@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use grimble_check::config::{ComputeTable, PacksTable};
-use grimble_check::fidelity::{capabilities_of, known_adapters};
+use grimble_check::fidelity::capabilities_of;
 use grimble_check::model_view::file_row;
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -123,14 +123,14 @@ impl Command for Doctor {
                 holes: row.holes,
             });
         }
-        let languages = known_adapters()
+        let languages = gob_symbols::fidelity_report()
             .into_iter()
             .map(|a| LanguageRow {
-                language: a.language().to_owned(),
-                adapter: a.identity(),
-                fidelity: a.fidelity().to_string(),
-                files: survey.languages.get(a.language()).copied().unwrap_or(0),
-                capabilities: capabilities_of(a.language())
+                language: a.language.to_owned(),
+                adapter: a.identity,
+                fidelity: a.fidelity.to_string(),
+                files: survey.languages.get(a.language).copied().unwrap_or(0),
+                capabilities: capabilities_of(a.language)
                     .into_iter()
                     .map(|(k, v)| (k, v.to_owned()))
                     .collect(),

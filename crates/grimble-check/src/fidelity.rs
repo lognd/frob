@@ -5,27 +5,22 @@ use std::collections::BTreeMap;
 use gob_ir::registry::{atoms, detectors};
 use gob_ir::{Answer, DetectorKind};
 use gob_symbols::{Adapter, adapters, opaque_adapter};
-use grimble_model::GrmbAdapter;
 use serde_json::{Value, json};
 
 /// The language tag of files no adapter claims.
 pub const OPAQUE: &str = "opaque";
 
-/// The language tag of a walked file: its adapter's, `grmb` for models, else [`OPAQUE`].
-pub fn language_tag(path: &str, hint: &gob_walk::LanguageHint) -> &'static str {
-    if path.ends_with(crate::MODEL_EXTENSION) {
-        "grmb"
-    } else {
-        gob_symbols::adapter_for(hint).map_or(OPAQUE, |a| a.language())
-    }
+/// The language tag of a walked file: its registered adapter's, else [`OPAQUE`].
+///
+/// `.grmb` resolves to `grmb` because `grimble-model` registers its adapter at link time.
+pub fn language_tag(path: &str, _hint: &gob_walk::LanguageHint) -> &'static str {
+    gob_symbols::adapter_for_path(path).map_or(OPAQUE, |a| a.language())
 }
 
-/// The adapters grimble knows: the gob-symbols ones, the opaque fallback and `.grmb`.
+/// Every adapter linked into this binary (rust, markdown, grmb, ...) then the opaque fallback.
 pub fn known_adapters() -> Vec<&'static dyn Adapter> {
-    static GRMB: GrmbAdapter = GrmbAdapter;
-    let mut all: Vec<&'static dyn Adapter> = adapters().to_vec();
+    let mut all = adapters();
     all.push(opaque_adapter());
-    all.push(&GRMB);
     all
 }
 
