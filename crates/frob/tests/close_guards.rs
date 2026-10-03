@@ -518,3 +518,14 @@ fn fixed_on_a_bug_without_evidence_is_still_refused() {
     assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stdout));
     assert_eq!(json(&out)["error"]["code"], "E-EVIDENCE-MISSING");
 }
+
+// frob:ticket 01M41KT4RMYMMP9SSFN8RZK7QV
+// frob:tests crates/frob-land/src/verb.rs::Land.from_matches
+#[test]
+fn land_with_a_non_done_outcome_needs_a_reason() {
+    let dir = repo(&[]);
+    let out = frob(dir.path(), &["land", "--outcome", "wont-fix"]);
+    assert_eq!(code(&out), 2, "{}", String::from_utf8_lossy(&out.stdout));
+    let text = json(&out)["error"]["message"].to_string();
+    assert!(text.contains("needs --reason"), "{text}");
+}

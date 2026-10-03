@@ -36,6 +36,20 @@ pub fn guards_apply(outcome: Option<Outcome>) -> bool {
     applies
 }
 
+/// The usage message when a close with `outcome` needs a `--reason` and `reason` is missing or blank; `None` when nothing is wrong.
+///
+/// Shared by `ticket close` and `land` so both demand the same thing of `invalid`, `duplicate` and `wont-fix`.
+// frob:ticket 01M41KT4RMYMMP9SSFN8RZK7QV
+pub fn missing_reason(outcome: Option<Outcome>, reason: Option<&str>) -> Option<String> {
+    if guards_apply(outcome) || reason.is_some_and(|r| !r.trim().is_empty()) {
+        return None;
+    }
+    Some(format!(
+        "closing as {} needs --reason <text> saying why (no evidence or changelog is asked for)",
+        outcome.map_or("this outcome", Outcome::as_str)
+    ))
+}
+
 /// What the ticket's changelog fragment looks like on disk, judged by the compile's own validator.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum FragmentState {
