@@ -2,21 +2,21 @@
 id = "01M41PEAN0RE8DBEKQ1RBF6057"
 title = "CI run 2 fails: ci.yml pins a nonexistent actionlint-py version, and Windows-only gob-trust code fails clippy"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T20:14:15Z"
-updated = "2026-10-03T20:14:15Z"
-scope = [".github/workflows/ci.yml", "crates/gob-trust/src/key.rs", "crates/frob-release/tests/**"]
+updated = "2026-10-03T20:27:21Z"
+scope = [".github/workflows/ci.yml", "crates/gob-trust/src/key.rs", "crates/frob-release/tests/**", "crates/frob/tests/merge_driver_path.rs", "crates/frob/tests/release_cut.rs", "crates/frob/tests/release_status.rs", "crates/frob-check/tests/check.rs", "crates/gob-git/tests/symlinks.rs"]
 
 [[acceptance]]
 text = "Given ci.yml and frob.toml, when the pin test runs, then every tool version in ci.yml equals the one frob.toml uses"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the workspace, when clippy runs for the Windows target with -D warnings, then it is clean, or the report states why it cannot run on this host"
-bound = false
+bound = true
 +++
 
 Run https://github.com/lognd/frob/actions/runs/37150145973 (2026-10-03): ubuntu tests passed, then two failures.
