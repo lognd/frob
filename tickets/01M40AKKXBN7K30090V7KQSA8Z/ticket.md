@@ -2,7 +2,8 @@
 id = "01M40AKKXBN7K30090V7KQSA8Z"
 title = "Attestation evidence: a person's signed statement as evidence for criteria that no tool can measure"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
