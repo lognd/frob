@@ -305,9 +305,11 @@ fn states(repo: &Repo) -> Vec<String> {
         .collect()
 }
 
-// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
 #[test]
 fn a_passing_measured_record_binds_and_show_names_the_evidence() {
+    // frob:tests crates/frob-pm/src/milestone/criteria.rs::bindings
+    // frob:tests crates/frob-evidence/src/verbs.rs::capture_args
+    // frob:tests crates/frob-evidence/src/verbs.rs::CaptureArgs.from_matches
     let repo = three();
     assert_eq!(states(&repo), ["unbound", "unbound", "unbound"]);
     std::fs::write(repo.dir.path().join("proof.txt"), "proof").expect("write");
@@ -327,9 +329,12 @@ fn a_passing_measured_record_binds_and_show_names_the_evidence() {
     assert_eq!(list["data"]["records"][0]["effective_status"], "measured");
 }
 
-// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
 #[test]
 fn a_failing_record_does_not_bind_and_warns() {
+    // frob:tests crates/frob-pm/src/milestone/criteria.rs::bindings
+    // frob:tests crates/frob-evidence/src/verbs.rs::capture_args
+    // frob:tests crates/frob-evidence/src/verbs.rs::CaptureArgs.from_matches
+    // frob:tests crates/frob-evidence/src/verbs.rs::with_record_warnings
     let repo = three();
     let out = offer(
         &repo,
@@ -347,9 +352,11 @@ fn a_failing_record_does_not_bind_and_warns() {
     assert_eq!(states(&repo), ["unbound", "unbound", "unbound"]);
 }
 
-// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
 #[test]
 fn the_latest_record_per_provider_ref_criterion_decides() {
+    // frob:tests crates/frob-pm/src/milestone/criteria.rs::bindings
+    // frob:tests crates/frob-evidence/src/verbs.rs::capture_args
+    // frob:tests crates/frob-evidence/src/verbs.rs::CaptureArgs.from_matches
     let repo = three();
     let probe = "git rev-parse --verify refs/tags/probe";
     offer(&repo, "command", probe, &["1"]);
@@ -362,9 +369,11 @@ fn the_latest_record_per_provider_ref_criterion_decides() {
     assert_eq!(states(&repo)[0], "unbound", "a later failure supersedes");
 }
 
-// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
 #[test]
 fn removing_a_criterion_remaps_bound_evidence() {
+    // frob:tests crates/frob-pm/src/milestone/criteria.rs::bindings
+    // frob:tests crates/frob-evidence/src/verbs.rs::capture_args
+    // frob:tests crates/frob-evidence/src/verbs.rs::CaptureArgs.from_matches
     let repo = three();
     std::fs::write(repo.dir.path().join("p.txt"), "p").expect("write");
     offer(&repo, "file", "p.txt", &["3"]);
@@ -389,9 +398,11 @@ fn removing_a_criterion_remaps_bound_evidence() {
     assert_eq!(json(&out)["error"]["code"], "E-MILESTONE-CRITERION");
 }
 
-// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
 #[test]
 fn the_ticket_allowlist_and_accepts_range_apply() {
+    // frob:tests crates/frob-pm/src/milestone/criteria.rs::bindings
+    // frob:tests crates/frob-evidence/src/verbs.rs::capture_args
+    // frob:tests crates/frob-evidence/src/verbs.rs::CaptureArgs.from_matches
     let repo = three();
     let out = offer(&repo, "command", "rm -rf /", &["1"]);
     assert_ne!(code(&out), 0);
@@ -407,9 +418,11 @@ fn the_ticket_allowlist_and_accepts_range_apply() {
     );
 }
 
-// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
 #[test]
 fn criterion_add_is_idempotent_and_starts_unbound() {
+    // frob:tests crates/frob-pm/src/milestone/criteria.rs::bindings
+    // frob:tests crates/frob-evidence/src/verbs.rs::capture_args
+    // frob:tests crates/frob-evidence/src/verbs.rs::CaptureArgs.from_matches
     let repo = three();
     let v = repo.ok(&["milestone", "criterion", "add", "0.532.0", "d"]);
     assert_eq!(v["already"], false);

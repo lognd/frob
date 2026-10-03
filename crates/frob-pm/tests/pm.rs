@@ -533,9 +533,9 @@ fn spellings_ordering_and_store_accessors() {
 }
 
 // frob:ticket 01M4069RACAQ8Z2C8APK0YKGNK
-// frob:tests 01M4069RACAQ8Z2C8APK0YKGNK
 #[test]
 fn bindings_name_the_deciding_event_and_removal_records_the_moved_map() {
+    // frob:tests crates/frob-pm/src/milestone/criteria.rs::bindings
     let (_dir, ledger) = fixture();
     let pm = PmStore::new(&ledger);
     let id = pm
