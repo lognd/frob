@@ -8,7 +8,7 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:53Z"
-updated = "2026-10-03T06:53:07Z"
+updated = "2026-10-03T07:04:21Z"
 idempotency_key = "m2-rel-pm-crate"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-pm/**", "Cargo.toml", "crates/frob-ledger/**"]
@@ -19,7 +19,7 @@ target = "01M3WYJ81430D3D5QSNCFM8QB0"
 
 [[acceptance]]
 text = "Given a milestone object written through the ledger, when the ledger is re-folded from events, then the same milestone state results"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given two concurrent edits of one milestone on different branches, when merged, then no event is lost"
