@@ -7,8 +7,8 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T18:11:40Z"
-updated = "2026-10-03T18:13:52Z"
-scope = ["crates/frob-lease/src/overlap.rs", "crates/frob-lease/tests/**", "docs/design/tickets.md"]
+updated = "2026-10-03T18:14:06Z"
+scope = ["crates/frob-lease/src/overlap.rs", "crates/frob-lease/tests/**", "docs/design/tickets.md", "crates/frob-lease/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given scopes crates/*/Cargo.toml and crates/frob-evidence/tests/**, when overlap is computed, then they do not overlap"
