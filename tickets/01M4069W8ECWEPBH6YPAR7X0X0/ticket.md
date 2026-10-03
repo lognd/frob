@@ -2,7 +2,8 @@
 id = "01M4069W8ECWEPBH6YPAR7X0X0"
 title = "frob release changelog: compile changelog.d fragments into CHANGELOG.md"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
