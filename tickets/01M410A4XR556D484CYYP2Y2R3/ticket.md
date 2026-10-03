@@ -6,9 +6,9 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-03T13:47:29Z"
-updated = "2026-10-03T13:51:23Z"
+updated = "2026-10-03T14:03:13Z"
 labels = ["release:0.532.0"]
-scope = ["crates/frob-check/src/scope.rs", "crates/frob-lease/**", "crates/frob-check/tests/check.rs"]
+scope = ["crates/frob-check/src/scope.rs", "crates/frob-lease/**", "crates/frob-check/tests/check.rs", "crates/frob-release/src/fragment.rs", "crates/frob-release/src/lib.rs", "Cargo.lock", "docs/reference/rules/SCOPE001.md", "docs/design/tickets.md"]
 +++
 
 found while working ~3TXB8SR: another ticket leasing changelog.d/** blocks every other ticket from widening to its own <ULID>.<type>.md, so check --ticket reports SCOPE001 on the fragment the close guard requires. Fragments are one file per ticket, so add changelog.d/** to [lease] shared_files or have the scope check always allow the ticket's own fragment.
