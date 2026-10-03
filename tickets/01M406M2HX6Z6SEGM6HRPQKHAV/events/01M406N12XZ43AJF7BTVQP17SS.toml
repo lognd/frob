@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "frob vet: dependency vetting (designed in cli.md, not implemented)"
+new = "grimble vet: dependency vetting in grimble-vet (designed in cli.md, not implemented)"
+at = "2026-10-03T06:19:03Z"
+actor = "lognd"
+rev = 1

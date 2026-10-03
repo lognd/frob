@@ -1,0 +1,11 @@
+kind = "evidence"
+at = "2026-10-03T06:32:54Z"
+actor = "lognd"
+rev = 1
+provider = "file"
+ref = "target/evidence/lint-release-yml.txt"
+digest = "2c84c931d4c0828e77a42958c15277792544c0855c4a272f2a186e776456f636"
+status = "measured"
+captured_at = "2026-10-03T06:32:54Z"
+accepts = [2]
+size = 225

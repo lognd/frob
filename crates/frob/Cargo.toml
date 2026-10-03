@@ -9,6 +9,10 @@ rust-version.workspace = true
 authors.workspace = true
 publish = false
 
+[package.metadata.dist]
+# frob-cli is the only distributable binary; dist ignores publish = false without this.
+dist = true
+
 [lib]
 name = "frob_cli"
 path = "src/lib.rs"
