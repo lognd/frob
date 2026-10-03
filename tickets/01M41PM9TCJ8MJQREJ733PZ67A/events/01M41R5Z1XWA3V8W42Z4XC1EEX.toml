@@ -1,0 +1,78 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T20:44:38Z"
+digest = "418caedc5c7c1a1a25324a0f82e3acb89a538ef3c9ee17cf83cf3f2516c2744e"
+exit_code = 0
+inline = '''
+   Compiling gix-path v0.12.6
+   Compiling gix-packetline v0.22.2
+   Compiling schemars v1.2.2
+   Compiling tracing-subscriber v0.3.23
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling gix-config-value v0.19.1
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-url v0.38.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-ignore v0.22.1
+   Compiling gix-pathspec v0.20.0
+   Compiling gix-shallow v0.13.0
+   Compiling gix-transport v0.59.2
+   Compiling gob-log v0.0.0 (<worktree>/crates/gob-log)
+   Compiling gix-refspec v0.45.1
+   Compiling gob-rules v0.0.0 (<worktree>/crates/gob-rules)
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-traverse v0.61.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-index v0.55.0
+   Compiling gix-pack v0.74.2
+   Compiling gob-diagnostics v0.0.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-worktree v0.56.0
+   Compiling gob-exec v0.0.0 (<worktree>/crates/gob-exec)
+   Compiling gix-odb v0.84.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-worktree-state v0.34.1
+   Compiling gob-config v0.0.0 (<worktree>/crates/gob-config)
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gob-cli v0.0.0 (<worktree>/crates/gob-cli)
+   Compiling gix v0.87.1
+   Compiling gob-git v0.0.0 (<worktree>/crates/gob-git)
+   Compiling frob-ledger v0.0.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.0.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.0.0 (<worktree>/crates/frob-release)
+   Compiling frob-evidence v0.0.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID aac52106-faa7-44bf-91a6-c856f8227b3b with nextest profile: default
+    Starting 4 tests across 3 binaries (34 tests skipped)
+        PASS [   0.005s] frob-evidence scrub::tests::windows_forms
+        PASS [   0.006s] frob-evidence scrub::tests::rewrites_worktree_repo_and_home
+        PASS [   0.006s] frob-evidence scrub::tests::respects_path_boundaries
+        PASS [   0.076s] frob-evidence::evidence captured_paths_become_placeholders_in_the_event_data
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.077s] 4 tests run: 4 passed, 34 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E 'test(=captured_paths_become_placeholders_in_the_event_data) | test(/scrub::tests/)'"
+size = 2810
+status = "measured"
+tests = ["scrub::tests::windows_forms", "scrub::tests::rewrites_worktree_repo_and_home", "scrub::tests::respects_path_boundaries", "captured_paths_become_placeholders_in_the_event_data"]
+at = "2026-10-03T20:44:38Z"
+actor = "lognd"
+rev = 1

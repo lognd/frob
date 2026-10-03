@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T20:17:30Z"
-updated = "2026-10-03T20:44:11Z"
+updated = "2026-10-03T20:44:38Z"
 scope = ["crates/frob-worktree/src/work.rs", "crates/frob-lease/src/model.rs", "crates/frob-evidence/**", "crates/frob-obligations/**", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/privacy.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/tests/privacy.rs", "crates/frob-check/src/product.rs", "crates/frob-tests/src/verb.rs", "docs/reference/rules/TICK004.md", "docs/reference/rules/README.md", "crates/frob-worktree/tests/work.rs", "docs/design/tickets.md"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a provider whose output contains the absolute worktree path and the home directory, when evidence is recorded, then the event contains placeholders and no absolute path"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a committed ledger file containing /home/name/, when frob check runs, then the new rule reports it with a remedy, and a clean ledger reports nothing"
