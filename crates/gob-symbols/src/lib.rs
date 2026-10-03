@@ -52,6 +52,7 @@ mod model;
 mod opaque;
 mod paths;
 mod pipeline;
+mod qualifier;
 mod registry;
 mod rust;
 mod symref;
@@ -69,13 +70,14 @@ pub use graph::{
 };
 pub use markdown::{MarkdownAdapter, slugify};
 pub use model::{
-    CallSite, Digests, FacetDigest, FileSymbols, ImportEdge, LocalBinding, RefKind, RefSite,
-    SymbolKind, SymbolRecord, UnitExtras, UseBinding, Visibility, collapse_ws,
+    CallSite, Digests, FacetDigest, FileSymbols, ImportEdge, LocalBinding, Receiver, RefKind,
+    RefSite, SymbolKind, SymbolRecord, UnitExtras, UseBinding, Visibility, collapse_ws,
 };
 pub use opaque::OpaqueAdapter;
 pub use pipeline::{
     BuildStats, EXTRACTOR_VERSION, build_graph, build_graph_with_stats, extract_file, fold_file,
 };
+pub use qualifier::{Admit, CallQualifier};
 pub use registry::{
     AdapterEntry, AdapterReport, DuplicateExtension, adapter_for, adapter_for_path, adapters,
     fidelity_report, opaque_adapter, registry_conflicts,

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Acceptance 1 (COV001 Unresolved below 40) is NOT met: 377 -> 284 on this repository. Landed as sound progress (qualifier-aware poison, typed receivers, dependency-closure pruning, call sites named in every message). The evidence event recorded with --accepts 1 does not prove the threshold; the target moves to the follow-up ticket filed with this comment."
+at = "2026-10-03T02:05:25Z"
+actor = "lognd"
+rev = 1

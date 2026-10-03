@@ -224,6 +224,29 @@ pub struct CallSite {
     pub local: LocalBinding,
     /// True when the call sits in a macro argument (status capped at May).
     pub in_macro: bool,
+    /// What a method call's receiver is, when syntactically evident; `None` for non-method calls.
+    #[serde(default)]
+    pub receiver: Option<Receiver>,
+    /// True when the qualifying path is a generic parameter or a bracketed type: no usable qualifier.
+    #[serde(default)]
+    pub opaque_qualifier: bool,
+    /// One-based source line of the call.
+    #[serde(default)]
+    pub line: u32,
+    /// The callee expression as written, for diagnostics (`Type::new(..)`, `x.run(..)`).
+    #[serde(default)]
+    pub text: String,
+}
+
+/// What a method call's receiver syntactically is.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Receiver {
+    /// The `self` value.
+    SelfValue,
+    /// A local or parameter whose declared type is syntactically evident.
+    Typed(String),
+    /// Any other expression: its type is unknown.
+    Expr,
 }
 
 /// What a non-call reference site is.
