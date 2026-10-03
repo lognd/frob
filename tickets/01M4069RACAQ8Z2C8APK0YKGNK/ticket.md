@@ -2,7 +2,8 @@
 id = "01M4069RACAQ8Z2C8APK0YKGNK"
 title = "Milestone exit criteria bound to evidence like ticket acceptance"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
