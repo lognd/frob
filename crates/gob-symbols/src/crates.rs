@@ -7,6 +7,8 @@
 //! dependencies matter (external crates hold no repository callables). A file
 //! with no `Cargo.toml` above it is never ruled out.
 
+// frob:ticket 01M3ZR5KCPY3E3NFCVFS404RDJ
+
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 
@@ -187,20 +189,6 @@ impl CrateDeps {
         out
     }
 
-    /// The crate directory that the extern crate `name` denotes inside crate `from`.
-    ///
-    /// `from` itself under its own package name (integration tests name their crate), else a
-    /// direct dependency of that name; never a transitive one, which `use` cannot name.
-    pub fn extern_crate(&mut self, from: &str, name: &str) -> Option<String> {
-        if self.package_name(from).as_deref() == Some(name) {
-            return Some(from.to_owned());
-        }
-        self.direct_deps(from)
-            .into_iter()
-            .find(|(n, _)| n == name)
-            .map(|(_, dir)| dir)
-    }
-
     /// True when code in crate `from` can call code in crate `to` (itself or a transitive dependency).
     pub fn can_reach(&mut self, from: &str, to: &str) -> bool {
         if from == to {
@@ -257,5 +245,39 @@ mod tests {
     fn join_rel_folds_dots() {
         assert_eq!(join_rel("crates/a", "../b"), "crates/b");
         assert_eq!(join_rel("", "crates/x"), "crates/x");
+    }
+
+    // frob:tests crates/gob-symbols/src/crates.rs::CrateDeps.extern_crates
+    #[test]
+    fn extern_crates_name_the_crate_itself_and_its_direct_dependencies() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        for (path, text) in [
+            ("Cargo.toml", "[workspace]\n"),
+            ("crates/a/Cargo.toml", "[package]\nname = \"a-lib\"\n"),
+            (
+                "crates/b/Cargo.toml",
+                "[package]\nname = \"b-app\"\n[dependencies]\na-lib = { path = \"../a\" }\n",
+            ),
+        ] {
+            let full = dir.path().join(path);
+            std::fs::create_dir_all(full.parent().expect("parent")).expect("mkdir");
+            std::fs::write(full, text).expect("write");
+        }
+        let mut deps = CrateDeps::new(dir.path());
+        let mut names = deps.extern_crates("crates/b");
+        names.sort();
+        assert_eq!(
+            names,
+            [
+                ("a_lib".to_owned(), "crates/a".to_owned()),
+                ("b_app".to_owned(), "crates/b".to_owned())
+            ]
+        );
+        assert_eq!(
+            deps.crate_of("crates/b/tests/t.rs").as_deref(),
+            Some("crates/b")
+        );
+        assert!(deps.can_reach("crates/b", "crates/a"));
+        assert!(!deps.can_reach("crates/a", "crates/b"));
     }
 }
