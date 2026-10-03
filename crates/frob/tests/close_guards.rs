@@ -310,7 +310,50 @@ fn no_changelog_without_a_reason_is_a_usage_error_and_changes_nothing() {
     let blank = close(dir.path(), &id, &["--no-changelog", "--reason", "  "]);
     assert_eq!(code(&blank), 2);
     let shown = ok(dir.path(), &["ticket", "show", &id]);
-    assert_ne!(shown["data"]["category"], "done");
+    assert_eq!(shown["data"]["summary"]["category"], "todo");
+}
+
+// frob:ticket 01M412CMSRCHNXHEEENY8ZYBDW
+// frob:tests crates/frob/src/ticket/write.rs::Close.run
+#[test]
+fn a_refused_close_keeps_the_exemption_event_and_a_retry_does_not_repeat_it() {
+    let dir = repo(&["criteria_evidenced", "changelog_fragment"]);
+    let id = chore(dir.path(), &["--acceptance", "the widget works"]);
+    let flags = ["--no-changelog", "--reason", "design only"];
+    let refused = close(dir.path(), &id, &flags);
+    assert_eq!(code(&refused), 3);
+    assert_eq!(json(&refused)["error"]["code"], "E-DONE-CRITERIA-UNBOUND");
+    let count = |dir: &Path| -> (usize, Value) {
+        let shown = ok(dir, &["ticket", "show", &id, "--events"]);
+        let n = shown["data"]["events"]
+            .as_array()
+            .expect("events")
+            .iter()
+            .filter(|e| e["kind"] == "changelog-exempt")
+            .count();
+        (n, shown)
+    };
+    let (n, shown) = count(dir.path());
+    assert_eq!(n, 1, "the intent is recorded though the close was refused");
+    assert_ne!(shown["data"]["summary"]["category"], "done");
+    assert_eq!(shown["data"]["changelog_exempt"]["reason"], "design only");
+    ok(
+        dir.path(),
+        &[
+            "ticket",
+            "close",
+            &id,
+            "--outcome",
+            "done",
+            "--no-changelog",
+            "--no-evidence",
+            "--reason",
+            "design only",
+        ],
+    );
+    let (n, shown) = count(dir.path());
+    assert_eq!(n, 1, "the retry reused the event");
+    assert_eq!(shown["data"]["summary"]["category"], "done");
 }
 
 // frob:ticket 01M412CMSRCHNXHEEENY8ZYBDW

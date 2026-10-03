@@ -694,6 +694,8 @@ fn ledger_step(
         },
     )?;
     let (evidence, done) = guards;
+    let exempt = done.record_exemption(ledger, id)?;
+    tracing::info!(ticket = %id, exempt = exempt.is_some(), "land audited the changelog exemption before closing");
     let defaults = default_close_guards();
     let mut guards: Vec<&dyn CloseGuard> = defaults.iter().map(|g| &**g).collect();
     guards.push(evidence);
@@ -709,8 +711,6 @@ fn ledger_step(
     if !applied.already {
         let recorded = evidence.record_bypass(ledger, id)?;
         tracing::info!(ticket = %id, bypass = recorded.is_some(), "land closed the ticket");
-        let exempt = done.record_exemption(ledger, id)?;
-        tracing::info!(ticket = %id, exempt = exempt.is_some(), "land audited the changelog exemption");
     }
     Ok(())
 }

@@ -690,6 +690,12 @@ impl Command for Close {
         if self.no_changelog {
             done = done.allow_no_changelog(self.reason.clone().unwrap_or_default());
         }
+        let already_done = ledger.show(id).map_err(cli_err)?.summary.category
+            == frob_ledger::model::Category::Done;
+        if !already_done {
+            done.record_exemption(&ledger, id)
+                .map_err(CliError::internal)?;
+        }
         let guards = default_close_guards();
         let mut refs: Vec<&dyn frob_ledger::guards::CloseGuard> =
             guards.iter().map(|g| &**g).collect();
@@ -703,8 +709,6 @@ impl Command for Close {
                 .record_bypass(&ledger, id)
                 .map_err(CliError::internal)?;
             tracing::info!(ticket = %id, bypass = recorded.is_some(), "evidence bypass audited");
-            done.record_exemption(&ledger, id)
-                .map_err(CliError::internal)?;
         }
         tracing::info!(ticket = %id, already = applied.already, "ticket close");
         let mut data = ChangeData::from(&applied);

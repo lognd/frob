@@ -450,7 +450,7 @@ user-visible effect (a design document, an internal refactor, a test-only
 change) is closed with `--no-changelog --reason TEXT` instead (~Y8ZYBDW): both
 flags are required together on `ticket close` and `land`, there is no
 exemption by file type, and the person or agent states why. The reason is
-recorded as a `changelog-exempt` event with the actor, satisfies
+recorded as a `changelog-exempt` event with the actor, written before the close so a crash cannot leave a closed ticket without its record (a refused close leaves the event on the open ticket; a retry with the same reason reuses it), satisfies
 `changelog_fragment` and REL003 for that ticket (`check --ticket` included, and
 `land` passes the exemption to its own check), and is shown by `ticket show`,
 `ticket brief`, the close and land reports and `release status`, which lists the

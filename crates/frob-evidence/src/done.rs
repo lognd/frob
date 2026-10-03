@@ -90,9 +90,9 @@ impl DoneGuard {
         self.no_changelog.as_deref()
     }
 
-    /// Write the exemption as a `changelog-exempt` event on `id`; `None` when none was requested.
+    /// Write the exemption as a `changelog-exempt` event on `id`; `None` when none was requested or the ticket already carries one with this reason.
     ///
-    /// Call it once the close has succeeded so the audit trail matches what happened.
+    /// Call it before the close so a crash cannot leave a closed ticket without its record; an event on a ticket whose close is then refused is harmless, and a retry with the same reason reuses it.
     ///
     /// # Errors
     ///
@@ -101,6 +101,11 @@ impl DoneGuard {
         let Some(reason) = self.no_changelog.as_deref() else {
             return Ok(None);
         };
+        let existing = frob_ledger::event::changelog_exemption(&ledger.events(id)?);
+        if existing.is_some_and(|x| x.reason == reason) {
+            tracing::debug!(ticket = %id, "changelog exemption already recorded; not repeated");
+            return Ok(None);
+        }
         let body = EventBody::ChangelogExempt(ChangelogExemptData {
             reason: reason.to_owned(),
         });
