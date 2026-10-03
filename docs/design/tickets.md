@@ -89,14 +89,24 @@ into per-ticket timelines, cycle times, velocity, and flow metrics in
 one pass; `frob ticket show --events` prints the timeline. Counts stay
 small: a busy ticket has tens of events, each a few hundred bytes.
 
-Every kind that any file refers to is in this table. Milestone 1 code
-(frob-ledger `EventBody`) interprets `create`, `field`, `transition`,
-`comment`, `link` and `exception`; every `rev`-1 file carries a `rev`
-key, the revision of the event file format (not of the ticket), and a
-kind a reader does not know folds to no change. `evidence` events are
-written by frob-evidence, which re-folds the ticket itself, until
-frob-ledger gains `EventBody::Evidence` (Milestone 2 note); the guard
-bypass is an `evidence-bypass` event written the same way.
+Every kind that any file refers to is in this table. frob-ledger's
+`EventBody` interprets `create`, `field`, `transition`, `comment`,
+`link`, `exception`, `evidence`, `evidence-bypass` and `land`; every
+`rev`-1 file carries a `rev` key, the revision of the event file format
+(not of the ticket), and a kind a reader does not know folds to no
+change. Every producer writes through one API, `Ledger::append(ticket,
+EventBody)`, which writes the event file, re-folds the ticket file and
+commits on the ledger ref (CAS); no crate writes event files directly
+(~CFM8QB0).
+
+The fold binds an acceptance criterion (`bound = true`) only from
+measured, passing evidence: a record whose status is `measured` and
+whose verdict is not a failure, whose `accepts` maps to the criterion
+through the `moved` maps of later acceptance edits (a removed criterion
+binds nothing). For each (provider, reference, criterion) the latest
+record decides, so a failure or an unmeasured record after a pass
+unbinds, and a pass after a failure binds; a criterion is bound when
+any (provider, reference) pair's latest record for it passes.
 
 | Kind | Subject | Required fields | Producer verb | Consumers |
 |---|---|---|---|---|
