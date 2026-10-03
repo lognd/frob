@@ -2,11 +2,11 @@
 id = "01M418CXCED7DEBX4WV2PM2R2K"
 title = "frob:accept CI006 in a YAML comment does not suppress the zizmor finding"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T16:08:48Z"
-updated = "2026-10-03T16:08:48Z"
+updated = "2026-10-03T17:45:08Z"
 labels = ["area:check"]
 scope = ["crates/frob-check", "crates/frob-obligations", "crates/gob-directives"]
 
