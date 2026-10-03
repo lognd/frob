@@ -1,0 +1,22 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T21:44:15Z"
+digest = "8991cdaff12e74256d8147b827c6d3921a5b7338abb0a277c03ec47d194d16e6"
+exit_code = 0
+inline = """
+== [1/1] docs: cargo doc --no-deps --all-features
+ok      docs                0.3s
+ci: all steps passed
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.19s
+     Running `target/debug/gob-dev ci --step docs`
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.22s
+   Generated <worktree>/target/doc/frob_ack/index.html and 38 other files
+"""
+passed = true
+provider = "command"
+ref = "cargo dev ci --step docs"
+size = 373
+status = "measured"
+at = "2026-10-03T21:44:15Z"
+actor = "lognd"
+rev = 1
