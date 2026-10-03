@@ -8,10 +8,10 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T23:39:54Z"
-updated = "2026-10-03T01:53:54Z"
+updated = "2026-10-03T01:54:23Z"
 idempotency_key = "m2-perf-test-flaky"
 labels = ["milestone:2"]
-scope = ["crates/frob-check/**", "crates/gob-check/**"]
+scope = ["crates/frob-check/**", "crates/gob-check/**", "crates/frob-ack/tests/**"]
 
 [[acceptance]]
 text = "Given a full-workspace test run under heavy CPU load, when the suite runs, then no test asserts wall-clock time and the bench still reports the warm-run budget"
