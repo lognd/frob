@@ -288,35 +288,26 @@ adapter, Rust and markdown become std adapter packs.
 ## 9. Trust and effects of plugins themselves
 
 Owner decision 2026-10-04: repository packs may run tier 3 (WASM) and
-may be granted any effect; nothing is banned. Safety comes from making
-every power declared, reviewed, pinned and approved per machine. A
-pessimistic security audit of this model (assuming people approve
-prompts without reading) is a separate ticket and may tighten it.
+may be granted any effect; nothing is banned. The pessimistic audit
+(notes/review/plugin-security-audit.md) tightened the first sketch; the
+full model is security.md (D82). In short:
 
-1. **Pure by default.** A tier-3 component runs in wasmtime with no file
-   system, network, environment, clock or process access. A pack that
-   declares no effects needs no approval anywhere: it can only return
-   findings. Tier 1 and 2 content runs no code at all.
-2. **Declared and scoped.** Effects are listed in the pack manifest with
-   their scope: file read paths (globs inside the repository), network
-   hosts, environment variable names, subprocess names. An undeclared
-   effect is a trap, reported Unresolved.
-3. **Granted in configuration, pinned to code.** Grants live in
-   `grimble.toml` and are recorded in `grimble.packs.lock` against the
-   pack's content digest. Any change to the pack's code changes the
-   digest and drops its grants; the lock diff shows the change in review.
-4. **Trusted per machine.** A repository pack with any effect does not
-   run until `grimble trust` records (repository, pack digest, granted
-   effects) in a store outside the repository
-   (`$XDG_CONFIG_HOME/grimble/trust.toml`). An untrusted pack's rules
-   report Unresolved with reason `untrusted` and the exact command to
-   trust it. A clone or a pull request can never trust itself. CI trusts
-   with an explicit flag in its own configuration.
-5. **Hard limits always.** Memory caps and epoch time budgets (a breach
-   is Unresolved, reason `budget`); wasmtime versions vetted by
-   `frob vet`. Grants are listed and counted in `grimble check --json`.
-   Packs are pinned by content digest; signatures (sigstore) are a
-   later option.
+1. **Pure by default**, in a separate sandbox worker with no secrets;
+   granted effects are performed by a host broker, never by the guest.
+   Tier 1 and 2 content runs no code at all.
+2. **Declared, exact and classed**: ordinary, secret-shaped, control
+   plane and privilege effects (`replaces`, `fix.machine`, `subprocess`)
+   are separate classes; read implies publish.
+3. **Pinned to the pack tree digest**, which covers every byte of the
+   pack (code, data, text, includes); any change drops trust and grants.
+4. **Trusted from a protected branch, not from a prompt**: CI uses
+   `--trust-from <protected ref>` only; developers run
+   `trust --follow origin/main` once; the TTY-only prompt remains for
+   code not yet on the protected branch. A repository can never raise
+   its own privileges.
+5. **An honest gate**: required packs make untrusted, budget and trap
+   results fail; CI fails on new unknowns in changed files; GATE001
+   reports any policy weakening between base and head.
 
 ## 10. Consequences
 

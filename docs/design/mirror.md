@@ -113,9 +113,16 @@ touching the producer.
 
 Skipping an edited issue is only safe if nobody can miss it. So:
 
-- **Loud.** MIR002 is severity Error and a required finding: it fails
-  `frob check` and the mirror CI job (exit 1), and it is repeated every
-  run until resolved. The mirror job also posts one comment on the
+- **Loud.** MIR002 is severity Error and required in the mirror CI job
+  and `frob mirror status` (exit 1), repeated every run until resolved.
+  In a code checkout's `frob check` it is a Warning and never blocks a
+  land, so someone who can only edit issues cannot stop code from
+  landing (security.md 2.11 and section 5, pending owner confirmation).
+- **Authenticated.** The mirror adopts or updates only issues its own
+  bot created whose marker carries an HMAC of the ULID; any other issue
+  carrying a marker is MIR003 spoofed-marker and ignored. `--adopt`
+  needs a TTY and never changes repository-owned fields (security.md
+  2.11). The mirror job also posts one comment on the
   issue itself, once: the issue is managed from the repository, the
   edit was not applied, and who can resolve it with which command.
 - **Specific.** The finding names the ticket, the issue URL, each edited
