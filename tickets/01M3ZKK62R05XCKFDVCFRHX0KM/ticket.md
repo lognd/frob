@@ -2,7 +2,8 @@
 id = "01M3ZKK62R05XCKFDVCFRHX0KM"
 title = "Adopt grimble in this repository: grimble.toml, exclude test corpora, ignore .grimble/, fix the compute digest example"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
