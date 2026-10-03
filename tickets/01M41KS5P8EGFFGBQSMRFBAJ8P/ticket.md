@@ -7,8 +7,8 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T19:27:44Z"
-updated = "2026-10-03T19:28:30Z"
-scope = ["crates/frob-pm/src/cycle/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs", "crates/frob-pm/src/doctor.rs"]
+updated = "2026-10-03T19:41:55Z"
+scope = ["crates/frob-pm/src/cycle/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs", "crates/frob-pm/src/doctor.rs", "crates/frob-pm/src/store.rs", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-pm/src/model.rs"]
 
 [[acceptance]]
 text = "Given a cycle created today and closed early, when ticket doctor runs, then it reports no E-PM-CONFLICT"
