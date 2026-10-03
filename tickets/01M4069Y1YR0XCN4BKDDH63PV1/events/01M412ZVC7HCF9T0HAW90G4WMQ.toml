@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T14:34:17Z"
+digest = "b562a1ad829b763934ac6ea64c20c85fc1847f482877a5bebb210c790bb03f7c"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+────────────
+ Nextest run ID 51ceb1cc-8893-4e74-82cd-235f42d2b6ce with nextest profile: default
+    Starting 12 tests across 1 binary
+        PASS [   0.016s] ( 1/12) frob-release::release_workflow retired_runner_and_manylinux_auto_never_appear
+        PASS [   0.016s] ( 2/12) frob-release::release_workflow linux_wheels_build_in_digest_pinned_manylinux_2_28_images_and_others_natively
+        PASS [   0.016s] ( 3/12) frob-release::release_workflow wheels_are_uploaded_as_artifacts_and_nothing_publishes_to_an_index
+        PASS [   0.017s] ( 4/12) frob-release::release_workflow the_matrix_is_exactly_the_five_wheel_targets
+        PASS [   0.019s] ( 5/12) frob-release::release_workflow smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemption
+        PASS [   0.018s] ( 6/12) frob-release::release_workflow every_job_has_a_timeout_and_the_failure_names_the_job
+        PASS [   0.019s] ( 7/12) frob-release::release_workflow maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
+        PASS [   0.019s] ( 8/12) frob-release::release_workflow every_publishing_job_needs_smoke
+        PASS [   0.020s] ( 9/12) frob-release::release_workflow only_the_exempt_targets_skip_the_smoke_and_the_exemption_is_explicit
+        PASS [   0.021s] (10/12) frob-release::release_workflow every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archive
+        PASS [   0.022s] (11/12) frob-release::release_workflow macos_x86_64_is_cross_built_on_macos_latest_and_nothing_else_is_cross
+        PASS [   0.026s] (12/12) frob-release::release_workflow triggers_are_tag_only_and_every_action_is_sha_pinned
+────────────
+     Summary [   0.027s] 12 tests run: 12 passed, 0 skipped
+"""
+passed = true
+provider = "command"
+ref = "cargo nextest run -p frob-release --test release_workflow"
+size = 1851
+status = "measured"
+at = "2026-10-03T14:34:17Z"
+actor = "lognd"
+rev = 1

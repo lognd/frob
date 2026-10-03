@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T14:33:50Z"
+updated = "2026-10-03T14:34:17Z"
 idempotency_key = "m2-rel-smoke-wiring"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = [".github/workflows/release.yml", "crates/frob/tests/release_workflow.rs", "crates/frob-release/tests/release_workflow.rs", "docs/design/releases.md", "packaging/pypi/BUILDING.md"]
@@ -23,7 +23,7 @@ target = "01M4069XXM8A47Y1F88NWXQPMM"
 
 [[acceptance]]
 text = "Given release.yml with a job lacking timeout-minutes, when the test runs, then it fails naming the job"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a publish job without needs smoke, when the test runs, then it fails"
