@@ -488,7 +488,7 @@ fn three_criteria(repo: &Repo) -> String {
     ])
 }
 
-// frob:ticket 09P2DKX
+// frob:ticket 01M4055D28TPGSJW71D09P2DKX
 #[test]
 fn add_acceptance_keeps_commas_whole_and_is_idempotent() {
     let repo = Repo::new(false);
@@ -532,7 +532,7 @@ fn add_acceptance_keeps_commas_whole_and_is_idempotent() {
     assert_eq!(repo.ok(&["ticket", "doctor"])["data"]["ok"], true);
 }
 
-// frob:ticket 09P2DKX
+// frob:ticket 01M4055D28TPGSJW71D09P2DKX
 #[test]
 fn removing_a_criterion_with_bound_evidence_reports_it_in_data_and_warning() {
     let repo = Repo::new(false);
@@ -554,7 +554,7 @@ fn removing_a_criterion_with_bound_evidence_reports_it_in_data_and_warning() {
     assert_eq!(repo.ok(&["ticket", "doctor"])["data"]["ok"], true);
 }
 
-// frob:ticket 09P2DKX
+// frob:ticket 01M4055D28TPGSJW71D09P2DKX
 #[test]
 fn evidence_keeps_pointing_at_its_own_criterion_after_an_earlier_removal() {
     let repo = Repo::new(false);
@@ -576,7 +576,7 @@ fn evidence_keeps_pointing_at_its_own_criterion_after_an_earlier_removal() {
     assert_eq!(final_out["data"]["lost_evidence"][0]["event"], on_three);
 }
 
-// frob:ticket 09P2DKX
+// frob:ticket 01M4055D28TPGSJW71D09P2DKX
 #[test]
 fn clear_acceptance_empties_the_list_and_reports_all_bound_evidence() {
     let repo = Repo::new(false);
@@ -591,7 +591,7 @@ fn clear_acceptance_empties_the_list_and_reports_all_bound_evidence() {
     assert_eq!(repo.ok(&["ticket", "doctor"])["data"]["ok"], true);
 }
 
-// frob:ticket 09P2DKX
+// frob:ticket 01M4055D28TPGSJW71D09P2DKX
 #[test]
 fn set_acceptance_is_refused_naming_the_dedicated_flags_and_schema_works() {
     let repo = Repo::new(false);

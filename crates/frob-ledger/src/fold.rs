@@ -384,7 +384,7 @@ mod tests {
         )
     }
 
-    // frob:ticket 09P2DKX
+    // frob:ticket 01M4055D28TPGSJW71D09P2DKX
     #[test]
     fn acceptance_events_fold_and_remap_recorded_positions() {
         let id = TicketId::mint();
