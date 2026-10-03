@@ -2,7 +2,8 @@
 id = "01M4069TBHQ2YTFEEWHED96MPY"
 title = "PM013 WIP limit exceeded rule"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
