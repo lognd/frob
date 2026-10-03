@@ -2,13 +2,14 @@
 id = "01M4069ZE5BQECP28D8PTH7VKB"
 title = "Create the 0.532.0 milestone object and move the release:0.532.0 labels onto it"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:13:00Z"
-updated = "2026-10-03T15:29:05Z"
+updated = "2026-10-03T15:29:07Z"
 idempotency_key = "m2-rel-assemble"
 labels = ["milestone:2", "area:release"]
 scope = ["tickets/**"]
