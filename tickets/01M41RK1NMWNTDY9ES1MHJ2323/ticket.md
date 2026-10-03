@@ -2,12 +2,13 @@
 id = "01M41RK1NMWNTDY9ES1MHJ2323"
 title = "frob check fails CI: .github/dependabot.yml carries the v1 directive frob:used-by (DSL001)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 1
 reporter = "lognd"
 created = "2026-10-03T20:51:46Z"
-updated = "2026-10-03T21:01:45Z"
+updated = "2026-10-03T21:01:48Z"
 scope = [".github/dependabot.yml"]
 
 [[acceptance]]
