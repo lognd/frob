@@ -9,6 +9,8 @@ use assert_cmd::Command;
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use serde_json::Value;
 
+mod common;
+
 /// A trunk-mode repository with `frob init` run and one commit.
 struct Repo {
     dir: tempfile::TempDir,
@@ -42,6 +44,7 @@ impl Repo {
         git(dir.path(), &["config", "core.autocrlf", "false"]);
         let repo = Self { dir };
         assert_eq!(code(&repo.run(&["--json", "init"])), 0);
+        common::set_done_requires(repo.dir.path(), &["no_open_children"]);
         repo.set_require_ci(false);
         git(repo.dir.path(), &["add", "-A"]);
         git(repo.dir.path(), &["commit", "-q", "-m", "base"]);

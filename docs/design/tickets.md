@@ -426,6 +426,25 @@ security, story, incident and invariant, and `ticket close
 event; evidence verdicts
 are `Passed | Failed | Unmeasured` and Unmeasured never reads as Failed.
 
+**Done requirements** (~XGAS05X, release 0.532.0). A close or land with
+outcome `done` or `fixed` also evaluates every entry of `[pm] done_requires`
+(pm-enforcement.md section 3) through the close guard `done_requires`, in
+the configured order, and refuses on the first that fails.
+`criteria_evidenced`: every acceptance criterion is bound (a measured
+passing record or an attestation, latest per provider, reference and
+criterion, through the moved maps); a ticket without criteria passes with a
+warning; `--no-evidence --reason` bypasses this requirement only and records
+the `evidence-bypass` event. `no_open_children`: every child is done.
+`changelog_fragment`: `changelog.d/<ULID>.<type>.md` exists (the full REL003
+rules are ~HE2EX99). `objective_target_met` passes for a ticket that is not a
+quality objective, and `docs_touched_or_excepted` and an objective's target
+are Unresolved today (no recorded docs exception, no stored target), so they
+refuse until they can be evaluated; a requirement that cannot be evaluated
+never passes. Other requirements have no bypass beyond editing
+`done_requires`. The running `frob` and its `grimble` sibling are allowed
+command-evidence tools by canonical path without being listed in
+`[evidence] allowed_tools`.
+
 **Attestation** (~7KQSA8Z, release 0.532.0). Some criteria cannot be
 measured by a tool (two outside repositories managed for two cycles with
 no data loss). `--provider attestation --statement TEXT [--fact F]...`

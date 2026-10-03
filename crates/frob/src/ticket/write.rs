@@ -668,10 +668,16 @@ impl Command for Close {
         if self.no_evidence {
             evidence = evidence.allow_bypass(self.reason.clone().unwrap_or_default());
         }
+        let mut done = frob_evidence::DoneGuard::for_ticket(&ledger, id, &ws.root)
+            .map_err(CliError::internal)?;
+        if self.no_evidence {
+            done = done.allow_bypass(self.reason.clone().unwrap_or_default());
+        }
         let guards = default_close_guards();
         let mut refs: Vec<&dyn frob_ledger::guards::CloseGuard> =
             guards.iter().map(|g| &**g).collect();
         refs.push(&evidence);
+        refs.push(&done);
         let applied = ledger
             .close(id, self.outcome, self.reason.clone(), &refs)
             .map_err(cli_err)?;
@@ -682,7 +688,14 @@ impl Command for Close {
             tracing::info!(ticket = %id, bypass = recorded.is_some(), "evidence bypass audited");
         }
         tracing::info!(ticket = %id, already = applied.already, "ticket close");
-        Ok(payload(&applied))
+        let out = payload(&applied);
+        Ok(if applied.already {
+            out
+        } else {
+            done.warnings(&applied.ticket)
+                .into_iter()
+                .fold(out, gob_cli::Payload::with_warning)
+        })
     }
 }
 

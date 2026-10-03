@@ -8,6 +8,8 @@ use assert_cmd::Command;
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use serde_json::Value;
 
+mod common;
+
 fn git(dir: &Path, args: &[&str]) {
     let spec = Spec {
         program: Program::Git,
@@ -35,6 +37,7 @@ fn repo() -> tempfile::TempDir {
     git(dir.path(), &["config", "user.email", "test@example.com"]);
     git(dir.path(), &["config", "core.autocrlf", "false"]);
     assert_eq!(code(&frob(dir.path(), &["init"])), 0);
+    common::set_done_requires(dir.path(), &["no_open_children"]);
     git(dir.path(), &["add", "-A"]);
     git(dir.path(), &["commit", "-q", "-m", "base"]);
     dir

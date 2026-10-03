@@ -24,6 +24,7 @@
 
 pub mod attestation;
 pub mod config;
+pub mod done;
 pub mod error;
 pub mod events;
 pub mod guard;
@@ -34,6 +35,7 @@ pub mod verbs;
 pub mod workspace;
 
 pub use config::EvidenceTable;
+pub use done::DoneGuard;
 pub use error::{EvidenceError, Result};
 pub use guard::EvidenceGuard;
 pub use record::{EvidenceRecord, Provider, Status};

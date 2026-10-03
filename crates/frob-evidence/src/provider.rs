@@ -6,7 +6,7 @@
 //! the blob store. Processes only ever run through `gob-exec` with a bounded
 //! timeout.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use frob_ledger::model::Stamp;
@@ -293,16 +293,20 @@ pub fn run_command(
     let (tool, rest) = argv
         .split_first()
         .ok_or_else(|| EvidenceError::BadReference("empty command".to_owned()))?;
-    if !allowed.iter().any(|a| a == tool) {
+    let program = if allowed.iter().any(|a| a == tool) {
+        match tool.as_str() {
+            "cargo" => Program::Cargo,
+            "git" => Program::Git,
+            name => Program::Tool {
+                name: name.to_owned(),
+            },
+        }
+    } else if let Some(path) = builtin_tool(tool, &builtin_tools()) {
+        tracing::debug!(tool, path = %path.display(), "command evidence: running frob tool allowed by default");
+        Program::Hook { path }
+    } else {
         tracing::warn!(tool, "command evidence refused: tool not allowlisted");
         return Err(EvidenceError::ToolNotAllowed { tool: tool.clone() });
-    }
-    let program = match tool.as_str() {
-        "cargo" => Program::Cargo,
-        "git" => Program::Git,
-        name => Program::Tool {
-            name: name.to_owned(),
-        },
     };
     let out = runner.run(&spec(program, rest.to_vec(), cwd, timeout))?;
     let (exit_code, measured) = exit_of(out.status);
@@ -316,6 +320,36 @@ pub fn run_command(
         failed_tests: Vec::new(),
         transcript,
     })
+}
+
+/// Canonical paths of the running executable and its `frob`/`grimble` siblings, allowed as command tools without listing.
+pub fn builtin_tools() -> Vec<PathBuf> {
+    let Ok(exe) = std::env::current_exe().and_then(|e| e.canonicalize()) else {
+        return Vec::new();
+    };
+    let mut out = vec![exe.clone()];
+    if let Some(dir) = exe.parent() {
+        for name in ["frob", "grimble"] {
+            if let Ok(p) = dir.join(name).canonicalize()
+                && p.is_file()
+                && !out.contains(&p)
+            {
+                out.push(p);
+            }
+        }
+    }
+    out
+}
+
+/// The canonical path `tool` names when it is one of `builtins` (a path, or a bare name found on `PATH`).
+pub fn builtin_tool(tool: &str, builtins: &[PathBuf]) -> Option<PathBuf> {
+    let found = if tool.contains(['/', '\\']) {
+        PathBuf::from(tool)
+    } else {
+        which::which(tool).ok()?
+    };
+    let canon = found.canonicalize().ok()?;
+    builtins.contains(&canon).then_some(canon)
 }
 
 /// Turn a capture into a record: redact, hash, store inline or by URI.

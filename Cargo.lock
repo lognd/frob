@@ -901,6 +901,7 @@ version = "0.0.0"
 dependencies = [
  "blake3",
  "frob-ledger",
+ "frob-pm",
  "gob-cli",
  "gob-config",
  "gob-exec",
@@ -913,6 +914,7 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+ "which",
 ]
 
 [[package]]

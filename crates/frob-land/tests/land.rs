@@ -96,6 +96,10 @@ impl Fixture {
                     Some(b"hello\n".to_vec()),
                 ),
                 (
+                    RelPath::new("frob.toml").expect("path"),
+                    Some(b"[pm]\ndone_requires = []\n".to_vec()),
+                ),
+                (
                     RelPath::new(".gitignore").expect("path"),
                     Some(b".frob/\n".to_vec()),
                 ),

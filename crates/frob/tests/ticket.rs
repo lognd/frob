@@ -8,6 +8,8 @@ use assert_cmd::Command;
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use serde_json::Value;
 
+mod common;
+
 /// A repository on `main` with an identity and `frob init` already run.
 struct Repo {
     dir: tempfile::TempDir,
@@ -51,6 +53,7 @@ impl Repo {
         git(dir.path(), &["config", "core.autocrlf", "false"]);
         let repo = Self { dir };
         assert_eq!(code(&repo.frob(&["init"])), 0);
+        common::set_done_requires(repo.path(), &["no_open_children"]);
         let driver = format!("{} merge-driver %O %A %B %P", frob_bin().display());
         git(
             repo.path(),

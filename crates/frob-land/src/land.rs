@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use frob_check::CheckOptions;
-use frob_evidence::{EvidenceGuard, Workspace};
+use frob_evidence::{DoneGuard, EvidenceGuard, Workspace};
 use frob_lease::{Lease, LeaseStore};
 use frob_ledger::guards::{CloseContext, CloseGuard, default_close_guards};
 use frob_ledger::model::Category;
@@ -83,6 +83,7 @@ struct Ready {
     base_merged: bool,
     site: Workspace,
     evidence: EvidenceGuard,
+    done: DoneGuard,
     out: LandOutcome,
 }
 
@@ -140,10 +141,15 @@ fn prepare(
         Workspace::open(&primary)?
     };
     let mut evidence = EvidenceGuard::for_ticket(&site.ledger, &site.store, id)?;
+    let mut done = DoneGuard::for_ticket(&site.ledger, id, &wt_path)?;
     if let Some(reason) = &opts.no_evidence_reason {
         evidence = evidence.allow_bypass(reason.clone());
+        done = done.allow_bypass(reason.clone());
     }
-    run_guards(view, &handle, &evidence, opts)?;
+    run_guards(view, &handle, &evidence, &done, opts)?;
+    let mut done_view = view.ticket.clone();
+    done_view.front.outcome = Some(opts.outcome);
+    warnings.extend(done.warnings(&done_view));
     let out = LandOutcome {
         branch: Some(branch.clone()),
         worktree: Some(wt_path.clone()),
@@ -163,6 +169,7 @@ fn prepare(
         base_merged,
         site,
         evidence,
+        done,
         out,
     })
 }
@@ -210,9 +217,18 @@ impl Ready {
             handle: &self.handle,
         };
         let site = &self.site;
-        let (id, base, branch, evidence) = (self.id, &self.base, &self.branch, &self.evidence);
+        let (id, base, branch) = (self.id, &self.base, &self.branch);
+        let (evidence, done) = (&self.evidence, &self.done);
         let oid = ctx.advance(on_branch, || {
-            ledger_step(&site.ledger, id, evidence, opts, base, branch, false)
+            ledger_step(
+                &site.ledger,
+                id,
+                (evidence, done),
+                opts,
+                base,
+                branch,
+                false,
+            )
         })?;
         self.out.commit = Some(oid.to_string());
         if opts.push {
@@ -222,7 +238,7 @@ impl Ready {
             ledger_step(
                 &self.site.ledger,
                 self.id,
-                &self.evidence,
+                (&self.evidence, &self.done),
                 opts,
                 &self.base,
                 &self.branch,
@@ -529,11 +545,13 @@ fn run_guards(
     view: &TicketView,
     handle: &str,
     evidence: &EvidenceGuard,
+    done: &DoneGuard,
     opts: &LandOptions,
 ) -> Result<(), LandError> {
     let defaults = default_close_guards();
     let mut guards: Vec<&dyn CloseGuard> = defaults.iter().map(|g| &**g).collect();
     guards.push(evidence);
+    guards.push(done);
     let cx = CloseContext {
         ticket: &view.ticket,
         handle,
@@ -644,7 +662,7 @@ impl Publish<'_> {
 fn ledger_step(
     ledger: &Ledger,
     id: TicketId,
-    evidence: &EvidenceGuard,
+    guards: (&EvidenceGuard, &DoneGuard),
     opts: &LandOptions,
     base: &str,
     branch: &str,
@@ -666,9 +684,11 @@ fn ledger_step(
             pushed,
         },
     )?;
+    let (evidence, done) = guards;
     let defaults = default_close_guards();
     let mut guards: Vec<&dyn CloseGuard> = defaults.iter().map(|g| &**g).collect();
     guards.push(evidence);
+    guards.push(done);
     let applied = ledger.close(
         id,
         Some(opts.outcome),
