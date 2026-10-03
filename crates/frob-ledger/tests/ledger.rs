@@ -573,6 +573,7 @@ fn merge_driver_unions_events_and_refolds() {
             old: Some(toml::Value::String("medium".into())),
             new: Some(toml::Value::String("high".into())),
             reason: None,
+            moved: None,
         }),
     );
     let theirs = Event::new(

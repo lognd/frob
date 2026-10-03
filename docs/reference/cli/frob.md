@@ -35,5 +35,5 @@
 | `ticket reopen` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Reopen a done ticket into todo with a required reason. |
 | `ticket show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one ticket from the index; `--events` adds its timeline. |
 | `ticket unlink` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove a typed link between two tickets; removing a missing link is a no-op. |
-| `ticket update` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Patch fields of a ticket: `--set key=value`, dedicated flags, label edits. |
+| `ticket update` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Patch fields of a ticket: `--set key=value`, dedicated flags, label, scope and acceptance edits. |
 | `work` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Lease a ticket, create its worktree and branch, and move it to in-progress. |

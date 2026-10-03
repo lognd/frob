@@ -142,6 +142,12 @@ Every verb, every time:
   lease is gone, through the branch name). `frob ticket start` takes the
   lease for the current checkout and records that checkout's root as the
   holder path.
+- Acceptance: `ticket update <id> --add-acceptance TEXT` (repeatable,
+  the text is taken whole, commas included), `--remove-acceptance N`
+  (repeatable, 1-based as `show` and `brief` number them) and
+  `--clear-acceptance`; each command writes one `field` event carrying
+  the old and new lists and an index map (tickets.md section 2a), and
+  removing a criterion that has bound evidence reports that evidence.
 - Batching: `ticket update <id> --set priority=high --set points=3
   --add-label x --link blocks:01J9QKX3M8Z4T7N2V5B6C0D1E2` is one commit,
   one lock. `frob batch` (Milestone 2 or later (D36)) reads JSON lines

@@ -378,7 +378,7 @@ fn opt_text(v: Option<&String>) -> Option<toml::Value> {
     v.cloned().map(toml::Value::String)
 }
 
-/// The current value of a settable field of `t`, as a TOML value (`None` when unset).
+/// The current value of a settable field (or `acceptance`) of `t`, as a TOML value (`None` when unset).
 pub fn get_field(t: &Ticket, name: &str) -> Option<toml::Value> {
     let fm = &t.front;
     let list = |v: &Vec<String>| (!v.is_empty()).then(|| strings(v));
@@ -397,8 +397,37 @@ pub fn get_field(t: &Ticket, name: &str) -> Option<toml::Value> {
         "labels" => list(&fm.labels),
         "scope" => list(&fm.scope),
         "body" => (!t.body.is_empty()).then(|| toml::Value::String(t.body.clone())),
+        "acceptance" => {
+            let texts: Vec<String> = fm.acceptance.iter().map(|a| a.text.clone()).collect();
+            list(&texts)
+        }
         _ => None,
     }
+}
+
+/// Replace the acceptance criteria of `t` with the texts in `value` (`None` empties them).
+///
+/// Acceptance is not settable through `update --set` (a criterion holds commas),
+/// so the dedicated flags and the fold use this instead of [`set_field`]. A
+/// criterion whose text survives keeps its `bound` flag.
+///
+/// # Errors
+///
+/// A message when `value` is not a list of text.
+pub fn set_acceptance(t: &mut Ticket, value: Option<&toml::Value>) -> Result<(), String> {
+    let texts = match value {
+        Some(v) => want_list("acceptance", v)?,
+        None => Vec::new(),
+    };
+    let old = std::mem::take(&mut t.front.acceptance);
+    t.front.acceptance = texts
+        .into_iter()
+        .map(|text| {
+            let bound = old.iter().any(|a| a.bound && a.text == text);
+            crate::model::Acceptance { text, bound }
+        })
+        .collect();
+    Ok(())
 }
 
 fn want_text(name: &str, v: &toml::Value) -> Result<String, String> {
@@ -531,6 +560,13 @@ pub fn parse_text_value(name: &str, text: &str) -> Result<Option<toml::Value>, S
             settable_names().join(", ")
         )
     })?;
+    if name == "acceptance" {
+        return Err(
+            "acceptance is a list of sentences that may hold commas, so --set cannot carry it; \
+             use --add-acceptance TEXT, --remove-acceptance N or --clear-acceptance"
+                .to_owned(),
+        );
+    }
     if !desc.settable {
         return Err(format!(
             "field `{name}` cannot be set with update; settable fields: {}",

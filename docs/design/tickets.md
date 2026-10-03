@@ -115,6 +115,22 @@ bypass is an `evidence-bypass` event written the same way.
 | `triage` | ticket | action (accept, decline, snooze, duplicate), until | ticket triage | inbox |
 | `cost` | ticket | tokens in, out, cache, cost, wall seconds | harness hook, land | stats, forecasts |
 
+Acceptance edits are `field` events on `acceptance` written by `frob
+ticket update --add-acceptance TEXT`, `--remove-acceptance N` and
+`--clear-acceptance` (one event per command; `--set acceptance=` is
+refused because criteria hold commas). `old` and `new` are the lists of
+criterion texts and a `moved` array maps each old criterion, by position,
+to its 1-based position in `new` (0 when removed). Evidence events are
+immutable and record `accepts` as positions in the list as it stood when
+they were written, so indices are not rewritten and do not shift in the
+record: a reader resolves a record's current criteria by composing the
+`moved` maps of every later acceptance event (`frob_ledger::fold::
+remap_accepts`, `Ledger::criteria_now`). A removal therefore never leaves
+evidence silently pointing at a different criterion, and `ticket update`
+reports (`lost_evidence` in the envelope, a warning in text) each record
+that loses a criterion, so it can be re-offered with `evidence add
+--accepts N`.
+
 Events with no ticket live under `events/<ulid>.toml` at the repo root,
 with the same envelope plus a `subject` such as `exception:<id>` or
 `component:<name>`. Their kinds are `budget-raise` (subject component:

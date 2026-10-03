@@ -12,7 +12,7 @@ use crate::event::{
 };
 use crate::id::{EventId, TicketId};
 use crate::model::{Acceptance, Category, Frontmatter, LinkOp, Ticket, normalize_body};
-use crate::schema::{get_field, set_field};
+use crate::schema::{get_field, set_acceptance, set_field};
 
 /// A concurrent pair of changes that disagree about the previous value.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -104,8 +104,41 @@ fn apply_field(
             });
         }
     }
-    set_field(t, &c.field, c.new.as_ref())
-        .map_err(|m| LedgerError::fold(id, format!("event {}: {m}", ev.id)))
+    let applied = if c.field == "acceptance" {
+        set_acceptance(t, c.new.as_ref())
+    } else {
+        set_field(t, &c.field, c.new.as_ref())
+    };
+    applied.map_err(|m| LedgerError::fold(id, format!("event {}: {m}", ev.id)))
+}
+
+/// Where criteria numbered under the list as it stood at event `since` sit now.
+///
+/// Evidence events are immutable and record `accepts` as 1-based positions in
+/// the acceptance list at write time. Every later `acceptance` field event
+/// carries a `moved` map, so composing those maps in fold order gives each
+/// recorded position's current one, or `None` when that criterion was removed
+/// (or a later event has no map, which can only lose track of it).
+pub fn remap_accepts(events: &[Event], since: EventId, accepts: &[usize]) -> Vec<Option<usize>> {
+    let mut ordered: Vec<&Event> = events.iter().collect();
+    ordered.sort_by_key(|e| e.order_key());
+    let mut now: Vec<Option<usize>> = accepts.iter().map(|n| Some(*n)).collect();
+    let later = ordered.into_iter().skip_while(|e| e.id != since).skip(1);
+    for ev in later {
+        let EventBody::Field(c) = &ev.body else {
+            continue;
+        };
+        if c.field != "acceptance" {
+            continue;
+        }
+        for slot in &mut now {
+            *slot = slot.and_then(|n| match c.moved.as_deref() {
+                Some(map) => map.get(n.wrapping_sub(1)).copied().filter(|m| *m != 0),
+                None => None,
+            });
+        }
+    }
+    now
 }
 
 fn apply_transition(
@@ -257,6 +290,7 @@ mod tests {
                 old: old.map(|s| toml::Value::String(s.into())),
                 new: Some(toml::Value::String(new.into())),
                 reason: None,
+                moved: None,
             }),
         )
     }
@@ -326,5 +360,53 @@ mod tests {
         assert!(fold(id, &evs).is_err());
         let evs = vec![create_event("a"), set("nope", None, "x")];
         assert!(fold(id, &evs).is_err());
+    }
+
+    fn texts(items: &[&str]) -> toml::Value {
+        toml::Value::Array(
+            items
+                .iter()
+                .map(|t| toml::Value::String((*t).into()))
+                .collect(),
+        )
+    }
+
+    fn acceptance_edit(old: &[&str], new: &[&str], moved: &[usize]) -> Event {
+        Event::new(
+            "a",
+            EventBody::Field(FieldChange {
+                field: "acceptance".into(),
+                old: Some(texts(old)),
+                new: Some(texts(new)),
+                reason: None,
+                moved: Some(moved.to_vec()),
+            }),
+        )
+    }
+
+    // frob:ticket 09P2DKX
+    #[test]
+    fn acceptance_events_fold_and_remap_recorded_positions() {
+        let id = TicketId::mint();
+        let create = create_event("a");
+        let evidence = Event::new("a", EventBody::Other);
+        let first = acceptance_edit(&["a"], &["a", "b, c"], &[1]);
+        let later = Event::new("a", EventBody::Other);
+        let second = acceptance_edit(&["a", "b, c"], &["b, c"], &[0, 1]);
+        let evs = vec![create, evidence.clone(), first, later.clone(), second];
+        let f = fold(id, &evs).expect("fold");
+        assert!(f.conflicts.is_empty(), "{:?}", f.conflicts);
+        let left: Vec<_> = f
+            .ticket
+            .front
+            .acceptance
+            .iter()
+            .map(|a| a.text.as_str())
+            .collect();
+        assert_eq!(left, ["b, c"]);
+        // Recorded before both edits: "a" (1) was removed by the second.
+        assert_eq!(remap_accepts(&evs, evidence.id, &[1]), [None]);
+        // Recorded between them: "b, c" (2) is now the first criterion, "a" (1) is gone.
+        assert_eq!(remap_accepts(&evs, later.id, &[1, 2]), [None, Some(1)]);
     }
 }

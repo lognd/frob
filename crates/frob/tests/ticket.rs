@@ -439,3 +439,177 @@ fn show_json_has_every_schema_field() {
         assert!(fields["scope"].is_array());
     }
 }
+
+/// The criterion texts of ticket `id`, in order.
+fn criteria(repo: &Repo, id: &str) -> Vec<String> {
+    repo.ok(&["ticket", "show", id])["data"]["fields"]["acceptance"]
+        .as_array()
+        .expect("acceptance list")
+        .iter()
+        .map(|a| a["text"].as_str().expect("text").to_owned())
+        .collect()
+}
+
+/// Record file evidence on ticket `id` for the 1-based criteria `accepts`; returns the event id.
+fn offer(repo: &Repo, id: &str, name: &str, accepts: &[&str]) -> String {
+    std::fs::write(repo.path().join(name), name).expect("write evidence file");
+    let mut args = vec![
+        "ticket",
+        "evidence",
+        "add",
+        id,
+        "--provider",
+        "file",
+        "--ref",
+        name,
+    ];
+    for n in accepts {
+        args.push("--accepts");
+        args.push(n);
+    }
+    repo.ok(&args)["data"]["event"]
+        .as_str()
+        .expect("event")
+        .to_owned()
+}
+
+fn three_criteria(repo: &Repo) -> String {
+    repo.id_of(&[
+        "ticket",
+        "new",
+        "--title",
+        "t",
+        "--acceptance",
+        "one",
+        "--acceptance",
+        "two",
+        "--acceptance",
+        "three",
+    ])
+}
+
+// frob:ticket 09P2DKX
+#[test]
+fn add_acceptance_keeps_commas_whole_and_is_idempotent() {
+    let repo = Repo::new(false);
+    let id = repo.id_of(&[
+        "ticket",
+        "new",
+        "--title",
+        "t",
+        "--acceptance",
+        "one",
+        "--acceptance",
+        "two",
+    ]);
+    let text = "Given a, b and c, when it runs, then d";
+    let out = repo.ok(&["ticket", "update", &id, "--add-acceptance", text]);
+    assert_eq!(out["already"], false);
+    assert_eq!(out["data"]["lost_evidence"], serde_json::json!([]));
+    assert_eq!(criteria(&repo, &id), ["one", "two", text]);
+    let again = repo.ok(&["ticket", "update", &id, "--add-acceptance", text]);
+    assert_eq!(again["already"], true);
+    repo.ok(&[
+        "ticket",
+        "update",
+        &id,
+        "--add-acceptance",
+        "x",
+        "--add-acceptance",
+        "y, z",
+    ]);
+    assert_eq!(criteria(&repo, &id).len(), 5);
+    let events = repo.ok(&["ticket", "show", &id, "--events"]);
+    let field: Vec<_> = events["data"]["events"]
+        .as_array()
+        .expect("events")
+        .iter()
+        .filter(|e| e["body"]["field"] == "acceptance")
+        .collect();
+    assert_eq!(field.len(), 2, "one field event per update: {events}");
+    assert_eq!(field[0]["body"]["old"], serde_json::json!(["one", "two"]));
+    assert_eq!(field[0]["body"]["new"].as_array().expect("new").len(), 3);
+    assert_eq!(repo.ok(&["ticket", "doctor"])["data"]["ok"], true);
+}
+
+// frob:ticket 09P2DKX
+#[test]
+fn removing_a_criterion_with_bound_evidence_reports_it_in_data_and_warning() {
+    let repo = Repo::new(false);
+    let id = three_criteria(&repo);
+    let ev = offer(&repo, &id, "a.txt", &["1", "3"]);
+    let out = repo.ok(&["ticket", "update", &id, "--remove-acceptance", "1"]);
+    let lost = out["data"]["lost_evidence"].as_array().expect("lost");
+    assert_eq!(lost.len(), 1, "{out}");
+    assert_eq!(lost[0]["event"], ev);
+    assert_eq!(lost[0]["lost"], serde_json::json!([1]));
+    assert_eq!(lost[0]["kept"], serde_json::json!([2]));
+    assert!(
+        out["warnings"][0].as_str().expect("warning").contains(&ev),
+        "{out}"
+    );
+    assert_eq!(criteria(&repo, &id), ["two", "three"]);
+    let text = repo.frob(&["ticket", "update", &id, "--remove-acceptance", "9"]);
+    assert_eq!(code(&text), 2, "{}", String::from_utf8_lossy(&text.stdout));
+    assert_eq!(repo.ok(&["ticket", "doctor"])["data"]["ok"], true);
+}
+
+// frob:ticket 09P2DKX
+#[test]
+fn evidence_keeps_pointing_at_its_own_criterion_after_an_earlier_removal() {
+    let repo = Repo::new(false);
+    let id = three_criteria(&repo);
+    let on_two = offer(&repo, &id, "a.txt", &["2"]);
+    let on_three = offer(&repo, &id, "b.txt", &["3"]);
+    // Removing "one" shifts the others up: the record for "two" now means 1, "three" means 2.
+    repo.ok(&["ticket", "update", &id, "--remove-acceptance", "1"]);
+    // Removing the current 1 ("two") must lose exactly the record offered for "two".
+    let out = repo.ok(&["ticket", "update", &id, "--remove-acceptance", "1"]);
+    let lost = out["data"]["lost_evidence"].as_array().expect("lost");
+    assert_eq!(lost.len(), 1, "{out}");
+    assert_eq!(lost[0]["event"], on_two);
+    assert_eq!(lost[0]["lost"], serde_json::json!([1]));
+    assert_ne!(lost[0]["event"], on_three);
+    assert_eq!(criteria(&repo, &id), ["three"]);
+    // Removing "three" now loses the other record, whose recorded index (3) is long out of range.
+    let final_out = repo.ok(&["ticket", "update", &id, "--remove-acceptance", "1"]);
+    assert_eq!(final_out["data"]["lost_evidence"][0]["event"], on_three);
+}
+
+// frob:ticket 09P2DKX
+#[test]
+fn clear_acceptance_empties_the_list_and_reports_all_bound_evidence() {
+    let repo = Repo::new(false);
+    let id = three_criteria(&repo);
+    let ev = offer(&repo, &id, "a.txt", &["2"]);
+    let out = repo.ok(&["ticket", "update", &id, "--clear-acceptance"]);
+    assert_eq!(out["data"]["lost_evidence"][0]["event"], ev);
+    assert_eq!(criteria(&repo, &id), Vec::<String>::new());
+    let again = repo.ok(&["ticket", "update", &id, "--clear-acceptance"]);
+    assert_eq!(again["already"], true);
+    assert_eq!(again["data"]["lost_evidence"], serde_json::json!([]));
+    assert_eq!(repo.ok(&["ticket", "doctor"])["data"]["ok"], true);
+}
+
+// frob:ticket 09P2DKX
+#[test]
+fn set_acceptance_is_refused_naming_the_dedicated_flags_and_schema_works() {
+    let repo = Repo::new(false);
+    let id = three_criteria(&repo);
+    let bad = repo.frob(&["ticket", "update", &id, "--set", "acceptance=a,b"]);
+    assert_eq!(code(&bad), 2, "{}", String::from_utf8_lossy(&bad.stdout));
+    let body = String::from_utf8_lossy(&bad.stdout);
+    for flag in [
+        "--add-acceptance",
+        "--remove-acceptance",
+        "--clear-acceptance",
+    ] {
+        assert!(body.contains(flag), "{body}");
+    }
+    let clear = repo.frob(&["ticket", "update", &id, "--clear", "acceptance"]);
+    assert_eq!(code(&clear), 2);
+    assert!(String::from_utf8_lossy(&clear.stdout).contains("--clear-acceptance"));
+    assert_eq!(criteria(&repo, &id).len(), 3);
+    let schema = repo.ok(&["ticket", "update", "--schema"]);
+    assert!(schema.to_string().contains("lost_evidence"), "{schema}");
+}

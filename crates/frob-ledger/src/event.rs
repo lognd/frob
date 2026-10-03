@@ -91,6 +91,9 @@ pub struct FieldChange {
     /// Why, required for some fields.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    /// Acceptance edits only: for each criterion of `old`, its 1-based position in `new`, or 0 when removed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub moved: Option<Vec<usize>>,
 }
 
 /// A category change; `done` carries the outcome.
@@ -325,12 +328,14 @@ mod tests {
                 old: Some(toml::Value::Integer(3)),
                 new: Some(toml::Value::Integer(5)),
                 reason: None,
+                moved: None,
             }),
             EventBody::Field(FieldChange {
                 field: "labels".into(),
                 old: None,
                 new: Some(toml::Value::Array(vec!["x".into()])),
                 reason: Some("why".into()),
+                moved: None,
             }),
             EventBody::Transition(TransitionData {
                 from: Category::Todo,
