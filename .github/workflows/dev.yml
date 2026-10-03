@@ -187,8 +187,8 @@ jobs:
   # add-then-prune: the new assets carry the tested sha in their names, so
   # they never collide with the previous ones; they are uploaded first, the
   # tag and notes move next, and the previous assets are deleted last. A run
-  # that fails before the prune removes its own partial uploads and leaves the
-  # previous assets in place.
+  # that fails before the prune removes only the assets it uploaded itself (a
+  # recorded list, never a match by sha) and leaves the previous assets in place.
   publish:
     name: publish (replace the dev prerelease assets)
     needs: [plan, build]
@@ -230,9 +230,23 @@ jobs:
               --title "frob dev" --notes "dev channel: creating"
             echo "fresh=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Upload the new assets (additive, previous assets untouched)
+      - name: Upload the new assets (additive; a name already on the release is skipped)
         shell: bash
-        run: gh release upload dev --repo "$REPO" --clobber staged/*
+        run: |
+          # Existing names (same sha from an earlier run) are never overwritten, deleted or
+          # re-added. A name is recorded before its upload starts, so the failure cleanup
+          # removes exactly what this run may have created and nothing else.
+          : > "$RUNNER_TEMP/uploaded.txt"
+          existing=$(gh release view dev --repo "$REPO" --json assets --jq '.assets[].name')
+          for f in staged/*; do
+            name=$(basename "$f")
+            if printf '%s\n' "$existing" | grep -Fxq "$name"; then
+              echo "skip $name: already on the release for this sha"
+              continue
+            fi
+            echo "$name" >> "$RUNNER_TEMP/uploaded.txt"
+            gh release upload dev --repo "$REPO" "$f"
+          done
       - name: Move the dev tag to the tested commit
         shell: bash
         run: |
@@ -253,12 +267,13 @@ jobs:
               *) gh release delete-asset dev "$name" --repo "$REPO" --yes ;;
             esac
           done
-      - name: Remove this run's partial uploads (previous assets stay)
-        if: ${{ failure() && steps.prune.outcome == 'skipped' && steps.ensure.outputs.fresh == 'false' }}
+      - name: Remove this run's own uploads (previous assets stay)
+        if: ${{ failure() && steps.prune.outcome == 'skipped' }}
         shell: bash
         run: |
-          gh release view dev --repo "$REPO" --json assets --jq '.assets[].name' | while read -r name; do
-            case "$name" in
-              *"-${SHORT}."*) gh release delete-asset dev "$name" --repo "$REPO" --yes || true ;;
-            esac
-          done
+          # Only names recorded by this run's upload step; never matched by sha.
+          if [ -f "$RUNNER_TEMP/uploaded.txt" ]; then
+            while read -r name; do
+              [ -n "$name" ] && { gh release delete-asset dev "$name" --repo "$REPO" --yes || true; }
+            done < "$RUNNER_TEMP/uploaded.txt"
+          fi

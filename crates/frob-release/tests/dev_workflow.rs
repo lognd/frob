@@ -199,6 +199,31 @@ fn assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones() 
     let cleanup = steps.last().unwrap();
     let cond = cleanup["if"].as_str().unwrap();
     assert!(cond.contains("failure()") && cond.contains("steps.prune.outcome == 'skipped'"));
+    // The cleanup deletes only names this run recorded, never by sha pattern, listing or clobber.
+    let cleanup_run = cleanup["run"].as_str().unwrap();
+    assert!(
+        cleanup_run.contains("uploaded.txt"),
+        "cleanup must read the recorded list"
+    );
+    for banned in ["${SHORT}", "--json assets", "release view", "staged/"] {
+        assert!(
+            !cleanup_run.contains(banned),
+            "cleanup must not select assets by {banned}"
+        );
+    }
+    // The upload records each name before uploading, skips existing names, and never clobbers.
+    let upload_run = steps[upload]["run"].as_str().unwrap();
+    assert!(upload_run.contains(">> \"$RUNNER_TEMP/uploaded.txt\""));
+    assert!(upload_run.contains("grep -Fxq") && upload_run.contains("continue"));
+    assert!(
+        !upload_run.contains("--clobber"),
+        "an existing asset is skipped, never overwritten"
+    );
+    assert!(
+        upload_run.find("uploaded.txt\"\n").unwrap_or(0)
+            < upload_run.find("gh release upload").unwrap(),
+        "record before upload"
+    );
     // Runs queue; a half-published release is never cancelled.
     assert_eq!(
         wf["concurrency"]["cancel-in-progress"].as_bool(),
