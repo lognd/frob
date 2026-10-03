@@ -2,7 +2,7 @@
 id = "01M3ZNR6Z969W9Q4MB04BJ7949"
 title = "Sibling follow-ups: materialized knobs, shared compute digest, state dirs never walked, grimble evidence, output cap"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
