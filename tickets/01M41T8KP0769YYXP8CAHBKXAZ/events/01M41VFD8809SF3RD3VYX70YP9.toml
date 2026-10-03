@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T21:42:13Z"
+digest = "81332de72730f765601371d3697af0f8a40cf5f111dbd3ca068eeee25ed939f2"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a2fa5586-8656-4ecf-bd55-5c3656cc5503 with nextest profile: default
+    Starting 4 tests across 1 binary (150 binaries skipped)
+        PASS [   0.005s] gob-dev::ci_parity ci_yml_installs_the_windows_target
+        PASS [   0.006s] gob-dev::ci_parity ci_yml_runs_exactly_the_cargo_dev_ci_steps
+        PASS [   0.006s] gob-dev::ci_parity a_check_missing_from_cargo_dev_ci_fails_naming_it
+        PASS [   0.008s] gob-dev::ci_parity a_raw_or_dropped_check_in_ci_yml_fails_naming_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 4 tests run: 4 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'binary(ci_parity)'"
+size = 821
+status = "measured"
+tests = ["ci_yml_installs_the_windows_target", "ci_yml_runs_exactly_the_cargo_dev_ci_steps", "a_check_missing_from_cargo_dev_ci_fails_naming_it", "a_raw_or_dropped_check_in_ci_yml_fails_naming_it"]
+at = "2026-10-03T21:42:13Z"
+actor = "lognd"
+rev = 1

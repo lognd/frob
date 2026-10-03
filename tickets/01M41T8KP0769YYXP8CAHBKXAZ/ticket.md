@@ -7,7 +7,7 @@ priority = "critical"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T21:21:02Z"
-updated = "2026-10-03T21:21:20Z"
+updated = "2026-10-03T21:42:13Z"
 scope = ["crates/frob-pm/src/board.rs", "crates/gob-dev/**", ".github/workflows/ci.yml", "crates/frob-release/tests/ci_pins.rs", "CONTRIBUTING.md"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = false
 
 [[acceptance]]
 text = "Given a check added to ci.yml but not to cargo dev ci (or with different flags), when the parity test runs, then it fails naming the check"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the board module, when cargo doc runs with -D warnings, then it is clean"
