@@ -2,13 +2,13 @@
 id = "01M404FZ1G52F6QMYYGS3AFCP4"
 title = "grimble SYS003, SYS008-011 examine no subject on this repository: framework warning on every run"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T05:41:20Z"
-updated = "2026-10-03T05:41:20Z"
+updated = "2026-10-03T05:41:53Z"
 idempotency_key = "m2-sys-zero-subjects"
 labels = ["milestone:2"]
 scope = ["crates/grimble-check/**", "crates/grimble-bind/**"]
