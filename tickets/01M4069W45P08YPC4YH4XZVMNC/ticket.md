@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:57Z"
-updated = "2026-10-03T16:48:05Z"
+updated = "2026-10-03T16:50:39Z"
 idempotency_key = "m2-rel-board"
 labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-pm/src/board.rs", "crates/frob/src/board_cmd.rs", "crates/frob-pm/src/lib.rs", "crates/frob/Cargo.toml", "crates/frob/src/lib.rs", "crates/frob/tests/board.rs", "crates/frob/tests/snapshots/board__board_text_100.snap", "crates/frob/tests/snapshots/board__board_text_50_stacked.snap", "docs/reference/cli/frob.md", "docs/design/releases.md"]
@@ -23,7 +23,7 @@ target = "01M4069VZVMHVZ15RSPZQRNCXY"
 
 [[acceptance]]
 text = "Given tickets in several categories, when frob board runs in text mode, then each column lists its cards with counts and limits"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a ticket in progress for three days, when the board renders, then its age reads 3d"
