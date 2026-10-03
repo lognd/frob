@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:43Z"
-updated = "2026-10-03T05:49:58Z"
+updated = "2026-10-03T05:51:56Z"
 idempotency_key = "m2-mirror-push-verb"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob/src/mirror_cmd.rs"]
@@ -16,6 +16,10 @@ scope = ["crates/frob/src/mirror_cmd.rs"]
 [[links]]
 kind = "blocked-by"
 target = "01M3ZX841SP0ZXM4CT18A4B8CV"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052W6Q1FAQK362YF6RCGW1"
 
 [[acceptance]]
 text = "Given pending events, when `frob mirror push --dry-run` runs, then the planned operations are printed and nothing is sent"
