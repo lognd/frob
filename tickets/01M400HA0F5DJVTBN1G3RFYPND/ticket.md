@@ -2,13 +2,14 @@
 id = "01M400HA0F5DJVTBN1G3RFYPND"
 title = "enumerates: the doc's own list is the claim; no members attribute"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T04:32:09Z"
-updated = "2026-10-03T04:37:25Z"
+updated = "2026-10-03T04:37:26Z"
 idempotency_key = "m2-enumerates-no-members"
 labels = ["milestone:2"]
 scope = ["docs/design/**"]
