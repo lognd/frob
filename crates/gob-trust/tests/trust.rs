@@ -70,8 +70,13 @@ fn env_key_parsing() {
 
 #[test]
 fn path_resolution() {
-    let p = resolve_key_path(|k| (k == "XDG_CONFIG_HOME").then(|| "/x/cfg".into())).unwrap();
-    assert!(p.ends_with("gob/machine.key") && p.starts_with("/x/cfg") || cfg!(windows));
+    // `/x/cfg` is not absolute on Windows (no drive), so build the base from a real absolute path.
+    let base = std::env::temp_dir().join("cfg");
+    let want = base.clone();
+    let p =
+        resolve_key_path(move |k| (k == "XDG_CONFIG_HOME").then(|| base.clone().into_os_string()))
+            .unwrap();
+    assert_eq!(p, want.join("gob").join("machine.key"));
     // A relative XDG_CONFIG_HOME is ignored (XDG spec), with no HOME that is an error.
     let e = resolve_key_path(|k| (k == "XDG_CONFIG_HOME").then(|| "rel".into()));
     assert!(matches!(e, Err(TrustError::NoConfigDir)));

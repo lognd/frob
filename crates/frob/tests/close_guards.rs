@@ -204,7 +204,12 @@ fn the_running_frob_is_an_allowed_command_tool_without_listing_it() {
     let dir = repo(&[]);
     let id = chore(dir.path(), &["--acceptance", "frob answers"]);
     let exe = assert_cmd::cargo::cargo_bin("frob");
-    let reference = format!("{} --version", exe.display());
+    // References are POSIX-quoted (`split_args`); build the line with the one quoting function so a
+    // Windows path's backslashes are not eaten as escapes.
+    let reference = gob_exec::command_line(
+        gob_exec::Shell::Posix,
+        &[gob_exec::Arg::from(exe), gob_exec::Arg::from("--version")],
+    );
     let added = ok(
         dir.path(),
         &[

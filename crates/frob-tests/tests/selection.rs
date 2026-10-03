@@ -249,8 +249,9 @@ fn test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree() {
     std::fs::create_dir_all(&leases).expect("leases dir");
     std::fs::write(
         leases.join("lease.toml"),
+        // A TOML literal string: a Windows path's backslashes are not escapes in it.
         format!(
-            "ticket = \"{id}\"\n\n[holder]\nworktree = \"{}\"\n",
+            "ticket = \"{id}\"\n\n[holder]\nworktree = '{}'\n",
             p.display()
         ),
     )

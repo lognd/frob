@@ -30,13 +30,6 @@ fn git(dir: &Path, args: &[&str]) -> String {
     out.stdout.trim().to_owned()
 }
 
-fn frob_bin() -> PathBuf {
-    Command::cargo_bin("frob")
-        .expect("frob binary")
-        .get_program()
-        .into()
-}
-
 /// A trunk-mode repository with `frob init` run and the merge driver configured (path of this build).
 struct Repo {
     dir: tempfile::TempDir,
@@ -52,11 +45,7 @@ impl Repo {
         git(dir.path(), &["config", "core.autocrlf", "false"]);
         let repo = Self { dir };
         assert_eq!(code(&repo.frob(&["init"])), 0);
-        let driver = format!("{} merge-driver %O %A %B %P", frob_bin().display());
-        git(
-            repo.path(),
-            &["config", "merge.frob-ledger.driver", &driver],
-        );
+        // `frob init` writes the driver itself; the merge below runs exactly what a user gets.
         let toml = repo.path().join("frob.toml");
         let text = std::fs::read_to_string(&toml).expect("frob.toml");
         std::fs::write(

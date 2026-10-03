@@ -855,6 +855,27 @@ fn release(leases: &LeaseStore, id: TicketId, actor: &str, warnings: &mut Vec<St
     }
 }
 
+// frob:ticket 01M41RK1G648EJJNRK4G5RJY40
+/// True when `cwd` is `dir` or lies inside it (compared on canonical paths, falling back to the raw ones).
+fn is_inside(cwd: &Path, dir: &Path) -> bool {
+    let canon = |p: &Path| p.canonicalize().unwrap_or_else(|_| p.to_path_buf());
+    canon(cwd).starts_with(canon(dir))
+}
+
+/// Move this process out of the worktree about to be removed: Windows refuses to delete a directory that is some process's cwd, and `land` runs from inside it.
+fn leave_worktree(wt_path: &Path, primary: &Path) {
+    let Ok(cwd) = std::env::current_dir() else {
+        return;
+    };
+    if !is_inside(&cwd, wt_path) {
+        return;
+    }
+    match std::env::set_current_dir(primary) {
+        Ok(()) => tracing::info!(to = %primary.display(), "left the worktree before removing it"),
+        Err(e) => tracing::warn!(error = %e, "could not leave the worktree; removal may fail"),
+    }
+}
+
 /// Remove the worktree and its (now merged) branch; failures are warnings because the land is done.
 fn remove_worktree(
     repo: &Repo,
@@ -864,6 +885,7 @@ fn remove_worktree(
     base: &str,
     warnings: &mut Vec<String>,
 ) -> bool {
+    leave_worktree(wt_path, primary);
     let path = wt_path.to_string_lossy();
     let merged = repo
         .rev_parse(branch)
@@ -894,4 +916,28 @@ fn remove_worktree(
         }
     }
     ok
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:ticket 01M41RK1G648EJJNRK4G5RJY40
+    // frob:tests crates/frob-land/src/land.rs::is_inside
+    #[test]
+    fn is_inside_is_true_for_the_dir_and_its_descendants_only() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let wt = tmp.path().join("wt");
+        let sub = wt.join("src");
+        std::fs::create_dir_all(&sub).expect("mkdir");
+        let sibling = tmp.path().join("wt-other");
+        std::fs::create_dir_all(&sibling).expect("mkdir");
+        assert!(is_inside(&wt, &wt));
+        assert!(is_inside(&sub, &wt));
+        assert!(
+            !is_inside(&sibling, &wt),
+            "a name prefix is not containment"
+        );
+        assert!(!is_inside(tmp.path(), &wt));
+    }
 }
