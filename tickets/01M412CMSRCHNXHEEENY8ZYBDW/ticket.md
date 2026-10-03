@@ -8,10 +8,10 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T14:23:48Z"
-updated = "2026-10-03T14:32:59Z"
+updated = "2026-10-03T14:33:00Z"
 idempotency_key = "m2-rel-no-changelog-exempt"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-evidence/src/done.rs", "crates/frob-release/src/rel003.rs", "crates/frob/src/ticket/**", "crates/frob-land/**", "crates/frob/tests/close_guards.rs", "crates/frob-ledger/src/event.rs"]
+scope = ["crates/frob-evidence/src/done.rs", "crates/frob-release/src/rel003.rs", "crates/frob/src/ticket/**", "crates/frob-land/**", "crates/frob/tests/close_guards.rs", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs"]
 
 [[acceptance]]
 text = "Given a ticket with no fragment, when close runs with --no-changelog and a reason, then it closes and records a changelog-exempt event"
