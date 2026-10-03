@@ -59,7 +59,7 @@ pub struct CheckData {
     pub stats: Option<Stats>,
     /// Stage timing, present with `--timing` or `-v`.
     pub timing: Option<TimingView>,
-    /// Per-language fidelity accounting (files examined, NotApplicable per family, Unresolved).
+    /// Per-language fidelity accounting (files examined, `NotApplicable` per family, Unresolved).
     pub fidelity: Option<gob_check::FidelityReport>,
     /// What `--fix` did, present with `--fix`.
     pub fix: Option<FixOutcome>,

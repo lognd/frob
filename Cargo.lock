@@ -922,6 +922,7 @@ dependencies = [
  "frob-ledger",
  "frob-tests",
  "globset",
+ "gob-check",
  "gob-config",
  "gob-directives",
  "gob-git",

@@ -11,6 +11,7 @@ publish.workspace = true
 
 [dependencies]
 frob-ack = { path = "../frob-ack" }
+gob-check = { path = "../gob-check" }
 frob-ledger = { path = "../frob-ledger" }
 frob-tests = { path = "../frob-tests" }
 globset = "0.4"
