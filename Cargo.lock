@@ -871,6 +871,7 @@ dependencies = [
  "frob-land",
  "frob-lease",
  "frob-ledger",
+ "frob-pm",
  "frob-tests",
  "frob-worktree",
  "gob-cache",

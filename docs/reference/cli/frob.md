@@ -16,6 +16,10 @@
 | `lease list` | yes | no | 0 ok, 3 refused, 4 internal | List the live scope leases of this clone. |
 | `lease widen` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-read the ticket scope (optionally adding globs to it) and rescope the caller's lease to match. |
 | `merge-driver` | yes | no | 0 ok, 1 negative, 2 usage, 4 internal | Union both sides' event files of a conflicted ticket.md and re-fold it (git invokes this). |
+| `milestone add` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Add an epic to a milestone; a repeat returns `already`, a non-epic is refused. |
+| `milestone list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List every milestone, oldest first. |
+| `milestone new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a milestone; an identical repeat returns `already`, a different one is refused. |
+| `milestone show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one milestone with its member epics and exit criteria. |
 | `requeue` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Release a ticket's lease and move it back to todo. |
 | `start` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Lease a ticket for this checkout (no new worktree) and move it to in-progress. |
 | `test` | no | yes | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run only the tests that reach the files changed against a base, and record the evidence. |

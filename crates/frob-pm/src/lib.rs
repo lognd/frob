@@ -32,6 +32,7 @@ pub mod error;
 pub mod event;
 pub mod fold;
 pub mod merge;
+pub mod milestone;
 pub mod model;
 pub mod store;
 

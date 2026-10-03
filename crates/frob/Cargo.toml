@@ -35,6 +35,7 @@ frob-check = { path = "../frob-check" }
 frob-evidence = { path = "../frob-evidence" }
 frob-land = { path = "../frob-land" }
 frob-lease = { path = "../frob-lease" }
+frob-pm = { path = "../frob-pm" }
 frob-ledger = { path = "../frob-ledger" }
 frob-tests = { path = "../frob-tests" }
 frob-worktree = { path = "../frob-worktree" }
