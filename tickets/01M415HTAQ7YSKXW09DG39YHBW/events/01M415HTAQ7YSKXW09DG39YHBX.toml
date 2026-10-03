@@ -1,0 +1,12 @@
+kind = "create"
+title = "Attestation statements can still write non-ASCII into the ledger"
+type = "bug"
+category = "todo"
+priority = "low"
+points = 1
+scope = ["crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/tests/**"]
+acceptance = ["Given an attestation statement containing a non-ASCII character, when evidence add --provider attestation runs, then it exits 2 naming the character and nothing is written under tickets/"]
+body = 'Left over from ~G31XEZ3: the non-ASCII backstop skips the attestation table because its digest covers the raw statement. Refuse a non-ASCII statement at input with a usage error naming the first offending character and its \\u{XXXX} escape (the attester types it, so they can retype it), rather than changing the digest scheme.'
+at = "2026-10-03T15:19:03Z"
+actor = "lognd"
+rev = 1
