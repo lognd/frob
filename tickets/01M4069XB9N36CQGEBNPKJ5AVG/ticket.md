@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a tag made by release cut, when frob check runs, then REL001 is silent"
-bound = false
+bound = true
 +++
 
 Fires for a frob-v* tag with no recorded cut event for the same commit and version (or whose commit has versions or changelog disagreeing). The rule page states that the v1 meaning was retired (exceptions.md 6). Tags before the first cut (none) are not special-cased.
