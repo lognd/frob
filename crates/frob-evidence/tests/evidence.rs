@@ -513,3 +513,112 @@ fn an_unterminated_quote_is_a_usage_error_and_records_nothing() {
     );
     assert_eq!(count, 0);
 }
+
+/// Every file under `dir`, recursively, as (path, bytes).
+fn files_under(dir: &Path) -> Vec<(std::path::PathBuf, Vec<u8>)> {
+    let mut out = Vec::new();
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return out;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            out.extend(files_under(&path));
+        } else {
+            let bytes = std::fs::read(&path).expect("read");
+            out.push((path, bytes));
+        }
+    }
+    out
+}
+
+/// Assert that every byte of every file under `<root>/tickets` is ASCII, and that there is something to check.
+fn assert_tickets_ascii(root: &Path) {
+    let files = files_under(&root.join("tickets"));
+    assert!(!files.is_empty(), "no files under tickets/");
+    for (path, bytes) in files {
+        assert!(bytes.is_ascii(), "non-ASCII bytes in {}", path.display());
+    }
+}
+
+// frob:ticket 01M413T4GRZDC843XFPG31XEZ3
+#[test]
+fn non_ascii_provider_output_is_escaped_in_every_ledger_file_and_shown_escaped() {
+    let dir = repo("box \u{2500}\u{2500} caf\u{e9}");
+    let ledger = ledger(dir.path());
+    let (_, handle) = ticket(&ledger, TicketType::Task);
+    drop(ledger);
+    let cli = cli();
+    let run = |args: &[&str]| gob_cli::run_for_test(&cli, args, dir.path());
+    let (code, out, err) = run(&[
+        "--json",
+        "ticket",
+        "evidence",
+        "add",
+        &handle,
+        "--provider",
+        "command",
+        "--ref",
+        "git log --format=%B",
+        "--accepts",
+        "1",
+    ]);
+    assert_eq!(code, 0, "{out}{err}");
+    assert_tickets_ascii(dir.path());
+    let (code, out, _) = run(&["--json", "ticket", "evidence", "fetch", &handle, "1"]);
+    assert_eq!(code, 0, "{out}");
+    let v = json(&out);
+    assert_eq!(v["data"]["status"], "measured", "{out}");
+    let content = v["data"]["content"].as_str().expect("content");
+    assert!(
+        content.contains("box \\u{2500}\\u{2500} caf\\u{e9}"),
+        "{content}"
+    );
+    let (code, out, _) = run(&["--json", "ticket", "evidence", "list", &handle]);
+    assert_eq!(code, 0, "{out}");
+    assert_eq!(
+        json(&out)["data"]["records"][0]["effective_status"],
+        "measured"
+    );
+}
+
+// frob:ticket 01M413T4GRZDC843XFPG31XEZ3
+#[test]
+fn nextest_evidence_runs_the_provider_plain_and_writes_ascii() {
+    // frob:tests crates/frob-evidence/src/provider.rs::plain_env
+    let env = provider::plain_env();
+    for (k, v) in [
+        ("NEXTEST_HIDE_PROGRESS_BAR", "1"),
+        ("NO_COLOR", "1"),
+        ("LC_ALL", "C"),
+    ] {
+        assert!(env.iter().any(|(ek, ev)| ek == k && ev == v), "{k}");
+    }
+    let dir = cargo_repo();
+    let ledger = ledger(dir.path());
+    let (_, handle) = ticket(&ledger, TicketType::Task);
+    drop(ledger);
+    let cli = cli();
+    let (code, out, err) = gob_cli::run_for_test(
+        &cli,
+        &[
+            "--json",
+            "ticket",
+            "evidence",
+            "add",
+            &handle,
+            "--provider",
+            "nextest",
+            "--ref",
+            "-p probe -E 'test(=alpha)'",
+            "--accepts",
+            "1",
+        ],
+        dir.path(),
+    );
+    assert_eq!(code, 0, "{out}{err}");
+    assert_tickets_ascii(dir.path());
+    let v = json(&out);
+    let inline = v["data"]["record"]["inline"].as_str().unwrap_or_default();
+    assert!(inline.is_ascii() && !inline.contains('\u{1b}'), "{inline}");
+}

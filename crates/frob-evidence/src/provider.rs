@@ -12,6 +12,7 @@ use std::time::Duration;
 use frob_ledger::model::Stamp;
 use gob_exec::{Outcome, Program, Runner, Spec};
 
+use crate::attestation::escape_non_ascii;
 use crate::error::{EvidenceError, Result};
 use crate::record::{EvidenceRecord, Provider, Status, digest_hex};
 use crate::store::{BlobStore, Stored};
@@ -187,10 +188,27 @@ fn spec(program: Program, args: Vec<String>, cwd: &Path, timeout: Duration) -> S
         program,
         args,
         cwd: Some(cwd.to_path_buf()),
-        env: Vec::new(),
+        env: plain_env(),
         timeout,
         capture: true,
     }
+}
+
+/// Environment that makes a provider print plain text: no color, no progress bar, no Unicode.
+///
+/// nextest has no Unicode switch of its own; it falls back to ASCII when the locale is not UTF-8,
+/// so `LC_ALL=C` is what turns the box-drawing characters off.
+pub fn plain_env() -> Vec<(String, String)> {
+    [
+        ("NEXTEST_HIDE_PROGRESS_BAR", "1"),
+        ("NEXTEST_SHOW_PROGRESS", "none"),
+        ("CARGO_TERM_COLOR", "never"),
+        ("NO_COLOR", "1"),
+        ("LC_ALL", "C"),
+    ]
+    .into_iter()
+    .map(|(k, v)| (k.to_owned(), v.to_owned()))
+    .collect()
 }
 
 fn exit_of(status: Outcome) -> (Option<i32>, bool) {
@@ -225,10 +243,10 @@ pub fn run_nextest(
     let mut json_args = args.clone();
     json_args.extend(["--message-format".to_owned(), "libtest-json".to_owned()]);
     let mut json_spec = spec(Program::Cargo, json_args, cwd, timeout);
-    json_spec.env = vec![(
+    json_spec.env.push((
         "NEXTEST_EXPERIMENTAL_LIBTEST_JSON".to_owned(),
         "1".to_owned(),
-    )];
+    ));
     let mut out = runner.run(&json_spec)?;
     let mut seen = parse_libtest_json(&out.stdout);
     let mut json = !seen.tests.is_empty();
@@ -364,7 +382,7 @@ pub fn build_record(
     capture: &Capture,
     accepts: &[usize],
 ) -> Result<EvidenceRecord> {
-    let redacted = gob_log::redact(&capture.transcript).into_owned();
+    let redacted = escape_non_ascii(&gob_log::redact(&capture.transcript));
     let digest = digest_hex(redacted.as_bytes());
     let (uri, inline) = match store.put(&redacted)? {
         Stored::Inline(t) => (None, Some(t)),
