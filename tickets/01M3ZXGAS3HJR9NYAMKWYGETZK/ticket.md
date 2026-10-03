@@ -21,6 +21,10 @@ target = "01M3ZX83NZ4PAM53VQCHXPE1R8"
 kind = "blocked-by"
 target = "01M3ZX841SP0ZXM4CT18A4B8CV"
 
+[[links]]
+kind = "blocked-by"
+target = "01M3ZXGAN6AMYG9AKKTD77SN7W"
+
 [[acceptance]]
 text = "Given an edit made between the mirror's read and write, when the next run reads history, then the edit is recorded as a proposal and nothing is lost"
 bound = false
