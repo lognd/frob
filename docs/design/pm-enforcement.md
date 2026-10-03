@@ -132,7 +132,7 @@ Milestone 2 or later (D36).
   would exceed `capacity = rolling_mean - k * stddev` (`[pm] capacity_k`,
   default 0.5) unless `--over-commit --reason`; the reason is a `cycle`
   event (op `over-commit`) and shows on the cycle report. Bootstrap:
-  until `[pm] min_history` completed cycles exist, capacity is not
+  until `[pm] min_history` (default 3) completed cycles exist, capacity is not
   enforced (PM010 is advisory) unless `capacity_points` is set, so a
   fresh repo never needs `--over-commit`. PM010 flags cycles
   over capacity; PM011 flags a cycle with no goal; PM012 flags stories
@@ -184,11 +184,12 @@ Milestone 2 or later (D36).
 milestone, cumulative flow by category, cycle-time scatter and
 percentiles, flow efficiency (active versus blocked time from events),
 aging WIP, throughput, and the commitment ratio. WIP limits are
-enforceable: `[pm.wip] in_progress_per_identity` (default 0, off) set to
-1 makes `start` refuse a second concurrent ticket for one holder (actor
-plus worktree path, so parallel agents in separate worktrees are not one
-identity), and a category limit makes the board column red and PM013
-fire.
+enforceable, with defaults and policy in releases.md 2 (D83):
+`[pm.wip] in_progress_per_identity` (default 1; 0 turns it off) makes
+`start` refuse a second concurrent ticket for one holder (actor plus
+worktree path, so parallel agents in separate worktrees are not one
+identity); `[pm.wip] in_progress` (default 2) caps the repository; a
+category limit makes the board column red and PM013 fire.
 
 ## 7. Rule family PM (generated like every other family)
 
