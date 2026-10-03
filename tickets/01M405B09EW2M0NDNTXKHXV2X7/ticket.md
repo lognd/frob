@@ -2,13 +2,13 @@
 id = "01M405B09EW2M0NDNTXKHXV2X7"
 title = "grimble SYS001, SYS002, SYS004: decide applicability from facts on a repository with no model entity"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T05:56:06Z"
-updated = "2026-10-03T06:13:15Z"
+updated = "2026-10-03T09:13:24Z"
 idempotency_key = "m2-sys-empty-model"
 labels = ["milestone:2", "release:0.532.0"]
 scope = ["crates/grimble-bind/**", "crates/grimble-check/**"]
