@@ -15,8 +15,10 @@
 | version | 1 |
 | since | 2.0.0 |
 
-A crate other than `gob-exec`, `gob-git` or the binary references `std::process`.
+A crate outside the repository's declared spawners uses a process-spawning API.
 
-Every spawn goes through `gob-exec` so it is allowlisted, bounded and
-counted; reading the git state goes through `gob-git`. Move the call into
-one of those crates or route it through `gob_exec::Runner`.
+A repository-local policy: only repositories that list crates in
+`[check] process_spawners` are checked, so consumers never see it. Matches
+`Command`, `Child`, `Stdio` and exec/spawn APIs, never `ExitCode`, `exit`
+or `id`. Move the call into a listed crate or route it through
+`gob_exec::Runner`.

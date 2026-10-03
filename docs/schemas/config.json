@@ -56,6 +56,14 @@
           "minimum": 0,
           "type": "integer"
         },
+        "process_spawners": {
+          "default": [],
+          "description": "Crates (directories under `crates/`) allowed to spawn processes; empty turns `PROC001` off.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "require_siblings": {
           "default": true,
           "description": "When true an unusable configured sibling is a required Unresolved (`SIB001`).",

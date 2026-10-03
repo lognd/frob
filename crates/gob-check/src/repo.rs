@@ -15,6 +15,7 @@ use gob_cache::Cache;
 use gob_rules::{Finding, Rule, RuleId, RuleMeta, Severity};
 use gob_text::{FileInterner, Span, TextRange, TextSize};
 
+use crate::config::CheckTable;
 use crate::product::{Product, RepoGroup, Snapshot};
 use crate::report::{Stats, Tally};
 use crate::rules::Proc001;
@@ -103,14 +104,14 @@ fn line_start(text: &str, line: usize) -> usize {
         .sum()
 }
 
-/// `PROC001` over the repository: one finding per forbidden `std::process` reference.
-fn proc001(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
+/// `PROC001` over the repository: one finding per spawning reference outside `spawners`.
+fn proc001(root: &Path, spawners: &[String], files: &mut FileInterner) -> Vec<Finding> {
     let id: RuleId = Proc001
         .meta()
         .rule_id()
         .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
     let mut out = Vec::new();
-    for hit in gob_exec::proc001::scan(root) {
+    for hit in gob_exec::proc001::scan(root, spawners) {
         let rel = hit
             .path
             .strip_prefix(root)
@@ -131,8 +132,9 @@ fn proc001(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
             Severity::Error,
             Some(span),
             format!(
-                "`{}` uses the process API outside gob-exec and gob-git; spawn through gob_exec::Runner",
-                hit.text
+                "`{}` uses a process-spawning API outside {}; spawn through gob_exec::Runner",
+                hit.text,
+                spawners.join(", ")
             ),
             &rel,
         ));
@@ -140,12 +142,12 @@ fn proc001(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
     out
 }
 
-/// The neutral repo groups every product gets: `PROC001`.
-pub(crate) fn builtin_groups<P: Product>() -> Vec<RepoGroup<P>> {
+/// The neutral repo groups every product gets: `PROC001`, which is inert without `process_spawners`.
+pub(crate) fn builtin_groups<P: Product>(spawners: Vec<String>) -> Vec<RepoGroup<P>> {
     vec![RepoGroup::new(
         "repo:process",
         vec![Proc001.meta()],
-        |s: &Snapshot<P>, f| proc001(&s.core.root, f),
+        move |s: &Snapshot<P>, f| proc001(&s.core.root, &spawners, f),
     )]
 }
 
@@ -159,11 +161,12 @@ pub(crate) fn run_repo_rules<P: Product>(
     files: &mut FileInterner,
     wanted: &dyn Fn(&RuleMeta) -> bool,
     tally: &mut Tally,
+    table: &CheckTable,
 ) -> Vec<Finding> {
     let digest = inputs_digest(product, snap);
     let mut out = Vec::new();
     let mut groups = product.repo_groups();
-    groups.extend(builtin_groups());
+    groups.extend(builtin_groups(table.process_spawners.clone()));
     for group in groups {
         if !group.metas.iter().any(|m| wanted(m)) {
             tracing::debug!(group = group.name, "repo group skipped by --only");

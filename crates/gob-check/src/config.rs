@@ -146,6 +146,9 @@ pub struct CheckTable {
     /// When true an unusable configured sibling is a required Unresolved (`SIB001`).
     #[config(default = true, enforcement)]
     pub require_siblings: bool,
+    /// Crates (directories under `crates/`) allowed to spawn processes; empty turns `PROC001` off.
+    #[config(default = Vec::new())]
+    pub process_spawners: Vec<String>,
     /// Bytes a sibling or tool may print on one stream before it is killed (default 64 MiB).
     #[config(default = 67_108_864)]
     pub output_cap_bytes: u64,
