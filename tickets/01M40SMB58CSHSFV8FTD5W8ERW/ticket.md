@@ -11,7 +11,7 @@ created = "2026-10-03T11:50:43Z"
 updated = "2026-10-03T12:24:19Z"
 idempotency_key = "m2-rel-cycle-early-close"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-pm/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs", "changelog.d/01M40SMB58CSHSFV8FTD5W8ERW.fixed.md"]
+scope = ["crates/frob-pm/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs", "changelog.d/01M40SMB58CSHSFV8FTD5W8ERW.fixed.md", "docs/design/pm-enforcement.md"]
 
 [[acceptance]]
 text = "Given a 7-day cycle closed on its first day, when a new cycle starting the next day is created, then it is accepted"
