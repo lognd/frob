@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "CI and dev tooling only: step prerequisites and a separate dev-tool target dir"
+at = "2026-10-03T22:33:46Z"
+actor = "lognd"
+rev = 1

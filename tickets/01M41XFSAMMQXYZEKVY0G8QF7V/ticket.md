@@ -2,12 +2,13 @@
 id = "01M41XFSAMMQXYZEKVY0G8QF7V"
 title = "CI clippy-windows fails: the ubuntu runner has no x86_64-w64-mingw32-gcc for libsqlite3-sys"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 1
 reporter = "lognd"
 created = "2026-10-03T22:17:23Z"
-updated = "2026-10-03T22:33:45Z"
+updated = "2026-10-03T22:33:46Z"
 scope = [".github/workflows/ci.yml", "crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/ci_parity.rs", "CONTRIBUTING.md", ".cargo/config.toml"]
 
 [[acceptance]]
