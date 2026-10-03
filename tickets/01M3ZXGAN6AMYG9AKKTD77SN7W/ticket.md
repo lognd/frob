@@ -2,13 +2,14 @@
 id = "01M3ZXGAN6AMYG9AKKTD77SN7W"
 title = "Mirror reconcile: field ownership, revert repository-owned edits, converge"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:39:11Z"
-updated = "2026-10-03T03:39:12Z"
+updated = "2026-10-03T05:51:56Z"
 idempotency_key = "m2-mirror-reconcile-engine"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/**"]
