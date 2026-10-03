@@ -428,6 +428,17 @@ fn text_mode_prints_ascii_rows_at_the_requested_width() {
     let text = String::from_utf8(out.stdout).expect("utf8");
     assert!(text.is_ascii());
     assert!(text.lines().all(|l| l.len() <= 96), "{text}");
+    // frob:ticket 01M41B2P3B5KVG5FJ5B0X2ANR8
+    assert!(!text.contains("board: ok"), "no envelope header: {text}");
+    assert!(!text.contains("lines:"), "no envelope key: {text}");
+    assert!(
+        text.starts_with("expedite") || text.starts_with("triage"),
+        "{text}"
+    );
+    assert!(
+        text.lines().all(|l| !l.trim_start().starts_with("- ~")),
+        "{text}"
+    );
     for needle in [
         "triage 1",
         "todo 1",

@@ -11,8 +11,12 @@ releases; the frob v1 history lives in [CHANGELOG-v1.md](../../CHANGELOG-v1.md).
 
 - `<ulid>` is the ULID of the ticket that shipped the change; it must resolve to a
   ticket in the ledger (the entry cites its handle and full ULID in plain text, never a path).
-- `<type>` is one of `added`, `changed`, `fixed`, `removed`, `deprecated`,
-  `security`; this is also the rendering order.
+- `<type>` is one of `notice`, `added`, `changed`, `fixed`, `removed`,
+  `deprecated`, `security`; this is also the rendering order. A `notice` is the
+  lead notice: one paragraph rendered above everything else in the section, with
+  no type heading. A release section takes at most one; a second is refused with
+  the files named. Its product prefix, if any, is dropped (a notice speaks for
+  the whole release).
 - The body is one or two user-facing sentences, ASCII only. A first-line prefix
   names the product: `frob:`, `gob:`, `grimble:` or `crunk:`. Without a prefix the
   entry belongs to `frob`. A prefix that is a near-miss of a product (`grimbel:`)
@@ -38,6 +42,8 @@ that succeeds.
 ```text
 ## 0.532.0 - 2026-10-03
 
+Read this before upgrading. (~R8CA0D, 01M4069QWSJEH5KW8K0YR8CA0D)
+
 ### frob
 
 #### Added
@@ -47,7 +53,7 @@ that succeeds.
 <!-- frob-section: 0.532.0 blake3:<hash> -->
 ```
 
-Sections are grouped by product (frob, gob, grimble, crunk), then by type, then
+The lead notice comes first, above the product headings. The rest is grouped by product (frob, gob, grimble, crunk), then by type, then
 by ULID. The closing marker is a BLAKE3 hash of the section; `--check` fails
 with `E-CHANGELOG-EDITED` when a section no longer matches it, so a hand edit of
 an older section is caught without consulting git history.

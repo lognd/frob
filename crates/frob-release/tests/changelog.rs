@@ -129,7 +129,7 @@ fn invalid_names_are_refused_with_the_remedy() {
     assert!(err.contains("<ulid>.<type>.md"), "{err}");
     assert!(err.contains("unknown type `bugfix`"), "{err}");
     assert!(
-        err.contains("added, changed, fixed, removed, deprecated, security"),
+        err.contains("notice, added, changed, fixed, removed, deprecated, security"),
         "{err}"
     );
 }
@@ -336,4 +336,58 @@ fn an_adopted_changelog_without_version_headings_gets_the_section_appended() {
         text.starts_with("# Changelog\n\n## Unreleased\n\n- x\n\n## 0.532.0"),
         "{text}"
     );
+}
+
+#[test]
+fn a_notice_leads_the_section_above_the_product_and_type_groups() {
+    // frob:ticket 01M41BWB5H544DN5ADDV50ZAVN
+    // frob:tests crates/frob-release/src/changelog.rs::render_section
+    let d = repo();
+    // C's ULID sorts before A and B, yet the notice must still come first as a plain paragraph.
+    frag(
+        d.path(),
+        &format!("{C}.notice.md"),
+        "frob: Read this before upgrading.\n",
+    );
+    let out = run(d.path(), &opts(Mode::DryRun), &resolver).unwrap();
+    let section = out.section.unwrap();
+    let notice = section.find("Read this before upgrading.").unwrap();
+    assert!(
+        section.starts_with("## 0.532.0 - 2026-10-03\n\nRead this before upgrading. ("),
+        "{section}"
+    );
+    assert!(notice < section.find("### frob").unwrap(), "{section}");
+    assert!(!section.contains("#### Notice"), "{section}");
+    assert_eq!(section.matches("Read this before upgrading.").count(), 1);
+}
+
+#[test]
+fn a_second_notice_is_refused_naming_both_files() {
+    // frob:ticket 01M41BWB5H544DN5ADDV50ZAVN
+    // frob:tests crates/frob-release/src/fragment.rs::read_all
+    let d = repo();
+    frag(d.path(), &format!("{A}.notice.md"), "First.\n");
+    frag(d.path(), &format!("{B}.notice.md"), "Second.\n");
+    let err = run(d.path(), &opts(Mode::Check), &resolver)
+        .unwrap_err()
+        .to_string();
+    // B sorts before A, so B keeps the lead and A is the refused second notice.
+    assert!(err.contains(&format!("changelog.d/{A}.notice.md")), "{err}");
+    assert!(err.contains("at most one `notice`"), "{err}");
+    assert!(
+        err.contains(&format!("`{B}.notice.md` is already one")),
+        "{err}"
+    );
+}
+
+#[test]
+fn the_v2_notice_fragment_is_a_lead_notice() {
+    // frob:ticket 01M41BWB5H544DN5ADDV50ZAVN
+    // frob:tests crates/frob-release/src/fragment.rs::parse_name
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../changelog.d");
+    let (ulid, kind) = frob_release::parse_name("01M4069YE7SYCYT7YGT2FCV344.notice.md").unwrap();
+    assert_eq!(kind, frob_release::Kind::Notice);
+    let text = fs::read_to_string(dir.join(format!("{ulid}.notice.md"))).unwrap();
+    assert!(text.contains("0.532.0 is the v2 Rust rewrite"));
+    assert!(!dir.join(format!("{ulid}.added.md")).exists());
 }

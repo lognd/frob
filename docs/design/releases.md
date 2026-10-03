@@ -105,7 +105,10 @@ example v1's `v0.531.0` here) are ignored.
 
 The compiled changelog section has product headings (`### frob`) only when
 several products are configured; with one product the entries are listed
-under their type headings, whatever product prefix a fragment names. A fresh
+under their type headings, whatever product prefix a fragment names. A `notice`
+fragment (`changelog.d/<ulid>.notice.md`, at most one per section) is rendered
+first, as a paragraph above the product and type headings, and is covered by the
+section hash like everything else. A fresh
 CHANGELOG.md links `CHANGELOG-v1.md` only when that file exists.
 
 **Adopting a hand-written CHANGELOG.md.** A file that does not start with
