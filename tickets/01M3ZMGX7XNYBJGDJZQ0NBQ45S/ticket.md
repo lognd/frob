@@ -2,7 +2,8 @@
 id = "01M3ZMGX7XNYBJGDJZQ0NBQ45S"
 title = "Capabilities deny by default; excuses only in matrix-build templates; CAP004 excused-but-used"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
