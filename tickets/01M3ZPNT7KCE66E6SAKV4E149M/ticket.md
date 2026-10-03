@@ -2,7 +2,8 @@
 id = "01M3ZPNT7KCE66E6SAKV4E149M"
 title = "G12 follow-ups: one walk for check and ack, mandatory ack reason, rename log and knobs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
