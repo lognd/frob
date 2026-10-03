@@ -2,13 +2,14 @@
 id = "01M3Z9B99B5FNR1YTF6YBM7WZC"
 title = "frob land E-LAND-CHECK-RED lists warnings instead of the blocking findings"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:46:55Z"
-updated = "2026-10-03T03:07:46Z"
+updated = "2026-10-03T03:07:47Z"
 idempotency_key = "m2-land-msg"
 labels = ["milestone:2"]
 scope = ["crates/frob-land/**"]
