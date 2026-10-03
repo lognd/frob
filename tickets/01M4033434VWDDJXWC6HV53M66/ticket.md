@@ -2,13 +2,13 @@
 id = "01M4033434VWDDJXWC6HV53M66"
 title = "Mirror protocol v2 from the adversarial audit and the TLA+ model"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T05:16:50Z"
-updated = "2026-10-03T05:16:50Z"
+updated = "2026-10-03T05:16:57Z"
 idempotency_key = "m2-mirror-protocol-v2"
 labels = ["milestone:2", "area:mirror"]
 scope = ["docs/design/**", "notes/review/mirror-audit.md"]
