@@ -156,6 +156,16 @@ Materialized: yes.
 | `in_progress` | `u32` | `2` | yes | Most tickets in progress in the repository at once, sized to what the machine can build; the default 2 matches the two-builder rule, and 0 is off. |
 | `in_progress_per_identity` | `u32` | `1` | yes | Most tickets one holder (actor plus worktree path) may have in progress; 1 makes an agent finish before starting another, 0 is off. |
 
+## `[release]`
+
+Release policy knobs read by `frob release status` and the `release cut` readiness gate.
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `require_ci` | `bool` | `true` | yes | When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green. |
+
 ## `[tickets]`
 
 Where the ticket ledger lives.

@@ -90,8 +90,10 @@ pub struct CycleView {
     pub alias: String,
     /// First day (`YYYY-MM-DD`).
     pub start: String,
-    /// Last day (`YYYY-MM-DD`).
+    /// Last planned day (`YYYY-MM-DD`).
     pub end: String,
+    /// Effective last day when the cycle closed before its planned end; absent otherwise.
+    pub ended: Option<String>,
     /// One-line goal.
     pub goal: String,
     /// Committed story points, when set.
@@ -181,6 +183,7 @@ impl CycleView {
             alias: c.alias(),
             start: c.start.to_string(),
             end: c.end.to_string(),
+            ended: c.ended.map(|d| d.to_string()),
             goal: c.goal.clone(),
             capacity_points: c.capacity_points,
             state: c.state.to_string(),
@@ -362,7 +365,7 @@ fn find(store: PmStore<'_>, reference: &str) -> Result<Cycle, CliError> {
 fn current(all: &[Cycle], today: Day) -> Option<&Cycle> {
     let open = || all.iter().filter(|c| c.state != State::Closed);
     open()
-        .find(|c| c.start <= today && today <= c.end)
+        .find(|c| c.start <= today && today <= c.effective_end())
         .or_else(|| open().find(|c| c.start > today))
         .or_else(|| all.last())
 }
@@ -631,6 +634,7 @@ fn close_bodies(c: &Cycle, plan: &ClosePlan, retro: Option<&str>) -> Vec<PmBody>
         from: c.state,
         to: State::Closed,
         reason: None,
+        ended: plan.ended,
     }));
     bodies
 }
@@ -695,7 +699,9 @@ impl Command for CycleClose {
             .transpose()?;
         let others = cycles(store)?;
         let members = member_facts(ctx, &ledger, &c)?;
-        let plan = plan_close(&c, &others, carry_to.as_ref(), &members).map_err(|e| refusal(&e))?;
+        let closed_on = Day::from_unix(Stamp::now().unix());
+        let plan = plan_close(&c, &others, carry_to.as_ref(), &members, closed_on)
+            .map_err(|e| refusal(&e))?;
         if let Some(target) = plan.target {
             for t in &plan.carried {
                 store
@@ -718,6 +724,7 @@ impl Command for CycleClose {
             carried = plan.carried.len(),
             committed = plan.committed,
             done = plan.done,
+            ended = ?plan.ended,
             target = ?plan.target_alias,
             "cycle closed"
         );

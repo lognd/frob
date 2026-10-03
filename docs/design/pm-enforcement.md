@@ -155,6 +155,13 @@ Milestone 2 or later (D36).
   cycle gains it by a `member` event, so a closed cycle lists only what it
   finished. The target is the next open or planned cycle by start date, or
   `--carry-to`; with none, close refuses and names `frob cycle new`.
+  Closing before the planned end records the close day (UTC, never before the
+  start) as the cycle's effective end, in the `transition` event (`ended`);
+  the fold sets `ended` on the cycle, and the overlap check, default-cycle
+  selection, velocity, capacity, the ratio and the E-CYCLE-NO-NEXT suggested start
+  all use the effective window. Closing on or after the planned end, or a close
+  event without `ended`, leaves the planned end in force. `cycle show` and
+  `list` report `end` (planned) and `ended` (effective, when different).
   `frob cycle new` ends at `start + [pm] cycle_days - 1` unless `--end`
   is given and refuses windows that overlap a cycle that is not closed.
 - Agent capacity: throughput in points per day is measured the same way

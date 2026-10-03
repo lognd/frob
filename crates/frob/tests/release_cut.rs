@@ -42,6 +42,13 @@ impl Repo {
         git(dir.path(), &["config", "core.autocrlf", "false"]);
         let repo = Self { dir };
         assert_eq!(code(&repo.run(&["--json", "init"])), 0);
+        let toml = repo.dir.path().join("frob.toml");
+        let text = std::fs::read_to_string(&toml).expect("frob.toml");
+        std::fs::write(
+            &toml,
+            text.replace("require_ci = true", "require_ci = false"),
+        )
+        .expect("write frob.toml");
         git(repo.dir.path(), &["add", "-A"]);
         git(repo.dir.path(), &["commit", "-q", "-m", "base"]);
         repo
@@ -366,4 +373,60 @@ fn push_sends_the_branch_and_the_tags_to_origin() {
         refs.contains("refs/tags/frob-v0.532.0") && refs.contains("refs/tags/grimble-v0.532.0"),
         "{refs}"
     );
+}
+
+/// Run frob with `path` as the whole PATH (a fake or absent `gh`).
+fn run_with_path(repo: &Repo, path: &Path, args: &[&str]) -> Output {
+    Command::cargo_bin("frob")
+        .expect("frob binary")
+        .current_dir(repo.dir.path())
+        .env_remove("FROB_LOG")
+        .env("PATH", path)
+        .args(args)
+        .output()
+        .expect("run frob")
+}
+
+/// A directory with a stub `gh` printing one failing check run (and an empty status).
+fn red_gh() -> tempfile::TempDir {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = tempfile::tempdir().expect("tempdir");
+    let script = "#!/bin/sh\ncase \"$*\" in\n*check-runs*) echo '{\"check_runs\":[{\"name\":\"lint\",\"status\":\"completed\",\"conclusion\":\"failure\",\"html_url\":\"https://x/lint\"}]}';;\n*) echo '{\"statuses\":[]}';;\nesac\n";
+    let path = dir.path().join("gh");
+    std::fs::write(&path, script).expect("script");
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+    dir
+}
+
+#[test]
+fn a_red_or_unknown_ci_tip_refuses_the_cut_without_override() {
+    // frob:tests crates/frob/src/release_cmd.rs::ReleaseCut.run
+    // frob:tests crates/frob/src/release_cmd.rs::ci_facts
+    let repo = releasable(true);
+    let d = repo.dir.path();
+    git(
+        d,
+        &["remote", "add", "origin", "git@github.com:acme/widget.git"],
+    );
+    let toml = d.join("frob.toml");
+    let text = std::fs::read_to_string(&toml).expect("frob.toml");
+    std::fs::write(
+        &toml,
+        text.replace("require_ci = false", "require_ci = true"),
+    )
+    .expect("write");
+    git(d, &["commit", "-q", "-am", "require ci"]);
+    let before = git_out(d, &["rev-parse", "main"]);
+    let red = red_gh();
+    let missing = tempfile::tempdir().expect("tempdir");
+    for (gh, needle) in [(red.path(), "CI is red"), (missing.path(), "CI status of")] {
+        let out = run_with_path(&repo, gh, &["--json", "release", "cut", "0.532.0"]);
+        assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stdout));
+        let text = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            text.contains("E-CUT-NOT-READY") && text.contains(needle),
+            "{text}"
+        );
+        assert_eq!(git_out(d, &["rev-parse", "main"]), before, "nothing cut");
+    }
 }

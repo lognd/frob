@@ -90,6 +90,8 @@ pub struct FrobConfig {
     pub evidence: frob_evidence::EvidenceTable,
     /// `[pm]`, `[pm.wip]` and `[pm.classes]`, owned by `frob-pm`.
     pub pm: frob_pm::PmConfig,
+    /// `[release]`, owned by `frob-release`.
+    pub release: frob_release::ReleaseConfig,
 }
 
 impl FrobConfig {
@@ -122,6 +124,7 @@ impl FrobConfig {
             worktree: gob_config::load::<frob_worktree::WorktreeConfig>(root, PRODUCT)?.value,
             evidence: gob_config::load::<frob_evidence::EvidenceTable>(root, PRODUCT)?.value,
             pm: frob_pm::PmConfig::load(root)?,
+            release: gob_config::load::<frob_release::ReleaseConfig>(root, PRODUCT)?.value,
         };
         tracing::debug!(root = %root.display(), "frob config loaded");
         Ok(cfg)

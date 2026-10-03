@@ -64,6 +64,7 @@ fn initial(id: ObjectId, ev: &PmEvent, c: &CreateData) -> std::result::Result<Ob
                 id,
                 start,
                 end,
+                ended: None,
                 goal: c.goal.clone(),
                 capacity_points: c.capacity_points,
                 state: State::initial(ObjectKind::Cycle),
@@ -231,6 +232,17 @@ fn apply_transition(
         });
     }
     *slot = d.to;
+    if let (Object::Cycle(c), Some(ended)) = (o, d.ended) {
+        if d.to != State::Closed || ended < c.start {
+            return Err(format!(
+                "effective end {ended} needs a close and a day on or after the start {}",
+                c.start
+            ));
+        }
+        // Closing on or after the planned end changes nothing.
+        c.ended = (ended < c.end).then_some(ended);
+        tracing::debug!(cycle = %c.alias(), ?c.ended, "cycle effective end folded");
+    }
     Ok(())
 }
 

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-pm/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs", "changelog.d/01M40SMB58CSHSFV8FTD5W8ERW.fixed.md"]
+new = ["crates/frob-pm/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs", "changelog.d/01M40SMB58CSHSFV8FTD5W8ERW.fixed.md", "docs/design/pm-enforcement.md"]
+at = "2026-10-03T12:24:19Z"
+actor = "lognd"
+rev = 1

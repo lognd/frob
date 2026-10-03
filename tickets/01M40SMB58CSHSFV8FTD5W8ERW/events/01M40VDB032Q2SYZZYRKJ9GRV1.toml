@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T12:21:51Z"
+digest = "051454bdf09e559b541310360ce44318c053ad0fa12d88672914d8305a315a52"
+exit_code = 0
+inline = """
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.39s
+────────────
+ Nextest run ID baf8bebc-639e-4cd2-b81b-3eaa3b10f23f with nextest profile: default
+    Starting 1 test across 133 binaries (1066 tests skipped)
+        PASS [   7.591s] (1/1) frob-cli::cycle closing_on_the_first_day_frees_the_next_day_and_shows_both_ends
+────────────
+     Summary [   7.596s] 1 test run: 1 passed, 1066 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-E 'test(closing_on_the_first_day_frees_the_next_day_and_shows_both_ends)'"
+size = 618
+status = "measured"
+tests = ["closing_on_the_first_day_frees_the_next_day_and_shows_both_ends"]
+at = "2026-10-03T12:21:51Z"
+actor = "lognd"
+rev = 1

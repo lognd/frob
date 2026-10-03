@@ -68,6 +68,10 @@ in_progress_per_identity = 1
 # Most tickets in progress in the repository at once, sized to what the machine can build; the default 2 matches the two-builder rule, and 0 is off.
 in_progress = 2
 
+[release]
+# When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green.
+require_ci = true
+
 [tickets]
 # Ref holding the ledger; the ledger merge driver and `doctor` resolve it.
 ref = "refs/heads/main"

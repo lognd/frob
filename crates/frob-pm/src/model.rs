@@ -253,8 +253,11 @@ pub struct Cycle {
     pub id: ObjectId,
     /// First day.
     pub start: Day,
-    /// Last day.
+    /// Last planned day.
     pub end: Day,
+    /// Effective last day when the cycle closed before `end` (the close day, UTC); `None` otherwise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ended: Option<Day>,
     /// One-line goal.
     pub goal: String,
     /// Story points the team commits to, when set.
@@ -275,6 +278,11 @@ impl Cycle {
     /// The date alias of the cycle: `START..END`.
     pub fn alias(&self) -> String {
         format!("{}..{}", self.start, self.end)
+    }
+
+    /// The last day the cycle really covers: the early-close day when set, else the planned `end`.
+    pub fn effective_end(&self) -> Day {
+        self.ended.unwrap_or(self.end)
     }
 }
 

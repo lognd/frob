@@ -8,6 +8,8 @@
 
 pub mod bump;
 pub mod changelog;
+pub mod ci;
+pub mod config;
 pub mod cut;
 pub mod error;
 pub mod fragment;
@@ -18,6 +20,7 @@ pub mod status;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+pub use config::ReleaseConfig;
 pub use error::{FragmentError, ReleaseError};
 pub use fragment::{Fragment, Kind, TicketResolver};
 

@@ -154,13 +154,16 @@ pub fn plan_new(
     }
     if let Some(c) = existing
         .iter()
-        .find(|c| c.state != State::Closed && c.start <= end && start <= c.end)
+        .find(|c| c.state != State::Closed && c.start <= end && start <= c.effective_end())
     {
-        let next_free = c.end.plus_days(1).map_err(|m| CycleError::BadWindow {
-            start: start.to_string(),
-            end: end.to_string(),
-            reason: m,
-        })?;
+        let next_free = c
+            .effective_end()
+            .plus_days(1)
+            .map_err(|m| CycleError::BadWindow {
+                start: start.to_string(),
+                end: end.to_string(),
+                reason: m,
+            })?;
         return Err(CycleError::Overlap {
             start,
             end,
@@ -224,6 +227,8 @@ pub struct MemberFacts {
 /// What closing a cycle will record.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClosePlan {
+    /// The effective end to record: the close day when it falls before the planned end, else `None`.
+    pub ended: Option<Day>,
     /// The cycle that takes the carried tickets; `None` when nothing carries.
     pub target: Option<ObjectId>,
     /// Alias of `target`, for messages.
@@ -259,6 +264,7 @@ pub fn next_cycle<'a>(cycle: &Cycle, others: &'a [Cycle]) -> Option<&'a Cycle> {
 /// Plan `cycle close`: refuse on live in-progress members, find where incomplete work goes, total the points.
 ///
 /// `carry_to` is the explicit `--carry-to` cycle, which overrides the next-by-start rule.
+/// `closed_on` is the close day (UTC); before the planned end it becomes the effective end.
 ///
 /// # Errors
 ///
@@ -269,7 +275,11 @@ pub fn plan_close(
     others: &[Cycle],
     carry_to: Option<&Cycle>,
     members: &[MemberFacts],
+    closed_on: Day,
 ) -> Result<ClosePlan, CycleError> {
+    let effective = closed_on.max(cycle.start).min(cycle.end);
+    let ended = (effective < cycle.end).then_some(effective);
+    tracing::debug!(cycle = %cycle.alias(), %closed_on, ?ended, "cycle close window");
     let blocking: Vec<String> = members
         .iter()
         .filter(|m| m.status == MemberStatus::InProgress && m.live_lease)
@@ -311,7 +321,7 @@ pub fn plan_close(
         Some(t)
     } else {
         let Some(t) = next_cycle(cycle, others) else {
-            let suggest_start = cycle.end.plus_days(1).unwrap_or(cycle.end);
+            let suggest_start = effective.plus_days(1).unwrap_or(effective);
             return Err(CycleError::NoNextCycle {
                 alias: cycle.alias(),
                 carrying: carried.len(),
@@ -321,6 +331,7 @@ pub fn plan_close(
         Some(t)
     };
     Ok(ClosePlan {
+        ended,
         target: target.map(|t| t.id),
         target_alias: target.map(Cycle::alias),
         carried,
@@ -343,6 +354,7 @@ mod tests {
             id: ObjectId::mint(),
             start: day(start),
             end: day(end),
+            ended: None,
             goal: "g".to_owned(),
             capacity_points: None,
             state,
@@ -426,7 +438,7 @@ mod tests {
         let others = [later, next.clone(), c.clone()];
         let live = [member(MemberStatus::InProgress, true, 3)];
         assert!(matches!(
-            plan_close(&c, &others, None, &live),
+            plan_close(&c, &others, None, &live, day("2026-10-11")),
             Err(CycleError::LiveLease { .. })
         ));
         let ms = [
@@ -434,7 +446,7 @@ mod tests {
             member(MemberStatus::InProgress, false, 3),
             member(MemberStatus::Open, false, 2),
         ];
-        let p = plan_close(&c, &others, None, &ms).expect("plan");
+        let p = plan_close(&c, &others, None, &ms, day("2026-10-11")).expect("plan");
         assert_eq!(p.target, Some(next.id));
         assert_eq!((p.committed, p.done, p.carried.len()), (10, 5, 2));
         assert_eq!(p.ratio(), Some(0.5));
@@ -445,19 +457,50 @@ mod tests {
         let c = cycle("2026-10-05", "2026-10-11", State::Active);
         let all_done = [member(MemberStatus::Dropped, false, 1)];
         assert_eq!(
-            plan_close(&c, &[], None, &all_done).expect("plan").target,
+            plan_close(&c, &[], None, &all_done, day("2026-10-11"))
+                .expect("plan")
+                .target,
             None
         );
         let todo = [member(MemberStatus::Open, false, 1)];
         assert!(matches!(
-            plan_close(&c, &[], None, &todo),
+            plan_close(&c, &[], None, &todo, day("2026-10-11")),
             Err(CycleError::NoNextCycle { suggest_start, .. }) if suggest_start == day("2026-10-12")
         ));
         let closed = cycle("2026-10-12", "2026-10-18", State::Closed);
         assert!(matches!(
-            plan_close(&c, &[], Some(&closed), &todo),
+            plan_close(&c, &[], Some(&closed), &todo, day("2026-10-11")),
             Err(CycleError::BadCarryTarget { .. })
         ));
         assert_eq!(ratio(0, 0), None);
+    }
+
+    #[test]
+    fn closing_early_records_the_close_day_and_moves_the_suggested_start() {
+        // frob:tests crates/frob-pm/src/cycle/lifecycle.rs::plan_close
+        let c = cycle("2026-10-05", "2026-10-11", State::Active);
+        let todo = [member(MemberStatus::Open, false, 1)];
+        let done = [member(MemberStatus::Finished, false, 1)];
+        let early = plan_close(&c, &[], None, &done, day("2026-10-06")).expect("plan");
+        assert_eq!(early.ended, Some(day("2026-10-06")));
+        let on_end = plan_close(&c, &[], None, &done, day("2026-10-11")).expect("plan");
+        assert_eq!(on_end.ended, None);
+        let late = plan_close(&c, &[], None, &done, day("2026-10-20")).expect("plan");
+        assert_eq!(late.ended, None);
+        let before = plan_close(&c, &[], None, &done, day("2026-10-01")).expect("plan");
+        assert_eq!(before.ended, Some(day("2026-10-05")));
+        assert!(matches!(
+            plan_close(&c, &[], None, &todo, day("2026-10-06")),
+            Err(CycleError::NoNextCycle { suggest_start, .. }) if suggest_start == day("2026-10-07")
+        ));
+    }
+
+    #[test]
+    fn an_early_closed_cycle_does_not_block_the_next_day() {
+        // frob:tests crates/frob-pm/src/cycle/lifecycle.rs::plan_new
+        let mut c = cycle("2026-10-05", "2026-10-11", State::Closed);
+        c.ended = Some(day("2026-10-05"));
+        let ok = plan_new(&[c], day("2026-10-06"), day("2026-10-07"), "g", None);
+        assert_eq!(ok, Ok(NewPlan::Create));
     }
 }

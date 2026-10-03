@@ -1,5 +1,6 @@
 ---
 source: crates/frob/tests/cli.rs
+assertion_line: 206
 expression: v
 ---
 {
@@ -92,6 +93,40 @@ expression: v
         "path",
         "present",
         "missing_knobs"
+      ],
+      "type": "object"
+    },
+    "DriverCheck": {
+      "description": "The configured ledger merge driver against the running frob.",
+      "properties": {
+        "command": {
+          "description": "The configured driver command, when set.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "detail": {
+          "description": "What went wrong, when not `ok`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fix": {
+          "description": "The exact command that fixes it, when not `ok`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "description": "`ok`, `mismatch` (a different frob), `unresolvable`, `unset` or `skipped`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state"
       ],
       "type": "object"
     },
@@ -297,6 +332,10 @@ expression: v
       "$ref": "#/$defs/ConfigInfo",
       "description": "Config status."
     },
+    "driver": {
+      "$ref": "#/$defs/DriverCheck",
+      "description": "Merge driver resolution."
+    },
     "git": {
       "$ref": "#/$defs/GitInfo",
       "description": "Git discovery."
@@ -326,7 +365,8 @@ expression: v
     "git",
     "cache",
     "config",
-    "ledger"
+    "ledger",
+    "driver"
   ],
   "title": "DoctorData",
   "type": "object"

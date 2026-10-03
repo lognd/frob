@@ -96,6 +96,9 @@ pub struct TransitionData {
     /// Why.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    /// Cycle closing before its planned end: the close day (UTC), which becomes the effective end.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ended: Option<Day>,
 }
 
 /// A release override: a cut proceeded although the milestone was not ready (releases.md section 4).
