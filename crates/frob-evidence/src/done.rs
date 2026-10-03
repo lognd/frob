@@ -22,12 +22,23 @@ pub const CODE_FRAGMENT: &str = "E-DONE-CHANGELOG-FRAGMENT";
 /// Flavour of a ticket that carries a measured target (pm-enforcement.md section 2a).
 const OBJECTIVE_FLAVOUR: &str = "quality_objective";
 
+/// What the ticket's changelog fragment looks like on disk, judged by the compile's own validator.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum FragmentState {
+    /// No `changelog.d/<ULID>.*.md` file.
+    Missing,
+    /// Every fragment of the ticket validates.
+    Valid,
+    /// At least one fragment fails validation; the messages name the file and the problem.
+    Invalid(Vec<String>),
+}
+
 /// Enforces `[pm] done_requires` when a ticket would be closed as completed work.
 #[derive(Debug, Clone)]
 pub struct DoneGuard {
     requires: Vec<DoneRequirement>,
     open_children: Vec<String>,
-    fragment_present: bool,
+    fragment: FragmentState,
     bypass: Option<String>,
 }
 
@@ -46,12 +57,12 @@ impl DoneGuard {
             .filter(|c| c.category != Category::Done)
             .map(|c| format!("{} ({})", c.handle, c.title))
             .collect();
-        let fragment_present = fragment_exists(root, id);
-        tracing::debug!(requires = ?pm.pm.done_requires, fragment_present, "done guard loaded");
+        let fragment = fragment_state(root, id, &view.summary.handle);
+        tracing::debug!(requires = ?pm.pm.done_requires, ?fragment, "done guard loaded");
         Ok(Self {
             requires: pm.pm.done_requires,
             open_children,
-            fragment_present,
+            fragment,
             bypass: None,
         })
     }
@@ -142,25 +153,38 @@ impl DoneGuard {
         ))
     }
 
+    // frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
     fn fragment(&self, cx: &CloseContext<'_>) -> Result<(), GuardFailure> {
-        if self.fragment_present {
-            return Ok(());
+        match &self.fragment {
+            FragmentState::Valid => Ok(()),
+            FragmentState::Missing => Err(GuardFailure {
+                code: CODE_FRAGMENT.to_owned(),
+                message: format!(
+                    "closing {} needs a changelog fragment (changelog_fragment, REL003, ~HE2EX99): \
+                     changelog.d/{}.<type>.md must exist",
+                    cx.handle, cx.ticket.front.id
+                ),
+                // frob:ticket 01M4069WHH6KXYWDAJD3TXB8SR
+                remedy: Some(format!(
+                    "run `frob ticket fragment {h}` in the ticket's worktree (writes changelog.d/<ULID>.<type>.md from the title; \
+                     add --type added|changed|fixed|removed|deprecated|security and --sentence \"<one user-facing sentence>\" to set them), \
+                     edit the sentence, and commit it; or remove changelog_fragment from [pm] done_requires",
+                    h = cx.handle
+                )),
+            }),
+            FragmentState::Invalid(problems) => Err(GuardFailure {
+                code: CODE_FRAGMENT.to_owned(),
+                message: format!(
+                    "closing {} has an invalid changelog fragment (changelog_fragment, REL003): {}",
+                    cx.handle,
+                    problems.join("; ")
+                ),
+                remedy: Some(format!(
+                    "fix what the message names, or replace the fragment with `frob ticket fragment {h} --force`, then commit it",
+                    h = cx.handle
+                )),
+            }),
         }
-        Err(GuardFailure {
-            code: CODE_FRAGMENT.to_owned(),
-            message: format!(
-                "closing {} needs a changelog fragment (changelog_fragment, REL003, ~HE2EX99): \
-                 changelog.d/{}.<type>.md must exist",
-                cx.handle, cx.ticket.front.id
-            ),
-            // frob:ticket 01M4069WHH6KXYWDAJD3TXB8SR
-            remedy: Some(format!(
-                "run `frob ticket fragment {h}` in the ticket's worktree (writes changelog.d/<ULID>.<type>.md from the title; \
-                 add --type added|changed|fixed|removed|deprecated|security and --sentence \"<one user-facing sentence>\" to set them), \
-                 edit the sentence, and commit it; or remove changelog_fragment from [pm] done_requires",
-                h = cx.handle
-            )),
-        })
     }
 }
 
@@ -178,19 +202,15 @@ fn unresolved(cx: &CloseContext<'_>, name: &str, why: &str) -> GuardFailure {
     }
 }
 
-/// True when `<root>/changelog.d` holds `<ULID>.<type>.md` for ticket `id`.
-fn fragment_exists(root: &Path, id: TicketId) -> bool {
-    let prefix = format!("{id}.");
-    let Ok(rd) = std::fs::read_dir(root.join("changelog.d")) else {
-        return false;
-    };
-    rd.filter_map(std::result::Result::ok).any(|e| {
-        let name = e.file_name().to_string_lossy().into_owned();
-        name.starts_with(&prefix)
-            && Path::new(&name)
-                .extension()
-                .is_some_and(|x| x.eq_ignore_ascii_case("md"))
-    })
+/// Validate the fragments of ticket `id` (handle `handle`) under `<root>/changelog.d` with `frob-release`'s validator.
+fn fragment_state(root: &Path, id: TicketId, handle: &str) -> FragmentState {
+    let ulid = id.to_string();
+    let resolver = |u: &str| u.eq_ignore_ascii_case(&ulid).then(|| handle.to_owned());
+    match frob_release::fragment::validate_ticket(&root.join("changelog.d"), &ulid, &resolver) {
+        Ok(found) if found.is_empty() => FragmentState::Missing,
+        Ok(_) => FragmentState::Valid,
+        Err(errs) => FragmentState::Invalid(errs.iter().map(ToString::to_string).collect()),
+    }
 }
 
 impl CloseGuard for DoneGuard {

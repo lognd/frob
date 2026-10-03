@@ -441,8 +441,10 @@ passing record or an attestation, latest per provider, reference and
 criterion, through the moved maps); a ticket without criteria passes with a
 warning; `--no-evidence --reason` bypasses this requirement only and records
 the `evidence-bypass` event. `no_open_children`: every child is done.
-`changelog_fragment`: `changelog.d/<ULID>.<type>.md` exists (the full REL003
-rules are ~HE2EX99). `objective_target_met` passes for a ticket that is not a
+`changelog_fragment`: `changelog.d/<ULID>.<type>.md` exists and passes the
+compile's own validator (REL003, ~HE2EX99): an unknown type, an empty or
+non-ASCII body or a near-miss product prefix refuses with the validation
+message, and `check --ticket` reports the same before land. `objective_target_met` passes for a ticket that is not a
 quality objective, and `docs_touched_or_excepted` and an objective's target
 are Unresolved today (no recorded docs exception, no stored target), so they
 refuse until they can be evaluated, so the default `done_requires` lists only

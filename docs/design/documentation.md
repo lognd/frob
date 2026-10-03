@@ -132,7 +132,12 @@ one or two user-facing sentences, first line prefixed with the product
 heading and deletes the fragments. Gate: a
 land that touches a product crate or a `gob-*` public item without a
 fragment is refused (REL003, the only rule for fragment presence;
-`[pm.done] changelog_fragment` evaluates it). `frob ticket fragment TICKET
+`[pm.done] changelog_fragment` evaluates it). REL003 is an Error: repository-wide
+for every fragment the compile's validator rejects (unknown type, bad ULID, ULID
+with no ticket, empty or non-ASCII body, near-miss product prefix); under
+`check --ticket` also for the checked, still-open ticket that has no fragment
+file; not applicable when `changelog_fragment` is not in `[pm] done_requires`
+and there is no `changelog.d` directory. `frob ticket fragment TICKET
 [--type T] [--sentence S] [--force]` writes the skeleton from the ticket title into
 the ticket's worktree and validates it with the compile's own validator, so the agent
 edits a sentence rather than inventing a file. The default type follows the ticket

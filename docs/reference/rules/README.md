@@ -107,6 +107,7 @@
 |---|---|---|---|---|---|---|
 | [REL001](REL001.md) | release-without-cut | error | manual | P+ | false | A product release tag that `frob release cut` did not create, or that no longer matches its cut. |
 | [REL002](REL002.md) | lockstep-version-mismatch | error | manual | P+ | false | Crates or the wheel whose version differs from the workspace version. |
+| [REL003](REL003.md) | changelog-fragment-required | error | manual | P+ | false | A changelog fragment that is missing for the checked ticket or that fails validation. |
 
 ## SCOPE
 

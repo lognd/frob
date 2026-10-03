@@ -11,6 +11,7 @@ use frob_obligations::{
 use frob_pm::rules::membership::Pm034;
 use frob_release::rel001::Rel001;
 use frob_release::rel002::Rel002;
+use frob_release::rel003::Rel003;
 use gob_check::{
     CheckError, CheckTable, CollectCx, Collected, External, FileCheck, Product, RepoGroup,
     ScopedFindings, Snapshot, Timing,
@@ -145,6 +146,12 @@ impl Product for Frob {
                 vec![Rel001.meta()],
                 |s: &Snapshot<Self>, _| rel001_findings(s),
             ),
+            // frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
+            RepoGroup::new(
+                "repo:fragments",
+                vec![Rel003.meta()],
+                |s: &Snapshot<Self>, _| rel003_findings(s),
+            ),
             RepoGroup::new(
                 "repo:ledger",
                 vec![Tick001.meta(), Tick003.meta()],
@@ -180,7 +187,8 @@ impl Product for Frob {
         table: &CheckTable,
     ) -> ScopedFindings {
         let base = self.opts.base.clone().unwrap_or_else(|| table.base.clone());
-        let findings = scope::ticket_rules(snap, scope, &base);
+        let mut findings = scope::ticket_rules(snap, scope, &base);
+        findings.extend(rel003_missing(snap, scope));
         let subjects = snap
             .inputs
             .ledger
@@ -250,6 +258,16 @@ impl Product for Frob {
                 }
                 why.is_none()
             })
+        } else if meta.id == "REL003" {
+            // frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
+            let why = frob_release::rel003::not_applicable(
+                &snap.core.root,
+                fragment_required(&snap.core.root),
+            );
+            if let Some(why) = &why {
+                tracing::info!(rule = meta.id, %why, "not applicable");
+            }
+            why.is_none()
         } else if meta.id == "REF001" || meta.id == "TODO002" {
             let ok = ledger_rule_applicable(
                 meta.id,
@@ -293,6 +311,52 @@ pub(crate) fn ledger_rule_applicable(
         .iter()
         .any(|d| d.namespace == "frob" && d.verb == verb);
     (tickets_configured || has_ledger) && (referenced || (rule == "REF001" && has_ledger))
+}
+
+// frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
+/// Whether `[pm] done_requires` lists `changelog_fragment`; an unreadable `[pm]` table counts as required (the default), logged.
+fn fragment_required(root: &std::path::Path) -> bool {
+    match frob_pm::PmConfig::load(root) {
+        Ok(pm) => pm
+            .pm
+            .done_requires
+            .contains(&frob_pm::DoneRequirement::ChangelogFragment),
+        Err(err) => {
+            tracing::warn!(%err, "REL003: [pm] unreadable; assuming changelog_fragment is required");
+            true
+        }
+    }
+}
+
+// frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
+/// `REL003` for every fragment in the repository that does not validate against the ledger.
+fn rel003_findings(snap: &Snapshot<Frob>) -> Vec<Finding> {
+    let Some(state) = &snap.inputs.ledger else {
+        tracing::info!("REL003: no ledger; fragment ULIDs cannot be resolved");
+        return Vec::new();
+    };
+    let resolver = |ulid: &str| -> Option<String> {
+        let id: frob_ledger::TicketId = ulid.parse().ok()?;
+        state.ledger.show(id).ok().map(|v| v.summary.handle)
+    };
+    frob_release::rel003::evaluate(&snap.core.root, &resolver).findings
+}
+
+// frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
+/// `REL003` for the checked ticket when it is still open, fragments are required and it has none.
+fn rel003_missing(snap: &Snapshot<Frob>, scope: &TicketScope) -> Option<Finding> {
+    let state = snap.inputs.ledger.as_ref()?;
+    if !fragment_required(&snap.core.root) {
+        tracing::debug!("REL003: changelog_fragment not required; no per-ticket check");
+        return None;
+    }
+    let id = state.ledger.resolve(&scope.handle).ok()?;
+    let view = state.ledger.show(id).ok()?;
+    if view.summary.category == frob_ledger::model::Category::Done {
+        tracing::debug!(handle = %scope.handle, "REL003: ticket already done");
+        return None;
+    }
+    frob_release::rel003::missing(&snap.core.root, &id.to_string(), &scope.handle)
 }
 
 // frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG

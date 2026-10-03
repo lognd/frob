@@ -115,10 +115,14 @@ fn this_repository_is_clean() {
 }
 
 mod rel001_corpus;
+mod rel003_corpus;
 
 fn runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     if case.rule.to_string() == "REL001" {
         return rel001_corpus::runner(case);
+    }
+    if case.rule.to_string() == "REL003" {
+        return rel003_corpus::runner(case);
     }
     // frob:tests crates/frob-release/src/rel002.rs::evaluate
     let d = tempfile::tempdir().unwrap();

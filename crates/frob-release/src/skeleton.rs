@@ -8,7 +8,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::error::SkeletonError;
-use crate::fragment::{Kind, TicketResolver, parse_one};
+use crate::fragment::{Kind, TicketResolver, files_of, parse_one};
 
 /// The fragment type a ticket of type `ticket_type` defaults to (see `documentation.md` section 6).
 ///
@@ -67,26 +67,6 @@ pub fn skeleton_text(title: &str) -> String {
     format!("frob: {t}{end}")
 }
 
-/// Fragments of `ulid` already in `dir`, by name.
-fn existing(dir: &Path, ulid: &str) -> Vec<String> {
-    let prefix = format!("{}.", ulid.to_ascii_lowercase());
-    let Ok(rd) = fs::read_dir(dir) else {
-        return Vec::new();
-    };
-    let mut names: Vec<String> = rd
-        .filter_map(Result::ok)
-        .map(|e| e.file_name().to_string_lossy().into_owned())
-        .filter(|n| {
-            n.to_ascii_lowercase().starts_with(&prefix)
-                && Path::new(n)
-                    .extension()
-                    .is_some_and(|x| x.eq_ignore_ascii_case("md"))
-        })
-        .collect();
-    names.sort();
-    names
-}
-
 /// Validate and write the fragment of `req`; the file is created only when the body passes.
 ///
 /// # Errors
@@ -102,7 +82,7 @@ pub fn write(req: &Request<'_>, resolver: &dyn TicketResolver) -> Result<Written
             ulid: req.ulid.to_owned(),
         });
     }
-    let found = existing(&dir, req.ulid);
+    let found = files_of(&dir, req.ulid);
     if let Some(first) = found.first()
         && !req.force
     {

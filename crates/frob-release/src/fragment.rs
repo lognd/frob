@@ -217,6 +217,69 @@ pub(crate) fn parse_one(
     })
 }
 
+/// Read and validate one file of `dir` by name.
+fn read_one(
+    dir: &Path,
+    name: &str,
+    resolver: &dyn TicketResolver,
+) -> Result<Fragment, FragmentError> {
+    match fs::read_to_string(dir.join(name)) {
+        Ok(body) => parse_one(name, &body, resolver),
+        Err(e) => Err(FragmentError::Unreadable {
+            file: name.to_owned(),
+            reason: e.to_string(),
+        }),
+    }
+}
+
+/// Names of the fragment files of ticket `ulid` in `dir` (`<ulid>.*.md`, any case), sorted.
+///
+/// The match is by prefix only, so a file with a bad type or body is still listed: it is the
+/// ticket's fragment, just an invalid one. A missing directory is an empty list.
+#[must_use]
+pub fn files_of(dir: &Path, ulid: &str) -> Vec<String> {
+    let prefix = format!("{}.", ulid.to_ascii_lowercase());
+    let Ok(rd) = fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    let mut names: Vec<String> = rd
+        .filter_map(Result::ok)
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .filter(|n| {
+            n.to_ascii_lowercase().starts_with(&prefix)
+                && Path::new(n)
+                    .extension()
+                    .is_some_and(|x| x.eq_ignore_ascii_case("md"))
+        })
+        .collect();
+    names.sort();
+    names
+}
+
+/// Validate every fragment of ticket `ulid` in `dir` with the compile's own validator.
+///
+/// An empty `Ok` means the ticket has no fragment file at all.
+///
+/// # Errors
+/// Every invalid fragment of the ticket, not just the first.
+pub fn validate_ticket(
+    dir: &Path,
+    ulid: &str,
+    resolver: &dyn TicketResolver,
+) -> Result<Vec<Fragment>, Vec<FragmentError>> {
+    let (mut ok, mut errs) = (Vec::new(), Vec::new());
+    for name in files_of(dir, ulid) {
+        match read_one(dir, &name, resolver) {
+            Ok(f) => ok.push(f),
+            Err(e) => {
+                tracing::warn!(error = %e, "invalid fragment");
+                errs.push(e);
+            }
+        }
+    }
+    if errs.is_empty() { Ok(ok) } else { Err(errs) }
+}
+
 /// Read every fragment in `dir`, collecting all problems; the result is sorted by type, then ULID.
 ///
 /// # Errors
@@ -240,14 +303,7 @@ pub fn read_all(
     names.sort();
     let (mut ok, mut errs) = (Vec::new(), Vec::new());
     for name in names {
-        let res = match fs::read_to_string(dir.join(&name)) {
-            Ok(body) => parse_one(&name, &body, resolver),
-            Err(e) => Err(FragmentError::Unreadable {
-                file: name.clone(),
-                reason: e.to_string(),
-            }),
-        };
-        match res {
+        match read_one(dir, &name, resolver) {
             Ok(f) => ok.push(f),
             Err(e) => {
                 tracing::warn!(error = %e, "invalid fragment");
