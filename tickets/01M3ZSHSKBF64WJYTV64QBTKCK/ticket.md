@@ -2,7 +2,8 @@
 id = "01M3ZSHSKBF64WJYTV64QBTKCK"
 title = "GRL language specification: one intuitive rule language for pattern and relational rules"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
