@@ -2,12 +2,12 @@
 id = "01M41RHBJ03PGD6JY0J6JTAH9Q"
 title = "TICK004 is an Error; ticket doctor --fix scrubs absolute home paths from existing ledgers with a forward commit"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T20:50:51Z"
-updated = "2026-10-03T20:50:51Z"
+updated = "2026-10-03T20:51:05Z"
 scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/scrub.rs", "docs/reference/rules/TICK004.md", "docs/design/tickets.md"]
 
 [[acceptance]]
