@@ -2,12 +2,12 @@
 id = "01M41BWB5H544DN5ADDV50ZAVN"
 title = "Changelog compile: a leading notice that sorts above the type groups of a release section"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T17:09:40Z"
-updated = "2026-10-03T17:11:17Z"
+updated = "2026-10-03T17:14:29Z"
 scope = ["crates/frob-release/**", "docs/reference/changelog.md"]
 
 [[acceptance]]
