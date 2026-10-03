@@ -45,12 +45,12 @@ fn extension(path: &str) -> &str {
     path.rsplit_once('.').map_or("", |(_, e)| e)
 }
 
-fn lock_site() -> Option<(&'static str, (usize, usize))> {
-    Some((LOCK_ANCHOR, (0, 0)))
+fn lock_site() -> (&'static str, (usize, usize)) {
+    (LOCK_ANCHOR, (0, 0))
 }
 
-fn site_of(l: &LiveSymbol) -> Option<(&str, (usize, usize))> {
-    Some((l.path.as_str(), l.span))
+fn site_of(l: &LiveSymbol) -> (&str, (usize, usize)) {
+    (l.path.as_str(), l.span)
 }
 
 fn changed_facets(e: &LockEntry, l: &LiveSymbol) -> Vec<&'static str> {
@@ -114,7 +114,7 @@ fn sys007_symbol(
                     }
                 ),
                 key,
-                site_of(l),
+                Some(site_of(l)),
             );
             return;
         }
@@ -130,7 +130,7 @@ fn sys007_symbol(
                     e.acked_at
                 ),
                 key,
-                site_of(l),
+                Some(site_of(l)),
             );
         }
         return;
@@ -161,7 +161,7 @@ fn sys007_symbol(
                 candidates[0]
             ),
             key,
-            lock_site(),
+            Some(lock_site()),
         );
         return;
     }
@@ -172,7 +172,7 @@ fn sys007_symbol(
             Reason::UnseenRemainder,
             &format!("{key} is gone but a same-language file hides units that could hold it"),
             key,
-            lock_site(),
+            Some(lock_site()),
         );
         return;
     }
@@ -184,7 +184,7 @@ fn sys007_symbol(
             e.acked_by, e.acked_at
         ),
         key,
-        lock_site(),
+        Some(lock_site()),
     );
 }
 
@@ -291,7 +291,7 @@ fn sys006(cx: &DriftCx<'_>, key: &str, out: &mut Output) {
                     *reason,
                     &format!("{key}: {why}"),
                     key,
-                    lock_site(),
+                    Some(lock_site()),
                 );
                 return;
             }
@@ -338,14 +338,20 @@ fn sys006(cx: &DriftCx<'_>, key: &str, out: &mut Output) {
         Severity::Error,
         format!("contract skew on {key}: {behind}; {}", why.join("; ")),
         key,
-        lock_site(),
+        Some(lock_site()),
     );
 }
 
 /// Evaluate SYS006, SYS007 and SYS008 over the lock; counts a subject per entry.
 pub fn evaluate(cx: &DriftCx<'_>, out: &mut Output) {
-    for rule in ["SYS006", "SYS007", "SYS008"] {
-        out.subjects.entry(rule).or_default();
+    // A rule with nothing to examine is not applicable, not vacuous: a repository that never
+    // acked has no lock, and must_measure must not fail it. SYS008 is not a required rule.
+    out.subjects.entry("SYS008").or_default();
+    if !cx.lock.flows.is_empty() {
+        out.subjects.entry("SYS006").or_default();
+    }
+    if !cx.lock.entries.is_empty() || !cx.lock.flows.is_empty() {
+        out.subjects.entry("SYS007").or_default();
     }
     let stale = cx.lock.reattest();
     if !stale.is_empty() {
@@ -356,7 +362,7 @@ pub fn evaluate(cx: &DriftCx<'_>, out: &mut Output) {
                 Severity::Error,
                 format!("kind scheme: {} {}", r.key, r.why()),
                 &r.key,
-                lock_site(),
+                Some(lock_site()),
             );
         }
         return;
@@ -376,7 +382,7 @@ pub fn evaluate(cx: &DriftCx<'_>, out: &mut Output) {
                 hidden_gone.len()
             ),
             LOCK_ANCHOR,
-            lock_site(),
+            Some(lock_site()),
         );
     }
     for key in cx.lock.flows.keys() {

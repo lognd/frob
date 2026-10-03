@@ -276,7 +276,7 @@ fn resolve(b: &Binding, t: &str, cur: &mut Current) -> Result<Vec<String>, AckEr
                 keys.push(k.clone());
             }
             Err(err) => {
-                tracing::debug!(symref = %k, %err, "path ack skips a symbol that is not Must and Exact")
+                tracing::debug!(symref = %k, %err, "path ack skips a symbol that is not Must and Exact");
             }
         }
     }

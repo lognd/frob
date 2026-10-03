@@ -64,7 +64,7 @@ impl Repo {
         let walked = gob_walk::walk(self.root(), &gob_walk::WalkConfig::default()).unwrap();
         let mut model = ModelFiles::new();
         for f in &walked.files {
-            if f.path.ends_with(".grmb") {
+            if Path::new(&f.path).extension().is_some_and(|e| e == "grmb") {
                 model = model.with_file(&f.path, std::fs::read(self.root().join(&f.path)).unwrap());
             }
         }
@@ -374,4 +374,14 @@ fn rules_sys006_unresolved_when_an_end_is_hidden_or_the_lock_is_unreadable() {
     r.write("grimble.lock", "version = ");
     let b = r.bind();
     assert!(drift(&b).contains(&"SYS007 unresolved:lock-unreadable".to_owned()));
+}
+
+// frob:tests crates/grimble-bind/src/drift.rs::evaluate
+#[test]
+fn rules_without_a_lock_have_no_subjects_so_must_measure_is_not_vacuous() {
+    let r = Repo::new();
+    let b = r.bind();
+    assert!(!b.subjects.contains_key("SYS006"));
+    assert!(!b.subjects.contains_key("SYS007"));
+    assert_eq!(drift(&b), Vec::<String>::new());
 }

@@ -388,6 +388,7 @@ impl LockFile {
         }
     }
 
+    // frob:ticket 01M3Z714820D1SK6X44T9R1B70
     /// Re-keys the symbol entry `old` to `new` keeping every digest, retargets flow ends that
     /// named `old`, and records `old -> new` in the rename chain.
     ///
