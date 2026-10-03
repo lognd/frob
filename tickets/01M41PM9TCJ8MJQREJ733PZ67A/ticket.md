@@ -7,12 +7,12 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T20:17:30Z"
-updated = "2026-10-03T20:42:36Z"
+updated = "2026-10-03T20:44:11Z"
 scope = ["crates/frob-worktree/src/work.rs", "crates/frob-lease/src/model.rs", "crates/frob-evidence/**", "crates/frob-obligations/**", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/privacy.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/tests/privacy.rs", "crates/frob-check/src/product.rs", "crates/frob-tests/src/verb.rs", "docs/reference/rules/TICK004.md", "docs/reference/rules/README.md", "crates/frob-worktree/tests/work.rs", "docs/design/tickets.md"]
 
 [[acceptance]]
 text = "Given frob work in a worktree under the home directory, when the lease event is written, then it contains no absolute path, only the worktree relative to the repository parent"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a provider whose output contains the absolute worktree path and the home directory, when evidence is recorded, then the event contains placeholders and no absolute path"

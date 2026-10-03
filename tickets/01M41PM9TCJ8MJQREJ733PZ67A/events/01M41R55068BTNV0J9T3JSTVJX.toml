@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T20:44:11Z"
+digest = "acf9739926af6c35a7ce95d1526521de39e32a56b9aa18cfcc9cdfc40b854813"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 432524bf-fda0-40b9-9617-be35b9d2704a with nextest profile: default
+    Starting 1 test across 2 binaries (16 tests skipped)
+        PASS [   0.385s] frob-worktree::work work_events_carry_no_absolute_path
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.386s] 1 test run: 1 passed, 16 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -E 'test(=work_events_carry_no_absolute_path)'"
+size = 545
+status = "measured"
+tests = ["work_events_carry_no_absolute_path"]
+at = "2026-10-03T20:44:11Z"
+actor = "lognd"
+rev = 1
