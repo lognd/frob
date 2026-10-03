@@ -1,0 +1,24 @@
+---
+source: crates/frob/tests/board.rs
+expression: "wide.join(\"\\n\")"
+---
+expedite 1/1
+====================================================================================================
+~4XZVM01 3p 5h [in-progress] @lognd Fix the release
+~4XZVM09 3p 1d [todo] Hot fix queued
+
+triage 1          | todo 1            | in-progress 2/1 ! | blocked 1         | done 1
+----------------- | ----------------- | ----------------- | ----------------- | -----------------
+~4XZVM07 3p 1d    | ~4XZVM05 3p 2d    | ~4XZVM02 3p 3d    | ~4XZVM06 3p 2d    | ~4XZVM08 3p 1d
+Needs a decision  | Queued work       | Cycle planning    | Waits on a        | Caf? shipped
+                  |                   | @agent-b          | blocker           |
+                  |                   |                   |                   |
+                  |                   | ~4XZVM03 3p 20m   |                   |
+                  |                   | Board verb with a |                   |
+                  |                   | very long title.. |                   |
+                  |                   | @agent-c          |                   |
+                  |                   |                   |                   |
+                  |                   | ~4XZVM04 3p 6d    |                   |
+                  |                   | Lockfiles         |                   |
+                  |                   | serialize         |                   |
+                  |                   | STALE             |                   |

@@ -880,6 +880,7 @@ dependencies = [
  "gob-cache",
  "gob-cli",
  "gob-config",
+ "gob-diagnostics",
  "gob-exec",
  "gob-git",
  "gob-rules",

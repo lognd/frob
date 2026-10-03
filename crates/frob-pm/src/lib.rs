@@ -27,6 +27,7 @@
 //! Ticket reads only accept `tickets/<ULID>/ticket.md`, so a binary without
 //! this crate ignores `_milestones/` and `_cycles/` entirely.
 
+pub mod board;
 pub mod config;
 pub mod cycle;
 pub mod doctor;

@@ -25,6 +25,7 @@ path = "src/main.rs"
 gob-cache = { path = "../gob-cache" }
 gob-cli = { path = "../gob-cli" }
 gob-config = { path = "../gob-config" }
+gob-diagnostics = { path = "../gob-diagnostics" }
 gob-exec = { path = "../gob-exec" }
 gob-git = { path = "../gob-git" }
 gob-rules = { path = "../gob-rules" }

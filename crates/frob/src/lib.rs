@@ -7,6 +7,7 @@
 //! ack, check and land verbs come from their sibling crates' `register`; [`milestone_cmd`] holds `milestone new/add/show/list`; [`cycle_cmd`] holds `cycle new/show/list/close`; [`release_cmd`] holds `release changelog`. Config knobs are the
 //! `ConfigTable` structs in [`config`].
 
+pub mod board_cmd;
 pub mod config;
 pub mod config_cmd;
 pub mod cycle_cmd;
@@ -33,7 +34,8 @@ pub fn cli() -> Cli {
             .register::<init::Init>()
             .register::<config_cmd::ConfigShow>()
             .register::<config_cmd::ConfigSync>()
-            .register::<lease_cmd::LeaseWiden>(),
+            .register::<lease_cmd::LeaseWiden>()
+            .register::<board_cmd::BoardVerb>(),
     );
     let cli = milestone_cmd::register(cli);
     let cli = cycle_cmd::register(cli);
