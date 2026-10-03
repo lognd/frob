@@ -2,7 +2,7 @@
 id = "01M3ZZG9SV29N5EKYRK2NAP90Y"
 title = "Doc consistency: SYNC rule family, include regions, paired sections, checked facts (D84)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
