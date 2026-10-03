@@ -674,13 +674,11 @@ impl Publish<'_> {
         let how = merge_base_in(self.wt, &wt_path, self.base, self.handle)?;
         let now = self.wt.rev_parse(self.base)?;
         let code_changed = match had {
-            Some(old) if old != now => {
-                let prefix = format!("{}/", ledger.config().dir.trim_end_matches('/'));
-                self.wt
-                    .diff_names(&TreeRef::Oid(old), &TreeRef::Oid(now))?
-                    .iter()
-                    .any(|c| !c.path.starts_with(&prefix))
-            }
+            Some(old) if old != now => self
+                .wt
+                .diff_names(&TreeRef::Oid(old), &TreeRef::Oid(now))?
+                .iter()
+                .any(|c| !ledger.config().is_ledger_path(&c.path)),
             Some(_) => false,
             None => true,
         };

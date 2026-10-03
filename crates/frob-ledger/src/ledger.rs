@@ -60,6 +60,17 @@ pub struct LedgerConfig {
     pub actor: Option<String>,
 }
 
+impl LedgerConfig {
+    /// Whether `path` (repo-relative) lies under the ledger directory, i.e. is ledger bookkeeping.
+    ///
+    /// frob:ticket 01M419M06CMCGJ39Y4HYPACKXP
+    #[must_use]
+    pub fn is_ledger_path(&self, path: &str) -> bool {
+        path.strip_prefix(self.dir.trim_end_matches('/'))
+            .is_some_and(|rest| rest.starts_with('/'))
+    }
+}
+
 impl Default for LedgerConfig {
     fn default() -> Self {
         Self {
