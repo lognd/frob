@@ -709,3 +709,199 @@ fn velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once() {
     assert_eq!(delivered(1), 3, "later work counts in the next cycle");
     assert_eq!(delivered(0) + delivered(1), 8, "nothing is counted twice");
 }
+
+/// Handles of the member tickets in a `cycle show` view.
+fn member_ids(view: &Value) -> Vec<String> {
+    view["tickets"]
+        .as_array()
+        .expect("tickets")
+        .iter()
+        .map(|t| t["id"].as_str().expect("id").to_owned())
+        .collect()
+}
+
+#[test]
+fn close_early_with_next_goal_creates_the_next_cycle_carries_members_and_counts_them() {
+    // frob:ticket 01M40VQWCV38B2JCABYNNNA877
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleClose
+    // frob:tests crates/frob-pm/src/cycle/lifecycle.rs::plan_next
+    let repo = Repo::new();
+    let c = utc_window(&repo, 0, 6);
+    let done = repo.done_ticket("2");
+    let todo = repo.ticket("todo", "3");
+    for t in [&done, &todo] {
+        repo.assign(id(&c), t);
+    }
+    let v = repo.ok(&[
+        "cycle",
+        "close",
+        id(&c),
+        "--next-goal",
+        "follow up",
+        "--next-days",
+        "2",
+    ]);
+    let closed = &v["data"]["cycle"];
+    assert_eq!(closed["state"], "closed");
+    assert_eq!(closed["ended"], utc(0).as_str());
+    assert_eq!(closed["commitment"]["committed"], 5);
+    assert_eq!(closed["commitment"]["done"], 2);
+    assert_eq!(closed["commitment"]["ratio"], 0.4);
+    let next = &v["data"]["next"];
+    assert_eq!(next["start"], utc(1).as_str());
+    assert_eq!(next["end"], utc(2).as_str());
+    assert_eq!(next["goal"], "follow up");
+    assert_eq!(closed["carried"][0]["to"], next["id"]);
+    let shown = repo.ok(&["cycle", "show", id(next)])["data"]["cycle"].clone();
+    assert_eq!(member_ids(&shown), vec![todo.clone()]);
+    assert_eq!(member_ids(closed), vec![done]);
+    // A repeat of the close changes nothing.
+    assert_eq!(repo.ok(&["cycle", "close", id(&c)])["already"], true);
+    assert_eq!(repo.ok(&["cycle", "list"])["data"]["count"], 2);
+}
+
+#[test]
+fn close_next_days_defaults_to_cycle_days() {
+    // frob:ticket 01M40VQWCV38B2JCABYNNNA877
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleClose
+    let repo = Repo::new();
+    let c = utc_window(&repo, 0, 6);
+    let todo = repo.ticket("todo", "1");
+    repo.assign(id(&c), &todo);
+    let v = repo.ok(&["cycle", "close", id(&c), "--next-goal", "g2"]);
+    assert_eq!(v["data"]["next"]["start"], utc(1).as_str());
+    assert_eq!(v["data"]["next"]["end"], utc(7).as_str());
+    // Nothing unfinished: no next cycle is made.
+    let c2 = utc_window(&repo, 8, 9);
+    let v = repo.ok(&["cycle", "close", id(&c2), "--next-goal", "unused"]);
+    assert_eq!(v["data"]["next"], Value::Null);
+    assert_eq!(repo.ok(&["cycle", "list"])["data"]["count"], 3);
+}
+
+#[test]
+fn close_early_without_next_goal_refuses_and_the_remedy_names_it() {
+    // frob:ticket 01M40VQWCV38B2JCABYNNNA877
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleClose
+    let repo = Repo::new();
+    let c = utc_window(&repo, 0, 6);
+    let todo = repo.ticket("todo", "3");
+    repo.assign(id(&c), &todo);
+    let out = repo.frob(&["cycle", "close", id(&c)]);
+    assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stdout));
+    let e = &json(&out)["error"];
+    assert_eq!(e["code"], "E-CYCLE-NO-NEXT");
+    assert!(
+        e["remedy"]
+            .as_str()
+            .expect("remedy")
+            .contains("--next-goal")
+    );
+    assert_eq!(
+        repo.ok(&["cycle", "show", id(&c)])["data"]["cycle"]["state"],
+        "planned"
+    );
+}
+
+#[test]
+fn close_retries_after_a_failure_between_the_create_and_the_carry() {
+    // frob:ticket 01M40VQWCV38B2JCABYNNNA877
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleClose
+    let repo = Repo::new();
+    let c = utc_window(&repo, 0, 6);
+    let todo = repo.ticket("todo", "3");
+    repo.assign(id(&c), &todo);
+    // The state a crash right after the create leaves: the next cycle exists, nothing carried.
+    // `cycle new` would refuse (the open cycle still covers those days), so write it as the close does.
+    let ledger = repo.ledger();
+    let made = PmStore::new(&ledger)
+        .create(frob_pm::NewObject::Cycle {
+            start: utc(1).parse().expect("day"),
+            end: utc(2).parse().expect("day"),
+            goal: "follow up".to_owned(),
+            capacity_points: None,
+        })
+        .expect("create")
+        .object;
+    let made = serde_json::json!({ "id": made.id().to_string() });
+    // Or after part of the carry: the target already holds the ticket, the source still does too.
+    repo.assign(id(&made), &todo);
+    let v = repo.ok(&[
+        "cycle",
+        "close",
+        id(&c),
+        "--next-goal",
+        "follow up",
+        "--next-days",
+        "2",
+    ]);
+    assert_eq!(v["data"]["cycle"]["state"], "closed");
+    assert_eq!(v["data"]["cycle"]["carried"][0]["to"], made["id"]);
+    assert_eq!(v["data"]["cycle"]["commitment"]["committed"], 3);
+    let shown = repo.ok(&["cycle", "show", id(&made)])["data"]["cycle"].clone();
+    assert_eq!(member_ids(&shown), vec![todo]);
+    assert_eq!(repo.ok(&["cycle", "list"])["data"]["count"], 2);
+}
+
+#[test]
+fn a_closed_cycle_does_not_block_the_same_dates_and_the_new_alias_is_suffixed() {
+    // frob:ticket 01M40VQWCV38B2JCABYNNNA877
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleNew
+    // frob:tests crates/frob-pm/src/store.rs::PmStore.resolve
+    // frob:tests crates/frob-pm/src/cycle/lifecycle.rs::plan_new
+    let repo = Repo::new();
+    let (s, e) = (utc(0), utc(1));
+    let first = utc_window(&repo, 0, 1);
+    let bare = format!("{s}..{e}");
+    assert_eq!(first["alias"], bare.as_str());
+    repo.ok(&["cycle", "close", id(&first)]);
+    // A different goal on the same dates is no conflict with a closed cycle.
+    let out = repo.ok(&[
+        "cycle", "new", "--start", &s, "--end", &e, "--goal", "again",
+    ]);
+    assert_eq!(out["already"], false);
+    let second = &out["data"]["cycle"];
+    let suffixed = format!("{bare}.2");
+    assert_eq!(second["alias"], suffixed.as_str());
+    // Even the identical goal is a fresh cycle after a close, and a repeat of the open one is `already`.
+    assert_eq!(
+        repo.ok(&[
+            "cycle", "new", "--start", &s, "--end", &e, "--goal", "again"
+        ])["already"],
+        true
+    );
+    for r in [
+        suffixed.as_str(),
+        id(second),
+        second["handle"].as_str().expect("handle"),
+    ] {
+        assert_eq!(
+            repo.ok(&["cycle", "show", r])["data"]["cycle"]["id"],
+            second["id"]
+        );
+    }
+    for r in [bare.as_str(), id(&first)] {
+        assert_eq!(
+            repo.ok(&["cycle", "show", r])["data"]["cycle"]["id"],
+            first["id"]
+        );
+    }
+    let list = repo.ok(&["cycle", "list"]);
+    let aliases: Vec<&str> = list["data"]["cycles"]
+        .as_array()
+        .expect("cycles")
+        .iter()
+        .map(|c| c["alias"].as_str().expect("alias"))
+        .collect();
+    assert_eq!(aliases, vec![bare.as_str(), suffixed.as_str()]);
+    // Overlap with an open cycle is still refused.
+    let out = repo.frob(&["cycle", "new", "--start", &e, "--goal", "x"]);
+    assert_eq!(code(&out), 3);
+    assert_eq!(json(&out)["error"]["code"], "E-CYCLE-OVERLAP");
+    // A third on the same dates after closing the second gets .3.
+    repo.ok(&["cycle", "close", id(second)]);
+    let third = repo.ok(&["cycle", "new", "--start", &s, "--end", &e, "--goal", "c"]);
+    assert_eq!(
+        third["data"]["cycle"]["alias"],
+        format!("{bare}.3").as_str()
+    );
+}

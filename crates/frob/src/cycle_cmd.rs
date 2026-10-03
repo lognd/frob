@@ -9,13 +9,14 @@
 
 // frob:ticket 01M4069RPPQE1ES1914K6V6Y0D
 // frob:ticket 01M4069SHBAEWRX9WWCSS2FEHN
+// frob:ticket 01M40VQWCV38B2JCABYNNNA877
 use frob_ledger::Ledger;
 use frob_ledger::TicketId;
 use frob_ledger::model::{Category, Outcome as TicketOutcome, Stamp};
 use frob_pm::cycle::assign::{AssignError, AssignPlan, TicketFacts, default_cycle, plan_assign};
 use frob_pm::cycle::lifecycle::{
-    ClosePlan, CycleError, MemberFacts, MemberStatus, NewPlan, plan_close, plan_new, ratio,
-    resolve_end, unknown_cycle,
+    ClosePlan, CycleError, MemberFacts, MemberStatus, NewPlan, plan_close, plan_new, plan_next,
+    ratio, resolve_end, unknown_cycle,
 };
 use frob_pm::cycle::velocity::{capacity, committed, done_facts};
 use frob_pm::event::{CycleEventData, CycleOp, MemberData, Op, PmBody, PmEvent, TransitionData};
@@ -229,6 +230,8 @@ fn review_events(store: PmStore<'_>, c: &Cycle) -> Vec<CycleEventData> {
 pub struct CycleData {
     /// The cycle after the verb ran.
     pub cycle: CycleView,
+    /// The next cycle `cycle close --next-goal` created for the carried tickets; absent otherwise.
+    pub next: Option<CycleView>,
     /// Ids of the events written (empty when `already` or read-only).
     pub events: Vec<String>,
     /// The ledger commit, when one was made.
@@ -280,7 +283,7 @@ fn refusal(e: &CycleError) -> CliError {
         }
         CycleError::NoNextCycle { suggest_start, .. } => {
             Refusal::new("E-CYCLE-NO-NEXT", GuardNeedsAction, e.to_string()).with_remedy(format!(
-                "create the next cycle (`frob cycle new --start {suggest_start} --goal <text>`) or pass `--carry-to CYCLE`"
+                "close and create the next cycle in one step with `--next-goal <text>` (optionally `--next-days N`), create it first (`frob cycle new --start {suggest_start} --goal <text>`), or pass `--carry-to CYCLE`"
             ))
         }
         CycleError::BadCarryTarget { .. } => {
@@ -474,6 +477,7 @@ impl Command for CycleNew {
         tracing::info!(cycle = %c.alias(), already, "cycle new");
         Ok(Payload::new(CycleData {
             cycle: CycleView::of(&c, store),
+            next: None,
             events,
             commit,
         })
@@ -526,6 +530,7 @@ impl Command for CycleShow {
         };
         Ok(Payload::new(CycleData {
             cycle: CycleView::of(&c, store),
+            next: None,
             events: Vec::new(),
             commit: None,
         }))
@@ -639,6 +644,40 @@ fn close_bodies(c: &Cycle, plan: &ClosePlan, retro: Option<&str>) -> Vec<PmBody>
     bodies
 }
 
+/// Create the cycle that follows `c` closing on `closed_on`, or return the identical one already there.
+fn create_next(
+    ctx: &Context,
+    store: PmStore<'_>,
+    c: &Cycle,
+    others: &[Cycle],
+    closed_on: Day,
+    goal: &str,
+    days: Option<u32>,
+) -> Result<Cycle, CliError> {
+    let days = match days {
+        Some(d) => d,
+        None => cycle_days(ctx)?,
+    };
+    let np = plan_next(c, others, closed_on, goal, days).map_err(|e| refusal(&e))?;
+    match np.plan {
+        NewPlan::Already(m) => Ok(*m),
+        NewPlan::Create => {
+            let a = store
+                .create(NewObject::Cycle {
+                    start: np.start,
+                    end: np.end,
+                    goal: goal.to_owned(),
+                    capacity_points: None,
+                })
+                .map_err(cycle_pm_err)?;
+            let frob_pm::Object::Cycle(m) = a.object else {
+                unreachable!("a created cycle folds to a cycle")
+            };
+            Ok(m)
+        }
+    }
+}
+
 /// Close a cycle: carry incomplete work to the next, record the ratio and retro; refused while live work is in progress.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
@@ -651,6 +690,8 @@ pub struct CycleClose {
     cycle: String,
     retro: Option<String>,
     carry_to: Option<String>,
+    next_goal: Option<String>,
+    next_days: Option<String>,
 }
 
 impl Command for CycleClose {
@@ -669,6 +710,17 @@ impl Command for CycleClose {
                 )
                 .value_name("CYCLE"),
             )
+            .arg(text_flag(
+                "next-goal",
+                "Goal of the next cycle, created the day after the effective end when unfinished tickets need one and none exists",
+            ))
+            .arg(
+                text_flag(
+                    "next-days",
+                    "Length of the cycle --next-goal creates (default [pm] cycle_days)",
+                )
+                .value_name("N"),
+            )
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
@@ -676,10 +728,28 @@ impl Command for CycleClose {
             cycle: get(m, "cycle").unwrap_or_default(),
             retro: get(m, "retro"),
             carry_to: get(m, "carry-to"),
+            next_goal: get(m, "next-goal"),
+            next_days: get(m, "next-days"),
         })
     }
 
+    // Write order (every step is safe to repeat, so a failed close is retried with the same arguments):
+    //   1. create the next cycle (a retry finds it as the next open or planned cycle and skips this),
+    //   2. add each carried ticket to it (adding an existing member writes nothing),
+    //   3. one commit on the closing cycle: carried, ratio, retro and the close transition.
+    // Until step 3 lands the cycle stays open, so a failure between steps never loses or double-counts work.
     fn run(&self, ctx: &Context) -> Outcome<CycleData> {
+        if self.next_days.is_some() && self.next_goal.is_none() {
+            return Err(CliError::Usage(
+                "--next-days only applies with --next-goal".to_owned(),
+            ));
+        }
+        let next_days = self
+            .next_days
+            .as_deref()
+            .map(str::parse::<u32>)
+            .transpose()
+            .map_err(|e| CliError::Usage(format!("--next-days: {e}")))?;
         let ledger = open(ctx)?;
         let store = PmStore::new(&ledger);
         let c = find(store, &self.cycle)?;
@@ -687,6 +757,7 @@ impl Command for CycleClose {
             tracing::info!(cycle = %c.alias(), "cycle close: already closed");
             return Ok(Payload::new(CycleData {
                 cycle: CycleView::of(&c, store),
+                next: None,
                 events: Vec::new(),
                 commit: None,
             })
@@ -700,8 +771,19 @@ impl Command for CycleClose {
         let others = cycles(store)?;
         let members = member_facts(ctx, &ledger, &c)?;
         let closed_on = Day::from_unix(Stamp::now().unix());
-        let plan = plan_close(&c, &others, carry_to.as_ref(), &members, closed_on)
-            .map_err(|e| refusal(&e))?;
+        let mut next: Option<Cycle> = None;
+        let mut planned = plan_close(&c, &others, carry_to.as_ref(), &members, closed_on);
+        if let (Err(CycleError::NoNextCycle { .. }), Some(goal)) =
+            (&planned, self.next_goal.as_deref())
+        {
+            let made = create_next(ctx, store, &c, &others, closed_on, goal, next_days)?;
+            tracing::info!(cycle = %c.alias(), next = %made.alias(), "cycle close created the next cycle");
+            let mut all = others.clone();
+            all.push(made.clone());
+            planned = plan_close(&c, &all, None, &members, closed_on);
+            next = Some(made);
+        }
+        let plan = planned.map_err(|e| refusal(&e))?;
         if let Some(target) = plan.target {
             for t in &plan.carried {
                 store
@@ -728,8 +810,13 @@ impl Command for CycleClose {
             target = ?plan.target_alias,
             "cycle closed"
         );
+        let next = next
+            .map(|n| find(store, &n.id.to_string()))
+            .transpose()?
+            .map(|n| CycleView::of(&n, store));
         Ok(Payload::new(CycleData {
             cycle: CycleView::of(&closed, store),
+            next,
             events: applied.events.iter().map(ToString::to_string).collect(),
             commit: Some(applied.commit),
         }))

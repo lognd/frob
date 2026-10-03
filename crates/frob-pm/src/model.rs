@@ -1,4 +1,5 @@
 //! The folded state of a milestone and of a cycle, and the small types they share.
+// frob:ticket 01M40VQWCV38B2JCABYNNNA877
 
 use std::fmt;
 use std::str::FromStr;
@@ -272,12 +273,23 @@ pub struct Cycle {
     pub created: Stamp,
     /// Time of the latest event.
     pub updated: Stamp,
+    /// Position among cycles sharing this date range, by creation (1: the first); derived by the store, never written.
+    #[serde(skip, default = "first_ordinal")]
+    pub ordinal: u32,
+}
+
+/// The ordinal of a cycle that is first (or alone) in its date range.
+const fn first_ordinal() -> u32 {
+    1
 }
 
 impl Cycle {
-    /// The date alias of the cycle: `START..END`.
+    /// The alias of the cycle: `START..END`, with `.N` appended from the second cycle of a shared date range.
     pub fn alias(&self) -> String {
-        format!("{}..{}", self.start, self.end)
+        match self.ordinal {
+            0 | 1 => format!("{}..{}", self.start, self.end),
+            n => format!("{}..{}.{n}", self.start, self.end),
+        }
     }
 
     /// The last day the cycle really covers: the early-close day when set, else the planned `end`.

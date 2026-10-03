@@ -71,6 +71,7 @@ fn initial(id: ObjectId, ev: &PmEvent, c: &CreateData) -> std::result::Result<Ob
                 tickets: Vec::new(),
                 created: ev.at,
                 updated: ev.at,
+                ordinal: 1,
             }))
         }
     }
