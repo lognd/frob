@@ -27,11 +27,13 @@
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
 // frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
+// frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
 
 pub mod ack;
 pub mod code;
 pub mod directives;
 pub mod drift;
+pub mod frob_owned;
 pub mod live;
 pub mod model;
 pub mod owner;
@@ -75,6 +77,8 @@ pub struct BindInput<'a> {
     pub strict: bool,
     /// `[grimble] rename_min_tokens`: smaller Bodies are never paired as a rename.
     pub rename_min_tokens: usize,
+    /// The ledger directory (`[tickets] dir` of `frob.toml`), a frob-owned path: never SYS001's subject.
+    pub ledger_dir: &'a str,
 }
 
 /// B, its findings and the subject counts.
@@ -213,6 +217,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         owners: &owners,
         modeled: &modeled,
         strict: input.strict,
+        ledger_dir: input.ledger_dir,
     };
     let not_applicable = declare_not_applicable(&model, &rel, &lock);
     let mut out = rules::evaluate(&cx);

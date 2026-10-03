@@ -29,6 +29,8 @@
 //! No frob crate is a dependency, direct or transitive (a test enforces it with the manifests),
 //! so the grimble binary never links frob (boundaries.md).
 
+// frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
+
 pub mod bind_cache;
 pub mod config;
 pub mod fidelity;
@@ -216,6 +218,7 @@ pub fn bind_models(
     model: &ModelFiles,
     table: &GrimbleTable,
 ) -> grimble_bind::Binding {
+    let ledger_dir = config::ledger_dir(root);
     grimble_bind::bind(&grimble_bind::BindInput {
         root,
         entries,
@@ -223,6 +226,7 @@ pub fn bind_models(
         modeled: &table.modeled,
         strict: table.strict,
         rename_min_tokens: usize::try_from(table.rename_min_tokens).unwrap_or(usize::MAX),
+        ledger_dir: &ledger_dir,
     })
 }
 

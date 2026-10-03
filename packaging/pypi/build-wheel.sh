@@ -2,8 +2,8 @@
 # Build the PyPI `frob` wheel for this host: frob via maturin (bindings=bin), grimble
 # via cargo, copied into the wheel's scripts. Usage: build-wheel.sh [--out DIR] [--target TRIPLE]
 # Never publishes. --target is forwarded to cargo and maturin (cross builds, e.g. the macOS
-# x86_64 wheel on an arm64 runner). Honors CARGO_TARGET_DIR (default: <repo>/target),
-# MATURIN_VERSION (pip requirement, default ">=1.9,<2"; the release workflow pins "==X.Y.Z")
+# x86_64 wheel on an arm64 runner). maturin comes from maturin-requirements.txt (exact version,
+# sha256 verified by --require-hashes). Honors CARGO_TARGET_DIR (default: <repo>/target)
 # and WHEEL_COMPAT (maturin --compatibility, default manylinux_2_28 on Linux; "off" = host decides).
 set -euo pipefail
 
@@ -25,7 +25,7 @@ vbin="$venv/bin"; [[ "${OS:-}" == "Windows_NT" ]] && vbin="$venv/Scripts"
 
 echo "build-wheel: maturin environment in $venv" >&2
 uv venv -q --clear "$venv"
-uv pip install -q --python "$vbin/python" "maturin${MATURIN_VERSION:->=1.9,<2}"
+uv pip install -q --require-hashes --no-deps --python "$vbin/python" -r "$here/maturin-requirements.txt"
 "$vbin/maturin" --version >&2
 
 echo "build-wheel: building grimble (release)" >&2
