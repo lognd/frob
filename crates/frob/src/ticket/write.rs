@@ -684,6 +684,15 @@ impl Command for Close {
                     .to_owned(),
             ));
         }
+        // frob:ticket 01M41KT4RMYMMP9SSFN8RZK7QV
+        if !frob_evidence::done::guards_apply(self.outcome)
+            && self.reason.as_deref().is_none_or(|r| r.trim().is_empty())
+        {
+            return Err(CliError::Usage(format!(
+                "closing as {} needs --reason <text> saying why (no evidence or changelog is asked for)",
+                self.outcome.map_or("this outcome", Outcome::as_str)
+            )));
+        }
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;
         let ws = frob_evidence::Workspace::open(&ctx.cwd).map_err(CliError::internal)?;

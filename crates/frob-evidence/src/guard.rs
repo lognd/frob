@@ -93,6 +93,10 @@ impl CloseGuard for EvidenceGuard {
     }
 
     fn check(&self, cx: &CloseContext<'_>) -> Result<(), GuardFailure> {
+        // frob:ticket 01M41KT4RMYMMP9SSFN8RZK7QV
+        if !crate::done::guards_apply(cx.outcome) {
+            return Ok(());
+        }
         let ty = cx.ticket.front.ty;
         if !CODE_CHANGING.contains(&ty) {
             return Ok(());

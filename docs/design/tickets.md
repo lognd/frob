@@ -464,6 +464,15 @@ security, story, incident and invariant, and `ticket close
 event; evidence verdicts
 are `Passed | Failed | Unmeasured` and Unmeasured never reads as Failed.
 
+**Which outcomes the close guards apply to** (~8RZK7QV). Evidence, criteria,
+children and changelog fragment prove that a change was made, so they apply
+to outcomes `done` and `fixed` only. `invalid`, `duplicate` and `wont-fix`
+close on a required `--reason` alone: no `--no-evidence` or `--no-changelog`
+is needed (or asked for), and `ticket close` without a reason is a usage
+error for them. The decision is one function of the outcome,
+`frob_evidence::done::guards_apply`, read by both guards, so `ticket close`
+and `land` agree.
+
 **Done requirements** (~XGAS05X, release 0.532.0). A close or land with
 outcome `done` or `fixed` also evaluates every entry of `[pm] done_requires`
 (pm-enforcement.md section 3) through the close guard `done_requires`, in
