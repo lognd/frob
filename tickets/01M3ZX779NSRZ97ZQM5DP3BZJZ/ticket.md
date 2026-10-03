@@ -2,7 +2,8 @@
 id = "01M3ZX779NSRZ97ZQM5DP3BZJZ"
 title = "gob-plan crate and GRL lexer: tokens, snippets, strings, regex, comments"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
