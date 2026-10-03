@@ -80,12 +80,16 @@ fn rule_id() -> RuleId {
 }
 
 /// Versions a ticket claims through `release:VERSION` labels, in label order.
-fn claimed_versions(labels: &[String]) -> impl Iterator<Item = &str> {
+pub(crate) fn claimed_versions(labels: &[String]) -> impl Iterator<Item = &str> {
     labels.iter().filter_map(|l| l.strip_prefix(CLAIM_PREFIX))
 }
 
 /// True when `start` or one of its ancestors is in `epics` (cycle-safe).
-fn reached(start: &Claimant, by_id: &BTreeMap<TicketId, &Claimant>, epics: &[TicketId]) -> bool {
+pub(crate) fn reached(
+    start: &Claimant,
+    by_id: &BTreeMap<TicketId, &Claimant>,
+    epics: &[TicketId],
+) -> bool {
     let mut seen = BTreeSet::new();
     let mut at = Some(start.id);
     while let Some(id) = at {

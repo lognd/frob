@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-lease/src/config.rs", "crates/frob-lease/src/store.rs", "crates/frob-lease/tests/**", "crates/frob-land/**", "docs/design/tickets.md"]
+new = ["crates/frob-lease/src/config.rs", "crates/frob-lease/src/store.rs", "crates/frob-lease/tests/**", "crates/frob-land/**", "docs/design/tickets.md", "crates/frob-lease/src/verbs.rs", "docs/reference/config.md", "docs/schemas/config.json"]
+at = "2026-10-03T16:46:56Z"
+actor = "lognd"
+rev = 1
