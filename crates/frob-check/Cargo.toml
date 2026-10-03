@@ -22,6 +22,7 @@ gob-cache = { path = "../gob-cache" }
 gob-cli = { path = "../gob-cli" }
 gob-diagnostics = { path = "../gob-diagnostics" }
 gob-directives = { path = "../gob-directives" }
+gob-config = { path = "../gob-config" }
 gob-exec = { path = "../gob-exec" }
 gob-git = { path = "../gob-git" }
 gob-languages = { path = "../gob-languages" }

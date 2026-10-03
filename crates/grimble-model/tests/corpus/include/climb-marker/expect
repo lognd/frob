@@ -1,0 +1,2 @@
+# the explicit `outside` marker lets an include climb out of its directory
+root: root.grmb

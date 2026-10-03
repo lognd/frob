@@ -53,7 +53,10 @@ use spawn::{Failure, Reason, Run, Spawned};
 pub struct Sib001;
 
 /// The configured siblings: product name and the config file that makes it configured.
-const SIBLINGS: &[(&str, &str)] = &[("grimble", "grimble.toml")];
+///
+/// `crunk` is registered ahead of its release: it is spawned only when `crunk.toml`
+/// exists, so a repository without one sees no change.
+const SIBLINGS: &[(&str, &str)] = &[("grimble", "grimble.toml"), ("crunk", "crunk.toml")];
 
 /// A started sibling run: the product and the thread driving its process.
 struct Pending {
@@ -111,6 +114,13 @@ impl Siblings {
                     },
                     |(_, path)| Program::Hook { path: path.clone() },
                 );
+            let compute_digest = match gob_config::ComputeTable::load_for_product(root, product) {
+                Ok((table, _)) => Some(gob_config::compute_digest(&table)),
+                Err(e) => {
+                    tracing::error!(product, error = %e, "compute knobs unreadable; digest not compared");
+                    None
+                }
+            };
             let run = Run {
                 program,
                 root: root.to_path_buf(),
@@ -118,6 +128,8 @@ impl Siblings {
                 base: base.to_owned(),
                 scope: scope.map(|s| s.iter().cloned().collect()),
                 timeout: Duration::from_secs(table.sibling_timeout_secs),
+                compute_digest,
+                output_cap: usize::try_from(table.output_cap_bytes).unwrap_or(usize::MAX),
             };
             tracing::info!(
                 product,

@@ -1,0 +1,5 @@
+grimble = "2";
+module m;
+include "a.grmb";
+node r : trusted {
+}

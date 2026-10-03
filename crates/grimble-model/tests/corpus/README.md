@@ -19,7 +19,8 @@ Where the spec lists one file but the point needs several files (`version/header
 | `walk: PATH ...` | the walk for MDL005 (repeatable); no `walk` line skips MDL005 |
 | `rule: SYS004 ...` | extra rule ids accepted by exception clauses |
 | `pack: ID VERSION [DIGEST] [atoms=a,b]` | an enabled pack |
-| `root: PATH` | an explicit root (default: files declaring `module`) |
+| `root: PATH` | an explicit declared root (default: files declaring `module`) |
+| `roots: none` | declared roots, none listed (`[grimble] models = []`): MDL021 |
 | `fmt: roundtrip` (default) | fmt is idempotent and `parse(fmt(x))` equals `x` in U (damaged files must be refused) |
 | `fmt: unchanged` / `fmt: refuses` | the file is already canonical / fmt refuses it |
 | `bind: FILE ANCHOR VERB` | a directive `ns:verb` binds to `ANCHOR` (`-` for any file) |

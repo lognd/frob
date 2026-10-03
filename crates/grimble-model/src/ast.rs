@@ -513,6 +513,8 @@ pub struct Include {
     pub path: Spanned<String>,
     /// The `as` mount prefix, if any.
     pub mount: Option<RefPath>,
+    /// True when the include carries the `outside` marker (it may climb out of the directory).
+    pub outside: bool,
     /// Whole item span.
     pub span: Span,
 }
@@ -544,7 +546,7 @@ pub struct TopException {
 /// A file-level item.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Item {
-    /// `include "p" [as P];`
+    /// `include "p" [as P] [outside];`
     Include(Include),
     /// `namespace N { ... }`
     Namespace(Namespace),

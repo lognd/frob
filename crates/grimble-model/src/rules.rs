@@ -5,7 +5,7 @@
 use std::collections::BTreeSet;
 
 use gob_directives::is_full_ulid;
-use gob_rules::{Finding, Registry, RuleId, Severity};
+use gob_rules::{Finding, Registry, RequiredReason, RuleId, Severity};
 use gob_text::{FileInterner, Span as TextSpan, TextRange};
 use gob_walk::selector::{Expr, Node};
 
@@ -14,7 +14,7 @@ use crate::ast::{
     Header, Ident, KeyVal, Link, LinkKind, ModuleKind, QuantKey, Quantity, RefPath, Sel, Value,
 };
 use crate::fold::{LABELS, TRUST_LEVELS};
-use crate::model::{EntityRec, Index, LoadedRoot, ModelFiles, Via, load_roots};
+use crate::model::{EntityRec, Index, LoadedRoot, ModelFiles, Via, load_roots, root_list};
 use crate::span::Span;
 use crate::text::{canonical_level, clause_key, clause_text, selector_text};
 
@@ -53,7 +53,7 @@ pub fn file_table(files: &ModelFiles) -> FileInterner {
 pub fn check_model(files: &ModelFiles) -> Vec<Finding> {
     let roots = load_roots(files);
     let mut ids = file_table(files);
-    let mut out = Vec::new();
+    let mut out = root_findings(files, &roots, &mut ids);
     let mut seen_modules: Vec<(String, String)> = Vec::new();
     for root in &roots {
         let mut ck = Checker::new(files, root, &mut ids);
@@ -87,6 +87,61 @@ pub fn check_model(files: &ModelFiles) -> Vec<Finding> {
     });
     out.dedup_by(|a, b| a.rule == b.rule && a.span == b.span && a.message == b.message);
     tracing::info!(findings = out.len(), roots = roots.len(), "model checked");
+    out
+}
+
+/// MDL021 (no usable root) and MDL019 (orphan files) for the model roots of `files`.
+// frob:ticket 01M3ZP159QB9VT8D4MBB5XVMKR
+fn root_findings(files: &ModelFiles, roots: &[LoadedRoot], ids: &mut FileInterner) -> Vec<Finding> {
+    let mut out = Vec::new();
+    if files.files.is_empty() {
+        return out;
+    }
+    let declared = root_list(files);
+    let mut unresolved = |msg: String| {
+        tracing::warn!(%msg, "no usable model root");
+        if let Ok(id) = "MDL021".parse::<RuleId>() {
+            out.push(
+                Finding::new(id, Severity::Unresolved, None, msg, "model-root").with_required(
+                    RequiredReason::ZeroSubjects {
+                        rule: "MDL021".to_owned(),
+                    },
+                ),
+            );
+        }
+    };
+    if declared.is_empty() {
+        unresolved(format!(
+            "{} .grmb file(s) found but no model root is declared; list the entry file under `[grimble] models` in grimble.toml (`grimble init` writes `design/model.grmb`)",
+            files.files.len()
+        ));
+        return out;
+    }
+    for r in declared.iter().filter(|r| !files.files.contains_key(*r)) {
+        unresolved(format!(
+            "declared model root `{r}` is not a .grmb file of the walk; fix `[grimble] models` in grimble.toml"
+        ));
+    }
+    let reached: BTreeSet<&str> = roots
+        .iter()
+        .flat_map(|r| r.files.iter().map(|f| f.parsed.path.as_str()))
+        .collect();
+    let Ok(rule) = "MDL019".parse::<RuleId>() else {
+        return out;
+    };
+    for path in files.files.keys().filter(|p| !reached.contains(p.as_str())) {
+        tracing::debug!(%path, "orphan model file");
+        let fid = ids.intern(path);
+        out.push(Finding::new(
+            rule.clone(),
+            Severity::Warn,
+            Some(TextSpan::new(fid, TextRange::new(0.into(), 0.into()))),
+            format!(
+                "`{path}` is reachable from no model root; include it from a root, list it under `[grimble] models`, or exclude it in `[check] exclude`"
+            ),
+            path,
+        ));
+    }
     out
 }
 

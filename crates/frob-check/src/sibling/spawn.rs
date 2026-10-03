@@ -13,9 +13,6 @@ pub const ACCEPTED_SIBLING_MAJORS: &[u32] = &[1];
 /// The contract name every sibling document carries.
 const CONTRACT: &str = "gob.sibling";
 
-/// Stdout larger than this is a malformed document (the output cap).
-const OUTPUT_CAP: usize = 64 * 1024 * 1024;
-
 /// How a sibling run failed; one `SIB001` reason code each.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Reason {
@@ -97,6 +94,10 @@ pub(super) struct Run {
     pub scope: Option<Vec<String>>,
     /// `[check] sibling_timeout_secs`.
     pub timeout: Duration,
+    /// Frob's own compute digest; a sibling document carrying another one is incompatible.
+    pub compute_digest: Option<String>,
+    /// `[check] output_cap_bytes`: the runner kills a sibling that prints more.
+    pub output_cap: usize,
 }
 
 /// A finished run: wall time and the validated document or the failure.
@@ -133,7 +134,9 @@ pub(super) fn run(run: &Run) -> Spawned {
 }
 
 fn exec(run: &Run) -> Result<Doc, Failure> {
-    let runner = Runner::new(Limits { jobs: 1 }).allow_tools([run.product.to_owned()]);
+    let runner = Runner::new(Limits { jobs: 1 })
+        .allow_tools([run.product.to_owned()])
+        .output_cap(run.output_cap);
     let spec = Spec {
         program: run.program.clone(),
         args: args(run),
@@ -150,6 +153,10 @@ fn exec(run: &Run) -> Result<Doc, Failure> {
         ExecError::Spawn(e) if e.kind() == std::io::ErrorKind::PermissionDenied => Failure::new(
             Reason::Absent,
             format!("`{}` is not executable: {e}", run.product),
+        ),
+        ExecError::OutputCap { limit } => Failure::new(
+            Reason::Malformed,
+            format!("output exceeds the {limit} byte cap; the child was killed"),
         ),
         other => Failure::new(Reason::Failed, other.to_string()),
     })?;
@@ -172,7 +179,7 @@ fn exec(run: &Run) -> Result<Doc, Failure> {
                 bytes = output.stdout.len(),
                 "sibling exited; reading document"
             );
-            parse(run.product, &output.stdout)
+            parse(run.product, run.compute_digest.as_deref(), &output.stdout)
         }
         Outcome::Exited(code) => {
             let mut failure = Failure::new(
@@ -205,13 +212,7 @@ fn tail(stderr: &str, stdout: &str) -> String {
 }
 
 /// Validate `stdout`: one envelope, an `ok` run, the accepted contract and major, the asked product.
-fn parse(product: &str, stdout: &str) -> Result<Doc, Failure> {
-    if stdout.len() > OUTPUT_CAP {
-        return Err(Failure::new(
-            Reason::Malformed,
-            format!("stdout exceeds the {OUTPUT_CAP} byte cap"),
-        ));
-    }
+fn parse(product: &str, expected_digest: Option<&str>, stdout: &str) -> Result<Doc, Failure> {
     let malformed = |why: String| Failure::new(Reason::Malformed, why);
     let env: Envelope = serde_json::from_str(stdout.trim())
         .map_err(|e| malformed(format!("stdout is not exactly one JSON envelope: {e}")))?;
@@ -245,6 +246,17 @@ fn parse(product: &str, stdout: &str) -> Result<Doc, Failure> {
             format!(
                 "asked for `{product}` but the document is from `{}`",
                 doc.product
+            ),
+        ));
+    }
+    if let Some(expected) = expected_digest
+        && doc.compute_digest != expected
+    {
+        return Err(Failure::new(
+            Reason::Incompatible,
+            format!(
+                "the sibling analysed under compute digest {} but frob's is {expected}; keep the [compute] knobs in one file",
+                doc.compute_digest
             ),
         ));
     }

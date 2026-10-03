@@ -275,7 +275,11 @@ without grimble sees .grmb as F0 opaque, and a `frob:` directive inside
 it is reported Unresolved, never silently unbound. The grammar
 specification (lexical rules, scoping of entity names, includes across
 files, versioning) is ticket G01; until it lands, the examples in
-sections 1-3 are illustrative.
+sections 1-3 are illustrative. Which files form a model is decided by
+declared roots (`[grimble] models`), not by the walk: only files reachable
+from a root through `include` load, an unreachable file is the orphan
+warning MDL019, and an include may not climb above its own directory
+without the `outside` marker (grmb-spec.md section 3, D77).
 
 ### 9.4 Drift on partial languages
 

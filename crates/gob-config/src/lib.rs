@@ -24,7 +24,10 @@
 //! assert_eq!(Tickets::describe().fields[0].default_toml, "5");
 //! ```
 
+extern crate self as gob_config;
+
 mod check;
+mod compute;
 mod describe;
 mod error;
 mod load;
@@ -32,6 +35,7 @@ mod materialize;
 mod schema;
 
 pub use check::{Cfg001, check};
+pub use compute::{ComputeTable, blake3_tagged, compute_digest};
 pub use describe::{
     ConfigTable, FieldDescription, TableDescription, TableEntry, all_tables, render_default,
     schema_of,

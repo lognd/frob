@@ -1,0 +1,120 @@
+# Diagnostics that teach, and fixes that are safe to apply
+
+Status: DRAFT under T-0001, for owner review (proposed decision D78).
+Applies to frob, grimble and crunk alike (gob-diagnostics, gob-rules,
+gob-cli). Modelled on rustc and cargo: the compiler teaches the language
+while you use it, every error has a code you can look up, and fixes are
+labelled by how safe they are to apply.
+
+## 1. Principles
+
+1. Every message answers three questions: what is wrong (one sentence),
+   where (a source snippet with the span underlined), and what to do
+   (a concrete next step, not a lecture).
+2. A message never makes the user search. Each finding names its rule
+   id and slug and ends with `= help: run grimble explain SYS001` (or
+   `frob explain`), which prints the full rule page offline, generated
+   from the same source as the web reference (as `rustc --explain E0308`
+   prints the error index entry).
+3. The tool teaches the next step at every point a newcomer can get
+   stuck: an empty repository, a missing config, a missing model root,
+   a missing ledger branch, an unknown verb, a typo in a key. Each of
+   those is a diagnostic with a remedy, never a bare failure.
+4. Teaching is not noise: help lines appear in text mode; JSON carries
+   the same content as fields (`remedy`, `explain`, `fixes`) for agents.
+   `--quiet` drops help lines; nothing is ever printed only to "be nice".
+
+## 2. Message shape
+
+```text
+error[SYS003]: unit claimed by two bindings that disagree
+  --> crates/frob-check/src/lib.rs:42:1
+   |
+42 | pub fn run(root: &Path) -> Report {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ bound to node `frob` by a grimble:binds directive
+   |
+  ::: design/model.grmb:12:3
+   |
+12 |   owns "crates/frob-check/**" ;
+   |   ---------------------------- also owned by node `checks` through this selector
+   |
+   = note: a directive outranks a selector, so `frob` is the owner today
+   = help: remove the directive, or narrow the selector to exclude this file
+   = fix (needs review): narrow the selector to "crates/frob-check/src/*.rs" except lib.rs
+   = explain: grimble explain SYS003
+```
+
+Rules for the renderer (gob-diagnostics): primary span with a label;
+secondary spans in other files with `:::` headers; `note` for facts the
+user did not ask for but needs; `help` for the next action; `fix` lines
+only when a machine fix exists, with its applicability (section 3);
+colour only on a terminal (`NO_COLOR` respected); every line ASCII.
+
+## 3. Fix applicability (rustc's model)
+
+Each `Fix` on a finding carries one applicability. The existing
+`FixKind` (Manual, Deterministic, VerifyCommit, FixIt) maps onto it.
+
+| Applicability | Meaning | Auto-applied? | Example |
+|---|---|---|---|
+| `machine` | Provably preserves meaning; idempotent; touches only the finding's span or a generated file | yes, with `--fix` | expand an abbreviated ticket id to its full ULID; sort `owns` clauses (fmt); regenerate a stale generated doc; materialize a missing config knob with its default |
+| `maybe-incorrect` | Usually right, may change meaning | never automatically; offered | narrow a selector; add a grant for an observed capability |
+| `has-placeholders` | Needs input the tool cannot know | never; shown as a template | add an excuse template with `because = "<reason>"` |
+| `manual` | No machine fix; the help line describes the steps | no | split a function that owns logic it dispatches |
+
+`--fix` applies only `machine` fixes, re-runs the affected rules once,
+and reports what it changed and what remains (as `cargo fix` and ruff
+do). `--fix --unsafe` is not offered in version 1: a fix that may be
+wrong is reviewed by a person, not by a flag.
+
+## 4. Auto-apply and prompting: when, and when never
+
+- **Never silently.** A plain `check` changes nothing. Ever. Writing
+  files requires `--fix` (or the `fix` verb).
+- **Machine fixes with `--fix`** are applied without asking, because they
+  are proven safe and reversible with version control. The run prints a
+  summary and the exact files changed.
+- **Interactive review on a terminal**: `frob fix --interactive` (and
+  `grimble fix --interactive`) walks through `maybe-incorrect` fixes one
+  at a time with a diff and `[y]es / [n]o / [e]dit / [s]kip rule / [q]uit`.
+  Only when stdin and stdout are a TTY; otherwise it refuses with exit 2
+  and tells the caller to use the JSON fix list instead.
+- **Never prompt unasked.** A check run on a terminal does not stop to
+  ask questions: prompts inside non-interactive verbs break scripts,
+  hooks, CI and agents, and are the first thing users disable. Instead
+  the summary ends with one line: `3 fixes available (1 safe): run frob
+  check --fix, or frob fix --interactive to review the rest`.
+- **Agents** read `fixes` from the JSON envelope (each with its
+  applicability and the exact text edits) and apply them through their
+  own tools, so the agent path never depends on a TTY.
+
+So: auto-apply is good for the narrow, provable class; prompting is
+good only inside an explicitly interactive verb; prompting during a
+normal run is a bad idea.
+
+## 5. Teaching moments (built in from day one)
+
+| Situation | What the user sees |
+|---|---|
+| first run in a repository without `frob.toml` or `grimble.toml` | what the tool is in two sentences, the one command to initialize, and what it will write |
+| ledger branch missing in a clone | `note: tickets live on the branch frob-tickets`; `help: git fetch origin frob-tickets` (one command), and a pointer to the branch README |
+| unknown verb or flag | did-you-mean (strsim) plus the three most likely verbs |
+| unknown config key | did-you-mean against the materialized table, and the doc link for the table |
+| no model root declared (MDL021) | the default root path, and `grimble init` if the file is missing |
+| a finding seen for the first time in this repository | the full `explain` text inline once, then only the one-line help afterwards (state kept in `.frob/seen.toml`, local and disposable) |
+| Unresolved finding | why the tool could not decide (the reason code in words) and the exact annotation or capability that would let it decide |
+
+## 6. Where explanations come from
+
+Each rule's explanation is its doc comment (`#[derive(Rule)]`) or its
+pack rule's `explain` text; gob-dev generates the web reference from the
+same source (docs/reference/rules/<ID>.md) and the binaries embed it for
+`explain`. One source, three outputs (terminal, web, JSON), so they can
+never disagree. GEN001 keeps the generated copies current.
+
+## 7. Open questions
+
+1. Should first-occurrence inline teaching (section 5, row 6) be on by
+   default, or opt-in with `[ui] teach = true`?
+2. Should `--fix` also apply machine fixes to files outside the current
+   ticket's scope, or stay within scope by default?

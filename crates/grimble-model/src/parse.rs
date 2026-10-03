@@ -658,6 +658,7 @@ impl Parser<'_> {
         } else {
             None
         };
+        let outside = self.eat_kw("outside");
         let semi = self.expect_p(Punct::Semi)?;
         let id = self.id();
         let span = start.to(semi.span);
@@ -666,6 +667,7 @@ impl Parser<'_> {
             id,
             path,
             mount,
+            outside,
             span,
         })
     }

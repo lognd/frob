@@ -55,8 +55,14 @@ fn duplicate_entities_are_reported_independent_of_include_order() {
 fn glob_includes_expand_in_byte_order_and_the_diamond_loads_once() {
     let mf = ModelFiles::new()
         .with_file("root.grmb", format!("{H}include \"parts/*.grmb\";\n"))
-        .with_file("parts/z.grmb", format!("{P}include \"../shared.grmb\";\n"))
-        .with_file("parts/a.grmb", format!("{P}include \"../shared.grmb\";\n"))
+        .with_file(
+            "parts/z.grmb",
+            format!("{P}include \"../shared.grmb\" outside;\n"),
+        )
+        .with_file(
+            "parts/a.grmb",
+            format!("{P}include \"../shared.grmb\" outside;\n"),
+        )
         .with_file("shared.grmb", P);
     let root = load_roots(&mf).remove(0);
     let order: Vec<&str> = root.files.iter().map(|f| f.parsed.path.as_str()).collect();

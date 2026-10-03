@@ -141,11 +141,14 @@ pub struct CheckTable {
     #[config(default = Vec::new())]
     pub tool: Vec<ToolStage>,
     /// Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7).
-    #[config(default = 120)]
+    #[config(default = 120, enforcement)]
     pub sibling_timeout_secs: u64,
     /// When true an unusable configured sibling is a required Unresolved (`SIB001`).
-    #[config(default = true)]
+    #[config(default = true, enforcement)]
     pub require_siblings: bool,
+    /// Bytes a sibling or tool may print on one stream before it is killed (default 64 MiB).
+    #[config(default = 67_108_864)]
+    pub output_cap_bytes: u64,
 }
 
 /// The time budget of the built-in rules.

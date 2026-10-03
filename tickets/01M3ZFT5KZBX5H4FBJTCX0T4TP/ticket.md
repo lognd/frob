@@ -2,16 +2,16 @@
 id = "01M3ZFT5KZBX5H4FBJTCX0T4TP"
 title = "frob-check perf test fails under concurrent builds; make the budget a measured benchmark, not a unit test"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T23:39:54Z"
-updated = "2026-10-02T23:39:54Z"
+updated = "2026-10-03T01:56:08Z"
 idempotency_key = "m2-perf-test-flaky"
 labels = ["milestone:2"]
-scope = ["crates/frob-check/**", "crates/gob-check/**"]
+scope = ["crates/frob-check/**", "crates/gob-check/**", "crates/frob-ack/tests/**", "crates/gob-exec/tests/**", "crates/frob-evidence/**", "crates/frob-tests/**", "crates/gob-dev/src/import_v1.rs", ".config/nextest.toml"]
 
 [[acceptance]]
 text = "Given a full-workspace test run under heavy CPU load, when the suite runs, then no test asserts wall-clock time and the bench still reports the warm-run budget"

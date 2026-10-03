@@ -2,7 +2,7 @@
 //!
 //! It ignores its argv except to echo it into a finding message, and reads its
 //! behaviour from `.fake-sibling` in the working directory (the repository root):
-//! `valid <ticket>`, `incompatible`, `badproduct`, `malformed`, `nomark`, `hang`,
+//! `valid <ticket>`, `incompatible`, `baddigest`, `flood`, `badproduct`, `malformed`, `nomark`, `hang`,
 //! `exit3` or `failenv`.
 
 use serde_json::{Value, json};
@@ -24,6 +24,14 @@ fn finding(
     })
 }
 
+/// The digest of the `[compute]` knobs the repository's config files resolve to.
+fn own_digest() -> String {
+    let (table, _) =
+        gob_config::ComputeTable::load_for_product(std::path::Path::new("."), "grimble")
+            .expect("compute knobs load");
+    gob_config::compute_digest(&table)
+}
+
 fn valid(ticket: &Value, args: &str) -> Value {
     let required = json!({"kind": "annotation_required", "code": "x", "public_surface": false});
     let mut unresolved = finding(
@@ -37,7 +45,7 @@ fn valid(ticket: &Value, args: &str) -> Value {
     unresolved["reason"] = json!("annotation-required");
     json!({
         "schema_version": "gob.sibling/1", "product": "grimble", "product_version": "0.0.0",
-        "compute_digest": format!("blake3:{}", "0".repeat(64)),
+        "compute_digest": own_digest(),
         "compute": {}, "invocation": {"verb": "check", "root": ".", "ticket_scope": null, "base": null},
         "fidelity": [{"language": "grmb", "adapter": "grimble", "adapter_version": "0", "level": "F3",
                       "capabilities": {}, "not_applicable_rules": ["SYS009"]}],
@@ -77,6 +85,11 @@ fn main() {
             doc["schema_version"] = json!("gob.sibling/9");
             println!("{}", envelope(&doc));
         }
+        "baddigest" => {
+            let mut doc = valid(&Value::Null, "");
+            doc["compute_digest"] = json!(format!("blake3:{}", "0".repeat(64)));
+            println!("{}", envelope(&doc));
+        }
         "badproduct" => {
             let mut doc = valid(&Value::Null, "");
             doc["product"] = json!("crunk");
@@ -89,6 +102,12 @@ fn main() {
                 .expect("object")
                 .remove("required");
             println!("{}", envelope(&doc));
+        }
+        "flood" => {
+            let line = "x".repeat(1023);
+            for _ in 0..4096 {
+                println!("{line}");
+            }
         }
         "malformed" => println!("this is not json"),
         "hang" => std::thread::sleep(std::time::Duration::from_secs(60)),

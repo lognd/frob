@@ -840,6 +840,7 @@ dependencies = [
  "gob-cache",
  "gob-check",
  "gob-cli",
+ "gob-config",
  "gob-diagnostics",
  "gob-directives",
  "gob-exec",
@@ -2042,6 +2043,7 @@ dependencies = [
 name = "gob-config"
 version = "0.0.0"
 dependencies = [
+ "blake3",
  "gob-macros",
  "gob-rules",
  "insta",

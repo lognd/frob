@@ -16,7 +16,11 @@ fn write(dir: &Path, rel: &str, text: &str) {
 #[test]
 fn the_document_carries_bindings_and_sys_findings() {
     let dir = tempfile::tempdir().unwrap();
-    write(dir.path(), "grimble.toml", "");
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
     write(
         dir.path(),
         "design/m.grmb",
@@ -46,7 +50,11 @@ fn the_document_carries_bindings_and_sys_findings() {
 #[test]
 fn no_model_means_no_binding_rows() {
     let dir = tempfile::tempdir().unwrap();
-    write(dir.path(), "grimble.toml", "");
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
     write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
     let r = run(dir.path(), &CheckOptions::default()).unwrap();
     let doc = sibling_document(&r);

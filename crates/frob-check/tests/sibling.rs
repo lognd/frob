@@ -128,7 +128,9 @@ fn frob_applies_its_own_gate_to_the_merged_marks() {
 const FAILURES: &[(&str, &str, &str)] = &[
     ("incompatible", "", "incompatible"),
     ("badproduct", "", "incompatible"),
+    ("baddigest", "", "incompatible"),
     ("malformed", "", "malformed"),
+    ("flood", "[check]\noutput_cap_bytes = 100000\n", "malformed"),
     ("nomark", "", "malformed"),
     ("exit3", "", "failed"),
     ("failenv", "", "failed"),
@@ -236,6 +238,33 @@ fn an_unconfigured_sibling_is_not_run_and_says_nothing() {
     let r = run(dir.path(), &opts()).expect("run");
     assert!(of_rule(&r, "SIB001").is_empty());
     assert!(r.timing.stages.iter().all(|s| s.name != "sibling:grimble"));
+}
+
+// frob:tests crates/frob-check/src/sibling/mod.rs::Siblings
+#[test]
+fn crunk_runs_only_when_crunk_toml_exists() {
+    let mut options = opts();
+    options
+        .sibling_programs
+        .push(("crunk".to_owned(), PathBuf::from(FAKE)));
+    let dir = repo("valid -", "");
+    let r = run(dir.path(), &options).expect("run");
+    assert!(r.timing.stages.iter().all(|s| s.name != "sibling:crunk"));
+    assert!(of_rule(&r, "SIB001").is_empty());
+    write(dir.path(), "crunk.toml", "");
+    let r = run(dir.path(), &options).expect("run");
+    assert!(r.timing.stages.iter().any(|s| s.name == "sibling:crunk"));
+    let sib = of_rule(&r, "SIB001");
+    assert_eq!(
+        sib.len(),
+        1,
+        "the fake answers as grimble, so crunk is incompatible"
+    );
+    assert!(
+        sib[0]
+            .message
+            .starts_with("crunk is configured but unusable (incompatible)")
+    );
 }
 
 /// A repository with a ledger holding an open ticket scoped to `src/a/**` and a dropped one.

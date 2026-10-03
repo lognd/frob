@@ -11,8 +11,8 @@ use crate::workspace::{check_error, config_refusal, locate_root, registered_tabl
 
 /// The model file `init` seeds when the repository has no model.
 pub const MODEL_PATH: &str = "design/model.grmb";
-/// The seed text: the version header and nothing else (grmb-spec 2.1).
-pub const MODEL_SEED: &str = "grimble = \"2\";\n";
+/// The seed text: the version header and the root's `module` declaration (grmb-spec 2.1, 3.1).
+pub const MODEL_SEED: &str = "grimble = \"2\";\nmodule model;\n";
 /// Lines that already ignore the state directory.
 const IGNORE_FORMS: [&str; 4] = [".grimble/", ".grimble", "/.grimble/", "/.grimble"];
 
