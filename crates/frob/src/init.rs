@@ -1,6 +1,6 @@
 //! `frob init`: materialize config, ignore `.frob/`, install the ledger merge driver.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
@@ -9,12 +9,17 @@ use gob_git::Repo;
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use crate::PRODUCT;
 use crate::config::FrobConfig;
 use crate::config_cmd::{SyncData, sync_config};
 use crate::workspace::{Located, config_refusal};
 
-/// Merge driver command line (`%O` ancestor, `%A` ours, `%B` theirs, `%P` path).
-const DRIVER_COMMAND: &str = "frob merge-driver %O %A %B %P";
+/// Merge driver arguments (`%O` ancestor, `%A` ours, `%B` theirs, `%P` path), after the program.
+const DRIVER_ARGS: &str = "merge-driver %O %A %B %P";
+/// The portable program name, used when `frob` on `PATH` is the running executable.
+const BARE_PROGRAM: &str = "frob";
+/// The git config key holding the ledger merge driver command.
+pub(crate) const DRIVER_KEY: &str = "merge.frob-ledger.driver";
 /// Human label stored in git config next to the driver.
 const DRIVER_NAME: &str = "frob ledger union-and-refold";
 /// Attribute name selecting the driver in `.gitattributes`.
@@ -25,7 +30,7 @@ const IGNORE_FORMS: [&str; 4] = [".frob/", ".frob", "/.frob/", "/.frob"];
 const GIT_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Write frob.toml knobs, ignore .frob/, and install the ledger merge driver; safe to repeat.
-#[derive(Debug, Clone, Copy, Default, gob_cli::Command)]
+#[derive(Debug, Clone, Default, gob_cli::Command)]
 #[command(
     verb = "init",
     product = "frob",
@@ -33,7 +38,12 @@ const GIT_TIMEOUT: Duration = Duration::from_secs(10);
     dry_run,
     exits(ok, refused, usage, internal)
 )]
-pub struct Init;
+pub struct Init {
+    /// Exact merge driver command to write, overriding the resolved one.
+    driver_command: Option<String>,
+    /// Rewrite an existing driver that points at a different frob.
+    fix_driver: bool,
+}
 
 /// One file-or-config step of init.
 #[derive(Debug, Serialize, JsonSchema)]
@@ -55,8 +65,21 @@ pub struct InitData {
     pub gitignore: Step,
     /// The `merge.frob-ledger.driver` git config.
     pub merge_driver: Step,
+    /// Which driver command is configured and why.
+    pub driver: DriverInfo,
     /// The `.gitattributes` lines (tickets, milestones, cycles).
     pub gitattributes: Step,
+}
+
+/// The merge driver command init settled on and the reason, in the output.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct DriverInfo {
+    /// The driver command now configured (or, in a dry run, that would be).
+    pub command: String,
+    /// Why this command: PATH resolution, an override, or an existing config kept.
+    pub reason: String,
+    /// What init did: `installed`, `updated`, `kept`, `override` or `mismatch-left`.
+    pub action: String,
 }
 
 /// Short name of the checked-out branch; an unborn branch counts (its ref exists after the first commit).
@@ -239,15 +262,252 @@ fn git(runner: &Runner, root: &Path, args: &[&str]) -> Result<(i32, String), Cli
     }
 }
 
-/// Ensure `merge.frob-ledger.driver` (and its name) are set in the local git config.
-fn ensure_merge_driver(root: &Path, dry_run: bool) -> Result<Step, CliError> {
+/// The running executable, canonical when possible.
+fn running_exe() -> Result<PathBuf, CliError> {
+    let exe = std::env::current_exe()
+        .map_err(|e| CliError::internal(format!("cannot locate the running executable: {e}")))?;
+    Ok(exe.canonicalize().unwrap_or(exe))
+}
+
+/// The version line a frob prints for `--version`, as the running one would.
+fn running_version_line() -> String {
+    format!("{PRODUCT} {}", env!("CARGO_PKG_VERSION"))
+}
+
+/// First stdout line of `<path> --version`, or `None` when it cannot run.
+fn version_line_of(path: &Path) -> Option<String> {
+    let spec = Spec {
+        program: Program::Hook {
+            path: path.to_path_buf(),
+        },
+        args: vec!["--version".to_owned()],
+        cwd: None,
+        env: Vec::new(),
+        timeout: GIT_TIMEOUT,
+        capture: true,
+    };
+    match Runner::new(Limits { jobs: 1 }).run(&spec) {
+        Ok(out) if out.status == ExecOutcome::Exited(0) => {
+            out.stdout.lines().next().map(|l| l.trim().to_owned())
+        }
+        other => {
+            tracing::warn!(path = %path.display(), result = ?other.map(|o| o.status), "version probe failed");
+            None
+        }
+    }
+}
+
+/// True when `path` is the running frob: the same canonical file, or else the same version line.
+fn is_running_frob(path: &Path, exe: &Path) -> bool {
+    let canon = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+    if canon == exe {
+        return true;
+    }
+    let same = version_line_of(&canon).is_some_and(|v| v == running_version_line());
+    tracing::debug!(path = %canon.display(), same, "different path; compared versions");
+    same
+}
+
+/// The first word of a driver command, unquoted the way a POSIX shell would (single quotes and backslashes).
+pub(crate) fn driver_program(command: &str) -> Option<String> {
+    let mut word = String::new();
+    let mut quoted = false;
+    let mut chars = command.trim_start().chars();
+    while let Some(c) = chars.next() {
+        match (quoted, c) {
+            (false, '\'') => quoted = true,
+            (true, '\'') => quoted = false,
+            (false, '\\') => word.extend(chars.next()),
+            (false, c) if c.is_whitespace() => break,
+            (_, c) => word.push(c),
+        }
+    }
+    Some(word).filter(|w| !w.is_empty())
+}
+
+/// Resolve a driver program: a path must exist, a bare name is looked up on `PATH` (never through a shell).
+fn resolve_program(program: &str) -> Option<PathBuf> {
+    if program.contains('/') {
+        return Path::new(program).is_file().then(|| PathBuf::from(program));
+    }
+    Program::Tool {
+        name: program.to_owned(),
+    }
+    .resolve()
+    .ok()
+}
+
+/// How a configured driver command relates to the running frob.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum DriverVerdict {
+    /// It resolves to the running frob.
+    Same,
+    /// It resolves to a different frob (the resolved path).
+    Other(String),
+    /// It resolves to nothing (the reason).
+    Unresolvable(String),
+}
+
+/// Judge `command` against the running executable.
+pub(crate) fn judge_driver(command: &str) -> Result<DriverVerdict, CliError> {
+    let exe = running_exe()?;
+    let Some(program) = driver_program(command) else {
+        return Ok(DriverVerdict::Unresolvable(
+            "the command is empty".to_owned(),
+        ));
+    };
+    Ok(match resolve_program(&program) {
+        None => DriverVerdict::Unresolvable(format!("`{program}` does not resolve to a file")),
+        Some(p) if is_running_frob(&p, &exe) => DriverVerdict::Same,
+        Some(p) => DriverVerdict::Other(p.display().to_string()),
+    })
+}
+
+/// Quote `path` for a git driver command (git runs it through a shell).
+fn shell_word(path: &str) -> String {
+    let plain = |c: char| c.is_ascii_alphanumeric() || "/._-+:@".contains(c);
+    if !path.is_empty() && path.chars().all(plain) {
+        path.to_owned()
+    } else {
+        format!("'{}'", path.replace('\'', "'\\''"))
+    }
+}
+
+/// The driver command for `program` (a bare name or an absolute path).
+fn driver_command_for(program: &str) -> String {
+    format!("{} {DRIVER_ARGS}", shell_word(program))
+}
+
+/// The command that fixes a wrong driver, runnable without trusting `PATH`.
+pub(crate) fn fix_command() -> String {
+    let exe = running_exe().map_or_else(|_| BARE_PROGRAM.to_owned(), |p| p.display().to_string());
+    format!("{} init --fix-driver", shell_word(&exe))
+}
+
+/// The driver command for this machine and why: bare `frob` only when `PATH` resolves to the running executable.
+fn default_driver() -> Result<(String, String), CliError> {
+    let exe = running_exe()?;
+    let abs = driver_command_for(&exe.display().to_string());
+    Ok(match resolve_program(BARE_PROGRAM) {
+        Some(p) if is_running_frob(&p, &exe) => (
+            driver_command_for(BARE_PROGRAM),
+            format!("`frob` on PATH ({}) is the running executable", p.display()),
+        ),
+        Some(p) => (
+            abs,
+            format!(
+                "`frob` on PATH ({}) is a different frob than the running {}",
+                p.display(),
+                exe.display()
+            ),
+        ),
+        None => (
+            abs,
+            format!("no `frob` on PATH; using the running {}", exe.display()),
+        ),
+    })
+}
+
+/// The configured driver command in the local git config, when set.
+pub(crate) fn configured_driver(root: &Path) -> Result<Option<String>, CliError> {
     let runner = Runner::new(Limits { jobs: 1 });
-    let key = "merge.frob-ledger.driver";
-    let (code, current) = git(&runner, root, &["config", "--local", "--get", key])?;
-    let present = code == 0 && current == DRIVER_COMMAND;
+    let (code, current) = git(&runner, root, &["config", "--local", "--get", DRIVER_KEY])?;
+    Ok((code == 0).then_some(current))
+}
+
+/// What to configure: the command, the reason, the action label, and a warning when a mismatch is left.
+struct DriverChoice {
+    command: String,
+    reason: String,
+    action: &'static str,
+    warning: Option<String>,
+}
+
+/// Decide the driver command from the override, the existing config and PATH resolution.
+fn choose_driver(
+    current: Option<&str>,
+    override_cmd: Option<&str>,
+    fix: bool,
+) -> Result<DriverChoice, CliError> {
+    if let Some(cmd) = override_cmd {
+        return Ok(DriverChoice {
+            command: cmd.to_owned(),
+            reason: "set by --driver-command".to_owned(),
+            action: "override",
+            warning: None,
+        });
+    }
+    let fresh = |action| -> Result<DriverChoice, CliError> {
+        let (command, reason) = default_driver()?;
+        Ok(DriverChoice {
+            command,
+            reason,
+            action,
+            warning: None,
+        })
+    };
+    let Some(cur) = current else {
+        return fresh("installed");
+    };
+    match judge_driver(cur)? {
+        DriverVerdict::Same => Ok(DriverChoice {
+            command: cur.to_owned(),
+            reason: "the existing driver resolves to the running frob".to_owned(),
+            action: "kept",
+            warning: None,
+        }),
+        DriverVerdict::Unresolvable(why) => {
+            tracing::warn!(
+                current = cur,
+                why,
+                "existing driver resolves to nothing; replacing"
+            );
+            fresh("updated")
+        }
+        DriverVerdict::Other(resolved) if fix => {
+            tracing::warn!(
+                current = cur,
+                resolved,
+                "existing driver is a different frob; replacing"
+            );
+            fresh("updated")
+        }
+        DriverVerdict::Other(resolved) => {
+            let warning = format!(
+                "merge driver `{cur}` resolves to {resolved}, a different frob than the running one; fix: {}",
+                fix_command()
+            );
+            tracing::warn!(
+                current = cur,
+                resolved,
+                "different-frob driver left in place"
+            );
+            Ok(DriverChoice {
+                command: cur.to_owned(),
+                reason: format!(
+                    "resolves to a different frob ({resolved}); left unchanged without --fix-driver"
+                ),
+                action: "mismatch-left",
+                warning: Some(warning),
+            })
+        }
+    }
+}
+
+/// Ensure `merge.frob-ledger.driver` (and its name) are set in the local git config.
+fn ensure_merge_driver(
+    root: &Path,
+    dry_run: bool,
+    override_cmd: Option<&str>,
+    fix: bool,
+) -> Result<(Step, DriverInfo, Option<String>), CliError> {
+    let runner = Runner::new(Limits { jobs: 1 });
+    let current = configured_driver(root)?;
+    let choice = choose_driver(current.as_deref(), override_cmd, fix)?;
+    let present = current.as_deref() == Some(choice.command.as_str());
     if !present && !dry_run {
         for (k, v) in [
-            (key, DRIVER_COMMAND),
+            (DRIVER_KEY, choice.command.as_str()),
             ("merge.frob-ledger.name", DRIVER_NAME),
         ] {
             let (code, _) = git(&runner, root, &["config", "--local", k, v])?;
@@ -255,19 +515,50 @@ fn ensure_merge_driver(root: &Path, dry_run: bool) -> Result<Step, CliError> {
                 return Err(CliError::internal(format!("git config {k} exited {code}")));
             }
         }
-        tracing::info!(key, "merge driver installed");
+        tracing::info!(command = %choice.command, reason = %choice.reason, "merge driver installed");
     }
-    Ok(Step {
-        target: key.to_owned(),
-        changed: !present,
-    })
+    let action = if present && choice.action != "mismatch-left" && choice.action != "override" {
+        "kept"
+    } else {
+        choice.action
+    };
+    Ok((
+        Step {
+            target: DRIVER_KEY.to_owned(),
+            changed: !present,
+        },
+        DriverInfo {
+            command: choice.command,
+            reason: choice.reason,
+            action: action.to_owned(),
+        },
+        choice.warning,
+    ))
 }
 
 impl Command for Init {
     type Data = InitData;
 
-    fn from_matches(_matches: &gob_cli::clap::ArgMatches) -> Result<Self, CliError> {
-        Ok(Self)
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        cmd.arg(
+            gob_cli::clap::Arg::new("driver-command")
+                .long("driver-command")
+                .value_name("TEXT")
+                .help("Write this exact merge driver command instead of the resolved one"),
+        )
+        .arg(
+            gob_cli::clap::Arg::new("fix-driver")
+                .long("fix-driver")
+                .action(gob_cli::clap::ArgAction::SetTrue)
+                .help("Rewrite an existing merge driver that points at a different frob"),
+        )
+    }
+
+    fn from_matches(matches: &gob_cli::clap::ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            driver_command: matches.get_one::<String>("driver-command").cloned(),
+            fix_driver: matches.get_flag("fix-driver"),
+        })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<InitData> {
@@ -281,20 +572,30 @@ impl Command for Init {
             Some(&|key| detected_default(repo, root, key)),
         )?;
         let gitignore = ensure_gitignore(root, ctx.dry_run)?;
-        let merge_driver = ensure_merge_driver(root, ctx.dry_run)?;
+        let (merge_driver, driver, driver_warning) = ensure_merge_driver(
+            root,
+            ctx.dry_run,
+            self.driver_command.as_deref(),
+            self.fix_driver,
+        )?;
         let gitattributes = ensure_gitattributes(root, &cfg.tickets.dir, ctx.dry_run)?;
         let already = config.added.is_empty()
             && !gitignore.changed
             && !merge_driver.changed
             && !gitattributes.changed;
         tracing::info!(already, dry_run = ctx.dry_run, "init finished");
-        Ok(Payload::new(InitData {
+        let payload = Payload::new(InitData {
             root: root.display().to_string(),
             config,
             gitignore,
             merge_driver,
+            driver,
             gitattributes,
         })
-        .with_already(already))
+        .with_already(already);
+        Ok(match driver_warning {
+            Some(w) => payload.with_warning(w),
+            None => payload,
+        })
     }
 }

@@ -1,5 +1,6 @@
 ---
 source: crates/frob/tests/cli.rs
+assertion_line: 58
 expression: v
 ---
 {
@@ -17,6 +18,12 @@ expression: v
       "missing_knobs": 27,
       "path": "[path]",
       "present": false
+    },
+    "driver": {
+      "command": null,
+      "detail": null,
+      "fix": null,
+      "state": "unset"
     },
     "git": {
       "branch": "[branch]",

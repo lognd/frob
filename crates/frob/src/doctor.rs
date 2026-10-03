@@ -13,6 +13,7 @@ use serde::Serialize;
 
 use crate::PRODUCT;
 use crate::config::FrobConfig;
+use crate::init::{DriverVerdict, configured_driver, fix_command, judge_driver};
 use crate::workspace::{Located, registered_tables, table_refs};
 
 /// How long a `--version` probe may run.
@@ -144,6 +145,19 @@ pub struct LedgerInfo {
     pub error: Option<String>,
 }
 
+/// The configured ledger merge driver against the running frob.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct DriverCheck {
+    /// `ok`, `mismatch` (a different frob), `unresolvable`, `unset` or `skipped`.
+    pub state: String,
+    /// The configured driver command, when set.
+    pub command: Option<String>,
+    /// What went wrong, when not `ok`.
+    pub detail: Option<String>,
+    /// The exact command that fixes it, when not `ok`.
+    pub fix: Option<String>,
+}
+
 /// Output of `doctor`.
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct DoctorData {
@@ -157,6 +171,8 @@ pub struct DoctorData {
     pub config: ConfigInfo,
     /// Ledger ref.
     pub ledger: LedgerInfo,
+    /// Merge driver resolution.
+    pub driver: DriverCheck,
     /// Language adapters; present only with `--languages`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub languages: Option<LanguagesReport>,
@@ -250,6 +266,7 @@ impl Command for Doctor {
         };
 
         let ledger = ledger_info(&located, &cfg);
+        let driver = driver_check(&located)?;
         let languages = self
             .languages
             .then(|| languages_report(&located.root, &cfg));
@@ -260,16 +277,64 @@ impl Command for Doctor {
             missing_knobs = config.missing_knobs,
             "doctor finished"
         );
-        Ok(Payload::new(DoctorData {
+        let warning = driver
+            .detail
+            .as_ref()
+            .zip(driver.fix.as_ref())
+            .map(|(d, f)| format!("{d}; fix: {f}"));
+        let payload = Payload::new(DoctorData {
             toolchain,
             git,
             cache,
             config,
             ledger,
+            driver,
             languages,
         })
-        .with_findings(findings))
+        .with_findings(findings);
+        Ok(match warning {
+            Some(w) => payload.with_warning(w),
+            None => payload,
+        })
     }
+}
+
+/// Judge the configured merge driver; a missing repository or an unset driver is not a problem.
+fn driver_check(located: &Located) -> Result<DriverCheck, CliError> {
+    let mut check = DriverCheck {
+        state: "skipped".to_owned(),
+        command: None,
+        detail: None,
+        fix: None,
+    };
+    if located.repo.is_none() {
+        return Ok(check);
+    }
+    let Some(command) = configured_driver(&located.root)? else {
+        "unset".clone_into(&mut check.state);
+        return Ok(check);
+    };
+    let (state, detail) = match judge_driver(&command)? {
+        DriverVerdict::Same => ("ok", None),
+        DriverVerdict::Other(p) => (
+            "mismatch",
+            Some(format!(
+                "merge driver `{command}` resolves to {p}, a different frob than the running one"
+            )),
+        ),
+        DriverVerdict::Unresolvable(why) => (
+            "unresolvable",
+            Some(format!("merge driver `{command}` does not resolve: {why}")),
+        ),
+    };
+    if detail.is_some() {
+        check.fix = Some(fix_command());
+    }
+    state.clone_into(&mut check.state);
+    check.detail = detail;
+    check.command = Some(command);
+    tracing::info!(state = %check.state, "merge driver checked");
+    Ok(check)
 }
 
 /// Adapters with their fidelity and capabilities, plus the walked extensions with none.

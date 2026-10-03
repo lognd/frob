@@ -1,0 +1,1 @@
+frob: `frob init` now writes the ledger merge driver as the running executable's absolute path when `frob` on PATH is a different frob (bare `frob` otherwise), with `--driver-command` and `--fix-driver`, and `frob doctor` reports a driver that resolves to a different frob or to nothing, with the fix command.
