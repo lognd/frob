@@ -4,9 +4,10 @@ title = "Wire frob-pm into ticket doctor and the merge driver (milestone.md, cyc
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-03T07:03:08Z"
-updated = "2026-10-03T07:08:03Z"
+updated = "2026-10-03T11:35:39Z"
 labels = ["release:0.532.0"]
 scope = ["crates/frob/src/ticket/**", "crates/frob/src/init.rs"]
 +++
