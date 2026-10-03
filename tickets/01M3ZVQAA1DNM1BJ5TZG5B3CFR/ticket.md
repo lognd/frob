@@ -8,10 +8,14 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T03:08:03Z"
-updated = "2026-10-03T03:08:03Z"
+updated = "2026-10-03T03:08:08Z"
 idempotency_key = "m2-gobsym-element-types"
 labels = ["milestone:2"]
 scope = ["crates/gob-symbols/**", "crates/frob-obligations/**", "docs/reference/fidelity.md"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZVQA77ZEK9DXEN5Z0XMZEG"
 
 [[acceptance]]
 text = "Given this repository, when frob check runs, then COV001 Unresolved findings number below 40 and the soundness tests of gob-symbols still pass"
