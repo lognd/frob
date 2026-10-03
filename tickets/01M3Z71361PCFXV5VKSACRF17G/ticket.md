@@ -8,9 +8,9 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-02T21:06:24Z"
+updated = "2026-10-03T06:13:14Z"
 idempotency_key = "m2-leasecfg"
-labels = ["milestone:2"]
+labels = ["milestone:2", "release:0.532.0"]
 scope = ["crates/frob-lease/**", "crates/frob-worktree/**", "crates/frob/**", "frob.toml"]
 
 [[acceptance]]

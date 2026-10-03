@@ -42,7 +42,7 @@ its own process.
 | **WIP limit per holder.** One ticket in progress per holder (actor plus worktree), so an agent finishes before starting. | `[pm.wip] in_progress_per_identity = 1` | `start` refuses a second (v1 T-5718) |
 | **WIP limit for the repository.** The number of in-progress tickets is capped at what the machine can build. In this repository that is two, the disk rule (frob-v2-disk-guard). | `[pm.wip] in_progress = 2` | PM013; `work` refuses past the limit, naming the holders |
 | **Replenishment order point.** When ready work falls below a threshold, planning happens then, on demand, not on a calendar. | `[pm] ready_min = 4` (twice the WIP limit) | PM033 replenish (Advisory): "ready queue is 1, below 4: run frob cycle plan or triage" |
-| **Classes of service.** `expedite` (a critical bug or security issue: may exceed the repository WIP limit by one, at most one at a time); `fixed-date` (ranked by due date); `standard`; `intangible` (chores and debt, capped as a share of each cycle's points). | `[pm.classes] expedite_max = 1`, `intangible_share = 0.2` | PM013 counts expedite separately; PM014 checks the share |
+| **Classes of service.** `expedite` (a critical bug or security issue: may exceed the repository WIP limit by one, at most one at a time); `fixed-date` (ranked by due date); `standard`; `intangible` (chores and debt, capped as a share of each cycle's points). | `[pm.classes] expedite_max = 1`, `intangible_share = 0.2` | PM013 counts expedite separately; PM035 intangible-share checks the share |
 | **Definition of ready.** A ticket enters `ready` only with scope, acceptance and points. | `[pm] ready_requires` | PM012, PM005 |
 | **Definition of done.** Close guards: criteria evidenced, docs touched or excepted, no open children, changelog fragment. | `[pm] done_requires` (pm-enforcement.md 3) | the close guard, REL003 |
 | **Cadences.** Replenishment on demand (order point); cycle review at each cycle close (commitment ratio, flow metrics, one retro note event); release on demand when a milestone is ready; a dev build on every green land. | `[pm] cycle_days = 7` | `frob cycle close`, `frob release status` |
@@ -126,6 +126,51 @@ part of the job's design:
   partial publish resumes from the first unpublished crate, never
   re-bumps. Registry tokens live only in the release environment, and
   security.md's CI rules apply.
+
+## 6a. Details (closing the 0.532.0 planner's gaps)
+
+- **Storage of milestones and cycles.** They are ledger objects with the
+  same event-sourced storage as tickets: an object directory holding a
+  frontmatter file folded from its own events, identified by a ULID,
+  with the version (milestones) or the dates (cycles) as aliases. Kinds
+  `milestone` and `cycle` join tickets.md 2a (`create`, `field`,
+  `member` for epic and ticket membership, `criterion`, `transition`).
+  In the milestone-1 layout they live at `tickets/_milestones/<ULID>/`
+  and `tickets/_cycles/<ULID>/`; on the ticket branch at `_milestones/`
+  and `_cycles/` (navigation.md 3.1). Membership is an event on the
+  object, never a field on the ticket, so moving a ticket between
+  cycles is one append.
+- **One version, per-binary tags.** Every crate and the wheel carry one
+  lockstep version (section 5); `release cut` tags `frob-vVERSION` and,
+  for each other binary that ships in the release, `grimble-vVERSION`
+  and `crunk-vVERSION` at the same commit (monorepo.md 4, updated).
+- **Forecast in `release status`.** Printed only when `[pm] min_history`
+  cycles exist; before that the line is Unresolved with the sample
+  count. `frob release forecast` ships with 0.536.0.
+- **What the wheel bundles.** The binaries built in that release: `frob`
+  always, `grimble` from 0.532.0 as a preview (its `--version` says
+  preview until 0.533.0), `crunk` once it exists.
+- **Trigger and gates.** Pushing a `frob-v*` tag starts the build and
+  smoke jobs; the crates.io and PyPI publish jobs run in a protected
+  environment that needs the owner's approval (v1's reviewer gate,
+  kept).
+- **CHANGELOG.** The v1 history moves to `CHANGELOG-v1.md`, linked from
+  the top of a new `CHANGELOG.md` that `release changelog` compiles from
+  fragments; the first section is 0.532.0.
+- **Dev channel branch.** "main" in section 5 means the repository's
+  default branch; in this repository that is `experimental` until main
+  is cut over.
+- **CI status in `release status`.** Read through the hosting API (`gh`
+  for GitHub) for the tip commit; without network or a token the line is
+  Unresolved, never assumed green.
+- **Owner actions before the first publish.** Configure trusted
+  publishing on PyPI (`frob`) and crates.io where available (otherwise a
+  token in the release environment); confirm ownership of the reserved
+  crate names (products.md 5). These are human steps, listed by
+  `frob release status` as Unresolved items until done.
+- **Rule numbers.** PM035 intangible-share (Warning) is new; PM014 keeps
+  its pm-enforcement.md meaning (milestone without forecast). PM010 to
+  PM012 and PM035 are not in 0.532.0 (cycles ship at minimum scope).
 
 ## 7. The v2 milestone list
 

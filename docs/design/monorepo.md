@@ -66,9 +66,10 @@ crunk are not second-class citizens in their own code.
 
 ## 4. Release and CI
 
-- Independent versions per binary, tags `frob-v*`, `grimble-v*`,
-  `crunk-v*`, cargo-dist per binary. crates.io receives the full crate
-  set at release, in lockstep versions, because `frob-cli` depends on
+- One lockstep version for every crate and binary (releases.md 5, D83);
+  per-binary tags `frob-v*`, `grimble-v*`, `crunk-v*` at the same commit
+  for the binaries that ship in a release; cargo-dist per binary.
+  crates.io receives the full crate set at release, in lockstep versions, because `frob-cli` depends on
   every `gob-*` and `frob-*` crate it links (D35); binaries also ship
   through cargo-dist and PyPI. Package names are reserved at first
   publish (products.md section 5).
