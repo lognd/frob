@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Also fix (cloc FROB_FEEDBACK.md item 8): cycles are keyed by their date range, so after an early close a new cycle with the same dates is refused as 'already exists with different goal'. Idempotency of cycle new must match only open or planned cycles; a closed cycle never matches; two cycles may share a date range when the earlier one is closed, and the alias of the later one gets a numeric suffix (for example 2026-10-03..2026-10-04.2) while handles and ULIDs stay the primary references. Test: close early, then cycle new with the same start: accepted."
+at = "2026-10-03T12:45:51Z"
+actor = "lognd"
+rev = 1
