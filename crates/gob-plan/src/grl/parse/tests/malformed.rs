@@ -30,6 +30,7 @@ fn raw(name: &'static str, src: &str, message: &'static str, span_text: &'static
 
 const EXPLAIN: &str = "explain \"\"\"\n    ## Remedy\n  \"\"\"";
 
+#[allow(clippy::too_many_lines, reason = "a flat table of malformed inputs")]
 fn cases() -> Vec<Case> {
     vec![
         case(

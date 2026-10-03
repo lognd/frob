@@ -3,6 +3,8 @@
 mod malformed;
 mod props;
 
+use std::fmt::Write as _;
+
 use gob_text::{FileId, FileInterner};
 
 use crate::grl::ast::{
@@ -49,7 +51,7 @@ const FIXTURES: &[&str] = &[
     "CI002_escaped",
 ];
 
-fn slice<'a>(src: &'a str, span: gob_text::Span) -> &'a str {
+fn slice(src: &str, span: gob_text::Span) -> &str {
     &src[span.range.to_usize_range()]
 }
 
@@ -74,7 +76,7 @@ fn fold_spans(raw: &str) -> String {
             let t = &tail[from..];
             &t[..t.find(')').expect("number")]
         };
-        out.push_str(&format!("@{}..{}", num(start), num(end)));
+        let _ = write!(out, "@{}..{}", num(start), num(end));
         let close = tail.find("} }").expect("span close") + 3;
         // `TextRange { .. } }` closes with "} }" after the end number.
         rest = &tail[close..];

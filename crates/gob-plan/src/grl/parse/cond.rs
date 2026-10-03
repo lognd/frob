@@ -335,7 +335,14 @@ impl Parser<'_> {
             }
             w if self.starts_rel_word(w) => {
                 let rel = self.rel()?;
-                Ok(binary(start, rel.span, CondKind::Rel { subject: lhs, rel }))
+                Ok(binary(
+                    start,
+                    rel.span,
+                    CondKind::Rel {
+                        subject: lhs,
+                        rel: Box::new(rel),
+                    },
+                ))
             }
             _ => Ok(bare(lhs)),
         }

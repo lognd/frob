@@ -518,7 +518,7 @@ pub enum CondKind {
         /// The left side.
         subject: Term,
         /// The relation and its object.
-        rel: Rel,
+        rel: Box<Rel>,
     },
     /// `term CMP term`
     Cmp {

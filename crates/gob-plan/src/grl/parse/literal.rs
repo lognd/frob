@@ -31,7 +31,7 @@ impl Parser<'_> {
             match part {
                 StrPart::Text { value: v, .. } => value.push_str(v),
                 StrPart::Interp { expr } => {
-                    let braces = self.braces(*expr);
+                    let braces = Self::braces(*expr);
                     self.error(ParseErrorKind::InterpolationNotAllowed { place }, braces);
                 }
             }
@@ -40,7 +40,7 @@ impl Parser<'_> {
     }
 
     /// The range of an interpolation including its braces.
-    fn braces(&self, expr: Span) -> Span {
+    fn braces(expr: Span) -> Span {
         let start = u32::from(expr.range.start()).saturating_sub(1);
         let end = u32::from(expr.range.end()).saturating_add(1);
         Span::new(
@@ -70,7 +70,7 @@ impl Parser<'_> {
                     if let Some(path) = self.interp_path(*expr) {
                         out.push(MessagePart::Interp {
                             path,
-                            span: self.braces(*expr),
+                            span: Self::braces(*expr),
                         });
                     }
                 }

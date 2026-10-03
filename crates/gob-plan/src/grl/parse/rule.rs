@@ -74,15 +74,12 @@ impl Parser<'_> {
         let start = self.here();
         self.bump();
         self.bal = 0;
-        let (id, slug, open) = match self.rule_head() {
-            Ok(head) => head,
-            Err(_) => {
-                self.skip_to_open_brace();
-                if let Some(open) = self.eat(&TokenKind::LBrace) {
-                    let _ = self.rule_body(open, "?");
-                }
-                return None;
+        let Ok((id, slug, open)) = self.rule_head() else {
+            self.skip_to_open_brace();
+            if let Some(open) = self.eat(&TokenKind::LBrace) {
+                let _ = self.rule_body(open, "?");
             }
+            return None;
         };
         let body = self.rule_body(open, &id.text);
         let end = body.close.unwrap_or_else(|| self.prev_span());
@@ -145,17 +142,13 @@ impl Parser<'_> {
                 break;
             }
             let item_stage = self.word().and_then(|w| self.stage_of(w));
-            match item_stage {
-                Some(item) => {
-                    self.check_order(stage, item, tok.span);
-                    stage = stage.max(item);
-                    self.item(item, &mut body);
-                }
-                None => {
-                    let _: PResult<()> =
-                        self.expected("a header, a clause, an `example` or `explain`");
-                    self.skip_to(Self::is_item_start);
-                }
+            if let Some(item) = item_stage {
+                self.check_order(stage, item, tok.span);
+                stage = stage.max(item);
+                self.item(item, &mut body);
+            } else {
+                let _: PResult<()> = self.expected("a header, a clause, an `example` or `explain`");
+                self.skip_to(Self::is_item_start);
             }
             if self.pos == before {
                 self.bump();

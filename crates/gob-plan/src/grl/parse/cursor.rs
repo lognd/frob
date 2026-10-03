@@ -214,10 +214,10 @@ impl<'a> Parser<'a> {
         loop {
             let joins = self.is(&TokenKind::Minus)
                 && self.word_nth(1).is_some()
-                && self.adjacent(word.span, self.here())
+                && Self::adjacent(word.span, self.here())
                 && self
                     .nth(1)
-                    .is_some_and(|t| self.adjacent(self.here(), t.span));
+                    .is_some_and(|t| Self::adjacent(self.here(), t.span));
             if !joins {
                 return Ok(word);
             }
@@ -233,7 +233,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn adjacent(&self, left: Span, right: Span) -> bool {
+    fn adjacent(left: Span, right: Span) -> bool {
         left.range.end() == right.range.start()
     }
 
