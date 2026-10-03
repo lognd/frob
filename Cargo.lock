@@ -1028,6 +1028,8 @@ name = "frob-release"
 version = "0.0.0"
 dependencies = [
  "blake3",
+ "schemars",
+ "serde",
  "tempfile",
  "thiserror",
  "tracing",

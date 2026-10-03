@@ -78,6 +78,22 @@ pub enum FragmentError {
     },
 }
 
+impl FragmentError {
+    /// The file name inside `changelog.d` this error is about.
+    #[must_use]
+    pub fn file(&self) -> &str {
+        match self {
+            Self::BadName { file, .. }
+            | Self::UnknownType { file, .. }
+            | Self::UnknownTicket { file, .. }
+            | Self::UnknownProduct { file, .. }
+            | Self::Empty { file }
+            | Self::NonAscii { file, .. }
+            | Self::Unreadable { file, .. } => file,
+        }
+    }
+}
+
 /// Why `frob release changelog` refused or failed.
 #[derive(Debug, thiserror::Error)]
 pub enum ReleaseError {

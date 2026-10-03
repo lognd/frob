@@ -11,6 +11,8 @@ publish.workspace = true
 
 [dependencies]
 blake3 = "1"
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
 thiserror = "2"
 tracing = "0.1"
 ulid = "1"

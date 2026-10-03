@@ -190,6 +190,29 @@ pub fn milestones(ledger: &Ledger) -> Result<Vec<Milestone>> {
         .collect())
 }
 
+// frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
+/// The facts of every ticket at the ledger tip, for `PM034` and the release readiness report.
+///
+/// # Errors
+/// Ledger read failures.
+pub fn claimants(ledger: &Ledger) -> Result<Vec<Claimant>> {
+    let Some(tip) = ledger.tip_hex()? else {
+        return Ok(Vec::new());
+    };
+    let mut tickets = Vec::new();
+    for id in ledger.ticket_ids_at(&tip)? {
+        if let Some(t) = ledger.read_ticket_at(&tip, id)? {
+            tickets.push(Claimant {
+                id,
+                title: t.front.title,
+                parent: t.front.parent,
+                labels: t.front.labels,
+            });
+        }
+    }
+    Ok(tickets)
+}
+
 /// Read milestones and tickets from `ledger` at its tip and run [`pm034`].
 ///
 /// Returns an empty evaluation without milestones (the rule is then not applicable).
@@ -203,20 +226,7 @@ pub fn evaluate(ledger: &Ledger) -> Result<Evaluation> {
         tracing::info!("PM034 not applicable: no milestone objects");
         return Ok(Evaluation::default());
     }
-    let Some(tip) = ledger.tip_hex()? else {
-        return Ok(Evaluation::default());
-    };
-    let mut tickets = Vec::new();
-    for id in ledger.ticket_ids_at(&tip)? {
-        if let Some(t) = ledger.read_ticket_at(&tip, id)? {
-            tickets.push(Claimant {
-                id,
-                title: t.front.title,
-                parent: t.front.parent,
-                labels: t.front.labels,
-            });
-        }
-    }
+    let tickets = claimants(ledger)?;
     let out = pm034(&milestones, &tickets);
     tracing::info!(
         milestones = milestones.len(),

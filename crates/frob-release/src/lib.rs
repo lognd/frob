@@ -1,4 +1,4 @@
-//! `frob release changelog`: compile `changelog.d/<ulid>.<type>.md` fragments into CHANGELOG.md.
+//! `frob release changelog` and `frob release status`: compile `changelog.d/<ulid>.<type>.md` fragments into CHANGELOG.md.
 //!
 //! Design: `documentation.md` section 6 and `releases.md` sections 3 and 6a. Fragments are
 //! validated against the ledger (through a [`TicketResolver`]), rendered into one version
@@ -9,6 +9,7 @@
 pub mod changelog;
 pub mod error;
 pub mod fragment;
+pub mod status;
 
 use std::fs;
 use std::path::{Path, PathBuf};

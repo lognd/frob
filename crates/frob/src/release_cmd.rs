@@ -1,10 +1,22 @@
-//! `release changelog`: compile `changelog.d` fragments into CHANGELOG.md (documentation.md 6).
+//! `release changelog` and `release status` (documentation.md 6, releases.md 4).
 //!
 //! A thin layer over `frob-release`: ticket ULIDs resolve against the ledger, a typed
 //! [`ReleaseError`] becomes an exit-3 refusal carrying its teaching message, and
-//! an I/O failure is internal.
+//! an I/O failure is internal. `release status` gathers the milestone, the open tickets,
+//! `PM034` and the changelog dry-run into [`frob_release::status::Input`] and reports; it never refuses
+//! over what it finds.
 
+use std::collections::BTreeSet;
+
+use frob_ledger::index::ListFilter;
+use frob_ledger::model::Category;
 use frob_ledger::{Ledger, TicketId};
+use frob_pm::PmStore;
+use frob_pm::model::Milestone;
+use frob_pm::rules::membership::{CLAIM_PREFIX, claimants, pm034};
+use frob_release::status::{
+    ChangelogFacts, EvidenceRef, Input, MilestoneFacts, OpenTicket, Report, assess,
+};
 use frob_release::{Mode, Options, ReleaseError};
 use gob_cli::clap::{Arg, ArgAction, ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
@@ -12,7 +24,8 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::config::FrobConfig;
-use crate::ticket::{get, text_flag};
+use crate::milestone_cmd::{MilestoneView, milestones, pm_err};
+use crate::ticket::{cli_err, get, open, text_flag};
 use crate::workspace::{Located, config_refusal};
 
 /// What `release changelog` did, or with `--check` and `--dry-run` would do.
@@ -139,7 +152,235 @@ fn refuse(e: ReleaseError) -> CliError {
         .into()
 }
 
+// frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
+/// What `release status` reports: a readiness report, or why there is nothing to report on.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct StatusData {
+    /// `report`, or `no-milestone` when no version could be chosen.
+    pub outcome: String,
+    /// The explanation and the next command, when `outcome` is `no-milestone`.
+    pub message: Option<String>,
+    /// The readiness report; absent when `outcome` is `no-milestone`.
+    pub report: Option<Report>,
+}
+
+/// Report release readiness: criteria, open tickets, PM034, fragments, what is unresolved; never fails.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "release status",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, internal)
+)]
+pub struct ReleaseStatus {
+    version: Option<String>,
+}
+
+impl Command for ReleaseStatus {
+    type Data = StatusData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        cmd.arg(
+            Arg::new("version")
+                .value_name("VERSION")
+                .help("Release version (default: the lowest open milestone)"),
+        )
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            version: get(m, "version"),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<StatusData> {
+        let ledger = open(ctx)?;
+        let all = milestones(PmStore::new(&ledger))?;
+        let version = if let Some(v) = self.version.clone() {
+            v
+        } else if let Some(m) = lowest_open(&all) {
+            m.version.clone()
+        } else {
+            tracing::info!("release status: no open milestone");
+            return Ok(Payload::new(StatusData {
+                outcome: "no-milestone".to_owned(),
+                message: Some(no_milestone_message(&all)),
+                report: None,
+            }));
+        };
+        let milestone = all
+            .iter()
+            .find(|m| m.version == version || m.id.handle() == version);
+        let version = milestone.map_or(version, |m| m.version.clone());
+        let ctx_dir = Located::discover(&ctx.cwd).into_repo()?.1;
+        let input = Input {
+            milestone: milestone.map(|m| facts(m, &ledger)).transpose()?,
+            open_tickets: open_tickets(&ledger, milestone, &version)?,
+            changelog: changelog_facts(&ctx_dir, &ledger, &version),
+            version,
+        };
+        let report = assess(&input);
+        Ok(Payload::new(StatusData {
+            outcome: "report".to_owned(),
+            message: None,
+            report: Some(report),
+        }))
+    }
+}
+
+// frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
+/// The open milestone with the lowest version, comparing numeric fields so 0.9.0 sorts before 0.10.0.
+fn lowest_open(all: &[Milestone]) -> Option<&Milestone> {
+    all.iter()
+        .filter(|m| m.state == frob_pm::State::Open)
+        .min_by_key(|m| version_key(&m.version))
+}
+
+/// Sort key of a version: numeric core, with a pre-release sorting before its release.
+fn version_key(v: &str) -> (Vec<u64>, bool, String) {
+    let (core, pre) = v.split_once('-').map_or((v, ""), |(c, p)| (c, p));
+    let nums = core
+        .split('.')
+        .map(|n| n.parse::<u64>().unwrap_or(0))
+        .collect();
+    (nums, pre.is_empty(), pre.to_owned())
+}
+
+/// The message when no version can be chosen: what exists and the command that creates a milestone.
+fn no_milestone_message(all: &[Milestone]) -> String {
+    if all.is_empty() {
+        "no milestone exists yet; create one with `frob milestone new <VERSION> --goal <text> --criterion <text>`, or name a version to see what is labelled `release:<VERSION>`: `frob release status <VERSION>`".to_owned()
+    } else {
+        let list: Vec<String> = all
+            .iter()
+            .map(|m| format!("{} ({})", m.version, m.state))
+            .collect();
+        format!(
+            "no open milestone ({}); name one with `frob release status <VERSION>` or create the next with `frob milestone new <VERSION> --goal <text>`",
+            list.join(", ")
+        )
+    }
+}
+
+// frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
+/// Milestone facts for the report: criteria with evidence, member epics, and its PM034 findings.
+fn facts(m: &Milestone, ledger: &Ledger) -> Result<MilestoneFacts, CliError> {
+    let view = MilestoneView::of(m, ledger);
+    let tickets = claimants(ledger).map_err(pm_err)?;
+    let pm034 = pm034(std::slice::from_ref(m), &tickets)
+        .findings
+        .into_iter()
+        .map(|f| f.message)
+        .collect();
+    Ok(MilestoneFacts {
+        handle: view.handle,
+        goal: view.goal,
+        state: view.state,
+        epics: view
+            .epics
+            .iter()
+            .map(|e| {
+                format!(
+                    "{} {}",
+                    e.handle.clone().unwrap_or_else(|| e.id.clone()),
+                    e.title.clone().unwrap_or_default()
+                )
+            })
+            .collect(),
+        criteria: view
+            .criteria
+            .into_iter()
+            .map(|c| frob_release::status::CriterionStatus {
+                position: c.position,
+                text: c.text,
+                state: c.state,
+                evidence: c
+                    .bound_by
+                    .into_iter()
+                    .map(|b| EvidenceRef {
+                        provider: b.provider,
+                        reference: b.reference,
+                    })
+                    .collect(),
+            })
+            .collect(),
+        pm034,
+    })
+}
+
+// frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
+/// Not-done tickets below the member epics (the epics themselves excluded) or labelled `release:VERSION`.
+fn open_tickets(
+    ledger: &Ledger,
+    milestone: Option<&Milestone>,
+    version: &str,
+) -> Result<Vec<OpenTicket>, CliError> {
+    let mut seen: BTreeSet<TicketId> = BTreeSet::new();
+    let mut found = Vec::new();
+    let mut keep = |s: frob_ledger::index::Summary| {
+        if s.category != Category::Done && seen.insert(s.id) {
+            found.push(OpenTicket {
+                handle: s.handle,
+                title: s.title,
+                category: s.category.to_string(),
+            });
+        }
+    };
+    let mut queue: Vec<TicketId> = milestone.map(|m| m.epics.clone()).unwrap_or_default();
+    let mut visited: BTreeSet<TicketId> = queue.iter().copied().collect();
+    while let Some(parent) = queue.pop() {
+        let children = ledger
+            .list(&ListFilter {
+                parent: Some(parent),
+                ..ListFilter::default()
+            })
+            .map_err(cli_err)?;
+        for c in children {
+            if visited.insert(c.id) {
+                queue.push(c.id);
+            }
+            keep(c);
+        }
+    }
+    let labelled = ledger
+        .list(&ListFilter {
+            label: Some(format!("{CLAIM_PREFIX}{version}")),
+            ..ListFilter::default()
+        })
+        .map_err(cli_err)?;
+    labelled.into_iter().for_each(keep);
+    tracing::debug!(version, open = found.len(), "open tickets gathered");
+    Ok(found)
+}
+
+// frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
+/// The changelog dry-run for `version`, reduced to what the report shows; reuses [`frob_release::run`].
+fn changelog_facts(root: &std::path::Path, ledger: &Ledger, version: &str) -> ChangelogFacts {
+    let opts = Options {
+        version: version.to_owned(),
+        date: jiff::Zoned::now().date().to_string(),
+        mode: Mode::DryRun,
+    };
+    let resolver = |ulid: &str| -> Option<String> {
+        let id: TicketId = ulid.parse().ok()?;
+        ledger.show(id).ok().map(|v| v.summary.handle)
+    };
+    match frob_release::run(root, &opts, &resolver) {
+        Ok(out) => ChangelogFacts::Valid {
+            fragments: out.fragments,
+            section: out.section,
+        },
+        Err(ReleaseError::Fragments(errs)) => ChangelogFacts::InvalidFragments(
+            errs.iter()
+                .map(|e| (e.file().to_owned(), e.to_string()))
+                .collect(),
+        ),
+        Err(e) => ChangelogFacts::Refused(e.to_string()),
+    }
+}
+
 /// Register the `release` verbs on the root.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<ReleaseChangelog>()
+        .register::<ReleaseStatus>()
 }
