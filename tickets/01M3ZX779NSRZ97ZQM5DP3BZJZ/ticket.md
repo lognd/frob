@@ -2,13 +2,13 @@
 id = "01M3ZX779NSRZ97ZQM5DP3BZJZ"
 title = "gob-plan crate and GRL lexer: tokens, snippets, strings, regex, comments"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:13Z"
-updated = "2026-10-03T03:34:13Z"
+updated = "2026-10-03T05:19:15Z"
 idempotency_key = "m2-grl-lex"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/**"]

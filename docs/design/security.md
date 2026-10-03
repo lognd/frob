@@ -326,24 +326,29 @@ Read implies publish: the trust prompt and docs say "can read and print".
 
 ### 2.11 The mirror and the ledger (I12)
 
-- Issue markers are authenticated: the mirror adopts or updates an issue
-  only if its author is the mirror's own bot identity (checked by user
-  id) and its marker carries an HMAC of the ULID under a key in CI
-  secrets. Anything else carrying a marker is **MIR003
-  spoofed-marker** (Advisory) and ignored.
-- `--adopt` requires a TTY, shows the diff with 2.10 escaping, refuses
-  edits by unmapped identities, and can never change repository-owned
-  fields (scope, acceptance, evidence, links). Tracker text in MIR002
-  carries `origin = tracker` and a length cap.
-- Tracker edits never block anything: repository-owned fields are
-  reverted to the ledger's projection and the edit is captured as a
-  proposal (mirror.md 3.1); MIR002 is Advisory. An outsider who edits
-  issues can produce at most one collapsed proposal line per issue.
-- The mirror job runs only for pushes to the protected ledger ref, from
-  the default branch's workflow definition. `doctor` (and a TICK rule)
-  checks through the hosting API that the ledger branch forbids force
-  pushes and deletion: an Error where the API answers, Unresolved
-  otherwise.
+The mirror's security design is mirror.md section 3 (from the
+adversarial audit notes/review/mirror-audit.md and the TLA+ model in
+docs/design/models/mirror/). The points that matter for I12:
+
+- The mirror job holds the tracker credentials and runs only from the
+  default branch's workflow on schedule or dispatch, with credentials in
+  an environment restricted to that branch; a push to the ticket branch
+  never runs a secret-bearing job (mirror.md 3.1).
+- Markers count only in the bot-authored creation revision of an issue
+  body and carry a MAC bound to the repository; any other issue carrying
+  a marker is **MIR003 spoofed-marker** (Advisory) and ignored
+  (mirror.md 3.3).
+- Tracker edits never block anything; they are reverted and captured as
+  proposals by reference, keyed by tracker event id, capped and
+  expiring; an outsider can add at most one proposal per issue and
+  field per day, and contested fields stop the revert war (mirror.md
+  3.4, 3.5).
+- `frob ticket proposals accept` requires a TTY and no agent marker,
+  shows the escaped diff, refuses unmapped identities, and never changes
+  scope, acceptance, evidence or links (mirror.md 3.5).
+- `doctor` (and a TICK rule) checks through the hosting API that the
+  ledger branch forbids force pushes and deletion: an Error where the
+  API answers, Unresolved otherwise.
 - Agent briefs render ledger text with `origin = ledger`; commands an
   agent brief suggests are limited to `[evidence] allowed_tools`.
 - CI rules: running a check with any trust other than `--trust-from` a
@@ -512,7 +517,7 @@ means the audit's mitigation is adopted as written in the section named.
 
 1. **Tracker edits.** Not a blocking finding anywhere; reconciled
    deterministically by field ownership with every edit captured as a
-   proposal (mirror.md 3.1).
+   proposal (mirror.md 3.4).
 2. **Escaping.** Option A: controls, bidi and invisible characters are
    always escaped; other non-ASCII is escaped only in text from packs,
    the tracker and the ledger; source snippets show as they are.
