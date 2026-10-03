@@ -2,7 +2,8 @@
 id = "01M41RHBJ03PGD6JY0J6JTAH9Q"
 title = "TICK004 is an Error; ticket doctor --fix scrubs absolute home paths from existing ledgers with a forward commit"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
