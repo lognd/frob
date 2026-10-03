@@ -8,6 +8,7 @@
 //! with no `Cargo.toml` above it is never ruled out.
 
 // frob:ticket 01M3ZR5KCPY3E3NFCVFS404RDJ
+// frob:ticket 01M3ZVQA77ZEK9DXEN5Z0XMZEG
 
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
@@ -189,11 +190,8 @@ impl CrateDeps {
         out
     }
 
-    /// True when code in crate `from` can call code in crate `to` (itself or a transitive dependency).
-    pub fn can_reach(&mut self, from: &str, to: &str) -> bool {
-        if from == to {
-            return true;
-        }
+    /// Every crate directory that code in crate `from` links transitively (not `from` itself).
+    pub fn transitive_deps(&mut self, from: &str) -> Vec<String> {
         if !self.closure.contains_key(from) {
             let mut seen = BTreeSet::new();
             let mut stack = vec![from.to_owned()];
@@ -207,7 +205,12 @@ impl CrateDeps {
             tracing::debug!(krate = from, deps = seen.len(), "crate dependency closure");
             self.closure.insert(from.to_owned(), seen);
         }
-        self.closure[from].contains(to)
+        self.closure[from].iter().cloned().collect()
+    }
+
+    /// True when code in crate `from` can call code in crate `to` (itself or a transitive dependency).
+    pub fn can_reach(&mut self, from: &str, to: &str) -> bool {
+        from == to || self.transitive_deps(from).iter().any(|d| d == to)
     }
 
     /// Like [`Self::can_reach`] for files, never ruling out a file with no manifest above it.

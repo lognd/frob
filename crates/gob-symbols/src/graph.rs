@@ -196,6 +196,8 @@ struct Index {
     ext_uses: HashMap<String, Vec<UseBinding>>,
     /// Source file to the directory of the crate that owns it (only with a manifest above it).
     file_crate: HashMap<String, String>,
+    /// Crate directory to the directories of the crates it links transitively (unknown-receiver candidates).
+    reach: HashMap<String, Vec<String>>,
     /// Crate directory to the extern crate names nameable inside it, with their directories.
     externs: HashMap<String, Vec<(String, String)>>,
     /// (crate dir, module path) to the file-level `pub use` bindings of that module.
@@ -614,6 +616,7 @@ impl SymbolGraph {
             ext_uses: HashMap::new(),
             file_crate: HashMap::new(),
             externs: HashMap::new(),
+            reach: HashMap::new(),
             pubuses: HashMap::new(),
             fields: HashMap::new(),
             struct_count: HashMap::new(),
@@ -631,6 +634,7 @@ impl SymbolGraph {
                 if !idx.externs.contains_key(&owner) {
                     let named = d.extern_crates(&owner);
                     idx.externs.insert(owner.clone(), named);
+                    idx.reach.insert(owner.clone(), d.transitive_deps(&owner));
                 }
                 idx.file_crate.insert(f.path.clone(), owner);
             }
@@ -997,7 +1001,26 @@ impl SymbolGraph {
             }
         }
         // Receiver type unknown: every method of that name that `x.m(args)` can call may be it.
-        let cands: Vec<NodeIndex> = named.into_iter().filter(|&n| fits(n)).collect();
+        // frob:ticket 01M3ZVQA77ZEK9DXEN5Z0XMZEG
+        // A dependency crate's method of that name is as possible as the caller's own (soundness).
+        let here = crate_and_module(caller.path()).0;
+        let linked = idx
+            .file_crate
+            .get(caller.path())
+            .and_then(|o| idx.reach.get(o))
+            .into_iter()
+            .flatten()
+            .filter(|d| **d != here)
+            .filter_map(|d| idx.by_name.get(&(d.clone(), q.name.to_owned())))
+            .flatten()
+            .copied();
+        let mut cands: Vec<NodeIndex> = named
+            .into_iter()
+            .chain(linked)
+            .filter(|&n| fits(n))
+            .collect();
+        cands.sort();
+        cands.dedup();
         if cands.is_empty() {
             Outcome::Gap(GapReason::Unbound)
         } else {

@@ -272,3 +272,56 @@ fn ambiguous_or_unlinked_cross_crate_calls_never_resolve() {
     assert!(calls_of(&g2, "tests/t.rs::t").is_empty());
     assert!(has_unknown(&g2, "tests/t.rs::t"));
 }
+
+// frob:ticket 01M3ZVQA77ZEK9DXEN5Z0XMZEG
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.from_files_with_deps
+#[test]
+fn unknown_receiver_call_poisons_same_named_methods_in_dependency_crates() {
+    let dir = tmp();
+    // c-app -> b-app -> a-lib; each defines `m(&self)` (and `d` is a different arity).
+    let c_toml = (
+        "crates/c/Cargo.toml",
+        "[package]\nname = \"c-app\"\n\n[dependencies]\nb-app = { path = \"../b\" }\n",
+    );
+    let a = (
+        "crates/a/src/lib.rs",
+        "pub struct A;\nimpl A {\n    pub fn m(&self) {}\n    pub fn two(&self, _x: u8) {}\n}\n",
+    );
+    let b = (
+        "crates/b/src/lib.rs",
+        "pub struct B;\nimpl B {\n    pub fn m(&self) {}\n}\n",
+    );
+    let c = (
+        "crates/c/src/lib.rs",
+        "pub struct C;\nimpl C {\n    pub fn m(&self) {}\n}\npub fn go() { make().m(); }\n",
+    );
+    let g = graph_in(dir.path(), &[ROOT, A_TOML, B_TOML, c_toml, a, b, c]);
+    let mut calls = calls_of(&g, "crates/c/src/lib.rs::go");
+    calls.sort();
+    let want = [
+        "a/src/lib.rs::A.m",
+        "b/src/lib.rs::B.m",
+        "c/src/lib.rs::C.m",
+    ];
+    assert_eq!(calls.len(), 3, "{calls:?}");
+    for (w, (got, status)) in want.iter().zip(&calls) {
+        assert!(got.ends_with(w), "{got} vs {w}");
+        assert_eq!(*status, Status::May, "{got}");
+    }
+    assert!(
+        !g.call_edges()
+            .iter()
+            .any(|e| matches!(e, CallEdge::Resolved { .. })),
+        "an unknown receiver never yields a Resolved edge"
+    );
+    // A crate that links nothing is not given the other crates' methods.
+    let g2 = graph_in(
+        dir.path(),
+        &[(
+            "crates/a/src/lib.rs",
+            "pub fn lone() { make().m(); }\npub struct A;\nimpl A { pub fn m(&self) {} }\n",
+        )],
+    );
+    let own = calls_of(&g2, "crates/a/src/lib.rs::lone");
+    assert_eq!(own.len(), 1, "{own:?}");
+}
