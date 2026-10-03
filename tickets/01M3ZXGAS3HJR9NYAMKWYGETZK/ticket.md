@@ -13,6 +13,10 @@ idempotency_key = "m2-mirror-proposal-capture"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/**", "crates/frob-ledger/**"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX83NZ4PAM53VQCHXPE1R8"
+
 [[acceptance]]
 text = "Given an edit made between the mirror's read and write, when the next run reads history, then the edit is recorded as a proposal and nothing is lost"
 bound = false
