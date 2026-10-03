@@ -8,7 +8,7 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T11:59:12Z"
-updated = "2026-10-03T12:35:32Z"
+updated = "2026-10-03T12:35:33Z"
 idempotency_key = "m2-rel-proc001-repo-local"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-check/**", "crates/frob-obligations/**", "frob.toml", "docs/reference/rules/**", "crates/gob-exec/src/proc001.rs", "crates/gob-exec/tests/proc001_self.rs", "crates/gob-check/**", "changelog.d/01M40T3VS6VVN80SP39XGS6PK2.fixed.md"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given this repository, when a crate other than gob-exec or gob-git uses std::process::Command, then PROC001 still fires, and ExitCode alone does not"
-bound = false
+bound = true
 +++
 
 Reported from the cloc repository (FROB_FEEDBACK.md item 2): PROC001 'uses the process API outside gob-exec and gob-git' fires as a universal Error in a consumer repository, on use std::process::ExitCode, which is not a spawn. The rule encodes this repository's own architecture (only gob-exec and gob-git spawn), so it must be a repo-local rule of the frob repository (declared in this repository's frob.toml or as a frob-repo pack), not a built-in that consumers inherit; and even here it must only match spawning APIs (Command, Child, exec, spawn), not ExitCode, exit or id. Tests: a consumer repository with ExitCode and Command: no PROC001; this repository: still enforced on Command outside the two crates, not on ExitCode.
