@@ -8,10 +8,10 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T12:27:36Z"
-updated = "2026-10-03T13:00:51Z"
+updated = "2026-10-03T13:00:52Z"
 idempotency_key = "m2-rel-close-creates-next"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-pm/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs", "docs/design/pm-enforcement.md"]
+scope = ["crates/frob-pm/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs", "docs/design/pm-enforcement.md", "changelog.d/01M40VQWCV38B2JCABYNNNA877.fixed.md"]
 
 [[acceptance]]
 text = "Given an open 7-day cycle on its first day with unfinished members, when cycle close with --next-goal runs, then a next cycle starting tomorrow exists, the members are carried into it, and the ratio counts them as committed"
