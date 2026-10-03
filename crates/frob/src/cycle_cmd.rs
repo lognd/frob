@@ -277,7 +277,8 @@ fn refusal(e: &CycleError) -> CliError {
         }
         CycleError::LiveLease { handles, .. } => {
             Refusal::new("E-CYCLE-LEASE", GuardNeedsAction, e.to_string()).with_remedy(format!(
-                "finish or requeue {} (`frob ticket update <ticket> --category todo` after `frob lease release`), then close again",
+                // frob:ticket 01M40YQZF4422S88TN6992AN0Q
+                "finish and land {}, or release it with `frob requeue <ticket> --reason <why>`, then close again",
                 handles.join(", ")
             ))
         }

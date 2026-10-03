@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob/src/cycle_cmd.rs", "crates/frob/tests/remedies.rs", "crates/gob-cli/src/cli.rs", "crates/frob/Cargo.toml", "Cargo.lock", "crates/gob-directives/src/scan.rs", "crates/gob-directives/src/rules.rs", "crates/gob-directives/tests/scan.rs", "docs/reference/rules/DSL002.md"]
+new = ["crates/frob/src/cycle_cmd.rs", "crates/frob/tests/remedies.rs", "crates/gob-cli/src/cli.rs", "crates/frob/Cargo.toml", "Cargo.lock", "crates/gob-directives/src/scan.rs", "crates/gob-directives/src/rules.rs", "crates/gob-directives/tests/scan.rs", "docs/reference/rules/DSL002.md", "changelog.d/01M40YQZF4422S88TN6992AN0Q.fixed.md"]
+at = "2026-10-03T14:02:44Z"
+actor = "lognd"
+rev = 1

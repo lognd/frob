@@ -77,6 +77,45 @@ impl Cli {
         exec.exit
     }
 
+    // frob:ticket 01M40YQZF4422S88TN6992AN0Q
+    /// Every verb path with the long flags it accepts (its own plus the global ones).
+    ///
+    /// Lets tests and doc checks verify that a quoted `product verb --flag` exists.
+    pub fn verb_flags(
+        &self,
+    ) -> std::collections::BTreeMap<String, std::collections::BTreeSet<String>> {
+        let root = self.build(false);
+        let globals: std::collections::BTreeSet<String> = root
+            .get_arguments()
+            .filter_map(|a| a.get_long().map(str::to_owned))
+            .chain(["schema", "help", "version"].map(str::to_owned))
+            .collect();
+        let mut out = std::collections::BTreeMap::new();
+        let mut stack: Vec<(String, &clap::Command)> = vec![(String::new(), &root)];
+        while let Some((path, cmd)) = stack.pop() {
+            let subs: Vec<_> = cmd.get_subcommands().collect();
+            if subs.is_empty() {
+                let mut flags = globals.clone();
+                flags.extend(
+                    cmd.get_arguments()
+                        .filter_map(|a| a.get_long().map(str::to_owned)),
+                );
+                out.insert(path, flags);
+                continue;
+            }
+            for sub in subs {
+                let next = if path.is_empty() {
+                    sub.get_name().to_owned()
+                } else {
+                    format!("{path} {}", sub.get_name())
+                };
+                stack.push((next, sub));
+            }
+        }
+        tracing::debug!(verbs = out.len(), "verb flag table built");
+        out
+    }
+
     /// Report a failure that happened before dispatch (exit 4) and return the code.
     pub fn fail_startup(&self, error: impl Into<Box<dyn std::error::Error + Send + Sync>>) -> i32 {
         let argv: Vec<OsString> = std::env::args_os().collect();

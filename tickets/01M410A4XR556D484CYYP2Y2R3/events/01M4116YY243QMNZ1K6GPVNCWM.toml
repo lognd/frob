@@ -1,0 +1,27 @@
+kind = "evidence"
+captured_at = "2026-10-03T14:03:13Z"
+digest = "23a0cb5681f639ee26980736e2e7117ae97c1b27b6bcc3c3366ed171a0986061"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.36s
+────────────
+ Nextest run ID 3ef7276b-58ee-4630-9519-e06539253854 with nextest profile: default
+    Starting 6 tests across 139 binaries (1134 tests skipped)
+        PASS [   0.014s] (1/6) frob-lease::lease scope001_allows_the_own_fragment_only
+        PASS [   0.023s] (2/6) frob-lease::lease widening_to_a_glob_covering_other_fragments_is_refused_with_a_teaching_message
+        PASS [   0.025s] (3/6) frob-lease::lease two_tickets_each_leasing_their_own_fragment_do_not_conflict
+        PASS [   0.174s] (4/6) frob-check::check a_tickets_own_fragment_is_never_scope001
+        PASS [   0.175s] (5/6) frob-check::check another_tickets_or_a_malformed_fragment_is_still_scope001
+        PASS [   0.190s] (6/6) frob-check::check a_recorded_changelog_d_glob_still_checks_but_covers_only_the_own_fragment
+────────────
+     Summary [   0.194s] 6 tests run: 6 passed, 1134 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-E 'test(two_tickets_each_leasing) | test(widening_to_a_glob_covering) | test(scope001_allows_the_own_fragment) | test(a_tickets_own_fragment) | test(another_tickets_or_a_malformed) | test(a_recorded_changelog_d_glob)'"
+size = 997
+status = "measured"
+tests = ["scope001_allows_the_own_fragment_only", "widening_to_a_glob_covering_other_fragments_is_refused_with_a_teaching_message", "two_tickets_each_leasing_their_own_fragment_do_not_conflict", "a_tickets_own_fragment_is_never_scope001", "another_tickets_or_a_malformed_fragment_is_still_scope001", "a_recorded_changelog_d_glob_still_checks_but_covers_only_the_own_fragment"]
+at = "2026-10-03T14:03:13Z"
+actor = "lognd"
+rev = 1
