@@ -187,7 +187,7 @@ Milestone 2 or later (D36).
   `create` event, so aliases are unique by construction; `ticket doctor --fix`
   numbers legacy duplicates in creation order with a `field` event on
   `ordinal`. Handles, ULIDs and aliases resolve. A transition's `from` is
-  judged against the state derived for the day of the event, not the stored one.
+  judged against the state derived for the day of the event, not the stored one. Close events written before states were derived, which record `from = planned` on a day the cycle had started, are also accepted (legacy tolerance); any other mismatch is a conflict.
   Closing before the planned end records the close day (UTC, never before the
   start) as the cycle's effective end, in the `transition` event (`ended`);
   the fold sets `ended` on the cycle, and the overlap check, default-cycle

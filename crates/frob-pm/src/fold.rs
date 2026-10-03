@@ -237,7 +237,11 @@ fn apply_transition(
         Object::Milestone(m) => m.state,
         Object::Cycle(c) => state_on(c, Day::from_unix(ev.at.unix())),
     };
-    if before != d.from {
+    // Before states were derived, a started cycle was still stored as planned and closes recorded
+    // `from = planned`; that pair (planned recorded where active is derived) stays valid history.
+    let legacy =
+        matches!(&*o, Object::Cycle(_)) && before == State::Active && d.from == State::Planned;
+    if before != d.from && !legacy {
         out.push(Conflict {
             event: ev.id,
             field: "state".to_owned(),
