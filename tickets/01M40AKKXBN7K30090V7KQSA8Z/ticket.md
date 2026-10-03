@@ -2,13 +2,13 @@
 id = "01M40AKKXBN7K30090V7KQSA8Z"
 title = "Attestation evidence: a person's signed statement as evidence for criteria that no tool can measure"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T07:28:11Z"
-updated = "2026-10-03T07:28:11Z"
+updated = "2026-10-03T10:17:17Z"
 idempotency_key = "m2-rel-attestation-evidence"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-evidence/**", "crates/frob/src/**", "crates/frob/tests/**", "crates/frob-pm/**"]
