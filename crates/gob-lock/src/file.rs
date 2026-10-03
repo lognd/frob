@@ -124,6 +124,36 @@ pub struct FlowEnd {
     pub identity: String,
     /// Hex digest of its Contract facet (SYS006 compares the two ends of a flow over this).
     pub contract: String,
+    /// Hex digest of the Contract facet of the flow's contract entity shape at ack time, when
+    /// the flow names a contract whose one `shape` identity was Exact (binding.md 5.2 and 6.6).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shape_contract: Option<String>,
+}
+
+/// What an [`AckLogEntry`] records.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AckLogKind {
+    /// `ack --rename OLD NEW`: the entry of `subject` was re-keyed to `target`.
+    Rename,
+}
+
+/// One append-only record of an ack decision that the entries themselves do not show.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AckLogEntry {
+    /// What was decided.
+    pub kind: AckLogKind,
+    /// The anchor acted on (the old anchor of a rename).
+    pub subject: String,
+    /// The anchor it became (the new anchor of a rename).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    /// `Name <email>` or `unknown`.
+    pub actor: String,
+    /// When (RFC 3339, UTC).
+    pub at: String,
+    /// Why, as given to `--reason`.
+    pub reason: String,
 }
 
 /// One acknowledged flow (`[[flow]]`); its map key in [`LockFile::flows`] is the flow key.
@@ -196,6 +226,8 @@ pub struct LockFile {
     pub flows: BTreeMap<String, FlowEntry>,
     /// The rename chain: old symref to the symref its entry was re-keyed to (`ack --rename`).
     pub renamed: BTreeMap<String, String>,
+    /// The append-only ack log (`[[ack_log]]`): decisions such as renames, oldest first.
+    pub ack_log: Vec<AckLogEntry>,
 }
 
 impl Default for LockFile {
@@ -206,6 +238,7 @@ impl Default for LockFile {
             entries: BTreeMap::new(),
             flows: BTreeMap::new(),
             renamed: BTreeMap::new(),
+            ack_log: Vec::new(),
         }
     }
 }
@@ -284,6 +317,8 @@ struct FileV2 {
     flow: Vec<FlowRow>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     renamed: BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    ack_log: Vec<AckLogEntry>,
 }
 
 impl LockFile {
@@ -304,6 +339,7 @@ impl LockFile {
             entries,
             flows: BTreeMap::new(),
             renamed: BTreeMap::new(),
+            ack_log: Vec::new(),
         }
     }
 
@@ -318,6 +354,7 @@ impl LockFile {
             entries: BTreeMap::new(),
             flows: BTreeMap::new(),
             renamed: v2.renamed,
+            ack_log: v2.ack_log,
         };
         for r in v2.symbol {
             let e = LockEntry {
@@ -385,6 +422,7 @@ impl LockFile {
                 })
                 .collect(),
             renamed: self.renamed.clone(),
+            ack_log: self.ack_log.clone(),
         }
     }
 
@@ -418,6 +456,19 @@ impl LockFile {
         self.renamed.insert(old.to_owned(), new.to_owned());
         tracing::info!(old, new, "lock entry re-keyed by rename");
         true
+    }
+
+    /// Appends a `rename` record to the ack log: who re-keyed `old` to `new`, when and why.
+    pub fn log_rename(&mut self, old: &str, new: &str, actor: &str, at: &str, reason: &str) {
+        self.ack_log.push(AckLogEntry {
+            kind: AckLogKind::Rename,
+            subject: old.to_owned(),
+            target: Some(new.to_owned()),
+            actor: actor.to_owned(),
+            at: at.to_owned(),
+            reason: reason.to_owned(),
+        });
+        tracing::info!(old, new, actor, "rename recorded in the ack log");
     }
 
     /// True when the file was written under another format version or digest scheme than this build's.
