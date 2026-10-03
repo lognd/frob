@@ -2,13 +2,14 @@
 id = "01M3ZXGAS3HJR9NYAMKWYGETZK"
 title = "Mirror reconcile: capture reverted edits from tracker history as proposal events"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:39:12Z"
-updated = "2026-10-03T03:39:12Z"
+updated = "2026-10-03T05:51:57Z"
 idempotency_key = "m2-mirror-proposal-capture"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/**", "crates/frob-ledger/**"]
