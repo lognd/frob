@@ -2,7 +2,8 @@
 id = "01M3ZTB2Y0J454GSSK4KGAMSF9"
 title = "gob-ir: shared resolution cache keyed by (scope, name)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
