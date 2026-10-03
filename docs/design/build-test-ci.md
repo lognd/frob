@@ -151,13 +151,26 @@ Jobs, all on PR and main:
 | workflow lint | zizmor and actionlint through frob's `[[check.tool]]` stage (cicd.md section 6; adopted before the CI adapters exist) | 1 min |
 | release (tag) | cargo-dist per binary on `frob-v*`, `grimble-v*`, `crunk-v*`; linux x86_64/aarch64, macos arm64, windows; crates.io publish of the full crate set in lockstep versions (monorepo.md section 4); `uv tool`-installable PyPI shims (the `frob` wheel bundles all three); Milestone 2 or later (D36) | 10 min |
 
-Target: every third-party action pinned by SHA, every toolchain version
-pinned in one `env:` block (v1 lesson: unpinned actions drifted). The
-current `.github/workflows/ci.yml` does not meet it yet (it uses tag
-refs such as `actions/checkout@v4`, no `permissions` and no
-`timeout-minutes`); pinning, permissions and timeouts are a ticket, and
-the zizmor and actionlint stages below keep it honest once adopted. The
-budget for a green PR run is 15 minutes wall, against v1's 123.
+Every third-party action is pinned by SHA, and every job has
+`permissions` and `timeout-minutes` (pinned by the workflow tests in
+frob-release). The budget for a green PR run is 15 minutes wall, against
+v1's 123.
+
+**One source of the checks: `cargo dev ci` (~AHBKXAZ).** The first push
+of experimental (2026-10-03) failed in CI four times on things no local
+gate ran: the host git identity, an actionlint pin, Windows-only code,
+rustdoc. The checks now live in one place, `crates/gob-dev/src/ci.rs`:
+each step's argv, environment and platform (fmt, clippy for the host,
+clippy for `x86_64-pc-windows-gnu`, docs with `RUSTDOCFLAGS=-D
+warnings`, nextest `--profile ci`, gen check, zizmor and actionlint at
+the versions `frob.toml` pins, ticket doctor, frob check, test
+dry-run). `ci.yml` runs `cargo dev ci --step NAME` per step and carries
+no argv, environment or tool version of its own; a parity test fails
+when the two disagree. Locally `cargo dev ci` stops at the first
+failing step (`--keep-going` runs all) and is the gate every
+implementer runs before reporting. The windows-latest job stays the
+real-platform check; `goway run --host win` adds it before push
+(paths.md section 4).
 
 ## 5. Developer loop
 
@@ -166,6 +179,7 @@ cargo dev gen                   # after adding a rule / command / config key
 cargo nextest run -p <crate>    # focused
 frob check --ticket <id>        # the gate, scoped
 frob test --base main           # touched tests via frob's own selection
+cargo dev ci                    # exactly what CI runs on Linux, before reporting
 ```
 
 `frob` in this checkout is the workspace binary via `cargo run -q --`

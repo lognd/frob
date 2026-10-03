@@ -1,0 +1,49 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T22:00:31Z"
+digest = "03ca89312bc7a62fd1c7f928a74811842b6fab672c13bbbae42cf70715f68ea6"
+exit_code = 0
+inline = '''
+   Compiling frob-ledger v0.0.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-symbols v0.0.0 (<worktree>/crates/gob-symbols)
+   Compiling frob-pm v0.0.0 (<worktree>/crates/frob-pm)
+   Compiling gob-directives v0.0.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.0.0 (<worktree>/crates/gob-check)
+   Compiling frob-ack v0.0.0 (<worktree>/crates/frob-ack)
+   Compiling grimble-model v0.0.0 (<worktree>/crates/grimble-model)
+   Compiling frob-release v0.0.0 (<worktree>/crates/frob-release)
+   Compiling grimble-bind v0.0.0 (<worktree>/crates/grimble-bind)
+   Compiling frob-evidence v0.0.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (<worktree>/crates/frob-lease)
+   Compiling grimble-check v0.0.0 (<worktree>/crates/grimble-check)
+   Compiling frob-worktree v0.0.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (<worktree>/crates/frob-tests)
+   Compiling grimble v0.0.0 (<worktree>/crates/grimble)
+   Compiling frob-obligations v0.0.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.0.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.0.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.88s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7ea6d3b1-8ff4-4ec9-966b-13652d33cecc with nextest profile: default
+    Starting 8 tests across 28 binaries (241 tests skipped)
+        PASS [   0.020s] frob-evidence scrub::tests::sibling_worktrees_collapse_in_both_styles
+        PASS [   0.020s] frob-evidence scrub::tests::respects_path_boundaries
+        PASS [   0.020s] frob-evidence scrub::tests::repair_rewrites_foreign_homes_and_is_idempotent
+        PASS [   0.020s] frob-evidence scrub::tests::rewrites_worktree_repo_and_home
+        PASS [   0.020s] frob-evidence scrub::tests::windows_forms
+        PASS [   0.034s] frob-evidence scrub::tests::worktree_paths_reduce_in_either_style
+        PASS [   0.847s] frob-cli::ticket_scrub placeholders_follow_the_repair_rules
+        PASS [   1.085s] frob-cli::ticket_scrub doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.086s] 8 tests run: 8 passed, 241 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p frob-evidence -E 'binary(ticket_scrub) | test(scrub::tests)'"
+size = 2389
+status = "measured"
+tests = ["scrub::tests::sibling_worktrees_collapse_in_both_styles", "scrub::tests::respects_path_boundaries", "scrub::tests::repair_rewrites_foreign_homes_and_is_idempotent", "scrub::tests::rewrites_worktree_repo_and_home", "scrub::tests::windows_forms", "scrub::tests::worktree_paths_reduce_in_either_style", "placeholders_follow_the_repair_rules", "doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same"]
+at = "2026-10-03T22:00:31Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-v2-wt/SKCPWMA; scope: crates/frob-evidence/src/scrub.rs, crates/frob-ledger/src/scrub.rs, crates/frob-ledger/src/privacy.rs, crates/frob/tests/ticket_scrub.rs, crates/frob-evidence/Cargo.toml, Cargo.lock; ttl 7200s"
+at = "2026-10-03T21:48:20Z"
+actor = "lognd"
+rev = 1
