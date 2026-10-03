@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T13:15:31Z"
+digest = "2237a5e3cf89db70f5289b7c18b405654e720be82ed250d85c796f355546df45"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.41s
+────────────
+ Nextest run ID 4cab547b-0b53-4e02-aab5-1e548931d02f with nextest profile: default
+    Starting 3 tests across 1 binary (17 tests skipped)
+        PASS [   2.072s] (1/3) frob-cli::cycle close_retries_after_a_failure_between_the_create_and_the_carry
+        PASS [   2.269s] (2/3) frob-cli::cycle close_next_days_defaults_to_cycle_days
+        PASS [   2.374s] (3/3) frob-cli::cycle close_early_with_next_goal_creates_the_next_cycle_carries_members_and_counts_them
+────────────
+     Summary [   2.375s] 3 tests run: 3 passed, 17 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test cycle -E 'test(close_early_with_next_goal) | test(close_next_days_defaults) | test(close_retries_after)'"
+size = 670
+status = "measured"
+tests = ["close_retries_after_a_failure_between_the_create_and_the_carry", "close_next_days_defaults_to_cycle_days", "close_early_with_next_goal_creates_the_next_cycle_carries_members_and_counts_them"]
+at = "2026-10-03T13:15:31Z"
+actor = "lognd"
+rev = 1
