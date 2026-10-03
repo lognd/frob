@@ -68,7 +68,6 @@ pub use graph::{
     CallEdge, EdgeKind, FileInfo, GapReason, ReachSet, ResolveError, Status, StatusEdge,
     SymbolGraph,
 };
-pub use qualifier::{Admit, CallQualifier};
 pub use markdown::{MarkdownAdapter, slugify};
 pub use model::{
     CallSite, Digests, FacetDigest, FileSymbols, ImportEdge, LocalBinding, Receiver, RefKind,
@@ -78,6 +77,7 @@ pub use opaque::OpaqueAdapter;
 pub use pipeline::{
     BuildStats, EXTRACTOR_VERSION, build_graph, build_graph_with_stats, extract_file, fold_file,
 };
+pub use qualifier::{Admit, CallQualifier};
 pub use registry::{
     AdapterEntry, AdapterReport, DuplicateExtension, adapter_for, adapter_for_path, adapters,
     fidelity_report, opaque_adapter, registry_conflicts,

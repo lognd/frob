@@ -172,8 +172,21 @@ struct CallTarget {
 
 /// Wrapper types whose methods are reached by auto-deref: a declared type of these says nothing about the callee.
 const DEREF_WRAPPERS: &[&str] = &[
-    "Box", "Rc", "Arc", "Cow", "Pin", "Ref", "RefMut", "RefCell", "Mutex", "RwLock", "MutexGuard",
-    "RwLockReadGuard", "RwLockWriteGuard", "ManuallyDrop", "Self",
+    "Box",
+    "Rc",
+    "Arc",
+    "Cow",
+    "Pin",
+    "Ref",
+    "RefMut",
+    "RefCell",
+    "Mutex",
+    "RwLock",
+    "MutexGuard",
+    "RwLockReadGuard",
+    "RwLockWriteGuard",
+    "ManuallyDrop",
+    "Self",
 ];
 
 /// Longest callee text kept for diagnostics.
@@ -644,7 +657,9 @@ impl<'a> Fold<'a> {
                             | "generic_type"
                             | "generic_type_with_turbofish"
                     )
-                }) || qualifier.as_ref().is_some_and(|q| self.generics.contains(q));
+                }) || qualifier
+                    .as_ref()
+                    .is_some_and(|q| self.generics.contains(q));
                 CallTarget {
                     construct: upper_first(&leaf),
                     name: leaf,
@@ -710,8 +725,7 @@ impl<'a> Fold<'a> {
             }
             _ => return None,
         };
-        (!DEREF_WRAPPERS.contains(&name.as_str()) && !self.generics.contains(&name))
-            .then_some(name)
+        (!DEREF_WRAPPERS.contains(&name.as_str()) && !self.generics.contains(&name)).then_some(name)
     }
 
     /// The type a `let` value evidently has: a struct literal or `Type::new`/`Type::default`.
@@ -1012,7 +1026,9 @@ impl<'a> Fold<'a> {
                 rhs.push(self.tr(c, depth + 1)?);
             }
         }
-        let declared = k.child_by_field_name("type").and_then(|t| self.plain_type(t));
+        let declared = k
+            .child_by_field_name("type")
+            .and_then(|t| self.plain_type(t));
         let ty = declared.or_else(|| {
             k.child_by_field_name("value")
                 .and_then(|v| self.value_type(v))
@@ -1571,7 +1587,9 @@ impl<'a> Fold<'a> {
                             binders.push(nm);
                         }
                     }
-                    let ty = p.child_by_field_name("type").and_then(|t| self.plain_type(t));
+                    let ty = p
+                        .child_by_field_name("type")
+                        .and_then(|t| self.plain_type(t));
                     self.type_binder(env_at, pat, ty);
                     let mut kids = vec![self.cx.lit("pattern", &shape, pat.unwrap_or(p))?];
                     if let Some(t) = p.child_by_field_name("type") {

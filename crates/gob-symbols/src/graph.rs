@@ -685,9 +685,7 @@ impl SymbolGraph {
                 Some(Receiver::SelfValue) => self
                     .enclosing_impl_type(&call.caller)
                     .map_or(CallQualifier::Receiver, CallQualifier::SelfType),
-                Some(Receiver::Typed(t)) if !aliases.contains(t) => {
-                    CallQualifier::Typed(t.clone())
-                }
+                Some(Receiver::Typed(t)) if !aliases.contains(t) => CallQualifier::Typed(t.clone()),
                 _ => CallQualifier::Receiver,
             });
         }
