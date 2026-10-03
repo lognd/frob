@@ -1,0 +1,12 @@
+kind = "create"
+title = "Ticket branch and one-way tracker mirror (D79)"
+type = "epic"
+category = "todo"
+priority = "high"
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+idempotency_key = "m2-epic-mirror"
+labels = ["milestone:2", "area:mirror"]
+body = "Epic grouping the tickets that implement docs/design/mirror.md. Children carry area:mirror."
+at = "2026-10-03T03:34:13Z"
+actor = "lognd"
+rev = 1
