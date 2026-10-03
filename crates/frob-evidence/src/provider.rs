@@ -28,6 +28,8 @@ pub struct Capture {
     pub measured: bool,
     /// Names of the tests that executed.
     pub tests: Vec<String>,
+    /// Names of the tests that failed, timed out or crashed (a subset of `tests`).
+    pub failed_tests: Vec<String>,
     /// The redacted transcript.
     pub transcript: String,
 }
@@ -73,10 +75,31 @@ pub fn split_args(input: &str) -> Result<Vec<String>> {
     Ok(out)
 }
 
-/// The test names in nextest's libtest-json lines (`ok` and `failed` events), plus whether any failed.
-pub fn parse_libtest_json(stdout: &str) -> (Vec<String>, bool) {
-    let mut names = Vec::new();
-    let mut failed = false;
+/// The tests a nextest run reported: every executed name and the failing subset.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Parsed {
+    /// Names of the tests that executed, in first-seen order.
+    pub tests: Vec<String>,
+    /// Names of the tests that failed, timed out or crashed.
+    pub failed: Vec<String>,
+}
+
+impl Parsed {
+    /// Record `name` as executed, and as failed when `failed`; duplicates are ignored.
+    fn note(&mut self, name: &str, failed: bool) {
+        if !self.tests.iter().any(|n| n == name) {
+            self.tests.push(name.to_owned());
+        }
+        if failed && !self.failed.iter().any(|n| n == name) {
+            tracing::warn!(test = name, "test failed");
+            self.failed.push(name.to_owned());
+        }
+    }
+}
+
+/// The tests in nextest's libtest-json lines (`ok` and `failed` events).
+pub fn parse_libtest_json(stdout: &str) -> Parsed {
+    let mut parsed = Parsed::default();
     for line in stdout.lines().map(str::trim).filter(|l| l.starts_with('{')) {
         let Ok(v) = serde_json::from_str::<serde_json::Value>(line) else {
             continue;
@@ -88,28 +111,27 @@ pub fn parse_libtest_json(stdout: &str) -> (Vec<String>, bool) {
         if !matches!(event, "ok" | "failed") {
             continue;
         }
-        failed |= event == "failed";
         if let Some(name) = v.get("name").and_then(|n| n.as_str()) {
             // nextest names are `<binary id>$<test path>`; keep the test path.
             let name = name.rsplit_once('$').map_or(name, |(_, t)| t);
-            if !names.iter().any(|n| n == name) {
-                names.push(name.to_owned());
-            }
+            parsed.note(name, event == "failed");
         }
     }
-    (names, failed)
+    parsed
 }
 
-/// The test names in nextest's human `PASS`/`FAIL` lines, plus whether any failed.
+/// The tests in nextest's human status lines (`PASS`, `FAIL`, `TIMEOUT`, `SIG...`).
 ///
 /// Used when libtest-json is unavailable or printed no test events.
-pub fn parse_human(transcript: &str) -> (Vec<String>, bool) {
-    let mut names = Vec::new();
-    let mut failed = false;
+pub fn parse_human(transcript: &str) -> Parsed {
+    let mut parsed = Parsed::default();
     for line in transcript.lines().map(str::trim) {
         let verdict = if line.starts_with("PASS ") {
             false
-        } else if line.starts_with("FAIL ") {
+        } else if ["FAIL ", "TIMEOUT ", "SIG"]
+            .iter()
+            .any(|p| line.starts_with(p))
+        {
             true
         } else {
             continue;
@@ -117,14 +139,11 @@ pub fn parse_human(transcript: &str) -> (Vec<String>, bool) {
         let Some((_, after)) = line.split_once(']') else {
             continue;
         };
-        failed |= verdict;
-        if let Some(name) = after.split_whitespace().last()
-            && !names.iter().any(|n| n == name)
-        {
-            names.push(name.to_owned());
+        if let Some(name) = after.split_whitespace().last() {
+            parsed.note(name, verdict);
         }
     }
-    (names, failed)
+    parsed
 }
 
 fn spec(program: Program, args: Vec<String>, cwd: &Path, timeout: Duration) -> Spec {
@@ -175,8 +194,8 @@ pub fn run_nextest(
         "1".to_owned(),
     )];
     let mut out = runner.run(&json_spec)?;
-    let (mut tests, mut failed) = parse_libtest_json(&out.stdout);
-    let mut json = !tests.is_empty();
+    let mut seen = parse_libtest_json(&out.stdout);
+    let mut json = !seen.tests.is_empty();
     if !json
         && matches!(out.status, Outcome::Exited(c) if c != 0)
         && (out.stderr.contains("libtest-json") || out.stderr.contains("message-format"))
@@ -187,20 +206,21 @@ pub fn run_nextest(
     }
     let mut transcript = out.stderr.clone();
     if !json {
-        (tests, failed) = parse_human(&out.stderr);
-        if tests.is_empty() {
-            (tests, failed) = parse_human(&out.stdout);
+        seen = parse_human(&out.stderr);
+        if seen.tests.is_empty() {
+            seen = parse_human(&out.stdout);
         }
         if !out.stdout.trim().is_empty() {
             transcript.push_str(&out.stdout);
         }
     }
     let (exit_code, measured) = exit_of(out.status);
-    let passed = exit_code == Some(0) && !failed;
+    let passed = exit_code == Some(0) && seen.failed.is_empty();
     tracing::info!(
         ?exit_code,
         passed,
-        tests = tests.len(),
+        tests = seen.tests.len(),
+        failed = ?seen.failed,
         json,
         "nextest captured"
     );
@@ -208,7 +228,8 @@ pub fn run_nextest(
         exit_code,
         passed,
         measured,
-        tests,
+        tests: seen.tests,
+        failed_tests: seen.failed,
         transcript,
     })
 }
@@ -249,6 +270,7 @@ pub fn run_command(
         passed: exit_code == Some(0),
         measured,
         tests: Vec::new(),
+        failed_tests: Vec::new(),
         transcript,
     })
 }
@@ -286,6 +308,7 @@ pub fn build_record(
         passed: capture.measured.then_some(capture.passed),
         exit_code: capture.exit_code,
         tests: capture.tests.clone(),
+        failed_tests: capture.failed_tests.clone(),
         inline,
         size: redacted.len() as u64,
     })
@@ -311,6 +334,7 @@ pub fn hash_file(root: &Path, path: &str, accepts: &[usize]) -> Result<EvidenceR
         passed: None,
         exit_code: None,
         tests: Vec::new(),
+        failed_tests: Vec::new(),
         inline: None,
         size: bytes.len() as u64,
     })
@@ -386,17 +410,20 @@ mod tests {
             "{\"type\":\"test\",\"event\":\"failed\",\"name\":\"c::bin/c$tests::b\"}\n",
             "not json\n",
         );
-        let (names, failed) = parse_libtest_json(out);
-        assert_eq!(names, ["tests::a", "tests::b"]);
-        assert!(failed);
+        let parsed = parse_libtest_json(out);
+        assert_eq!(parsed.tests, ["tests::a", "tests::b"]);
+        assert_eq!(parsed.failed, ["tests::b"]);
     }
 
     #[test]
     fn human_lines_become_names() {
         let out = "        PASS [   0.004s] frob-tests tests::one\n        FAIL [   0.004s] frob-tests tests::two\n     Summary [   0.01s] 2 tests run: 1 passed, 1 failed\n";
-        let (names, failed) = parse_human(out);
-        assert_eq!(names, ["tests::one", "tests::two"]);
-        assert!(failed);
-        assert_eq!(parse_human("nothing here"), (Vec::new(), false));
+        let parsed = parse_human(out);
+        assert_eq!(parsed.tests, ["tests::one", "tests::two"]);
+        assert_eq!(parsed.failed, ["tests::two"]);
+        let timeout =
+            "     TIMEOUT [  60.0s] pkg tests::slow\n        FAIL [   0.1s] pkg tests::slow\n";
+        assert_eq!(parse_human(timeout).failed, ["tests::slow"]);
+        assert_eq!(parse_human("nothing here"), Parsed::default());
     }
 }

@@ -559,6 +559,7 @@ fn evidence_events(
             passed: Some(exit == 0),
             exit_code: Some(exit),
             tests: Vec::new(),
+            failed_tests: Vec::new(),
             inline: None,
             size: 0,
         };

@@ -184,6 +184,7 @@ fn a_missing_blob_is_unmeasured_not_failed() {
         passed: true,
         measured: true,
         tests: vec![],
+        failed_tests: vec![],
         transcript: "y".repeat(40),
     };
     let rec = build_record(&st, Provider::Command, "git status", &cap, &[]).expect("record");

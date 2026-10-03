@@ -87,6 +87,9 @@ pub struct EvidenceRecord {
     /// Names of the tests that executed (nextest only).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tests: Vec<String>,
+    /// Names of the tests that failed, timed out or crashed (nextest only), so a flake is identifiable.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub failed_tests: Vec<String>,
     /// The transcript itself when it is within `inline_max_bytes`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inline: Option<String>,

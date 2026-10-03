@@ -25,6 +25,15 @@ pub struct EvidenceAdded {
     pub commit: String,
 }
 
+/// The failing test names for the refusal message, or a note that none were captured.
+fn failed_names(failed: &[String]) -> String {
+    if failed.is_empty() {
+        "no failing test name captured".to_owned()
+    } else {
+        failed.join(", ")
+    }
+}
+
 /// Output of `frob test`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct TestData {
@@ -44,6 +53,9 @@ pub struct TestData {
     pub passed: Option<bool>,
     /// Names of the tests that executed.
     pub executed: Vec<String>,
+    /// Names of the tests that failed, timed out or crashed.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub failed: Vec<String>,
     /// The evidence event, when the run happened in a lease-holding worktree.
     pub evidence: Option<EvidenceAdded>,
 }
@@ -122,6 +134,7 @@ impl Command for TestVerb {
             ran: false,
             passed: None,
             executed: Vec::new(),
+            failed: Vec::new(),
             evidence: None,
         };
         let mut warnings: Vec<String> = data
@@ -149,6 +162,7 @@ impl Command for TestVerb {
         data.ran = true;
         data.passed = Some(report.capture.passed);
         data.executed.clone_from(&report.capture.tests);
+        data.failed.clone_from(&report.capture.failed_tests);
         match lease_ticket(repo.common_dir(), &ws.root) {
             Some(reference) => match ws.ledger.resolve(&reference) {
                 Ok(id) => {
@@ -186,9 +200,10 @@ impl Command for TestVerb {
             Ok(payload)
         } else {
             Err(CliError::Negative(format!(
-                "tests failed ({} executed, exit {:?}){}",
+                "tests failed ({} executed, exit {:?}): {}{}",
                 data.executed.len(),
                 report.capture.exit_code,
+                failed_names(&data.failed),
                 data.evidence.as_ref().map_or(String::new(), |e| format!(
                     "; evidence {} recorded on {}",
                     e.event, e.ticket
