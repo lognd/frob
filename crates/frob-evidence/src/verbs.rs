@@ -1,4 +1,4 @@
-//! The `ticket evidence add|list|fetch` verbs.
+//! The `ticket evidence add`, `ticket evidence list` and `ticket evidence fetch` verbs.
 
 use frob_ledger::TicketId;
 use gob_cli::clap::{Arg, ArgAction, ArgMatches, builder::PossibleValuesParser};
@@ -203,138 +203,141 @@ impl EvidenceFetch {
     }
 }
 
-/// Output of `ticket evidence`: the data of whichever action ran.
-#[derive(Debug, Clone, Serialize, JsonSchema)]
-#[serde(untagged)]
-pub enum EvidenceData {
-    /// From `add`.
-    Add(AddData),
-    /// From `list`.
-    List(ListData),
-    /// From `fetch`.
-    Fetch(FetchData),
-}
-
-/// Capture, list or fetch the evidence of a ticket: `ticket evidence add|list|fetch <ticket>`.
-///
-/// `gob-cli` supports verb paths of at most two words, so the action is the
-/// first positional of one `ticket evidence` verb rather than a third word.
-#[derive(Debug, Clone, gob_cli::Command)]
-#[command(
-    verb = "ticket evidence",
-    product = "frob",
-    exits(ok, refused, usage, internal)
-)]
-pub struct Evidence {
-    action: Action,
-}
-
-#[derive(Debug, Clone)]
-enum Action {
-    Add(EvidenceAdd),
-    List(EvidenceList),
-    Fetch(EvidenceFetch),
-}
-
 fn flag(m: &ArgMatches, name: &str) -> Option<String> {
     m.get_one::<String>(name).cloned()
 }
 
-impl Command for Evidence {
-    type Data = EvidenceData;
+fn ticket_arg() -> Arg {
+    Arg::new("ticket")
+        .required(true)
+        .value_name("TICKET")
+        .help("Full ULID, ~handle or alias of the ticket")
+}
+
+/// Capture evidence with a provider and append it to a ticket: `ticket evidence add <ticket>`.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "ticket evidence add",
+    product = "frob",
+    exits(ok, refused, usage, internal)
+)]
+pub struct AddVerb(EvidenceAdd);
+
+impl Command for AddVerb {
+    type Data = AddData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("action")
-                .required(true)
-                .value_name("ACTION")
-                .value_parser(PossibleValuesParser::new(["add", "list", "fetch"]))
-                .help("add, list or fetch"),
-        )
-        .arg(
-            Arg::new("ticket")
-                .required(true)
-                .value_name("TICKET")
-                .help("Full ULID, ~handle or alias of the ticket"),
-        )
-        .arg(
+        cmd.arg(ticket_arg())
+            .arg(
+                Arg::new("provider")
+                    .long("provider")
+                    .required(true)
+                    .value_name("PROVIDER")
+                    .value_parser(PossibleValuesParser::new(Provider::NAMES))
+                    .help("Measurer: nextest, command or file"),
+            )
+            .arg(
+                Arg::new("ref")
+                    .long("ref")
+                    .required(true)
+                    .value_name("REF")
+                    .help("Nextest filter args, the command line, or the file path"),
+            )
+            .arg(
+                Arg::new("accepts")
+                    .long("accepts")
+                    .value_name("N")
+                    .value_parser(gob_cli::clap::value_parser!(usize))
+                    .action(ArgAction::Append)
+                    .help("1-based acceptance criterion this evidence is offered for (repeatable)"),
+            )
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let provider = flag(m, "provider")
+            .ok_or_else(|| CliError::Usage("add needs --provider".to_owned()))?
+            .parse::<Provider>()
+            .map_err(|e| CliError::Usage(e.to_string()))?;
+        let reference =
+            flag(m, "ref").ok_or_else(|| CliError::Usage("add needs --ref".to_owned()))?;
+        Ok(Self(EvidenceAdd {
+            ticket: flag(m, "ticket").unwrap_or_default(),
+            provider,
+            reference,
+            accepts: m
+                .get_many::<usize>("accepts")
+                .map(|v| v.copied().collect())
+                .unwrap_or_default(),
+        }))
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<AddData> {
+        self.0.run(ctx)
+    }
+}
+
+/// List the evidence records of a ticket with their effective status: `ticket evidence list <ticket>`.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "ticket evidence list",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ListVerb(EvidenceList);
+
+impl Command for ListVerb {
+    type Data = ListData;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        cmd.arg(ticket_arg())
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self(EvidenceList {
+            ticket: flag(m, "ticket").unwrap_or_default(),
+        }))
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<ListData> {
+        self.0.run(ctx)
+    }
+}
+
+/// Fetch one evidence blob, hash verified: `ticket evidence fetch <ticket> <index>`.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "ticket evidence fetch",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct FetchVerb(EvidenceFetch);
+
+impl Command for FetchVerb {
+    type Data = FetchData;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        cmd.arg(ticket_arg()).arg(
             Arg::new("index")
+                .required(true)
                 .value_name("INDEX")
                 .value_parser(gob_cli::clap::value_parser!(usize))
-                .help("fetch: 1-based position from `ticket evidence list`"),
-        )
-        .arg(
-            Arg::new("provider")
-                .long("provider")
-                .value_name("PROVIDER")
-                .value_parser(PossibleValuesParser::new(Provider::NAMES))
-                .help("add: measurer (nextest, command or file)"),
-        )
-        .arg(
-            Arg::new("ref")
-                .long("ref")
-                .value_name("REF")
-                .help("add: nextest filter args, the command line, or the file path"),
-        )
-        .arg(
-            Arg::new("accepts")
-                .long("accepts")
-                .value_name("N")
-                .value_parser(gob_cli::clap::value_parser!(usize))
-                .action(ArgAction::Append)
-                .help(
-                    "add: 1-based acceptance criterion this evidence is offered for (repeatable)",
-                ),
+                .help("1-based position from `ticket evidence list`"),
         )
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let ticket = flag(m, "ticket").unwrap_or_default();
-        let action = match flag(m, "action").unwrap_or_default().as_str() {
-            "add" => {
-                let provider = flag(m, "provider")
-                    .ok_or_else(|| CliError::Usage("add needs --provider".to_owned()))?
-                    .parse::<Provider>()
-                    .map_err(|e| CliError::Usage(e.to_string()))?;
-                let reference =
-                    flag(m, "ref").ok_or_else(|| CliError::Usage("add needs --ref".to_owned()))?;
-                Action::Add(EvidenceAdd {
-                    ticket,
-                    provider,
-                    reference,
-                    accepts: m
-                        .get_many::<usize>("accepts")
-                        .map(|v| v.copied().collect())
-                        .unwrap_or_default(),
-                })
-            }
-            "list" => Action::List(EvidenceList { ticket }),
-            "fetch" => Action::Fetch(EvidenceFetch {
-                ticket,
-                index: m
-                    .get_one::<usize>("index")
-                    .copied()
-                    .ok_or_else(|| CliError::Usage("fetch needs an INDEX".to_owned()))?,
-            }),
-            other => return Err(CliError::Usage(format!("unknown action `{other}`"))),
-        };
-        Ok(Self { action })
+        Ok(Self(EvidenceFetch {
+            ticket: flag(m, "ticket").unwrap_or_default(),
+            index: m
+                .get_one::<usize>("index")
+                .copied()
+                .ok_or_else(|| CliError::Usage("fetch needs an INDEX".to_owned()))?,
+        }))
     }
 
-    fn run(&self, ctx: &Context) -> Outcome<EvidenceData> {
-        match &self.action {
-            Action::Add(v) => v.run(ctx).map(|p| map(p, EvidenceData::Add)),
-            Action::List(v) => v.run(ctx).map(|p| map(p, EvidenceData::List)),
-            Action::Fetch(v) => v.run(ctx).map(|p| map(p, EvidenceData::Fetch)),
-        }
-    }
-}
-
-fn map<T>(p: Payload<T>, f: impl FnOnce(T) -> EvidenceData) -> Payload<EvidenceData> {
-    Payload {
-        data: f(p.data),
-        findings: p.findings,
-        warnings: p.warnings,
-        already: p.already,
+    fn run(&self, ctx: &Context) -> Outcome<FetchData> {
+        self.0.run(ctx)
     }
 }

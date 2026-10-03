@@ -80,10 +80,36 @@ impl Command for FailCmd {
     }
 }
 
+/// Nest three words deep to prove the tree is not limited to two.
+#[derive(Debug, Command)]
+#[command(verb = "deep a b", product = "dummy", exits(ok, usage))]
+struct DeepCmd {
+    name: String,
+}
+
+impl Command for DeepCmd {
+    type Data = String;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        cmd.arg(Arg::new("name").required(true).action(ArgAction::Set))
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            name: m.get_one::<String>("name").cloned().unwrap_or_default(),
+        })
+    }
+
+    fn run(&self, _: &Context) -> Outcome<String> {
+        Ok(Payload::new(self.name.clone()))
+    }
+}
+
 fn cli() -> Cli {
     Cli::new("dummy", "1.2.3")
         .register::<EchoCmd>()
         .register::<FailCmd>()
+        .register::<DeepCmd>()
 }
 
 fn run(args: &[&str]) -> (i32, String, String) {
@@ -194,4 +220,36 @@ fn derive_registers_metadata() {
     let f = all_commands().find(|m| m.verb == "fail").unwrap();
     assert!(!f.idempotent && !f.dry_run);
     assert_eq!(f.exits.len(), 5);
+}
+
+#[test]
+fn schema_flag_needs_no_positionals() {
+    for args in [
+        &["fail", "--schema"][..],
+        &["--schema", "deep", "a", "b"],
+        &["deep", "a", "b", "--schema"],
+    ] {
+        let (exit, out, err) = run(args);
+        assert_eq!((exit, err.as_str()), (0, ""), "{args:?}");
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert!(v.is_object(), "{args:?}: {out}");
+    }
+    // Without --schema the positional is still required.
+    assert_eq!(run(&["fail"]).0, 2);
+    assert_eq!(run(&["deep", "a", "b"]).0, 2);
+}
+
+#[test]
+fn three_word_verbs_are_real_subcommands() {
+    let (exit, out, _) = run(&["deep", "a", "b", "x"]);
+    assert_eq!(exit, 0, "{out}");
+    let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(v["verb"], "deep.a.b");
+    assert_eq!(v["data"], "x");
+    let (exit, out, _) = run(&["deep", "a", "b", "--help"]);
+    assert_eq!(exit, 0);
+    assert!(out.contains("Usage: dummy deep a b"), "{out}");
+    let (exit, out, _) = run(&["deep", "--help"]);
+    assert_eq!(exit, 0);
+    assert!(out.contains("a "), "{out}");
 }
