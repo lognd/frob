@@ -2,7 +2,8 @@
 id = "01M41EBQN0HT7956KPP0ZJET37"
 title = "Link docs/guides/release.md from the registry setup item of frob release status"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
