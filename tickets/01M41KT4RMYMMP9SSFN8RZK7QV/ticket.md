@@ -2,7 +2,8 @@
 id = "01M41KT4RMYMMP9SSFN8RZK7QV"
 title = "Closing a ticket as invalid, duplicate or wont-fix demands measured evidence and a changelog fragment"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
