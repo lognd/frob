@@ -2,12 +2,12 @@
 id = "01M413V82EXMRXXVWZN0MQNY3G"
 title = "A cycle whose start date has come stays planned; state never becomes active"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T14:49:15Z"
-updated = "2026-10-03T14:49:15Z"
+updated = "2026-10-03T14:55:05Z"
 scope = ["crates/frob-pm/src/cycle/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs"]
 
 [[acceptance]]
