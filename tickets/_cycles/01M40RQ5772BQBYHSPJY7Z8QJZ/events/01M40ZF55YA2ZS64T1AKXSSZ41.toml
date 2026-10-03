@@ -1,0 +1,6 @@
+kind = "cycle"
+op = "retro"
+text = "First real cycle. 0.532.0 release track built in a day; outside repositories found real frob bugs fast (symlinks, CRLF, PROC001, lock files, done_requires); closing early to move to 2-day cycles."
+at = "2026-10-03T13:32:45Z"
+actor = "lognd"
+rev = 1
