@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = 'Also add to grl-spec.md 3 (from ~MVY3DFK): in non-message strings a backslash before a brace is kept as written ("\{" is the two characters backslash and brace), so a glob or regex sees its own escape; \" \\ and \n decode as in every string.'
+at = "2026-10-03T10:50:41Z"
+actor = "lognd"
+rev = 1
