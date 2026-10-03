@@ -2,11 +2,12 @@
 id = "01M41DQF8CJG567CJ1AWETTCK4"
 title = "PM001/PM002/PM034 skipped when the ledger holds milestones but no tickets"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 reporter = "lognd"
 created = "2026-10-03T17:41:57Z"
-updated = "2026-10-03T19:11:52Z"
+updated = "2026-10-03T19:11:53Z"
 scope = ["crates/frob-check/src/snapshot.rs", "crates/frob/tests/milestone.rs"]
 
 [[acceptance]]
