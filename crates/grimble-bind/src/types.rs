@@ -150,6 +150,8 @@ pub enum Reason {
     InferenceUnavailable,
     /// Zero subjects over a scope that was not wholly not-applicable.
     Vacuous,
+    /// `grimble.lock` exists but cannot be read or parsed.
+    LockUnreadable,
 }
 
 impl Reason {
@@ -161,6 +163,7 @@ impl Reason {
             Self::Fidelity => "fidelity",
             Self::InferenceUnavailable => "inference-unavailable",
             Self::Vacuous => "vacuous",
+            Self::LockUnreadable => "lock-unreadable",
         }
     }
 }

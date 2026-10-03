@@ -78,6 +78,36 @@ sys_rule!(
     "Opt-in through `[grimble] modeled`: fires for a public unit selected at Must that is foreign. Effects are not consulted yet (no effects query exists). Unresolved when visibility is unknown (F0 and F1 languages) or the owner is May only; with every selected unit unmeasurable the rule examined nothing and is required-Unresolved (vacuous). Error under `[grimble] strict`."
 );
 sys_rule!(
+    Sys006,
+    "SYS006",
+    "sys-contract-skew",
+    Error,
+    P0,
+    true,
+    "The two ends of an acked flow disagree on the Contract facet.",
+    "Fires when the producer and consumer end of a flow recorded in grimble.lock have Contract digests that differ from each other now, or either differs from its acked digest (that end is ahead of its ack; the other is behind). Unresolved when either end is F0 or F1, opaque in the Contract facet, or bound only at May. A flow with an end not bound now is SYS009's. The Contract facet of the end symbols stands in for the shape contract until the lock records it; `versioning compat` does not yet lower the severity."
+);
+sys_rule!(
+    Sys007,
+    "SYS007",
+    "sys-changed-since-ack",
+    Error,
+    P0,
+    true,
+    "An acked identity changed since its ack.",
+    "One finding per lock entry with a kind in the message: facet (a Sig, Body, Doc or Attr digest differs from the acked one), gone (the anchor is absent and no rename candidate exists) and scheme (the lock was written under another format version or digest scheme; every entry is stale and `ack --all --reason` re-attests it). Unresolved when a facet is not Exact (F0 or F1 language, a parse hole) or a gone anchor may live on in a unit whose Body is hidden. An entry SYS008 reports is not reported here."
+);
+sys_rule!(
+    Sys008,
+    "SYS008",
+    "sys-renamed",
+    Advisory,
+    P0,
+    false,
+    "An acked identity vanished and its Body appears under a new name.",
+    "Advisory: a lock entry whose anchor is gone while an unacked identity of the same language has an equal, non-trivial Body digest (at least 12 canonical atoms). The pairing is May even when unique; every candidate is listed and none is picked. Run `grimble ack --rename OLD NEW` to carry the entry. Unresolved, once, when a unit hides its Body and could hold a renamed identity."
+);
+sys_rule!(
     Sys009,
     "SYS009",
     "sys-flow-end-unbound",

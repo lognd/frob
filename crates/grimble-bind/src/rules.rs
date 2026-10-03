@@ -47,11 +47,11 @@ pub struct Output {
 }
 
 impl Output {
-    fn count(&mut self, rule: &'static str, n: usize) {
+    pub(crate) fn count(&mut self, rule: &'static str, n: usize) {
         *self.subjects.entry(rule).or_default() += n;
     }
 
-    fn fire(
+    pub(crate) fn fire(
         &mut self,
         rule: &'static str,
         severity: Severity,
@@ -70,7 +70,7 @@ impl Output {
         });
     }
 
-    fn unresolved(
+    pub(crate) fn unresolved(
         &mut self,
         rule: &'static str,
         reason: Reason,

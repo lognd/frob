@@ -2307,6 +2307,7 @@ dependencies = [
  "gob-directives",
  "gob-ir",
  "gob-languages",
+ "gob-lock",
  "gob-rules",
  "gob-symbols",
  "gob-text",
@@ -2315,6 +2316,7 @@ dependencies = [
  "rayon",
  "serde_json",
  "tempfile",
+ "thiserror",
  "tracing",
 ]
 

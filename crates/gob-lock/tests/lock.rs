@@ -292,3 +292,26 @@ fn plan_acks_flows_by_key() {
     .unwrap();
     assert!(again.acked.is_empty());
 }
+
+// frob:ticket 01M3Z714820D1SK6X44T9R1B70
+// frob:tests crates/gob-lock/src/file.rs::LockFile
+#[test]
+fn rename_rekeys_entry_and_flow_ends_and_records_the_chain() {
+    let mut lock = LockFile::default();
+    lock.entries.insert("a.rs::old".to_owned(), entry("1"));
+    lock.flows.insert("flow/x".to_owned(), flow());
+    let old = lock.flows["flow/x"].producer.identity.clone();
+    lock.entries.insert(old.clone(), entry("p"));
+    assert!(lock.rename(&old, "b.rs::new"));
+    assert!(!lock.entries.contains_key(&old));
+    assert_eq!(lock.entries["b.rs::new"].sig, "p");
+    assert_eq!(lock.flows["flow/x"].producer.identity, "b.rs::new");
+    assert_eq!(lock.renamed[&old], "b.rs::new");
+    assert!(!lock.rename("missing", "z"));
+    assert!(
+        !lock.rename("a.rs::old", "b.rs::new"),
+        "target already keyed"
+    );
+    let text = lock.to_toml().unwrap();
+    assert_eq!(LockFile::from_toml(&text).unwrap(), lock);
+}
