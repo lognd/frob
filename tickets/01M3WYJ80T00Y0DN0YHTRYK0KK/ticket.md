@@ -16,11 +16,11 @@ scope = [".github/**", ".gitattributes"]
 
 [[acceptance]]
 text = "Given a fresh clone, when a file is committed, then git prints no CRLF warning"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given .github, when read, then no template mentions Python, uv or pytest"
-bound = false
+bound = true
 +++
 
 Follow-up from T-0003. Delete .github/workflows/release.yml (PyPI publish) and rewrite the issue and PR templates under .github for the Rust workspace (no uv run frob, no Python). Add .gitattributes with '* text=auto eol=lf' so commits stop printing CRLF warnings on this host, and normalize line endings in one commit. Also add Cargo.lock to [tickets] registry_files is already done; nothing else.
