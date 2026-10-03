@@ -92,6 +92,27 @@ impl Repo {
         }))
     }
 
+    // frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
+    /// The short names of every tag (`refs/tags/<name>`), sorted.
+    ///
+    /// # Errors
+    /// [`GitError::Ref`] when the reference store cannot be read.
+    pub fn list_tags(&self) -> Result<Vec<String>, GitError> {
+        let platform = self
+            .gix
+            .references()
+            .map_err(|e| GitError::Ref(e.to_string()))?;
+        let iter = platform.tags().map_err(|e| GitError::Ref(e.to_string()))?;
+        let mut names = Vec::new();
+        for r in iter {
+            let r = r.map_err(|e| GitError::Ref(e.to_string()))?;
+            names.push(r.name().shorten().to_str_lossy().into_owned());
+        }
+        names.sort();
+        debug!(count = names.len(), "tags listed");
+        Ok(names)
+    }
+
     /// Up to `limit` commits from `rev` following first parents, newest first, with their subject lines.
     ///
     /// # Errors

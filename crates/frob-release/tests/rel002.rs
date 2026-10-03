@@ -114,7 +114,12 @@ fn this_repository_is_clean() {
     assert!(e.findings.is_empty(), "{:?}", e.findings);
 }
 
+mod rel001_corpus;
+
 fn runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
+    if case.rule.to_string() == "REL001" {
+        return rel001_corpus::runner(case);
+    }
     // frob:tests crates/frob-release/src/rel002.rs::evaluate
     let d = tempfile::tempdir().unwrap();
     for line in case.text.lines().filter(|l| !l.trim().is_empty()) {

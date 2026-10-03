@@ -62,3 +62,21 @@ fn first_parent_subjects_lists_newest_first_and_honours_the_limit() {
     assert_eq!(all, vec![(b, "second".to_owned()), (a, "first".to_owned())]);
     assert_eq!(repo.first_parent_subjects("main", 1).unwrap().len(), 1);
 }
+
+// frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
+#[test]
+fn list_tags_returns_every_tag_name_sorted() {
+    // frob:tests crates/gob-git/src/tag.rs::Repo.list_tags
+    let (_d, repo) = fixture();
+    assert!(repo.list_tags().unwrap().is_empty());
+    let c1 = commit(&repo, "1", "first");
+    let author = Some(("T".to_owned(), "t@example.com".to_owned()));
+    for name in ["zeta-v1", "frob-v0.0.1", "v0.531.0"] {
+        repo.create_annotated_tag(name, c1, "m", author.clone())
+            .unwrap();
+    }
+    assert_eq!(
+        repo.list_tags().unwrap(),
+        vec!["frob-v0.0.1", "v0.531.0", "zeta-v1"]
+    );
+}
