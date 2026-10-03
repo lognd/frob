@@ -68,6 +68,7 @@ pub use config::{CheckTable, FailOn, PerfTable, ToolParser, ToolStage};
 pub use core::{Core, FileIndex};
 pub use error::CheckError;
 pub use filecheck::{CheckCtx, FileCheck, SharedCtx};
+pub use gob_cache::ArtifactKey;
 pub use options::RunOptions;
 pub use pipeline::run;
 pub use product::{

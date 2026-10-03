@@ -14,6 +14,7 @@ use gob_rules::{
 use gob_text::{FileInterner, Span};
 use grimble_model::{ModelFiles, check_model, rules::file_table};
 
+use crate::bind_cache::{self, BindSummary};
 use crate::config::{GrimbleTable, PRODUCT};
 use crate::fidelity::language_tag;
 use crate::model_view::ModelView;
@@ -35,8 +36,8 @@ pub struct GrimbleInputs {
     pub model: ModelFiles,
     /// Entities, exceptions and file status derived from them.
     pub view: Arc<ModelView>,
-    /// The binding relation B and the SYS findings (grimble-bind).
-    pub binding: grimble_bind::Binding,
+    /// The rows of B, the SYS findings and subject counts (grimble-bind), possibly from the cache.
+    pub binding: BindSummary,
 }
 
 /// What a run leaves behind for the document builder: the model view and which exception parked which finding.
@@ -50,6 +51,8 @@ pub(crate) struct Trace {
     pub parks: BTreeMap<String, String>,
     /// The rows of B as sibling `bindings` items.
     pub bindings: Vec<serde_json::Value>,
+    /// True when the binding result was read from the cache.
+    pub bind_cached: bool,
 }
 
 /// The grimble product driving the shared check pipeline.
@@ -138,13 +141,34 @@ impl Product for Grimble {
         let view = Arc::new(ModelView::build(&model));
         cx.timing.push("model", started.elapsed(), true);
         let started = std::time::Instant::now();
-        let binding = bind_models(&cx.core.root, &cx.core.entries, &model, &table);
+        let digest = bind_cache::digest(&cx.core.root, &cx.core.entries, &table);
+        let key = bind_cache::key(&digest, cx.cache.engine());
+        let cached = cx
+            .cache
+            .get_artifact(&key)
+            .and_then(|b| BindSummary::decode(&b));
+        let bind_cached = cached.is_some();
+        let binding = if let Some(summary) = cached {
+            tracing::info!(digest = %digest, rows = summary.bindings.len(), "binding reused from cache");
+            summary
+        } else {
+            let summary = BindSummary::of(&bind_models(
+                &cx.core.root,
+                &cx.core.entries,
+                &model,
+                &table,
+            ));
+            cx.cache.put_artifact(&key, &summary.encode());
+            tracing::info!(digest = %digest, rows = summary.bindings.len(), "binding computed and cached");
+            summary
+        };
         cx.timing.push("binding", started.elapsed(), true);
         {
             let mut trace = self.trace.lock().unwrap_or_else(PoisonError::into_inner);
             trace.view = Some(Arc::clone(&view));
             trace.languages = languages;
-            trace.bindings = binding.bindings_json();
+            trace.bindings.clone_from(&binding.bindings);
+            trace.bind_cached = bind_cached;
         }
         Ok(Collected {
             shared: GrimbleShared {

@@ -29,6 +29,7 @@
 //! No frob crate is a dependency, direct or transitive (a test enforces it with the manifests),
 //! so the grimble binary never links frob (boundaries.md).
 
+pub mod bind_cache;
 pub mod config;
 pub mod fidelity;
 pub mod model_view;
@@ -90,6 +91,8 @@ pub struct GrimbleRun {
     pub base: Option<String>,
     /// The rows of the binding relation B, as sibling `bindings` items.
     pub bindings: Vec<serde_json::Value>,
+    /// True when the binding result came from the cache instead of being rebuilt.
+    pub bind_cached: bool,
     /// Wall time of the run in milliseconds.
     pub elapsed_ms: u64,
     /// Non-fatal notes: pipeline warnings plus the packs notice.
@@ -141,6 +144,7 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
         ticket_scope: opts.ticket_scope.clone(),
         base: opts.base.clone(),
         bindings: trace.bindings,
+        bind_cached: trace.bind_cached,
         elapsed_ms,
         warnings,
     })
