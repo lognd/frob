@@ -8,10 +8,10 @@ points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-03T01:23:42Z"
+updated = "2026-10-03T01:31:04Z"
 idempotency_key = "m2-drift"
 labels = ["milestone:2"]
-scope = ["crates/grimble-bind/**", "crates/gob-lock/**"]
+scope = ["crates/grimble-bind/**", "crates/gob-lock/**", "crates/grimble/**"]
 
 [[links]]
 kind = "blocked-by"
