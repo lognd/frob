@@ -28,21 +28,26 @@ linker and `RUSTFLAGS` overrides (an env `RUSTFLAGS` replaces the config's).
 Measured 2026-10-03 on aarch64: about 3 minutes cold; wheel
 `frob-VERSION-py3-none-manylinux_2_28_aarch64.whl`, about 42 MB unpacked.
 
-## What ticket 5Y75MX7 (workflow wheel matrix) needs
+## Release workflow wheel job (ticket 5Y75MX7)
 
-- Linux x86_64 and aarch64 (smoke.sh WHEEL VERSION after each build): the container above (no cross compile needed; use
-  native runners for each arch). The wheel is not abi-specific (`py3-none`).
-- macOS arm64 and x86_64: `macos-latest`; for x86_64 add the rust target
-  `x86_64-apple-darwin` and pass `--target x86_64-apple-darwin`. `build-wheel.sh`
-  does not take a target yet: extend it with `--target T` that is forwarded to the
-  `cargo build -p grimble` and to `maturin build`, and copy grimble from
-  `target/T/release`.
-- Windows x86_64: `grimble.exe` is handled by the script (`OS=Windows_NT`), but
-  the venv path is `Scripts/` there and `install -m` needs Git Bash; verify.
-- Every build job: pinned maturin (the script pins `>=1.9,<2`; pin an exact version
-  with a hash in the workflow), a timeout, and artifact smoke after the build:
-  `uv venv; uv pip install <wheel>; frob --version; grimble --version; frob doctor`
-  in a fixture repository (ticket NWXQPMM).
+`.github/workflows/release.yml` job `wheel`, one matrix entry per target; wheels are
+run artifacts (`wheel-<target>`), nothing is published there.
+
+- Linux x86_64 / aarch64: native runners (`ubuntu-latest`, `ubuntu-24.04-arm`), the
+  digest-pinned `quay.io/pypa/manylinux_2_28_<arch>` image via `docker run` as above.
+- macOS arm64: `macos-latest`. macOS x86_64: `macos-latest` with
+  `build-wheel.sh --target x86_64-apple-darwin` (cargo and maturin both get the target).
+  The arm64 runner cannot execute it, so it is the single smoke exemption
+  (`smoke: false`; pinned by `crates/frob-release/tests/release_workflow.rs`).
+- Windows x86_64: `windows-latest`, Git Bash; `build-wheel.sh` and `smoke.sh` use the
+  venv's `Scripts/` directory there.
+- maturin is pinned exactly (`MATURIN_VERSION` in the workflow, passed through to
+  `build-wheel.sh`); no hash pin. Every other smoked wheel runs
+  `smoke.sh WHEEL VERSION` on its build runner.
+- No sdist is built (see the last bullet).
+
+## Still to decide / other tickets
+
 - Build the wheel from the tagged commit; the version is the static
   `[project] version` that `frob release cut` rewrites (REL002 checks it).
 - `maturin sdist` is allowed but needs the whole workspace; build it from the
