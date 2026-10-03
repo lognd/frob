@@ -2,7 +2,8 @@
 id = "01M4069W45P08YPC4YH4XZVMNC"
 title = "frob board: text columns by category with WIP limits, expedite lane and card age"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
