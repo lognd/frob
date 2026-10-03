@@ -8,14 +8,14 @@ points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T09:57:47Z"
-updated = "2026-10-03T10:09:42Z"
+updated = "2026-10-03T10:15:12Z"
 idempotency_key = "m2-evidence-ref-hyphen"
 labels = ["milestone:2", "release:0.532.0"]
 scope = ["crates/frob-evidence/**", "crates/frob/src/milestone_evidence_cmd.rs", "crates/frob/tests/**"]
 
 [[acceptance]]
 text = "Given --ref -p frob-cli -E 'test(x)', when ticket evidence add runs, then the filter is taken whole"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a nextest filter matching zero tests, when evidence add runs, then nothing is recorded and the message says the filter matched nothing"
