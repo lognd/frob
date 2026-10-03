@@ -2,12 +2,13 @@
 id = "01M41PM9TCJ8MJQREJ733PZ67A"
 title = "Ledger events commit absolute local paths (home directory, user name) into pushed repositories"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T20:17:30Z"
-updated = "2026-10-03T20:48:25Z"
+updated = "2026-10-03T20:48:26Z"
 scope = ["crates/frob-worktree/src/work.rs", "crates/frob-lease/src/model.rs", "crates/frob-evidence/**", "crates/frob-obligations/**", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/privacy.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/tests/privacy.rs", "crates/frob-check/src/product.rs", "crates/frob-tests/src/verb.rs", "docs/reference/rules/TICK004.md", "docs/reference/rules/README.md", "crates/frob-worktree/tests/work.rs", "docs/design/tickets.md"]
 
 [[acceptance]]
