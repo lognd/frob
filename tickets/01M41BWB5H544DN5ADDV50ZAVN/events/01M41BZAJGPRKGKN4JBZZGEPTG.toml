@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the changelog compile, when run, then the v2 notice leads the 0.532.0 section", "Given a fragment marked as a lead notice, when release changelog compiles a section, then it appears first, above the type groups, and at most one lead notice per section is accepted"]
+moved = []
+at = "2026-10-03T17:11:17Z"
+actor = "lognd"
+rev = 1
