@@ -2,13 +2,13 @@
 id = "01M3ZV9022FDZNMYNZHPXWP8TB"
 title = "Navigation: slug follows the title; sub-epics flattened (close D81 open questions)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T03:00:14Z"
-updated = "2026-10-03T03:00:14Z"
+updated = "2026-10-03T03:00:28Z"
 idempotency_key = "m2-navigation-reslug"
 labels = ["milestone:2"]
 scope = ["docs/design/**"]
