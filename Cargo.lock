@@ -2228,6 +2228,7 @@ name = "gob-plan"
 version = "0.0.0"
 dependencies = [
  "gob-text",
+ "insta",
  "proptest",
  "thiserror",
  "tracing",

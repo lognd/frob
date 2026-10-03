@@ -1,0 +1,28 @@
+rule CI002 "permissions-declared" {
+  lang yaml
+  severity warn
+
+  find w: file where w.path matches ".github/workflows/*.\{yml,yaml\}"
+  no k: key(path = "/permissions") inside w
+  some j: key(path = "/jobs/*") inside w where no p: key(name = "permissions") directly inside j
+  report w "workflow has no top-level permissions and job {j.name} declares none"
+
+  example fire { file ".github/workflows/ci.yml" """
+    name: ci                                 #~ warn
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+  """ }
+  example clean { file ".github/workflows/ci.yml" """
+    name: ci
+    permissions: { contents: read }
+    jobs:
+      build: { runs-on: ubuntu-latest }
+  """ }
+  explain """
+    Without explicit permissions a workflow token gets the repository default,
+    often write access.
+    ## Remedy
+    Add `permissions:` at the top level or to every job.
+  """
+}

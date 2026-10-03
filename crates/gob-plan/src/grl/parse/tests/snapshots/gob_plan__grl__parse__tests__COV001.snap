@@ -1,0 +1,491 @@
+---
+source: crates/gob-plan/src/grl/parse/tests/mod.rs
+expression: dump(&p.file)
+---
+File {
+   rules: [
+    Rule {
+       id: Word {
+         text: "COV001",
+        span: @5..11 
+      },
+      slug: StrLit {
+         value: "untested-public-function",
+        span: @12..38 
+      },
+      headers: [
+        Spanned {
+           node: Lang(
+            Any {
+               quoted: false 
+            }
+          ),
+          span: @43..49 
+        },
+        Spanned {
+           node: Polarity(
+            Minus
+          ),
+          span: @52..63 
+        },
+        Spanned {
+           node: Severity(
+            Warn
+          ),
+          span: @65..78 
+        },
+        Spanned {
+           node: Scope(
+            Repo
+          ),
+          span: @80..90 
+        },
+        Spanned {
+           node: MustMeasure,
+          span: @92..104 
+        },
+        Spanned {
+           node: Knob(
+            Knob {
+               name: Word {
+                 text: "depth",
+                span: @112..117 
+              },
+              ty: Spanned {
+                 node: Int,
+                span: @119..122 
+              },
+              default: Spanned {
+                 node: Int(
+                  12
+                ),
+                span: @125..127 
+              },
+              doc: StrLit {
+                 value: "call levels a test may go through",
+                span: @128..163 
+              } 
+            }
+          ),
+          span: @107..163 
+        }
+      ],
+      clauses: [
+        Spanned {
+           node: Find(
+            Binding {
+               name: Word {
+                 text: "f",
+                span: @172..173 
+              },
+              source: Shape(
+                Spanned {
+                   node: Kind {
+                     kind: Word {
+                       text: "function",
+                      span: @175..183 
+                    },
+                    fields: [],
+                  arg: None 
+                },
+                span: @175..183 
+              }
+            ),
+            rels: [],
+          filter: Some(
+            Spanned {
+               node: And(
+                [
+                  Spanned {
+                     node: Is {
+                       subject: Spanned {
+                         node: Path(
+                          Path {
+                             segments: [
+                              Word {
+                                 text: "f",
+                                span: @190..191 
+                              }
+                            ],
+                            span: @190..191 
+                          }
+                        ),
+                        span: @190..191 
+                      },
+                      test: Word {
+                         text: "public",
+                        span: @195..201 
+                      } 
+                    },
+                    span: @190..201 
+                  },
+                  Spanned {
+                     node: Not(
+                      Spanned {
+                         node: Rel {
+                           subject: Spanned {
+                             node: Path(
+                              Path {
+                                 segments: [
+                                  Word {
+                                     text: "f",
+                                    span: @210..211 
+                                  }
+                                ],
+                                span: @210..211 
+                              }
+                            ),
+                            span: @210..211 
+                          },
+                          rel: Spanned {
+                             node: Containment {
+                               directly: false,
+                              dir: Inside,
+                              object: Term(
+                                Spanned {
+                                   node: Path(
+                                    Path {
+                                       segments: [
+                                        Word {
+                                           text: "test",
+                                          span: @219..223 
+                                        }
+                                      ],
+                                      span: @219..223 
+                                    }
+                                  ),
+                                  span: @219..223 
+                                }
+                              ) 
+                            },
+                            span: @212..223 
+                          } 
+                        },
+                        span: @210..223 
+                      }
+                    ),
+                    span: @206..223 
+                  }
+                ]
+              ),
+              span: @190..223 
+            }
+          ),
+          span: @172..223 
+        }
+      ),
+      span: @167..223 
+    },
+    Spanned {
+       node: Where(
+        Spanned {
+           node: Any(
+            [
+              Spanned {
+                 node: Quant {
+                   quant: Some,
+                  binding: Binding {
+                     name: Word {
+                       text: "t",
+                      span: @243..244 
+                    },
+                    source: Shape(
+                      Spanned {
+                         node: Kind {
+                           kind: Word {
+                             text: "test",
+                            span: @246..250 
+                          },
+                          fields: [],
+                        arg: None 
+                      },
+                      span: @246..250 
+                    }
+                  ),
+                  rels: [],
+                filter: Some(
+                  Spanned {
+                     node: Rel {
+                       subject: Spanned {
+                         node: Path(
+                          Path {
+                             segments: [
+                              Word {
+                                 text: "t",
+                                span: @257..258 
+                              }
+                            ],
+                            span: @257..258 
+                          }
+                        ),
+                        span: @257..258 
+                      },
+                      rel: Spanned {
+                         node: Reaches {
+                           target: Term(
+                            Spanned {
+                               node: Path(
+                                Path {
+                                   segments: [
+                                    Word {
+                                       text: "f",
+                                      span: @267..268 
+                                    }
+                                  ],
+                                  span: @267..268 
+                                }
+                              ),
+                              span: @267..268 
+                            }
+                          ),
+                          via: [
+                            Word {
+                               text: "calls",
+                              span: @273..278 
+                            }
+                          ],
+                          within: Some(
+                            Spanned {
+                               node: Knob(
+                                Word {
+                                   text: "depth",
+                                  span: @291..296 
+                                }
+                              ),
+                              span: @286..296 
+                            }
+                          ) 
+                        },
+                        span: @259..296 
+                      } 
+                    },
+                    span: @257..296 
+                  }
+                ),
+                span: @243..296 
+              } 
+            },
+            span: @238..296 
+          },
+          Spanned {
+             node: Quant {
+               quant: Some,
+              binding: Binding {
+                 name: Word {
+                   text: "t",
+                  span: @317..318 
+                },
+                source: Shape(
+                  Spanned {
+                     node: Kind {
+                       kind: Word {
+                         text: "test",
+                        span: @320..324 
+                      },
+                      fields: [],
+                    arg: None 
+                  },
+                  span: @320..324 
+                }
+              ),
+              rels: [],
+            filter: Some(
+              Spanned {
+                 node: Rel {
+                   subject: Spanned {
+                     node: Path(
+                      Path {
+                         segments: [
+                          Word {
+                             text: "t",
+                            span: @331..332 
+                          }
+                        ],
+                        span: @331..332 
+                      }
+                    ),
+                    span: @331..332 
+                  },
+                  rel: Spanned {
+                     node: Verb {
+                       certainty: None,
+                      verb: Word {
+                         text: "tests",
+                        span: @333..338 
+                      },
+                      object: Term(
+                        Spanned {
+                           node: Path(
+                            Path {
+                               segments: [
+                                Word {
+                                   text: "f",
+                                  span: @339..340 
+                                }
+                              ],
+                              span: @339..340 
+                            }
+                          ),
+                          span: @339..340 
+                        }
+                      ) 
+                    },
+                    span: @333..340 
+                  } 
+                },
+                span: @331..340 
+              }
+            ),
+            span: @317..340 
+          } 
+        },
+        span: @312..340 
+      }
+    ]
+  ),
+  span: @232..342 
+}
+),
+span: @226..342 
+},
+Spanned {
+   node: Report(
+    Report {
+       target: Word {
+         text: "f",
+        span: @352..353 
+      },
+      message: Message {
+         parts: [
+          Text {
+             value: "public ",
+            span: @355..362 
+          },
+          Interp {
+             path: Path {
+               segments: [
+                Word {
+                   text: "f",
+                  span: @363..364 
+                },
+                Word {
+                   text: "kind",
+                  span: @365..369 
+                }
+              ],
+              span: @363..369 
+            },
+            span: @362..370 
+          },
+          Text {
+             value: " `",
+            span: @370..372 
+          },
+          Interp {
+             path: Path {
+               segments: [
+                Word {
+                   text: "f",
+                  span: @373..374 
+                },
+                Word {
+                   text: "name",
+                  span: @375..379 
+                }
+              ],
+              span: @373..379 
+            },
+            span: @372..380 
+          },
+          Text {
+             value: "` has no test that reaches it",
+            span: @380..409 
+          }
+        ],
+        span: @354..410 
+      },
+      when: None 
+    }
+  ),
+  span: @345..410 
+}
+],
+examples: [
+  Example {
+     expect: Expect {
+       kind: Fire,
+      span: @422..426 
+    },
+    lang: Some(
+      Word {
+         text: "rust",
+        span: @427..431 
+      }
+    ),
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "pub fn double(x: i32) -> i32 { x * 2 }       //~ warn",
+        body: @435..496,
+        span: @432..499 
+      }
+    ),
+    span: @414..499 
+  },
+  Example {
+     expect: Expect {
+       kind: Clean,
+      span: @510..515 
+    },
+    lang: Some(
+      Word {
+         text: "rust",
+        span: @516..520 
+      }
+    ),
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "pub fn double(x: i32) -> i32 { x * 2 }\n#[cfg(test)] mod tests { #[test] fn d() { assert_eq!(super::double(2), 4); } }",
+        body: @524..653,
+        span: @521..656 
+      }
+    ),
+    span: @502..656 
+  },
+  Example {
+     expect: Expect {
+       kind: Unresolved,
+      span: @667..677 
+    },
+    lang: Some(
+      Word {
+         text: "python",
+        span: @678..684 
+      }
+    ),
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "def helper(cb): cb()                          #~ unresolved\ndef test_run(): helper(len)",
+        body: @688..787,
+        span: @685..790 
+      }
+    ),
+    span: @659..790 
+  }
+],
+explain: Some(
+  Explain {
+     text: BlockLit {
+       value: "Public callables should be reached by at least one test.\n## Remedy\nAdd a test that calls it, or link one with `frob:tests`.",
+      body: @804..943,
+      span: @801..946 
+    },
+    span: @793..946 
+  }
+),
+span: @0..948 
+}
+] 
+}

@@ -1,0 +1,479 @@
+---
+source: crates/gob-plan/src/grl/parse/tests/mod.rs
+expression: dump(&p.file)
+---
+File {
+   rules: [
+    Rule {
+       id: Word {
+         text: "NEAT013",
+        span: @5..12 
+      },
+      slug: StrLit {
+         value: "ambient-source-call",
+        span: @13..34 
+      },
+      headers: [
+        Spanned {
+           node: Lang(
+            Any {
+               quoted: false 
+            }
+          ),
+          span: @39..45 
+        },
+        Spanned {
+           node: Severity(
+            Warn
+          ),
+          span: @48..61 
+        },
+        Spanned {
+           node: Knob(
+            Knob {
+               name: Word {
+                 text: "sources",
+                span: @69..76 
+              },
+              ty: Spanned {
+                 node: Vocab,
+                span: @78..83 
+              },
+              default: Spanned {
+                 node: Call {
+                   name: Word {
+                     text: "vocab",
+                    span: @86..91 
+                  },
+                  args: [
+                    Spanned {
+                       node: Str(
+                        "clock"
+                      ),
+                      span: @92..99 
+                    },
+                    Spanned {
+                       node: Str(
+                        "rng"
+                      ),
+                      span: @101..106 
+                    },
+                    Spanned {
+                       node: Str(
+                        "env"
+                      ),
+                      span: @108..113 
+                    },
+                    Spanned {
+                       node: Str(
+                        "fs"
+                      ),
+                      span: @115..119 
+                    },
+                    Spanned {
+                       node: Str(
+                        "net"
+                      ),
+                      span: @121..126 
+                    },
+                    Spanned {
+                       node: Str(
+                        "stdio"
+                      ),
+                      span: @128..135 
+                    },
+                    Spanned {
+                       node: Str(
+                        "exit"
+                      ),
+                      span: @137..143 
+                    }
+                  ] 
+                },
+                span: @86..144 
+              },
+              doc: StrLit {
+                 value: "ambient sources",
+                span: @145..162 
+              } 
+            }
+          ),
+          span: @64..162 
+        }
+      ],
+      clauses: [
+        Spanned {
+           node: Find(
+            Binding {
+               name: Word {
+                 text: "fn",
+                span: @171..173 
+              },
+              source: Shape(
+                Spanned {
+                   node: Kind {
+                     kind: Word {
+                       text: "function",
+                      span: @175..183 
+                    },
+                    fields: [],
+                  arg: None 
+                },
+                span: @175..183 
+              }
+            ),
+            rels: [],
+          filter: Some(
+            Spanned {
+               node: Not(
+                Spanned {
+                   node: HasAttr {
+                     subject: Spanned {
+                       node: Path(
+                        Path {
+                           segments: [
+                            Word {
+                               text: "fn",
+                              span: @194..196 
+                            }
+                          ],
+                          span: @194..196 
+                        }
+                      ),
+                      span: @194..196 
+                    },
+                    attr: StrLit {
+                       value: "frob:shell",
+                      span: @206..218 
+                    } 
+                  },
+                  span: @194..218 
+                }
+              ),
+              span: @190..218 
+            }
+          ),
+          span: @171..218 
+        }
+      ),
+      span: @166..218 
+    },
+    Spanned {
+       node: Find(
+        Binding {
+           name: Word {
+             text: "c",
+            span: @226..227 
+          },
+          source: Shape(
+            Spanned {
+               node: Kind {
+                 kind: Word {
+                   text: "call",
+                  span: @229..233 
+                },
+                fields: [],
+              arg: None 
+            },
+            span: @229..233 
+          }
+        ),
+        rels: [],
+      filter: Some(
+        Spanned {
+           node: Rel {
+             subject: Spanned {
+               node: Path(
+                Path {
+                   segments: [
+                    Word {
+                       text: "c",
+                      span: @240..241 
+                    }
+                  ],
+                  span: @240..241 
+                }
+              ),
+              span: @240..241 
+            },
+            rel: Spanned {
+               node: InUnit {
+                 object: Term(
+                  Spanned {
+                     node: Path(
+                      Path {
+                         segments: [
+                          Word {
+                             text: "fn",
+                            span: @250..252 
+                          }
+                        ],
+                        span: @250..252 
+                      }
+                    ),
+                    span: @250..252 
+                  }
+                ) 
+              },
+              span: @242..252 
+            } 
+          },
+          span: @240..252 
+        }
+      ),
+      span: @226..252 
+    }
+  ),
+  span: @221..252 
+},
+Spanned {
+   node: Where(
+    Spanned {
+       node: Quant {
+         quant: Some,
+        binding: Binding {
+           name: Word {
+             text: "v",
+            span: @266..267 
+          },
+          source: Shape(
+            Spanned {
+               node: Kind {
+                 kind: Word {
+                   text: "unit",
+                  span: @269..273 
+                },
+                fields: [],
+              arg: None 
+            },
+            span: @269..273 
+          }
+        ),
+        rels: [],
+      filter: Some(
+        Spanned {
+           node: And(
+            [
+              Spanned {
+                 node: Rel {
+                   subject: Spanned {
+                     node: Path(
+                      Path {
+                         segments: [
+                          Word {
+                             text: "c",
+                            span: @280..281 
+                          }
+                        ],
+                        span: @280..281 
+                      }
+                    ),
+                    span: @280..281 
+                  },
+                  rel: Spanned {
+                     node: Verb {
+                       certainty: None,
+                      verb: Word {
+                         text: "resolves to",
+                        span: @282..293 
+                      },
+                      object: Term(
+                        Spanned {
+                           node: Path(
+                            Path {
+                               segments: [
+                                Word {
+                                   text: "v",
+                                  span: @294..295 
+                                }
+                              ],
+                              span: @294..295 
+                            }
+                          ),
+                          span: @294..295 
+                        }
+                      ) 
+                    },
+                    span: @282..295 
+                  } 
+                },
+                span: @280..295 
+              },
+              Spanned {
+                 node: In {
+                   lhs: Spanned {
+                     node: Path(
+                      Path {
+                         segments: [
+                          Word {
+                             text: "v",
+                            span: @300..301 
+                          }
+                        ],
+                        span: @300..301 
+                      }
+                    ),
+                    span: @300..301 
+                  },
+                  rhs: Spanned {
+                     node: Knob(
+                      Word {
+                         text: "sources",
+                        span: @310..317 
+                      }
+                    ),
+                    span: @305..317 
+                  } 
+                },
+                span: @300..317 
+              }
+            ]
+          ),
+          span: @280..317 
+        }
+      ),
+      span: @266..317 
+    } 
+  },
+  span: @261..317 
+}
+),
+span: @255..317 
+},
+Spanned {
+   node: Report(
+    Report {
+       target: Word {
+         text: "c",
+        span: @327..328 
+      },
+      message: Message {
+         parts: [
+          Interp {
+             path: Path {
+               segments: [
+                Word {
+                   text: "fn",
+                  span: @331..333 
+                },
+                Word {
+                   text: "name",
+                  span: @334..338 
+                }
+              ],
+              span: @331..338 
+            },
+            span: @330..339 
+          },
+          Text {
+             value: " calls ",
+            span: @339..346 
+          },
+          Interp {
+             path: Path {
+               segments: [
+                Word {
+                   text: "v",
+                  span: @347..348 
+                },
+                Word {
+                   text: "name",
+                  span: @349..353 
+                }
+              ],
+              span: @347..353 
+            },
+            span: @346..354 
+          },
+          Text {
+             value: ", an ambient source; inject it or mark the unit frob:shell",
+            span: @354..412 
+          }
+        ],
+        span: @329..413 
+      },
+      when: None 
+    }
+  ),
+  span: @320..413 
+}
+],
+examples: [
+  Example {
+     expect: Expect {
+       kind: Fire,
+      span: @425..429 
+    },
+    lang: Some(
+      Word {
+         text: "python",
+        span: @430..436 
+      }
+    ),
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "def now_str():\n    return time.time()          #~ warn",
+        body: @440..506,
+        span: @437..509 
+      }
+    ),
+    span: @417..509 
+  },
+  Example {
+     expect: Expect {
+       kind: Clean,
+      span: @520..525 
+    },
+    lang: Some(
+      Word {
+         text: "python",
+        span: @526..532 
+      }
+    ),
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "# frob:shell\ndef now_str():\n    return time.time()",
+        body: @536..602,
+        span: @533..605 
+      }
+    ),
+    span: @512..605 
+  },
+  Example {
+     expect: Expect {
+       kind: NotApplicable,
+      span: @616..629 
+    },
+    lang: Some(
+      Word {
+         text: "lua",
+        span: @630..633 
+      }
+    ),
+    name: None,
+    body: Source(
+      BlockLit {
+         value: "local t = os.time()",
+        body: @637..664,
+        span: @634..667 
+      }
+    ),
+    span: @608..667 
+  }
+],
+explain: Some(
+  Explain {
+     text: BlockLit {
+       value: "Calls to clocks, randomness, the environment, files, network or stdio make a\nfunction impure and hard to test.\n## Remedy\nPass the source in as a parameter, or mark the unit `frob:shell`.",
+      body: @681..887,
+      span: @678..890 
+    },
+    span: @670..890 
+  }
+),
+span: @0..892 
+}
+] 
+}

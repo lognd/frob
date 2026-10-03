@@ -1,0 +1,29 @@
+rule NEAT013 "ambient-source-call" {
+  lang *
+  severity warn
+  knob sources: vocab = vocab("clock", "rng", "env", "fs", "net", "stdio", "exit") "ambient sources"
+
+  find fn: function where not fn has attr "frob:shell"
+  find c: call where c in unit fn
+  where some v: unit where c resolves to v and v in knob.sources
+  report c "{fn.name} calls {v.name}, an ambient source; inject it or mark the unit frob:shell"
+
+  example fire python """
+    def now_str():
+        return time.time()          #~ warn
+  """
+  example clean python """
+    # frob:shell
+    def now_str():
+        return time.time()
+  """
+  example notapplicable lua """
+    local t = os.time()
+  """
+  explain """
+    Calls to clocks, randomness, the environment, files, network or stdio make a
+    function impure and hard to test.
+    ## Remedy
+    Pass the source in as a parameter, or mark the unit `frob:shell`.
+  """
+}

@@ -1,0 +1,380 @@
+---
+source: crates/gob-plan/src/grl/parse/tests/mod.rs
+expression: dump(&p.file)
+---
+File {
+   rules: [
+    Rule {
+       id: Word {
+         text: "CAP001",
+        span: @5..11 
+      },
+      slug: StrLit {
+         value: "undeclared-capability",
+        span: @12..35 
+      },
+      headers: [
+        Spanned {
+           node: Lang(
+            Any {
+               quoted: false 
+            }
+          ),
+          span: @40..46 
+        },
+        Spanned {
+           node: Severity(
+            Error
+          ),
+          span: @49..63 
+        },
+        Spanned {
+           node: Needs(
+            [
+              Word {
+                 text: "model",
+                span: @72..77 
+              }
+            ]
+          ),
+          span: @66..77 
+        }
+      ],
+      clauses: [
+        Spanned {
+           node: Find(
+            Binding {
+               name: Word {
+                 text: "c",
+                span: @86..87 
+              },
+              source: Shape(
+                Spanned {
+                   node: Kind {
+                     kind: Word {
+                       text: "cell",
+                      span: @89..93 
+                    },
+                    fields: [],
+                  arg: None 
+                },
+                span: @89..93 
+              }
+            ),
+            rels: [],
+          filter: Some(
+            Spanned {
+               node: And(
+                [
+                  Spanned {
+                     node: Flag(
+                      Spanned {
+                         node: Path(
+                          Path {
+                             segments: [
+                              Word {
+                                 text: "c",
+                                span: @100..101 
+                              },
+                              Word {
+                                 text: "observed",
+                                span: @102..110 
+                              }
+                            ],
+                            span: @100..110 
+                          }
+                        ),
+                        span: @100..110 
+                      }
+                    ),
+                    span: @100..110 
+                  },
+                  Spanned {
+                     node: Not(
+                      Spanned {
+                         node: Flag(
+                          Spanned {
+                             node: Path(
+                              Path {
+                                 segments: [
+                                  Word {
+                                     text: "c",
+                                    span: @119..120 
+                                  },
+                                  Word {
+                                     text: "granted",
+                                    span: @121..128 
+                                  }
+                                ],
+                                span: @119..128 
+                              }
+                            ),
+                            span: @119..128 
+                          }
+                        ),
+                        span: @119..128 
+                      }
+                    ),
+                    span: @115..128 
+                  },
+                  Spanned {
+                     node: Not(
+                      Spanned {
+                         node: Flag(
+                          Spanned {
+                             node: Path(
+                              Path {
+                                 segments: [
+                                  Word {
+                                     text: "c",
+                                    span: @137..138 
+                                  },
+                                  Word {
+                                     text: "excused",
+                                    span: @139..146 
+                                  }
+                                ],
+                                span: @137..146 
+                              }
+                            ),
+                            span: @137..146 
+                          }
+                        ),
+                        span: @137..146 
+                      }
+                    ),
+                    span: @133..146 
+                  }
+                ]
+              ),
+              span: @100..146 
+            }
+          ),
+          span: @86..146 
+        }
+      ),
+      span: @81..146 
+    },
+    Spanned {
+       node: Report(
+        Report {
+           target: Word {
+             text: "c",
+            span: @156..157 
+          },
+          message: Message {
+             parts: [
+              Text {
+                 value: "node ",
+                span: @159..164 
+              },
+              Interp {
+                 path: Path {
+                   segments: [
+                    Word {
+                       text: "c",
+                      span: @165..166 
+                    },
+                    Word {
+                       text: "node",
+                      span: @167..171 
+                    },
+                    Word {
+                       text: "name",
+                      span: @172..176 
+                    }
+                  ],
+                  span: @165..176 
+                },
+                span: @164..177 
+              },
+              Text {
+                 value: " uses ",
+                span: @177..183 
+              },
+              Interp {
+                 path: Path {
+                   segments: [
+                    Word {
+                       text: "c",
+                      span: @184..185 
+                    },
+                    Word {
+                       text: "atom",
+                      span: @186..190 
+                    }
+                  ],
+                  span: @184..190 
+                },
+                span: @183..191 
+              },
+              Text {
+                 value: " without a grant (deny by default)",
+                span: @191..225 
+              }
+            ],
+            span: @158..226 
+          },
+          when: None 
+        }
+      ),
+      span: @149..226 
+    },
+    Spanned {
+       node: Fix(
+        Fix {
+           kind: Host {
+             name: Word {
+               text: "add_grant",
+              span: @238..247 
+            },
+            args: [
+              Spanned {
+                 node: Path(
+                  Path {
+                     segments: [
+                      Word {
+                         text: "c",
+                        span: @248..249 
+                      },
+                      Word {
+                         text: "node",
+                        span: @250..254 
+                      }
+                    ],
+                    span: @248..254 
+                  }
+                ),
+                span: @248..254 
+              },
+              Spanned {
+                 node: Path(
+                  Path {
+                     segments: [
+                      Word {
+                         text: "c",
+                        span: @256..257 
+                      },
+                      Word {
+                         text: "atom",
+                        span: @258..262 
+                      }
+                    ],
+                    span: @256..262 
+                  }
+                ),
+                span: @256..262 
+              }
+            ] 
+          },
+          applicability: Some(
+            Applicability {
+               kind: HasPlaceholders,
+              span: @265..281 
+            }
+          ) 
+        }
+      ),
+      span: @229..282 
+    }
+  ],
+  examples: [
+    Example {
+       expect: Expect {
+         kind: Fire,
+        span: @294..298 
+      },
+      lang: Some(
+        Word {
+           text: "rust",
+          span: @299..303 
+        }
+      ),
+      name: None,
+      body: Inputs(
+        [
+          Spanned {
+             node: Model(
+              BlockLit {
+                 value: "node frob owns \"src/**\";",
+                body: @319..343,
+                span: @316..346 
+              }
+            ),
+            span: @310..346 
+          },
+          Spanned {
+             node: File {
+               path: StrLit {
+                 value: "src/a.rs",
+                span: @356..366 
+              },
+              text: BlockLit {
+                 value: "fn serve() { std::net::TcpListener::bind(\"0.0.0.0:0\"); }   //~ error",
+                body: @370..450,
+                span: @367..453 
+              } 
+            },
+            span: @351..453 
+          }
+        ]
+      ),
+      span: @286..457 
+    },
+    Example {
+       expect: Expect {
+         kind: Clean,
+        span: @468..473 
+      },
+      lang: Some(
+        Word {
+           text: "rust",
+          span: @474..478 
+        }
+      ),
+      name: None,
+      body: Inputs(
+        [
+          Spanned {
+             node: Model(
+              BlockLit {
+                 value: "node frob owns \"src/**\" { may net.listen because=\"the server\"; }",
+                body: @494..558,
+                span: @491..561 
+              }
+            ),
+            span: @485..561 
+          },
+          Spanned {
+             node: File {
+               path: StrLit {
+                 value: "src/a.rs",
+                span: @571..581 
+              },
+              text: BlockLit {
+                 value: "fn serve() { std::net::TcpListener::bind(\"0.0.0.0:0\"); }",
+                body: @585..653,
+                span: @582..656 
+              } 
+            },
+            span: @566..656 
+          }
+        ]
+      ),
+      span: @460..660 
+    }
+  ],
+  explain: Some(
+    Explain {
+       text: BlockLit {
+         value: "Capabilities are denied unless granted (D75).\n## Remedy\nAdd `may ATOM because=\"...\"` to the node, or remove the use.",
+        body: @674..806,
+        span: @671..809 
+      },
+      span: @663..809 
+    }
+  ),
+  span: @0..811 
+}
+] 
+}

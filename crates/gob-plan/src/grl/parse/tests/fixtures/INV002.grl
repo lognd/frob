@@ -1,0 +1,38 @@
+rule INV002 "forbidden-import" {
+  lang *
+  severity error  scope repo
+  needs config
+
+  find row: config.invariants.forbid_imports              # columns from, to, reason (typed)
+  find i: import where i.file.path matches row.from and i.target under row.to
+  report i "{i.file.path} imports {i.target}: {row.reason}"
+  unresolved when not row.from is valid_glob because "invalid glob in [invariants] forbid_imports"
+
+  example fire python {
+    config """
+      [[invariants.forbid_imports]]
+      from = "src/core/**"
+      to = "requests"
+      reason = "no network in core"
+    """
+    file "src/core/a.py" """
+      import requests              #~ error
+    """
+  }
+  example clean python {
+    config """
+      [[invariants.forbid_imports]]
+      from = "src/core/**"
+      to = "requests"
+      reason = "no network in core"
+    """
+    file "src/core/a.py" """
+      import requests_mock
+    """
+  }
+  explain """
+    Some modules must not depend on others; the table lives in [invariants].
+    ## Remedy
+    Remove the import or move the code; change the table only with a decision.
+  """
+}

@@ -1,0 +1,434 @@
+---
+source: crates/gob-plan/src/grl/parse/tests/mod.rs
+expression: dump(&p.file)
+---
+File {
+   rules: [
+    Rule {
+       id: Word {
+         text: "INV002",
+        span: @5..11 
+      },
+      slug: StrLit {
+         value: "forbidden-import",
+        span: @12..30 
+      },
+      headers: [
+        Spanned {
+           node: Lang(
+            Any {
+               quoted: false 
+            }
+          ),
+          span: @35..41 
+        },
+        Spanned {
+           node: Severity(
+            Error
+          ),
+          span: @44..58 
+        },
+        Spanned {
+           node: Scope(
+            Repo
+          ),
+          span: @60..70 
+        },
+        Spanned {
+           node: Needs(
+            [
+              Word {
+                 text: "config",
+                span: @79..85 
+              }
+            ]
+          ),
+          span: @73..85 
+        }
+      ],
+      clauses: [
+        Spanned {
+           node: Find(
+            Binding {
+               name: Word {
+                 text: "row",
+                span: @94..97 
+              },
+              source: Side(
+                Path {
+                   segments: [
+                    Word {
+                       text: "config",
+                      span: @99..105 
+                    },
+                    Word {
+                       text: "invariants",
+                      span: @106..116 
+                    },
+                    Word {
+                       text: "forbid_imports",
+                      span: @117..131 
+                    }
+                  ],
+                  span: @99..131 
+                }
+              ),
+              rels: [],
+            filter: None,
+            span: @94..131 
+          }
+        ),
+        span: @89..131 
+      },
+      Spanned {
+         node: Find(
+          Binding {
+             name: Word {
+               text: "i",
+              span: @187..188 
+            },
+            source: Shape(
+              Spanned {
+                 node: Kind {
+                   kind: Word {
+                     text: "import",
+                    span: @190..196 
+                  },
+                  fields: [],
+                arg: None 
+              },
+              span: @190..196 
+            }
+          ),
+          rels: [],
+        filter: Some(
+          Spanned {
+             node: And(
+              [
+                Spanned {
+                   node: GlobMatch {
+                     lhs: Spanned {
+                       node: Path(
+                        Path {
+                           segments: [
+                            Word {
+                               text: "i",
+                              span: @203..204 
+                            },
+                            Word {
+                               text: "file",
+                              span: @205..209 
+                            },
+                            Word {
+                               text: "path",
+                              span: @210..214 
+                            }
+                          ],
+                          span: @203..214 
+                        }
+                      ),
+                      span: @203..214 
+                    },
+                    rhs: Spanned {
+                       node: Path(
+                        Path {
+                           segments: [
+                            Word {
+                               text: "row",
+                              span: @223..226 
+                            },
+                            Word {
+                               text: "from",
+                              span: @227..231 
+                            }
+                          ],
+                          span: @223..231 
+                        }
+                      ),
+                      span: @223..231 
+                    } 
+                  },
+                  span: @203..231 
+                },
+                Spanned {
+                   node: Rel {
+                     subject: Spanned {
+                       node: Path(
+                        Path {
+                           segments: [
+                            Word {
+                               text: "i",
+                              span: @236..237 
+                            },
+                            Word {
+                               text: "target",
+                              span: @238..244 
+                            }
+                          ],
+                          span: @236..244 
+                        }
+                      ),
+                      span: @236..244 
+                    },
+                    rel: Spanned {
+                       node: Under {
+                         term: Spanned {
+                           node: Path(
+                            Path {
+                               segments: [
+                                Word {
+                                   text: "row",
+                                  span: @251..254 
+                                },
+                                Word {
+                                   text: "to",
+                                  span: @255..257 
+                                }
+                              ],
+                              span: @251..257 
+                            }
+                          ),
+                          span: @251..257 
+                        } 
+                      },
+                      span: @245..257 
+                    } 
+                  },
+                  span: @236..257 
+                }
+              ]
+            ),
+            span: @203..257 
+          }
+        ),
+        span: @187..257 
+      }
+    ),
+    span: @182..257 
+  },
+  Spanned {
+     node: Report(
+      Report {
+         target: Word {
+           text: "i",
+          span: @267..268 
+        },
+        message: Message {
+           parts: [
+            Interp {
+               path: Path {
+                 segments: [
+                  Word {
+                     text: "i",
+                    span: @271..272 
+                  },
+                  Word {
+                     text: "file",
+                    span: @273..277 
+                  },
+                  Word {
+                     text: "path",
+                    span: @278..282 
+                  }
+                ],
+                span: @271..282 
+              },
+              span: @270..283 
+            },
+            Text {
+               value: " imports ",
+              span: @283..292 
+            },
+            Interp {
+               path: Path {
+                 segments: [
+                  Word {
+                     text: "i",
+                    span: @293..294 
+                  },
+                  Word {
+                     text: "target",
+                    span: @295..301 
+                  }
+                ],
+                span: @293..301 
+              },
+              span: @292..302 
+            },
+            Text {
+               value: ": ",
+              span: @302..304 
+            },
+            Interp {
+               path: Path {
+                 segments: [
+                  Word {
+                     text: "row",
+                    span: @305..308 
+                  },
+                  Word {
+                     text: "reason",
+                    span: @309..315 
+                  }
+                ],
+                span: @305..315 
+              },
+              span: @304..316 
+            }
+          ],
+          span: @269..317 
+        },
+        when: None 
+      }
+    ),
+    span: @260..317 
+  },
+  Spanned {
+     node: Unresolved(
+      Unresolved {
+         when: Spanned {
+           node: Not(
+            Spanned {
+               node: Is {
+                 subject: Spanned {
+                   node: Path(
+                    Path {
+                       segments: [
+                        Word {
+                           text: "row",
+                          span: @340..343 
+                        },
+                        Word {
+                           text: "from",
+                          span: @344..348 
+                        }
+                      ],
+                      span: @340..348 
+                    }
+                  ),
+                  span: @340..348 
+                },
+                test: Word {
+                   text: "valid_glob",
+                  span: @352..362 
+                } 
+              },
+              span: @340..362 
+            }
+          ),
+          span: @336..362 
+        },
+        because: Message {
+           parts: [
+            Text {
+               value: "invalid glob in [invariants] forbid_imports",
+              span: @372..415 
+            }
+          ],
+          span: @371..416 
+        } 
+      }
+    ),
+    span: @320..416 
+  }
+],
+examples: [
+  Example {
+     expect: Expect {
+       kind: Fire,
+      span: @428..432 
+    },
+    lang: Some(
+      Word {
+         text: "python",
+        span: @433..439 
+      }
+    ),
+    name: None,
+    body: Inputs(
+      [
+        Spanned {
+           node: Config(
+            BlockLit {
+               value: "[[invariants.forbid_imports]]\nfrom = \"src/core/**\"\nto = \"requests\"\nreason = \"no network in core\"",
+              body: @456..582,
+              span: @453..585 
+            }
+          ),
+          span: @446..585 
+        },
+        Spanned {
+           node: File {
+             path: StrLit {
+               value: "src/core/a.py",
+              span: @595..610 
+            },
+            text: BlockLit {
+               value: "import requests              #~ error",
+              body: @614..663,
+              span: @611..666 
+            } 
+          },
+          span: @590..666 
+        }
+      ]
+    ),
+    span: @420..670 
+  },
+  Example {
+     expect: Expect {
+       kind: Clean,
+      span: @681..686 
+    },
+    lang: Some(
+      Word {
+         text: "python",
+        span: @687..693 
+      }
+    ),
+    name: None,
+    body: Inputs(
+      [
+        Spanned {
+           node: Config(
+            BlockLit {
+               value: "[[invariants.forbid_imports]]\nfrom = \"src/core/**\"\nto = \"requests\"\nreason = \"no network in core\"",
+              body: @710..836,
+              span: @707..839 
+            }
+          ),
+          span: @700..839 
+        },
+        Spanned {
+           node: File {
+             path: StrLit {
+               value: "src/core/a.py",
+              span: @849..864 
+            },
+            text: BlockLit {
+               value: "import requests_mock",
+              body: @868..900,
+              span: @865..903 
+            } 
+          },
+          span: @844..903 
+        }
+      ]
+    ),
+    span: @673..907 
+  }
+],
+explain: Some(
+  Explain {
+     text: BlockLit {
+       value: "Some modules must not depend on others; the table lives in [invariants].\n## Remedy\nRemove the import or move the code; change the table only with a decision.",
+      body: @921..1094,
+      span: @918..1097 
+    },
+    span: @910..1097 
+  }
+),
+span: @0..1099 
+}
+] 
+}

@@ -1,0 +1,345 @@
+---
+source: crates/gob-plan/src/grl/parse/tests/mod.rs
+expression: dump(&p.file)
+---
+File {
+   rules: [
+    Rule {
+       id: Word {
+         text: "SCOPE001",
+        span: @5..13 
+      },
+      slug: StrLit {
+         value: "path-outside-lease",
+        span: @14..34 
+      },
+      headers: [
+        Spanned {
+           node: Lang(
+            Nothing
+          ),
+          span: @39..45 
+        },
+        Spanned {
+           node: Severity(
+            Error
+          ),
+          span: @48..62 
+        },
+        Spanned {
+           node: Scope(
+            Repo
+          ),
+          span: @64..74 
+        },
+        Spanned {
+           node: Needs(
+            [
+              Word {
+                 text: "diff",
+                span: @83..87 
+              },
+              Word {
+                 text: "lease",
+                span: @89..94 
+              },
+              Word {
+                 text: "config",
+                span: @96..102 
+              }
+            ]
+          ),
+          span: @77..102 
+        }
+      ],
+      clauses: [
+        Spanned {
+           node: Find(
+            Binding {
+               name: Word {
+                 text: "p",
+                span: @111..112 
+              },
+              source: Side(
+                Path {
+                   segments: [
+                    Word {
+                       text: "diff",
+                      span: @114..118 
+                    },
+                    Word {
+                       text: "changed",
+                      span: @119..126 
+                    }
+                  ],
+                  span: @114..126 
+                }
+              ),
+              rels: [],
+            filter: Some(
+              Spanned {
+                 node: And(
+                  [
+                    Spanned {
+                       node: Not(
+                        Spanned {
+                           node: GlobMatch {
+                             lhs: Spanned {
+                               node: Path(
+                                Path {
+                                   segments: [
+                                    Word {
+                                       text: "p",
+                                      span: @139..140 
+                                    }
+                                  ],
+                                  span: @139..140 
+                                }
+                              ),
+                              span: @139..140 
+                            },
+                            rhs: Spanned {
+                               node: Path(
+                                Path {
+                                   segments: [
+                                    Word {
+                                       text: "lease",
+                                      span: @149..154 
+                                    },
+                                    Word {
+                                       text: "globs",
+                                      span: @155..160 
+                                    }
+                                  ],
+                                  span: @149..160 
+                                }
+                              ),
+                              span: @149..160 
+                            } 
+                          },
+                          span: @139..160 
+                        }
+                      ),
+                      span: @135..160 
+                    },
+                    Spanned {
+                       node: Not(
+                        Spanned {
+                           node: GlobMatch {
+                             lhs: Spanned {
+                               node: Path(
+                                Path {
+                                   segments: [
+                                    Word {
+                                       text: "p",
+                                      span: @169..170 
+                                    }
+                                  ],
+                                  span: @169..170 
+                                }
+                              ),
+                              span: @169..170 
+                            },
+                            rhs: Spanned {
+                               node: Path(
+                                Path {
+                                   segments: [
+                                    Word {
+                                       text: "config",
+                                      span: @179..185 
+                                    },
+                                    Word {
+                                       text: "lease",
+                                      span: @186..191 
+                                    },
+                                    Word {
+                                       text: "shared_files",
+                                      span: @192..204 
+                                    }
+                                  ],
+                                  span: @179..204 
+                                }
+                              ),
+                              span: @179..204 
+                            } 
+                          },
+                          span: @169..204 
+                        }
+                      ),
+                      span: @165..204 
+                    }
+                  ]
+                ),
+                span: @135..204 
+              }
+            ),
+            span: @111..204 
+          }
+        ),
+        span: @106..204 
+      },
+      Spanned {
+         node: Report(
+          Report {
+             target: Word {
+               text: "p",
+              span: @214..215 
+            },
+            message: Message {
+               parts: [
+                Interp {
+                   path: Path {
+                     segments: [
+                      Word {
+                         text: "p",
+                        span: @218..219 
+                      }
+                    ],
+                    span: @218..219 
+                  },
+                  span: @217..220 
+                },
+                Text {
+                   value: " is outside the scope lease of ",
+                  span: @220..251 
+                },
+                Interp {
+                   path: Path {
+                     segments: [
+                      Word {
+                         text: "lease",
+                        span: @252..257 
+                      },
+                      Word {
+                         text: "ticket",
+                        span: @258..264 
+                      }
+                    ],
+                    span: @252..264 
+                  },
+                  span: @251..265 
+                }
+              ],
+              span: @216..266 
+            },
+            when: None 
+          }
+        ),
+        span: @207..266 
+      },
+      Spanned {
+         node: Fix(
+          Fix {
+             kind: Manual {
+               message: Message {
+                 parts: [
+                  Text {
+                     value: "widen the lease with `frob lease widen`, or move the change to a ticket that owns the path",
+                    span: @281..371 
+                  }
+                ],
+                span: @280..372 
+              } 
+            },
+            applicability: None 
+          }
+        ),
+        span: @269..372 
+      }
+    ],
+    examples: [
+      Example {
+         expect: Expect {
+           kind: Fire,
+          span: @384..388 
+        },
+        lang: None,
+        name: None,
+        body: Inputs(
+          [
+            Spanned {
+               node: Lease(
+                [
+                  StrLit {
+                     value: "crates/a/**",
+                    span: @402..415 
+                  }
+                ]
+              ),
+              span: @395..416 
+            },
+            Spanned {
+               node: Diff(
+                [
+                  StrLit {
+                     value: "crates/b/src/lib.rs",
+                    span: @427..448 
+                  }
+                ]
+              ),
+              span: @421..449 
+            }
+          ]
+        ),
+        span: @376..453 
+      },
+      Example {
+         expect: Expect {
+           kind: Clean,
+          span: @464..469 
+        },
+        lang: None,
+        name: None,
+        body: Inputs(
+          [
+            Spanned {
+               node: Lease(
+                [
+                  StrLit {
+                     value: "crates/a/**",
+                    span: @483..496 
+                  }
+                ]
+              ),
+              span: @476..497 
+            },
+            Spanned {
+               node: Config(
+                BlockLit {
+                   value: "[lease]\nshared_files = [\"Cargo.lock\"]",
+                  body: @512..567,
+                  span: @509..570 
+                }
+              ),
+              span: @502..570 
+            },
+            Spanned {
+               node: Diff(
+                [
+                  StrLit {
+                     value: "Cargo.lock",
+                    span: @581..593 
+                  }
+                ]
+              ),
+              span: @575..594 
+            }
+          ]
+        ),
+        span: @456..598 
+      }
+    ],
+    explain: Some(
+      Explain {
+         text: BlockLit {
+           value: "A ticket may only change the paths its lease covers.\n## Remedy\nWiden the lease or move the change.",
+          body: @612..726,
+          span: @609..729 
+        },
+        span: @601..729 
+      }
+    ),
+    span: @0..731 
+  }
+] 
+}
