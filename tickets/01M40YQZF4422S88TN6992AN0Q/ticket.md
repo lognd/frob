@@ -2,7 +2,8 @@
 id = "01M40YQZF4422S88TN6992AN0Q"
 title = "Remedies name commands that do not exist (frob lease release); test every remedy against the CLI registry"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
