@@ -9,9 +9,9 @@ points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T04:21:15Z"
-updated = "2026-10-03T09:29:26Z"
+updated = "2026-10-03T15:28:17Z"
 idempotency_key = "m2-directive-in-code-span"
-labels = ["milestone:2", "release:0.532.0"]
+labels = ["milestone:2"]
 scope = ["crates/gob-directives/**", "crates/gob-languages/**"]
 
 [[acceptance]]

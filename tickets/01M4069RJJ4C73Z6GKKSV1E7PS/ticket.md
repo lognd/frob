@@ -9,9 +9,9 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:53Z"
-updated = "2026-10-03T07:57:20Z"
+updated = "2026-10-03T15:28:19Z"
 idempotency_key = "m2-rel-pm034"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-pm/src/rules/membership.rs", "docs/reference/rules/pm/**", "crates/frob-pm/src/rules/**", "crates/frob-pm/src/lib.rs", "crates/frob-pm/Cargo.toml", "crates/frob-pm/tests/**", "crates/frob-check/Cargo.toml", "crates/frob-check/src/product.rs", "crates/frob-check/src/snapshot.rs", "docs/reference/rules/**", "Cargo.lock"]
 
 [[links]]

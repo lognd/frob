@@ -9,9 +9,9 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:13:00Z"
-updated = "2026-10-03T09:06:12Z"
+updated = "2026-10-03T15:28:25Z"
 idempotency_key = "m2-rel-init-e2e"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["crates/frob/tests/e2e_init_loop.rs"]
 
 [[links]]

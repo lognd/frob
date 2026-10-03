@@ -2126,6 +2126,7 @@ dependencies = [
  "gob-config",
  "gob-diagnostics",
  "gob-directives",
+ "gob-exec",
  "gob-log",
  "gob-mdtest",
  "gob-rules",

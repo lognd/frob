@@ -8,9 +8,9 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:13:00Z"
-updated = "2026-10-03T06:13:00Z"
+updated = "2026-10-03T15:28:25Z"
 idempotency_key = "m2-rel-release-guide"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["docs/guides/release.md"]
 
 [[links]]

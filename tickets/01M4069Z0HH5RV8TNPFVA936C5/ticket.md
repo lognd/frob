@@ -9,9 +9,9 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:13:00Z"
-updated = "2026-10-03T09:49:04Z"
+updated = "2026-10-03T15:28:25Z"
 idempotency_key = "m2-rel-init-adopt"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["crates/frob/src/init.rs", "crates/frob/tests/init_adopt.rs", "crates/frob/src/config_cmd.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/gob-check/src/config.rs", "crates/frob-check/src/product.rs", "crates/frob-check/tests/check.rs", "crates/frob/tests/snapshots/*", "crates/frob/tests/cli.rs", "docs/reference/config.md", "docs/design/cli.md", "docs/design/rules.md"]
 
 [[links]]

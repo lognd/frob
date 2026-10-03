@@ -9,9 +9,9 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:55Z"
-updated = "2026-10-03T14:54:30Z"
+updated = "2026-10-03T15:28:19Z"
 idempotency_key = "m2-rel-cycle-velocity"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-pm/src/cycle/velocity.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs", "docs/reference/cli/frob.md", "crates/frob-pm/src/cycle/lifecycle.rs"]
 
 [[links]]

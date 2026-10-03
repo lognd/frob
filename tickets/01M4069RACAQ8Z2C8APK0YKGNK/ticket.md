@@ -9,9 +9,9 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:53Z"
-updated = "2026-10-03T07:28:09Z"
+updated = "2026-10-03T15:28:18Z"
 idempotency_key = "m2-rel-milestone-evidence"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-pm/src/milestone/criteria.rs", "crates/frob-evidence/src/**", "crates/frob-pm/src/**", "crates/frob-pm/tests/**", "crates/frob/src/**", "crates/frob/tests/**", "docs/design/releases.md", "docs/reference/cli/frob.md"]
 
 [[links]]

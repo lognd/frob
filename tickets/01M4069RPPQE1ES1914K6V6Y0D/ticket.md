@@ -9,9 +9,9 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:54Z"
-updated = "2026-10-03T11:23:07Z"
+updated = "2026-10-03T15:28:19Z"
 idempotency_key = "m2-rel-cycle-new-close"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["crates/frob-pm/src/cycle/lifecycle.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-pm/src/store.rs", "crates/frob-pm/src/model.rs", "crates/frob-pm/src/lib.rs", "crates/frob-pm/src/cycle/mod.rs", "crates/frob/src/lib.rs", "crates/frob/tests/cycle.rs", "docs/reference/cli/frob.md", "docs/design/pm-enforcement.md", "crates/frob-pm/src/milestone/mod.rs", "changelog.d/01M40R0C1E6K6V6Y0D0000CYC1.added.md", "changelog.d/01M4069RPPQE1ES1914K6V6Y0D.added.md"]
 
 [[links]]

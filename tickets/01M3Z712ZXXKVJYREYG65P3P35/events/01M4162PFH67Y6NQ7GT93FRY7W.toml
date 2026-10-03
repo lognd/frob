@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["milestone:2", "release:0.532.0"]
+new = ["milestone:2"]
+at = "2026-10-03T15:28:16Z"
+actor = "lognd"
+rev = 1

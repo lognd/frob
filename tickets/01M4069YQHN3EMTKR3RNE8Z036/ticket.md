@@ -2,16 +2,16 @@
 id = "01M4069YQHN3EMTKR3RNE8Z036"
 title = "Dev channel: every green land builds artifacts to a GitHub prerelease dev"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:13:00Z"
-updated = "2026-10-03T06:13:00Z"
+updated = "2026-10-03T15:47:43Z"
 idempotency_key = "m2-rel-dev-channel"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = [".github/workflows/dev.yml", ".github/workflows/ci.yml"]
+labels = ["milestone:2", "area:release"]
+scope = [".github/workflows/dev.yml", ".github/workflows/ci.yml", "crates/frob-release/tests/dev_workflow.rs", "docs/design/releases.md"]
 
 [[links]]
 kind = "blocked-by"

@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use gob_dev::import_v1::{self, ImportOptions};
 use gob_dev::out::emit;
-use gob_dev::{Kind, Mode, apply, generate, workspace_root};
+use gob_dev::{Kind, Mode, apply, generate, publish, workspace_root};
 
 /// Command-line interface of the developer task runner.
 #[derive(Debug, Parser)]
@@ -32,6 +32,12 @@ enum Task {
         /// Output root (defaults to the workspace root).
         #[arg(long)]
         root: Option<PathBuf>,
+    },
+    /// Publish the workspace crates to crates.io in dependency order; resumable.
+    Publish {
+        /// Print the order and publish nothing.
+        #[arg(long)]
+        dry_run: bool,
     },
     /// Convert the v1 YAML ledger into v2 ULID tickets (one-off, T-0025).
     ImportV1Tickets {
@@ -80,6 +86,7 @@ fn main() -> Result<(), Failed> {
             map_out.as_deref(),
             report_md.as_deref(),
         ),
+        Task::Publish { dry_run } => publish_crates(dry_run),
         Task::Gen { kind, check, root } => {
             let workspace = match workspace_root() {
                 Ok(w) => w,
@@ -107,6 +114,32 @@ fn main() -> Result<(), Failed> {
             }
         }
     }
+}
+
+/// Plan and run the crates.io publish from the workspace root.
+fn publish_crates(dry_run: bool) -> Result<(), Failed> {
+    let fail = |e: &dyn std::fmt::Display| {
+        tracing::error!(error = %e, "publish failed");
+        Failed(format!("error: {e}"))
+    };
+    let root = workspace_root().map_err(|e| fail(&e))?;
+    let order = publish::read_metadata(&root)
+        .and_then(|json| publish::plan(&json))
+        .map_err(|e| fail(&e))?;
+    let opts = publish::Options {
+        dry_run,
+        ..publish::Options::default()
+    };
+    publish::run(
+        &order,
+        &publish::CratesIo,
+        &publish::CargoCli { root },
+        &opts,
+        &mut |line| emit(line),
+        &std::thread::sleep,
+    )
+    .map(|_| ())
+    .map_err(|e| fail(&e))
 }
 
 /// Run the v1 import and print its summary table, counts and dropped fields.
@@ -166,6 +199,12 @@ mod tests {
         };
         assert_eq!(kind, Kind::All);
         assert!(check);
+    }
+
+    #[test]
+    fn publish_parses() {
+        let cli = Cli::try_parse_from(["gob-dev", "publish", "--dry-run"]).expect("parses");
+        assert!(matches!(cli.command, Task::Publish { dry_run: true }));
     }
 
     #[test]

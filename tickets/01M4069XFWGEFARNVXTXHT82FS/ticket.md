@@ -9,9 +9,9 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T06:34:10Z"
+updated = "2026-10-03T15:28:23Z"
 idempotency_key = "m2-rel-dist-config"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["dist-workspace.toml", ".github/workflows/release.yml", "Cargo.toml", "crates/frob/Cargo.toml", "docs/decisions/**"]
 
 [[acceptance]]

@@ -8,9 +8,9 @@ priority = "medium"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T09:01:09Z"
-updated = "2026-10-03T09:57:45Z"
+updated = "2026-10-03T15:28:27Z"
 idempotency_key = "m2-rel-e2e-check-before-init-teaches"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["crates/frob/src/lib.rs", "crates/frob/tests/check_verb.rs", "crates/gob-cli/src/cli.rs", "crates/frob/src/first_run.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/frob/tests/first_run.rs", "crates/gob-cli/src/lib.rs"]
 
 [[acceptance]]
