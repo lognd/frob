@@ -2227,6 +2227,7 @@ dependencies = [
 name = "gob-plan"
 version = "0.0.0"
 dependencies = [
+ "gob-rules",
  "gob-text",
  "insta",
  "proptest",

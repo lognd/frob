@@ -150,20 +150,8 @@ pub enum LangSet {
     List(Vec<Word>),
 }
 
-/// A rule polarity (grl-spec.md 7.2).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Polarity {
-    /// `P+`: a bad thing exists.
-    Plus,
-    /// `P-`: a good thing is missing.
-    Minus,
-    /// `P0`: a fact to report.
-    Zero,
-    /// `Pn`: a count crosses a limit.
-    Count,
-    /// `Pc`: a closure property.
-    Closure,
-}
+/// A rule polarity (grl-spec.md 7.2): the one enum of `gob-rules`, not a second copy.
+pub use gob_rules::Polarity;
 
 /// A rule severity.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

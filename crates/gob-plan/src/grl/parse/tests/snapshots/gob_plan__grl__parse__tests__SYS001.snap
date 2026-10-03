@@ -24,7 +24,7 @@ File {
         },
         Spanned {
            node: Polarity(
-            Minus
+            Pminus
           ),
           span: @35..46 
         },

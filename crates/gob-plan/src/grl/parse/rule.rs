@@ -356,11 +356,11 @@ impl Parser<'_> {
         {
             self.bump();
             return Ok(match p.as_str() {
-                "P+" => Polarity::Plus,
-                "P-" => Polarity::Minus,
-                "P0" => Polarity::Zero,
-                "Pn" => Polarity::Count,
-                _ => Polarity::Closure,
+                "P+" => Polarity::Pplus,
+                "P-" => Polarity::Pminus,
+                "P0" => Polarity::P0,
+                "Pn" => Polarity::Pn,
+                _ => Polarity::Pc,
             });
         }
         self.expected("a polarity: `P+`, `P-`, `P0`, `Pn` or `Pc`")
