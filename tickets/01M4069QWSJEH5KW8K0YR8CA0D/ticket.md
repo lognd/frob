@@ -2,13 +2,13 @@
 id = "01M4069QWSJEH5KW8K0YR8CA0D"
 title = "frob-pm crate: milestone and cycle object model, storage and fold"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:53Z"
-updated = "2026-10-03T06:12:53Z"
+updated = "2026-10-03T06:51:40Z"
 idempotency_key = "m2-rel-pm-crate"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-pm/**", "Cargo.toml"]
