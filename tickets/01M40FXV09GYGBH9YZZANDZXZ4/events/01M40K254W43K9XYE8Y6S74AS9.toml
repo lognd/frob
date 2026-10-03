@@ -1,0 +1,37 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T09:55:56Z"
+digest = "b8e6cbe65d75623920f963e74c54f36abc2279b844be47ba7742cc2f82043121"
+exit_code = 0
+inline = """
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/ANDZXZ4/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/ANDZXZ4/crates/frob-lease)
+   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/ANDZXZ4/crates/frob-ack)
+   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/ANDZXZ4/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/ANDZXZ4/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/ANDZXZ4/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/ANDZXZ4/crates/frob-check)
+   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/ANDZXZ4/crates/frob-land)
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/ANDZXZ4/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.12s
+────────────
+ Nextest run ID 97000420-fb7e-4a16-baba-5ffea1e2c745 with nextest profile: default
+    Starting 6 tests across 1 binary (14 binaries skipped)
+        PASS [   0.013s] (1/6) frob-cli::first_run outside_a_git_repository_says_to_run_inside_one
+        PASS [   0.036s] (2/6) frob-cli::first_run text_mode_names_init_on_stderr
+        PASS [   0.036s] (3/6) frob-cli::first_run check_without_config_teaches_init_with_no_findings
+        PASS [   0.041s] (4/6) frob-cli::first_run ticket_list_without_config_gives_the_same_diagnostic
+        PASS [   0.118s] (5/6) frob-cli::first_run doctor_schema_and_help_work_without_config
+        PASS [   0.138s] (6/6) frob-cli::first_run a_present_frob_toml_lets_check_run
+────────────
+     Summary [   0.138s] 6 tests run: 6 passed, 0 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E binary(first_run)"
+size = 1743
+status = "measured"
+tests = ["outside_a_git_repository_says_to_run_inside_one", "text_mode_names_init_on_stderr", "check_without_config_teaches_init_with_no_findings", "ticket_list_without_config_gives_the_same_diagnostic", "doctor_schema_and_help_work_without_config", "a_present_frob_toml_lets_check_run"]
+at = "2026-10-03T09:55:56Z"
+actor = "lognd"
+rev = 1
