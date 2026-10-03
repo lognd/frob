@@ -56,6 +56,7 @@ mod pipeline;
 mod qualifier;
 mod registry;
 mod rust;
+mod stdtypes;
 mod symref;
 mod view;
 
@@ -72,9 +73,9 @@ pub use graph::{
 };
 pub use markdown::{MarkdownAdapter, slugify};
 pub use model::{
-    CallRef, CallSite, Digests, FacetDigest, FieldDecl, FileSymbols, ImportEdge, LocalBinding,
-    MethodSig, Receiver, RefKind, RefSite, RetType, SelfKind, SymbolKind, SymbolRecord, UnitExtras,
-    UseBinding, Visibility, collapse_ws,
+    CallRef, CallSite, DeriveDecl, Digests, FacetDigest, FieldDecl, FileSymbols, ImportEdge,
+    LocalBinding, MapKind, MethodSig, Receiver, RefKind, RefSite, RetType, SelfKind, SymbolKind,
+    SymbolRecord, UnitExtras, UseBinding, Visibility, collapse_ws,
 };
 pub use opaque::OpaqueAdapter;
 pub use pipeline::{

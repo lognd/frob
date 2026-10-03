@@ -27,7 +27,7 @@
 // frob:ticket 01M3Z713F6VY15YSMS15033RN1
 
 use std::cell::RefCell;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use gob_ir::{
     GroupOrder, NodeId, NodeSpec, Operator, Resolution, ScopeGraph, Sort, TermError, reserved,
@@ -41,15 +41,15 @@ use crate::adapter::{
 };
 use crate::fold::{Cx, base_file, failed_file, file_root_spec};
 use crate::model::{
-    CallRef, CallSite, FieldDecl, FileSymbols, ImportEdge, LocalBinding, Receiver, RefKind,
-    RefSite, RetType, SelfKind, UseBinding, Visibility, collapse_ws,
+    CallRef, CallSite, DeriveDecl, FieldDecl, FileSymbols, ImportEdge, LocalBinding, MapKind,
+    Receiver, RefKind, RefSite, RetType, SelfKind, UseBinding, Visibility, collapse_ws,
 };
 use crate::paths::crate_and_module;
 use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
 use crate::view::{
-    self, ATTR_ARITY, ATTR_IMPLEMENTS, ATTR_RET, ATTR_RET_ARG, ATTR_RET_TUPLE, ATTR_SELF_KIND,
-    ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, Naming,
+    self, ATTR_ARITY, ATTR_IMPLEMENTS, ATTR_RET, ATTR_RET_ARG, ATTR_RET_ARG2, ATTR_RET_TUPLE,
+    ATTR_SELF_KIND, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, Naming,
 };
 
 /// Deepest term nesting before a subtree collapses into one opaque node.
@@ -189,6 +189,80 @@ struct CallTarget {
     bound: Vec<String>,
 }
 
+/// Methods whose closure argument (at the given position, with the given parameter count unless 0) receives the receiver's item as the listed parameters.
+///
+/// `Receiver::Item` of a receiver that is not a known standard iterable types nothing, so a method
+/// that exists on other types too (`map` on a repository type) is harmless here.
+const ITEM_CLOSURES: &[(&str, usize, &[usize], usize)] = &[
+    ("map", 0, &[0], 0),
+    ("filter", 0, &[0], 0),
+    ("for_each", 0, &[0], 0),
+    ("any", 0, &[0], 0),
+    ("all", 0, &[0], 0),
+    ("find", 0, &[0], 0),
+    ("position", 0, &[0], 0),
+    ("take_while", 0, &[0], 0),
+    ("skip_while", 0, &[0], 0),
+    ("filter_map", 0, &[0], 0),
+    ("flat_map", 0, &[0], 0),
+    ("inspect", 0, &[0], 0),
+    ("find_map", 0, &[0], 0),
+    ("max_by_key", 0, &[0], 0),
+    ("min_by_key", 0, &[0], 0),
+    ("map_while", 0, &[0], 0),
+    ("partition", 0, &[0], 0),
+    ("is_some_and", 0, &[0], 0),
+    ("is_none_or", 0, &[0], 0),
+    ("is_ok_and", 0, &[0], 0),
+    ("and_then", 0, &[0], 0),
+    ("map_or", 1, &[0], 0),
+    ("map_or_else", 1, &[0], 0),
+    ("retain", 0, &[0], 1),
+    ("sort_by_key", 0, &[0], 0),
+    ("sort_unstable_by_key", 0, &[0], 0),
+    ("fold", 1, &[1], 0),
+    ("max_by", 0, &[0, 1], 0),
+    ("min_by", 0, &[0, 1], 0),
+    ("sort_by", 0, &[0, 1], 0),
+    ("sort_unstable_by", 0, &[0, 1], 0),
+    ("reduce", 0, &[0, 1], 0),
+];
+
+/// The standard type built by `Type::new()`, `Type::from(..)`, `Type::with_capacity(..)` or `Type::default()`.
+///
+/// The graph ignores the answer when the repository declares a type of that name.
+fn std_constructor<'p>(path: &'p [String], name: &str) -> Option<&'p str> {
+    let [.., ty] = path else { return None };
+    let ctor = matches!(name, "new" | "default" | "with_capacity" | "from");
+    (ctor
+        && matches!(
+            ty.as_str(),
+            "String" | "Vec" | "HashMap" | "HashSet" | "BTreeMap" | "BTreeSet" | "VecDeque"
+        ))
+    .then_some(ty.as_str())
+}
+
+/// The named, non-comment children of `n` other than a `mut` marker.
+fn named_children(n: Node<'_>) -> Vec<Node<'_>> {
+    children(n)
+        .into_iter()
+        .filter(|c| c.is_named() && !is_comment(*c) && c.kind() != "mutable_specifier")
+        .collect()
+}
+
+/// The positional elements of a tuple or tuple-struct pattern, wildcards (`_`, an anonymous token) included.
+fn pattern_elements(n: Node<'_>) -> Vec<Node<'_>> {
+    children(n)
+        .into_iter()
+        .filter(|c| !is_comment(*c) && !matches!(c.kind(), "(" | ")" | "," | "::"))
+        .collect()
+}
+
+/// True for the `..` rest element of a tuple or struct pattern.
+fn is_rest_pattern(n: Node<'_>) -> bool {
+    n.kind().contains("remaining") || n.kind().contains("rest") || n.kind() == ".."
+}
+
 /// Wrapper types whose methods are reached by auto-deref: a declared type of these says nothing about the callee.
 const DEREF_WRAPPERS: &[&str] = &[
     "Box",
@@ -234,6 +308,8 @@ const EXACT_MACROS: &[&str] = &[
     "warn",
     "error",
     "trace",
+    "matches",
+    "vec",
 ];
 
 /// `c` blanked for the synthetic text: newlines stay so line numbers match.
@@ -241,14 +317,15 @@ fn blank(c: u8) -> u8 {
     if c == b'\n' { b'\n' } else { b' ' }
 }
 
-/// The call expression `f(..)` of the synthetic wrapper whose callee starts at byte `at`.
-fn find_synthetic_call(root: Node<'_>, at: usize) -> Option<Node<'_>> {
+/// The node of `kind` in the synthetic macro tree that starts at byte `at` (a call is matched by its callee).
+fn find_synthetic<'t>(root: Node<'t>, kind: &str, at: usize) -> Option<Node<'t>> {
     let mut stack = vec![root];
     while let Some(n) = stack.pop() {
-        if n.kind() == "call_expression"
-            && n.child_by_field_name("function")
-                .is_some_and(|f| f.start_byte() == at)
-        {
+        let start = match kind {
+            "call_expression" => n.child_by_field_name("function").map(|f| f.start_byte()),
+            _ => Some(n.start_byte()),
+        };
+        if n.kind() == kind && start == Some(at) {
             return Some(n);
         }
         stack.extend(children(n));
@@ -313,6 +390,12 @@ struct Fold<'a> {
     fields: Vec<FieldDecl>,
     /// `Result`/`Option` aliases whose first parameter is not the Ok/Some type.
     opaque_aliases: Vec<String>,
+    /// The declared type of each module-level `const`/`static` outside function bodies, by name; `None` when the name is declared twice.
+    consts: HashMap<String, Option<Receiver>>,
+    /// The impl types being visited, innermost last (`Self` in `Self::NAME`).
+    impl_types: Vec<String>,
+    /// The derives of each struct and enum declared in this file.
+    derives: Vec<DeriveDecl>,
 }
 
 /// One-based source line of `n`.
@@ -407,7 +490,11 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         fn_sig: None,
         fields: Vec::new(),
         opaque_aliases: Vec::new(),
+        consts: HashMap::new(),
+        impl_types: Vec::new(),
+        derives: Vec::new(),
     };
+    f.collect_consts(root, None);
     let kids = f.container(root, &Scope::default(), true)?;
     let root_id =
         f.cx.add(file_root_spec(&f.cx, input.size as usize), &kids)?;
@@ -418,6 +505,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         uses,
         fields,
         opaque_aliases,
+        derives,
         ..
     } = f;
     let term = cx.b.finish(root_id)?;
@@ -455,6 +543,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     file.extras = v.extras;
     file.fields = fields;
     file.opaque_aliases = opaque_aliases;
+    file.derives = derives;
     tracing::debug!(
         path = input.path,
         symbols = file.symbols.len(),
@@ -827,16 +916,8 @@ impl<'a> Fold<'a> {
         };
         match v.kind() {
             "self" => Receiver::SelfValue,
-            "identifier" => {
-                let name = self.t(v);
-                self.env
-                    .borrow()
-                    .iter()
-                    .rev()
-                    .find(|(n, _)| n == name)
-                    .and_then(|(_, t)| t.clone())
-                    .unwrap_or(Receiver::Expr)
-            }
+            "identifier" => self.identifier_receiver(self.t(v)),
+            "scoped_identifier" => self.scoped_receiver(v),
             "parenthesized_expression" | "reference_expression" => {
                 let inner = if v.kind() == "reference_expression" {
                     v.child_by_field_name("value")
@@ -852,6 +933,39 @@ impl<'a> Fold<'a> {
                 }
             }
             "call_expression" => self.call_receiver(v),
+            "string_literal" | "raw_string_literal" => Receiver::Typed("str".to_owned()),
+            "range_expression" => Receiver::Typed(crate::stdtypes::RANGE.to_owned()),
+            "array_expression" => Receiver::Typed(crate::stdtypes::SLICE.to_owned()),
+            "tuple_expression" => Receiver::Tuple(
+                children(v)
+                    .into_iter()
+                    .filter(|c| c.is_named() && !is_comment(*c))
+                    .map(|c| self.receiver_of(Some(c)))
+                    .collect(),
+            ),
+            "struct_expression" => self.struct_literal_receiver(v),
+            "macro_invocation" => match v
+                .child_by_field_name("macro")
+                .and_then(|m| self.t(m).rsplit("::").next())
+            {
+                Some("format") => Receiver::Typed("String".to_owned()),
+                Some("vec") => Receiver::Typed("Vec".to_owned()),
+                _ => Receiver::Expr,
+            },
+            "index_expression" => {
+                let parts: Vec<Node<'_>> = children(v)
+                    .into_iter()
+                    .filter(|c| c.is_named() && !is_comment(*c))
+                    .collect();
+                match (parts.as_slice(), self.receiver_of(parts.first().copied())) {
+                    (_, Receiver::Expr | Receiver::Bound(_)) => Receiver::Expr,
+                    ([_, idx], b) if idx.kind() == "range_expression" => {
+                        Receiver::Slice(Box::new(b))
+                    }
+                    ([_, _], b) => Receiver::Index(Box::new(b)),
+                    _ => Receiver::Expr,
+                }
+            }
             "field_expression" => {
                 let field = v.child_by_field_name("field");
                 match (self.receiver_of(v.child_by_field_name("value")), field) {
@@ -863,6 +977,174 @@ impl<'a> Fold<'a> {
                 }
             }
             _ => Receiver::Expr,
+        }
+    }
+
+    /// The receiver of the bare name `name`: a typed local, a module-level constant, or a unit struct.
+    fn identifier_receiver(&self, name: &str) -> Receiver {
+        let local = self
+            .env
+            .borrow()
+            .iter()
+            .rev()
+            .find(|(n, _)| n == name)
+            .map(|(_, t)| t.clone());
+        match local {
+            Some(t) => t.unwrap_or(Receiver::Expr),
+            None => self.consts.get(name).map_or_else(
+                || {
+                    if upper_first(name) && !self.locals.iter().any(|l| l == name) {
+                        Receiver::Unit(name.to_owned())
+                    } else {
+                        Receiver::Expr
+                    }
+                },
+                |t| t.clone().unwrap_or(Receiver::Expr),
+            ),
+        }
+    }
+
+    /// The receiver of a path value `Type::NAME` (an associated constant or unit variant).
+    fn scoped_receiver(&self, v: Node<'_>) -> Receiver {
+        let (Some(path), Some(name)) =
+            (v.child_by_field_name("path"), v.child_by_field_name("name"))
+        else {
+            return Receiver::Expr;
+        };
+        let leaf = self.t(name);
+        let base = match self.t(path) {
+            "Self" => self.impl_types.last().cloned(),
+            t if path.kind() == "identifier" && upper_first(t) => Some(t.to_owned()),
+            _ => None,
+        };
+        match base {
+            Some(b) if upper_first(leaf) => {
+                Receiver::Assoc(Box::new(Receiver::Typed(b)), leaf.to_owned())
+            }
+            _ => Receiver::Expr,
+        }
+    }
+
+    /// The collection a `source.collect::<C>()` call builds: the turbofish type, its `_` elements taken from the items of `source`.
+    fn collect_receiver(&self, call: Node<'_>, source: &Receiver) -> Option<Receiver> {
+        let f = call.child_by_field_name("function")?;
+        let targs = (f.kind() == "generic_function")
+            .then(|| f.child_by_field_name("type_arguments"))
+            .flatten()?;
+        let ty = children(targs)
+            .into_iter()
+            .find(|c| c.is_named() && c.kind() != "lifetime" && !is_comment(*c))?;
+        self.collected(ty, source)
+    }
+
+    /// The receiver of the declared collection type `ty` filled from the iterator `source` (`Vec<_>`), or the type itself when fully written.
+    fn collected(&self, ty: Node<'_>, source: &Receiver) -> Option<Receiver> {
+        let shape = self.ret_type(ty)?;
+        if shape.head == "String" && shape.arg.is_none() {
+            return Some(Receiver::Typed("String".to_owned()));
+        }
+        if !crate::stdtypes::is_collection(&shape.head) {
+            return None;
+        }
+        if shape.arg.as_deref() == Some("_") || (shape.arg.is_none() && shape.tuple.is_none()) {
+            return Some(Receiver::Collected {
+                shape: Box::new(shape),
+                source: Box::new(source.clone()),
+            });
+        }
+        Some(Receiver::Decl(Box::new(shape)))
+    }
+
+    /// The receiver standing for the value of the method call `v` (`t` its parsed head, `args` its argument count).
+    fn method_receiver(&self, v: Node<'_>, t: CallTarget, args: usize) -> Receiver {
+        if matches!(t.receiver, None | Some(Receiver::Expr | Receiver::Bound(_))) {
+            return Receiver::Expr;
+        }
+        // `v.get(a..b)` is a slice, not an element.
+        let range_arg = v
+            .child_by_field_name("arguments")
+            .and_then(|a| {
+                children(a)
+                    .into_iter()
+                    .find(|c| c.is_named() && !is_comment(*c))
+            })
+            .is_some_and(|c| c.kind() == "range_expression");
+        if range_arg && matches!(t.name.as_str(), "get" | "get_mut") {
+            return Receiver::Expr;
+        }
+        let recv = t.receiver;
+        if matches!(t.name.as_str(), "unwrap" | "expect") && args <= 1 {
+            return recv.map_or(Receiver::Expr, |r| Receiver::Unwrap(Box::new(r)));
+        }
+        let kind = match t.name.as_str() {
+            "map" => Some(MapKind::Map),
+            "and_then" => Some(MapKind::AndThen),
+            "filter_map" => Some(MapKind::FilterMap),
+            _ => None,
+        };
+        if t.name == "collect"
+            && args == 0
+            && let Some(recv) = &recv
+            && let Some(c) = self.collect_receiver(v, recv)
+        {
+            return c;
+        }
+        if let Some(kind) = kind
+            && args == 1
+            && let Some(recv) = &recv
+            && let Some(result) = v
+                .child_by_field_name("arguments")
+                .and_then(|a| {
+                    children(a)
+                        .into_iter()
+                        .find(|c| c.kind() == "closure_expression")
+                })
+                .and_then(|c| self.closure_result(c))
+        {
+            return Receiver::Mapped {
+                recv: Box::new(recv.clone()),
+                result: Box::new(result),
+                kind,
+            };
+        }
+        Receiver::Ret(Box::new(CallRef {
+            name: t.name,
+            path: Vec::new(),
+            bound: Vec::new(),
+            recv,
+            args,
+        }))
+    }
+
+    /// The receiver of a struct literal: its struct, or the enum of a struct-like variant (`Kind::A { .. }`).
+    fn struct_literal_receiver(&self, v: Node<'_>) -> Receiver {
+        let Some(name) = v.child_by_field_name("name") else {
+            return Receiver::Expr;
+        };
+        let segs = split_path(self.t(name));
+        let plain = || {
+            self.plain_type(name)
+                .map_or(Receiver::Expr, Receiver::Typed)
+        };
+        match segs.as_slice() {
+            [s] if s == "Self" => self
+                .impl_types
+                .last()
+                .cloned()
+                .map_or(Receiver::Expr, Receiver::Typed),
+            [.., ty, _] if upper_first(ty) => self
+                .variant_owner(&segs[..segs.len() - 1])
+                .map_or(Receiver::Expr, Receiver::Typed),
+            _ => plain(),
+        }
+    }
+
+    /// The enum type named by the path `owner` of a variant (`Kind`, `module::Kind`, `Self`).
+    fn variant_owner(&self, owner: &[String]) -> Option<String> {
+        match owner {
+            [s] if s == "Self" => self.impl_types.last().cloned(),
+            [] => None,
+            _ => Some(owner.join("::")),
         }
     }
 
@@ -878,36 +1160,36 @@ impl<'a> Fold<'a> {
         };
         let t = self.call_target(f);
         let args = Self::arg_count(v);
-        if t.dynamic || (t.opaque && t.bound.is_empty()) || t.construct {
+        if t.construct {
+            // `Kind::A(..)`: the value of a tuple-variant constructor is the enum.
+            return match t.path.as_slice() {
+                [.., ty] if upper_first(ty) => self
+                    .variant_owner(&t.path)
+                    .map_or(Receiver::Expr, Receiver::Typed),
+                _ => Receiver::Expr,
+            };
+        }
+        if t.dynamic || (t.opaque && t.bound.is_empty()) {
             return Receiver::Expr;
         }
         if t.method {
-            let Some(
-                Receiver::SelfValue
-                | Receiver::Typed(_)
-                | Receiver::Field(..)
-                | Receiver::Ret(_)
-                | Receiver::Unwrap(_),
-            ) = t.receiver.as_ref()
-            else {
-                return Receiver::Expr;
-            };
-            let recv = t.receiver;
-            if matches!(t.name.as_str(), "unwrap" | "expect") && args <= 1 {
-                return recv.map_or(Receiver::Expr, |r| Receiver::Unwrap(Box::new(r)));
-            }
-            return Receiver::Ret(Box::new(CallRef {
-                name: t.name,
-                path: Vec::new(),
-                bound: Vec::new(),
-                recv,
-                args,
-            }));
+            return self.method_receiver(v, t, args);
         }
         let bound =
             self.env.borrow().iter().any(|(n, _)| *n == t.name) || self.locals.contains(&t.name);
         if bound && t.path.is_empty() {
             return Receiver::Expr;
+        }
+        if let Some(std) = std_constructor(&t.path, &t.name) {
+            return Receiver::Typed(std.to_owned());
+        }
+        // `Self::default()` is `Self` (`Default::default` returns `Self`; `new` is looked up by its signature).
+        if t.name == "default" && args == 0 && t.path == ["Self"] {
+            return self
+                .impl_types
+                .last()
+                .cloned()
+                .map_or(Receiver::Expr, Receiver::Typed);
         }
         Receiver::Ret(Box::new(CallRef {
             name: t.name,
@@ -923,69 +1205,195 @@ impl<'a> Fold<'a> {
         if let Some(t) = self.value_type(v) {
             return Some(Receiver::Typed(t));
         }
-        match v.kind() {
-            "string_literal" | "raw_string_literal" => {
-                return Some(Receiver::Typed("str".to_owned()));
-            }
-            "macro_invocation" => {
-                let name = v
-                    .child_by_field_name("macro")
-                    .and_then(|m| self.t(m).rsplit("::").next());
-                return match name {
-                    Some("format") => Some(Receiver::Typed("String".to_owned())),
-                    Some("vec") => Some(Receiver::Typed("Vec".to_owned())),
-                    _ => None,
-                };
-            }
-            _ => {}
-        }
         match self.receiver_of(Some(v)) {
             Receiver::Expr => None,
             r => Some(r),
         }
     }
 
-    /// A declared return type reduced to its plain head and first generic argument.
+    /// Records the declared types of the `const` and `static` items under `n` (not inside function bodies):
+    /// module-level ones in `consts`, associated ones of an impl in the field table (`Type::NAME`).
+    fn collect_consts(&mut self, n: Node<'_>, owner: Option<&str>) {
+        for c in children(n) {
+            match c.kind() {
+                "const_item" | "static_item" => {
+                    let (Some(name), ty) =
+                        (c.child_by_field_name("name"), c.child_by_field_name("type"))
+                    else {
+                        continue;
+                    };
+                    let name = self.t(name).to_owned();
+                    if let Some(owner) = owner {
+                        if let Some(shape) = ty
+                            .and_then(|t| self.ret_type(t))
+                            .map(|r| self.subst_self(r))
+                        {
+                            self.push_field(owner, name, shape);
+                        }
+                    } else {
+                        let recv = ty.and_then(|t| self.typed_receiver(t));
+                        self.consts
+                            .entry(name)
+                            .and_modify(|e| *e = None)
+                            .or_insert(recv);
+                    }
+                }
+                "impl_item" => {
+                    let owner = c.child_by_field_name("type").map(|t| self.type_name(t));
+                    if let (Some(body), Some(owner)) = (c.child_by_field_name("body"), owner) {
+                        let saved = self.enter_generics(c);
+                        self.impl_types.push(owner.clone());
+                        self.collect_consts(body, Some(&owner));
+                        self.impl_types.pop();
+                        self.leave_generics(saved);
+                    }
+                }
+                "trait_item" | "function_item" | "closure_expression" | "macro_definition" => {}
+                _ => self.collect_consts(c, owner),
+            }
+        }
+    }
+
+    /// `RefCell`, `Mutex` or `RwLock` when the generic type `t` is one: their lock/borrow methods are typed.
+    fn cell_head(&self, t: Node<'_>) -> Option<&'static str> {
+        let head = t.child_by_field_name("type")?;
+        let name = self.t(head).rsplit("::").next().unwrap_or("");
+        ["RefCell", "Mutex", "RwLock"]
+            .into_iter()
+            .find(|c| *c == name)
+            .filter(|_| !self.generics.iter().any(|g| g == name))
+    }
+
+    /// The `T` of `impl Iterator<Item = T>` (also `IntoIterator`, `DoubleEndedIterator`, `ExactSizeIterator`), as a shape.
+    fn iterator_item(&self, t: Node<'_>) -> Option<RetType> {
+        let mut stack = vec![t];
+        while let Some(n) = stack.pop() {
+            if n.kind() == "generic_type"
+                && let Some(head) = n.child_by_field_name("type")
+                && matches!(
+                    self.t(head),
+                    "Iterator" | "IntoIterator" | "DoubleEndedIterator" | "ExactSizeIterator"
+                )
+                && let Some(args) = n.child_by_field_name("type_arguments")
+            {
+                let item = children(args).into_iter().find(|c| {
+                    c.kind() == "type_binding"
+                        && c.child_by_field_name("name")
+                            .is_some_and(|b| self.t(b) == "Item")
+                })?;
+                return self.ret_type(item.child_by_field_name("type")?);
+            }
+            stack.extend(
+                children(n)
+                    .into_iter()
+                    .filter(|c| c.kind() != "type_arguments"),
+            );
+        }
+        None
+    }
+
+    /// `dyn:A+B` for a trait object type (`dyn A + B`, `Box<dyn A>`, `Arc<dyn A>`, `&dyn A`), else `None`.
+    fn dyn_head(&self, t: Node<'_>) -> Option<String> {
+        let obj = match t.kind() {
+            "reference_type" => return self.dyn_head(t.child_by_field_name("type")?),
+            "dynamic_type" => t,
+            "generic_type" => {
+                let head = self.t(t.child_by_field_name("type")?);
+                if !matches!(head.rsplit("::").next(), Some("Box" | "Arc" | "Rc")) {
+                    return None;
+                }
+                let args = t.child_by_field_name("type_arguments")?;
+                let mut kids = children(args)
+                    .into_iter()
+                    .filter(|c| c.is_named() && c.kind() != "lifetime" && !is_comment(*c));
+                let only = kids.next().filter(|_| kids.next().is_none())?;
+                return self.dyn_head(only);
+            }
+            _ => return None,
+        };
+        let mut traits = self.trait_names(obj);
+        traits.sort();
+        traits.dedup();
+        (!traits.is_empty()).then(|| format!("{}{}", crate::stdtypes::DYN, traits.join("+")))
+    }
+
+    /// A declared type reduced to its plain head, plain generic arguments and tuple elements.
     fn ret_type(&self, t: Node<'_>) -> Option<RetType> {
         let name = |n: Node<'_>| -> Option<String> {
             if n.kind() == "type_identifier" && self.t(n) == "Self" {
                 return Some("Self".to_owned());
             }
-            self.plain_type(n)
+            if self.t(n) == "_" {
+                return Some("_".to_owned());
+            }
+            self.dyn_head(n).or_else(|| self.plain_type(n))
+        };
+        let tuple_elems = |n: Node<'_>| -> Option<Vec<Option<String>>> {
+            let elems: Vec<Option<String>> = children(n)
+                .into_iter()
+                .filter(|c| c.is_named() && !is_comment(*c))
+                .map(name)
+                .collect();
+            (n.kind() == "tuple_type" && !elems.is_empty()).then_some(elems)
         };
         match t.kind() {
             "reference_type" => self.ret_type(t.child_by_field_name("type")?),
+            "abstract_type" => {
+                let item = self.iterator_item(t)?;
+                Some(crate::stdtypes::wrap(crate::stdtypes::ITER, &item))
+            }
+            "generic_type"
+                if t.child_by_field_name("type")
+                    .is_some_and(|h| self.t(h).rsplit("::").next() == Some("Cow")) =>
+            {
+                // `Cow<'_, str>` and `Cow<'_, [T]>` read as `str` and `[T]`: no repository type hides behind them.
+                let arg = t.child_by_field_name("type_arguments").and_then(|a| {
+                    children(a)
+                        .into_iter()
+                        .find(|c| c.is_named() && c.kind() != "lifetime" && !is_comment(*c))
+                })?;
+                self.ret_type(arg)
+                    .filter(|r| r.head == "str" || r.head == crate::stdtypes::SLICE)
+            }
             "generic_type" => {
-                let head = name(t.child_by_field_name("type")?)?;
-                let arg = t
+                let head = self.cell_head(t).map_or_else(
+                    || name(t.child_by_field_name("type")?),
+                    |h| Some(h.to_owned()),
+                )?;
+                let mut args = t
                     .child_by_field_name("type_arguments")
-                    .and_then(|a| {
-                        children(a)
-                            .into_iter()
-                            .find(|c| c.is_named() && c.kind() != "lifetime")
-                    })
-                    .and_then(name);
+                    .map(children)
+                    .into_iter()
+                    .flatten()
+                    .filter(|c| c.is_named() && c.kind() != "lifetime" && !is_comment(*c));
+                let first = args.next();
+                let second = args.next();
                 Some(RetType {
                     head,
-                    arg,
-                    tuple: None,
+                    arg: first.and_then(name),
+                    arg2: second.and_then(name),
+                    tuple: first.and_then(tuple_elems),
                 })
             }
-            "tuple_type" => {
-                let elems: Vec<Option<String>> = children(t)
-                    .into_iter()
-                    .filter(|c| c.is_named() && !is_comment(*c))
-                    .map(name)
-                    .collect();
-                (!elems.is_empty()).then(|| RetType {
-                    head: "(tuple)".to_owned(),
-                    arg: None,
-                    tuple: Some(elems),
+            "array_type" => {
+                let elem = t.child_by_field_name("element")?;
+                Some(RetType {
+                    head: crate::stdtypes::SLICE.to_owned(),
+                    arg: name(elem),
+                    arg2: None,
+                    tuple: tuple_elems(elem),
                 })
             }
+            "tuple_type" => tuple_elems(t).map(|elems| RetType {
+                head: crate::stdtypes::TUPLE.to_owned(),
+                arg: None,
+                arg2: None,
+                tuple: Some(elems),
+            }),
             _ => Some(RetType {
                 head: name(t)?,
                 arg: None,
+                arg2: None,
                 tuple: None,
             }),
         }
@@ -1018,7 +1426,7 @@ impl<'a> Fold<'a> {
             _ => return None,
         };
         let name = path.rsplit("::").next().unwrap_or(&path);
-        (!DEREF_WRAPPERS.contains(&name) && !self.generics.iter().any(|g| g == name))
+        (name != "_" && !DEREF_WRAPPERS.contains(&name) && !self.generics.iter().any(|g| g == name))
             .then_some(path)
     }
 
@@ -1057,17 +1465,6 @@ impl<'a> Fold<'a> {
                 .then(|| name.to_owned())
             }
             _ => None,
-        }
-    }
-
-    /// Declares the type of the variable `pattern` pushed at `env[at]` (a single plain binder only).
-    fn type_binder(&self, at: usize, pat: Option<Node<'_>>, ty: Option<Receiver>) {
-        let Some(pat) = pat else { return };
-        let plain = pat.kind() == "identifier"
-            || (pat.kind() == "mut_pattern"
-                && children(pat).iter().any(|c| c.kind() == "identifier"));
-        if let (true, Some(ty), Some(slot)) = (plain, ty, self.env.borrow_mut().get_mut(at)) {
-            slot.1 = Some(ty);
         }
     }
 
@@ -1162,33 +1559,229 @@ impl<'a> Fold<'a> {
         self.bounds.truncate(marks.1);
     }
 
-    /// Types the plain binders of the tuple pattern `p` as elements of `value` (slots from `env[at..]`).
-    fn tuple_binders(&self, at: usize, p: Node<'_>, value: &Receiver) {
-        for (i, c) in children(p)
-            .into_iter()
-            .filter(|c| c.is_named() && !is_comment(*c))
-            .enumerate()
-        {
-            let name = match c.kind() {
-                "identifier" => self.t(c).to_owned(),
-                "mut_pattern" => match children(c).into_iter().find(|x| x.kind() == "identifier") {
-                    Some(id) => self.t(id).to_owned(),
-                    None => continue,
-                },
-                _ => continue,
-            };
-            let mut env = self.env.borrow_mut();
-            if let Some(slot) = env.iter_mut().skip(at).find(|(n, _)| *n == name) {
-                slot.1 = Some(Receiver::Elem(Box::new(value.clone()), i));
+    /// Types the binders of the pattern `p` (their slots are in `env[at..]`) as the parts of `value`.
+    ///
+    /// Plain binders take the value, tuple patterns its elements, `Some(x)`/`Ok(x)` its success value
+    /// and enum-variant or struct patterns the declared field types. Or-patterns, slices, `@` bindings
+    /// and anything after a `..` stay untyped.
+    fn type_pattern(&self, at: usize, p: Node<'_>, value: &Receiver) {
+        match p.kind() {
+            "identifier" => self.set_slot(at, self.t(p), value),
+            "mut_pattern" | "reference_pattern" | "ref_pattern" => {
+                if let Some(inner) = named_children(p).into_iter().next() {
+                    self.type_pattern(at, inner, value);
+                }
             }
+            "tuple_pattern" => {
+                for (i, c) in pattern_elements(p).into_iter().enumerate() {
+                    if is_rest_pattern(c) {
+                        break;
+                    }
+                    let part = match value {
+                        Receiver::Tuple(elems) => match elems.get(i) {
+                            Some(Receiver::Expr) | None => continue,
+                            Some(e) => e.clone(),
+                        },
+                        _ => Receiver::Elem(Box::new(value.clone()), i),
+                    };
+                    self.type_pattern(at, c, &part);
+                }
+            }
+            "tuple_struct_pattern" => {
+                let Some(path) = p.child_by_field_name("type") else {
+                    return;
+                };
+                let segs = split_path(self.t(path));
+                let elems: Vec<Node<'_>> = pattern_elements(p)
+                    .into_iter()
+                    .filter(|c| c.id() != path.id())
+                    .collect();
+                match (segs.as_slice(), elems.as_slice()) {
+                    ([s], [one]) if s == "Some" || s == "Ok" => {
+                        self.type_pattern(at, *one, &Receiver::Unwrap(Box::new(value.clone())));
+                    }
+                    (segs, _) if segs.len() >= 2 => {
+                        for (i, c) in elems.into_iter().enumerate() {
+                            if is_rest_pattern(c) {
+                                break;
+                            }
+                            let field = Receiver::Variant {
+                                path: segs.to_vec(),
+                                field: i.to_string(),
+                            };
+                            self.type_pattern(at, c, &field);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            "struct_pattern" => {
+                let Some(path) = p.child_by_field_name("type") else {
+                    return;
+                };
+                let segs = split_path(self.t(path));
+                for fp in named_children(p)
+                    .into_iter()
+                    .filter(|c| c.kind() == "field_pattern")
+                {
+                    let parts = named_children(fp);
+                    let (name, sub) = match parts.as_slice() {
+                        [n] => (*n, None),
+                        [n, pat] => (*n, Some(*pat)),
+                        _ => continue,
+                    };
+                    let field = self.t(name).to_owned();
+                    let recv = match segs.as_slice() {
+                        [s] if s == "Self" => {
+                            Receiver::Field(Box::new(Receiver::SelfValue), field.clone())
+                        }
+                        [s] if upper_first(s) => {
+                            Receiver::Field(Box::new(Receiver::Typed(s.clone())), field.clone())
+                        }
+                        segs if segs.len() >= 2 => Receiver::Variant {
+                            path: segs.to_vec(),
+                            field: field.clone(),
+                        },
+                        _ => continue,
+                    };
+                    match sub {
+                        Some(pat) => self.type_pattern(at, pat, &recv),
+                        None => self.set_slot(at, &field, &recv),
+                    }
+                }
+            }
+            _ => {}
         }
     }
 
-    /// The receiver that a declared type `t` stands for: a plain type, else its trait bounds.
+    /// Declares the type of the variable `name` pushed at or after `env[at]`.
+    fn set_slot(&self, at: usize, name: &str, ty: &Receiver) {
+        if upper_first(name) {
+            return;
+        }
+        let mut env = self.env.borrow_mut();
+        if let Some(slot) = env.iter_mut().skip(at).find(|(n, _)| n == name) {
+            slot.1 = Some(ty.clone());
+        }
+    }
+
+    /// The receiver standing for the value of the `for`/closure/`if let` source `v`, when it is typed at all.
+    fn typed_source(&self, v: Node<'_>) -> Option<Receiver> {
+        match self.receiver_of(Some(v)) {
+            Receiver::Expr | Receiver::Bound(_) => None,
+            r => Some(r),
+        }
+    }
+
+    /// The type of the body of closure `n` (an expression or a block holding only one), its parameters typed as in `closure`.
+    fn closure_result(&self, n: Node<'_>) -> Option<Receiver> {
+        let body = n.child_by_field_name("body")?;
+        let tail = if body.kind() == "block" {
+            let mut inner = children(body)
+                .into_iter()
+                .filter(|c| !matches!(c.kind(), "{" | "}") && !is_comment(*c));
+            let only = inner.next()?;
+            inner.next().is_none().then_some(only)?
+        } else {
+            body
+        };
+        let saved = self.env.borrow().len();
+        if let Some(ps) = children(n)
+            .into_iter()
+            .find(|c| c.kind() == "closure_parameters")
+        {
+            self.bind_closure_params(n, ps);
+        }
+        let out = self.typed_source(tail);
+        self.env.borrow_mut().truncate(saved);
+        out
+    }
+
+    /// The receiver for the closure parameter `param` of closure `n`, when `n` is an argument of a method call
+    /// whose receiver is typed and the method passes its item to the closure.
+    fn closure_item(&self, n: Node<'_>, param: usize) -> Option<Receiver> {
+        let args = n.parent().filter(|a| a.kind() == "arguments")?;
+        let call = args.parent().filter(|c| c.kind() == "call_expression")?;
+        let f = call.child_by_field_name("function")?;
+        let f = if f.kind() == "generic_function" {
+            f.child_by_field_name("function")?
+        } else {
+            f
+        };
+        if f.kind() != "field_expression" {
+            return None;
+        }
+        let method = self.t(f.child_by_field_name("field")?);
+        let pos = children(args)
+            .into_iter()
+            .filter(|c| c.is_named() && !is_comment(*c))
+            .position(|c| c.id() == n.id())?;
+        let arity = n.child_by_field_name("parameters").map_or(0, |ps| {
+            children(ps)
+                .into_iter()
+                .filter(|x| x.is_named() && !is_comment(*x))
+                .count()
+        });
+        let (_, _, params, want) = ITEM_CLOSURES
+            .iter()
+            .find(|(m, at, _, _)| *m == method && *at == pos)?;
+        if !params.contains(&param) || (*want != 0 && *want != arity) {
+            return None;
+        }
+        let recv = self.typed_source(f.child_by_field_name("value")?)?;
+        Some(Receiver::Item(Box::new(recv)))
+    }
+
+    /// `shape` with `Self` replaced by the type of the impl being visited (a local declaration is read in the impl's own file).
+    fn subst_self(&self, mut shape: RetType) -> RetType {
+        let Some(me) = self.impl_types.last() else {
+            return shape;
+        };
+        let fix = |s: &mut String| {
+            if s == "Self" {
+                me.clone_into(s);
+            }
+        };
+        fix(&mut shape.head);
+        shape.arg.iter_mut().for_each(fix);
+        shape.arg2.iter_mut().for_each(fix);
+        shape.tuple.iter_mut().flatten().flatten().for_each(fix);
+        shape
+    }
+
+    /// The receiver that a declared type `t` stands for: a plain type (with its generic arguments), else its trait bounds.
     fn typed_receiver(&self, t: Node<'_>) -> Option<Receiver> {
-        self.plain_type(t)
-            .map(Receiver::Typed)
-            .or_else(|| self.bound_receiver(t))
+        let mut peeled = t;
+        while peeled.kind() == "reference_type" {
+            peeled = peeled.child_by_field_name("type")?;
+        }
+        if peeled.kind() == "type_identifier" && self.t(peeled) == "Self" {
+            return self.impl_types.last().cloned().map(Receiver::Typed);
+        }
+        let shape = self.ret_type(peeled).map(|r| self.subst_self(r));
+        if matches!(peeled.kind(), "array_type" | "tuple_type") {
+            return shape.map(|r| Receiver::Decl(Box::new(r)));
+        }
+        if let Some(r) = self.dyn_head(t) {
+            return Some(Receiver::Decl(Box::new(RetType {
+                head: r,
+                arg: None,
+                arg2: None,
+                tuple: None,
+            })));
+        }
+        if let Some(plain) = self.plain_type(t) {
+            return Some(match shape {
+                Some(r)
+                    if r.head == plain
+                        && (r.arg.is_some() || r.arg2.is_some() || r.tuple.is_some()) =>
+                {
+                    Receiver::Decl(Box::new(r))
+                }
+                _ => Receiver::Typed(plain),
+            });
+        }
+        self.bound_receiver(t)
     }
 
     /// The receiver a parameter or `let` type stands for when it is only known by its trait bounds.
@@ -1329,34 +1922,7 @@ impl<'a> Fold<'a> {
         let Some(tt) = children(n).into_iter().find(|c| c.kind() == "token_tree") else {
             return false;
         };
-        let (a, b) = (tt.start_byte(), tt.end_byte());
-        let bytes = self.cx.text.as_bytes();
-        if a < 8 || b > bytes.len() || b < a + 2 {
-            return false;
-        }
-        let mut synth: Vec<u8> = bytes[..b]
-            .iter()
-            .enumerate()
-            .map(|(i, &c)| if i < a { blank(c) } else { c })
-            .collect();
-        synth[..7].copy_from_slice(b"fn g(){");
-        synth[a - 1] = b'f';
-        synth[a] = b'(';
-        synth[b - 1] = b')';
-        // `%x` and `?x` field values (tracing) are not Rust expressions: blank the sigil.
-        for i in a + 1..b - 1 {
-            if matches!(synth[i], b'%' | b'?')
-                && synth[..i]
-                    .iter()
-                    .rev()
-                    .find(|c| !c.is_ascii_whitespace())
-                    .is_some_and(|c| matches!(c, b'=' | b',' | b'('))
-            {
-                synth[i] = b' ';
-            }
-        }
-        synth.extend_from_slice(b";}");
-        let Ok(synth) = String::from_utf8(synth) else {
+        let Some(synth) = self.synthetic_macro_text(name, tt) else {
             return false;
         };
         let gob_languages::ParseResult::Parsed(tree) =
@@ -1372,27 +1938,18 @@ impl<'a> Fold<'a> {
             );
             return false;
         }
-        let Some(call) = find_synthetic_call(tree.root(), a - 1) else {
-            return false;
+        let a = tt.start_byte();
+        let root = if name == "matches" {
+            find_synthetic(tree.root(), "match_expression", a - 5)
+        } else {
+            find_synthetic(tree.root(), "call_expression", a - 1)
+                .and_then(|c| c.child_by_field_name("arguments"))
         };
-        let Some(args) = call.child_by_field_name("arguments") else {
+        let Some(root) = root else {
             return false;
         };
         let saved_env = self.env.borrow().len();
-        let mut all = vec![args];
-        let mut nodes = Vec::new();
-        while let Some(x) = all.pop() {
-            nodes.push(x);
-            all.extend(children(x));
-        }
-        for x in &nodes {
-            for p in Self::binder_patterns(*x) {
-                let _ = self.pattern(p);
-            }
-        }
-        for x in nodes {
-            self.exact_macro_node(x, caller, name);
-        }
+        self.macro_walk(root, caller, name);
         self.env.borrow_mut().truncate(saved_env);
         tracing::trace!(
             path = self.path,
@@ -1402,14 +1959,159 @@ impl<'a> Fold<'a> {
         true
     }
 
-    /// The pattern nodes that `x` itself introduces bindings with.
-    fn binder_patterns(x: Node<'_>) -> Vec<Node<'_>> {
-        match x.kind() {
-            "closure_parameters" => vec![x],
-            "let_declaration" | "match_arm" | "for_expression" | "let_condition" => {
-                x.child_by_field_name("pattern").into_iter().collect()
+    /// The synthetic Rust text that re-parses the arguments of macro `name` (token tree `tt`) as expressions.
+    ///
+    /// Everything before the arguments is blanked so each node keeps its byte offset and line:
+    /// `f(ARGS)` for most macros, `match E { P if G =>0 }` for `matches!(E, P if G)`, and `vec![x; n]`
+    /// with its `;` read as a comma.
+    fn synthetic_macro_text(&self, name: &str, tt: Node<'_>) -> Option<String> {
+        let (a, b) = (tt.start_byte(), tt.end_byte());
+        let bytes = self.cx.text.as_bytes();
+        let is_matches = name == "matches";
+        if a < if is_matches { 13 } else { 8 } || b > bytes.len() || b < a + 2 {
+            return None;
+        }
+        let mut synth: Vec<u8> = bytes[..b]
+            .iter()
+            .enumerate()
+            .map(|(i, &c)| if i < a { blank(c) } else { c })
+            .collect();
+        synth[..7].copy_from_slice(b"fn g(){");
+        let top_level = |tok: &str| {
+            children(tt)
+                .into_iter()
+                .find(|c| c.kind() == tok && c.child_count() == 0)
+                .map(|c| c.start_byte())
+        };
+        if is_matches {
+            // `matches!(E, P if G)` is `match E { P if G =>0 }`: the closing text lies past the real arguments.
+            let comma = top_level(",")?;
+            synth[a - 5..a].copy_from_slice(b"match");
+            synth[a] = b' ';
+            synth[comma] = b'{';
+            synth[b - 1] = b' ';
+        } else {
+            synth[a - 1] = b'f';
+            synth[a] = b'(';
+            synth[b - 1] = b')';
+            if name == "vec"
+                && let Some(semi) = top_level(";")
+            {
+                synth[semi] = b',';
             }
-            _ => Vec::new(),
+        }
+        // `%x` and `?x` field values (tracing) are not Rust expressions: blank the sigil.
+        for i in a + 1..b - 1 {
+            if matches!(synth[i], b'%' | b'?')
+                && synth[..i]
+                    .iter()
+                    .rev()
+                    .find(|c| !c.is_ascii_whitespace())
+                    .is_some_and(|c| matches!(c, b'=' | b',' | b'('))
+            {
+                synth[i] = b' ';
+            }
+        }
+        synth.extend_from_slice(if is_matches { b"=>0};}" } else { b";}" });
+        String::from_utf8(synth).ok()
+    }
+
+    /// Walks the parsed argument tree `x` of a std macro in scope order: records its call sites with
+    /// the variables each pattern binds (typed where the source is typed) visible only where Rust scopes them.
+    fn macro_walk(&mut self, x: Node<'_>, caller: usize, macro_name: &str) {
+        match x.kind() {
+            "closure_expression" => {
+                let saved = self.env.borrow().len();
+                for c in children(x) {
+                    if c.kind() == "closure_parameters" {
+                        self.bind_closure_params(x, c);
+                    } else {
+                        self.macro_walk(c, caller, macro_name);
+                    }
+                }
+                self.env.borrow_mut().truncate(saved);
+            }
+            "match_expression" => {
+                let scrutinee = x.child_by_field_name("value");
+                if let Some(v) = scrutinee {
+                    self.macro_walk(v, caller, macro_name);
+                }
+                let value = scrutinee.and_then(|v| self.typed_source(v));
+                let Some(body) = x.child_by_field_name("body") else {
+                    return;
+                };
+                for arm in children(body) {
+                    let saved = self.env.borrow().len();
+                    if arm.kind() == "match_arm" {
+                        self.bind_arm(arm, value.as_ref());
+                    }
+                    for c in children(arm) {
+                        self.macro_walk(c, caller, macro_name);
+                    }
+                    self.env.borrow_mut().truncate(saved);
+                }
+            }
+            "for_expression" => {
+                let source = x.child_by_field_name("value");
+                if let Some(v) = source {
+                    self.macro_walk(v, caller, macro_name);
+                }
+                let saved = self.env.borrow().len();
+                if let Some(p) = x.child_by_field_name("pattern") {
+                    let item = source
+                        .and_then(|v| self.typed_source(v))
+                        .map(|r| Receiver::Item(Box::new(r)));
+                    let names = self.pattern_shape(p).0;
+                    self.bind_typed(p, &names, item.as_ref());
+                }
+                if let Some(body) = x.child_by_field_name("body") {
+                    self.macro_walk(body, caller, macro_name);
+                }
+                self.env.borrow_mut().truncate(saved);
+            }
+            "if_expression" | "while_expression" => {
+                let saved = self.env.borrow().len();
+                for c in children(x) {
+                    if Some(c.id()) == x.child_by_field_name("alternative").map(|a| a.id()) {
+                        self.env.borrow_mut().truncate(saved);
+                    }
+                    self.macro_walk(c, caller, macro_name);
+                }
+                self.env.borrow_mut().truncate(saved);
+            }
+            "let_condition" | "let_declaration" => {
+                for c in children(x) {
+                    if x.child_by_field_name("pattern")
+                        .is_none_or(|p| p.id() != c.id())
+                    {
+                        self.macro_walk(c, caller, macro_name);
+                    }
+                }
+                if let Some(p) = x.child_by_field_name("pattern") {
+                    let value = x.child_by_field_name("value");
+                    let declared = x
+                        .child_by_field_name("type")
+                        .and_then(|t| self.typed_receiver(t));
+                    let ty = declared.or_else(|| value.and_then(|v| self.typed_source(v)));
+                    let names = self.pattern_shape(p).0;
+                    self.bind_typed(p, &names, ty.as_ref());
+                }
+            }
+            "block" => {
+                let saved = self.env.borrow().len();
+                for c in children(x) {
+                    self.macro_walk(c, caller, macro_name);
+                }
+                self.env.borrow_mut().truncate(saved);
+            }
+            _ => {
+                self.exact_macro_node(x, caller, macro_name);
+                if x.kind() != "macro_invocation" {
+                    for c in children(x) {
+                        self.macro_walk(c, caller, macro_name);
+                    }
+                }
+            }
         }
     }
 
@@ -1547,15 +2249,14 @@ impl<'a> Fold<'a> {
         }
     }
 
-    /// The variables a pattern binds (deduplicated, in order) and its shape text.
-    fn pattern(&self, p: Node<'_>) -> (Vec<String>, String) {
+    /// The variables a pattern binds (deduplicated, in order) and its shape text, without declaring them.
+    fn pattern_shape(&self, p: Node<'_>) -> (Vec<String>, String) {
         let mut names: Vec<String> = Vec::new();
         let mut shape: Vec<String> = Vec::new();
         for l in leaves(p) {
             if self.is_binder_leaf(l) {
                 let name = self.t(l).to_owned();
                 if !names.contains(&name) {
-                    self.env.borrow_mut().push((name.clone(), None));
                     names.push(name);
                 }
                 shape.push("_".to_owned());
@@ -1564,6 +2265,21 @@ impl<'a> Fold<'a> {
             }
         }
         (names, shape.join(" "))
+    }
+
+    /// Declares `names` as untyped variables in scope.
+    fn declare(&self, names: &[String]) {
+        let mut env = self.env.borrow_mut();
+        env.extend(names.iter().map(|n| (n.clone(), None)));
+    }
+
+    /// Declares the binders of `p` and types them as the parts of `value` (when it is known).
+    fn bind_typed(&self, p: Node<'_>, names: &[String], value: Option<&Receiver>) {
+        let at = self.env.borrow().len();
+        self.declare(names);
+        if let Some(v) = value {
+            self.type_pattern(at, p, v);
+        }
     }
 
     fn bind_node(
@@ -1637,33 +2353,44 @@ impl<'a> Fold<'a> {
     }
 
     fn let_stmt(&mut self, k: Node<'_>, rest: &[Node<'_>], depth: usize) -> R<NodeId> {
-        let env_at = self.env.borrow().len();
-        let (binders, shape) = k
-            .child_by_field_name("pattern")
-            .map_or((Vec::new(), String::new()), |p| self.pattern(p));
+        let pat = k.child_by_field_name("pattern");
+        let (binders, shape) = pat.map_or((Vec::new(), String::new()), |p| self.pattern_shape(p));
         let mut rhs = vec![self.cx.lit("pattern", &shape, k)?];
         for field in ["type", "value", "alternative"] {
             if let Some(c) = k.child_by_field_name(field) {
                 rhs.push(self.tr(c, depth + 1)?);
             }
         }
-        let declared = k.child_by_field_name("type").and_then(|t| {
-            self.plain_type(t)
-                .map(Receiver::Typed)
-                .or_else(|| self.bound_receiver(t))
-        });
-        let ty = declared.or_else(|| {
+        // The value is typed against the variables in scope before the new ones shadow them.
+        let declared = k
+            .child_by_field_name("type")
+            .and_then(|t| self.typed_receiver(t));
+        let ty = self.collected_let(k).or(declared).or_else(|| {
             k.child_by_field_name("value")
                 .and_then(|v| self.value_receiver(v))
         });
-        let pat = k.child_by_field_name("pattern");
-        match (&ty, pat) {
-            (Some(r), Some(p)) if p.kind() == "tuple_pattern" => self.tuple_binders(env_at, p, r),
-            _ => self.type_binder(env_at, pat, ty),
+        match pat {
+            Some(p) => self.bind_typed(p, &binders, ty.as_ref()),
+            None => self.declare(&binders),
         }
         let rhs = self.cx.op(Operator::group(GroupOrder::Sequence), k, &rhs)?;
         let scope = self.rest_group(k, rest, depth)?;
         self.bind_node("let", k, &binders, scope, rhs)
+    }
+
+    /// For `let v: Vec<_> = it.collect();`, the collection filled from the items of `it`.
+    fn collected_let(&self, k: Node<'_>) -> Option<Receiver> {
+        let ty = k.child_by_field_name("type")?;
+        let call = k.child_by_field_name("value")?;
+        let f = call.child_by_field_name("function")?;
+        if call.kind() != "call_expression"
+            || f.kind() != "field_expression"
+            || self.t(f.child_by_field_name("field")?) != "collect"
+        {
+            return None;
+        }
+        let source = self.typed_source(f.child_by_field_name("value")?)?;
+        self.collected(ty, &source)
     }
 
     fn nested_fn_anon(&mut self, k: Node<'_>, depth: usize) -> R<NodeId> {
@@ -1706,26 +2433,14 @@ impl<'a> Fold<'a> {
     fn closure(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
         let mut binders: Vec<String> = Vec::new();
         let mut kids = Vec::new();
+        let saved_env = self.env.borrow().len();
         for c in children(n) {
             if c.kind() == "closure_parameters" {
-                for p in children(c).into_iter().filter(tree_sitter::Node::is_named) {
-                    let pat = if p.kind() == "parameter" {
-                        p.child_by_field_name("pattern").unwrap_or(p)
-                    } else {
-                        p
-                    };
-                    let env_at = self.env.borrow().len();
-                    let (names, shape) = self.pattern(pat);
+                for (names, shape, p) in self.bind_closure_params(n, c) {
                     for nm in names {
                         if !binders.contains(&nm) {
                             binders.push(nm);
                         }
-                    }
-                    if p.kind() == "parameter" {
-                        let ty = p
-                            .child_by_field_name("type")
-                            .and_then(|t| self.typed_receiver(t));
-                        self.type_binder(env_at, Some(pat), ty);
                     }
                     kids.push(self.cx.lit("pattern", &shape, p)?);
                     if p.kind() == "parameter"
@@ -1738,21 +2453,83 @@ impl<'a> Fold<'a> {
                 kids.push(self.tr(c, depth + 1)?);
             }
         }
+        self.env.borrow_mut().truncate(saved_env);
         let names: Vec<&str> = binders.iter().map(String::as_str).collect();
         let spec = NodeSpec::new(Operator::anon("closure"), self.cx.node_loc(n)).binders(&names);
         self.cx.add(spec, &kids)
     }
 
+    /// Declares the parameters `ps` of closure `n`, typed by their annotation or by the item the
+    /// closure receives; returns each parameter's binders, pattern shape and node.
+    fn bind_closure_params<'t>(
+        &self,
+        n: Node<'t>,
+        ps: Node<'t>,
+    ) -> Vec<(Vec<String>, String, Node<'t>)> {
+        let params = children(ps)
+            .into_iter()
+            .filter(|x| x.is_named() && !is_comment(*x));
+        let mut out = Vec::new();
+        for (j, p) in params.enumerate() {
+            let pat = if p.kind() == "parameter" {
+                p.child_by_field_name("pattern").unwrap_or(p)
+            } else {
+                p
+            };
+            let (names, shape) = self.pattern_shape(pat);
+            let annotated = p
+                .child_by_field_name("type")
+                .filter(|_| p.kind() == "parameter")
+                .and_then(|t| self.typed_receiver(t));
+            let ty = annotated.or_else(|| self.closure_item(n, j));
+            self.bind_typed(pat, &names, ty.as_ref());
+            out.push((names, shape, p));
+        }
+        out
+    }
+
+    /// Declares the binders of the match arm `arm` (typed from `value` when the arm has a single pattern); returns the binders and pattern shapes.
+    fn bind_arm(&self, arm: Node<'_>, value: Option<&Receiver>) -> (Vec<String>, Vec<String>) {
+        let mp = arm.child_by_field_name("pattern");
+        let cond = mp.and_then(|m| m.child_by_field_name("condition"));
+        let mut binders = Vec::new();
+        let mut shapes = Vec::new();
+        let Some(m) = mp else {
+            return (binders, shapes);
+        };
+        let pats: Vec<Node<'_>> = children(m)
+            .into_iter()
+            .filter(|c| c.is_named() && cond.is_none_or(|x| x.id() != c.id()))
+            .collect();
+        for c in &pats {
+            let (names, shape) = self.pattern_shape(*c);
+            for nm in names {
+                if !binders.contains(&nm) {
+                    binders.push(nm);
+                }
+            }
+            shapes.push(shape);
+        }
+        // One pattern types its binders; alternatives (`a | b`) leave them untyped.
+        match pats.as_slice() {
+            [only] => self.bind_typed(*only, &binders, value),
+            _ => self.declare(&binders),
+        }
+        (binders, shapes)
+    }
+
     fn match_expr(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
         let mut kids = Vec::new();
-        if let Some(v) = n.child_by_field_name("value") {
+        let scrutinee = n.child_by_field_name("value");
+        if let Some(v) = scrutinee {
             kids.push(self.tr(v, depth + 1)?);
         }
+        let value = scrutinee.and_then(|v| self.typed_source(v));
         if let Some(body) = n.child_by_field_name("body") {
             let mut arms = Vec::new();
             for c in children(body) {
                 match c.kind() {
-                    "match_arm" => arms.push(self.match_arm(c, depth + 2)?),
+                    "match_arm" => arms.push(self.match_arm(c, value.as_ref(), depth + 2)?),
                     "{" | "}" => {}
                     _ => arms.push(self.tr(c, depth + 2)?),
                 }
@@ -1765,25 +2542,11 @@ impl<'a> Fold<'a> {
         self.cx.op(Operator::group(GroupOrder::Sequence), n, &kids)
     }
 
-    fn match_arm(&mut self, arm: Node<'_>, depth: usize) -> R<NodeId> {
+    fn match_arm(&mut self, arm: Node<'_>, value: Option<&Receiver>, depth: usize) -> R<NodeId> {
         let mp = arm.child_by_field_name("pattern");
         let cond = mp.and_then(|m| m.child_by_field_name("condition"));
-        let mut binders = Vec::new();
-        let mut shapes = Vec::new();
-        if let Some(m) = mp {
-            for c in children(m).into_iter().filter(tree_sitter::Node::is_named) {
-                if cond.is_some_and(|x| x.id() == c.id()) {
-                    continue;
-                }
-                let (names, shape) = self.pattern(c);
-                for nm in names {
-                    if !binders.contains(&nm) {
-                        binders.push(nm);
-                    }
-                }
-                shapes.push(shape);
-            }
-        }
+        let saved_env = self.env.borrow().len();
+        let (binders, shapes) = self.bind_arm(arm, value);
         let shape = self
             .cx
             .lit("pattern", &shapes.join(" | "), mp.unwrap_or(arm))?;
@@ -1794,6 +2557,7 @@ impl<'a> Fold<'a> {
         if let Some(v) = arm.child_by_field_name("value") {
             scope_kids.push(self.tr(v, depth + 1)?);
         }
+        self.env.borrow_mut().truncate(saved_env);
         let scope = self
             .cx
             .op(Operator::group(GroupOrder::Sequence), arm, &scope_kids)?;
@@ -1807,13 +2571,20 @@ impl<'a> Fold<'a> {
         ) else {
             return self.generic(n, depth);
         };
-        let (binders, shape) = self.pattern(p);
+        let (binders, shape) = self.pattern_shape(p);
         let mut rhs = vec![self.cx.lit("pattern", &shape, p)?];
-        if let Some(v) = n.child_by_field_name("value") {
+        let source = n.child_by_field_name("value");
+        if let Some(v) = source {
             rhs.push(self.tr(v, depth + 1)?);
         }
+        let item = source
+            .and_then(|v| self.typed_source(v))
+            .map(|r| Receiver::Item(Box::new(r)));
+        let saved_env = self.env.borrow().len();
+        self.bind_typed(p, &binders, item.as_ref());
         let rhs = self.cx.op(Operator::group(GroupOrder::Sequence), n, &rhs)?;
         let scope = self.tr(body, depth + 1)?;
+        self.env.borrow_mut().truncate(saved_env);
         self.bind_node("for", n, &binders, scope, rhs)
     }
 
@@ -1825,7 +2596,7 @@ impl<'a> Fold<'a> {
             match x.kind() {
                 "let_condition" => {
                     if let Some(p) = x.child_by_field_name("pattern") {
-                        for nm in self.pattern(p).0 {
+                        for nm in self.pattern_shape(p).0 {
                             if !out.contains(&nm) {
                                 out.push(nm);
                             }
@@ -1843,15 +2614,20 @@ impl<'a> Fold<'a> {
         let Some(cond) = n.child_by_field_name("condition") else {
             return self.generic(n, depth);
         };
+        let saved_env = self.env.borrow().len();
         let binders = self.cond_binders(cond);
         let body = n
             .child_by_field_name("consequence")
             .or_else(|| n.child_by_field_name("body"));
         let Some(body) = body.filter(|_| !binders.is_empty()) else {
-            return self.generic(n, depth);
+            let out = self.generic(n, depth);
+            self.env.borrow_mut().truncate(saved_env);
+            return out;
         };
         let rhs = self.tr(cond, depth + 1)?;
         let scope = self.tr(body, depth + 1)?;
+        // The `let` binders live in the consequence only.
+        self.env.borrow_mut().truncate(saved_env);
         let kind = if n.kind() == "if_expression" {
             "if-let"
         } else {
@@ -1870,12 +2646,21 @@ impl<'a> Fold<'a> {
 
     fn let_condition(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
         let mut kids = Vec::new();
-        if let Some(p) = n.child_by_field_name("pattern") {
-            let shape = self.pattern(p).1;
-            kids.push(self.cx.lit("pattern", &shape, p)?);
+        let pat = n.child_by_field_name("pattern");
+        let names = pat.map(|p| {
+            let (names, shape) = self.pattern_shape(p);
+            (p, names, shape)
+        });
+        if let Some((p, _, shape)) = &names {
+            kids.push(self.cx.lit("pattern", shape, *p)?);
         }
-        if let Some(v) = n.child_by_field_name("value") {
+        let source = n.child_by_field_name("value");
+        if let Some(v) = source {
             kids.push(self.tr(v, depth + 1)?);
+        }
+        if let Some((p, names, _)) = &names {
+            let value = source.and_then(|v| self.typed_source(v));
+            self.bind_typed(*p, names, value.as_ref());
         }
         self.cx.op(Operator::group(GroupOrder::Sequence), n, &kids)
     }
@@ -2018,6 +2803,9 @@ impl<'a> Fold<'a> {
                 if let Some(a) = r.arg {
                     spec = spec.attr(ATTR_RET_ARG, a.as_str());
                 }
+                if let Some(a) = r.arg2 {
+                    spec = spec.attr(ATTR_RET_ARG2, a.as_str());
+                }
                 if let Some(t) = r.tuple {
                     let joined: Vec<&str> = t.iter().map(|e| e.as_deref().unwrap_or("_")).collect();
                     spec = spec.attr(ATTR_RET_TUPLE, joined.join(",").as_str());
@@ -2137,6 +2925,7 @@ impl<'a> Fold<'a> {
         let body = node.child_by_field_name("body");
         if node.kind() == "struct_item" {
             self.struct_fields(node, &name);
+            self.record_derives(&name, lead);
         }
         if kind == "type"
             && matches!(name.as_str(), "Result" | "Option")
@@ -2276,34 +3065,118 @@ impl<'a> Fold<'a> {
         matches!(head.as_deref(), Some("Result" | "Option")) && param.is_some() && param == arg
     }
 
+    /// Records the `#[derive(..)]` traits among the attributes of the struct or enum `owner`.
+    fn record_derives(&mut self, owner: &str, lead: &Lead<'_>) {
+        let mut traits: Vec<String> = Vec::new();
+        for a in &lead.attrs {
+            let text = self.t(*a);
+            let Some(start) = text.find("derive(") else {
+                continue;
+            };
+            let inner = &text[start + "derive(".len()..];
+            let Some(inner) = inner.split(')').next() else {
+                continue;
+            };
+            traits.extend(
+                inner
+                    .split(',')
+                    .filter_map(|t| t.trim().rsplit("::").next())
+                    .filter(|t| !t.is_empty())
+                    .map(str::to_owned),
+            );
+        }
+        if !traits.is_empty() {
+            tracing::trace!(path = self.path, owner, ?traits, "type derives");
+            self.derives.push(DeriveDecl {
+                owner: owner.to_owned(),
+                traits,
+            });
+        }
+    }
+
     /// Records the concrete-typed fields of the struct `node` named `owner` (the field type table).
     fn struct_fields(&mut self, node: Node<'_>, owner: &str) {
-        let Some(list) = node
-            .child_by_field_name("body")
-            .filter(|b| b.kind() == "field_declaration_list")
-        else {
+        let Some(list) = node.child_by_field_name("body") else {
             return;
         };
         let saved = self.enter_generics(node);
-        for d in children(list)
+        self.record_fields(list, owner, "");
+        self.leave_generics(saved);
+    }
+
+    /// Records the concrete-typed fields of every variant of the enum `node` named `owner` as `Variant.field`,
+    /// and each unit variant as an associated value of the enum's own type (`Kind::Plain`).
+    fn enum_fields(&mut self, node: Node<'_>, owner: &str) {
+        let Some(list) = node.child_by_field_name("body") else {
+            return;
+        };
+        let saved = self.enter_generics(node);
+        for v in children(list)
             .into_iter()
-            .filter(|c| c.kind() == "field_declaration")
+            .filter(|c| c.kind() == "enum_variant")
         {
-            let (Some(name), Some(ty)) = (
-                d.child_by_field_name("name"),
-                d.child_by_field_name("type")
-                    .and_then(|t| self.plain_type(t)),
-            ) else {
+            let Some(name) = v.child_by_field_name("name") else {
                 continue;
             };
-            tracing::trace!(path = self.path, owner, field = self.t(name), %ty, "struct field type");
-            self.fields.push(FieldDecl {
-                owner: owner.to_owned(),
-                field: self.t(name).to_owned(),
-                ty,
-            });
+            match v.child_by_field_name("body") {
+                Some(body) => {
+                    let prefix = format!("{}.", self.t(name));
+                    self.record_fields(body, owner, &prefix);
+                }
+                None if self.generics.is_empty() => {
+                    let own = RetType {
+                        head: owner.to_owned(),
+                        arg: None,
+                        arg2: None,
+                        tuple: None,
+                    };
+                    self.push_field(owner, self.t(name).to_owned(), own);
+                }
+                None => {}
+            }
         }
         self.leave_generics(saved);
+    }
+
+    /// Records the typed fields of a named or tuple field list as `owner.<prefix><field>`.
+    fn record_fields(&mut self, list: Node<'_>, owner: &str, prefix: &str) {
+        match list.kind() {
+            "field_declaration_list" => {
+                for d in children(list)
+                    .into_iter()
+                    .filter(|c| c.kind() == "field_declaration")
+                {
+                    if let (Some(name), Some(ty)) = (
+                        d.child_by_field_name("name"),
+                        d.child_by_field_name("type").and_then(|t| self.ret_type(t)),
+                    ) {
+                        self.push_field(owner, format!("{prefix}{}", self.t(name)), ty);
+                    }
+                }
+            }
+            "ordered_field_declaration_list" => {
+                let types = children(list)
+                    .into_iter()
+                    .filter(|c| c.is_named() && !is_comment(*c))
+                    .filter(|c| !matches!(c.kind(), "attribute_item" | "visibility_modifier"));
+                for (i, t) in types.enumerate() {
+                    if let Some(ty) = self.ret_type(t) {
+                        self.push_field(owner, format!("{prefix}{i}"), ty);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// Adds one field to the field type table.
+    fn push_field(&mut self, owner: &str, field: String, ty: RetType) {
+        tracing::trace!(path = self.path, owner, %field, head = %ty.head, "field type");
+        self.fields.push(FieldDecl {
+            owner: owner.to_owned(),
+            field,
+            ty,
+        });
     }
 
     fn params(
@@ -2319,23 +3192,23 @@ impl<'a> Fold<'a> {
             match p.kind() {
                 "parameter" => {
                     let pat = p.child_by_field_name("pattern");
-                    let env_at = self.env.borrow().len();
                     let (names, mut shape) =
-                        pat.map_or((Vec::new(), String::new()), |x| self.pattern(x));
+                        pat.map_or((Vec::new(), String::new()), |x| self.pattern_shape(x));
                     if children(p).iter().any(|c| c.kind() == "mutable_specifier") {
                         shape.insert_str(0, "mut ");
                     }
-                    for nm in names {
-                        if !binders.contains(&nm) {
-                            binders.push(nm);
+                    for nm in &names {
+                        if !binders.contains(nm) {
+                            binders.push(nm.clone());
                         }
                     }
-                    let ty = p.child_by_field_name("type").and_then(|t| {
-                        self.plain_type(t)
-                            .map(Receiver::Typed)
-                            .or_else(|| self.bound_receiver(t))
-                    });
-                    self.type_binder(env_at, pat, ty);
+                    let ty = p
+                        .child_by_field_name("type")
+                        .and_then(|t| self.typed_receiver(t));
+                    match pat {
+                        Some(x) => self.bind_typed(x, &names, ty.as_ref()),
+                        None => self.declare(&names),
+                    }
                     let mut kids = vec![self.cx.lit("pattern", &shape, pat.unwrap_or(p))?];
                     if let Some(t) = p.child_by_field_name("type") {
                         kids.push(self.with_expr(false, |s| s.tr(t, 2))?);
@@ -2437,6 +3310,8 @@ impl<'a> Fold<'a> {
         };
         let vis = self.visibility(node, scope);
         let body = node.child_by_field_name("body");
+        self.enum_fields(node, &name);
+        self.record_derives(&name, lead);
         let ord = self.alloc();
         self.unit_stack.push(ord);
         let sig = self.sig_tokens(node, &[Some(name_node), body])?;
@@ -2515,7 +3390,10 @@ impl<'a> Fold<'a> {
                     inherit: Some(vis),
                     ..Scope::default()
                 };
-                self.container(b, &inner, false)?
+                let saved_generics = self.enter_generics(node);
+                let out = self.container(b, &inner, false);
+                self.leave_generics(saved_generics);
+                out?
             }
             None => Vec::new(),
         };
@@ -2569,7 +3447,9 @@ impl<'a> Fold<'a> {
                     trait_impl: tr.is_some(),
                 };
                 let saved_generics = self.enter_generics(node);
+                self.impl_types.push(tname.clone());
                 let out = self.container(b, &inner, false);
+                self.impl_types.pop();
                 self.leave_generics(saved_generics);
                 out?
             }

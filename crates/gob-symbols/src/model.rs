@@ -200,7 +200,11 @@ pub struct RetType {
     pub head: String,
     /// The plain first generic argument (`Foo` in `Result<Foo, E>`), when it is a plain type.
     pub arg: Option<String>,
-    /// For a tuple return type, the plain type of each element (`None` where it is not a plain type).
+    /// The plain second generic argument (`V` in `HashMap<K, V>`), when it is a plain type.
+    #[serde(default)]
+    pub arg2: Option<String>,
+    /// The plain type of each tuple element (`None` where it is not a plain type): the type's own
+    /// elements when `head` is `(tuple)`, else the elements of the first generic argument when that is a tuple.
     pub tuple: Option<Vec<Option<String>>>,
 }
 
@@ -325,6 +329,42 @@ pub enum Receiver {
     SelfValue,
     /// A local or parameter whose declared type is syntactically evident.
     Typed(String),
+    /// A declared type that carries generic arguments or tuple elements (`Vec<Foo>`, `HashMap<K, V>`, `Option<(A, B)>`).
+    Decl(Box<RetType>),
+    /// The item an iteration over the receiver yields (`for x in v`, an iterator-closure parameter).
+    Item(Box<Receiver>),
+    /// `recv.map(|x| body)`: the iterator, `Option` or `Result` `recv` with its items replaced by the type of `result`.
+    Mapped {
+        /// The mapped iterator, `Option` or `Result`.
+        recv: Box<Receiver>,
+        /// The type of the closure body.
+        result: Box<Receiver>,
+        /// Which adaptor takes the closure.
+        kind: MapKind,
+    },
+    /// `let v: Vec<_> = source.collect()`: the declared collection with its `_` element filled in from the items of `source`.
+    Collected {
+        /// The declared collection type, `_` where inferred.
+        shape: Box<RetType>,
+        /// The iterator that is collected.
+        source: Box<Receiver>,
+    },
+    /// `base[a..b]`: the `str`, slice or `Vec` receiver sliced by a range.
+    Slice(Box<Receiver>),
+    /// The associated constant or unit variant `base::NAME` of the type `base` stands for.
+    Assoc(Box<Receiver>, String),
+    /// A tuple expression: the receiver of each element (destructured by tuple patterns; never a method receiver).
+    Tuple(Vec<Receiver>),
+    /// The element `base[i]` of a `Vec`, slice, array or map receiver (never a range index).
+    Index(Box<Receiver>),
+    /// A field of an enum variant bound by a pattern (`Kind::A(x)`, `Kind::B { f }`): `path` is the pattern
+    /// path (`Kind::A`) and `field` the tuple index or field name.
+    Variant {
+        /// The pattern path, enum then variant (`Self::A`, `module::Kind::A`).
+        path: Vec<String>,
+        /// The tuple index or field name.
+        field: String,
+    },
     /// A field of the receiver `base` (`self.paths`, `x.node`): typed through the struct field table.
     Field(Box<Receiver>, String),
     /// The value of a call whose callee has a declared return type (`store_in(..)`, `Type::open(..)`, `x.term()`).
@@ -335,8 +375,22 @@ pub enum Receiver {
     Unwrap(Box<Receiver>),
     /// A value known only by its trait bounds (`&dyn A`, `impl A`, a generic `T: A + B`): trait names, sorted.
     Bound(Vec<String>),
+    /// An upper-case name used as a value that is no local or constant (`Drift001.meta()`): a unit struct when
+    /// the graph finds exactly one struct of that name, otherwise untyped.
+    Unit(String),
     /// Any other expression: its type is unknown.
     Expr,
+}
+
+/// The adaptors whose closure result types the adapted value.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum MapKind {
+    /// `map`: each item becomes the closure result.
+    Map,
+    /// `and_then` on `Option`/`Result`: the closure returns the new `Option`/`Result`.
+    AndThen,
+    /// `filter_map` on an iterator: the closure returns an `Option` of the new item.
+    FilterMap,
 }
 
 /// The callee of a call whose value is used as a receiver, kept so the graph can look up its return type.
@@ -354,15 +408,24 @@ pub struct CallRef {
     pub args: usize,
 }
 
+/// The traits a struct or enum derives (`#[derive(Clone, gob_rules::Rule)]`), by last path segment.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DeriveDecl {
+    /// The derived type's simple name.
+    pub owner: String,
+    /// The derive names, in source order.
+    pub traits: Vec<String>,
+}
+
 /// A struct field whose declared type is a concrete path type (the field type table).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FieldDecl {
-    /// The declaring struct's simple name.
+    /// The declaring struct's or enum's simple name.
     pub owner: String,
-    /// The field name.
+    /// The field name; for an enum variant field `Variant.name` or `Variant.0`.
     pub field: String,
-    /// The field's plain declared type (wrappers, generics and non-path types are never recorded).
-    pub ty: String,
+    /// The field's plain declared type with its plain generic arguments (wrappers, generics and non-path types are never recorded).
+    pub ty: RetType,
 }
 
 /// What a non-call reference site is.
@@ -453,4 +516,7 @@ pub struct FileSymbols {
     pub fields: Vec<FieldDecl>,
     /// Names of `Result`/`Option` type aliases here whose first parameter is not the Ok/Some type.
     pub opaque_aliases: Vec<String>,
+    /// The `#[derive(..)]` traits of each struct and enum declared here.
+    #[serde(default)]
+    pub derives: Vec<DeriveDecl>,
 }

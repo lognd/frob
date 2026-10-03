@@ -2,6 +2,7 @@
 
 // frob:ticket 01M3Z713F6VY15YSMS15033RN1
 
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 
 pub use gob_ir::Status;
@@ -15,10 +16,12 @@ use crate::adapter::{Fidelity, ParseStatus};
 use crate::crates::CrateDeps;
 use crate::model::{
     CallRef, CallSite, Digests, FacetDigest, FieldDecl, FileSymbols, ImportEdge, LocalBinding,
-    Receiver, RefKind, RefSite, SymbolKind, SymbolRecord, UnitExtras, UseBinding, Visibility,
+    MapKind, Receiver, RefKind, RefSite, RetType, SymbolKind, SymbolRecord, UnitExtras, UseBinding,
+    Visibility,
 };
 use crate::paths::crate_and_module;
 use crate::qualifier::{Admit, CallQualifier};
+use crate::stdtypes;
 use crate::symref::{Symref, Target, split_qual};
 
 /// Kind of a graph edge.
@@ -202,23 +205,54 @@ struct Index {
     externs: HashMap<String, Vec<(String, String)>>,
     /// (crate dir, module path) to the file-level `pub use` bindings of that module.
     pubuses: HashMap<(String, String), Vec<UseBinding>>,
-    /// (crate dir, struct name) to its typed fields (the field type table).
+    /// (crate dir, struct or enum name) to its typed fields (the field type table; variant fields are `Variant.field`).
     fields: HashMap<(String, String), Vec<(FieldDecl, String)>>,
-    /// (crate dir, struct name) to the number of structs declared so (a field table is only sound for one).
+    /// (file, type name) to the number of structs and enums that file declares: a name declared once in the
+    /// calling file is that file's type whatever else shares the name (integration tests are separate crates).
+    file_types: HashMap<(String, String), usize>,
+    /// (crate dir, type name) to the number of structs and enums declared so (a field table is only sound for one).
     struct_count: HashMap<(String, String), usize>,
     /// Names of structs and enums declared anywhere in the repository.
     declared_types: HashSet<String>,
     /// Names of types with an `impl Deref` or `impl DerefMut`: methods may come from the target.
     deref_types: HashSet<String>,
+    /// Receiver types already worked out, per calling symbol (a method chain would otherwise be re-resolved at every link).
+    memo: RefCell<HashMap<(Symref, Receiver), Option<Ty>>>,
     /// Names of `Result`/`Option` aliases whose first parameter is not the Ok/Some type (`?` and `unwrap` cannot be trusted).
     opaque_aliases: HashSet<String>,
     /// Names of `macro_rules!` macros declared anywhere (they may shadow a std macro of the same name).
     declared_macros: HashSet<String>,
-    /// Names of module-level type aliases anywhere: a declared type of these says nothing about the callee.
-    aliases: HashSet<String>,
+    /// (crate dir, name) of enums (a unit-struct value never names one).
+    enums: HashSet<(String, String)>,
+    /// (crate dir, type name) to the traits that type derives.
+    derives: HashMap<(String, String), Vec<String>>,
+    /// Names of every function and method declared anywhere in the repository.
+    callable_names: HashSet<String>,
+    /// (crate dir, name) of module-level type aliases: a declared type of these says nothing about the callee.
+    aliases: HashSet<(String, String)>,
 }
 
 impl Index {
+    /// Every function and method called `name` in the caller's crate and the crates it links.
+    fn callables_in_reach(&self, caller: &Symref, name: &str) -> Vec<NodeIndex> {
+        let here = crate_and_module(caller.path()).0;
+        let linked: Vec<String> = self
+            .file_crate
+            .get(caller.path())
+            .and_then(|o| self.reach.get(o))
+            .into_iter()
+            .flatten()
+            .filter(|d| **d != here)
+            .cloned()
+            .collect();
+        std::iter::once(here)
+            .chain(linked)
+            .filter_map(|c| self.by_name.get(&(c, name.to_owned())))
+            .flatten()
+            .copied()
+            .collect()
+    }
+
     /// The crate-relative paths at which `segs` is defined in crate `dir`, following `pub use` re-exports.
     fn canonical_paths(&self, dir: &str, segs: &[String], depth: usize) -> Vec<(String, String)> {
         const MAX_HOPS: usize = 8;
@@ -287,6 +321,93 @@ impl Index {
             .unwrap_or_else(|| t.to_owned())
     }
 
+    /// True when the path call `path` written in `file` names the standard library (`std::fs`, an imported `fs`, `String`).
+    fn is_std_path(&self, file: &str, path: &[String]) -> bool {
+        let [first, rest @ ..] = path else {
+            return false;
+        };
+        if matches!(first.as_str(), "std" | "core" | "alloc") {
+            return true;
+        }
+        if !rest.is_empty() {
+            return false;
+        }
+        let import = self
+            .uses
+            .get(file)
+            .into_iter()
+            .chain(self.ext_uses.get(file))
+            .flatten()
+            .find(|u| u.local == *first && !u.target.ends_with("::*"));
+        match import {
+            Some(u) => u.target.starts_with("std::") || u.target.starts_with("core::"),
+            None => {
+                first == "str"
+                    || (first.starts_with(char::is_uppercase)
+                        && !self.declared_types.contains(first)
+                        && !self.is_alias(file, first))
+            }
+        }
+    }
+
+    /// `ty`, or the JSON-like value head when it names `serde_json::Value`, `toml::Value` and the like.
+    fn canonical_ext(&self, ty: Ty) -> Ty {
+        let path = match ty.qual.as_slice() {
+            [] => self
+                .uses
+                .get(&ty.file)
+                .into_iter()
+                .chain(self.ext_uses.get(&ty.file))
+                .flatten()
+                .find(|u| u.local == ty.head && !u.target.ends_with("::*"))
+                .map(|u| u.target.clone()),
+            qual => Some(format!("{}::{}", qual.join("::"), ty.head)),
+        };
+        match path {
+            Some(p) if stdtypes::is_json_path(&p) => Ty::plain(stdtypes::JSON.to_owned(), &ty.file),
+            _ => ty,
+        }
+    }
+
+    /// True when `ty` is written as a standard-library path (`std::process::Output`) or imported from one.
+    fn is_std_type(&self, ty: &Ty) -> bool {
+        let std = |p: &str| matches!(p, "std" | "core" | "alloc");
+        if let Some(first) = ty.qual.first() {
+            return std(first);
+        }
+        self.uses
+            .get(&ty.file)
+            .into_iter()
+            .chain(self.ext_uses.get(&ty.file))
+            .flatten()
+            .find(|u| u.local == ty.head && !u.target.ends_with("::*"))
+            .is_some_and(|u| std(u.target.split("::").next().unwrap_or("")))
+    }
+
+    /// True when the type name `written` in `file` may be a type alias.
+    ///
+    /// An alias declared in the file's own crate counts; one declared elsewhere only when the file
+    /// imports the name (or has a glob import that could bring it in).
+    fn is_alias(&self, file: &str, written: &str) -> bool {
+        let krate = crate_and_module(file).0;
+        let real = self.real_type_name(file, written);
+        let named = |n: &str| self.aliases.iter().any(|(_, a)| a == n);
+        if [written, real.as_str()]
+            .iter()
+            .any(|n| self.aliases.contains(&(krate.clone(), (*n).to_owned())))
+        {
+            return true;
+        }
+        let imports = self
+            .uses
+            .get(file)
+            .into_iter()
+            .chain(self.ext_uses.get(file))
+            .flatten()
+            .any(|u| u.local == written || u.target.ends_with("::*"));
+        imports && (named(written) || named(&real))
+    }
+
     /// Sorts every file's `use` bindings into internal, external and re-exported.
     ///
     /// A file-level `use inputs::Inputs;` names a module of the current module (2018 paths): when
@@ -332,19 +453,33 @@ impl Index {
             (SymbolKind::Struct, Some(n)) => {
                 let n = base_segment(n);
                 *self
+                    .file_types
+                    .entry((s.symref.path().to_owned(), n.to_owned()))
+                    .or_default() += 1;
+                *self
                     .struct_count
                     .entry((krate.to_owned(), n.to_owned()))
                     .or_default() += 1;
                 self.declared_types.insert(n.to_owned());
             }
             (SymbolKind::Enum, Some(n)) => {
+                let n = base_segment(n);
+                self.enums.insert((krate.to_owned(), n.to_owned()));
+                *self
+                    .file_types
+                    .entry((s.symref.path().to_owned(), n.to_owned()))
+                    .or_default() += 1;
+                *self
+                    .struct_count
+                    .entry((krate.to_owned(), n.to_owned()))
+                    .or_default() += 1;
                 self.declared_types.insert(n.to_owned());
             }
             (SymbolKind::Macro, Some(n)) => {
                 self.declared_macros.insert(n.to_owned());
             }
             (SymbolKind::TypeAlias, Some(n)) if !assoc => {
-                self.aliases.insert(n.to_owned());
+                self.aliases.insert((krate.to_owned(), n.to_owned()));
             }
             (SymbolKind::Impl, _) => {
                 let tr = s.implements.as_deref().unwrap_or("");
@@ -360,25 +495,27 @@ impl Index {
     }
 
     /// The type of `owner.field` (and the file declaring it) when `owner` is the only struct so named in `krate`.
-    fn field_type(&self, krate: &str, owner: &str, field: &str) -> Option<Ty> {
+    fn field_type(&self, via: &Ty, krate: &str, owner: &str, field: &str) -> Option<Ty> {
         let key = (krate.to_owned(), owner.to_owned());
-        if self.struct_count.get(&key) != Some(&1) {
+        let local = self.declared_once_in(&via.file, krate, owner);
+        if !local && self.struct_count.get(&key) != Some(&1) {
             return None;
         }
         let mut hits = self
             .fields
             .get(&key)?
             .iter()
-            .filter(|(d, _)| d.field == field);
+            .filter(|(d, f)| d.field == field && (!local || *f == via.file));
         let (first, file) = hits.next()?;
-        hits.next().is_none().then(|| Ty {
-            head: first.ty.clone(),
-            arg: None,
-            tuple: None,
-            bound: None,
-            qual: Vec::new(),
-            file: file.clone(),
-        })
+        hits.next()
+            .is_none()
+            .then(|| Ty::from_shape(&first.ty, file))
+    }
+
+    /// True when `file` (in crate `krate`) declares the type `name` exactly once: there it is that type.
+    fn declared_once_in(&self, file: &str, krate: &str, name: &str) -> bool {
+        crate_and_module(file).0 == krate
+            && self.file_types.get(&(file.to_owned(), name.to_owned())) == Some(&1)
     }
 
     /// The directory of the extern crate named `name` in `file`'s crate (itself, or a direct dependency).
@@ -406,6 +543,50 @@ impl Index {
 }
 
 impl Ty {
+    /// The plain type `head` written in `file`.
+    fn plain(head: String, file: &str) -> Self {
+        Self {
+            qual: Vec::new(),
+            bound: None,
+            tuple: None,
+            head,
+            arg: None,
+            arg2: None,
+            file: file.to_owned(),
+        }
+    }
+
+    /// The type `shape` describes, its names written in `file`.
+    fn from_shape(shape: &RetType, file: &str) -> Self {
+        let known = |a: &Option<String>| a.clone().filter(|a| a != "_");
+        Self {
+            tuple: shape.tuple.clone(),
+            arg: known(&shape.arg),
+            arg2: known(&shape.arg2),
+            ..Self::plain(shape.head.clone(), file)
+        }
+        .dyn_normalized()
+    }
+
+    /// A trait-object head (`dyn:A+B`) as `Self` known only by the traits `A` and `B`.
+    fn dyn_normalized(mut self) -> Self {
+        if let Some(traits) = self.head.strip_prefix(stdtypes::DYN) {
+            self.bound = Some(traits.split('+').map(str::to_owned).collect());
+            "Self".clone_into(&mut self.head);
+        }
+        self
+    }
+
+    /// The generic shape of `self` (head, arguments and tuple elements).
+    fn shape(&self) -> RetType {
+        RetType {
+            head: self.head.clone(),
+            arg: self.arg.clone(),
+            arg2: self.arg2.clone(),
+            tuple: self.tuple.clone(),
+        }
+    }
+
     /// `self` with a path written in `head` (`gob_ir::Ctx`) split into `qual` and the bare name.
     fn with_split_path(mut self) -> Self {
         if self.head.contains("::") {
@@ -428,8 +609,10 @@ struct Ty {
     tuple: Option<Vec<Option<String>>>,
     /// The type name as written (`written` in `use a::B as written`).
     head: String,
-    /// The first generic argument, for `Result<T, _>` and `Option<T>`.
+    /// The first generic argument, for `Result<T, _>`, `Option<T>` and `Vec<T>`.
     arg: Option<String>,
+    /// The second generic argument, for `HashMap<K, V>`.
+    arg2: Option<String>,
     /// The file whose imports the names are written against.
     file: String,
 }
@@ -625,6 +808,11 @@ impl SymbolGraph {
             aliases: HashSet::new(),
             declared_macros: HashSet::new(),
             opaque_aliases: HashSet::new(),
+            memo: RefCell::new(HashMap::new()),
+            callable_names: HashSet::new(),
+            derives: HashMap::new(),
+            file_types: HashMap::new(),
+            enums: HashSet::new(),
         };
         for f in files.iter().filter(|f| is_rust(&f.path)) {
             let (krate, module) = crate_and_module(&f.path);
@@ -639,6 +827,12 @@ impl SymbolGraph {
                 idx.file_crate.insert(f.path.clone(), owner);
             }
             idx.opaque_aliases.extend(f.opaque_aliases.iter().cloned());
+            for d in &f.derives {
+                idx.derives
+                    .entry((krate.clone(), d.owner.clone()))
+                    .or_default()
+                    .extend(d.traits.iter().cloned());
+            }
             for d in &f.fields {
                 idx.fields
                     .entry((krate.clone(), d.owner.clone()))
@@ -673,6 +867,7 @@ impl SymbolGraph {
                 if matches!(s.kind, SymbolKind::Function | SymbolKind::Method)
                     && let Some(n) = s.symref.name()
                 {
+                    idx.callable_names.insert(n.to_owned());
                     idx.by_name
                         .entry((krate.clone(), n.to_owned()))
                         .or_default()
@@ -764,34 +959,39 @@ impl SymbolGraph {
     /// anything unproven give `None`.
     fn receiver_ty(&self, idx: &Index, caller: &Symref, r: &Receiver) -> Option<Ty> {
         let ty = self.receiver_ty_raw(idx, caller, r)?;
-        let real = idx.real_type_name(&ty.file, &ty.head);
-        (!idx.aliases.contains(&real)).then_some(ty)
+        (!idx.is_alias(&ty.file, &ty.head)).then_some(ty)
     }
 
     /// [`Self::receiver_ty`] without the final alias check (`Result` may be an alias that `?` still opens).
     fn receiver_ty_raw(&self, idx: &Index, caller: &Symref, r: &Receiver) -> Option<Ty> {
+        let key = (caller.clone(), r.clone());
+        if let Some(hit) = idx.memo.borrow().get(&key) {
+            return hit.clone();
+        }
+        let out = self.receiver_ty_uncached(idx, caller, r);
+        idx.memo.borrow_mut().insert(key, out.clone());
+        out
+    }
+
+    /// [`Self::receiver_ty_raw`] without the memo.
+    fn receiver_ty_uncached(&self, idx: &Index, caller: &Symref, r: &Receiver) -> Option<Ty> {
+        let file = caller.path();
         let ty = match r {
-            Receiver::SelfValue => Ty {
-                head: self.enclosing_impl_type(caller)?,
-                arg: None,
-                tuple: None,
-                bound: None,
-                qual: Vec::new(),
-                file: caller.path().to_owned(),
-            },
-            Receiver::Typed(t) => Ty {
-                head: t.clone(),
-                arg: None,
-                tuple: None,
-                bound: None,
-                qual: Vec::new(),
-                file: caller.path().to_owned(),
-            },
+            Receiver::SelfValue => Ty::plain(self.enclosing_impl_type(caller)?, file),
+            Receiver::Typed(t) => Ty::plain(t.clone(), file),
+            Receiver::Decl(shape) => Ty::from_shape(shape, file),
             Receiver::Field(base, field) => {
                 let b = self.receiver_ty(idx, caller, base)?;
                 let (krate, real) = self.type_home(idx, &b);
-                idx.field_type(&krate, &real, field)?
+                match idx.field_type(&b, &krate, &real, field) {
+                    Some(t) => t,
+                    None if idx.is_std_type(&b) => {
+                        Ty::from_shape(&stdtypes::ext_field(&b.head, field)?, &b.file)
+                    }
+                    None => return None,
+                }
             }
+            Receiver::Variant { path, field } => self.variant_field_ty(idx, caller, path, field)?,
             Receiver::Ret(call) => self.ret_ty(idx, caller, call)?,
             Receiver::Unwrap(inner) => {
                 let t = self.receiver_ty_raw(idx, caller, inner)?;
@@ -800,35 +1000,206 @@ impl SymbolGraph {
                 {
                     return None;
                 }
-                let head = t.arg?;
-                let bound = t.bound.filter(|_| head == "Self");
-                Ty {
-                    head,
-                    arg: None,
-                    tuple: None,
-                    bound,
-                    qual: Vec::new(),
-                    file: t.file,
+                match (t.arg, t.tuple) {
+                    (Some(head), _) => {
+                        let bound = t.bound.filter(|_| head == "Self");
+                        Ty {
+                            bound,
+                            ..Ty::plain(head, &t.file)
+                        }
+                    }
+                    (None, Some(elems)) => Ty {
+                        tuple: Some(elems),
+                        ..Ty::plain(stdtypes::TUPLE.to_owned(), &t.file)
+                    },
+                    (None, None) => return None,
                 }
             }
             Receiver::Elem(inner, i) => {
                 let t = self.receiver_ty_raw(idx, caller, inner)?;
-                Ty {
-                    head: t.tuple?.get(*i)?.clone()?,
-                    arg: None,
-                    tuple: None,
-                    bound: None,
-                    qual: Vec::new(),
-                    file: t.file,
+                if t.head != stdtypes::TUPLE {
+                    return None;
+                }
+                Ty::plain(t.tuple?.get(*i)?.clone()?, &t.file)
+            }
+            Receiver::Mapped { recv, result, kind } => {
+                self.mapped_ty(idx, caller, recv, result, *kind)?
+            }
+            Receiver::Collected { shape, source } => {
+                let t = self.std_ty(idx, caller, source)?;
+                let item = stdtypes::item_of(&t.shape())?;
+                Ty::from_shape(&stdtypes::collect_into(&shape.head, &item)?, &t.file)
+            }
+            Receiver::Item(inner) => {
+                let t = self.std_ty(idx, caller, inner)?;
+                Ty::from_shape(&stdtypes::item_of(&t.shape())?, &t.file)
+            }
+            Receiver::Index(inner) => {
+                let t = self.std_ty(idx, caller, inner)?;
+                Ty::from_shape(&stdtypes::index_of(&t.shape())?, &t.file)
+            }
+            Receiver::Slice(inner) => {
+                let t = self.std_ty(idx, caller, inner)?;
+                match t.head.as_str() {
+                    "String" | "str" => Ty::plain("str".to_owned(), &t.file),
+                    "Vec" | "[]" | "VecDeque" => Ty {
+                        arg: t.arg,
+                        tuple: t.tuple,
+                        ..Ty::plain(stdtypes::SLICE.to_owned(), &t.file)
+                    },
+                    _ => return None,
                 }
             }
-            Receiver::Bound(_) | Receiver::Expr => return None,
+            Receiver::Assoc(base, name) => {
+                let b = self.receiver_ty(idx, caller, base)?;
+                let (krate, real) = self.type_home(idx, &b);
+                idx.field_type(&b, &krate, &real, name)?
+            }
+            Receiver::Unit(name) => {
+                let t = Ty::plain(name.clone(), file);
+                let (krate, real) = self.type_home(idx, &t);
+                let key = (krate, real);
+                if idx.struct_count.get(&key) != Some(&1) || idx.enums.contains(&key) {
+                    return None;
+                }
+                t
+            }
+            Receiver::Bound(_) | Receiver::Tuple(_) | Receiver::Expr => return None,
         };
-        Some(ty.with_split_path())
+        Some(idx.canonical_ext(ty.dyn_normalized().with_split_path()))
+    }
+
+    /// The declared type of field `field` of the enum variant named by the pattern `path` (`Kind::A`, `Self::A`).
+    fn variant_field_ty(
+        &self,
+        idx: &Index,
+        caller: &Symref,
+        path: &[String],
+        field: &str,
+    ) -> Option<Ty> {
+        let file = caller.path();
+        let (variant, owner) = path.split_last()?;
+        let enum_ty = match owner {
+            [] => return None,
+            [only] if only == "Self" => Ty::plain(self.enclosing_impl_type(caller)?, file),
+            _ => Ty::plain(owner.join("::"), file),
+        };
+        let b = enum_ty.with_split_path();
+        if idx.is_alias(&b.file, &b.head) {
+            return None;
+        }
+        let (krate, real) = self.type_home(idx, &b);
+        idx.field_type(&b, &krate, &real, &format!("{variant}.{field}"))
+    }
+
+    /// The type of `recv.map(|x| body)` where `recv` is a standard iterator, `Option` or `Result` and `result` types `body`.
+    fn mapped_ty(
+        &self,
+        idx: &Index,
+        caller: &Symref,
+        recv: &Receiver,
+        result: &Receiver,
+        kind: MapKind,
+    ) -> Option<Ty> {
+        let t = self.std_ty(idx, caller, recv)?;
+        let r = self.receiver_ty(idx, caller, result)?;
+        if r.bound.is_some() || !r.qual.is_empty() {
+            return None;
+        }
+        let head = match (kind, t.head.as_str()) {
+            (MapKind::Map | MapKind::FilterMap, stdtypes::ITER) => stdtypes::ITER,
+            (MapKind::Map | MapKind::AndThen, "Option") => "Option",
+            (MapKind::Map | MapKind::AndThen, "Result") => "Result",
+            _ => return None,
+        };
+        let item = match kind {
+            MapKind::Map => r.shape(),
+            // The closure returns the `Option`/`Result` (or `Option` of the item) itself.
+            MapKind::AndThen | MapKind::FilterMap => {
+                if !matches!(r.head.as_str(), "Option" | "Result")
+                    || idx.opaque_aliases.contains(&r.head)
+                {
+                    return None;
+                }
+                stdtypes::inner(&r.shape())?
+            }
+        };
+        Some(Ty::from_shape(&stdtypes::wrap(head, &item), &r.file))
+    }
+
+    /// The type of `r` when it is a standard type this repository does not shadow (so the standard method tables apply).
+    fn std_ty(&self, idx: &Index, caller: &Symref, r: &Receiver) -> Option<Ty> {
+        let t = self.receiver_ty_raw(idx, caller, r)?;
+        let real = idx.real_type_name(&t.file, &t.head);
+        // `Result` and `Option` aliases keep the Ok/Some type first unless recorded as opaque.
+        let alias = !matches!(real.as_str(), "Result" | "Option") && idx.is_alias(&t.file, &t.head);
+        let std = t.qual.is_empty()
+            && stdtypes::is_std_head(&t.head)
+            && !idx.declared_types.contains(&real)
+            && !alias
+            && !idx.opaque_aliases.contains(&real);
+        std.then_some(t)
+    }
+
+    /// The return type of a call whose callee is the standard library's, not looked up in the repository.
+    ///
+    /// A standard receiver's method (`v.iter()`, `m.get(..)`); `Clone::clone` returns `Self`;
+    /// `ToString::to_string` returns `String` unless the repository declares a method of that name
+    /// that could shadow it; and standard functions (`fs::read_to_string`, `Path::new`).
+    fn known_ret_ty(&self, idx: &Index, caller: &Symref, call: &CallRef) -> Option<Ty> {
+        // frob:ticket 01M3ZVQAA1DNM1BJ5TZG5B3CFR
+        if let Some(recv) = &call.recv {
+            if let Some(t) = self.std_ty(idx, caller, recv)
+                && let Some(shape) = stdtypes::step(&t.shape(), &call.name, call.args)
+            {
+                return Some(Ty::from_shape(&shape, &t.file));
+            }
+            if call.args == 0 {
+                if call.name == "clone"
+                    && let Some(t) = self.receiver_ty(idx, caller, recv)
+                    && t.bound.is_none()
+                {
+                    return Some(t);
+                }
+                if call.name == "to_string" && !idx.callable_names.contains("to_string") {
+                    return Some(Ty::plain("String".to_owned(), caller.path()));
+                }
+            }
+            return None;
+        }
+        let module = call.path.last()?;
+        let shape = stdtypes::assoc_fn(module, &call.name)?;
+        idx.is_std_path(caller.path(), &call.path)
+            .then(|| Ty::from_shape(&shape, caller.path()))
+    }
+
+    /// `Type::from(x)` is `Type` whichever `From` impl it picks: the type of the one impl type among `nodes`.
+    fn impl_owner_ty(&self, nodes: &[NodeIndex]) -> Option<Ty> {
+        let from_impl = |n: NodeIndex| {
+            self.graph[n].implements.as_deref().is_some_and(|t| {
+                t.rsplit("::")
+                    .next()
+                    .is_some_and(|l| l.starts_with("From<"))
+            })
+        };
+        if nodes.is_empty() || !nodes.iter().all(|&n| from_impl(n)) {
+            return None;
+        }
+        let owners: BTreeSet<String> = nodes
+            .iter()
+            .filter_map(|&n| self.enclosing_impl_type(&self.graph[n].symref))
+            .collect();
+        let (Some(owner), 1) = (owners.first(), owners.len()) else {
+            return None;
+        };
+        Some(Ty::plain(owner.clone(), self.graph[nodes[0]].symref.path()))
     }
 
     /// The declared return type of the one concrete callee that `call` resolves to.
     fn ret_ty(&self, idx: &Index, caller: &Symref, call: &CallRef) -> Option<Ty> {
+        if let Some(t) = self.known_ret_ty(idx, caller, call) {
+            return Some(t);
+        }
         let q = Query {
             name: &call.name,
             qualifier: call.path.last().map(String::as_str),
@@ -838,12 +1209,16 @@ impl SymbolGraph {
             args: Some(call.args),
         };
         let outcome = self.resolve_site(idx, caller, &q, call.recv.as_ref(), LocalBinding::None);
+        if call.name == "from"
+            && call.recv.is_none()
+            && let Outcome::Hit(nodes, _) = &outcome
+            && let Some(t) = self.impl_owner_ty(nodes)
+        {
+            return Some(t);
+        }
         let (n, bounds) = match outcome {
             Outcome::Hit(nodes, Status::Must) => {
                 let [n] = nodes[..] else { return None };
-                if self.is_trait_member(n) {
-                    return None;
-                }
                 (n, None)
             }
             // A call through trait bounds: the trait's declaration says what comes back.
@@ -859,17 +1234,31 @@ impl SymbolGraph {
         };
         let rec = &self.graph[n];
         let ret = rec.signature.as_ref()?.ret.as_ref()?;
+        // A trait declaration says what comes back unless it says `Self`, which only the implementing type knows.
+        let says_self = [Some(&ret.head), ret.arg.as_ref(), ret.arg2.as_ref()]
+            .into_iter()
+            .flatten()
+            .any(|h| h == "Self");
+        if bounds.is_none() && self.is_trait_member(n) && says_self {
+            return None;
+        }
         let sub = |s: &str| match (s, &bounds) {
             ("Self", None) => self.enclosing_impl_type(&rec.symref),
             _ => Some(s.to_owned()),
         };
-        Some(Ty {
+        let ty = Ty {
             tuple: ret.tuple.clone(),
             head: sub(&ret.head)?,
             arg: ret.arg.as_deref().and_then(sub),
+            arg2: ret.arg2.as_deref().and_then(sub),
             bound: bounds,
             qual: Vec::new(),
             file: rec.symref.path().to_owned(),
+        };
+        Some(if ty.bound.is_none() {
+            ty.dyn_normalized()
+        } else {
+            ty
         })
     }
 
@@ -907,15 +1296,104 @@ impl SymbolGraph {
         }
         match qualifier {
             Some(qual) => {
+                if let Some(o) = self.resolve_crate_path(idx, file, q) {
+                    return o;
+                }
                 if let Some(o) = self.resolve_extern(idx, file, q) {
                     return o;
                 }
-                self.resolve_qualified(caller, qual, named, uses)
+                let o = self.resolve_qualified(caller, qual, named, uses);
+                if matches!(o, Outcome::Gap(GapReason::Unbound))
+                    && let Some(d) = self.derived_path_call(idx, caller, qual, name)
+                {
+                    return d;
+                }
+                o
             }
             None => self
                 .resolve_extern(idx, file, q)
                 .unwrap_or_else(|| self.resolve_bare(idx, &krate, file, name, named, uses)),
         }
+    }
+
+    /// `name` called on the type `ty` (declared once in crate `home`) that derives it rather than declaring it.
+    ///
+    /// A standard derive (`Clone`, `Default`, ..) generates code outside the repository: nothing to link and
+    /// nothing unknown. A derive named like a repository trait that declares `name` reaches that declaration (Must).
+    fn derived_call(
+        &self,
+        idx: &Index,
+        caller: &Symref,
+        home: &str,
+        ty: &str,
+        name: &str,
+    ) -> Option<Outcome> {
+        // frob:ticket 01M3ZVQAA1DNM1BJ5TZG5B3CFR
+        let key = (home.to_owned(), ty.to_owned());
+        if idx.struct_count.get(&key) != Some(&1) {
+            return None;
+        }
+        let derives = idx.derives.get(&key)?;
+        if derives
+            .iter()
+            .any(|d| stdtypes::std_derive_methods(d).contains(&name))
+        {
+            tracing::debug!(
+                ty,
+                name,
+                "call generated by a standard derive: no callee to link"
+            );
+            return Some(Outcome::Local);
+        }
+        let decls: BTreeSet<NodeIndex> = idx
+            .callables_in_reach(caller, name)
+            .into_iter()
+            .filter(|&n| {
+                self.is_trait_member(n)
+                    && self.graph[n]
+                        .symref
+                        .segments()
+                        .len()
+                        .checked_sub(2)
+                        .is_some_and(|i| {
+                            derives
+                                .iter()
+                                .any(|d| d == base_segment(&self.graph[n].symref.segments()[i]))
+                        })
+            })
+            .collect();
+        tracing::debug!(
+            ty,
+            name,
+            declarations = decls.len(),
+            "call through a repository derive"
+        );
+        match decls.len() {
+            0 => None,
+            1 => Some(Outcome::Hit(decls.into_iter().collect(), Status::Must)),
+            _ => Some(Outcome::Hit(decls.into_iter().collect(), Status::May)),
+        }
+    }
+
+    /// `Type::name(..)` where `Type` derives the trait that declares or generates `name` (`FrontmatterSchema::describe()`).
+    fn derived_path_call(
+        &self,
+        idx: &Index,
+        caller: &Symref,
+        qual: &str,
+        name: &str,
+    ) -> Option<Outcome> {
+        let written = if qual == "Self" {
+            self.enclosing_impl_type(caller)?
+        } else {
+            qual.to_owned()
+        };
+        let t = Ty::plain(written, caller.path());
+        if idx.is_alias(&t.file, &t.head) {
+            return None;
+        }
+        let (home, real) = self.type_home(idx, &t);
+        self.derived_call(idx, caller, &home, &real, name)
     }
 
     /// `x.name(..)`: the receiver's own methods when its type is proven, else every method that fits the call shape.
@@ -969,15 +1447,22 @@ impl SymbolGraph {
                 .filter(|&n| fits(n) && parent_seg(n).as_deref() == Some(t.as_str()))
                 .collect();
             if let [one] = mine.as_slice() {
+                let own_file = self.graph[*one].symref.path() == caller.path();
                 let unique = idx
                     .struct_count
-                    .get(&(home, t.clone()))
-                    .is_none_or(|&c| c <= 1);
+                    .get(&(home.clone(), t.clone()))
+                    .is_none_or(|&c| c <= 1)
+                    || (own_file && idx.declared_once_in(caller.path(), &home, &t));
                 let sure = self.graph[*one].implements.is_none() && unique;
                 return Outcome::Hit(mine, if sure { Status::Must } else { Status::May });
             }
             if !mine.is_empty() {
                 return Outcome::Hit(mine, Status::May);
+            }
+            if !idx.deref_types.contains(&t)
+                && let Some(o) = self.derived_call(idx, caller, &home, &t, q.name)
+            {
+                return o;
             }
             if !idx.deref_types.contains(&t) {
                 // The type has no such method of its own: only trait-provided methods remain
@@ -1311,6 +1796,55 @@ impl SymbolGraph {
         })
     }
 
+    /// `crate::a::name(..)` and `crate::Type::name(..)` in a library or binary source file: the items at that
+    /// absolute path of the file's own crate (following `pub use` re-exports); `None` when nothing is found there.
+    ///
+    /// `self::` and `super::` are not resolved: an inline `mod` changes what they mean and the file alone cannot say.
+    fn resolve_crate_path(&self, idx: &Index, file: &str, q: &Query<'_>) -> Option<Outcome> {
+        let [first, rest @ ..] = q.path else {
+            return None;
+        };
+        let in_src = file.starts_with("src/") || file.contains("/src/");
+        if first != "crate" || !in_src {
+            return None;
+        }
+        let krate = crate_and_module(file).0;
+        let mut full = rest.to_vec();
+        full.push(q.name.to_owned());
+        let mut found: Vec<NodeIndex> = idx
+            .canonical_paths(&krate, &full, 0)
+            .into_iter()
+            .filter_map(|key| idx.by_item.get(&key))
+            .flatten()
+            .copied()
+            .filter(|&n| {
+                matches!(
+                    self.graph[n].kind,
+                    SymbolKind::Function | SymbolKind::Method
+                )
+            })
+            .collect();
+        found.sort();
+        found.dedup();
+        tracing::debug!(
+            file,
+            name = q.name,
+            candidates = found.len(),
+            "crate-relative path call"
+        );
+        match found.as_slice() {
+            [] => None,
+            [one] => {
+                let r = &self.graph[*one];
+                let concrete = !self.is_trait_member(*one)
+                    && (r.kind == SymbolKind::Function || r.implements.is_none());
+                let status = if concrete { Status::Must } else { Status::May };
+                Some(Outcome::Hit(found, status))
+            }
+            _ => Some(Outcome::Hit(found, Status::May)),
+        }
+    }
+
     /// `Q::name(..)`: candidates whose enclosing type or module is `Q`.
     fn resolve_qualified(
         &self,
@@ -1497,7 +2031,7 @@ impl SymbolGraph {
                 .and_then(|u| u.target.rsplit("::").next().map(str::to_owned))
                 .unwrap_or_else(|| q.to_owned()),
         };
-        (!idx.aliases.contains(&real)).then_some(CallQualifier::Path(real))
+        (!idx.is_alias(call.caller.path(), &real)).then_some(CallQualifier::Path(real))
     }
 
     /// Whether the qualified unresolved call `q` could be a call of `rec` (never guesses: doubt is `Maybe`).

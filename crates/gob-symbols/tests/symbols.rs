@@ -782,7 +782,7 @@ fn macro_arguments_stay_may_for_declared_macros_and_shadowed_names() {
     );
     // Arguments that are not plain expressions fall back to the token scan (May).
     let odd = "struct S; impl S { fn ok(&self) -> bool { true } }\n\
-               fn t(s: S) { assert!(matches!(s.ok(), true | false)); }\n";
+               fn t(s: S) { assert!(s.ok() => true); }\n";
     let g = graph_of(&[("c/src/lib.rs", odd)]);
     assert!(
         call_status(&g, "lib.rs::t")

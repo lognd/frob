@@ -19,7 +19,7 @@ use crate::registry::adapter_for;
 
 /// Bump when extraction output changes for the same input; part of the
 /// cache key.
-pub const EXTRACTOR_VERSION: u32 = 13;
+pub const EXTRACTOR_VERSION: u32 = 14;
 
 /// Counters from one [`build_graph_with_stats`] run.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
