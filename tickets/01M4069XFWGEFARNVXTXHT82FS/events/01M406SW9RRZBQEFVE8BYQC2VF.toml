@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["dist-workspace.toml", ".github/workflows/release.yml", "Cargo.toml", "crates/frob/Cargo.toml"]
+new = ["dist-workspace.toml", ".github/workflows/release.yml", "Cargo.toml", "crates/frob/Cargo.toml", "docs/decisions/**"]
+at = "2026-10-03T06:21:42Z"
+actor = "lognd"
+rev = 1
