@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T18:11:40Z"
-updated = "2026-10-03T18:28:08Z"
+updated = "2026-10-03T18:28:09Z"
 scope = ["crates/frob-lease/src/overlap.rs", "crates/frob-lease/tests/**", "docs/design/tickets.md", "crates/frob-lease/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given crates/*/src/** and crates/frob-*/src/lib.rs, when overlap is computed, then they overlap"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a property test over random path sets and glob pairs from a small alphabet, when the segment test says disjoint, then no generated path matches both globs"

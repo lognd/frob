@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T18:28:09Z"
+digest = "101c9e1c09e8fb915882fb79444223627782dacec71a221a1c4d6a3778c99b51"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6777c61d-4b68-4bba-83cf-863794df81e7 with nextest profile: default
+    Starting 1 test across 3 binaries (29 tests skipped)
+        PASS [   0.023s] frob-lease overlap::tests::per_crate_wildcards_are_disjoint_when_segments_differ
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.024s] 1 test run: 1 passed, 29 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-lease -E 'test(per_crate_wildcards_are_disjoint_when_segments_differ)'"
+size = 571
+status = "measured"
+tests = ["overlap::tests::per_crate_wildcards_are_disjoint_when_segments_differ"]
+at = "2026-10-03T18:28:09Z"
+actor = "lognd"
+rev = 1
