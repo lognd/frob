@@ -8,9 +8,9 @@ priority = "medium"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T09:01:09Z"
-updated = "2026-10-03T10:09:31Z"
+updated = "2026-10-03T15:28:28Z"
 idempotency_key = "m2-rel-e2e-usage-lists-missing-args"
-labels = ["milestone:2", "area:release", "release:0.532.0"]
+labels = ["milestone:2", "area:release"]
 scope = ["crates/gob-cli/src/cli.rs", "crates/gob-cli/tests/usage_missing_args.rs", "crates/frob/tests/e2e_init_loop.rs"]
 
 [[acceptance]]
