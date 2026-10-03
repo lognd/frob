@@ -7,7 +7,7 @@ priority = "critical"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T19:47:13Z"
-updated = "2026-10-03T20:01:38Z"
+updated = "2026-10-03T20:03:14Z"
 scope = ["crates/grimble-model/tests/**", "crates/frob-release/tests/**", "crates/gob-git/tests/**", "crates/frob/src/init.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/snapshots/cli__init_frob_toml.snap", "crates/frob/tests/common/**"]
 
 [[acceptance]]
