@@ -160,6 +160,10 @@ struct PendingUse {
 }
 
 /// What a call's function expression is, read from the syntax alone.
+#[allow(
+    clippy::struct_excessive_bools,
+    reason = "construct/dynamic/method/opaque are independent syntactic facts of one call head"
+)]
 struct CallTarget {
     name: String,
     qualifier: Option<String>,

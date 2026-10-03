@@ -21,6 +21,7 @@ use gob_symbols::{
 };
 use gob_text::{FileInterner, Span};
 
+use crate::deps::CrateDeps;
 use crate::rules::Cov001;
 use crate::util::{finding, rule_id};
 
@@ -133,6 +134,7 @@ fn poison_map(
     graph: &SymbolGraph,
     tests: &BTreeSet<Symref>,
     by_name: &HashMap<&str, Vec<&SymbolRecord>>,
+    deps: &mut CrateDeps,
 ) -> HashMap<Symref, Poison> {
     let mut poisoned: HashSet<Symref> = HashSet::new();
     for t in tests {
@@ -148,9 +150,14 @@ fn poison_map(
         let Some(cands) = e.name.as_deref().and_then(|n| by_name.get(n)) else {
             continue;
         };
+        let linked: Vec<&SymbolRecord> = cands
+            .iter()
+            .copied()
+            .filter(|r| deps.file_can_reach(e.from.path(), r.symref.path()))
+            .collect();
         let admitted: Vec<(&SymbolRecord, Admit)> = match &e.qualifier {
-            None => cands.iter().map(|r| (*r, Admit::Maybe)).collect(),
-            Some(q) => cands
+            None => linked.iter().map(|r| (*r, Admit::Maybe)).collect(),
+            Some(q) => linked
                 .iter()
                 .map(|r| (*r, graph.admits(q, r)))
                 .filter(|(_, a)| *a != Admit::No)
@@ -183,20 +190,39 @@ fn poison_map(
     out
 }
 
-/// The first May call edge into each callable that is itself reached over May-or-better edges.
+/// For each callable reached only through May edges, the ambiguous call that first made it so.
+///
+/// Walks forward from every May edge leaving the Must-reached set; callables
+/// further down inherit the label of the May edge that started their chain.
 fn may_sites<'g>(
     graph: &'g SymbolGraph,
-    maybe: &HashSet<Symref>,
+    must: &HashSet<Symref>,
 ) -> HashMap<&'g Symref, &'g StatusEdge> {
     let mut out: HashMap<&Symref, &StatusEdge> = HashMap::new();
+    let mut calls_from: HashMap<&Symref, Vec<&StatusEdge>> = HashMap::new();
+    let mut queue: VecDeque<(&Symref, &StatusEdge)> = VecDeque::new();
     for e in graph
         .edges_with_status()
         .iter()
-        .filter(|e| e.kind == EdgeKind::Calls && e.status == Status::May && e.line.is_some())
-        .filter(|e| maybe.contains(&e.from))
+        .filter(|e| e.kind == EdgeKind::Calls && e.to.is_some())
     {
-        if let Some(to) = &e.to {
-            out.entry(to).or_insert(e);
+        calls_from.entry(&e.from).or_default().push(e);
+        if let (Some(to), true) = (&e.to, e.status == Status::May && must.contains(&e.from)) {
+            if !must.contains(to) && !out.contains_key(to) && e.line.is_some() {
+                out.insert(to, e);
+                queue.push_back((to, e));
+            }
+        }
+    }
+    while let Some((n, label)) = queue.pop_front() {
+        for e in calls_from.get(n).into_iter().flatten() {
+            if let Some(to) = &e.to
+                && !must.contains(to)
+                && !out.contains_key(to)
+            {
+                out.insert(to, label);
+                queue.push_back((to, label));
+            }
         }
     }
     out
@@ -275,9 +301,9 @@ pub(crate) fn cov001(
             by_name.entry(n).or_default().push(r);
         }
     }
-    let poison = poison_map(graph, &tests, &by_name);
-    let maybe_sites = may_sites(graph, &maybe);
+    let poison = poison_map(graph, &tests, &by_name, &mut CrateDeps::new(root));
     let reached = must;
+    let maybe_sites = may_sites(graph, &reached);
     let covered = declared(graph, directives);
     tracing::debug!(
         tests = tests.len(),

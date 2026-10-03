@@ -58,6 +58,7 @@ mod collect;
 mod comments;
 mod config;
 mod cov;
+mod deps;
 mod doc;
 mod exc;
 mod inv;
