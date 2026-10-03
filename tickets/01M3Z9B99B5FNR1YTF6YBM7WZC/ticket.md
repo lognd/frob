@@ -16,7 +16,7 @@ scope = ["crates/frob-land/**"]
 
 [[acceptance]]
 text = "Given a land blocked by one error among many warnings, when the refusal is printed, then the error is listed first and warnings are only counted"
-bound = false
+bound = true
 +++
 
 When the land check is red, the refusal message enumerates the first ten findings regardless of severity, so a land blocked by one TOOL001 error showed ten COV001 warnings and hid the cause. List only the findings at or above fail_on (and required Unresolved), blocking first, with the count of the rest.
