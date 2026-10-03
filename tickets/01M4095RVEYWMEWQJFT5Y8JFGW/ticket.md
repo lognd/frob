@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T07:03:08Z"
-updated = "2026-10-03T11:46:09Z"
+updated = "2026-10-03T11:48:37Z"
 labels = ["release:0.532.0"]
 scope = ["crates/frob/src/ticket/**", "crates/frob/src/init.rs", "crates/frob/tests/pm_wiring.rs", "crates/frob/tests/cli.rs", ".gitattributes", "docs/design/tickets.md", "crates/frob-pm/src/merge.rs", "changelog.d/01M4095RVEYWMEWQJFT5Y8JFGW.added.md", "docs/reference/cli/frob.md"]
 +++
