@@ -154,6 +154,7 @@ fn init_materializes_the_owner_as_the_attester() {
 #[test]
 fn an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it() {
     // frob:tests crates/frob/src/milestone_evidence_cmd.rs::add_evidence
+    // frob:ticket 01M415HTAQ7YSKXW09DG39YHBW
     // frob:tests crates/frob/src/milestone_cmd.rs::MilestoneView
     let repo = Repo::new();
     let head = git(repo.dir.path(), &["rev-parse", "HEAD"]);
@@ -162,7 +163,7 @@ fn an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it() {
         &ws,
         "0.532.0",
         &args(
-            "two outside repos managed for two cycles, \u{201c}no loss\u{201d}\nand done",
+            "two outside repos managed for two cycles, \"no loss\"\nand done",
             &["https://example.com/log", &head[..8]],
             &[1],
         ),
@@ -191,7 +192,7 @@ fn an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it() {
     );
     assert_eq!(
         c["bound_by"][0]["attestation"]["statement"],
-        "two outside repos managed for two cycles, \u{201c}no loss\u{201d}\nand done"
+        "two outside repos managed for two cycles, \"no loss\"\nand done"
     );
     assert_eq!(criterion(&repo, 2)["attested"], false);
     let list = repo.ok(&["milestone", "evidence", "list", "0.532.0"]);
@@ -402,4 +403,54 @@ fn removing_a_criterion_reports_the_evidence_it_loses() {
     let empty = Repo::new();
     let none = empty.ok(&["milestone", "criterion", "remove", "0.532.0", "1"]);
     assert_eq!(none["data"]["lost_evidence"], serde_json::json!([]));
+}
+
+#[test]
+fn a_non_ascii_statement_is_a_usage_error_on_both_verbs_and_writes_nothing() {
+    // frob:ticket 01M415HTAQ7YSKXW09DG39YHBW
+    // frob:tests crates/frob-evidence/src/attestation.rs::attest
+    // frob:tests crates/frob/src/milestone_evidence_cmd.rs::add_evidence
+    let repo = Repo::new();
+    let t = repo.ok(&[
+        "ticket",
+        "new",
+        "--title",
+        "Soak",
+        "--type",
+        "task",
+        "--acceptance",
+        "a thing",
+    ]);
+    let id = t["data"]["id"].as_str().expect("id").to_owned();
+    let ws = repo.workspace();
+    let human = Presence::interactive();
+    let bad = args("caf\u{e9}", &[], &[1]);
+
+    let err = add_evidence(&ws, "0.532.0", &bad, &human).expect_err("refused");
+    let gob_cli::CliError::Refusal(r) = err else {
+        panic!("a refusal, got {err:?}")
+    };
+    assert_eq!(r.code, "E-ATTEST-NON-ASCII");
+    assert!(
+        r.message.contains("\\u{00E9}") && r.message.contains("position 4"),
+        "{}",
+        r.message
+    );
+    assert_eq!(criterion(&repo, 1)["bound"], false, "milestone untouched");
+
+    // The ticket verb captures through the same CaptureArgs::capture.
+    let err = bad.capture(&ws, &human).expect_err("refused");
+    assert!(matches!(err, frob_evidence::EvidenceError::NonAscii { .. }));
+    let bad_fact = args("ok", &["https://example.com/\u{e9}"], &[1]);
+    assert!(bad_fact.capture(&ws, &human).is_err());
+    let list = repo.ok(&["ticket", "evidence", "list", &id]);
+    assert_eq!(list["data"]["count"], 0, "{list}");
+    assert_eq!(
+        git(repo.dir.path(), &["status", "--porcelain"]),
+        "",
+        "nothing written"
+    );
+
+    let good = args("cafe", &[], &[1]);
+    assert!(add_evidence(&ws, "0.532.0", &good, &human).is_ok());
 }
