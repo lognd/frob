@@ -75,8 +75,9 @@ fn name_and_version(identity: &str, language: &str) -> (String, String) {
 
 /// One fidelity entry per language in `seen` (adapter tag to file count), sorted by language.
 ///
-/// `grmb` is always present: it is grimble's own language and the run read the model through it.
-pub fn fidelity_json(seen: &BTreeMap<String, usize>) -> Vec<Value> {
+/// `grmb` is always present: it is grimble's own language and the run read the model through
+/// it, so the rules `not_applicable` names (their entities are model facts) are listed on its row.
+pub fn fidelity_json(seen: &BTreeMap<String, usize>, not_applicable: &[String]) -> Vec<Value> {
     let mut rows: BTreeMap<String, Value> = BTreeMap::new();
     for a in known_adapters() {
         let language = a.language();
@@ -92,7 +93,7 @@ pub fn fidelity_json(seen: &BTreeMap<String, usize>) -> Vec<Value> {
                 "adapter_version": adapter_version,
                 "level": a.fidelity().to_string(),
                 "capabilities": capabilities_of(language),
-                "not_applicable_rules": Vec::<String>::new(),
+                "not_applicable_rules": if language == "grmb" { not_applicable } else { &[] },
             }),
         );
     }

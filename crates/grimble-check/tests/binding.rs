@@ -122,6 +122,55 @@ fn a_summary_survives_its_encoding() {
         anchor: "a".to_owned(),
     });
     s.subjects.insert("SYS003", 7);
+    s.not_applicable.insert("SYS009", "no flow".to_owned());
     assert_eq!(BindSummary::decode(&s.encode()), Some(s));
     assert_eq!(BindSummary::decode(b"{}"), None);
+}
+
+// frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
+// frob:tests crates/grimble-check/src/product.rs::Grimble
+#[test]
+fn rules_without_subjects_are_not_applicable_and_never_zero_subject_rows() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
+    write(
+        dir.path(),
+        "design/m.grmb",
+        "grimble = \"2\";\nmodule m;\n\nnode a : trusted { owns \"src/**\"; }\nnode d : trusted { owns \"design/**\"; }\n",
+    );
+    write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
+    let r = run(dir.path(), &CheckOptions::default()).unwrap();
+    let doc = sibling_document(&r);
+    let na = ["SYS003", "SYS008", "SYS009", "SYS010", "SYS011"];
+    let grmb = doc["fidelity"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["language"] == "grmb")
+        .unwrap();
+    let listed: Vec<&str> = grmb["not_applicable_rules"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_str().unwrap())
+        .collect();
+    for rule in na {
+        assert!(
+            listed.contains(&rule),
+            "{rule} in not_applicable_rules: {listed:?}"
+        );
+        assert!(r.not_applicable.contains_key(rule));
+    }
+    for row in doc["rules"].as_array().unwrap() {
+        let rule = row["rule"].as_str().unwrap();
+        assert!(!na.contains(&rule), "{rule} must not appear as a rule row");
+        let measured = row["subjects_examined"].as_u64().unwrap() > 0
+            || row["findings"].as_u64().unwrap() > 0
+            || row["unresolved"].as_u64().unwrap() > 0;
+        assert!(measured, "{rule} reported zero subjects");
+    }
 }

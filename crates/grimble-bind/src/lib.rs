@@ -26,6 +26,7 @@
 //!   registered; only `grimble:binds` is.
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
+// frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
 
 pub mod ack;
 pub mod code;
@@ -93,6 +94,50 @@ pub struct Binding {
     pub live: live::Live,
     /// For each flow anchor, the contract it names (`contract` clause) and that contract's compat.
     pub flow_contracts: BTreeMap<String, model::FlowContract>,
+    /// Rules whose whole scope is `NotApplicable` on this model, with the reason (never a finding).
+    pub not_applicable: BTreeMap<&'static str, &'static str>,
+}
+
+/// Rules that have nothing to examine, rather than something to certify, when the model lacks
+/// their subject entity, with the reason each reports.
+const SCOPED_RULES: [(&str, &str); 5] = [
+    (
+        "SYS003",
+        "the model has no operand, singleton clause (shape, ref, runnable), directive owner or flow end to examine",
+    ),
+    (
+        "SYS008",
+        "no grimble.lock entry names a gone anchor, so there is nothing to pair as a rename",
+    ),
+    (
+        "SYS009",
+        "the model declares no flow whose endpoint node owns code",
+    ),
+    (
+        "SYS010",
+        "the model declares no claim above proof level L1 that is not assumed",
+    ),
+    ("SYS011", "the model declares no vmodel ref or runnable"),
+];
+
+/// Move every [`SCOPED_RULES`] rule that examined zero subjects and reported nothing out of
+/// `subjects` and into the `NotApplicable` map with its reason.
+fn declare_not_applicable(
+    subjects: &mut BTreeMap<&'static str, usize>,
+    findings: &[BindFinding],
+) -> BTreeMap<&'static str, &'static str> {
+    let mut out = BTreeMap::new();
+    for (rule, reason) in SCOPED_RULES {
+        let idle = subjects.get(rule).is_none_or(|n| *n == 0);
+        if idle && !findings.iter().any(|f| f.rule == rule) {
+            tracing::info!(rule, reason, "rule is not applicable on this model");
+            subjects.remove(rule);
+            if let Some(id) = RULES.iter().copied().find(|r| *r == rule) {
+                out.insert(id, reason);
+            }
+        }
+    }
+    out
 }
 
 impl Binding {
@@ -137,7 +182,12 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
     let model = model::load(input.model);
     if model.entities.is_empty() {
         tracing::info!("no model entities; binding skipped");
-        return Binding::default();
+        let mut subjects = BTreeMap::new();
+        let not_applicable = declare_not_applicable(&mut subjects, &[]);
+        return Binding {
+            not_applicable,
+            ..Binding::default()
+        };
     }
     let code = code::Code::build(input.root, input.entries);
     let directives = directives::scan(&code);
@@ -198,10 +248,12 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
             );
         }
     }
+    let not_applicable = declare_not_applicable(&mut out.subjects, &out.findings);
     Binding {
         rows: rel.rows,
         findings: out.findings,
         subjects: out.subjects,
+        not_applicable,
         owners,
         edges: rel.edges,
         live,

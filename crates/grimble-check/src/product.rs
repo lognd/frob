@@ -53,6 +53,8 @@ pub(crate) struct Trace {
     pub bindings: Vec<serde_json::Value>,
     /// True when the binding result was read from the cache.
     pub bind_cached: bool,
+    /// Rules whose whole scope is `NotApplicable` on this model, with the reason.
+    pub not_applicable: BTreeMap<String, String>,
 }
 
 /// The grimble product driving the shared check pipeline.
@@ -169,6 +171,11 @@ impl Product for Grimble {
             trace.languages = languages;
             trace.bindings.clone_from(&binding.bindings);
             trace.bind_cached = bind_cached;
+            trace.not_applicable = binding
+                .not_applicable
+                .iter()
+                .map(|(rule, why)| ((*rule).to_owned(), why.clone()))
+                .collect();
         }
         Ok(Collected {
             shared: GrimbleShared {
@@ -227,6 +234,10 @@ impl Product for Grimble {
                     .collect()
             }),
         ]
+    }
+
+    fn applicable(&self, snap: &Snapshot<Self>, meta: &RuleMeta) -> bool {
+        !snap.inputs.binding.not_applicable.contains_key(meta.id)
     }
 
     fn repo_digest(&self, _snap: &Snapshot<Self>) -> Vec<u8> {

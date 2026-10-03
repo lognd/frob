@@ -7,6 +7,7 @@
 //! so another build never reuses the result.
 
 // frob:ticket 01M403Q1W4PMWRM8GXPRS10WX7
+// frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -20,7 +21,7 @@ use serde_json::{Value, json};
 use crate::config::{GrimbleTable, PRODUCT};
 
 /// Schema version of the stored payload; bump when the encoding below changes.
-const SCHEMA: u32 = 1;
+const SCHEMA: u32 = 2;
 
 /// What `grimble check` keeps of a [`Binding`]: document rows, SYS findings and subject counts.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -31,6 +32,8 @@ pub struct BindSummary {
     pub findings: Vec<BindFinding>,
     /// Subjects examined per rule.
     pub subjects: BTreeMap<&'static str, usize>,
+    /// Rules whose whole scope is `NotApplicable` on this model, with the reason.
+    pub not_applicable: BTreeMap<&'static str, String>,
 }
 
 impl BindSummary {
@@ -40,6 +43,11 @@ impl BindSummary {
             bindings: binding.bindings_json(),
             findings: binding.findings.clone(),
             subjects: binding.subjects.clone(),
+            not_applicable: binding
+                .not_applicable
+                .iter()
+                .map(|(rule, why)| (*rule, (*why).to_owned()))
+                .collect(),
         }
     }
 
@@ -64,6 +72,7 @@ impl BindSummary {
             "bindings": self.bindings,
             "findings": findings,
             "subjects": self.subjects,
+            "not_applicable": self.not_applicable,
         });
         serde_json::to_vec(&doc).unwrap_or_else(|e| unreachable!("a JSON value encodes: {e}"))
     }
@@ -97,10 +106,15 @@ impl BindSummary {
         for (rule, n) in doc["subjects"].as_object()? {
             subjects.insert(rule_of(rule)?, usize::try_from(n.as_u64()?).ok()?);
         }
+        let mut not_applicable = BTreeMap::new();
+        for (rule, why) in doc["not_applicable"].as_object()? {
+            not_applicable.insert(rule_of(rule)?, why.as_str()?.to_owned());
+        }
         Some(Self {
             bindings: doc["bindings"].as_array()?.clone(),
             findings,
             subjects,
+            not_applicable,
         })
     }
 }
