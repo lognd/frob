@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T09:28:59Z"
+digest = "a87187d1bc381bdb777e868b1c9d9386f8ee34cb45b5e2c834681bc350168024"
+exit_code = 0
+inline = """
+   Compiling gob-languages v0.0.0 (/home/logan/projects/frob-v2-wt/RSYVF9C/crates/gob-languages)
+   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/RSYVF9C/crates/gob-symbols)
+   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/RSYVF9C/crates/gob-directives)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.88s
+────────────
+ Nextest run ID 3227bea1-3442-4e3a-b20a-3cf5a03a943f with nextest profile: default
+    Starting 10 tests across 4 binaries (48 tests skipped)
+        PASS [   0.006s] ( 1/10) gob-directives::scan markdown_fenced_block_directive_still_text
+        PASS [   0.006s] ( 2/10) gob-directives::scan markdown_before_first_heading_is_file
+        PASS [   0.006s] ( 3/10) gob-directives::scan markdown_code_span_over_line_break_is_text
+        PASS [   0.006s] ( 4/10) gob-directives::scan markdown_escaped_backtick_does_not_open_a_span
+        PASS [   0.006s] ( 5/10) gob-directives::scan markdown_binds_to_preceding_heading
+        PASS [   0.006s] ( 6/10) gob-directives::scan markdown_inline_code_span_directive_is_text
+        PASS [   0.006s] ( 7/10) gob-directives::scan markdown_real_directive_beside_code_span_text_is_found
+        PASS [   0.006s] ( 8/10) gob-directives::scan markdown_comment_opening_a_line_is_an_html_block_not_span_content
+        PASS [   0.006s] ( 9/10) gob-directives::scan markdown_double_backtick_span_with_inner_backtick_is_text
+        PASS [   0.007s] (10/10) gob-directives::scan markdown_directive_right_after_code_span_counts
+────────────
+     Summary [   0.007s] 10 tests run: 10 passed, 48 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p gob-directives -E test(markdown_)"
+size = 1657
+status = "measured"
+tests = ["markdown_fenced_block_directive_still_text", "markdown_before_first_heading_is_file", "markdown_code_span_over_line_break_is_text", "markdown_escaped_backtick_does_not_open_a_span", "markdown_binds_to_preceding_heading", "markdown_inline_code_span_directive_is_text", "markdown_real_directive_beside_code_span_text_is_found", "markdown_comment_opening_a_line_is_an_html_block_not_span_content", "markdown_double_backtick_span_with_inner_backtick_is_text", "markdown_directive_right_after_code_span_counts"]
+at = "2026-10-03T09:28:59Z"
+actor = "lognd"
+rev = 1

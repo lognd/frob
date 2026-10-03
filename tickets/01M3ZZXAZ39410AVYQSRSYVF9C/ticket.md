@@ -8,14 +8,14 @@ points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T04:21:15Z"
-updated = "2026-10-03T09:27:47Z"
+updated = "2026-10-03T09:28:59Z"
 idempotency_key = "m2-directive-in-code-span"
 labels = ["milestone:2", "release:0.532.0"]
 scope = ["crates/gob-directives/**", "crates/gob-languages/**"]
 
 [[acceptance]]
 text = "Given a markdown line with an HTML comment holding a frob directive inside backticks, when directives are scanned, then no directive is reported"
-bound = false
+bound = true
 +++
 
 Found while landing ~2NAP90Y: the inline code span with an HTML comment containing frob:end, in docs/design/doc-consistency.md, raised DSL001 although it is code, not a comment. Markdown code spans and fenced blocks are text; directives inside them must be ignored (fenced blocks already are). Add a fixture with a directive-shaped HTML comment inside an inline code span.
