@@ -2,14 +2,14 @@
 id = "01M41B2P3B5KVG5FJ5B0X2ANR8"
 title = "Text view prints a verb's rendered lines raw instead of as an indented YAML-ish list"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T16:55:39Z"
-updated = "2026-10-03T16:55:39Z"
-scope = ["crates/gob-cli/**", "crates/frob/tests/snapshots/**"]
+updated = "2026-10-03T17:14:59Z"
+scope = ["crates/gob-cli/**", "crates/frob/tests/snapshots/**", "crates/frob/src/board_cmd.rs"]
 
 [[acceptance]]
 text = "Given frob board --text, when it runs, then stdout is exactly the renderer's rows with no envelope header, list markers or indent"
