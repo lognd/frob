@@ -2,13 +2,13 @@
 id = "01M4069YA9PXDNNCV86DR38G0G"
 title = "PyPI publish job: trusted publishing for frob, protected environment, release notes"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T15:28:24Z"
+updated = "2026-10-03T16:55:54Z"
 idempotency_key = "m2-rel-publish-pypi"
 labels = ["milestone:2", "area:release"]
 scope = [".github/workflows/release.yml"]
