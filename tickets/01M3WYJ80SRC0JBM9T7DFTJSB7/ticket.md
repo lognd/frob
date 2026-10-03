@@ -20,11 +20,11 @@ target = "01M3WYJ80RTGN3GV42EMGK5MMK"
 
 [[acceptance]]
 text = "Given the repository after the switch, when CI runs, then frob check and frob test from the v2 binary pass"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the v1 tickets, when imported, then every v1 id resolves through an alias and the count matches"
-bound = false
+bound = true
 +++
 
 Switch this repository from v1 frob to frob v2 per migration.md section 2 step 1 and D36. Write the materialized frob.toml for v2 (frob init), add a one-off script under crates/gob-dev (cargo dev import-v1-tickets) that converts tickets/T-*/ticket.md from the v1 ledger into v2 ULID tickets minted from the v1 created timestamps with aliases = ["T-0001"...], add frob check and frob test to .github/workflows/ci.yml using the built binary, remove the v1 check_base key, update CONTRIBUTING.md with the v2 workflow (work, check, test, land), and record in notes/coordinator.md that v2 is live. Record every v1-only field that could not be carried as a dropped item with reason.
