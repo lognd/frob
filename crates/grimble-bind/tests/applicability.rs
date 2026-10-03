@@ -160,8 +160,6 @@ fn sys011_examines_a_vmodel_link_and_fires_when_it_is_broken() {
 
 const OWNERSHIP: [&str; 3] = ["SYS001", "SYS002", "SYS004"];
 
-// frob:tests crates/grimble-bind/src/rules.rs::sys001_inapplicable
-// frob:tests crates/grimble-bind/src/rules.rs::sys002_inapplicable
 // frob:tests crates/grimble-bind/src/rules.rs::sys004_inapplicable
 #[test]
 fn no_model_entity_makes_sys001_sys002_sys004_not_applicable() {
@@ -185,8 +183,6 @@ fn no_model_entity_makes_sys001_sys002_sys004_not_applicable() {
     }
 }
 
-// frob:tests crates/grimble-bind/src/rules.rs::sys001_inapplicable
-// frob:tests crates/grimble-bind/src/rules.rs::sys002_inapplicable
 // frob:tests crates/grimble-bind/src/rules.rs::sys004_inapplicable
 #[test]
 fn a_model_with_nodes_examines_ownership_subjects() {
