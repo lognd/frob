@@ -2,11 +2,12 @@
 id = "01M418B3JG4FQ3CJGV5W87T6MG"
 title = "Wire lease-aware PM013 in frob check and add the expedite/stale mdtest DSL"
 type = "chore"
-category = "todo"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T16:07:49Z"
-updated = "2026-10-03T16:07:49Z"
+updated = "2026-10-03T16:23:19Z"
 scope = ["crates/frob-check/src/product.rs", "crates/frob-pm/tests/corpus.rs", "crates/frob-pm/tests/mdtest/pm013.md"]
 
 [[links]]
