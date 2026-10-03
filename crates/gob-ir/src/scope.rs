@@ -8,8 +8,8 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt::Write as _;
-use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Mutex, OnceLock};
 
 use tracing::{debug, trace};
 
@@ -216,12 +216,15 @@ struct Memo {
     cells: Vec<OnceLock<Resolution>>,
     /// Set once any cell was filled, so a mutation only pays to clear after a resolve.
     filled: AtomicBool,
+    /// Shared resolutions keyed by name then scope, filled along transparent chains.
+    shared: Mutex<HashMap<String, HashMap<ScopeId, Resolution>>>,
 }
 
 impl Clone for Memo {
     fn clone(&self) -> Self {
         Self {
             cells: self.cells.clone(),
+            shared: Mutex::new(self.shared.lock().expect("shared cache lock").clone()),
             filled: AtomicBool::new(self.filled.load(Ordering::Relaxed)),
         }
     }
@@ -235,6 +238,7 @@ impl Memo {
             for c in &mut self.cells {
                 *c = OnceLock::new();
             }
+            self.shared.get_mut().expect("shared cache lock").clear();
             *self.filled.get_mut() = false;
         }
     }
@@ -454,9 +458,58 @@ impl ScopeGraph {
             trace!(reference = r.0, "resolution cache hit");
             return hit.clone();
         }
-        let res = self.resolve_name(reference.scope, &reference.name);
+        let res = self.resolve_shared(reference.scope, &reference.name);
         self.memo.filled.store(true, Ordering::Relaxed);
         cell.get_or_init(|| res).clone()
+    }
+
+    /// The sole successor of `scope` when it cannot affect `name`: no live declaration of it,
+    /// no covering hint, and exactly one `Must` edge.
+    fn transparent_next(&self, scope: ScopeId, name: &str) -> Option<ScopeId> {
+        let sc = &self.scopes[scope.index()];
+        let [edge] = sc.edges.as_slice() else {
+            return None;
+        };
+        let opaque = sc.hints.iter().any(|h| h.may_define.covers(name));
+        let declared = sc.decls.iter().any(|&d| {
+            let decl = &self.decls[d.index()];
+            decl.name == name && !decl.shadowed
+        });
+        (edge.status == Status::Must && !opaque && !declared).then_some(edge.target)
+    }
+
+    /// Resolve `name` from `scope` through the shared (scope, name) cache.
+    ///
+    /// Transparent scopes are skipped iteratively to the first scope that matters, and every
+    /// scope on the way shares its result, so refs at the bottom of a deep chain cost one walk.
+    fn resolve_shared(&self, scope: ScopeId, name: &str) -> Resolution {
+        let lookup = |s: ScopeId| {
+            let map = self.memo.shared.lock().expect("shared cache lock");
+            map.get(name).and_then(|m| m.get(&s)).cloned()
+        };
+        let mut chain = Vec::new();
+        let mut seen = BTreeSet::new();
+        let mut cur = scope;
+        let res = loop {
+            if let Some(hit) = lookup(cur) {
+                trace!(scope = cur.0, name, "shared resolution cache hit");
+                break hit;
+            }
+            if !seen.insert(cur) {
+                break Resolution::Unknown;
+            }
+            chain.push(cur);
+            match self.transparent_next(cur, name) {
+                Some(next) => cur = next,
+                None => break self.resolve_name(cur, name),
+            }
+        };
+        let mut map = self.memo.shared.lock().expect("shared cache lock");
+        let slot = map.entry(name.to_owned()).or_default();
+        for s in chain {
+            slot.insert(s, res.clone());
+        }
+        res
     }
 
     /// Enter `scope` on a path of status `path`: record its declarations and hints.

@@ -8,7 +8,7 @@ points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-02T21:06:25Z"
+updated = "2026-10-03T03:34:59Z"
 idempotency_key = "m2-neat"
 labels = ["milestone:2"]
 scope = ["crates/grimble-lints/**", "crates/gob-ir/**"]
@@ -24,6 +24,18 @@ target = "01M3Z713NBP986Q2ZDHKKR84AW"
 [[links]]
 kind = "blocked-by"
 target = "01M3Z713YNM5666B7YFEHPFVKD"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7E5VPTH8J16D5APQDEAP"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7F1SGDAFM6ZQ8BP7TEN3"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7FYE5D1N2SY01VNVVACK"
 
 [[acceptance]]
 text = "Given a unit marked frob:honest that calls a clock vocabulary symbol, when grimble check runs, then NEAT010 reports the claim contradicted"

@@ -1,0 +1,15 @@
+kind = "create"
+title = "enumerates: claim shapes (tables, lists, headings, whole sections), key extraction and fix placement"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+idempotency_key = "m2-enumerates-shapes"
+labels = ["milestone:2"]
+scope = ["docs/design/**"]
+acceptance = ["Given doc-consistency.md 5.0, when read, then every claim shape, key rule, extent rule and fix placement rule is specified with an example"]
+body = "Owner question 2026-10-03: does enumerates detect tables, formatting, headings, subheadings? Specify the claim shapes (table key column, list items, member-per-heading, a whole section across subsections), key extraction and normalization (code spans, links, emphasis, member names: identifier, serde or clap rename, display), the claim's extent, duplicates, fixes that write in the shape of the existing block and keep its sort order, and the extraction work needed in the markdown adapter (tree-sitter-md pipe_table, list, list_item; headings exist today)."
+at = "2026-10-03T04:38:10Z"
+actor = "lognd"
+rev = 1

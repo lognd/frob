@@ -8,7 +8,7 @@ points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-03T01:02:13Z"
+updated = "2026-10-03T03:34:59Z"
 idempotency_key = "m2-caps"
 labels = ["milestone:2"]
 scope = ["crates/grimble-capabilities/**", "crates/gob-ir/**"]
@@ -20,6 +20,14 @@ target = "01M3Z712KRPYF3DQG6ZFCWVPS7"
 [[links]]
 kind = "blocked-by"
 target = "01M3Z71450ZE377RBK3EG1XSWC"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7F1SGDAFM6ZQ8BP7TEN3"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7JRYNHG0BHJ3ZHC9450N"
 
 [[acceptance]]
 text = "Given a node in a language with no detector for atom net, when the matrix is built, then the cell is unknown and the summary carries one Unresolved for the node"

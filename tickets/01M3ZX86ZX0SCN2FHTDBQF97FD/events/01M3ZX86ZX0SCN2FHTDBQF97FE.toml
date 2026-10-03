@@ -1,0 +1,22 @@
+kind = "create"
+title = "TICK007 misfiled-ticket with machine fix"
+type = "task"
+category = "todo"
+priority = "high"
+points = 2
+parent = "01M3ZX776JJSRQXW8Q0327K9QN"
+idempotency_key = "m2-nav-tick007"
+labels = ["milestone:2", "area:navigation"]
+scope = ["crates/frob-obligations/src/tick_misfiled.rs"]
+acceptance = ["Given a ticket file at a stale path, when checked, then TICK007 fires and the fix is `frob ticket reindex`", "Given all files at computed paths, when checked, then it does not fire"]
+body = """
+Implements navigation.md section 2.2.
+
+On the tip of the branch every ticket file is at its computed path; the fix is frob ticket reindex."""
+at = "2026-10-03T03:34:46Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX85S7ASFGT31GDYMRB5JX"

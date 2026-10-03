@@ -1,0 +1,30 @@
+kind = "create"
+title = "mirror resolve --adopt: tracker edit applied through ticket verbs"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+idempotency_key = "m2-mirror-resolve-adopt"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob/src/mirror_cmd.rs", "crates/frob-mirror/src/adopt.rs"]
+acceptance = ["Given a non-TTY stdin, when `--adopt` runs, then it exits 3 and changes nothing", "Given a tracker edit to the scope section, when adopted, then it is refused because scope is repository-owned"]
+body = """
+Implements mirror.md section 3.1; security.md section 2.11.
+
+Needs a TTY, shows the diff with escaping, refuses edits by unmapped identities, can never change repository-owned fields (scope, acceptance, evidence, links); tracker text carries origin tracker and a length cap."""
+at = "2026-10-03T03:34:43Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7YW7S3BJ72FPRQ85F72V"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7Z0EM0DCAHC59PJH50MJ"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX84SFSR050P2XV293C4MC"

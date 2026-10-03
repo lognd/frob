@@ -121,30 +121,32 @@ fn ref_ids(graph: &ScopeGraph, term: &Term) -> Vec<RefId> {
 }
 
 fn bench_resolution(c: &mut Criterion) {
-    let term = many_refs(200, 20_000);
-    let mut g = c.benchmark_group("resolution_20k_refs_depth_200");
-    g.sample_size(20);
-    g.bench_function("cold", |b| {
-        b.iter_batched(
-            || ScopeGraph::from_term(&term),
-            |graph| {
-                for r in ref_ids(&graph, &term) {
-                    black_box(graph.resolve(r));
-                }
-            },
-            criterion::BatchSize::LargeInput,
-        );
-    });
-    let warm = ScopeGraph::from_term(&term);
-    let warm_refs = ref_ids(&warm, &term);
-    g.bench_function("memoized", |b| {
-        b.iter(|| {
-            for &r in &warm_refs {
-                black_box(warm.resolve(r));
-            }
+    for depth in [200, 10_000] {
+        let term = many_refs(depth, 20_000);
+        let mut g = c.benchmark_group(format!("resolution_20k_refs_depth_{depth}"));
+        g.sample_size(10);
+        g.bench_function("cold", |b| {
+            b.iter_batched(
+                || ScopeGraph::from_term(&term),
+                |graph| {
+                    for r in ref_ids(&graph, &term) {
+                        black_box(graph.resolve(r));
+                    }
+                },
+                criterion::BatchSize::LargeInput,
+            );
         });
-    });
-    g.finish();
+        let warm = ScopeGraph::from_term(&term);
+        let warm_refs = ref_ids(&warm, &term);
+        g.bench_function("memoized", |b| {
+            b.iter(|| {
+                for &r in &warm_refs {
+                    black_box(warm.resolve(r));
+                }
+            });
+        });
+        g.finish();
+    }
 }
 
 fn bench(c: &mut Criterion) {

@@ -1,0 +1,22 @@
+kind = "create"
+title = "frob tour: the stops one at a time with next and previous"
+type = "task"
+category = "todo"
+priority = "low"
+points = 3
+parent = "01M3ZX776JJSRQXW8Q0327K9QN"
+idempotency_key = "m2-nav-tour-verb"
+labels = ["milestone:2", "area:navigation"]
+scope = ["crates/frob/src/tour_cmd.rs"]
+acceptance = ["Given `frob tour`, when run on a TTY, then stop 1 shows with next and previous controls", "Given a non-TTY, when run, then all stops print in order"]
+body = """
+Implements navigation.md section 5 (last paragraph).
+
+Same stops in the terminal; opens linked files in the pager."""
+at = "2026-10-03T03:34:47Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX887RZB82G8HR5JKQ2FER"

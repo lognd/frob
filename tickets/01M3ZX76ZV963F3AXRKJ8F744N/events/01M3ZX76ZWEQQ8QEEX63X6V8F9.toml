@@ -1,0 +1,12 @@
+kind = "create"
+title = "Diagnostics that teach and safe fixes (D78)"
+type = "epic"
+category = "todo"
+priority = "high"
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+idempotency_key = "m2-epic-diagnostics"
+labels = ["milestone:2", "area:diagnostics"]
+body = "Epic grouping the tickets that implement docs/design/diagnostics.md. Children carry area:diagnostics."
+at = "2026-10-03T03:34:13Z"
+actor = "lognd"
+rev = 1

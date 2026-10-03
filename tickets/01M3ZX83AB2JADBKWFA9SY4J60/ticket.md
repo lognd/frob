@@ -1,0 +1,31 @@
++++
+id = "01M3ZX83AB2JADBKWFA9SY4J60"
+title = "Tracker adapter trait and capabilities record"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+reporter = "lognd"
+created = "2026-10-03T03:34:42Z"
+updated = "2026-10-03T03:34:42Z"
+idempotency_key = "m2-mirror-adapter-trait"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-mirror/src/adapter.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX832JK52FXBPPCCGTDRTG"
+
+[[acceptance]]
+text = "Given a fake adapter and a recorded projection, when the mirror runs offline, then operations are produced without network"
+bound = false
+
+[[acceptance]]
+text = "Given an adapter declaring no native sub-issues, when relations are routed, then parent edges fall back to body links and the capabilities say so"
+bound = false
++++
+
+Implements mirror.md sections 2.1 and 3 (upkeep per tracker).
+
+Trait: create, update, close, link, find-by-ULID, schema; a capabilities record (native sub-issues, native links, custom fields, state reasons, markdown dialect); recorded API fixtures so tests run offline.

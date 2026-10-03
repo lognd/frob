@@ -1,0 +1,15 @@
+kind = "create"
+title = "Mirror reconcile: field ownership, revert repository-owned edits, converge"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+idempotency_key = "m2-mirror-reconcile-engine"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-mirror/**"]
+acceptance = ["Given an issue whose title was edited in the tracker, when the mirror runs, then the title is reverted to the projection, no check fails, and a second run changes nothing", "Given a tracker-owned field edited in the tracker, when the mirror runs, then it is left unchanged"]
+body = "mirror.md 3.1. [mirror.fields] ownership table (materialized; v1 all written fields repository-owned; comments, reactions, non-frob: labels tracker-owned). Each run per issue: compare current state to the projection; revert repository-owned fields; never write tracker-owned ones; at most one host-template comment per issue per day. Idempotent and serialized (one writer). MIR002 tracker-edit-reverted as Advisory, never an error. Uses the adapter reads and writes."
+at = "2026-10-03T03:39:11Z"
+actor = "lognd"
+rev = 1

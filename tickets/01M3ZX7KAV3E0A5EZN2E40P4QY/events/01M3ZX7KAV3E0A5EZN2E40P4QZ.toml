@@ -1,0 +1,22 @@
+kind = "create"
+title = "External packs: fetch by URL and tree digest, vendor, hardened extraction"
+type = "task"
+category = "todo"
+priority = "low"
+points = 5
+parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
+idempotency_key = "m2-packs-external"
+labels = ["milestone:2", "area:packs"]
+scope = ["crates/gob-packs/src/external/**"]
+acceptance = ["Given an archive with a symlink entry or a path escaping the root, when fetched, then extraction is refused with PACK005 before anything is written", "Given a digest mismatch, when fetched, then nothing is vendored and the error names both digests"]
+body = """
+Implements plugins.md section 2; security.md section 2.8.
+
+HTTPS only, redirects only within the declared host, tree digest verified before extraction, absolute, .. , symlink, hardlink and device entries refused, size and file-count caps; vendored then treated as a repository pack, shown as ext:HOST/NAME."""
+at = "2026-10-03T03:34:25Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7K7BN0CEADJFMCTGEA64"

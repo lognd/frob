@@ -1,0 +1,39 @@
++++
+id = "01M3ZX7DYR7PR1PBCZ7E8Q56WW"
+title = "GRL name and type checks: GRL001, GRL003, GRL004, GRL005, GRL013"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
+reporter = "lognd"
+created = "2026-10-03T03:34:20Z"
+updated = "2026-10-03T03:34:20Z"
+idempotency_key = "m2-grl-check-names"
+labels = ["milestone:2", "area:grl"]
+scope = ["crates/gob-plan/src/check/names.rs", "crates/gob-plan/src/check/mod.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7D9CT156TR8J4YTQ622S"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7DCQGFR0761QHY8NPAQE"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7DMYNTWB3AP04CDMAECH"
+
+[[acceptance]]
+text = "Given `where not d inside tset`, when compiled, then GRL001 points at `tset` with help `did you mean test` and the catalog command, byte-equal to its golden"
+bound = false
+
+[[acceptance]]
+text = "Given a variable bound twice, used only inside `no`, compared across types, or bound and never used, when compiled, then GRL004, GRL003, GRL005 and warning GRL013 are emitted with their goldens"
+bound = false
++++
+
+Implements grl-spec.md sections 7.1 and 10.
+
+Every name is checked at compile time against the catalog with did-you-mean; binding rules for find/some/no; type mismatches. A typo is a compile error, never a silent no-match.

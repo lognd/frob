@@ -1,0 +1,35 @@
++++
+id = "01M3ZX80VRDCSVZCCXQAB08HB0"
+title = "CI rule: non-base-ref trust in pull_request_target or workflow_run is an Error"
+type = "task"
+category = "todo"
+priority = "low"
+points = 2
+parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
+reporter = "lognd"
+created = "2026-10-03T03:34:39Z"
+updated = "2026-10-03T03:34:39Z"
+idempotency_key = "m2-sec-ci-trust-rule"
+labels = ["milestone:2", "area:security"]
+scope = ["crates/grimble-ci/src/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3Z7157776CWEKRPG8886VJ4"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7V587K71E94E0AE4GWW8"
+
+[[acceptance]]
+text = "Given a pull_request_target workflow running check with a trust flag other than --trust-from a protected ref, when checked, then an Error is reported"
+bound = false
+
+[[acceptance]]
+text = "Given --trust-from origin/main in the same workflow, when checked, then no finding is emitted"
+bound = false
++++
+
+Implements security.md section 2.11 (CI rules); cicd.md.
+
+Joins CI006 and CI011; the design assigns it no id yet (listed in the planning report).

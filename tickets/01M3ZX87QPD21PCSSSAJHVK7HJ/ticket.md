@@ -1,0 +1,35 @@
++++
+id = "01M3ZX87QPD21PCSSSAJHVK7HJ"
+title = "ticket doable --newcomer and indexes/good-first.md"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M3ZX776JJSRQXW8Q0327K9QN"
+reporter = "lognd"
+created = "2026-10-03T03:34:46Z"
+updated = "2026-10-03T03:34:46Z"
+idempotency_key = "m2-nav-doable-newcomer"
+labels = ["milestone:2", "area:navigation"]
+scope = ["crates/frob/src/ticket/read.rs", "crates/frob-ledger/src/gen/good_first.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX864QGR220FTRGCDPXYZD"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX87KRP6G49GHANMAK5JA8"
+
+[[acceptance]]
+text = "Given three ready good-first tickets of 1, 2 and 2 points, when `ticket doable --newcomer` runs, then they are listed smallest first with their start notes"
+bound = false
+
+[[acceptance]]
+text = "Given the generated indexes/good-first.md, when compared with the verb, then the same tickets appear in the same order"
+bound = false
++++
+
+Implements navigation.md section 4.2 (last bullet).
+
+Lists ready good-first tickets smallest first with their Start here notes inline; the generated page matches the verb output.

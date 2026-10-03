@@ -1,0 +1,39 @@
++++
+id = "01M3ZX7VPGRERTZNVS5VR437JY"
+title = "Process packs: absolute path outside the work tree, digest in the lock, scrubbed environment"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
+reporter = "lognd"
+created = "2026-10-03T03:34:34Z"
+updated = "2026-10-03T03:51:20Z"
+idempotency_key = "m2-sec-process-packs"
+labels = ["milestone:2", "area:security"]
+scope = ["crates/gob-check/src/tools.rs", "crates/gob-exec/src/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7V0XP3BYTWDHXN20Z79R"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7V587K71E94E0AE4GWW8"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7VJE22Y68R184Y9WQC2N"
+
+[[acceptance]]
+text = "Given a stage resolving to ./bin/tool inside the work tree via $PATH, when trusted or run, then it is refused"
+bound = false
+
+[[acceptance]]
+text = "Given an untrusted stage, when check runs, then it is Unresolved untrusted, not run, and the remedy names the trust command; a changed binary digest drops trust"
+bound = false
++++
+
+Implements security.md section 2.4 (I11).
+
+Program resolved at trust time to an absolute path outside the work tree (a $PATH entry inside it is refused) and its digest recorded; different binary is untrusted; scrubbed env, GIT_CONFIG_NOSYSTEM=1, no -c passthrough, stdin closed. Until trusted the stage is Unresolved untrusted with the trust command.

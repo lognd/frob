@@ -1,0 +1,22 @@
+kind = "create"
+title = "frob mirror status and MIR001 mirror-behind"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+idempotency_key = "m2-mirror-status"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-mirror/src/status.rs", "crates/frob-obligations/src/mir.rs"]
+acceptance = ["Given three unpublished events, when `frob check` runs, then MIR001 reports behind by 3 events since the last publish time", "Given a fully published mirror, when check runs, then no MIR001 is emitted"]
+body = """
+Implements mirror.md section 3 (tracker or network down).
+
+MIR001 is Unresolved, not required by default: the mirror is behind by N events since a time. Never silent."""
+at = "2026-10-03T03:34:43Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX841SP0ZXM4CT18A4B8CV"
