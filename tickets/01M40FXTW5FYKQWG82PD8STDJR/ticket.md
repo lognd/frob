@@ -2,12 +2,13 @@
 id = "01M40FXTW5FYKQWG82PD8STDJR"
 title = "frob init hard-codes [tickets] ref = refs/heads/main; ticket new fails on a repository whose branch is trunk"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T09:01:08Z"
-updated = "2026-10-03T09:12:59Z"
+updated = "2026-10-03T09:13:00Z"
 idempotency_key = "m2-rel-e2e-init-ledger-ref"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob/src/init.rs", "crates/frob/tests/init_adopt.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/frob/src/config_cmd.rs", "docs/design/cli.md"]
