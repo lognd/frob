@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T10:08:04Z"
+digest = "8032f40164abf756072b3c47cad3f4eb15c4d77bc0da60055e5f91c656c8bbb7"
+exit_code = 0
+inline = """
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/frob)
+   Compiling gob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/JNF3JFH/crates/gob-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.40s
+────────────
+ Nextest run ID 7bf7ab50-aa01-4851-87de-db18ea50fc03 with nextest profile: default
+    Starting 1 test across 18 binaries (120 tests skipped)
+        PASS [   0.062s] (1/1) frob-cli::e2e_init_loop usage_error_names_the_missing_arguments
+────────────
+     Summary [   0.063s] 1 test run: 1 passed, 120 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p gob-cli -p frob-cli -E 'test(usage_missing_args) | test(usage_error_names_the_missing_arguments)'"
+size = 611
+status = "measured"
+tests = ["usage_error_names_the_missing_arguments"]
+at = "2026-10-03T10:08:04Z"
+actor = "lognd"
+rev = 1
