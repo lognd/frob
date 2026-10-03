@@ -8,7 +8,7 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:58Z"
-updated = "2026-10-03T13:44:52Z"
+updated = "2026-10-03T13:44:55Z"
 idempotency_key = "m2-rel-land-fragment"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-land/src/**", "crates/frob-release/src/skeleton.rs", "crates/frob-release/src/fragment.rs", "crates/frob-release/src/lib.rs", "crates/frob-release/tests/skeleton.rs", "crates/frob-evidence/src/done.rs", "crates/frob/src/ticket/fragment_cmd.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/fragment.rs", "docs/design/documentation.md", "docs/reference/cli/frob.md"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an existing fragment, when frob ticket fragment runs without --force, then it is refused and not overwritten; with --force it is replaced"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the changelog_fragment close or land refusal, then its remedy names the exact frob ticket fragment command, and after running it the guard passes"
