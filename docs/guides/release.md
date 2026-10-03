@@ -59,35 +59,36 @@ project `frob`, Manage, Publishing, add a GitHub trusted publisher with:
 Never add a PyPI token as a repository or environment secret. The workflow
 uses trusted publishing, and a test in
 `crates/frob-release/tests/release_workflow.rs` fails if the workflow reads a
-`secrets.` value.
+`secrets.` value other than the crates.io `CARGO_REGISTRY_TOKEN` in the `crates`
+job.
 
 ### 4. crates.io: the first publish of each crate uses a token
 
-Every crate is `publish = false` today. Ticket ~AZS0RRT makes the shipped set
-publishable and adds the token fallback to the `crates` job (this guide owns the
-wording of the token steps below; they stay pending ~AZS0RRT). Until ~AZS0RRT
-lands, the `crates` job cannot publish a crate that does not exist yet: it only
-exchanges a trusted-publishing token, and crates.io cannot configure trusted
-publishing before a crate exists. Do not cut 0.532.0 until ~AZS0RRT is landed.
-(`release.yml` today contains no stored secret and a test forbids one; the
-fallback is that ticket's change, so check its wording in the workflow when it
-lands.)
+crates.io cannot configure trusted publishing for a crate that does not exist
+yet, so the first publish of the 35 shipped crates uses a one-time token. The
+`crates` job reads the `crates-io` environment secret `CARGO_REGISTRY_TOKEN` when
+one is set (it logs "publishing with the environment's CARGO_REGISTRY_TOKEN") and
+otherwise exchanges a trusted-publishing token. A stored token always wins, so it
+must be deleted afterwards (section 5).
 
-When ~AZS0RRT has landed:
-
-1. On crates.io create an API token scoped to publishing new crates and
-   versions (a one-time token; revoke it after the first release).
-2. In the `crates-io` environment (not the repository) add the environment
-   secret `CARGO_REGISTRY_TOKEN` with that token.
+1. On crates.io create an API token with the `publish-new` and `publish-update`
+   scopes (one-time; revoked after the first release). Scope it to the crate
+   names if the form allows.
+2. In the `crates-io` environment (not the repository, so only the `crates` job
+   can read it) add the environment secret `CARGO_REGISTRY_TOKEN` with that
+   token.
 3. Confirm you own the reserved crate names (the owner action named by
    `frob release status`).
+4. Push the tag. A partial publish resumes by re-running; versions already on
+   the index are skipped.
 
 ### 5. crates.io trusted publisher, after the first release
 
 Once every crate exists, on crates.io open each crate's settings and add a
 trusted publisher with: repository `lognd/frob`, workflow `release.yml`,
-environment `crates-io`. Then delete the one-time token secret from the
-`crates-io` environment. Later releases use the short-lived token the job gets
+environment `crates-io`. Then delete the one-time `CARGO_REGISTRY_TOKEN` secret from the
+`crates-io` environment (while it exists the job keeps using it instead of OIDC)
+and revoke the token on crates.io. Later releases use the short-lived token the job gets
 from `rust-lang/crates-io-auth-action`.
 
 ## Every release
@@ -274,8 +275,8 @@ environment `pypi` or `crates-io`. A mismatch in any field is rejected.
 
 ## Not verified
 
-- ~AZS0RRT has not landed: the token fallback and the publishable crate set do
-  not exist yet, so setup step 4 describes intent, not a tested job.
+- The token fallback was tested as workflow structure only; no real first
+  publish has run.
 - The GitHub and crates.io and PyPI settings screens (environment tag rules,
   trusted publisher forms, the yank buttons) were written from the owner's
   steps and general knowledge, not exercised here.

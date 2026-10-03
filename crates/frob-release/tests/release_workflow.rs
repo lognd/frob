@@ -489,7 +489,7 @@ fn triggers_are_tag_only_and_every_action_is_sha_pinned() {
 // frob:ticket 01M4069Y65FA7GGXG2F6N2KET1
 // frob:ticket 01M4172YE3SZDG17J1CAZS0RRT
 #[test]
-fn crates_job_publishes_through_trusted_publishing_in_the_crates_io_environment_after_smoke() {
+fn crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke() {
     let wf = workflow();
     let job = &wf["jobs"]["crates"];
     assert!(

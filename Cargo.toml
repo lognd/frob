@@ -14,8 +14,6 @@ authors = ["Logan Dapp"]
 # which carry `publish = false` in their own manifest and are exactly:
 #   gob-dev     the `cargo dev` task runner
 #   gob-mdtest  the markdown corpus test harness
-#   grimble     the grimble preview binary (ships with 0.533.0; its name is
-#               already reserved and its library crates grimble-* do publish)
 
 [workspace.lints.rust]
 missing_docs = "deny"

@@ -178,9 +178,8 @@ part of the job's design:
   security.md's CI rules apply. Every crate publishes (`publish` is set
   per crate, never workspace-wide) except the dev-only crates, which
   carry `publish = false` and are exactly `gob-dev` (the `cargo dev`
-  runner), `gob-mdtest` (the corpus test harness) and `grimble` (the
-  preview binary, shipped with 0.533.0; the `grimble-*` library crates
-  do publish). The root `Cargo.toml` comment repeats this list. Every
+  runner) and `gob-mdtest` (the corpus test harness); `grimble` ships
+  as a preview in 0.532.0 with the `grimble-*` crates. The root `Cargo.toml` comment repeats this list. Every
   path dependency on a shipped crate carries a `version`, which `frob
   release bump` keeps in lockstep. The `crates` job publishes with the
   `crates-io` environment's `CARGO_REGISTRY_TOKEN` secret when one is
