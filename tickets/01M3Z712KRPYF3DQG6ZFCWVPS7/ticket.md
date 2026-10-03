@@ -20,7 +20,7 @@ target = "01M3Z712GP8XV2WEAS1VHQ7FD4"
 
 [[acceptance]]
 text = "Given each v1 strata binding mechanism, when looked up in the document, then it maps to exactly one of the four sources with a status"
-bound = false
+bound = true
 +++
 
 grimble-model.md 9.1: define the relation B between model entities and U identities with Must/May/Unknown from the four ranked sources (grimble:binds directives, owns selectors, pack inference, nothing); precedence and conflict rules; how SCIP occurrences enter; what each of the twelve v1 mechanisms becomes; the drift rules SYS001-012 restated as predicates over B and the facets, each with polarity and its Unresolved conditions.

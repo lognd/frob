@@ -15,11 +15,11 @@ scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/**", "crates/frob-la
 
 [[acceptance]]
 text = "Given an evidence event with accepts, when the ticket is folded, then the matching acceptance items are bound"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given frob-evidence and frob-land, when grepped for commit_paths, then neither calls it directly"
-bound = false
+bound = true
 +++
 
 frob-evidence and frob-land each copy a private commit helper to write event files and re-fold ticket.md because EventBody has no Evidence, EvidenceBypass or Land variants and commit_events is pub(crate). Add the variants (fold binds acceptance[].bound from evidence accepts; land records base ref, commit oid, pushed), a public Ledger::append(ticket, EventBody) that writes, re-folds and commits on the ledger ref, and switch frob-evidence and frob-land to it, deleting the copies.

@@ -16,7 +16,7 @@ scope = ["crates/frob-lease/**", "crates/frob-ledger/**", "crates/frob/**", "doc
 
 [[acceptance]]
 text = "Given a held lease, when the holder widens the ticket scope, then the lease file contains the new globs and SCOPE001 no longer fires for them"
-bound = false
+bound = true
 +++
 
 Found on ~KKR84AW: after ticket update changed the scope, the live lease under .git/frob/leases kept the old globs and SCOPE001 kept firing; there is no verb to widen a held lease, so the coordinator edited the lease file by hand. A scope change by the lease holder must re-validate overlap and rewrite the lease under leases.lock (refusing with E-LEASE-HELD if the widened scope overlaps another live lease); add frob lease widen <ticket> as the explicit form.

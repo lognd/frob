@@ -16,7 +16,7 @@ scope = ["crates/frob-check/**", "frob.toml", ".github/**", "docs/reference/**"]
 
 [[acceptance]]
 text = "Given this repository, when frob check runs with the two stages configured, then zizmor and actionlint findings appear under CI ids and a tool that is missing yields one Unresolved finding"
-bound = false
+bound = true
 +++
 
 cicd.md section 3: [[check.tool]] parsers for zizmor --format json-v1 and actionlint -format json mapping to CI ids with the repository's runner labels passed through, schema-lag results as Unresolved, findings carrying frob exceptions and evidence; frob.toml of this repository gains both stages and CI runs them; docs regenerated.

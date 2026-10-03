@@ -24,7 +24,7 @@ target = "01M3Z71450ZE377RBK3EG1XSWC"
 
 [[acceptance]]
 text = "Given a producer whose Contract facet changed and a consumer acked at the old facet, when grimble check runs, then SYS006 names the flow and both ends"
-bound = false
+bound = true
 +++
 
 G05 typed entries: contract skew over the Contract facet between producer and consumer, changed and renamed via identity and body facet, ack verb writing grimble.lock on the current branch.

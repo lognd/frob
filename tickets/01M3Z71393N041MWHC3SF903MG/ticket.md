@@ -16,7 +16,7 @@ scope = ["crates/gob-directives/**", "crates/gob-macros/**", "docs/reference/**"
 
 [[acceptance]]
 text = "Given a frob:effects reads(X) writes(Y) directive, when scanned, then the record carries the parsed atom set and the directive page documents it"
-bound = false
+bound = true
 +++
 
 code-model.md 4 after D63: honoured namespaces come from a materialized [directives] table; add the claim directives frob:effects (vocabulary of neatness.md 3), frob:pure, frob:honest, frob:core, frob:shell, frob:hook, frob:dispatcher, frob:idempotent, frob:trusted and frob:calls as parsed records with schema and docs; no evaluation yet.

@@ -16,11 +16,11 @@ scope = ["docs/design/**", "crates/grimble-model/**", "crates/grimble-check/**",
 
 [[acceptance]]
 text = "Given a repository with grimble.toml listing one root and an extra unreachable .grmb file, when grimble check runs, then only the root's include tree is the model and the extra file gets the orphan warning"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an include that climbs above the including file's directory without the explicit marker, when grimble check runs, then an MDL error names the include"
-bound = false
+bound = true
 +++
 
 Owner decision 2026-10-04 (Rust crate model). (1) Declared entry point with a conventional default: grimble init writes [grimble] models = ["design/model.grmb"] as a materialized enforcement knob; grimble-check loads only files reachable from the listed roots through include, never every walked .grmb file. (2) Orphans fail loudly: a .grmb file reachable from no root and not excluded is a new MDL warning naming it (rustc silently ignores unreachable files; grimble does not). (3) Location mirrors hierarchy: include may name only files at or below the including file's directory (like mod foo resolving to foo.rs or foo/); climbing out requires an explicit marker in the include statement (the #[path] analogue, grammar to specify) and is otherwise an MDL error. (4) Several roots remain independent models; declared cross-model dependencies are out of scope. Update grmb-spec.md section 3 and the MDL table (new ids), the corpus outline, grimble-model.md and the README decision log (row D77), implement in grimble-model (include resolution, the new MDL rules), grimble-check (root-based loading, orphan detection) and grimble (init writes the knob), set the knob in this repository's grimble.toml, regenerate docs/reference.

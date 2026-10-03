@@ -16,7 +16,7 @@ scope = ["crates/frob-check/**", "crates/gob-check/**", "crates/frob-ack/tests/*
 
 [[acceptance]]
 text = "Given a full-workspace test run under heavy CPU load, when the suite runs, then no test asserts wall-clock time and the bench still reports the warm-run budget"
-bound = false
+bound = true
 +++
 
 warm_run_on_this_repository_is_under_two_seconds failed during a full-workspace run while another worktree compiled, and passed alone at 1.7 s. A wall-clock assertion in the unit suite is load-sensitive. Move the 2 s budget check to the criterion bench and PERF001 (per D30 and the [perf] knobs), keep a unit test that asserts the timing breakdown is produced, and record the measured warm time in the bench output.

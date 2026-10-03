@@ -28,7 +28,7 @@ target = "01M3Z713YNM5666B7YFEHPFVKD"
 
 [[acceptance]]
 text = "Given grimble.toml present and no grimble binary, when frob check runs with the default knobs, then exit is 1 with one required Unresolved finding naming the product"
-bound = false
+bound = true
 +++
 
 D28 and the sibling contract: frob check runs grimble check --json when grimble.toml exists, validates the schema version, evaluates ticket-bound exception exits, merges findings and fidelity, and fails the gate when the sibling is absent per fail_on_unresolved required.

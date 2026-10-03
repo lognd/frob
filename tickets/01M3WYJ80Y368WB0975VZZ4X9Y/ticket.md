@@ -16,7 +16,7 @@ scope = ["crates/gob-git/**"]
 
 [[acceptance]]
 text = "Given a repo with core.autocrlf=true and a checked-out ledger ref, when commit_paths writes a ticket twice with a checkout in between, then the second write succeeds and a genuine local content edit still refuses"
-bound = false
+bound = true
 +++
 
 check_local_edits in crates/gob-git/src/ledger.rs hashes raw disk bytes. With core.autocrlf=true (this host's global git config) git checkout rewrites tracked text files as CRLF, so the next commit_paths on a checked-out ref refuses with E-GIT-LOCAL-EDITS although nothing changed. Compare after applying the worktree-to-index filters (gix pipeline for the path's attributes and autocrlf) or compare normalized content, so a pure line-ending difference is never a local edit. Add a test that sets core.autocrlf=true in the temp repo config, checks out, then commits again successfully, while a real content change still refuses.

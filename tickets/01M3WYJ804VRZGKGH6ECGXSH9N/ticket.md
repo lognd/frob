@@ -20,11 +20,11 @@ target = "01M3WYJ803SJM87D7TS77Y40A4"
 
 [[acceptance]]
 text = "Given any UTF-8 text and a byte offset inside it, when converted to line/column and back, then the original offset is returned"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a span on a line, when rendered, then the snippet shows the line and a caret under the span"
-bound = false
+bound = true
 +++
 
 Implement crates/gob-text per architecture.md section 1 and code-model.md section 2 (spans for every finding). Types: TextSize/TextRange (newtype over u32, like ruff_text_size; evaluate depending on the ruff_text_size crate from crates.io first and prefer it if its API fits, documenting the choice), LineIndex (byte offset to 1-based line/column, UTF-8 aware, UTF-16 column helper for LSP later), SourceText (Arc<str> plus LineIndex, lazily built), Span { file: FileId, range }. FileId is an interned newtype owned here. Include a snippet renderer helper that returns the line of a span with a caret (used by gob-diagnostics text output). Property tests with proptest for offset round-trips. Rustdoc on everything with examples that compile as doctests.

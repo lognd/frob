@@ -16,11 +16,11 @@ scope = ["crates/frob-ledger/**", "crates/frob/**", "docs/design/tickets.md", "d
 
 [[acceptance]]
 text = "Given a ticket with two criteria, when ticket update --add-acceptance with a comma in its text runs, then the ticket has three criteria and the third holds the full text"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a criterion with bound evidence, when it is removed, then the command reports the evidence that loses its criterion"
-bound = false
+bound = true
 +++
 
 Found by the mirror re-cut: ticket update cannot change acceptance, because --set splits list values on commas and acceptance text contains commas, so planners record changed acceptance in decision comments instead of the bound list. Add --add-acceptance TEXT (repeatable), --remove-acceptance INDEX (repeatable, 1-based as shown by show), and --clear-acceptance; each change is a field event with the old and new list; bound evidence on a removed criterion is reported, not silently dropped. Same pattern as --add-scope and --remove-scope (~V5F85PC).

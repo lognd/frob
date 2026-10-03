@@ -16,7 +16,7 @@ scope = ["crates/gob-ir/**"]
 
 [[acceptance]]
 text = "Given a term nested one million levels deep, when printed, digested and its symrefs computed, then no stack overflow occurs and the results are deterministic"
-bound = false
+bound = true
 +++
 
 Found by 01M3Z712DPZN71ZQDS6PXY6QQV: the printer, the symref pass and from_term recurse over term depth, so a deep term (generated code, long expression chains) can overflow the stack, which breaks Theorem 1's totality claim in practice. Convert to explicit work stacks; add a test with a 1e6-deep term; memoize scope resolution per reference.

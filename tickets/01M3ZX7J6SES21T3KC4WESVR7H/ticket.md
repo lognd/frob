@@ -16,11 +16,11 @@ scope = ["crates/gob-trust/**"]
 
 [[acceptance]]
 text = "Given a value MAC'd with the machine key, when verified, then it passes, and when one byte is changed it fails"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given no key file, when first used, then a key is created with owner-only permissions and a group- or world-writable key is reported by a typed error"
-bound = false
+bound = true
 +++
 
 Implements security.md sections 2.2 and 2.3.

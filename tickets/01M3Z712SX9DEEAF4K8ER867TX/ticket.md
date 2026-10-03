@@ -20,7 +20,7 @@ target = "01M3Z712KRPYF3DQG6ZFCWVPS7"
 
 [[acceptance]]
 text = "Given the specification, when a pack adds an atom with a detector for one language, then the matrix shows unknown for other languages and not-applicable only where the pack declares it"
-bound = false
+bound = true
 +++
 
 grimble-model.md sections 5 and 9.6: pack format (atoms, detectors per language with detector kind, callee vocabularies, claims), the registry as inventory entries in a shared gob crate, the drift-lock that pins pack versions per repository, materialized knobs, and the not-applicable cell declaration.

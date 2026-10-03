@@ -16,7 +16,7 @@ scope = ["crates/gob-diagnostics/**", "crates/gob-check/**", "crates/gob-ir/**",
 
 [[acceptance]]
 text = "Given the workspace, when grepped for RequiredMarks and for a Polarity enum outside gob-rules, then neither exists and every rule page shows polarity"
-bound = false
+bound = true
 +++
 
 From ~KKR84AW: gob-diagnostics re-exports gob_rules::RequiredReason and drops RequiredMarks so the gate reads Finding.required directly (then delete gate_reason in gob-check required.rs); gob-ir replaces its Polarity with pub use gob_rules::Polarity; gob-dev renders polarity and must_measure on rule pages and the generated docs are regenerated; frob-ledger sets must_measure on TICK002.
