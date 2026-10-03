@@ -121,7 +121,7 @@ impl Adapter for MarkdownAdapter {
         match tree {
             ConcreteTree::Parsed(t) => fold_tree(&t.text, t.root(), input),
             ConcreteTree::Unparsed(reason) => failed_file(input, "markdown", *reason),
-            ConcreteTree::Leaf => failed_file(
+            ConcreteTree::Leaf | ConcreteTree::Source(_) => failed_file(
                 input,
                 "markdown",
                 gob_languages::UnresolvedReason::GrammarUnavailable,

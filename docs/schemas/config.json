@@ -79,6 +79,25 @@
       },
       "type": "object"
     },
+    "directives": {
+      "additionalProperties": false,
+      "description": "Which directive namespaces are honoured (code-model section 4, decision D63).",
+      "properties": {
+        "namespaces": {
+          "default": [
+            "frob",
+            "grimble",
+            "crunk"
+          ],
+          "description": "Comment namespaces the scanner reads; comments in any other are ignored.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "evidence": {
       "additionalProperties": false,
       "description": "How evidence is captured and where large blobs go.",

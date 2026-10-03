@@ -262,8 +262,10 @@ Ticket ids in `frob:ticket`, `frob:todo` and
 an abbreviation, and v1 `T-0042` aliases resolve until `frob migrate
 directives` rewrites them. In milestone 1 the parser's DSL002 flags any
 abbreviated id, including a v1 `T-####`, with the remedy `frob ticket
-expand`. The `[directives] namespaces` knob is not yet a `ConfigTable`
-(Milestone 2 note); milestone 1 hard-codes the `frob` namespace. Milestone 1 (D36) parses the `frob:`
+expand`. The `[directives] namespaces` knob is a `ConfigTable`
+(gob-directives `DirectivesConfig`, default namespaces `frob`, `grimble`,
+`crunk`); frob-check, frob-ack and frob-obligations still scan with
+`ScanConfig::default()` (frob only) until grimble and crunk register verbs. Milestone 1 (D36) parses the `frob:`
 namespace only; `grimble:` and `crunk:` are Milestone 2 or later (D36).
 Dropped unless a consumer commits: protocol/transition/requires/acquire/
 release/escapes (typestate DSL), scaffold managed-block markers (dropped

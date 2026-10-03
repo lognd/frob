@@ -230,3 +230,55 @@ fn an_exception_edit_changes_only_the_attr_facet() {
     ));
     assert_eq!(base, reformatted, "reformatting never changes a digest");
 }
+
+#[test]
+// frob:ticket 01M3ZEH3S0PG61C2AEBM691F69
+// frob:tests crates/grimble-model/src/adapter.rs::GrmbAdapter
+fn a_binary_linking_grimble_model_sees_grmb_at_f4_in_the_report() {
+    let report = gob_symbols::fidelity_report();
+    let row = report
+        .iter()
+        .find(|r| r.language == "grmb")
+        .expect("grmb registered");
+    assert_eq!(row.fidelity, Fidelity::F4);
+    assert_eq!(row.extensions, vec!["grmb"]);
+    let order = row
+        .capabilities
+        .iter()
+        .find(|(c, _)| *c == Capability::Order)
+        .map(|(_, p)| *p);
+    assert_eq!(order, Some(Precision::Declared));
+    assert_eq!(report.last().expect("rows").language, "opaque");
+    assert!(gob_symbols::adapter_for_path("design/m.grmb").is_some());
+    assert!(gob_symbols::registry_conflicts().is_empty());
+}
+
+#[test]
+// frob:ticket 01M3ZEH3S0PG61C2AEBM691F69
+// frob:tests crates/grimble-model/src/adapter.rs::fold_text
+fn the_file_symbols_of_a_grmb_file_list_its_entities() {
+    let text = format!("{H}node n : trusted {{\n}}\nnode k : trusted {{\n}}\n");
+    let input = FileInput {
+        path: "design/m.grmb",
+        digest: "00",
+        size: u32::try_from(text.len()).expect("small"),
+    };
+    let a = GrmbAdapter;
+    let tree = a.parse(&text, &ParseLimits::default());
+    let folded = a.fold(&tree, &input).expect("fold");
+    let got: Vec<(gob_symbols::SymbolKind, String)> = folded
+        .file
+        .symbols
+        .iter()
+        .map(|s| (s.kind, s.symref.to_string()))
+        .collect();
+    assert!(
+        got.contains(&(gob_symbols::SymbolKind::Node, "design/m.grmb::n".to_owned())),
+        "{got:?}"
+    );
+    assert!(
+        got.contains(&(gob_symbols::SymbolKind::Node, "design/m.grmb::k".to_owned())),
+        "{got:?}"
+    );
+    assert_eq!(folded.file.extras.len(), folded.file.symbols.len());
+}

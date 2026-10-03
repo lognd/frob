@@ -248,7 +248,7 @@ fn rules_are_registered_with_d32_identity() {
 }
 
 #[test]
-fn registry_lists_milestone_one_verbs_with_schemas() {
+fn registry_lists_every_verb_with_schemas() {
     let verbs: Vec<String> = all_directives()
         .map(gob_directives::DirectiveMeta::qualified)
         .collect();
@@ -256,12 +256,22 @@ fn registry_lists_milestone_one_verbs_with_schemas() {
         verbs,
         [
             "frob:accept",
+            "frob:calls",
+            "frob:core",
             "frob:defer",
+            "frob:dispatcher",
             "frob:doc",
+            "frob:effects",
+            "frob:honest",
+            "frob:hook",
+            "frob:idempotent",
             "frob:invariant",
+            "frob:pure",
+            "frob:shell",
             "frob:tests",
             "frob:ticket",
-            "frob:todo"
+            "frob:todo",
+            "frob:trusted"
         ]
         .map(String::from)
     );
@@ -272,4 +282,106 @@ fn registry_lists_milestone_one_verbs_with_schemas() {
     let todo = all_directives().find(|m| m.verb == "todo").unwrap();
     let schema = serde_json::to_value(todo.json_schema()).unwrap();
     assert_eq!(schema["properties"]["note"]["type"], "array");
+    let effects = all_directives().find(|m| m.verb == "effects").unwrap();
+    let schema = serde_json::to_value(effects.json_schema()).unwrap();
+    assert_eq!(schema["properties"]["set"]["type"], "array");
+}
+
+#[test]
+fn dsl001_suggests_the_new_claim_verbs() {
+    for (typo, want) in [
+        ("effect", "effects"),
+        ("dispatch", "dispatcher"),
+        ("idempotant", "idempotent"),
+        ("trust", "trusted"),
+        ("call", "calls"),
+    ] {
+        let r = common::scan("src/a.rs", &format!("// frob:{typo} x\n"));
+        assert_eq!(r.findings[0].rule.as_str(), "DSL001", "{typo}");
+        assert!(
+            r.findings[0]
+                .message
+                .contains(&format!("did you mean `frob:{want}`")),
+            "{typo}: {}",
+            r.findings[0].message
+        );
+    }
+}
+
+#[test]
+fn effects_record_carries_the_parsed_atom_set() {
+    use gob_directives::{EffectAtom, EffectBase, effects_claim};
+    let r = common::scan(
+        "src/a.rs",
+        "// frob:effects reads(src/x.rs::X) writes(src/y.rs::Y)\nfn a() {}\n",
+    );
+    assert!(r.findings.is_empty(), "{:?}", r.findings);
+    let claim = effects_claim(&r.directives[0]).unwrap().unwrap();
+    assert_eq!(claim.alias, None);
+    let EffectBase::Atoms(atoms) = claim.set.base else {
+        panic!("expected atoms");
+    };
+    assert!(matches!(atoms[0], EffectAtom::Reads(_)));
+    assert!(matches!(atoms[1], EffectAtom::Writes(_)));
+}
+
+#[test]
+fn aliases_yield_the_same_claim_as_the_long_form() {
+    use gob_directives::{EffectAlias, effects_claim};
+    let text = "// frob:pure\nfn a() {}\n// frob:honest\nfn b() {}\n// frob:effects none\nfn c() {}\n// frob:effects honest\nfn d() {}\n// frob:core\nfn e() {}\n";
+    let r = common::scan("src/a.rs", text);
+    assert!(r.findings.is_empty(), "{:?}", r.findings);
+    let claims: Vec<_> = r
+        .directives
+        .iter()
+        .filter_map(|d| effects_claim(d).map(Result::unwrap))
+        .collect();
+    assert_eq!(claims.len(), 4);
+    assert_eq!(claims[0].set, claims[2].set);
+    assert_eq!(claims[1].set, claims[3].set);
+    assert_eq!(claims[0].alias, Some(EffectAlias::Pure));
+    assert_eq!(claims[1].alias, Some(EffectAlias::Honest));
+    assert_eq!(claims[2].alias, None);
+}
+
+#[test]
+fn effect_set_errors_point_inside_the_token() {
+    let text = "// frob:effects clock reads(src/a.rs::x teleport\n";
+    let r = common::scan("src/a.rs", text);
+    assert_eq!(r.findings[0].rule.as_str(), "PARSE001");
+    let range = r.findings[0].span.unwrap().range;
+    let bad = &text[range.to_usize_range()];
+    assert_eq!(bad, "reads(src/a.rs::x");
+}
+
+#[test]
+fn directives_config_defaults_and_scan_config() {
+    use gob_directives::DirectivesConfig;
+    let cfg = DirectivesConfig::default();
+    assert_eq!(cfg.namespaces, ["frob", "grimble", "crunk"]);
+    let scan = ScanConfig::from_config(&cfg, "grimble");
+    assert_eq!(scan.namespaces, cfg.namespaces);
+    assert_eq!(scan.product, "grimble");
+}
+
+#[test]
+fn claim_verbs_are_registered_and_documented() {
+    let verbs: Vec<_> = gob_directives::all_directives()
+        .filter(|m| m.namespace == "frob")
+        .map(|m| m.verb)
+        .collect();
+    for v in [
+        "effects",
+        "pure",
+        "honest",
+        "core",
+        "shell",
+        "hook",
+        "dispatcher",
+        "idempotent",
+        "trusted",
+        "calls",
+    ] {
+        assert!(verbs.contains(&v), "{v} missing from the registry");
+    }
 }

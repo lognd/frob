@@ -25,6 +25,30 @@
       "title": "frob:accept",
       "type": "object"
     },
+    "frob:calls": {
+      "additionalProperties": false,
+      "description": "Declare the targets of the dynamic call at this site (May precision).",
+      "properties": {
+        "targets": {
+          "description": "The symrefs the call may reach.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [],
+      "title": "frob:calls",
+      "type": "object"
+    },
+    "frob:core": {
+      "additionalProperties": false,
+      "description": "Mark this unit as functional core (pure decisions, no effects of its own).",
+      "properties": {},
+      "required": [],
+      "title": "frob:core",
+      "type": "object"
+    },
     "frob:defer": {
       "additionalProperties": false,
       "description": "Park one rule's finding at this site until a ticket pays it.",
@@ -54,6 +78,14 @@
       "title": "frob:defer",
       "type": "object"
     },
+    "frob:dispatcher": {
+      "additionalProperties": false,
+      "description": "Mark this unit as an intentional dispatcher, opting out of the dispatcher rule.",
+      "properties": {},
+      "required": [],
+      "title": "frob:dispatcher",
+      "type": "object"
+    },
     "frob:doc": {
       "additionalProperties": false,
       "description": "Link this site to the documentation section that describes it.",
@@ -69,6 +101,51 @@
       "title": "frob:doc",
       "type": "object"
     },
+    "frob:effects": {
+      "additionalProperties": false,
+      "description": "Claim this unit's effect set: `none`, `honest`, `io`, `any` or atoms, optionally `total`.",
+      "properties": {
+        "set": {
+          "description": "`none`, `honest`, `io`, `any`, or atoms (`reads(X)`, `writes(Y)`, `clock`, `rng`, `env`, `fs`, `net`, `stdio`, `exit`, `panic`, `diverge`) then optional `total`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [],
+      "title": "frob:effects",
+      "type": "object"
+    },
+    "frob:honest": {
+      "additionalProperties": false,
+      "description": "Alias of `frob:effects honest`: this unit's effects are what its signature admits.",
+      "properties": {},
+      "required": [],
+      "title": "frob:honest",
+      "type": "object"
+    },
+    "frob:hook": {
+      "additionalProperties": false,
+      "description": "Mark this unit as a framework entry point, subject to the thin-hook rule.",
+      "properties": {
+        "kind": {
+          "description": "The framework's name for the hook kind, such as `route` or `command`.",
+          "type": "string"
+        }
+      },
+      "required": [],
+      "title": "frob:hook",
+      "type": "object"
+    },
+    "frob:idempotent": {
+      "additionalProperties": false,
+      "description": "Claim this unit is idempotent; discharged only by a bound `idempotent` test.",
+      "properties": {},
+      "required": [],
+      "title": "frob:idempotent",
+      "type": "object"
+    },
     "frob:invariant": {
       "additionalProperties": false,
       "description": "Name an invariant that this site upholds.",
@@ -82,6 +159,22 @@
         "name"
       ],
       "title": "frob:invariant",
+      "type": "object"
+    },
+    "frob:pure": {
+      "additionalProperties": false,
+      "description": "Alias of `frob:effects none`: this unit has no effects.",
+      "properties": {},
+      "required": [],
+      "title": "frob:pure",
+      "type": "object"
+    },
+    "frob:shell": {
+      "additionalProperties": false,
+      "description": "Mark this unit as imperative shell (effects at the edge, thin logic).",
+      "properties": {},
+      "required": [],
+      "title": "frob:shell",
       "type": "object"
     },
     "frob:tests": {
@@ -139,6 +232,21 @@
       ],
       "title": "frob:todo",
       "type": "object"
+    },
+    "frob:trusted": {
+      "additionalProperties": false,
+      "description": "Own an unverified claim about this unit; it is never counted as verified.",
+      "properties": {
+        "because": {
+          "description": "Why the owner vouches for the claim without proof.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "because"
+      ],
+      "title": "frob:trusted",
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -147,13 +255,40 @@
       "$ref": "#/$defs/frob:accept"
     },
     {
+      "$ref": "#/$defs/frob:calls"
+    },
+    {
+      "$ref": "#/$defs/frob:core"
+    },
+    {
       "$ref": "#/$defs/frob:defer"
+    },
+    {
+      "$ref": "#/$defs/frob:dispatcher"
     },
     {
       "$ref": "#/$defs/frob:doc"
     },
     {
+      "$ref": "#/$defs/frob:effects"
+    },
+    {
+      "$ref": "#/$defs/frob:honest"
+    },
+    {
+      "$ref": "#/$defs/frob:hook"
+    },
+    {
+      "$ref": "#/$defs/frob:idempotent"
+    },
+    {
       "$ref": "#/$defs/frob:invariant"
+    },
+    {
+      "$ref": "#/$defs/frob:pure"
+    },
+    {
+      "$ref": "#/$defs/frob:shell"
     },
     {
       "$ref": "#/$defs/frob:tests"
@@ -163,6 +298,9 @@
     },
     {
       "$ref": "#/$defs/frob:todo"
+    },
+    {
+      "$ref": "#/$defs/frob:trusted"
     }
   ],
   "title": "frob directives"

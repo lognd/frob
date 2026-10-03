@@ -2101,6 +2101,7 @@ dependencies = [
 name = "gob-directives"
 version = "0.0.0"
 dependencies = [
+ "gob-config",
  "gob-languages",
  "gob-macros",
  "gob-mdtest",
@@ -2244,6 +2245,7 @@ dependencies = [
  "gob-text",
  "gob-walk",
  "insta",
+ "inventory",
  "petgraph",
  "postcard",
  "rayon",

@@ -78,6 +78,20 @@ pub enum SymbolKind {
     Macro,
     /// A markdown heading.
     Heading,
+    /// A model `node` entity.
+    Node,
+    /// A model `flow` entity.
+    Flow,
+    /// A model `contract` entity.
+    Contract,
+    /// A model `claim` entity.
+    Claim,
+    /// A model `vmodel` entity.
+    VModel,
+    /// A model `pack` entity.
+    Pack,
+    /// A model `boundary` entity.
+    Boundary,
 }
 
 /// Item visibility as seen from outside the crate.

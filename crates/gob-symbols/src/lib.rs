@@ -7,7 +7,8 @@
 //! - [`Adapter`]: the contract `parse`, `fold`, `capabilities`, `fidelity`.
 //!   [`RustAdapter`] (F3), [`MarkdownAdapter`] (F4) and [`OpaqueAdapter`] (F0, for
 //!   every file with no adapter) each produce a [`gob_ir::Term`] and a
-//!   [`gob_ir::ScopeGraph`] ([`Folded`]); [`adapters`] lists them.
+//!   [`gob_ir::ScopeGraph`] ([`Folded`]); [`adapters`] lists them and the `inventory`-based registry
+//!   ([`AdapterEntry`]) lets crates that depend on this one add more.
 //! - [`SymbolRecord`] with [`Digests`] (`sig`, `body`, `doc`, `attr`, `contract`):
 //!   the `unit` view of a term; digests are gob-ir scheme 2, BLAKE3 over the
 //!   canonical facet stream (trivia excluded, outer attributes in Sig, G7-G9).
@@ -51,6 +52,7 @@ mod model;
 mod opaque;
 mod paths;
 mod pipeline;
+mod registry;
 mod rust;
 mod symref;
 mod view;
@@ -72,8 +74,12 @@ pub use model::{
 };
 pub use opaque::OpaqueAdapter;
 pub use pipeline::{
-    BuildStats, EXTRACTOR_VERSION, adapter_for, adapters, build_graph, build_graph_with_stats,
-    extract_file, fold_file, opaque_adapter,
+    BuildStats, EXTRACTOR_VERSION, build_graph, build_graph_with_stats, extract_file, fold_file,
+};
+pub use registry::{
+    AdapterEntry, AdapterReport, DuplicateExtension, adapter_for, adapter_for_path, adapters,
+    fidelity_report, opaque_adapter, registry_conflicts,
 };
 pub use rust::RustAdapter;
 pub use symref::{Symref, SymrefError, Target};
+pub use view::model_symbols;

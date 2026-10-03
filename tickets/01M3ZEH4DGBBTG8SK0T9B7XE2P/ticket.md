@@ -2,13 +2,14 @@
 id = "01M3ZEH4DGBBTG8SK0T9B7XE2P"
 title = "grmb-spec corrections from the G08 implementation"
 type = "docs"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T23:17:29Z"
-updated = "2026-10-02T23:17:29Z"
+updated = "2026-10-02T23:25:53Z"
 idempotency_key = "m2-grmb-spec-fixes"
 labels = ["milestone:2"]
 scope = ["docs/design/**"]

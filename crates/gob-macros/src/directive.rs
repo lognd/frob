@@ -20,7 +20,7 @@ struct DirectiveArgs {
     verb: String,
 }
 
-/// The four flags are the attribute grammar itself, not state.
+/// The five flags are the attribute grammar itself, not state.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, FromField)]
 #[darling(attributes(arg), forward_attrs(doc))]
@@ -36,6 +36,8 @@ struct ArgField {
     #[darling(default)]
     list: bool,
     #[darling(default)]
+    rest: bool,
+    #[darling(default)]
     ticket_ref: bool,
 }
 
@@ -45,6 +47,8 @@ enum Mode {
     Positional,
     Keyed,
     List,
+    /// All remaining positionals parsed together as one `FromArgs` value.
+    Rest,
 }
 
 /// Outer wrapper of a field type.
@@ -98,17 +102,22 @@ struct Planned {
 fn plan_field(f: &ArgField, errors: &mut darling::error::Accumulator) -> Option<Planned> {
     let ident = f.ident.clone()?;
     let (sh, inner) = shape(&f.ty);
-    let chosen = usize::from(f.positional) + usize::from(f.key.is_some()) + usize::from(f.list);
+    let chosen = usize::from(f.positional)
+        + usize::from(f.key.is_some())
+        + usize::from(f.list)
+        + usize::from(f.rest);
     if chosen > 1 {
         errors.push(
             darling::Error::custom(format!(
-                "field `{ident}`: choose one of `positional`, `key = \"..\"`, `list`"
+                "field `{ident}`: choose one of `positional`, `key = \"..\"`, `list`, `rest`"
             ))
             .with_span(&ident),
         );
         return None;
     }
-    let mode = if f.list {
+    let mode = if f.rest {
+        Mode::Rest
+    } else if f.list {
         Mode::List
     } else if f.key.is_some() {
         Mode::Keyed
@@ -127,8 +136,9 @@ fn plan_field(f: &ArgField, errors: &mut darling::error::Accumulator) -> Option<
         errors.push(darling::Error::custom(format!("field `{ident}`: {msg}")).with_span(&ident));
     };
     match (mode, sh) {
-        (Mode::List, Shape::Vec) => {}
+        (Mode::List, Shape::Vec) | (Mode::Rest, Shape::Plain) => {}
         (Mode::List, _) => bad("`list` needs a `Vec<T>` field"),
+        (Mode::Rest, _) => bad("`rest` needs a plain field type implementing `FromArgs`"),
         (_, Shape::Vec) => bad("a `Vec<T>` field needs `#[arg(list)]`"),
         _ => {}
     }
@@ -182,10 +192,10 @@ fn check_order(planned: &[Planned], errors: &mut darling::error::Accumulator) {
                 }
                 seen_optional |= p.optional;
             }
-            Mode::List => {
+            Mode::List | Mode::Rest => {
                 if seen_list {
                     errors.push(
-                        darling::Error::custom("only one `list` field is allowed")
+                        darling::Error::custom("only one `list` or `rest` field is allowed")
                             .with_span(&p.ident),
                     );
                 }
@@ -305,11 +315,16 @@ fn meta_tokens(p: &Planned) -> TokenStream2 {
         quote!(::core::option::Option::None)
     };
     let positional = p.mode != Mode::Keyed;
-    let list = p.mode == Mode::List;
+    let list = matches!(p.mode, Mode::List | Mode::Rest);
     let optional = p.optional;
     let ticket_ref = p.ticket_ref;
     let summary = &p.summary;
     let inner = &p.inner;
+    let kind = if p.mode == Mode::Rest {
+        quote!(<#inner as ::gob_directives::FromArgs>::KIND)
+    } else {
+        quote!(<#inner as ::gob_directives::FromArg>::KIND)
+    };
     quote! {
         ::gob_directives::ArgMeta {
             name: #name,
@@ -317,7 +332,7 @@ fn meta_tokens(p: &Planned) -> TokenStream2 {
             positional: #positional,
             list: #list,
             optional: #optional,
-            kind: <#inner as ::gob_directives::FromArg>::KIND,
+            kind: #kind,
             ticket_ref: #ticket_ref,
             summary: #summary,
         }
@@ -336,6 +351,7 @@ fn bind_tokens(p: &Planned) -> TokenStream2 {
         (Mode::Positional, true) => quote!(let #id = cur.positional_opt::<#inner>(#name)?;),
         (Mode::Keyed, false) => quote!(let #id = cur.keyed::<#ty>(#key)?;),
         (Mode::Keyed, true) => quote!(let #id = cur.keyed_opt::<#inner>(#key)?;),
+        (Mode::Rest, _) => quote!(let #id = cur.rest::<#ty>(#name)?;),
         (Mode::List, _) => quote!(let #id = cur.list::<#inner>(#name)?;),
     }
 }

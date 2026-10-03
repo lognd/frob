@@ -9,6 +9,7 @@
 // frob:ticket 01M3Z713F6VY15YSMS15033RN1
 
 use std::fmt;
+use std::sync::Arc;
 
 use gob_ir::{ScopeGraph, Term, TermError};
 use gob_languages::{ParseLimits, ParsedTree, UnresolvedReason};
@@ -203,6 +204,8 @@ pub enum ConcreteTree {
     Unparsed(UnresolvedReason),
     /// The constant one-leaf tree of an adapter-less file.
     Leaf,
+    /// The source text itself, for adapters whose hand-written parser runs in `fold`.
+    Source(Arc<str>),
 }
 
 /// The facts about one artifact that every adapter needs from the walker.

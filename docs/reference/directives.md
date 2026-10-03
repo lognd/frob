@@ -12,6 +12,20 @@ Accept one rule's finding at this site permanently, with a reason.
 | because | `because=<v>` | string | yes | An ADR, a style anchor or one sentence. |
 | until | `until=<v>` | string | no | An optional date or metric after which the acceptance is revisited. |
 
+## `frob:calls`
+
+Declare the targets of the dynamic call at this site (May precision).
+
+| Argument | Form | Type | Required | Summary |
+|---|---|---|---|---|
+| targets | `<targets>...` | string | no | The symrefs the call may reach. |
+
+## `frob:core`
+
+Mark this unit as functional core (pure decisions, no effects of its own).
+
+Takes no arguments.
+
 ## `frob:defer`
 
 Park one rule's finding at this site until a ticket pays it.
@@ -23,6 +37,12 @@ Park one rule's finding at this site until a ticket pays it.
 | ticket | `ticket=<v>` | string | yes | The ticket that will pay the debt (full ULID). |
 | until | `until=<v>` | string | no | An optional earlier date or metric target. |
 
+## `frob:dispatcher`
+
+Mark this unit as an intentional dispatcher, opting out of the dispatcher rule.
+
+Takes no arguments.
+
 ## `frob:doc`
 
 Link this site to the documentation section that describes it.
@@ -31,6 +51,34 @@ Link this site to the documentation section that describes it.
 |---|---|---|---|---|
 | target | `<target>` | string | yes | The documentation anchor, `path#slug`. |
 
+## `frob:effects`
+
+Claim this unit's effect set: `none`, `honest`, `io`, `any` or atoms, optionally `total`.
+
+| Argument | Form | Type | Required | Summary |
+|---|---|---|---|---|
+| set | `<set>...` | string | no | `none`, `honest`, `io`, `any`, or atoms (`reads(X)`, `writes(Y)`, `clock`, `rng`, `env`, `fs`, `net`, `stdio`, `exit`, `panic`, `diverge`) then optional `total`. |
+
+## `frob:honest`
+
+Alias of `frob:effects honest`: this unit's effects are what its signature admits.
+
+Takes no arguments.
+
+## `frob:hook`
+
+Mark this unit as a framework entry point, subject to the thin-hook rule.
+
+| Argument | Form | Type | Required | Summary |
+|---|---|---|---|---|
+| kind | `<kind>` | string | no | The framework's name for the hook kind, such as `route` or `command`. |
+
+## `frob:idempotent`
+
+Claim this unit is idempotent; discharged only by a bound `idempotent` test.
+
+Takes no arguments.
+
 ## `frob:invariant`
 
 Name an invariant that this site upholds.
@@ -38,6 +86,18 @@ Name an invariant that this site upholds.
 | Argument | Form | Type | Required | Summary |
 |---|---|---|---|---|
 | name | `<name>` | string | yes | The invariant's name. |
+
+## `frob:pure`
+
+Alias of `frob:effects none`: this unit has no effects.
+
+Takes no arguments.
+
+## `frob:shell`
+
+Mark this unit as imperative shell (effects at the edge, thin logic).
+
+Takes no arguments.
 
 ## `frob:tests`
 
@@ -64,3 +124,11 @@ Mark outstanding work owned by a ticket, with an optional free-text note.
 |---|---|---|---|---|
 | id | `<id>` | string | yes | The owning ticket's full 26-char ULID. |
 | note | `<note>...` | string | no | The remaining words, kept as the note. |
+
+## `frob:trusted`
+
+Own an unverified claim about this unit; it is never counted as verified.
+
+| Argument | Form | Type | Required | Summary |
+|---|---|---|---|---|
+| because | `because=<v>` | string | yes | Why the owner vouches for the claim without proof. |

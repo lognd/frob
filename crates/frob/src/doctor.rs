@@ -6,7 +6,7 @@ use std::time::Duration;
 use gob_cache::{Cache, CacheConfig};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec};
-use gob_symbols::{Fidelity, adapter_for, adapters, opaque_adapter};
+use gob_symbols::{Fidelity, adapter_for, fidelity_report};
 use gob_walk::{WalkConfig, walk};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -307,17 +307,15 @@ fn languages_report(root: &std::path::Path, cfg: &FrobConfig) -> LanguagesReport
             *unadapted.entry(ext).or_default() += 1;
         }
     }
-    let mut rows: Vec<LanguageRow> = adapters()
+    let mut rows: Vec<LanguageRow> = fidelity_report()
         .into_iter()
-        .chain([opaque_adapter()])
         .map(|a| LanguageRow {
-            language: a.language().to_owned(),
-            fidelity: a.fidelity().to_string(),
-            adapter: a.identity(),
-            files: claimed.get(a.language()).copied().unwrap_or(0),
+            language: a.language.to_owned(),
+            fidelity: a.fidelity.to_string(),
+            adapter: a.identity,
+            files: claimed.get(a.language).copied().unwrap_or(0),
             capabilities: a
-                .capabilities()
-                .rows()
+                .capabilities
                 .into_iter()
                 .map(|(c, p)| CapabilityRow {
                     capability: c.name().to_owned(),

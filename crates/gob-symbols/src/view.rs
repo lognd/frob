@@ -33,6 +33,8 @@ pub(crate) enum Naming {
     Rust,
     /// `path#slug`.
     Markdown,
+    /// Model entities: `path::name`, kinds from the entity keyword.
+    Model,
     /// Only the file node exists.
     Opaque,
 }
@@ -89,6 +91,13 @@ fn facet(term: &Term, node: NodeId, f: Facet, unknown: &mut Vec<String>) -> Face
 fn kind_of(naming: Naming, kind: &str) -> SymbolKind {
     match (naming, kind) {
         (Naming::Markdown, _) => SymbolKind::Heading,
+        (Naming::Model, "node") => SymbolKind::Node,
+        (Naming::Model, "flow") => SymbolKind::Flow,
+        (Naming::Model, "contract") => SymbolKind::Contract,
+        (Naming::Model, "claim") => SymbolKind::Claim,
+        (Naming::Model, "vmodel") => SymbolKind::VModel,
+        (Naming::Model, "pack") => SymbolKind::Pack,
+        (Naming::Model, "boundary") => SymbolKind::Boundary,
         (_, "function") => SymbolKind::Function,
         (_, "method") => SymbolKind::Method,
         (_, "struct") => SymbolKind::Struct,
@@ -265,7 +274,7 @@ pub(crate) fn build(term: &Term, path: &str, naming: Naming) -> View {
     match naming {
         Naming::Rust => patch_impl_visibility(&mut view.symbols),
         Naming::Markdown => subtree_digests(&mut view),
-        Naming::Opaque => {}
+        Naming::Model | Naming::Opaque => {}
     }
     view
 }
@@ -375,4 +384,13 @@ fn subtree_digests(view: &mut View) {
     for (e, m) in view.extras.iter_mut().zip(memo) {
         e.subtree = m;
     }
+}
+
+/// The entity symbols of a model term for `path`, with their extras, in document order.
+///
+/// For adapters (grimble-model) whose units are model entities rather than code items.
+pub fn model_symbols(term: &Term, path: &str) -> (Vec<SymbolRecord>, Vec<UnitExtras>) {
+    let v = build(term, path, Naming::Model);
+    tracing::debug!(path, symbols = v.symbols.len(), "model symbol view");
+    (v.symbols, v.extras)
 }

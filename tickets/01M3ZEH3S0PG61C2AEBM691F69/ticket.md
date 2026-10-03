@@ -2,13 +2,14 @@
 id = "01M3ZEH3S0PG61C2AEBM691F69"
 title = "gob-symbols: adapter registry, ConcreteTree::Source and entity kinds so non-tree-sitter adapters register"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T23:17:28Z"
-updated = "2026-10-02T23:17:28Z"
+updated = "2026-10-02T23:33:21Z"
 idempotency_key = "m2-adapter-registry"
 labels = ["milestone:2"]
 scope = ["crates/gob-symbols/**", "crates/grimble-model/**", "crates/frob/**", "docs/reference/**"]

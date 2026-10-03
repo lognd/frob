@@ -1,0 +1,146 @@
+kind = "evidence"
+at = "2026-10-02T23:32:47Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p gob-symbols -p grimble-model -p frob-cli"
+digest = "815225a1749e9a430240f7ea60e8c308949ac372625baac97e1482a62791a922"
+status = "measured"
+captured_at = "2026-10-02T23:32:47Z"
+accepts = [1]
+passed = true
+exit_code = 0
+inline = """
+   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/gob-symbols)
+   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-ledger)
+   Compiling proptest v1.11.0
+   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/gob-directives)
+   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-evidence)
+   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-tests)
+   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-ack)
+   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-lease)
+   Compiling grimble-model v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/grimble-model)
+   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-check)
+   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-worktree)
+   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob-land)
+   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/M691F69/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 24.36s
+────────────
+ Nextest run ID 67a6a1e0-0b6d-41fd-870a-831761c6f731 with nextest profile: ci
+    Starting 111 tests across 16 binaries
+        PASS [   0.017s] (  1/111) frob-cli config::tests::registry_files_alias_extends_lease_shared_files_without_duplicates
+        PASS [   0.029s] (  2/111) frob-cli::cli every_verb_is_in_the_command_inventory
+        PASS [   0.052s] (  3/111) frob-cli::check_verb explain_prints_the_rule_page_and_unknown_is_usage
+        PASS [   0.058s] (  4/111) frob-cli::cli config_show_effective_reports_provenance
+        PASS [   0.060s] (  5/111) frob-cli::cli dry_run_is_rejected_on_verbs_that_do_not_opt_in
+        PASS [   0.061s] (  6/111) frob-cli::cli config_show_rejects_unknown_keys_with_a_suggestion
+        PASS [   0.094s] (  7/111) frob-cli::cli init_outside_a_repo_is_a_refusal
+        PASS [   0.123s] (  8/111) frob-cli::cli config_sync_adds_missing_knobs_once
+        PASS [   0.109s] (  9/111) frob-cli::cli init_dry_run_writes_nothing
+        PASS [   0.178s] ( 10/111) frob-cli::cli doctor_outside_a_repo_still_succeeds
+        PASS [   0.057s] ( 11/111) frob-cli::cli unknown_verb_exits_2_with_a_suggestion
+        PASS [   0.119s] ( 12/111) frob-cli::cli schema_verb_dumps_envelope_and_config
+        PASS [   0.183s] ( 13/111) frob-cli::cli in_process_root_matches_the_binary_contract
+        PASS [   0.219s] ( 14/111) frob-cli::cli schema_flag_prints_the_verb_schema
+        PASS [  10.238s] ( 15/111) frob-cli::cli init_twice_second_is_already_and_changes_nothing
+        PASS [  10.364s] ( 16/111) frob-cli::cli doctor_piped_is_json_envelope_even_with_cfg001
+        PASS [  10.395s] ( 17/111) frob-cli::cli doctor_languages_prints_fidelity_precisions_and_f0_extensions
+        PASS [  10.419s] ( 18/111) frob-cli::cli json_flag_is_an_alias_and_conflicts_with_text
+        PASS [  10.363s] ( 19/111) frob-cli::cli text_format_goes_to_stdout_and_errors_to_stderr
+        PASS [   0.429s] ( 20/111) frob-cli::ticket merge_driver_fails_with_exit_1_when_the_fold_fails
+        PASS [  11.073s] ( 21/111) frob-cli::lease_widen lease_widen_without_a_lease_is_refused
+        PASS [  11.294s] ( 22/111) frob-cli::lease_widen update_by_a_non_holder_succeeds_with_a_warning_naming_the_holder
+        PASS [  11.334s] ( 23/111) frob-cli::lease_widen widening_into_another_live_lease_is_refused_and_the_ticket_is_unchanged
+        PASS [  23.134s] ( 24/111) frob-cli::lease_widen lease_widen_rereads_the_scope_and_is_idempotent
+        PASS [  23.308s] ( 25/111) frob-cli::check_verb error_finding_exits_1_and_fail_on_none_exits_0
+        PASS [  13.653s] ( 26/111) frob-cli::ticket ambiguous_handle_exits_3_listing_both_candidates
+        PASS [  13.833s] ( 27/111) frob-cli::ticket empty_set_on_a_list_is_refused_and_clear_empties_it_with_an_event
+        PASS [   0.282s] ( 28/111) frob-cli::wiring registry_files_alias_is_accepted_and_shared_tables_are_listed
+        PASS [  13.322s] ( 29/111) frob-cli::ticket new_with_the_same_key_returns_already
+        PASS [   0.009s] ( 30/111) gob-symbols markdown::tests::github_slugs
+        PASS [   0.022s] ( 31/111) gob-symbols paths::tests::module_paths
+        PASS [   0.010s] ( 32/111) gob-symbols registry::tests::a_builtin_extension_cannot_be_taken
+        PASS [   0.008s] ( 33/111) gob-symbols registry::tests::a_duplicate_extension_keeps_the_first_claimant_and_is_reported
+        PASS [   0.007s] ( 34/111) gob-symbols registry::tests::the_report_lists_builtins_then_opaque
+        PASS [   0.007s] ( 35/111) gob-symbols symref::tests::bracket_dots_stay_in_segment
+        PASS [   0.019s] ( 36/111) gob-symbols symref::tests::rejects_malformed
+        PASS [   0.018s] ( 37/111) gob-symbols symref::tests::round_trips
+        PASS [   0.268s] ( 38/111) frob-cli::wiring sibling_verbs_print_schemas
+        PASS [   0.107s] ( 39/111) gob-symbols::corpus markdown_corpus_covers_every_claimed_operator
+        PASS [   0.015s] ( 40/111) gob-symbols::corpus rust_depth_limit_collapses_into_opaque_and_keeps_calls
+        PASS [   0.010s] ( 41/111) gob-symbols::gaps contract_digest_erases_names_but_sig_keeps_them
+        PASS [   0.010s] ( 42/111) gob-symbols::gaps g01_unresolved_calls_poison_reach_instead_of_being_dropped
+        PASS [   0.009s] ( 43/111) gob-symbols::gaps g02_edges_carry_must_may_unknown_status
+        PASS [   0.090s] ( 44/111) gob-symbols::corpus rust_corpus_covers_every_claimed_operator
+        PASS [   0.013s] ( 45/111) gob-symbols::gaps g03_calls_of_function_values_are_unknown_not_dropped
+        PASS [   0.009s] ( 46/111) gob-symbols::gaps g04_function_passed_as_value_is_a_may_reference_edge
+        PASS [   0.009s] ( 47/111) gob-symbols::gaps g07_outer_attributes_are_in_sig_and_attr_digests
+        PASS [   0.009s] ( 48/111) gob-symbols::gaps g08_comments_in_a_body_do_not_change_the_body_digest
+        PASS [   0.009s] ( 49/111) gob-symbols::gaps g09_markdown_body_is_section_local_with_a_separate_subtree_digest
+        PASS [   0.011s] ( 50/111) gob-symbols::gaps g10_public_api_follows_pub_use_reexports
+        PASS [   0.010s] ( 51/111) gob-symbols::gaps g11_parse_errors_are_holes_and_parse_status_is_a_query
+        PASS [   0.007s] ( 52/111) gob-symbols::gaps g19_unknown_language_is_one_opaque_f0_unit
+        PASS [   0.009s] ( 53/111) gob-symbols::gaps imports_pick_the_callee_among_same_named_functions
+        PASS [   0.008s] ( 54/111) gob-symbols::gaps markdown_links_resolve_to_anchors_or_are_broken_unknown_edges
+        PASS [   0.009s] ( 55/111) gob-symbols::symbols affects_is_transitive_and_ambiguity_is_kept
+        PASS [   0.008s] ( 56/111) gob-symbols::symbols caller_is_affected_by_callee
+        PASS [   0.008s] ( 57/111) gob-symbols::symbols change_doc_changes_doc_only_and_whitespace_is_ignored
+        PASS [   0.011s] ( 58/111) gob-symbols::symbols consistent_param_rename_is_alpha_equivalent_but_a_type_change_is_not
+        PASS [   0.021s] ( 59/111) gob-symbols::symbols corpus_matches_expected_symrefs
+        PASS [   0.012s] ( 60/111) gob-symbols::symbols edit_body_changes_body_only
+        PASS [   0.017s] ( 61/111) gob-symbols::symbols every_public_item_has_symref_kind_and_digests
+        PASS [   0.009s] ( 62/111) gob-symbols::symbols graph_digest_tracks_structure
+        PASS [   0.014s] ( 63/111) gob-symbols::symbols imports_are_flattened_and_classified
+        PASS [   0.009s] ( 64/111) gob-symbols::symbols imports_link_files_in_the_graph
+        PASS [   0.010s] ( 65/111) gob-symbols::symbols markdown_slugs_dedupe_and_nest
+        PASS [   0.013s] ( 66/111) gob-symbols::symbols public_api_hides_private_containers
+        PASS [   0.008s] ( 67/111) gob-symbols::symbols qualified_calls_narrow_candidates
+        PASS [   0.010s] ( 68/111) gob-symbols::symbols resolve_accepts_unique_suffixes_and_reports_ambiguity
+        PASS [  14.467s] ( 69/111) frob-cli::ticket new_update_close_makes_three_commits_and_frontmatter_equals_the_fold
+        PASS [   0.009s] ( 70/111) grimble-model directive::tests::code_side_verbs_are_mdl013
+        PASS [   0.010s] ( 71/111) grimble-model directive::tests::finds_line_and_block_directives
+        PASS [   0.009s] ( 72/111) grimble-model fmt::tests::a_hole_is_never_formatted_away
+        PASS [   0.008s] ( 73/111) grimble-model fmt::tests::long_selectors_wrap_after_operators
+        PASS [   0.008s] ( 74/111) grimble-model fmt::tests::prints_canonical_text_and_is_idempotent
+        PASS [   0.008s] ( 75/111) grimble-model lex::tests::comments_nest_and_leave_the_token_stream
+        PASS [   0.009s] ( 76/111) grimble-model lex::tests::quantities_dates_and_strings
+        PASS [   0.009s] ( 77/111) grimble-model lex::tests::raw_newline_in_string_is_reported
+        PASS [   0.008s] ( 78/111) grimble-model parse::tests::bare_cr_and_bom_are_opaque
+        PASS [   0.009s] ( 79/111) grimble-model parse::tests::comments_bind_by_rule
+        PASS [   0.007s] ( 80/111) grimble-model parse::tests::minimal_model_parses
+        PASS [   0.006s] ( 81/111) grimble-model parse::tests::missing_header_refuses_the_file
+        PASS [   0.018s] ( 82/111) grimble-model parse::tests::pathological_nesting_does_not_overflow_the_stack
+        PASS [   0.008s] ( 83/111) grimble-model parse::tests::syntax_error_becomes_hole_and_parsing_continues
+        PASS [   0.175s] ( 84/111) grimble-model::corpus conformance_corpus
+        PASS [   0.007s] ( 85/111) grimble-model::model a_binary_linking_grimble_model_sees_grmb_at_f4_in_the_report
+        PASS [   0.009s] ( 86/111) grimble-model::model an_exception_edit_changes_only_the_attr_facet
+        PASS [   0.008s] ( 87/111) grimble-model::model an_extension_is_one_identity_with_two_parts
+        PASS [   0.008s] ( 88/111) grimble-model::model duplicate_entities_are_reported_independent_of_include_order
+        PASS [   0.008s] ( 89/111) grimble-model::model glob_includes_expand_in_byte_order_and_the_diamond_loads_once
+        PASS [   0.008s] ( 90/111) grimble-model::model mounting_prefixes_anchors_and_the_term_binds_the_prefix
+        PASS [   0.012s] ( 91/111) grimble-model::model the_adapter_is_f4_and_folds_through_the_gob_symbols_contract
+        PASS [   0.008s] ( 92/111) grimble-model::model the_file_symbols_of_a_grmb_file_list_its_entities
+        PASS [   0.008s] ( 93/111) grimble-model::model the_registry_knows_the_mdl_family
+        PASS [  14.972s] ( 94/111) frob-cli::ticket show_json_has_every_schema_field
+        PASS [   3.593s] ( 95/111) frob-cli::wiring close_of_a_task_without_evidence_is_refused_with_the_test_remedy
+        PASS [   0.099s] ( 96/111) grimble-model::roundtrip the_pipeline_is_total_on_arbitrary_bytes
+        PASS [  26.832s] ( 97/111) frob-cli::lease_widen update_by_the_holder_widens_and_narrows_the_lease
+        PASS [   0.013s] ( 98/111) grimble-model::selectors literal_selectors_are_must_and_holes_add_a_hidden_placeholder
+        PASS [   0.011s] ( 99/111) grimble-model::selectors owner_distinguishes_owned_foreign_and_unknown
+        PASS [  26.767s] (100/111) frob-cli::ticket add_scope_and_remove_scope_round_trip_with_noop_semantics
+        PASS [   0.011s] (101/111) grimble-model::selectors specificity_is_a_total_order_and_ties_are_unknown
+        PASS [   2.012s] (102/111) gob-symbols::symbols second_build_extracts_nothing
+        PASS [   2.201s] (103/111) gob-symbols::gaps g19_walked_files_without_an_adapter_are_counted_opaque
+        PASS [   0.147s] (104/111) grimble-model::roundtrip the_pipeline_is_total_on_token_soup
+        PASS [   0.784s] (105/111) grimble-model::roundtrip the_generator_makes_valid_models
+        PASS [   3.420s] (106/111) frob-cli::wiring no_evidence_with_a_reason_closes_and_records_a_bypass_event
+        PASS [  16.884s] (107/111) frob-cli::ticket merge_driver_unions_events_from_both_branches_and_refolds
+        PASS [   1.700s] (108/111) grimble-model::roundtrip fmt_is_a_fixed_point_and_preserves_u
+        PASS [  15.995s] (109/111) frob-cli::ticket update_set_comment_brief_and_parent
+        PASS [  17.210s] (110/111) frob-cli::ticket links_blocked_doable_and_repeat_semantics
+        PASS [   4.546s] (111/111) frob-cli::wiring doable_hides_tickets_overlapping_a_live_lease_and_shows_them_otherwise
+────────────
+     Summary [  27.855s] 111 tests run: 111 passed, 0 skipped
+"""
+size = 12641

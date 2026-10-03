@@ -1,0 +1,5 @@
+error: field `id`: `rest` needs a plain field type implementing `FromArgs`
+ --> tests/ui/directive_rest_not_plain.rs:8:5
+  |
+8 |     id: Vec<String>,
+  |     ^^

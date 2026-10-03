@@ -98,7 +98,7 @@ impl Adapter for RustAdapter {
         match tree {
             ConcreteTree::Parsed(t) => fold_tree(&t.text, t.root(), input),
             ConcreteTree::Unparsed(reason) => failed_file(input, "rust", *reason),
-            ConcreteTree::Leaf => failed_file(
+            ConcreteTree::Leaf | ConcreteTree::Source(_) => failed_file(
                 input,
                 "rust",
                 gob_languages::UnresolvedReason::GrammarUnavailable,
