@@ -2,12 +2,12 @@
 id = "01M41MWVAZM5SVK5A91M4WWW00"
 title = "CI on experimental fails: tests depend on the host git identity, and a fixture name is invalid on Windows"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T19:47:13Z"
-updated = "2026-10-03T19:47:38Z"
+updated = "2026-10-03T19:47:47Z"
 scope = ["crates/grimble-model/tests/**", "crates/frob-release/tests/**", "crates/gob-git/tests/**", "crates/frob/src/init.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/snapshots/cli__init_frob_toml.snap", "crates/frob/tests/common/**"]
 
 [[acceptance]]
