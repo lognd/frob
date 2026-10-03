@@ -7,7 +7,7 @@ priority = "critical"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T21:21:02Z"
-updated = "2026-10-03T21:44:15Z"
+updated = "2026-10-03T21:48:03Z"
 scope = ["crates/frob-pm/src/board.rs", "crates/gob-dev/**", ".github/workflows/ci.yml", "crates/frob-release/tests/ci_pins.rs", "CONTRIBUTING.md"]
 
 [[acceptance]]
