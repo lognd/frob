@@ -2,13 +2,14 @@
 id = "01M3ZZ14E0BZQ4K6XN9C28ECPV"
 title = "Version scheme: v2 continues 0.53X.0; 1.0.0 is the first stable release"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T04:05:51Z"
-updated = "2026-10-03T04:09:01Z"
+updated = "2026-10-03T04:09:02Z"
 idempotency_key = "m2-version-scheme-053x"
 labels = ["milestone:2"]
 scope = ["docs/design/**"]
