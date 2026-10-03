@@ -2,7 +2,7 @@
 id = "01M407VRHHCEM42DHWAPN12ND1"
 title = "Coordinator log: CFM8QB0 format land, ledger repair, session state"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
