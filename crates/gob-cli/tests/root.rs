@@ -153,7 +153,10 @@ fn cwd_flag_is_validated_and_applied() {
     let dir = std::env::temp_dir();
     let (exit, out, _) = run(&["--cwd", dir.to_str().unwrap(), "echo"]);
     assert_eq!(exit, 0);
-    assert!(out.contains(dir.to_str().unwrap().trim_end_matches('/')));
+    // The envelope is JSON, so a Windows path arrives backslash-escaped; compare parsed paths.
+    let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let printed = std::path::PathBuf::from(v["data"]["cwd"].as_str().unwrap());
+    assert_eq!(printed, dir, "{out}");
     let (exit, _, _) = run(&["--cwd", "/definitely/not/here", "echo"]);
     assert_eq!(exit, 2);
 }

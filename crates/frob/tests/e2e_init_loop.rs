@@ -214,6 +214,7 @@ fn full_loop(branch: &str) {
     }
     let land = Fresh::ok(&wt, &["land"]);
     assert_eq!(land["verb"], "land");
+    let land_warnings = land["warnings"].to_string();
 
     // base branch holds the change
     let lib = git(root, &["show", &format!("{branch}:src/lib.rs")]);
@@ -235,7 +236,11 @@ fn full_loop(branch: &str) {
     assert_eq!(show["data"]["summary"]["id"], id.as_str());
 
     // worktree and branch removed
-    assert!(!wt.exists(), "worktree removed: {}", wt.display());
+    assert!(
+        !wt.exists(),
+        "worktree removed: {} (land warnings: {land_warnings})",
+        wt.display()
+    );
     let branches = git(root, &["branch", "--list", "ticket/*"]);
     assert!(branches.is_empty(), "ticket branch removed: {branches}");
 

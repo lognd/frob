@@ -10,7 +10,7 @@ body = '''
 Owner request 2026-10-03 (D86, docs/design/rules.md section 3.1, boundaries.md 2.5): the PATH host-path portability family. The / versus \ difference broke CI on every first Windows run (~G5RJY40: merge driver path, command allowlist compare, --cwd string compare, fixtures).
 
 Rules (see rules.md 3.1 for the exact firing conditions and defaults):
-- PATH001 absolute-host-path: absolute host path string literals (/home/<name>/, /Users/<name>/, /root/, /tmp/..., X:\ or X:/, UNC); exempt /, URLs, shebangs, [path] allowed (default /dev/null); Warn in non-test code, Advisory in tests.
+- PATH001 absolute-host-path: absolute host path string literals (/home/<name>/, /Users/<name>/, ~other/, /tmp/..., X:\ or X:/, UNC); exempt /, URLs, shebangs, [path] allowed (default /dev/null); Warn in non-test code, Advisory in tests.
 - PATH002 string-path-separator: a path turned into a string (Rust to_str, to_string_lossy, display, as_os_str; Python str(p), os.fspath) then split, joined, concatenated, compared, trimmed or searched with a literal / or \ in the same function.
 - PATH003 path-in-command-line: a path-derived string interpolated into one command-line string (format! into a shell command, sh -c, a git config value git runs, a .ps1 body) instead of passed as its own argument.
 

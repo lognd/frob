@@ -6,10 +6,10 @@
 |---|---|
 | family | TICK |
 | product | frob |
-| severity (default) | warn |
+| severity (default) | error |
 | tier | universal |
 | scope | repo |
-| fix | manual |
+| fix | deterministic |
 | polarity | P+ |
 | must_measure | false |
 | version | 1 |
@@ -18,5 +18,5 @@
 A committed ledger file holds an absolute home path.
 
 `/home/<name>/`, `/Users/<name>/`, `/root/` and `C:\Users\<name>\` in a ledger file publish the local user name and
-directory layout of everyone who pushes. frob does not rewrite committed ledgers: edit the value in a new commit
-(`~/` or a path relative to the repository parent), or leave it if the repository is private.
+directory layout of everyone who pushes. `frob ticket doctor --fix` scrubs the paths in one new commit (history is
+never rewritten); a hand edit to `~/` or a path relative to the repository parent clears the finding too.

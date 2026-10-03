@@ -4,16 +4,16 @@ actor = "lognd"
 rev = 1
 provider = "command"
 ref = "cargo nextest run --profile ci -p gob-lock -p frob-ack -p gob-symbols"
-digest = "4ceb2d8d73507719a0b6760f21cd93959f87407b06783bd43ceb1b9b15a8f83e"
+digest = "47620a6c0cd1cef43173771e0cf707cecd89a51cf1cbbaa41eb27aa373ee6bfb"
 status = "measured"
 captured_at = "2026-10-02T22:44:30Z"
 accepts = [1, 2]
 passed = true
 exit_code = 0
 inline = """
-   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-symbols)
-   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-directives)
-   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/frob-ack)
+   Compiling gob-symbols v0.0.0 (frob-v2-wt/WKASW54/crates/gob-symbols)
+   Compiling gob-directives v0.0.0 (frob-v2-wt/WKASW54/crates/gob-directives)
+   Compiling frob-ack v0.0.0 (frob-v2-wt/WKASW54/crates/frob-ack)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 3.28s
 ────────────
  Nextest run ID 58d9a163-1d0d-4401-ba62-a7f35c5d80cd with nextest profile: ci
@@ -83,4 +83,4 @@ inline = """
 ────────────
      Summary [   1.498s] 62 tests run: 62 passed, 0 skipped
 """
-size = 6623
+size = 6560

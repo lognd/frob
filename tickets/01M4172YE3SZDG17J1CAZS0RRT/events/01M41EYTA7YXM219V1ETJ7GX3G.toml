@@ -1,7 +1,7 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T18:03:26Z"
-digest = "5b3e1a7295c6c1744f27229838249523ba6351d479ea94fd7589ce9b14b43fd8"
+digest = "df00d32aa5da36f28aca34403651ba8c9da6f44d98703dfdad56bd4d17ae7886"
 exit_code = 0
 inline = """
 dry run: 34 crates in publish order, nothing published
@@ -39,14 +39,14 @@ dry run: 34 crates in publish order, nothing published
  32. grimble-check 0.0.0
  33. frob-land 0.0.0
  34. frob-cli 0.0.0
-   Compiling gob-dev v0.0.0 (/home/logan/projects/frob-v2-wt/AZS0RRT/crates/gob-dev)
+   Compiling gob-dev v0.0.0 (frob-v2-wt/AZS0RRT/crates/gob-dev)
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.74s
      Running `target/debug/gob-dev publish --dry-run`
 """
 passed = true
 provider = "command"
 ref = "cargo dev publish --dry-run"
-size = 1015
+size = 994
 status = "measured"
 at = "2026-10-03T18:03:26Z"
 actor = "lognd"

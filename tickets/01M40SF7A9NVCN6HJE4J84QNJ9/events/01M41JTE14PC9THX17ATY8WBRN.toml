@@ -1,7 +1,7 @@
 kind = "transition"
 from = "todo"
 to = "in-progress"
-reason = "lease: lognd in /home/logan/projects/frob-v2-wt/J84QNJ9; scope: .github/workflows/release.yml, packaging/pypi/**, docs/design/releases.md, .github/workflows/build-smoke.yml, crates/frob-release/tests/release_workflow.rs, changelog.d/01M413T4GRZDC843XFPG31XEZ3.fixed.md, changelog.d/01M40YQZF4422S88TN6992AN0Q.fixed.md; ttl 7200s"
+reason = "lease: lognd in frob-v2-wt/J84QNJ9; scope: .github/workflows/release.yml, packaging/pypi/**, docs/design/releases.md, .github/workflows/build-smoke.yml, crates/frob-release/tests/release_workflow.rs, changelog.d/01M413T4GRZDC843XFPG31XEZ3.fixed.md, changelog.d/01M40YQZF4422S88TN6992AN0Q.fixed.md; ttl 7200s"
 at = "2026-10-03T19:10:57Z"
 actor = "lognd"
 rev = 1

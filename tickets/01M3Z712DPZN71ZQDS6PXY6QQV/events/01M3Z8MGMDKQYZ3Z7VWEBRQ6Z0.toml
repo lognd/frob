@@ -4,7 +4,7 @@ actor = "lognd"
 rev = 1
 provider = "command"
 ref = "cargo nextest run --profile ci -p gob-ir"
-digest = "ad46ecbdc034a048f46ce6c8312dec7ffcf89384028da93cd607939c5f085dc5"
+digest = "635f075a70feb9dfbf471ced0b50af3c0bde49f024c3f2b63e2c39e4f7584261"
 status = "measured"
 captured_at = "2026-10-02T21:34:29Z"
 accepts = [1, 2]
@@ -12,8 +12,8 @@ passed = true
 exit_code = 0
 inline = """
     Blocking waiting for file lock on package cache
-   Compiling gob-rules v0.0.0 (/home/logan/projects/frob-v2-wt/PXY6QQV/crates/gob-rules)
-   Compiling gob-ir v0.0.0 (/home/logan/projects/frob-v2-wt/PXY6QQV/crates/gob-ir)
+   Compiling gob-rules v0.0.0 (frob-v2-wt/PXY6QQV/crates/gob-rules)
+   Compiling gob-ir v0.0.0 (frob-v2-wt/PXY6QQV/crates/gob-ir)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 2.42s
 ────────────
  Nextest run ID d83e04a7-eacb-439f-bcf6-dfcb3cf4a59a with nextest profile: ci
@@ -92,4 +92,4 @@ inline = """
 ────────────
      Summary [   0.314s] 71 tests run: 71 passed, 0 skipped
 """
-size = 7043
+size = 7001

@@ -4,7 +4,7 @@ actor = "lognd"
 rev = 1
 provider = "nextest"
 ref = "-p frob-ack -p frob-check -p frob-cli -p frob-land -p frob-lease -p frob-tests -p frob-worktree -p gob-cache -p gob-check -p gob-dev -p gob-diagnostics -p gob-directives -p gob-exec -p gob-ir -p gob-lock -p gob-symbols -E '(package(=frob-ack) & (test(=acked_signature_change_fires_drift003_and_ack_clears_it) | test(=changed_public_signature_with_unacked_dependents_fires_affect001) | test(=code_and_doc_changes_under_an_acked_binding_fire_drift001_naming_the_facet) | test(=doc_to_missing_heading_fires_drift002_with_nearest_heading) | test(=evaluate_matches_check_and_is_served_from_cache_on_repeat) | test(=lock_and_symbols_agree_on_the_digest_scheme) | test(=outer_attribute_change_on_an_acked_symbol_fires_drift001_on_attr) | test(=path_target_acks_every_symbol_and_all_reacks_tracked) | test(=reack_of_unchanged_state_is_a_no_op) | test(=scheme_one_lock_under_version_two_is_all_reattest) | test(=unknown_target_and_empty_request_are_errors) | test(=verbs_ack_why_and_affects_work_end_to_end) | test(=version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it))) | (package(=frob-check) & (test(=a_branch_touching_an_out_of_scope_file_still_fires_scope001) | test(=a_changed_side_input_misses_the_cache) | test(=a_configured_ledger_that_is_absent_fails_the_gate_but_an_unconfigured_one_does_not) | test(=a_failing_tool_stage_yields_tool001_outside_the_budget) | test(=a_frob_accept_suppresses_a_tool_finding_like_a_native_one) | test(=a_missing_tool_binary_fails_under_required_and_passes_under_never) | test(=a_non_required_unresolved_finding_passes_under_required_and_fails_under_all) | test(=a_tool_outside_its_version_range_yields_one_non_required_unresolved) | test(=actionlint_findings_map_to_ci014_and_configured_labels_are_dropped) | test(=an_annotation_required_unresolved_finding_is_marked_required) | test(=an_optional_missing_tool_is_unresolved_but_not_required) | test(=bare_marker_fires_and_second_run_hits_the_cache_with_identical_output) | test(=base_advancing_does_not_leak_into_scope001) | test(=cov001_counts_rust_files_and_is_not_required_without_a_test_capable_language) | test(=editing_a_file_invalidates_only_its_entries) | test(=fail_on_maps_severity_to_the_exit_code) | test(=fix_is_refused_without_a_ticket_when_the_knob_requires_scope) | test(=fix_rewrites_the_file_and_the_next_run_is_clean) | test(=fixture_a_matches_the_recorded_findings) | test(=fixture_b_matches_the_recorded_findings) | test(=only_filters_by_family_and_rejects_unknown_names) | test(=perf001_fires_only_when_enforced_and_over_budget) | test(=telemetry_line_is_appended_when_enabled) | test(=the_ledger_directory_is_exempt_from_scope001) | test(=ticket_restricts_per_file_rules_to_its_scope) | test(=ticket_without_a_ledger_is_an_error) | test(=uncommitted_out_of_scope_edits_still_fire_scope001) | test(=unparseable_output_is_a_tool001_error) | test(=warm_run_on_this_repository_is_under_two_seconds) | test(=zizmor_findings_carry_ci_ids_and_real_spans))) | (package(=frob-cli) & (test(=in_process_root_matches_the_binary_contract))) | (package(=frob-land) & (test(=an_unleased_ticket_and_another_worktree_are_refused) | test(=conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean) | test(=dirty_worktree_refuses_and_lists_paths) | test(=dry_run_plan_is_deterministic_and_changes_nothing) | test(=happy_path_lands_closes_and_cleans_up) | test(=landing_from_inside_the_worktree_defaults_to_its_ticket) | test(=lock_contention_refuses_retryably_naming_the_holder) | test(=missing_evidence_refuses_unless_bypassed_with_a_reason) | test(=red_check_refuses_with_exit_3_and_moves_nothing))) | (package(=frob-lease) & (test(=verbs_list_leases_and_contention))) | (package(=frob-tests) & (test(=attribute_scan_recognises_tests_outside_a_tests_module) | test(=flags_targets_that_resolve_to_no_test_or_no_symbol))) | (package(=frob-worktree) & (test(=another_holder_is_refused_and_can_steal_with_a_reason) | test(=cli_work_twice_reports_already_and_other_actor_gets_exit_3) | test(=concurrent_work_on_overlapping_tickets_grants_exactly_one) | test(=doable_hides_tickets_overlapping_a_live_lease) | test(=start_leases_the_current_checkout_and_requeue_releases) | test(=unworkable_tickets_are_refused) | test(=work_creates_worktree_and_is_idempotent_for_the_holder) | test(=worktree_dir_knob_moves_the_worktree))) | (package(=gob-cache) & (test(=tests::findings_miss_when_any_key_part_changes) | test(=tests::null_cache_when_dir_is_a_file) | test(=tests::persists_across_reopen))) | (package(=gob-check) & (test(=a_foreign_product_gets_findings_caches_and_subject_counts) | test(=a_must_measure_rule_with_zero_subjects_is_a_required_unresolved) | test(=only_accepts_this_products_rules_and_rejects_the_others) | test(=zero_subjects_pass_when_the_rule_is_not_applicable_or_was_filtered_out))) | (package(=gob-dev) & (test(=committed_pages_have_no_orphans_on_disk) | test(=imports_maps_and_verifies) | test(=output_is_deterministic_and_check_passes) | test(=refuses_a_non_empty_target) | test(=renders_the_id_map) | test(=renders_the_migration_report) | test(=renders_the_summary_table) | test(=ulids_keep_creation_order))) | (package(=gob-diagnostics) & (test(=required_reason_serializes_tagged_and_summary_counts_required))) | (package(=gob-directives) & (test(=binds_to_adjacent_fn_and_doc_comment_form) | test(=binds_to_fn_two_lines_later) | test(=block_comment_lines_are_scanned_individually) | test(=dsl001_suggests_close_verb_and_points_at_it) | test(=dsl002_names_the_remedy_and_has_no_fix) | test(=enclosing_symbol_when_nothing_follows) | test(=file_level_when_no_symbols) | test(=inner_doc_binds_to_container_not_next_item) | test(=innermost_enclosing_wins) | test(=markdown_before_first_heading_is_file) | test(=markdown_binds_to_preceding_heading) | test(=optionals_may_be_absent) | test(=parse001_points_at_the_exact_token) | test(=parses_every_mode) | test(=record_span_covers_directive_text) | test(=tests_inside_module_tests_reorients) | test(=tests_outside_a_test_item_does_not_reorient) | test(=tests_reorients_to_target_inside_test_item) | test(=tests_with_bad_target_in_test_item_is_parse001) | test(=three_lines_away_is_not_following) | test(=toml_hash_comment_is_file_bound) | test(=typed_args_round_trip) | test(=typed_errors) | test(=unhonoured_namespaces_are_ignored_and_honoured_ones_all_unknown))) | (package(=gob-exec) & (test(=captured_output_is_redacted_and_env_added) | test(=concurrency_is_bounded_by_jobs) | test(=spawn_counter_counts_only_real_spawns) | test(=timeout_kills_group_within_a_second) | test(=timeout_leaves_no_grandchild) | test(=unlisted_program_is_not_allowed))) | (package(=gob-ir) & (test(=golden_digest_is_stable_across_runs) | test(=malformed_programs_are_errors) | test(=occurrences_literals_and_free_variables_of_subterms) | test(=opaque_indirect_reads_scope_lexically_and_payload_is_exact) | test(=p0_requires_exact_on_both_sides) | test(=p_minus_bounds_table) | test(=p_plus_bounds_table) | test(=pc_reach_table) | test(=pn_max_and_min_thresholds) | test(=relation_closure_is_a_kleene_least_fixpoint))) | (package(=gob-lock) & (test(=diff_reports_added_removed_and_changed_facets) | test(=empty_lock_is_just_the_header) | test(=file_name_is_product_dot_lock) | test(=flow_and_five_facet_symbol_entries_round_trip_in_stable_text) | test(=missing_file_is_empty_and_garbage_is_an_error) | test(=plan_acks_flows_by_key) | test(=plan_records_changes_skips_unchanged_and_rejects_empty) | test(=plan_refuses_to_migrate_without_all_and_reason_then_reattests_and_drops) | test(=save_load_round_trips_and_is_sorted_and_stable) | test(=scheme_one_file_under_version_two_is_all_reattest) | test(=version_one_file_loads_and_every_entry_needs_reattest))) | (package(=gob-symbols) & (test(=g19_unknown_language_is_one_opaque_f0_unit) | test(=markdown_corpus_covers_every_claimed_operator) | test(=rust_corpus_covers_every_claimed_operator)))'"
-digest = "eaef67ba909a03892f3cd9e42f1fb02285143d96a54eb2e436bbcf1e5d2f3918"
+digest = "c4abe26c09f7bd1a44e7272385450f06718eb6797a27887fe349174080315bfe"
 status = "measured"
 captured_at = "2026-10-02T22:44:13Z"
 passed = true
@@ -14,7 +14,7 @@ inline = """
    Compiling serde_json v1.0.151
    Compiling ppv-lite86 v0.2.21
    Compiling aho-corasick v1.1.5
-   Compiling gob-check v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-check)
+   Compiling gob-check v0.0.0 (frob-v2-wt/WKASW54/crates/gob-check)
    Compiling rand_chacha v0.9.0
    Compiling rand v0.9.5
    Compiling tree-sitter v0.27.0
@@ -23,29 +23,29 @@ inline = """
    Compiling pest_generator v2.9.2
    Compiling pest_derive v2.9.2
    Compiling insta v1.48.0
-   Compiling gob-languages v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-languages)
-   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-symbols)
+   Compiling gob-languages v0.0.0 (frob-v2-wt/WKASW54/crates/gob-languages)
+   Compiling gob-symbols v0.0.0 (frob-v2-wt/WKASW54/crates/gob-symbols)
    Compiling regex v1.13.1
    Compiling proptest v1.11.0
    Compiling error_set_impl v0.9.2
    Compiling error_set v0.9.2
-   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-directives)
-   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/frob-ledger)
-   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/frob-ack)
-   Compiling gob-ir v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-ir)
-   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/frob-evidence)
-   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/frob-lease)
-   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/frob-tests)
-   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/frob-obligations)
-   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/frob-check)
-   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/frob-worktree)
-   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/frob-land)
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/frob)
-   Compiling gob-dev v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-dev)
-   Compiling gob-diagnostics v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-diagnostics)
-   Compiling gob-cache v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-cache)
-   Compiling gob-lock v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-lock)
-   Compiling gob-exec v0.0.0 (/home/logan/projects/frob-v2-wt/WKASW54/crates/gob-exec)
+   Compiling gob-directives v0.0.0 (frob-v2-wt/WKASW54/crates/gob-directives)
+   Compiling frob-ledger v0.0.0 (frob-v2-wt/WKASW54/crates/frob-ledger)
+   Compiling frob-ack v0.0.0 (frob-v2-wt/WKASW54/crates/frob-ack)
+   Compiling gob-ir v0.0.0 (frob-v2-wt/WKASW54/crates/gob-ir)
+   Compiling frob-evidence v0.0.0 (frob-v2-wt/WKASW54/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (frob-v2-wt/WKASW54/crates/frob-lease)
+   Compiling frob-tests v0.0.0 (frob-v2-wt/WKASW54/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (frob-v2-wt/WKASW54/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (frob-v2-wt/WKASW54/crates/frob-check)
+   Compiling frob-worktree v0.0.0 (frob-v2-wt/WKASW54/crates/frob-worktree)
+   Compiling frob-land v0.0.0 (frob-v2-wt/WKASW54/crates/frob-land)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/WKASW54/crates/frob)
+   Compiling gob-dev v0.0.0 (frob-v2-wt/WKASW54/crates/gob-dev)
+   Compiling gob-diagnostics v0.0.0 (frob-v2-wt/WKASW54/crates/gob-diagnostics)
+   Compiling gob-cache v0.0.0 (frob-v2-wt/WKASW54/crates/gob-cache)
+   Compiling gob-lock v0.0.0 (frob-v2-wt/WKASW54/crates/gob-lock)
+   Compiling gob-exec v0.0.0 (frob-v2-wt/WKASW54/crates/gob-exec)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 48.90s
 ────────────
  Nextest run ID 81f434c7-968a-48c3-9990-c85f5a5956ce with nextest profile: default
@@ -186,4 +186,4 @@ inline = """
 ────────────
      Summary [  23.221s] 133 tests run: 133 passed, 201 skipped
 """
-size = 15671
+size = 15251

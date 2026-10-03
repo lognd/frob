@@ -184,6 +184,29 @@ pub struct ChangelogExemptData {
     pub reason: String,
 }
 
+/// One digest recomputed by a scrub: the event file and the digest before and after.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct DigestChange {
+    /// Repo-relative path of the event file whose `digest` changed.
+    pub file: String,
+    /// The digest before the scrub.
+    pub old: String,
+    /// The digest over the scrubbed text.
+    pub new: String,
+}
+
+/// A doctor repair rewrote files of this ticket to remove absolute home paths (audit only).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ScrubData {
+    /// Why the files were rewritten.
+    pub reason: String,
+    /// Repo-relative paths of the rewritten files.
+    pub files: Vec<String>,
+    /// Digests recomputed over scrubbed evidence text.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub digests: Vec<DigestChange>,
+}
+
 /// A branch landed on a base ref.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct LandData {
@@ -221,6 +244,8 @@ pub enum EventBody {
     ChangelogExempt(ChangelogExemptData),
     /// The ticket's branch was landed; audit only.
     Land(LandData),
+    /// A doctor repair scrubbed absolute home paths from the ticket's files; audit only.
+    Scrub(ScrubData),
     /// A kind this version does not interpret; it folds to no change.
     #[serde(other)]
     Other,
@@ -368,6 +393,7 @@ pub const fn kind_name(body: &EventBody) -> &'static str {
         EventBody::EvidenceBypass(_) => "evidence-bypass",
         EventBody::ChangelogExempt(_) => "changelog-exempt",
         EventBody::Land(_) => "land",
+        EventBody::Scrub(_) => "scrub",
         EventBody::Other => "other",
     }
 }
@@ -460,6 +486,15 @@ mod tests {
                 commit: "abc".into(),
                 branch: "ticket/X".into(),
                 pushed: false,
+            }),
+            EventBody::Scrub(ScrubData {
+                reason: "absolute home paths".into(),
+                files: vec!["tickets/X/events/E.toml".into()],
+                digests: vec![DigestChange {
+                    file: "tickets/X/events/E.toml".into(),
+                    old: "a".into(),
+                    new: "b".into(),
+                }],
             }),
         ];
         for body in bodies {

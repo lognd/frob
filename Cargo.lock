@@ -2187,6 +2187,7 @@ version = "0.0.0"
 dependencies = [
  "gob-log",
  "nix",
+ "proptest",
  "thiserror",
  "tracing",
  "walkdir",

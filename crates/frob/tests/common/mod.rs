@@ -4,10 +4,17 @@
 
 use std::path::Path;
 
-/// A fresh git repository in a temp dir with a repo-local identity (`Test` / `test@example.com`), so no test reads the host's git config.
+/// A fresh git repository in a temp dir on branch `main` with a repo-local identity (`Test` / `test@example.com`), so no test reads the host's git config.
 pub fn git_repo() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     gob_git::Repo::init(dir.path()).expect("git init");
+    // git for Windows defaults to `master`; pin the branch so snapshots and `base = ...` agree everywhere.
+    let head = std::process::Command::new("git")
+        .args(["symbolic-ref", "HEAD", "refs/heads/main"])
+        .current_dir(dir.path())
+        .status()
+        .expect("git symbolic-ref");
+    assert!(head.success(), "git symbolic-ref HEAD");
     for (key, value) in [("user.name", "Test"), ("user.email", "test@example.com")] {
         let status = std::process::Command::new("git")
             .args(["config", key, value])

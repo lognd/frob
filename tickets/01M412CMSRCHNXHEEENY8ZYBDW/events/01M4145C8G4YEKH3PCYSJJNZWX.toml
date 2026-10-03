@@ -1,10 +1,10 @@
 kind = "evidence"
 accepts = [1, 2]
 captured_at = "2026-10-03T14:54:47Z"
-digest = "e7e7add339e001a1cd4863f03b88c7d17ee65c0acb71bd4b944a9f4bf28d8e24"
+digest = "840f17a01911e343c1dd93d93af421247c04cb0d39dce45f7838a45e522fcbfc"
 exit_code = 0
 inline = """
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/Y8ZYBDW/crates/frob)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/Y8ZYBDW/crates/frob)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 6.52s
 ────────────
  Nextest run ID 2a6ccd82-3945-4b0e-9305-e808b55af9a7 with nextest profile: ci
@@ -20,7 +20,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-cli --profile ci -E 'test(no_changelog) | test(exemption)'"
-size = 1068
+size = 1047
 status = "measured"
 tests = ["the_missing_fragment_remedy_names_both_the_fragment_verb_and_the_exemption", "no_changelog_without_a_reason_is_a_usage_error_and_changes_nothing", "no_changelog_with_a_reason_closes_without_a_fragment_and_records_the_event", "a_refused_close_keeps_the_exemption_event_and_a_retry_does_not_repeat_it", "tickets_closed_with_no_changelog_are_listed_for_the_reviewer_and_do_not_block"]
 at = "2026-10-03T14:54:47Z"

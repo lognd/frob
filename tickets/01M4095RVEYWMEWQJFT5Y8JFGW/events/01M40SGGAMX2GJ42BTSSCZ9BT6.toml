@@ -1,9 +1,9 @@
 kind = "evidence"
 captured_at = "2026-10-03T11:48:37Z"
-digest = "aa52ed0e89c54d161e8cae99e8c8fc1ef75a068ec5f846f7e8b6e2ab9db8f422"
+digest = "46b56afc552c005a4557c38c89570f6ac0b92a56a080a12ba0c28da3a8d5ba64"
 exit_code = 0
 inline = """
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/5Y8JFGW/crates/frob)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/5Y8JFGW/crates/frob)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 5.99s
 ────────────
  Nextest run ID 353c00cc-c9b5-42c1-a1af-83a8ca8e6e2a with nextest profile: default
@@ -18,7 +18,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-cli -E binary(pm_wiring)"
-size = 905
+size = 884
 status = "measured"
 tests = ["init_registers_milestone_and_cycle_attributes_once", "merge_driver_verb_refolds_a_milestone_path", "concurrent_milestone_edits_on_two_branches_merge_with_both_events_and_a_refolded_frontmatter", "doctor_reports_a_drifted_milestone_and_a_dangling_cycle_member_and_fix_repairs_them"]
 at = "2026-10-03T11:48:37Z"

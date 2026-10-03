@@ -1,10 +1,10 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T08:23:15Z"
-digest = "fd57411a10f5ca686139ea4d0f8595cc92d9e816f8c1b179f5f3bfdebc3d7b03"
+digest = "dc972d5f85e7e100a0fe409caa468070f1b5d3e84e542d92962bf751a3465a74"
 exit_code = 0
 inline = """
-   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/WSY4VA5/crates/frob-release)
+   Compiling frob-release v0.0.0 (frob-v2-wt/WSY4VA5/crates/frob-release)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 0.81s
 ────────────
  Nextest run ID d3c1a9b1-38d4-45dc-b441-cc4322e21236 with nextest profile: default
@@ -16,7 +16,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-release -E test(bump_sets_every_crate_pin_wheel_and_lock)"
-size = 531
+size = 510
 status = "measured"
 tests = ["bump_sets_every_crate_pin_wheel_and_lock"]
 at = "2026-10-03T08:23:15Z"

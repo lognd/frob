@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
-use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec};
+use gob_exec::{Arg, Limits, Outcome as ExecOutcome, Program, Runner, Shell, Spec, command_line};
 use gob_git::Repo;
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -15,7 +15,8 @@ use crate::config_cmd::{SyncData, sync_config};
 use crate::workspace::{Located, config_refusal};
 
 /// Merge driver arguments (`%O` ancestor, `%A` ours, `%B` theirs, `%P` path), after the program.
-const DRIVER_ARGS: &str = "merge-driver %O %A %B %P";
+/// The arguments after the program in the driver command; git substitutes the `%` placeholders.
+const DRIVER_ARGS: [&str; 5] = ["merge-driver", "%O", "%A", "%B", "%P"];
 /// The portable program name, used when `frob` on `PATH` is the running executable.
 const BARE_PROGRAM: &str = "frob";
 /// The git config key holding the ledger merge driver command.
@@ -327,7 +328,7 @@ pub(crate) fn driver_program(command: &str) -> Option<String> {
 
 /// Resolve a driver program: a path must exist, a bare name is looked up on `PATH` (never through a shell).
 fn resolve_program(program: &str) -> Option<PathBuf> {
-    if program.contains('/') {
+    if program.contains('/') || (cfg!(windows) && program.contains('\\')) {
         return Path::new(program).is_file().then(|| PathBuf::from(program));
     }
     Program::Tool {
@@ -363,31 +364,61 @@ pub(crate) fn judge_driver(command: &str) -> Result<DriverVerdict, CliError> {
     })
 }
 
-/// Quote `path` for a git driver command (git runs it through a shell).
-fn shell_word(path: &str) -> String {
-    let plain = |c: char| c.is_ascii_alphanumeric() || "/._-+:@".contains(c);
-    if !path.is_empty() && path.chars().all(plain) {
-        path.to_owned()
+/// The shell git runs a driver command through: the bundled `sh` on Windows, `sh` elsewhere.
+fn driver_shell() -> Shell {
+    if cfg!(windows) {
+        Shell::GitForWindowsSh
     } else {
-        format!("'{}'", path.replace('\'', "'\\''"))
+        Shell::Posix
+    }
+}
+
+// frob:ticket 01M41RK1G648EJJNRK4G5RJY40
+/// The form of an executable path written into a driver command on Windows: forward slashes, no `\\?\` verbatim prefix.
+///
+/// `D:/a/frob.exe` is understood by git's `sh` and by the Windows loader alike; quoting is
+/// `gob_exec::command_line`'s job. This string rewrite is the one path-to-text bridge left here and
+/// moves to `gob-path` (paths.md section 1) unchanged.
+pub(crate) fn windows_shell_path(path: &str) -> String {
+    let plain = if let Some(unc) = path.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{unc}")
+    } else {
+        path.strip_prefix(r"\\?\").unwrap_or(path).to_owned()
+    };
+    plain.replace('\\', "/")
+}
+
+/// The executable path as written into a driver command: Windows paths are made `sh`-safe, others are untouched.
+fn exe_for_shell(exe: &Path) -> String {
+    let text = exe.display().to_string();
+    if cfg!(windows) {
+        windows_shell_path(&text)
+    } else {
+        text
     }
 }
 
 /// The driver command for `program` (a bare name or an absolute path).
 fn driver_command_for(program: &str) -> String {
-    format!("{} {DRIVER_ARGS}", shell_word(program))
+    // git expands `%` itself before the shell runs, so a literal one in the path is doubled.
+    let mut argv = vec![Arg::from(program.replace('%', "%%"))];
+    argv.extend(DRIVER_ARGS.iter().map(|a| Arg::from(*a)));
+    command_line(driver_shell(), &argv)
 }
 
 /// The command that fixes a wrong driver, runnable without trusting `PATH`.
 pub(crate) fn fix_command() -> String {
-    let exe = running_exe().map_or_else(|_| BARE_PROGRAM.to_owned(), |p| p.display().to_string());
-    format!("{} init --fix-driver", shell_word(&exe))
+    let exe = running_exe().map_or_else(|_| BARE_PROGRAM.to_owned(), |p| exe_for_shell(&p));
+    command_line(
+        driver_shell(),
+        &[Arg::from(exe), Arg::from("init"), Arg::from("--fix-driver")],
+    )
 }
 
 /// The driver command for this machine and why: bare `frob` only when `PATH` resolves to the running executable.
 fn default_driver() -> Result<(String, String), CliError> {
     let exe = running_exe()?;
-    let abs = driver_command_for(&exe.display().to_string());
+    let abs = driver_command_for(&exe_for_shell(&exe));
     Ok(match resolve_program(BARE_PROGRAM) {
         Some(p) if is_running_frob(&p, &exe) => (
             driver_command_for(BARE_PROGRAM),
@@ -597,5 +628,59 @@ impl Command for Init {
             Some(w) => payload.with_warning(w),
             None => payload,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:ticket 01M41RK1G648EJJNRK4G5RJY40
+    // frob:tests crates/frob/src/init.rs::windows_shell_path
+    #[test]
+    fn windows_paths_become_forward_slash_sh_words() {
+        assert_eq!(
+            windows_shell_path(r"D:\a\frob\frob\target\debug\frob.exe"),
+            "D:/a/frob/frob/target/debug/frob.exe"
+        );
+        // The mixed form assert_cmd and cargo produce, and the verbatim prefix canonicalize adds.
+        assert_eq!(
+            windows_shell_path(r"D:\a\frob\target\debug/frob.exe"),
+            "D:/a/frob/target/debug/frob.exe"
+        );
+        assert_eq!(
+            windows_shell_path(r"\\?\C:\Users\Run Ner\frob.exe"),
+            "C:/Users/Run Ner/frob.exe"
+        );
+        assert_eq!(
+            windows_shell_path(r"\\?\UNC\host\share\frob.exe"),
+            "//host/share/frob.exe"
+        );
+        assert_eq!(windows_shell_path("/usr/bin/frob"), "/usr/bin/frob");
+    }
+
+    // frob:ticket 01M41RK1G648EJJNRK4G5RJY40
+    // frob:tests crates/frob/src/init.rs::driver_command_for
+    #[test]
+    fn the_driver_command_is_built_by_command_line_and_keeps_git_placeholders() {
+        let line = driver_command_for(&windows_shell_path(r"C:\Program Files\frob\frob.exe"));
+        let argv: Vec<Arg> = [
+            "C:/Program Files/frob/frob.exe",
+            "merge-driver",
+            "%O",
+            "%A",
+            "%B",
+            "%P",
+        ]
+        .into_iter()
+        .map(Arg::from)
+        .collect();
+        assert_eq!(line, command_line(driver_shell(), &argv));
+        assert!(line.ends_with(" merge-driver %O %A %B %P"), "{line}");
+        assert_eq!(
+            driver_program(&line).as_deref(),
+            Some("C:/Program Files/frob/frob.exe")
+        );
+        assert!(driver_command_for("/opt/50%/frob").contains("50%%"));
     }
 }

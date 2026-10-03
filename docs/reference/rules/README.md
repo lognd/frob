@@ -138,7 +138,7 @@
 | [TICK001](TICK001.md) | frontmatter-differs-from-fold | error | deterministic | P+ | false | A ticket's frontmatter differs from the fold of its events. |
 | [TICK002](TICK002.md) | ticket-not-on-base | error | manual | P+ | true | A ticket id is referenced but absent from the base ref. |
 | [TICK003](TICK003.md) | dangling-link | error | manual | P+ | false | A link or parent names a ticket that does not exist. |
-| [TICK004](TICK004.md) | absolute-home-path | warn | manual | P+ | false | A committed ledger file holds an absolute home path. |
+| [TICK004](TICK004.md) | absolute-home-path | error | deterministic | P+ | false | A committed ledger file holds an absolute home path. |
 
 ## TODO
 

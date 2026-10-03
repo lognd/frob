@@ -1,11 +1,11 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-03T08:35:37Z"
-digest = "709a4cb22b206396113071d87697fb5c7b7549aecbb34a765b09380a9fb3f8b9"
+digest = "f5905f6415b0776b413a6785b6c08c74384058b16b008492eabdca40d748dabd"
 exit_code = 0
 inline = """
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/BZ9EG10/crates/frob)
-   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/BZ9EG10/crates/frob-release)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/BZ9EG10/crates/frob)
+   Compiling frob-release v0.0.0 (frob-v2-wt/BZ9EG10/crates/frob-release)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 2.45s
 ────────────
  Nextest run ID a25ad8ea-25b7-4921-9efd-b7e5bad2e8fa with nextest profile: default
@@ -18,7 +18,7 @@ inline = """
 passed = true
 provider = "nextest"
 ref = "-p frob-cli -p frob-release -E 'test(=a_ready_milestone_is_cut_into_one_commit_with_tags_and_a_ledger_record) | test(=a_ready_cut_is_one_commit_with_bump_and_changelog_and_both_tags)'"
-size = 765
+size = 723
 status = "measured"
 tests = ["a_ready_cut_is_one_commit_with_bump_and_changelog_and_both_tags", "a_ready_milestone_is_cut_into_one_commit_with_tags_and_a_ledger_record"]
 at = "2026-10-03T08:35:37Z"

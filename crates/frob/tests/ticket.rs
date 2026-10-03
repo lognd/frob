@@ -1,6 +1,6 @@
 //! End-to-end tests of the `ticket` verbs and the ledger merge driver against temporary repositories.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Output;
 use std::time::Duration;
 
@@ -35,13 +35,6 @@ fn git(dir: &Path, args: &[&str]) -> String {
     out.stdout.trim().to_owned()
 }
 
-fn frob_bin() -> PathBuf {
-    Command::cargo_bin("frob")
-        .expect("frob binary")
-        .get_program()
-        .into()
-}
-
 impl Repo {
     fn new(branch_mode: bool) -> Self {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -54,11 +47,7 @@ impl Repo {
         let repo = Self { dir };
         assert_eq!(code(&repo.frob(&["init"])), 0);
         common::set_done_requires(repo.path(), &["no_open_children"]);
-        let driver = format!("{} merge-driver %O %A %B %P", frob_bin().display());
-        git(
-            repo.path(),
-            &["config", "merge.frob-ledger.driver", &driver],
-        );
+        // `frob init` writes the driver itself; the merge below runs exactly what a user gets.
         if branch_mode {
             let toml = repo.path().join("frob.toml");
             let text = std::fs::read_to_string(&toml).expect("frob.toml");

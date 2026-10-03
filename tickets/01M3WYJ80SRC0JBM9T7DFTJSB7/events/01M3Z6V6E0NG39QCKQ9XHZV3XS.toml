@@ -4,24 +4,24 @@ actor = "lognd"
 rev = 1
 provider = "command"
 ref = "cargo nextest run --profile ci -p gob-dev -p frob-cli"
-digest = "f05c59e8ca4d95c76d05ac41558a7b25c402dee36e21a513e77266d0a97dd170"
+digest = "ba47cc6f8ac36b03d9e58073d5f24103d8a37e2813944c59b5413bc96ce882eb"
 status = "measured"
 captured_at = "2026-10-02T21:03:10Z"
 accepts = [1, 2]
 passed = true
 exit_code = 0
 inline = """
-   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2/crates/frob-ledger)
-   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2/crates/frob-ack)
-   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2/crates/frob-evidence)
-   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2/crates/frob-lease)
-   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2/crates/frob-worktree)
-   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2/crates/frob-tests)
-   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2/crates/frob-obligations)
-   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2/crates/frob-check)
-   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2/crates/frob-land)
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2/crates/frob)
-   Compiling gob-dev v0.0.0 (/home/logan/projects/frob-v2/crates/gob-dev)
+   Compiling frob-ledger v0.0.0 (<repo>/crates/frob-ledger)
+   Compiling frob-ack v0.0.0 (<repo>/crates/frob-ack)
+   Compiling frob-evidence v0.0.0 (<repo>/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (<repo>/crates/frob-lease)
+   Compiling frob-worktree v0.0.0 (<repo>/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (<repo>/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (<repo>/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (<repo>/crates/frob-check)
+   Compiling frob-land v0.0.0 (<repo>/crates/frob-land)
+   Compiling frob-cli v0.0.0 (<repo>/crates/frob)
+   Compiling gob-dev v0.0.0 (<repo>/crates/gob-dev)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 49.00s
 ────────────
  Nextest run ID 43d7f9cf-0279-41ab-96d7-a5a83033ca0c with nextest profile: ci
@@ -76,4 +76,4 @@ inline = """
 ────────────
      Summary [  10.507s] 47 tests run: 47 passed, 0 skipped
 """
-size = 5591
+size = 5349

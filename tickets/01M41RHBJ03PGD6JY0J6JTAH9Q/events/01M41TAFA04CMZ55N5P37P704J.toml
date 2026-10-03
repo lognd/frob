@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T21:22:03Z"
+digest = "54194bbfea494c9cf01997b50cbe8f71363eddabb3a642bc2fc4f3c7b463ad77"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7f8691f4-3d10-4d58-b80a-94c6532b8da3 with nextest profile: default
+    Starting 2 tests across 30 binaries (262 tests skipped)
+        PASS [   0.131s] frob-ledger::scrub second_run_is_a_no_op
+        PASS [   1.033s] frob-cli::ticket_scrub doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.035s] 2 tests run: 2 passed, 262 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -p frob-cli -E 'test(second_run_is_a_no_op) | test(doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same)'"
+size = 646
+status = "measured"
+tests = ["second_run_is_a_no_op", "doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same"]
+at = "2026-10-03T21:22:03Z"
+actor = "lognd"
+rev = 1

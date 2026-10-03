@@ -3,7 +3,7 @@
 
 use frob_ledger::model::TicketType;
 use frob_ledger::ops::NewTicket;
-use frob_ledger::privacy::{find_home_path, tick004};
+use frob_ledger::privacy::{find_home_path, find_home_root, tick004};
 use frob_ledger::{Ledger, LedgerConfig};
 use gob_git::{CommitOptions, RelPath, Repo};
 
@@ -110,4 +110,34 @@ fn ledger_walk_reports_only_dirty_files() {
         assert_eq!(f.rule.as_str(), "TICK004");
         assert!(f.message.contains(&id.to_string()), "{}", f.message);
     }
+}
+
+/// `TICK004` is an Error, and its message names the repair verb.
+// frob:tests crates/frob-ledger/src/privacy.rs::tick004
+#[test]
+fn tick004_is_an_error_naming_the_repair() {
+    let f = tick004("tickets/X/ticket.md", b"in /home/name/p").expect("finding");
+    assert_eq!(f.severity, gob_rules::Severity::Error);
+    assert!(f.message.contains("ticket doctor --fix"), "{}", f.message);
+}
+
+/// The root range covers `/home/<name>` and its Windows and `/root` spellings, not the rest of the path.
+// frob:tests crates/frob-ledger/src/privacy.rs::find_home_root
+#[test]
+fn home_root_range_stops_after_the_user_name() {
+    for (text, root) in [
+        ("at /home/ann/projects/x", "/home/ann"),
+        ("/Users/bob.k/Library", "/Users/bob.k"),
+        ("cd /root/work", "/root"),
+        ("C:\\Users\\bo\\proj", "C:\\Users\\bo"),
+        (
+            "C:\\Users\\bo\\proj".replace("\\\\", "\\").as_str(),
+            "C:\\Users\\bo",
+        ),
+        ("d:/Users/bo/proj", "d:/Users/bo"),
+    ] {
+        let r = find_home_root(text.as_bytes()).expect(text);
+        assert_eq!(&text[r], root, "{text}");
+    }
+    assert!(find_home_root(b"~/projects /home/<user>/x").is_none());
 }

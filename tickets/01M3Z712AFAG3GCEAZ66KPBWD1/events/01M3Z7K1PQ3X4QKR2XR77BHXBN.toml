@@ -4,7 +4,7 @@ actor = "lognd"
 rev = 1
 provider = "nextest"
 ref = "-p frob-check -p frob-cli -p frob-land -p frob-lease -p frob-ledger -p frob-tests -p gob-config -p gob-dev -p gob-diagnostics -p gob-git -E '(package(=frob-check) & (test(=a_changed_side_input_misses_the_cache) | test(=a_failing_tool_stage_yields_tool001_outside_the_budget) | test(=a_missing_tool_binary_fails_under_required_and_passes_under_never) | test(=a_non_required_unresolved_finding_passes_under_required_and_fails_under_all) | test(=an_annotation_required_unresolved_finding_is_marked_required) | test(=bare_marker_fires_and_second_run_hits_the_cache_with_identical_output) | test(=editing_a_file_invalidates_only_its_entries) | test(=fail_on_maps_severity_to_the_exit_code) | test(=fix_is_refused_without_a_ticket_when_the_knob_requires_scope) | test(=fix_rewrites_the_file_and_the_next_run_is_clean) | test(=only_filters_by_family_and_rejects_unknown_names) | test(=perf001_fires_only_when_enforced_and_over_budget) | test(=required::tests::annotation_prefix_maps_to_a_required_reason) | test(=required::tests::pending_mark_matches_by_rule_and_message) | test(=required::tests::unrelated_unresolved_is_not_marked) | test(=telemetry_line_is_appended_when_enabled) | test(=ticket_restricts_per_file_rules_to_its_scope) | test(=ticket_without_a_ledger_is_an_error) | test(=warm_run_on_this_repository_is_under_two_seconds))) | (package(=frob-cli) & (test(=config_show_effective_reports_provenance) | test(=config_show_rejects_unknown_keys_with_a_suggestion) | test(=config_sync_adds_missing_knobs_once) | test(=doctor_outside_a_repo_still_succeeds) | test(=doctor_piped_is_json_envelope_even_with_cfg001) | test(=dry_run_is_rejected_on_verbs_that_do_not_opt_in) | test(=every_verb_is_in_the_command_inventory) | test(=in_process_root_matches_the_binary_contract) | test(=init_dry_run_writes_nothing) | test(=init_outside_a_repo_is_a_refusal) | test(=init_twice_second_is_already_and_changes_nothing) | test(=json_flag_is_an_alias_and_conflicts_with_text) | test(=schema_flag_prints_the_verb_schema) | test(=schema_verb_dumps_envelope_and_config) | test(=text_format_goes_to_stdout_and_errors_to_stderr) | test(=unknown_verb_exits_2_with_a_suggestion))) | (package(=frob-land) & (test(=an_unleased_ticket_and_another_worktree_are_refused) | test(=conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean) | test(=dirty_worktree_refuses_and_lists_paths) | test(=dry_run_plan_is_deterministic_and_changes_nothing) | test(=happy_path_lands_closes_and_cleans_up) | test(=landing_from_inside_the_worktree_defaults_to_its_ticket) | test(=lock_contention_refuses_retryably_naming_the_holder) | test(=missing_evidence_refuses_unless_bypassed_with_a_reason) | test(=red_check_refuses_with_exit_3_and_moves_nothing))) | (package(=frob-lease) & (test(=contention_ranks_shared_files))) | (package(=frob-ledger) & (test(=alias_ambiguity_lists_both_candidates) | test(=branch_mode_commits_to_the_current_branch) | test(=concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent) | test(=doctor_flags_and_fixes_a_stale_frontmatter) | test(=index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise) | test(=lifecycle_new_update_link_comment_close) | test(=link_topology_is_enforced) | test(=new_is_idempotent_on_the_key) | test(=tick002_and_tick003) | test(=trunk_mode_commits_to_trunk_even_on_another_branch) | test(=update_validates_and_repeats_are_already))) | (package(=frob-tests) & (test(=an_untouched_tree_selects_nothing_and_a_touched_test_file_selects_its_tests) | test(=attribute_scan_recognises_tests_outside_a_tests_module) | test(=dry_run_prints_the_selection_and_runs_nothing) | test(=flags_targets_that_resolve_to_no_test_or_no_symbol) | test(=only_tests_reaching_the_changed_function_are_selected) | test(=test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree))) | (package(=gob-config) & (test(=check_emits_cfg001_per_missing_knob) | test(=file_beats_default_and_override_beats_file) | test(=materialize_preserves_comments_and_order) | test(=nested_table_loads) | test(=unknown_key_suggests_nearest) | test(=unknown_key_without_close_match_has_no_suggestion) | test(=wrong_type_is_invalid))) | (package(=gob-dev) & (test(=imports_maps_and_verifies) | test(=refuses_a_non_empty_target) | test(=renders_the_migration_report) | test(=renders_the_summary_table) | test(=ulids_keep_creation_order))) | (package(=gob-diagnostics) & (test(=exit_code_table) | test(=fail_on_threshold) | test(=json_refusal_snapshot) | test(=json_success_snapshot) | test(=required_reason_serializes_tagged_and_summary_counts_required) | test(=schema_has_envelope_fields) | test(=slug_resolves_from_registry) | test(=text_color_snapshot) | test(=text_plain_snapshot) | test(=unresolved_policy_composes_with_the_threshold) | test(=unresolved_policy_matrix))) | (package(=gob-git) & (test(=cas_exhausted_when_ref_keeps_churning) | test(=cas_succeeds_after_one_lost_race) | test(=commit_from_linked_worktree_syncs_primary_checkout) | test(=concurrent_writers_lose_nothing) | test(=delete_via_none_and_local_edit_refusal) | test(=primary_with_local_edit_is_reported_and_keeps_it) | test(=read_apis) | test(=root_commit_on_missing_ref_and_checkout_sync) | test(=spawn_fallbacks_worktree_merge_push) | test(=staged_unrelated_file_is_untouched)))'"
-digest = "dc0832c287f6aedd30e673ef5fdc4b0e7215e69b7858564f87b07f0c65118d63"
+digest = "4128285fb09ba137a60aefe33a50a6f0cedf79e56a7781291eda1bf4430e3aad"
 status = "measured"
 captured_at = "2026-10-02T21:16:12Z"
 passed = true
@@ -44,11 +44,11 @@ inline = """
    Compiling pest_derive v2.9.2
    Compiling insta v1.48.0
    Compiling regex v1.13.1
-   Compiling gob-languages v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/gob-languages)
+   Compiling gob-languages v0.0.0 (frob-v2-wt/6KPBWD1/crates/gob-languages)
    Compiling error_set_impl v0.9.2
    Compiling error_set v0.9.2
-   Compiling gob-config v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/gob-config)
-   Compiling gob-diagnostics v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/gob-diagnostics)
+   Compiling gob-config v0.0.0 (frob-v2-wt/6KPBWD1/crates/gob-config)
+   Compiling gob-diagnostics v0.0.0 (frob-v2-wt/6KPBWD1/crates/gob-diagnostics)
    Compiling ahash v0.8.12
    Compiling ppv-lite86 v0.2.21
    Compiling half v2.7.1
@@ -66,8 +66,8 @@ inline = """
    Compiling gix-object v0.64.1
    Compiling gix-lock v24.0.0
    Compiling gix-shallow v0.13.0
-   Compiling gob-cache v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/gob-cache)
-   Compiling gob-symbols v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/gob-symbols)
+   Compiling gob-cache v0.0.0 (frob-v2-wt/6KPBWD1/crates/gob-cache)
+   Compiling gob-symbols v0.0.0 (frob-v2-wt/6KPBWD1/crates/gob-symbols)
    Compiling gix-revwalk v0.35.0
    Compiling gix-ref v0.67.1
    Compiling gix-filter v0.34.0
@@ -79,7 +79,7 @@ inline = """
    Compiling gix-config v0.60.0
    Compiling gix-protocol v0.65.1
    Compiling gix-odb v0.84.0
-   Compiling gob-directives v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/gob-directives)
+   Compiling gob-directives v0.0.0 (frob-v2-wt/6KPBWD1/crates/gob-directives)
    Compiling gix-worktree v0.56.0
    Compiling gix-diff v0.67.1
    Compiling gix-dir v0.29.1
@@ -88,18 +88,18 @@ inline = """
    Compiling gix-merge v0.20.1
    Compiling gix-status v0.34.1
    Compiling gix v0.87.1
-   Compiling gob-git v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/gob-git)
-   Compiling frob-ledger v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/frob-ledger)
-   Compiling frob-ack v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/frob-ack)
-   Compiling frob-evidence v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/frob-evidence)
-   Compiling frob-lease v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/frob-lease)
-   Compiling frob-worktree v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/frob-worktree)
-   Compiling frob-tests v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/frob-tests)
-   Compiling frob-obligations v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/frob-obligations)
-   Compiling frob-check v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/frob-check)
-   Compiling frob-land v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/frob-land)
-   Compiling frob-cli v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/frob)
-   Compiling gob-dev v0.0.0 (/home/logan/projects/frob-v2-wt/6KPBWD1/crates/gob-dev)
+   Compiling gob-git v0.0.0 (frob-v2-wt/6KPBWD1/crates/gob-git)
+   Compiling frob-ledger v0.0.0 (frob-v2-wt/6KPBWD1/crates/frob-ledger)
+   Compiling frob-ack v0.0.0 (frob-v2-wt/6KPBWD1/crates/frob-ack)
+   Compiling frob-evidence v0.0.0 (frob-v2-wt/6KPBWD1/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (frob-v2-wt/6KPBWD1/crates/frob-lease)
+   Compiling frob-worktree v0.0.0 (frob-v2-wt/6KPBWD1/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (frob-v2-wt/6KPBWD1/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (frob-v2-wt/6KPBWD1/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (frob-v2-wt/6KPBWD1/crates/frob-check)
+   Compiling frob-land v0.0.0 (frob-v2-wt/6KPBWD1/crates/frob-land)
+   Compiling frob-cli v0.0.0 (frob-v2-wt/6KPBWD1/crates/frob)
+   Compiling gob-dev v0.0.0 (frob-v2-wt/6KPBWD1/crates/gob-dev)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 46.04s
 ────────────
  Nextest run ID a68ccb49-53ea-4377-949c-6ff3826ca00a with nextest profile: default
@@ -202,4 +202,4 @@ inline = """
 ────────────
      Summary [  10.006s] 95 tests run: 95 passed, 82 skipped
 """
-size = 13102
+size = 12724
