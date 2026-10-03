@@ -21,6 +21,10 @@ target = "01M3Z713YNM5666B7YFEHPFVKD"
 kind = "blocked-by"
 target = "01M3ZX7F1SGDAFM6ZQ8BP7TEN3"
 
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7FYE5D1N2SY01VNVVACK"
+
 [[acceptance]]
 text = "Given two crates importing each other, when grimble check runs, then CYCLE names both"
 bound = false
