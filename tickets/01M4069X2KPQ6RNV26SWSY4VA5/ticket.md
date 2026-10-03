@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:58Z"
-updated = "2026-10-03T08:23:15Z"
+updated = "2026-10-03T08:23:19Z"
 idempotency_key = "m2-rel-version-bump"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-release/src/bump.rs", "crates/frob-release/Cargo.toml", "crates/frob-release/src/lib.rs", "crates/frob-release/src/rel002.rs", "crates/frob-release/src/error.rs", "crates/frob-release/tests/bump.rs", "crates/frob/src/release_cmd.rs", "crates/frob/Cargo.toml", "Cargo.lock", "docs/design/releases.md", "docs/reference/cli/frob.md"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the same version again, when bump runs, then no file changes"
-bound = false
+bound = true
 +++
 
 A function and `frob release bump VERSION --dry-run` that rewrites [workspace.package] version, intra-workspace dependency version pins and the wheel's pyproject version with format-preserving TOML edits, then re-checks REL002; idempotent.
