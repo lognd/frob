@@ -2,13 +2,14 @@
 id = "01M40SG11J388ZYWB7YJD0NPX1"
 title = "frob init registers the merge driver as bare 'frob', which may resolve to a different frob on PATH"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T11:48:22Z"
-updated = "2026-10-03T12:05:36Z"
+updated = "2026-10-03T12:05:37Z"
 idempotency_key = "m2-rel-init-driver-binary"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob/src/init.rs", "crates/frob/src/doctor*", "crates/frob/tests/**", "docs/design/cli.md", "changelog.d/01M40SG11J388ZYWB7YJD0NPX1.*"]
