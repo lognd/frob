@@ -151,6 +151,8 @@ fn refuse(e: ReleaseError) -> CliError {
         ReleaseError::Tampered(_) | ReleaseError::Unmarked(_) => {
             ("E-CHANGELOG-EDITED", "git checkout -- CHANGELOG.md")
         }
+        // frob:ticket 01M413T4PVDKZ014X3WB5DF7DD
+        ReleaseError::Config(_) => ("E-RELEASE-CONFIG", "frob config show --effective"),
     };
     tracing::info!(code, "release changelog refused");
     Refusal::new(code, RefusalClass::GuardNeedsAction, e.to_string())

@@ -130,3 +130,9 @@ in_progress = 4
 [release]
 # When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green.
 require_ci = true
+# Tag name pattern of a release; `{product}` expands once per product below.
+tag = "{product}-v{version}"
+# Products a release ships, one tag each (grimble is a preview binary until 0.533.0).
+products = ["frob", "grimble"]
+# Products that ship as a preview: their tag message and changelog heading say so (grimble until 0.533.0).
+preview = ["grimble"]

@@ -42,6 +42,14 @@ impl Repo {
         git(dir.path(), &["config", "core.autocrlf", "false"]);
         let repo = Self { dir };
         assert_eq!(code(&repo.run(&["--json", "init"])), 0);
+        let toml = repo.dir.path().join("frob.toml");
+        let text = std::fs::read_to_string(&toml).expect("frob.toml");
+        std::fs::write(
+            &toml,
+            text.replace("tag = \"v{version}\"", "tag = \"{product}-v{version}\"")
+                .replace("products = []", "products = [\"frob\", \"grimble\"]"),
+        )
+        .expect("write frob.toml");
         git(repo.dir.path(), &["add", "-A"]);
         git(repo.dir.path(), &["commit", "-q", "-m", "base"]);
         repo

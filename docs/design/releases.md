@@ -69,7 +69,7 @@ Incremental releases depend on main always being shippable:
 | `frob milestone criterion add VERSION TEXT` / `remove VERSION N` | edits the exit criteria; a removal records the `moved` map (old position to new, 0 when removed) so evidence follows its criterion |
 | `frob milestone evidence add VERSION --provider P --ref R [--accepts N]...` / `list VERSION` | captures a record with the same providers, allowlist and format as `ticket evidence add` and offers it for exit criteria; `milestone show` prints each criterion as `bound` or `unbound` with the binding evidence (latest record per provider, ref and criterion decides; only measured, passing records bind; `--provider attestation --statement T [--fact F]...` is a listed attester's statement for criteria no tool measures, shown as `attested`, security.md 2.3). `milestone criterion remove` reports the evidence that loses its criterion (`lost_evidence`, as `ticket update` does) |
 | `frob release status [VERSION]` | readiness: every exit criterion evidenced; no open ticket in the milestone's epics; CI green on the tip; fragments compile; GEN001 and the pack lock clean. It also prints what is left, the forecast for it (pm-enforcement.md 5) and the changelog preview. It never fails a check; it reports. |
-| `frob release cut VERSION` | requires status ready (or `--override --reason`, recorded as an event). Bumps the lockstep version of every crate (monorepo.md 4); compiles CHANGELOG.md from the fragments and removes them; commits on main through the land machinery (CAS, one commit); tags `frob-vVERSION` (plus `grimble-v` and `crunk-v` when those binaries are in the milestone). Pushing the tag starts the release job. As built: `frob release cut VERSION [--override --reason TEXT] [--push]` refuses a dirty tree, a checkout off the base branch, an existing tag and a not-ready status (exit 3 with the remedy); the override reason is a `override` event on the milestone; the commit is `chore(release): cut VERSION`; tags are annotated, local unless `--push`, and `frob` and `grimble` (preview) are both tagged from 0.532.0; the milestone gets a `cut` event (version, commit, tag names and oids; REL001 reads it) and moves to `released`. A failure after the commit resumes by re-running the same command (failure matrix in `crates/frob-release/src/cut.rs`). |
+| `frob release cut VERSION` | requires status ready (or `--override --reason`, recorded as an event). Bumps the lockstep version of every crate (monorepo.md 4); compiles CHANGELOG.md from the fragments and removes them; commits on main through the land machinery (CAS, one commit); tags one tag per configured product (section 4a). Pushing the tag starts the release job. As built: `frob release cut VERSION [--override --reason TEXT] [--push]` refuses a dirty tree, a checkout off the base branch, an existing tag and a not-ready status (exit 3 with the remedy); the override reason is a `override` event on the milestone; the commit is `chore(release): cut VERSION`; tags are annotated, local unless `--push`, one per `[release] products` entry named by `[release] tag` (this repository: `frob-v` and `grimble-v` tags); the milestone gets a `cut` event (version, commit, tag names and oids; REL001 reads it) and moves to `released`. A failure after the commit resumes by re-running the same command (failure matrix in `crates/frob-release/src/cut.rs`). |
 | `frob release bump VERSION [--dry-run] [--allow-downgrade]` | sets the one lockstep version: `[workspace.package] version` (added when absent), every member made to inherit it with `version.workspace = true` (one line to edit per release, no member can drift), the `version` of intra-workspace path dependencies, a static wheel `pyproject.toml` version, then `Cargo.lock` through an offline `cargo update --workspace`; format-preserving, idempotent (a repeat reports `already`), refuses a version below the current one without `--allow-downgrade`, and re-runs REL002 afterwards. `release cut` calls it |
 | `frob release forecast VERSION` | time to release: the forecast of the last blocking ticket plus the measured land-to-release lag |
 | `frob cycle new/plan/assign/close/velocity` | as pm-enforcement.md 4; `plan` fills to capacity from ready work in rank order, preferring the next milestone |
@@ -77,12 +77,46 @@ Incremental releases depend on main always being shippable:
 
 New rules: **PM033 replenish** (Advisory, the order point), **PM034
 milestone-member-outside-epics** (Warning, the v1 T-5149 failure),
-**REL001 release-without-cut** (Error: a `frob-v*` tag not made by
+**REL001 release-without-cut** (Error: a product tag, per the configured tag pattern, not made by
 `release cut`, so versions, changelog and tags never disagree), and
 **REL002 lockstep-version-mismatch** (Error: workspace crates whose
 versions differ). REL001 was v1's debt rule; its id is reused only
 because exceptions.md 6 retired the v1 meaning, and the rule page says
 so.
+
+## 4a. Products, tag pattern and the changelog in any repository
+
+`release cut`, `release changelog` and REL001 know no product names of
+their own; they read `[release]` in `frob.toml` (reported by cloc, the first
+consumer repository):
+
+| Key | Default | Meaning |
+|---|---|---|
+| `tag` | `"v{version}"` | tag name pattern; `{version}` is required, `{product}` expands to each product name |
+| `products` | `[]` | the products a release ships, one tag each; empty means one product named after the repository (the `origin` URL's last segment, else the main checkout's directory name) |
+
+A repository that sets neither gets one tag, `vVERSION`. With several
+products the pattern must contain `{product}` (otherwise the tags would
+collide, and the cut refuses). This repository sets `products = ["frob",
+"grimble"]` and `tag = "{product}-v{version}"`, so its tags are unchanged.
+REL001 treats a tag as a product tag when it matches the pattern for a
+configured product and the rest parses as a version; all other tags (for
+example v1's `v0.531.0` here) are ignored.
+
+The compiled changelog section has product headings (`### frob`) only when
+several products are configured; with one product the entries are listed
+under their type headings, whatever product prefix a fragment names. A fresh
+CHANGELOG.md links `CHANGELOG-v1.md` only when that file exists.
+
+**Adopting a hand-written CHANGELOG.md.** A file that does not start with
+the generated-file marker is the author's. `release changelog` inserts the
+generated section directly above the first version heading (`## 1.2.0`,
+`## [1.2.0] - date`, `## v1.2.0`; `## Unreleased` is not one), keeps
+everything above it as it was, and puts the integrity marker on the generated
+section only. Unmarked sections of such a file are never verified; marked
+ones are, so a hand edit of a generated section is still detected. A file
+with no version heading gets the section appended. A file that starts with
+the marker keeps the strict rule: every section must carry its marker.
 
 ## 5. Channels and version scheme
 
@@ -152,10 +186,10 @@ part of the job's design:
   and `_cycles/` (navigation.md 3.1). Membership is an event on the
   object, never a field on the ticket, so moving a ticket between
   cycles is one append.
-- **One version, per-binary tags.** Every crate and the wheel carry one
-  lockstep version (section 5); `release cut` tags `frob-vVERSION` and,
-  for each other binary that ships in the release, `grimble-vVERSION`
-  and `crunk-vVERSION` at the same commit (monorepo.md 4, updated).
+- **One version, per-product tags.** Every crate and the wheel carry one
+  lockstep version (section 5); `release cut` tags each configured product
+  at the same commit (section 4a; monorepo.md 4, updated). Here that is
+  `frob-vVERSION` and `grimble-vVERSION`, plus `crunk-v` once it exists.
 - **Forecast in `release status`.** Printed only when `[pm] min_history`
   cycles exist; before that the line is Unresolved with the sample
   count. `frob release forecast` ships with 0.536.0.

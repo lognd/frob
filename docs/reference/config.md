@@ -159,13 +159,16 @@ Materialized: yes.
 
 ## `[release]`
 
-Release policy knobs read by `frob release status` and the `release cut` readiness gate.
+Release policy knobs read by `frob release status`, `release cut`, `release changelog` and REL001.
 
 Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `preview` | `Vec<String>` | `[]` | yes | Products that ship as a preview: their tag message and changelog heading carry " (preview)". |
+| `products` | `Vec<String>` | `[]` | yes | Products a release ships, one tag each; empty means one product named after the repository. |
 | `require_ci` | `bool` | `true` | yes | When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green. |
+| `tag` | `String` | `"v{version}"` | yes | Tag name pattern of a release: `{version}` is required, `{product}` is replaced by each product name (one tag per product). |
 
 ## `[tickets]`
 

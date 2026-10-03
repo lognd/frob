@@ -6,13 +6,13 @@ use std::fs;
 use std::path::Path;
 
 use frob_pm::event::CutData;
-use frob_release::cut::{CutError, CutLedger, CutPlan, SHIPPED_BINARIES, cut};
+use frob_release::cut::{CutError, CutLedger, CutPlan, cut};
 use frob_release::rel001::{evaluate, not_applicable};
 use gob_git::{RelPath, Repo};
 use gob_rules::Severity;
 
 mod rel001_corpus;
-use rel001_corpus::{MAIN, commit, fixture, opts, recorded, tag};
+use rel001_corpus::{FROB_TOML, MAIN, commit, fixture, opts, recorded, tag};
 
 fn errors(repo: &Repo, cuts: &[CutData]) -> Vec<String> {
     evaluate(repo, cuts)
@@ -78,6 +78,7 @@ fn tags_made_by_release_cut_itself_are_silent() {
     // frob:tests crates/frob-release/src/rel001.rs::evaluate
     let (dir, repo) = fixture();
     let files = [
+        ("frob.toml", FROB_TOML),
         (
             "Cargo.toml",
             "[workspace]\nmembers = [\"crates/*\"]\n\n[workspace.package]\nversion = \"0.0.0\"\n",
@@ -126,10 +127,10 @@ fn tags_made_by_release_cut_itself_are_silent() {
     .unwrap();
     assert_eq!(ledger.recorded.len(), 1);
     let e = evaluate(&repo, &ledger.recorded);
-    assert_eq!(e.subjects, SHIPPED_BINARIES.len());
+    assert_eq!(e.subjects, 2);
     assert!(e.findings.is_empty(), "{:?}", e.findings);
     // The same tags without the record are strays.
-    assert_eq!(errors(&repo, &[]).len(), SHIPPED_BINARIES.len());
+    assert_eq!(errors(&repo, &[]).len(), 2);
 }
 
 #[test]
@@ -235,4 +236,25 @@ fn this_repository_is_clean_or_not_applicable() {
     let repo = Repo::discover(&root).unwrap();
     let e = evaluate(&repo, &[]);
     assert!(e.findings.is_empty(), "{:?}", e.findings);
+}
+
+#[test]
+fn the_configured_tag_pattern_decides_which_tags_are_product_tags() {
+    // frob:ticket 01M413T4PVDKZ014X3WB5DF7DD
+    // frob:tests crates/frob-release/src/rel001.rs::evaluate
+    let (d, repo) = fixture();
+    fs::write(d.path().join("frob.toml"), "").unwrap();
+    let c = commit(&repo, "0.0.1");
+    // Default pattern: `v{version}` is a product tag, `frob-v{version}` is not.
+    tag(&repo, "frob-v0.0.1", c);
+    assert!(errors(&repo, &[]).is_empty());
+    tag(&repo, "v0.0.1", c);
+    let msgs = errors(&repo, &[]);
+    assert_eq!(msgs.len(), 1, "{msgs:?}");
+    assert!(msgs[0].contains("`v0.0.1`"), "{msgs:?}");
+    // frob's own pattern ignores the plain `v` tag again.
+    fs::write(d.path().join("frob.toml"), rel001_corpus::FROB_TOML).unwrap();
+    let msgs = errors(&repo, &[]);
+    assert_eq!(msgs.len(), 1, "{msgs:?}");
+    assert!(msgs[0].contains("`frob-v0.0.1`"), "{msgs:?}");
 }

@@ -46,7 +46,9 @@ impl Repo {
         let text = std::fs::read_to_string(&toml).expect("frob.toml");
         std::fs::write(
             &toml,
-            text.replace("require_ci = true", "require_ci = false"),
+            text.replace("require_ci = true", "require_ci = false")
+                .replace("tag = \"v{version}\"", "tag = \"{product}-v{version}\"")
+                .replace("products = []", "products = [\"frob\", \"grimble\"]"),
         )
         .expect("write frob.toml");
         git(repo.dir.path(), &["add", "-A"]);

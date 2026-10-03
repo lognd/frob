@@ -22,7 +22,7 @@ pub mod status;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub use config::ReleaseConfig;
+pub use config::{ProductTags, ReleaseConfig};
 pub use error::{FragmentError, ReleaseError, SkeletonError};
 pub use fragment::{Fragment, Kind, TicketResolver, parse_name};
 
@@ -133,7 +133,8 @@ pub fn run(
     {
         return Err(ReleaseError::VersionExists(opts.version.clone()));
     }
-    let section = changelog::render_section(&opts.version, &opts.date, &fragments);
+    let products = ProductTags::load(root)?;
+    let section = changelog::render_section(&opts.version, &opts.date, &fragments, &products);
     if opts.mode != Mode::Write {
         return Ok(Outcome {
             section: Some(section),
@@ -142,11 +143,19 @@ pub fn run(
         });
     }
     let (header, rest) = match &existing {
-        Some(t) => {
+        Some(t) if changelog::is_generated(t) => {
             let (h, s) = changelog::split(t);
             (h.to_owned(), s.concat())
         }
-        None => (changelog::initial_header(), String::new()),
+        Some(t) => {
+            tracing::info!("adopting a hand-written CHANGELOG.md");
+            let (above, rest) = changelog::split_adopted(t);
+            (spaced(above), rest.to_owned())
+        }
+        None => (
+            changelog::initial_header(root.join("CHANGELOG-v1.md").is_file()),
+            String::new(),
+        ),
     };
     let new_text = format!("{header}{section}\n{rest}");
     write_atomic(&log, &new_text)?;
@@ -160,6 +169,15 @@ pub fn run(
         fragments: names,
         written: true,
     })
+}
+
+/// `above` ended so that a following section starts after one blank line (empty stays empty).
+fn spaced(above: &str) -> String {
+    let mut out = above.trim_end_matches('\n').to_owned();
+    if !out.is_empty() {
+        out.push_str("\n\n");
+    }
+    out
 }
 
 /// Write `text` to `path` through a sibling temp file and a rename, so a failure leaves the old file.

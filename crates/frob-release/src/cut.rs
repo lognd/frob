@@ -16,7 +16,7 @@
 //! 2. [`CutLedger::clear`] (the readiness gate; records an override). Fresh cuts only.
 //! 3. Bump and changelog compile in the working tree, collect exactly the changed paths, one
 //!    commit `chore(release): cut VERSION`; the tree is restored when anything fails first.
-//! 4. One annotated tag per shipped binary at that commit.
+//! 4. One annotated tag per configured product (`[release] products`, `tag`) at that commit.
 //! 5. [`CutLedger::record`]: a `cut` event (version, commit, tag names and oids), then the
 //!    milestone `transition` to released.
 //! 6. With `push`, the base branch and the tags go to `origin`.
@@ -44,10 +44,7 @@ use frob_pm::event::{CutData, TagRecord};
 use gob_git::{CommitOptions, Oid, RelPath, Repo, StatusKind, StatusOptions};
 
 use crate::bump::{self, BumpError, BumpOptions};
-use crate::{Mode, Options, ReleaseError, TicketResolver};
-
-/// Binaries tagged by every cut: grimble ships as a preview from 0.532.0 (releases.md 6a); add crunk once it exists.
-pub const SHIPPED_BINARIES: [&str; 2] = ["frob", "grimble"];
+use crate::{Mode, Options, ProductTags, ReleaseError, TicketResolver};
 
 /// How many first-parent commits are searched for an earlier cut commit when resuming.
 const RESUME_SCAN: usize = 500;
@@ -106,7 +103,7 @@ pub struct CutOutcome {
     pub version: String,
     /// The release commit.
     pub commit: Oid,
-    /// Every tag at that commit, in [`SHIPPED_BINARIES`] order.
+    /// Every tag at that commit, in configured product order.
     pub tags: Vec<TagRecord>,
     /// True when an earlier, interrupted cut was finished instead of starting one.
     pub resumed: bool,
@@ -217,12 +214,6 @@ pub fn commit_subject(version: &str) -> String {
     format!("chore(release): cut {version}")
 }
 
-/// The tag name for `binary` at `version`, for example `frob-v0.532.0`.
-#[must_use]
-pub fn tag_name(binary: &str, version: &str) -> String {
-    format!("{binary}-v{version}")
-}
-
 /// Cut `plan.version`: refuse, gate, commit, tag, record, optionally push; or finish an interrupted cut.
 ///
 /// # Errors
@@ -240,6 +231,7 @@ pub fn cut(
             current: current.unwrap_or_else(|| "a detached HEAD".to_owned()),
         });
     }
+    let products = ProductTags::load(plan.root)?;
     let dirty = dirty_paths(&repo)?;
     if !dirty.is_empty() {
         return Err(CutError::Dirty(dirty));
@@ -254,8 +246,7 @@ pub fn cut(
         .find(|(_, s)| *s == subject)
         .map(|(oid, _)| oid);
     let mut existing = Vec::new();
-    for bin in SHIPPED_BINARIES {
-        let name = tag_name(bin, &plan.version);
+    for name in products.tag_names(&plan.version) {
         if let Some(info) = repo.find_tag(&name)? {
             if earlier != Some(info.commit) {
                 tracing::warn!(tag = %name, "cut refused: tag exists elsewhere");
@@ -280,17 +271,13 @@ pub fn cut(
         return Err(CutError::Stopped(Phase::Commit));
     }
     let mut tags = Vec::new();
-    for bin in SHIPPED_BINARIES {
-        let name = tag_name(bin, &plan.version);
+    for product in products.products() {
+        let name = products.tag_name(product, &plan.version);
         if let Some(t) = existing.iter().find(|t| t.name == name) {
             tags.push(t.clone());
             continue;
         }
-        let msg = if bin == "frob" {
-            format!("frob {}", plan.version)
-        } else {
-            format!("{bin} {} (preview)", plan.version)
-        };
+        let msg = products.tag_message(product, &plan.version);
         let object = repo.create_annotated_tag(&name, commit, &msg, None)?;
         tags.push(TagRecord {
             name,

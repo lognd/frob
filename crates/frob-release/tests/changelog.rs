@@ -32,6 +32,12 @@ fn opts(mode: Mode) -> Options {
 
 fn repo() -> tempfile::TempDir {
     let d = tempfile::tempdir().unwrap();
+    fs::write(
+        d.path().join("frob.toml"),
+        "[release]\npreview = [\"grimble\"]\nproducts = [\"frob\", \"grimble\"]\ntag = \"{product}-v{version}\"\n",
+    )
+    .unwrap();
+    fs::write(d.path().join("CHANGELOG-v1.md"), "# v1\n").unwrap();
     frag(
         d.path(),
         &format!("{A}.fixed.md"),
@@ -59,6 +65,18 @@ fn groups_by_product_type_then_ulid_and_removes_fragments() {
     let text = fs::read_to_string(d.path().join("CHANGELOG.md")).unwrap();
     let pos = |s: &str| text.find(s).unwrap_or_else(|| panic!("missing {s}"));
     assert!(pos("### frob") < pos("### gob"));
+    // grimble is a preview product: its heading says so when it has entries.
+    frag(d.path(), &format!("{A}.added.md"), "grimble: Added.\n");
+    let dry = run(
+        d.path(),
+        &Options {
+            version: "0.533.0".into(),
+            ..opts(Mode::DryRun)
+        },
+        &resolver,
+    )
+    .unwrap();
+    assert!(dry.section.unwrap().contains("### grimble (preview)"));
     assert!(pos("#### Added") < pos("#### Fixed"));
     assert!(pos("Added a thing. Second line.") < pos("Fixed the thing."));
     assert!(text.contains(&format!("(~{}, {B})", &B[B.len() - 7..])));
@@ -226,6 +244,11 @@ fn bad_version_and_non_ascii_are_refused() {
 fn near_miss_product_prefix_is_refused_with_a_suggestion_but_plain_words_pass() {
     // frob:tests crates/frob-release/src/fragment.rs::read_all
     let d = tempfile::tempdir().unwrap();
+    fs::write(
+        d.path().join("frob.toml"),
+        "[release]\nproducts = [\"frob\", \"grimble\"]\ntag = \"{product}-v{version}\"\n",
+    )
+    .unwrap();
     frag(d.path(), &format!("{A}.added.md"), "grimbel: typo\n");
     let err = run(d.path(), &opts(Mode::Check), &resolver)
         .unwrap_err()
@@ -244,4 +267,73 @@ fn near_miss_product_prefix_is_refused_with_a_suggestion_but_plain_words_pass() 
         "{s}"
     );
     assert!(!s.contains("](") && !s.contains("tickets/"), "{s}");
+}
+
+#[test]
+fn a_single_product_has_no_product_heading_and_no_v1_link() {
+    // frob:ticket 01M413T4PVDKZ014X3WB5DF7DD
+    // frob:tests crates/frob-release/src/changelog.rs::render_section
+    let d = tempfile::tempdir().unwrap();
+    frag(d.path(), &format!("{B}.added.md"), "frob: Added a thing.\n");
+    frag(
+        d.path(),
+        &format!("{C}.fixed.md"),
+        "gob: Fixed a gob thing.\n",
+    );
+    run(d.path(), &opts(Mode::Write), &resolver).unwrap();
+    let text = fs::read_to_string(d.path().join("CHANGELOG.md")).unwrap();
+    assert!(!text.contains("\n### "), "{text}");
+    assert!(text.contains("Added a thing.") && text.contains("Fixed a gob thing."));
+    assert!(!text.contains("CHANGELOG-v1.md"), "{text}");
+}
+
+#[test]
+fn a_hand_written_changelog_is_adopted_above_its_first_version_heading() {
+    // frob:ticket 01M413T4PVDKZ014X3WB5DF7DD
+    // frob:tests crates/frob-release/src/lib.rs::run
+    // frob:tests crates/frob-release/src/changelog.rs::split_adopted
+    let d = tempfile::tempdir().unwrap();
+    let hand = "# Changelog\n\nAll notable changes.\n\n## [Unreleased]\n\n- something pending\n\n## [1.0.0] - 2026-01-01\n\n- first release\n";
+    fs::write(d.path().join("CHANGELOG.md"), hand).unwrap();
+    frag(d.path(), &format!("{B}.added.md"), "Added a thing.\n");
+    run(d.path(), &opts(Mode::Write), &resolver).unwrap();
+    let text = fs::read_to_string(d.path().join("CHANGELOG.md")).unwrap();
+    let above = "# Changelog\n\nAll notable changes.\n\n## [Unreleased]\n\n- something pending\n\n";
+    assert!(text.starts_with(above), "{text}");
+    assert!(
+        text.ends_with("## [1.0.0] - 2026-01-01\n\n- first release\n"),
+        "{text}"
+    );
+    assert_eq!(text.matches("<!-- frob-section: ").count(), 1, "{text}");
+    assert!(text.find("## 0.532.0").unwrap() < text.find("## [1.0.0]").unwrap());
+    // A second release adopts the same way and the marked section still verifies.
+    frag(d.path(), &format!("{C}.added.md"), "Added another.\n");
+    let o = Options {
+        version: "0.533.0".into(),
+        ..opts(Mode::Write)
+    };
+    run(d.path(), &o, &resolver).unwrap();
+    let again = fs::read_to_string(d.path().join("CHANGELOG.md")).unwrap();
+    assert!(again.find("## 0.533.0").unwrap() < again.find("## 0.532.0").unwrap());
+    assert!(again.contains("- first release"));
+    run(d.path(), &opts(Mode::Check), &resolver).unwrap();
+}
+
+#[test]
+fn an_adopted_changelog_without_version_headings_gets_the_section_appended() {
+    // frob:ticket 01M413T4PVDKZ014X3WB5DF7DD
+    // frob:tests crates/frob-release/src/changelog.rs::split_adopted
+    let d = tempfile::tempdir().unwrap();
+    fs::write(
+        d.path().join("CHANGELOG.md"),
+        "# Changelog\n\n## Unreleased\n\n- x\n",
+    )
+    .unwrap();
+    frag(d.path(), &format!("{B}.added.md"), "Added a thing.\n");
+    run(d.path(), &opts(Mode::Write), &resolver).unwrap();
+    let text = fs::read_to_string(d.path().join("CHANGELOG.md")).unwrap();
+    assert!(
+        text.starts_with("# Changelog\n\n## Unreleased\n\n- x\n\n## 0.532.0"),
+        "{text}"
+    );
 }

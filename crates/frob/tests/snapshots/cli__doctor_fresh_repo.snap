@@ -14,7 +14,7 @@ expression: v
     },
     "config": {
       "error": null,
-      "missing_knobs": 28,
+      "missing_knobs": 31,
       "path": "[path]",
       "present": false
     },
@@ -352,6 +352,42 @@ expression: v
       "fix": null,
       "line": null,
       "message": "missing materialized knob `release.require_ci` in frob.toml (default true); run `frob init` (or `frob config sync`) to write it",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "152a3cbe4b2e13f8ab638b1410254b8fd74dc4341e50693c859429a424d14cff",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `release.tag` in frob.toml (default \"v{version}\"); run `frob init` (or `frob config sync`) to write it",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "58bb9846eb2a8bba4ba97b1d6ad208742f38c53e121daf32b9d0f0826adbca74",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `release.products` in frob.toml (default []); run `frob init` (or `frob config sync`) to write it",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "0342b54b84ba505aacf450a21e0c56a19bdcadeba52daf81133a439024805880",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `release.preview` in frob.toml (default []); run `frob init` (or `frob config sync`) to write it",
       "required": null,
       "rule": "CFG001",
       "severity": "error",

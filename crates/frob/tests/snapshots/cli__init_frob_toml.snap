@@ -71,6 +71,12 @@ in_progress = 2
 [release]
 # When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green.
 require_ci = true
+# Tag name pattern of a release: `{version}` is required, `{product}` is replaced by each product name (one tag per product).
+tag = "v{version}"
+# Products a release ships, one tag each; empty means one product named after the repository.
+products = []
+# Products that ship as a preview: their tag message and changelog heading carry " (preview)".
+preview = []
 
 [tickets]
 # Ref holding the ledger; the ledger merge driver and `doctor` resolve it.

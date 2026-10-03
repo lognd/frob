@@ -399,12 +399,33 @@
     },
     "release": {
       "additionalProperties": false,
-      "description": "Release policy knobs read by `frob release status` and the `release cut` readiness gate.",
+      "description": "Release policy knobs read by `frob release status`, `release cut`, `release changelog` and REL001.",
       "properties": {
+        "preview": {
+          "default": [],
+          "description": "Products that ship as a preview: their tag message and changelog heading carry \" (preview)\".",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "products": {
+          "default": [],
+          "description": "Products a release ships, one tag each; empty means one product named after the repository.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "require_ci": {
           "default": true,
           "description": "When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green.",
           "type": "boolean"
+        },
+        "tag": {
+          "default": "v{version}",
+          "description": "Tag name pattern of a release: `{version}` is required, `{product}` is replaced by each product name (one tag per product).",
+          "type": "string"
         }
       },
       "type": "object"

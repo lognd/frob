@@ -7,13 +7,11 @@
 //! the workspace version committed at that commit (read through `gob-git`, never the working
 //! tree) must equal the tag's version.
 
+use crate::ProductTags;
 use frob_pm::event::{CutData, TagRecord};
 use gob_git::Repo;
 use gob_rules::{Finding, Rule, RuleId, Severity};
 use toml::Table;
-
-/// Tag name prefixes of the shipped products; a tag matches when the rest is a semver version.
-pub const PRODUCT_TAG_PREFIXES: [&str; 3] = ["frob-v", "grimble-v", "crunk-v"];
 
 // frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
 /// A product release tag that `frob release cut` did not create, or that no longer matches its cut.
@@ -22,12 +20,14 @@ pub const PRODUCT_TAG_PREFIXES: [&str; 3] = ["frob-v", "grimble-v", "crunk-v"];
 /// replaced it with `defer` exceptions and the EXC rules (`exceptions.md` section 6), and the
 /// id now guards the integrity of release tags instead.
 ///
-/// A product tag is `frob-v*`, `grimble-v*` or `crunk-v*` whose remainder is a version. The
+/// A product tag is a tag name matching the configured `[release] tag` pattern for one of the
+/// configured `[release] products` (default: `v{version}` for one product named after the
+/// repository; this repository sets `{product}-v{version}` for frob and grimble). The
 /// rule fires for each such tag when no recorded `cut` event names the tag with the same tag
 /// object and commit (a tag made by plain `git tag`), when the tag now points at a different
 /// commit than the one the cut recorded (a moved tag), or when the workspace version in the
 /// `Cargo.toml` committed at the tagged commit differs from the tag's version. Tags before the
-/// first cut are not special-cased. Tags that match no product prefix are ignored, for example
+/// first cut are not special-cased. Tags that match no product tag are ignored, for example
 /// the v1 release tag `v0.531.0`. A repository with no product tags and no recorded cuts is
 /// not applicable.
 ///
@@ -63,22 +63,13 @@ pub struct Evaluation {
 
 /// Why the rule has nothing to examine in a repository with no product tags and no cuts.
 const NOT_APPLICABLE: &str =
-    "no product tags (frob-v*, grimble-v*, crunk-v*) and no recorded release cuts";
+    "no product tags (per [release] tag and products) and no recorded release cuts";
 
 fn rule_id() -> RuleId {
     Rel001
         .meta()
         .rule_id()
         .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"))
-}
-
-/// The version of a product tag name, or `None` when the name matches no product prefix.
-#[must_use]
-pub fn product_tag_version(name: &str) -> Option<&str> {
-    PRODUCT_TAG_PREFIXES
-        .iter()
-        .find_map(|p| name.strip_prefix(p))
-        .filter(|v| semver::Version::parse(v).is_ok())
 }
 
 fn finding(severity: Severity, tag: &str, kind: &str, message: String) -> Finding {
@@ -116,19 +107,30 @@ fn recorded<'a>(cuts: &'a [CutData], tag: &str) -> Option<&'a TagRecord> {
 }
 
 /// Every product tag in `repo`, or the reason git could not list them.
-fn product_tags(repo: &Repo) -> Result<Vec<String>, String> {
+fn product_tags(repo: &Repo, products: &ProductTags) -> Result<Vec<String>, String> {
     Ok(repo
         .list_tags()
         .map_err(|e| e.to_string())?
         .into_iter()
-        .filter(|n| product_tag_version(n).is_some())
+        .filter(|n| products.tag_version(n).is_some())
         .collect())
+}
+
+/// The configured products of `repo`'s work tree, or the reason they cannot be resolved.
+fn products_of(repo: &Repo) -> Result<ProductTags, String> {
+    let root = repo
+        .work_dir()
+        .ok_or_else(|| "the repository has no work tree".to_owned())?;
+    ProductTags::load(root).map_err(|e| e.to_string())
 }
 
 /// Why `REL001` does not apply to `repo` given `cuts`, or `None` when it does.
 #[must_use]
 pub fn not_applicable(repo: &Repo, cuts: &[CutData]) -> Option<String> {
-    match product_tags(repo) {
+    let Ok(products) = products_of(repo) else {
+        return None;
+    };
+    match product_tags(repo, &products) {
         Ok(tags) if tags.is_empty() && cuts.is_empty() => Some(NOT_APPLICABLE.to_owned()),
         Ok(_) | Err(_) => None,
     }
@@ -141,7 +143,21 @@ pub fn not_applicable(repo: &Repo, cuts: &[CutData]) -> Option<String> {
 /// findings, zero subjects). A tag git cannot resolve is Unresolved with the reason.
 pub fn evaluate(repo: &Repo, cuts: &[CutData]) -> Evaluation {
     let mut out = Evaluation::default();
-    let tags = match product_tags(repo) {
+    let products = match products_of(repo) {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::warn!(%e, "REL001: release configuration unusable");
+            out.subjects = 1;
+            out.findings.push(finding(
+                Severity::Unresolved,
+                "config",
+                "config-unresolved",
+                format!("REL001: the [release] configuration cannot be resolved: {e}"),
+            ));
+            return out;
+        }
+    };
+    let tags = match product_tags(repo, &products) {
         Ok(t) => t,
         Err(e) => {
             tracing::warn!(%e, "REL001: tags unreadable");
@@ -162,7 +178,7 @@ pub fn evaluate(repo: &Repo, cuts: &[CutData]) -> Evaluation {
     }
     for tag in &tags {
         out.subjects += 1;
-        check_tag(repo, cuts, tag, &mut out);
+        check_tag(repo, &products, cuts, tag, &mut out);
     }
     tracing::info!(
         subjects = out.subjects,
@@ -172,8 +188,14 @@ pub fn evaluate(repo: &Repo, cuts: &[CutData]) -> Evaluation {
     out
 }
 
-fn check_tag(repo: &Repo, cuts: &[CutData], tag: &str, out: &mut Evaluation) {
-    let version = product_tag_version(tag).unwrap_or_default();
+fn check_tag(
+    repo: &Repo,
+    products: &ProductTags,
+    cuts: &[CutData],
+    tag: &str,
+    out: &mut Evaluation,
+) {
+    let version = products.tag_version(tag).unwrap_or_default();
     let info = match repo.find_tag(tag) {
         Ok(Some(i)) => i,
         Ok(None) => {

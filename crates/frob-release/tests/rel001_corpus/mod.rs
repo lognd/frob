@@ -8,6 +8,10 @@ use frob_pm::event::{CutData, TagRecord};
 use frob_release::rel001::evaluate;
 use gob_git::{CommitOptions, Oid, RelPath, Repo};
 
+/// The release configuration of frob's own repository: two products, `{product}-v{version}` tags.
+pub const FROB_TOML: &str =
+    "[release]\nproducts = [\"frob\", \"grimble\"]\ntag = \"{product}-v{version}\"\n";
+
 pub const MAIN: &str = "refs/heads/main";
 
 pub fn opts() -> CommitOptions {
@@ -25,6 +29,7 @@ pub fn fixture() -> (tempfile::TempDir, Repo) {
     let dir = tempfile::tempdir().unwrap();
     let repo = Repo::init(dir.path()).unwrap();
     fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").unwrap();
+    fs::write(dir.path().join("frob.toml"), FROB_TOML).unwrap();
     (dir, repo)
 }
 

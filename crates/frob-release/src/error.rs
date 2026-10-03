@@ -111,6 +111,9 @@ pub enum ReleaseError {
         "CHANGELOG.md already has a section for {0}; pick the next version or restore the file"
     )]
     VersionExists(String),
+    /// The `[release]` table could not be loaded or its values are unusable.
+    #[error("release configuration: {0}")]
+    Config(String),
     /// A compiled section no longer matches its integrity marker.
     #[error(
         "CHANGELOG.md section {0} was edited by hand; restore it from git, or fix the fragment and recompile (compiled sections are never hand-edited)"
