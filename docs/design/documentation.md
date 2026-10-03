@@ -172,6 +172,7 @@ concurrently and are timed as separate stages).
 | fragment present | REL003 |
 | ADR present | DEC004 |
 | doc drift | `frob:doc` / `describes` anchors and `frob ack` (existing) |
+| doc-to-doc agreement, repeated text, facts in prose | include regions, `frob:same-as` pairs, checked facts, single definitions (doc-consistency.md, SYNC family) |
 
 ## 9. Writing style for the written pages
 
