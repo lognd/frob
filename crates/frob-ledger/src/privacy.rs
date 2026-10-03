@@ -34,6 +34,22 @@ pub fn find_home_path(bytes: &[u8]) -> Option<(usize, &'static str)> {
     None
 }
 
+// frob:ticket 01M41RHBJ03PGD6JY0J6JTAH9Q
+/// The byte range of the first absolute home root in `bytes`: the `/home/<name>` part, without what follows.
+///
+/// The same hits as [`find_home_path`]; a repair replaces exactly this range so the rest of the path survives.
+pub fn find_home_root(bytes: &[u8]) -> Option<std::ops::Range<usize>> {
+    let (start, kind) = find_home_path(bytes)?;
+    if kind == "/root/" {
+        return Some(start..start + "/root".len());
+    }
+    // Everything before the user name: `/home/`, `/Users/`, `C:\Users\`, and so on.
+    let lead = kind.find('<').unwrap_or(kind.len());
+    let name_at = start + lead;
+    let name = bytes[name_at..].iter().take_while(|b| is_name(**b)).count();
+    Some(start..name_at + name)
+}
+
 /// True when the byte before `at` does not continue a path, so a `/` at `at` begins an absolute one.
 fn starts_path(bytes: &[u8], at: usize) -> bool {
     at == 0 || !(is_name(bytes[at - 1]) || matches!(bytes[at - 1], b'/' | b'\\' | b'~'))
@@ -92,11 +108,11 @@ pub fn tick004(path: &str, bytes: &[u8]) -> Option<Finding> {
     let rule = id_of(&Tick004);
     Some(Finding::new(
         rule,
-        Severity::Warn,
+        Severity::Error,
         None,
         format!(
             "{path}: absolute home path ({kind}) at byte {offset}; it publishes the local user name and directory layout. \
-             Frob does not rewrite committed ledgers: if this repository is public, rewrite the value yourself (for example `~/` or a path relative to the repository parent) in a new commit"
+             Run `frob ticket doctor --fix` to scrub it in a new commit (history is never rewritten); a hand edit to `~/` or a path relative to the repository parent also clears it"
         ),
         path,
     ))

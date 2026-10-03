@@ -8,9 +8,13 @@
 //! applies it to the transcript before the digest is computed, so the digest, the
 //! stored text and the inline text all describe the same scrubbed bytes.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+use frob_ledger::privacy::find_home_root;
+use gob_git::Repo;
 
 // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
+// frob:ticket 01M41RHBJ03PGD6JY0J6JTAH9Q
 
 /// Placeholder for the worktree root.
 pub const WORKTREE: &str = "<worktree>";
@@ -18,11 +22,15 @@ pub const WORKTREE: &str = "<worktree>";
 pub const REPO: &str = "<repo>";
 /// Placeholder for the home directory.
 pub const HOME: &str = "~";
+/// Placeholder for the home directory of someone else (a foreign user name), used only by a repair.
+pub const OTHER_HOME: &str = "~other";
 
 /// Absolute roots to rewrite and the placeholder each becomes, longest root first.
 #[derive(Debug, Clone, Default)]
 pub struct PathScrub {
-    rules: Vec<(String, &'static str)>,
+    rules: Vec<(String, String)>,
+    /// Rewrite any remaining `/home/<name>` style root to [`OTHER_HOME`] (repair only).
+    foreign: bool,
 }
 
 impl PathScrub {
@@ -37,22 +45,85 @@ impl PathScrub {
 
     /// A scrub for `worktree`, `repo` and an explicit `home` (none skips the home rule).
     pub fn with_home(repo: &Path, worktree: &Path, home: Option<&Path>) -> Self {
-        let mut rules: Vec<(String, &'static str)> = Vec::new();
-        let mut add = |root: &Path, placeholder: &'static str| {
-            for form in forms(root) {
-                if !rules.iter().any(|(n, _)| *n == form) {
-                    rules.push((form, placeholder));
+        let mut scrub = Self::default();
+        scrub.add(worktree, WORKTREE);
+        scrub.add(repo, REPO);
+        if let Some(h) = home {
+            scrub.add(h, HOME);
+        }
+        scrub.finish()
+    }
+
+    /// A scrub that repairs paths written on any machine of this repository: the checkout, its linked
+    /// worktrees and the local origin (all rewritten to `<repo>`, `<worktree>` or the form relative to the
+    /// repository parent, like `app-wt/T1`), the home directory, and every other home root to `~other`.
+    ///
+    /// Used by `ticket doctor --fix` on ledgers written before new evidence was scrubbed.
+    pub fn for_repair(repo: &Repo, worktree: &Path) -> Self {
+        let home = ["HOME", "USERPROFILE"]
+            .iter()
+            .find_map(std::env::var_os)
+            .map(PathBuf::from);
+        let main = main_root(repo, worktree);
+        let mut roots = vec![main.clone()];
+        if let Some(origin) = repo.remote_url("origin").and_then(|u| local_path(&u)) {
+            roots.push(origin);
+        }
+        let mut scrub = Self {
+            foreign: true,
+            ..Self::default()
+        };
+        let parent_of = |r: &Path| r.parent().map(Path::to_path_buf);
+        let mut siblings: Vec<PathBuf> = Vec::new();
+        for w in repo.list_worktrees().unwrap_or_default() {
+            if w.path != main && w.path != worktree {
+                siblings.push(w.path);
+            }
+        }
+        for root in &roots {
+            let (Some(parent), Some(name)) = (parent_of(root), root.file_name()) else {
+                continue;
+            };
+            let dir = format!("{}-wt", name.to_string_lossy());
+            scrub.add_text(&parent.join(&dir), &dir);
+            for w in siblings.iter().filter(|w| w.starts_with(&parent)) {
+                if let Ok(rel) = w.strip_prefix(&parent) {
+                    scrub.add_text(w, &rel.to_string_lossy().replace('\\', "/"));
                 }
             }
-        };
-        add(worktree, WORKTREE);
-        add(repo, REPO);
-        if let Some(h) = home {
-            add(h, HOME);
         }
-        rules.sort_by_key(|(n, _)| std::cmp::Reverse(n.len()));
-        tracing::debug!(rules = rules.len(), "path scrub built");
-        Self { rules }
+        for root in &roots {
+            scrub.add(root, REPO);
+        }
+        scrub.add(worktree, WORKTREE);
+        if let Some(h) = &home {
+            scrub.add(h, HOME);
+        }
+        scrub.finish()
+    }
+
+    /// Register every spelling of `root` as rewriting to `placeholder`, unless an earlier rule owns it.
+    fn add(&mut self, root: &Path, placeholder: &str) {
+        self.add_text(root, placeholder);
+    }
+
+    fn add_text(&mut self, root: &Path, placeholder: &str) {
+        for form in forms(root) {
+            if !self.rules.iter().any(|(n, _)| *n == form) {
+                self.rules.push((form, placeholder.to_owned()));
+            }
+        }
+    }
+
+    /// Order the rules longest root first.
+    fn finish(mut self) -> Self {
+        self.rules.sort_by_key(|(n, _)| std::cmp::Reverse(n.len()));
+        tracing::debug!(
+            rules = self.rules.len(),
+            foreign = self.foreign,
+            "path scrub built"
+        );
+        self
     }
 
     /// `text` with every configured root replaced by its placeholder.
@@ -61,11 +132,41 @@ impl PathScrub {
         for (needle, placeholder) in &self.rules {
             out = replace_rooted(&out, needle, placeholder);
         }
+        if self.foreign {
+            out = rewrite_foreign_homes(&out);
+        }
         if out != text {
             tracing::debug!("absolute paths in captured text rewritten to placeholders");
         }
         out
     }
+}
+
+/// The work tree root of the main checkout of `repo`, falling back to `worktree`.
+fn main_root(repo: &Repo, worktree: &Path) -> PathBuf {
+    let common = repo.common_dir();
+    if common.file_name().is_some_and(|n| n == ".git") {
+        common.parent().unwrap_or(worktree).to_path_buf()
+    } else {
+        worktree.to_path_buf()
+    }
+}
+
+/// The filesystem path a remote URL names, when it is a local path or a `file://` URL.
+fn local_path(url: &str) -> Option<PathBuf> {
+    let path = url.strip_prefix("file://").unwrap_or(url);
+    (path.starts_with('/') && !path.contains(':'))
+        .then(|| PathBuf::from(path.trim_end_matches('/')))
+}
+
+/// Replace every remaining `/home/<name>` style root by [`OTHER_HOME`], keeping the rest of the path.
+fn rewrite_foreign_homes(text: &str) -> String {
+    let mut out = text.to_owned();
+    // Rescan the whole text each time so a hit is judged with the byte before it.
+    while let Some(range) = find_home_root(out.as_bytes()) {
+        out.replace_range(range, OTHER_HOME);
+    }
+    out
 }
 
 /// The spellings of `root` worth matching: as given, canonical, with `/` separators and with doubled backslashes.
@@ -159,5 +260,23 @@ mod tests {
             s.apply("C:\\Users\\bo\\app\\src C:/Users/bo/app/src C:\\\\Users\\\\bo\\\\x"),
             "<repo>\\src <repo>/src ~\\\\x"
         );
+    }
+
+    /// A repair scrub sends sibling worktrees to the parent-relative form and foreign homes to `~other`.
+    // frob:tests crates/frob-evidence/src/scrub.rs::rewrite_foreign_homes
+    #[test]
+    fn repair_rewrites_foreign_homes_and_is_idempotent() {
+        let mut s = scrub();
+        s.foreign = true;
+        s.add_text(Path::new("/home/ann/projects/app-wt"), "app-wt");
+        s.rules.sort_by_key(|(n, _)| std::cmp::Reverse(n.len()));
+        let got = s.apply(
+            "lease in /home/ann/projects/app-wt/T9; /home/bob/x and C:\\\\Users\\\\cy\\\\p and /home/ann/home/zed/q",
+        );
+        assert_eq!(
+            got,
+            "lease in app-wt/T9; ~other/x and ~other\\\\p and ~/home/zed/q"
+        );
+        assert_eq!(s.apply(&got), got, "a second pass changes nothing");
     }
 }

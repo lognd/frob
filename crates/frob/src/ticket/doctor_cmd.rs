@@ -1,7 +1,10 @@
 //! `ticket doctor`: ledger integrity.
 
+use frob_evidence::record::digest_hex;
+use frob_evidence::scrub::PathScrub;
 use frob_ledger::TicketId;
 use frob_ledger::doctor::Issue;
+use frob_ledger::scrub::{ScrubReport, ScrubTools};
 use frob_pm::doctor::PmIssue;
 use frob_pm::{ObjectKind, PmStore};
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
@@ -25,6 +28,16 @@ pub struct DoctorData {
     pub issues: Vec<Issue>,
     /// Tickets whose frontmatter `--fix` rewrote.
     pub fixed: Vec<TicketId>,
+    /// Ledger files `--fix` rewrote to remove absolute home paths (`TICK004`).
+    pub scrubbed: Vec<String>,
+    /// Tickets that got a `scrub` audit event.
+    pub scrubbed_tickets: Vec<TicketId>,
+    /// Evidence digests recomputed over scrubbed text.
+    pub scrub_digests: usize,
+    /// Files whose home path the scrub could not clear.
+    pub scrub_unresolved: Vec<String>,
+    /// The commit that made the scrub, when there was anything to scrub.
+    pub scrub_commit: Option<String>,
     /// Milestones examined.
     pub milestones: usize,
     /// Cycles examined.
@@ -81,7 +94,7 @@ impl Command for TicketDoctor {
             Arg::new("fix")
                 .long("fix")
                 .action(ArgAction::SetTrue)
-                .help("Rewrite frontmatter that differs from its events (TICK001, E-PM-DRIFT)"),
+                .help("Rewrite frontmatter that differs from its events (TICK001, E-PM-DRIFT) and scrub absolute home paths from the ledger in one commit (TICK004)"),
         )
     }
 
@@ -94,6 +107,11 @@ impl Command for TicketDoctor {
     fn run(&self, ctx: &Context) -> CliOutcome<DoctorData> {
         let ledger = open(ctx)?;
         let report = ledger.doctor(self.fix).map_err(cli_err)?;
+        let scrub = if self.fix {
+            scrub_ledger(&ledger)?
+        } else {
+            ScrubReport::default()
+        };
         let pm = PmStore::new(&ledger).doctor(self.fix).map_err(pm_err)?;
         let count_of = |kind: ObjectKind| {
             let tip = ledger.tip_hex().map_err(cli_err)?;
@@ -114,19 +132,51 @@ impl Command for TicketDoctor {
             pm_fixed = pm.fixed.len(),
             "ticket doctor ran the pm checks"
         );
-        let ok = report.is_clean() && pm.is_clean();
+        let mut findings = report.findings;
+        findings.extend(ledger.home_path_findings().map_err(cli_err)?);
+        let ok = report.issues.is_empty() && findings.is_empty() && pm.is_clean();
         let data = DoctorData {
             tickets: report.tickets,
             events: report.events,
             ok,
             issues: report.issues,
             fixed: report.fixed,
+            scrubbed: scrub.files,
+            scrubbed_tickets: scrub.tickets,
+            scrub_digests: scrub.digests,
+            scrub_unresolved: scrub.unresolved,
+            scrub_commit: scrub.commit,
             milestones,
             cycles,
             pm_events: pm.events,
             pm_issues: pm.issues.into_iter().map(PmIssueView::from).collect(),
             pm_fixed: pm.fixed.iter().map(ToString::to_string).collect(),
         };
-        Ok(Payload::new(data).with_findings(report.findings))
+        Ok(Payload::new(data).with_findings(findings))
     }
+}
+
+// frob:ticket 01M41RHBJ03PGD6JY0J6JTAH9Q
+/// Scrub absolute home paths out of the ledger with the repair scrub of this checkout (one forward commit, none when clean).
+fn scrub_ledger(ledger: &frob_ledger::Ledger) -> Result<ScrubReport, CliError> {
+    let root = ledger
+        .repo()
+        .work_dir()
+        .map(std::path::Path::to_path_buf)
+        .unwrap_or_default();
+    let scrub = PathScrub::for_repair(ledger.repo(), &root);
+    let rewrite = |t: &str| scrub.apply(t);
+    let tools = ScrubTools {
+        rewrite: &rewrite,
+        digest: &|b: &[u8]| digest_hex(b),
+    };
+    let report = ledger.scrub_home_paths(&tools).map_err(cli_err)?;
+    tracing::info!(
+        files = report.files.len(),
+        tickets = report.tickets.len(),
+        digests = report.digests,
+        unresolved = report.unresolved.len(),
+        "ticket doctor --fix scrubbed the ledger"
+    );
+    Ok(report)
 }
