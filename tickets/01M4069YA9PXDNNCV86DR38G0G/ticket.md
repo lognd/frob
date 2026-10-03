@@ -2,7 +2,8 @@
 id = "01M4069YA9PXDNNCV86DR38G0G"
 title = "PyPI publish job: trusted publishing for frob, protected environment, release notes"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
