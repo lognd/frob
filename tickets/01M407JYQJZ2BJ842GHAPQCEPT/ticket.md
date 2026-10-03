@@ -8,10 +8,10 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T06:35:23Z"
-updated = "2026-10-03T06:38:03Z"
+updated = "2026-10-03T06:47:46Z"
 idempotency_key = "m2-tool-stage-silent-failure"
 labels = ["milestone:2", "release:0.532.0"]
-scope = ["crates/gob-check/**", "crates/gob-exec/**", "crates/frob-check/**", "frob.toml", ".github/workflows/**"]
+scope = ["crates/gob-check/**", "crates/gob-exec/**", "crates/frob-check/**", "frob.toml", ".github/workflows/**", "crates/gob-rules/src/required.rs", "crates/grimble-check/src/sibling.rs", "docs/design/rules.md", "docs/design/sibling-contract.md", "docs/schemas/envelope.json"]
 
 [[acceptance]]
 text = "Given a tool stage whose command cannot be resolved, when frob check runs, then a required Unresolved finding names the stage and shows the tool's error"
