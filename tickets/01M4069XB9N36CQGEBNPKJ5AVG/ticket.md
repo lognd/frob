@@ -8,10 +8,10 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:58Z"
-updated = "2026-10-03T08:39:04Z"
+updated = "2026-10-03T08:39:54Z"
 idempotency_key = "m2-rel-rel001"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-release/src/rel001.rs", "docs/reference/rules/rel/**"]
+scope = ["crates/frob-release/src/rel001.rs", "docs/reference/rules/rel/**", "docs/reference/rules/REL001.md"]
 
 [[links]]
 kind = "blocked-by"
