@@ -2,13 +2,13 @@
 id = "01M4069XMEQQ5P082TMA389FFK"
 title = "PyPI wheel packaging: maturin bin-bundle wheel for frob"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T06:12:59Z"
+updated = "2026-10-03T11:07:12Z"
 idempotency_key = "m2-rel-wheel-bundle"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["packaging/pypi/**", "Cargo.toml"]
