@@ -2,7 +2,8 @@
 id = "01M41ZJGQ1GKF6NJ1JV25QHMNX"
 title = "Dev channel never runs: workflow_run fires only from the default branch; make it a gated job in ci.yml"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
