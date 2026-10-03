@@ -2,13 +2,13 @@
 id = "01M4069WSTV5ZJMRPYR2YECX6Q"
 title = "frob release status [VERSION]: readiness report that never fails"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:58Z"
-updated = "2026-10-03T06:12:58Z"
+updated = "2026-10-03T07:57:46Z"
 idempotency_key = "m2-rel-release-status"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-release/src/status.rs", "crates/frob/src/release_cmd.rs"]
