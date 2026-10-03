@@ -2,7 +2,8 @@
 id = "01M412CMSRCHNXHEEENY8ZYBDW"
 title = "Audited --no-changelog exemption for changes with no user-visible effect"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
