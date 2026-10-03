@@ -8,14 +8,14 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T11:59:12Z"
-updated = "2026-10-03T12:27:42Z"
+updated = "2026-10-03T12:35:32Z"
 idempotency_key = "m2-rel-proc001-repo-local"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-check/**", "crates/frob-obligations/**", "frob.toml", "docs/reference/rules/**", "crates/gob-exec/src/proc001.rs", "crates/gob-exec/tests/proc001_self.rs", "crates/gob-check/**", "changelog.d/01M40T3VS6VVN80SP39XGS6PK2.fixed.md"]
 
 [[acceptance]]
 text = "Given a consumer repository using std::process::ExitCode and Command, when frob check runs, then no PROC001 finding appears"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given this repository, when a crate other than gob-exec or gob-git uses std::process::Command, then PROC001 still fires, and ExitCode alone does not"
