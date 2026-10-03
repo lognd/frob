@@ -422,3 +422,26 @@ fn example_forms_parse() {
         Some("named")
     );
 }
+
+// frob:tests crates/gob-plan/src/grl/ast.rs::Source.span
+// frob:tests crates/gob-plan/src/grl/ast.rs::Object.span
+#[test]
+fn source_and_object_spans_cover_their_text() {
+    let src = wrap("find d: diff.changed\n  find t: tset where t inside tset");
+    let rule = rule_of(&src);
+    let ClauseKind::Find(side) = &rule.clauses[0].node else {
+        panic!("find");
+    };
+    assert_eq!(slice(&src, side.source.span()), "diff.changed");
+    let ClauseKind::Find(shape) = &rule.clauses[1].node else {
+        panic!("find");
+    };
+    assert_eq!(slice(&src, shape.source.span()), "tset");
+    let CondKind::Rel { rel, .. } = &shape.filter.as_ref().expect("filter").node else {
+        panic!("rel");
+    };
+    let RelKind::Containment { object, .. } = &rel.node else {
+        panic!("contain");
+    };
+    assert_eq!(slice(&src, object.span()), "tset");
+}

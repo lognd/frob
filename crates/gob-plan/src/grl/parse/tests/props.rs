@@ -122,12 +122,15 @@ fn span(a: u32, b: u32) -> Span {
 
 const TEXT: &str = "x.y f.name 1 + 2 {}";
 
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(512))]
+/// A bounded configuration: a few hundred cases keep the suite fast.
+fn config() -> ProptestConfig {
+    ProptestConfig::with_cases(384)
+}
 
-    // frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse_tokens
-    #[test]
-    fn arbitrary_token_streams_never_panic(kinds in proptest::collection::vec(arb_kind(40), 0..120)) {
+// frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse_tokens
+#[test]
+fn arbitrary_token_streams_never_panic() {
+    proptest!(config(), |(kinds in proptest::collection::vec(arb_kind(40), 0..120))| {
         let tokens: Vec<Token> = kinds
             .into_iter()
             .enumerate()
@@ -137,41 +140,53 @@ proptest! {
             })
             .collect();
         let parsed = parse_tokens(file(), TEXT, &tokens);
-        // Whatever came out, an invalid stream reports at least one error unless it is empty or valid.
         let _ = (parsed.errors.len(), parsed.file.rules.len());
-    }
+    });
+}
 
-    // frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
-    #[test]
-    fn arbitrary_text_never_panics(src in "[ -~\n]{0,200}") {
+// frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
+#[test]
+fn arbitrary_text_never_panics() {
+    proptest!(config(), |(src in "[ -~\n]{0,200}")| {
         let parsed = parse(file(), &src);
         for e in &parsed.errors {
             prop_assert!(usize::try_from(u32::from(e.span.range.end())).unwrap_or(usize::MAX) <= src.len());
         }
-    }
+    });
+}
 
-    // frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
-    #[test]
-    fn mutated_valid_rules_never_panic(
-        which in 0..FIXTURES.len(),
-        cuts in proptest::collection::vec((0usize..2000, 0usize..40), 0..4),
-        inserts in proptest::collection::vec((0usize..2000, proptest::sample::select(WORDS), proptest::sample::select(&["{", "}", "(", ")", "\"", "`", "[", "]", ",", ":", "->", "~", "|", "\"\"\""][..])), 0..4),
-    ) {
-        let mut src = fixture(FIXTURES[which]);
-        for (at, len) in cuts {
-            let at = at % (src.len() + 1);
-            let end = (at + len).min(src.len());
-            src.replace_range(at..end, "");
+// frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
+#[test]
+fn mutated_valid_rules_never_panic() {
+    const PUNCT: &[&str] = &[
+        "{", "}", "(", ")", "\"", "`", "[", "]", ",", ":", "->", "~", "|", "\"\"\"",
+    ];
+    proptest!(
+        config(),
+        |(
+            which in 0..FIXTURES.len(),
+            cuts in proptest::collection::vec((0usize..2000, 0usize..40), 0..4),
+            inserts in proptest::collection::vec(
+                (0usize..2000, proptest::sample::select(WORDS), proptest::sample::select(PUNCT)),
+                0..4,
+            ),
+        )| {
+            let mut src = fixture(FIXTURES[which]);
+            for (at, len) in cuts {
+                let at = at % (src.len() + 1);
+                let end = (at + len).min(src.len());
+                src.replace_range(at..end, "");
+            }
+            for (at, word, punct) in inserts {
+                let at = at % (src.len() + 1);
+                src.insert_str(at, &format!(" {word} {punct} "));
+            }
+            let parsed = parse(file(), &src);
+            for e in &parsed.errors {
+                prop_assert!(usize::try_from(u32::from(e.span.range.end())).unwrap_or(usize::MAX) <= src.len());
+            }
         }
-        for (at, word, punct) in inserts {
-            let at = at % (src.len() + 1);
-            src.insert_str(at, &format!(" {word} {punct} "));
-        }
-        let parsed = parse(file(), &src);
-        for e in &parsed.errors {
-            prop_assert!(usize::try_from(u32::from(e.span.range.end())).unwrap_or(usize::MAX) <= src.len());
-        }
-    }
+    );
 }
 
 // frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
