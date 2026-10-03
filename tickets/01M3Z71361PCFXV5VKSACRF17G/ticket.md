@@ -2,7 +2,8 @@
 id = "01M3Z71361PCFXV5VKSACRF17G"
 title = "frob-lease: take configuration from the caller so registry_files reaches every verb"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
