@@ -11,7 +11,7 @@ created = "2026-10-03T05:53:02Z"
 updated = "2026-10-03T06:02:11Z"
 idempotency_key = "m2-ticket-update-acceptance"
 labels = ["milestone:2"]
-scope = ["crates/frob-ledger/**", "crates/frob/**", "docs/design/tickets.md", "docs/design/cli.md"]
+scope = ["crates/frob-ledger/**", "crates/frob/**", "docs/design/tickets.md", "docs/design/cli.md", "docs/reference/cli/frob.md"]
 
 [[acceptance]]
 text = "Given a ticket with two criteria, when ticket update --add-acceptance with a comma in its text runs, then the ticket has three criteria and the third holds the full text"
