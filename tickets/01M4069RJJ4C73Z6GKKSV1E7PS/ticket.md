@@ -2,7 +2,8 @@
 id = "01M4069RJJ4C73Z6GKKSV1E7PS"
 title = "PM034 milestone-member-outside-epics (Warning)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
