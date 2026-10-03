@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T14:49:15Z"
-updated = "2026-10-03T18:18:32Z"
+updated = "2026-10-03T18:36:16Z"
 scope = ["crates/frob-check/**", "crates/frob/src/check_cmd.rs"]
 
 [[acceptance]]
 text = "Given a ticket diff touching one file and repository-wide warnings elsewhere, when check --ticket --text runs, then findings on the touched file print first and the others appear only as per-rule counts"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given --json, when check --ticket runs, then every finding is still present"

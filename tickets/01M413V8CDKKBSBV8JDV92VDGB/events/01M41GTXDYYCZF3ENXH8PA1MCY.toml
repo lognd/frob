@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T18:36:16Z"
+digest = "e1b40e8d25fae419eb62f538678a8f6e8bccf3b7d65b255b3c00f9d78e198236"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.40s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 41b0b47a-f9cd-42d7-833d-2c39238230e7 with nextest profile: default
+    Starting 1 test across 8 binaries (60 tests skipped)
+        PASS [   0.621s] frob-check::check ticket_text_leads_with_diff_findings_and_counts_the_rest
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.622s] 1 test run: 1 passed, 60 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -E 'test(ticket_text_leads_with_diff_findings_and_counts_the_rest)'"
+size = 721
+status = "measured"
+tests = ["ticket_text_leads_with_diff_findings_and_counts_the_rest"]
+at = "2026-10-03T18:36:16Z"
+actor = "lognd"
+rev = 1
