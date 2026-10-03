@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "Outbox: idempotent operations, incremental sync, full resync verb"
+new = "Outbox: ledger-driven work from unpublished events, idempotent set-to-value operations, full resync"
+at = "2026-10-03T05:49:57Z"
+actor = "lognd"
+rev = 1
