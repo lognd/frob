@@ -2,7 +2,8 @@
 id = "01M407JYQJZ2BJ842GHAPQCEPT"
 title = "A tool stage that cannot run reports nothing: frob check passes while actionlint never ran"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
