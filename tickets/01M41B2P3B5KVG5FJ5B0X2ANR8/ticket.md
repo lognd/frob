@@ -8,8 +8,8 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T16:55:39Z"
-updated = "2026-10-03T17:14:59Z"
-scope = ["crates/gob-cli/**", "crates/frob/tests/snapshots/**", "crates/frob/src/board_cmd.rs"]
+updated = "2026-10-03T17:32:52Z"
+scope = ["crates/gob-cli/**", "crates/frob/tests/snapshots/**", "crates/frob/src/board_cmd.rs", "crates/frob/tests/board.rs"]
 
 [[acceptance]]
 text = "Given frob board --text, when it runs, then stdout is exactly the renderer's rows with no envelope header, list markers or indent"
