@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:54Z"
-updated = "2026-10-03T11:09:47Z"
+updated = "2026-10-03T11:18:57Z"
 idempotency_key = "m2-rel-cycle-new-close"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-pm/src/cycle/lifecycle.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs", "crates/frob-pm/src/store.rs", "crates/frob-pm/src/model.rs", "crates/frob-pm/src/lib.rs", "crates/frob-pm/src/cycle/mod.rs", "crates/frob/src/lib.rs", "crates/frob/tests/cycle.rs", "docs/reference/cli/frob.md", "docs/design/pm-enforcement.md", "crates/frob-pm/src/milestone/mod.rs"]
@@ -23,7 +23,7 @@ target = "01M4069R19D2KZENDGEH83JZSW"
 
 [[acceptance]]
 text = "Given a cycle with an unfinished ticket, when frob cycle close runs, then the ticket carries to the next cycle and the ratio is recorded"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a member in-progress with a live lease, when close runs, then it exits 3 naming the ticket"
