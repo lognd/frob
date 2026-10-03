@@ -7,8 +7,8 @@ priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T20:14:15Z"
-updated = "2026-10-03T20:14:24Z"
-scope = [".github/workflows/ci.yml", "crates/gob-trust/src/key.rs", "crates/frob-release/tests/**"]
+updated = "2026-10-03T20:16:58Z"
+scope = [".github/workflows/ci.yml", "crates/gob-trust/src/key.rs", "crates/frob-release/tests/**", "crates/frob/tests/merge_driver_path.rs", "crates/frob/tests/release_cut.rs", "crates/frob/tests/release_status.rs", "crates/frob-check/tests/check.rs", "crates/gob-git/tests/symlinks.rs"]
 
 [[acceptance]]
 text = "Given ci.yml and frob.toml, when the pin test runs, then every tool version in ci.yml equals the one frob.toml uses"
