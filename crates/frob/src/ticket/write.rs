@@ -684,6 +684,11 @@ impl Command for Close {
                     .to_owned(),
             ));
         }
+        // frob:ticket 01M41KT4RMYMMP9SSFN8RZK7QV
+        if let Some(msg) = frob_evidence::done::missing_reason(self.outcome, self.reason.as_deref())
+        {
+            return Err(CliError::Usage(msg));
+        }
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;
         let ws = frob_evidence::Workspace::open(&ctx.cwd).map_err(CliError::internal)?;

@@ -424,3 +424,108 @@ fn an_objective_flavour_is_unresolved_and_a_plain_ticket_passes() {
     assert_eq!(code(&out), 3);
     assert_eq!(json(&out)["error"]["code"], "E-DONE-UNRESOLVED");
 }
+
+/// A bug with an unbound criterion in a repo enforcing every default requirement.
+fn bug_with_criterion(dir: &Path) -> String {
+    ok(
+        dir,
+        &[
+            "ticket",
+            "new",
+            "--title",
+            "b",
+            "--type",
+            "bug",
+            "--acceptance",
+            "it is fixed",
+        ],
+    )["data"]["id"]
+        .as_str()
+        .expect("id")
+        .to_owned()
+}
+
+// frob:ticket 01M41KT4RMYMMP9SSFN8RZK7QV
+// frob:tests crates/frob-evidence/src/done.rs::guards_apply
+#[test]
+fn invalid_duplicate_and_wont_fix_close_a_bug_on_a_reason_alone() {
+    let dir = repo(&[
+        "criteria_evidenced",
+        "no_open_children",
+        "changelog_fragment",
+    ]);
+    for outcome in ["invalid", "duplicate", "wont-fix"] {
+        let id = bug_with_criterion(dir.path());
+        let out = frob(
+            dir.path(),
+            &[
+                "ticket",
+                "close",
+                &id,
+                "--outcome",
+                outcome,
+                "--reason",
+                "not a bug",
+            ],
+        );
+        assert_eq!(
+            code(&out),
+            0,
+            "{outcome}: {}",
+            String::from_utf8_lossy(&out.stdout)
+        );
+        let shown = ok(dir.path(), &["ticket", "show", &id]);
+        assert_eq!(shown["data"]["summary"]["category"], "done");
+        assert_eq!(shown["data"]["summary"]["outcome"], outcome);
+    }
+}
+
+// frob:ticket 01M41KT4RMYMMP9SSFN8RZK7QV
+// frob:tests crates/frob/src/ticket/write.rs::Close.run
+#[test]
+fn a_non_done_outcome_without_a_reason_is_a_usage_error_and_changes_nothing() {
+    let dir = repo(&[]);
+    let id = bug_with_criterion(dir.path());
+    let out = frob(
+        dir.path(),
+        &["ticket", "close", &id, "--outcome", "invalid"],
+    );
+    assert_eq!(code(&out), 2, "{}", String::from_utf8_lossy(&out.stdout));
+    let blank = frob(
+        dir.path(),
+        &[
+            "ticket",
+            "close",
+            &id,
+            "--outcome",
+            "invalid",
+            "--reason",
+            " ",
+        ],
+    );
+    assert_eq!(code(&blank), 2);
+    let shown = ok(dir.path(), &["ticket", "show", &id]);
+    assert_eq!(shown["data"]["summary"]["category"], "todo");
+}
+
+// frob:ticket 01M41KT4RMYMMP9SSFN8RZK7QV
+// frob:tests crates/frob-evidence/src/guard.rs::EvidenceGuard.check
+#[test]
+fn fixed_on_a_bug_without_evidence_is_still_refused() {
+    let dir = repo(&["changelog_fragment"]);
+    let id = bug_with_criterion(dir.path());
+    let out = frob(dir.path(), &["ticket", "close", &id, "--outcome", "fixed"]);
+    assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stdout));
+    assert_eq!(json(&out)["error"]["code"], "E-EVIDENCE-MISSING");
+}
+
+// frob:ticket 01M41KT4RMYMMP9SSFN8RZK7QV
+// frob:tests crates/frob-land/src/verb.rs::Land.from_matches
+#[test]
+fn land_with_a_non_done_outcome_needs_a_reason() {
+    let dir = repo(&[]);
+    let out = frob(dir.path(), &["land", "--outcome", "wont-fix"]);
+    assert_eq!(code(&out), 2, "{}", String::from_utf8_lossy(&out.stdout));
+    let text = json(&out)["error"]["message"].to_string();
+    assert!(text.contains("needs --reason"), "{text}");
+}

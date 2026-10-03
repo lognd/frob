@@ -82,6 +82,17 @@ impl Command for Land {
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let outcome = match text(m, "outcome") {
+            Some(s) => s
+                .parse::<TicketOutcome>()
+                .map_err(|e| CliError::Usage(format!("--outcome: {e}")))?,
+            None => TicketOutcome::Done,
+        };
+        if let Some(msg) =
+            frob_evidence::done::missing_reason(Some(outcome), text(m, "reason").as_deref())
+        {
+            return Err(CliError::Usage(msg));
+        }
         let reason = text(m, "reason").filter(|r| !r.trim().is_empty());
         let (no_evidence, no_changelog) = (m.get_flag("no-evidence"), m.get_flag("no-changelog"));
         let given = |flag: &str| match &reason {
@@ -90,19 +101,14 @@ impl Command for Land {
                 "{flag} needs --reason <text> saying why"
             ))),
         };
-        if !no_evidence && !no_changelog && text(m, "reason").is_some() {
+        let claims = frob_evidence::done::guards_apply(Some(outcome));
+        if claims && !no_evidence && !no_changelog && text(m, "reason").is_some() {
             return Err(CliError::Usage(
-                "--reason is only used with --no-evidence or --no-changelog".to_owned(),
+                "--reason is only used with --no-evidence, --no-changelog or an invalid, duplicate or wont-fix outcome".to_owned(),
             ));
         }
         let no_evidence_reason = no_evidence.then(|| given("--no-evidence")).transpose()?;
         let no_changelog_reason = no_changelog.then(|| given("--no-changelog")).transpose()?;
-        let outcome = match text(m, "outcome") {
-            Some(s) => s
-                .parse::<TicketOutcome>()
-                .map_err(|e| CliError::Usage(format!("--outcome: {e}")))?,
-            None => TicketOutcome::Done,
-        };
         Ok(Self {
             opts: LandOptions {
                 handle: text(m, "ticket"),
@@ -112,6 +118,7 @@ impl Command for Land {
                 keep_worktree: m.get_flag("keep-worktree"),
                 no_evidence_reason,
                 no_changelog_reason,
+                reason: if claims { None } else { reason.clone() },
                 outcome,
                 retry: RetryPolicy::default(),
             },

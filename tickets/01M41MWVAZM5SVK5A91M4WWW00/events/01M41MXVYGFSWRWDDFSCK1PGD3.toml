@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in /home/logan/projects/frob-v2-wt/M4WWW00; scope: crates/grimble-model/tests/**, crates/frob-release/tests/**, crates/gob-git/tests/**, crates/frob/src/init.rs, crates/frob/tests/cli.rs, crates/frob/tests/snapshots/cli__init_frob_toml.snap, crates/frob/tests/common/**; ttl 7200s"
+at = "2026-10-03T19:47:47Z"
+actor = "lognd"
+rev = 1

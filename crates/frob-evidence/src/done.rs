@@ -23,6 +23,33 @@ pub const CODE_FRAGMENT: &str = "E-DONE-CHANGELOG-FRAGMENT";
 /// Flavour of a ticket that carries a measured target (pm-enforcement.md section 2a).
 const OBJECTIVE_FLAVOUR: &str = "quality_objective";
 
+// frob:ticket 01M41KT4RMYMMP9SSFN8RZK7QV
+/// Whether the done guards (evidence, criteria, children, fragment) apply to a close with `outcome`.
+///
+/// Only `done` and `fixed` claim a change was made; `invalid`, `duplicate` and `wont-fix` close on a reason alone. A missing outcome is judged strictly (the outcome guard refuses it anyway). `ticket close`, `land` and both guards read this one answer.
+pub fn guards_apply(outcome: Option<Outcome>) -> bool {
+    let applies = !matches!(
+        outcome,
+        Some(Outcome::Invalid | Outcome::Duplicate | Outcome::WontFix)
+    );
+    tracing::debug!(?outcome, applies, "done guards applicability");
+    applies
+}
+
+/// The usage message when a close with `outcome` needs a `--reason` and `reason` is missing or blank; `None` when nothing is wrong.
+///
+/// Shared by `ticket close` and `land` so both demand the same thing of `invalid`, `duplicate` and `wont-fix`.
+// frob:ticket 01M41KT4RMYMMP9SSFN8RZK7QV
+pub fn missing_reason(outcome: Option<Outcome>, reason: Option<&str>) -> Option<String> {
+    if guards_apply(outcome) || reason.is_some_and(|r| !r.trim().is_empty()) {
+        return None;
+    }
+    Some(format!(
+        "closing as {} needs --reason <text> saying why (no evidence or changelog is asked for)",
+        outcome.map_or("this outcome", Outcome::as_str)
+    ))
+}
+
 /// What the ticket's changelog fragment looks like on disk, judged by the compile's own validator.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum FragmentState {
@@ -273,7 +300,7 @@ impl CloseGuard for DoneGuard {
     }
 
     fn check(&self, cx: &CloseContext<'_>) -> Result<(), GuardFailure> {
-        if !matches!(cx.outcome, Some(Outcome::Done | Outcome::Fixed)) {
+        if !guards_apply(cx.outcome) {
             return Ok(());
         }
         for req in &self.requires {

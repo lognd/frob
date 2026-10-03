@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T19:42:50Z"
+digest = "bf2283720ff85ef387601e1a8def6d86c08e079bd893e6e73d04dfe8f756cb0c"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5e1ec5a4-14bc-4d4a-a6b7-f60a893d26b7 with nextest profile: default
+    Starting 2 tests across 1 binary (29 tests skipped)
+        PASS [   0.709s] frob-cli::cycle doctor_is_clean_after_an_early_close_and_a_same_day_recreate
+        PASS [   0.717s] frob-cli::cycle close_with_next_goal_on_a_reused_range_gets_a_unique_alias
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.718s] 2 tests run: 2 passed, 29 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test cycle doctor_is_clean_after_an_early_close_and_a_same_day_recreate close_with_next_goal_on_a_reused_range_gets_a_unique_alias"
+size = 667
+status = "measured"
+tests = ["doctor_is_clean_after_an_early_close_and_a_same_day_recreate", "close_with_next_goal_on_a_reused_range_gets_a_unique_alias"]
+at = "2026-10-03T19:42:50Z"
+actor = "lognd"
+rev = 1

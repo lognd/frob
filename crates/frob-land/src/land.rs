@@ -814,8 +814,9 @@ fn ledger_step(
     let applied = ledger.close(
         id,
         Some(opts.outcome),
-        opts.no_evidence_reason
+        opts.reason
             .clone()
+            .or_else(|| opts.no_evidence_reason.clone())
             .or_else(|| opts.no_changelog_reason.clone()),
         &guards,
     )?;

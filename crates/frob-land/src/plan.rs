@@ -62,6 +62,8 @@ pub struct LandOptions {
     pub no_evidence_reason: Option<String>,
     /// Close without a changelog fragment, saying why (`--no-changelog --reason`).
     pub no_changelog_reason: Option<String>,
+    /// Why the ticket is closed, required for `invalid`, `duplicate` and `wont-fix`.
+    pub reason: Option<String>,
     /// The outcome the ticket is closed with.
     pub outcome: Outcome,
     /// Stale-base retry tuning; only used when `wait_secs` is above zero.
@@ -78,6 +80,7 @@ impl Default for LandOptions {
             keep_worktree: false,
             no_evidence_reason: None,
             no_changelog_reason: None,
+            reason: None,
             outcome: Outcome::Done,
             retry: RetryPolicy::default(),
         }

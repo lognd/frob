@@ -223,7 +223,7 @@ v1-style warn) unless declared under `[tickets.custom_fields]`.
 | classification | priority (low, medium, high or critical), class of service (expedite, fixed-date, standard or intangible; default standard), component (registry, monorepo.md), labels, area |
 | hierarchy | parent, children (derived), links (typed, section 4) |
 | planning | cycle (object; membership is an event), milestone (a release object, never a ticket type), points, due (RFC 3339; orders fixed-date tickets), rank (fractional, LexoRank-style) |
-| state | status (category plus status name, section 5), outcome (done, wont-do, duplicate, cannot-reproduce, absorbed), blocked (derived from open blockers) |
+| state | status (category plus status name, section 5), outcome (done, fixed, wont-fix, duplicate, invalid), blocked (derived from open blockers) |
 | scope | scope (globs), scope_mode (exclusive, append, none), scope_ack reason, evidence_scope |
 | acceptance | criteria list with bound evidence ids |
 | evidence | evidence records (runnable id, kind, last verdict, verified_at, at commit) |
@@ -275,7 +275,7 @@ Guards are named Rust predicates (`has_evidence`, `no_open_blockers`,
 evaluated when a ticket would reach `done`. `close` and `land` evaluate
 the same guard set: a ticket whose scope changed files reaches `done`
 only through `land`, and `close` is the path for tickets with no
-landing (outcome wont-do, duplicate, cannot-reproduce, absorbed, or
+landing (outcome wont-fix, duplicate or invalid, or
 evidence-only work). A repo can choose the guard set; it cannot remove
 the integrity guards on `done`. Post-actions (`release_lease`,
 `record_land`) are fixed behaviour. `fail` is not a state: it is an
@@ -374,7 +374,7 @@ Milestone 2 or later (D36).
 | issue types, hierarchy levels | type enum (section 3) plus configurable depth; one `parent` edge | Epic Link / Parent Link / parent churn (pinch 10) |
 | system and custom fields | fixed core schema; typed extras in `frob.toml`, validated at write | 700-field configurations, global field ids (2) |
 | statuses, categories, transitions, conditions, validators, post-functions | categories fixed (`triage`, `todo`, `in-progress`, `done`, plus derived `blocked`); display names free; guards are predicates on `close` and `land`, not a transition graph; policy change is a commit | "transition not found", admin-only workflow edits, saved JQL breaking on rename (3) |
-| resolution | mandatory `outcome` written atomically with the terminal status: done, wont-do, duplicate, cannot-reproduce, absorbed | Done-without-resolution, "Unresolved" counted as resolved (9) |
+| resolution | mandatory `outcome` written atomically with the terminal status: done, fixed, wont-fix, duplicate, invalid | Done-without-resolution, "Unresolved" counted as resolved (9) |
 | priority | `low`, `medium`, `high`, `critical` enum | - |
 | class of service | `class` enum: `expedite`, `fixed-date`, `standard`, `intangible`; `ticket new --class`, `ticket update --class`; `doable` lists expedite first, then fixed-date by `due`, then the rest | - |
 | components | registry in config, each with path globs and optional owner; double as the product selector in the monorepo | free-text drift |
@@ -463,6 +463,15 @@ security, story, incident and invariant, and `ticket close
 --no-evidence --reason` bypasses it with an audited `evidence-bypass`
 event; evidence verdicts
 are `Passed | Failed | Unmeasured` and Unmeasured never reads as Failed.
+
+**Which outcomes the close guards apply to** (~8RZK7QV). Evidence, criteria,
+children and changelog fragment prove that a change was made, so they apply
+to outcomes `done` and `fixed` only. `invalid`, `duplicate` and `wont-fix`
+close on a required `--reason` alone: no `--no-evidence` or `--no-changelog`
+is needed (or asked for), and `ticket close` without a reason is a usage
+error for them. The decision is one function of the outcome,
+`frob_evidence::done::guards_apply`, read by both guards, so `ticket close`
+and `land` agree.
 
 **Done requirements** (~XGAS05X, release 0.532.0). A close or land with
 outcome `done` or `fixed` also evaluates every entry of `[pm] done_requires`
