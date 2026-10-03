@@ -15,7 +15,7 @@
 
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use frob_check::CheckOptions;
 use frob_evidence::{DoneGuard, EvidenceGuard, Workspace};
@@ -25,13 +25,17 @@ use frob_ledger::model::Category;
 use frob_ledger::ops::TicketView;
 use frob_ledger::{Ledger, RefMode, TicketId};
 use gob_diagnostics::{ExitCode, Refusal, RefusalClass};
-use gob_git::{MergeOutcome, Oid, Repo, StatusOptions};
+use gob_git::{MergeOutcome, Oid, Repo, StatusOptions, TreeRef};
 
 use crate::error::{LandError, needs_action};
 use crate::events::{LandEvent, append_land};
 use crate::git::git;
 use crate::lock::LandLock;
-use crate::plan::{LandOptions, LandOutcome, PlanInputs, digest, steps};
+use crate::lockfile;
+use crate::plan::{LandOptions, LandOutcome, PlanInputs, RetryPolicy, digest, steps};
+
+/// Stable code of the refusal when the base moved during the land.
+const CODE_STALE: &str = "E-LAND-STALE";
 
 /// How many dirty paths a refusal message lists before summarising.
 const LIST_CAP: usize = 10;
@@ -206,6 +210,7 @@ impl Ready {
     ) -> Result<LandOutcome, LandError> {
         let on_branch = self.site.ledger.config().mode == RefMode::Branch;
         let actor = self.site.ledger.actor()?;
+        let started = Instant::now();
         let _lock = LandLock::acquire(
             self.repo.common_dir(),
             Duration::from_secs(opts.wait_secs),
@@ -222,17 +227,36 @@ impl Ready {
         let site = &self.site;
         let (id, base, branch) = (self.id, &self.base, &self.branch);
         let (evidence, done) = (&self.evidence, &self.done);
-        let oid = ctx.advance(on_branch, || {
-            ledger_step(
-                &site.ledger,
-                id,
-                (evidence, done),
-                opts,
-                base,
-                branch,
-                false,
-            )
-        })?;
+        let retrying = opts.wait_secs > 0;
+        let budget = opts
+            .retry
+            .budget
+            .unwrap_or_else(|| Duration::from_secs(opts.wait_secs));
+        let mut attempt = 0_u32;
+        let oid = loop {
+            attempt += 1;
+            if let Some(hook) = &opts.retry.before_attempt {
+                hook(attempt);
+            }
+            let advanced = ctx.advance(on_branch, || {
+                ledger_step(
+                    &site.ledger,
+                    id,
+                    (evidence, done),
+                    opts,
+                    base,
+                    branch,
+                    false,
+                )
+            });
+            match advanced {
+                Err(LandError::Refused(r)) if retrying && r.code == CODE_STALE => {
+                    ctx.recover_stale(&site.ledger, opts, attempt, started, budget)?;
+                }
+                other => break other?,
+            }
+        };
+        self.out.attempts = attempt;
         self.out.commit = Some(oid.to_string());
         if opts.push {
             self.out.pushed = push_base(&self.repo, &self.base, &mut self.out.warnings);
@@ -287,6 +311,7 @@ fn empty_outcome(id: TicketId, handle: &str, base: &str, opts: &LandOptions) -> 
         worktree_removed: false,
         digest: None,
         plan: Vec::new(),
+        attempts: 0,
         warnings: Vec::new(),
         changelog_exempt: None,
     }
@@ -457,6 +482,14 @@ fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<
             tracing::info!(base, "base merged into the ticket branch");
             Ok("merged".to_owned())
         }
+        // frob:ticket 01M418TM2GZ24YPQE7ECTKE1J4
+        MergeOutcome::Conflicts(paths) if lockfile::all_shared(wt_path, &paths)? => {
+            tracing::info!(
+                count = paths.len(),
+                "base merge conflicts only in shared lockfiles"
+            );
+            lockfile::resolve(wt, wt_path, base, &paths)
+        }
         MergeOutcome::Conflicts(paths) => {
             let abort = git(wt, wt_path, &["merge", "--abort"])?;
             tracing::warn!(
@@ -590,6 +623,74 @@ struct Publish<'a> {
 }
 
 impl Publish<'_> {
+    /// The retryable `E-LAND-STALE` refusal, naming the attempt count once retries ran out.
+    fn stale(&self, gave_up_after: Option<u32>) -> LandError {
+        let message = match gave_up_after {
+            None => format!("{} moved while landing", self.base),
+            Some(n) => format!(
+                "{} moved while landing; gave up after {n} attempt(s) because the --wait budget is spent",
+                self.base
+            ),
+        };
+        LandError::Refused(
+            Refusal::new(CODE_STALE, RefusalClass::GuardRetryByWaiting, message)
+                .with_remedy(format!("frob land {} --wait <secs>", self.handle)),
+        )
+    }
+
+    /// After a stale compare-and-swap (frob:ticket ~VMHTBE7): back off, re-merge the moved base and re-check only if code changed.
+    ///
+    /// Ledger-only moves cannot change the check verdict, so the check is
+    /// skipped unless a path outside the ledger directory differs between the
+    /// base the branch contained and the new base. Nothing is written before
+    /// the compare-and-swap succeeds, so a crash here resumes with `frob land`.
+    fn recover_stale(
+        &self,
+        ledger: &Ledger,
+        opts: &LandOptions,
+        attempt: u32,
+        started: Instant,
+        budget: Duration,
+    ) -> Result<(), LandError> {
+        let elapsed = started.elapsed();
+        if elapsed >= budget {
+            tracing::warn!(attempt, ?elapsed, ?budget, "land retry budget spent");
+            return Err(self.stale(Some(attempt)));
+        }
+        let pause = jitter(&opts.retry, attempt, self.handle).min(budget.saturating_sub(elapsed));
+        tracing::info!(
+            attempt,
+            ?pause,
+            base = self.base,
+            "base moved while landing; retrying"
+        );
+        std::thread::sleep(pause);
+        let had = self.wt.merge_base(self.base, self.branch)?;
+        let wt_path = self
+            .wt
+            .work_dir()
+            .map(Path::to_path_buf)
+            .ok_or_else(|| LandError::Config("not inside a git work tree".to_owned()))?;
+        let how = merge_base_in(self.wt, &wt_path, self.base, self.handle)?;
+        let now = self.wt.rev_parse(self.base)?;
+        let code_changed = match had {
+            Some(old) if old != now => {
+                let prefix = format!("{}/", ledger.config().dir.trim_end_matches('/'));
+                self.wt
+                    .diff_names(&TreeRef::Oid(old), &TreeRef::Oid(now))?
+                    .iter()
+                    .any(|c| !c.path.starts_with(&prefix))
+            }
+            Some(_) => false,
+            None => true,
+        };
+        tracing::info!(attempt, merge = %how, code_changed, "stale base re-merged");
+        if code_changed {
+            verify_check(&wt_path, ledger, self.handle, self.base, opts)?;
+        }
+        Ok(())
+    }
+
     /// Fast-forward the base branch to the ticket branch tip; `before` runs first in `branch` ref mode.
     ///
     /// In branch ref mode the ledger commits ride on the ticket branch, so
@@ -602,14 +703,7 @@ impl Publish<'_> {
     ) -> Result<Oid, LandError> {
         let base_oid = self.wt.rev_parse(self.base)?;
         if self.wt.merge_base(self.base, self.branch)? != Some(base_oid) {
-            return Err(LandError::Refused(
-                Refusal::new(
-                    "E-LAND-STALE",
-                    RefusalClass::GuardRetryByWaiting,
-                    format!("{} moved while landing", self.base),
-                )
-                .with_remedy(format!("frob land {}", self.handle)),
-            ));
+            return Err(self.stale(None));
         }
         if ledger_on_branch {
             before()?;
@@ -665,6 +759,25 @@ impl Publish<'_> {
         }
         Ok(head)
     }
+}
+
+/// A full-jitter backoff for `attempt`: uniform in zero to the doubling ceiling (clock entropy, no rng dependency).
+fn jitter(policy: &RetryPolicy, attempt: u32, salt: &str) -> Duration {
+    let ceiling = policy
+        .backoff_base
+        .saturating_mul(1_u32 << attempt.min(16))
+        .min(policy.backoff_max);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos());
+    let mut h = blake3::Hasher::new();
+    h.update(&nanos.to_le_bytes());
+    h.update(&attempt.to_le_bytes());
+    h.update(salt.as_bytes());
+    let bytes = h.finalize();
+    let draw = u64::from_le_bytes(bytes.as_bytes()[..8].try_into().expect("8 bytes"));
+    let ceil_nanos = u64::try_from(ceiling.as_nanos()).unwrap_or(u64::MAX).max(1);
+    Duration::from_nanos(draw % ceil_nanos)
 }
 
 /// Record the `land` event, close the ticket through the guards and audit an evidence bypass.

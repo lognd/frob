@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T16:50:40Z"
+digest = "8abd24c98c988bd6f61277c766259dcc5ec49c3fc236bfcef46da8fe52d98536"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d404e656-cc8f-4cda-9759-1893fabc6789 with nextest profile: default
+    Starting 1 test across 1 binary (8 tests skipped)
+        PASS [   0.019s] frob-cli::board a_ticket_in_progress_for_three_days_reads_3d
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test board -E 'test(a_ticket_in_progress_for_three_days_reads_3d)'"
+size = 547
+status = "measured"
+tests = ["a_ticket_in_progress_for_three_days_reads_3d"]
+at = "2026-10-03T16:50:40Z"
+actor = "lognd"
+rev = 1

@@ -2,21 +2,22 @@
 id = "01M415AC5KGV3FMV512VMHTBE7"
 title = "land --wait does not retry E-LAND-STALE when the base moves during the land"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T15:14:59Z"
-updated = "2026-10-03T16:12:26Z"
+updated = "2026-10-03T16:29:57Z"
 scope = ["crates/frob-land/**"]
 
 [[acceptance]]
 text = "Given --wait and a base that moves once during the land with ledger-only commits, when land runs, then it lands without a manual retry and reports attempts 2"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given --wait and a base that keeps moving past the budget, when land runs, then it fails with E-LAND-STALE naming the attempt count"
-bound = false
+bound = true
 +++
 
 Observed by the coordinator on 2026-10-03: with several agents recording evidence (each a ledger commit on experimental), land ~0MQNY3G --wait 300 and land ~DH63PV1 --wait 300 failed with E-LAND-STALE 'experimental moved while landing' (retryable: true) and needed manual reruns. Under --wait, land should retry a stale compare-and-swap itself: re-merge the new base, re-run the check only if non-ledger paths changed, and retry with backoff until the wait budget is spent; then report the attempt count. Without --wait, behaviour is unchanged.

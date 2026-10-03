@@ -1,16 +1,18 @@
-//! The `cycle` verbs: `new`, `show`, `list`, `close`, `assign`, `unassign` over `frob-pm`.
+//! The `cycle` verbs: `new`, `show`, `list`, `close`, `assign`, `unassign`, `plan`, `velocity` over `frob-pm`.
 //!
 //! A cycle's alias is its dates (`START..END`). `new` and `close` are
 //! idempotent: an identical repeat returns `already: true`. Incomplete members
 //! carry to the next cycle with `cycle` events (op `carried`) and the
 //! commitment ratio is recorded at close (pm-enforcement.md section 4).
 //! `assign` refuses past capacity unless `--over-commit --reason`, and moves a
-//! ticket out of the open or planned cycle that held it.
+//! ticket out of the open or planned cycle that held it. `plan` proposes a
+//! fill of ready work (`--apply` assigns through the same path as `assign`).
 
 // frob:ticket 01M4069RPPQE1ES1914K6V6Y0D
 // frob:ticket 01M4069SHBAEWRX9WWCSS2FEHN
 // frob:ticket 01M40VQWCV38B2JCABYNNNA877
 // frob:ticket 01M4069SYRHMYXCFAZH0AN408B
+// frob:ticket 01M4069T2V69X32EP8NZQHJH6H
 use std::collections::BTreeMap;
 
 use frob_ledger::Ledger;
@@ -21,8 +23,9 @@ use frob_pm::cycle::lifecycle::{
     ClosePlan, CycleError, MemberFacts, MemberStatus, NewPlan, plan_close, plan_new, plan_next,
     ratio, resolve_end, unknown_cycle, with_state,
 };
+use frob_pm::cycle::plan::{Candidate, PlanError, milestone_members, next_milestone, plan_fill};
 use frob_pm::cycle::velocity::{
-    Delivery, ROLLING_CYCLES, capacity, committed, delivered, delivery, done_facts,
+    Capacity, Delivery, ROLLING_CYCLES, capacity, committed, delivered, delivery, done_facts,
     history_capacity, recent_closed, velocity,
 };
 use frob_pm::event::{CycleEventData, CycleOp, MemberData, Op, PmBody, PmEvent, TransitionData};
@@ -951,6 +954,76 @@ fn assign_bodies(ticket: TicketId, over: Option<(u32, Option<u32>, Option<&str>)
     bodies
 }
 
+/// What one assignment did, as [`assign_one`] reports it to `cycle assign` and `cycle plan --apply`.
+struct Assigned {
+    cycle: Cycle,
+    moved_from: Option<String>,
+    committed: u32,
+    over_committed: bool,
+    events: Vec<String>,
+    commit: Option<String>,
+    already: bool,
+}
+
+/// Assign `facts` to `target` under `cap`: the one path `cycle assign` and `cycle plan --apply` share.
+///
+/// Capacity refusal, the move out of another cycle and the over-commit record all live here.
+#[allow(clippy::too_many_arguments)]
+fn assign_one(
+    store: PmStore<'_>,
+    ledger: &Ledger,
+    target: &Cycle,
+    all: &[Cycle],
+    cap: &Capacity,
+    facts: &TicketFacts,
+    over_commit: bool,
+    reason: Option<&str>,
+) -> Result<Assigned, CliError> {
+    let id = facts.id;
+    let members = member_points(ledger, target);
+    let plan = plan_assign(target, all, facts, &members, cap.clone(), over_commit)
+        .map_err(|e| assign_refusal(&e, &target.alias()))?;
+    match plan {
+        AssignPlan::Already => Ok(Assigned {
+            cycle: target.clone(),
+            moved_from: None,
+            committed: committed(&members),
+            over_committed: false,
+            events: Vec::new(),
+            commit: None,
+            already: true,
+        }),
+        AssignPlan::Add {
+            moved_from,
+            committed,
+            capacity: _,
+            over_commit,
+        } => {
+            if let Some((old, _)) = &moved_from {
+                store
+                    .set_member(ObjectKind::Cycle, *old, id, Op::Remove)
+                    .map_err(cycle_pm_err)?;
+            }
+            let bodies = assign_bodies(id, over_commit.then_some((committed, cap.limit(), reason)));
+            let applied = store
+                .append_many(ObjectKind::Cycle, target.id, bodies)
+                .map_err(cycle_pm_err)?;
+            let frob_pm::Object::Cycle(c) = applied.object else {
+                unreachable!("a cycle event folds to a cycle")
+            };
+            Ok(Assigned {
+                cycle: c,
+                moved_from: moved_from.map(|(_, a)| a),
+                committed,
+                over_committed: over_commit,
+                events: applied.events.iter().map(ToString::to_string).collect(),
+                commit: Some(applied.commit),
+                already: false,
+            })
+        }
+    }
+}
+
 /// Assign a ticket to a cycle (default: the open one containing today, else the next planned); refused past capacity unless over-committed.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
@@ -1022,54 +1095,25 @@ impl Command for CycleAssign {
             cfg.pm.pm.min_history,
             cfg.pm.pm.capacity_k,
         );
-        let members = member_points(&ledger, &target);
-        let plan = plan_assign(
+        let a = assign_one(
+            store,
+            &ledger,
             &target,
             &all,
+            &cap,
             &facts,
-            &members,
-            cap.clone(),
             self.over_commit,
-        )
-        .map_err(|e| assign_refusal(&e, &target.alias()))?;
-        let (c, moved_from, committed_after, over, events, commit, already) = match plan {
-            AssignPlan::Already => {
-                let committed = committed(&members);
-                (target, None, committed, false, Vec::new(), None, true)
-            }
-            AssignPlan::Add {
-                moved_from,
-                committed,
-                capacity: _,
-                over_commit,
-            } => {
-                if let Some((old, _)) = &moved_from {
-                    store
-                        .set_member(ObjectKind::Cycle, *old, id, Op::Remove)
-                        .map_err(cycle_pm_err)?;
-                }
-                let bodies = assign_bodies(
-                    id,
-                    over_commit.then_some((committed, cap.limit(), reason.as_deref())),
-                );
-                let applied = store
-                    .append_many(ObjectKind::Cycle, target.id, bodies)
-                    .map_err(cycle_pm_err)?;
-                let frob_pm::Object::Cycle(c) = applied.object else {
-                    unreachable!("a cycle event folds to a cycle")
-                };
-                let events = applied.events.iter().map(ToString::to_string).collect();
-                (
-                    c,
-                    moved_from.map(|(_, a)| a),
-                    committed,
-                    over_commit,
-                    events,
-                    Some(applied.commit),
-                    false,
-                )
-            }
-        };
+            reason.as_deref(),
+        )?;
+        let (c, moved_from, committed_after, over, events, commit, already) = (
+            a.cycle,
+            a.moved_from,
+            a.committed,
+            a.over_committed,
+            a.events,
+            a.commit,
+            a.already,
+        );
         tracing::info!(
             cycle = %c.alias(), ticket = %facts.handle, already, over_committed = over,
             moved_from = ?moved_from, committed = committed_after, capacity = %cap.describe(),
@@ -1309,6 +1353,253 @@ impl Command for CycleVelocity {
     }
 }
 
+/// One ticket `cycle plan` assigns, or assigned.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct PlanPickView {
+    /// Handle of the ticket.
+    pub ticket: String,
+    /// Its title.
+    pub title: String,
+    /// Points it adds to the commitment.
+    pub points: u32,
+    /// Committed points of the cycle after this ticket.
+    pub running: u32,
+    /// Why it ranks here: class of service and next-milestone preference.
+    pub why: String,
+}
+
+/// A ready ticket `cycle plan` does not assign, with the reason.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct PlanLeftOutView {
+    /// Handle of the ticket.
+    pub ticket: String,
+    /// Why it was left out.
+    pub reason: String,
+}
+
+/// Output of `cycle plan`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct PlanData {
+    /// Alias of the planned cycle.
+    pub cycle: String,
+    /// The next milestone the plan preferred, when one is open.
+    pub milestone: Option<String>,
+    /// The capacity statement the plan filled to.
+    pub capacity: String,
+    /// The limit in points.
+    pub capacity_limit: Option<u32>,
+    /// Committed points before the plan.
+    pub committed_before: u32,
+    /// Committed points after the plan (or after `--apply`).
+    pub committed_after: u32,
+    /// True when the picks were assigned (`--apply`); false for a proposal.
+    pub applied: bool,
+    /// Tickets to assign (or assigned), in rank order.
+    pub picks: Vec<PlanPickView>,
+    /// Ready tickets already in the cycle.
+    pub already_in_cycle: Vec<String>,
+    /// Ready tickets not assigned, with reasons.
+    pub left_out: Vec<PlanLeftOutView>,
+    /// The ledger commit of the last assignment, when `--apply` wrote any.
+    pub commit: Option<String>,
+}
+
+/// The ready tickets `cycle plan` chooses from, in `doable` rank order, with what the verb needs to show and assign them.
+struct Ready {
+    /// Version of the next milestone, when one is open.
+    milestone: Option<String>,
+    ranked: Vec<Candidate>,
+    facts: BTreeMap<TicketId, TicketFacts>,
+    titles: BTreeMap<TicketId, String>,
+}
+
+/// Read the doable tickets (the one definition of ready) and mark those of the next milestone.
+fn ready_candidates(ctx: &Context, ledger: &Ledger) -> Result<Ready, CliError> {
+    let (lease_store, _) = open_lease_store(ctx)?;
+    let guard = frob_lease::LeaseGuard::new(lease_store).map_err(CliError::internal)?;
+    let doable = ledger.doable(&guard).map_err(cli_err)?;
+    let milestones = frob_pm::rules::membership::milestones(ledger).map_err(cycle_pm_err)?;
+    let next = next_milestone(&milestones);
+    let in_next = match next {
+        Some(m) => milestone_members(
+            m,
+            &frob_pm::rules::membership::claimants(ledger).map_err(cycle_pm_err)?,
+        ),
+        None => std::collections::BTreeSet::new(),
+    };
+    let mut facts = BTreeMap::new();
+    let mut titles = BTreeMap::new();
+    let ranked = doable
+        .iter()
+        .map(|s| {
+            let f = TicketFacts {
+                id: s.id,
+                handle: s.handle.clone(),
+                ty: s.ty,
+                points: s.points.map(u32::from),
+            };
+            facts.insert(s.id, f.clone());
+            titles.insert(s.id, s.title.clone());
+            Candidate {
+                facts: f,
+                class: s.class,
+                next_milestone: in_next.contains(&s.id),
+            }
+        })
+        .collect();
+    Ok(Ready {
+        milestone: next.map(|m| m.version.clone()),
+        ranked,
+        facts,
+        titles,
+    })
+}
+
+/// Propose filling a cycle from ready work in rank order, preferring the next milestone, never past capacity; `--apply` assigns.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "cycle plan",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct CyclePlan {
+    cycle: Option<String>,
+    apply: bool,
+    points: Option<String>,
+}
+
+impl Command for CyclePlan {
+    type Data = PlanData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        cmd.arg(cycle_arg(false))
+            .arg(
+                Arg::new("apply")
+                    .long("apply")
+                    .action(gob_cli::clap::ArgAction::SetTrue)
+                    .help("Assign the proposed tickets (idempotent); without it nothing is written"),
+            )
+            .arg(text_flag(
+                "points",
+                "Fill to this many points instead of the cycle's capacity (needed while capacity is not enforced)",
+            ))
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            cycle: get(m, "cycle"),
+            apply: m.get_flag("apply"),
+            points: get(m, "points"),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<PlanData> {
+        let points = self
+            .points
+            .as_deref()
+            .map(|p| {
+                p.parse::<u32>()
+                    .map_err(|e| CliError::Usage(format!("--points: {e}")))
+            })
+            .transpose()?;
+        let (_, root) = Located::discover(&ctx.cwd).into_repo()?;
+        let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
+        let ledger = open(ctx)?;
+        let store = PmStore::new(&ledger);
+        let all = cycles(store)?;
+        let target = match &self.cycle {
+            Some(r) => find(store, r)?,
+            None => default_cycle(&all, today_utc())
+                .map_err(|e| assign_refusal(&e, "CYCLE"))?
+                .clone(),
+        };
+        let done = done_points(&deliveries(store, &ledger, &all));
+        let cap = points.map_or_else(
+            || {
+                capacity(
+                    &target,
+                    &all,
+                    &done,
+                    cfg.pm.pm.min_history,
+                    cfg.pm.pm.capacity_k,
+                )
+            },
+            Capacity::Set,
+        );
+        let ready = ready_candidates(ctx, &ledger)?;
+        let (next, ranked, facts, titles) =
+            (ready.milestone, ready.ranked, ready.facts, ready.titles);
+        let members = member_points(&ledger, &target);
+        let plan =
+            plan_fill(&target, &all, ranked, &members, &cap).map_err(|e| plan_refusal(&e))?;
+        let mut commit = None;
+        let mut committed_after = plan.committed;
+        if self.apply {
+            let mut at = target.clone();
+            for p in &plan.picks {
+                let a = assign_one(store, &ledger, &at, &all, &cap, &facts[&p.id], false, None)?;
+                committed_after = a.committed;
+                commit = a.commit.or(commit);
+                at = a.cycle;
+            }
+        } else if let Some(last) = plan.picks.last() {
+            committed_after = last.running;
+        }
+        tracing::info!(
+            cycle = %target.alias(), apply = self.apply, picks = plan.picks.len(),
+            left_out = plan.left_out.len(), committed_after, capacity = %cap.describe(),
+            "cycle plan"
+        );
+        let nothing = plan.picks.is_empty();
+        Ok(Payload::new(PlanData {
+            cycle: target.alias(),
+            milestone: next,
+            capacity: cap.describe(),
+            capacity_limit: cap.limit(),
+            committed_before: plan.committed,
+            committed_after,
+            applied: self.apply,
+            picks: plan
+                .picks
+                .iter()
+                .map(|p| PlanPickView {
+                    ticket: p.handle.clone(),
+                    title: titles.get(&p.id).cloned().unwrap_or_default(),
+                    points: p.points,
+                    running: p.running,
+                    why: p.why.clone(),
+                })
+                .collect(),
+            already_in_cycle: plan.already,
+            left_out: plan
+                .left_out
+                .into_iter()
+                .map(|l| PlanLeftOutView {
+                    ticket: l.handle,
+                    reason: l.reason,
+                })
+                .collect(),
+            commit,
+        })
+        .with_already(self.apply && nothing))
+    }
+}
+
+/// Map a plan failure to its refusal, with the command that fixes it.
+fn plan_refusal(e: &PlanError) -> CliError {
+    match e {
+        PlanError::Assign(a) => assign_refusal(a, "CYCLE"),
+        PlanError::NoCapacity { .. } => Refusal::new(
+            "E-CYCLE-NO-CAPACITY",
+            RefusalClass::GuardNeedsAction,
+            e.to_string(),
+        )
+        .with_remedy("frob cycle plan --points N")
+        .into(),
+    }
+}
+
 /// Verbs of this module, registered on the root in one place.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<CycleNew>()
@@ -1317,5 +1608,6 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<CycleClose>()
         .register::<CycleAssign>()
         .register::<CycleUnassign>()
+        .register::<CyclePlan>()
         .register::<CycleVelocity>()
 }

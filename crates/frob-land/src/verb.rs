@@ -5,7 +5,7 @@ use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 
 use crate::land::land;
-use crate::plan::{LandOptions, LandOutcome};
+use crate::plan::{LandOptions, LandOutcome, RetryPolicy};
 
 /// Land a leased ticket branch onto the base branch, close the ticket and clean up.
 #[derive(Debug, Clone, gob_cli::Command)]
@@ -44,7 +44,7 @@ impl Command for Land {
                 .long("wait")
                 .value_name("SECS")
                 .value_parser(gob_cli::clap::value_parser!(u64))
-                .help("Wait up to this many seconds for the land lock (default 0)"),
+                .help("Wait up to this many seconds for the land lock and to retry when the base moves (default 0)"),
         )
         .arg(
             Arg::new("keep-worktree")
@@ -113,6 +113,7 @@ impl Command for Land {
                 no_evidence_reason,
                 no_changelog_reason,
                 outcome,
+                retry: RetryPolicy::default(),
             },
         })
     }

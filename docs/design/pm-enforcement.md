@@ -148,9 +148,18 @@ Milestone 2 or later (D36).
   epics and unestimated tickets are refused. PM010 flags cycles
   over capacity; PM011 flags a cycle with no goal; PM012 flags stories
   in a cycle that are not `ready`.
-- `frob cycle plan <cycle>` proposes a commitment: ready stories by
-  rank until capacity, respecting dependencies, and prints what it left
-  out and why.
+- `frob cycle plan [CYCLE] [--apply] [--points N]` proposes a commitment:
+  the tickets `ticket doable` lists (so dependencies are respected), in its
+  rank order (expedite, fixed-date by due, then the rest) except that
+  tickets of the next milestone (the open one with the earliest target)
+  lead the plain lane, until capacity. Each candidate goes through the same
+  rules as `cycle assign`, so it never over-commits; it prints the picks
+  (points, running total, why), the ready tickets already in the cycle and
+  what it left out with the reason (no points, over the limit, in another
+  cycle). Without an enforced capacity there is no limit to fill to, so it
+  is refused (`E-CYCLE-NO-CAPACITY`) unless `--points N` gives one. By
+  default nothing is written; `--apply` assigns the picks through the
+  `assign` path and a repeat is a no-op.
 - `frob cycle close` moves incomplete work to the next cycle with a
   `cycle` event (op `carried`), records the commitment-versus-done ratio, and
   refuses if any ticket in the cycle is in `in-progress` with a live

@@ -2,12 +2,12 @@
 //!
 //! "Ready" is exactly the set `frob ticket doable` lists: [`Ledger::doable`]
 //! is the one definition, so the advice and the pull verb can never disagree
-//! about what is available. The advice names `cycle plan` without the `frob`
-//! prefix until that verb exists (`remedies.rs` rejects unknown verb paths);
-//! restore `run frob cycle plan` when it lands. The pure core [`pm033`] takes the count;
-//! [`evaluate`] reads it from a ledger and a lease check.
+//! about what is available. The advice is to `run frob cycle plan`
+//! (remedies are checked against the verb registry). The pure core [`pm033`]
+//! takes the count; [`evaluate`] reads it from a ledger and a lease check.
 
 // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
+// frob:ticket 01M4069T2V69X32EP8NZQHJH6H
 
 use frob_ledger::Ledger;
 use frob_ledger::guards::LeaseCheck;
@@ -23,7 +23,7 @@ use crate::rules::membership::Evaluation;
 ///
 /// ## Remedy
 ///
-/// Plan the next cycle (`cycle plan`) or triage the backlog so more tickets become
+/// Plan the next cycle (run `frob cycle plan`) or triage the backlog so more tickets become
 /// doable, or lower `[pm] ready_min` in `frob.toml`.
 #[derive(Debug, Clone, Copy, Default, Rule)]
 #[rule(
@@ -63,7 +63,7 @@ pub fn pm033(ready_min: u32, ready: usize) -> Evaluation {
         Severity::Advisory,
         None,
         format!(
-            "ready queue is {ready}, below {ready_min}: plan the next cycle (cycle plan) or triage"
+            "ready queue is {ready}, below {ready_min}: plan the next cycle (run frob cycle plan) or triage"
         ),
         "ready:queue",
     ));

@@ -1,5 +1,6 @@
 //! `cycle new`, `show`, `list` and `close`: defaults, overlap, idempotency, carry-over and refusals.
 // frob:ticket 01M4069RPPQE1ES1914K6V6Y0D
+// frob:ticket 01M4069T2V69X32EP8NZQHJH6H
 
 use std::path::Path;
 use std::process::Output;
@@ -1058,4 +1059,62 @@ fn a_cycle_starting_tomorrow_is_planned_and_a_closed_cycle_stays_closed() {
     );
     let later = utc_window(&repo, 8, 14);
     assert_eq!(later["state"], "planned");
+}
+
+#[test]
+fn plan_proposes_a_fill_to_capacity_and_apply_assigns_idempotently() {
+    // frob:tests crates/frob/src/cycle_cmd.rs::CyclePlan
+    // frob:tests crates/frob-pm/src/cycle/plan.rs::plan_fill
+    let repo = Repo::new();
+    let c = window(&repo, -1, 5, Some("5"));
+    repo.ticket("todo", "3");
+    repo.ticket("todo", "3");
+    repo.ticket("todo", "2");
+    let dry = repo.ok(&["cycle", "plan", id(&c)]);
+    assert_eq!(dry["data"]["applied"], false);
+    assert_eq!(dry["data"]["committed_after"], 5);
+    assert_eq!(dry["data"]["picks"].as_array().expect("picks").len(), 2);
+    let left = dry["data"]["left_out"].as_array().expect("left");
+    assert_eq!(left.len(), 1);
+    assert!(
+        left[0]["reason"]
+            .as_str()
+            .expect("r")
+            .contains("5-point limit")
+    );
+    let shown = repo.ok(&["cycle", "show", id(&c)]);
+    assert!(
+        member_ids(&shown["data"]["cycle"]).is_empty(),
+        "a dry run writes nothing"
+    );
+    let applied = repo.ok(&["cycle", "plan", id(&c), "--apply"]);
+    assert_eq!(applied["data"]["applied"], true);
+    assert_eq!(applied["data"]["committed_after"], 5);
+    let shown = repo.ok(&["cycle", "show", id(&c)]);
+    assert_eq!(member_ids(&shown["data"]["cycle"]).len(), 2);
+    let again = repo.ok(&["cycle", "plan", id(&c), "--apply"]);
+    assert_eq!(again["already"], true);
+    assert!(again["data"]["picks"].as_array().expect("picks").is_empty());
+    assert_eq!(
+        again["data"]["already_in_cycle"]
+            .as_array()
+            .expect("a")
+            .len(),
+        2
+    );
+}
+
+#[test]
+fn plan_without_enforced_capacity_is_refused_unless_points_is_given() {
+    // frob:tests crates/frob/src/cycle_cmd.rs::CyclePlan
+    let repo = Repo::new();
+    let c = window(&repo, -1, 5, None);
+    repo.ticket("todo", "3");
+    repo.ticket("todo", "3");
+    let out = repo.frob(&["cycle", "plan", id(&c)]);
+    assert_eq!(code(&out), 3);
+    assert_eq!(json(&out)["error"]["code"], "E-CYCLE-NO-CAPACITY");
+    let v = repo.ok(&["cycle", "plan", id(&c), "--points", "4"]);
+    assert_eq!(v["data"]["picks"].as_array().expect("picks").len(), 1);
+    assert_eq!(v["data"]["capacity_limit"], 4);
 }

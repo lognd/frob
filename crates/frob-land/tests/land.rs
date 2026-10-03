@@ -1,11 +1,12 @@
 //! `land` end to end in temporary repositories (system git required: gob-git spawns it for worktrees and merges).
 
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Duration;
 
 use frob_evidence::events;
 use frob_evidence::provider::hash_file;
-use frob_land::{LandError, LandLock, LandOptions, land};
+use frob_land::{LandError, LandLock, LandOptions, RetryPolicy, land};
 use frob_lease::{LeaseConfig, LeaseStore};
 use frob_ledger::model::{Category, Outcome, TicketType};
 use frob_ledger::ops::NewTicket;
@@ -538,4 +539,259 @@ fn landing_from_inside_the_worktree_defaults_to_its_ticket() {
     let out = land(&s.wt, &LandOptions::default()).expect("land from the worktree");
     assert_eq!(out.id, s.id);
     assert!(out.closed && !s.wt.exists());
+}
+
+/// A retry policy with millisecond backoff that runs `mover(attempt)` before each compare-and-swap.
+fn retry_with(budget_ms: u64, mover: impl Fn(u32) + Send + Sync + 'static) -> RetryPolicy {
+    RetryPolicy {
+        backoff_base: Duration::from_millis(1),
+        backoff_max: Duration::from_millis(2),
+        budget: Some(Duration::from_millis(budget_ms)),
+        before_attempt: Some(Arc::new(mover)),
+    }
+}
+
+/// Commit `rel` straight onto `main`, the way another agent's ledger or code commit moves the base.
+fn move_main(root: &Path, rel: &str, text: &str) {
+    let repo = Repo::discover(root).expect("repo");
+    repo.commit_paths(
+        MAIN,
+        &[(
+            RelPath::new(rel).expect("path"),
+            Some(text.as_bytes().to_vec()),
+        )],
+        "other agent",
+        &CommitOptions::default(),
+    )
+    .expect("move main");
+}
+
+// Covers ~VMHTBE7.
+#[test]
+fn wait_retries_a_base_that_moved_once_with_ledger_only_commits() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+    let root = fx.root.clone();
+    let mut opts = Fixture::opts(&s);
+    opts.wait_secs = 5;
+    opts.retry = retry_with(4000, move |n| {
+        if n == 1 {
+            move_main(&root, "tickets/zz-note.txt", "note\n");
+        }
+    });
+
+    let out = land(&fx.root, &opts).expect("land retried");
+    assert!(out.closed, "landed without a manual retry");
+    assert_eq!(out.attempts, 2);
+    let blob = fx.repo().read_blob_at("main", "src/a.rs").expect("read");
+    assert_eq!(blob.as_deref(), Some(b"fn a() {}\n".as_slice()));
+    let note = fx
+        .repo()
+        .read_blob_at("main", "tickets/zz-note.txt")
+        .expect("read");
+    assert!(note.is_some(), "the other agent's commit is kept");
+}
+
+// Covers ~VMHTBE7.
+#[test]
+fn wait_retries_a_base_that_moved_with_a_code_change() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+    let root = fx.root.clone();
+    let mut opts = Fixture::opts(&s);
+    opts.wait_secs = 5;
+    opts.retry = retry_with(4000, move |n| {
+        if n == 1 {
+            move_main(&root, "docs/other.md", "other\n");
+        }
+    });
+
+    let out = land(&fx.root, &opts).expect("land retried");
+    assert!(out.closed);
+    assert_eq!(out.attempts, 2);
+}
+
+// Covers ~VMHTBE7.
+#[test]
+fn wait_gives_up_naming_the_attempts_when_the_base_keeps_moving() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+    let root = fx.root.clone();
+    let mut opts = Fixture::opts(&s);
+    opts.wait_secs = 1;
+    opts.retry = retry_with(30, move |n| {
+        move_main(&root, &format!("tickets/zz-note-{n}.txt"), "note\n");
+    });
+
+    let err = land(&fx.root, &opts).expect_err("budget spent");
+    let r = refusal(&err);
+    assert_eq!(r.code, "E-LAND-STALE");
+    assert_eq!(r.class, RefusalClass::GuardRetryByWaiting);
+    assert!(r.message.contains("gave up after"), "{}", r.message);
+    assert!(r.message.contains("attempt"), "{}", r.message);
+    assert!(
+        fx.leases().live_lease(s.id).expect("lease").is_some(),
+        "the lease is kept so `frob land` resumes"
+    );
+}
+
+// Covers ~VMHTBE7.
+#[test]
+fn without_wait_a_moved_base_is_not_retried() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+    let root = fx.root.clone();
+    let mut opts = Fixture::opts(&s);
+    opts.retry = retry_with(4000, move |n| {
+        if n == 1 {
+            move_main(&root, "tickets/zz-note.txt", "note\n");
+        }
+    });
+
+    let err = land(&fx.root, &opts).expect_err("stale");
+    assert_eq!(refusal(&err).code, "E-LAND-STALE");
+    assert!(refusal(&err).message.ends_with("moved while landing"));
+    let out = land(&fx.root, &Fixture::opts(&s)).expect("rerun resumes");
+    assert!(out.closed);
+    assert_eq!(out.attempts, 1);
+}
+
+const BASE_LOCK: &str = "# This file is automatically @generated by Cargo.\n# It is not intended for manual editing.\nversion = 4\n\n[[package]]\nname = \"base\"\nversion = \"0.1.0\"\n";
+
+fn cargo_ok(dir: &Path, args: &[&str]) -> bool {
+    let spec = Spec {
+        program: Program::Cargo,
+        args: args.iter().map(|s| (*s).to_owned()).collect(),
+        cwd: Some(dir.to_path_buf()),
+        env: Vec::new(),
+        timeout: Duration::from_secs(120),
+        capture: true,
+    };
+    Runner::new(Limits { jobs: 1 })
+        .run(&spec)
+        .is_ok_and(|o| o.status == ExecOutcome::Exited(0))
+}
+
+/// Add workspace member `crates/<name>` in `wt`, regenerate `Cargo.lock` offline and commit.
+fn add_member(wt: &Path, name: &str) {
+    Fixture::commit_in(
+        wt,
+        &format!("crates/{name}/Cargo.toml"),
+        &format!("[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nedition = \"2021\"\n"),
+    );
+    Fixture::commit_in(wt, &format!("crates/{name}/src/lib.rs"), "\n");
+    assert!(cargo_ok(
+        wt,
+        &["metadata", "--offline", "--format-version", "1"]
+    ));
+    git(wt, &["add", "-A"]);
+    git(wt, &["commit", "-q", "-m", &format!("lock {name}")]);
+}
+
+// Covers ~CTKE1J4.
+#[test]
+fn a_conflict_confined_to_cargo_lock_is_regenerated_at_land() {
+    if !git_available() || !cargo_ok(Path::new("."), &["--version"]) {
+        return;
+    }
+    let fx = Fixture::new();
+    fx.repo()
+        .commit_paths(
+            MAIN,
+            &[
+                (
+                    RelPath::new("Cargo.toml").expect("path"),
+                    Some(b"[workspace]\nmembers = [\"crates/*\"]\nresolver = \"2\"\n".to_vec()),
+                ),
+                (
+                    RelPath::new("crates/base/Cargo.toml").expect("path"),
+                    Some(
+                        b"[package]\nname = \"base\"\nversion = \"0.1.0\"\nedition = \"2021\"\n"
+                            .to_vec(),
+                    ),
+                ),
+                (
+                    RelPath::new("crates/base/src/lib.rs").expect("path"),
+                    Some(b"\n".to_vec()),
+                ),
+                (
+                    RelPath::new("Cargo.lock").expect("path"),
+                    Some(BASE_LOCK.as_bytes().to_vec()),
+                ),
+            ],
+            "workspace",
+            &CommitOptions::default(),
+        )
+        .expect("workspace commit");
+    let one = fx.start("Add one", &["crates/one/**", "Cargo.lock"]);
+    let two = fx.start("Add two", &["crates/two/**", "Cargo.lock"]);
+    add_member(&one.wt, "one");
+    add_member(&two.wt, "two");
+    Fixture::evidence(&one, "crates/one/src/lib.rs");
+    Fixture::evidence(&two, "crates/two/src/lib.rs");
+
+    land(&fx.root, &Fixture::opts(&one)).expect("first land");
+    let out = land(&fx.root, &Fixture::opts(&two)).expect("second land regenerates the lockfile");
+    assert!(out.closed);
+    assert_eq!(
+        out.base_merge.as_deref(),
+        Some("merged (lockfile regenerated)")
+    );
+    let lock = fx.repo().read_blob_at("main", "Cargo.lock").expect("read");
+    let lock = String::from_utf8(lock.expect("lock")).expect("utf8");
+    for name in ["base", "one", "two"] {
+        assert!(lock.contains(&format!("name = \"{name}\"")), "{lock}");
+    }
+    assert!(!lock.contains("<<<<<<<"), "{lock}");
+}
+
+// Covers ~CTKE1J4.
+#[test]
+fn a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    fx.repo()
+        .commit_paths(
+            MAIN,
+            &[(
+                RelPath::new("uv.lock").expect("path"),
+                Some(b"base\n".to_vec()),
+            )],
+            "uv base",
+            &CommitOptions::default(),
+        )
+        .expect("commit");
+    let s = fx.start("Touch uv", &["uv.lock"]);
+    Fixture::commit_in(&s.wt, "uv.lock", "ticket\n");
+    move_main(&fx.root, "uv.lock", "moved\n");
+    let before = fx.main_tip();
+    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("no resolver");
+    let r = refusal(&err);
+    assert_eq!(r.code, "E-LAND-LOCKFILE");
+    assert!(r.message.contains("uv.lock"), "{}", r.message);
+    assert_eq!(fx.main_tip(), before);
+    let (_, status) = git_out(&s.wt, &["status", "--porcelain"]);
+    assert!(!status.lines().any(|l| l.starts_with("UU")), "{status}");
 }

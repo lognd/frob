@@ -5,20 +5,21 @@
 //! (`<common_dir>/frob/land.lock`, [`LandLock`]), fast-forwards the base
 //! branch, writes a `land` event, closes the ticket, releases the lease and
 //! removes the worktree. Everything runs in the foreground; `--wait` bounds
-//! only the lock acquisition. [`register`] adds the verb to a product root.
+//! the lock acquisition and the retries of a stale base (`E-LAND-STALE`). [`register`] adds the verb to a product root.
 
 pub mod error;
 pub mod events;
 mod git;
 pub mod land;
 pub mod lock;
+mod lockfile;
 pub mod plan;
 pub mod verb;
 
 pub use error::LandError;
 pub use land::land;
 pub use lock::LandLock;
-pub use plan::{LandOptions, LandOutcome};
+pub use plan::{LandOptions, LandOutcome, RetryPolicy};
 
 /// Register `land` on a product root.
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {

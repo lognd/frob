@@ -12,6 +12,7 @@ use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
 use frob_pm::rules::membership::Pm034;
+use frob_pm::rules::milestone::{Pm001, Pm002};
 use frob_pm::rules::replenish::Pm033;
 use frob_pm::rules::wip::Pm013;
 use frob_release::rel001::Rel001;
@@ -34,7 +35,7 @@ use crate::snapshot::{self, FrobInputs, FrobShared};
 /// Rules that read the ticket ledger: without one they examine nothing.
 const LEDGER_RULES: [&str; 3] = ["REF001", "TODO002", "TICK002"];
 
-/// Why `PM034` is not applicable when it is not (logged, never a finding).
+/// Why `PM034`, `PM001` and `PM002` are not applicable when it is not (logged, never a finding).
 const PM034_NA: &str = "no milestone objects in this repository";
 
 /// frob driving the shared check pipeline, with the options of one `frob check` run.
@@ -67,19 +68,30 @@ fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
     }
 }
 
-/// `PM034` findings for the `repo:pm` group; empty without a ledger, milestones or on a read failure.
+/// `PM034`, `PM001` and `PM002` findings for the `repo:pm` group; empty without a ledger, milestones or on a read failure.
 // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
+// frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
 fn pm_findings(inputs: &FrobInputs) -> Vec<Finding> {
     let Some(state) = &inputs.ledger else {
         return Vec::new();
     };
-    frob_pm::rules::membership::evaluate(&state.ledger).map_or_else(
+    let mut out = frob_pm::rules::membership::evaluate(&state.ledger).map_or_else(
         |err| {
             tracing::warn!(%err, "PM034 not evaluated");
             Vec::new()
         },
         |e| e.findings,
-    )
+    );
+    out.extend(
+        frob_pm::rules::milestone::evaluate(&state.ledger).map_or_else(
+            |err| {
+                tracing::warn!(%err, "PM001 and PM002 not evaluated");
+                Vec::new()
+            },
+            |e| e.findings,
+        ),
+    );
+    out
 }
 
 /// Ticket ids holding a live lease, the liveness input of `PM013`; `None` (every in-progress ticket counts) when the lease store cannot be read.
@@ -219,9 +231,12 @@ impl Product for Frob {
                     )
                 },
             ),
-            RepoGroup::new("repo:pm", vec![Pm034.meta()], |s: &Snapshot<Self>, _| {
-                pm_findings(&s.inputs)
-            }),
+            // frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
+            RepoGroup::new(
+                "repo:pm",
+                vec![Pm034.meta(), Pm001.meta(), Pm002.meta()],
+                |s: &Snapshot<Self>, _| pm_findings(&s.inputs),
+            ),
             // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
             RepoGroup::new("repo:wip", vec![Pm013.meta()], |s: &Snapshot<Self>, _| {
                 wip_findings(&s.inputs)
@@ -336,7 +351,7 @@ impl Product for Frob {
 
     fn applicable(&self, snap: &Snapshot<Self>, meta: &RuleMeta) -> bool {
         // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
-        if meta.id == "PM034" {
+        if matches!(meta.id, "PM034" | "PM001" | "PM002") {
             let ok = snap
                 .inputs
                 .ledger
