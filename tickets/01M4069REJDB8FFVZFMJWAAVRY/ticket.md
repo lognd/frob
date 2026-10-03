@@ -2,7 +2,8 @@
 id = "01M4069REJDB8FFVZFMJWAAVRY"
 title = "PM001 and PM002: milestone goal and epic completeness rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
