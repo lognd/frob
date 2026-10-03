@@ -8,10 +8,10 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:55Z"
-updated = "2026-10-03T10:55:39Z"
+updated = "2026-10-03T10:58:33Z"
 idempotency_key = "m2-rel-wip-repo"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-lease/**", "crates/frob-worktree/**", "frob.toml"]
+scope = ["crates/frob-lease/**", "crates/frob-worktree/**", "frob.toml", "docs/design/architecture.md", "docs/design/tickets.md", "docs/design/releases.md", "docs/reference/config.md", "docs/reference/config.schema.json"]
 
 [[links]]
 kind = "blocked-by"
