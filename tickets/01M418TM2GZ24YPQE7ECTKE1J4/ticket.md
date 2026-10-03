@@ -7,12 +7,12 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T16:16:18Z"
-updated = "2026-10-03T16:46:56Z"
+updated = "2026-10-03T16:47:45Z"
 scope = ["crates/frob-lease/src/config.rs", "crates/frob-lease/src/store.rs", "crates/frob-lease/tests/**", "crates/frob-land/**", "docs/design/tickets.md", "crates/frob-lease/src/verbs.rs", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "Given no [lease] shared_files and two tickets whose scopes overlap only on Cargo.lock, when the second runs frob work, then it leases without E-LEASE-HELD"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given [lease] shared_files = [] set explicitly and the same overlap, when frob work runs, then E-LEASE-HELD names [lease] shared_files in the remedy"
