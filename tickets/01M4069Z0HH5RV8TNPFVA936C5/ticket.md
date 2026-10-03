@@ -15,6 +15,10 @@ scope = ["crates/frob/src/init.rs", "crates/frob/tests/init_adopt.rs"]
 
 [[links]]
 kind = "blocked-by"
+target = "01M3ZZXAZ39410AVYQSRSYVF9C"
+
+[[links]]
+kind = "blocked-by"
 target = "01M405B09EW2M0NDNTXKHXV2X7"
 
 [[links]]
