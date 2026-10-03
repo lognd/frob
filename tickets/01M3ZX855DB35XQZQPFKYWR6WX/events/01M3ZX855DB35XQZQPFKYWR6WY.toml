@@ -1,0 +1,22 @@
+kind = "create"
+title = "[mirror.identities] and tracker key stored as a ticket alias"
+type = "task"
+category = "todo"
+priority = "low"
+points = 2
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+idempotency_key = "m2-mirror-identities"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-mirror/src/identity.rs"]
+acceptance = ["Given an owner without a mapping, when published, then the issue is unassigned and the note says so", "Given a published ticket, when `frob ticket show <tracker-key>` runs, then the ticket resolves"]
+body = """
+Implements mirror.md sections 2.1 (people) and 3 (identity).
+
+Unmapped identities are left unassigned and noted; the tracker key becomes an alias so `frob ticket show PROJ-123` works."""
+at = "2026-10-03T03:34:44Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX83XX6D2N7XDTVRVYV6TS"
