@@ -12,7 +12,8 @@ pub use frob_ledger::fold::Conflict;
 
 use crate::error::{PmError, Result};
 use crate::event::{
-    CreateData, CriterionData, MemberData, Op, PmBody, PmEvent, TransitionData, sort_events,
+    CreateData, CriterionData, CycleEventData, CycleOp, MemberData, Op, PmBody, PmEvent,
+    TransitionData, sort_events,
 };
 use crate::model::{Criterion, Cycle, Day, Milestone, Object, ObjectId, ObjectKind, State};
 
@@ -158,6 +159,27 @@ fn apply_member(o: &mut Object, d: &MemberData) {
     }
 }
 
+/// Apply a `cycle` event: `carried` takes the ticket out of the closing cycle, the rest are records.
+fn apply_cycle(o: &mut Object, d: &CycleEventData) -> std::result::Result<(), String> {
+    let Object::Cycle(c) = o else {
+        return Err("only a cycle takes `cycle` events".to_owned());
+    };
+    match d.op {
+        CycleOp::Carried => {
+            let t = d.ticket.ok_or("a carried event needs `ticket`")?;
+            c.tickets.retain(|m| *m != t);
+        }
+        CycleOp::Ratio if d.committed.is_none() || d.done.is_none() => {
+            return Err("a ratio event needs `committed` and `done`".to_owned());
+        }
+        CycleOp::Retro if d.text.is_none() => {
+            return Err("a retro event needs `text`".to_owned());
+        }
+        CycleOp::Ratio | CycleOp::Retro | CycleOp::Other => {}
+    }
+    Ok(())
+}
+
 fn apply_criterion(o: &mut Object, d: &CriterionData) -> std::result::Result<(), String> {
     let Object::Milestone(m) = o else {
         return Err("only a milestone has exit criteria".to_owned());
@@ -285,6 +307,7 @@ pub fn fold(kind: ObjectKind, id: ObjectId, events: &[PmEvent]) -> Result<Folded
                 Ok(())
             }
             PmBody::Criterion(d) => apply_criterion(&mut object, d),
+            PmBody::Cycle(d) => apply_cycle(&mut object, d),
             PmBody::Transition(d) => apply_transition(&mut object, ev, d, &mut conflicts),
         };
         applied.map_err(|m| fail(format!("event {}: {m}", ev.id)))?;

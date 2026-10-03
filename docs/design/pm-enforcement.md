@@ -144,6 +144,14 @@ Milestone 2 or later (D36).
   `cycle` event (op `carried`), records the commitment-versus-done ratio, and
   refuses if any ticket in the cycle is in `in-progress` with a live
   lease (finish or requeue first).
+  Storage: `carried` (ticket, to), `ratio` (committed and done points)
+  and `retro` (text) are `cycle` events on the closing cycle; `carried`
+  also takes the ticket out of that cycle's members while the target
+  cycle gains it by a `member` event, so a closed cycle lists only what it
+  finished. The target is the next open or planned cycle by start date, or
+  `--carry-to`; with none, close refuses and names `frob cycle new`.
+  `frob cycle new` ends at `start + [pm] cycle_days - 1` unless `--end`
+  is given and refuses windows that overlap a cycle that is not closed.
 - Agent capacity: throughput in points per day is measured the same way
   per agent identity, and pooled per identity class (human or agent)
   while an identity has fewer than `[pm] min_history` samples, because

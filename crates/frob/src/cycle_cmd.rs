@@ -1,0 +1,682 @@
+//! The `cycle` verbs: `new`, `show`, `list`, `close` over `frob-pm`.
+//!
+//! A cycle's alias is its dates (`START..END`). `new` and `close` are
+//! idempotent: an identical repeat returns `already: true`. Incomplete members
+//! carry to the next cycle with `cycle` events (op `carried`) and the
+//! commitment ratio is recorded at close (pm-enforcement.md section 4).
+
+// frob:ticket 01M4069RPPQE1ES1914K6V6Y0D
+use frob_ledger::Ledger;
+use frob_ledger::TicketId;
+use frob_ledger::model::{Category, Outcome as TicketOutcome, Stamp};
+use frob_pm::cycle::lifecycle::{
+    ClosePlan, CycleError, MemberFacts, MemberStatus, NewPlan, plan_close, plan_new, ratio,
+    resolve_end, unknown_cycle,
+};
+use frob_pm::event::{CycleEventData, CycleOp, PmBody, PmEvent, TransitionData};
+use frob_pm::model::{Cycle, Day, State};
+use frob_pm::{NewObject, ObjectKind, PmError, PmStore};
+use gob_cli::clap::{Arg, ArgMatches, Command as ClapCommand};
+use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use schemars::JsonSchema;
+use serde::Serialize;
+
+use crate::config::FrobConfig;
+use crate::milestone_cmd::pm_err;
+use crate::ticket::{cli_err, get, open, open_lease_store, text_flag};
+use crate::workspace::{Located, config_refusal};
+
+/// A member ticket as listed under a cycle.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct TicketRef {
+    /// Full ULID of the ticket.
+    pub id: String,
+    /// Handle with `~`, when the ticket is readable.
+    pub handle: Option<String>,
+    /// Title, when the ticket is readable.
+    pub title: Option<String>,
+    /// Workflow category, when readable.
+    pub category: Option<String>,
+    /// Story points, when estimated.
+    pub points: Option<u8>,
+}
+
+/// One carried-over ticket as recorded by a `cycle` event.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct CarriedView {
+    /// Full ULID of the ticket that moved on.
+    pub ticket: String,
+    /// The cycle it moved to (ULID).
+    pub to: String,
+}
+
+/// The commitment-versus-done record written at close.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct RatioView {
+    /// Story points committed (members' points at close).
+    pub committed: u32,
+    /// Story points done.
+    pub done: u32,
+    /// `done / committed`, absent when nothing was committed.
+    pub ratio: Option<f64>,
+}
+
+/// A cycle as every `cycle` verb reports it.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct CycleView {
+    /// Full ULID.
+    pub id: String,
+    /// Handle with `~`.
+    pub handle: String,
+    /// The `START..END` alias.
+    pub alias: String,
+    /// First day (`YYYY-MM-DD`).
+    pub start: String,
+    /// Last day (`YYYY-MM-DD`).
+    pub end: String,
+    /// One-line goal.
+    pub goal: String,
+    /// Committed story points, when set.
+    pub capacity_points: Option<u32>,
+    /// State: planned, active or closed.
+    pub state: String,
+    /// Member tickets (after a close: the ones that stayed).
+    pub tickets: Vec<TicketRef>,
+    /// Tickets carried out at close.
+    pub carried: Vec<CarriedView>,
+    /// The commitment ratio recorded at close.
+    pub commitment: Option<RatioView>,
+    /// The retro note recorded at close.
+    pub retro: Option<String>,
+    /// Creation time.
+    pub created: Stamp,
+    /// Time of the latest event.
+    pub updated: Stamp,
+}
+
+impl CycleView {
+    /// View `c`, reading its member tickets from `ledger` and its review events from `store`.
+    fn of(c: &Cycle, store: PmStore<'_>) -> Self {
+        let ledger = store.ledger();
+        let tickets = c
+            .tickets
+            .iter()
+            .map(|id| match ledger.show(*id) {
+                Ok(v) => TicketRef {
+                    id: id.to_string(),
+                    handle: Some(v.summary.handle),
+                    title: Some(v.summary.title),
+                    category: Some(v.summary.category.to_string()),
+                    points: v.summary.points,
+                },
+                Err(e) => {
+                    tracing::warn!(ticket = %id, error = %e, "member ticket unreadable");
+                    TicketRef {
+                        id: id.to_string(),
+                        handle: None,
+                        title: None,
+                        category: None,
+                        points: None,
+                    }
+                }
+            })
+            .collect();
+        let events = review_events(store, c);
+        let mut carried = Vec::new();
+        let mut commitment = None;
+        let mut retro = None;
+        for d in events {
+            match d.op {
+                CycleOp::Carried => {
+                    if let (Some(t), Some(to)) = (d.ticket, d.to) {
+                        carried.push(CarriedView {
+                            ticket: t.to_string(),
+                            to: to.to_string(),
+                        });
+                    }
+                }
+                CycleOp::Ratio => {
+                    if let (Some(committed), Some(done)) = (d.committed, d.done) {
+                        commitment = Some(RatioView {
+                            committed,
+                            done,
+                            ratio: ratio(committed, done),
+                        });
+                    }
+                }
+                CycleOp::Retro => retro = d.text,
+                CycleOp::Other => {}
+            }
+        }
+        Self {
+            id: c.id.to_string(),
+            handle: c.id.handle(),
+            alias: c.alias(),
+            start: c.start.to_string(),
+            end: c.end.to_string(),
+            goal: c.goal.clone(),
+            capacity_points: c.capacity_points,
+            state: c.state.to_string(),
+            tickets,
+            carried,
+            commitment,
+            retro,
+            created: c.created,
+            updated: c.updated,
+        }
+    }
+}
+
+/// The `cycle` events of `c` in fold order; unreadable history is logged and treated as empty.
+fn review_events(store: PmStore<'_>, c: &Cycle) -> Vec<CycleEventData> {
+    let read = store
+        .ledger()
+        .tip_hex()
+        .map_err(PmError::from)
+        .and_then(|tip| {
+            tip.map_or(Ok(Vec::new()), |t| {
+                store.read_events_at(&t, ObjectKind::Cycle, c.id)
+            })
+        });
+    match read {
+        Ok(events) => events
+            .into_iter()
+            .filter_map(|e: PmEvent| match e.body {
+                PmBody::Cycle(d) => Some(*d),
+                _ => None,
+            })
+            .collect(),
+        Err(e) => {
+            tracing::warn!(cycle = %c.id, error = %e, "cycle events unreadable");
+            Vec::new()
+        }
+    }
+}
+
+/// Output of `cycle new`, `show` and `close`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct CycleData {
+    /// The cycle after the verb ran.
+    pub cycle: CycleView,
+    /// Ids of the events written (empty when `already` or read-only).
+    pub events: Vec<String>,
+    /// The ledger commit, when one was made.
+    pub commit: Option<String>,
+}
+
+/// Output of `cycle list`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct CycleListData {
+    /// Number of cycles.
+    pub count: usize,
+    /// The cycles, earliest start first.
+    pub cycles: Vec<CycleView>,
+}
+
+/// Map a cycle rule failure to its refusal, with the command that fixes it.
+fn refusal(e: &CycleError) -> CliError {
+    use RefusalClass::{GuardNeedsAction, UsageError};
+    let r = match e {
+        CycleError::BadWindow { .. } => {
+            Refusal::new("E-CYCLE-WINDOW", UsageError, e.to_string())
+                .with_remedy("pass --start and an --end on or after it, for example `frob cycle new --start 2026-10-05 --end 2026-10-11 --goal <text>`")
+        }
+        CycleError::Overlap { with, next_free, .. } => {
+            Refusal::new("E-CYCLE-OVERLAP", GuardNeedsAction, e.to_string()).with_remedy(format!(
+                "start after it (`frob cycle new --start {next_free} --goal <text>`) or inspect it with `frob cycle show {with}`"
+            ))
+        }
+        CycleError::Conflict { alias, .. } => {
+            Refusal::new("E-CYCLE-EXISTS", GuardNeedsAction, e.to_string())
+                .with_remedy(format!("frob cycle show {alias}"))
+        }
+        CycleError::Unknown { suggestions, .. } => {
+            let msg = match suggestions.as_slice() {
+                [] => e.to_string(),
+                s => format!("{e}; did you mean {}?", s.join(", ")),
+            };
+            let remedy = match suggestions.first() {
+                Some(s) => format!("frob cycle show {s}"),
+                None => "frob cycle list".to_owned(),
+            };
+            Refusal::new("E-CYCLE-NOT-FOUND", GuardNeedsAction, msg).with_remedy(remedy)
+        }
+        CycleError::LiveLease { handles, .. } => {
+            Refusal::new("E-CYCLE-LEASE", GuardNeedsAction, e.to_string()).with_remedy(format!(
+                "finish or requeue {} (`frob ticket update <ticket> --category todo` after `frob lease release`), then close again",
+                handles.join(", ")
+            ))
+        }
+        CycleError::NoNextCycle { suggest_start, .. } => {
+            Refusal::new("E-CYCLE-NO-NEXT", GuardNeedsAction, e.to_string()).with_remedy(format!(
+                "create the next cycle (`frob cycle new --start {suggest_start} --goal <text>`) or pass `--carry-to CYCLE`"
+            ))
+        }
+        CycleError::BadCarryTarget { .. } => {
+            Refusal::new("E-CYCLE-CARRY-TARGET", GuardNeedsAction, e.to_string())
+                .with_remedy("frob cycle list")
+        }
+    };
+    r.into()
+}
+
+/// Map a `frob-pm` failure for a cycle verb: not-found and invalid input name cycle remedies.
+fn cycle_pm_err(e: PmError) -> CliError {
+    match e {
+        PmError::Invalid(m) => Refusal::new("E-CYCLE-INPUT", RefusalClass::UsageError, m).into(),
+        PmError::NotFound { .. } | PmError::Ambiguous { .. } => Refusal::new(
+            "E-CYCLE-NOT-FOUND",
+            RefusalClass::GuardNeedsAction,
+            e.to_string(),
+        )
+        .with_remedy("frob cycle list")
+        .into(),
+        other => pm_err(other),
+    }
+}
+
+/// Every cycle folded at the current tip, earliest start first.
+fn cycles(store: PmStore<'_>) -> Result<Vec<Cycle>, CliError> {
+    let mut out: Vec<Cycle> = store
+        .list(ObjectKind::Cycle)
+        .map_err(cycle_pm_err)?
+        .into_iter()
+        .filter_map(|o| match o {
+            frob_pm::Object::Cycle(c) => Some(c),
+            frob_pm::Object::Milestone(_) => None,
+        })
+        .collect();
+    out.sort_by_key(|c| (c.start, c.end));
+    Ok(out)
+}
+
+/// Resolve `reference` (ULID, `~handle` or `START..END`) to a cycle, suggesting aliases when none match.
+fn find(store: PmStore<'_>, reference: &str) -> Result<Cycle, CliError> {
+    match store.resolve(ObjectKind::Cycle, reference) {
+        Ok(frob_pm::Object::Cycle(c)) => Ok(c),
+        Ok(frob_pm::Object::Milestone(_)) => unreachable!("resolve of a cycle returns a cycle"),
+        Err(PmError::NotFound { .. }) => {
+            tracing::info!(reference, "unknown cycle");
+            Err(refusal(&unknown_cycle(&cycles(store)?, reference)))
+        }
+        Err(e) => Err(cycle_pm_err(e)),
+    }
+}
+
+/// The cycle `show` picks without an argument: the open one holding `today`, else the next to start, else the latest.
+fn current(all: &[Cycle], today: Day) -> Option<&Cycle> {
+    let open = || all.iter().filter(|c| c.state != State::Closed);
+    open()
+        .find(|c| c.start <= today && today <= c.end)
+        .or_else(|| open().find(|c| c.start > today))
+        .or_else(|| all.last())
+}
+
+/// The `[pm] cycle_days` setting of the repository containing `ctx.cwd`.
+fn cycle_days(ctx: &Context) -> Result<u32, CliError> {
+    let (_, root) = Located::discover(&ctx.cwd).into_repo()?;
+    let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
+    Ok(cfg.pm.pm.cycle_days)
+}
+
+/// Parse a `YYYY-MM-DD` flag value.
+fn parse_day(flag: &str, text: &str) -> Result<Day, CliError> {
+    text.parse::<Day>()
+        .map_err(|e| CliError::Usage(format!("--{flag}: {e}")))
+}
+
+/// The positional `CYCLE` argument.
+fn cycle_arg(required: bool) -> Arg {
+    Arg::new("cycle")
+        .required(required)
+        .value_name("CYCLE")
+        .help("Cycle ULID, ~handle or START..END alias")
+}
+
+/// Create a cycle; an identical repeat returns `already`, an overlapping or different one is refused.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "cycle new",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct CycleNew {
+    start: String,
+    end: Option<String>,
+    goal: String,
+    capacity: Option<String>,
+}
+
+impl Command for CycleNew {
+    type Data = CycleData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        cmd.arg(text_flag("start", "First day, YYYY-MM-DD").required(true))
+            .arg(text_flag(
+                "end",
+                "Last day, YYYY-MM-DD (default start + [pm] cycle_days - 1)",
+            ))
+            .arg(text_flag("goal", "One-line goal of the cycle").required(true))
+            .arg(
+                text_flag(
+                    "capacity",
+                    "Story points the team commits to (default unset, derived from history)",
+                )
+                .value_name("N")
+                .visible_alias("capacity-points"),
+            )
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            start: get(m, "start").unwrap_or_default(),
+            end: get(m, "end"),
+            goal: get(m, "goal").unwrap_or_default(),
+            capacity: get(m, "capacity"),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<CycleData> {
+        let start = parse_day("start", &self.start)?;
+        let end = self
+            .end
+            .as_deref()
+            .map(|e| parse_day("end", e))
+            .transpose()?;
+        let capacity_points = self
+            .capacity
+            .as_deref()
+            .map(str::parse::<u32>)
+            .transpose()
+            .map_err(|e| CliError::Usage(format!("--capacity: {e}")))?;
+        let end = resolve_end(start, end, cycle_days(ctx)?).map_err(|e| refusal(&e))?;
+        let ledger = open(ctx)?;
+        let store = PmStore::new(&ledger);
+        let plan = plan_new(&cycles(store)?, start, end, &self.goal, capacity_points)
+            .map_err(|e| refusal(&e))?;
+        let (c, events, commit, already) = match plan {
+            NewPlan::Already(c) => (*c, Vec::new(), None, true),
+            NewPlan::Create => {
+                let a = store
+                    .create(NewObject::Cycle {
+                        start,
+                        end,
+                        goal: self.goal.clone(),
+                        capacity_points,
+                    })
+                    .map_err(cycle_pm_err)?;
+                let frob_pm::Object::Cycle(c) = a.object else {
+                    unreachable!("a created cycle folds to a cycle")
+                };
+                let events = a.events.iter().map(ToString::to_string).collect();
+                (c, events, Some(a.commit), false)
+            }
+        };
+        tracing::info!(cycle = %c.alias(), already, "cycle new");
+        Ok(Payload::new(CycleData {
+            cycle: CycleView::of(&c, store),
+            events,
+            commit,
+        })
+        .with_already(already))
+    }
+}
+
+/// Show one cycle (default: the current one) with its members, carried work, ratio and retro.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "cycle show",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct CycleShow {
+    cycle: Option<String>,
+}
+
+impl Command for CycleShow {
+    type Data = CycleData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        cmd.arg(cycle_arg(false))
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            cycle: get(m, "cycle"),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<CycleData> {
+        let ledger = open(ctx)?;
+        let store = PmStore::new(&ledger);
+        let c = if let Some(r) = &self.cycle {
+            find(store, r)?
+        } else {
+            let all = cycles(store)?;
+            current(&all, Day::today()).cloned().ok_or_else(|| {
+                CliError::from(
+                    Refusal::new(
+                        "E-CYCLE-NONE",
+                        RefusalClass::GuardNeedsAction,
+                        "there are no cycles yet",
+                    )
+                    .with_remedy("frob cycle new --start YYYY-MM-DD --goal <text>"),
+                )
+            })?
+        };
+        Ok(Payload::new(CycleData {
+            cycle: CycleView::of(&c, store),
+            events: Vec::new(),
+            commit: None,
+        }))
+    }
+}
+
+/// List every cycle, earliest start first.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "cycle list",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct CycleList;
+
+impl Command for CycleList {
+    type Data = CycleListData;
+
+    fn from_matches(_: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self)
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<CycleListData> {
+        let ledger = open(ctx)?;
+        let store = PmStore::new(&ledger);
+        let views: Vec<CycleView> = cycles(store)?
+            .iter()
+            .map(|c| CycleView::of(c, store))
+            .collect();
+        Ok(Payload::new(CycleListData {
+            count: views.len(),
+            cycles: views,
+        }))
+    }
+}
+
+/// What the close rules need to know about each member of `c`, read from the ledger and the lease store.
+fn member_facts(ctx: &Context, ledger: &Ledger, c: &Cycle) -> Result<Vec<MemberFacts>, CliError> {
+    let (leases, _) = open_lease_store(ctx)?;
+    c.tickets
+        .iter()
+        .map(|id| member_fact(ledger, &leases, *id))
+        .collect()
+}
+
+/// The close-rule facts of one ticket.
+fn member_fact(
+    ledger: &Ledger,
+    leases: &frob_lease::LeaseStore,
+    id: TicketId,
+) -> Result<MemberFacts, CliError> {
+    let s = ledger.show(id).map_err(cli_err)?.summary;
+    let status = match (s.category, s.outcome) {
+        (Category::Done, Some(TicketOutcome::Fixed | TicketOutcome::Done)) => {
+            MemberStatus::Finished
+        }
+        (Category::Done, _) => MemberStatus::Dropped,
+        (Category::InProgress, _) => MemberStatus::InProgress,
+        _ => MemberStatus::Open,
+    };
+    Ok(MemberFacts {
+        id,
+        handle: s.handle,
+        status,
+        live_lease: leases.live_lease(id)?.is_some(),
+        points: u32::from(s.points.unwrap_or(0)),
+    })
+}
+
+/// The events a close writes on the closing cycle: carried, ratio, retro, then the transition.
+fn close_bodies(c: &Cycle, plan: &ClosePlan, retro: Option<&str>) -> Vec<PmBody> {
+    let event = |d: CycleEventData| PmBody::Cycle(Box::new(d));
+    let blank = |op| CycleEventData {
+        op,
+        ticket: None,
+        to: None,
+        committed: None,
+        done: None,
+        text: None,
+    };
+    let mut bodies: Vec<PmBody> = plan
+        .carried
+        .iter()
+        .map(|t| {
+            event(CycleEventData {
+                ticket: Some(*t),
+                to: plan.target,
+                ..blank(CycleOp::Carried)
+            })
+        })
+        .collect();
+    bodies.push(event(CycleEventData {
+        committed: Some(plan.committed),
+        done: Some(plan.done),
+        ..blank(CycleOp::Ratio)
+    }));
+    if let Some(text) = retro {
+        bodies.push(event(CycleEventData {
+            text: Some(text.to_owned()),
+            ..blank(CycleOp::Retro)
+        }));
+    }
+    bodies.push(PmBody::Transition(TransitionData {
+        from: c.state,
+        to: State::Closed,
+        reason: None,
+    }));
+    bodies
+}
+
+/// Close a cycle: carry incomplete work to the next, record the ratio and retro; refused while live work is in progress.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "cycle close",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct CycleClose {
+    cycle: String,
+    retro: Option<String>,
+    carry_to: Option<String>,
+}
+
+impl Command for CycleClose {
+    type Data = CycleData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        cmd.arg(cycle_arg(true))
+            .arg(text_flag(
+                "retro",
+                "Retrospective note recorded with the close, taken whole",
+            ))
+            .arg(
+                text_flag(
+                    "carry-to",
+                    "Cycle that takes the incomplete tickets (default: the next open or planned cycle by start date)",
+                )
+                .value_name("CYCLE"),
+            )
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            cycle: get(m, "cycle").unwrap_or_default(),
+            retro: get(m, "retro"),
+            carry_to: get(m, "carry-to"),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<CycleData> {
+        let ledger = open(ctx)?;
+        let store = PmStore::new(&ledger);
+        let c = find(store, &self.cycle)?;
+        if c.state == State::Closed {
+            tracing::info!(cycle = %c.alias(), "cycle close: already closed");
+            return Ok(Payload::new(CycleData {
+                cycle: CycleView::of(&c, store),
+                events: Vec::new(),
+                commit: None,
+            })
+            .with_already(true));
+        }
+        let carry_to = self
+            .carry_to
+            .as_deref()
+            .map(|r| find(store, r))
+            .transpose()?;
+        let others = cycles(store)?;
+        let members = member_facts(ctx, &ledger, &c)?;
+        let plan = plan_close(&c, &others, carry_to.as_ref(), &members).map_err(|e| refusal(&e))?;
+        if let Some(target) = plan.target {
+            for t in &plan.carried {
+                store
+                    .set_member(ObjectKind::Cycle, target, *t, frob_pm::event::Op::Add)
+                    .map_err(cycle_pm_err)?;
+            }
+        }
+        let applied = store
+            .append_many(
+                ObjectKind::Cycle,
+                c.id,
+                close_bodies(&c, &plan, self.retro.as_deref()),
+            )
+            .map_err(cycle_pm_err)?;
+        let frob_pm::Object::Cycle(closed) = applied.object else {
+            unreachable!("a cycle event folds to a cycle")
+        };
+        tracing::info!(
+            cycle = %closed.alias(),
+            carried = plan.carried.len(),
+            committed = plan.committed,
+            done = plan.done,
+            target = ?plan.target_alias,
+            "cycle closed"
+        );
+        Ok(Payload::new(CycleData {
+            cycle: CycleView::of(&closed, store),
+            events: applied.events.iter().map(ToString::to_string).collect(),
+            commit: Some(applied.commit),
+        }))
+    }
+}
+
+/// Verbs of this module, registered on the root in one place.
+pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
+    cli.register::<CycleNew>()
+        .register::<CycleShow>()
+        .register::<CycleList>()
+        .register::<CycleClose>()
+}

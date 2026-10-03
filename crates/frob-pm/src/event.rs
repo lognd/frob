@@ -3,7 +3,7 @@
 //! (`kind`, `at`, `actor`, `rev`).
 //!
 //! Kinds: `create`, `field`, `member`, `criterion`, `transition` (releases.md
-//! section 6a) plus `evidence`, which binds exit criteria exactly as it binds
+//! section 6a) plus `cycle` (carried, ratio, retro at cycle close), `evidence`, which binds exit criteria exactly as it binds
 //! ticket acceptance, and `override` and `cut`, which `release cut` records on a
 //! milestone (they fold to no change; REL001 reads `cut`). Any other kind parses as [`PmBody::Other`] and folds to
 //! no change, so a newer ledger still folds here.
@@ -132,6 +132,44 @@ pub struct CutData {
     pub tags: Vec<TagRecord>,
 }
 
+/// What a `cycle` event records.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum CycleOp {
+    /// An incomplete member moved to a later cycle at close (`ticket`, `to`).
+    Carried,
+    /// The commitment-versus-done ratio at close (`committed`, `done` points).
+    Ratio,
+    /// The retrospective note written at close (`text`).
+    Retro,
+    /// An op this version does not interpret; it folds to no change.
+    #[serde(other)]
+    Other,
+}
+
+/// A cycle-review fact recorded on a cycle (pm-enforcement.md section 4); which fields are set depends on the op.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CycleEventData {
+    /// What this records.
+    pub op: CycleOp,
+    /// Carried: the ticket that moved on.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ticket: Option<TicketId>,
+    /// Carried: the cycle it moved to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub to: Option<crate::model::ObjectId>,
+    /// Ratio: story points committed (members' points at close).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub committed: Option<u32>,
+    /// Ratio: story points done.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub done: Option<u32>,
+    /// Retro: the note, taken whole.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+}
+
 /// The kind-specific part of an event; the `kind` key selects the variant.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
@@ -148,6 +186,8 @@ pub enum PmBody {
     Transition(TransitionData),
     /// A measurement offered for exit criteria; binds them in the fold.
     Evidence(EvidenceData),
+    /// A cycle-review fact (`carried`, `ratio`, `retro`); only `carried` changes the fold.
+    Cycle(Box<CycleEventData>),
     /// A readiness override recorded by `release cut --override`; folds to no change.
     Override(OverrideData),
     /// A completed release cut; folds to no change (the `transition` to released is separate).
@@ -167,6 +207,7 @@ impl PmBody {
             Self::Criterion(_) => "criterion",
             Self::Transition(_) => "transition",
             Self::Evidence(_) => "evidence",
+            Self::Cycle(_) => "cycle",
             Self::Override(_) => "override",
             Self::Cut(_) => "cut",
             Self::Other => "other",
