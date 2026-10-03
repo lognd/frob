@@ -124,8 +124,8 @@ intangible_share = 0.2
 [pm.wip]
 # Most tickets one holder (actor plus worktree path) may have in progress; 1 makes an agent finish before starting another, 0 is off.
 in_progress_per_identity = 1
-# Most tickets in progress in the repository at once; 0 is off. The generic default is 2 (the two-builder rule is about disk use, see notes/coordinator.md); this repository runs 3 for two building agents plus the coordinator's design tickets.
-in_progress = 3
+# Repository WIP cap: three building agents (sccache halves worktree builds, measured 2026-10-03: 110 s cold to 58 s warm) plus the coordinator design ticket.
+in_progress = 4
 
 [release]
 # When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green.
