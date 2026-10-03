@@ -2,7 +2,8 @@
 id = "01M3Z714BATXCX8X2XN0XW0SPK"
 title = "G13: frob orchestration of grimble as a sibling stage"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
