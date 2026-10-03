@@ -1,0 +1,8 @@
+kind = "create"
+object = "milestone"
+version = "0.532.0"
+goal = "someone outside this repository can install frob and run its whole loop"
+criteria = ["binaries and wheel install on the five targets with artifact smoke", "two outside repositories (the cloc-style tool and the mdcat fork) managed by frob for two cycles with no ledger data loss", "CHANGELOG compiled from fragments"]
+at = "2026-10-03T15:27:57Z"
+actor = "lognd"
+rev = 1
