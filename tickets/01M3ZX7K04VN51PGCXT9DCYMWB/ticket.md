@@ -1,0 +1,35 @@
++++
+id = "01M3ZX7K04VN51PGCXT9DCYMWB"
+title = "config --for FILE: packs and rules in effect and the config line each came from"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
+reporter = "lognd"
+created = "2026-10-03T03:34:25Z"
+updated = "2026-10-03T03:34:25Z"
+idempotency_key = "m2-packs-config-for"
+labels = ["milestone:2", "area:packs"]
+scope = ["crates/grimble/src/config_for.rs", "crates/frob/src/config_cmd.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7FKFSHB8KZM2N4CNF0P9"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7JWHQZQHD66HV2SB0498"
+
+[[acceptance]]
+text = "Given the react activation of packs-activation, when `config --for frontend/a.tsx` runs, then react and its rules are listed with the config line"
+bound = false
+
+[[acceptance]]
+text = "Given a file outside every path, when run, then only always-on packs are listed"
+bound = false
++++
+
+Implements plugins.md section 2.
+
+Newcomer-facing answer to where does this rule come from.
