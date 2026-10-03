@@ -2,12 +2,12 @@
 id = "01M41PEAN0RE8DBEKQ1RBF6057"
 title = "CI run 2 fails: ci.yml pins a nonexistent actionlint-py version, and Windows-only gob-trust code fails clippy"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T20:14:15Z"
-updated = "2026-10-03T20:14:15Z"
+updated = "2026-10-03T20:14:24Z"
 scope = [".github/workflows/ci.yml", "crates/gob-trust/src/key.rs", "crates/frob-release/tests/**"]
 
 [[acceptance]]
