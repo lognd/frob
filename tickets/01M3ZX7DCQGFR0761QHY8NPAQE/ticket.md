@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = 'Given `lang "*"`, when parsed, then it is accepted with a warning that says to drop the quotes, and given an unknown word in a kind position then parsing succeeds and the word is left for name resolution'
-bound = false
+bound = true
 +++
 
 Implements grl-spec.md sections 4 and 5.
