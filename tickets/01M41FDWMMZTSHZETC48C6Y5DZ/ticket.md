@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T18:11:40Z"
-updated = "2026-10-03T18:28:12Z"
+updated = "2026-10-03T18:31:43Z"
 scope = ["crates/frob-lease/src/overlap.rs", "crates/frob-lease/tests/**", "docs/design/tickets.md", "crates/frob-lease/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
