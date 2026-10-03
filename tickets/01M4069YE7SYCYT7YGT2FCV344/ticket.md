@@ -8,7 +8,7 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:59Z"
-updated = "2026-10-03T16:56:12Z"
+updated = "2026-10-03T17:10:03Z"
 idempotency_key = "m2-rel-release-notes"
 labels = ["milestone:2", "area:release"]
 scope = ["docs/guides/upgrade-from-v1.md", "changelog.d/**"]
@@ -19,7 +19,7 @@ target = "01M4069W8ECWEPBH6YPAR7X0X0"
 
 [[acceptance]]
 text = "Given the guide, when read, then it contains the exact pin command for 0.531.0"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the changelog compile, when run, then the v2 notice leads the 0.532.0 section"
