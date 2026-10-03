@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T11:04:56Z"
+digest = "f37625789c9c709f7a4ca61ee46aaeba0d9e5ab5e488fd47170b0e08fa999d8a"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+────────────
+ Nextest run ID 826cdb8a-03ae-4e83-a37e-e60c5239c846 with nextest profile: default
+    Starting 1 test across 2 binaries (11 tests skipped)
+        PASS [   0.276s] (1/1) frob-worktree::work limit_zero_is_off_and_reentry_is_not_a_new_slot
+────────────
+     Summary [   0.277s] 1 test run: 1 passed, 11 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -E test(limit_zero_is_off_and_reentry_is_not_a_new_slot)"
+size = 444
+status = "measured"
+tests = ["limit_zero_is_off_and_reentry_is_not_a_new_slot"]
+at = "2026-10-03T11:04:56Z"
+actor = "lognd"
+rev = 1
