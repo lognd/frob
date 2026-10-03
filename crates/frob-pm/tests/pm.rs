@@ -93,7 +93,7 @@ fn as_milestone(o: &Object) -> &frob_pm::Milestone {
     }
 }
 
-/// frob:tests acceptance 1 of ~YR8CA0D: re-folding from events gives the written state.
+/// Acceptance 1 of ~YR8CA0D: re-folding from events gives the written state.
 #[test]
 fn fold_from_events_equals_the_written_state() {
     let (dir, ledger) = fixture();
@@ -167,7 +167,7 @@ fn git(dir: &Path, args: &[&str]) -> std::process::Output {
         .expect("git runs")
 }
 
-/// frob:tests acceptance 2 of ~YR8CA0D: concurrent edits on two branches merge with no event lost.
+/// Acceptance 2 of ~YR8CA0D: concurrent edits on two branches merge with no event lost.
 #[test]
 fn concurrent_edits_on_two_branches_merge_without_losing_an_event() {
     let (dir, ledger) = fixture();
@@ -506,5 +506,28 @@ fn creation_rules_and_unscheduled_milestones() {
     assert!(
         pm.set_field(ObjectKind::Milestone, id, "nonsense", Some("x".into()))
             .is_err()
+    );
+}
+
+#[test]
+fn spellings_ordering_and_store_accessors() {
+    let (_dir, ledger) = fixture();
+    let pm = PmStore::new(&ledger);
+    assert_eq!(pm.ledger().config().dir, "tickets");
+    assert_eq!(ObjectKind::Milestone.as_str(), "milestone");
+    assert_eq!(State::Released.as_str(), "released");
+    let id = pm
+        .create(milestone("0.1.0", &[]))
+        .expect("create")
+        .object
+        .id();
+    let tip = ledger.tip_hex().expect("tip").expect("some");
+    let events = pm
+        .read_events_at(&tip, ObjectKind::Milestone, id)
+        .expect("events");
+    assert!(
+        events
+            .windows(2)
+            .all(|w| w[0].order_key() <= w[1].order_key())
     );
 }
