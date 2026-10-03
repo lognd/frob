@@ -2,7 +2,8 @@
 id = "01M405B09EW2M0NDNTXKHXV2X7"
 title = "grimble SYS001, SYS002, SYS004: decide applicability from facts on a repository with no model entity"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
