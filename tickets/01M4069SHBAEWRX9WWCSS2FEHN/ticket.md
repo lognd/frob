@@ -2,7 +2,8 @@
 id = "01M4069SHBAEWRX9WWCSS2FEHN"
 title = "frob cycle assign with capacity and over-commit"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
