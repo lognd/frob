@@ -8,10 +8,14 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T02:43:46Z"
-updated = "2026-10-03T02:43:46Z"
+updated = "2026-10-03T02:43:58Z"
 idempotency_key = "m2-gobsym-depth-cap"
 labels = ["milestone:2"]
 scope = ["crates/gob-symbols/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZR5KCPY3E3NFCVFS404RDJ"
 
 [[acceptance]]
 text = "Given a generated Rust file nested 5000 levels deep, when gob-symbols lowers it on a 2 MiB stack, then it completes without opaque(depth-limit) and symref storage is linear in nesting depth"
