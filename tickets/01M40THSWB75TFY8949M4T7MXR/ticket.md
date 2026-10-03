@@ -2,7 +2,8 @@
 id = "01M40THSWB75TFY8949M4T7MXR"
 title = "Digests hash raw worktree bytes, so core.autocrlf checkouts look changed (EXC005, DRIFT)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
