@@ -2,7 +2,8 @@
 id = "01M3Z713YNM5666B7YFEHPFVKD"
 title = "G09: grimble binary skeleton: check --json, init, doctor, fmt, exceptions list"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
