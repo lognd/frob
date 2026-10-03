@@ -1,0 +1,22 @@
+kind = "create"
+title = "Fake GitHub for replaying the model: history, listing, lost and late creates, rate limits"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+idempotency_key = "m2-mirror2-fake-github"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-mirror/tests/support/**"]
+acceptance = ["Given a seed, when a scenario runs twice, then both runs are identical", "Given a delayed create, when time advances, then the issue appears later with an event id in order", "Given a call budget of B, when the B+1th call is made, then it is refused as rate-limited"]
+body = """
+Implements the test support for mirror.md section 3.7 and docs/design/models/mirror/README.md section 2.
+
+A deterministic fake tracker implementing the adapter trait: append-only history with event ids, listing by creator, read-your-writes lookup, adversaries (human edits of repository-owned and tracker-owned fields, marker spoof, human-created marked issue), network kinds (lost create, delayed create landing later, duplicated write), crashes injected at any step, rate-limit refusals counted per call."""
+at = "2026-10-03T05:51:39Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX83AB2JADBKWFA9SY4J60"
