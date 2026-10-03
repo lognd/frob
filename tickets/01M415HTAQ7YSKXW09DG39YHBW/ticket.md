@@ -2,12 +2,12 @@
 id = "01M415HTAQ7YSKXW09DG39YHBW"
 title = "Attestation statements can still write non-ASCII into the ledger"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-10-03T15:19:03Z"
-updated = "2026-10-03T15:19:03Z"
+updated = "2026-10-03T18:13:45Z"
 scope = ["crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/tests/**"]
 
 [[acceptance]]
