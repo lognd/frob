@@ -2,7 +2,7 @@
 id = "01M412NNKMX02EQ3EY42J6PM7K"
 title = "This repository: [pm.wip] in_progress = 4 now that sccache halves worktree builds"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
