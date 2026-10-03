@@ -7,12 +7,12 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-03T14:48:39Z"
-updated = "2026-10-03T14:56:38Z"
+updated = "2026-10-03T15:12:01Z"
 scope = ["crates/frob-evidence/**"]
 
 [[acceptance]]
 text = "Given a provider whose output contains non-ASCII characters, when evidence is recorded, then every byte written under tickets/ is ASCII and the escaped text round-trips on show"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given nextest evidence, when recorded, then the provider was run with plain non-Unicode output"
