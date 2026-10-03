@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T14:48:39Z"
-updated = "2026-10-03T15:16:16Z"
+updated = "2026-10-03T15:16:17Z"
 scope = ["crates/frob-release/**", "crates/gob-config/**", "docs/design/releases.md"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a hand-written CHANGELOG.md with an Unreleased heading, when release changelog runs, then it inserts the generated section without refusing and leaves the hand-written text intact"
-bound = false
+bound = true
 +++
 
 Reported by the cloc repository (FROB_FEEDBACK item 13): release cut tags every entry of SHIPPED_BINARIES (frob-vX, grimble-vX) and release changelog hard-codes a '### frob' product heading and refuses an existing hand-written CHANGELOG.md without an integrity marker. Make products and the tag pattern configuration ([release] tag = "v{version}", products = [...]; frob's own repo sets frob and grimble), default to one product named after the repository with tag v{version}, omit the product heading when there is one product, and adopt an existing CHANGELOG.md (insert above the first version heading, keep what is above, mark only the generated section).
