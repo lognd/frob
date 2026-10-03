@@ -446,6 +446,7 @@ impl ScopeGraph {
     }
 
     /// Resolve a reference; the result is cached per reference until the graph next changes.
+    // frob:ticket 01M3Z8NVCBM9KXN5ZY97QWX8P1
     pub fn resolve(&self, r: RefId) -> Resolution {
         let reference = &self.refs[r.index()];
         let cell = &self.memo.cells[r.index()];

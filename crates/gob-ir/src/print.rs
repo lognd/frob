@@ -305,6 +305,7 @@ impl<'a> Printer<'a> {
     }
 
     /// Print the subtree at `id` with an explicit work stack (no recursion over depth).
+    // frob:ticket 01M3Z8NVCBM9KXN5ZY97QWX8P1
     fn node_with_parent(&mut self, id: NodeId, parent: Option<&'a Node>) {
         let term = self.term;
         let mut work = vec![Task::Enter {

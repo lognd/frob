@@ -3,6 +3,8 @@
 //!
 //! The term is built iteratively, because the test itself must not recurse either.
 
+// frob:ticket 01M3Z8NVCBM9KXN5ZY97QWX8P1
+
 mod support;
 
 use std::collections::BTreeSet;

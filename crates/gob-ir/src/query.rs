@@ -198,6 +198,7 @@ impl Term {
     }
 
     /// Free variables of the subterm at `id` (names of `ref`s not bound inside it).
+    // frob:ticket 01M3Z8NVCBM9KXN5ZY97QWX8P1
     pub fn free_vars(&self, id: NodeId) -> BTreeSet<String> {
         /// Pending work of the explicit-stack walk.
         enum Task<'a> {

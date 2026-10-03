@@ -250,6 +250,7 @@ impl<'m> Ctx<'m> {
 
     /// The call graph over units: `(caller unit, callee unit)` for every `apply` whose head is a
     /// `ref`; the callee is the first part of the resolved identity.
+    // frob:ticket 01M3Z8NVCBM9KXN5ZY97QWX8P1
     pub fn rel_calls(&self) -> Relation {
         let mut r = Relation::new();
         let t = self.term();

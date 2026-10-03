@@ -4,6 +4,8 @@
 //! The expected digests in `tests/snapshots/equivalence.txt` were taken from the recursive
 //! implementation before the conversion (01M3Z8NVCBM9KXN5ZY97QWX8P1). Regenerate deliberately
 //! with `GOB_IR_WRITE_SNAPSHOT=1`.
+
+// frob:ticket 01M3Z8NVCBM9KXN5ZY97QWX8P1
 #![allow(clippy::many_single_char_names, reason = "terse generators")]
 #![allow(clippy::cast_possible_truncation, reason = "moduli below 50")]
 

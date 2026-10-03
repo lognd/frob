@@ -305,6 +305,7 @@ pub struct Term {
 ///
 /// Each stack entry carries the arena index of the nearest enclosing symref owner (`None` is the
 /// locator root); anon segments count per owner in preorder, exactly as the recursive pass did.
+// frob:ticket 01M3Z8NVCBM9KXN5ZY97QWX8P1
 fn compute_symrefs(term: &Term) -> Vec<Option<Symref>> {
     let mut out: Vec<Option<Symref>> = vec![None; term.nodes.len()];
     // One anon counter per possible owner, plus the locator root in the last slot.
