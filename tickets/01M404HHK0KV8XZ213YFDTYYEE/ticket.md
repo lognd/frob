@@ -2,13 +2,14 @@
 id = "01M404HHK0KV8XZ213YFDTYYEE"
 title = "Design consistency pass: resolve the planner's fifteen contradictions"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T05:42:11Z"
-updated = "2026-10-03T05:44:37Z"
+updated = "2026-10-03T05:44:38Z"
 idempotency_key = "m2-design-consistency-pass-2"
 labels = ["milestone:2"]
 scope = ["docs/design/**", "notes/review/design-consistency-2.md"]
