@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-03T11:45:10Z"
+digest = "fae32291506ff7fec6038629ec3cf3b788acba1870d3150168485b8e278ca8f9"
+exit_code = 0
+inline = """
+   Compiling frob-release v0.0.0 (/home/logan/projects/frob-v2-wt/5Y75MX7/crates/frob-release)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.84s
+────────────
+ Nextest run ID 15abd246-e963-4d3d-8fd3-88ea73d896c6 with nextest profile: default
+    Starting 7 tests across 1 binary (6 binaries skipped)
+        PASS [   0.008s] (1/7) frob-release::release_workflow retired_runner_and_manylinux_auto_never_appear
+        PASS [   0.010s] (2/7) frob-release::release_workflow maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
+        PASS [   0.009s] (3/7) frob-release::release_workflow linux_wheels_build_in_digest_pinned_manylinux_2_28_images_and_others_natively
+        PASS [   0.009s] (4/7) frob-release::release_workflow only_the_exempt_targets_skip_the_smoke_and_the_exemption_is_explicit
+        PASS [   0.009s] (5/7) frob-release::release_workflow wheels_are_uploaded_as_artifacts_and_nothing_publishes_to_an_index
+        PASS [   0.009s] (6/7) frob-release::release_workflow the_matrix_is_exactly_the_five_wheel_targets
+        PASS [   0.010s] (7/7) frob-release::release_workflow macos_x86_64_is_cross_built_on_macos_latest_and_nothing_else_is_cross
+────────────
+     Summary [   0.011s] 7 tests run: 7 passed, 0 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-E 'binary(release_workflow)' -p frob-release"
+size = 1329
+status = "measured"
+tests = ["retired_runner_and_manylinux_auto_never_appear", "maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions", "linux_wheels_build_in_digest_pinned_manylinux_2_28_images_and_others_natively", "only_the_exempt_targets_skip_the_smoke_and_the_exemption_is_explicit", "wheels_are_uploaded_as_artifacts_and_nothing_publishes_to_an_index", "the_matrix_is_exactly_the_five_wheel_targets", "macos_x86_64_is_cross_built_on_macos_latest_and_nothing_else_is_cross"]
+at = "2026-10-03T11:45:10Z"
+actor = "lognd"
+rev = 1
