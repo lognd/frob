@@ -125,7 +125,8 @@ root without a new or updated ADR or an ack with reason. The v1
 
 ## 6. CHANGELOG
 
-Fragments `changelog.d/<ulid>.<added|changed|fixed|removed|deprecated|security>.md`,
+Fragments `changelog.d/<ulid>.<notice|added|changed|fixed|removed|deprecated|security>.md`
+(`notice` is the lead notice, one paragraph above the type groups, at most one per release section),
 one or two user-facing sentences, first line prefixed with the product
 (`frob:`, `grimble:`, `crunk:`). `frob release changelog` (frob-release;
 `cargo dev gen` calls it) compiles per product under one version

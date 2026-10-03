@@ -11,6 +11,8 @@ pub const PRODUCTS: [&str; 4] = ["frob", "gob", "grimble", "crunk"];
 /// Fragment type, declared in rendering order.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Kind {
+    /// Lead notice: one paragraph above the type groups of a release section (at most one per section).
+    Notice,
     /// New capability.
     Added,
     /// Changed behaviour.
@@ -27,7 +29,8 @@ pub enum Kind {
 
 impl Kind {
     /// Every type in rendering order.
-    pub const ALL: [Kind; 6] = [
+    pub const ALL: [Kind; 7] = [
+        Kind::Notice,
         Kind::Added,
         Kind::Changed,
         Kind::Fixed,
@@ -39,6 +42,7 @@ impl Kind {
     /// The lowercase file-name segment.
     pub fn as_str(self) -> &'static str {
         match self {
+            Kind::Notice => "notice",
             Kind::Added => "added",
             Kind::Changed => "changed",
             Kind::Fixed => "fixed",
@@ -51,6 +55,7 @@ impl Kind {
     /// The section heading, e.g. `Added`.
     pub fn title(self) -> &'static str {
         match self {
+            Kind::Notice => "Notice",
             Kind::Added => "Added",
             Kind::Changed => "Changed",
             Kind::Fixed => "Fixed",
@@ -315,5 +320,21 @@ pub fn read_all(
         return Err(errs);
     }
     ok.sort_by(|a, b| (a.kind, &a.ulid).cmp(&(b.kind, &b.ulid)));
+    let notices: Vec<&str> = ok
+        .iter()
+        .filter(|f| f.kind == Kind::Notice)
+        .map(|f| f.file.as_str())
+        .collect();
+    if notices.len() > 1 {
+        tracing::warn!(count = notices.len(), "more than one lead notice");
+        // Every notice after the first is the offender; the first is the one that stays.
+        return Err(notices[1..]
+            .iter()
+            .map(|file| FragmentError::SecondNotice {
+                file: (*file).to_owned(),
+                first: notices[0].to_owned(),
+            })
+            .collect());
+    }
     Ok(ok)
 }
