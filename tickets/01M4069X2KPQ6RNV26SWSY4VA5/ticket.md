@@ -8,10 +8,10 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:58Z"
-updated = "2026-10-03T08:16:40Z"
+updated = "2026-10-03T08:16:41Z"
 idempotency_key = "m2-rel-version-bump"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
-scope = ["crates/frob-release/src/bump.rs", "crates/frob-release/Cargo.toml", "crates/frob-release/src/lib.rs", "crates/frob-release/src/rel002.rs"]
+scope = ["crates/frob-release/src/bump.rs", "crates/frob-release/Cargo.toml", "crates/frob-release/src/lib.rs", "crates/frob-release/src/rel002.rs", "crates/frob-release/src/error.rs"]
 
 [[links]]
 kind = "blocked-by"
