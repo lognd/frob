@@ -373,6 +373,11 @@ fn perf001_fires_only_when_enforced_and_over_budget() {
 
 /// A repository with a ledger on `main` holding one ticket scoped to `src/a/**`.
 fn ticket_fixture() -> (tempfile::TempDir, String) {
+    ticket_fixture_scoped(&["src/a/**"])
+}
+
+/// [`ticket_fixture`] with the ticket scoped to `scope`.
+fn ticket_fixture_scoped(scope: &[&str]) -> (tempfile::TempDir, String) {
     let dir = tempfile::tempdir().expect("tempdir");
     let repo = Repo::init(dir.path()).expect("init");
     std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").expect("head");
@@ -396,7 +401,7 @@ fn ticket_fixture() -> (tempfile::TempDir, String) {
     .expect("root commit");
     let ledger = Ledger::open(repo, LedgerConfig::default());
     let mut new = NewTicket::new("Scoped work", TicketType::Task);
-    new.scope = vec!["src/a/**".to_owned()];
+    new.scope = scope.iter().map(|g| (*g).to_owned()).collect();
     let id = ledger.new_ticket(new).expect("ticket").ticket.front.id;
     (dir, id.to_string())
 }
@@ -615,7 +620,15 @@ fn ticket_opts(id: &str) -> CheckOptions {
 
 /// Branch `work` off `main` in `ticket_fixture`, then commit `files` onto `main` behind it.
 fn branched(files: &[(&str, &str)], on_main: &[(&str, &str)]) -> (tempfile::TempDir, String) {
-    let (dir, id) = ticket_fixture();
+    branched_in(ticket_fixture(), files, on_main)
+}
+
+/// [`branched`] over an existing fixture.
+fn branched_in(
+    (dir, id): (tempfile::TempDir, String),
+    files: &[(&str, &str)],
+    on_main: &[(&str, &str)],
+) -> (tempfile::TempDir, String) {
     let repo = Repo::discover(dir.path()).expect("discover");
     let opts = CommitOptions::default();
     let put = |r: &str, set: &[(&str, &str)], msg: &str| {
@@ -871,4 +884,71 @@ fn ref001_and_todo002_apply_only_when_they_have_a_reference_to_judge() {
         zero_subject_rules(&markers).is_empty(),
         "a bare marker is TODO001's subject, not TODO002's"
     );
+}
+
+/// A ULID no fixture ticket owns.
+const OTHER_ULID: &str = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
+
+// frob:tests crates/frob-check/src/scope.rs::branch_changes
+#[test]
+fn a_tickets_own_fragment_is_never_scope001() {
+    let (dir, id) = ticket_fixture();
+    let own = format!("changelog.d/{id}.added.md");
+    let (dir, id) = branched_in(
+        (dir, id),
+        &[
+            ("src/a/lib.rs", "pub fn a() {}\n"),
+            (&own, "Added a thing.\n"),
+        ],
+        &[],
+    );
+    let r = run(dir.path(), &ticket_opts(&id)).expect("run");
+    assert!(scope001_paths(&r).is_empty(), "{:?}", scope001_paths(&r));
+}
+
+// frob:tests crates/frob-check/src/scope.rs::branch_changes
+#[test]
+fn another_tickets_or_a_malformed_fragment_is_still_scope001() {
+    let (dir, id) = ticket_fixture();
+    let other = format!("changelog.d/{OTHER_ULID}.added.md");
+    let malformed = format!("changelog.d/{id}.bogus.md");
+    let (dir, id) = branched_in(
+        (dir, id),
+        &[
+            ("src/a/lib.rs", "pub fn a() {}\n"),
+            (&other, "x\n"),
+            (&malformed, "x\n"),
+        ],
+        &[],
+    );
+    let r = run(dir.path(), &ticket_opts(&id)).expect("run");
+    let hits = scope001_paths(&r);
+    assert_eq!(hits.len(), 2, "{hits:?}");
+    assert!(hits.iter().any(|m| m.contains(OTHER_ULID)), "{hits:?}");
+    assert!(hits.iter().any(|m| m.contains(".bogus.md")), "{hits:?}");
+}
+
+// frob:tests crates/frob-check/src/scope.rs::resolve
+#[test]
+fn a_recorded_changelog_d_glob_still_checks_but_covers_only_the_own_fragment() {
+    let fixture = ticket_fixture_scoped(&["src/a/**", "changelog.d/**"]);
+    let own = format!("changelog.d/{}.fixed.md", fixture.1);
+    let other = format!("changelog.d/{OTHER_ULID}.fixed.md");
+    let (dir, id) = branched_in(
+        fixture,
+        &[
+            ("src/a/lib.rs", "pub fn a() {}\n"),
+            (&own, "Fixed.\n"),
+            (&other, "x\n"),
+        ],
+        &[],
+    );
+    let r = run(dir.path(), &ticket_opts(&id)).expect("run");
+    let hits = scope001_paths(&r);
+    assert_eq!(
+        hits.len(),
+        1,
+        "the glob no longer licenses foreign fragments: {hits:?}"
+    );
+    assert!(hits[0].contains(OTHER_ULID), "{hits:?}");
 }

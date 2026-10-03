@@ -476,3 +476,104 @@ fn open_store_uses_the_callers_config_not_the_file() {
         .expect("b shares Cargo.lock");
     assert!(store.contention().expect("contention").is_empty());
 }
+
+// frob:tests crates/frob-lease/src/overlap.rs::scopes_overlap
+#[test]
+fn two_tickets_each_leasing_their_own_fragment_do_not_conflict() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default());
+    let (a, b) = (TicketId::mint(), TicketId::mint());
+    let frag = |t: TicketId| format!("changelog.d/{t}.added.md");
+    write(dir.path(), &frag(a));
+    write(dir.path(), &frag(b));
+    store
+        .acquire(a, &holder("alice"), &scope(&["crates/x/**", &frag(a)]))
+        .expect("a");
+    store
+        .acquire(
+            b,
+            &holder("bob"),
+            &scope(&["crates/y/**", &frag(b), "changelog.d/**"]),
+        )
+        .expect("b: a legacy changelog.d/** scope is ignored, not an error");
+    let c = TicketId::mint();
+    store
+        .acquire(
+            c,
+            &holder("carol"),
+            &scope(&["changelog.d/*.added.md", &frag(c)]),
+        )
+        .expect("c: foreign-covering globs never contend");
+}
+
+// frob:tests crates/frob-lease/src/store.rs::rescope
+#[test]
+fn widening_to_a_glob_covering_other_fragments_is_refused_with_a_teaching_message() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default());
+    let t = TicketId::mint();
+    store
+        .acquire(t, &holder("a"), &scope(&["crates/x/**"]))
+        .expect("a");
+    for glob in [
+        "changelog.d/**",
+        "changelog.d/*",
+        "changelog.d/",
+        "changelog.d/*.added.md",
+    ] {
+        let err = store
+            .rescope(
+                t,
+                &holder("a"),
+                &scope(&["crates/x/**", glob]),
+                store.config(),
+            )
+            .expect_err(glob);
+        assert!(
+            matches!(err, LeaseError::FragmentGlob { .. }),
+            "{glob}: {err:?}"
+        );
+        let msg = err.to_string();
+        assert!(
+            msg.contains("own") && msg.contains("needs no lease"),
+            "{msg}"
+        );
+        assert_eq!(
+            err.to_refusal().expect("refusal").code,
+            "E-LEASE-FRAGMENT-GLOB"
+        );
+    }
+    let own = format!("changelog.d/{t}.added.md");
+    store
+        .rescope(
+            t,
+            &holder("a"),
+            &scope(&["crates/x/**", &own]),
+            store.config(),
+        )
+        .expect("the exact own fragment is fine");
+    let kept = store.live_lease(t).expect("read").expect("lease");
+    assert_eq!(kept.scope, scope(&["crates/x/**", &own]));
+}
+
+// frob:tests crates/frob-lease/src/rule.rs::scope001
+#[test]
+fn scope001_allows_the_own_fragment_only() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default());
+    let t = TicketId::mint();
+    let lease = store
+        .acquire(t, &holder("a"), &scope(&["crates/x/**", "changelog.d/**"]))
+        .expect("legacy scope still acquires")
+        .lease;
+    let own = format!("changelog.d/{t}.fixed.md");
+    let other = "changelog.d/01ARZ3NDEKTSV4RRFFQ69G5FAV.fixed.md";
+    let paths = [
+        RelPath::new(own.as_str()).expect("own"),
+        RelPath::new(other).expect("other"),
+        RelPath::new(format!("changelog.d/{t}.nope.md")).expect("bad"),
+    ];
+    let hits = scope001(&paths, &lease, &[]);
+    assert_eq!(hits.len(), 2, "{hits:?}");
+    assert!(hits.iter().all(|f| !f.message.starts_with(&own)));
+}

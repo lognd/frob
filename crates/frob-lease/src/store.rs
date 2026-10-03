@@ -22,7 +22,7 @@ use serde::Serialize;
 use crate::config::LeaseConfig;
 use crate::error::{LeaseError, SAME_TICKET};
 use crate::model::{Holder, Lease, StealRecord};
-use crate::overlap::{Resolver, glob_set, scopes_overlap};
+use crate::overlap::{Resolver, covers_foreign_fragments, glob_set, scopes_overlap};
 
 /// How often a blocked caller retries the lock.
 const LOCK_POLL: Duration = Duration::from_millis(5);
@@ -294,9 +294,12 @@ impl LeaseStore {
             }
         }
         for other in live.iter().filter(|l| l.ticket != ticket) {
-            if let Some(overlap) =
-                scopes_overlap(scope, &other.scope, &self.shared, &self.resolver)?
-            {
+            if let Some(overlap) = scopes_overlap(
+                (scope, ticket),
+                (&other.scope, other.ticket),
+                &self.shared,
+                &self.resolver,
+            )? {
                 tracing::info!(%ticket, other = %other.ticket, holder = %other.holder, %overlap, "acquire refused: overlap");
                 return Err(LeaseError::Held {
                     holder: other.holder.clone(),
@@ -387,11 +390,21 @@ impl LeaseStore {
             return Ok(lease);
         }
         let widens = new_scope.iter().any(|g| !lease.scope.contains(g));
+        if let Some(glob) = new_scope
+            .iter()
+            .find(|g| !lease.scope.contains(g) && covers_foreign_fragments(g))
+        {
+            tracing::info!(%ticket, %glob, "rescope refused: glob covers other tickets' fragments");
+            return Err(LeaseError::FragmentGlob { glob: glob.clone() });
+        }
         if widens {
             for other in live.iter().filter(|l| l.ticket != ticket) {
-                if let Some(overlap) =
-                    scopes_overlap(new_scope, &other.scope, &self.shared, &self.resolver)?
-                {
+                if let Some(overlap) = scopes_overlap(
+                    (new_scope, ticket),
+                    (&other.scope, other.ticket),
+                    &self.shared,
+                    &self.resolver,
+                )? {
                     tracing::info!(%ticket, other = %other.ticket, holder = %other.holder, %overlap, "rescope refused: overlap");
                     return Err(LeaseError::Held {
                         holder: other.holder.clone(),

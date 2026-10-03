@@ -13,6 +13,8 @@ use std::collections::BTreeSet;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
+use frob_ledger::TicketId;
+use frob_release::{Kind, parse_name};
 use globset::{Glob, GlobBuilder, GlobMatcher, GlobSet, GlobSetBuilder};
 use gob_walk::WalkConfig;
 
@@ -20,6 +22,40 @@ use crate::error::LeaseError;
 
 /// Characters that start a wildcard in a glob.
 const WILD: [char; 4] = ['*', '?', '[', '{'];
+
+/// The directory holding changelog fragments, with a trailing slash.
+const FRAGMENT_DIR: &str = "changelog.d/";
+
+/// A valid ULID no real ticket owns, used to probe whether a glob would cover other tickets' fragments.
+const PROBE_ULID: &str = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
+
+/// True when `path` is `changelog.d/<ticket ULID>.<type>.md` for exactly this `ticket`.
+///
+/// Reuses the release fragment name parser; a malformed name or another ticket's ULID is not "own".
+pub fn is_own_fragment(path: &str, ticket: TicketId) -> bool {
+    let Some(name) = path.strip_prefix(FRAGMENT_DIR) else {
+        return false;
+    };
+    parse_name(name).is_ok_and(|(ulid, _)| ulid == ticket.to_string().to_ascii_uppercase())
+}
+
+/// True when a directory-qualified `changelog.d/` glob would match other tickets' fragments.
+///
+/// Such a glob (`changelog.d/**`, `changelog.d/*`) blocks every other ticket from its own
+/// fragment, so leases ignore it and a new request for it is refused. A glob naming one exact
+/// fragment, or one with no `changelog.d/` literal prefix (`**`), is not covered by this rule.
+pub fn covers_foreign_fragments(glob: &str) -> bool {
+    let g = normalize(glob);
+    if !has_wildcard(&g) || !literal_prefix(&g).starts_with(FRAGMENT_DIR) {
+        return false;
+    }
+    let Ok(m) = matcher(&g) else {
+        return false;
+    };
+    Kind::ALL
+        .iter()
+        .any(|k| m.is_match(format!("{FRAGMENT_DIR}{PROBE_ULID}.{}.md", k.as_str())))
+}
 
 /// Canonical spelling of a scope entry: no `./`, and `dir/` meaning `dir/**`.
 pub fn normalize(glob: &str) -> String {
@@ -173,30 +209,44 @@ impl Resolver {
     }
 }
 
-/// Scope entries that survive the shared-file exemption.
-fn effective(scope: &[String], shared: &GlobSet) -> Vec<String> {
+/// Scope entries that survive the shared-file and fragment exemptions of `ticket`.
+///
+/// A glob covering other tickets' fragments (legacy `changelog.d/**`) and a literal naming
+/// the ticket's own fragment never contend: every ticket owns its fragment without a lease.
+fn effective(scope: &[String], shared: &GlobSet, ticket: TicketId) -> Vec<String> {
     scope
         .iter()
         .map(|g| normalize(g))
         .filter(|g| !shared.is_match(g.as_str()))
+        .filter(|g| {
+            let skip = covers_foreign_fragments(g) || is_own_fragment(g, ticket);
+            if skip {
+                tracing::debug!(glob = %g, %ticket, "fragment glob ignored by overlap");
+            }
+            !skip
+        })
         .collect()
 }
 
 /// Describe how scopes `a` and `b` overlap, or `None` when they are disjoint.
 ///
-/// Shared files are exempt on both sides; the text test runs first and the
-/// repository walk only when it finds nothing.
+/// Shared files and each side's own changelog fragment are exempt (`a_ticket` owns `a`,
+/// `b_ticket` owns `b`); the text test runs first and the repository walk only when it
+/// finds nothing.
 ///
 /// # Errors
 ///
 /// [`LeaseError::BadGlob`] or [`LeaseError::Walk`].
 pub fn scopes_overlap(
-    a: &[String],
-    b: &[String],
+    (a, a_ticket): (&[String], TicketId),
+    (b, b_ticket): (&[String], TicketId),
     shared: &GlobSet,
     resolver: &Resolver,
 ) -> Result<Option<String>, LeaseError> {
-    let (ea, eb) = (effective(a, shared), effective(b, shared));
+    let (ea, eb) = (
+        effective(a, shared, a_ticket),
+        effective(b, shared, b_ticket),
+    );
     for ga in &ea {
         for gb in &eb {
             if globs_overlap(ga, gb)? {
@@ -208,10 +258,12 @@ pub fn scopes_overlap(
             }
         }
     }
-    let (ra, rb) = (
+    let (mut ra, mut rb) = (
         resolver.resolve(&ea, shared)?,
         resolver.resolve(&eb, shared)?,
     );
+    ra.retain(|f| !is_own_fragment(f, a_ticket));
+    rb.retain(|f| !is_own_fragment(f, b_ticket));
     let common: Vec<&String> = ra.intersection(&rb).take(3).collect();
     Ok((!common.is_empty()).then(|| {
         common

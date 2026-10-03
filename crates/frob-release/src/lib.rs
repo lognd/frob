@@ -23,7 +23,7 @@ use std::path::{Path, PathBuf};
 
 pub use config::ReleaseConfig;
 pub use error::{FragmentError, ReleaseError, SkeletonError};
-pub use fragment::{Fragment, Kind, TicketResolver};
+pub use fragment::{Fragment, Kind, TicketResolver, parse_name};
 
 /// What the command does with its result.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

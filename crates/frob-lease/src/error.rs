@@ -60,6 +60,14 @@ pub enum LeaseError {
         /// The parser's complaint.
         message: String,
     },
+    /// A requested glob would cover other tickets' changelog fragments.
+    #[error(
+        "E-LEASE-FRAGMENT-GLOB: `{glob}` would cover other tickets' changelog fragments and block them; a ticket's own `changelog.d/<ULID>.<type>.md` needs no lease, so drop this glob (write the fragment with `frob ticket fragment`)"
+    )]
+    FragmentGlob {
+        /// The refused glob.
+        glob: String,
+    },
     /// A lease file exists but cannot be read as a lease.
     #[error("E-LEASE-FORMAT: {}: {message}", path.display())]
     Format {
@@ -102,6 +110,7 @@ impl LeaseError {
             Self::NotHeld { .. } => ("E-LEASE-NONE", GuardNeedsAction),
             Self::LockTimeout { .. } => ("E-LEASE-LOCK-TIMEOUT", Timeout),
             Self::BadGlob { .. } => ("E-LEASE-GLOB", GuardNeedsAction),
+            Self::FragmentGlob { .. } => ("E-LEASE-FRAGMENT-GLOB", GuardNeedsAction),
             Self::Format { .. } => ("E-LEASE-FORMAT", GuardNeedsAction),
             Self::Io { .. } | Self::Walk(_) | Self::Repo(_) => return None,
         };

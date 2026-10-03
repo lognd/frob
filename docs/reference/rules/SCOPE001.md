@@ -19,4 +19,5 @@ A changed path lies outside the globs of the ticket's scope lease.
 
 Widen the ticket's scope (`frob ticket update`) and re-acquire the lease, or
 move the change to a ticket that owns the path. Paths matching
-`[lease] shared_files` are exempt.
+`[lease] shared_files` are exempt, and so is the ticket's own changelog fragment
+(`changelog.d/<its ULID>.<type>.md`); other tickets' fragments are not.

@@ -43,8 +43,8 @@ impl LeaseCheck for LeaseGuard {
     fn is_free(&self, ticket: &Summary, scope: &[String]) -> bool {
         for lease in self.live.iter().filter(|l| l.ticket != ticket.id) {
             match scopes_overlap(
-                scope,
-                &lease.scope,
+                (scope, ticket.id),
+                (&lease.scope, lease.ticket),
                 self.store.shared(),
                 self.store.resolver(),
             ) {

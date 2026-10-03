@@ -4,13 +4,14 @@ use gob_git::RelPath;
 use gob_rules::{Finding, Rule, RuleId, Severity};
 
 use crate::model::Lease;
-use crate::overlap::{glob_set, matcher};
+use crate::overlap::{covers_foreign_fragments, glob_set, is_own_fragment, matcher};
 
 /// A changed path lies outside the globs of the ticket's scope lease.
 ///
 /// Widen the ticket's scope (`frob ticket update`) and re-acquire the lease, or
 /// move the change to a ticket that owns the path. Paths matching
-/// `[lease] shared_files` are exempt.
+/// `[lease] shared_files` are exempt, and so is the ticket's own changelog fragment
+/// (`changelog.d/<its ULID>.<type>.md`); other tickets' fragments are not.
 #[derive(Debug, Clone, Copy, Default, Rule)]
 #[rule(
     id = "SCOPE001",
@@ -36,6 +37,13 @@ pub fn scope001(diff_paths: &[RelPath], lease: &Lease, shared: &[String]) -> Vec
     let scope: Vec<_> = lease
         .scope
         .iter()
+        .filter(|g| {
+            let skip = covers_foreign_fragments(g);
+            if skip {
+                tracing::warn!(ticket = %lease.ticket, glob = %g, "scope glob covering other tickets' fragments ignored");
+            }
+            !skip
+        })
         .filter_map(|g| match matcher(g) {
             Ok(m) => Some(m),
             Err(e) => {
@@ -50,7 +58,11 @@ pub fn scope001(diff_paths: &[RelPath], lease: &Lease, shared: &[String]) -> Vec
     });
     diff_paths
         .iter()
-        .filter(|p| !scope.iter().any(|m| m.is_match(p.as_str())) && !shared.is_match(p.as_str()))
+        .filter(|p| {
+            !scope.iter().any(|m| m.is_match(p.as_str()))
+                && !shared.is_match(p.as_str())
+                && !is_own_fragment(p.as_str(), lease.ticket)
+        })
         .map(|p| {
             tracing::debug!(path = %p, ticket = %lease.ticket, "SCOPE001 finding");
             Finding::new(

@@ -288,7 +288,13 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   `[lease] lock_timeout_ms` (default 5000), and append-shared files such
   as `Cargo.lock` are exempt from overlap through `[lease] shared_files`
   (every verb that opens the lease store passes the same config; the old
-  `[tickets] registry_files` alias is gone). The heartbeat is renewed by any frob verb run from that
+  `[tickets] registry_files` alias is gone). A ticket's own changelog
+  fragment `changelog.d/<its ULID>.<type>.md` needs no lease: it is
+  always in scope for SCOPE001 and never contends for overlap, while a
+  requested glob that would cover other tickets' fragments
+  (`changelog.d/**`, `changelog.d/*`) is refused at `lease widen` with
+  `E-LEASE-FRAGMENT-GLOB`; such a glob already recorded in a ticket's
+  scope is kept but ignored by overlap and SCOPE001. The heartbeat is renewed by any frob verb run from that
   worktree and, when it exists, by the daemon, so a 40-minute build
   with no frob call stays inside the TTL; a stale lease can be taken
   with `--steal` and a reason. Leases release automatically on every

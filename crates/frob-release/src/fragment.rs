@@ -152,12 +152,13 @@ fn join_lines(s: &str) -> String {
         .join(" ")
 }
 
-/// Validate one fragment's name and body.
-pub(crate) fn parse_one(
-    file: &str,
-    body: &str,
-    resolver: &dyn TicketResolver,
-) -> Result<Fragment, FragmentError> {
+/// Parse a fragment file name `<ULID>.<type>.md` into its upper-case ULID and type.
+///
+/// # Errors
+///
+/// [`FragmentError::BadName`] for a wrong shape or non-ULID stem,
+/// [`FragmentError::UnknownType`] for a type outside [`Kind::ALL`].
+pub fn parse_name(file: &str) -> Result<(String, Kind), FragmentError> {
     let bad = |why: &str| FragmentError::BadName {
         file: file.to_owned(),
         why: why.to_owned(),
@@ -178,6 +179,16 @@ pub(crate) fn parse_one(
             got: parts[1].to_owned(),
         });
     };
+    Ok((ulid, kind))
+}
+
+/// Validate one fragment's name and body.
+pub(crate) fn parse_one(
+    file: &str,
+    body: &str,
+    resolver: &dyn TicketResolver,
+) -> Result<Fragment, FragmentError> {
+    let (ulid, kind) = parse_name(file)?;
     let Some(handle) = resolver.handle(&ulid) else {
         return Err(FragmentError::UnknownTicket {
             file: file.to_owned(),

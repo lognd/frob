@@ -945,6 +945,7 @@ name = "frob-lease"
 version = "0.0.0"
 dependencies = [
  "frob-ledger",
+ "frob-release",
  "globset",
  "gob-cli",
  "gob-config",
