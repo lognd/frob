@@ -101,7 +101,7 @@ touching the producer.
 | **Partial failure and retries** | An outbox: each ledger event that needs publishing becomes an operation with an idempotency key (ticket ULID plus event ULID). The mirror keeps a map file `mirror.toml` on the ticket branch: ticket ULID to tracker key, last published event, and a hash of the last published rendering. Re-running is safe: an operation whose hash matches the tracker's current state is skipped; a failed one is retried next run. At-least-once delivery, idempotent effect. |
 | **Rate limits and cost** | Incremental by default: only tickets with events after the last published event are touched. Conditional requests (ETags) where the API offers them, batching, exponential backoff that honours `Retry-After`. A full resync is an explicit verb. |
 | **Identity** | Tracker key stored as a ticket alias (so `frob ticket show PROJ-123` works); ULID stored in the issue (hidden marker plus a label or custom field) so the mirror re-finds an issue even if the map file is lost. Duplicate detection on first sync: an issue already carrying the ULID is adopted, never duplicated. |
-| **Edits made in the tracker** | Detected, never overwritten silently: before updating an issue the mirror compares the tracker's current rendering with the last published digest. If someone edited it, the mirror skips that issue and reports MIR002 (section 3.1). |
+| **Edits made in the tracker** | Detected, never overwritten silently: before updating an issue the mirror compares the tracker's current rendering with the last published digest. If someone edited a repository-owned field, the mirror reverts it and records the edit as a proposal on the ticket (section 3.1); nothing blocks. |
 | **Deletions and drops** | Never delete in the tracker. A dropped ticket is closed with its reason; a deleted tracker issue is recreated and reported. |
 | **Schema drift** | The adapter validates the mapping against the tracker's schema at startup (custom field ids, workflow states, labels). A missing field fails the run with one clear diagnostic and a remedy, before any write. |
 | **Tracker or network down** | The run stops cleanly; nothing is half-written beyond the outbox; `frob check` reports MIR001 (Unresolved, not required by default) saying the mirror is behind by N events since a time. Never silent. |
@@ -109,37 +109,72 @@ touching the producer.
 | **Privacy and security** | Evidence transcripts are redacted (gob-log) before publishing; a `[mirror] exclude` list keeps sensitive tickets or fields private; the mirror never publishes leases' worktree paths. |
 | **Upkeep per tracker** | One adapter crate per tracker behind a small trait (create, update, close, link, find-by-ULID, schema), with recorded API fixtures so tests run offline. |
 
-### 3.1 Divergence is loud and resolvable (owner decision)
+### 3.1 Reconcile, never block (owner decision)
 
-Skipping an edited issue is only safe if nobody can miss it. So:
+An edit made in the tracker never fails a check and never blocks a land
+or a mirror run (owner decision 2026-10-04, replacing the earlier
+skip-and-report). Detection is cheap, so handling is deterministic.
 
-- **Loud.** MIR002 is severity Error and required in the mirror CI job
-  and `frob mirror status` (exit 1), repeated every run until resolved.
-  In a code checkout's `frob check` it is a Warning and never blocks a
-  land, so someone who can only edit issues cannot stop code from
-  landing (security.md 2.11 and section 5, pending owner confirmation).
-- **Authenticated.** The mirror adopts or updates only issues its own
-  bot created whose marker carries an HMAC of the ULID; any other issue
-  carrying a marker is MIR003 spoofed-marker and ignored. `--adopt`
-  needs a TTY and never changes repository-owned fields (security.md
-  2.11). The mirror job also posts one comment on the
-  issue itself, once: the issue is managed from the repository, the
-  edit was not applied, and who can resolve it with which command.
-- **Specific.** The finding names the ticket, the issue URL, each edited
-  field with its published and current values (a diff for body
-  sections), the tracker user and the time, read from the tracker's
-  history API where it exists.
-- **Resolvable**, by one of three verbs, each recorded as a ledger event
-  with the resolver and a reason, so the decision is auditable:
+**One owner per field.** The repository and the tracker are two replicas
+of the same tickets. Conflicts are avoided, not resolved: every
+projected field has exactly one owner, declared in `[mirror.fields]`
+(materialized). In version 1 every field the mirror writes is
+repository-owned; tracker-owned are only the things the mirror never
+writes (comments, reactions, labels outside the managed namespace
+`frob:`, and any field listed in `tracker_owned`). Single-writer-per-field
+needs no consensus and no clocks: whichever replica owns a field is the
+only one whose value counts.
 
-  | Verb | Effect |
-  |---|---|
-  | `frob mirror resolve <ticket> --keep-repo` | re-publish the repository version over the edit, with a comment linking the edit |
-  | `frob mirror resolve <ticket> --adopt` | turn the tracker edit into a ledger change through the normal ticket verbs (the edit is applied to the ticket, then re-published), the manual form of the later import phase |
-  | `frob mirror resolve <ticket> --ignore-field <field> --reason "..."` | stop mirroring that field for that issue (recorded in `mirror.toml`); the field becomes tracker-owned for that issue only |
+**Each run, per issue.** The mirror reads the issue's current state and
+the tracker's change history since its last publish (timeline events
+for title, state, labels and assignees; body edit history), then:
 
-  The diagnostic prints all three verbs as `help` lines (diagnostics.md),
-  and `frob explain MIR002` explains when to choose which.
+| What changed in the tracker | Deterministic action |
+|---|---|
+| a repository-owned field | revert it to the projection of the ledger, and record the edit as a `proposal` event on the ticket (field, published value, tracker value, tracker user, time, link) |
+| a tracker-owned field | nothing |
+| nothing | nothing (the rendering digest matches) |
+
+The issue gets at most one comment per day, written from a host
+template: the field is managed in the repository, the change was saved
+as a proposal on the ticket, and a maintainer can accept it.
+
+**Convergence.** After a run, every repository-owned field of every
+mirrored issue equals the projection of the ledger at the run's commit.
+Runs are idempotent (a second run changes nothing) and serialized (one
+writer, a CI concurrency group, ordered by ledger commit), so the
+tracker converges to a function of the ledger.
+
+**The race.** If someone edits between the mirror's read and its write,
+the write overwrites the edit. Nothing is lost: the tracker's history
+is append-only, the next run finds the edit in it, and records the
+proposal. Conditional writes are used where the tracker offers them
+(UNVERIFIED for GitHub issue updates, checked at implementation) but
+correctness does not depend on them. An adapter whose tracker lacks
+history for a field declares it in `capabilities`; for such a field the
+mirror captures only what it observed at read time, and the fidelity of
+capture is listed in `frob mirror status`.
+
+**Proposals.** `frob ticket proposals` lists them; `accept` applies the
+change through the normal ticket verbs (an event authored by the
+accepter, citing the tracker user), which the next run re-publishes;
+`decline` records a reason. Pending proposals are a summary count in
+`frob check` and an Advisory note (MIR002 tracker-edit-reverted), never
+an error. Repeated edits by the same user to the same field collapse
+into one proposal holding the latest value; proposals from tracker
+users not mapped to identities are kept but collapsed per issue, so
+edit spam produces one line, not a queue. Proposals can never change
+scope, acceptance, evidence or links, which stay repository-only
+(security.md 2.11).
+
+**Authenticated.** The mirror updates only issues its own bot created
+whose marker carries an HMAC of the ULID; any other issue carrying a
+marker is MIR003 spoofed-marker (Advisory) and ignored.
+
+**Where the tracker should win.** A team that plans in the tracker
+declares those fields tracker-owned (`tracker_owned = ["priority",
+"assignee"]`); the mirror then stops writing them and, in the later
+import phase (section 4), imports them as ledger events.
 
 ## 4. Later: bringing material decisions back
 
@@ -160,7 +195,9 @@ Decided 2026-10-04:
 1. GitHub Issues first, behind the platform-agnostic projection
    (section 2.1); GitLab and Jira adapters route from the same
    projection later.
-2. Divergence: skip and report, loudly and resolvably (section 3.1).
+2. Tracker edits never block: one owner per field, repository-owned
+   fields reverted deterministically, every edit captured as a proposal
+   (section 3.1). Replaces the earlier skip-and-report.
 
 3. The code repository's pointer is a generated region of README.md,
    not a `TICKETS.md` (navigation.md 3.2).

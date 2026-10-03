@@ -2,7 +2,7 @@
 
 Status: ACCEPTED (D82, ticket ~AR02B3E), from the pessimistic audit
 notes/review/plugin-security-audit.md (34 findings: 4 critical, 17 high,
-10 medium, 3 low). Three judgment calls are marked OWNER in section 5.
+10 medium, 3 low). The owner decisions on three judgment calls are section 5.
 Applies to frob, grimble and crunk; the shared pieces live in gob crates.
 
 Owner position: nothing is banned. Repository packs may run WASM and be
@@ -131,7 +131,7 @@ any sandbox, so they enter the same trust model:
   `untrusted` with the trust command, exactly like a WASM pack. This
   includes this repository's own stages (`cargo dev gen --check` and the
   like): a maintainer runs `frob trust --follow origin/experimental`
-  once (OWNER, section 5).
+  once (owner decision, section 5).
 
 ### 2.5 The sandbox worker and the effect broker (I5, I6, I10, I11)
 
@@ -263,7 +263,7 @@ Read implies publish: the trust prompt and docs say "can read and print".
   C1 control except newline, and every bidi and invisible formatting
   character, everywhere. Other non-ASCII is escaped as `\u{...}` in
   text originating from packs, the tracker or the ledger, and shown as
-  is in source snippets (OWNER, section 5). JSON keeps exact strings.
+  is in source snippets (owner decision, section 5). JSON keeps exact strings.
   Interactive diffs show invisible characters as escapes.
 - **Origin.** Every text field carries `origin` (`host`, `std`,
   `pack:NAME`, `source`, `tracker`, `ledger`); text mode prefixes
@@ -297,10 +297,10 @@ Read implies publish: the trust prompt and docs say "can read and print".
   edits by unmapped identities, and can never change repository-owned
   fields (scope, acceptance, evidence, links). Tracker text in MIR002
   carries `origin = tracker` and a length cap.
-- MIR002 placement: required in the mirror job and `frob mirror
-  status`; a Warning in the code checkout's `frob check` and never a
-  land blocker, so an outsider who edits an issue cannot stop code from
-  landing (OWNER, section 5).
+- Tracker edits never block anything: repository-owned fields are
+  reverted to the ledger's projection and the edit is captured as a
+  proposal (mirror.md 3.1); MIR002 is Advisory. An outsider who edits
+  issues can produce at most one collapsed proposal line per issue.
 - The mirror job runs only for pushes to the protected ledger ref, from
   the default branch's workflow definition. `doctor` (and a TICK rule)
   checks through the hosting API that the ledger branch forbids force
@@ -334,9 +334,9 @@ means the audit's mitigation is adopted as written in the section named.
 | SEC-13 network scoping | high | accepted | 2.5 |
 | SEC-14 subprocess by name | high | accepted | 2.4 |
 | SEC-15 plugin fixes | high | accepted | 2.10 |
-| SEC-16 text injection | high | accepted with the OWNER escaping choice | 2.10 |
+| SEC-16 text injection | high | accepted; escaping option A (owner) | 2.10 |
 | SEC-17 trust fatigue | high | accepted | 2.3 |
-| SEC-18 mirror adoption | high | accepted with the OWNER MIR002 placement | 2.11 |
+| SEC-18 mirror adoption | high | accepted; tracker edits reconciled, never blocking (owner) | 2.11 |
 | SEC-19 replaces | high | accepted | 2.9 |
 | SEC-20 adapters | high | accepted | 2.9 |
 | SEC-21 committed derived state | high | accepted | 2.2 |
@@ -365,17 +365,17 @@ means the audit's mitigation is adopted as written in the section named.
 | `E-STATE-TRACKED` | guard, exit 3 | git tracks a state or cache directory |
 | Unresolved reasons | `untrusted`, `untrusted-in-change`, `budget`, `trap`, `effect-denied`, `pack-unavailable`, `replaced-divergence` | required for required packs |
 
-## 5. OWNER: three judgment calls
+## 5. Owner decisions (2026-10-04)
 
-1. **MIR002 placement.** The owner asked for divergence to be loud. The
-   audit shows that making it required in the code gate lets anyone who
-   can edit an issue block every land (I12). Proposed: required in the
-   mirror job and `mirror status` (a red CI job is loud), a Warning in
-   the code checkout's `check`.
-2. **Escaping non-ASCII.** Proposed: always escape controls, bidi and
-   invisible characters; escape other non-ASCII only in text from packs,
-   the tracker and the ledger; show source snippets as they are.
-3. **This repository's own tool stages need trust once.** After 2.4
-   lands, a maintainer runs `frob trust --follow origin/experimental`
-   once per machine, and CI uses `--trust-from`. Agents cannot run it,
-   so each machine that runs agents needs it done once by a person.
+1. **Tracker edits.** Not a blocking finding anywhere; reconciled
+   deterministically by field ownership with every edit captured as a
+   proposal (mirror.md 3.1).
+2. **Escaping.** Option A: controls, bidi and invisible characters are
+   always escaped; other non-ASCII is escaped only in text from packs,
+   the tracker and the ledger; source snippets show as they are.
+3. **This repository's own tool stages** need the one-time trust step;
+   the owner performs it on this machine. The review flow a person sees
+   when trusting (pagination, identity facts, per-item acknowledgement,
+   cooldown) is pending a second audit of attention and social
+   engineering attacks (notes/review/trust-ux-audit.md) and is specified
+   after it.
