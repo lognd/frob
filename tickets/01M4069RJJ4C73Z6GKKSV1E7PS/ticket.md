@@ -2,13 +2,13 @@
 id = "01M4069RJJ4C73Z6GKKSV1E7PS"
 title = "PM034 milestone-member-outside-epics (Warning)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T06:12:53Z"
-updated = "2026-10-03T06:12:53Z"
+updated = "2026-10-03T07:46:29Z"
 idempotency_key = "m2-rel-pm034"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob-pm/src/rules/membership.rs", "docs/reference/rules/pm/**"]
