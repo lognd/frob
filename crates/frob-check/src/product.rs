@@ -8,6 +8,7 @@ use frob_ledger::rules::{Tick001, Tick003};
 use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
+use frob_pm::rules::membership::Pm034;
 use gob_check::{
     CheckError, CheckTable, CollectCx, Collected, External, FileCheck, Product, RepoGroup,
     ScopedFindings, Snapshot, Timing,
@@ -24,6 +25,9 @@ use crate::snapshot::{self, FrobInputs, FrobShared};
 
 /// Rules that read the ticket ledger: without one they examine nothing.
 const LEDGER_RULES: [&str; 3] = ["REF001", "TODO002", "TICK002"];
+
+/// Why `PM034` is not applicable when it is not (logged, never a finding).
+const PM034_NA: &str = "no milestone objects in this repository";
 
 /// frob driving the shared check pipeline, with the options of one `frob check` run.
 pub struct Frob {
@@ -53,6 +57,21 @@ fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
             Vec::new()
         }
     }
+}
+
+/// `PM034` findings for the `repo:pm` group; empty without a ledger, milestones or on a read failure.
+// frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
+fn pm_findings(inputs: &FrobInputs) -> Vec<Finding> {
+    let Some(state) = &inputs.ledger else {
+        return Vec::new();
+    };
+    frob_pm::rules::membership::evaluate(&state.ledger).map_or_else(
+        |err| {
+            tracing::warn!(%err, "PM034 not evaluated");
+            Vec::new()
+        },
+        |e| e.findings,
+    )
 }
 
 impl Product for Frob {
@@ -109,6 +128,9 @@ impl Product for Frob {
                     )
                 },
             ),
+            RepoGroup::new("repo:pm", vec![Pm034.meta()], |s: &Snapshot<Self>, _| {
+                pm_findings(&s.inputs)
+            }),
             RepoGroup::new(
                 "repo:ledger",
                 vec![Tick001.meta(), Tick003.meta()],
@@ -194,7 +216,18 @@ impl Product for Frob {
     }
 
     fn applicable(&self, snap: &Snapshot<Self>, meta: &RuleMeta) -> bool {
-        if LEDGER_RULES.contains(&meta.id) {
+        // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
+        if meta.id == "PM034" {
+            let ok = snap
+                .inputs
+                .ledger
+                .as_ref()
+                .is_some_and(|l| l.milestones > 0);
+            if !ok {
+                tracing::info!(rule = meta.id, why = PM034_NA, "not applicable");
+            }
+            ok
+        } else if LEDGER_RULES.contains(&meta.id) {
             snap.shared.has_ledger || snap.inputs.tickets_configured
         } else if meta.id == "COV001" {
             // COV001 needs a language with a test capability; only Rust has one today.

@@ -11,6 +11,7 @@ publish.workspace = true
 
 [dependencies]
 frob-ledger = { path = "../frob-ledger" }
+gob-rules = { path = "../gob-rules" }
 jiff = "0.2"
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
@@ -19,6 +20,7 @@ tracing = "0.1"
 
 [dev-dependencies]
 gob-git = { path = "../gob-git" }
+gob-mdtest = { path = "../gob-mdtest" }
 tempfile = "3"
 
 [lints]

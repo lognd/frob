@@ -83,6 +83,12 @@
 |---|---|---|---|---|---|---|
 | [PERF001](PERF001.md) | check-over-budget | warn | manual | P+ | false | The built-in stages of a check run took longer than the `[perf]` budget. |
 
+## PM
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [PM034](PM034.md) | milestone-member-outside-epics | warn | manual | P+ | false | A ticket claims a milestone that its epic ancestry does not reach. |
+
 ## PROC
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

@@ -34,6 +34,7 @@ pub mod fold;
 pub mod merge;
 pub mod milestone;
 pub mod model;
+pub mod rules;
 pub mod store;
 
 pub use error::{PmError, Result};

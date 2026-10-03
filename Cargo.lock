@@ -836,6 +836,7 @@ dependencies = [
  "frob-lease",
  "frob-ledger",
  "frob-obligations",
+ "frob-pm",
  "frob-tests",
  "gob-cache",
  "gob-check",
@@ -1012,6 +1013,8 @@ version = "0.0.0"
 dependencies = [
  "frob-ledger",
  "gob-git",
+ "gob-mdtest",
+ "gob-rules",
  "jiff",
  "serde",
  "tempfile",
