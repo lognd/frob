@@ -1003,27 +1003,38 @@ impl<'a> Fold<'a> {
 
     /// The plain type named by `t` (through references), when it says what a method call on it reaches.
     fn plain_type(&self, t: Node<'_>) -> Option<String> {
-        let name = match t.kind() {
+        let path = match t.kind() {
             "reference_type" => return self.plain_type(t.child_by_field_name("type")?),
             "type_identifier" | "primitive_type" => self.t(t).to_owned(),
-            "scoped_type_identifier" => {
-                // `module::Type` names a type; `Self::Item`, `T::Output` name associated types.
-                let path = t.child_by_field_name("path")?;
-                if !split_path(self.t(path)).iter().all(|s| !upper_first(s)) {
-                    return None;
-                }
-                self.t(t.child_by_field_name("name")?).to_owned()
-            }
+            "scoped_type_identifier" => self.scoped_type_path(t)?,
             "generic_type" => {
                 let head = t.child_by_field_name("type")?;
-                if head.kind() != "type_identifier" {
-                    return None;
+                match head.kind() {
+                    "type_identifier" => self.t(head).to_owned(),
+                    "scoped_type_identifier" => self.scoped_type_path(head)?,
+                    _ => return None,
                 }
-                self.t(head).to_owned()
             }
             _ => return None,
         };
-        (!DEREF_WRAPPERS.contains(&name.as_str()) && !self.generics.contains(&name)).then_some(name)
+        let name = path.rsplit("::").next().unwrap_or(&path);
+        (!DEREF_WRAPPERS.contains(&name) && !self.generics.iter().any(|g| g == name))
+            .then_some(path)
+    }
+
+    /// `module::Type` as written; `None` for associated types (`Self::Item`, `T::Output`), whose prefix is a type.
+    fn scoped_type_path(&self, t: Node<'_>) -> Option<String> {
+        let path = split_path(self.t(t.child_by_field_name("path")?));
+        if !path.iter().all(|s| !upper_first(s)) {
+            return None;
+        }
+        let name = self.t(t.child_by_field_name("name")?);
+        Some(
+            path.into_iter()
+                .chain([name.to_owned()])
+                .collect::<Vec<_>>()
+                .join("::"),
+        )
     }
 
     /// The type a `let` value evidently has: a struct literal or `Type::new`/`Type::default`.

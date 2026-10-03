@@ -374,8 +374,18 @@ impl Index {
             arg: None,
             tuple: None,
             bound: None,
+            qual: Vec::new(),
             file: file.clone(),
         })
+    }
+
+    /// The directory of the extern crate named `name` in `file`'s crate (itself, or a direct dependency).
+    fn extern_dir(&self, file: &str, name: &str) -> Option<String> {
+        let externs = self.externs.get(self.file_crate.get(file)?)?;
+        externs
+            .iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, d)| d.clone())
     }
 
     /// The extern crate directory and crate-relative path that `file` imports `local` from, by explicit `use`.
@@ -393,9 +403,23 @@ impl Index {
     }
 }
 
+impl Ty {
+    /// `self` with a path written in `head` (`gob_ir::Ctx`) split into `qual` and the bare name.
+    fn with_split_path(mut self) -> Self {
+        if self.head.contains("::") {
+            let mut segs: Vec<String> = self.head.split("::").map(str::to_owned).collect();
+            self.head = segs.pop().unwrap_or_default();
+            self.qual = segs;
+        }
+        self
+    }
+}
+
 /// A receiver type proven for a call.
 #[derive(Debug, Clone)]
 struct Ty {
+    /// The module path written before `head` (`gob_ir` in `gob_ir::Ctx`).
+    qual: Vec<String>,
     /// The traits `Self` stands for, when `head` is `Self` returned through trait bounds.
     bound: Option<Vec<String>>,
     /// The element types of a tuple value.
@@ -748,6 +772,7 @@ impl SymbolGraph {
                 arg: None,
                 tuple: None,
                 bound: None,
+                qual: Vec::new(),
                 file: caller.path().to_owned(),
             },
             Receiver::Typed(t) => Ty {
@@ -755,11 +780,12 @@ impl SymbolGraph {
                 arg: None,
                 tuple: None,
                 bound: None,
+                qual: Vec::new(),
                 file: caller.path().to_owned(),
             },
             Receiver::Field(base, field) => {
                 let b = self.receiver_ty(idx, caller, base)?;
-                let (krate, real) = self.type_home(idx, &b.file, &b.head);
+                let (krate, real) = self.type_home(idx, &b);
                 idx.field_type(&krate, &real, field)?
             }
             Receiver::Ret(call) => self.ret_ty(idx, caller, call)?,
@@ -777,6 +803,7 @@ impl SymbolGraph {
                     arg: None,
                     tuple: None,
                     bound,
+                    qual: Vec::new(),
                     file: t.file,
                 }
             }
@@ -787,12 +814,13 @@ impl SymbolGraph {
                     arg: None,
                     tuple: None,
                     bound: None,
+                    qual: Vec::new(),
                     file: t.file,
                 }
             }
             Receiver::Bound(_) | Receiver::Expr => return None,
         };
-        Some(ty)
+        Some(ty.with_split_path())
     }
 
     /// The declared return type of the one concrete callee that `call` resolves to.
@@ -836,6 +864,7 @@ impl SymbolGraph {
             head: sub(&ret.head)?,
             arg: ret.arg.as_deref().and_then(sub),
             bound: bounds,
+            qual: Vec::new(),
             file: rec.symref.path().to_owned(),
         })
     }
@@ -911,7 +940,7 @@ impl SymbolGraph {
             return self.resolve_bound_method(&traits, &named, &fits, &parent_seg);
         }
         if let Some(ty) = receiver.and_then(|r| self.receiver_ty(idx, caller, r)) {
-            let (home, t) = self.type_home(idx, &ty.file, &ty.head);
+            let (home, t) = self.type_home(idx, &ty);
             let here = crate_and_module(caller.path()).0;
             // The type's methods live in its home crate; impls written in the caller's crate add trait impls.
             let pool: Vec<NodeIndex> = if home == here {
@@ -1068,13 +1097,20 @@ impl SymbolGraph {
     /// The crate directory declaring the type `written` in `file`, and its name there.
     ///
     /// A name imported from another crate follows `pub use` re-exports to the crate that declares it.
-    fn type_home(&self, idx: &Index, file: &str, written: &str) -> (String, String) {
+    fn type_home(&self, idx: &Index, ty: &Ty) -> (String, String) {
+        let (file, written) = (ty.file.as_str(), ty.head.as_str());
         let real = idx.real_type_name(file, written);
         let here = crate_and_module(file).0;
-        if idx.struct_count.contains_key(&(here.clone(), real.clone())) {
+        if ty.qual.is_empty() && idx.struct_count.contains_key(&(here.clone(), real.clone())) {
             return (here, real);
         }
-        let Some((dir, within)) = idx.explicit_extern(file, written) else {
+        let named_from = match ty.qual.split_first() {
+            None => idx.explicit_extern(file, written),
+            Some((head, rest)) => idx
+                .extern_dir(file, head)
+                .map(|dir| (dir, rest.iter().cloned().chain([ty.head.clone()]).collect())),
+        };
+        let Some((dir, within)) = named_from else {
             return (here, real);
         };
         let homes: BTreeSet<(String, String)> =
