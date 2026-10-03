@@ -90,29 +90,48 @@ frob, grimble and crunk.
   with no effects and no privileges; its affected rules report
   Unresolved `untrusted-in-change`, which is required in CI. There is no
   other CI trust flag, and CI never reads or writes a user store.
-- **Follow a protected branch locally.** `trust --follow origin/main`,
-  once per repository, trusts any pair present in the lock at a commit
-  reachable from the fetched protected ref. Routine updates need no
-  prompt; only code that has not landed on the protected branch does.
-  Fewer prompts, each one meaningful, is the only real cure for trust
-  fatigue.
-- **The prompt, when one is needed.** `trust` refuses unless stdin and
-  stdout are a TTY (exit 3); it has no `--yes` and no `--all`, so agents
-  and scripts cannot run it, and the JSON remedy for `untrusted` is
-  marked `requires_human = true`. The prompt shows only host-derived
-  facts: tree digest, effects and their delta against the previously
-  trusted version (widening first and in full), size and kind of
-  binaries, whether the change is on the protected branch, whether a
-  binary is reproduced from source (2.8), signed or unsigned, and the
-  git author of the last change. Pack-supplied prose never appears.
-  Widening an effect or trusting `subprocess` requires typing the pack
-  name.
+- **Follow a protected branch locally, as a ceremony** (TUX-01 to
+  TUX-03, TUX-06, TUX-18). `trust --follow` is a one-time review, not a
+  blanket grant: it records the full refname, the remote URL and the
+  current tip in the MAC'd store, and the person types the remote
+  identity (and `unprotected` when branch protection is not verified).
+  The documented default is `--follow --ordinary-only`. The recorded tip
+  advances only through a fast-forward fetch performed by frob from the
+  recorded URL (`trust --sync`, or implicitly on `frob fetch`); a ref
+  moved by anything else is ignored and reported by `doctor`, so an
+  agent cannot trust its own pack by creating a local branch. Trust is
+  evaluated at `merge-base(HEAD, recorded tip)`, never "anything
+  reachable", so reverting to a withdrawn pack version prompts again.
+  On advance: code-only changes, narrowing, and ordinary widening within
+  already granted classes and domains are accepted; any widening into a
+  high-risk class, a new registrable domain, a new
+  `runs-repository-code` stage, or a stage whose declared inputs changed
+  in foreign commits is held pending (the pack runs with its previous
+  effects, the new ones denied) until a person reviews it, as browsers
+  do for extension updates that ask for more. A revocation list on the
+  protected branch overrides every entry.
+- **The review** (section 2.12) runs only on a TTY, never with a known
+  agent marker in the environment (for example `CLAUDECODE=1`; the
+  refusal tells the agent to stop and tell the user which pack is
+  untrusted), has no `--yes`, `--all` or scope flags, and is reached
+  only through `frob trust` with no arguments that pre-decide the
+  answer. The JSON remedy for `untrusted` carries `requires_human =
+  true` and a pack id, never a command line. Stated honestly (TUX-05):
+  the TTY check stops scripts and obedient agents, not a goal-seeking
+  process running as the same user; the structural limits of I2 are the
+  real defence. Machines that run agents may enable an OS presence check
+  (polkit, Windows Hello, macOS authentication, a FIDO2 touch) in the
+  user's own config, and agent sandboxes should deny writes to
+  `$XDG_CONFIG_HOME/gob/` and `.git/refs/remotes/`.
 - **The store.** `$XDG_CONFIG_HOME/gob/trust.toml`; repository identity
   is the canonical root path plus root commit id plus remote URL (all
   must match); each entry records who, when and an expiry (default 90
   days; grants of network effects 180 days) and is MAC'd so hand-added
   lines are inert. `trust list`, `trust revoke`; `doctor` reports
-  expired entries and a group- or world-writable store.
+  expired entries and a group- or world-writable store. Denials are
+  remembered per digest; grants unused for 30 days expire. `trust
+  --show` prints the pending review non-interactively (agents may run
+  it); it has no approve action.
 
 ### 2.4 Tool stages are process packs (I11)
 
@@ -127,6 +146,25 @@ any sandbox, so they enter the same trust model:
   digest recorded in the lock; a different binary is untrusted.
 - It runs with a scrubbed environment, `GIT_CONFIG_NOSYSTEM=1`, no `-c`
   passthrough, stdin closed.
+- **Honest classes** (TUX-04). Programs known to execute work-tree
+  content (cargo, rustc wrappers, make, npm, pnpm, yarn, python, node,
+  sh, bash, go, gradle, mvn) are class `runs-repository-code`; launchers
+  that download and run code (uvx, npx with a package, pipx run, go run
+  with a module path) are `fetches-and-runs-code` and must pin a content
+  hash or are shown as "downloads and runs unpinned code from HOST". The
+  review says in host text: this runs code from whatever branch you
+  have checked out, with your full privileges. Such stages declare
+  `inputs` (globs whose bytes govern behaviour; the host adds known ones
+  such as `build.rs`, `**/Cargo.toml`, `.cargo/**`, `package.json`,
+  `Makefile`); when inputs changed in commits authored elsewhere (present
+  on another remote ref), the stage is Unresolved `untrusted-in-change`
+  locally. Your own unpushed commits do not trigger it. In CI such
+  stages run only in jobs without secrets for pull requests from forks.
+- **Placeholders cannot inject options** (TUX-15): tracked-path
+  placeholders render as `./path`, `--` is inserted before positional
+  placeholders where the program supports it, and the review shows the
+  template with these guards; a program supporting neither is
+  high-risk "arguments come from file names".
 - Until trusted (store or base ref), the stage is Unresolved
   `untrusted` with the trust command, exactly like a WASM pack. This
   includes this repository's own stages (`cargo dev gen --check` and the
@@ -312,6 +350,88 @@ Read implies publish: the trust prompt and docs say "can read and print".
   protected ref inside a `pull_request_target` or `workflow_run`
   workflow is an Error (joins CI006 and CI011 in cicd.md).
 
+### 2.12 The trust review a person sees (from the trust UX audit)
+
+Evidence: notes/review/trust-ux-audit.md (18 findings, 37 references
+including warning-habituation research and the xz-utils, event-stream,
+ua-parser-js, VS Code workspace trust, Android and browser-extension
+cases). The principle: how rarely a prompt appears matters more than
+how thorough each prompt is, and the length of a review must be set by
+the host, never by the pack.
+
+- **Review grants, never call sites** (TUX-08). The broker performs only
+  granted effects, so the grant is the complete description of what a
+  pack can do; one dangerous call among a thousand benign ones is one
+  line, "can send src/** to example.com". The host computes flows (a
+  read grant plus a send grant is shown as a flow) and shows
+  `runs-repository-code` first because it dominates every other effect.
+  Code is reviewed in pull requests; the review says so in one line.
+- **Screen 1, the summary, is always exactly one screen** (TUX-07): the
+  repository identity, three host facts first ("Saying no breaks
+  nothing: N rules stay Unresolved on this machine", "CI never uses this
+  machine's trust", "This is not a code review"; TUX-12), then high-risk
+  items (each needing its own confirmation), then ordinary items
+  aggregated into one decision, then verified provenance. Ordering:
+  widenings before new; then control plane, privilege (`subprocess`,
+  `runs-repository-code`, `replaces`, `fix.machine`), secret-shaped,
+  send flows, new hosts, ordinary. Actions: deny all (the default on
+  Enter), trust ordinary only, review high risk, trust once for this
+  run, details (a read-only pager with no approve action).
+- **High-risk screens, at most five per session**, one item each, with
+  type-to-confirm of the risky scope itself (the domain, the program,
+  the secret class), never the pack name (TUX-09). Above five, the only
+  options are approving the whole class by typing it with its count, or
+  denying. Consequence sentences are host templates. Required for:
+  secret-shaped reads and environment, control-plane writes,
+  `subprocess`, `runs-repository-code`, `fetches-and-runs-code`,
+  `replaces`, `fix.machine`, any send flow, any wildcard host, any new
+  registrable domain, and the `--follow` ceremony. Not required for
+  ordinary effects, narrowing, fetch-only to an already granted
+  domain, or trusting a pure pack once.
+- **Deny is as easy as approve** (TUX-14): per-effect allow or deny;
+  packs run with what was allowed and denied effects answer
+  `effect-denied`; `trust once` for one invocation; a receipt screen
+  lists what was granted and denied, expiry, and the revoke command.
+- **Input hygiene** (TUX-16): the review runs in the terminal's
+  alternate screen with a host-drawn frame; buffered input is flushed;
+  bracketed paste is enabled and pasted text is rejected; each decision
+  arms about one second after drawing and re-arms on any keypress. No
+  longer or per-item cooldowns: delays habituate and multiply with
+  attacker-inflated volume.
+- **Identity: verified facts only** (TUX-10). Shown: signature
+  verification against allowed signers kept outside the work tree (key
+  fingerprint and entry, or "unsigned"), the first change by that key
+  to this pack, whether and since when it is on the followed ref, branch
+  protection status, PACK010 reproducibility, and the widening history
+  with the note "age is not safety". Git author and committer names are
+  only in details, labelled unverified. Hosting account age, stars,
+  downloads and any pack prose never appear.
+- **Text in the review** (TUX-11, TUX-17): every string passes the
+  2.10 escaper with its origin; fields authored by the change escape
+  non-ASCII; long fields say "(N more chars)" instead of truncating
+  silently, and hosts and paths are never truncated; hosts are shown as
+  A-labels with the registrable domain first and set apart; mixed-script
+  and confusable names, near-misses of known domains and of built-in or
+  already trusted pack names are flagged; a new pack says "new pack,
+  never trusted before" with its digest prefix.
+- **Rate limits** (TUX-13): one review session per invocation, at most
+  five type-to-confirm decisions per session, at most three sessions per
+  repository per day; `check` prints an untrusted notice once per
+  (digest, day) and otherwise only counts it. In CI, an
+  `untrusted-in-change` message says it is fixed by landing the change
+  on the protected branch after review, not by running trust anywhere.
+
+The owner's proposal, element by element (owner request 2026-10-04,
+verdicts from the audit, adopted):
+
+| Element | Decision |
+|---|---|
+| pagination | changed: one fixed summary screen plus at most five high-risk screens; the pack's size never sets the review's length |
+| author information | dropped as a cue; verified provenance shown instead |
+| capabilities in the repository | kept, as grants and host-computed flows |
+| manual acknowledgement of each item | changed: only high-risk and widened items, by typing the scope; ordinary items share one decision; deny is the default |
+| small cooldown | kept narrowly: about one second, re-armed on keypress, against typeahead and accidental input |
+
 ## 3. Finding index
 
 Every audit finding, its decision and where it is specified. "Accepted"
@@ -354,6 +474,29 @@ means the audit's mitigation is adopted as written in the section named.
 | SEC-33 cached effectful findings | low | accepted | 2.10 |
 | SEC-34 wasmtime vetting | low | accepted | 2.5 |
 
+### 3.1 Trust UX audit index
+
+| Finding | Severity | Section |
+|---|---|---|
+| TUX-01 --follow as a blanket grant | high | 2.3 |
+| TUX-02 movable local ref | high | 2.3 |
+| TUX-03 history-wide reachability | high | 2.3 |
+| TUX-04 tool stages run checked-out code | high | 2.4 |
+| TUX-05 TTY is not human presence | high | 2.3 |
+| TUX-06 long-con widening on the protected branch | high | 2.3 |
+| TUX-07 volume attack | medium | 2.12 |
+| TUX-08 needle in a haystack | medium | 2.12 |
+| TUX-09 typing the pack name | medium | 2.12 |
+| TUX-10 spoofable identity | medium | 2.12 |
+| TUX-11 forged strings in facts | medium | 2.12 |
+| TUX-12 primed human | medium | 2.12 |
+| TUX-13 trust bombing | medium | 2.12 |
+| TUX-14 deny harder than approve | medium | 2.12 |
+| TUX-15 placeholder option injection | medium | 2.4 |
+| TUX-16 typeahead and paste | low | 2.12 |
+| TUX-17 near-miss names | low | 2.12 |
+| TUX-18 protection not checked locally | low | 2.3 |
+
 ## 4. New ids
 
 | Id | Kind | Meaning |
@@ -375,7 +518,5 @@ means the audit's mitigation is adopted as written in the section named.
    the tracker and the ledger; source snippets show as they are.
 3. **This repository's own tool stages** need the one-time trust step;
    the owner performs it on this machine. The review flow a person sees
-   when trusting (pagination, identity facts, per-item acknowledgement,
-   cooldown) is pending a second audit of attention and social
-   engineering attacks (notes/review/trust-ux-audit.md) and is specified
-   after it.
+   is section 2.12, from the second audit (attention and social
+   engineering attacks).
