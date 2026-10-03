@@ -2,7 +2,8 @@
 id = "01M40T3VA5Y86ZQH234NTKAXC1"
 title = "SCOPE001 reports untouched file symlinks as changed, blocking every land"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
