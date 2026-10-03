@@ -2,12 +2,12 @@
 id = "01M40FXV09GYGBH9YZZANDZXZ4"
 title = "frob check without frob.toml runs the rules instead of teaching 'run frob init' (diagnostics.md section 5)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T09:01:09Z"
-updated = "2026-10-03T09:01:09Z"
+updated = "2026-10-03T09:49:55Z"
 idempotency_key = "m2-rel-e2e-check-before-init-teaches"
 labels = ["milestone:2", "area:release", "release:0.532.0"]
 scope = ["crates/frob/src/lib.rs", "crates/frob/tests/check_verb.rs"]
