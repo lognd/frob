@@ -3,12 +3,12 @@ id = "01M38BCNC47JQEWMEGB0S9ZR42"
 title = "WEBSEC403 full-strength server-route cross-reference"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-09-24T00:00:00Z"
+updated = "2026-10-04T21:01:21Z"
 aliases = ["T-5508"]
-labels = ["v1-cluster:B2", "area:grimble"]
+labels = ["v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/webapp/_websec_authz_routes.py"]
 +++
 
