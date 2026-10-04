@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T02:09:36Z"
+digest = "ef5c0f27628f2cbf3d61d2afe92dd84fa4ed004e71b8fbd5f0d511da15f712ee"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d6a8a1f6-ddfd-417a-a6fd-f01eebc1b5b8 with nextest profile: default
+    Starting 2 tests across 157 binaries (1406 tests skipped)
+        PASS [   0.875s] frob-worktree::gc throttle_is_honored_and_the_guard_forces_a_pass
+        PASS [  21.122s] frob-cli::gc work_runs_one_pass_then_the_interval_throttles_the_next
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  21.129s] 2 tests run: 2 passed, 1406 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'test(throttle_is_honored) | test(work_runs_one_pass_then)'"
+size = 658
+status = "measured"
+tests = ["throttle_is_honored_and_the_guard_forces_a_pass", "work_runs_one_pass_then_the_interval_throttles_the_next"]
+at = "2026-10-04T02:09:36Z"
+actor = "lognd"
+rev = 1

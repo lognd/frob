@@ -7,24 +7,24 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-04T00:23:54Z"
-updated = "2026-10-04T01:55:57Z"
+updated = "2026-10-04T02:13:00Z"
 scope = ["crates/frob-worktree/**", "crates/frob-land/src/land.rs", "crates/frob/src/doctor_cmd.rs", "crates/gob-config/**", "docs/design/architecture.md", "docs/design/tickets.md", "docs/reference/config.md", "docs/schemas/config.json", "crates/frob/src/doctor.rs", "crates/frob/src/config.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/snapshots/cli__doctor_schema.snap", "crates/frob/tests/snapshots/cli__doctor_fresh_repo.snap", "crates/frob/tests/snapshots/cli__init_frob_toml.snap", "frob.toml", "docs/reference/cli/frob.md", "Cargo.lock", "crates/frob/tests/gc.rs", "crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
 text = "Given a target dir over its budget with old and recent artifacts, when a GC pass runs, then old artifacts are evicted until under budget and the latest build's artifacts and the frob and grimble binaries remain"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a worktree whose ticket is closed but which has uncommitted changes, when a GC pass runs, then it is kept and reported"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a pass ran within the interval, when frob work runs again, then no pass runs; and given free space below the guard, then a pass runs regardless"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given frob doctor, when it runs, then it shows the last pass, bytes reclaimed and usage per category"
-bound = false
+bound = true
 +++
 
 Owner request 2026-10-03: garbage collection must be automatic so stale data never builds up again (today the primary checkout's target/ held 127 GB, 74 GB of it build artifacts untouched for over 6 hours plus 28 GB of incremental state; ~107 GB were freed by hand). No new verb unless it is the best way. frob owns local state and the build output of the checkouts it manages; goway owns its remote hosts (its own gc).
