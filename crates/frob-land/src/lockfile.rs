@@ -33,9 +33,9 @@ pub(crate) fn committed_shared_files(wt: &Repo, base: &str) -> Result<Vec<String
             .map_err(|e| LandError::Config(format!("{base}:frob.toml is not UTF-8: {e}")))?,
         None => String::new(),
     };
-    let cfg = LeaseConfig::from_toml_str(&text, label)
+    let cfg = gob_config::load_str::<LeaseConfig>(&text, label)
         .map_err(|e| LandError::Config(format!("{base}:frob.toml: {e}")))?;
-    Ok(cfg.shared_files)
+    Ok(cfg.value.shared_files)
 }
 
 /// True when every conflicted path is a shared lockfile matching `shared_files`.

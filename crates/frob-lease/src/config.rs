@@ -72,13 +72,4 @@ impl LeaseConfig {
     pub fn load(root: &Path) -> Result<Self, ConfigError> {
         Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
     }
-
-    /// Load `[lease]` from committed `frob.toml` text, labelled `label` in errors (frob:ticket 01M43FX5KWVP277RX5666MMPM1).
-    ///
-    /// # Errors
-    ///
-    /// The [`ConfigError`] for bad TOML, an unknown key or a mistyped value.
-    pub fn from_toml_str(text: &str, label: &Path) -> Result<Self, ConfigError> {
-        Ok(gob_config::load_str::<Self>(text, label)?.value)
-    }
 }
