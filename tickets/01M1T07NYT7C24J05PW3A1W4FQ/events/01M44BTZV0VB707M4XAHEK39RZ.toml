@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. A runner stage must report failed node ids, not only a count, so a flake is distinguishable from a regression; applies to future v2 providers."
+at = "2026-10-04T21:06:39Z"
+actor = "lognd"
+rev = 1
