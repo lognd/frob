@@ -2,7 +2,8 @@
 id = "01M42FN1YDHJNZ5NM7QEDPHHFS"
 title = 'Windows verbatim paths (\\?\) break git calls, and the GC path jail may admit a dotdot path; one canonicalize, a strict jail'
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
