@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T22:57:50Z"
-updated = "2026-10-04T00:35:26Z"
+updated = "2026-10-04T00:41:13Z"
 scope = ["crates/frob-check/tests/perf.rs", "crates/frob-check/benches/**", "crates/frob-check/Cargo.toml", "crates/gob-ir/tests/deep.rs", "crates/frob-ack/tests/workspace.rs", "Cargo.toml", ".config/nextest.toml", "crates/gob-dev/src/ci.rs", "docs/design/build-test-ci.md", "Cargo.lock"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the scheduled bench, when it runs in release on this repository, then it reports cold and warm totals against the recorded budget"
-bound = false
+bound = true
 +++
 
 Measured 2026-10-03 on the 12-core host, cargo nextest run --workspace --profile ci: 1355 tests, 138 s wall, 765 s of test time. The wall is one test:
