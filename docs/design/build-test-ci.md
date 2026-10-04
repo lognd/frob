@@ -214,23 +214,24 @@ place that can check it cheaply:
   opt-level 1 (clean compile slower, suite no faster). The suite is now
   bound by aggregate CPU of the many `frob-cli` tests that spawn the debug
   binary, which no per-crate opt level moved outside noise.
-- Guard: the nextest `ci` profile terminates and fails any test over 30 s
-  (`slow-timeout` period 10 s, `terminate-after` 3). The reviewed
-  override list in `.config/nextest.toml` names what may take longer
-  (today only the `gob-macros` trybuild `ui` test, which compiles fixture
-  crates); an entry needs a reason, it is never an ignore. The budget is
-  wall-clock, so it is load-sensitive: on a host at load 25 or more
-  (parallel builds) a legitimately 10 s test can cross it, which is a
-  signal to run `cargo dev ci` on a quiet host. `cargo dev ci` reads
-  `target/nextest/ci/junit.xml` after the nextest step and prints the
-  suite wall time and the five slowest tests.
+- Two guards, for two purposes. Hang guard: the nextest `ci` profile
+  terminates and fails any test over 120 s (`slow-timeout` period 30 s,
+  `terminate-after` 4), so a hung test fails fast while slower CI runners
+  (4-core GitHub runners, windows-latest) never trip it; a test that
+  legitimately needs more gets a reasoned entry in the reviewed override
+  list in `.config/nextest.toml` (none today), never an ignore. Speed
+  regression: `cargo dev ci` reads `target/nextest/ci/junit.xml` after the
+  nextest step, prints the suite wall time and the five slowest tests, and
+  warns (never fails) when a test exceeds 30 s or the suite exceeds 90 s on
+  the host running it. A wall-clock failure threshold would fail by machine
+  speed (8 s tests timed out at host load 26), which is noise, not a guard.
 
 Measured 2026-10-03 on the shared 12-core host (load varied 9 to 60 from
 other builds, so compare within a row, not across rows):
 
 | Measure | Before | After |
 |---|---|---|
-| nextest ci wall (tests only) | 138 s idle; 295 s at load 34 with a terminate | 47-61 s at load 10-16; 78 s inside `cargo dev ci` |
+| nextest ci wall (tests only) | 138 s idle; 295 s at load 34 with a terminate | 47-62 s at load 10-17 (target 60 s, met in all but one run, 62 s); 78 s inside `cargo dev ci` |
 | slowest test | perf 98-136 s | `gob-ir::deep` 8-14 s |
 | clean compile, sccache warm | 1 m 07 s to 3 m 53 s (load 17 to 61) | 1 m 36 s with `"*"` opt 2 (rejected); gob-ir opt 2 within noise of baseline |
 
