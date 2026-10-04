@@ -6,7 +6,8 @@ category = "in-progress"
 priority = "critical"
 reporter = "lognd"
 created = "2026-10-04T13:26:27Z"
-updated = "2026-10-04T13:46:48Z"
+updated = "2026-10-04T13:56:20Z"
+scope = ["crates/frob-obligations/src/comments.rs", "crates/gob-directives/src/comments.rs", "crates/gob-languages/src/hash.rs", "crates/gob-languages/src/lib.rs"]
 
 [[acceptance]]
 text = "Given a TOML file whose multi-line string contains a line starting with # frob:doc, when frob check runs, then no directive is read from it"
