@@ -7,8 +7,8 @@ priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T02:34:31Z"
-updated = "2026-10-04T02:34:31Z"
-scope = [".cargo/config.toml", "crates/gob-dev/**", ".github/workflows/ci.yml", "CONTRIBUTING.md", "docs/design/build-test-ci.md", "crates/frob-worktree/src/gc/**"]
+updated = "2026-10-04T02:35:01Z"
+scope = [".cargo/config.toml", "crates/gob-dev/**", ".github/workflows/ci.yml", "CONTRIBUTING.md", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
 text = "Given the windows-latest job, when it runs cargo dev-isolated ci --step nextest, then the build can rebuild target/debug/gob-dev.exe because the running tool lives in target/dev-tool"

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = [".cargo/config.toml", "crates/gob-dev/**", ".github/workflows/ci.yml", "CONTRIBUTING.md", "docs/design/build-test-ci.md", "crates/frob-worktree/src/gc/**"]
+new = [".cargo/config.toml", "crates/gob-dev/**", ".github/workflows/ci.yml", "CONTRIBUTING.md", "docs/design/build-test-ci.md"]
+at = "2026-10-04T02:35:01Z"
+actor = "lognd"
+rev = 1
