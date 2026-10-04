@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T23:56:37Z"
-updated = "2026-10-04T01:28:34Z"
+updated = "2026-10-04T01:28:35Z"
 scope = ["crates/frob-land/**", "crates/frob-check/src/delta.rs", "docs/design/tickets.md", "docs/design/rules.md"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the ticket introduces a new error, when land runs, then it refuses naming only the new finding"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the ticket fixes a pre-existing error, when land runs, then the report shows it resolved"
