@@ -747,3 +747,55 @@ fn a_lockfile_only_overlap_names_shared_files_in_the_remedy() {
     };
     assert!(!r.remedy.expect("remedy").contains("shared_files"));
 }
+
+// frob:ticket 01M42MGP62EPY4K7C29M0388X5
+#[test]
+fn a_corrupt_lease_file_is_skipped_reported_and_kept() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    gob_git::Repo::init(dir.path()).expect("init");
+    let (store, _) = frob_lease::open_store(dir.path(), LeaseConfig::default()).expect("open");
+    let good = TicketId::mint();
+    store
+        .acquire(good, &holder("a"), &scope(&["src/**"]))
+        .expect("a");
+    let bad = TicketId::mint();
+    let bad_path = dir
+        .path()
+        .join(".git/frob/leases")
+        .join(format!("{bad}.toml"));
+    std::fs::write(&bad_path, "not = [valid").expect("corrupt");
+
+    let cli = frob_lease::register(gob_cli::Cli::new("frob", "0.0.0"));
+    let (code, out, err) = gob_cli::run_for_test(&cli, &["lease", "list"], dir.path());
+    assert_eq!(code, 0, "{err}");
+    let v: serde_json::Value = serde_json::from_str(&out).expect("json");
+    assert_eq!(
+        v["data"]["leases"].as_array().map(Vec::len),
+        Some(1),
+        "{out}"
+    );
+    assert_eq!(
+        v["data"]["corrupt"].as_array().map(Vec::len),
+        Some(1),
+        "{out}"
+    );
+    assert_eq!(v["warnings"].as_array().map(Vec::len), Some(1), "{out}");
+
+    // Other tickets still acquire; the corrupt ticket itself is refused, not overwritten.
+    store
+        .acquire(TicketId::mint(), &holder("b"), &scope(&["docs/**"]))
+        .expect("other ticket proceeds");
+    assert!(matches!(
+        store.acquire(bad, &holder("c"), &scope(&["lib/**"])),
+        Err(LeaseError::Format { .. })
+    ));
+    assert!(bad_path.exists(), "never silently deleted");
+
+    let moved = store.quarantine_corrupt().expect("quarantine");
+    assert_eq!(moved.len(), 1);
+    assert!(moved[0].exists() && !bad_path.exists());
+    assert!(store.corrupt_leases().expect("scan").is_empty());
+    store
+        .acquire(bad, &holder("c"), &scope(&["lib/**"]))
+        .expect("acquirable after quarantine");
+}
