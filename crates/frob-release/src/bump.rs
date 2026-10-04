@@ -347,11 +347,7 @@ fn read(root: &Path, rel: &str) -> Result<String, BumpError> {
 
 /// Write `text` to `path` through a sibling temp file and a rename.
 fn write_atomic(path: &Path, text: &str) -> Result<(), BumpError> {
-    let mut tmp = path.as_os_str().to_owned();
-    tmp.push(".bump.tmp");
-    let tmp = PathBuf::from(tmp);
-    fs::write(&tmp, text).map_err(|e| io("write", &tmp, &e))?;
-    fs::rename(&tmp, path).map_err(|e| io("rename", &tmp, &e))
+    gob_fs::write_atomic(path, text.as_bytes()).map_err(|e| io("write", path, &e))
 }
 
 /// Plan every edit; nothing is written.

@@ -24,6 +24,7 @@ path = "src/main.rs"
 gob-check = { version = "0.0.0", path = "../gob-check" }
 gob-cli = { version = "0.0.0", path = "../gob-cli" }
 gob-config = { version = "0.0.0", path = "../gob-config" }
+gob-fs = { version = "0.0.0", path = "../gob-fs" }
 gob-git = { version = "0.0.0", path = "../gob-git" }
 gob-lock = { version = "0.0.0", path = "../gob-lock" }
 gob-rules = { version = "0.0.0", path = "../gob-rules" }

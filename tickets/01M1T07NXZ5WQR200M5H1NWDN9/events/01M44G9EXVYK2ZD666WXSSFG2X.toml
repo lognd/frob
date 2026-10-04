@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Closing done or landing a story, bug or security ticket with zero acceptance criteria is refused on the offending close, naming the ticket type", "A ticket with criteria closes normally, and a chore, docs or epic ticket with zero criteria still closes", "The refusal is on the offending close or land itself, not a later unrelated land"]
+moved = []
+at = "2026-10-04T22:24:27Z"
+actor = "lognd"
+rev = 1

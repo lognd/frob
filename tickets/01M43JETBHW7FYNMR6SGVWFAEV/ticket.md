@@ -2,11 +2,12 @@
 id = "01M43JETBHW7FYNMR6SGVWFAEV"
 title = "One shared atomic file write helper; migrate hand-rolled temp-and-rename copies"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T13:43:05Z"
-updated = "2026-10-04T21:11:09Z"
+updated = "2026-10-04T22:35:33Z"
 scope = ["Cargo.lock", "crates/gob-fs/Cargo.toml", "crates/gob-fs/src", "crates/gob-fs/tests", "crates/gob-check/Cargo.toml", "crates/gob-check/src/atomic.rs", "crates/gob-check/src/fix.rs", "crates/gob-check/src/lib.rs", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/src/store.rs", "crates/frob-lease/Cargo.toml", "crates/frob-lease/src/store.rs", "crates/frob-release/Cargo.toml", "crates/frob-release/src/bump.rs", "crates/frob-release/src/lib.rs", "crates/frob-release/tests/changelog.rs", "crates/frob-worktree/Cargo.toml", "crates/frob-worktree/src/gc/stamp.rs", "crates/gob-lock/Cargo.toml", "crates/gob-lock/src/file.rs", "crates/gob-trust/Cargo.toml", "crates/gob-trust/src/state/store.rs", "crates/grimble/Cargo.toml", "crates/grimble/src/ack.rs", "crates/gob-fs/src/lib.rs", "crates/gob-fs/tests/inventory.rs"]
 
 [[acceptance]]

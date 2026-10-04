@@ -48,7 +48,6 @@
 //! This crate depends on no frob crate (a test enforces it with `cargo
 //! metadata`), so grimble links it without pulling frob in.
 
-mod atomic;
 mod config;
 mod core;
 mod error;

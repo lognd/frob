@@ -209,7 +209,10 @@ fn existing_version_is_refused() {
 fn fragments_survive_a_failed_write() {
     // frob:tests crates/frob-release/src/lib.rs::run
     let d = repo();
-    fs::create_dir(d.path().join("CHANGELOG.md.tmp")).unwrap();
+    // A directory at the target makes the final rename fail after staging succeeds.
+    let target = d.path().join("CHANGELOG.md");
+    fs::remove_file(&target).ok();
+    fs::create_dir(&target).unwrap();
     let err = run(d.path(), &opts(Mode::Write), &resolver).unwrap_err();
     assert!(matches!(err, ReleaseError::Io { .. }));
     assert!(
@@ -218,7 +221,7 @@ fn fragments_survive_a_failed_write() {
             .join(format!("{A}.fixed.md"))
             .exists()
     );
-    assert!(!d.path().join("CHANGELOG.md").exists());
+    assert!(target.is_dir(), "target untouched");
 }
 
 #[test]
