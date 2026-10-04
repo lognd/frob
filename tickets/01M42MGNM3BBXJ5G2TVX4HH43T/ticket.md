@@ -2,7 +2,8 @@
 id = "01M42MGNM3BBXJ5G2TVX4HH43T"
 title = "Concurrent ledger writes fail with E-LEDGER-CAS: retries have no backoff (10 of 24 concurrent ticket new failed)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
