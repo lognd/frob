@@ -7,7 +7,7 @@ priority = "low"
 parent = "01M3AXSDACKS00T3E853M1J0DR"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:58Z"
+updated = "2026-10-04T20:59:59Z"
 aliases = ["T-6510"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
