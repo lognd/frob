@@ -2,11 +2,11 @@
 id = "01M43HGBQ9YS0Z8YPKQ41MBK6Q"
 title = "TOML comment scanner reads # inside multi-line strings as comments, so quoted directives fire"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 reporter = "lognd"
 created = "2026-10-04T13:26:27Z"
-updated = "2026-10-04T13:26:27Z"
+updated = "2026-10-04T13:27:02Z"
 
 [[acceptance]]
 text = "Given a TOML file whose multi-line string contains a line starting with # frob:doc, when frob check runs, then no directive is read from it"
