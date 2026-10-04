@@ -36,6 +36,10 @@
 //! positionally instead of with an exponent.
 
 #![allow(
+    clippy::result_large_err,
+    reason = "SpecError carries path, location, detail and suggestion by value; it is built once per failed load, never in a loop"
+)]
+#![allow(
     clippy::format_push_string,
     reason = "the reference page and path renderers build text with push_str(&format!(..)) for readability"
 )]

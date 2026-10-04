@@ -1,6 +1,7 @@
 #![allow(
     dead_code,
-    reason = "each test binary uses a different subset of the helpers"
+    clippy::result_large_err,
+    reason = "each test binary uses a different subset of the helpers; SpecError is large by value"
 )]
 
 //! Shared helpers for the crunk-spec integration tests.
