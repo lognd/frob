@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: wiring css/scss into v1 capability/dup/docblock facets; v2 css adapter is ~Z8V73JM."
+at = "2026-10-04T21:08:55Z"
+actor = "lognd"
+rev = 1
