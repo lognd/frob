@@ -2,12 +2,13 @@
 id = "01M42SQ7RJ5T8SJWKRHYV9D5RT"
 title = "State store read fails with PermissionDenied on Windows while a concurrent write replaces the entry"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-04T06:30:47Z"
-updated = "2026-10-04T06:37:19Z"
+updated = "2026-10-04T06:37:20Z"
 scope = ["crates/gob-trust/src/state/**", "crates/gob-trust/tests/state.rs"]
 
 [[acceptance]]
