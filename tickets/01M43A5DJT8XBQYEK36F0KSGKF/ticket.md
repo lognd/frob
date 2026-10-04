@@ -8,12 +8,12 @@ points = 8
 parent = "01M43A5349M17PED730HKNM4VV"
 reporter = "lognd"
 created = "2026-10-04T11:18:09Z"
-updated = "2026-10-04T11:32:00Z"
+updated = "2026-10-04T11:50:05Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/gob-directives/src/comments.rs", "crates/frob-obligations/src/comments.rs", "crates/frob-check/tests/**", "docs/reference/fidelity.md", "Cargo.toml", "crates/gob-directives/src/scan.rs", "crates/gob-directives/src/bind.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-tests/src/catalog.rs", "Cargo.lock", "crates/frob-tests/src/touched.rs"]
 
 [[acceptance]]
 text = "Given a Python file with a frob directive in a comment and a bare TODO, when frob check runs, then the directive binds to the item below and TODO001 fires"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a Python package with pytest tests, when the symbol graph is built, then modules, classes, functions, imports, calls and test functions are present and COV001 sees which functions tests reach"
