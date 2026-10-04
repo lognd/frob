@@ -2,7 +2,8 @@
 id = "01M41ZSWGC86TY3K0NSA8AMNGF"
 title = "Warm frob check re-does graph (3.0 s) and directives (2.2 s) on an unchanged repository"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
