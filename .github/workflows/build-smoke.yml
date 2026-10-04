@@ -5,7 +5,8 @@ name: build-smoke
 # through a local path, so caller and callee are always the same ref).
 #   plan   resolves the version of `frob-cli` and, when `tag` is given, requires
 #          the tag to be `frob-v<that version>`;
-#   build  one cargo-dist archive per target, smoked on the build runner;
+#   build  one cargo-dist archive per product binary per target (frob-cli-<target>
+#          and grimble-<target>), each smoked on the build runner;
 #   wheel  the five PyPI wheels (only when `wheels` is true; the dev jobs build none);
 #   smoke  every artifact re-run on a fresh runner (not the build runner).
 # It needs no secrets and declares none; callers must not pass `secrets:` (pinned by
@@ -164,35 +165,50 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
         run: dist build --artifacts=local --target "$TARGET" --output-format=json > dist-manifest.json
-      - name: Smoke the archive (unpack, run the fixture repository loop)
+      - name: Smoke every product archive (unpack, run each binary)
         if: matrix.smoke
         shell: bash
         env:
+          TARGET: ${{ matrix.target }}
           VERSION: ${{ needs.plan.outputs.version }}
         run: |
-          case "$RUNNER_OS" in
-            Windows) archive=$(ls target/distrib/*.zip) ;;
-            *) archive=$(ls target/distrib/*.tar.xz) ;;
-          esac
-          packaging/smoke/archive-smoke.sh "$archive" "$VERSION"
-      - name: Cross-built archive is not executable here (explicit smoke exemption)
+          case "$RUNNER_OS" in Windows) ext=zip ;; *) ext=tar.xz ;; esac
+          packaging/smoke/archive-smoke.sh frob "target/distrib/frob-cli-$TARGET.$ext" "$VERSION"
+          packaging/smoke/archive-smoke.sh grimble "target/distrib/grimble-$TARGET.$ext"
+      - name: Cross-built archives are not executable here (explicit smoke exemption)
         if: ${{ !matrix.smoke }}
         shell: bash
         env:
           TARGET: ${{ matrix.target }}
         run: |
-          archive=$(ls target/distrib/*.tar.xz)
-          case "$archive" in
-            *"$TARGET"*) echo "::notice::smoke exempt for $TARGET: archive built but not executed on this runner ($archive)" ;;
-            *) echo "archive $archive does not carry the $TARGET triple" >&2; exit 1 ;;
-          esac
+          for archive in "target/distrib/frob-cli-$TARGET.tar.xz" "target/distrib/grimble-$TARGET.tar.xz"; do
+            [ -f "$archive" ] || { echo "missing archive $archive" >&2; exit 1; }
+            echo "::notice::smoke exempt for $TARGET: archive built but not executed on this runner ($archive)"
+          done
+      - name: Exactly the product archives were built
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          case "$RUNNER_OS" in Windows) ext=zip ;; *) ext=tar.xz ;; esac
+          expected=$(printf '%s\n' "frob-cli-$TARGET.$ext" "grimble-$TARGET.$ext" | sort)
+          found=$(cd target/distrib && ls | grep -E '\.(tar\.xz|zip)$' | sort)
+          if [ "$found" != "$expected" ]; then
+            printf 'target/distrib holds:\n%s\nexpected exactly:\n%s\n' "$found" "$expected" >&2
+            exit 1
+          fi
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: archives-${{ matrix.target }}
           path: |
-            target/distrib/*.tar.xz
-            target/distrib/*.zip
-            target/distrib/*.sha256
+            target/distrib/frob-cli-${{ matrix.target }}.tar.xz
+            target/distrib/frob-cli-${{ matrix.target }}.tar.xz.sha256
+            target/distrib/frob-cli-${{ matrix.target }}.zip
+            target/distrib/frob-cli-${{ matrix.target }}.zip.sha256
+            target/distrib/grimble-${{ matrix.target }}.tar.xz
+            target/distrib/grimble-${{ matrix.target }}.tar.xz.sha256
+            target/distrib/grimble-${{ matrix.target }}.zip
+            target/distrib/grimble-${{ matrix.target }}.zip.sha256
           if-no-files-found: error
 
   # Five PyPI wheels, uploaded as run artifacts (packaging/pypi/BUILDING.md).
@@ -403,14 +419,13 @@ jobs:
         env:
           VERSION: ${{ needs.plan.outputs.version }}
         run: packaging/pypi/smoke.sh wheels/frob-*.whl "$VERSION"
-      - name: Smoke the downloaded archive (unpack, fixture repository loop)
+      - name: Smoke the downloaded product archives (unpack, run each binary)
         if: matrix.smoke
         shell: bash
         env:
+          TARGET: ${{ matrix.target }}
           VERSION: ${{ needs.plan.outputs.version }}
         run: |
-          case "$RUNNER_OS" in
-            Windows) archive=$(ls archives/*.zip) ;;
-            *) archive=$(ls archives/*.tar.xz) ;;
-          esac
-          packaging/smoke/archive-smoke.sh "$archive" "$VERSION"
+          case "$RUNNER_OS" in Windows) ext=zip ;; *) ext=tar.xz ;; esac
+          packaging/smoke/archive-smoke.sh frob "archives/frob-cli-$TARGET.$ext" "$VERSION"
+          packaging/smoke/archive-smoke.sh grimble "archives/grimble-$TARGET.$ext"

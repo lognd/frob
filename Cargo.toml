@@ -14,6 +14,7 @@ authors = ["Logan Dapp"]
 # which carry `publish = false` in their own manifest and are exactly:
 #   gob-dev     the `cargo dev` task runner
 #   gob-mdtest  the markdown corpus test harness
+#   gob-testsupport  test-only helper binaries (fake-sibling) and their locator
 
 [workspace.lints.rust]
 missing_docs = "deny"

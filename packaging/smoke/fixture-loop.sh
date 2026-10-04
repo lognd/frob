@@ -110,7 +110,9 @@ wt="$(printf '%s\n' "$env" | pick path)"
 [ -f "$wt/src/lib.rs" ] || die "worktree $wt lacks the crate"
 cd "$wt"
 
-# 5. The change, inside the scope; check on the ticket.
+# 5. The change and the changelog fragment (named with the ticket id), inside the scope; check on the ticket.
+mkdir -p changelog.d
+printf 'tiny: Made add overflow-safe.\n' >"changelog.d/$id.fixed.md"
 sed -i.bak -e 's/a + b/a.wrapping_add(b)/' src/lib.rs && rm -f src/lib.rs.bak
 grep -q wrapping_add src/lib.rs || die "edit did not apply"
 env="$(fj check --ticket "$handle")"; has "$env" '"verb":"check"' check
@@ -122,9 +124,7 @@ env="$(fj ticket evidence add "$handle" --accepts 1 --provider command --ref "ca
 has "$env" '"passed":true' evidence
 say "evidence ok"
 
-# 7. Changelog fragment named with the ticket id, then commit and land.
-mkdir -p changelog.d
-printf 'tiny: Made add overflow-safe.\n' >"changelog.d/$id.fixed.md"
+# 7. Commit and land (the fragment was written in step 5: REL003 requires it at check time).
 git add -A
 git commit -q -m "fix: overflow-safe add"
 fj land >/dev/null
