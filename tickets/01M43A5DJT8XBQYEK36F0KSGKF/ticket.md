@@ -8,7 +8,7 @@ points = 8
 parent = "01M43A5349M17PED730HKNM4VV"
 reporter = "lognd"
 created = "2026-10-04T11:18:09Z"
-updated = "2026-10-04T11:51:58Z"
+updated = "2026-10-04T11:52:04Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/gob-directives/src/comments.rs", "crates/frob-obligations/src/comments.rs", "crates/frob-check/tests/**", "docs/reference/fidelity.md", "Cargo.toml", "crates/gob-directives/src/scan.rs", "crates/gob-directives/src/bind.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-tests/src/catalog.rs", "Cargo.lock", "crates/frob-tests/src/touched.rs"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a Python package with pytest tests, when the symbol graph is built, then modules, classes, functions, imports, calls and test functions are present and COV001 sees which functions tests reach"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a Python construct the adapter does not model, when check runs, then it is reported Unresolved, not clean"
