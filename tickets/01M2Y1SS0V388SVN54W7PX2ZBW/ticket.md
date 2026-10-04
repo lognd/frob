@@ -4,13 +4,13 @@ title = "SEO and WEBPERF: Google spam policies, per-page title/description/canon
 type = "story"
 flavour = "quality_objective"
 category = "triage"
-priority = "high"
+priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-09-20T00:00:00Z"
+updated = "2026-10-04T21:01:02Z"
 aliases = ["T-5147"]
-labels = ["milestone:0.534.0", "component:gates", "v1-cluster:B2", "area:crunk"]
+labels = ["component:gates", "v1-cluster:B2", "area:crunk", "triage:accepted", "milestone:0.538.0"]
 +++
 
 38 entries here plus lint-authorities.md sections C and D. Keyword stuffing: the rule is NOT a density threshold; it fires on the Google spam-policy shape (repeated keyword lists, unnatural repetition, hidden text) and a companion advisory checks that the target keyword appears once each in title, slug, h1 and opening sentence, citing Google Search Central spam policies and title-link guidance. Static: framework default titles (Vite, React App, Next.js), duplicate titles/descriptions across routes, missing meta description, missing og:image/og:title, missing canonical, multiple or zero h1, missing lang, missing favicon, no robots.txt or one blocking Google-Extended/GPTBot without a decision record, no sitemap.xml, no llms.txt (advisory, community proposal), staging without noindex, source maps in prod, bundle over the configured budget (default cites web.dev), images without width/height (CLS), no loading=lazy on offscreen images, no srcset, fonts without font-display, render-blocking scripts without defer/async, no Cache-Control/immutable on hashed assets, no compression config, API list endpoints without pagination, DB access without pool config (PgBouncer/SQLAlchemy pool), no server cache layer for repeated expensive queries, undebounced input handlers and unbounded re-renders (React docs as authority). Lighthouse as an optional adapter in the tool registry for dynamic-only entries.
