@@ -458,7 +458,8 @@ pub fn run<P: Product>(
     let only = validate_only(product, &opts.only)?;
     let mut report = pass(product, root, opts, &table, &perf, &only)?;
     if opts.fix {
-        let applied = fix::apply(root, &report.findings, &report.files, &report.digests)?;
+        let raw = fix::raw_digests(root, &report.findings, &report.files);
+        let applied = fix::apply(root, &report.findings, &report.files, &report.digests, &raw)?;
         if !applied.applied.is_empty() {
             tracing::info!(
                 fixes = applied.applied.len(),

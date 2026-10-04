@@ -105,6 +105,7 @@ pub(crate) fn apply(
     findings: &[Finding],
     files: &FileInterner,
     analysed: &HashMap<String, String>,
+    raw: &HashMap<String, String>,
 ) -> Result<FixRun, CheckError> {
     let mut candidates = Vec::new();
     for f in findings {
@@ -138,7 +139,7 @@ pub(crate) fn apply(
         });
     }
 
-    let originals = load_checked(root, &candidates, analysed)?;
+    let originals = load_checked(root, &candidates, analysed, raw)?;
 
     let mut accepted: Vec<Candidate> = Vec::new();
     let mut ranges: BTreeMap<String, Vec<(usize, usize)>> = BTreeMap::new();
@@ -208,11 +209,41 @@ pub(crate) fn apply(
     })
 }
 
+/// The `E-FIX-STALE` refusal for `path`.
+fn stale(path: &str) -> CheckError {
+    CheckError::FixIo(format!(
+        "E-FIX-STALE: {path} changed since the check; rerun `check --fix`"
+    ))
+}
+
+/// Digest the exact raw bytes of every file a Deterministic fix edits (the offsets' basis).
+pub(crate) fn raw_digests(
+    root: &Path,
+    findings: &[Finding],
+    files: &FileInterner,
+) -> HashMap<String, String> {
+    let mut out = HashMap::new();
+    for e in findings
+        .iter()
+        .filter_map(|f| f.fix.as_ref().filter(|x| x.kind == FixKind::Deterministic))
+        .flat_map(|f| &f.edits)
+    {
+        let Some(path) = files.path(e.file) else {
+            continue;
+        };
+        if let Ok(bytes) = std::fs::read(root.join(path)) {
+            out.insert(path.to_owned(), Digest::of(&bytes).to_string());
+        }
+    }
+    out
+}
+
 /// Read every file the candidates touch and refuse any whose digest is not the analysed one.
 fn load_checked(
     root: &Path,
     candidates: &[Candidate],
     analysed: &HashMap<String, String>,
+    raw: &HashMap<String, String>,
 ) -> Result<BTreeMap<String, String>, CheckError> {
     let paths: BTreeSet<&String> = candidates
         .iter()
@@ -226,12 +257,17 @@ fn load_checked(
             .map_err(|e| CheckError::FixIo(format!("E-CHECK-FIX-IO: read {path}: {e}")))?;
         if analysed.get(path).map(String::as_str) != Some(Digest::of(&now).to_string().as_str()) {
             tracing::warn!(path, "file changed since analysis; --fix refused");
-            return Err(CheckError::FixIo(format!(
-                "E-FIX-STALE: {path} changed since the check; rerun `check --fix`"
-            )));
+            return Err(stale(path));
         }
-        let text = std::fs::read_to_string(root.join(path))
+        let bytes = std::fs::read(root.join(path))
             .map_err(|e| CheckError::FixIo(format!("E-CHECK-FIX-IO: read {path}: {e}")))?;
+        if raw.get(path).map(String::as_str) != Some(Digest::of(&bytes).to_string().as_str()) {
+            tracing::warn!(path, "raw bytes changed since analysis; --fix refused");
+            return Err(stale(path));
+        }
+        let text = String::from_utf8(bytes).map_err(|e| {
+            CheckError::FixIo(format!("E-CHECK-FIX-IO: read {path}: not UTF-8: {e}"))
+        })?;
         originals.insert(path.clone(), text);
     }
     Ok(originals)
@@ -271,6 +307,7 @@ mod tests {
         dir: tempfile::TempDir,
         files: FileInterner,
         analysed: HashMap<String, String>,
+        raw: HashMap<String, String>,
     }
 
     impl Fx {
@@ -278,15 +315,18 @@ mod tests {
             let dir = tempfile::tempdir().unwrap();
             let mut interner = FileInterner::new();
             let mut analysed = HashMap::new();
+            let mut raw = HashMap::new();
             for (name, text) in files {
                 std::fs::write(dir.path().join(name), text).unwrap();
                 interner.intern(name);
                 analysed.insert((*name).to_owned(), Digest::of(text.as_bytes()).to_string());
+                raw.insert((*name).to_owned(), Digest::of(text.as_bytes()).to_string());
             }
             Self {
                 dir,
                 files: interner,
                 analysed,
+                raw,
             }
         }
 
@@ -318,7 +358,13 @@ mod tests {
         }
 
         fn run(&self, findings: &[Finding]) -> Result<FixRun, CheckError> {
-            apply(self.dir.path(), findings, &self.files, &self.analysed)
+            apply(
+                self.dir.path(),
+                findings,
+                &self.files,
+                &self.analysed,
+                &self.raw,
+            )
         }
 
         fn read(&self, name: &str) -> String {
@@ -351,6 +397,23 @@ mod tests {
         assert!(err.to_string().contains("E-FIX-STALE"));
         assert_eq!(fx.read("a.txt"), "hello world");
         assert_eq!(fx.read("b.txt"), "other, edited");
+    }
+
+    // frob:tests crates/gob-check/src/fix.rs::apply
+    #[test]
+    fn a_line_ending_only_edit_since_the_check_is_refused() {
+        let mut fx = Fx::new(&[("a.txt", "one\ntwo\n")]);
+        let f = Fx::finding(vec![fx.edit("a.txt", 0, 3, "ONE")]);
+        // The walk digest (git-normalised) still matches; only the raw bytes differ.
+        std::fs::write(fx.dir.path().join("a.txt"), "one\r\ntwo\r\n").unwrap();
+        let mut analysed = fx.analysed.clone();
+        analysed.insert(
+            "a.txt".to_owned(),
+            Digest::of(b"one\r\ntwo\r\n").to_string(),
+        );
+        let err = apply(fx.dir.path(), &[f], &fx.files, &analysed, &fx.raw).unwrap_err();
+        assert!(err.to_string().starts_with("E-FIX-STALE: a.txt"), "{err}");
+        assert_eq!(fx.read("a.txt"), "one\r\ntwo\r\n");
     }
 
     // frob:tests crates/gob-check/src/fix.rs::apply
