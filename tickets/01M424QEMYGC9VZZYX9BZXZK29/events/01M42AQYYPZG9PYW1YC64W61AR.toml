@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T02:09:02Z"
+digest = "e239fe9f7826e05e097200b0f63e8a89883c2924a4171d2a36685017001d9df7"
+exit_code = 0
+inline = '''
+   Compiling frob-worktree v0.0.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.63s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c1639bb6-470b-49fb-a982-fe6b8adea5da with nextest profile: default
+    Starting 4 tests across 3 binaries (33 tests skipped)
+        PASS [   0.009s] frob-worktree::gc plan_evicts_oldest_artifacts_until_under_budget_and_keeps_the_latest_build
+        PASS [   0.012s] frob-worktree::gc plan_never_evicts_the_latest_build_even_over_budget
+        PASS [   0.012s] frob-worktree::gc plan_removes_stale_incremental_regardless_of_budget_and_keeps_fresh_incremental
+        PASS [   0.132s] frob-worktree::gc target_over_budget_evicts_old_artifacts_and_keeps_latest_build_and_binaries
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.153s] 4 tests run: 4 passed, 33 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -E 'test(target_over_budget) | test(plan_)'"
+size = 991
+status = "measured"
+tests = ["plan_evicts_oldest_artifacts_until_under_budget_and_keeps_the_latest_build", "plan_never_evicts_the_latest_build_even_over_budget", "plan_removes_stale_incremental_regardless_of_budget_and_keeps_fresh_incremental", "target_over_budget_evicts_old_artifacts_and_keeps_latest_build_and_binaries"]
+at = "2026-10-04T02:09:02Z"
+actor = "lognd"
+rev = 1
