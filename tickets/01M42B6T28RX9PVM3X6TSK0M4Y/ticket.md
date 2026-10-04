@@ -2,7 +2,8 @@
 id = "01M42B6T28RX9PVM3X6TSK0M4Y"
 title = "land now takes about 10 minutes: the ratchet's base check runs cold in a fresh worktree without the shared cache"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
