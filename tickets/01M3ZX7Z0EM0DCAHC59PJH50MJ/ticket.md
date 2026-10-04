@@ -8,14 +8,14 @@ points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:37Z"
-updated = "2026-10-04T04:25:55Z"
+updated = "2026-10-04T04:30:34Z"
 idempotency_key = "m2-sec-escape-controls"
 labels = ["milestone:2", "area:security", "good-first"]
 scope = ["crates/gob-diagnostics/src/escape.rs", "crates/gob-diagnostics/src/text.rs", "crates/frob-evidence/src/attestation.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given a message containing ESC [ 31 m and a right-to-left override, when rendered as text, then both appear as escapes and no control byte reaches the terminal"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the same message, when rendered as JSON, then the original string is preserved exactly"
