@@ -4,7 +4,7 @@ name: release
 # (dist-workspace.toml) and attached to a GitHub release. Hand-written
 # around `dist build` so the trigger, SHA pins, per-job permissions and
 # timeouts are ours (docs/decisions/2026-10-03-release-workflow-hand-written.md).
-# Plan, build and smoke live in the reusable build-smoke.yml, shared with dev.yml:
+# Plan, build and smoke live in the reusable build-smoke.yml, shared with the dev jobs of ci.yml:
 # the matrix, the dist pin and the smoke steps have one source there. It also builds
 # the five PyPI wheels (packaging/pypi) as run artifacts only.
 # The `crates` job publishes the workspace crates to crates.io
@@ -34,7 +34,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # Plan, build and smoke are the shared reusable workflow (also called by dev.yml):
+  # Plan, build and smoke are the shared reusable workflow (also called by the dev jobs of ci.yml):
   # the tag check, the five archives, the five wheels, and the fresh-runner smoke of
   # every artifact. The call succeeds only when all of them did, so a job that
   # lists `artifacts` in `needs` runs only after the smoke passed. It passes no

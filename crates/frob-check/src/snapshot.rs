@@ -10,7 +10,10 @@ use frob_obligations::{InvariantsConfig, ObligationInputs};
 use gob_cache::{ArtifactKey, Cache};
 use gob_check::{CollectCx, Collected};
 use gob_directives::frob::Doc;
-use gob_directives::{Binding, Directive, DirectiveRecord, ScanConfig, Scanner};
+use gob_directives::{
+    Binding, Directive, DirectiveRecord, ScanConfig, Scanner, WIRE_VERSION, decode_records,
+    encode_records,
+};
 use gob_languages::{Language, grammar_identity};
 use gob_lock::{LockFile, file_name};
 use gob_rules::Finding;
@@ -145,8 +148,8 @@ fn open_ledger(root: &Path, cfg: LedgerConfig) -> Option<LedgerState> {
     }
 }
 
-/// Bump when the scan's output for a given text changes; part of the empty-scan cache key.
-const SCAN_VERSION: u32 = 1;
+/// Bump when the scan's output for a given text changes; part of the scan cache key.
+const SCAN_VERSION: u32 = 2;
 
 /// One scanned file.
 struct Scanned {
@@ -154,43 +157,83 @@ struct Scanned {
     findings: Vec<Finding>,
 }
 
-/// Scan `entry` for directives when its text carries the marker.
+// frob:ticket 01M41ZSWGC86TY3K0NSA8AMNGF
+/// What [`scan_one`] did for one file.
+struct ScanOutcome {
+    /// The file's directives and findings, `None` when it has neither.
+    scanned: Option<Scanned>,
+    /// True when the file was read and scanned, false when its records came from the cache.
+    fresh: bool,
+}
+
+// frob:ticket 01M41ZSWGC86TY3K0NSA8AMNGF
+/// Scan `entry` for directives, serving unchanged files from the artifact cache.
 ///
-/// A file whose scan found nothing (a stray mention of the marker) is
-/// remembered by content digest and skipped next time; directive records are
-/// not serializable, so files that do carry directives are rescanned.
+/// Every file of a known language is cached by content digest, engine and
+/// grammar: a file without the marker or with a clean scan stores its (possibly
+/// empty) directive records and is not read next time. A file whose scan
+/// raised findings is rescanned each run, as findings are not serialized.
 fn scan_one(
     root: &Path,
     cache: &Cache,
     entry: &FileEntry,
     file: FileId,
     scanner: &Scanner,
-) -> Option<Scanned> {
+) -> Option<ScanOutcome> {
     let lang = Language::detect(&entry.path)?;
     let key = ArtifactKey {
         content_digest: entry.digest.to_string(),
         producer_identity: format!(
-            "frob-check/scan-empty/v{SCAN_VERSION}/{EXTRACTOR_VERSION}/{}",
+            "frob-check/scan/v{SCAN_VERSION}/{WIRE_VERSION}/{EXTRACTOR_VERSION}/{}/{}",
+            cache.engine(),
             grammar_identity(lang)
         ),
     };
-    if cache.get_artifact(&key).is_some() {
-        return None;
+    if let Some(bytes) = cache.get_artifact(&key)
+        && let Some(directives) = decode_records(&bytes, file)
+    {
+        tracing::debug!(
+            path = %entry.path,
+            directives = directives.len(),
+            "directive scan served from cache"
+        );
+        let found = (!directives.is_empty()).then_some(Scanned {
+            directives,
+            findings: Vec::new(),
+        });
+        return Some(ScanOutcome {
+            scanned: found,
+            fresh: false,
+        });
     }
-    let text = std::fs::read_to_string(root.join(&entry.path)).ok()?;
-    if !text.contains(DIRECTIVE_MARKER) {
-        return None;
+    let fresh = |scanned| {
+        Some(ScanOutcome {
+            scanned,
+            fresh: true,
+        })
+    };
+    let Ok(text) = std::fs::read_to_string(root.join(&entry.path)) else {
+        return fresh(None);
+    };
+    let (directives, findings) = if text.contains(DIRECTIVE_MARKER) {
+        let symbols = extract_file(entry, &text);
+        let result = scanner.scan_in(file, lang, &text, &symbols);
+        (result.directives, result.findings)
+    } else {
+        (Vec::new(), Vec::new())
+    };
+    if findings.is_empty()
+        && let Some(bytes) = encode_records(&directives)
+    {
+        cache.put_artifact(&key, &bytes);
     }
-    let symbols = extract_file(entry, &text);
-    let result = scanner.scan_in(file, lang, &text, &symbols);
-    if result.directives.is_empty() && result.findings.is_empty() {
-        cache.put_artifact(&key, b"empty");
-        return None;
+    if directives.is_empty() && findings.is_empty() {
+        return fresh(None);
     }
-    Some(Scanned {
-        directives: result.directives,
-        findings: result.findings,
-    })
+    fresh(Some(Scanned {
+        directives,
+        findings,
+    }))
 }
 
 /// The `frob:doc` directives among `directives`, in the shape `frob-ack` evaluates.
@@ -246,16 +289,28 @@ pub(crate) fn collect(
 
     let started = Instant::now();
     let scanner = Scanner::new(&ScanConfig::default());
-    let results: Vec<Scanned> = entries
+    let outcomes: Vec<ScanOutcome> = entries
         .par_iter()
         .filter_map(|e| scan_one(root, cx.cache, e, index.ids[&e.path], &scanner))
         .collect();
     let mut directives = Vec::new();
     let mut scan_findings = Vec::new();
-    for s in results {
+    for o in &outcomes {
+        if o.fresh {
+            cx.stats.directives_scanned += 1;
+        } else {
+            cx.stats.directives_cached += 1;
+        }
+    }
+    for s in outcomes.into_iter().filter_map(|o| o.scanned) {
         directives.extend(s.directives);
         scan_findings.extend(s.findings);
     }
+    tracing::info!(
+        scanned = cx.stats.directives_scanned,
+        cached = cx.stats.directives_cached,
+        "directive scan done"
+    );
     let lock = LockFile::load(&root.join(file_name(PRODUCT)))?;
     let docs = doc_directives(&directives, files);
     cx.timing.push("directives", started.elapsed(), true);

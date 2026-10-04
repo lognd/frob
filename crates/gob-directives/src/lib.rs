@@ -51,6 +51,7 @@ mod meta;
 mod rules;
 mod scan;
 mod ulid;
+mod wire;
 
 pub use args::{ArgError, ArgKind, ArgList, ArgMeta, Cursor, FromArg, FromArgs, Keyed, Token};
 pub use bind::Binding;
@@ -62,3 +63,4 @@ pub use meta::{Directive, DirectiveEntry, DirectiveMeta, all_directives, validat
 pub use rules::{Dsl001, Dsl002, Parse001};
 pub use scan::{DirectiveRecord, NOT_ATTACHED, REORIENT_VERB, ScanConfig, ScanResult, Scanner};
 pub use ulid::{is_full_ulid, looks_like_ticket_ref};
+pub use wire::{WIRE_VERSION, decode_records, encode_records};

@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T00:37:19Z"
+digest = "2c88f6189a6a3a1930a8d15d73c29b3a31b74567c1aa1706a29270d20570d6ad"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID df162db2-f20f-4862-a7b3-9006131d8349 with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.134s] frob-release::rel001 the_stray_tag_remedy_names_adopt_before_deletion
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.146s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release --test rel001 -E 'test(the_stray_tag_remedy_names_adopt_before_deletion)'"
+size = 610
+status = "measured"
+tests = ["the_stray_tag_remedy_names_adopt_before_deletion"]
+at = "2026-10-04T00:37:19Z"
+actor = "lognd"
+rev = 1
