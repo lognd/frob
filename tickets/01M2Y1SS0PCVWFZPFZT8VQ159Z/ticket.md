@@ -4,13 +4,13 @@ title = "WEBSEC session, authentication and cryptography: CSRF, cookie flags, fi
 type = "story"
 flavour = "user_story"
 category = "triage"
-priority = "critical"
+priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-09-20T00:00:00Z"
+updated = "2026-10-04T21:00:43Z"
 aliases = ["T-5142"]
-labels = ["milestone:0.534.0", "component:gates", "v1-cluster:B2", "area:grimble"]
+labels = ["component:gates", "v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
 
 34 entries, 25 static, 7 config, 4 dynamic-only -> test obligations. Static rules: state-changing route on GET; CSRF middleware absent in Django/Flask/Express/Rails config; cookie without Secure/HttpOnly/SameSite; session id not rotated on login; no server-side logout invalidation; jwt.decode without algorithms allowlist or verify_exp; refresh token without rotation; OAuth client without state/PKCE; redirect_uri wildcard; password hashing via md5/sha1/plain vs bcrypt/argon2/scrypt; composition rules or max length below 64 (NIST 800-63B 5.1.1.2); ECB mode; static IV; random.random/Math.random for tokens; verify=False, rejectUnauthorized:false, http:// API base URLs; HSTS absent. Cites in corpus.
