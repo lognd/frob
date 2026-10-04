@@ -6,11 +6,11 @@ category = "in-progress"
 priority = "critical"
 reporter = "lognd"
 created = "2026-10-04T13:26:27Z"
-updated = "2026-10-04T13:27:02Z"
+updated = "2026-10-04T13:46:47Z"
 
 [[acceptance]]
 text = "Given a TOML file whose multi-line string contains a line starting with # frob:doc, when frob check runs, then no directive is read from it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the current ledger on experimental, when frob check runs, then no DRIFT002 or TEST001 finding points into tickets/"
