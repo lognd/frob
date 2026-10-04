@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T23:56:37Z"
-updated = "2026-10-04T01:28:36Z"
+updated = "2026-10-04T01:32:43Z"
 scope = ["crates/frob-land/**", "crates/frob-check/src/delta.rs", "docs/design/tickets.md", "docs/design/rules.md"]
 
 [[acceptance]]
