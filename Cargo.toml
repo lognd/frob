@@ -37,3 +37,10 @@ must_use_candidate = "allow"       # blanket #[must_use] on every getter is nois
 [profile.dist]
 inherits = "release"
 lto = "thin"
+
+# Hot crates run optimised in dev and test builds (docs/design/build-test-ci.md 5). Only gob-ir
+# is adopted: its million-level deep test is pure gob-ir work and drops from about 70 s to 8 s,
+# for a few seconds of clean compile. `package."*"` at 2 and gob-symbols, frob-check and frob-cli
+# at 1 were measured and rejected (slower clean compile, no suite gain).
+[profile.dev.package.gob-ir]
+opt-level = 2

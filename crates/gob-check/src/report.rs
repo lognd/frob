@@ -58,6 +58,7 @@ impl Timing {
     }
 }
 
+// frob:ticket 01M41ZSWGC86TY3K0NSA8AMNGF
 /// Counters of one run.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Stats {
@@ -77,6 +78,10 @@ pub struct Stats {
     pub graph_cached: usize,
     /// Files whose symbols were extracted afresh.
     pub graph_extracted: usize,
+    /// Files whose directive records came from the artifact cache.
+    pub directives_cached: usize,
+    /// Files read and scanned for directives afresh.
+    pub directives_scanned: usize,
 }
 
 impl Stats {

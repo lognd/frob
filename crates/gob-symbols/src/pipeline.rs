@@ -112,6 +112,7 @@ pub fn build_graph(root: &Path, files: &[FileEntry], cache: &Cache) -> SymbolGra
     build_graph_with_stats(root, files, cache).0
 }
 
+// frob:ticket 01M41ZSWGC86TY3K0NSA8AMNGF
 /// Like [`build_graph`], also returning hit/miss counters.
 ///
 /// Per-file artifacts are the serialized [`FileSymbols`] view, keyed by file
@@ -123,6 +124,7 @@ pub fn build_graph_with_stats(
     files: &[FileEntry],
     cache: &Cache,
 ) -> (SymbolGraph, BuildStats) {
+    let started = std::time::Instant::now();
     let extracted = AtomicUsize::new(0);
     let cached = AtomicUsize::new(0);
     let skipped = AtomicUsize::new(0);
@@ -184,9 +186,12 @@ pub fn build_graph_with_stats(
         skipped: skipped.load(Ordering::Relaxed),
         opaque: opaque.load(Ordering::Relaxed),
     };
-    tracing::info!(?stats, "symbol extraction done");
-    (
-        SymbolGraph::from_files_with_deps(per_file, &mut CrateDeps::new(root)),
-        stats,
-    )
+    let per_file_ms = started.elapsed().as_millis();
+    tracing::info!(?stats, per_file_ms, "symbol extraction done");
+    let graph = SymbolGraph::from_files_with_deps(per_file, &mut CrateDeps::new(root));
+    tracing::info!(
+        assemble_ms = started.elapsed().as_millis() - per_file_ms,
+        "symbol graph assembled"
+    );
+    (graph, stats)
 }

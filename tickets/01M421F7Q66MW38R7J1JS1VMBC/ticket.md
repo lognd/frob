@@ -2,14 +2,14 @@
 id = "01M421F7Q66MW38R7J1JS1VMBC"
 title = "frob finds sibling binaries next to its own executable first, then on PATH (D87)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:26:59Z"
-updated = "2026-10-03T23:26:59Z"
-scope = ["crates/frob-check/src/sibling.rs", "crates/frob-check/tests/sibling.rs", "docs/design/sibling-contract.md"]
+updated = "2026-10-04T00:37:23Z"
+scope = ["crates/frob-check/src/sibling.rs", "crates/frob-check/tests/sibling.rs", "docs/design/sibling-contract.md", "crates/gob-exec/src/discover.rs", "crates/gob-exec/src/lib.rs", "crates/gob-exec/src/program.rs", "crates/gob-exec/tests/discover.rs", "crates/frob/src/doctor.rs", "crates/frob/tests/sibling_discovery.rs", "crates/frob-check/src/sibling/mod.rs", "docs/design/products.md"]
 
 [[acceptance]]
 text = "Given grimble next to the running frob and not on PATH, when frob check runs, then it finds and runs that grimble"

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-release/**", "crates/frob/src/release_cmd.rs", "crates/frob/tests/release.rs", "crates/frob/tests/release_cut.rs", "docs/design/releases.md", "docs/guides/release.md", "docs/reference/cli/frob.md", "docs/reference/rules/REL001.md"]
+new = ["crates/frob-release/**", "crates/frob/src/release_cmd.rs", "crates/frob/tests/release.rs", "crates/frob/tests/release_cut.rs", "docs/design/releases.md", "docs/guides/release.md", "docs/reference/cli/frob.md", "docs/reference/rules/REL001.md", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs"]
+at = "2026-10-03T23:58:08Z"
+actor = "lognd"
+rev = 1

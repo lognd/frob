@@ -14,6 +14,10 @@ use gob_ir::{Digest, Facet, FacetDigest, Model, NodeId, Operator, PrintOpts, Res
 use support::B;
 
 const DEPTH: u32 = 1_000_000;
+/// Depth of the determinism comparison: the property is per-algorithm, not per-depth, so two
+/// builds at a twentieth of [`DEPTH`] prove it for the cost of one million-level run (the
+/// totality run itself builds the full depth once).
+const DETERMINISM_DEPTH: u32 = DEPTH / 20;
 /// The default thread stack of `std::thread`, deliberately not raised.
 const DEFAULT_STACK: usize = 2 * 1024 * 1024;
 
@@ -34,12 +38,12 @@ struct Report {
     unbound_again: Resolution,
 }
 
-fn build() -> (Model, NodeId) {
+fn build(depth: u32) -> (Model, NodeId) {
     let mut b = B::new("deep.rs", "rust");
     let x0 = b.reference("x0");
     let zz = b.reference("zz");
     let mut cur = b.node(Operator::group(gob_ir::GroupOrder::Sequence), &[x0, zz]);
-    for k in 1..=DEPTH {
+    for k in 1..=depth {
         cur = if k % 5000 == 0 {
             b.unit("function", &format!("u{k}"), &[], &[cur])
         } else if k % 1001 == 0 {
@@ -57,12 +61,12 @@ fn build() -> (Model, NodeId) {
     (Model::lexical(b.finish(root)), x0)
 }
 
-fn report() -> Report {
-    let (model, leaf) = build();
+fn report(depth: u32) -> Report {
+    let (model, leaf) = build(depth);
     let term = model.term();
     let root = term.root();
     let alpha = term.print_alpha(root);
-    assert!(alpha.len() > DEPTH as usize);
+    assert!(alpha.len() > depth as usize);
     assert_eq!(
         alpha.bytes().filter(|&c| c == b'(').count(),
         alpha.bytes().filter(|&c| c == b')').count(),
@@ -92,20 +96,21 @@ fn report() -> Report {
     }
 }
 
+/// Runs [`report`] at `depth` on a thread with the default stack.
+fn report_on_default_stack(depth: u32) -> Report {
+    thread::Builder::new()
+        .stack_size(DEFAULT_STACK)
+        .spawn(move || report(depth))
+        .expect("spawn")
+        .join()
+        .expect("no stack overflow or panic")
+}
+
 #[test]
-fn a_million_levels_deep_on_a_default_stack_is_total_and_deterministic() {
-    let run = || {
-        thread::Builder::new()
-            .stack_size(DEFAULT_STACK)
-            .spawn(report)
-            .expect("spawn")
-            .join()
-            .expect("no stack overflow or panic")
-    };
+fn a_million_levels_deep_on_a_default_stack_is_total() {
     let start = std::time::Instant::now();
-    let first = run();
+    let first = report_on_default_stack(DEPTH);
     eprintln!("one deep run took {:?}", start.elapsed());
-    assert_eq!(first, run(), "deterministic across runs");
     assert!(matches!(first.bound, Resolution::Must(_)));
     assert_eq!(first.unbound, Resolution::Unknown);
     assert_eq!(first.unbound_again, Resolution::Unknown);
@@ -119,4 +124,16 @@ fn a_million_levels_deep_on_a_default_stack_is_total_and_deterministic() {
     assert_eq!(first.units, 1 + 200 + anons);
     assert_eq!(first.ancestors, DEPTH as usize + 2);
     assert!(first.deepest_symref.starts_with("deep.rs::"));
+}
+
+#[test]
+fn a_deep_term_reports_deterministically_across_builds() {
+    let first = report_on_default_stack(DETERMINISM_DEPTH);
+    assert_eq!(
+        first,
+        report_on_default_stack(DETERMINISM_DEPTH),
+        "deterministic across runs"
+    );
+    assert!(matches!(first.bound, Resolution::Must(_)));
+    assert_eq!(first.ancestors, DETERMINISM_DEPTH as usize + 2);
 }

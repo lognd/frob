@@ -7,6 +7,7 @@
 //! Design: `docs/design/build-test-ci.md`.
 // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
 // frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
+// frob:ticket 01M41ZSW6DZMBE5QWNGB6VY10G
 
 use std::path::Path;
 use std::time::Duration;
@@ -356,6 +357,96 @@ pub fn host_is_linux() -> bool {
     cfg!(target_os = "linux")
 }
 
+/// Where nextest's `ci` profile writes its junit report, relative to the workspace root.
+pub const JUNIT_PATH: &str = "target/nextest/ci/junit.xml";
+
+/// Value of the XML attribute `name` in `tag` (a `<testcase .../>` or `<testsuites ...>` element).
+fn attr<'a>(tag: &'a str, name: &str) -> Option<&'a str> {
+    let needle = format!(" {name}=\"");
+    let start = tag.find(&needle)? + needle.len();
+    let len = tag[start..].find('"')?;
+    Some(&tag[start..start + len])
+}
+
+/// Suite wall time in seconds and every test (`classname name`, seconds), slowest first.
+///
+/// Reads the junit XML nextest writes; `None` when it has no suite time.
+#[must_use]
+pub fn junit_report(junit: &str) -> Option<(f64, Vec<(String, f64)>)> {
+    let suite = attr(junit.lines().find(|l| l.contains("<testsuites"))?, "time")?
+        .parse()
+        .ok()?;
+    let mut tests: Vec<(String, f64)> = junit
+        .lines()
+        .filter(|l| l.trim_start().starts_with("<testcase"))
+        .filter_map(|l| {
+            let secs = attr(l, "time")?.parse().ok()?;
+            Some((
+                format!("{} {}", attr(l, "classname")?, attr(l, "name")?),
+                secs,
+            ))
+        })
+        .collect();
+    tests.sort_by(|a, b| b.1.total_cmp(&a.1));
+    Some((suite, tests))
+}
+
+/// Soft budget: a test slower than this many seconds is reported (never failed) by `cargo dev ci`.
+pub const SOFT_TEST_BUDGET_SECS: f64 = 30.0;
+/// Soft budget: a nextest suite slower than this many seconds is reported (never failed).
+pub const SOFT_SUITE_BUDGET_SECS: f64 = 90.0;
+
+/// Warnings for the soft speed budget; empty when the suite and every test are within it.
+///
+/// Speed depends on the host, so these warn and never fail; the hang guard is nextest's
+/// `terminate-after` (`.config/nextest.toml`).
+#[must_use]
+pub fn budget_warnings(suite: f64, tests: &[(String, f64)]) -> Vec<String> {
+    let mut out = Vec::new();
+    if suite > SOFT_SUITE_BUDGET_SECS {
+        out.push(format!(
+            "warning: nextest suite took {suite:.1}s, over the {SOFT_SUITE_BUDGET_SECS:.0}s soft budget"
+        ));
+    }
+    out.extend(
+        tests
+            .iter()
+            .filter(|(_, secs)| *secs > SOFT_TEST_BUDGET_SECS)
+            .map(|(name, secs)| {
+                format!(
+                    "warning: {name} took {secs:.1}s, over the {SOFT_TEST_BUDGET_SECS:.0}s soft budget"
+                )
+            }),
+    );
+    out
+}
+
+/// Number of slowest tests `cargo dev ci` lists after the nextest step.
+const SLOWEST: usize = 5;
+
+/// Say the nextest suite wall time and the five slowest tests, from the junit report under `root`.
+fn report_nextest(root: &Path, say: &mut dyn FnMut(&str)) {
+    let path = root.join(JUNIT_PATH);
+    let Ok(junit) = std::fs::read_to_string(&path) else {
+        tracing::warn!(path = %path.display(), "no nextest junit report to summarise");
+        return;
+    };
+    let Some((suite, slowest)) = junit_report(&junit) else {
+        tracing::warn!(path = %path.display(), "nextest junit report is unparsable");
+        return;
+    };
+    say(&format!(
+        "   nextest suite wall time {suite:.1}s; slowest tests:"
+    ));
+    for (name, secs) in slowest.iter().take(SLOWEST) {
+        say(&format!("   {secs:>8.1}s  {name}"));
+    }
+    for w in budget_warnings(suite, &slowest) {
+        tracing::warn!("{w}");
+        say(&format!("   {w}"));
+    }
+}
+
 /// Run `selected` in order through `exec`, stopping at the first failure unless `keep_going`.
 ///
 /// `linux` says whether linux-only steps run; they are reported as skipped otherwise. Steps
@@ -392,6 +483,9 @@ pub fn run(
             }
         };
         let failed = matches!(status, StepStatus::Failed(_));
+        if step.name == "nextest" && !matches!(status, StepStatus::Skipped(_)) {
+            report_nextest(root, say);
+        }
         results.push(StepResult {
             name: step.name,
             status,
@@ -496,6 +590,51 @@ mod tests {
         let r = run(Path::new("."), &all, &f, true, true, &mut |_| {});
         assert_eq!(r.len(), n);
         assert_eq!(f.seen.borrow().len(), n);
+    }
+
+    // frob:tests crates/gob-dev/src/ci.rs::junit_report
+    #[test]
+    fn junit_report_gives_suite_time_and_slowest_tests_first() {
+        let xml = concat!(
+            "<testsuites name=\"nextest-run\" tests=\"3\" time=\"12.5\">\n",
+            "  <testsuite name=\"a::b\">\n",
+            "    <testcase name=\"fast\" classname=\"a::b\" time=\"0.1\"/>\n",
+            "    <testcase name=\"slow\" classname=\"a::b\" time=\"9.0\"/>\n",
+            "    <testcase name=\"mid\" classname=\"a::b\" time=\"3.0\"/>\n",
+            "  </testsuite>\n</testsuites>\n"
+        );
+        let (suite, top) = junit_report(xml).unwrap();
+        assert!((suite - 12.5).abs() < 1e-9);
+        assert_eq!(top.len(), 3);
+        assert_eq!(top[0].0, "a::b slow");
+        assert_eq!(top[1].0, "a::b mid");
+        assert!(junit_report("not xml").is_none());
+    }
+
+    // frob:tests crates/gob-dev/src/ci.rs::budget_warnings
+    #[test]
+    fn soft_budget_warns_on_slow_tests_and_a_slow_suite_only() {
+        let tests = vec![("a slow".to_owned(), 31.0), ("b ok".to_owned(), 30.0)];
+        assert!(budget_warnings(90.0, &tests[1..]).is_empty());
+        let w = budget_warnings(91.0, &tests);
+        assert_eq!(w.len(), 2, "{w:?}");
+        assert!(w[0].contains("suite") && w[1].contains("a slow"));
+    }
+
+    #[test]
+    fn nextest_ci_profile_is_a_hang_guard_not_a_speed_budget() {
+        let root = crate::find_workspace_root(&std::env::current_dir().unwrap()).unwrap();
+        let text = std::fs::read_to_string(root.join(".config/nextest.toml")).unwrap();
+        let cfg: toml::Table = text.parse().unwrap();
+        let ci = &cfg["profile"]["ci"];
+        let slow = &ci["slow-timeout"];
+        let period = slow["period"].as_str().unwrap();
+        let after = slow["terminate-after"].as_integer().unwrap();
+        assert_eq!(period, "30s");
+        assert_eq!(
+            after, 4,
+            "terminate at 120 s: hangs fail, slow runners do not"
+        );
     }
 
     #[test]

@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T00:16:55Z"
+digest = "73b4419e4c6d96d80dc19fc128d971d0932ad3087a89e4c6aa335a962da1d9ea"
+provider = "file"
+ref = "notes/perf-warm-check.md"
+size = 1199
+status = "measured"
+at = "2026-10-04T00:16:55Z"
+actor = "lognd"
+rev = 1

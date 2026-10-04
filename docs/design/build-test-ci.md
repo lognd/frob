@@ -82,7 +82,7 @@ grimble-model.md 9.7, cicd.md section 6 and migration.md point here.
 - Proc-macro crate (`gob-macros`) tiny and stable; grammar C builds
   isolated in `gob-languages` with per-grammar features; tokio only in
   the serve and gh crates (boundaries.md section 6).
-- Dev profile: `opt-level = 1` for deps, `debug = "line-tables-only"`,
+- Dev profile: `opt-level = 2` for `gob-ir` only (section 5, "Suite time"), `debug = "line-tables-only"`,
   `split-debuginfo = "unpacked"`, incremental on; lld (default since
   1.90) or mold via `.cargo/config.toml`; `sccache` for grammar C.
 - Release profile: lto = "fat", codegen-units = 1, panic = "abort",
@@ -181,6 +181,59 @@ frob check --ticket <id>        # the gate, scoped
 frob test --base main           # touched tests via frob's own selection
 cargo dev ci                    # exactly what CI runs on Linux, before reporting
 ```
+
+### Suite time (~B6VY10G)
+
+`cargo nextest run --workspace --profile ci` measured 138 s wall on the
+12-core host with 1355 tests, 765 s of test time; one test was the wall
+(`frob-check::perf`, a cold then warm full check of this repository in a
+debug build, 98-136 s). The fix keeps every proof and moves it to the
+place that can check it cheaply:
+
+- Function and performance are separate. `frob-check/tests/perf.rs`
+  asserts on a small generated fixture that stages are timed and that a
+  second run hits the cache (0.3 s). The real-repository measurement is
+  the `full_check` criterion bench ("bench (scheduled)", section 4), in
+  release: it deletes the derived `.frob/cache.sqlite`, times the cold
+  run (budget 60 s, measured 20-30 s on a loaded host) and the warm run
+  (budget 2 s, architecture.md section 9; measured 1.2 s), and fails
+  with the number. Run it with `cargo bench -p frob-check --bench
+  full_check`.
+- `frob-ack/tests/workspace.rs` walks a generated 40-module fixture
+  instead of this repository: DRIFT002 on a bad target is covered by
+  `ack.rs`, and this repository's own doc targets are what the `check`
+  step of `cargo dev ci` enforces, so the real walk only repeated it.
+- `gob-ir/tests/deep.rs` keeps the million levels, built once (totality
+  on a default stack). Determinism is compared across two builds at
+  50,000 levels: the property is per algorithm, not per depth.
+- Build profile: `[profile.dev.package.gob-ir] opt-level = 2` takes the
+  deep test from 70 s to 8-14 s at no measurable clean-compile cost (the
+  crate is small). Rejected on measurement: `[profile.dev.package."*"]
+  opt-level = 2` (clean compile with sccache warm 1 m 36 s against 1 m 07 s,
+  suite no faster) and `gob-symbols`, `frob-check`, `frob-cli` at
+  opt-level 1 (clean compile slower, suite no faster). The suite is now
+  bound by aggregate CPU of the many `frob-cli` tests that spawn the debug
+  binary, which no per-crate opt level moved outside noise.
+- Two guards, for two purposes. Hang guard: the nextest `ci` profile
+  terminates and fails any test over 120 s (`slow-timeout` period 30 s,
+  `terminate-after` 4), so a hung test fails fast while slower CI runners
+  (4-core GitHub runners, windows-latest) never trip it; a test that
+  legitimately needs more gets a reasoned entry in the reviewed override
+  list in `.config/nextest.toml` (none today), never an ignore. Speed
+  regression: `cargo dev ci` reads `target/nextest/ci/junit.xml` after the
+  nextest step, prints the suite wall time and the five slowest tests, and
+  warns (never fails) when a test exceeds 30 s or the suite exceeds 90 s on
+  the host running it. A wall-clock failure threshold would fail by machine
+  speed (8 s tests timed out at host load 26), which is noise, not a guard.
+
+Measured 2026-10-03 on the shared 12-core host (load varied 9 to 60 from
+other builds, so compare within a row, not across rows):
+
+| Measure | Before | After |
+|---|---|---|
+| nextest ci wall (tests only) | 138 s idle; 295 s at load 34 with a terminate | 47-62 s at load 10-17 (target 60 s, met in all but one run, 62 s); 78 s inside `cargo dev ci` |
+| slowest test | perf 98-136 s | `gob-ir::deep` 8-14 s |
+| clean compile, sccache warm | 1 m 07 s to 3 m 53 s (load 17 to 61) | 1 m 36 s with `"*"` opt 2 (rejected); gob-ir opt 2 within noise of baseline |
 
 `frob` in this checkout is the workspace binary via `cargo run -q --`
 alias `cargo frob`; a stale global install is detected (version
