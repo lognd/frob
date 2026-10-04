@@ -8,8 +8,8 @@ points = 3
 parent = "01M43A5349M17PED730HKNM4VV"
 reporter = "lognd"
 created = "2026-10-04T11:18:16Z"
-updated = "2026-10-04T12:05:43Z"
-scope = ["crates/frob-evidence/src/provider.rs", "crates/frob-tests/**", "docs/design/tickets.md"]
+updated = "2026-10-04T12:06:21Z"
+scope = ["crates/frob-evidence/src/provider.rs", "crates/frob-tests/**", "docs/design/tickets.md", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/tests/pytest.rs", "docs/reference/config.md", "docs/design/architecture.md", "docs/design/build-test-ci.md"]
 
 [[links]]
 kind = "blocked-by"
