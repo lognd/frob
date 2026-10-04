@@ -7,14 +7,14 @@ priority = "high"
 parent = "01M1T07NXSGQEK1JQ4XKQSJFAK"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T22:24:27Z"
+updated = "2026-10-04T22:29:22Z"
 aliases = ["T-4031"]
 labels = ["v1-cluster:C2", "triage:accepted"]
 scope = ["crates/frob-evidence/src/done.rs", "crates/frob/tests/close_guards.rs", "crates/frob-land/tests/land.rs", "docs/design/tickets.md", "docs/design/README.md"]
 
 [[acceptance]]
 text = "Closing done or landing a story, bug or security ticket with zero acceptance criteria is refused on the offending close, naming the ticket type"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A ticket with criteria closes normally, and a chore, docs or epic ticket with zero criteria still closes"
