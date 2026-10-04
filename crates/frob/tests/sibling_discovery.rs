@@ -172,3 +172,90 @@ fn check_reports_sibling_locations_in_json_and_only_under_verbose_in_text() {
         String::from_utf8_lossy(&loud.stdout)
     );
 }
+
+/// Write an executable `crunk` stub into `dir`.
+fn crunk_stub(dir: &Path, body: &str) {
+    let path = dir.join("crunk");
+    std::fs::write(&path, format!("#!/bin/sh\n{body}\n")).expect("write stub");
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+}
+
+/// A repository configured for crunk alone.
+fn crunk_repo() -> tempfile::TempDir {
+    let dir = repo();
+    std::fs::remove_file(dir.path().join("grimble.toml")).expect("remove");
+    std::fs::write(dir.path().join("crunk.toml"), "").expect("write");
+    dir
+}
+
+/// Crunk acceptance 1: a crunk beside frob and not on PATH is run by `check` when `crunk.toml` exists.
+// frob:ticket 01M43ARWKFWVZZAR84NF50FAHB
+// frob:tests crates/frob-check/src/sibling/mod.rs::Siblings
+#[test]
+fn check_runs_the_crunk_next_to_frob_when_path_has_none() {
+    let (env, frob) = tool_env();
+    let repo = crunk_repo();
+    let absent = json(&run(&frob, repo.path(), None, &["check"])).to_string();
+    assert!(
+        absent.contains("`crunk` was not found next to frob or on PATH"),
+        "{absent}"
+    );
+    crunk_stub(
+        &env.path().join("bin"),
+        r#"echo '{"verb":"check","already":false,"ok":false,"data":null,"findings":[],"warnings":[],"error":{"code":"E-X","message":"crunk ran beside frob","remedy":"x","retryable":false},"schema_version":1}'; exit 4"#,
+    );
+    let ran = json(&run(&frob, repo.path(), None, &["check"])).to_string();
+    assert!(ran.contains("crunk ran beside frob"), "{ran}");
+    assert!(!ran.contains("was not found"), "{ran}");
+}
+
+/// Crunk acceptance 2: different crunk versions beside frob and on PATH are both reported; the one beside frob is used.
+// frob:ticket 01M43ARWKFWVZZAR84NF50FAHB
+// frob:tests crates/frob/src/doctor.rs::Doctor
+#[test]
+fn doctor_reports_both_crunks_and_uses_the_one_beside_frob() {
+    let (env, frob) = tool_env();
+    crunk_stub(&env.path().join("bin"), "echo 'crunk 1.0.0'");
+    let on_path = tempfile::tempdir().expect("tempdir");
+    crunk_stub(on_path.path(), "echo 'crunk 2.0.0'");
+    let repo = crunk_repo();
+    let out = run(&frob, repo.path(), Some(on_path.path()), &["doctor"]);
+    assert_eq!(out.status.code(), Some(0), "{}", json(&out));
+    let env_json = json(&out);
+    let row = env_json["data"]["siblings"]
+        .as_array()
+        .expect("siblings")
+        .iter()
+        .find(|r| r["product"] == "crunk")
+        .expect("crunk row");
+    assert_eq!(row["location"], "beside-frob");
+    assert_eq!(row["version"], "crunk 1.0.0");
+    assert_eq!(row["other"]["version"], "crunk 2.0.0");
+    assert_eq!(row["other"]["differs"], true);
+    assert!(
+        env_json["warnings"]
+            .to_string()
+            .contains("differs from the one next to frob"),
+        "{env_json}"
+    );
+}
+
+/// Crunk acceptance 3: a crunk whose `--json` carries another schema_version is a required Unresolved and exit 1.
+// frob:ticket 01M43ARWKFWVZZAR84NF50FAHB
+// frob:tests crates/frob-check/src/sibling/mod.rs::Sib001
+#[test]
+fn a_crunk_with_another_schema_version_fails_check_with_exit_one() {
+    let (env, frob) = tool_env();
+    crunk_stub(
+        &env.path().join("bin"),
+        r#"echo '{"verb":"check","already":false,"ok":true,"data":{"schema_version":"gob.sibling/9","product":"crunk"},"findings":[],"warnings":[],"error":null,"schema_version":1}'"#,
+    );
+    let repo = crunk_repo();
+    let out = run(&frob, repo.path(), None, &["check"]);
+    assert_eq!(out.status.code(), Some(1), "{}", json(&out));
+    let text = json(&out).to_string();
+    assert!(
+        text.contains("SIB001") && text.contains("(incompatible)"),
+        "{text}"
+    );
+}
