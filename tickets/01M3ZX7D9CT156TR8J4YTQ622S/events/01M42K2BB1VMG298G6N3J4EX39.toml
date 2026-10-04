@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T04:34:31Z"
+digest = "7292a8509b2cc7c796ff23267be287b2bd732fa48f36646ce8ccd1a8ccbeab38"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4aa89135-c234-4a35-8bd2-b0d5041cfd3d with nextest profile: default
+    Starting 2 tests across 1 binary (21 tests skipped)
+        PASS [   0.013s] gob-plan::grl_errors validator_rejects_a_misplaced_caret
+        PASS [   0.024s] gob-plan::grl_errors a_one_byte_difference_fails_and_prints_the_diff
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.025s] 2 tests run: 2 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test grl_errors a_one_byte_difference_fails_and_prints_the_diff validator_rejects_a_misplaced_caret"
+size = 641
+status = "measured"
+tests = ["validator_rejects_a_misplaced_caret", "a_one_byte_difference_fails_and_prints_the_diff"]
+at = "2026-10-04T04:34:31Z"
+actor = "lognd"
+rev = 1

@@ -8,11 +8,13 @@
 // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
 // frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
 // frob:ticket 01M41ZSW6DZMBE5QWNGB6VY10G
+// frob:ticket 01M42A37XTPF2H1WXQQZWEYXGZ
 
 use std::path::Path;
 use std::time::Duration;
 
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
+use serde::Deserialize;
 
 /// Rust target whose clippy run catches Windows-only breakage from a Linux host.
 pub const WINDOWS_TARGET: &str = "x86_64-pc-windows-gnu";
@@ -37,6 +39,8 @@ pub struct Step {
     pub linux_only: bool,
     /// Prerequisites checked before the step runs; `ci.yml` must install each (parity test).
     pub needs: Vec<Prerequisite>,
+    /// Heavy enough to run on a goway host under `--remote`; others always run locally.
+    pub offload: bool,
 }
 
 /// Something a step needs on the host, checked before it runs and installed by `ci.yml`.
@@ -103,6 +107,17 @@ pub enum CiError {
     /// A process could not be run at all.
     #[error("{0}")]
     Spawn(String),
+    /// The goway host lacks declared prerequisites: a host setup problem, not a code failure.
+    #[error("host {host} lacks: {}", missing.join("; "))]
+    HostPrerequisite {
+        /// Pool host that was probed.
+        host: String,
+        /// Each missing item with the command that installs it.
+        missing: Vec<String>,
+    },
+    /// goway itself failed (exit 125: no host, ssh, sync), not the step's command.
+    #[error("goway failed: {0}")]
+    Goway(String),
 }
 
 /// How one step ended.
@@ -112,12 +127,16 @@ pub enum StepStatus {
     Passed,
     /// Failed, with the reason.
     Failed(String),
+    /// The goway host lacks a declared prerequisite (named in the reason); the code was not run.
+    HostPrerequisite(String),
+    /// goway failed before or around the step (exit 125); says nothing about the step itself.
+    GowayFailed(String),
     /// Not run on this host, with the reason (never silent).
     Skipped(String),
 }
 
 /// A step and how it ended.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct StepResult {
     /// Step name.
     pub name: &'static str,
@@ -125,6 +144,8 @@ pub struct StepResult {
     pub status: StepStatus,
     /// Wall-clock time spent.
     pub elapsed: Duration,
+    /// Where the step ran when goway ran it; `None` for a local step.
+    pub remote: Option<Remote>,
 }
 
 fn strings(parts: &[&str]) -> Vec<String> {
@@ -139,7 +160,14 @@ fn cargo(name: &'static str, args: &[&str]) -> Step {
         env: Vec::new(),
         linux_only: false,
         needs: Vec::new(),
+        offload: false,
     }
+}
+
+/// Mark `step` as runnable on a goway host under `--remote`.
+fn offloaded(mut step: Step) -> Step {
+    step.offload = true;
+    step
 }
 
 /// `version_args` of the `[[check.tool]]` named `tool` in `frob.toml`: the pinned uvx invocation.
@@ -191,6 +219,7 @@ pub fn steps(root: &Path) -> Result<Vec<Step>, CiError> {
             env: Vec::new(),
             linux_only: true,
             needs: Vec::new(),
+            offload: false,
         })
     };
     let linux = |mut s: Step| {
@@ -211,12 +240,14 @@ pub fn steps(root: &Path) -> Result<Vec<Step>, CiError> {
         ],
     );
     clippy_windows.linux_only = true;
+    clippy_windows.offload = true;
     clippy_windows.needs = vec![Prerequisite::RustTarget(WINDOWS_TARGET), MINGW_GCC];
     let mut docs = cargo("docs", &["doc", "--no-deps", "--all-features"]);
     docs.env = vec![("RUSTDOCFLAGS".to_owned(), "-D warnings".to_owned())];
+    docs.offload = true;
     Ok(vec![
         cargo("fmt", &["fmt", "--all", "--check"]),
-        cargo(
+        offloaded(cargo(
             "clippy",
             &[
                 "clippy",
@@ -226,15 +257,21 @@ pub fn steps(root: &Path) -> Result<Vec<Step>, CiError> {
                 "-D",
                 "warnings",
             ],
-        ),
+        )),
         clippy_windows,
         docs,
-        cargo("nextest", &["nextest", "run", "--profile", "ci"]),
+        offloaded(cargo("nextest", &["nextest", "run", "--profile", "ci"])),
         cargo("gen", &["dev", "gen", "all", "--check"]),
         uvx("zizmor", "zizmor")?,
         uvx("actionlint", "actionlint")?,
-        linux(cargo("doctor", &["run", "-p", "frob-cli", "--", "doctor"])),
-        linux(cargo("check", &["run", "-p", "frob-cli", "--", "check"])),
+        offloaded(linux(cargo(
+            "doctor",
+            &["run", "-p", "frob-cli", "--", "doctor"],
+        ))),
+        offloaded(linux(cargo(
+            "check",
+            &["run", "-p", "frob-cli", "--", "check"],
+        ))),
         linux(cargo(
             "test-dry-run",
             &[
@@ -253,12 +290,13 @@ pub fn steps(root: &Path) -> Result<Vec<Step>, CiError> {
 
 /// Executes one step; a trait so tests drive the flow without spawning anything.
 pub trait StepRunner {
-    /// Run `step` in `root`, returning `Ok(())` when it exits 0.
+    /// Run `step` in `root`; `Ok` when it exits 0, carrying where it ran if a goway host ran it.
     ///
     /// # Errors
-    /// [`CiError::TargetMissing`] or [`CiError::ToolMissing`] when a prerequisite is absent, [`CiError::Spawn`] on any
-    /// other failure to run or a non-zero exit.
-    fn run(&self, root: &Path, step: &Step) -> Result<(), CiError>;
+    /// [`CiError::TargetMissing`] or [`CiError::ToolMissing`] when a prerequisite is absent,
+    /// [`CiError::Goway`] when goway itself failed, [`CiError::Spawn`] on any other failure to
+    /// run or a non-zero exit.
+    fn run(&self, root: &Path, step: &Step) -> Result<Option<Remote>, CiError>;
 }
 
 /// The real [`StepRunner`], spawning through `gob-exec`.
@@ -338,15 +376,276 @@ fn require_all(root: &Path, step: &Step) -> Result<(), CiError> {
     Ok(())
 }
 
+/// Environment variable that opts `cargo dev ci` into running offloadable steps through goway;
+/// its value is the goway binary (a bare name or a path). A `--remote` flag will set the same.
+pub const REMOTE_ENV: &str = "CARGO_DEV_CI_REMOTE";
+
+/// Run `step` on this host, checking its prerequisites locally first.
+fn run_local(root: &Path, step: &Step) -> Result<Option<Remote>, CiError> {
+    require_all(root, step)?;
+    let out = runner()
+        .run(&spec(root, step, STEP_TIMEOUT, false))
+        .map_err(|e| CiError::Spawn(format!("{}: {e}", step.name)))?;
+    match out.status {
+        Outcome::Exited(0) => Ok(None),
+        other => Err(CiError::Spawn(format!("ended {other:?}"))),
+    }
+}
+
 impl StepRunner for ExecRunner {
-    fn run(&self, root: &Path, step: &Step) -> Result<(), CiError> {
-        require_all(root, step)?;
-        let out = runner()
-            .run(&spec(root, step, STEP_TIMEOUT, false))
-            .map_err(|e| CiError::Spawn(format!("{}: {e}", step.name)))?;
-        match out.status {
-            Outcome::Exited(0) => Ok(()),
-            other => Err(CiError::Spawn(format!("ended {other:?}"))),
+    fn run(&self, root: &Path, step: &Step) -> Result<Option<Remote>, CiError> {
+        match std::env::var(REMOTE_ENV) {
+            Ok(bin) if !bin.is_empty() => {
+                tracing::info!(goway = %bin, step = step.name, "remote runner selected by env");
+                GowayRunner::new(&bin, RemoteOs::default()).run(root, step)
+            }
+            _ => run_local(root, step),
+        }
+    }
+}
+
+/// Operating system of a goway host. Only Linux is built; Windows (`--remote-os windows`,
+/// `goway run --host <windows host>`) adds a variant and its arms here, nowhere else.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum RemoteOs {
+    /// A Linux helper.
+    #[default]
+    Linux,
+}
+
+impl RemoteOs {
+    /// The `goway run --needs` term that restricts the pool to this OS.
+    #[must_use]
+    pub fn needs_term(self) -> &'static str {
+        match self {
+            Self::Linux => "os=linux",
+        }
+    }
+
+    /// The remote command that lists installed rustup targets, one per line.
+    fn target_list(self) -> Vec<String> {
+        match self {
+            Self::Linux => strings(&["rustup", "target", "list", "--installed"]),
+        }
+    }
+
+    /// The remote command that exits 0 when `tool` is on the host's `PATH`.
+    fn tool_probe(self, tool: &str) -> Vec<String> {
+        match self {
+            Self::Linux => vec!["which".to_owned(), tool.to_owned()],
+        }
+    }
+}
+
+/// Hardware every offloaded step needs from its host (`goway run --needs`).
+pub const REMOTE_NEEDS: [&str; 2] = ["cores>=8", "mem>=2G"];
+/// goway's own failure exit code (also "no host"), as opposed to the remote command's.
+pub const GOWAY_FAILURE: i32 = 125;
+/// How many times a goway failure is retried before it is reported.
+const GOWAY_RETRIES: u32 = 5;
+/// First wait after a goway failure; doubles each retry up to [`GOWAY_BACKOFF_CAP`].
+const GOWAY_BACKOFF: Duration = Duration::from_secs(15);
+/// Longest wait between goway retries.
+const GOWAY_BACKOFF_CAP: Duration = Duration::from_secs(120);
+/// Where the goway run report lands, relative to the workspace root (`target/` is untracked).
+const REPORT_PATH: &str = "target/goway-ci-report.json";
+
+/// Where a goway-run step ran, from `goway run --report`.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct Remote {
+    /// Pool host name.
+    pub host: String,
+    /// Host operating system.
+    pub os: String,
+    /// Host CPU architecture.
+    pub arch: String,
+    /// The remote command's exit code.
+    pub exit_code: i32,
+    /// Remote wall time in seconds.
+    pub duration_secs: f64,
+}
+
+/// A [`StepRunner`] that sends offloadable steps through `goway run` and runs the rest locally.
+///
+/// The remote command is the step's own program, args and env (`-e K=V`), so [`steps`] stays the
+/// single source. goway ships the work tree with a minimal `.git` (`--with-git`), so the steps
+/// that ask git about the repository run remotely too.
+#[derive(Debug)]
+pub struct GowayRunner {
+    goway: Program,
+    os: RemoteOs,
+    retries: u32,
+    backoff: Duration,
+}
+
+impl GowayRunner {
+    /// Use the goway at `binary`: a bare name looked up on `PATH`, or a path to the executable.
+    #[must_use]
+    pub fn new(binary: &str, os: RemoteOs) -> Self {
+        let goway = if binary.contains(['/', '\\']) {
+            Program::Hook {
+                path: binary.into(),
+            }
+        } else {
+            Program::Tool {
+                name: binary.to_owned(),
+            }
+        };
+        Self::with_retry(goway, os, GOWAY_RETRIES, GOWAY_BACKOFF)
+    }
+
+    /// As [`Self::new`] with an explicit program and retry policy (tests use zero backoff).
+    #[must_use]
+    pub fn with_retry(goway: Program, os: RemoteOs, retries: u32, backoff: Duration) -> Self {
+        Self {
+            goway,
+            os,
+            retries,
+            backoff,
+        }
+    }
+
+    /// The `goway run` argv for `command`, pinned to `host` when given.
+    fn argv(
+        &self,
+        root: &Path,
+        host: Option<&str>,
+        env: &[(String, String)],
+        command: &[String],
+    ) -> Vec<String> {
+        let mut a = strings(&["run", "--with-git"]);
+        for need in REMOTE_NEEDS.iter().copied().chain([self.os.needs_term()]) {
+            a.extend(["--needs".to_owned(), need.to_owned()]);
+        }
+        a.extend([
+            "--report".to_owned(),
+            root.join(REPORT_PATH).display().to_string(),
+        ]);
+        if let Some(h) = host {
+            a.extend(["--host".to_owned(), h.to_owned()]);
+        }
+        for (k, v) in env {
+            a.extend(["-e".to_owned(), format!("{k}={v}")]);
+        }
+        a.push("--".to_owned());
+        a.extend(command.iter().cloned());
+        a
+    }
+
+    /// Run one goway command, retrying exit 125 with backoff; returns the outcome and report.
+    fn invoke(
+        &self,
+        root: &Path,
+        argv: &[String],
+        capture: bool,
+    ) -> Result<(Outcome, String, Option<Remote>), CiError> {
+        let report = root.join(REPORT_PATH);
+        let mut wait = self.backoff;
+        for attempt in 0..=self.retries {
+            // A stale report from an earlier run must never be taken for this one's.
+            let _ = std::fs::remove_file(&report);
+            if let Some(dir) = report.parent() {
+                let _ = std::fs::create_dir_all(dir);
+            }
+            let out = runner()
+                .run(&Spec {
+                    program: self.goway.clone(),
+                    args: argv.to_vec(),
+                    cwd: Some(root.to_path_buf()),
+                    env: Vec::new(),
+                    timeout: STEP_TIMEOUT,
+                    capture,
+                })
+                .map_err(|e| CiError::Goway(format!("cannot run goway: {e}")))?;
+            if out.status != Outcome::Exited(GOWAY_FAILURE) {
+                let remote = std::fs::read_to_string(&report)
+                    .ok()
+                    .and_then(|t| serde_json::from_str::<Remote>(&t).ok());
+                if remote.is_none() {
+                    tracing::warn!(report = %report.display(), "goway wrote no usable report");
+                }
+                return Ok((out.status, out.stdout, remote));
+            }
+            tracing::warn!(attempt, ?wait, "goway exit 125 (no host or goway failure)");
+            if attempt < self.retries {
+                std::thread::sleep(wait);
+                wait = (wait * 2).min(GOWAY_BACKOFF_CAP);
+            }
+        }
+        Err(CiError::Goway(format!(
+            "exit {GOWAY_FAILURE} (no host, or goway itself failed) after {} attempts",
+            self.retries + 1
+        )))
+    }
+
+    /// Check `step`'s prerequisites on a goway host; returns that host so the step runs on it.
+    fn require_remote(&self, root: &Path, step: &Step) -> Result<Option<String>, CiError> {
+        let mut host: Option<String> = None;
+        let mut missing = Vec::new();
+        for need in &step.needs {
+            let (command, probe) = match need {
+                Prerequisite::RustTarget(_) => (self.os.target_list(), "rustup target list"),
+                Prerequisite::SystemTool { tool, .. } => (self.os.tool_probe(tool), "which"),
+            };
+            let argv = self.argv(root, host.as_deref(), &[], &command);
+            let (status, stdout, remote) = self.invoke(root, &argv, true)?;
+            if host.is_none() {
+                host = remote.map(|r| r.host);
+            }
+            let found = match need {
+                Prerequisite::RustTarget(t) => {
+                    status == Outcome::Exited(0) && stdout.lines().any(|l| l.trim() == *t)
+                }
+                Prerequisite::SystemTool { .. } => status == Outcome::Exited(0),
+            };
+            tracing::info!(step = step.name, probe, found, host = ?host, "remote prerequisite");
+            if !found {
+                missing.push(format!(
+                    "{} (run: {})",
+                    match need {
+                        Prerequisite::RustTarget(t) => format!("rust target {t}"),
+                        Prerequisite::SystemTool { tool, .. } => (*tool).to_owned(),
+                    },
+                    need.install_command()
+                ));
+            }
+        }
+        if !missing.is_empty() {
+            tracing::error!(step = step.name, ?missing, "goway host lacks prerequisites");
+            return Err(CiError::HostPrerequisite {
+                host: host.unwrap_or_else(|| "unknown".to_owned()),
+                missing,
+            });
+        }
+        Ok(host)
+    }
+}
+
+/// The program name as the remote shell sees it.
+fn remote_program(program: &Program) -> String {
+    match program {
+        Program::Hook { path } => path.display().to_string(),
+        other => other.label(),
+    }
+}
+
+impl StepRunner for GowayRunner {
+    fn run(&self, root: &Path, step: &Step) -> Result<Option<Remote>, CiError> {
+        if !step.offload {
+            return run_local(root, step);
+        }
+        let host = self.require_remote(root, step)?;
+        let mut command = vec![remote_program(&step.program)];
+        command.extend(step.args.iter().cloned());
+        let argv = self.argv(root, host.as_deref(), &step.env, &command);
+        let (status, _, remote) = self.invoke(root, &argv, false)?;
+        let at = remote
+            .as_ref()
+            .map_or_else(String::new, |r| format!(" on {} ({})", r.host, r.arch));
+        match status {
+            Outcome::Exited(0) => Ok(remote),
+            Outcome::Exited(code) => Err(CiError::Spawn(format!("exit {code}{at}"))),
+            other => Err(CiError::Spawn(format!("ended {other:?}{at}"))),
         }
     }
 }
@@ -463,6 +762,7 @@ pub fn run(
     let total = selected.len();
     for (i, step) in selected.iter().enumerate() {
         let started = std::time::Instant::now();
+        let mut remote = None;
         let status = if step.linux_only && !linux {
             tracing::warn!(step = step.name, "linux-only step skipped on this host");
             StepStatus::Skipped("linux-only step, this host is not Linux".to_owned())
@@ -475,21 +775,37 @@ pub fn run(
                 step.args.join(" ")
             ));
             match exec.run(root, step) {
-                Ok(()) => StepStatus::Passed,
+                Ok(at) => {
+                    remote = at;
+                    StepStatus::Passed
+                }
+                Err(e @ CiError::HostPrerequisite { .. }) => {
+                    tracing::error!(step = step.name, error = %e, "host prerequisite missing");
+                    StepStatus::HostPrerequisite(e.to_string())
+                }
+                Err(e @ CiError::Goway(_)) => {
+                    tracing::error!(step = step.name, error = %e, "goway failed");
+                    StepStatus::GowayFailed(e.to_string())
+                }
                 Err(e) => {
                     tracing::error!(step = step.name, error = %e, "ci step failed");
                     StepStatus::Failed(e.to_string())
                 }
             }
         };
-        let failed = matches!(status, StepStatus::Failed(_));
-        if step.name == "nextest" && !matches!(status, StepStatus::Skipped(_)) {
+        let failed = matches!(
+            status,
+            StepStatus::Failed(_) | StepStatus::GowayFailed(_) | StepStatus::HostPrerequisite(_)
+        );
+        // The junit report stays on a remote host; reading the local copy would show a stale run.
+        if step.name == "nextest" && status == StepStatus::Passed && remote.is_none() {
             report_nextest(root, say);
         }
         results.push(StepResult {
             name: step.name,
             status,
             elapsed: started.elapsed(),
+            remote,
         });
         if failed && !keep_going {
             break;
@@ -526,17 +842,25 @@ pub fn summary(results: &[StepResult]) -> (Vec<String>, bool) {
         let (mark, note) = match &r.status {
             StepStatus::Passed => ("ok     ", String::new()),
             StepStatus::Failed(why) => ("FAILED ", format!("  {why}")),
+            StepStatus::GowayFailed(why) => ("GOWAY  ", format!("  {why}")),
+            StepStatus::HostPrerequisite(why) => ("HOSTREQ", format!("  {why}")),
             StepStatus::Skipped(why) => ("skipped", format!("  {why}")),
         };
+        let at = r.remote.as_ref().map_or_else(String::new, |h| {
+            format!("  on {} ({}/{})", h.host, h.os, h.arch)
+        });
         lines.push(format!(
-            "{mark} {:<15} {:>7.1}s{note}",
+            "{mark} {:<15} {:>7.1}s{at}{note}",
             r.name,
             r.elapsed.as_secs_f64()
         ));
     }
-    let ok = !results
-        .iter()
-        .any(|r| matches!(r.status, StepStatus::Failed(_)));
+    let ok = !results.iter().any(|r| {
+        matches!(
+            r.status,
+            StepStatus::Failed(_) | StepStatus::GowayFailed(_) | StepStatus::HostPrerequisite(_)
+        )
+    });
     lines.push(if ok {
         "ci: all steps passed".to_owned()
     } else {
@@ -557,12 +881,12 @@ mod tests {
     }
 
     impl StepRunner for Fake {
-        fn run(&self, _: &Path, step: &Step) -> Result<(), CiError> {
+        fn run(&self, _: &Path, step: &Step) -> Result<Option<Remote>, CiError> {
             self.seen.borrow_mut().push(step.name);
             if step.name == self.fail {
                 Err(CiError::Spawn("boom".to_owned()))
             } else {
-                Ok(())
+                Ok(None)
             }
         }
     }
@@ -704,6 +1028,7 @@ mod tests {
                 tool: "no-such-tool-0g8qf7v",
                 install: "sudo apt-get install -y ghost-pkg",
             }],
+            offload: false,
         };
         let e = ExecRunner.run(Path::new("."), &step).unwrap_err();
         assert!(matches!(e, CiError::ToolMissing { .. }), "{e}");
@@ -731,5 +1056,193 @@ mod tests {
         assert!(z.args[0].starts_with("zizmor@"));
         let a = all.iter().find(|s| s.name == "actionlint").unwrap();
         assert!(a.args.iter().any(|x| x.starts_with("actionlint-py==")));
+    }
+
+    /// A fake goway: logs one argv element per line to `log`, writes a report, exits `code`.
+    #[cfg(unix)]
+    fn fake_goway(dir: &Path, code: i32) -> (GowayRunner, std::path::PathBuf) {
+        use std::os::unix::fs::PermissionsExt;
+        let log = dir.join("argv.log");
+        let bin = dir.join("goway");
+        let script = format!(
+            "#!/bin/sh\nrep=\nfor a in \"$@\"; do\n  [ \"$prev\" = --report ] && rep=\"$a\"\n  \
+             printf '%s\\n' \"$a\" >> '{}'\n  prev=\"$a\"\ndone\n\
+             printf '{{\"host\":\"fakehost\",\"os\":\"linux\",\"arch\":\"x86_64\",\
+             \"exit_code\":{code},\"duration_secs\":1.5}}' > \"$rep\"\nexit {code}\n",
+            log.display()
+        );
+        std::fs::write(&bin, script).unwrap();
+        std::fs::set_permissions(&bin, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let runner = GowayRunner::with_retry(
+            Program::Hook { path: bin },
+            RemoteOs::Linux,
+            2,
+            Duration::ZERO,
+        );
+        (runner, log)
+    }
+
+    #[cfg(unix)]
+    fn step_named(name: &str) -> Step {
+        real().into_iter().find(|s| s.name == name).unwrap()
+    }
+
+    // frob:tests crates/gob-dev/src/ci.rs::GowayRunner
+    #[cfg(unix)]
+    #[test]
+    fn remote_step_calls_goway_with_the_exact_argv_and_env_and_names_the_host() {
+        let dir = tempfile::tempdir().unwrap();
+        let (g, log) = fake_goway(dir.path(), 0);
+        let docs = step_named("docs");
+        let r = run(dir.path(), &[docs], &g, false, true, &mut |_| {});
+        assert_eq!(r[0].status, StepStatus::Passed);
+        let argv: Vec<String> = std::fs::read_to_string(&log)
+            .unwrap()
+            .lines()
+            .map(str::to_owned)
+            .collect();
+        let pos = argv.iter().position(|a| a == "--").unwrap();
+        assert_eq!(
+            &argv[pos + 1..],
+            ["cargo", "doc", "--no-deps", "--all-features"]
+        );
+        assert_eq!(&argv[..2], ["run", "--with-git"]);
+        assert!(argv.windows(2).any(|w| w == ["--needs", "cores>=8"]));
+        assert!(argv.windows(2).any(|w| w == ["--needs", "os=linux"]));
+        assert!(
+            argv.windows(2)
+                .any(|w| w == ["-e", "RUSTDOCFLAGS=-D warnings"])
+        );
+        let (lines, ok) = summary(&r);
+        assert!(ok);
+        assert!(
+            lines[0].contains("fakehost") && lines[0].contains("x86_64"),
+            "{lines:?}"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn goway_exit_125_is_a_goway_failure_after_retries_not_a_test_failure() {
+        let dir = tempfile::tempdir().unwrap();
+        let (g, log) = fake_goway(dir.path(), GOWAY_FAILURE);
+        let r = run(
+            dir.path(),
+            &[step_named("nextest")],
+            &g,
+            false,
+            true,
+            &mut |_| {},
+        );
+        assert!(
+            matches!(r[0].status, StepStatus::GowayFailed(_)),
+            "{:?}",
+            r[0].status
+        );
+        let attempts = std::fs::read_to_string(&log)
+            .unwrap()
+            .lines()
+            .filter(|l| *l == "--with-git")
+            .count();
+        assert_eq!(attempts, 3, "one try plus two retries");
+        let (lines, ok) = summary(&r);
+        assert!(!ok);
+        assert!(
+            lines[0].starts_with("GOWAY") && lines[0].contains("goway failed"),
+            "{lines:?}"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_remote_command_failure_is_a_step_failure_naming_the_host() {
+        let dir = tempfile::tempdir().unwrap();
+        let (g, _) = fake_goway(dir.path(), 1);
+        let r = run(
+            dir.path(),
+            &[step_named("nextest")],
+            &g,
+            false,
+            true,
+            &mut |_| {},
+        );
+        let StepStatus::Failed(why) = &r[0].status else {
+            panic!("{:?}", r[0].status)
+        };
+        assert!(why.contains("exit 1") && why.contains("fakehost"), "{why}");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn steps_not_marked_offload_stay_local() {
+        let dir = tempfile::tempdir().unwrap();
+        let (g, log) = fake_goway(dir.path(), 0);
+        let local = Step {
+            name: "local-true",
+            program: Program::Tool {
+                name: "true".to_owned(),
+            },
+            args: Vec::new(),
+            env: Vec::new(),
+            linux_only: false,
+            needs: Vec::new(),
+            offload: false,
+        };
+        let r = run(dir.path(), &[local], &g, false, true, &mut |_| {});
+        assert_eq!(r[0].status, StepStatus::Passed);
+        assert!(r[0].remote.is_none());
+        assert!(!log.exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn remote_prerequisites_are_probed_on_the_host_and_the_step_is_pinned_to_it() {
+        let dir = tempfile::tempdir().unwrap();
+        let (g, log) = fake_goway(dir.path(), 0);
+        // The fake prints no installed targets, so the probe reports the target missing.
+        let r = run(
+            dir.path(),
+            &[step_named("clippy-windows")],
+            &g,
+            false,
+            true,
+            &mut |_| {},
+        );
+        assert!(
+            matches!(&r[0].status, StepStatus::HostPrerequisite(w)
+                if w.contains("fakehost") && w.contains("rustup target add")),
+            "{:?}",
+            r[0].status
+        );
+        let text = std::fs::read_to_string(&log).unwrap();
+        assert!(text.lines().any(|l| l == "rustup"), "{text}");
+    }
+
+    #[test]
+    fn only_heavy_steps_are_offloadable() {
+        let off: Vec<_> = real()
+            .iter()
+            .filter(|s| s.offload)
+            .map(|s| s.name)
+            .collect();
+        assert_eq!(
+            off,
+            [
+                "clippy",
+                "clippy-windows",
+                "docs",
+                "nextest",
+                "doctor",
+                "check"
+            ]
+        );
+    }
+
+    #[test]
+    fn goway_binary_path_or_bare_name() {
+        let by_path = GowayRunner::new("/opt/goway", RemoteOs::Linux);
+        assert!(matches!(by_path.goway, Program::Hook { .. }));
+        let by_name = GowayRunner::new("goway", RemoteOs::Linux);
+        assert!(matches!(by_name.goway, Program::Tool { .. }));
     }
 }

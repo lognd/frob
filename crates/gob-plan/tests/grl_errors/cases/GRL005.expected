@@ -1,0 +1,12 @@
+error[GRL005]: mismatched types: a string is compared with an integer
+ --> rules/GRL005.grl:5:19
+  |
+5 |   where f.name == 3
+  |                   ^ expected a string here, found the integer `3`
+5 |   where f.name == 3
+  |         ------ this is a string
+  |
+  = help: write `"3"` to compare with text, or compare a number such as `f.line`
+  = explain: grimble explain GRL005
+
+error: aborting due to 1 previous error

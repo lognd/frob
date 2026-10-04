@@ -22,9 +22,10 @@ in the last section, "Not verified".
    `frob-cli` crate version), `build` (five archives per product), `wheel` (five wheels per product),
    `smoke` (installs every artifact on a fresh runner), then `release` (GitHub
    release with the archives), `crates` (crates.io) and `pypi` (PyPI).
-4. `crates` waits for your approval in the `crates-io` environment. `pypi` runs
-   only after `crates` succeeds and waits for your approval in the `pypi`
-   environment. The `release` job needs no approval.
+4. `crates` waits for your approval in the `crates-io` environment and `pypi`
+   waits for your approval in the `pypi` environment. Both start after `smoke`
+   and are independent: PyPI does not wait for the (possibly hours-long, rate
+   limited) crates.io publish. The `release` job needs no approval.
 
 ## One-time setup
 
@@ -82,8 +83,32 @@ must be deleted afterwards (section 5).
    token.
 3. Confirm you own the reserved crate names (the owner action named by
    `frob release status`).
-4. Push the tag. A partial publish resumes by re-running; versions already on
+4. Reserve the crate names before the first release (below).
+5. Push the tag. A partial publish resumes by re-running; versions already on
    the index are skipped.
+
+#### Reserving names (`cargo dev publish --reserve`)
+
+crates.io limits new crate names far more tightly than new versions: a small
+burst, then about one new name per ten minutes, answering 429 with the time to
+retry. Publishing 31 new names inside the release job would run for hours, so
+reserve the missing names once from your machine with your own token. Each
+placeholder is a code-free 0.0.0 crate (name, a description pointing at the
+repository, the license), so the release then publishes only new versions.
+
+```sh
+cargo dev publish --reserve           # dry run: lists the missing names and the pacing plan
+CARGO_REGISTRY_TOKEN=... cargo dev publish --reserve --apply
+```
+
+The first five names go out at once, then one every ten minutes; a 429 is waited
+out within `--max-wait` (minutes, default 30). When the budget is spent the
+command prints the next crate and the earliest retry time and exits 75;
+re-run it then. It is resumable: names already on crates.io are skipped.
+
+`cargo dev publish` (the release job) handles 429 the same way: it waits within
+`--max-wait` and otherwise stops with exit status 75, naming the next crate and
+the retry time, so re-running the job resumes there.
 
 ### 5. crates.io trusted publisher, after the first release
 
@@ -154,8 +179,8 @@ Open the run in the repository's Actions tab (workflow `release`).
 2. When `crates` shows "Waiting for review", approve the `crates-io`
    environment. The job prints the publish order in a dry run, then publishes
    the crates in dependency order.
-3. When `crates` has succeeded, `pypi` shows "Waiting for review". Approve the
-   `pypi` environment. It uploads the ten smoked wheels (five per product).
+3. `pypi` also shows "Waiting for review" once `smoke` has passed, without
+   waiting for `crates`. Approve the `pypi` environment. It uploads the ten smoked wheels (five per product).
 
 Timeouts are in the workflow: `build` and `wheel` 60 minutes, `smoke` 30,
 `crates` 120, `pypi` 30. A job whose runner never schedules fails at its timeout
@@ -256,6 +281,9 @@ cargo dev publish --dry-run
 You can also run `cargo dev publish` from your machine with
 `CARGO_REGISTRY_TOKEN` set; it resumes the same way. The error names the crate:
 "re-run to resume here".
+
+A run that stops on the crates.io rate limit prints "stopped (resumable)" with the
+next crate and the retry time; re-run the job after that time.
 
 If a crate publishes but the index does not show it in time, the run fails with
 a message that the version did not appear on the index; re-run the job.

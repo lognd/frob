@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T04:37:59Z"
+digest = "41585dd8135b5c9064e3ed1146cb74103bea750643669c0483498394fbeaae7d"
+exit_code = 0
+inline = '''
+   Compiling gob-plan v0.0.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.67s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 46893027-840c-4dbf-a651-309d42b3790e with nextest profile: default
+    Starting 3 tests across 2 binaries (52 tests skipped)
+        PASS [   0.031s] gob-plan plan::tests::round_trip_keeps_every_header_field
+        PASS [   0.042s] gob-plan plan::tests::std_provenance_and_other_polarities_round_trip
+        PASS [   0.048s] gob-plan plan::tests::props::valid_plans_round_trip_exactly
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.049s] 3 tests run: 3 passed, 52 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(round_trip_keeps_every_header_field) | test(std_provenance_and_other_polarities_round_trip) | test(valid_plans_round_trip_exactly)'"
+size = 787
+status = "measured"
+tests = ["plan::tests::round_trip_keeps_every_header_field", "plan::tests::std_provenance_and_other_polarities_round_trip", "plan::tests::props::valid_plans_round_trip_exactly"]
+at = "2026-10-04T04:37:59Z"
+actor = "lognd"
+rev = 1

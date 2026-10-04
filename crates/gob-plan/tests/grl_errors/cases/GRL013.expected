@@ -1,0 +1,10 @@
+warning[GRL013]: `c` is bound and never used
+ --> rules/GRL013.grl:5:8
+  |
+5 |   find c: comment
+  |        ^ `c` is not used by any condition or message
+  |
+  = help: use `c` in a `where` or a `report`, or delete the clause
+  = explain: grimble explain GRL013
+
+warning: 1 warning emitted

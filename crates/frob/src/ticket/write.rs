@@ -632,6 +632,7 @@ pub struct Close {
     reason: Option<String>,
     no_evidence: bool,
     no_changelog: bool,
+    no_land: bool,
 }
 
 impl Command for Close {
@@ -655,6 +656,12 @@ impl Command for Close {
                     .help("Close without measured evidence; needs --reason and is audited"),
             )
             .arg(
+                Arg::new("no-land")
+                    .long("no-land")
+                    .action(ArgAction::SetTrue)
+                    .help("Close done although the ticket branch holds commits not merged into the base; needs --reason and is audited"),
+            )
+            .arg(
                 Arg::new("no-changelog")
                     .long("no-changelog")
                     .action(ArgAction::SetTrue)
@@ -669,6 +676,7 @@ impl Command for Close {
             reason: get(m, "reason"),
             no_evidence: m.get_flag("no-evidence"),
             no_changelog: m.get_flag("no-changelog"),
+            no_land: m.get_flag("no-land"),
         })
     }
 
@@ -681,6 +689,13 @@ impl Command for Close {
         if self.no_changelog && self.reason.as_deref().is_none_or(|r| r.trim().is_empty()) {
             return Err(CliError::Usage(
                 "--no-changelog needs --reason <text> saying why the change needs no changelog note"
+                    .to_owned(),
+            ));
+        }
+        // frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
+        if self.no_land && self.reason.as_deref().is_none_or(|r| r.trim().is_empty()) {
+            return Err(CliError::Usage(
+                "--no-land needs --reason <text> saying why the unmerged branch is acceptable"
                     .to_owned(),
             ));
         }
@@ -705,17 +720,35 @@ impl Command for Close {
         if self.no_changelog {
             done = done.allow_no_changelog(self.reason.clone().unwrap_or_default());
         }
-        let already_done = ledger.show(id).map_err(cli_err)?.summary.category
-            == frob_ledger::model::Category::Done;
+        // frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
+        let view = ledger.show(id).map_err(cli_err)?;
+        let mut merged = frob_evidence::done::MergedGuard::for_ticket(
+            &ledger,
+            ledger.repo(),
+            id,
+            &frob_worktree::work::base_branch(&ledger),
+            &view.summary.handle,
+        )
+        .map_err(CliError::internal)?;
+        if self.no_land {
+            merged = merged.allow_no_land(self.reason.clone().unwrap_or_default());
+        }
+        let already_done = view.summary.category == frob_ledger::model::Category::Done;
         if !already_done {
             done.record_exemption(&ledger, id)
                 .map_err(CliError::internal)?;
+            if frob_evidence::done::guards_apply(self.outcome) {
+                merged
+                    .record_exemption(&ledger, id)
+                    .map_err(CliError::internal)?;
+            }
         }
         let guards = default_close_guards();
         let mut refs: Vec<&dyn frob_ledger::guards::CloseGuard> =
             guards.iter().map(|g| &**g).collect();
         refs.push(&evidence);
         refs.push(&done);
+        refs.push(&merged);
         let applied = ledger
             .close(id, self.outcome, self.reason.clone(), &refs)
             .map_err(cli_err)?;
