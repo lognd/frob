@@ -2297,6 +2297,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "gob-packs"
+version = "0.0.0"
+dependencies = [
+ "proptest",
+ "serde",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "tracing",
+]
+
+[[package]]
 name = "gob-plan"
 version = "0.0.0"
 dependencies = [
