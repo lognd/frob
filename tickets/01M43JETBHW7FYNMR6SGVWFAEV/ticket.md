@@ -2,11 +2,11 @@
 id = "01M43JETBHW7FYNMR6SGVWFAEV"
 title = "One shared atomic file write helper; migrate hand-rolled temp-and-rename copies"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T13:43:05Z"
-updated = "2026-10-04T13:43:05Z"
+updated = "2026-10-04T20:52:05Z"
 
 [[acceptance]]
 text = "Given the workspace, when the inventory test runs, then every temp-and-rename write goes through the shared helper"
