@@ -2,11 +2,12 @@
 id = "01M0GSW4QFS0PHRVSJF4QDT695"
 title = "wire frob_core.py_function_metrics into archgate's per-function metrics walk"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-08-21T00:00:00Z"
-updated = "2026-08-21T00:00:00Z"
+updated = "2026-10-04T21:08:44Z"
 aliases = ["T-2799"]
 labels = ["milestone:0.540.0", "v1-cluster:D2"]
 scope = ["src/frob/arch/_python.py", "tests/unit/test_arch_python_native.py", "tests/unit/test_arch.py", "docs/audits/perf.md", "docs/modules/arch.md"]
