@@ -8,7 +8,7 @@ points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-04T03:34:50Z"
-updated = "2026-10-04T04:15:56Z"
+updated = "2026-10-04T04:32:15Z"
 scope = ["crates/frob-worktree/**", "crates/gob-exec/**", "crates/gob-git/**", "crates/frob-land/**", "clippy.toml", "docs/design/paths.md", "crates/gob-cache/src/lib.rs", "crates/gob-cache/Cargo.toml", "crates/gob-cache/tests/shared.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-evidence/Cargo.toml", "crates/frob-tests/src/lease.rs", "crates/frob/src/init.rs", "crates/frob/Cargo.toml", "crates/frob-check/benches/full_check.rs", "crates/frob-check/Cargo.toml", "crates/gob-cache/benches/cache.rs", "Cargo.lock", "changelog.d/01M42EDPHHFS000000000000000.fixed.md", "changelog.d/01M42FN1YDHJNZ5NM7QEDPHHFS.security.md", "crates/frob-evidence/src/scrub.rs", "crates/frob/tests/merge_driver_path.rs"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = false
 
 [[acceptance]]
 text = "Given the codebase, when clippy runs, then std::fs::canonicalize is disallowed outside the one canonicalization function"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given windows-latest CI, when the frob-worktree gc tests run, then they pass"
