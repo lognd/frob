@@ -2,11 +2,12 @@
 id = "01M12TN686JBA5VE1MYPPGA6B5"
 title = "frob-suggest/--json UX gaps for consumer projects (diax F-012)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 reporter = "human"
 created = "2026-08-28T00:00:00Z"
-updated = "2026-10-04T21:08:09Z"
+updated = "2026-10-04T21:08:10Z"
 aliases = ["T-3334"]
 labels = ["milestone:1.1.0", "v1-cluster:E1"]
 scope = ["src/frob/check/__init__.py"]

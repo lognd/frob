@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~KHCKTS3: frob-suggest and --json UX gaps for consumers are cases for the new frob hook (PT-3)."
+at = "2026-10-04T21:08:10Z"
+actor = "lognd"
+rev = 1
