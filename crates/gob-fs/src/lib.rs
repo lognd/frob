@@ -53,6 +53,7 @@ fn create_staged(tmp: &Path, target: &Path, perms: Perms) -> io::Result<File> {
 }
 
 /// Flush the directory entry of a renamed file to disk (Unix; a no-op elsewhere).
+#[cfg_attr(not(unix), allow(clippy::unnecessary_wraps))]
 fn sync_parent(path: &Path) -> io::Result<()> {
     #[cfg(unix)]
     {
