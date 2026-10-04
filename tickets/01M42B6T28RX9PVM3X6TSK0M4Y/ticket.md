@@ -7,12 +7,12 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T02:17:08Z"
-updated = "2026-10-04T02:24:04Z"
+updated = "2026-10-04T03:21:14Z"
 scope = ["crates/frob-land/src/ratchet.rs", "crates/frob-land/src/land.rs", "crates/frob-land/tests/land.rs", "crates/gob-cache/**", "docs/design/rules.md", "crates/gob-check/src/pipeline.rs", "crates/frob-worktree/src/gc/caches.rs", "crates/frob-worktree/src/gc/pass.rs", "crates/frob-worktree/tests/gc.rs", "docs/design/architecture.md", "crates/gob-cache/Cargo.toml", "crates/frob-land/Cargo.toml", "changelog/**"]
 
 [[acceptance]]
 text = "Given a warm primary cache and an unchanged base, when land computes the ratchet, then the base check hits the cache for unchanged files and land wall time is reported before and after"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given two tickets landing on the same base commit, when the second lands, then the cached base fingerprint set is reused without a base check"
