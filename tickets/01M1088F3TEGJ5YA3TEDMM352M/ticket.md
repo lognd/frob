@@ -6,10 +6,14 @@ category = "triage"
 priority = "medium"
 reporter = "human"
 created = "2026-08-27T00:00:00Z"
-updated = "2026-08-27T00:00:00Z"
+updated = "2026-10-04T21:09:30Z"
 aliases = ["T-3194"]
 labels = ["milestone:1.1.0", "v1-cluster:C1b"]
 scope = ["src/frob/tickets"]
+
+[[links]]
+kind = "duplicates"
+target = "01M3AXSDBMG2ZAEHTQ6JHA8CYK"
 +++
 
 MEASURED 2026-08-27, while assembling T-3157's ground-truth fixture suite.
