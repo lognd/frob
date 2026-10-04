@@ -206,8 +206,14 @@ Tests that run pytest (frob-evidence and frob-tests) need `python3` and
 `FROB_REQUIRE_PYTHON_TESTS` turns the skip into a failure, so a host that
 installs both can never pass silently without them. Under `CI` (set by
 GitHub) `steps()` gives the `nextest` step that variable, and a `pytest`
-step (before `nextest`, `ci.yml` sets up python 3.12 first) installs the
-pinned `PYTEST_REQUIREMENT`, so CI cannot skip them. A developer machine
+step (before `nextest`; `ci.yml` sets up python 3.12 and uv first)
+runs `uv tool install --force` of the pinned `PYTEST_REQUIREMENT` (idempotent; pip
+is not used because hosts under PEP 668 refuse it), and the `nextest` step
+runs with `uv tool dir --bin` in front of `PATH`, so CI cannot skip them.
+uv is a declared prerequisite: the repo-root `goway.toml` lists it under
+`[toolchain] tools` so `goway doctor --fix` installs it on each helper, and
+`ci.yml` installs it with a pinned `astral-sh/setup-uv` (the zizmor and
+actionlint steps need `uvx` from it too). A developer machine
 keeps the named skips. The Windows job does not set the variable yet: its
 python has no `python3` name for the probe (follow-up ticket).
 Declared prerequisites are probed on the host (`rustup target list

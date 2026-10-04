@@ -10,6 +10,7 @@
 // frob:ticket 01M41ZSW6DZMBE5QWNGB6VY10G
 // frob:ticket 01M42A37XTPF2H1WXQQZWEYXGZ
 // frob:ticket 01M43FB0TFBNDFH1AEC1CTNHZG
+// frob:ticket 01M44M58PKEM2HMKZF2CANFHAW
 
 use std::path::Path;
 use std::time::Duration;
@@ -20,7 +21,8 @@ use serde::Deserialize;
 /// Rust target whose clippy run catches Windows-only breakage from a Linux host.
 pub const WINDOWS_TARGET: &str = "x86_64-pc-windows-gnu";
 
-/// Pinned pytest requirement the `pytest` step installs, so the pytest-backed tests never skip.
+/// Pinned pytest requirement the `pytest` step installs with `uv tool install`, so the
+/// pytest-backed tests never skip.
 pub const PYTEST_REQUIREMENT: &str = "pytest==8.4.2";
 /// Environment variable that turns a missing python or pytest from a named skip into a failure.
 pub const REQUIRE_PYTHON_TESTS_ENV: &str = "FROB_REQUIRE_PYTHON_TESTS";
@@ -47,6 +49,8 @@ pub struct Step {
     pub needs: Vec<Prerequisite>,
     /// Heavy enough to run on a goway host under `--remote`; others always run locally.
     pub offload: bool,
+    /// Run with uv's tool bin dir on `PATH`, so pytest installed by the `pytest` step is found.
+    pub uv_tools_on_path: bool,
 }
 
 /// Something a step needs on the host, checked before it runs and installed by `ci.yml`.
@@ -167,6 +171,7 @@ fn cargo(name: &'static str, args: &[&str]) -> Step {
         linux_only: false,
         needs: Vec::new(),
         offload: false,
+        uv_tools_on_path: false,
     }
 }
 
@@ -202,25 +207,21 @@ fn pinned_uvx(frob_toml: &toml::Table, tool: &str) -> Result<Vec<String>, CiErro
         .collect()
 }
 
-/// The `pytest` step: install [`PYTEST_REQUIREMENT`] with the host's python (`py -3` on Windows).
+/// The `pytest` step: `uv tool install --force` [`PYTEST_REQUIREMENT`] (idempotent, replaces a
+/// stray pytest; no pip, which hosts under PEP 668 refuse). Later steps see the executable
+/// through [`Step::uv_tools_on_path`].
 fn pytest_install() -> Step {
-    let (name, lead): (&str, &[&str]) = if cfg!(windows) {
-        ("py", &["-3"])
-    } else {
-        ("python3", &[])
-    };
-    let mut args = strings(lead);
-    args.extend(strings(&["-m", "pip", "install", PYTEST_REQUIREMENT]));
     Step {
         name: "pytest",
         program: Program::Tool {
-            name: name.to_owned(),
+            name: "uv".to_owned(),
         },
-        args,
+        args: strings(&["tool", "install", "--force", PYTEST_REQUIREMENT]),
         env: Vec::new(),
         linux_only: false,
         needs: Vec::new(),
         offload: false,
+        uv_tools_on_path: false,
     }
 }
 
@@ -261,6 +262,7 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
             linux_only: true,
             needs: Vec::new(),
             offload: false,
+            uv_tools_on_path: false,
         })
     };
     let linux = |mut s: Step| {
@@ -287,6 +289,7 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
     docs.env = vec![("RUSTDOCFLAGS".to_owned(), "-D warnings".to_owned())];
     docs.offload = true;
     let mut nextest = offloaded(cargo("nextest", &["nextest", "run", "--profile", "ci"]));
+    nextest.uv_tools_on_path = true;
     if require_python {
         tracing::info!("nextest requires python and pytest (no skips)");
         nextest.env = vec![(REQUIRE_PYTHON_TESTS_ENV.to_owned(), "1".to_owned())];
@@ -354,12 +357,45 @@ fn runner() -> Runner {
     Runner::new(Limits { jobs: 1 })
 }
 
+/// `PATH` with uv's tool bin dir (`uv tool dir --bin`) in front, or `None` when uv cannot say.
+fn path_with_uv_tools(root: &Path) -> Option<String> {
+    let query = Spec {
+        program: Program::Tool {
+            name: "uv".to_owned(),
+        },
+        args: strings(&["tool", "dir", "--bin"]),
+        cwd: Some(root.to_path_buf()),
+        env: Vec::new(),
+        timeout: QUERY_TIMEOUT,
+        capture: true,
+    };
+    let out = match runner().run(&query) {
+        Ok(out) if out.status == Outcome::Exited(0) => out,
+        other => {
+            tracing::warn!(?other, "uv tool dir --bin failed; PATH left unchanged");
+            return None;
+        }
+    };
+    let bin = std::path::PathBuf::from(out.stdout.trim());
+    let rest = std::env::var_os("PATH").unwrap_or_default();
+    let joined =
+        std::env::join_paths(std::iter::once(bin.clone()).chain(std::env::split_paths(&rest)));
+    tracing::info!(bin = %bin.display(), "uv tool bin dir put on PATH for the step");
+    joined.ok()?.into_string().ok()
+}
+
 fn spec(root: &Path, step: &Step, timeout: Duration, capture: bool) -> Spec {
+    let mut env = step.env.clone();
+    if step.uv_tools_on_path
+        && let Some(path) = path_with_uv_tools(root)
+    {
+        env.push(("PATH".to_owned(), path));
+    }
     Spec {
         program: step.program.clone(),
         args: step.args.clone(),
         cwd: Some(root.to_path_buf()),
-        env: step.env.clone(),
+        env,
         timeout,
         capture,
     }
@@ -1076,6 +1112,7 @@ mod tests {
                 install: "sudo apt-get install -y ghost-pkg",
             }],
             offload: false,
+            uv_tools_on_path: false,
         };
         let e = ExecRunner.run(Path::new("."), &step).unwrap_err();
         assert!(matches!(e, CiError::ToolMissing { .. }), "{e}");
@@ -1234,6 +1271,7 @@ mod tests {
             linux_only: false,
             needs: Vec::new(),
             offload: false,
+            uv_tools_on_path: false,
         };
         let r = run(dir.path(), &[local], &g, false, true, &mut |_| {});
         assert_eq!(r[0].status, StepStatus::Passed);

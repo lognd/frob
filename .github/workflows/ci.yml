@@ -40,9 +40,12 @@ jobs:
       - uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2.87.22
         with:
           tool: nextest
+      # The tests need a python3 on PATH; pytest itself comes from uv (pip is refused on PEP 668 hosts).
       - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           python-version: "3.12"
+      - name: Install uv (pytest step, zizmor and actionlint tool stages)
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       - name: Install mold (linux linker)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y mold clang
@@ -78,7 +81,7 @@ jobs:
       - name: Docs (Windows, isolated tool)
         if: runner.os == 'Windows'
         run: cargo dev-isolated ci --step docs
-      - name: Install pinned pytest (pytest-backed tests must not skip)
+      - name: Install pinned pytest with uv (pytest-backed tests must not skip)
         if: runner.os == 'Linux'
         run: cargo dev ci --step pytest
       - name: Install pinned pytest (Windows, isolated tool)
@@ -106,9 +109,6 @@ jobs:
             git fetch --no-tags origin '+refs/heads/experimental:refs/remotes/origin/experimental'
             git update-ref refs/heads/experimental refs/remotes/origin/experimental
           fi
-      - name: Install uv (runs the zizmor and actionlint tool stages)
-        if: runner.os == 'Linux'
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       - name: Fetch zizmor (version from frob.toml)
         if: runner.os == 'Linux'
         run: cargo dev ci --step zizmor

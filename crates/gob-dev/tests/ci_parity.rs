@@ -285,3 +285,32 @@ fn ci_definition_sets_require_python_tests_and_pins_pytest() {
         "a local run must keep the named skips"
     );
 }
+
+// frob:ticket 01M44M58PKEM2HMKZF2CANFHAW
+// frob:tests crates/gob-dev/tests/ci_parity.rs::pytest_step_installs_with_uv_not_pip_and_nextest_sees_it
+#[test]
+fn pytest_step_installs_with_uv_not_pip_and_nextest_sees_it() {
+    let steps = ci::steps_with(&root(), true).unwrap();
+    let pytest = steps.iter().find(|s| s.name == "pytest").unwrap();
+    assert_eq!(pytest.program.label(), "uv");
+    assert_eq!(
+        pytest.args,
+        ["tool", "install", "--force", ci::PYTEST_REQUIREMENT],
+        "pytest must be installed with uv, never pip"
+    );
+    let nextest = steps.iter().find(|s| s.name == "nextest").unwrap();
+    assert!(
+        nextest.uv_tools_on_path,
+        "nextest must find the uv-installed pytest"
+    );
+}
+
+// frob:ticket 01M44M58PKEM2HMKZF2CANFHAW
+// frob:tests crates/gob-dev/tests/ci_parity.rs::goway_toml_declares_uv_as_a_required_tool
+#[test]
+fn goway_toml_declares_uv_as_a_required_tool() {
+    let text = std::fs::read_to_string(root().join("goway.toml")).unwrap();
+    let table: toml::Table = text.parse().unwrap();
+    let tools = table["toolchain"]["tools"].as_array().unwrap();
+    assert!(tools.iter().any(|t| t.as_str() == Some("uv")), "{tools:?}");
+}

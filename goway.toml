@@ -1,0 +1,3 @@
+# goway reads this to provision helpers (goway doctor --fix).
+[toolchain]
+tools = ["uv"]
