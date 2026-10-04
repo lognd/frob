@@ -1,0 +1,11 @@
+error[GRL007]: `unsafe_block` has no meaning in every language
+ --> rules/GRL007.grl:4:11
+  |
+4 |   find u: rust`unsafe { $$$BODY }` as roles
+  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `as roles` cannot lift the `unsafe_block` node of this snippet
+  |
+  = note: only nodes with a universal operator (calls, branches, loops, assignments, ...) can be matched in every language
+  = help: match the parts that have universal words, or narrow the rule with `lang rust` and drop `as roles`
+  = explain: grimble explain GRL007
+
+error: aborting due to 1 previous error

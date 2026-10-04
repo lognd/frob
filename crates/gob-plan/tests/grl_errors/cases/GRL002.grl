@@ -1,0 +1,26 @@
+rule PYEX001 "bare-except" {
+  lang python
+
+  find e: python`except: $$$`
+  report e "catch a named exception"
+
+  example fire """
+    try:
+        run()
+    except:                                #~ warn
+        pass
+  """
+  example clean """
+    try:
+        run()
+    except ValueError:
+        pass
+  """
+
+  explain """
+    A bare `except:` also catches KeyboardInterrupt and SystemExit.
+
+    ## Remedy
+    Name the exception you expect.
+  """
+}

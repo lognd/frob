@@ -1,0 +1,22 @@
+rule NOPE012 "wide-fix" {
+  lang rust
+
+  find d: `dbg!($X)`
+  find f: function where d inside f
+  report d "remove dbg! before committing"
+  fix f -> `fn gone() {}` [machine]
+
+  example fire """
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+  """
+  example clean """
+    fn f(x: u32) -> u32 { x }
+  """
+
+  explain """
+    `dbg!` prints to stderr and is meant for local debugging only.
+
+    ## Remedy
+    Delete the call, or log through `tracing` if the value matters.
+  """
+}

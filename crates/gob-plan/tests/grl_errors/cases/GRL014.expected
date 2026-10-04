@@ -1,0 +1,13 @@
+error[GRL014]: `diff.changed` is used but `diff` is not in `needs`
+ --> rules/GRL014.grl:5:24
+  |
+2 |   lang rust
+  |   --------- no `needs` line in the header
+...
+5 |   where d.file.path in diff.changed
+  |                        ^^^^^^^^^^^^ reads the `diff` relation
+  |
+  = help: add `needs diff` to the header; the rule re-runs when the diff changes
+  = explain: grimble explain GRL014
+
+error: aborting due to 1 previous error

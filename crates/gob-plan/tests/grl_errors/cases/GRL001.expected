@@ -1,0 +1,11 @@
+error[GRL001]: unknown kind `tset`
+ --> rules/GRL001.grl:5:22
+  |
+5 |   where not d inside tset
+  |                      ^^^^ not a kind, field or relation
+  |
+  = help: did you mean `test`?
+  = help: `grimble rule catalog` lists every kind, field and relation
+  = explain: grimble explain GRL001
+
+error: aborting due to 1 previous error
