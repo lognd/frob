@@ -2,13 +2,13 @@
 id = "01M42FN1YDHJNZ5NM7QEDPHHFS"
 title = 'Windows verbatim paths (\\?\) break git calls, and the GC path jail may admit a dotdot path; one canonicalize, a strict jail'
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-04T03:34:50Z"
-updated = "2026-10-04T03:34:50Z"
+updated = "2026-10-04T03:35:06Z"
 scope = ["crates/frob-worktree/**", "crates/gob-exec/**", "crates/gob-git/**", "crates/frob-land/**", "crates/frob-check/src/**", "clippy.toml", "docs/design/paths.md"]
 
 [[acceptance]]
