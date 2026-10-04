@@ -8,8 +8,8 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:27:02Z"
-updated = "2026-10-04T02:23:35Z"
-scope = ["packaging/**", ".github/workflows/build-smoke.yml", ".github/workflows/release.yml", "crates/frob-release/**", "docs/guides/release.md", "docs/design/releases.md"]
+updated = "2026-10-04T02:56:51Z"
+scope = ["packaging/**", ".github/workflows/build-smoke.yml", ".github/workflows/release.yml", "crates/frob-release/**", "docs/guides/release.md", "docs/design/releases.md", "changelog.d/01M421FB3B2P9EMNKPDTPHS84G.changed.md"]
 
 [[links]]
 kind = "blocked-by"
