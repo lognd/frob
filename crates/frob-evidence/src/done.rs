@@ -523,15 +523,24 @@ mod tests {
     use frob_ledger::LedgerConfig;
     use frob_ledger::model::TicketType;
     use frob_ledger::ops::NewTicket;
+    use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec};
 
     fn git(dir: &Path, args: &[&str]) {
-        let ok = std::process::Command::new("git")
-            .args(args)
-            .current_dir(dir)
-            .status()
-            .expect("git")
-            .success();
-        assert!(ok, "git {args:?}");
+        let spec = Spec {
+            program: Program::Git,
+            args: args.iter().map(|a| (*a).to_owned()).collect(),
+            cwd: Some(dir.to_path_buf()),
+            env: Vec::new(),
+            timeout: std::time::Duration::from_secs(30),
+            capture: true,
+        };
+        let out = Runner::new(Limits { jobs: 1 }).run(&spec).expect("git");
+        assert_eq!(
+            out.status,
+            ExecOutcome::Exited(0),
+            "git {args:?}: {}",
+            out.stderr
+        );
     }
 
     // frob:ticket 01M42MGNSY7N4NANEFNG7AXHR1
@@ -549,23 +558,23 @@ mod tests {
             gob_git::Repo::discover(p).expect("repo"),
             LedgerConfig::default(),
         );
-        let blocker = ledger
+        let upstream = ledger
             .new_ticket(NewTicket::new("Blocker", TicketType::Chore))
             .expect("blocker");
         let mut req = NewTicket::new("Blocked", TicketType::Chore);
-        req.blocked_by = vec![blocker.ticket.front.id];
-        let blocked = ledger.new_ticket(req).expect("blocked");
-        let id = blocked.ticket.front.id;
+        req.blocked_by = vec![upstream.ticket.front.id];
+        let downstream = ledger.new_ticket(req).expect("blocked");
+        let id = downstream.ticket.front.id;
 
         let guard = DoneGuard::for_ticket(&ledger, id, p).expect("guard");
         let cx = |outcome| CloseContext {
-            ticket: &blocked.ticket,
-            handle: &blocked.handle,
+            ticket: &downstream.ticket,
+            handle: &downstream.handle,
             outcome,
         };
         let f = guard.check(&cx(Some(Outcome::Done))).expect_err("refused");
         assert_eq!(f.code, CODE_BLOCKERS);
-        assert!(f.message.contains(&blocker.handle), "{}", f.message);
+        assert!(f.message.contains(&upstream.handle), "{}", f.message);
         assert!(guard.check(&cx(Some(Outcome::WontFix))).is_ok());
     }
 }
