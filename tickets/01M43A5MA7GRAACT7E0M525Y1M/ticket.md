@@ -2,13 +2,13 @@
 id = "01M43A5MA7GRAACT7E0M525Y1M"
 title = "pytest evidence provider and Python test selection for frob test"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M43A5349M17PED730HKNM4VV"
 reporter = "lognd"
 created = "2026-10-04T11:18:16Z"
-updated = "2026-10-04T11:18:16Z"
+updated = "2026-10-04T12:05:43Z"
 scope = ["crates/frob-evidence/src/provider.rs", "crates/frob-tests/**", "docs/design/tickets.md"]
 
 [[links]]
