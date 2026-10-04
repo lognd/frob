@@ -3,13 +3,13 @@ id = "01M3AXSD9Z2T54HFHNCZ91W3YV"
 title = "STORE authority gaps and dropped rows"
 type = "story"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M38BCP8YSPMT8SG9Y3VM7F8C"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:19Z"
 aliases = ["T-6463"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 +++
 
 Two halves: (1) close the 13 authority-citation gaps the research pass
