@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T04:59:49Z"
-updated = "2026-10-04T14:11:37Z"
+updated = "2026-10-04T15:02:37Z"
 scope = ["crates/frob-check/src/**", "crates/frob-check/tests/check.rs", "crates/frob-check/tests/evaluation.rs", "crates/gob-rules/src/required.rs", "crates/grimble-check/src/sibling.rs", "docs/schemas/envelope.json", "crates/gob-check/src/repo.rs", "crates/gob-diagnostics/tests/contract.rs"]
 
 [[acceptance]]
