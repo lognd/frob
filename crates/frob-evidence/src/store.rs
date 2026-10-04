@@ -137,10 +137,8 @@ impl BlobStore {
                     tracing::debug!(path = %path.display(), "blob already stored");
                 } else {
                     std::fs::create_dir_all(&dir).map_err(|e| EvidenceError::io(&dir, e))?;
-                    let tmp = dir.join(format!(".{hex}.tmp"));
-                    std::fs::write(&tmp, text.as_bytes())
-                        .map_err(|e| EvidenceError::io(&tmp, e))?;
-                    std::fs::rename(&tmp, &path).map_err(|e| EvidenceError::io(&path, e))?;
+                    gob_fs::write_atomic(&path, text.as_bytes())
+                        .map_err(|e| EvidenceError::io(&path, e))?;
                     tracing::info!(path = %path.display(), bytes = text.len(), "blob stored");
                 }
                 Ok(Stored::Uri(format!("dir:{rel}/{hex}")))

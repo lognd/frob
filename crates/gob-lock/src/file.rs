@@ -598,19 +598,11 @@ impl LockFile {
     /// [`LockError::Io`] when the temp file cannot be written or renamed, plus render errors.
     pub fn save(&self, path: &Path) -> Result<(), LockError> {
         let text = self.to_toml()?;
-        let mut tmp = path.as_os_str().to_owned();
-        tmp.push(".tmp");
-        let tmp = PathBuf::from(tmp);
-        let io = |context, p: &Path| {
-            let p = p.to_path_buf();
-            move |source| LockError::Io {
-                context,
-                path: p,
-                source,
-            }
-        };
-        std::fs::write(&tmp, text).map_err(io("write", &tmp))?;
-        std::fs::rename(&tmp, path).map_err(io("rename", path))?;
+        gob_fs::write_atomic(path, text.as_bytes()).map_err(|source| LockError::Io {
+            context: "write",
+            path: path.to_path_buf(),
+            source,
+        })?;
         tracing::info!(path = %path.display(), entries = self.entries.len(), "lock saved");
         Ok(())
     }

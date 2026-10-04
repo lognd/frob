@@ -183,7 +183,5 @@ fn spaced(above: &str) -> String {
 
 /// Write `text` to `path` through a sibling temp file and a rename, so a failure leaves the old file.
 fn write_atomic(path: &Path, text: &str) -> Result<(), ReleaseError> {
-    let tmp = path.with_extension("md.tmp");
-    fs::write(&tmp, text).map_err(|e| io("write", &tmp, &e))?;
-    fs::rename(&tmp, path).map_err(|e| io("rename", &tmp, &e))
+    gob_fs::write_atomic(path, text.as_bytes()).map_err(|e| io("write", path, &e))
 }

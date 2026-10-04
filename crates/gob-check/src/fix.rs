@@ -10,9 +10,9 @@ use gob_rules::{Finding, FixKind};
 use gob_text::FileInterner;
 use gob_walk::{ContentSource, Digest};
 
-use crate::atomic::write_atomic;
 use crate::error::CheckError;
 use crate::report::AppliedFix;
+use gob_fs::write_atomic;
 
 /// One edit resolved to a path and byte range.
 struct Edit {
