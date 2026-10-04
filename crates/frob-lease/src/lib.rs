@@ -30,7 +30,7 @@ pub use error::LeaseError;
 pub use guard::LeaseGuard;
 pub use model::{Holder, Lease, StealRecord};
 pub use rule::{Scope001, scope001};
-pub use store::{Acquired, Contended, LeaseStore, Stolen};
+pub use store::{Acquired, Contended, CorruptLease, LeaseStore, Stolen};
 
 /// Open the lease store of the repository containing `cwd` with the caller's `cfg`.
 ///

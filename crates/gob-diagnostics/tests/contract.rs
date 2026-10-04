@@ -306,3 +306,44 @@ fn slug_resolves_from_registry() {
     let rec = FindingRecord::from_finding(&fx.findings[1], &fx.sources, &reg);
     assert_eq!(rec.slug.as_deref(), Some("bad-call"));
 }
+
+const HOSTILE: &str = "ok\u{1b}[31mred\u{202e}gnp.exe\u{7}\u{9b}2J\u{200b}";
+
+#[test]
+fn text_escapes_hostile_message_and_json_keeps_it_exact() {
+    let fx = fixture();
+    let findings = vec![Finding::new(
+        "DOC001".parse().unwrap(),
+        Severity::Error,
+        None,
+        HOSTILE,
+        "src/a.rs",
+    )];
+    let report = Report {
+        findings: &findings,
+        sources: &fx.sources,
+    };
+    for color in [ColorChoice::Never, ColorChoice::Always] {
+        let out = render_text(
+            &report,
+            &TextOptions {
+                color,
+                snippets: true,
+            },
+        );
+        assert!(
+            out.contains("\\u{1b}[31mred\\u{202e}gnp.exe\\u{7}\\u{9b}2J\\u{200b}"),
+            "{out}"
+        );
+        let raw = out.replace("\u{1b}[", "").replace(['\u{1b}', '\n'], "");
+        // Only the renderer's own color sequences may hold ESC; the message contributes none.
+        assert!(
+            !raw.chars()
+                .any(|c| c.is_control() || gob_diagnostics::is_dangerous(c)),
+            "{out:?}"
+        );
+    }
+    let rec = FindingRecord::from_finding(&findings[0], &fx.sources, Registry::global());
+    let json = serde_json::to_value(&rec).unwrap();
+    assert_eq!(json["message"], HOSTILE);
+}

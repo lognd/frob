@@ -10,7 +10,7 @@ use crate::config::overlap_is_lockfiles;
 use crate::error::{LeaseError, SAME_TICKET};
 use crate::model::Lease;
 use crate::open_store_from_file as open_store;
-use crate::store::Contended;
+use crate::store::{Contended, CorruptLease};
 
 impl From<LeaseError> for CliError {
     fn from(e: LeaseError) -> Self {
@@ -32,7 +32,10 @@ impl From<LeaseError> for CliError {
                         "wait until the lease on {ticket} ends (`frob requeue {ticket} --reason <why>` frees it), then rerun"
                     )),
                     LeaseError::Format { path, .. } => {
-                        r.with_remedy(format!("remove {} and rerun", path.display()))
+                        r.with_remedy(format!(
+                            "move {} aside (rename it to <name>.toml.corrupt) and rerun",
+                            path.display()
+                        ))
                     }
                     _ => r,
                 };
@@ -48,6 +51,8 @@ impl From<LeaseError> for CliError {
 pub struct LeaseListData {
     /// Live leases ordered by ticket.
     pub leases: Vec<Lease>,
+    /// Lease files that could not be read; skipped, not deleted.
+    pub corrupt: Vec<CorruptLease>,
 }
 
 /// List the live scope leases of this clone.
@@ -69,9 +74,17 @@ impl Command for LeaseList {
 
     fn run(&self, ctx: &Context) -> Outcome<LeaseListData> {
         let (store, _) = open_store(&ctx.cwd)?;
-        Ok(Payload::new(LeaseListData {
-            leases: store.list()?,
-        }))
+        let leases = store.list()?;
+        let corrupt = store.corrupt_leases()?;
+        let mut payload = Payload::new(LeaseListData { leases, corrupt });
+        for c in payload.data.corrupt.clone() {
+            payload = payload.with_warning(format!(
+                "corrupt lease file {} skipped ({}); move it aside (rename it to <name>.toml.corrupt)",
+                c.path.display(),
+                c.message
+            ));
+        }
+        Ok(payload)
     }
 }
 

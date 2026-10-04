@@ -122,6 +122,10 @@ pub struct FixOutcome {
     pub applied: Vec<AppliedFix>,
     /// Fixes skipped because their edits overlapped an earlier fix of the same file.
     pub skipped_overlap: usize,
+    /// Fixes skipped because an edit was out of range for its file.
+    pub skipped_invalid: usize,
+    /// Fixes dropped because the rewritten file no longer parsed.
+    pub rolled_back: usize,
     /// Findings left after the re-run (all severities).
     pub remaining: usize,
 }
@@ -164,6 +168,8 @@ pub struct CheckReport {
     pub suppressed: Vec<(Finding, Exception)>,
     /// Resolves the file ids in the findings' spans.
     pub files: FileInterner,
+    /// Content digest per walked path at analysis time (the `--fix` precondition).
+    pub digests: std::collections::HashMap<String, String>,
     /// Stage timing, tool stages last.
     pub timing: Timing,
     /// Counters.

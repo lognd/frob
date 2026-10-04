@@ -1,0 +1,9 @@
+kind = "create"
+title = "Ledger::commit_events drops CommitOutcome.unsynced: no warning names the checkout or paths"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-ledger/src/ledger.rs"]
+at = "2026-10-04T13:25:27Z"
+actor = "lognd"
+rev = 1

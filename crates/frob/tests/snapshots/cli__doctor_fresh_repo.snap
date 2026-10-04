@@ -64,6 +64,10 @@ expression: v
       "linked_worktree": false,
       "root": "[path]"
     },
+    "leases": {
+      "corrupt": [],
+      "state": "ok"
+    },
     "ledger": {
       "error": "[error]",
       "oid": null,

@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T13:13:59Z"
+digest = "3cb759c11090e2445715156469fc9bef104a03414b8f16bc456c14cf8bd75114"
+exit_code = 0
+inline = '''
+   Compiling gob-git v0.0.0 (<worktree>/crates/gob-git)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.79s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 91f13b74-bce3-4168-b588-366a85bff486 with nextest profile: default
+    Starting 2 tests across 1 binary (13 tests skipped)
+        PASS [   0.095s] gob-git::ledger primary_with_local_edit_is_reported_and_keeps_it
+        PASS [   0.102s] gob-git::ledger primary_with_local_edit_still_receives_the_unblocked_new_paths
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.103s] 2 tests run: 2 passed, 13 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p gob-git --test ledger primary_with_local_edit"
+size = 715
+status = "measured"
+tests = ["primary_with_local_edit_is_reported_and_keeps_it", "primary_with_local_edit_still_receives_the_unblocked_new_paths"]
+at = "2026-10-04T13:13:59Z"
+actor = "lognd"
+rev = 1

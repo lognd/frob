@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T13:49:39Z"
+digest = "ef5ed471262a3b2d903c873e5729e81ec4535a21f54bf576b0394824d003afff"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 91e036e2-9ef5-4e63-8442-963bc143e164 with nextest profile: default
+    Starting 1 test across 1 binary
+        PASS [   0.804s] frob-cli::ticket_unsynced comment_from_a_linked_worktree_warns_about_the_blocked_primary
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.805s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-cli --test ticket_unsynced comment_from_a_linked"
+size = 557
+status = "measured"
+tests = ["comment_from_a_linked_worktree_warns_about_the_blocked_primary"]
+at = "2026-10-04T13:49:39Z"
+actor = "lognd"
+rev = 1
