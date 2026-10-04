@@ -8,7 +8,7 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:47Z"
-updated = "2026-10-04T20:51:53Z"
+updated = "2026-10-04T20:54:57Z"
 idempotency_key = "crunk-plan-sib"
 labels = ["area:crunk"]
 scope = ["crates/frob-check/tests/**", "crates/frob-check/src/sibling/**", "crates/frob/tests/sibling_discovery.rs", "crates/frob/src/doctor.rs", "crates/gob-testsupport/**"]
@@ -23,7 +23,7 @@ target = "01M43ARWCVRCE25KDZC8CRC1ZH"
 
 [[acceptance]]
 text = "Given crunk beside frob and not on PATH and a crunk.toml, when frob check runs, then crunk's findings appear in the merged report"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given crunk versions beside frob and on PATH that differ, when frob doctor runs, then both are reported and the one beside frob is used"
