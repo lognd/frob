@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: re-homing a dangling v1 WIRE001 follow_up citation."
+at = "2026-10-04T21:07:22Z"
+actor = "lognd"
+rev = 1
