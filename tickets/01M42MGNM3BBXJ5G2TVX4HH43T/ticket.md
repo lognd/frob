@@ -7,8 +7,8 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:59:49Z"
-updated = "2026-10-04T11:54:56Z"
-scope = ["crates/gob-git/src/ledger.rs"]
+updated = "2026-10-04T11:57:26Z"
+scope = ["crates/gob-git/src/ledger.rs", "crates/gob-git/tests/ledger.rs"]
 
 [[acceptance]]
 text = "Given 24 concurrent ticket new, when they run, then all succeed"
