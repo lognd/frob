@@ -1,0 +1,21 @@
+{
+  "palette": [
+    "ink"
+  ],
+  "roles": [
+    "body"
+  ],
+  "layers": [],
+  "stacks": [],
+  "lint_rules": [],
+  "breakpoints": [],
+  "platforms": [],
+  "screens": [
+    "landing",
+    "portal-dashboard",
+    "portal-invoices-empty",
+    "login-page"
+  ],
+  "sessions": [],
+  "mock_sets": []
+}

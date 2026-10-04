@@ -1,0 +1,184 @@
+{
+  "project": {
+    "css_root": "src/styles",
+    "tokens_file": "tokens.css",
+    "root_font_size": 16.0
+  },
+  "palette": {
+    "ink": {
+      "r": 0.10196078431372549,
+      "g": 0.10196078431372549,
+      "b": 0.10196078431372549,
+      "a": 1.0
+    }
+  },
+  "roles": {
+    "body": {
+      "foreground": "ink",
+      "background": "ink",
+      "floor": 4.5
+    }
+  },
+  "scales": {
+    "spacing": [
+      0.0,
+      4.0,
+      8.0
+    ],
+    "font_sizes": [
+      12.0,
+      16.0
+    ],
+    "radii": [
+      0.0,
+      4.0
+    ],
+    "sizes": []
+  },
+  "typography": {
+    "families": [
+      "Inter"
+    ],
+    "weights": [
+      400
+    ],
+    "stacks": {}
+  },
+  "layers": {},
+  "org": {
+    "buckets": [
+      "base",
+      "components",
+      "layouts",
+      "utilities"
+    ],
+    "class_case": "kebab",
+    "component_prefix": true,
+    "tokens_only_custom_props": true,
+    "model": "buckets",
+    "ignore": [],
+    "entry": []
+  },
+  "lint": {
+    "rules": {},
+    "fix_tolerance": 0.15,
+    "color_tolerance": 8.0
+  },
+  "tokens": {
+    "color": "color",
+    "space": "space",
+    "font_size": "font-size",
+    "radius": "radius",
+    "layer": "layer",
+    "font_family": "font-family",
+    "size": "size",
+    "header": "",
+    "json_file": ""
+  },
+  "jsx": {
+    "globs": [
+      "src/**/*.tsx"
+    ]
+  },
+  "tailwind": {
+    "config": "",
+    "css_entry": "",
+    "tokens_file": "",
+    "namespace_keys": false,
+    "alpha_channels": false,
+    "version": "auto"
+  },
+  "breakpoints": {
+    "points": {},
+    "base_required": []
+  },
+  "platforms": {},
+  "screens": {
+    "landing": {
+      "id": "landing",
+      "entry": "/",
+      "states": [
+        {
+          "id": "default",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        }
+      ],
+      "applies_to": null
+    },
+    "portal-dashboard": {
+      "id": "portal-dashboard",
+      "entry": "/portal",
+      "states": [
+        {
+          "id": "default",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        }
+      ],
+      "applies_to": null
+    },
+    "portal-invoices-empty": {
+      "id": "portal-invoices-empty",
+      "entry": "/portal/invoices?state=empty",
+      "states": [
+        {
+          "id": "empty",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        }
+      ],
+      "applies_to": null
+    },
+    "login-page": {
+      "id": "login-page",
+      "entry": "/login/",
+      "states": [
+        {
+          "id": "default",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        }
+      ],
+      "applies_to": null
+    }
+  },
+  "sessions": {},
+  "mock_sets": {}
+}

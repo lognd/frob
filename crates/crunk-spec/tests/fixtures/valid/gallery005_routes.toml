@@ -1,0 +1,78 @@
+# T-0257 acceptance fixture: a minimal project whose declared [[screen]]
+# ids deliberately differ from their entry paths (the id-vs-entry mismatch
+# GALLERY005 used to compare against), one entry carries a query string,
+# and its paired router.tsx (below) discovers exactly one undeclared route
+# plus a "*" catch-all that must never require its own [[screen]].
+
+[project]
+css_root = "src/styles"
+tokens_file = "tokens.css"
+root_font_size = 16
+
+[palette]
+ink = "#1a1a1a"
+
+[palette.roles]
+body = ["ink", "ink"]
+
+[scales]
+spacing = [0, 4, 8]
+font_sizes = [12, 16]
+radii = [0, 4]
+
+[typography]
+families = ["Inter"]
+weights = [400]
+
+[org]
+buckets = ["base", "components", "layouts", "utilities"]
+class_case = "kebab"
+component_prefix = true
+tokens_only_custom_props = true
+
+[jsx]
+globs = ["src/**/*.tsx"]
+
+[lint]
+fix_tolerance = 0.15
+color_tolerance = 8.0
+
+# id "landing" == its own entry path -- the coincidental case that always
+# happened to pass, even under the old id-vs-entry-comparing bug.
+[[screen]]
+id = "landing"
+entry = "/"
+
+[[screen.states]]
+id = "default"
+
+# id "portal-dashboard" != entry "/portal" -- exactly the case the old
+# bug (comparing discovered paths against declared IDS) always flagged
+# as a false GALLERY005, since no discovered path is ever spelled
+# "portal-dashboard".
+[[screen]]
+id = "portal-dashboard"
+entry = "/portal"
+
+[[screen.states]]
+id = "default"
+
+# entry carries a query string selecting a gallery state -- the router
+# only ever discovers the bare path ("/portal/invoices"), so matching
+# must strip the query string before comparing.
+[[screen]]
+id = "portal-invoices-empty"
+entry = "/portal/invoices?state=empty"
+
+[[screen.states]]
+id = "empty"
+
+# entry has a trailing slash the router's own resolved path never
+# carries (React Router path joining always strips it) -- matching must
+# tolerate exactly one trailing slash on either side.
+[[screen]]
+id = "login-page"
+entry = "/login/"
+
+[[screen.states]]
+id = "default"

@@ -1,0 +1,18 @@
+[project]
+css_root = "."
+tokens_file = "t.css"
+root_font_size = 10
+
+[palette]
+a = "white"
+
+[scales]
+spacing = [1]
+font_sizes = [10]
+
+[typography]
+families = ["x"]
+weights = [400]
+
+[org]
+buckets = ["b"]

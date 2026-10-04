@@ -1,0 +1,31 @@
+{
+  "palette": [
+    "ink",
+    "paper",
+    "accent"
+  ],
+  "roles": [
+    "body"
+  ],
+  "layers": [
+    "base",
+    "dropdown",
+    "overlay",
+    "toast"
+  ],
+  "stacks": [],
+  "lint_rules": [
+    "SPACE001"
+  ],
+  "breakpoints": [
+    "sm",
+    "md",
+    "lg",
+    "xl",
+    "2xl"
+  ],
+  "platforms": [],
+  "screens": [],
+  "sessions": [],
+  "mock_sets": []
+}

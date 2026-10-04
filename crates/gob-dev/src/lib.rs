@@ -72,12 +72,14 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Vec<GenFile> {
     }
     if all || kind == Kind::Config {
         files.extend(render::config::generate());
+        files.extend(render::crunk::generate_config());
     }
     if all || kind == Kind::Cli {
         files.extend(render::cli::generate());
     }
     if all || kind == Kind::Schemas {
         files.extend(render::schemas::generate());
+        files.extend(render::crunk::generate_schemas());
     }
     files.sort_by(|a, b| a.path.cmp(&b.path));
     tracing::info!(?kind, files = files.len(), "generated");

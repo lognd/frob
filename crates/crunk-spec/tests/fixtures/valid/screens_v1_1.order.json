@@ -1,0 +1,50 @@
+{
+  "palette": [
+    "bg-primary",
+    "fg-primary"
+  ],
+  "roles": [
+    "body"
+  ],
+  "layers": [],
+  "stacks": [],
+  "lint_rules": [],
+  "breakpoints": [],
+  "platforms": [
+    "chromium-mobile",
+    "chromium-desktop",
+    "firefox-mobile",
+    "firefox-desktop",
+    "webkit-mobile",
+    "webkit-desktop",
+    "reflow-320"
+  ],
+  "screens": [
+    "landing",
+    "projects",
+    "login",
+    "register",
+    "verify-email",
+    "reset-password",
+    "portal",
+    "confirm-dialog",
+    "admin"
+  ],
+  "sessions": [
+    "none",
+    "customer",
+    "admin"
+  ],
+  "mock_sets": [
+    "projects-pending",
+    "projects-empty",
+    "projects-500",
+    "auth-login-429",
+    "auth-login-503",
+    "auth-register-ok",
+    "auth-verify-ok",
+    "auth-verify-500",
+    "auth-reset-ok",
+    "portal-invoices-empty"
+  ]
+}
