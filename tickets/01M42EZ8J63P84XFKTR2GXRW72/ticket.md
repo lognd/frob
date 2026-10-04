@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T03:22:55Z"
-updated = "2026-10-04T03:57:05Z"
+updated = "2026-10-04T04:09:19Z"
 scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/scrub.rs", "crates/frob/src/ticket/**", "crates/frob/tests/**", "crates/gob-config/**", "docs/design/tickets.md", "docs/design/architecture.md", "docs/reference/rules/**", "crates/frob/src/doctor.rs", "crates/frob-check/src/product.rs"]
 
 [[acceptance]]
