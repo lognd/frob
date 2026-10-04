@@ -95,6 +95,24 @@ expression: v
       ],
       "type": "object"
     },
+    "CorruptLease": {
+      "description": "A lease file that cannot be read as a lease; it grants and blocks nothing.",
+      "properties": {
+        "message": {
+          "description": "What is wrong with it.",
+          "type": "string"
+        },
+        "path": {
+          "description": "The unreadable file.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "message"
+      ],
+      "type": "object"
+    },
     "DriverCheck": {
       "description": "The configured ledger merge driver against the running frob.",
       "properties": {
@@ -397,6 +415,37 @@ expression: v
       ],
       "type": "object"
     },
+    "LeaseInfo": {
+      "description": "Lease-file health: unreadable lease files and what `--fix` did about them.",
+      "properties": {
+        "corrupt": {
+          "description": "Lease files that cannot be parsed (path and parse error); they are skipped by every verb.",
+          "items": {
+            "$ref": "#/$defs/CorruptLease"
+          },
+          "type": "array"
+        },
+        "quarantined": {
+          "description": "Present with `--fix`: where each corrupt file was moved (`<name>.toml.corrupt`).",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "state": {
+          "description": "`ok`, or `skipped: <why>` when there is no repository work tree or the store could not be read.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "corrupt"
+      ],
+      "type": "object"
+    },
     "LedgerInfo": {
       "description": "Ledger ref reachability.",
       "properties": {
@@ -602,6 +651,10 @@ expression: v
       ],
       "description": "Language adapters; present only with `--languages`."
     },
+    "leases": {
+      "$ref": "#/$defs/LeaseInfo",
+      "description": "Lease files: corrupt ones and their quarantine."
+    },
     "ledger": {
       "$ref": "#/$defs/LedgerInfo",
       "description": "Ledger ref."
@@ -626,7 +679,8 @@ expression: v
     "ledger",
     "driver",
     "siblings",
-    "gc"
+    "gc",
+    "leases"
   ],
   "title": "DoctorData",
   "type": "object"

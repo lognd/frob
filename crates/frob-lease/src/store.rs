@@ -56,6 +56,15 @@ pub struct Contended {
     pub tickets: Vec<TicketId>,
 }
 
+/// A lease file that cannot be read as a lease; it grants and blocks nothing.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct CorruptLease {
+    /// The unreadable file.
+    pub path: PathBuf,
+    /// What is wrong with it.
+    pub message: String,
+}
+
 /// Proof that the lease lock is held; unlocks on drop.
 struct LockGuard(File);
 
@@ -211,24 +220,70 @@ impl LeaseStore {
         }
     }
 
-    /// Every lease file, live or expired, ordered by ticket.
-    fn read_all(&self) -> Result<Vec<Lease>, LeaseError> {
+    /// Every readable lease file plus every unreadable one, leases ordered by ticket.
+    ///
+    /// A corrupt file is reported, never deleted, and never counted as a lease:
+    /// it cannot be proven to grant or block anything.
+    fn scan(&self) -> Result<(Vec<Lease>, Vec<CorruptLease>), LeaseError> {
         let entries = match fs::read_dir(&self.dir) {
             Ok(e) => e,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                return Ok((Vec::new(), Vec::new()));
+            }
             Err(e) => return Err(LeaseError::io(format!("reading {}", self.dir.display()), e)),
         };
         let mut out = Vec::new();
+        let mut corrupt = Vec::new();
         for entry in entries {
             let path = entry
                 .map_err(|e| LeaseError::io(format!("reading {}", self.dir.display()), e))?
                 .path();
             if path.extension().is_some_and(|x| x == "toml") {
-                out.push(read_lease(&path)?);
+                match read_lease(&path) {
+                    Ok(l) => out.push(l),
+                    Err(LeaseError::Format { path, message }) => {
+                        tracing::warn!(path = %path.display(), %message, "corrupt lease file skipped");
+                        corrupt.push(CorruptLease { path, message });
+                    }
+                    Err(e) => return Err(e),
+                }
             }
         }
         out.sort_by_key(|l| l.ticket);
-        Ok(out)
+        corrupt.sort_by(|a, b| a.path.cmp(&b.path));
+        Ok((out, corrupt))
+    }
+
+    /// Every readable lease file, live or expired, ordered by ticket.
+    fn read_all(&self) -> Result<Vec<Lease>, LeaseError> {
+        Ok(self.scan()?.0)
+    }
+
+    /// The lease files that cannot be read (read-only; for `lease list` and doctor).
+    ///
+    /// # Errors
+    ///
+    /// I/O failures reading the lease directory.
+    pub fn corrupt_leases(&self) -> Result<Vec<CorruptLease>, LeaseError> {
+        Ok(self.scan()?.1)
+    }
+
+    /// Move every corrupt lease file aside as `<name>.toml.corrupt` (kept, not deleted); returns the new paths.
+    ///
+    /// # Errors
+    ///
+    /// Lock and I/O failures.
+    pub fn quarantine_corrupt(&self) -> Result<Vec<PathBuf>, LeaseError> {
+        let _lock = self.lock()?;
+        let mut moved = Vec::new();
+        for c in self.scan()?.1 {
+            let dest = c.path.with_extension("toml.corrupt");
+            fs::rename(&c.path, &dest)
+                .map_err(|e| LeaseError::io(format!("quarantining {}", c.path.display()), e))?;
+            tracing::info!(from = %c.path.display(), to = %dest.display(), "corrupt lease quarantined");
+            moved.push(dest);
+        }
+        Ok(moved)
     }
 
     /// Live leases, deleting expired ones (requires the lock).
@@ -305,6 +360,18 @@ impl LeaseStore {
     ) -> Result<Acquired, E> {
         let lock = self.lock()?;
         let now = (self.clock)();
+        if let Some(c) = self
+            .corrupt_leases()?
+            .into_iter()
+            .find(|c| c.path == self.lease_path(ticket))
+        {
+            tracing::warn!(%ticket, path = %c.path.display(), "acquire refused: own lease file is corrupt");
+            return Err(LeaseError::Format {
+                path: c.path,
+                message: c.message,
+            }
+            .into());
+        }
         let live = self.live_pruned(&lock, now)?;
         let existing = live.iter().find(|l| l.ticket == ticket);
         if let Some(e) = existing.filter(|e| &e.holder != holder) {
