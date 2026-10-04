@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T11:45:31Z"
+digest = "c17f3c36bd7fb22c9d7cc019354df53bbaf9a012b60593e62673367c85d498c9"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.40s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 81d6338d-52cc-439c-873f-b77697f01294 with nextest profile: default
+    Starting 2 tests across 1 binary (10 tests skipped)
+        PASS [   0.060s] gob-dev::import_v1 merge_refuses_id_and_alias_collisions_without_writing
+        PASS [   0.206s] gob-dev::import_v1 merge_adds_only_new_ticket_directories
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.211s] 2 tests run: 2 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --test import_v1 -E 'test(/merge_/)'"
+size = 646
+status = "measured"
+tests = ["merge_refuses_id_and_alias_collisions_without_writing", "merge_adds_only_new_ticket_directories"]
+at = "2026-10-04T11:45:31Z"
+actor = "lognd"
+rev = 1

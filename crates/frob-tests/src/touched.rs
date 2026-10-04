@@ -123,7 +123,9 @@ pub fn touched_set(repo: &Repo, graph: &SymbolGraph, base: &str) -> Result<Touch
     }
     let unresolved_files: Vec<String> = files
         .iter()
-        .filter(|p| adapter_for_path(p).is_none())
+        // frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
+        // frob:todo 01M43A5MA7GRAACT7E0M525Y1M Python files stay unresolved until pytest selection lands.
+        .filter(|p| adapter_for_path(p).is_none() || gob_symbols::is_python_path(p))
         .cloned()
         .collect();
     for p in &unresolved_files {
