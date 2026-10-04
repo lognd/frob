@@ -2,12 +2,12 @@
 id = "01M42MGN2BQNKR7AN7QSDX5V8M"
 title = "A field line equal to the frontmatter fence (+++) makes a ticket unreadable; it vanishes on index rebuild and doctor --fix cannot repair it"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T04:59:48Z"
-updated = "2026-10-04T04:59:48Z"
+updated = "2026-10-04T05:45:28Z"
 scope = ["crates/frob-ledger/**"]
 
 [[acceptance]]
