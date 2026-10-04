@@ -22,7 +22,9 @@
 mod error;
 mod key;
 mod mac;
+mod state;
 
 pub use error::TrustError;
 pub use key::{KEY_LEN, MachineKey, default_key_path, resolve_key_path};
 pub use mac::{Canonical, CanonicalWriter, Tag, mac, mac_record, verify, verify_record};
+pub use state::{Discard, Lookup, StateError, StateStore, cache_dir, ci_active, resolve_cache_dir};
