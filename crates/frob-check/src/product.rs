@@ -414,11 +414,6 @@ impl Product for Frob {
         {
             out.extend_from_slice(rules.fingerprint().as_bytes());
         }
-        // An unreadable ledger keys differently from a healthy one, so repairing it never replays the failure.
-        if let Some(err) = &snap.inputs.ledger_error {
-            out.extend_from_slice(b"ledger-error\0");
-            out.extend_from_slice(err.as_bytes());
-        }
         out.extend_from_slice(format!("{:?}", snap.inputs.invariants.forbid_imports).as_bytes());
         out
     }
