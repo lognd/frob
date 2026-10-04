@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T22:57:50Z"
-updated = "2026-10-04T00:42:28Z"
+updated = "2026-10-04T00:52:21Z"
 scope = ["crates/frob-check/tests/perf.rs", "crates/frob-check/benches/**", "crates/frob-check/Cargo.toml", "crates/gob-ir/tests/deep.rs", "crates/frob-ack/tests/workspace.rs", "Cargo.toml", ".config/nextest.toml", "crates/gob-dev/src/ci.rs", "docs/design/build-test-ci.md", "Cargo.lock"]
 
 [[acceptance]]
