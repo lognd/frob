@@ -1,0 +1,1 @@
+frob: the check cache is now one SQLite file per repository under the git common dir, shared by the primary checkout, every ticket worktree and land's base checkout, and land keeps the per-base finding set there too, so a land no longer re-checks unchanged files from cold and a second ticket on the same base runs no base check.

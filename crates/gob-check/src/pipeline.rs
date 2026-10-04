@@ -237,7 +237,8 @@ fn pass<P: Product>(
 ) -> Result<CheckReport, CheckError> {
     let mut tally = Tally::default();
     let mut warnings = Vec::new();
-    let cache = Cache::open(&root.join(product.state_dir())).with_engine(engine_fingerprint());
+    // frob:ticket 01M42B6T28RX9PVM3X6TSK0M4Y
+    let cache = Cache::open_shared(root, &product.state_dir()).with_engine(engine_fingerprint());
     let core = walk_core(
         root,
         table,

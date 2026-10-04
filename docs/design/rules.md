@@ -235,8 +235,11 @@ frob check [--files F..] [--ticket ID] [--base REF] [--only FAMILY..]
            [--fix | --fix-all] [--delta] [--fail-on SEV] [--json | --sarif] [--timing]
 ```
 
-1. Load config (`frob.toml`, deny unknown fields), open the worktree's
-   `.frob/cache.sqlite`.
+1. Load config (`frob.toml`, deny unknown fields), open the repository's
+   shared cache (`<git common dir>/frob/cache/frob/cache.sqlite`, one per
+   repository, shared by the primary checkout, every ticket worktree and the
+   land ratchet's base worktree; keys are content digests, so sharing is
+   safe; outside a git checkout `.frob/cache.sqlite`).
 2. Discover tracked files (`ignore` crate honoring .gitignore), stat,
    digest changed ones (blake3, rayon).
 3. Build the snapshot: parse artifacts, symbols, edges, resolved graph,
@@ -335,8 +338,10 @@ section, never dropped.
   rule set. It refuses a finding at or above `fail_on` only when its
   fingerprint is absent from the base. The base side runs in a throwaway
   detached worktree and is cached per base commit in
-  `.frob/land-base/<oid>.json` (a moved base has a new oid, so a `--wait`
-  retry recomputes it). The ticket-scoped run still supplies the
+  `<git common dir>/frob/land-base/<oid>.json`, shared by every worktree, so a
+  second ticket landing on the same base runs no base check (a moved base has
+  a new oid, so it is recomputed). The base worktree's check uses the shared
+  cache, so every file unchanged since an earlier check is a hit (~TSK0M4Y). The ticket-scoped run still supplies the
   ticket-only findings (SCOPE001, ticket-scoped rules) that no unscoped run
   has, and a repository-level finding such as REL001 is judged only on the
   unscoped side, so text that differs between the scoped and unscoped runs

@@ -1,4 +1,4 @@
-//! Per-worktree SQLite cache (architecture.md section 3, D30).
+//! SQLite cache, one per repository (architecture.md sections 3 and 9, D30, ~TSK0M4Y).
 //!
 //! Stores parse artifacts keyed by (content digest, producer identity),
 //! per-file findings keyed by (file digest, rule id, rule version,
@@ -10,11 +10,11 @@
 //! When the database cannot be opened the cache degrades to a null cache
 //! where every read misses and every write is a no-op.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 
 /// File name of the database inside the cache directory.
 pub const DB_FILE: &str = "cache.sqlite";
@@ -53,7 +53,7 @@ pub struct CacheConfig {
 impl Default for CacheConfig {
     fn default() -> Self {
         Self {
-            busy_timeout: Duration::from_millis(500),
+            busy_timeout: Duration::from_secs(5),
         }
     }
 }
@@ -147,20 +147,22 @@ fn now_secs() -> i64 {
         .map_or(0, |d| i64::try_from(d.as_secs()).unwrap_or(i64::MAX))
 }
 
+// frob:ticket 01M42B6T28RX9PVM3X6TSK0M4Y
 fn migrate(conn: &mut Connection) -> rusqlite::Result<()> {
     conn.execute_batch("CREATE TABLE IF NOT EXISTS schema_version(version INTEGER NOT NULL);")?;
+    // One writer at a time: the version is read inside the write transaction, so two
+    // processes opening a fresh shared cache cannot both run the same migration.
+    let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
     let current: Option<i64> =
-        conn.query_row("SELECT MAX(version) FROM schema_version", [], |r| r.get(0))?;
+        tx.query_row("SELECT MAX(version) FROM schema_version", [], |r| r.get(0))?;
     let current = usize::try_from(current.unwrap_or(0)).unwrap_or(0);
     for (i, sql) in MIGRATIONS.iter().enumerate().skip(current) {
-        let tx = conn.transaction()?;
         tx.execute_batch(sql)?;
         tx.execute("DELETE FROM schema_version", [])?;
         tx.execute("INSERT INTO schema_version(version) VALUES (?1)", [i + 1])?;
-        tx.commit()?;
         tracing::info!(from = i, to = i + 1, "cache schema migrated");
     }
-    Ok(())
+    tx.commit()
 }
 
 // frob:ticket 01M41ZSWGC86TY3K0NSA8AMNGF
@@ -179,7 +181,60 @@ fn open_conn(dir: &Path, config: CacheConfig) -> Result<Connection, String> {
     Ok(conn)
 }
 
+/// Directory under the git common dir that holds frob's per-repository state.
+pub const SHARED_DIR: &str = "frob";
+
+/// The git common directory of the checkout at `root`, read from the filesystem (no git process).
+///
+/// A primary checkout has a `.git` directory; a linked worktree has a `.git` file naming its
+/// private git dir, whose `commondir` file points back at the shared one.
+pub fn git_common_dir(root: &Path) -> Option<PathBuf> {
+    let dot_git = root.join(".git");
+    let meta = std::fs::metadata(&dot_git).ok()?;
+    if meta.is_dir() {
+        return Some(dot_git);
+    }
+    let text = std::fs::read_to_string(&dot_git).ok()?;
+    let private = Path::new(text.trim().strip_prefix("gitdir:")?.trim());
+    let private = if private.is_absolute() {
+        private.to_path_buf()
+    } else {
+        root.join(private)
+    };
+    let common = match std::fs::read_to_string(private.join("commondir")) {
+        Ok(rel) => private.join(rel.trim()),
+        Err(_) => private,
+    };
+    common.canonicalize().ok()
+}
+
+/// The repository-wide cache directory for the state directory `state_dir` (for example `.frob`) of `root`.
+///
+/// It lives under the git common dir, so the primary checkout, every ticket worktree and the
+/// land ratchet's base worktree share one cache; keys are content digests, so sharing is safe.
+/// `None` outside a git checkout, where the caller keeps its per-checkout directory.
+pub fn shared_dir(root: &Path, state_dir: &str) -> Option<PathBuf> {
+    let name = state_dir.trim_matches(|c| c == '.' || c == '/');
+    Some(
+        git_common_dir(root)?
+            .join(SHARED_DIR)
+            .join("cache")
+            .join(name),
+    )
+}
+
 impl Cache {
+    /// Opens the repository-shared cache for `root`'s `state_dir`, else `<root>/<state_dir>`.
+    pub fn open_shared(root: &Path, state_dir: &str) -> Self {
+        match shared_dir(root, state_dir) {
+            Some(dir) => {
+                tracing::debug!(dir = %dir.display(), "shared cache selected");
+                Self::open(&dir)
+            }
+            None => Self::open(&root.join(state_dir)),
+        }
+    }
+
     /// Opens `<dir>/cache.sqlite`, falling back to a null cache on any failure.
     pub fn open(dir: &Path) -> Self {
         Self::open_with(dir, CacheConfig::default())

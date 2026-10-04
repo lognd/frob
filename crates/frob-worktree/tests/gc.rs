@@ -619,6 +619,43 @@ fn cache_budget_evicts_least_recent_and_only_allowlisted_files() {
     assert!(evict.iter().any(|e| e.paths[0].ends_with("cache.sqlite")));
 }
 
+// frob:tests crates/frob-worktree/src/gc/caches.rs::shared_entries
+#[test]
+fn shared_cache_and_base_sets_under_the_common_dir_are_evictable_and_nothing_else() {
+    let fx = Fixture::new();
+    let common = fx.repo().common_dir().to_path_buf();
+    let frob = common.join("frob");
+    write(
+        &frob.join("cache").join("frob").join("cache.sqlite"),
+        3000,
+        5 * HOUR,
+    );
+    write(
+        &frob.join("cache").join("frob").join("cache.sqlite-wal"),
+        100,
+        5 * HOUR,
+    );
+    write(
+        &frob.join("cache").join("frob").join("other.dat"),
+        500,
+        99 * HOUR,
+    );
+    write(&frob.join("land-base").join("aaa.json"), 1000, 20 * HOUR);
+    write(&frob.join("land.lock"), 10, 99 * HOUR);
+    let entries = caches::shared_entries(&common);
+    assert_eq!(entries.len(), 2, "database with companions, one base set");
+    let evict = caches::plan(entries, 1500, SystemTime::now());
+    assert_eq!(evict.len(), 2, "both are over the budget and old enough");
+    assert!(
+        evict.iter().any(|e| e.paths.len() == 2),
+        "the database goes with its wal"
+    );
+    let jail = Jail::new([frob.clone()]);
+    for p in evict.iter().flat_map(|e| &e.paths) {
+        assert!(jail.admit(p).is_ok(), "{}", p.display());
+    }
+}
+
 // frob:tests crates/frob-worktree/src/gc/artifacts.rs::plan
 #[test]
 fn only_old_unreferenced_digest_named_blobs_are_collected() {

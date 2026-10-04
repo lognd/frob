@@ -964,3 +964,79 @@ fn a_release_finding_the_ticket_introduces_refuses() {
     );
     assert_eq!(fx.main_tip(), before, "base did not move");
 }
+
+/// The repository-shared state directory under the git common dir.
+fn shared_state(fx: &Fixture) -> PathBuf {
+    fx.repo().common_dir().join("frob")
+}
+
+// frob:tests crates/frob-land/src/ratchet.rs::base_findings
+#[test]
+fn a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add a file", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+    // A set no real base check would produce, planted where any ticket's land reads it.
+    let oid = fx.main_tip();
+    let planted = shared_state(&fx)
+        .join("land-base")
+        .join(format!("{oid}.json"));
+    std::fs::create_dir_all(planted.parent().expect("parent")).expect("mkdir");
+    let fake = serde_json::json!({"oid": oid, "findings": [{
+        "fingerprint": "feedface", "rule": "PLANTED", "path": null, "message": "from the cached set"
+    }]});
+    std::fs::write(&planted, fake.to_string()).expect("plant");
+
+    let out = land(&fx.root, &Fixture::opts(&s)).expect("land");
+    assert!(
+        out.resolved.iter().any(|n| n.rule == "PLANTED"),
+        "the cached set was not used: {:?}",
+        out.resolved
+    );
+    assert!(
+        !fx.root.join(".frob").join("land-base").exists(),
+        "no per-checkout base set is written any more"
+    );
+}
+
+// frob:tests crates/frob-land/src/ratchet.rs::base_findings
+#[test]
+fn a_check_in_a_fresh_worktree_hits_the_cache_the_primary_warmed() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    commit_on_main(&fx, "src/old.rs", "fn old() {}\n");
+    let opts = frob_check::CheckOptions {
+        skip_telemetry: true,
+        ..frob_check::CheckOptions::default()
+    };
+    frob_check::run(&fx.root, &opts).expect("warm check");
+    let shared = gob_cache::shared_dir(&fx.root, ".frob").expect("shared dir");
+    let warm = gob_cache::Cache::open(&shared).stats();
+    assert!(!warm.null && warm.findings + warm.artifacts > 0, "{warm:?}");
+    assert!(!fx.root.join(".frob").join("cache.sqlite").exists());
+
+    let wt = fx.root.parent().expect("tmp").join("base-checkout");
+    git(
+        &fx.root,
+        &[
+            "worktree",
+            "add",
+            "--detach",
+            wt.to_str().expect("utf8"),
+            "main",
+        ],
+    );
+    frob_check::run(&wt, &opts).expect("base check");
+    let after = gob_cache::Cache::open(&shared).stats();
+    assert_eq!(
+        (after.findings, after.artifacts, after.repo_rule),
+        (warm.findings, warm.artifacts, warm.repo_rule),
+        "an unchanged tree adds no rows: every lookup in the new worktree hit"
+    );
+}

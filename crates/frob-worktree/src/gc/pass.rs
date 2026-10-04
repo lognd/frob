@@ -292,7 +292,7 @@ fn collect(run: &mut Run<'_>) -> Vec<Usage> {
     }
     let checkouts = checkouts(env, &wenv);
     let (build_usage, build_by_checkout) = collect_build(run, &checkouts);
-    collect_caches(run, &checkouts);
+    collect_caches(run, &checkouts, &common, &state_jail);
     if !run.deadline.expired() {
         collect_artifacts(run, &common, &state_jail);
     }
@@ -315,7 +315,8 @@ fn collect(run: &mut Run<'_>) -> Vec<Usage> {
         bytes: checkouts
             .iter()
             .map(|c| caches::total(&caches::entries(c)))
-            .sum(),
+            .sum::<u64>()
+            + caches::total(&caches::shared_entries(&common)),
     });
     usage.push(Usage {
         category: "artifacts".to_owned(),
@@ -511,7 +512,7 @@ fn collect_build(run: &mut Run<'_>, checkouts: &[PathBuf]) -> (u64, Vec<(PathBuf
     (remaining_total, per)
 }
 
-fn collect_caches(run: &mut Run<'_>, checkouts: &[PathBuf]) {
+fn collect_caches(run: &mut Run<'_>, checkouts: &[PathBuf], common: &Path, state_jail: &Jail) {
     let env = run.env;
     let budget = env.config.cache_budget_mb.saturating_mul(MIB);
     for checkout in checkouts {
@@ -519,21 +520,31 @@ fn collect_caches(run: &mut Run<'_>, checkouts: &[PathBuf]) {
             return;
         }
         let jail = Jail::new([checkout.join(".frob")]);
-        for e in caches::plan(caches::entries(checkout), budget, env.now) {
-            if run.dry {
-                run.did("caches", &e.paths[0], e.bytes);
-                continue;
+        evict(run, &jail, caches::entries(checkout), budget);
+    }
+    // frob:ticket 01M42B6T28RX9PVM3X6TSK0M4Y
+    if !run.deadline.expired() {
+        evict(run, state_jail, caches::shared_entries(common), budget);
+    }
+}
+
+/// Evict the least recently used of `entries` over `budget` through `jail`.
+fn evict(run: &mut Run<'_>, jail: &Jail, entries: Vec<caches::Entry>, budget: u64) {
+    let now = run.env.now;
+    for e in caches::plan(entries, budget, now) {
+        if run.dry {
+            run.did("caches", &e.paths[0], e.bytes);
+            continue;
+        }
+        let mut ok = true;
+        for p in &e.paths {
+            if let Err(err) = jail.remove(p) {
+                ok = false;
+                run.warn(err);
             }
-            let mut ok = true;
-            for p in &e.paths {
-                if let Err(err) = jail.remove(p) {
-                    ok = false;
-                    run.warn(err);
-                }
-            }
-            if ok {
-                run.did("caches", &e.paths[0], e.bytes);
-            }
+        }
+        if ok {
+            run.did("caches", &e.paths[0], e.bytes);
         }
     }
 }

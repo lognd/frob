@@ -2,9 +2,11 @@
 //!
 //! The base side is the same check run without a ticket scope on the base tip,
 //! in a throwaway detached worktree under the git common dir. Its finding
-//! fingerprints are cached per base commit in `<worktree>/.frob/land-base/<oid>.json`,
-//! so a second land on the same base (or a `--wait` retry that did not move it)
-//! costs nothing; a moved base has a new oid and so is recomputed.
+//! fingerprints are cached per base commit in `<git common dir>/frob/land-base/<oid>.json`,
+//! shared by every worktree, so a second land on the same base (from any ticket, or a `--wait`
+//! retry that did not move it) costs nothing; a moved base has a new oid and so is recomputed.
+//! The throwaway worktree's check opens the repository-shared cache (gob-cache), so every file
+//! unchanged since an earlier check is a cache hit (~TSK0M4Y).
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -18,6 +20,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::LandError;
 use crate::git::git;
+
+/// Directory under `<common>/frob/` holding the per-base finding sets.
+pub const LAND_BASE_DIR: &str = "land-base";
 
 /// One finding as land's report lists it (pre-existing or resolved).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -75,9 +80,10 @@ pub(crate) fn base_findings(
     oid: &str,
     ledger: &LedgerConfig,
 ) -> Result<Vec<FindingNote>, LandError> {
-    let cache = wt_path
-        .join(".frob")
-        .join("land-base")
+    let cache = wt
+        .common_dir()
+        .join(gob_cache::SHARED_DIR)
+        .join(LAND_BASE_DIR)
         .join(format!("{oid}.json"));
     if let Some(set) = read_cache(&cache, oid) {
         tracing::info!(

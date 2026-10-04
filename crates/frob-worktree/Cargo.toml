@@ -12,6 +12,7 @@ authors.workspace = true
 frob-ledger = { version = "0.0.0", path = "../frob-ledger" }
 frob-lease = { version = "0.0.0", path = "../frob-lease" }
 frob-pm = { version = "0.0.0", path = "../frob-pm" }
+gob-cache = { version = "0.0.0", path = "../gob-cache" }
 gob-cli = { version = "0.0.0", path = "../gob-cli" }
 gob-config = { version = "0.0.0", path = "../gob-config" }
 gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
