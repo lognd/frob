@@ -2,12 +2,12 @@
 id = "01M424QEMYGC9VZZYX9BZXZK29"
 title = "Automatic garbage collection: throttled pass in work and land keeps build output, worktrees, caches and artifacts under budget"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-04T00:23:54Z"
-updated = "2026-10-04T00:23:54Z"
+updated = "2026-10-04T01:35:32Z"
 scope = ["crates/frob-worktree/**", "crates/frob-land/src/land.rs", "crates/frob/src/doctor_cmd.rs", "crates/gob-config/**", "docs/design/architecture.md", "docs/design/tickets.md", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
