@@ -187,12 +187,14 @@ pub const SHARED_DIR: &str = "frob";
 /// The git common directory of the checkout at `root`, read from the filesystem (no git process).
 ///
 /// A primary checkout has a `.git` directory; a linked worktree has a `.git` file naming its
-/// private git dir, whose `commondir` file points back at the shared one.
+/// private git dir, whose `commondir` file points back at the shared one. Both branches return
+/// the `gob_exec::canonical` form so the two spellings of one directory (8.3 short vs long name
+/// on Windows) agree.
 pub fn git_common_dir(root: &Path) -> Option<PathBuf> {
     let dot_git = root.join(".git");
     let meta = std::fs::metadata(&dot_git).ok()?;
     if meta.is_dir() {
-        return Some(dot_git);
+        return gob_exec::canonical(&dot_git).ok();
     }
     let text = std::fs::read_to_string(&dot_git).ok()?;
     let private = Path::new(text.trim().strip_prefix("gitdir:")?.trim());
