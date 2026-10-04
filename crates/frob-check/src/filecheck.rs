@@ -103,8 +103,11 @@ impl FileCheck<Frob> for ObligationFileCheck {
         ]
     }
 
+    // frob:ticket 01M43KP0RXKB1DJA8KGJTV288R
     fn applies(&self, ctx: &SharedCtx<'_, Frob>, path: &str) -> bool {
-        ctx.product.obligation_paths.contains(path) || ctx.product.file_info.contains_key(path)
+        ctx.product.roles.role(path).scans_directives()
+            && (ctx.product.obligation_paths.contains(path)
+                || ctx.product.file_info.contains_key(path))
     }
 
     fn examines(&self, ctx: &SharedCtx<'_, Frob>, rule: &RuleMeta, _path: &str) -> bool {

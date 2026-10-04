@@ -625,6 +625,6 @@ fn markdown_prose_and_front_matter_mentioning_waive_are_not_directives() {
         assert_eq!(md_count(&text), 0, "front matter fenced by {fence}");
     }
     // A real HTML comment after the front matter is still a directive.
-    let live = format!("+++\nk = 1\n+++\n\n# T\n\n<!-- frob:invariant x -->\n");
-    assert_eq!(md_count(&live), 1);
+    let live = "+++\nk = 1\n+++\n\n# T\n\n<!-- frob:invariant x -->\n";
+    assert_eq!(md_count(live), 1);
 }
