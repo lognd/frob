@@ -2,13 +2,13 @@
 id = "01M421FB3B2P9EMNKPDTPHS84G"
 title = "One wheel set per product: grimble standalone on PyPI, frob depends on it at the same version (D87)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:27:02Z"
-updated = "2026-10-03T23:27:02Z"
+updated = "2026-10-04T02:23:35Z"
 scope = ["packaging/**", ".github/workflows/build-smoke.yml", ".github/workflows/release.yml", "crates/frob-release/**", "docs/guides/release.md", "docs/design/releases.md"]
 
 [[links]]
