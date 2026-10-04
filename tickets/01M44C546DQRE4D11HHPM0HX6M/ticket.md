@@ -2,11 +2,11 @@
 id = "01M44C546DQRE4D11HHPM0HX6M"
 title = "Build the triage inbox verbs: ticket triage accept, decline, snooze, duplicate"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T21:12:11Z"
-updated = "2026-10-04T21:12:11Z"
+updated = "2026-10-04T21:12:25Z"
 
 [[acceptance]]
 text = "Given tickets in triage labelled triage:accepted, when ticket triage accept --label triage:accepted runs, then each moves to todo in one ledger commit and the report lists every ticket"
