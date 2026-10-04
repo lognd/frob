@@ -7,12 +7,12 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T04:59:50Z"
-updated = "2026-10-04T13:25:54Z"
+updated = "2026-10-04T13:30:42Z"
 scope = ["crates/gob-check/src/**", "crates/gob-check/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given a file edited between check and fix, when --fix runs, then it refuses that file; and an interrupted fix never leaves a partial file"
-bound = true
+bound = false
 +++
 
 Found by reading source. Add one shared write_atomic; --fix checks the file digest first, re-parses the result and rolls back on failure. Evidence and repro: notes/review/v1-gap/D-incidents.md (P-02).
