@@ -2,12 +2,13 @@
 id = "01M43A53W5X4PBCXWCTTM4E1PN"
 title = "Selective v1 ticket import: requirement-bearing open tickets only, history for the rest"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T11:17:59Z"
-updated = "2026-10-04T11:38:49Z"
+updated = "2026-10-04T11:38:51Z"
 scope = ["crates/gob-dev/src/import_v1.rs", "crates/gob-dev/src/import_v1/**", "docs/migration/**", "docs/design/migration.md", "crates/gob-dev/src/main.rs", "crates/gob-dev/tests/import_v1.rs", "crates/gob-dev/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
