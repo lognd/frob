@@ -7,7 +7,7 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-04T00:23:54Z"
-updated = "2026-10-04T02:13:00Z"
+updated = "2026-10-04T02:22:20Z"
 scope = ["crates/frob-worktree/**", "crates/frob-land/src/land.rs", "crates/frob/src/doctor_cmd.rs", "crates/gob-config/**", "docs/design/architecture.md", "docs/design/tickets.md", "docs/reference/config.md", "docs/schemas/config.json", "crates/frob/src/doctor.rs", "crates/frob/src/config.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/snapshots/cli__doctor_schema.snap", "crates/frob/tests/snapshots/cli__doctor_fresh_repo.snap", "crates/frob/tests/snapshots/cli__init_frob_toml.snap", "frob.toml", "docs/reference/cli/frob.md", "Cargo.lock", "crates/frob/tests/gc.rs", "crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
