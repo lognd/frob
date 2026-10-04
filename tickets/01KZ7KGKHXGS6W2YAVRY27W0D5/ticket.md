@@ -6,9 +6,9 @@ category = "triage"
 priority = "medium"
 reporter = "human"
 created = "2026-08-05T00:00:00Z"
-updated = "2026-08-05T00:00:00Z"
+updated = "2026-10-04T21:08:38Z"
 aliases = ["T-1597"]
-labels = ["milestone:1.1.0", "v1-cluster:D2"]
+labels = ["v1-cluster:D2", "triage:accepted"]
 scope = ["tickets/T-1597/**"]
 +++
 

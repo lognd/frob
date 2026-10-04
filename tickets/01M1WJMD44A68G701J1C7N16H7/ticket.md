@@ -3,13 +3,13 @@ id = "01M1WJMD44A68G701J1C7N16H7"
 title = "coverage-over-a-registry is not coverage-over-the-real-surface: add a surface-enumeration check alongside registry-totality tests"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M1WJMD2FWKPS1J7MPF18KDVY"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:06:08Z"
 aliases = ["T-4228"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates"]
 +++
 

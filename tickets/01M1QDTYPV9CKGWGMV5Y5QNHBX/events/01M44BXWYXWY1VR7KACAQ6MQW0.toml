@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. frob serve must explain a missing frob.toml (or bootstrap) instead of exiting 1; see ~MQ1NM4Q and E-NO-CONFIG (~2XMCJCD)."
+at = "2026-10-04T21:08:14Z"
+actor = "lognd"
+rev = 1

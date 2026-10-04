@@ -2,11 +2,12 @@
 id = "01M1QDTYTC9HP2GAW1XFPV1CKY"
 title = "bump_patch_version does not rewrite frob-core/strata-core pins, only [project].version"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:01:53Z"
 aliases = ["T-3916"]
 labels = ["milestone:1.1.0", "v1-cluster:B3d"]
 scope = ["src/frob/release/__init__.py"]

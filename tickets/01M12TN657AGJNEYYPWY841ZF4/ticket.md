@@ -2,11 +2,12 @@
 id = "01M12TN657AGJNEYYPWY841ZF4"
 title = "Register TDD001/VMOD001/VERSION001 in _KNOWN_GATE_RULES (REG002 on check-coverage.yaml)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-08-28T00:00:00Z"
-updated = "2026-08-28T00:00:00Z"
+updated = "2026-10-04T21:01:39Z"
 aliases = ["T-3239"]
 labels = ["milestone:0.541.0", "v1-cluster:B3d"]
 scope = ["src/frob/gates/_waive.py"]

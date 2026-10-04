@@ -2,11 +2,12 @@
 id = "01M2KR6WDXYQ57V26TMZV13W1J"
 title = "testing: LANGUAGE_COLLECTORS keys vitest as 'ts' but [[test.runner]] language is 'typescript', so vitest evidence is never verified"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-16T00:00:00Z"
-updated = "2026-09-16T00:00:00Z"
+updated = "2026-10-04T21:06:47Z"
 aliases = ["T-4541"]
 labels = ["milestone:0.540.0", "v1-cluster:C4a"]
 +++

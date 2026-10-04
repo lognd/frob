@@ -2,11 +2,12 @@
 id = "01M30M6G4PBNK1HW7PW7NHF9QH"
 title = "frob:tests parse fails on a quoted target immediately followed by a trailing noqa suffix"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-21T00:00:00Z"
-updated = "2026-09-21T00:00:00Z"
+updated = "2026-10-04T21:06:55Z"
 aliases = ["T-5270"]
 labels = ["milestone:0.534.0", "v1-cluster:C4a"]
 scope = ["src/frob/graph/dsl.py"]

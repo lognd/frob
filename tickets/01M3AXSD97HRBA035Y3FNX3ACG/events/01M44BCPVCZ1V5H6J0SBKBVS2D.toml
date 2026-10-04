@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~060142M: pack scaffold for grimble-sysdesign covers client-library detection, findings and registration; v1 gate wiring, gates.md rows and registry entries do not exist in v2 (D3, D76, D89)."
+at = "2026-10-04T20:58:51Z"
+actor = "lognd"
+rev = 1

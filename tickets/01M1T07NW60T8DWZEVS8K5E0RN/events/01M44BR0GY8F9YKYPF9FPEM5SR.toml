@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: investigates the v1 [[policy.norm]] surface (never exercisable); v2 has no policy.norm, rules are GRL (D80) and exceptions are D21."
+at = "2026-10-04T21:05:01Z"
+actor = "lognd"
+rev = 1

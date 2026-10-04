@@ -2,11 +2,12 @@
 id = "01M1QDTYS0EHKZEP5JQD4MM2M4"
 title = "LANG003 (per-project language conformance) burn-down: 21 unwaived findings"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:08:48Z"
 aliases = ["T-3872"]
 labels = ["milestone:0.541.0", "v1-cluster:D2"]
 +++

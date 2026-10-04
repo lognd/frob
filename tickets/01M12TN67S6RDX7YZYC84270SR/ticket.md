@@ -2,11 +2,12 @@
 id = "01M12TN67S6RDX7YZYC84270SR"
 title = "'no grammar registered for extension .md' internal call-site hint leaks into ticket verb output"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 reporter = "human"
 created = "2026-08-28T00:00:00Z"
-updated = "2026-08-28T00:00:00Z"
+updated = "2026-10-04T21:08:47Z"
 aliases = ["T-3321"]
 labels = ["milestone:1.1.0", "v1-cluster:D2"]
 scope = ["src/frob/app/ticket_runner/_verify.py"]

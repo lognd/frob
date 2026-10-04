@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: the v1 a11y_gate hook contract (_locate_statement_page repo root) has no v2 counterpart; crunk-web (D89) is written fresh."
+at = "2026-10-04T21:01:14Z"
+actor = "lognd"
+rev = 1

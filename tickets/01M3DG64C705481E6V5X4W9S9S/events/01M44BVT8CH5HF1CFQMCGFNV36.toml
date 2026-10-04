@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. PT-5: a fixer must re-parse after each edit and roll back on failure; check against ~29MKDDF (gob-fix Edit, overlap, dry-run diff, atomic write), which does not state a post-edit parse check."
+at = "2026-10-04T21:07:06Z"
+actor = "lognd"
+rev = 1

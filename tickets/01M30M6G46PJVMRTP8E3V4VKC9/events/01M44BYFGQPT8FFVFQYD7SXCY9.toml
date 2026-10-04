@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "Dropped on purpose: the land queue and its MCP enqueue tools do not exist in v2 (D7, D8, D25; cli.md removed list)."
+at = "2026-10-04T21:08:33Z"
+actor = "lognd"
+rev = 1

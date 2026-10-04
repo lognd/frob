@@ -3,13 +3,13 @@ id = "01M3AXSD8SS01FYJMKFFWRW85A"
 title = "SYSDESIGN107: internal listener accepting plaintext when design declares zero-trust"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD8RPMPFSYCWPM0XQY5G"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:58:36Z"
 aliases = ["T-6425"]
-labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_lb.py", "tests/fixtures/sysdesign/sysdesign107/**"]
 
 [[links]]

@@ -3,13 +3,13 @@ id = "01M2KR6WD1KXN9PGT16RCMBYFN"
 title = "C# and Unity support for frob (owner directive 2026-09-16)"
 type = "epic"
 category = "triage"
-priority = "medium"
+priority = "low"
 points = 1
 reporter = "agent"
 created = "2026-09-16T00:00:00Z"
-updated = "2026-09-16T00:00:00Z"
+updated = "2026-10-04T21:08:54Z"
 aliases = ["T-4513"]
-labels = ["milestone:0.533.0", "v1-cluster:D2"]
+labels = ["v1-cluster:D2", "triage:accepted"]
 scope = ["tickets/T-CSUNITY-EPIC/**"]
 +++
 

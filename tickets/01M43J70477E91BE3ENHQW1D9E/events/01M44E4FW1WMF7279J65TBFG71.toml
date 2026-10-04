@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "internal: concurrent CAS test asserts the documented guarantee; no user-visible behaviour change"
+at = "2026-10-04T21:46:47Z"
+actor = "lognd"
+rev = 1

@@ -3,12 +3,12 @@ id = "01M0XNVQXJ1A3FA43N7AA0PAPK"
 title = "Epic: narrative belongs in tickets, code and docs carry utility"
 type = "epic"
 category = "triage"
-priority = "high"
+priority = "low"
 reporter = "human"
 created = "2026-08-26T00:00:00Z"
-updated = "2026-08-26T00:00:00Z"
+updated = "2026-10-04T21:07:26Z"
 aliases = ["T-2994"]
-labels = ["milestone:1.0.0", "v1-cluster:F1"]
+labels = ["v1-cluster:F1", "triage:accepted"]
 +++
 
 ONE DOCTRINE, four measured instances. The owner arrived at this incrementally

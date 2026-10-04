@@ -3,13 +3,13 @@ id = "01M3AXSD7YZNPPSYE1DAZ2MT42"
 title = "engine vocabulary: product->paradigm table read from the existing store engine attr"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSDBCZ0WN62JE8P0BQRA2"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:58:00Z"
 aliases = ["T-6398"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/strata/_engine_vocab.py"]
 
 [[links]]

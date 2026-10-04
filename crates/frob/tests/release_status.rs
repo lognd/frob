@@ -5,7 +5,6 @@ use std::path::Path;
 use std::process::Output;
 use std::time::Duration;
 
-use assert_cmd::Command;
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use serde_json::Value;
 
@@ -64,8 +63,7 @@ impl Repo {
     /// Run frob with `path` as the whole PATH (so a fake or absent `gh`).
     #[cfg(unix)]
     fn run_with_path(&self, path: &Path, args: &[&str]) -> Output {
-        Command::cargo_bin("frob")
-            .expect("frob binary")
+        common::frob_command()
             .current_dir(self.dir.path())
             .env_remove("FROB_LOG")
             .env("PATH", path)
@@ -75,8 +73,7 @@ impl Repo {
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        Command::cargo_bin("frob")
-            .expect("frob binary")
+        common::frob_command()
             .current_dir(self.dir.path())
             .env_remove("FROB_LOG")
             .args(args)

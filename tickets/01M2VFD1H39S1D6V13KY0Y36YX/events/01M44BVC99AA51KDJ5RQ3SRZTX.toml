@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Touched-set test selection misses tests that fake a changed function signature; uncertain how frob-tests reaches such tests in Rust."
+at = "2026-10-04T21:06:51Z"
+actor = "lognd"
+rev = 1

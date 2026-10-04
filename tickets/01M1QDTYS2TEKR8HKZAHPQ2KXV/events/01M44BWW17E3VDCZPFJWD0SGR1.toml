@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 DOCENUM001 burn-down."
+at = "2026-10-04T21:07:40Z"
+actor = "lognd"
+rev = 1

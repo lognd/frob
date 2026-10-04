@@ -2,11 +2,12 @@
 id = "01M1QDTYTW9WFV0Y8JNTF643CZ"
 title = "F-167: mutation-evidence spawns pytest with cargo/gtest/junit/vitest node ids (_evidence_test_ids treats any :: id as pytest-shaped)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:06:26Z"
 aliases = ["T-3932"]
 labels = ["milestone:1.1.0", "v1-cluster:C4a"]
 scope = ["src/frob/tickets/_mutation_evidence.py"]

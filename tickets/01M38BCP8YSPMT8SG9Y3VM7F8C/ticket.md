@@ -6,9 +6,9 @@ category = "triage"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-09-24T00:00:00Z"
+updated = "2026-10-04T20:56:54Z"
 aliases = ["T-6430"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
 
 Database-paradigm misuse (using a relational/document/key-value/graph/

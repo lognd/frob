@@ -3,13 +3,13 @@ id = "01M1WJMD43QA4H55AS684P9467"
 title = "evidence classification: a test whose subject is constructed in the test file rather than imported from the package is weaker evidence"
 type = "task"
 category = "triage"
-priority = "high"
+priority = "low"
 parent = "01M1WJMD2FWKPS1J7MPF18KDVY"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:06:07Z"
 aliases = ["T-4227"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates"]
 +++
 

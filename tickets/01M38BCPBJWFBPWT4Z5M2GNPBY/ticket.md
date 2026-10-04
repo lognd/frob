@@ -2,11 +2,12 @@
 id = "01M38BCPBJWFBPWT4Z5M2GNPBY"
 title = "register src/frob/agent as a cli-owned module glob in design/frob.strata"
 type = "docs"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-09-24T00:00:00Z"
+updated = "2026-10-04T21:02:55Z"
 aliases = ["T-6514"]
 labels = ["v1-cluster:B3d"]
 scope = ["design/frob.strata"]

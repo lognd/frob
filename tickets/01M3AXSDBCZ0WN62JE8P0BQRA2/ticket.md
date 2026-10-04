@@ -3,13 +3,13 @@ id = "01M3AXSDBCZ0WN62JE8P0BQRA2"
 title = "STORE3xx declared-vs-observed via strata"
 type = "story"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M38BCP8YSPMT8SG9Y3VM7F8C"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:56Z"
 aliases = ["T-6508"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 +++
 
 The paradigm-level mismatches (many-to-many in a document store, ACID

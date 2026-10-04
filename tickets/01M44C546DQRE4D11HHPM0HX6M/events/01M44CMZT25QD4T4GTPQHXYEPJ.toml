@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T21:20:51Z"
+digest = "94def36fffd2fc28245de18e87db4f78f629d17914a38954e0c87a8b4c942024"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 29761e6d-20a9-473f-8143-f73d1a536a3d with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.791s] frob-cli::triage accept_refuses_a_ticket_not_in_triage_with_a_remedy_and_writes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.792s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test triage -E 'test(accept_refuses_a_ticket_not_in_triage)'"
+size = 574
+status = "measured"
+tests = ["accept_refuses_a_ticket_not_in_triage_with_a_remedy_and_writes_nothing"]
+at = "2026-10-04T21:20:51Z"
+actor = "lognd"
+rev = 1

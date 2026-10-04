@@ -3,13 +3,13 @@ id = "01M3AXSDBDC6VCB5P8WXYTGV57"
 title = "SYSDESIGN407: container spec with no resources.requests set"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD8AD5W7ECRJX8VGNKVM"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:57Z"
 aliases = ["T-6509"]
-labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_horizontal.py", "tests/fixtures/sysdesign/sysdesign407/**"]
 
 [[links]]

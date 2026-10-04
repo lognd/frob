@@ -2,11 +2,12 @@
 id = "01M12TN67D7RCEZV9MEATN5YJ5"
 title = "NEGEXIST001 false positives on rule-description prose and gitignored files"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 reporter = "human"
 created = "2026-08-28T00:00:00Z"
-updated = "2026-08-28T00:00:00Z"
+updated = "2026-10-04T21:07:30Z"
 aliases = ["T-3309"]
 labels = ["milestone:1.1.0", "v1-cluster:F1"]
 scope = ["src/frob/gates/__init__.py"]

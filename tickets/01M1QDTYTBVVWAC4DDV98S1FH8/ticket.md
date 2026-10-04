@@ -2,11 +2,12 @@
 id = "01M1QDTYTBVVWAC4DDV98S1FH8"
 title = "generalize VERSION001 into a REL-family rule for any sibling-distribution pin, not just frob-core/strata-core"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:01:52Z"
 aliases = ["T-3915"]
 labels = ["milestone:1.1.0", "v1-cluster:B3d"]
 scope = ["src/frob/gates/_version_coupling.py"]

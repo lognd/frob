@@ -2,11 +2,12 @@
 id = "01M1QDTYQEEAFC68ACF76TH9AC"
 title = 'F-017: docs/strata/surface.md + threat.md node grammar shows attr IDENT form but the real form needs STRING (attr "privacy-policy"; retention=90d) -- fix the docs to show the STRING attr form'
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:01:47Z"
 aliases = ["T-3822"]
 labels = ["milestone:1.1.0", "v1-cluster:B3d"]
 scope = ["strata-core/src/parse/grammar_node.rs", "design/litmus/attr_ident.strata"]

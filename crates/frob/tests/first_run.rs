@@ -1,17 +1,17 @@
 //! A config-needing verb without `frob.toml` teaches `frob init` instead of running (~ANDZXZ4).
 // frob:ticket 01M40FXV09GYGBH9YZZANDZXZ4
 
+mod common;
+
 use std::path::Path;
 use std::time::Duration;
 
-use assert_cmd::Command;
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use serde_json::Value;
 
 /// Run frob in `dir`.
 fn frob(dir: &Path, args: &[&str]) -> std::process::Output {
-    Command::cargo_bin("frob")
-        .expect("frob binary")
+    common::frob_command()
         .current_dir(dir)
         .args(args)
         .output()

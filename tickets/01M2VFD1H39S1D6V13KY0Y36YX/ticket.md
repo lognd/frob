@@ -3,12 +3,12 @@ id = "01M2VFD1H39S1D6V13KY0Y36YX"
 title = "touched-set test selection misses tests that fake a changed function signature"
 type = "bug"
 category = "triage"
-priority = "medium"
+priority = "low"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-09-19T00:00:00Z"
+updated = "2026-10-04T21:06:51Z"
 aliases = ["T-4643"]
-labels = ["milestone:0.540.0", "v1-cluster:C4a"]
+labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["docs/modules/tickets.md"]
 +++
 

@@ -2,11 +2,12 @@
 id = "01M1QDTYRVYX3GN7QWWXNRFKH7"
 title = "NARR001 (narrative-block placement) burn-down: 156 unwaived findings"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:07:39Z"
 aliases = ["T-3867"]
 labels = ["milestone:1.0.0", "v1-cluster:F1"]
 +++

@@ -3,12 +3,12 @@ id = "01M0XNVQWK34C04HF1DGVGDB1W"
 title = "Windows-native daemon transport (epic): named pipes vs loopback TCP+token vs AF_UNIX hybrid"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 reporter = "human"
 created = "2026-08-26T00:00:00Z"
-updated = "2026-08-26T00:00:00Z"
+updated = "2026-10-04T21:08:03Z"
 aliases = ["T-2963"]
-labels = ["milestone:0.542.0", "v1-cluster:E1"]
+labels = ["v1-cluster:E1", "triage:accepted"]
 scope = ["src/frob/serve/**", "src/frob/app/_daemon_proxy.py", "tests/test_app_daemon_proxy.py", "tests/test_serve_socket.py", "tests/test_serve_events.py", "tests/test_serve_leases.py", "docs/modules/serve.md"]
 +++
 

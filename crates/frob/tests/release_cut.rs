@@ -1,11 +1,12 @@
 //! `release cut` end to end on temporary repositories with a ledger and a milestone.
 // frob:ticket 01M4069X6S9RJWRXX3YBZ9EG10
 
+mod common;
+
 use std::path::Path;
 use std::process::Output;
 use std::time::Duration;
 
-use assert_cmd::Command;
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use serde_json::Value;
 
@@ -57,8 +58,7 @@ impl Repo {
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        Command::cargo_bin("frob")
-            .expect("frob binary")
+        common::frob_command()
             .current_dir(self.dir.path())
             .env_remove("FROB_LOG")
             .args(args)
@@ -380,8 +380,7 @@ fn push_sends_the_branch_and_the_tags_to_origin() {
 /// Run frob with `path` as the whole PATH (a fake or absent `gh`).
 #[cfg(unix)]
 fn run_with_path(repo: &Repo, path: &Path, args: &[&str]) -> Output {
-    Command::cargo_bin("frob")
-        .expect("frob binary")
+    common::frob_command()
         .current_dir(repo.dir.path())
         .env_remove("FROB_LOG")
         .env("PATH", path)

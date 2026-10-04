@@ -2,11 +2,12 @@
 id = "01M1QDTYS44WYV8R41RAN2FZ36"
 title = "ENV001 (undocumented env var) burn-down: 5 unwaived findings"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:07:41Z"
 aliases = ["T-3876"]
 labels = ["milestone:0.541.0", "v1-cluster:F1"]
 +++

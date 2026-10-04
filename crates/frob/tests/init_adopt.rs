@@ -2,11 +2,12 @@
 // frob:ticket 01M40FXTW5FYKQWG82PD8STDJR
 // frob:ticket 01M4069Z0HH5RV8TNPFVA936C5
 
+mod common;
+
 use std::path::Path;
 use std::process::Output;
 use std::time::Duration;
 
-use assert_cmd::Command;
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use serde_json::Value;
 
@@ -61,7 +62,7 @@ fn repo(branch: &str, commit: bool) -> tempfile::TempDir {
 
 /// Run `frob --json <args>` in `dir` with the outer nextest environment scrubbed.
 fn frob(dir: &Path, args: &[&str]) -> Output {
-    let mut cmd = Command::cargo_bin("frob").expect("frob binary");
+    let mut cmd = common::frob_command();
     cmd.current_dir(dir).env_remove("FROB_LOG").arg("--json");
     for (k, _) in std::env::vars() {
         if k.starts_with("NEXTEST") || k == "CARGO_TARGET_DIR" {

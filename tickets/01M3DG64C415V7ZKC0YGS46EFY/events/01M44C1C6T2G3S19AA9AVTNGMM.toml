@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. PT-11 second case: a waiver applying on one run and not the next; v2 caches are engine-keyed (D85, ~1EZ3QHP done) but no determinism test exists."
+at = "2026-10-04T21:10:08Z"
+actor = "lognd"
+rev = 1

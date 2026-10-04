@@ -3,13 +3,13 @@ id = "01M1T07NY10YD7MRB7SSYSK2BD"
 title = "frob:claim directive (or frob:doc guidance) for cross-file comment assertions"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M1T07NXSGQEK1JQ4XKQSJFAK"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:05:19Z"
 aliases = ["T-4033"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_docenum.py"]
 
 [[acceptance]]

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T21:20:49Z"
+digest = "760badfbcdd326f4e20a3f00f12418b5ed2744078464c4ddbb815cf2d69debb1"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d14f8b2c-1975-44f2-a55e-27cfdd821feb with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   1.071s] frob-cli::triage accept_by_label_moves_every_match_to_todo_in_one_commit_and_reports_each
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.072s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test triage -E 'test(accept_by_label_moves_every_match)'"
+size = 576
+status = "measured"
+tests = ["accept_by_label_moves_every_match_to_todo_in_one_commit_and_reports_each"]
+at = "2026-10-04T21:20:49Z"
+actor = "lognd"
+rev = 1

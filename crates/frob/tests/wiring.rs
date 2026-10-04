@@ -4,7 +4,6 @@ use std::path::Path;
 use std::process::Output;
 use std::time::Duration;
 
-use assert_cmd::Command;
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use serde_json::Value;
 
@@ -44,8 +43,7 @@ fn repo() -> tempfile::TempDir {
 }
 
 fn frob(dir: &Path, args: &[&str]) -> Output {
-    Command::cargo_bin("frob")
-        .expect("frob binary")
+    common::frob_command()
         .current_dir(dir)
         .env_remove("FROB_LOG")
         .arg("--json")
