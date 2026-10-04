@@ -7,12 +7,12 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:59:50Z"
-updated = "2026-10-04T11:41:54Z"
+updated = "2026-10-04T11:51:53Z"
 scope = ["crates/frob-land/src/ratchet.rs", "crates/frob-land/src/lib.rs", "crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
 text = "Given the base has one finding X and the ticket adds a second X, when land runs, then it refuses naming the new occurrence"
-bound = false
+bound = true
 +++
 
 Found by reading ratchet.rs: base and head are compared by fingerprint set, so a new duplicate occurrence is not new. Compare multiplicities; also key the base cache by engine and config (P-07). Evidence and repro: notes/review/v1-gap/D-incidents.md (P-06, P-07).
