@@ -2,13 +2,13 @@
 id = "01M43ARW68Z46ETMAQ6CB4N03R"
 title = "Parity corpus capture: freeze the Python crunk fixtures and golden outputs"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:46Z"
-updated = "2026-10-04T11:28:46Z"
+updated = "2026-10-04T11:40:48Z"
 idempotency_key = "crunk-plan-corpus"
 labels = ["area:crunk"]
 scope = ["tests/crunk-parity/**"]
