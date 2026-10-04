@@ -2,11 +2,12 @@
 id = "01M44C546DQRE4D11HHPM0HX6M"
 title = "Build the triage inbox verbs: ticket triage accept, decline, snooze, duplicate"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T21:12:11Z"
-updated = "2026-10-04T22:21:24Z"
+updated = "2026-10-04T22:21:25Z"
 scope = ["crates/frob-ledger/**", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/triage_cmd.rs", "crates/frob/tests/triage.rs", "docs/design/tickets.md", "docs/design/cli.md", "docs/reference/cli/frob.md"]
 
 [[acceptance]]
