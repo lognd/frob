@@ -2,7 +2,8 @@
 id = "01M4235FC39ZQYF207H8ANQEZE"
 title = "frob release adopt VERSION: record an existing published tag as a cut instead of deleting it (REL001)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
