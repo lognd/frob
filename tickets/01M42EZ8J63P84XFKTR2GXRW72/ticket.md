@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T03:22:55Z"
-updated = "2026-10-04T03:49:26Z"
+updated = "2026-10-04T03:49:55Z"
 scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/scrub.rs", "crates/frob/src/ticket/**", "crates/frob/tests/**", "crates/gob-config/**", "docs/design/tickets.md", "docs/design/architecture.md", "docs/reference/rules/**"]
 
 [[acceptance]]
@@ -24,7 +24,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the repository, when its tracked files are searched, then no redaction rule or private term appears in any committed config"
-bound = false
+bound = true
 +++
 
 Requested by goway (2026-10-04): a goway ticket's acceptance text named one of the owner's private machines, and goway is public. Hand-editing event files breaks their digests, and dropping commits keeps getting undone when ticket branches merge the base back in. Generalize the TICK004 home-path scrub (~6JTAH9Q, ~SKCPWMA) to user-defined private terms.
