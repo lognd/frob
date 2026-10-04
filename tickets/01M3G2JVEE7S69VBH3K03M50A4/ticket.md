@@ -7,10 +7,14 @@ priority = "high"
 points = 2
 reporter = "agent"
 created = "2026-09-27T00:00:00Z"
-updated = "2026-09-27T00:00:00Z"
+updated = "2026-10-04T21:07:19Z"
 aliases = ["T-6606"]
 labels = ["milestone:0.535.0", "v1-cluster:C4a"]
 scope = ["src/frob/testing/_collect.py", "src/frob/testing/_select.py", "docs/modules/testing.md"]
+
+[[links]]
+kind = "duplicates"
+target = "01M1T07NZ6Z8S8P3AQVVZBDJTE"
 +++
 
 Reported by the crunk session (2026-09-26, crunk T-0211): `frob test
