@@ -1,0 +1,16 @@
+[package]
+name = "crunk-tailwind"
+version = "0.0.0"
+description = "Tailwind default-theme key tables and the utility candidate parser for crunk."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+thiserror = "2"
+tracing = "0.1"
