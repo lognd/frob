@@ -2,11 +2,11 @@
 id = "01M43J70477E91BE3ENHQW1D9E"
 title = "gob-git: concurrent CAS writers test is flaky under load (CasExhausted)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T13:38:49Z"
-updated = "2026-10-04T13:38:49Z"
+updated = "2026-10-04T20:52:02Z"
 
 [[acceptance]]
 text = "Given a heavily loaded host, when the concurrent CAS writers test runs 50 times, then it passes every time"
