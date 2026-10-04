@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T11:17:59Z"
-updated = "2026-10-04T11:27:19Z"
+updated = "2026-10-04T11:27:20Z"
 scope = ["crates/gob-dev/src/import_v1.rs", "crates/gob-dev/src/import_v1/**", "docs/migration/**", "docs/design/migration.md", "crates/gob-dev/src/main.rs", "crates/gob-dev/tests/import_v1.rs", "crates/gob-dev/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given imported text with a home path or a private term, when it is written, then the redaction rules apply"
-bound = false
+bound = true
 +++
 
 Owner decision 2026-10-04: import from the v1 ledger only the tickets that carry real requirements, not all 970 open ones (notes/review/v1-gap/B-backlog.md proposes the split; migration.md currently imports everything).
