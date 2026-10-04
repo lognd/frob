@@ -6,7 +6,7 @@ category = "triage"
 priority = "low"
 reporter = "auditor"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:02:06Z"
+updated = "2026-10-04T21:02:07Z"
 aliases = ["T-4157"]
 labels = ["v1-cluster:B3d", "triage:accepted"]
 
