@@ -2,7 +2,8 @@
 id = "01M3ZX7JACXBTB74QS6TX6YZZE"
 title = "Derived state outside the work tree with MAC and atomic writes"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
