@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 use std::process::Output;
 use std::time::Duration;
 
-use assert_cmd::Command;
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use serde_json::Value;
 
@@ -75,7 +74,7 @@ impl Fresh {
 
     /// Run frob in `dir` with the nextest environment of the outer run scrubbed.
     fn run_in(dir: &Path, args: &[&str]) -> Output {
-        let mut cmd = Command::cargo_bin("frob").expect("frob binary");
+        let mut cmd = common::frob_command();
         cmd.current_dir(dir).env_remove("FROB_LOG");
         for (k, _) in std::env::vars() {
             if k.starts_with("NEXTEST") || k == "CARGO_TARGET_DIR" {

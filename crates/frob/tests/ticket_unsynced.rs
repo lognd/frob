@@ -1,9 +1,10 @@
 //! A ledger write from a linked worktree names checkouts it could not sync.
 
+mod common;
+
 use std::path::Path;
 use std::process::{Command as Std, Output};
 
-use assert_cmd::Command;
 use serde_json::Value;
 
 fn git(dir: &Path, args: &[&str]) {
@@ -16,8 +17,7 @@ fn git(dir: &Path, args: &[&str]) {
 }
 
 fn frob(dir: &Path, args: &[&str]) -> Output {
-    Command::cargo_bin("frob")
-        .expect("frob binary")
+    common::frob_command()
         .current_dir(dir)
         .env_remove("FROB_LOG")
         .arg("--json")

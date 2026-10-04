@@ -6,7 +6,6 @@ use std::path::Path;
 use std::process::Output;
 use std::time::Duration;
 
-use assert_cmd::Command;
 use frob_lease::{Holder, LeaseConfig, LeaseStore};
 use frob_pm::event::Op;
 use frob_pm::{ObjectId, ObjectKind, PmStore};
@@ -55,8 +54,7 @@ impl Repo {
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        Command::cargo_bin("frob")
-            .expect("frob binary")
+        common::frob_command()
             .current_dir(self.dir.path())
             .env_remove("FROB_LOG")
             .args(args)

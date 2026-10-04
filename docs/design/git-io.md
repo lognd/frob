@@ -43,7 +43,11 @@ directory, write a tree equal to the tip's tree with only that
 directory replaced, commit, and update the ref by compare-and-swap. The
 tree is never built from any index, so staged user changes cannot enter
 a ledger commit. If the CAS loses, re-read the tip, rebuild and retry up
-to `[git] cas_retries` times. When a checkout has the ledger ref
+to `[git] cas_retries` times (a bounded count with jittered backoff,
+never a deadline). The guarantee is that no accepted commit is lost and
+that racing writers as a whole always make progress; it is not that
+every racer wins, so a writer that loses `cas_retries + 1` times in a
+row gets `E-GIT-CAS-EXHAUSTED`. When a checkout has the ledger ref
 checked out, its index entries and worktree files for `tickets/` are
 updated to match (refused with a remedy if those paths have local
 edits). No `git add`, no `git commit`, no hooks unless the repo asks for

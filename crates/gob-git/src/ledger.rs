@@ -13,6 +13,16 @@ use tracing::{debug, info, warn};
 use crate::read::odb_err;
 use crate::{GitError, Oid, RelPath, Repo};
 
+// frob:ticket 01M43J70477E91BE3ENHQW1D9E
+//
+// Retry-policy guarantee (what callers and tests may rely on): the budget is a bounded
+// attempt count (`cas_retries + 1`), not a deadline, so it never depends on host speed.
+// A loss means another writer held or moved the ref, so the ref's writers as a whole always
+// make progress (lock-free), and no accepted commit is ever lost or overwritten. It does NOT
+// promise that every one of N racing writers wins: a writer that loses `cas_retries + 1`
+// times in a row gets [`GitError::CasExhausted`] and the caller decides whether to retry.
+// Jitter only lowers the odds of exhaustion; correctness never depends on it.
+
 /// Backoff window after the first lost compare-and-swap; doubles per loss up to [`BACKOFF_CAP`].
 const BACKOFF_BASE: Duration = Duration::from_millis(100);
 /// Largest backoff window, so the whole retry budget stays bounded (about 3 s of sleep at 5 retries).

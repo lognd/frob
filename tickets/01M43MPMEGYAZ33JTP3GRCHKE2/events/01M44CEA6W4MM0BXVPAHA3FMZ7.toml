@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "internal test-harness change only: CLI tests run with a hermetic PATH; no user-visible behaviour"
+at = "2026-10-04T21:17:12Z"
+actor = "lognd"
+rev = 1
