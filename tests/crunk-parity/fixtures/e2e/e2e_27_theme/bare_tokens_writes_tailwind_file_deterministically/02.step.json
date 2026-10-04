@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_27_theme.py::test_bare_tokens_writes_tailwind_file_deterministically",
+  "setup_deleted": [],
+  "stdin": null
+}

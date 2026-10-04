@@ -1,0 +1,12 @@
+error[GRL012]: the `explain` text of `NOPE009` has no `## Remedy` section
+  --> rules/GRL012.grl:14:3
+   |
+14 |   explain """
+   |   ^^^^^^^ add a `## Remedy` heading to this text
+   |
+   = help: end the text with a section saying how to fix a finding:
+           ## Remedy
+           Delete the call, or log through `tracing` if the value matters.
+   = explain: grimble explain GRL012
+
+error: aborting due to 1 previous error

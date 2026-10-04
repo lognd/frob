@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "check",
+    "--report"
+  ],
+  "command": "python -m crunk check --report",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_39_report_unused.py::test_report_markdown_unused_section",
+  "setup_deleted": [],
+  "stdin": null
+}

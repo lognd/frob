@@ -1,0 +1,11 @@
+error[GRL003]: `g` is only used inside `no`; add a `find g:` clause
+ --> rules/GRL003.grl:5:34
+  |
+5 |   where no t: test where t calls g
+  |                                  ^ `g` is not bound anywhere
+  |
+  = note: `not`, `no` and `unresolved when` use variables but never bind them
+  = help: bind it outside the `no`, for example `find g: function`, so the rule says where `g` comes from
+  = explain: grimble explain GRL003
+
+error: aborting due to 1 previous error

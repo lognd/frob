@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T05:26:14Z"
+digest = "4fbe6b2cb2f568165c5ef6f4e4da9bdb60d60c619c9308fa8ccdb1e2070a6edd"
+exit_code = 0
+inline = '''
+   Compiling frob-cli v0.0.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ac06f074-119d-4dbb-9ae3-1659c67fbd3d with nextest profile: default
+    Starting 1 test across 1 binary (20 tests skipped)
+        PASS [   2.465s] frob-cli::close_guards doctor_reports_a_done_ticket_whose_branch_is_unmerged_unless_exempted
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.465s] 1 test run: 1 passed, 20 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test close_guards doctor_reports_a_done_ticket"
+size = 635
+status = "measured"
+tests = ["doctor_reports_a_done_ticket_whose_branch_is_unmerged_unless_exempted"]
+at = "2026-10-04T05:26:14Z"
+actor = "lognd"
+rev = 1

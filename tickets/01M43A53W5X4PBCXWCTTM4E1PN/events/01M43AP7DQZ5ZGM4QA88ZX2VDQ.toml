@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-04T11:27:19Z"
+digest = "054e1e49312231e110db09ac5b4536d9e19b2a6b75efa5ae780eb71b540e483d"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7eb97965-6cc1-4b85-8b75-f7a227a70da3 with nextest profile: default
+    Starting 1 test across 1 binary (8 tests skipped)
+        PASS [   0.014s] gob-dev::import_v1 selection_imports_requirement_bearing_open_tickets_only
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --test import_v1 selection_imports_requirement_bearing_open_tickets_only"
+size = 561
+status = "measured"
+tests = ["selection_imports_requirement_bearing_open_tickets_only"]
+at = "2026-10-04T11:27:19Z"
+actor = "lognd"
+rev = 1

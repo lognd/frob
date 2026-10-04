@@ -64,3 +64,52 @@ fn build_fake_sibling() -> PathBuf {
         .next_back()
         .expect("cargo reported no fake-sibling executable")
 }
+
+// frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+/// Environment variable that turns a missing Python prerequisite from a named skip into a failure.
+pub const REQUIRE_PYTHON_TESTS: &str = "FROB_REQUIRE_PYTHON_TESTS";
+
+/// True when `tool --version` runs on this host.
+fn tool_runs(tool: &str) -> bool {
+    let spec = Spec {
+        program: Program::Tool {
+            name: tool.to_owned(),
+        },
+        args: vec!["--version".to_owned()],
+        cwd: None,
+        env: Vec::new(),
+        timeout: Duration::from_secs(60),
+        capture: true,
+    };
+    let ok = Runner::new(Limits { jobs: 1 })
+        .run(&spec)
+        .is_ok_and(|o| o.status == Outcome::Exited(0));
+    tracing::debug!(tool, ok, "python prerequisite probed");
+    ok
+}
+
+/// Probe the prerequisites of a pytest-running test: `python3` and `pytest` on `PATH`.
+///
+/// Returns true when both run. When one is absent the test must return early: this
+/// prints `skipped: <tool> not on PATH (<test>)` naming the missing tool, and never
+/// passes silently, because setting [`REQUIRE_PYTHON_TESTS`] makes the absence a panic
+/// (CI sets it where the tools are installed).
+///
+/// # Panics
+/// When a tool is absent and [`REQUIRE_PYTHON_TESTS`] is set.
+#[must_use]
+pub fn python_test_prerequisites(test: &str) -> bool {
+    for tool in ["python3", "pytest"] {
+        if tool_runs(tool) {
+            continue;
+        }
+        let reason = format!("{tool} not on PATH ({test})");
+        assert!(
+            std::env::var_os(REQUIRE_PYTHON_TESTS).is_none(),
+            "{REQUIRE_PYTHON_TESTS} is set but {reason}"
+        );
+        eprintln!("skipped: {reason}");
+        return false;
+    }
+    true
+}

@@ -5,7 +5,7 @@
 //! # Overview
 //!
 //! - [`Adapter`]: the contract `parse`, `fold`, `capabilities`, `fidelity`.
-//!   [`RustAdapter`] (F3), [`MarkdownAdapter`] (F4) and [`OpaqueAdapter`] (F0, for
+//!   [`RustAdapter`] (F3), [`PythonAdapter`] (F2), [`MarkdownAdapter`] (F4) and [`OpaqueAdapter`] (F0, for
 //!   every file with no adapter) each produce a [`gob_ir::Term`] and a
 //!   [`gob_ir::ScopeGraph`] ([`Folded`]); [`adapters`] lists them and the `inventory`-based registry
 //!   ([`AdapterEntry`]) lets crates that depend on this one add more.
@@ -53,6 +53,7 @@ mod model;
 mod opaque;
 mod paths;
 mod pipeline;
+mod python;
 mod qualifier;
 mod registry;
 mod rust;
@@ -80,7 +81,11 @@ pub use model::{
 };
 pub use opaque::OpaqueAdapter;
 pub use pipeline::{
-    BuildStats, EXTRACTOR_VERSION, build_graph, build_graph_with_stats, extract_file, fold_file,
+    BuildStats, EXTRACTOR_VERSION, SkipKind, SkippedFile, build_graph, build_graph_with_stats,
+    extract_file, fold_file,
+};
+pub use python::{
+    PythonAdapter, is_python_path, is_python_test_file, is_python_test_fn, is_python_test_module,
 };
 pub use qualifier::{Admit, CallQualifier};
 pub use registry::{

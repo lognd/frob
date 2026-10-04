@@ -229,7 +229,14 @@ part of the job's design:
   set and through the OIDC action otherwise (crates.io cannot configure
   trusted publishing for a crate that does not exist yet, so the first
   publish needs the token; the owner then configures trusted publishing
-  per crate and deletes the secret).
+  per crate and deletes the secret). crates.io rate-limits new crate
+  names (a small burst, then about one per ten minutes, answered with
+  429 and a retry time), so `cargo dev publish` waits out a 429 within
+  `--max-wait` and otherwise exits 75 naming the next crate and the retry
+  time, and `cargo dev publish --reserve [--apply]` pre-publishes 0.0.0
+  placeholders for missing names (paced, resumable, dry run by default).
+  The `pypi` job needs only `artifacts` (smoke), not `crates`: the two
+  registries publish independently.
 
 ## 6a. Details (closing the 0.532.0 planner's gaps)
 
@@ -321,6 +328,8 @@ Each milestone is a usable increment. Epics are the existing ones
 | **0.534.0 "tickets anyone can read"** | the ledger lives on its branch, with navigation and a GitHub mirror | area:navigation; area:mirror (reconcile, proposals); migration of this repository's ledger | TICK004-007 green; mirror model-checked properties hold in the implementation's property tests; reindex replay check green |
 | **0.535.0 "plugins you can trust"** | repository and external packs run safely | area:packs; area:security; G10, G14, G17, NEAT families | security audit findings closed or recorded; trust review usability test; B2-B3 within target |
 | **0.536.0 "plans you can trust"** | forecasting and flow metrics from real history | PM family, cycles, forecasts, `frob stats`; docs site | forecasts validated against two months of history |
+| **0.537.0 "design tokens, one binary"** | crunk ships from the monorepo | epic ~X0SN72M: crunk binary and registration, crunk.toml, TS/TSX and CSS ingest, token model and export, the core token rule families (Rust first), fix, query, parity with the Python crunk, preview release | parity harness green against the Python crunk corpus; crunk preview installs from PyPI and archives; the Python crunk retired (owner steps) |
+| **0.538.0 "web and system-design packs"** | the D89 packs | crunk-web (A11Y, SEO, LAUNCH, WEBPERF markup), crunk gallery (opt-in), epic ~5NR79CM grimble-websec and grimble-sysdesign | each pack loads through the pack loader with its families tested; packs off by default |
 | **1.0.0** | stable | everything above | 30 days managing three or more repositories with no data loss; no open critical or high security finding; upgrade path from v1 documented |
 
 Milestones beyond 0.532.0 stay `unscheduled` until there is history

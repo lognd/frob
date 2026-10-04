@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--report",
+    "--contrast"
+  ],
+  "command": "python -m crunk check --report --contrast",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_28_report.py::test_report_and_contrast_mutually_exclusive",
+  "setup_deleted": [],
+  "stdin": null
+}

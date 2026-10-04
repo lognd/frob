@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "imported from v1 state `dropped`"
+at = "2026-09-22T00:00:03Z"
+actor = "import"
+rev = 1

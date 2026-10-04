@@ -7,8 +7,8 @@
 
 use std::collections::BTreeMap;
 
-use gob_rules::{Finding, RuleId, RuleMeta, Severity};
-use gob_symbols::{Fidelity, FileInfo, ParseStatus};
+use gob_rules::{Finding, RequiredReason, RuleId, RuleMeta, Severity};
+use gob_symbols::{Fidelity, FileInfo, ParseStatus, SkipKind, SkippedFile};
 use gob_text::{FileId, Span, TextRange};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -156,6 +156,29 @@ pub fn unresolved_finding(
     )
 }
 
+// frob:ticket 01M42M1KK02KFZG39CXKAD47SZ
+/// The required Unresolved `READ001` finding for one unreadable `file`.
+///
+/// Required so the default `fail_on_unresolved = "required"` gate fails on it: a
+/// file the gates never read must not read as clean. The reason is
+/// `ZeroSubjects`, the gate's existing "measured nothing" class (a dedicated
+/// variant is a follow-up).
+pub fn unreadable_finding(meta: &RuleMeta, file: Option<FileId>, skipped: &SkippedFile) -> Finding {
+    unresolved_finding(
+        meta,
+        file,
+        &skipped.path,
+        &format!(
+            "file not read ({}: {}); no rule examined it",
+            skipped.kind.as_str(),
+            skipped.detail
+        ),
+    )
+    .with_required(RequiredReason::ZeroSubjects {
+        rule: meta.id.to_owned(),
+    })
+}
+
 /// One Unresolved finding of `meta` for all opaque text files `files` (spanless, one per rule).
 pub fn opaque_finding(meta: &RuleMeta, files: &[&str]) -> Finding {
     let first = files.first().copied().unwrap_or_default();
@@ -230,11 +253,23 @@ pub struct SiblingRow {
     pub other: Option<OtherCopy>,
 }
 
+// frob:ticket 01M42M1KK02KFZG39CXKAD47SZ
+/// Walked files no rule could read, counted by reason (`READ001`).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct SkippedReport {
+    /// Files skipped in all.
+    pub files: usize,
+    /// Reason class (`encoding`, `permission`, `io`, `size`) to its file count.
+    pub reasons: BTreeMap<String, usize>,
+}
+
 /// The per-language fidelity report of one run.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct FidelityReport {
     /// Language label to its counts.
     pub languages: BTreeMap<String, LanguageFidelity>,
+    /// Files that were walked but never read; they are in no language row and each has a `READ001` finding.
+    pub skipped: SkippedReport,
 }
 
 impl FidelityReport {
@@ -269,6 +304,16 @@ impl FidelityReport {
         for rule in unresolved {
             *row.unresolved.entry((*rule).to_owned()).or_default() += 1;
         }
+    }
+
+    /// Count one unreadable file under its reason class.
+    pub fn add_skipped(&mut self, kind: SkipKind) {
+        self.skipped.files += 1;
+        *self
+            .skipped
+            .reasons
+            .entry(kind.as_str().to_owned())
+            .or_default() += 1;
     }
 
     /// Add `n` Unresolved findings of `rule` to the language `label`.

@@ -9,7 +9,7 @@ use crate::event::EventBody;
 use crate::fold::fold;
 use crate::id::TicketId;
 use crate::ledger::Ledger;
-use crate::rules::{tick001, tick003};
+use crate::rules::{tick001, tick001_unreadable, tick003};
 
 /// Seconds an event's `at` may differ from its ULID time before it is flagged.
 pub const CLOCK_SKEW_SECS: i64 = 600;
@@ -117,10 +117,18 @@ impl Ledger {
             Ok(Some(t)) => t,
             Ok(None) => return false,
             Err(e) => {
-                report
-                    .issues
-                    .push(issue("E-DOCTOR-UNREADABLE", e.to_string()));
-                return false;
+                // The events are the source of truth: a foldable ticket is repairable.
+                let foldable = self
+                    .read_events_at(hex, id)
+                    .is_ok_and(|ev| fold(id, &ev).is_ok());
+                if foldable {
+                    report.findings.push(tick001_unreadable(id, &e.to_string()));
+                } else {
+                    report
+                        .issues
+                        .push(issue("E-DOCTOR-UNREADABLE", e.to_string()));
+                }
+                return foldable;
             }
         };
         if stored.front.id != id {

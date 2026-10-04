@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "check"
+  ],
+  "command": "python -m crunk check",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_10_alpha.py::test_near_translucent_literal_fixes_to_color_mix_preserving_alpha",
+  "setup_deleted": [],
+  "stdin": null
+}

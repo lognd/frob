@@ -76,6 +76,12 @@ fn is_rust(path: &str) -> bool {
         .is_some_and(|e| e.eq_ignore_ascii_case("rs"))
 }
 
+// frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+/// True for the files whose symbols seed selection: Rust and Python sources.
+fn is_seed_source(path: &str) -> bool {
+    is_rust(path) || gob_symbols::is_python_path(path)
+}
+
 fn base_symbols(repo: &Repo, base: &str, path: &str) -> Result<BTreeMap<Symref, Digests>> {
     let Some(bytes) = repo.read_blob_at(base, path)? else {
         return Ok(BTreeMap::new());
@@ -95,7 +101,7 @@ fn base_symbols(repo: &Repo, base: &str, path: &str) -> Result<BTreeMap<Symref, 
 
 /// Files changed between `base` and the work tree, and the changed symbols among `graph`'s.
 ///
-/// A symbol is touched when it is new in a changed Rust file or its signature or
+/// A symbol is touched when it is new in a changed Rust or Python file or its signature or
 /// body digest differs from the same symref at `base`. Deleted symbols cannot be
 /// seeds (they are gone from the graph); their callers are still touched by
 /// the edits that removed the calls.
@@ -107,7 +113,7 @@ pub fn touched_set(repo: &Repo, graph: &SymbolGraph, base: &str) -> Result<Touch
     let changed = repo.diff_names(&TreeRef::Ref(base.to_owned()), &TreeRef::WorkTree)?;
     let files: Vec<String> = changed.iter().map(|c| c.path.clone()).collect();
     let mut symbols: BTreeSet<Symref> = BTreeSet::new();
-    for path in files.iter().filter(|p| is_rust(p)) {
+    for path in files.iter().filter(|p| is_seed_source(p)) {
         let before = base_symbols(repo, base, path)?;
         for rec in graph.records().filter(|r| r.symref.path() == path) {
             if !matches!(rec.symref.target(), Target::Symbol(_)) {

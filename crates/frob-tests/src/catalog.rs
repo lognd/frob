@@ -36,11 +36,15 @@ fn is_test_attribute(line: &str) -> bool {
 
 /// True when `path` is an integration-test file (under a `tests/` directory).
 pub fn is_test_file(path: &str) -> bool {
-    path.starts_with("tests/") || path.contains("/tests/")
+    path.starts_with("tests/") || path.contains("/tests/") || gob_symbols::is_python_test_file(path)
 }
 
 /// True when `rec` is a test function; see the module docs for the heuristic.
 pub fn is_test_fn(rec: &SymbolRecord, text: Option<&str>) -> bool {
+    // frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
+    if gob_symbols::is_python_path(rec.symref.path()) {
+        return gob_symbols::is_python_test_fn(rec);
+    }
     if rec.kind != SymbolKind::Function || !matches!(rec.symref.target(), Target::Symbol(_)) {
         return false;
     }

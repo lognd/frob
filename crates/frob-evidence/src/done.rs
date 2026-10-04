@@ -3,9 +3,9 @@
 
 use std::path::Path;
 
-use frob_ledger::event::{ChangelogExemptData, EventBody};
+use frob_ledger::event::{ChangelogExemptData, EventBody, LandExemptData};
 use frob_ledger::guards::{CloseContext, CloseGuard, GuardFailure};
-use frob_ledger::model::{Category, Outcome, Ticket};
+use frob_ledger::model::{Category, LinkKind, Outcome, Ticket};
 use frob_ledger::{EventId, Ledger, TicketId};
 use frob_pm::{DoneRequirement, PmConfig};
 
@@ -15,10 +15,18 @@ use crate::error::{EvidenceError, Result as EvResult};
 pub const CODE_CRITERIA: &str = "E-DONE-CRITERIA-UNBOUND";
 /// Stable code of a ticket that still has open children.
 pub const CODE_CHILDREN: &str = "E-DONE-OPEN-CHILDREN";
+/// Stable code of a ticket that is still blocked by an open ticket (`no_open_blockers`, ~G7AXHR1).
+pub const CODE_BLOCKERS: &str = "E-DONE-OPEN-BLOCKERS";
 /// Stable code of a requirement that cannot be evaluated yet (Unresolved, never a silent pass).
 pub const CODE_UNRESOLVED: &str = "E-DONE-UNRESOLVED";
 /// Stable code of a missing changelog fragment (REL003).
 pub const CODE_FRAGMENT: &str = "E-DONE-CHANGELOG-FRAGMENT";
+
+/// Stable code of a done close whose ticket branch holds commits the base lacks (~CKZS2R3).
+pub const CODE_UNMERGED: &str = "E-DONE-UNMERGED";
+
+/// Most unmerged commits a refusal or doctor issue lists by name.
+const UNMERGED_LIST_CAP: usize = 5;
 
 /// Flavour of a ticket that carries a measured target (pm-enforcement.md section 2a).
 const OBJECTIVE_FLAVOUR: &str = "quality_objective";
@@ -66,6 +74,8 @@ enum FragmentState {
 pub struct DoneGuard {
     requires: Vec<DoneRequirement>,
     open_children: Vec<String>,
+    /// Blockers (`handle (title)`) whose category is not `done`.
+    open_blockers: Vec<String>,
     fragment: FragmentState,
     bypass: Option<String>,
     /// A `changelog-exempt` event already on the ticket.
@@ -89,6 +99,20 @@ impl DoneGuard {
             .filter(|c| c.category != Category::Done)
             .map(|c| format!("{} ({})", c.handle, c.title))
             .collect();
+        // frob:ticket 01M42MGNSY7N4NANEFNG7AXHR1
+        let open_blockers: Vec<String> = view
+            .outgoing
+            .iter()
+            .chain(&view.incoming)
+            .filter(|l| l.kind == LinkKind::BlockedBy && l.category != Some(Category::Done))
+            .map(|l| {
+                format!(
+                    "{} ({})",
+                    l.handle.as_deref().unwrap_or("dangling"),
+                    l.title.as_deref().unwrap_or("?")
+                )
+            })
+            .collect();
         let fragment = fragment_state(root, id, &view.summary.handle);
         let recorded_exemption =
             frob_ledger::event::changelog_exemption(&ledger.events(id)?).is_some();
@@ -96,6 +120,7 @@ impl DoneGuard {
         Ok(Self {
             requires: pm.pm.done_requires,
             open_children,
+            open_blockers,
             fragment,
             bypass: None,
             recorded_exemption,
@@ -211,6 +236,25 @@ impl DoneGuard {
         })
     }
 
+    // frob:ticket 01M42MGNSY7N4NANEFNG7AXHR1
+    fn blockers(&self, cx: &CloseContext<'_>) -> Result<(), GuardFailure> {
+        if self.open_blockers.is_empty() {
+            return Ok(());
+        }
+        Err(GuardFailure {
+            code: CODE_BLOCKERS.to_owned(),
+            message: format!(
+                "closing {} needs every blocker closed (no_open_blockers); open: {}",
+                cx.handle,
+                self.open_blockers.join("; ")
+            ),
+            remedy: Some(
+                "close each blocker, or remove the link with frob ticket unlink, then retry"
+                    .to_owned(),
+            ),
+        })
+    }
+
     fn objective(cx: &CloseContext<'_>) -> Result<(), GuardFailure> {
         if cx.ticket.front.flavour.as_deref() != Some(OBJECTIVE_FLAVOUR) {
             return Ok(());
@@ -303,6 +347,11 @@ impl CloseGuard for DoneGuard {
         if !guards_apply(cx.outcome) {
             return Ok(());
         }
+        // Always on: not a `done_requires` entry, since the requirement enum lives outside this ticket's scope.
+        if let Err(f) = self.blockers(cx) {
+            tracing::info!(code = %f.code, "no_open_blockers refused");
+            return Err(f);
+        }
         for req in &self.requires {
             let verdict = match req {
                 DoneRequirement::CriteriaEvidenced => self.criteria(cx),
@@ -317,5 +366,215 @@ impl CloseGuard for DoneGuard {
             verdict?;
         }
         Ok(())
+    }
+}
+
+// frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
+/// The branch `frob work` creates for ticket `handle` (`~` optional).
+pub fn ticket_branch(handle: &str) -> String {
+    format!("ticket/{}", handle.trim_start_matches('~'))
+}
+
+// frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
+/// Commits of the ticket branch of `handle` that `base` lacks, as `oid subject` lines, plus whether the list was cut.
+///
+/// A ticket branch that no longer exists (deleted after landing) has none, so such a ticket closes cleanly.
+///
+/// # Errors
+///
+/// [`EvidenceError::Git`] when `base` does not resolve or history cannot be read.
+pub fn unmerged_commits(
+    repo: &gob_git::Repo,
+    base: &str,
+    handle: &str,
+) -> EvResult<(Vec<String>, bool)> {
+    let branch = format!("refs/heads/{}", ticket_branch(handle));
+    if repo.rev_parse(&branch).is_err() {
+        tracing::debug!(%branch, "ticket branch is absent; nothing unmerged");
+        return Ok((Vec::new(), false));
+    }
+    let found = repo.commits_not_in(&branch, base, UNMERGED_LIST_CAP + 1)?;
+    let more = found.len() > UNMERGED_LIST_CAP;
+    let lines = found
+        .into_iter()
+        .take(UNMERGED_LIST_CAP)
+        .map(|(oid, subject)| format!("{} {subject}", &oid.to_string()[..12]))
+        .collect();
+    Ok((lines, more))
+}
+
+// frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
+/// Refuses `done` and `fixed` while the ticket branch holds commits not reachable from the base.
+///
+/// `land` merges before it closes and does not build this guard; `--no-land --reason` is the audited escape hatch.
+#[derive(Debug, Clone, Default)]
+pub struct MergedGuard {
+    unmerged: Vec<String>,
+    more: bool,
+    base: String,
+    no_land: Option<String>,
+    recorded_exemption: bool,
+}
+
+impl MergedGuard {
+    /// A guard for ticket `id` (handle `handle`) judged against branch `base` of `repo`.
+    ///
+    /// # Errors
+    ///
+    /// [`EvidenceError::Git`] reading history, ledger failures reading the events.
+    pub fn for_ticket(
+        ledger: &Ledger,
+        repo: &gob_git::Repo,
+        id: TicketId,
+        base: &str,
+        handle: &str,
+    ) -> EvResult<Self> {
+        let (unmerged, more) = unmerged_commits(repo, base, handle)?;
+        let recorded_exemption = frob_ledger::event::land_exemption(&ledger.events(id)?).is_some();
+        tracing::debug!(
+            count = unmerged.len(),
+            more,
+            recorded_exemption,
+            "merged guard loaded"
+        );
+        Ok(Self {
+            unmerged,
+            more,
+            base: base.to_owned(),
+            no_land: None,
+            recorded_exemption,
+        })
+    }
+
+    /// Let the close through with unmerged commits (`--no-land --reason <why>`); [`Self::record_exemption`] audits it.
+    #[must_use]
+    pub fn allow_no_land(mut self, reason: impl Into<String>) -> Self {
+        let reason = reason.into();
+        tracing::warn!(%reason, "unmerged-branch exemption requested");
+        self.no_land = Some(reason);
+        self
+    }
+
+    /// Write the exemption as a `land-exempt` event on `id`; `None` when none was requested or one with this reason exists.
+    ///
+    /// Call it before the close so a crash cannot leave a closed ticket without its record.
+    ///
+    /// # Errors
+    ///
+    /// Ledger, git or format failures.
+    pub fn record_exemption(&self, ledger: &Ledger, id: TicketId) -> EvResult<Option<EventId>> {
+        let Some(reason) = self.no_land.as_deref() else {
+            return Ok(None);
+        };
+        if self.unmerged.is_empty() {
+            return Ok(None);
+        }
+        let existing = frob_ledger::event::land_exemption(&ledger.events(id)?);
+        if existing.is_some_and(|x| x.reason == reason) {
+            return Ok(None);
+        }
+        let applied = ledger.append(
+            id,
+            EventBody::LandExempt(LandExemptData {
+                reason: reason.to_owned(),
+            }),
+        )?;
+        let event = applied.events.first().copied().ok_or_else(|| {
+            EvidenceError::Malformed("the land-exempt event was not written".to_owned())
+        })?;
+        tracing::info!(ticket = %id, event = %event, "unmerged-branch exemption audited");
+        Ok(Some(event))
+    }
+}
+
+impl CloseGuard for MergedGuard {
+    fn name(&self) -> &'static str {
+        "branch_merged"
+    }
+
+    fn check(&self, cx: &CloseContext<'_>) -> Result<(), GuardFailure> {
+        if !guards_apply(cx.outcome)
+            || self.unmerged.is_empty()
+            || self.no_land.is_some()
+            || self.recorded_exemption
+        {
+            return Ok(());
+        }
+        let more = if self.more { "; and more" } else { "" };
+        Err(GuardFailure {
+            code: CODE_UNMERGED.to_owned(),
+            message: format!(
+                "closing {} as done needs its branch merged into {} (branch_merged, ~CKZS2R3); unmerged: {}{more}",
+                cx.handle,
+                self.base,
+                self.unmerged.join("; ")
+            ),
+            remedy: Some(format!(
+                "frob land {h}; or, when the work lives elsewhere, audited, frob ticket close {h} --outcome done --no-land --reason <why>",
+                h = cx.handle
+            )),
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use frob_ledger::LedgerConfig;
+    use frob_ledger::model::TicketType;
+    use frob_ledger::ops::NewTicket;
+    use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec};
+
+    fn git(dir: &Path, args: &[&str]) {
+        let spec = Spec {
+            program: Program::Git,
+            args: args.iter().map(|a| (*a).to_owned()).collect(),
+            cwd: Some(dir.to_path_buf()),
+            env: Vec::new(),
+            timeout: std::time::Duration::from_secs(30),
+            capture: true,
+        };
+        let out = Runner::new(Limits { jobs: 1 }).run(&spec).expect("git");
+        assert_eq!(
+            out.status,
+            ExecOutcome::Exited(0),
+            "git {args:?}: {}",
+            out.stderr
+        );
+    }
+
+    // frob:ticket 01M42MGNSY7N4NANEFNG7AXHR1
+    // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
+    #[test]
+    fn an_open_blocker_refuses_a_done_close_and_is_named_but_not_other_outcomes() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let p = dir.path();
+        git(p, &["init", "-q"]);
+        git(p, &["symbolic-ref", "HEAD", "refs/heads/main"]);
+        git(p, &["config", "user.name", "T"]);
+        git(p, &["config", "user.email", "t@example.com"]);
+        git(p, &["commit", "-q", "--allow-empty", "-m", "base"]);
+        let ledger = Ledger::open(
+            gob_git::Repo::discover(p).expect("repo"),
+            LedgerConfig::default(),
+        );
+        let upstream = ledger
+            .new_ticket(NewTicket::new("Blocker", TicketType::Chore))
+            .expect("blocker");
+        let mut req = NewTicket::new("Blocked", TicketType::Chore);
+        req.blocked_by = vec![upstream.ticket.front.id];
+        let downstream = ledger.new_ticket(req).expect("blocked");
+        let id = downstream.ticket.front.id;
+
+        let guard = DoneGuard::for_ticket(&ledger, id, p).expect("guard");
+        let cx = |outcome| CloseContext {
+            ticket: &downstream.ticket,
+            handle: &downstream.handle,
+            outcome,
+        };
+        let f = guard.check(&cx(Some(Outcome::Done))).expect_err("refused");
+        assert_eq!(f.code, CODE_BLOCKERS);
+        assert!(f.message.contains(&upstream.handle), "{}", f.message);
+        assert!(guard.check(&cx(Some(Outcome::WontFix))).is_ok());
     }
 }

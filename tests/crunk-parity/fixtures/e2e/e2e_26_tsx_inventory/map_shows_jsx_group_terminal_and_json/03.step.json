@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "map",
+    "--json"
+  ],
+  "command": "python -m crunk map --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_26_tsx_inventory.py::test_map_shows_jsx_group_terminal_and_json",
+  "setup_deleted": [],
+  "stdin": null
+}

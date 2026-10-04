@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T11:52:12Z"
+digest = "cd48e8f592b5284012dde196bf9cec6a5bf722796c4d6ce0f7aee2eefcc1a1dc"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.38s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5d4a935d-a63b-46a5-a0f0-a688489dfafc with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.191s] frob-check::python an_unmodelled_python_construct_is_unresolved_not_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.203s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check --test python an_unmodelled"
+size = 560
+status = "measured"
+tests = ["an_unmodelled_python_construct_is_unresolved_not_clean"]
+at = "2026-10-04T11:52:12Z"
+actor = "lognd"
+rev = 1

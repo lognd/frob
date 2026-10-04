@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "kind": "unused",
+  "results": [
+    {
+      "name": "--color-accent"
+    },
+    {
+      "name": "--font-size-12"
+    },
+    {
+      "name": "--font-size-14"
+    },
+    {
+      "name": "--font-size-16"
+    },
+    {
+      "name": "--font-size-20"
+    },
+    {
+      "name": "--font-size-24"
+    },
+    {
+      "name": "--font-size-32"
+    },
+    {
+      "name": "--font-size-48"
+    },
+    {
+      "name": "--layer-base"
+    },
+    {
+      "name": "--layer-dropdown"
+    },
+    {
+      "name": "--layer-overlay"
+    },
+    {
+      "name": "--layer-toast"
+    },
+    {
+      "name": "--radius-0"
+    },
+    {
+      "name": "--radius-16"
+    },
+    {
+      "name": "--radius-4"
+    },
+    {
+      "name": "--radius-8"
+    },
+    {
+      "name": "--space-0"
+    },
+    {
+      "name": "--space-12"
+    },
+    {
+      "name": "--space-16"
+    },
+    {
+      "name": "--space-24"
+    },
+    {
+      "name": "--space-32"
+    },
+    {
+      "name": "--space-4"
+    },
+    {
+      "name": "--space-48"
+    },
+    {
+      "name": "--space-64"
+    },
+    {
+      "name": "--space-8"
+    }
+  ]
+}

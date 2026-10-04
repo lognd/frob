@@ -1,0 +1,18 @@
+kind = "create"
+title = "WEBSEC config/headers substrate: response-header lint engine"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M2Y1SS0Q1MXMXDHZ5ZJAD3XB"
+aliases = ["T-5325"]
+labels = ["milestone:0.534.0"]
+scope = ["src/frob/webapp/_websec_headers.py", "tests/fixtures/webapp/websec3xx/**", "docs/modules/webapp-websec-headers.md", "tests/unit/test_webapp_websec_headers.py"]
+body = "HeaderSourceKind union parser: (a) app-code AST lint for helmet(...)/django-secure/SECURE_* settings/manual response.headers[...]= calls, (b) nginx/Caddy config-file line parser for add_header/directive blocks, (c) documented gap for CDN-layer-only header injection (Cloudflare/Fastly dashboards) as a WARN advisory ('no in-repo evidence; confirm at your edge') rather than a false ERROR. Fixture: nginx conf, Django settings, Express+helmet fixture, one with and one without each header."
+at = "2026-09-22T00:00:00Z"
+actor = "human"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M336K75PBAVJE0SEABECQYQV"

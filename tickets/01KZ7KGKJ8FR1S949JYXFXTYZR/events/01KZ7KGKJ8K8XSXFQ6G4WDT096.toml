@@ -1,0 +1,26 @@
+kind = "create"
+title = "Cross-language inspection stress test: one repo, every supported language, one obligation graph"
+type = "task"
+category = "triage"
+priority = "medium"
+parent = "01KZ7KGKHXGS6W2YAVRY27W0D5"
+aliases = ["T-1608"]
+labels = ["milestone:1.1.0", "v1-cluster:D2"]
+scope = ["tests/**", "src/frob/**", "docs/**"]
+body = """
+The payoff test for the whole epic: a single fixture repository containing every supported language at once, carrying a real obligation graph across language boundaries.
+
+What it must demonstrate:
+- Doc edges from a symbol in one language to documentation that also covers symbols in another.
+- Test edges from a test written in one language binding a symbol implemented in another (the FFI/binding shape frob users actually have: Python tests over a Rust or C++ core, a TypeScript client over a Java service).
+- Waivers, todos, and ticket directives resolving identically regardless of the host language's comment syntax.
+- A full frob check over the mixed repo producing correct, non-degraded results -- and, critically, ANNOUNCING any language whose analysis could not run rather than silently reporting zero findings for it.
+
+That last point is this drive's recurring lesson applied to the language layer: a silent under-report is indistinguishable from a clean result, and every incident this session traced back to exactly that. A mixed-language repo multiplies the opportunities for it."""
+at = "2026-08-05T00:00:00Z"
+actor = "human"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01KZ7KGKJ7TR8HEBH86Y18T290"

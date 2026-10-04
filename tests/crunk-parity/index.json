@@ -1,0 +1,1225 @@
+{
+  "e2e_int": {
+    "E2E-01": {
+      "expected_dirs": [
+        "expected/e2e/e2e_01_init/init_default_preset_then_check_clean",
+        "expected/e2e/e2e_01_init/init_mono_preset_then_check_clean",
+        "expected/e2e/e2e_01_init/reinit_without_force_exits_2",
+        "expected/e2e/e2e_01_init/reinit_with_force_exits_0"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_01_init/init_default_preset_then_check_clean",
+        "fixtures/e2e/e2e_01_init/init_mono_preset_then_check_clean",
+        "fixtures/e2e/e2e_01_init/reinit_without_force_exits_2",
+        "fixtures/e2e/e2e_01_init/reinit_with_force_exits_0"
+      ],
+      "scenarios": [
+        "e2e_01_init/init_default_preset_then_check_clean",
+        "e2e_01_init/init_mono_preset_then_check_clean",
+        "e2e_01_init/reinit_without_force_exits_2",
+        "e2e_01_init/reinit_with_force_exits_0"
+      ],
+      "source": "tests/system/test_e2e_01_init.py"
+    },
+    "E2E-02": {
+      "expected_dirs": [
+        "expected/e2e/e2e_02_color/near_accent_color_flagged_and_fixed"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_02_color/near_accent_color_flagged_and_fixed"
+      ],
+      "scenarios": [
+        "e2e_02_color/near_accent_color_flagged_and_fixed"
+      ],
+      "source": "tests/system/test_e2e_02_color.py"
+    },
+    "E2E-03": {
+      "expected_dirs": [
+        "expected/e2e/e2e_03_spacing/space001_warns_by_default_then_errors_when_releveled",
+        "expected/e2e/e2e_03_spacing/fix_snaps_near_value_leaves_far_value"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_03_spacing/space001_warns_by_default_then_errors_when_releveled",
+        "fixtures/e2e/e2e_03_spacing/fix_snaps_near_value_leaves_far_value"
+      ],
+      "scenarios": [
+        "e2e_03_spacing/space001_warns_by_default_then_errors_when_releveled",
+        "e2e_03_spacing/fix_snaps_near_value_leaves_far_value"
+      ],
+      "source": "tests/system/test_e2e_03_spacing.py"
+    },
+    "E2E-04": {
+      "expected_dirs": [
+        "expected/e2e/e2e_04_org/stray_file_is_org001",
+        "expected/e2e/e2e_04_org/bad_case_and_missing_prefix_are_org002_and_org003"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_04_org/stray_file_is_org001",
+        "fixtures/e2e/e2e_04_org/bad_case_and_missing_prefix_are_org002_and_org003"
+      ],
+      "scenarios": [
+        "e2e_04_org/stray_file_is_org001",
+        "e2e_04_org/bad_case_and_missing_prefix_are_org002_and_org003"
+      ],
+      "source": "tests/system/test_e2e_04_org.py"
+    },
+    "E2E-05": {
+      "expected_dirs": [
+        "expected/e2e/e2e_05_tokens/edit_accent_drifts_then_regenerates_tokens"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_05_tokens/edit_accent_drifts_then_regenerates_tokens"
+      ],
+      "scenarios": [
+        "e2e_05_tokens/edit_accent_drifts_then_regenerates_tokens"
+      ],
+      "source": "tests/system/test_e2e_05_tokens.py"
+    },
+    "E2E-06": {
+      "expected_dirs": [
+        "expected/e2e/e2e_06_waiver/waiver_with_reason_silences_and_counts_waived",
+        "expected/e2e/e2e_06_waiver/waiver_without_reason_is_waive001"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_06_waiver/waiver_with_reason_silences_and_counts_waived",
+        "fixtures/e2e/e2e_06_waiver/waiver_without_reason_is_waive001"
+      ],
+      "scenarios": [
+        "e2e_06_waiver/waiver_with_reason_silences_and_counts_waived",
+        "e2e_06_waiver/waiver_without_reason_is_waive001"
+      ],
+      "source": "tests/system/test_e2e_06_waiver.py"
+    },
+    "E2E-07": {
+      "expected_dirs": [
+        "expected/e2e/e2e_07_json_exit_codes/json_clean_tree_exits_0_and_parses",
+        "expected/e2e/e2e_07_json_exit_codes/json_violating_tree_exits_1_with_rule_path_line",
+        "expected/e2e/e2e_07_json_exit_codes/corrupt_crunk_toml_exits_2"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_07_json_exit_codes/json_clean_tree_exits_0_and_parses",
+        "fixtures/e2e/e2e_07_json_exit_codes/json_violating_tree_exits_1_with_rule_path_line",
+        "fixtures/e2e/e2e_07_json_exit_codes/corrupt_crunk_toml_exits_2"
+      ],
+      "scenarios": [
+        "e2e_07_json_exit_codes/json_clean_tree_exits_0_and_parses",
+        "e2e_07_json_exit_codes/json_violating_tree_exits_1_with_rule_path_line",
+        "e2e_07_json_exit_codes/corrupt_crunk_toml_exits_2"
+      ],
+      "source": "tests/system/test_e2e_07_json_exit_codes.py"
+    },
+    "E2E-08": {
+      "expected_dirs": [
+        "expected/e2e/e2e_08_contrast/low_contrast_role_pair_is_contrast001_with_ratio"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_08_contrast/low_contrast_role_pair_is_contrast001_with_ratio"
+      ],
+      "scenarios": [
+        "e2e_08_contrast/low_contrast_role_pair_is_contrast001_with_ratio"
+      ],
+      "source": "tests/system/test_e2e_08_contrast.py"
+    },
+    "E2E-09": {
+      "expected_dirs": [
+        "expected/e2e/e2e_09_map/map_text_lists_component_and_flags_stray",
+        "expected/e2e/e2e_09_map/map_json_round_trips_pinned_shape"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_09_map/map_text_lists_component_and_flags_stray",
+        "fixtures/e2e/e2e_09_map/map_json_round_trips_pinned_shape"
+      ],
+      "scenarios": [
+        "e2e_09_map/map_text_lists_component_and_flags_stray",
+        "e2e_09_map/map_json_round_trips_pinned_shape"
+      ],
+      "source": "tests/system/test_e2e_09_map.py"
+    },
+    "E2E-10": {
+      "expected_dirs": [
+        "expected/e2e/e2e_10_alpha/exact_rgb_translucent_literal_passes_untouched",
+        "expected/e2e/e2e_10_alpha/near_translucent_literal_fixes_to_color_mix_preserving_alpha",
+        "expected/e2e/e2e_10_alpha/far_translucent_literal_reported_not_fixed"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_10_alpha/exact_rgb_translucent_literal_passes_untouched",
+        "fixtures/e2e/e2e_10_alpha/near_translucent_literal_fixes_to_color_mix_preserving_alpha",
+        "fixtures/e2e/e2e_10_alpha/far_translucent_literal_reported_not_fixed"
+      ],
+      "scenarios": [
+        "e2e_10_alpha/exact_rgb_translucent_literal_passes_untouched",
+        "e2e_10_alpha/near_translucent_literal_fixes_to_color_mix_preserving_alpha",
+        "e2e_10_alpha/far_translucent_literal_reported_not_fixed"
+      ],
+      "source": "tests/system/test_e2e_10_alpha.py"
+    },
+    "E2E-11": {
+      "expected_dirs": [
+        "expected/e2e/e2e_11_stacks/declared_stacks_pass_check_and_export_tokens"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_11_stacks/declared_stacks_pass_check_and_export_tokens"
+      ],
+      "scenarios": [
+        "e2e_11_stacks/declared_stacks_pass_check_and_export_tokens"
+      ],
+      "source": "tests/system/test_e2e_11_stacks.py"
+    },
+    "E2E-12": {
+      "expected_dirs": [
+        "expected/e2e/e2e_12_ungoverned/outside_css_flagged_as_org005",
+        "expected/e2e/e2e_12_ungoverned/org_ignore_glob_silences_exactly_it",
+        "expected/e2e/e2e_12_ungoverned/map_still_shows_only_governed_files"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_12_ungoverned/outside_css_flagged_as_org005",
+        "fixtures/e2e/e2e_12_ungoverned/org_ignore_glob_silences_exactly_it",
+        "fixtures/e2e/e2e_12_ungoverned/map_still_shows_only_governed_files"
+      ],
+      "scenarios": [
+        "e2e_12_ungoverned/outside_css_flagged_as_org005",
+        "e2e_12_ungoverned/org_ignore_glob_silences_exactly_it",
+        "e2e_12_ungoverned/map_still_shows_only_governed_files"
+      ],
+      "source": "tests/system/test_e2e_12_ungoverned.py"
+    },
+    "E2E-13": {
+      "expected_dirs": [
+        "expected/e2e/e2e_13_prefixes/empty_color_prefix_exported_accepted_and_fixed"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_13_prefixes/empty_color_prefix_exported_accepted_and_fixed"
+      ],
+      "scenarios": [
+        "e2e_13_prefixes/empty_color_prefix_exported_accepted_and_fixed"
+      ],
+      "source": "tests/system/test_e2e_13_prefixes.py"
+    },
+    "E2E-14": {
+      "expected_dirs": [
+        "expected/e2e/e2e_14_entry/entry_file_no_org001_and_layer_color_located",
+        "expected/e2e/e2e_14_entry/map_shows_entry_group"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_14_entry/entry_file_no_org001_and_layer_color_located",
+        "fixtures/e2e/e2e_14_entry/map_shows_entry_group"
+      ],
+      "scenarios": [
+        "e2e_14_entry/entry_file_no_org001_and_layer_color_located",
+        "e2e_14_entry/map_shows_entry_group"
+      ],
+      "source": "tests/system/test_e2e_14_entry.py"
+    },
+    "E2E-15": {
+      "expected_dirs": [
+        "expected/e2e/e2e_15_output/check_paths_are_root_relative_terminal_and_json",
+        "expected/e2e/e2e_15_output/fix_output_path_is_root_relative",
+        "expected/e2e/e2e_15_output/map_output_paths_are_root_relative",
+        "expected/e2e/e2e_15_output/check_contrast_clean_exits_0",
+        "expected/e2e/e2e_15_output/check_contrast_failing_pair_exits_1"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_15_output/check_paths_are_root_relative_terminal_and_json",
+        "fixtures/e2e/e2e_15_output/fix_output_path_is_root_relative",
+        "fixtures/e2e/e2e_15_output/map_output_paths_are_root_relative",
+        "fixtures/e2e/e2e_15_output/check_contrast_clean_exits_0",
+        "fixtures/e2e/e2e_15_output/check_contrast_failing_pair_exits_1"
+      ],
+      "scenarios": [
+        "e2e_15_output/check_paths_are_root_relative_terminal_and_json",
+        "e2e_15_output/fix_output_path_is_root_relative",
+        "e2e_15_output/map_output_paths_are_root_relative",
+        "e2e_15_output/check_contrast_clean_exits_0",
+        "e2e_15_output/check_contrast_failing_pair_exits_1"
+      ],
+      "source": "tests/system/test_e2e_15_output.py"
+    },
+    "E2E-16": {
+      "expected_dirs": [
+        "expected/e2e/e2e_16_query/find_text_and_json",
+        "expected/e2e/e2e_16_query/component_card",
+        "expected/e2e/e2e_16_query/component_unknown_name_exits_2",
+        "expected/e2e/e2e_16_query/dupes_finds_planted_pair",
+        "expected/e2e/e2e_16_query/unused_finds_planted_token",
+        "expected/e2e/e2e_16_query/uses_leading_dashes_optional",
+        "expected/e2e/e2e_16_query/color_nearest_palette_entries",
+        "expected/e2e/e2e_16_query/color_unparseable_value_exits_2",
+        "expected/e2e/e2e_16_query/violations_filtered_by_rule",
+        "expected/e2e/e2e_16_query/query_with_no_subcommand_exits_2"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_16_query/find_text_and_json",
+        "fixtures/e2e/e2e_16_query/component_card",
+        "fixtures/e2e/e2e_16_query/component_unknown_name_exits_2",
+        "fixtures/e2e/e2e_16_query/dupes_finds_planted_pair",
+        "fixtures/e2e/e2e_16_query/unused_finds_planted_token",
+        "fixtures/e2e/e2e_16_query/uses_leading_dashes_optional",
+        "fixtures/e2e/e2e_16_query/color_nearest_palette_entries",
+        "fixtures/e2e/e2e_16_query/color_unparseable_value_exits_2",
+        "fixtures/e2e/e2e_16_query/violations_filtered_by_rule",
+        "fixtures/e2e/e2e_16_query/query_with_no_subcommand_exits_2"
+      ],
+      "scenarios": [
+        "e2e_16_query/find_text_and_json",
+        "e2e_16_query/component_card",
+        "e2e_16_query/component_unknown_name_exits_2",
+        "e2e_16_query/dupes_finds_planted_pair",
+        "e2e_16_query/unused_finds_planted_token",
+        "e2e_16_query/uses_leading_dashes_optional",
+        "e2e_16_query/color_nearest_palette_entries",
+        "e2e_16_query/color_unparseable_value_exits_2",
+        "e2e_16_query/violations_filtered_by_rule",
+        "e2e_16_query/query_with_no_subcommand_exits_2"
+      ],
+      "source": "tests/system/test_e2e_16_query.py"
+    },
+    "E2E-17": {
+      "expected_dirs": [
+        "expected/e2e/e2e_17_cache/warm_run_byte_identical_to_cold",
+        "expected/e2e/e2e_17_cache/stylesheet_edit_invalidates_cache",
+        "expected/e2e/e2e_17_cache/crunk_toml_edit_invalidates_cache",
+        "expected/e2e/e2e_17_cache/no_cache_bypasses_reads_but_still_refreshes"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_17_cache/warm_run_byte_identical_to_cold",
+        "fixtures/e2e/e2e_17_cache/stylesheet_edit_invalidates_cache",
+        "fixtures/e2e/e2e_17_cache/crunk_toml_edit_invalidates_cache",
+        "fixtures/e2e/e2e_17_cache/no_cache_bypasses_reads_but_still_refreshes"
+      ],
+      "scenarios": [
+        "e2e_17_cache/warm_run_byte_identical_to_cold",
+        "e2e_17_cache/stylesheet_edit_invalidates_cache",
+        "e2e_17_cache/crunk_toml_edit_invalidates_cache",
+        "e2e_17_cache/no_cache_bypasses_reads_but_still_refreshes"
+      ],
+      "source": "tests/system/test_e2e_17_cache.py"
+    },
+    "E2E-18": {
+      "expected_dirs": [
+        "expected/e2e/e2e_18_19_schema/missing_section_names_offender_exit_2_no_verbose",
+        "expected/e2e/e2e_18_19_schema/bad_class_case_names_offender_exit_2_no_verbose",
+        "expected/e2e/e2e_18_19_schema/minimal_spec_loads_with_documented_defaults"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_18_19_schema/missing_section_names_offender_exit_2_no_verbose",
+        "fixtures/e2e/e2e_18_19_schema/bad_class_case_names_offender_exit_2_no_verbose",
+        "fixtures/e2e/e2e_18_19_schema/minimal_spec_loads_with_documented_defaults"
+      ],
+      "scenarios": [
+        "e2e_18_19_schema/missing_section_names_offender_exit_2_no_verbose",
+        "e2e_18_19_schema/bad_class_case_names_offender_exit_2_no_verbose",
+        "e2e_18_19_schema/minimal_spec_loads_with_documented_defaults"
+      ],
+      "source": "tests/system/test_e2e_18_19_schema.py"
+    },
+    "E2E-19": {
+      "expected_dirs": [
+        "expected/e2e/e2e_18_19_schema/missing_section_names_offender_exit_2_no_verbose",
+        "expected/e2e/e2e_18_19_schema/bad_class_case_names_offender_exit_2_no_verbose",
+        "expected/e2e/e2e_18_19_schema/minimal_spec_loads_with_documented_defaults"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_18_19_schema/missing_section_names_offender_exit_2_no_verbose",
+        "fixtures/e2e/e2e_18_19_schema/bad_class_case_names_offender_exit_2_no_verbose",
+        "fixtures/e2e/e2e_18_19_schema/minimal_spec_loads_with_documented_defaults"
+      ],
+      "scenarios": [
+        "e2e_18_19_schema/missing_section_names_offender_exit_2_no_verbose",
+        "e2e_18_19_schema/bad_class_case_names_offender_exit_2_no_verbose",
+        "e2e_18_19_schema/minimal_spec_loads_with_documented_defaults"
+      ],
+      "source": "tests/system/test_e2e_18_19_schema.py"
+    },
+    "E2E-20": {
+      "expected_dirs": [
+        "expected/e2e/e2e_20_21_ux/tokens_format_css_previews_without_writing",
+        "expected/e2e/e2e_20_21_ux/fix_dry_run_names_unfixable_remainder",
+        "expected/e2e/e2e_20_21_ux/fix_with_applied_fixes_still_names_unfixable_remainder"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_20_21_ux/tokens_format_css_previews_without_writing",
+        "fixtures/e2e/e2e_20_21_ux/fix_dry_run_names_unfixable_remainder",
+        "fixtures/e2e/e2e_20_21_ux/fix_with_applied_fixes_still_names_unfixable_remainder"
+      ],
+      "scenarios": [
+        "e2e_20_21_ux/tokens_format_css_previews_without_writing",
+        "e2e_20_21_ux/fix_dry_run_names_unfixable_remainder",
+        "e2e_20_21_ux/fix_with_applied_fixes_still_names_unfixable_remainder"
+      ],
+      "source": "tests/system/test_e2e_20_21_ux.py"
+    },
+    "E2E-21": {
+      "expected_dirs": [
+        "expected/e2e/e2e_20_21_ux/tokens_format_css_previews_without_writing",
+        "expected/e2e/e2e_20_21_ux/fix_dry_run_names_unfixable_remainder",
+        "expected/e2e/e2e_20_21_ux/fix_with_applied_fixes_still_names_unfixable_remainder"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_20_21_ux/tokens_format_css_previews_without_writing",
+        "fixtures/e2e/e2e_20_21_ux/fix_dry_run_names_unfixable_remainder",
+        "fixtures/e2e/e2e_20_21_ux/fix_with_applied_fixes_still_names_unfixable_remainder"
+      ],
+      "scenarios": [
+        "e2e_20_21_ux/tokens_format_css_previews_without_writing",
+        "e2e_20_21_ux/fix_dry_run_names_unfixable_remainder",
+        "e2e_20_21_ux/fix_with_applied_fixes_still_names_unfixable_remainder"
+      ],
+      "source": "tests/system/test_e2e_20_21_ux.py"
+    },
+    "E2E-22": {
+      "expected_dirs": [
+        "expected/e2e/e2e_22_floors/floor_role_passes_plain_role_fails_terminal",
+        "expected/e2e/e2e_22_floors/floor_role_json_field_parses"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_22_floors/floor_role_passes_plain_role_fails_terminal",
+        "fixtures/e2e/e2e_22_floors/floor_role_json_field_parses"
+      ],
+      "scenarios": [
+        "e2e_22_floors/floor_role_passes_plain_role_fails_terminal",
+        "e2e_22_floors/floor_role_json_field_parses"
+      ],
+      "source": "tests/system/test_e2e_22_floors.py"
+    },
+    "E2E-23": {
+      "expected_dirs": [
+        "expected/e2e/e2e_23_header/configured_header_verbatim_and_family_quoted"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_23_header/configured_header_verbatim_and_family_quoted"
+      ],
+      "scenarios": [
+        "e2e_23_header/configured_header_verbatim_and_family_quoted"
+      ],
+      "source": "tests/system/test_e2e_23_header.py"
+    },
+    "E2E-24": {
+      "expected_dirs": [
+        "expected/e2e/e2e_24_25_jsx/e2e_24_jsx_style_props_judged_never_fixable",
+        "expected/e2e/e2e_24_25_jsx/e2e_25_tw001_arbitrary_utilities_and_tw002_undefined_mapping"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_24_25_jsx/e2e_24_jsx_style_props_judged_never_fixable",
+        "fixtures/e2e/e2e_24_25_jsx/e2e_25_tw001_arbitrary_utilities_and_tw002_undefined_mapping"
+      ],
+      "scenarios": [
+        "e2e_24_25_jsx/e2e_24_jsx_style_props_judged_never_fixable",
+        "e2e_24_25_jsx/e2e_25_tw001_arbitrary_utilities_and_tw002_undefined_mapping"
+      ],
+      "source": "tests/system/test_e2e_24_25_jsx.py"
+    },
+    "E2E-25": {
+      "expected_dirs": [
+        "expected/e2e/e2e_24_25_jsx/e2e_24_jsx_style_props_judged_never_fixable",
+        "expected/e2e/e2e_24_25_jsx/e2e_25_tw001_arbitrary_utilities_and_tw002_undefined_mapping"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_24_25_jsx/e2e_24_jsx_style_props_judged_never_fixable",
+        "fixtures/e2e/e2e_24_25_jsx/e2e_25_tw001_arbitrary_utilities_and_tw002_undefined_mapping"
+      ],
+      "scenarios": [
+        "e2e_24_25_jsx/e2e_24_jsx_style_props_judged_never_fixable",
+        "e2e_24_25_jsx/e2e_25_tw001_arbitrary_utilities_and_tw002_undefined_mapping"
+      ],
+      "source": "tests/system/test_e2e_24_25_jsx.py"
+    },
+    "E2E-26": {
+      "expected_dirs": [
+        "expected/e2e/e2e_26_tsx_inventory/query_component_cards_a_jsx_component",
+        "expected/e2e/e2e_26_tsx_inventory/query_find_ranks_the_jsx_component",
+        "expected/e2e/e2e_26_tsx_inventory/map_shows_jsx_group_terminal_and_json",
+        "expected/e2e/e2e_26_tsx_inventory/cache_key_changes_when_jsx_source_or_tailwind_config_changes"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_26_tsx_inventory/query_component_cards_a_jsx_component",
+        "fixtures/e2e/e2e_26_tsx_inventory/query_find_ranks_the_jsx_component",
+        "fixtures/e2e/e2e_26_tsx_inventory/map_shows_jsx_group_terminal_and_json",
+        "fixtures/e2e/e2e_26_tsx_inventory/cache_key_changes_when_jsx_source_or_tailwind_config_changes"
+      ],
+      "scenarios": [
+        "e2e_26_tsx_inventory/query_component_cards_a_jsx_component",
+        "e2e_26_tsx_inventory/query_find_ranks_the_jsx_component",
+        "e2e_26_tsx_inventory/map_shows_jsx_group_terminal_and_json",
+        "e2e_26_tsx_inventory/cache_key_changes_when_jsx_source_or_tailwind_config_changes"
+      ],
+      "source": "tests/system/test_e2e_26_tsx_inventory.py"
+    },
+    "E2E-27": {
+      "expected_dirs": [
+        "expected/e2e/e2e_27_theme/bare_tokens_writes_tailwind_file_deterministically",
+        "expected/e2e/e2e_27_theme/palette_edit_changes_tailwind_file",
+        "expected/e2e/e2e_27_theme/hand_edited_tailwind_file_raises_tokens001_naming_it",
+        "expected/e2e/e2e_27_theme/format_tailwind_previews_without_writing",
+        "expected/e2e/e2e_27_theme/hand_edited_json_file_raises_tokens001_naming_it"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_27_theme/bare_tokens_writes_tailwind_file_deterministically",
+        "fixtures/e2e/e2e_27_theme/palette_edit_changes_tailwind_file",
+        "fixtures/e2e/e2e_27_theme/hand_edited_tailwind_file_raises_tokens001_naming_it",
+        "fixtures/e2e/e2e_27_theme/format_tailwind_previews_without_writing",
+        "fixtures/e2e/e2e_27_theme/hand_edited_json_file_raises_tokens001_naming_it"
+      ],
+      "scenarios": [
+        "e2e_27_theme/bare_tokens_writes_tailwind_file_deterministically",
+        "e2e_27_theme/palette_edit_changes_tailwind_file",
+        "e2e_27_theme/hand_edited_tailwind_file_raises_tokens001_naming_it",
+        "e2e_27_theme/format_tailwind_previews_without_writing",
+        "e2e_27_theme/hand_edited_json_file_raises_tokens001_naming_it"
+      ],
+      "source": "tests/system/test_e2e_27_theme.py"
+    },
+    "E2E-28": {
+      "expected_dirs": [
+        "expected/e2e/e2e_28_report/report_json_v2_schema_clean_tree",
+        "expected/e2e/e2e_28_report/report_markdown_and_json_agree_on_violating_tree",
+        "expected/e2e/e2e_28_report/report_deterministic_on_unchanged_tree",
+        "expected/e2e/e2e_28_report/report_and_contrast_mutually_exclusive"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_28_report/report_json_v2_schema_clean_tree",
+        "fixtures/e2e/e2e_28_report/report_markdown_and_json_agree_on_violating_tree",
+        "fixtures/e2e/e2e_28_report/report_deterministic_on_unchanged_tree",
+        "fixtures/e2e/e2e_28_report/report_and_contrast_mutually_exclusive"
+      ],
+      "scenarios": [
+        "e2e_28_report/report_json_v2_schema_clean_tree",
+        "e2e_28_report/report_markdown_and_json_agree_on_violating_tree",
+        "e2e_28_report/report_deterministic_on_unchanged_tree",
+        "e2e_28_report/report_and_contrast_mutually_exclusive"
+      ],
+      "source": "tests/system/test_e2e_28_report.py"
+    },
+    "E2E-29": {
+      "expected_dirs": [
+        "expected/e2e/e2e_29_utility_first/utility_first_tree_checks_clean",
+        "expected/e2e/e2e_29_utility_first/utility_first_tree_planted_drift_still_fires",
+        "expected/e2e/e2e_29_utility_first/same_tree_under_buckets_model_shows_org001"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_29_utility_first/utility_first_tree_checks_clean",
+        "fixtures/e2e/e2e_29_utility_first/utility_first_tree_planted_drift_still_fires",
+        "fixtures/e2e/e2e_29_utility_first/same_tree_under_buckets_model_shows_org001"
+      ],
+      "scenarios": [
+        "e2e_29_utility_first/utility_first_tree_checks_clean",
+        "e2e_29_utility_first/utility_first_tree_planted_drift_still_fires",
+        "e2e_29_utility_first/same_tree_under_buckets_model_shows_org001"
+      ],
+      "source": "tests/system/test_e2e_29_utility_first.py"
+    },
+    "E2E-30": {
+      "expected_dirs": [
+        "expected/e2e/e2e_30_suggested/check_json_carries_suggested_tokens",
+        "expected/e2e/e2e_30_suggested/report_json_carries_suggested_tokens"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_30_suggested/check_json_carries_suggested_tokens",
+        "fixtures/e2e/e2e_30_suggested/report_json_carries_suggested_tokens"
+      ],
+      "scenarios": [
+        "e2e_30_suggested/check_json_carries_suggested_tokens",
+        "e2e_30_suggested/report_json_carries_suggested_tokens"
+      ],
+      "source": "tests/system/test_e2e_30_suggested.py"
+    },
+    "E2E-31": {
+      "expected_dirs": [
+        "expected/e2e/e2e_31_preview_diff/e2e_31_preview_every_entry_and_step_deterministic",
+        "expected/e2e/e2e_31_preview_diff/e2e_31_diff_shows_exactly_the_edited_delta"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_31_preview_diff/e2e_31_preview_every_entry_and_step_deterministic",
+        "fixtures/e2e/e2e_31_preview_diff/e2e_31_diff_shows_exactly_the_edited_delta"
+      ],
+      "scenarios": [
+        "e2e_31_preview_diff/e2e_31_preview_every_entry_and_step_deterministic",
+        "e2e_31_preview_diff/e2e_31_diff_shows_exactly_the_edited_delta"
+      ],
+      "source": "tests/system/test_e2e_31_preview_diff.py"
+    },
+    "E2E-32": {
+      "expected_dirs": [
+        "expected/e2e/e2e_32_explain/e2e_32_explain_prints_value_group_defined_in_and_sites"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_32_explain/e2e_32_explain_prints_value_group_defined_in_and_sites"
+      ],
+      "scenarios": [
+        "e2e_32_explain/e2e_32_explain_prints_value_group_defined_in_and_sites"
+      ],
+      "source": "tests/system/test_e2e_32_explain.py"
+    },
+    "E2E-33": {
+      "expected_dirs": [
+        "expected/e2e/e2e_33_orphan/e2e_33_scaffold_states_path_base_rule",
+        "expected/e2e/e2e_33_orphan/e2e_33_orphan_warning_on_write",
+        "expected/e2e/e2e_33_orphan/e2e_33_orphan_warning_on_check",
+        "expected/e2e/e2e_33_orphan/e2e_33_no_warning_without_stale_copy"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_33_orphan/e2e_33_scaffold_states_path_base_rule",
+        "fixtures/e2e/e2e_33_orphan/e2e_33_orphan_warning_on_write",
+        "fixtures/e2e/e2e_33_orphan/e2e_33_orphan_warning_on_check",
+        "fixtures/e2e/e2e_33_orphan/e2e_33_no_warning_without_stale_copy"
+      ],
+      "scenarios": [
+        "e2e_33_orphan/e2e_33_scaffold_states_path_base_rule",
+        "e2e_33_orphan/e2e_33_orphan_warning_on_write",
+        "e2e_33_orphan/e2e_33_orphan_warning_on_check",
+        "e2e_33_orphan/e2e_33_no_warning_without_stale_copy"
+      ],
+      "source": "tests/system/test_e2e_33_orphan.py"
+    },
+    "E2E-34": {
+      "expected_dirs": [
+        "expected/e2e/e2e_34_explain_jsx/e2e_34_explain_lists_jsx_utility_only_site"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_34_explain_jsx/e2e_34_explain_lists_jsx_utility_only_site"
+      ],
+      "scenarios": [
+        "e2e_34_explain_jsx/e2e_34_explain_lists_jsx_utility_only_site"
+      ],
+      "source": "tests/system/test_e2e_34_explain_jsx.py"
+    },
+    "E2E-35": {
+      "expected_dirs": [
+        "expected/e2e/e2e_35_color_flag/preview_color_flag_carries_ansi_when_piped",
+        "expected/e2e/e2e_35_color_flag/preview_unflagged_piped_run_stays_plain",
+        "expected/e2e/e2e_35_color_flag/preview_no_color_env_wins_over_color_flag"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_35_color_flag/preview_color_flag_carries_ansi_when_piped",
+        "fixtures/e2e/e2e_35_color_flag/preview_unflagged_piped_run_stays_plain",
+        "fixtures/e2e/e2e_35_color_flag/preview_no_color_env_wins_over_color_flag"
+      ],
+      "scenarios": [
+        "e2e_35_color_flag/preview_color_flag_carries_ansi_when_piped",
+        "e2e_35_color_flag/preview_unflagged_piped_run_stays_plain",
+        "e2e_35_color_flag/preview_no_color_env_wins_over_color_flag"
+      ],
+      "source": "tests/system/test_e2e_35_color_flag.py"
+    },
+    "E2E-36": {
+      "expected_dirs": [
+        "expected/e2e/e2e_36_keyspace/e2e_36_collision_warning_on_write",
+        "expected/e2e/e2e_36_keyspace/e2e_36_collision_warning_on_check",
+        "expected/e2e/e2e_36_keyspace/e2e_36_namespace_keys_emits_prefixed_keys_and_no_warning",
+        "expected/e2e/e2e_36_keyspace/e2e_36_no_warning_without_tailwind_file"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_36_keyspace/e2e_36_collision_warning_on_write",
+        "fixtures/e2e/e2e_36_keyspace/e2e_36_collision_warning_on_check",
+        "fixtures/e2e/e2e_36_keyspace/e2e_36_namespace_keys_emits_prefixed_keys_and_no_warning",
+        "fixtures/e2e/e2e_36_keyspace/e2e_36_no_warning_without_tailwind_file"
+      ],
+      "scenarios": [
+        "e2e_36_keyspace/e2e_36_collision_warning_on_write",
+        "e2e_36_keyspace/e2e_36_collision_warning_on_check",
+        "e2e_36_keyspace/e2e_36_namespace_keys_emits_prefixed_keys_and_no_warning",
+        "e2e_36_keyspace/e2e_36_no_warning_without_tailwind_file"
+      ],
+      "source": "tests/system/test_e2e_36_keyspace.py"
+    },
+    "E2E-37": {
+      "expected_dirs": [
+        "expected/e2e/e2e_37_alpha_channels/e2e_37_non_alpha_theme_mapping_fires_tw003",
+        "expected/e2e/e2e_37_alpha_channels/e2e_37_alpha_capable_theme_mapping_is_silent",
+        "expected/e2e/e2e_37_alpha_channels/e2e_37_alpha_channels_emits_rgb_triplets_and_alpha_capable_theme"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_37_alpha_channels/e2e_37_non_alpha_theme_mapping_fires_tw003",
+        "fixtures/e2e/e2e_37_alpha_channels/e2e_37_alpha_capable_theme_mapping_is_silent",
+        "fixtures/e2e/e2e_37_alpha_channels/e2e_37_alpha_channels_emits_rgb_triplets_and_alpha_capable_theme"
+      ],
+      "scenarios": [
+        "e2e_37_alpha_channels/e2e_37_non_alpha_theme_mapping_fires_tw003",
+        "e2e_37_alpha_channels/e2e_37_alpha_capable_theme_mapping_is_silent",
+        "e2e_37_alpha_channels/e2e_37_alpha_channels_emits_rgb_triplets_and_alpha_capable_theme"
+      ],
+      "source": "tests/system/test_e2e_37_alpha_channels.py"
+    },
+    "E2E-38": {
+      "expected_dirs": [
+        "expected/e2e/e2e_38_ts_constants/ts_class_constant_e2e"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_38_ts_constants/ts_class_constant_e2e"
+      ],
+      "scenarios": [
+        "e2e_38_ts_constants/ts_class_constant_e2e"
+      ],
+      "source": "tests/system/test_e2e_38_ts_constants.py"
+    },
+    "E2E-39": {
+      "expected_dirs": [
+        "expected/e2e/e2e_39_report_unused/report_json_unused_tokens_matches_query_unused",
+        "expected/e2e/e2e_39_report_unused/report_markdown_unused_section"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_39_report_unused/report_json_unused_tokens_matches_query_unused",
+        "fixtures/e2e/e2e_39_report_unused/report_markdown_unused_section"
+      ],
+      "scenarios": [
+        "e2e_39_report_unused/report_json_unused_tokens_matches_query_unused",
+        "e2e_39_report_unused/report_markdown_unused_section"
+      ],
+      "source": "tests/system/test_e2e_39_report_unused.py"
+    },
+    "E2E-40": {
+      "expected_dirs": [
+        "expected/e2e/e2e_40_channel_triplets/channel_triplet_and_exact_rgba_both_yield_color001",
+        "expected/e2e/e2e_40_channel_triplets/glass_panel_definition_sites_both_yield_org004"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_40_channel_triplets/channel_triplet_and_exact_rgba_both_yield_color001",
+        "fixtures/e2e/e2e_40_channel_triplets/glass_panel_definition_sites_both_yield_org004"
+      ],
+      "scenarios": [
+        "e2e_40_channel_triplets/channel_triplet_and_exact_rgba_both_yield_color001",
+        "e2e_40_channel_triplets/glass_panel_definition_sites_both_yield_org004"
+      ],
+      "source": "tests/system/test_e2e_40_channel_triplets.py"
+    },
+    "E2E-41": {
+      "expected_dirs": [
+        "expected/e2e/e2e_41_sizes/e2e_41_size001_warns_and_fix_snaps_in_css_only",
+        "expected/e2e/e2e_41_sizes/e2e_41_max_width_exempt",
+        "expected/e2e/e2e_41_sizes/e2e_41_spacing_fallback_when_sizes_undeclared"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_41_sizes/e2e_41_size001_warns_and_fix_snaps_in_css_only",
+        "fixtures/e2e/e2e_41_sizes/e2e_41_max_width_exempt",
+        "fixtures/e2e/e2e_41_sizes/e2e_41_spacing_fallback_when_sizes_undeclared"
+      ],
+      "scenarios": [
+        "e2e_41_sizes/e2e_41_size001_warns_and_fix_snaps_in_css_only",
+        "e2e_41_sizes/e2e_41_max_width_exempt",
+        "e2e_41_sizes/e2e_41_spacing_fallback_when_sizes_undeclared"
+      ],
+      "source": "tests/system/test_e2e_41_sizes.py"
+    },
+    "E2E-42": {
+      "expected_dirs": [
+        "expected/e2e/e2e_42_43_44_viewport/e2e_42_bp001_media_query_viewport",
+        "expected/e2e/e2e_42_43_44_viewport/e2e_42_bp_family_silent_with_no_breakpoints",
+        "expected/e2e/e2e_42_43_44_viewport/e2e_43_bp002_responsive_variant_missing_base",
+        "expected/e2e/e2e_42_43_44_viewport/e2e_44_bp003_overflow_width_via_tailwind_default"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_42_43_44_viewport/e2e_42_bp001_media_query_viewport",
+        "fixtures/e2e/e2e_42_43_44_viewport/e2e_42_bp_family_silent_with_no_breakpoints",
+        "fixtures/e2e/e2e_42_43_44_viewport/e2e_43_bp002_responsive_variant_missing_base",
+        "fixtures/e2e/e2e_42_43_44_viewport/e2e_44_bp003_overflow_width_via_tailwind_default"
+      ],
+      "scenarios": [
+        "e2e_42_43_44_viewport/e2e_42_bp001_media_query_viewport",
+        "e2e_42_43_44_viewport/e2e_42_bp_family_silent_with_no_breakpoints",
+        "e2e_42_43_44_viewport/e2e_43_bp002_responsive_variant_missing_base",
+        "e2e_42_43_44_viewport/e2e_44_bp003_overflow_width_via_tailwind_default"
+      ],
+      "source": "tests/system/test_e2e_42_43_44_viewport.py"
+    },
+    "E2E-43": {
+      "expected_dirs": [
+        "expected/e2e/e2e_42_43_44_viewport/e2e_42_bp001_media_query_viewport",
+        "expected/e2e/e2e_42_43_44_viewport/e2e_42_bp_family_silent_with_no_breakpoints",
+        "expected/e2e/e2e_42_43_44_viewport/e2e_43_bp002_responsive_variant_missing_base",
+        "expected/e2e/e2e_42_43_44_viewport/e2e_44_bp003_overflow_width_via_tailwind_default"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_42_43_44_viewport/e2e_42_bp001_media_query_viewport",
+        "fixtures/e2e/e2e_42_43_44_viewport/e2e_42_bp_family_silent_with_no_breakpoints",
+        "fixtures/e2e/e2e_42_43_44_viewport/e2e_43_bp002_responsive_variant_missing_base",
+        "fixtures/e2e/e2e_42_43_44_viewport/e2e_44_bp003_overflow_width_via_tailwind_default"
+      ],
+      "scenarios": [
+        "e2e_42_43_44_viewport/e2e_42_bp001_media_query_viewport",
+        "e2e_42_43_44_viewport/e2e_42_bp_family_silent_with_no_breakpoints",
+        "e2e_42_43_44_viewport/e2e_43_bp002_responsive_variant_missing_base",
+        "e2e_42_43_44_viewport/e2e_44_bp003_overflow_width_via_tailwind_default"
+      ],
+      "source": "tests/system/test_e2e_42_43_44_viewport.py"
+    },
+    "E2E-44": {
+      "expected_dirs": [
+        "expected/e2e/e2e_42_43_44_viewport/e2e_42_bp001_media_query_viewport",
+        "expected/e2e/e2e_42_43_44_viewport/e2e_42_bp_family_silent_with_no_breakpoints",
+        "expected/e2e/e2e_42_43_44_viewport/e2e_43_bp002_responsive_variant_missing_base",
+        "expected/e2e/e2e_42_43_44_viewport/e2e_44_bp003_overflow_width_via_tailwind_default"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_42_43_44_viewport/e2e_42_bp001_media_query_viewport",
+        "fixtures/e2e/e2e_42_43_44_viewport/e2e_42_bp_family_silent_with_no_breakpoints",
+        "fixtures/e2e/e2e_42_43_44_viewport/e2e_43_bp002_responsive_variant_missing_base",
+        "fixtures/e2e/e2e_42_43_44_viewport/e2e_44_bp003_overflow_width_via_tailwind_default"
+      ],
+      "scenarios": [
+        "e2e_42_43_44_viewport/e2e_42_bp001_media_query_viewport",
+        "e2e_42_43_44_viewport/e2e_42_bp_family_silent_with_no_breakpoints",
+        "e2e_42_43_44_viewport/e2e_43_bp002_responsive_variant_missing_base",
+        "e2e_42_43_44_viewport/e2e_44_bp003_overflow_width_via_tailwind_default"
+      ],
+      "source": "tests/system/test_e2e_42_43_44_viewport.py"
+    },
+    "E2E-45": {
+      "expected_dirs": [
+        "expected/e2e/e2e_45_selfmap/e2e_45_selfmap_explain_and_unused",
+        "expected/e2e/e2e_45_selfmap/e2e_45_selfmap_both_knobs_explain_and_unused"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_45_selfmap/e2e_45_selfmap_explain_and_unused",
+        "fixtures/e2e/e2e_45_selfmap/e2e_45_selfmap_both_knobs_explain_and_unused"
+      ],
+      "scenarios": [
+        "e2e_45_selfmap/e2e_45_selfmap_explain_and_unused",
+        "e2e_45_selfmap/e2e_45_selfmap_both_knobs_explain_and_unused"
+      ],
+      "source": "tests/system/test_e2e_45_selfmap.py"
+    },
+    "E2E-46": {
+      "expected_dirs": [
+        "expected/e2e/e2e_46_explain_hardened/e2e_46_explain_rgb_companion_answers_channel_form",
+        "expected/e2e/e2e_46_explain_hardened/e2e_46_explain_nonsense_exits_2_clean"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_46_explain_hardened/e2e_46_explain_rgb_companion_answers_channel_form",
+        "fixtures/e2e/e2e_46_explain_hardened/e2e_46_explain_nonsense_exits_2_clean"
+      ],
+      "scenarios": [
+        "e2e_46_explain_hardened/e2e_46_explain_rgb_companion_answers_channel_form",
+        "e2e_46_explain_hardened/e2e_46_explain_nonsense_exits_2_clean"
+      ],
+      "source": "tests/system/test_e2e_46_explain_hardened.py"
+    },
+    "E2E-47": {
+      "expected_dirs": [
+        "expected/e2e/e2e_47_optional_dims/e2e_47_minimal_spec_without_layers_and_radii_loads_and_checks",
+        "expected/e2e/e2e_47_optional_dims/e2e_47_radius001_and_layer001_stay_silent",
+        "expected/e2e/e2e_47_optional_dims/e2e_47_tokens_emit_no_radius_or_layer_tokens"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_47_optional_dims/e2e_47_minimal_spec_without_layers_and_radii_loads_and_checks",
+        "fixtures/e2e/e2e_47_optional_dims/e2e_47_radius001_and_layer001_stay_silent",
+        "fixtures/e2e/e2e_47_optional_dims/e2e_47_tokens_emit_no_radius_or_layer_tokens"
+      ],
+      "scenarios": [
+        "e2e_47_optional_dims/e2e_47_minimal_spec_without_layers_and_radii_loads_and_checks",
+        "e2e_47_optional_dims/e2e_47_radius001_and_layer001_stay_silent",
+        "e2e_47_optional_dims/e2e_47_tokens_emit_no_radius_or_layer_tokens"
+      ],
+      "source": "tests/system/test_e2e_47_optional_dims.py"
+    },
+    "E2E-48": {
+      "expected_dirs": [
+        "expected/e2e/e2e_48_semantic_drift/formatter_rewrap_of_json_artifacts_passes_check",
+        "expected/e2e/e2e_48_semantic_drift/value_edit_in_json_artifact_still_fails_check",
+        "expected/e2e/e2e_48_semantic_drift/tokens_css_byte_edit_still_fails_check"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_48_semantic_drift/formatter_rewrap_of_json_artifacts_passes_check",
+        "fixtures/e2e/e2e_48_semantic_drift/value_edit_in_json_artifact_still_fails_check",
+        "fixtures/e2e/e2e_48_semantic_drift/tokens_css_byte_edit_still_fails_check"
+      ],
+      "scenarios": [
+        "e2e_48_semantic_drift/formatter_rewrap_of_json_artifacts_passes_check",
+        "e2e_48_semantic_drift/value_edit_in_json_artifact_still_fails_check",
+        "e2e_48_semantic_drift/tokens_css_byte_edit_still_fails_check"
+      ],
+      "source": "tests/system/test_e2e_48_semantic_drift.py"
+    },
+    "E2E-49": {
+      "expected_dirs": [
+        "expected/e2e/e2e_49_50_exclusivity/e2e_49_tw004_default_color_denylist",
+        "expected/e2e/e2e_49_50_exclusivity/e2e_50_tw005_default_scale_key_bypass"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_49_50_exclusivity/e2e_49_tw004_default_color_denylist",
+        "fixtures/e2e/e2e_49_50_exclusivity/e2e_50_tw005_default_scale_key_bypass"
+      ],
+      "scenarios": [
+        "e2e_49_50_exclusivity/e2e_49_tw004_default_color_denylist",
+        "e2e_49_50_exclusivity/e2e_50_tw005_default_scale_key_bypass"
+      ],
+      "source": "tests/system/test_e2e_49_50_exclusivity.py"
+    },
+    "E2E-50": {
+      "expected_dirs": [
+        "expected/e2e/e2e_49_50_exclusivity/e2e_49_tw004_default_color_denylist",
+        "expected/e2e/e2e_49_50_exclusivity/e2e_50_tw005_default_scale_key_bypass"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_49_50_exclusivity/e2e_49_tw004_default_color_denylist",
+        "fixtures/e2e/e2e_49_50_exclusivity/e2e_50_tw005_default_scale_key_bypass"
+      ],
+      "scenarios": [
+        "e2e_49_50_exclusivity/e2e_49_tw004_default_color_denylist",
+        "e2e_49_50_exclusivity/e2e_50_tw005_default_scale_key_bypass"
+      ],
+      "source": "tests/system/test_e2e_49_50_exclusivity.py"
+    },
+    "E2E-51": {
+      "expected_dirs": [
+        "expected/e2e/e2e_51_sizes/e2e_51_size_prefixes_bypass_default_scale",
+        "expected/e2e/e2e_51_sizes/e2e_51_size_export_and_theme_and_suggested_token"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_51_sizes/e2e_51_size_prefixes_bypass_default_scale",
+        "fixtures/e2e/e2e_51_sizes/e2e_51_size_export_and_theme_and_suggested_token"
+      ],
+      "scenarios": [
+        "e2e_51_sizes/e2e_51_size_prefixes_bypass_default_scale",
+        "e2e_51_sizes/e2e_51_size_export_and_theme_and_suggested_token"
+      ],
+      "source": "tests/system/test_e2e_51_sizes.py"
+    },
+    "E2E-52": {
+      "expected_dirs": [
+        "expected/e2e/e2e_52_config/e2e_52_borrowed_spec_judges_tree_with_no_crunk_toml"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_52_config/e2e_52_borrowed_spec_judges_tree_with_no_crunk_toml"
+      ],
+      "scenarios": [
+        "e2e_52_config/e2e_52_borrowed_spec_judges_tree_with_no_crunk_toml"
+      ],
+      "source": "tests/system/test_e2e_52_config.py"
+    },
+    "E2E-53": {
+      "expected_dirs": [
+        "expected/e2e/e2e_53_borrower/e2e_53_absent_css_root_borrower_still_runs_jsx"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_53_borrower/e2e_53_absent_css_root_borrower_still_runs_jsx"
+      ],
+      "scenarios": [
+        "e2e_53_borrower/e2e_53_absent_css_root_borrower_still_runs_jsx"
+      ],
+      "source": "tests/system/test_e2e_53_borrower.py"
+    },
+    "E2E-54": {
+      "expected_dirs": [
+        "expected/e2e/e2e_54_pathmode/e2e_54_path_scoped_run_matches_repo_wide_findings"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_54_pathmode/e2e_54_path_scoped_run_matches_repo_wide_findings"
+      ],
+      "scenarios": [
+        "e2e_54_pathmode/e2e_54_path_scoped_run_matches_repo_wide_findings"
+      ],
+      "source": "tests/system/test_e2e_54_pathmode.py"
+    },
+    "E2E-55": {
+      "expected_dirs": [
+        "expected/e2e/e2e_55_cache_home/second_run_hits_and_project_tree_gains_no_entries",
+        "expected/e2e/e2e_55_cache_home/without_override_resolves_under_xdg_fallback"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_55_cache_home/second_run_hits_and_project_tree_gains_no_entries",
+        "fixtures/e2e/e2e_55_cache_home/without_override_resolves_under_xdg_fallback"
+      ],
+      "scenarios": [
+        "e2e_55_cache_home/second_run_hits_and_project_tree_gains_no_entries",
+        "e2e_55_cache_home/without_override_resolves_under_xdg_fallback"
+      ],
+      "source": "tests/system/test_e2e_55_cache_home.py"
+    },
+    "E2E-56": {
+      "expected_dirs": [
+        "expected/e2e/e2e_56_57_58_honesty/e2e_56_outside_root_path_exits_2",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_56_missing_spec_exits_2",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_57_cache_prune_all",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_58_explain_unknown_no_near_candidates",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_58_explain_unknown_near_miss_still_shows_closest",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_58_map_all_empty_prints_note"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_56_outside_root_path_exits_2",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_56_missing_spec_exits_2",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_57_cache_prune_all",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_58_explain_unknown_no_near_candidates",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_58_explain_unknown_near_miss_still_shows_closest",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_58_map_all_empty_prints_note"
+      ],
+      "scenarios": [
+        "e2e_56_57_58_honesty/e2e_56_outside_root_path_exits_2",
+        "e2e_56_57_58_honesty/e2e_56_missing_spec_exits_2",
+        "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune",
+        "e2e_56_57_58_honesty/e2e_57_cache_prune_all",
+        "e2e_56_57_58_honesty/e2e_58_explain_unknown_no_near_candidates",
+        "e2e_56_57_58_honesty/e2e_58_explain_unknown_near_miss_still_shows_closest",
+        "e2e_56_57_58_honesty/e2e_58_map_all_empty_prints_note"
+      ],
+      "source": "tests/system/test_e2e_56_57_58_honesty.py"
+    },
+    "E2E-57": {
+      "expected_dirs": [
+        "expected/e2e/e2e_56_57_58_honesty/e2e_56_outside_root_path_exits_2",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_56_missing_spec_exits_2",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_57_cache_prune_all",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_58_explain_unknown_no_near_candidates",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_58_explain_unknown_near_miss_still_shows_closest",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_58_map_all_empty_prints_note"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_56_outside_root_path_exits_2",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_56_missing_spec_exits_2",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_57_cache_prune_all",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_58_explain_unknown_no_near_candidates",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_58_explain_unknown_near_miss_still_shows_closest",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_58_map_all_empty_prints_note"
+      ],
+      "scenarios": [
+        "e2e_56_57_58_honesty/e2e_56_outside_root_path_exits_2",
+        "e2e_56_57_58_honesty/e2e_56_missing_spec_exits_2",
+        "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune",
+        "e2e_56_57_58_honesty/e2e_57_cache_prune_all",
+        "e2e_56_57_58_honesty/e2e_58_explain_unknown_no_near_candidates",
+        "e2e_56_57_58_honesty/e2e_58_explain_unknown_near_miss_still_shows_closest",
+        "e2e_56_57_58_honesty/e2e_58_map_all_empty_prints_note"
+      ],
+      "source": "tests/system/test_e2e_56_57_58_honesty.py"
+    },
+    "E2E-58": {
+      "expected_dirs": [
+        "expected/e2e/e2e_56_57_58_honesty/e2e_56_outside_root_path_exits_2",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_56_missing_spec_exits_2",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_57_cache_prune_all",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_58_explain_unknown_no_near_candidates",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_58_explain_unknown_near_miss_still_shows_closest",
+        "expected/e2e/e2e_56_57_58_honesty/e2e_58_map_all_empty_prints_note"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_56_outside_root_path_exits_2",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_56_missing_spec_exits_2",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_57_cache_prune_all",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_58_explain_unknown_no_near_candidates",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_58_explain_unknown_near_miss_still_shows_closest",
+        "fixtures/e2e/e2e_56_57_58_honesty/e2e_58_map_all_empty_prints_note"
+      ],
+      "scenarios": [
+        "e2e_56_57_58_honesty/e2e_56_outside_root_path_exits_2",
+        "e2e_56_57_58_honesty/e2e_56_missing_spec_exits_2",
+        "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune",
+        "e2e_56_57_58_honesty/e2e_57_cache_prune_all",
+        "e2e_56_57_58_honesty/e2e_58_explain_unknown_no_near_candidates",
+        "e2e_56_57_58_honesty/e2e_58_explain_unknown_near_miss_still_shows_closest",
+        "e2e_56_57_58_honesty/e2e_58_map_all_empty_prints_note"
+      ],
+      "source": "tests/system/test_e2e_56_57_58_honesty.py"
+    },
+    "E2E-59": {
+      "expected_dirs": [
+        "expected/e2e/e2e_59_root_locator/borrowed_root_defaults_wrong_and_root_flag_fixes_it",
+        "expected/e2e/e2e_59_root_locator/plain_in_project_run_prints_no_locator"
+      ],
+      "fixture_dirs": [
+        "fixtures/e2e/e2e_59_root_locator/borrowed_root_defaults_wrong_and_root_flag_fixes_it",
+        "fixtures/e2e/e2e_59_root_locator/plain_in_project_run_prints_no_locator"
+      ],
+      "scenarios": [
+        "e2e_59_root_locator/borrowed_root_defaults_wrong_and_root_flag_fixes_it",
+        "e2e_59_root_locator/plain_in_project_run_prints_no_locator"
+      ],
+      "source": "tests/system/test_e2e_59_root_locator.py"
+    },
+    "INT-01": {
+      "expected_dirs": [],
+      "fixture_dirs": [],
+      "note": "library-level test (no CLI subprocess); source named, fixtures inline in the test",
+      "scenarios": [],
+      "source": "tests/integration/test_int_01_spec_toml.py"
+    },
+    "INT-02": {
+      "expected_dirs": [],
+      "fixture_dirs": [],
+      "note": "library-level test (no CLI subprocess); source named, fixtures inline in the test",
+      "scenarios": [],
+      "source": "tests/integration/test_int_02_ingest_fs.py"
+    },
+    "INT-03": {
+      "expected_dirs": [],
+      "fixture_dirs": [],
+      "note": "library-level test (no CLI subprocess); source named, fixtures inline in the test",
+      "scenarios": [],
+      "source": "tests/integration/test_int_03_rules_full_catalog.py"
+    },
+    "INT-04": {
+      "expected_dirs": [],
+      "fixture": "fixtures/static/int04_default",
+      "fixture_dirs": [],
+      "golden": "expected/int-04-golden/tokens.css",
+      "note": "library-level test (no CLI subprocess); source named, fixtures inline in the test",
+      "scenarios": [],
+      "source": "tests/integration/test_int_04_tokens_spec.py"
+    },
+    "INT-05": {
+      "expected_dirs": [],
+      "fixture_dirs": [],
+      "note": "library-level test (no CLI subprocess); source named, fixtures inline in the test",
+      "scenarios": [],
+      "source": "tests/integration/test_int_05_fixes_pipeline.py"
+    },
+    "INT-06": {
+      "expected_dirs": [],
+      "fixture_dirs": [],
+      "note": "library-level test (no CLI subprocess); source named, fixtures inline in the test",
+      "scenarios": [],
+      "source": "tests/integration/test_int_06_report.py"
+    },
+    "INT-07": {
+      "expected_dirs": [],
+      "fixture_dirs": [],
+      "note": "library-level test (no CLI subprocess); source named, fixtures inline in the test",
+      "scenarios": [],
+      "source": "tests/integration/test_int_07_shell_wiring.py"
+    },
+    "INT-08": {
+      "expected_dirs": [],
+      "fixture_dirs": [],
+      "note": "library-level test (no CLI subprocess); source named, fixtures inline in the test",
+      "scenarios": [],
+      "source": "tests/integration/test_int_08_scaffold.py"
+    },
+    "INT-09": {
+      "expected_dirs": [],
+      "fixture_dirs": [],
+      "note": "library-level test (no CLI subprocess); source named, fixtures inline in the test",
+      "scenarios": [],
+      "source": "tests/integration/test_int_09_cache.py"
+    },
+    "INT-10": {
+      "expected_dirs": [],
+      "fixture_dirs": [],
+      "note": "library-level test (no CLI subprocess); source named, fixtures inline in the test",
+      "scenarios": [],
+      "source": "tests/integration/test_int_10_query.py"
+    },
+    "INT-11": {
+      "expected_dirs": [],
+      "fixture_dirs": [],
+      "note": "library-level test (no CLI subprocess); source named, fixtures inline in the test",
+      "scenarios": [],
+      "source": "tests/integration/test_int_11_jsx.py"
+    },
+    "INT-12": {
+      "expected_dirs": [],
+      "fixture_dirs": [],
+      "note": "library-level test (no CLI subprocess); source named, fixtures inline in the test",
+      "scenarios": [],
+      "source": "tests/integration/test_int_12_report.py"
+    }
+  },
+  "matrix": {
+    "gallery005_routes": {
+      "commands": [
+        "check_--json",
+        "check_--report",
+        "check_--contrast",
+        "tokens_--format_css",
+        "tokens_--format_json",
+        "tokens_--format_tailwind",
+        "tokens_--check",
+        "fix_--dry-run",
+        "map_--json",
+        "query_find_card_--json",
+        "query_component_card_--json",
+        "query_dupes_--json",
+        "query_unused_--json",
+        "query_uses_color-ink_--json",
+        "query_color_1a1a1a_--json",
+        "query_violations_--json",
+        "explain_color-ink_--json",
+        "explain_color-ink",
+        "preview",
+        "diff_.._int04_default"
+      ]
+    },
+    "init_default": {
+      "commands": [
+        "check_--json",
+        "check_--report",
+        "check_--contrast",
+        "tokens_--format_css",
+        "tokens_--format_json",
+        "tokens_--format_tailwind",
+        "tokens_--check",
+        "fix_--dry-run",
+        "map_--json",
+        "query_find_card_--json",
+        "query_component_card_--json",
+        "query_dupes_--json",
+        "query_unused_--json",
+        "query_uses_color-ink_--json",
+        "query_color_1a1a1a_--json",
+        "query_violations_--json",
+        "explain_color-ink_--json",
+        "explain_color-ink",
+        "preview",
+        "diff_.._int04_default"
+      ]
+    },
+    "int04_default": {
+      "commands": [
+        "check_--json",
+        "check_--report",
+        "check_--contrast",
+        "tokens_--format_css",
+        "tokens_--format_json",
+        "tokens_--format_tailwind",
+        "tokens_--check",
+        "fix_--dry-run",
+        "map_--json",
+        "query_find_card_--json",
+        "query_component_card_--json",
+        "query_dupes_--json",
+        "query_unused_--json",
+        "query_uses_color-ink_--json",
+        "query_color_1a1a1a_--json",
+        "query_violations_--json",
+        "explain_color-ink_--json",
+        "explain_color-ink",
+        "preview",
+        "diff_.._gallery005_routes"
+      ]
+    },
+    "screens_v1_1": {
+      "commands": [
+        "check_--json",
+        "check_--report",
+        "check_--contrast",
+        "tokens_--format_css",
+        "tokens_--format_json",
+        "tokens_--format_tailwind",
+        "tokens_--check",
+        "fix_--dry-run",
+        "map_--json",
+        "query_find_card_--json",
+        "query_component_card_--json",
+        "query_dupes_--json",
+        "query_unused_--json",
+        "query_uses_color-ink_--json",
+        "query_color_1a1a1a_--json",
+        "query_violations_--json",
+        "explain_color-ink_--json",
+        "explain_color-ink",
+        "preview",
+        "diff_.._int04_default"
+      ]
+    }
+  },
+  "static_fixtures": {
+    "gallery005_routes": "fixtures/static/gallery005_routes",
+    "init_default": "fixtures/static/init_default",
+    "int04_default": "fixtures/static/int04_default",
+    "screens_v1_1": "fixtures/static/screens_v1_1",
+    "tailwind_v4": "fixtures/static/tailwind_v4",
+    "web_pages": "fixtures/static/web_pages"
+  }
+}

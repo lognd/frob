@@ -4,6 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
+use gob_symbols::{SkipKind, SkippedFile};
 use gob_text::{FileId, FileInterner};
 use gob_walk::{FileEntry, WalkConfig, walk};
 
@@ -22,6 +23,7 @@ pub struct FileIndex {
     pub dirs: HashSet<String>,
 }
 
+// frob:ticket 01M42M1KK02KFZG39CXKAD47SZ
 /// What the walk produced: the repository root, its files and their identities.
 #[derive(Debug)]
 pub struct Core {
@@ -33,6 +35,8 @@ pub struct Core {
     pub index: FileIndex,
     /// Interner holding every walked path; products extend clones of it.
     pub files: FileInterner,
+    /// Walked files over `size_cap`: never read, reported as Unresolved (`READ001`).
+    pub skipped: Vec<SkippedFile>,
 }
 
 /// Walk `root` honouring `[check] exclude` and `size_cap`, never entering `/<state_dir>/` or `/target/`.
@@ -58,9 +62,18 @@ pub(crate) fn walk_core(
             ..WalkConfig::default()
         },
     )?;
-    for big in &walked.oversized {
-        tracing::info!(path = %big.path, size = big.size, "file over size_cap skipped");
-    }
+    let skipped: Vec<SkippedFile> = walked
+        .oversized
+        .iter()
+        .map(|big| {
+            tracing::info!(path = %big.path, size = big.size, "file over size_cap; reported as READ001");
+            SkippedFile {
+                path: big.path.clone(),
+                kind: SkipKind::Size,
+                detail: format!("{} bytes exceeds size_cap {}", big.size, table.size_cap),
+            }
+        })
+        .collect();
     let mut entries = walked.files;
     entries.sort_by(|a, b| a.path.cmp(&b.path));
     let mut files = FileInterner::new();
@@ -87,5 +100,6 @@ pub(crate) fn walk_core(
         entries,
         index,
         files,
+        skipped,
     })
 }

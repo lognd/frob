@@ -118,6 +118,7 @@ any (provider, reference) pair's latest record for it passes.
 | `evidence` | ticket | evidence id, verdict, measured value, commit, store URI or inline text | evidence | close guard, done-report |
 | `evidence-bypass` | ticket | reason | `ticket close --no-evidence --reason` | audit, doctor |
 | `changelog-exempt` | ticket | reason | `ticket close` and `land` with `--no-changelog --reason` | audit, REL003, show, brief, release status (folds to no change, so old binaries read it as an uninterpreted kind) |
+| `land-exempt` | ticket | reason | `ticket close --outcome done --no-land --reason` | audit, doctor (folds to no change, so old binaries read it as an uninterpreted kind) |
 | `scrub` | ticket | reason, files rewritten, digests recomputed (file, old, new) | `ticket doctor --fix` (the `TICK004` and `TICK005` repair) | audit only; the fold ignores it, `updated` included |
 | `lease` | ticket | op (take, renew, release, steal), holder, scope | start, work, requeue, close | contention, wave |
 | `review` | ticket or exception | subject, verdict, reviewer | review, `exceptions` review of an accept | EXC012, cycle report |
@@ -504,13 +505,33 @@ finds nothing and commits nothing. The GUI renders blobs through
 the same fetch. Changed: evidence providers are a trait
 (`pytest`, `cargo test`, `ctest`, `vitest`, `junit`, `command`) so
 Rust-only or docs-only repos close tickets natively (milestone 1 ships
-`nextest`, `command` and `file` providers; the `command` provider may
-run only programs in `[evidence] allowed_tools`); the close guard
+`nextest`, `pytest`, `command` and `file` providers; the `command` and
+`pytest` providers may run only programs in `[evidence] allowed_tools`,
+and `pytest` is listed by default like `cargo` and `git`); the close guard
 requires a Measured record for the code-changing types task, bug,
 security, story, incident and invariant, and `ticket close
 --no-evidence --reason` bypasses it with an audited `evidence-bypass`
 event; evidence verdicts
 are `Passed | Failed | Unmeasured` and Unmeasured never reads as Failed.
+
+**The pytest provider** (~M525Y1M). `ticket evidence add --provider pytest
+--ref '<pytest args>'` runs `pytest -o junit_family=xunit1 --junitxml=<tmp>
+<args>` through gob-exec (a `Tool` program, so `pytest` must be in
+`[evidence] allowed_tools`, else `E-EVIDENCE-TOOL`), reads the junit file and
+records one measured record whose `tests` are pytest node ids
+(`tests/test_a.py::TestC::test_m[param]`) and whose `failed_tests` are the
+cases with a `failure` or `error`; a skipped case did not execute and is not
+listed. The transcript (stdout then stderr) goes through the same redaction,
+path scrub and non-ASCII escape as every provider, so the stored text is
+ASCII. Exit code 5 (nothing collected) is `E-EVIDENCE-NO-TESTS`, not a failed
+measurement. `frob test` selects Python tests the same way as Rust ones (the
+Python adapter puts their symbols and calls in the graph; a changed `.py`
+file is no longer an `unresolved_files` entry), runs
+`pytest <node id>...` for them after the nextest run, and appends one
+evidence event per runner. With `--all`, pytest also runs when the work tree
+has Python test files. Tests that run pytest need `python3` and `pytest` on
+`PATH`: when absent they skip with the named reason on stderr, or fail when
+`FROB_REQUIRE_PYTHON_TESTS` is set.
 
 **Which outcomes the close guards apply to** (~8RZK7QV). Evidence, criteria,
 children and changelog fragment prove that a change was made, so they apply
@@ -542,7 +563,9 @@ recorded as a `changelog-exempt` event with the actor, written before the close 
 `changelog_fragment` and REL003 for that ticket (`check --ticket` included, and
 `land` passes the exemption to its own check), and is shown by `ticket show`,
 `ticket brief`, the close and land reports and `release status`, which lists the
-exempted tickets of the milestone. `objective_target_met` passes for a ticket that is not a
+exempted tickets of the milestone. A done close also needs the work on the base (`branch_merged`, ~CKZS2R3, code `E-DONE-UNMERGED`): `ticket close --outcome done` and `fixed` are refused while `ticket/<handle>` holds commits not reachable from the base branch, naming the first of them and the remedy, `frob land` or, audited, `--no-land --reason TEXT` (a `land-exempt` event, written before the close). `land` merges before it closes and so never trips the guard; a ticket whose branch was deleted after landing has nothing unmerged and closes cleanly; `wont-fix`, `duplicate` and `invalid` are exempt like the other done guards. `ticket doctor` reports every done or fixed ticket whose branch still holds unmerged commits and has no `land-exempt` event as `E-DOCTOR-UNMERGED`. The "no change to the scope paths on the base since the ticket started" doctor check is not built yet.
+
+`objective_target_met` passes for a ticket that is not a
 quality objective, and `docs_touched_or_excepted` and an objective's target
 are Unresolved today (no recorded docs exception, no stored target), so they
 refuse until they can be evaluated, so the default `done_requires` lists only

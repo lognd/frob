@@ -69,7 +69,7 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
-| `allowed_tools` | `Vec<String>` | `["cargo", "git"]` | no | Programs the `command` provider may run (the first word of the command must be listed). |
+| `allowed_tools` | `Vec<String>` | `["cargo", "git", "pytest"]` | no | Programs the `command` provider may run (the first word of the command must be listed); the `pytest` provider needs `pytest` listed too. |
 | `attesters` | `Vec<String>` | `[]` | yes | Identities (git `user.email`) that may attest a criterion; `frob init` and `config sync` write the repository owner's email, and an empty list means nobody may. |
 | `inline_max_bytes` | `u64` | `16384` | no | Transcripts up to this many bytes are stored inline in the event file. |
 | `nextest_profile` | `String` | `""` | no | Value for `cargo nextest run --profile`; empty leaves nextest's own default. |

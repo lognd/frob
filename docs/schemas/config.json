@@ -171,9 +171,10 @@
         "allowed_tools": {
           "default": [
             "cargo",
-            "git"
+            "git",
+            "pytest"
           ],
-          "description": "Programs the `command` provider may run (the first word of the command must be listed).",
+          "description": "Programs the `command` provider may run (the first word of the command must be listed); the `pytest` provider needs `pytest` listed too.",
           "items": {
             "type": "string"
           },

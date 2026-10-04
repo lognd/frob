@@ -1,0 +1,16 @@
++++
+id = "01M1WJMD2YDY1KSRZAJKCTJCK8"
+title = "lint: a *_path Field default that is a relative path should be flagged"
+type = "bug"
+category = "triage"
+priority = "medium"
+parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
+reporter = "agent"
+created = "2026-09-07T00:00:00Z"
+updated = "2026-09-07T00:00:00Z"
+aliases = ["T-4190"]
+labels = ["milestone:1.1.0", "v1-cluster:B4"]
+scope = ["src/frob/gates"]
++++
+
+Consumer F-307/H3-5 (T-4109): no gate compares an AppConfig default filesystem path against a deployment manifest, because none exists on main -- but the cheap gate-worthy version needs no manifest: a Field(default=...) on a *_path-named field whose value is a relative path is itself a smell. Fixture-testable: YES, in frob's own pydantic AppConfig-shaped models.

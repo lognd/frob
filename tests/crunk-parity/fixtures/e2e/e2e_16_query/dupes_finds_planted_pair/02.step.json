@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "query",
+    "dupes",
+    "--json"
+  ],
+  "command": "python -m crunk query dupes --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_16_query.py::test_dupes_finds_planted_pair",
+  "setup_deleted": [],
+  "stdin": null
+}

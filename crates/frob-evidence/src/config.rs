@@ -9,8 +9,8 @@ pub const DEFAULT_STORE: &str = "dir:.git/frob/artifacts";
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "evidence", materialize)]
 pub struct EvidenceTable {
-    /// Programs the `command` provider may run (the first word of the command must be listed).
-    #[config(default = vec!["cargo".to_owned(), "git".to_owned()])]
+    /// Programs the `command` provider may run (the first word of the command must be listed); the `pytest` provider needs `pytest` listed too.
+    #[config(default = vec!["cargo".to_owned(), "git".to_owned(), "pytest".to_owned()])]
     pub allowed_tools: Vec<String>,
     /// Transcripts up to this many bytes are stored inline in the event file.
     #[config(default = 16_384)]

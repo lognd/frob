@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_02_color.py::test_near_accent_color_flagged_and_fixed",
+  "setup_deleted": [],
+  "stdin": null
+}

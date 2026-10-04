@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check"
+  ],
+  "command": "python -m crunk check",
+  "cwd": ".",
+  "env": {
+    "CRUNK_CACHE_DIR": "<TMP>/cache-home6"
+  },
+  "node": "tests/system/test_e2e_59_root_locator.py::test_plain_in_project_run_prints_no_locator",
+  "setup_deleted": [],
+  "stdin": null
+}

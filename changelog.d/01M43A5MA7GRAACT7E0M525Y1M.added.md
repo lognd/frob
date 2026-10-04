@@ -1,0 +1,1 @@
+frob test now selects and runs the pytest tests that reach a changed Python function, and ticket evidence add accepts --provider pytest, which records per-test results from pytest's junit report (pytest is allowed by default in [evidence] allowed_tools).

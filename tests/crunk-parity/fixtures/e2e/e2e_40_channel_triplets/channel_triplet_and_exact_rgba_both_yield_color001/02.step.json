@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--report",
+    "--json"
+  ],
+  "command": "python -m crunk check --report --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_40_channel_triplets.py::test_channel_triplet_and_exact_rgba_both_yield_color001",
+  "setup_deleted": [],
+  "stdin": null
+}

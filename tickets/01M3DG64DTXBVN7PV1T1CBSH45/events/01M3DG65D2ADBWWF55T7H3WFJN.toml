@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-26: duplicate of T-5815 (ticket new --points not persisted), which landed on dev 430899e128 on 2026-09-26"
+at = "2026-09-26T00:00:01Z"
+actor = "import"
+rev = 1

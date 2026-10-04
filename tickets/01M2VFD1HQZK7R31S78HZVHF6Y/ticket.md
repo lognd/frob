@@ -1,0 +1,48 @@
++++
+id = "01M2VFD1HQZK7R31S78HZVHF6Y"
+title = "Wire [arch.layering] into frob check: ARCH10x red on a kernel layering violation"
+type = "task"
+category = "done"
+outcome = "done"
+priority = "critical"
+reporter = "human"
+created = "2026-09-19T00:00:00Z"
+updated = "2026-09-19T00:00:02Z"
+aliases = ["T-4663"]
+labels = ["milestone:0.535.0"]
+scope = ["src/frob/arch/_layering.py", "frob.toml", "tests/unit/test_layering_gate.py", "docs/modules/arch.md", "src/frob/gates/_arch.py", "frob-ratchet.lock.json"]
+
+[[acceptance]]
+text = "Given [arch.layering] declares ledger < leases < land < app with gates independent, when `frob check` runs, then a layering violation is reported as an ARCH10x finding at RED severity and fails the check."
+bound = false
+
+[[acceptance]]
+text = "POSITIVE CONTROL: tests/unit/test_layering_gate.py::test_upward_import_is_arch10x_red plants an import from the ledger layer back up into the land layer and asserts `frob check` reports ARCH10x at red. It FAILS on dev today (the layering checker is never invoked, so the planted violation is reported by nothing -- a silent zero) and passes after this leaf."
+bound = false
+
+[[acceptance]]
+text = "Given no violation, when `frob check` runs, then the layering job reports a nonzero number of edges CHECKED, never a bare zero; tests/unit/test_layering_gate.py::test_layering_job_reports_edges_checked proves the job actually ran."
+bound = false
+
+[[acceptance]]
+text = "docs/modules/arch.md's DIP layering section is updated to describe the live kernel contract rather than an inert example, in this same change."
+bound = false
++++
+
+Kernel decoupling leaf (LAYERING story). ~3 points. This is the leaf that makes the whole epic irreversible.
+
+`[arch.layering]` already exists in frob.toml, but T-0620 shipped it INERT: the schema and `frob.arch._layering.check_layering_violations` are real, and nothing calls them from `frob check`. A declared-but-unenforced boundary is not a boundary.
+
+Wire it, and declare the kernel contract in frob.toml:
+
+  layers: ledger = src/frob/tickets/_store*.py-and-successors, leases = the lease store module, land = the land state machine, app = src/frob/app, gates = src/frob/gates
+  allow:  leases -> ledger; land -> leases, ledger; app -> land, leases, ledger; gates -> (nothing in the kernel); ledger -> ()
+
+A violation is ARCH10x RED in `frob check`, not a warning. Log every checked edge at DEBUG and every violation at ERROR with both endpoints and the importing line.
+
+Keep the existing app -> lang example contract intact; this leaf ADDS the kernel layers to it.
+
+Note: the exact path globs per layer depend on the module names the sibling ledger/lease/land leaves land. File the contract against the paths that exist when this leaf starts and state any deferred layer in the done report.
+
+## Unblock log
+- 2026-09-19: unblocked by T-4657 -- T-4657 is READY and queued to land; blocker is land order only

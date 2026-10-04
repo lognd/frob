@@ -1,0 +1,34 @@
+kind = "create"
+title = "config-surface ingestion"
+type = "story"
+category = "triage"
+priority = "medium"
+parent = "01M3AXSDACKS00T3E853M1J0DR"
+aliases = ["T-6426"]
+labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
+body = """
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its story scaffold, none exists on dev yet"
+title: config-surface ingestion
+kind: feature
+tier: story
+parent: T-SYS-EPIC
+milestone: 0.539.0
+sprint: sysdesign
+scope: (none -- story, no direct code scope)
+blocked_by: []
+
+Body:
+
+frob today parses zero of the config surfaces the research catalogue's evidence-artifact
+column names as the check target: Kubernetes manifests, Helm values, Terraform/HCL,
+docker-compose, and Envoy/NGINX/Caddy config are either not found at all or line-regex-scanned
+for one narrow WEBSEC purpose (see SYSDESIGN-INVENTORY.md sec 2 "CONFIG SURFACES FROB PARSES
+TODAY"). Every rule leaf in Stories C-G tagged "Static: config" is blocked_by the parser leaf
+for its surface. One shared leaf (T-SYS-B-CONFIGDOC) lands first: a `ConfigDoc` contract in
+frob.lang that every per-surface parser below implements, so SYSDESIGN rules read one uniform
+shape regardless of which YAML/HCL/conf dialect produced it -- mirrors the existing
+`frob.lang.raw_tree` precedent the STORE family reuses (DB-STORE-TREE.md) rather than inventing
+a parallel per-surface API."""
+at = "2026-09-25T00:00:00Z"
+actor = "agent"
+rev = 1

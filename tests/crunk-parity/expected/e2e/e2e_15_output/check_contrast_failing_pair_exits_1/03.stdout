@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "pairs": [
+    {
+      "role": "body",
+      "foreground": "paper",
+      "background": "paper",
+      "ratio": 1.0,
+      "floor": 4.5,
+      "passes": false
+    }
+  ]
+}

@@ -1,0 +1,22 @@
++++
+id = "01M336K75WHJ5T4THWGX939771"
+title = "WEBSEC117-122: header/URL/log injection and WebSocket origin check"
+type = "task"
+category = "done"
+outcome = "done"
+priority = "high"
+points = 5
+parent = "01M2Y1SS0NVJMAC21FPVPYYSEE"
+reporter = "human"
+created = "2026-09-22T00:00:00Z"
+updated = "2026-09-22T00:00:02Z"
+aliases = ["T-5308"]
+labels = ["milestone:0.534.0"]
+scope = ["src/frob/webapp/_websec_headers_log.py", "tests/fixtures/webapp/websec1xx/headers_log/**", "docs/modules/webapp-websec-headers-log.md", "tests/unit/test_websec_headers_log.py", "src/frob/gates/_taint_gate.py"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M336K75VAADETHRZ71MT5J2W"
++++
+
+URL-building injection (missing urlencode/scheme allowlist), CRLF/header injection (response.setHeader from unvalidated input), log injection (f-string/concat of request data into a logger with no CR/LF-stripping encoder), HTML injection in transactional email, Content-Disposition/filename encoding (RFC 6266), field over-exposure (jsonify(model.__dict__) style whole-object serialization), backend following redirects from untrusted URLs (SSRF-adjacent), and WebSocket origin-check + WSS-only enforcement (ASVS V4.4.1/V4.4.2) -- this leaf is the canonical owner of the WebSocket-origin rule; T-5143-5 (config/headers story) cross-references this leaf's rule id rather than reimplementing it. Fixture per rule id.

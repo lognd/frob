@@ -1,0 +1,13 @@
+kind = "create"
+title = "extend the PII-structural gate to model the message/extra split inside a log record"
+type = "task"
+category = "triage"
+priority = "medium"
+parent = "01M1WJMD2FWKPS1J7MPF18KDVY"
+aliases = ["T-4231"]
+labels = ["milestone:1.1.0", "v1-cluster:B4"]
+scope = ["src/frob/gates/_pii_structural"]
+body = "Consumer F-373/P9 (T-4175): a redaction test passes secrets in the log message, which is the surface the filter handles; the PII gate is structural (it knows which nodes/files carry which PII classes) and does not model the message/extra split inside a log record, so a secret passed via extra= would be invisible to both the filter and the gate. Fixture-testable: YES, frob's own PII-structural gate and its own logging module."
+at = "2026-09-07T00:00:00Z"
+actor = "agent"
+rev = 1

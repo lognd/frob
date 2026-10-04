@@ -1,0 +1,45 @@
++++
+id = "01M43AVKZWSTQRGWR6YPXH7THX"
+title = "Port the crunk system and integration scenarios (E2E-01..58, INT-01..12) to Rust tests"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 8
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+reporter = "lognd"
+created = "2026-10-04T11:30:16Z"
+updated = "2026-10-04T11:30:16Z"
+idempotency_key = "crunk-plan-e2e"
+labels = ["area:crunk"]
+scope = ["crates/crunk/tests/e2e/**", "crates/crunk/tests/int/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M43ATBPPR5QCY0CSPPTNEDQ0"
+
+[[links]]
+kind = "blocked-by"
+target = "01M43ATBY4CHA4FYVC7BWK6MXR"
+
+[[links]]
+kind = "blocked-by"
+target = "01M43ATE06MNRNVJJ314KW24RJ"
+
+[[links]]
+kind = "blocked-by"
+target = "01M43AVKMT52QCG7DGNQ4J906S"
+
+[[acceptance]]
+text = "Given the mapping table, when audited, then every Python test function is mapped to a Rust test or a dropped entry with a reason"
+bound = false
+
+[[acceptance]]
+text = "Given the Rust suite, when run, then it passes on Linux, macOS and Windows runners"
+bound = false
+
+[[acceptance]]
+text = "Given a mapped test, when its Rust counterpart is removed, then the audit script fails"
+bound = false
++++
+
+monorepo.md 5 step 3 ('1158 tests'): capability tickets port their own unit tests; this ticket ports what remains of tests/system (58 e2e files through the real CLI, including the wheel build covered by the registration ticket's smoke) and tests/integration (12 INT) using gob-testsupport's fixture-tree builder and insta snapshots; owner-visible count table maps every Python test to a Rust test or a reasoned drop.

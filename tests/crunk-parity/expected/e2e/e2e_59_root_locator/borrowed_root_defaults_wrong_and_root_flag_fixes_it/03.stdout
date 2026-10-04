@@ -1,0 +1,41 @@
+spec: <ROOT>/proj/crunk.toml  root: <ROOT>
+{
+  "version": 1,
+  "violations": [
+    {
+      "rule": "ORG005",
+      "severity": "error",
+      "path": "proj/styles/base/reset.css",
+      "line": 0,
+      "message": "proj/styles/base/reset.css is a CSS file outside styles (css_root); add a matching glob to [org].ignore to exempt it",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "ORG005",
+      "severity": "error",
+      "path": "proj/styles/tokens.css",
+      "line": 0,
+      "message": "proj/styles/tokens.css is a CSS file outside styles (css_root); add a matching glob to [org].ignore to exempt it",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "TOKENS001",
+      "severity": "error",
+      "path": "styles/tokens.css",
+      "line": 0,
+      "message": "tokens file missing; run `crunk tokens` to regenerate",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    }
+  ],
+  "counts": {
+    "error": 3,
+    "warning": 0,
+    "waived": 0
+  }
+}

@@ -1,7 +1,6 @@
 //! The `test` verb: `frob test --base <ref> [--all] [--dry-run]`.
 
 use frob_evidence::provider::build_record;
-use frob_evidence::record::Provider;
 use frob_evidence::{EvidenceError, Workspace, events};
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
@@ -10,7 +9,7 @@ use serde::Serialize;
 
 use crate::error::TestsError;
 use crate::lease::lease_ticket;
-use crate::run::{RunOptions, join_args, run};
+use crate::run::{RunOptions, RunReport, join_args, run};
 use crate::select::{TestTarget, select_tests};
 use crate::touched::{TouchedSet, build_repo_graph, touched_set};
 
@@ -45,9 +44,9 @@ pub struct TestData {
     pub touched: TouchedSet,
     /// The selected tests.
     pub selected: Vec<TestTarget>,
-    /// One `package test_path` line per selected test.
+    /// One `package test_path` (nextest) or `pytest node_id` line per selected test.
     pub plan: Vec<String>,
-    /// Whether nextest ran.
+    /// Whether any runner ran.
     pub ran: bool,
     /// The verdict, when it ran.
     pub passed: Option<bool>,
@@ -56,8 +55,11 @@ pub struct TestData {
     /// Names of the tests that failed, timed out or crashed.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub failed: Vec<String>,
-    /// The evidence event, when the run happened in a lease-holding worktree.
+    /// The first evidence event, when the run happened in a lease-holding worktree.
     pub evidence: Option<EvidenceAdded>,
+    /// Every evidence event appended, one per runner that ran (nextest, then pytest).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub evidence_all: Vec<EvidenceAdded>,
 }
 
 /// Run only the tests that reach the files changed against a base, and record the evidence.
@@ -78,6 +80,59 @@ fn with_warnings(data: TestData, warnings: Vec<String>) -> Payload<TestData> {
     let mut payload = Payload::new(data);
     payload.warnings = warnings;
     payload
+}
+
+// frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+/// Append one evidence event per run to the ticket the worktree's lease names; empty (with a warning) without one.
+///
+/// # Errors
+///
+/// The CLI error of a failed store or ledger append.
+fn record_runs(
+    ws: &Workspace,
+    report: &RunReport,
+    warnings: &mut Vec<String>,
+) -> Result<Vec<EvidenceAdded>, CliError> {
+    let repo = ws.ledger.repo();
+    let mut recorded: Vec<EvidenceAdded> = Vec::new();
+    match lease_ticket(repo.common_dir(), &ws.root) {
+        Some(reference) => match ws.ledger.resolve(&reference) {
+            Ok(id) => {
+                let handle = ws
+                    .ledger
+                    .show(id)
+                    .map_or_else(|_| reference.clone(), |v| v.summary.handle);
+                for one in &report.runs {
+                    // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
+                    let record = build_record(
+                        &ws.store,
+                        &ws.scrub(),
+                        one.provider(),
+                        &join_args(&one.args),
+                        &one.capture,
+                        &[],
+                    )
+                    .map_err(EvidenceError::into_cli)?;
+                    let appended = events::append(&ws.ledger, id, &record)
+                        .map_err(EvidenceError::into_cli)?;
+                    recorded.push(EvidenceAdded {
+                        ticket: handle.clone(),
+                        event: appended.event.to_string(),
+                        commit: appended.commit.to_string(),
+                    });
+                }
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, reference, "lease names an unknown ticket; no evidence recorded");
+                warnings.push(format!("lease ticket `{reference}` not found; no evidence recorded"));
+            }
+        },
+        None => warnings.push(
+            "not in a lease-holding worktree; no evidence recorded (use `frob ticket evidence add`)"
+                .to_owned(),
+        ),
+    }
+    Ok(recorded)
 }
 
 impl Command for TestVerb {
@@ -121,10 +176,7 @@ impl Command for TestVerb {
             }
             _ => (TouchedSet::default(), Vec::new()),
         };
-        let plan: Vec<String> = selected
-            .iter()
-            .map(|t| format!("{} {}", t.package, t.test_path))
-            .collect();
+        let plan: Vec<String> = selected.iter().map(TestTarget::plan_line).collect();
         let mut data = TestData {
             base: self.base.clone(),
             dry_run: ctx.dry_run,
@@ -136,6 +188,7 @@ impl Command for TestVerb {
             executed: Vec::new(),
             failed: Vec::new(),
             evidence: None,
+            evidence_all: Vec::new(),
         };
         let mut warnings: Vec<String> = data
             .touched
@@ -156,46 +209,18 @@ impl Command for TestVerb {
             root: ws.root.clone(),
             timeout: ws.timeout(),
             profile: ws.evidence.nextest_profile.clone(),
+            allowed_tools: ws.evidence.allowed_tools.clone(),
             all: self.all,
         };
         let report = run(&ws.runner(), &data.selected, &opts).map_err(TestsError::into_cli)?;
         data.ran = true;
-        data.passed = Some(report.capture.passed);
-        data.executed.clone_from(&report.capture.tests);
-        data.failed.clone_from(&report.capture.failed_tests);
-        match lease_ticket(repo.common_dir(), &ws.root) {
-            Some(reference) => match ws.ledger.resolve(&reference) {
-                Ok(id) => {
-                    // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
-                    let record = build_record(
-                        &ws.store,
-                        &ws.scrub(),
-                        Provider::Nextest,
-                        &join_args(&report.args),
-                        &report.capture,
-                        &[],
-                    )
-                    .map_err(EvidenceError::into_cli)?;
-                    let appended = events::append(&ws.ledger, id, &record)
-                        .map_err(EvidenceError::into_cli)?;
-                    let handle = ws.ledger.show(id).map_or(reference, |v| v.summary.handle);
-                    data.evidence = Some(EvidenceAdded {
-                        ticket: handle,
-                        event: appended.event.to_string(),
-                        commit: appended.commit.to_string(),
-                    });
-                }
-                Err(e) => {
-                    tracing::warn!(error = %e, reference, "lease names an unknown ticket; no evidence recorded");
-                    warnings.push(format!("lease ticket `{reference}` not found; no evidence recorded"));
-                }
-            },
-            None => warnings.push(
-                "not in a lease-holding worktree; no evidence recorded (use `frob ticket evidence add`)"
-                    .to_owned(),
-            ),
-        }
-        if report.capture.passed {
+        data.passed = Some(report.passed());
+        data.executed = report.executed();
+        data.failed = report.failed();
+        let recorded = record_runs(&ws, &report, &mut warnings)?;
+        data.evidence = recorded.first().cloned();
+        data.evidence_all = recorded;
+        if report.passed() {
             let mut payload = Payload::new(data);
             payload.warnings = warnings;
             Ok(payload)
@@ -203,7 +228,7 @@ impl Command for TestVerb {
             Err(CliError::Negative(format!(
                 "tests failed ({} executed, exit {:?}): {}{}",
                 data.executed.len(),
-                report.capture.exit_code,
+                report.exit_code(),
                 failed_names(&data.failed),
                 data.evidence.as_ref().map_or(String::new(), |e| format!(
                     "; evidence {} recorded on {}",

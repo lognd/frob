@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "kind": "component",
+  "results": [
+    {
+      "name": "Badge",
+      "path": "frontend/Badge.tsx",
+      "elements": [],
+      "modifiers": [],
+      "tokens": [
+        "--color-accent"
+      ],
+      "utilities": [
+        "bg-primary",
+        "p-[13px]"
+      ],
+      "colors": [],
+      "spacings": [],
+      "layers": [
+        "5"
+      ]
+    }
+  ]
+}

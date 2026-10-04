@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "violations": [
+    {
+      "rule": "TOKENS001",
+      "severity": "error",
+      "path": "styles/tokens.css",
+      "line": 0,
+      "message": "tokens file drifted; run `crunk tokens` to regenerate",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    }
+  ],
+  "counts": {
+    "error": 1,
+    "warning": 0,
+    "waived": 0
+  }
+}

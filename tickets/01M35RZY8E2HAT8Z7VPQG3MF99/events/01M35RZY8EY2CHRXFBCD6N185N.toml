@@ -1,0 +1,12 @@
+kind = "create"
+title = "Wire html/javascript/vue into capability/dup/docblock FACETS"
+type = "bug"
+category = "triage"
+priority = "medium"
+aliases = ["T-5390"]
+labels = ["v1-cluster:D2"]
+scope = ["src/frob/lang/_support.py"]
+body = "found while working T-5300: html/javascript/vue get a real frob.lang grammar/walker (_walk_html.py/_walk_javascript.py/_walk_vue.py) but, like css/scss before them (T-5303, T-5386), are not yet wired into the capability/dup/docblock FACETS registry -- follow-up, not this leaf's scope."
+at = "2026-09-23T00:00:00Z"
+actor = "human"
+rev = 1

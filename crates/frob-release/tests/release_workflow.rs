@@ -787,7 +787,10 @@ fn pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_onl
         publishes(job),
         "the pypi job must be detected as publishing"
     );
-    assert!(needs_of(job).is_superset(&BTreeSet::from(["artifacts", "crates"])));
+    // PyPI and crates.io publish independently after smoke (~0JTYGH0): a slow crates.io
+    // publish behind the new-crate rate limit must not hold the wheels back.
+    assert_eq!(needs_of(job), BTreeSet::from(["artifacts"]));
+    assert!(needs_of(&wf["jobs"]["crates"]).contains("artifacts"));
     assert_eq!(job["environment"].as_str(), Some("pypi"));
     let perms = job["permissions"].as_mapping().unwrap();
     assert_eq!(perms.len(), 1, "id-token only: {perms:?}");

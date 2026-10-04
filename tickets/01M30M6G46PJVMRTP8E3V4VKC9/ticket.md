@@ -1,0 +1,19 @@
++++
+id = "01M30M6G46PJVMRTP8E3V4VKC9"
+title = "MCP tools frob_land_enqueue, frob_land_status, frob_land_queue over the socket daemon; agents enqueue through the tool"
+type = "task"
+category = "triage"
+priority = "high"
+reporter = "human"
+created = "2026-09-21T00:00:00Z"
+updated = "2026-09-21T00:00:00Z"
+aliases = ["T-5254"]
+labels = ["milestone:0.535.0", "v1-cluster:E1"]
+scope = ["src/frob/serve/_tools.py", "src/frob/serve/_socketd.py", "docs/guides/agent-playbook.md", "tests/unit/serve/**"]
++++
+
+Leaf F of T-5106 (~2 pts). MCP surface for the queue. Blocked by leaf B (status shape) and leaf E (daemon owns the drain).
+- `serve/_tools.py` gains `frob_land_enqueue(ticket_id, worktree)`, `frob_land_status(ticket_id)` and `frob_land_queue()` following the existing `Result[dict, ServeError]` tool shape, registered in `_socketd`'s name-keyed dispatch table; they call `enqueue`/`read_intent_record`/`queue_status` and never land inline.
+- Agents call the tool instead of a shell land; the brief's "append to queue.txt" step is deleted from docs/guides/agent-playbook.md.
+- Blocked also by T-3904 only if the mcp 2.x port changes the registration shape; otherwise independent.
+- Positive control: an enqueue through the socket shows up in `--status` and lands via the daemon cycle.

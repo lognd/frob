@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_42_43_44_viewport.py::test_e2e_43_bp002_responsive_variant_missing_base",
+  "setup_deleted": [],
+  "stdin": null
+}

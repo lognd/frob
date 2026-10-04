@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "check"
+  ],
+  "command": "python -m crunk check",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_07_json_exit_codes.py::test_corrupt_crunk_toml_exits_2",
+  "setup_deleted": [],
+  "stdin": null
+}

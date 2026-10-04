@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["frob.toml", "packaging/pypi/products.toml", "packaging/pypi/**", "packaging/smoke/**", "crates/crunk/Cargo.toml", "dist-workspace.toml", ".github/workflows/release.yml", ".github/workflows/build-smoke.yml", "crates/frob-release/tests/products.rs", "crates/frob-release/tests/release_workflow.rs"]
+new = ["frob.toml", "packaging/pypi/products.toml", "packaging/pypi/**", "packaging/smoke/**", "crates/crunk/Cargo.toml", "dist-workspace.toml", ".github/workflows/release.yml", ".github/workflows/build-smoke.yml", "crates/frob-release/tests/products.rs", "crates/frob-release/tests/release_workflow.rs", ".github/workflows/ci.yml"]
+at = "2026-10-04T13:04:23Z"
+actor = "lognd"
+rev = 1

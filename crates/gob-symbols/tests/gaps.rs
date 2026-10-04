@@ -362,3 +362,64 @@ fn markdown_links_resolve_to_anchors_or_are_broken_unknown_edges() {
     let broken = links.iter().find(|e| e.status == Status::Unknown).unwrap();
     assert_eq!(broken.reason, Some(GapReason::BrokenLink));
 }
+
+// frob:ticket 01M421PY49MQ5WX8RGQ36ZXTMR
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.from_files
+#[test]
+fn graph_is_identical_at_one_and_many_threads() {
+    let files: Vec<(String, String)> = (0..40)
+        .map(|i| {
+            let text = format!(
+                "use crate::helper;\nstruct S{i};\nimpl S{i} {{ fn m(&self) {{ helper(); self.n(); }} fn n(&self) {{}} }}\n\
+                 fn helper() {{}}\nfn f{i}() {{ helper(); mystery{i}(); S{i}.m(); f{}(); }}\n",
+                (i + 1) % 40
+            );
+            (format!("c/src/m{i}.rs"), text)
+        })
+        .collect();
+    let build = |threads: usize| {
+        let pool = rayon::ThreadPoolBuilder::new()
+            .num_threads(threads)
+            .build()
+            .unwrap();
+        pool.install(|| SymbolGraph::from_files(files.iter().map(|(p, t)| extract(p, t)).collect()))
+    };
+    let one = build(1);
+    for n in [2, 4, 8] {
+        let many = build(n);
+        assert_eq!(one.call_edges(), many.call_edges(), "calls at {n} threads");
+        assert_eq!(
+            one.edges_with_status(),
+            many.edges_with_status(),
+            "status edges at {n}"
+        );
+        assert_eq!(one.imports(), many.imports(), "imports at {n}");
+        assert_eq!(one.graph_digest(), many.graph_digest(), "digest at {n}");
+        assert!(one.records().eq(many.records()), "records at {n}");
+    }
+    assert!(!one.call_edges().is_empty());
+}
+
+// frob:ticket 01M42M1KK02KFZG39CXKAD47SZ
+// frob:tests crates/gob-symbols/src/pipeline.rs::build_graph_with_stats
+#[test]
+fn an_undecodable_file_is_listed_with_its_reason_not_only_counted() {
+    let root = tempfile::tempdir().unwrap();
+    std::fs::write(root.path().join("bad.md"), [0xff, 0xfe, b'\n']).unwrap();
+    let e = entry("bad.md", "x");
+    let cache = gob_cache::Cache::null();
+    let (g, stats) = build_graph_with_stats(root.path(), &[e], &cache);
+    assert_eq!(stats.skipped, 1);
+    assert_eq!(stats.unreadable.len(), 1);
+    assert_eq!(stats.unreadable[0].path, "bad.md");
+    assert_eq!(stats.unreadable[0].kind, gob_symbols::SkipKind::Encoding);
+    assert!(
+        stats.unreadable[0].detail.contains("utf-8"),
+        "{:?}",
+        stats.unreadable
+    );
+    assert!(
+        g.file_info("bad.md").is_none(),
+        "no file node for an unread file"
+    );
+}

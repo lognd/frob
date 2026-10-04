@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<!--
+T-0186 fixture: a canvas app that paints asynchronously (simulating a
+WASM/heavy-JS canvas init) 600ms after load -- longer than the pre-T-0186
+~1.5s-after-load capture sometimes missed once real network/render jitter
+is added on top. `#painted` only appears once the canvas draw finishes,
+so a state declaring `{"kind": "wait_for", "selector": "#painted"}` as
+its last action proves the canvas/async-app readiness signal
+(`WaitForAction`, documented in gallery.md) rather than relying on a
+bigger `settle_ms` guess.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>crunk delayed-canvas fixture</title>
+</head>
+<body>
+  <canvas id="stage" width="200" height="200"></canvas>
+  <script>
+    setTimeout(() => {
+      const ctx = document.getElementById("stage").getContext("2d");
+      ctx.fillStyle = "#00ff00";
+      ctx.fillRect(0, 0, 200, 200);
+      const marker = document.createElement("div");
+      marker.id = "painted";
+      marker.textContent = "painted";
+      document.body.appendChild(marker);
+    }, 600);
+  </script>
+</body>
+</html>

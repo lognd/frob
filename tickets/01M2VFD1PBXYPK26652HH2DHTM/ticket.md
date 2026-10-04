@@ -1,0 +1,15 @@
++++
+id = "01M2VFD1PBXYPK26652HH2DHTM"
+title = "Wire frob run/build --help into _build_parser's subcommand tree"
+type = "task"
+category = "triage"
+priority = "high"
+reporter = "human"
+created = "2026-09-19T00:00:00Z"
+updated = "2026-09-19T00:00:00Z"
+aliases = ["T-4811"]
+labels = ["milestone:0.537.0", "v1-cluster:G2"]
+scope = ["src/frob/_cli_parsers/_root.py"]
++++
+
+T-4759 added frob.app.run_runner.run/run_build (frob run <name> [--dry-run], frob build [--dry-run]), dispatched directly from frob.__main__._dispatch (same non-uniform shape as bind/agent/worktree) so they already work end to end. Their --help-only parser builders (_add_run_parser/_add_build_parser in src/frob/_cli_parsers/_run.py, re-exported through the package __init__.py and frob.__main__) could not be registered into _add_analysis_subparsers/_add_workflow_subparsers in src/frob/_cli_parsers/_root.py because that file was leased by T-4546 at the time T-4759 landed. Once that lease clears: call _add_run_parser(sub) and _add_build_parser(sub) from the appropriate _root.py registration function (mirroring bind/agent/worktree's own --help-only registration) so 'run'/'build' show up in top-level frob --help.

@@ -1,0 +1,4 @@
+--bg-primary  #0d1117  group=color
+  defined in: styles/tokens.css
+  frontend/Shell.tsx:2
+  utilities: bg-bg-primary

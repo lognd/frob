@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "buckets": {
+    "base": [
+      {
+        "path": "styles/base/reset.css",
+        "component": null,
+        "classes": 0
+      }
+    ],
+    "components": [
+      {
+        "path": "styles/components/card.css",
+        "component": "card",
+        "classes": 2
+      }
+    ],
+    "layouts": [],
+    "utilities": [],
+    "entry": [],
+    "jsx": [],
+    "tokens": [
+      {
+        "path": "styles/tokens.css",
+        "component": null,
+        "classes": 0
+      }
+    ]
+  },
+  "strays": [
+    "styles/oops.css"
+  ]
+}

@@ -156,14 +156,15 @@ jobs:
   # frob and grimble (one wheel set per product, D87; each project trusts this workflow and
   # this environment). It builds nothing: it uploads exactly the wheels the shared workflow
   # built and smoked
-  # on fresh runners, and runs only after the crates.io publish
-  # succeeded. pypa/gh-action-pypi-publish is used rather than the uv upload command
+  # on fresh runners. It runs after smoke and independently of the crates.io publish
+  # (which can take hours behind the new-crate rate limit). pypa/gh-action-pypi-publish is
+  # used rather than the uv upload command
   # because it also uploads PEP 740 attestations by default and needs no tool
   # install. skip-existing makes a re-run after a partial upload resume.
   # The only job with id-token: write besides `crates`; it never gets contents.
   pypi:
     name: pypi (PyPI publish of the smoked wheels)
-    needs: [artifacts, crates]
+    needs: artifacts
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: pypi

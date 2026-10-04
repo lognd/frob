@@ -292,6 +292,7 @@ pub fn fold(id: TicketId, events: &[Event]) -> Result<Folded> {
             | EventBody::Exception(_)
             | EventBody::EvidenceBypass(_)
             | EventBody::ChangelogExempt(_)
+            | EventBody::LandExempt(_)
             | EventBody::Land(_)
             | EventBody::Other
             // Evidence binds once at the end, through the acceptance remap.

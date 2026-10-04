@@ -6,13 +6,20 @@ use std::collections::BTreeSet;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use gob_symbols::{Adapter, Fidelity, MarkdownAdapter, RustAdapter, SymbolGraph, fold_file};
+use gob_symbols::{
+    Adapter, Fidelity, MarkdownAdapter, PythonAdapter, RustAdapter, SymbolGraph, fold_file,
+};
 use gob_walk::{Digest, FileEntry, LanguageHint};
 
 /// Operators the Rust adapter claims at F3; `opaque` is covered by `rust_depth_limit`.
 const RUST_CLAIMS: [&str; 12] = [
     "unit", "anon", "ref", "apply", "bind", "group", "lit", "attr", "comment", "region", "phase",
     "hole",
+];
+
+/// Operators the Python adapter claims at F2 (binders are unit and `anon` abstractors, not `bind` nodes).
+const PYTHON_CLAIMS: [&str; 9] = [
+    "unit", "anon", "ref", "apply", "group", "lit", "attr", "comment", "hole",
 ];
 
 /// Operators the markdown adapter claims at F4.
@@ -145,6 +152,13 @@ fn run_corpus(lang: &str, ext: &str, claims: &[&str]) {
 fn rust_corpus_covers_every_claimed_operator() {
     assert_eq!(RustAdapter.fidelity(), Fidelity::F3);
     run_corpus("rust", "rs", &RUST_CLAIMS);
+}
+
+// frob:tests crates/gob-symbols/src/adapter.rs::Adapter.fidelity
+#[test]
+fn python_corpus_covers_every_claimed_operator() {
+    assert_eq!(PythonAdapter.fidelity(), Fidelity::F2);
+    run_corpus("python", "py", &PYTHON_CLAIMS);
 }
 
 #[test]

@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "tokens",
+    "--check"
+  ],
+  "command": "python -m crunk tokens --check",
+  "cwd": "fixtures/static/init_default",
+  "exit": 0,
+  "project": "init_default"
+}

@@ -12,7 +12,7 @@ use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use super::{cli_err, open};
+use super::{cli_err, open, terminal_lease};
 use crate::milestone_cmd::pm_err;
 
 /// Output of `ticket doctor`.
@@ -48,6 +48,8 @@ pub struct DoctorData {
     pub pm_issues: Vec<PmIssueView>,
     /// Milestone or cycle ULIDs whose frontmatter `--fix` rewrote.
     pub pm_fixed: Vec<String>,
+    /// Tickets whose lease (held for a terminal ticket) `--fix` removed.
+    pub reaped_leases: Vec<TicketId>,
 }
 
 /// A milestone or cycle problem as reported by `ticket doctor`.
@@ -106,7 +108,24 @@ impl Command for TicketDoctor {
 
     fn run(&self, ctx: &Context) -> CliOutcome<DoctorData> {
         let ledger = open(ctx)?;
-        let report = ledger.doctor(self.fix).map_err(cli_err)?;
+        let mut report = ledger.doctor(self.fix).map_err(cli_err)?;
+        report.issues.extend(unmerged_done_issues(&ledger)?);
+        // frob:ticket 01M42MGN8882Y65TVXH0V1WTNR
+        let stale = terminal_lease::stale_leases(ctx, &ledger)?;
+        let reaped_leases = if self.fix {
+            terminal_lease::reap(ctx, &stale)?
+        } else {
+            report
+                .issues
+                .extend(stale.iter().map(|(ticket, holder)| Issue {
+                    code: "E-DOCTOR-TERMINAL-LEASE".to_owned(),
+                    ticket: *ticket,
+                    message: format!(
+                        "ticket {ticket} is done but {holder} still holds its lease; `frob ticket doctor --fix` removes it"
+                    ),
+                }));
+            Vec::new()
+        };
         let scrub = if self.fix {
             scrub_ledger(&ledger)?
         } else {
@@ -153,6 +172,7 @@ impl Command for TicketDoctor {
             pm_events: pm.events,
             pm_issues: pm.issues.into_iter().map(PmIssueView::from).collect(),
             pm_fixed: pm.fixed.iter().map(ToString::to_string).collect(),
+            reaped_leases,
         };
         Ok(Payload::new(data).with_findings(findings))
     }
@@ -181,4 +201,43 @@ fn scrub_ledger(ledger: &frob_ledger::Ledger) -> Result<ScrubReport, CliError> {
         "ticket doctor --fix scrubbed the ledger"
     );
     Ok(report)
+}
+
+// frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
+/// One `E-DOCTOR-UNMERGED` issue per done or fixed ticket whose branch still holds commits the base lacks and that carries no `land-exempt` audit event.
+fn unmerged_done_issues(ledger: &frob_ledger::Ledger) -> Result<Vec<Issue>, CliError> {
+    let base = frob_worktree::work::base_branch(ledger);
+    let filter = frob_ledger::index::ListFilter {
+        category: Some(frob_ledger::model::Category::Done),
+        ..Default::default()
+    };
+    let mut issues = Vec::new();
+    for s in ledger.list(&filter).map_err(cli_err)? {
+        if !frob_evidence::done::guards_apply(s.outcome) {
+            continue;
+        }
+        let (unmerged, more) =
+            frob_evidence::done::unmerged_commits(ledger.repo(), &base, &s.handle)
+                .map_err(CliError::internal)?;
+        if unmerged.is_empty() {
+            continue;
+        }
+        if frob_ledger::event::land_exemption(&ledger.events(s.id).map_err(cli_err)?).is_some() {
+            tracing::debug!(handle = %s.handle, "done ticket has unmerged commits but a land-exempt record");
+            continue;
+        }
+        tracing::warn!(handle = %s.handle, count = unmerged.len(), "done ticket with an unmerged branch");
+        issues.push(Issue {
+            code: "E-DOCTOR-UNMERGED".to_owned(),
+            ticket: s.id,
+            message: format!(
+                "{} is done but {} holds commits not merged into {base}: {}{}; land them or record why with a new ticket",
+                s.handle,
+                frob_evidence::done::ticket_branch(&s.handle),
+                unmerged.join("; "),
+                if more { "; and more" } else { "" }
+            ),
+        });
+    }
+    Ok(issues)
 }

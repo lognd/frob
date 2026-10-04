@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "query",
+    "uses",
+    "color-ink",
+    "--json"
+  ],
+  "command": "python -m crunk query uses color-ink --json",
+  "cwd": "fixtures/static/screens_v1_1",
+  "exit": 0,
+  "project": "screens_v1_1"
+}

@@ -1,0 +1,13 @@
+kind = "create"
+title = "DRIFT: compare a module's own docstring against its own module's code, not only doc files against acked refs"
+type = "bug"
+category = "triage"
+priority = "medium"
+parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
+aliases = ["T-4187"]
+labels = ["milestone:1.1.0", "v1-cluster:F1"]
+scope = ["src/frob/gates/_docblocks.py"]
+body = "Consumer F-307/H3-9 (T-4109). Distinct comparison target from the claim-lint leaf (T-4185's sibling): DRIFT001 today compares doc FILES to acked refs and never a module docstring's own claim against that module's code. Do not collapse with H3-4 per the epic's instruction. Fixture-testable: YES."
+at = "2026-09-07T00:00:00Z"
+actor = "agent"
+rev = 1

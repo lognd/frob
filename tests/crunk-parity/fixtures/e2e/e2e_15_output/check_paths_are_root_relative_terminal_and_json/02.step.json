@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "check"
+  ],
+  "command": "python -m crunk check",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_15_output.py::test_check_paths_are_root_relative_terminal_and_json",
+  "setup_deleted": [],
+  "stdin": null
+}

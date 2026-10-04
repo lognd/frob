@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-symbols/src/pipeline.rs", "crates/gob-check/src/**", "crates/frob-check/src/**", "crates/frob-check/tests/**"]
+new = ["crates/gob-symbols/src/pipeline.rs", "crates/gob-check/src/**", "crates/frob-check/src/**", "crates/frob-check/tests/**", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/tests/symbols.rs", "crates/gob-symbols/tests/gaps.rs", "docs/design/architecture.md", "docs/reference/rules/README.md", "docs/reference/rules/READ001.md"]
+at = "2026-10-04T06:01:35Z"
+actor = "lognd"
+rev = 1

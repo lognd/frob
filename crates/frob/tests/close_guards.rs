@@ -534,3 +534,174 @@ fn land_with_a_non_done_outcome_needs_a_reason() {
     let text = json(&out)["error"]["message"].to_string();
     assert!(text.contains("needs --reason"), "{text}");
 }
+
+/// The handle (with `~`) of ticket `id`.
+fn handle_of(dir: &Path, id: &str) -> String {
+    ok(dir, &["ticket", "show", id])["data"]["summary"]["handle"]
+        .as_str()
+        .expect("handle")
+        .to_owned()
+}
+
+/// Give ticket `id` a branch `ticket/<handle>` with one commit the base lacks; returns the handle.
+fn unmerged_branch(dir: &Path, id: &str) -> String {
+    let handle = handle_of(dir, id);
+    let branch = format!("ticket/{}", handle.trim_start_matches('~'));
+    git(dir, &["checkout", "-q", "-b", &branch]);
+    let file = format!("work-{}.txt", handle.trim_start_matches('~'));
+    std::fs::write(dir.join(&file), "work\n").expect("write");
+    git(dir, &["add", &file]);
+    git(dir, &["commit", "-q", "-m", "unmerged ticket work"]);
+    git(dir, &["checkout", "-q", "main"]);
+    handle
+}
+
+// frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
+// frob:tests crates/frob-evidence/src/done.rs::MergedGuard.check
+// frob:tests crates/frob-evidence/src/done.rs::MergedGuard.for_ticket
+// frob:tests crates/frob-evidence/src/done.rs::ticket_branch
+#[test]
+fn a_done_close_with_an_unmerged_ticket_branch_is_refused_naming_commits_and_remedy() {
+    let dir = repo(&[]);
+    let id = chore(dir.path(), &[]);
+    unmerged_branch(dir.path(), &id);
+    let out = close(dir.path(), &id, &["--no-evidence", "--reason", "docs only"]);
+    assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stdout));
+    assert_eq!(json(&out)["error"]["code"], "E-DONE-UNMERGED");
+    let text = refusal_text(&out);
+    assert!(text.contains("unmerged ticket work"), "{text}");
+    assert!(text.contains("--no-land --reason"), "{text}");
+    assert!(text.contains("frob land"), "{text}");
+    let shown = ok(dir.path(), &["ticket", "show", &id]);
+    assert_ne!(shown["data"]["summary"]["category"], "done");
+}
+
+// frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
+// frob:tests crates/frob-evidence/src/done.rs::MergedGuard.record_exemption
+// frob:tests crates/frob-evidence/src/done.rs::MergedGuard.allow_no_land
+// frob:tests crates/frob-ledger/src/event.rs::land_exemption
+#[test]
+fn no_land_with_a_reason_closes_and_audits_and_without_a_reason_is_a_usage_error() {
+    let dir = repo(&[]);
+    let id = chore(dir.path(), &[]);
+    unmerged_branch(dir.path(), &id);
+    let bare = close(dir.path(), &id, &["--no-evidence", "--no-land"]);
+    assert_eq!(code(&bare), 2);
+    let closed = ok(
+        dir.path(),
+        &[
+            "ticket",
+            "close",
+            &id,
+            "--outcome",
+            "done",
+            "--no-evidence",
+            "--no-land",
+            "--reason",
+            "work continues on another branch",
+        ],
+    );
+    assert_eq!(closed["data"]["category"], "done");
+    let shown = ok(dir.path(), &["ticket", "show", &id, "--events"]);
+    let kinds: Vec<_> = shown["data"]["events"]
+        .as_array()
+        .expect("events")
+        .iter()
+        .map(|e| e["kind"].as_str().expect("kind"))
+        .collect();
+    assert!(kinds.contains(&"land-exempt"), "{kinds:?}");
+}
+
+// frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
+// frob:tests crates/frob-evidence/src/done.rs::unmerged_commits
+#[test]
+fn merged_and_deleted_ticket_branches_close_cleanly_and_non_done_outcomes_are_exempt() {
+    let dir = repo(&[]);
+    let merged = chore(dir.path(), &[]);
+    let handle = unmerged_branch(dir.path(), &merged);
+    git(
+        dir.path(),
+        &[
+            "merge",
+            "-q",
+            "--ff-only",
+            &format!("ticket/{}", handle.trim_start_matches('~')),
+        ],
+    );
+    let out = close(dir.path(), &merged, &["--no-evidence", "--reason", "x"]);
+    assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stdout));
+
+    let deleted = chore(dir.path(), &[]);
+    let h2 = unmerged_branch(dir.path(), &deleted);
+    git(
+        dir.path(),
+        &[
+            "branch",
+            "-q",
+            "-D",
+            &format!("ticket/{}", h2.trim_start_matches('~')),
+        ],
+    );
+    let out = close(dir.path(), &deleted, &["--no-evidence", "--reason", "x"]);
+    assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stdout));
+
+    let dropped = chore(dir.path(), &[]);
+    unmerged_branch(dir.path(), &dropped);
+    let out = frob(
+        dir.path(),
+        &[
+            "ticket",
+            "close",
+            &dropped,
+            "--outcome",
+            "wont-fix",
+            "--reason",
+            "not needed",
+        ],
+    );
+    assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stdout));
+}
+
+// frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
+// frob:tests crates/frob/src/ticket/doctor_cmd.rs::unmerged_done_issues
+#[test]
+fn doctor_reports_a_done_ticket_whose_branch_is_unmerged_unless_exempted() {
+    let dir = repo(&[]);
+    let id = chore(dir.path(), &[]);
+    // Closed while the branch was absent, then the branch appears with unmerged work.
+    let closed = close(dir.path(), &id, &["--no-evidence", "--reason", "x"]);
+    assert_eq!(code(&closed), 0);
+    let clean = ok(dir.path(), &["ticket", "doctor"]);
+    assert_eq!(clean["data"]["ok"], true);
+    unmerged_branch(dir.path(), &id);
+    let out = frob(dir.path(), &["ticket", "doctor"]);
+    let v = json(&out);
+    assert_eq!(v["data"]["ok"], false, "{v}");
+    assert_eq!(v["data"]["issues"][0]["code"], "E-DOCTOR-UNMERGED", "{v}");
+    assert!(
+        v["data"]["issues"][0]["message"]
+            .to_string()
+            .contains("unmerged ticket work")
+    );
+
+    let exempt = chore(dir.path(), &[]);
+    unmerged_branch(dir.path(), &exempt);
+    let out = frob(
+        dir.path(),
+        &[
+            "ticket",
+            "close",
+            &exempt,
+            "--outcome",
+            "done",
+            "--no-evidence",
+            "--no-land",
+            "--reason",
+            "elsewhere",
+        ],
+    );
+    assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stdout));
+    let v = json(&frob(dir.path(), &["ticket", "doctor"]));
+    let issues = v["data"]["issues"].as_array().expect("issues");
+    assert_eq!(issues.len(), 1, "{v}");
+}

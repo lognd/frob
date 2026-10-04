@@ -1176,3 +1176,31 @@ fn ticket_json_keeps_every_finding_and_errors_outside_the_diff_print_in_full() {
         "blocking finding outside the diff is shown: {err}"
     );
 }
+
+// frob:ticket 01M42M1KK02KFZG39CXKAD47SZ
+// frob:tests crates/frob-check/src/verb.rs::lead_lines
+#[test]
+fn ticket_text_never_folds_a_required_unreadable_finding_into_a_count() {
+    let (dir, id, cli) = lead_fixture();
+    std::fs::write(
+        dir.path().join("docs-bad.md"),
+        [b'#', b' ', 0xff, 0xfe, b'\n'],
+    )
+    .unwrap();
+    let args = [
+        "check",
+        "--ticket",
+        id.as_str(),
+        "--base",
+        "main",
+        "--text",
+        "--fail-on",
+        "none",
+    ];
+    let (code, out, err) = gob_cli::run_for_test(&cli, &args, dir.path());
+    assert_eq!(code, 1, "required Unresolved fails the gate: {out}{err}");
+    assert!(
+        err.contains("READ001") && err.contains("docs-bad.md"),
+        "named in full although outside the diff: {err}"
+    );
+}

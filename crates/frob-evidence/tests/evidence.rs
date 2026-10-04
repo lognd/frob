@@ -674,3 +674,145 @@ fn captured_paths_become_placeholders_in_the_event_data() {
     );
     assert_eq!(rec.size, inline.len() as u64);
 }
+
+/// A repository with one passing and one failing pytest test (the failure message carries a non-ASCII letter).
+fn pytest_repo(allowed_tools: Option<&str>) -> tempfile::TempDir {
+    let dir = repo("base");
+    let p = dir.path();
+    std::fs::create_dir(p.join("tests")).expect("tests");
+    std::fs::write(
+        p.join("tests/test_probe.py"),
+        "def test_ok():\n    assert 1 + 1 == 2\n\n\nclass TestK:\n    def test_bad(self):\n        assert 1 == 2, \"caf\\u00e9\"\n",
+    )
+    .expect("py");
+    if let Some(tools) = allowed_tools {
+        std::fs::write(
+            p.join("frob.toml"),
+            format!("[evidence]\nallowed_tools = {tools}\n"),
+        )
+        .expect("frob.toml");
+    }
+    git(p, &["add", "-A"]);
+    git(p, &["commit", "-q", "-m", "py"]);
+    dir
+}
+
+/// Run `evidence add --provider pytest --ref <reference>`; returns (code, stdout, stderr, list count).
+fn add_pytest(dir: &Path, reference: &str) -> (i32, String, String, u64) {
+    let ledger = ledger(dir);
+    let (_, handle) = ticket(&ledger, TicketType::Task);
+    drop(ledger);
+    let cli = cli();
+    let run = |args: &[&str]| gob_cli::run_for_test(&cli, args, dir);
+    let (code, out, err) = run(&[
+        "--json",
+        "ticket",
+        "evidence",
+        "add",
+        &handle,
+        "--provider",
+        "pytest",
+        "--ref",
+        reference,
+        "--accepts",
+        "1",
+    ]);
+    let (_, listed, _) = run(&["--json", "ticket", "evidence", "list", &handle]);
+    let count = json(&listed)["data"]["count"].as_u64().expect("count");
+    (code, out, err, count)
+}
+
+// frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+#[test]
+fn pytest_evidence_records_per_test_results_as_a_measured_record() {
+    // frob:tests crates/frob-evidence/src/provider.rs::run_pytest
+    if !gob_testsupport::python_test_prerequisites("pytest_evidence_records_per_test_results") {
+        return;
+    }
+    let dir = pytest_repo(None);
+    let (code, out, err, count) = add_pytest(dir.path(), "tests/test_probe.py");
+    assert_eq!(code, 0, "{out}{err}");
+    assert_eq!(count, 1);
+    let rec = &json(&out)["data"]["record"];
+    assert_eq!(rec["provider"], "pytest", "{out}");
+    assert_eq!(rec["status"], "measured", "{out}");
+    assert_eq!(
+        rec["passed"], false,
+        "a failing test fails the record: {out}"
+    );
+    let names = |k: &str| -> Vec<String> {
+        rec[k]
+            .as_array()
+            .expect(k)
+            .iter()
+            .filter_map(|t| t.as_str().map(str::to_owned))
+            .collect()
+    };
+    assert_eq!(
+        names("tests"),
+        [
+            "tests/test_probe.py::test_ok",
+            "tests/test_probe.py::TestK::test_bad"
+        ],
+        "{out}"
+    );
+    assert_eq!(
+        names("failed_tests"),
+        ["tests/test_probe.py::TestK::test_bad"]
+    );
+    let inline = rec["inline"].as_str().expect("inline transcript");
+    assert!(
+        inline.is_ascii(),
+        "captured text goes through the escape path"
+    );
+    assert!(
+        !inline.contains(&dir.path().display().to_string()),
+        "captured text goes through the scrub path: {inline}"
+    );
+}
+
+// frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+#[test]
+fn a_pytest_node_id_runs_just_that_test() {
+    // frob:tests crates/frob-evidence/src/provider.rs::run_pytest
+    if !gob_testsupport::python_test_prerequisites("a_pytest_node_id_runs_just_that_test") {
+        return;
+    }
+    let dir = pytest_repo(None);
+    let (code, out, err, _) = add_pytest(dir.path(), "tests/test_probe.py::test_ok");
+    assert_eq!(code, 0, "{out}{err}");
+    let rec = &json(&out)["data"]["record"];
+    assert_eq!(rec["passed"], true, "{out}");
+    assert_eq!(rec["tests"], json_array(&["tests/test_probe.py::test_ok"]));
+}
+
+fn json_array(items: &[&str]) -> serde_json::Value {
+    serde_json::Value::Array(items.iter().map(|s| serde_json::Value::from(*s)).collect())
+}
+
+// frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+#[test]
+fn pytest_collecting_nothing_refuses_and_records_nothing() {
+    // frob:tests crates/frob-evidence/src/provider.rs::capture
+    if !gob_testsupport::python_test_prerequisites("pytest_collecting_nothing_refuses") {
+        return;
+    }
+    let dir = pytest_repo(None);
+    let (code, out, err, count) = add_pytest(dir.path(), "-k no_such_test_anywhere");
+    assert_eq!(code, 2, "{out}{err}");
+    assert_eq!(json(&out)["error"]["code"], "E-EVIDENCE-NO-TESTS");
+    assert_eq!(count, 0);
+}
+
+// frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+#[test]
+fn pytest_outside_the_allowlist_is_refused_without_running_anything() {
+    // frob:tests crates/frob-evidence/src/provider.rs::run_pytest
+    let dir = pytest_repo(Some("[\"cargo\", \"git\"]"));
+    let (code, out, err, count) = add_pytest(dir.path(), "tests");
+    assert_eq!(code, 3, "{out}{err}");
+    let e = &json(&out)["error"];
+    assert_eq!(e["code"], "E-EVIDENCE-TOOL");
+    assert!(e["remedy"].as_str().expect("remedy").contains("pytest"));
+    assert_eq!(count, 0);
+}

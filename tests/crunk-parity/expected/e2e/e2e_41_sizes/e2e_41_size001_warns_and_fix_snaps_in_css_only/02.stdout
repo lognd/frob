@@ -1,0 +1,105 @@
+{
+  "version": 2,
+  "violations": [
+    {
+      "rule": "SIZE001",
+      "severity": "warn",
+      "path": "frontend/components/Tap.tsx",
+      "line": 2,
+      "message": "width: 45px is off the scale; between var(--size-44) and var(--size-64)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": "--size-44"
+    },
+    {
+      "rule": "SIZE001",
+      "severity": "warn",
+      "path": "styles/components/tap.css",
+      "line": 2,
+      "message": "width: 45px is off the scale; between var(--size-44) and var(--size-64)",
+      "fixable": true,
+      "waived": false,
+      "suggested_token": "--size-44"
+    },
+    {
+      "rule": "TOKENS001",
+      "severity": "error",
+      "path": "styles/tokens.css",
+      "line": 0,
+      "message": "tokens file drifted; run `crunk tokens` to regenerate",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    }
+  ],
+  "counts": {
+    "error": 1,
+    "warning": 2,
+    "waived": 0
+  },
+  "contrast": {
+    "pairs": [
+      {
+        "role": "body",
+        "foreground": "ink",
+        "background": "paper",
+        "ratio": 16.64,
+        "floor": 4.5,
+        "passes": true
+      }
+    ]
+  },
+  "tokens": {
+    "status": "drifted"
+  },
+  "unused_tokens": [
+    "--color-accent",
+    "--font-size-12",
+    "--font-size-14",
+    "--font-size-16",
+    "--font-size-20",
+    "--font-size-24",
+    "--font-size-32",
+    "--font-size-48",
+    "--layer-base",
+    "--layer-dropdown",
+    "--layer-overlay",
+    "--layer-toast",
+    "--radius-0",
+    "--radius-16",
+    "--radius-4",
+    "--radius-8",
+    "--size-16",
+    "--size-24",
+    "--size-32",
+    "--size-44",
+    "--size-64",
+    "--space-0",
+    "--space-12",
+    "--space-16",
+    "--space-24",
+    "--space-32",
+    "--space-4",
+    "--space-48",
+    "--space-64",
+    "--space-8"
+  ],
+  "files": {
+    "frontend/components/Tap.tsx": {
+      "error": 0,
+      "warning": 1
+    },
+    "styles/base/reset.css": {
+      "error": 0,
+      "warning": 0
+    },
+    "styles/components/tap.css": {
+      "error": 0,
+      "warning": 1
+    },
+    "styles/tokens.css": {
+      "error": 1,
+      "warning": 0
+    }
+  }
+}

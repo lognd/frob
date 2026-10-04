@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--config",
+    "<ROOT>/sibling/does-not-exist.toml"
+  ],
+  "command": "python -m crunk check --config <ROOT>/sibling/does-not-exist.toml",
+  "cwd": "sibling",
+  "env": {},
+  "node": "tests/system/test_e2e_52_config.py::test_e2e_52_borrowed_spec_judges_tree_with_no_crunk_toml",
+  "setup_deleted": [],
+  "stdin": null
+}

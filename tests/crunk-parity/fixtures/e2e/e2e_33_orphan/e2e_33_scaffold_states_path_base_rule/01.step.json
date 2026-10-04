@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_33_orphan.py::test_e2e_33_scaffold_states_path_base_rule",
+  "setup_deleted": [],
+  "stdin": null
+}
