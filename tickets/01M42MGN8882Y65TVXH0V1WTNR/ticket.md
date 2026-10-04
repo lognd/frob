@@ -7,12 +7,12 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:59:48Z"
-updated = "2026-10-04T11:40:51Z"
+updated = "2026-10-04T11:48:53Z"
 scope = ["crates/frob/src/ticket/**"]
 
 [[acceptance]]
 text = "Given a leased ticket, when it is closed or dropped, then its lease is released and an overlapping work succeeds"
-bound = false
+bound = true
 +++
 
 Reproduced: close leaves the lease (contradicts the design: leases release on every terminal transition). Release on close and drop, and reap leases of terminal tickets. Evidence and repro: notes/review/v1-gap/D-incidents.md (P-03).
