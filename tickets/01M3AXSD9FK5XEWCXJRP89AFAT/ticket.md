@@ -3,13 +3,13 @@ id = "01M3AXSD9FK5XEWCXJRP89AFAT"
 title = "STORE305: search index written as the sole source of truth (no canonical-store writer for the same entity)"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSDBCZ0WN62JE8P0BQRA2"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:01Z"
 aliases = ["T-6447"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_strata_mismatch.py", "tests/fixtures/store/store305-search-as-source-of-truth/**"]
 
 [[links]]
