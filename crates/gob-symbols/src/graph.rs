@@ -723,7 +723,7 @@ impl SymbolGraph {
 
     fn build(mut files: Vec<FileSymbols>, deps: Option<&mut CrateDeps>) -> Self {
         let t = std::time::Instant::now();
-        let mut lap = |phase: &str| {
+        let lap = |phase: &str| {
             tracing::debug!(
                 phase,
                 ms = t.elapsed().as_millis(),
