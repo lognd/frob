@@ -2,13 +2,13 @@
 id = "01M3ZX7D9CT156TR8J4YTQ622S"
 title = "GRL error goldens GRL001-GRL015 written before the compiler"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:19Z"
-updated = "2026-10-03T03:34:19Z"
+updated = "2026-10-04T04:25:07Z"
 idempotency_key = "m2-grl-goldens"
 labels = ["milestone:2", "area:grl", "kind:test"]
 scope = ["crates/gob-plan/tests/grl_errors/**"]
