@@ -24,7 +24,7 @@ use frob_ledger::guards::{CloseContext, CloseGuard, default_close_guards};
 use frob_ledger::model::Category;
 use frob_ledger::ops::TicketView;
 use frob_ledger::{Ledger, RefMode, TicketId};
-use gob_diagnostics::{ExitCode, Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass};
 use gob_git::{MergeOutcome, Oid, Repo, StatusOptions, TreeRef};
 
 use crate::error::{LandError, needs_action};
@@ -520,11 +520,14 @@ fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<
     }
 }
 
-/// Run the ticket-scoped check in the worktree; refuse on a finding at the configured `fail_on` that is new relative to the base tip.
+/// Run the checks in the worktree; refuse on a finding at the configured `fail_on` that is new relative to the base tip.
 ///
-/// The ratchet (rules.md section 6): blocking findings whose fingerprint
-/// already exists on the base tip are returned as pre-existing, not refused;
-/// base findings that are gone are returned as resolved.
+/// The ratchet (rules.md section 6) compares like with like: the unscoped
+/// check at the head against the unscoped check at the base, so repository
+/// level findings such as REL001 match across the two. The ticket-scoped run
+/// adds the ticket-only findings (SCOPE001, done rules) that no unscoped run
+/// has. Blocking findings already on the base are returned as pre-existing,
+/// base findings that are gone as resolved.
 fn verify_check(
     wt: &Repo,
     wt_path: &Path,
@@ -533,96 +536,59 @@ fn verify_check(
     base: &str,
     opts: &LandOptions,
 ) -> Result<Ratchet, LandError> {
-    let report = frob_check::run(
-        wt_path,
-        &CheckOptions {
-            ticket: Some(handle.to_owned()),
-            base: Some(base.to_owned()),
-            ledger: Some(ledger.config().clone()),
-            skip_telemetry: true,
-            changelog_exempt: opts.no_changelog_reason.is_some(),
-            ..CheckOptions::default()
-        },
-    )?;
-    let head = ratchet::notes(&report);
+    let run = |ticket: Option<&str>| {
+        frob_check::run(
+            wt_path,
+            &CheckOptions {
+                ticket: ticket.map(str::to_owned),
+                base: ticket.map(|_| base.to_owned()),
+                ledger: Some(ledger.config().clone()),
+                skip_telemetry: true,
+                changelog_exempt: opts.no_changelog_reason.is_some(),
+                ..CheckOptions::default()
+            },
+        )
+    };
+    let scoped = run(Some(handle))?;
+    let head = run(None)?;
     let base_oid = wt.rev_parse(base)?.to_string();
     let base_set = ratchet::base_findings(wt, wt_path, &base_oid, ledger.config())?;
-    let changed: std::collections::HashSet<String> = wt
-        .diff_names(
-            &TreeRef::Oid(wt.rev_parse(base)?),
-            &TreeRef::Oid(wt.rev_parse("HEAD")?),
-        )?
-        .into_iter()
-        .map(|c| c.path.clone())
-        .collect();
-    let resolved = ratchet::resolved(&base_set, &head, &changed);
-    // Reuse the gate's own predicate on one finding at a time so the list matches the verdict.
-    let mut blocking: Vec<_> = report
-        .findings
-        .iter()
-        .zip(&head)
-        .filter(|(f, _)| {
-            report.exit_code() != ExitCode::Ok
-                && gob_diagnostics::fail_on(
-                    std::slice::from_ref(*f),
-                    report.fail_on.threshold(),
-                    report.fail_on_unresolved,
-                ) != ExitCode::Ok
-        })
-        .collect();
-    blocking.sort_by_key(|(f, _)| std::cmp::Reverse(f.severity));
-    let non_blocking = report.findings.len() - blocking.len();
-    let (new, old) = ratchet::split(
-        blocking.iter().map(|(f, n)| (*f, n.fingerprint.as_str())),
-        &base_set,
-    );
-    let pre_existing: Vec<ratchet::FindingNote> = blocking
-        .iter()
-        .filter(|(f, _)| old.iter().any(|o| std::ptr::eq(*o, *f)))
-        .map(|(_, n)| (*n).clone())
-        .collect();
+    let verdict = ratchet::verdict(&scoped, &head, &base_set);
     tracing::info!(
-        findings = report.findings.len(),
-        new = new.len(),
-        pre_existing = pre_existing.len(),
-        resolved = resolved.len(),
-        non_blocking,
+        new = verdict.new.len(),
+        pre_existing = verdict.pre_existing.len(),
+        resolved = verdict.resolved.len(),
+        non_blocking = verdict.non_blocking,
         "land check ratchet"
     );
-    if new.is_empty() {
+    if verdict.new.is_empty() {
         return Ok(Ratchet {
-            pre_existing,
-            resolved,
+            pre_existing: verdict.pre_existing,
+            resolved: verdict.resolved,
         });
     }
-    tracing::warn!(blocking = new.len(), non_blocking, "land check red");
-    Err(refuse(
-        &report,
-        &new,
-        non_blocking,
-        pre_existing.len(),
-        (handle, base),
-    ))
+    tracing::warn!(blocking = verdict.new.len(), "land check red");
+    Err(refuse(&scoped, &verdict, (handle, base)))
 }
 
-/// The `E-LAND-CHECK-RED` refusal naming only the `new` blocking findings.
+/// The `E-LAND-CHECK-RED` refusal naming only the new blocking findings of `verdict`.
 fn refuse(
     report: &frob_check::CheckReport,
-    new: &[&gob_rules::Finding],
-    non_blocking: usize,
-    pre_existing: usize,
+    verdict: &ratchet::Verdict,
     (handle, base): (&str, &str),
 ) -> LandError {
+    let new = &verdict.new;
+    let (non_blocking, pre_existing) = (verdict.non_blocking, verdict.pre_existing.len());
     let listed: Vec<String> = new
         .iter()
         .take(LIST_CAP)
-        .map(|f| {
-            let at = f
-                .span
-                .as_ref()
-                .and_then(|s| report.files.path(s.file))
-                .unwrap_or("-");
-            format!("{} {at}: {}", f.rule, f.message)
+        .map(|n| {
+            format!(
+                "{} {}: {}",
+                n.rule,
+                n.path.as_deref().unwrap_or("-"),
+                n.message
+            )
         })
         .collect();
     let hidden = new.len().saturating_sub(LIST_CAP);

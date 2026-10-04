@@ -174,36 +174,76 @@ fn run_at_base(
     Ok(notes(&result?))
 }
 
-/// Findings of `head` that are absent from `base` (new) and present in it (pre-existing).
-pub(crate) fn split<'a, T>(
-    head: impl IntoIterator<Item = (T, &'a str)>,
-    base: &[FindingNote],
-) -> (Vec<T>, Vec<T>) {
-    let known: HashSet<&str> = base.iter().map(|n| n.fingerprint.as_str()).collect();
-    let (mut new, mut old) = (Vec::new(), Vec::new());
-    for (item, fp) in head {
-        if known.contains(fp) {
-            old.push(item);
-        } else {
-            new.push(item);
-        }
-    }
-    (new, old)
+/// The ratchet's decision for one land.
+#[derive(Debug, Default)]
+pub(crate) struct Verdict {
+    /// Blocking findings absent from the base: ticket-only findings and head findings the base lacks.
+    pub new: Vec<FindingNote>,
+    /// Blocking head findings already on the base.
+    pub pre_existing: Vec<FindingNote>,
+    /// Base findings no longer present at the head.
+    pub resolved: Vec<FindingNote>,
+    /// Findings of the ticket-scoped run below the gate (counted in the refusal).
+    pub non_blocking: usize,
 }
 
-/// Base findings gone at the head: located in a path the ticket changed and absent from `head`.
-///
-/// Location-free findings are never reported resolved: the scoped head run and the
-/// unscoped base run do not evaluate the same repository-level rules.
-pub(crate) fn resolved(
-    base: &[FindingNote],
-    head: &[FindingNote],
-    changed: &HashSet<String>,
-) -> Vec<FindingNote> {
-    let now: HashSet<&str> = head.iter().map(|n| n.fingerprint.as_str()).collect();
-    base.iter()
-        .filter(|n| !now.contains(n.fingerprint.as_str()))
-        .filter(|n| n.path.as_ref().is_some_and(|p| changed.contains(p)))
-        .cloned()
+/// Notes of the findings of `report` that fail the gate (its own `fail_on` predicate, one finding at a time).
+fn blocking(report: &CheckReport) -> Vec<FindingNote> {
+    if report.exit_code() == gob_diagnostics::ExitCode::Ok {
+        return Vec::new();
+    }
+    report
+        .findings
+        .iter()
+        .zip(notes(report))
+        .filter(|(f, _)| {
+            gob_diagnostics::fail_on(
+                std::slice::from_ref(*f),
+                report.fail_on.threshold(),
+                report.fail_on_unresolved,
+            ) != gob_diagnostics::ExitCode::Ok
+        })
+        .map(|(_, n)| n)
         .collect()
+}
+
+/// Decide the ratchet: compare the unscoped `head` run with the unscoped `base` set, and add the
+/// ticket-only blocking findings of the `scoped` run (a located finding the unscoped run lacks, or a
+/// location-free one of a rule the unscoped run never produces, such as SCOPE001); a location-free
+/// finding of a rule both runs produce is judged on the unscoped side only, so repository-level text
+/// that differs between the two runs cannot read as new.
+pub(crate) fn verdict(scoped: &CheckReport, head: &CheckReport, base: &[FindingNote]) -> Verdict {
+    let known: HashSet<&str> = base.iter().map(|n| n.fingerprint.as_str()).collect();
+    let head_notes = notes(head);
+    let head_fps: HashSet<&str> = head_notes.iter().map(|n| n.fingerprint.as_str()).collect();
+    let head_rules: HashSet<&str> = head_notes.iter().map(|n| n.rule.as_str()).collect();
+    let scoped_blocking = blocking(scoped);
+    let mut out = Verdict {
+        non_blocking: scoped.findings.len() - scoped_blocking.len(),
+        ..Verdict::default()
+    };
+    let mut seen = HashSet::new();
+    for n in scoped_blocking {
+        let ticket_only = !head_fps.contains(n.fingerprint.as_str())
+            && (n.path.is_some() || !head_rules.contains(n.rule.as_str()));
+        if ticket_only && seen.insert(n.fingerprint.clone()) {
+            out.new.push(n);
+        }
+    }
+    for n in blocking(head) {
+        if !seen.insert(n.fingerprint.clone()) {
+            continue;
+        }
+        if known.contains(n.fingerprint.as_str()) {
+            out.pre_existing.push(n);
+        } else {
+            out.new.push(n);
+        }
+    }
+    out.resolved = base
+        .iter()
+        .filter(|n| !head_fps.contains(n.fingerprint.as_str()))
+        .cloned()
+        .collect();
+    out
 }

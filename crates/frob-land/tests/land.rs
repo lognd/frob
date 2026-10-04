@@ -885,3 +885,65 @@ fn fixing_a_base_finding_is_reported_resolved() {
     );
     assert!(out.pre_existing.is_empty(), "{:?}", out.pre_existing);
 }
+
+/// Make `v0.1.0` a hand-made release tag (no recorded cut): REL001 fires wherever it is checked.
+fn stray_tag(fx: &Fixture, name: &str) {
+    git(&fx.root, &["tag", name, "main"]);
+}
+
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    stray_tag(&fx, "v0.1.0");
+    let s = fx.start("Unrelated", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+
+    let out = land(&fx.root, &Fixture::opts(&s)).expect("REL001 on the base does not block");
+    assert!(out.closed);
+    assert!(
+        out.pre_existing.iter().any(|n| n.rule == "REL001"),
+        "{:?}",
+        out.pre_existing
+    );
+}
+
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn a_release_finding_the_ticket_introduces_refuses() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    // Base: only `v0.1.0` is a product tag (it is stray, so REL001 already fires); `app-v0.2.0` is not a product tag yet.
+    commit_on_main(
+        &fx,
+        "frob.toml",
+        "[pm]\ndone_requires = [\"criteria_evidenced\"]\n[release]\ntag = \"v{version}\"\n",
+    );
+    stray_tag(&fx, "v0.1.0");
+    stray_tag(&fx, "app-v0.2.0");
+    let s = fx.start("Rename tags", &["src/**", "frob.toml"]);
+    Fixture::commit_in(
+        &s.wt,
+        "frob.toml",
+        "[pm]\ndone_requires = [\"criteria_evidenced\"]\n[release]\ntag = \"{product}-v{version}\"\nproducts = [\"app\"]\n",
+    );
+    Fixture::evidence(&s, "frob.toml");
+    let before = fx.main_tip();
+
+    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("new REL001 refuses");
+    let msg = refusal(&err).message.clone();
+    assert_eq!(refusal(&err).code, "E-LAND-CHECK-RED");
+    assert!(msg.contains("REL001"), "{msg}");
+    assert!(msg.contains("app-v0.2.0"), "names the new tag: {msg}");
+    assert!(
+        !msg.contains("v0.1.0:") && !msg.contains("`v0.1.0`"),
+        "{msg}"
+    );
+    assert_eq!(fx.main_tip(), before, "base did not move");
+}

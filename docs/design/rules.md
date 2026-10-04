@@ -330,18 +330,21 @@ section, never dropped.
 - `--delta` uses a per-checkout `.frob/baseline` of finding fingerprints
   (advisory, untracked), same as v1.
 - `frob land` applies the same fingerprints as a ratchet on the base tip
-  (~QAFRXM3): it refuses a finding at or above `fail_on` only when its
-  fingerprint is absent from the base. The base side is the unscoped check
-  run on the base commit in a throwaway detached worktree, cached per base
-  commit in `.frob/land-base/<oid>.json` (a moved base has a new oid, so a
-  `--wait` retry recomputes it). Blocking findings already on the base are
-  listed in land's report as `pre_existing`, base findings in a path the
-  ticket changed that no longer occur are listed as `resolved`; nothing is
-  hidden, and `frob check`, CI and release status still fail on them.
-  Location-free findings are matched by fingerprint but never reported as
-  resolved, because the ticket-scoped and unscoped runs do not evaluate
-  the same repository-level rules. SCOPE001 and the done guards are about
-  the ticket and are unaffected.
+  (~QAFRXM3), comparing like with like: the unscoped check at the head
+  against the unscoped check at the base, both with the same options and
+  rule set. It refuses a finding at or above `fail_on` only when its
+  fingerprint is absent from the base. The base side runs in a throwaway
+  detached worktree and is cached per base commit in
+  `.frob/land-base/<oid>.json` (a moved base has a new oid, so a `--wait`
+  retry recomputes it). The ticket-scoped run still supplies the
+  ticket-only findings (SCOPE001, ticket-scoped rules) that no unscoped run
+  has, and a repository-level finding such as REL001 is judged only on the
+  unscoped side, so text that differs between the scoped and unscoped runs
+  cannot make an old tag read as new. Blocking findings already on the base
+  are listed in land's report as `pre_existing`, base findings absent at the
+  head as `resolved`; nothing is hidden, and `frob check`, CI and release
+  status still fail on them. The done guards are about the ticket and are
+  unaffected.
 - Quarantine and `[land] verify = "ci"` are Milestone 2 or later (D36).
   With a sub-second check, landing runs the full check synchronously,
   so milestone 1 has no post-land red to quarantine, and the
