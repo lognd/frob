@@ -7,12 +7,12 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T03:22:55Z"
-updated = "2026-10-04T03:47:57Z"
+updated = "2026-10-04T03:49:17Z"
 scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/scrub.rs", "crates/frob/src/ticket/**", "crates/frob/tests/**", "crates/gob-config/**", "docs/design/tickets.md", "docs/design/architecture.md", "docs/reference/rules/**"]
 
 [[acceptance]]
 text = "Given a local rule for a private term, when ticket new or update is given text containing it, then it exits 2 naming the rule label without echoing the term and writes nothing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given ledger files already containing the term, when ticket doctor --fix runs, then one commit replaces it everywhere, recomputes inline digests, records audit events without the term, and a second run changes nothing"
