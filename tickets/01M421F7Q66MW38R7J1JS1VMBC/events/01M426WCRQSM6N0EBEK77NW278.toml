@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T01:01:33Z"
+digest = "29c4f4ccfc5e131dd14025a7ae1db1e9b31c4d94f397336e7baaf2a08785e8d9"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.38s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 25f45ed3-aa5c-498c-ad7f-b51d7fe9adc6 with nextest profile: default
+    Starting 1 test across 154 binaries (1366 tests skipped)
+        PASS [   8.033s] frob-cli::sibling_discovery doctor_reports_both_grimbles_and_uses_the_one_beside_frob
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   8.306s] 1 test run: 1 passed, 1366 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "doctor_reports_both_grimbles_and_uses_the_one_beside_frob"
+size = 582
+status = "measured"
+tests = ["doctor_reports_both_grimbles_and_uses_the_one_beside_frob"]
+at = "2026-10-04T01:01:33Z"
+actor = "lognd"
+rev = 1
