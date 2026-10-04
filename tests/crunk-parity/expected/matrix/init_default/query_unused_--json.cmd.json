@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "query",
+    "unused",
+    "--json"
+  ],
+  "command": "python -m crunk query unused --json",
+  "cwd": "fixtures/static/init_default",
+  "exit": 0,
+  "project": "init_default"
+}

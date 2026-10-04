@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens",
+    "--format",
+    "json"
+  ],
+  "command": "python -m crunk tokens --format json",
+  "cwd": "fixtures/static/gallery005_routes",
+  "exit": 0,
+  "project": "gallery005_routes"
+}

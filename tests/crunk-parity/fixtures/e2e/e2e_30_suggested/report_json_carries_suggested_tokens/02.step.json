@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--report",
+    "--json"
+  ],
+  "command": "python -m crunk check --report --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_30_suggested.py::test_report_json_carries_suggested_tokens",
+  "setup_deleted": [],
+  "stdin": null
+}

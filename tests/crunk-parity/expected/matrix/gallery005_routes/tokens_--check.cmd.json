@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "tokens",
+    "--check"
+  ],
+  "command": "python -m crunk tokens --check",
+  "cwd": "fixtures/static/gallery005_routes",
+  "exit": 1,
+  "project": "gallery005_routes"
+}

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_46_explain_hardened.py::test_e2e_46_explain_rgb_companion_answers_channel_form",
+  "setup_deleted": [],
+  "stdin": null
+}

@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "check",
+    "--json"
+  ],
+  "command": "python -m crunk check --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_07_json_exit_codes.py::test_json_clean_tree_exits_0_and_parses",
+  "setup_deleted": [],
+  "stdin": null
+}

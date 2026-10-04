@@ -1,0 +1,9 @@
+{
+  "argv": [
+    "preview"
+  ],
+  "command": "python -m crunk preview",
+  "cwd": "fixtures/static/int04_default",
+  "exit": 0,
+  "project": "int04_default"
+}

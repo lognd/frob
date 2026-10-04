@@ -1,0 +1,9 @@
+{
+  "argv": [
+    "preview"
+  ],
+  "command": "python -m crunk preview",
+  "cwd": "fixtures/static/gallery005_routes",
+  "exit": 0,
+  "project": "gallery005_routes"
+}

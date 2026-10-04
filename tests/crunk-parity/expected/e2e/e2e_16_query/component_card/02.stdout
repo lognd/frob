@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "kind": "component",
+  "results": [
+    {
+      "name": "card",
+      "path": "styles/components/card.css",
+      "elements": [
+        "title"
+      ],
+      "modifiers": [
+        "large"
+      ],
+      "tokens": [
+        "--color-accent",
+        "--color-ink",
+        "--space-16",
+        "--space-8"
+      ],
+      "utilities": [],
+      "colors": [],
+      "spacings": [],
+      "layers": []
+    }
+  ]
+}

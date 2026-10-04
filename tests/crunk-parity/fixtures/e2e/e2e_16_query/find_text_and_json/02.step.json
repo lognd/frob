@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "query",
+    "find",
+    "card"
+  ],
+  "command": "python -m crunk query find card",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_16_query.py::test_find_text_and_json",
+  "setup_deleted": [],
+  "stdin": null
+}

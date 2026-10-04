@@ -1,0 +1,5 @@
+.app {
+  color: var(--color-ink);
+  padding: 8px;
+}
+.bad { color: #ee2211; }

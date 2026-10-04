@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "kind": "color",
+  "results": [
+    {
+      "name": "ink",
+      "value": "#1a1a1a",
+      "distance": 0.0,
+      "exact": true,
+      "alpha_variant": false
+    },
+    {
+      "name": "accent",
+      "value": "#2f6fed",
+      "distance": 396.09,
+      "exact": false,
+      "alpha_variant": false
+    },
+    {
+      "name": "paper",
+      "value": "#fafaf7",
+      "distance": 669.41,
+      "exact": false,
+      "alpha_variant": false
+    }
+  ]
+}

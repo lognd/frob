@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_27_theme.py::test_palette_edit_changes_tailwind_file",
+  "setup_deleted": [],
+  "stdin": null
+}

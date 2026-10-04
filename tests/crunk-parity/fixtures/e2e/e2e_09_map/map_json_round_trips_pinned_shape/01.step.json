@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_09_map.py::test_map_json_round_trips_pinned_shape",
+  "setup_deleted": [],
+  "stdin": null
+}

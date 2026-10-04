@@ -1,0 +1,3 @@
+component card                           styles/components/card.css  classes=3 declarations=4  uses=3
+class     card--large                    styles/components/card.css  uses=1
+class     card__title                    styles/components/card.css  uses=1

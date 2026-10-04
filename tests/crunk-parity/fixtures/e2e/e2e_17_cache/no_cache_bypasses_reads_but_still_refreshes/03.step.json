@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--json",
+    "--no-cache"
+  ],
+  "command": "python -m crunk check --json --no-cache",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_17_cache.py::test_no_cache_bypasses_reads_but_still_refreshes",
+  "setup_deleted": [],
+  "stdin": null
+}

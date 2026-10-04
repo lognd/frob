@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "explain",
+    "layer-base",
+    "--json"
+  ],
+  "command": "python -m crunk explain layer-base --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_45_selfmap.py::test_e2e_45_selfmap_both_knobs_explain_and_unused",
+  "setup_deleted": [],
+  "stdin": null
+}

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_26_tsx_inventory.py::test_cache_key_changes_when_jsx_source_or_tailwind_config_changes",
+  "setup_deleted": [],
+  "stdin": null
+}

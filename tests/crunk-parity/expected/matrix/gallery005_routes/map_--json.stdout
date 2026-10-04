@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "buckets": {
+    "base": [],
+    "components": [],
+    "layouts": [],
+    "utilities": [],
+    "entry": [],
+    "jsx": [
+      {
+        "path": "src/router.tsx",
+        "component": "router",
+        "declarations": 0,
+        "utilities": 0
+      }
+    ],
+    "tokens": [
+      {
+        "path": "src/styles/tokens.css",
+        "component": null,
+        "classes": 0
+      }
+    ]
+  },
+  "strays": []
+}

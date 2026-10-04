@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "query",
+    "uses",
+    "--json",
+    "--",
+    "--color-ink"
+  ],
+  "command": "python -m crunk query uses --json -- --color-ink",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_16_query.py::test_uses_leading_dashes_optional",
+  "setup_deleted": [],
+  "stdin": null
+}

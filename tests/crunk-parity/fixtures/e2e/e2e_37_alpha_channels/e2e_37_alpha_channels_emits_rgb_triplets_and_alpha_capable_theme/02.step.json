@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_37_alpha_channels.py::test_e2e_37_alpha_channels_emits_rgb_triplets_and_alpha_capable_theme",
+  "setup_deleted": [],
+  "stdin": null
+}

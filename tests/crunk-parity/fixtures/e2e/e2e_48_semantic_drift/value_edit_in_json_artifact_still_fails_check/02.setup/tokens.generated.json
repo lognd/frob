@@ -1,0 +1,18 @@
+{
+  "color-accent": "#2f6fed",
+  "color-ink": "#000000",
+  "color-paper": "#fafaf7",
+  "font-family-base": "Inter, system-ui",
+  "font-size-12": "12px",
+  "font-size-16": "16px",
+  "font-size-20": "20px",
+  "layer-base": "0",
+  "radius-0": "0px",
+  "radius-4": "4px",
+  "radius-8": "8px",
+  "space-0": "0px",
+  "space-12": "12px",
+  "space-16": "16px",
+  "space-4": "4px",
+  "space-8": "8px"
+}

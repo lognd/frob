@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "check"
+  ],
+  "command": "python -m crunk check",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_47_optional_dims.py::test_e2e_47_minimal_spec_without_layers_and_radii_loads_and_checks",
+  "setup_deleted": [],
+  "stdin": null
+}

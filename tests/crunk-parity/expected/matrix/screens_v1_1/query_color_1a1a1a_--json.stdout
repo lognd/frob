@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "kind": "color",
+  "results": [
+    {
+      "name": "bg-primary",
+      "value": "#282828",
+      "distance": 41.99,
+      "exact": false,
+      "alpha_variant": false
+    },
+    {
+      "name": "fg-primary",
+      "value": "#ebdbb2",
+      "distance": 562.2,
+      "exact": false,
+      "alpha_variant": false
+    }
+  ]
+}

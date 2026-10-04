@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "query",
+    "color",
+    "#1a1a1a",
+    "--json"
+  ],
+  "command": "python -m crunk query color #1a1a1a --json",
+  "cwd": "fixtures/static/gallery005_routes",
+  "exit": 0,
+  "project": "gallery005_routes"
+}

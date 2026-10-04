@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "map"
+  ],
+  "command": "python -m crunk map",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_15_output.py::test_map_output_paths_are_root_relative",
+  "setup_deleted": [],
+  "stdin": null
+}

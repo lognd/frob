@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_17_cache.py::test_no_cache_bypasses_reads_but_still_refreshes",
+  "setup_deleted": [],
+  "stdin": null
+}

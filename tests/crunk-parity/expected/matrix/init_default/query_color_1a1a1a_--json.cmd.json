@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "query",
+    "color",
+    "#1a1a1a",
+    "--json"
+  ],
+  "command": "python -m crunk query color #1a1a1a --json",
+  "cwd": "fixtures/static/init_default",
+  "exit": 0,
+  "project": "init_default"
+}

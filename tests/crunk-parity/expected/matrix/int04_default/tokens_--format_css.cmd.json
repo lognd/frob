@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens",
+    "--format",
+    "css"
+  ],
+  "command": "python -m crunk tokens --format css",
+  "cwd": "fixtures/static/int04_default",
+  "exit": 0,
+  "project": "int04_default"
+}

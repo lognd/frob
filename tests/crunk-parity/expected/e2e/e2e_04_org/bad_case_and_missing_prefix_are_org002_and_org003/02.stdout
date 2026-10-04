@@ -1,0 +1,4 @@
+styles/components/card.css:1  ORG002  error  class 'card_title' violates kebab case
+styles/components/card.css:1  ORG003  error  class 'card_title' does not carry the component prefix 'card'
+styles/components/card.css:2  ORG003  error  class 'title' does not carry the component prefix 'card'
+3 errors, 0 warnings, 0 waived
