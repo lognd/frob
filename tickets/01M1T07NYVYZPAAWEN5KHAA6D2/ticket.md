@@ -4,12 +4,12 @@ title = "F-261: a wrong-direction frob:tests directive parses silently and only 
 type = "task"
 flavour = "ux"
 category = "triage"
-priority = "medium"
+priority = "low"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:06:40Z"
 aliases = ["T-4059"]
-labels = ["milestone:0.540.0", "v1-cluster:C4a"]
+labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/graph/dsl.py"]
 +++
 
