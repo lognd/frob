@@ -149,10 +149,11 @@ fn now_secs() -> i64 {
 
 // frob:ticket 01M42B6T28RX9PVM3X6TSK0M4Y
 fn migrate(conn: &mut Connection) -> rusqlite::Result<()> {
-    conn.execute_batch("CREATE TABLE IF NOT EXISTS schema_version(version INTEGER NOT NULL);")?;
-    // One writer at a time: the version is read inside the write transaction, so two
-    // processes opening a fresh shared cache cannot both run the same migration.
+    // One writer at a time: the version table is created and read inside the write
+    // transaction, so two processes opening a fresh shared cache cannot both run the same
+    // migration or collide on the table creation.
     let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    tx.execute_batch("CREATE TABLE IF NOT EXISTS schema_version(version INTEGER NOT NULL);")?;
     let current: Option<i64> =
         tx.query_row("SELECT MAX(version) FROM schema_version", [], |r| r.get(0))?;
     let current = usize::try_from(current.unwrap_or(0)).unwrap_or(0);
@@ -165,14 +166,42 @@ fn migrate(conn: &mut Connection) -> rusqlite::Result<()> {
     tx.commit()
 }
 
+/// Retries `op` while SQLite reports BUSY/LOCKED, up to `timeout`.
+///
+/// Switching a fresh database to WAL fails with BUSY without consulting the busy handler when
+/// a peer is mid-switch, so `busy_timeout` alone does not cover a concurrent first open.
+// frob:ticket 01M42G1XH9FARCHDA7KCE69AVN
+fn retry_busy<T>(
+    timeout: Duration,
+    mut op: impl FnMut() -> rusqlite::Result<T>,
+) -> rusqlite::Result<T> {
+    let start = std::time::Instant::now();
+    loop {
+        match op() {
+            Err(rusqlite::Error::SqliteFailure(e, _))
+                if matches!(
+                    e.code,
+                    rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked
+                ) && start.elapsed() < timeout =>
+            {
+                tracing::debug!("cache database busy; retrying");
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            other => return other,
+        }
+    }
+}
+
 // frob:ticket 01M41ZSWGC86TY3K0NSA8AMNGF
 fn open_conn(dir: &Path, config: CacheConfig) -> Result<Connection, String> {
     std::fs::create_dir_all(dir).map_err(|e| format!("create dir: {e}"))?;
     let mut conn = Connection::open(dir.join(DB_FILE)).map_err(|e| format!("open: {e}"))?;
     conn.busy_timeout(config.busy_timeout)
         .map_err(|e| format!("busy_timeout: {e}"))?;
-    conn.pragma_update(None, "journal_mode", "WAL")
-        .map_err(|e| format!("wal: {e}"))?;
+    retry_busy(config.busy_timeout, || {
+        conn.pragma_update(None, "journal_mode", "WAL")
+    })
+    .map_err(|e| format!("wal: {e}"))?;
     // The cache is regenerable, and in WAL mode NORMAL only risks the last commits on power loss:
     // FULL would fsync every one of the thousands of per-file puts of a cold run.
     conn.pragma_update(None, "synchronous", "NORMAL")
