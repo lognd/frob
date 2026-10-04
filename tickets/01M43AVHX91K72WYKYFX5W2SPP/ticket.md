@@ -1,0 +1,41 @@
++++
+id = "01M43AVHX91K72WYKYFX5W2SPP"
+title = "Pack scaffold: crunk-web (A11Y, SEO, LAUNCH, WEBPERF markup and assets)"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+reporter = "lognd"
+created = "2026-10-04T11:30:14Z"
+updated = "2026-10-04T11:30:14Z"
+idempotency_key = "crunk-plan-webpack"
+labels = ["area:crunk"]
+scope = ["packs/crunk-web/**", "crates/crunk-check/src/packs.rs", "docs/crunk/packs/crunk-web.md"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7FYE5D1N2SY01VNVVACK"
+
+[[links]]
+kind = "blocked-by"
+target = "01M43ARYFVG86PAGGM78JGRZY3"
+
+[[links]]
+kind = "blocked-by"
+target = "01M43ATCF5GGK59S96K1ZF0G9C"
+
+[[acceptance]]
+text = "Given the scaffold, when `crunk rule catalog` lists packs, then crunk-web shows its four families and one rule each"
+bound = false
+
+[[acceptance]]
+text = "Given a pack rule without a firing and a clean example, when the pack compiles, then it fails (GRL requirement)"
+bound = false
+
+[[acceptance]]
+text = "Given the pack lock, when verified, then the digest matches the pack tree"
+bound = false
++++
+
+D89 (docs/design/README.md), boundaries.md 2.5, plugins.md. Create the pack directory and manifest (packs.md tier-1 data file: name, version, families A11Y, SEO, LAUNCH, WEBPERF registered under the crunk namespace, languages typescript, css and html if the adapter exists, vocabularies, one worked GRL rule per family with firing and clean examples so the rule compiles), the pack lock entry, and crunk's registration of the pack as a std pack (default on or opt-in is an owner decision, see design gaps; implement it as a [packs] config switch). The v1 catalog is notes/v1/gates-and-rules.md section 11. No v1 Python crunk source: these families never existed in crunk.
