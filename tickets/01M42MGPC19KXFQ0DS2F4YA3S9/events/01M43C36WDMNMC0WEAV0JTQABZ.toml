@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T11:51:53Z"
+digest = "0e569bc42b3cc2ffa28d3ff8e2d5a49c94c8b436856f5223c1e9f59b4755d992"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4df64452-b480-4952-ae97-3fffe405e102 with nextest profile: default
+    Starting 1 test across 2 binaries (30 tests skipped)
+        PASS [   1.853s] frob-land::land a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.855s] 1 test run: 1 passed, 30 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one)'"
+size = 634
+status = "measured"
+tests = ["a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one"]
+at = "2026-10-04T11:51:53Z"
+actor = "lognd"
+rev = 1

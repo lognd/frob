@@ -10,6 +10,7 @@ pub mod doctor_cmd;
 pub mod fragment_cmd;
 pub mod merge_cmd;
 pub mod read;
+pub mod terminal_lease;
 pub mod write;
 
 use frob_ledger::model::{Category, Class, Outcome, Priority, TicketType};
