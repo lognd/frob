@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T23:44:17Z"
+digest = "4e7990f4a1427773decf024ba51bfa86d1898e8fe52f3723d733d2e20268bf65"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d910c854-de30-4dbb-b3b3-5002efb1a806 with nextest profile: default
+    Starting 1 test across 5 binaries (82 tests skipped)
+        PASS [   0.008s] gob-dev::ci_parity ci_yml_runs_exactly_the_cargo_dev_ci_steps
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 82 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E test(ci_yml_runs_exactly_the_cargo_dev_ci_steps)"
+size = 552
+status = "measured"
+tests = ["ci_yml_runs_exactly_the_cargo_dev_ci_steps"]
+at = "2026-10-04T23:44:17Z"
+actor = "lognd"
+rev = 1
