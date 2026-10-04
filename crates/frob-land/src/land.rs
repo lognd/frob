@@ -379,7 +379,7 @@ fn primary_root(repo: &Repo) -> Result<PathBuf, LandError> {
 
 /// `path` resolved through symlinks when it exists, so equal places compare equal.
 fn canon(path: &Path) -> PathBuf {
-    std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
+    gob_exec::canonical(path).unwrap_or_else(|_| path.to_path_buf())
 }
 
 /// The ticket to land: the given reference, else the one leased by `cwd_root`.
@@ -929,7 +929,7 @@ fn release(leases: &LeaseStore, id: TicketId, actor: &str, warnings: &mut Vec<St
 // frob:ticket 01M41RK1G648EJJNRK4G5RJY40
 /// True when `cwd` is `dir` or lies inside it (compared on canonical paths, falling back to the raw ones).
 fn is_inside(cwd: &Path, dir: &Path) -> bool {
-    let canon = |p: &Path| p.canonicalize().unwrap_or_else(|_| p.to_path_buf());
+    let canon = |p: &Path| gob_exec::canonical(p).unwrap_or_else(|_| p.to_path_buf());
     canon(cwd).starts_with(canon(dir))
 }
 

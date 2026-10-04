@@ -172,6 +172,40 @@ impl Repo {
         }
     }
 
+    /// Commits reachable from `tip` but not from `base`, newest first, at most `limit`, with their subject lines.
+    ///
+    /// # Errors
+    /// [`GitError::Rev`] when either spec does not resolve, [`GitError::Odb`] on a read failure.
+    pub fn commits_not_in(
+        &self,
+        tip: &str,
+        base: &str,
+        limit: usize,
+    ) -> Result<Vec<(Oid, String)>, GitError> {
+        let (tip_id, base_id) = (self.rev_parse(tip)?, self.rev_parse(base)?);
+        let walk = self
+            .gix
+            .rev_walk([tip_id])
+            .with_hidden([base_id])
+            .all()
+            .map_err(odb_err)?;
+        let mut out = Vec::new();
+        for info in walk.take(limit) {
+            let info = info.map_err(odb_err)?;
+            let commit = self.gix.find_commit(info.id).map_err(odb_err)?;
+            let subject = commit
+                .message_raw_sloppy()
+                .lines()
+                .next()
+                .unwrap_or_default()
+                .to_str_lossy()
+                .into_owned();
+            out.push((info.id, subject));
+        }
+        debug!(tip, base, count = out.len(), "commits not in base listed");
+        Ok(out)
+    }
+
     /// The contents of `path` at `rev`, or `None` when absent there.
     ///
     /// # Errors

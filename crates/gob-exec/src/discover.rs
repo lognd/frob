@@ -115,7 +115,7 @@ pub fn plan(
 /// Directories to search beside `exe`: its canonical parent (symlinks resolved), then its raw parent when different.
 pub fn beside_dirs(exe: &Path) -> Vec<PathBuf> {
     let mut dirs = Vec::new();
-    match exe.canonicalize() {
+    match crate::path::canonical(exe) {
         Ok(real) => dirs.extend(real.parent().map(Path::to_path_buf)),
         Err(e) => tracing::debug!(error = %e, "running executable did not canonicalize"),
     }
@@ -129,7 +129,7 @@ pub fn beside_dirs(exe: &Path) -> Vec<PathBuf> {
 
 /// True when `a` and `b` are the same file once symlinks are resolved.
 fn same_file(a: &Path, b: &Path) -> bool {
-    match (a.canonicalize(), b.canonicalize()) {
+    match (crate::path::canonical(a), crate::path::canonical(b)) {
         (Ok(x), Ok(y)) => x == y,
         _ => a == b,
     }

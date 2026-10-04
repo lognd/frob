@@ -1,0 +1,13 @@
+error[GRL008]: `$Y` is used in the fix but no snippet binds it
+ --> rules/GRL008.grl:6:13
+  |
+4 |   find d: `dbg!($X)`
+  |                 -- the only metavariable bound
+...
+6 |   fix d -> `$Y` [machine]
+  |             ^^ not bound by any snippet in this rule
+  |
+  = help: did you mean `$X`?
+  = explain: grimble explain GRL008
+
+error: aborting due to 1 previous error

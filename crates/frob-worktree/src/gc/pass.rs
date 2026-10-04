@@ -189,16 +189,28 @@ fn unix(t: SystemTime) -> i64 {
         .map_or(0, |d| i64::try_from(d.as_secs()).unwrap_or(i64::MAX))
 }
 
+/// The host's report-only setting; Windows reports without deleting in the automatic pass.
+const REPORT_ONLY_HOST: bool = cfg!(windows);
+
+/// True when `mode` must only report: the automatic pass on Windows until the jail fix is proven (~EDPHHFS).
+pub const fn report_only(mode: Mode, windows: bool) -> bool {
+    windows && matches!(mode, Mode::Auto)
+}
+
 /// Run one pass in `mode`; never fails, problems are warnings in the report.
 pub fn run(env: &Env<'_>, mode: Mode) -> Report {
     let started = Instant::now();
+    let dry = mode == Mode::DryRun || report_only(mode, REPORT_ONLY_HOST);
+    if dry && mode != Mode::DryRun {
+        tracing::warn!("automatic gc is report-only on this platform; nothing is deleted");
+    }
     let common = env.repo.common_dir().to_path_buf();
     let stamp = stamp::load(&common);
     let free = (env.free_bytes)(env.primary);
     let guard_bytes = env.config.guard_min_free_gb.saturating_mul(GIB);
     let guard = guard_bytes > 0 && free.is_some_and(|f| f < guard_bytes);
     let mut report = Report {
-        dry_run: mode == Mode::DryRun,
+        dry_run: dry,
         forced_by_guard: false,
         free_bytes: free,
         ..Report::default()
@@ -219,7 +231,7 @@ pub fn run(env: &Env<'_>, mode: Mode) -> Report {
     report.ran = true;
     let mut run = Run {
         env,
-        dry: mode == Mode::DryRun,
+        dry,
         deadline: Deadline {
             at: started + Duration::from_secs(env.config.time_limit_secs.max(1)),
             hit: false,
@@ -332,11 +344,11 @@ fn collect(run: &mut Run<'_>) -> Vec<Usage> {
 /// The primary and every linked worktree under the frob worktree parent that still exists.
 fn checkouts(env: &Env<'_>, wenv: &WorktreeEnv<'_>) -> Vec<PathBuf> {
     let mut out = vec![env.primary.to_path_buf()];
-    let parent = wenv.parent.canonicalize().ok();
+    let parent = gob_exec::canonical(wenv.parent).ok();
     if let Ok(infos) = env.repo.list_worktrees() {
         for i in infos {
-            let canon = i.path.canonicalize().ok();
-            let primary = env.primary.canonicalize().ok();
+            let canon = gob_exec::canonical(&i.path).ok();
+            let primary = gob_exec::canonical(env.primary).ok();
             if canon.is_some()
                 && canon != primary
                 && canon
@@ -461,7 +473,7 @@ fn collect_build(run: &mut Run<'_>, checkouts: &[PathBuf]) -> (u64, Vec<(PathBuf
             let dirs = a.output_dirs(checkout);
             let jail = Jail::new(dirs.clone());
             for dir in dirs {
-                let Ok(canon) = dir.canonicalize() else {
+                let Ok(canon) = gob_exec::canonical(&dir) else {
                     continue;
                 };
                 let units = a.units(&canon, &policy);
