@@ -2,11 +2,12 @@
 id = "01M1T07NYJGETZ4A744PSANMYZ"
 title = "Scope denominator: five reported defects are one unanswered question about what set a ticket is accountable for"
 type = "epic"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "high"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:09:08Z"
+updated = "2026-10-04T21:09:09Z"
 aliases = ["T-4050"]
 labels = ["milestone:1.1.0", "v1-cluster:C3"]
 
