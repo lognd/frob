@@ -2,11 +2,12 @@
 id = "01M1T07NYMYD26P1X0M6Q5ZBXE"
 title = "frob ticket close succeeds with the ticket's code still uncommitted, so a ticket can read done on main with no implementation (3 agents, one session)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "high"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:09:46Z"
+updated = "2026-10-04T21:09:47Z"
 aliases = ["T-4052"]
 labels = ["milestone:1.1.0", "v1-cluster:C2"]
 scope = ["src/frob/app/ticket_runner/_close_cmd.py"]

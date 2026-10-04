@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~CKZS2R3: v1 T-4052 is the cited origin of ~CKZS2R3 (close done refuses unmerged branch commits, guard and doctor)."
+at = "2026-10-04T21:09:47Z"
+actor = "lognd"
+rev = 1
