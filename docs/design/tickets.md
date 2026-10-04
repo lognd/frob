@@ -132,7 +132,7 @@ any (provider, reference) pair's latest record for it passes.
 | `exception` | ticket | kind (accept, defer, hotfix), rule, site | check --fix, land --hotfix | ticket page, close guard |
 | `cycle` | ticket | cycle id, op (assign, carried, over-commit), reason (required for over-commit) | cycle assign, cycle close | velocity, forecasts, cycle report |
 | `attempt` | ticket | outcome (failed, abandoned), reason | requeue --failed, a failed land | brief, doctor |
-| `triage` | ticket | action (accept, decline, snooze, duplicate), until | ticket triage | inbox |
+| `triage` | ticket | action (accept, decline, snooze, duplicate), until (snooze only), reason (when given) | ticket triage | inbox; the fold ignores it (the `transition` and `link` events written beside it carry the state change) |
 | `cost` | ticket | tokens in, out, cache, cost, wall seconds | harness hook, land | stats, forecasts |
 
 The class of service is the field `class` (and `due`): `create` and
@@ -644,12 +644,47 @@ REL003 (documentation.md section 6).
 frob ticket new|show|list|query|board|doable|wave|contention|brief|log
 frob ticket update|link|unlink|comment|accept|evidence|attach|body
 frob ticket evidence [add|fetch] | done-report   # two-word path, action positional (cli.md section 2)
-frob ticket triage accept|decline|snooze|duplicate
+frob ticket triage accept|decline|snooze|duplicate|list   # five verbs (section 11.1)
 frob ticket start|requeue|review|close|drop|reopen
 frob ticket component ... | reconcile | doctor
 frob work <id> | frob land <id> | frob cycle ... | frob forecast ...
 frob merge-driver            # hidden; git invokes it (section 2)
 ```
+
+### 11.1 The triage inbox
+
+The inbox is the set of tickets in category `triage` that are not snoozed
+(~PM0HX6M). Five verbs, each its own two-word-plus-action path like
+`ticket evidence add`:
+
+| Verb | Writes | Needs |
+|---|---|---|
+| `ticket triage accept` | `transition` triage to todo, then `triage` (accept) | tickets or a query; `--reason` optional |
+| `ticket triage decline` | `transition` to done with outcome `wont-fix`, then `triage` (decline) | tickets or a query; `--reason` required |
+| `ticket triage snooze` | `triage` (snooze) with `until` only; the ticket stays in `triage` | tickets or a query; `--until` required (a date `2026-11-01`, midnight UTC, or an RFC 3339 time, strictly in the future); `--reason` optional |
+| `ticket triage duplicate` | `link` (`duplicates`, skipped when the edge exists), `transition` to done with outcome `duplicate`, then `triage` (duplicate) | one ticket and `--of <ticket>`; `--reason` defaults to `duplicate of <target>` |
+| `ticket triage list` | nothing | optional `--label`, `--type`, `--at <date or time>` (the inbox as of that instant), `--all` (also snoozed tickets, with `snoozed_until`) |
+
+Selection: the verbs that take tickets accept several positionals, or a
+query over the inbox (`--label`, `--type`; a query never selects a snoozed
+ticket), not both and not neither (usage, exit 2). One call is one ledger
+commit for every ticket it decides (a single ticket's commit is named
+`tickets(triage-<action>): <handle> <title>`, a batch
+`tickets(triage-<action>): <n> tickets`), and the report
+(`data.entries`) lists every ticket with `status` `applied` or `already`,
+its category and outcome after the call, plus the `commit`.
+
+Idempotence and refusal: a ticket whose latest `triage` event is this same
+decision (same action and, for a snooze, the same `until`) is `already` and
+writes nothing; a call whose tickets are all `already`, or a query that
+selects nothing, exits 0 with `already` set. A ticket that is neither in
+`triage` nor already given this decision is refused with
+`E-TRIAGE-NOT-IN-TRIAGE` (exit 3) and the remedy `frob ticket triage list`;
+one refusal aborts the whole call before anything is written, so a batch
+is all or nothing. Decline and duplicate do not run the close guards (like
+`ticket drop`, they close without done), and a newer snooze replaces an
+older one. A snooze hides the ticket while `at < until`; the inbox reads
+the ticket's latest `triage` event, so no frontmatter field records it.
 
 Roughly 35 verbs against v1's 65 parser nodes; every setter is `set`;
 `--json` and `--reason` are universal; mutating verbs are idempotent on

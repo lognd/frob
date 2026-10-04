@@ -195,6 +195,20 @@ string_enum!(
 );
 
 string_enum!(
+    /// What a `triage` event decided about a ticket in the inbox.
+    TriageAction {
+        /// Moved from triage to todo.
+        Accept => "accept",
+        /// Closed wont-fix.
+        Decline => "decline",
+        /// Hidden from the inbox until a date.
+        Snooze => "snooze",
+        /// Closed as a duplicate of another ticket.
+        Duplicate => "duplicate",
+    }
+);
+
+string_enum!(
     /// Whether a `link` event adds or removes an edge.
     LinkOp {
         /// Add the edge.

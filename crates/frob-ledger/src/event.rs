@@ -2,7 +2,7 @@
 //!
 //! Every kind of event the model knows is an [`EventBody`] variant. The kinds
 //! of the design table that no M1 verb produces (`evidence`, `lease`,
-//! `review`, `cycle`, `attempt`, `triage`, `cost`) parse as
+//! `review`, `cycle`, `attempt`, `cost`) parse as
 //! [`EventBody::Other`] and fold to no state change, so a ledger written by a
 //! later frob still folds here.
 
@@ -13,7 +13,7 @@ use crate::error::{LedgerError, Result};
 use crate::id::{EventId, TicketId};
 use crate::model::{
     Category, Class, CommentSubtype, ExceptionKind, Link, LinkKind, LinkOp, Outcome, Points,
-    Priority, Stamp, TicketType,
+    Priority, Stamp, TicketType, TriageAction,
 };
 
 /// Revision of the event file format written by this crate (`rev` in every file).
@@ -214,6 +214,24 @@ pub struct ScrubData {
     pub digests: Vec<DigestChange>,
 }
 
+/// One decision on a ticket in the triage inbox (`ticket triage`).
+///
+/// An accept, decline or duplicate rides in the same commit as the `transition`
+/// (and, for a duplicate, `link`) event it explains; a snooze changes no field.
+/// The fold ignores the event: the inbox reads it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct TriageData {
+    /// What was decided.
+    pub action: TriageAction,
+    /// A snooze hides the ticket from the inbox until this instant.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub until: Option<Stamp>,
+    /// Why, when the verb was given a reason.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
 /// A branch landed on a base ref.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct LandData {
@@ -255,6 +273,9 @@ pub enum EventBody {
     Land(LandData),
     /// A doctor repair scrubbed absolute home paths from the ticket's files; audit only.
     Scrub(ScrubData),
+    // frob:ticket 01M44C546DQRE4D11HHPM0HX6M
+    /// A triage decision (accept, decline, snooze, duplicate); the inbox reads it, the fold ignores it.
+    Triage(TriageData),
     /// A kind this version does not interpret; it folds to no change.
     #[serde(other)]
     Other,
@@ -416,6 +437,7 @@ pub const fn kind_name(body: &EventBody) -> &'static str {
         EventBody::LandExempt(_) => "land-exempt",
         EventBody::Land(_) => "land",
         EventBody::Scrub(_) => "scrub",
+        EventBody::Triage(_) => "triage",
         EventBody::Other => "other",
     }
 }
@@ -520,6 +542,11 @@ mod tests {
                     old: "a".into(),
                     new: "b".into(),
                 }],
+            }),
+            EventBody::Triage(TriageData {
+                action: TriageAction::Snooze,
+                until: Some("2026-11-01T00:00:00Z".parse().expect("stamp")),
+                reason: Some("after the release".into()),
             }),
         ];
         for body in bodies {
