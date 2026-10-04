@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T22:54:21Z"
-updated = "2026-10-04T23:33:24Z"
+updated = "2026-10-04T23:40:18Z"
 scope = ["crates/frob-evidence/src/provider.rs", "crates/gob-dev/src/ci.rs"]
 
 [[acceptance]]
