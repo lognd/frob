@@ -1,9 +1,13 @@
 # The PyPI product list: the one source of the wheel set (docs/design/products.md 6, D87).
 # One entry per product binary; render.py turns each entry into a maturin project and
-# build-wheel.sh builds every entry, so adding a product (crunk, once its Rust crate exists) is
+# build-wheel.sh builds every entry, so adding a product (crunk was the last) is
 # one more [[product]] table here plus its row in the workflow's count steps (a test pins both).
 # Each wheel carries only its own binary; `depends` names sibling products pinned at the same
 # lockstep version (`grimble==<version>`), so the package manager composes the install.
+# Gates (D87, pinned by crates/frob-release/tests/products.rs): frob's `depends` gains "crunk"
+# only at the first crunk preview release (~AYA6294); the release workflow builds and smokes the
+# crunk wheel but does not upload it to PyPI until the Python crunk (lognd/crunk) is retired,
+# so a Rust wheel never replaces that project's releases.
 
 [[product]]
 name = "frob"                      # PyPI project, wheel name and binary
@@ -19,4 +23,12 @@ package = "grimble"
 manifest = "crates/grimble/Cargo.toml"
 summary = "The design goblin: design-model checks, init, doctor and fmt (preview). frob depends on it."
 keywords = ["design", "agentic", "git", "ci"]
+depends = []
+
+[[product]]
+name = "crunk"
+package = "crunk"
+manifest = "crates/crunk/Cargo.toml"
+summary = "The front-end design-system goblin: tokens, palette, Tailwind and contrast checks (preview). Installable alone."
+keywords = ["design-system", "tokens", "tailwind", "css", "ci"]
 depends = []

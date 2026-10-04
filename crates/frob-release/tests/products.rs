@@ -10,12 +10,12 @@ use std::process::Command;
 use serde_json::Value;
 
 /// The products: binary name to the package that carries it (and names its archive).
-const PRODUCTS: [(&str, &str); 2] = [("frob", "frob-cli"), ("grimble", "grimble")];
-
-// frob:ticket 01M43ARVS24254G85TMFYH8FGQ
-/// Products whose binary package exists but whose release wiring (dist opt-in, smoke, workflows) does
-/// not yet; ~8CRC1ZH folds each entry into [`PRODUCTS`] when it registers the product.
-const UNWIRED_PRODUCTS: [(&str, &str); 1] = [("crunk", "crunk")];
+// frob:ticket 01M43ARWCVRCE25KDZC8CRC1ZH
+const PRODUCTS: [(&str, &str); 3] = [
+    ("frob", "frob-cli"),
+    ("grimble", "grimble"),
+    ("crunk", "crunk"),
+];
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -65,11 +65,7 @@ fn published_packages_declare_only_product_binaries() {
     for pkg in publishable(&meta) {
         let name = pkg["name"].as_str().unwrap();
         for bin in bins(pkg) {
-            let expected = PRODUCTS
-                .iter()
-                .chain(&UNWIRED_PRODUCTS)
-                .find(|(b, _)| *b == bin)
-                .map(|(_, p)| *p);
+            let expected = PRODUCTS.iter().find(|(b, _)| *b == bin).map(|(_, p)| *p);
             assert_eq!(
                 expected,
                 Some(name),
@@ -80,7 +76,6 @@ fn published_packages_declare_only_product_binaries() {
     }
     let want: BTreeMap<String, String> = PRODUCTS
         .iter()
-        .chain(&UNWIRED_PRODUCTS)
         .map(|(b, p)| ((*b).to_owned(), (*p).to_owned()))
         .collect();
     assert_eq!(found, want, "every product binary ships from its package");
@@ -143,7 +138,15 @@ fn the_smoke_steps_name_each_product_archive_and_run_each_binary() {
     );
     let script = read("packaging/smoke/archive-smoke.sh");
     assert!(script.contains("fixture-loop.sh"), "frob runs the loop");
-    assert!(script.contains("--version"), "grimble runs its binary");
+    assert!(
+        script.contains("--version"),
+        "grimble and crunk run their binary"
+    );
+    assert!(script.contains("doctor"), "grimble and crunk run doctor");
+    assert!(
+        script.contains("frob | grimble | crunk) ;;"),
+        "the smoke accepts every product"
+    );
     assert!(script.is_ascii());
 }
 
@@ -151,9 +154,9 @@ fn the_smoke_steps_name_each_product_archive_and_run_each_binary() {
 #[test]
 fn publish_jobs_accept_only_product_archives() {
     let ci = read(".github/workflows/ci.yml");
-    assert!(ci.contains("frob-cli-*|grimble-*) ;; *) echo \"unexpected file"));
+    assert!(ci.contains("frob-cli-*|grimble-*|crunk-*) ;; *) echo \"unexpected file"));
     let rel = read(".github/workflows/release.yml");
-    assert!(rel.contains("for product in frob-cli grimble; do"));
+    assert!(rel.contains("for product in frob-cli grimble crunk; do"));
     assert!(rel.contains("archives/frob-cli-x86_64-unknown-linux-gnu.tar.xz"));
     assert!(!rel.contains("archives/*"), "no globbed asset list");
 }
@@ -194,9 +197,10 @@ fn the_pypi_product_list_is_the_product_list() {
     assert_eq!(listed, want);
 }
 
-/// Binds: frob's wheel depends on grimble at its own version; grimble's depends on nothing.
+/// Binds: frob's wheel depends on grimble (and not yet crunk, D87: only from the first crunk
+/// preview release, ~AYA6294) at its own version; grimble's and crunk's depend on nothing.
 #[test]
-fn frob_depends_on_grimble_at_the_same_version_and_grimble_on_nothing() {
+fn frob_depends_on_grimble_at_the_same_version_and_grimble_and_crunk_on_nothing() {
     for p in pypi_products() {
         let deps: Vec<&str> = p["depends"]
             .as_array()
@@ -206,7 +210,7 @@ fn frob_depends_on_grimble_at_the_same_version_and_grimble_on_nothing() {
             .collect();
         match p["name"].as_str().unwrap() {
             "frob" => assert_eq!(deps, ["grimble"]),
-            "grimble" => assert!(deps.is_empty()),
+            "grimble" | "crunk" => assert!(deps.is_empty()),
             other => panic!("unexpected product {other}"),
         }
     }
@@ -234,9 +238,9 @@ fn frob_depends_on_grimble_at_the_same_version_and_grimble_on_nothing() {
     );
 }
 
-/// Binds: the smoke installs from the local wheels only and covers the three scenarios.
+/// Binds: the smoke installs from the local wheels only and covers the four scenarios.
 #[test]
-fn the_wheel_smoke_installs_from_local_wheels_only_in_three_scenarios() {
+fn the_wheel_smoke_installs_from_local_wheels_only_in_four_scenarios() {
     let smoke = read("packaging/pypi/smoke.sh");
     assert!(smoke.contains("--no-index --find-links"));
     let installs: Vec<&str> = smoke
@@ -244,7 +248,7 @@ fn the_wheel_smoke_installs_from_local_wheels_only_in_three_scenarios() {
         .filter(|l| !l.trim_start().starts_with('#'))
         .filter(|l| l.starts_with("uv pip install") || l.starts_with("uv tool install"))
         .collect();
-    assert_eq!(installs.len(), 3, "{installs:?}");
+    assert_eq!(installs.len(), 4, "{installs:?}");
     for l in &installs {
         assert!(
             l.contains("${install_args[@]}"),
@@ -255,6 +259,7 @@ fn the_wheel_smoke_installs_from_local_wheels_only_in_three_scenarios() {
         "# a. grimble alone",
         "# b. frob alone",
         "# c. uv tool install frob",
+        "# d. crunk alone",
     ] {
         assert!(smoke.contains(scenario), "smoke lacks `{scenario}`");
     }
@@ -273,10 +278,59 @@ fn the_workflows_count_wheels_for_every_pypi_product() {
         .map(|p| p["name"].as_str().unwrap().to_owned())
         .collect();
     let loop_line = format!("for product in {}; do", names.join(" "));
-    for wf in [
-        ".github/workflows/build-smoke.yml",
-        ".github/workflows/release.yml",
-    ] {
-        assert!(read(wf).contains(&loop_line), "{wf} lacks `{loop_line}`");
-    }
+    assert!(
+        read(".github/workflows/build-smoke.yml").contains(&loop_line),
+        "build-smoke.yml lacks `{loop_line}`"
+    );
+    // The upload job counts the uploaded products: the PyPI list minus the gated crunk.
+    let uploaded: Vec<&str> = names
+        .iter()
+        .map(String::as_str)
+        .filter(|n| *n != GATED_FROM_PYPI)
+        .collect();
+    let upload_line = format!("for product in {}; do", uploaded.join(" "));
+    assert!(
+        read(".github/workflows/release.yml").contains(&upload_line),
+        "release.yml lacks `{upload_line}`"
+    );
+}
+
+/// The product whose wheel is built and smoked but not uploaded to `PyPI` while the Python crunk
+/// (lognd/crunk) still publishes that project name (D87, packaging/pypi/BUILDING.md).
+const GATED_FROM_PYPI: &str = "crunk";
+
+/// Binds: crunk is registered in the release config as a preview product, and the release job
+/// holds the crunk wheels back from the `PyPI` upload until the Python crunk is retired.
+#[test]
+fn crunk_is_a_preview_release_product_whose_wheel_is_not_uploaded_yet() {
+    let cfg: toml::Table = read("frob.toml").parse().unwrap();
+    let list = |key: &str| -> Vec<String> {
+        cfg["release"][key]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_str().unwrap().to_owned())
+            .collect()
+    };
+    let bins: Vec<String> = PRODUCTS.iter().map(|(b, _)| (*b).to_owned()).collect();
+    assert_eq!(
+        list("products"),
+        bins,
+        "[release] products are the product list"
+    );
+    assert!(
+        list("preview").contains(&GATED_FROM_PYPI.to_owned()),
+        "crunk ships as a preview"
+    );
+    let rel = read(".github/workflows/release.yml");
+    assert!(
+        rel.contains("-name 'crunk-*.whl' -delete"),
+        "the crunk wheels are held back"
+    );
+    let hold = rel.find("-name 'crunk-*.whl' -delete").unwrap();
+    let count = rel.find("-name \"$product-*.whl\"").unwrap();
+    assert!(
+        hold < count,
+        "the hold-back precedes the per-product upload checks"
+    );
 }
