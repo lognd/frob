@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: tail-end hygiene of the v1 repository (docs completeness, detector-gap audit, waiver audit); the v2 repository starts clean."
+at = "2026-10-04T21:07:21Z"
+actor = "lognd"
+rev = 1
