@@ -163,6 +163,18 @@ fn html_regions<'t>(text: &'t str, skip: &[std::ops::Range<usize>]) -> Vec<Segme
     out
 }
 
+/// Push the `#` comment starting at byte `at` of `line` (file offset of the line is `offset`).
+fn push_hash<'t>(out: &mut Vec<Segment<'t>>, line: &'t str, at: usize, offset: usize) {
+    let body = line[at..].trim_start_matches('#');
+    let skip = line.len() - at - body.len();
+    push(
+        out,
+        offset + at + skip,
+        body.trim_end_matches(['\n', '\r']),
+        false,
+    );
+}
+
 /// Lexer state carried across lines by [`hash_comments`].
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Str {
@@ -207,14 +219,7 @@ fn hash_comments(text: &str, yaml: bool) -> Vec<Segment<'_>> {
                     // Rest of the header line: only modifiers and an optional comment.
                     if let Some(h) = line[i..].find('#') {
                         let at = i + h;
-                        let body = line[at..].trim_start_matches('#');
-                        let skip = line.len() - at - body.len();
-                        push(
-                            &mut out,
-                            offset + at + skip,
-                            body.trim_end_matches(['\n', '\r']),
-                            false,
-                        );
+                        push_hash(&mut out, line, at, offset);
                     }
                     break;
                 }
@@ -241,14 +246,7 @@ fn hash_comments(text: &str, yaml: bool) -> Vec<Segment<'_>> {
                         state = Str::Block { parent: indent };
                     }
                     b'#' if !yaml || i == 0 || matches!(b[i - 1], b' ' | b'\t') => {
-                        let body = line[i..].trim_start_matches('#');
-                        let skip = line.len() - i - body.len();
-                        push(
-                            &mut out,
-                            offset + i + skip,
-                            body.trim_end_matches(['\n', '\r']),
-                            false,
-                        );
+                        push_hash(&mut out, line, i, offset);
                         break;
                     }
                     _ => {}
