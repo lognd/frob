@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 secret_prop reads-flows cannot carry waive/timeout (REL200); v2 exceptions attach structurally (exceptions.md)."
+at = "2026-10-04T21:02:39Z"
+actor = "lognd"
+rev = 1
