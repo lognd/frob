@@ -3,13 +3,13 @@ id = "01M1T07NVQKZMWGGVE81YP4XHR"
 title = "waiver path for INV001/INV002"
 type = "security"
 category = "triage"
-priority = "high"
+priority = "low"
 parent = "01M1QDTYTRW714S858S0TP6YWM"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:04:48Z"
 aliases = ["T-3959"]
-labels = ["milestone:0.539.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_inv.py", "src/frob/gates/_waive.py"]
 
 [[acceptance]]
