@@ -313,11 +313,8 @@ impl LeaseStore {
             path: path.clone(),
             message: e.to_string(),
         })?;
-        let tmp = path.with_extension("toml.tmp");
-        fs::write(&tmp, text)
-            .map_err(|e| LeaseError::io(format!("writing {}", tmp.display()), e))?;
-        fs::rename(&tmp, &path)
-            .map_err(|e| LeaseError::io(format!("renaming to {}", path.display()), e))
+        gob_fs::write_atomic(&path, text.as_bytes())
+            .map_err(|e| LeaseError::io(format!("writing {}", path.display()), e))
     }
 
     /// Take (or re-take) the lease on `ticket` for `holder` over `scope`.

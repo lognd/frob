@@ -114,10 +114,7 @@ fn write_lock(
         Err(err) => {
             tracing::warn!(%err, "not a git repository; grimble.lock written but not committed");
             let path = root.join(&name);
-            let tmp = root.join(format!("{name}.tmp"));
-            std::fs::write(&tmp, bytes)
-                .and_then(|()| std::fs::rename(&tmp, &path))
-                .map_err(CliError::internal)?;
+            gob_fs::write_atomic(&path, &bytes).map_err(CliError::internal)?;
             Ok((None, None))
         }
     }
