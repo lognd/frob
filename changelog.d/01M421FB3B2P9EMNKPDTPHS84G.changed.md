@@ -1,0 +1,1 @@
+PyPI now carries one wheel set per product: grimble installs on its own, and frob's wheel no longer bundles it but depends on grimble at the same version, so pip or uv install frob pulls both and frob finds grimble beside itself.

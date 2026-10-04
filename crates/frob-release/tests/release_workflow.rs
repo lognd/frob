@@ -833,7 +833,56 @@ fn pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_onl
         })
         .expect("the publish step");
     assert_eq!(publish["with"]["packages-dir"].as_str(), Some("dist"));
+    assert_eq!(publish["with"]["skip-existing"].as_bool(), Some(true));
     assert_eq!(downloads[0]["with"]["path"].as_str(), Some("dist"));
+}
+
+/// Binds the upload criterion of ~TPHS84G: the pypi job uploads both products' wheels, and each set's count is checked.
+// frob:ticket 01M421FB3B2P9EMNKPDTPHS84G
+#[test]
+fn the_pypi_job_checks_each_products_wheel_count_before_uploading_both() {
+    let wf = workflow();
+    let steps = wf["jobs"]["pypi"]["steps"].as_sequence().unwrap();
+    let guard = steps
+        .iter()
+        .filter_map(|s| s["run"].as_str())
+        .find(|r| r.contains("-name \"$product-*.whl\""))
+        .expect("a step counts each product's wheels");
+    assert!(guard.contains("for product in frob grimble; do"), "{guard}");
+    assert!(guard.contains("-ne 5"), "five targets per product: {guard}");
+    assert!(guard.contains("exit 1"));
+    // The guard precedes the publish; the single download holds both products' artifacts.
+    let at = |pred: &dyn Fn(&Value) -> bool| steps.iter().position(pred).unwrap();
+    let guard_at = at(&|s| {
+        s["run"]
+            .as_str()
+            .is_some_and(|r| r.contains("$product-*.whl"))
+    });
+    let publish_at = at(&|s| {
+        s["uses"]
+            .as_str()
+            .is_some_and(|u| u.starts_with("pypa/gh-action-pypi-publish@"))
+    });
+    assert!(guard_at < publish_at);
+    // Each wheel job artifact carries both products' wheels (the glob is not product-specific).
+    let shared = shared();
+    let upload = shared["jobs"]["wheel"]["steps"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .find(|s| {
+            s["uses"]
+                .as_str()
+                .is_some_and(|u| u.starts_with("actions/upload-artifact@"))
+        })
+        .unwrap();
+    assert_eq!(upload["with"]["path"].as_str(), Some("target/wheels/*.whl"));
+    // The wheel job checks one wheel per product, and the smoke runs on the whole directory.
+    let text = serde_yaml_ng::to_string(&shared["jobs"]["wheel"]["steps"]).unwrap();
+    assert!(text.contains("for product in frob grimble; do"));
+    assert!(text.contains("packaging/pypi/smoke.sh target/wheels"));
+    let fresh = serde_yaml_ng::to_string(&shared["jobs"]["smoke"]["steps"]).unwrap();
+    assert!(fresh.contains("packaging/pypi/smoke.sh wheels"));
 }
 
 #[test]

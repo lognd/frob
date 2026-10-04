@@ -147,3 +147,126 @@ fn publish_jobs_accept_only_product_archives() {
     assert!(rel.contains("archives/frob-cli-x86_64-unknown-linux-gnu.tar.xz"));
     assert!(!rel.contains("archives/*"), "no globbed asset list");
 }
+
+// frob:ticket 01M421FB3B2P9EMNKPDTPHS84G
+
+/// The `[[product]]` tables of the `PyPI` product list.
+fn pypi_products() -> Vec<toml::Table> {
+    let table: toml::Table = read("packaging/pypi/products.toml").parse().unwrap();
+    table["product"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| p.as_table().unwrap().clone())
+        .collect()
+}
+
+/// Binds: the `PyPI` product list is the product list, and each entry points at its package's manifest.
+#[test]
+fn the_pypi_product_list_is_the_product_list() {
+    let listed: Vec<(String, String)> = pypi_products()
+        .iter()
+        .map(|p| {
+            let name = p["name"].as_str().unwrap().to_owned();
+            let package = p["package"].as_str().unwrap().to_owned();
+            let manifest = read(p["manifest"].as_str().unwrap());
+            assert!(
+                manifest.contains(&format!("name = \"{package}\"")),
+                "{name}: manifest does not declare package {package}"
+            );
+            (name, package)
+        })
+        .collect();
+    let want: Vec<(String, String)> = PRODUCTS
+        .iter()
+        .map(|(b, p)| ((*b).to_owned(), (*p).to_owned()))
+        .collect();
+    assert_eq!(listed, want);
+}
+
+/// Binds: frob's wheel depends on grimble at its own version; grimble's depends on nothing.
+#[test]
+fn frob_depends_on_grimble_at_the_same_version_and_grimble_on_nothing() {
+    for p in pypi_products() {
+        let deps: Vec<&str> = p["depends"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|d| d.as_str().unwrap())
+            .collect();
+        match p["name"].as_str().unwrap() {
+            "frob" => assert_eq!(deps, ["grimble"]),
+            "grimble" => assert!(deps.is_empty()),
+            other => panic!("unexpected product {other}"),
+        }
+    }
+    // One template, rendered per product: the dependency is pinned `==` the wheel's own version.
+    let render = read("packaging/pypi/render.py");
+    assert!(
+        render.contains("f\"{d}=={version}\""),
+        "pin is the wheel version"
+    );
+    let template = read("packaging/pypi/pyproject.template.toml");
+    assert!(template.contains("version = \"@VERSION@\""));
+    assert!(template.contains("dependencies = @DEPENDENCIES@"));
+    assert!(
+        !std::path::Path::new(&root().join("packaging/pypi/pyproject.toml")).exists(),
+        "no per-product pyproject is checked in; the version is the Cargo lockstep version"
+    );
+    let build = read("packaging/pypi/build-wheel.sh");
+    assert!(
+        build.contains("render.py\" list"),
+        "build-wheel.sh builds every listed product"
+    );
+    assert!(
+        !build.contains("data/scripts"),
+        "no wheel bundles another product's binary"
+    );
+}
+
+/// Binds: the smoke installs from the local wheels only and covers the three scenarios.
+#[test]
+fn the_wheel_smoke_installs_from_local_wheels_only_in_three_scenarios() {
+    let smoke = read("packaging/pypi/smoke.sh");
+    assert!(smoke.contains("--no-index --find-links"));
+    let installs: Vec<&str> = smoke
+        .lines()
+        .filter(|l| !l.trim_start().starts_with('#'))
+        .filter(|l| l.starts_with("uv pip install") || l.starts_with("uv tool install"))
+        .collect();
+    assert_eq!(installs.len(), 3, "{installs:?}");
+    for l in &installs {
+        assert!(
+            l.contains("${install_args[@]}"),
+            "install without --no-index: {l}"
+        );
+    }
+    for scenario in [
+        "# a. grimble alone",
+        "# b. frob alone",
+        "# c. uv tool install frob",
+    ] {
+        assert!(smoke.contains(scenario), "smoke lacks `{scenario}`");
+    }
+    assert!(
+        smoke.contains("beside-frob"),
+        "scenario c asserts sibling discovery"
+    );
+    assert!(smoke.is_ascii());
+}
+
+/// Binds: the workflows name every `PyPI` product in the per-product wheel count checks.
+#[test]
+fn the_workflows_count_wheels_for_every_pypi_product() {
+    let names: Vec<String> = pypi_products()
+        .iter()
+        .map(|p| p["name"].as_str().unwrap().to_owned())
+        .collect();
+    let loop_line = format!("for product in {}; do", names.join(" "));
+    for wf in [
+        ".github/workflows/build-smoke.yml",
+        ".github/workflows/release.yml",
+    ] {
+        assert!(read(wf).contains(&loop_line), "{wf} lacks `{loop_line}`");
+    }
+}

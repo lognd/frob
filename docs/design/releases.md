@@ -162,7 +162,11 @@ part of the job's design:
   `packaging/smoke/fixture-loop.sh`: init, doctor, check, a ticket with
   one criterion, work, edit, check, command-provider evidence, a changelog
   fragment, land, then the ticket is closed done and `ticket doctor` is
-  clean. The loop runs twice: on the build runner right after the build,
+  clean. The wheel smoke takes the whole wheel directory and installs from
+  it only (`--no-index --find-links`, never the index): grimble alone, frob
+  alone (which must pull grimble at the same version, then the loop), and
+  `uv tool install frob` (grimble not on `PATH`, yet `frob doctor` finds it
+  beside frob). The loop runs twice: on the build runner right after the build,
   and again in the `smoke` job, a separate matrix job that downloads the
   uploaded wheel and archive onto a fresh runner (so a runtime dependency
   only the build machine has is caught); every publishing job needs
@@ -189,7 +193,15 @@ part of the job's design:
   x86_64 and aarch64, macOS arm64 and x86_64 (cross), windows x86_64.
   PyPI gets one wheel set per product, each carrying only its own
   binary; `frob` depends on `grimble` and `crunk` at the same version
-  (products.md 6, D87).
+  (products.md 6, D87). As built, `packaging/pypi/products.toml` is the
+  one product list (frob, grimble; crunk is one more entry): `render.py`
+  renders each product's maturin project from one template, and the
+  version is the Cargo lockstep version read at build time, so the
+  `grimble==VERSION` pin of the frob wheel and every wheel version are
+  equal by construction (no checked-in version to bump or drift, REL002
+  has nothing to compare). `wheel` builds both products per target into
+  one `wheel-<target>` artifact; the `pypi` job checks five wheels per
+  product before uploading.
 - **Pinned installers:** inside the manylinux containers rustup-init is
   downloaded from its versioned static URL
   (`static.rust-lang.org/rustup/archive/<version>/<triple>/rustup-init`)
