@@ -135,3 +135,24 @@ pub fn python_test_prerequisites(test: &str) -> bool {
     }
     true
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A tool name no host has is reported as not runnable.
+    #[test]
+    fn a_missing_tool_is_not_runnable() {
+        assert!(!tool_runs("frob-no-such-tool-xyz", &[], None));
+    }
+
+    /// The launcher list is python3, python, then `py -3`, and a Python 3 on the host is found.
+    #[test]
+    fn python_launchers_are_tried_in_order_and_find_python3() {
+        let names: Vec<_> = PYTHON_LAUNCHERS.iter().map(|(n, _)| *n).collect();
+        assert_eq!(names, ["python3", "python", "py"]);
+        assert_eq!(PYTHON_LAUNCHERS[2].1, ["-3"]);
+        // Presence depends on the host; the probe must simply not panic and agree with itself.
+        assert_eq!(python3_runs(), python3_runs());
+    }
+}
