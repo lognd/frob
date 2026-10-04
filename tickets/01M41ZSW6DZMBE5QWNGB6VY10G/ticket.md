@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T22:57:50Z"
-updated = "2026-10-03T22:58:04Z"
+updated = "2026-10-04T00:35:26Z"
 scope = ["crates/frob-check/tests/perf.rs", "crates/frob-check/benches/**", "crates/frob-check/Cargo.toml", "crates/gob-ir/tests/deep.rs", "crates/frob-ack/tests/workspace.rs", "Cargo.toml", ".config/nextest.toml", "crates/gob-dev/src/ci.rs", "docs/design/build-test-ci.md", "Cargo.lock"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = false
 
 [[acceptance]]
 text = "Given the perf assertions, when the fixture test runs, then it checks timed stages and warm cache hits in under 1 s"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the scheduled bench, when it runs in release on this repository, then it reports cold and warm totals against the recorded budget"
