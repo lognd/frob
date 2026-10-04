@@ -6,9 +6,13 @@ category = "triage"
 priority = "high"
 reporter = "human"
 created = "2026-08-26T00:00:00Z"
-updated = "2026-08-26T00:00:00Z"
+updated = "2026-10-04T21:01:35Z"
 aliases = ["T-3004"]
 labels = ["milestone:0.535.0", "v1-cluster:B3d"]
+
+[[links]]
+kind = "duplicates"
+target = "01M3Z714MQBXMW4PJVRQNDWNDM"
 +++
 
 OWNER DESIGN DECISION, 2026-08-26. Recorded here ONCE so children reference it
