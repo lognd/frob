@@ -2,15 +2,16 @@
 
 // frob:ticket 01M3Z713F6VY15YSMS15033RN1
 
-use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
+use std::sync::Mutex;
 
 pub use gob_ir::Status;
 
 use gob_text::{TextRange, TextSize};
 use petgraph::Direction;
-use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::graph::{DiGraph, EdgeIndex, NodeIndex};
 use petgraph::visit::EdgeRef;
+use rayon::prelude::*;
 
 use crate::adapter::{Fidelity, ParseStatus};
 use crate::crates::CrateDeps;
@@ -165,6 +166,8 @@ pub enum ResolveError {
 #[derive(Debug, Default)]
 pub struct SymbolGraph {
     graph: DiGraph<SymbolRecord, Edge>,
+    /// (from, to, kind) to its edge: `link` dedupes in O(1) instead of scanning a hub's adjacency list.
+    edge_ix: HashMap<(NodeIndex, NodeIndex, EdgeKind), EdgeIndex>,
     index: HashMap<Symref, NodeIndex>,
     imports: Vec<ImportEdge>,
     calls: Vec<CallEdge>,
@@ -217,7 +220,7 @@ struct Index {
     /// Names of types with an `impl Deref` or `impl DerefMut`: methods may come from the target.
     deref_types: HashSet<String>,
     /// Receiver types already worked out, per calling symbol (a method chain would otherwise be re-resolved at every link).
-    memo: RefCell<HashMap<(Symref, Receiver), Option<Ty>>>,
+    memo: Vec<MemoShard>,
     /// Names of `Result`/`Option` aliases whose first parameter is not the Ok/Some type (`?` and `unwrap` cannot be trusted).
     opaque_aliases: HashSet<String>,
     /// Names of `macro_rules!` macros declared anywhere (they may shadow a std macro of the same name).
@@ -232,7 +235,20 @@ struct Index {
     aliases: HashSet<(String, String)>,
 }
 
+/// Lock shards of the receiver-type memo (parallel call resolution would otherwise queue on one lock).
+const MEMO_SHARDS: usize = 64;
+
+/// One lock shard of the receiver-type memo.
+type MemoShard = Mutex<HashMap<(Symref, Receiver), Option<Ty>>>;
+
 impl Index {
+    /// The memo shard owning `caller`'s entries.
+    fn memo_shard(&self, caller: &Symref) -> &MemoShard {
+        use std::hash::{BuildHasher, BuildHasherDefault, DefaultHasher};
+        let h = BuildHasherDefault::<DefaultHasher>::default().hash_one(caller);
+        &self.memo[usize::try_from(h % MEMO_SHARDS as u64).expect("shard index fits usize")]
+    }
+
     /// Every function and method called `name` in the caller's crate and the crates it links.
     fn callables_in_reach(&self, caller: &Symref, name: &str) -> Vec<NodeIndex> {
         let here = crate_and_module(caller.path()).0;
@@ -684,6 +700,18 @@ fn link_target(file: &str, dest: &str) -> Option<(String, Option<String>)> {
     Some((parts.join("/"), frag))
 }
 
+/// Call sites per parallel task in `link_calls` (small enough that one huge file cannot serialize the pass).
+const CALL_CHUNK: usize = 256;
+
+/// One chunk's call-resolution output, merged into the graph in file order.
+#[derive(Default)]
+struct CallSink {
+    links: Vec<(NodeIndex, NodeIndex, EdgeKind, Status)>,
+    calls: Vec<CallEdge>,
+    status_edges: Vec<StatusEdge>,
+    poisoned: Vec<NodeIndex>,
+}
+
 impl SymbolGraph {
     /// Builds the graph from per-file results (any order), without crate manifests: calls resolve within a crate only.
     pub fn from_files(files: Vec<FileSymbols>) -> Self {
@@ -697,16 +725,29 @@ impl SymbolGraph {
     }
 
     fn build(mut files: Vec<FileSymbols>, deps: Option<&mut CrateDeps>) -> Self {
+        let t = std::time::Instant::now();
+        let lap = |phase: &str| {
+            tracing::debug!(
+                phase,
+                ms = t.elapsed().as_millis(),
+                "graph assembly phase done"
+            );
+        };
         files.sort_by(|a, b| a.path.cmp(&b.path));
         let mut g = Self::default();
         for f in &files {
             g.add_file(f);
         }
+        lap("add_file");
         let idx = g.index_of(&files, deps);
+        lap("index_of");
         g.link_imports(&idx);
         g.link_reexports(&files, &idx);
+        lap("imports");
         g.link_calls(&files, &idx);
+        lap("calls");
         g.link_refs(&files, &idx);
+        lap("refs");
         tracing::debug!(
             nodes = g.graph.node_count(),
             edges = g.graph.edge_count(),
@@ -728,19 +769,12 @@ impl SymbolGraph {
     }
 
     fn link(&mut self, a: NodeIndex, b: NodeIndex, kind: EdgeKind, status: Status) {
-        let existing = self
-            .graph
-            .edges_connecting(a, b)
-            .find(|e| e.weight().kind == kind)
-            .map(|e| e.id());
-        match existing {
-            Some(id) => {
-                let w = &mut self.graph[id];
-                w.status = w.status.max(status);
-            }
-            None => {
-                self.graph.add_edge(a, b, Edge { kind, status });
-            }
+        if let Some(&id) = self.edge_ix.get(&(a, b, kind)) {
+            let w = &mut self.graph[id];
+            w.status = w.status.max(status);
+        } else {
+            let id = self.graph.add_edge(a, b, Edge { kind, status });
+            self.edge_ix.insert((a, b, kind), id);
         }
     }
 
@@ -808,7 +842,7 @@ impl SymbolGraph {
             aliases: HashSet::new(),
             declared_macros: HashSet::new(),
             opaque_aliases: HashSet::new(),
-            memo: RefCell::new(HashMap::new()),
+            memo: (0..MEMO_SHARDS).map(|_| Mutex::default()).collect(),
             callable_names: HashSet::new(),
             derives: HashMap::new(),
             file_types: HashMap::new(),
@@ -965,11 +999,15 @@ impl SymbolGraph {
     /// [`Self::receiver_ty`] without the final alias check (`Result` may be an alias that `?` still opens).
     fn receiver_ty_raw(&self, idx: &Index, caller: &Symref, r: &Receiver) -> Option<Ty> {
         let key = (caller.clone(), r.clone());
-        if let Some(hit) = idx.memo.borrow().get(&key) {
+        // The lock is never held across the (recursive) computation; a race only repeats a pure result.
+        if let Some(hit) = idx.memo_shard(caller).lock().expect("memo lock").get(&key) {
             return hit.clone();
         }
         let out = self.receiver_ty_uncached(idx, caller, r);
-        idx.memo.borrow_mut().insert(key, out.clone());
+        idx.memo_shard(caller)
+            .lock()
+            .expect("memo lock")
+            .insert(key, out.clone());
         out
     }
 
@@ -1959,31 +1997,53 @@ impl SymbolGraph {
         }
     }
 
+    // frob:ticket 01M421PY49MQ5WX8RGQ36ZXTMR
+    /// Resolves and records every call site per file in parallel (read-only), then merges the results in call order.
+    ///
+    /// Resolution reads only the graph's `Contains` edges and the index, never what the merge
+    /// adds, so the result equals a sequential pass; `par_iter().map().collect()` keeps file and
+    /// call order, which keeps the merged edges deterministic at any thread count.
     fn link_calls(&mut self, files: &[FileSymbols], idx: &Index) {
-        for f in files {
-            for call in &f.calls {
-                let outcome = self.resolve_site(
-                    idx,
-                    &call.caller,
-                    &Query {
-                        name: &call.callee,
-                        qualifier: call.qualifier.as_deref(),
-                        path: &call.qual_path,
-                        bound: &call.bound,
-                        method: call.method,
-                        args: call.args,
-                    },
-                    call.receiver.as_ref(),
-                    call.local,
-                );
-                let qualifier = self.call_qualifier(idx, call);
-                let capped = call.in_macro
-                    && call
-                        .macro_exact
-                        .as_deref()
-                        .is_none_or(|m| idx.declared_macros.contains(m));
-                self.record_call(call, outcome, qualifier, capped);
+        let t0 = std::time::Instant::now();
+        let all: Vec<&CallSite> = files.iter().flat_map(|f| f.calls.iter()).collect();
+        let sinks: Vec<CallSink> = all
+            .par_chunks(CALL_CHUNK)
+            .map(|chunk| {
+                let mut sink = CallSink::default();
+                for &call in chunk {
+                    let outcome = self.resolve_site(
+                        idx,
+                        &call.caller,
+                        &Query {
+                            name: &call.callee,
+                            qualifier: call.qualifier.as_deref(),
+                            path: &call.qual_path,
+                            bound: &call.bound,
+                            method: call.method,
+                            args: call.args,
+                        },
+                        call.receiver.as_ref(),
+                        call.local,
+                    );
+                    let qualifier = self.call_qualifier(idx, call);
+                    let capped = call.in_macro
+                        && call
+                            .macro_exact
+                            .as_deref()
+                            .is_none_or(|m| idx.declared_macros.contains(m));
+                    self.record_call(&mut sink, call, outcome, qualifier, capped);
+                }
+                sink
+            })
+            .collect();
+        tracing::debug!(ms = t0.elapsed().as_millis(), "calls resolved");
+        for sink in sinks {
+            for (a, b, kind, status) in sink.links {
+                self.link(a, b, kind, status);
             }
+            self.calls.extend(sink.calls);
+            self.status_edges.extend(sink.status_edges);
+            self.poisoned.extend(sink.poisoned);
         }
     }
 
@@ -2086,7 +2146,8 @@ impl SymbolGraph {
     }
 
     fn record_call(
-        &mut self,
+        &self,
+        sink: &mut CallSink,
         call: &CallSite,
         outcome: Outcome,
         qualifier: Option<CallQualifier>,
@@ -2109,12 +2170,12 @@ impl SymbolGraph {
                     line = call.line,
                     "unresolved call recorded with qualifier"
                 );
-                self.calls.push(CallEdge::Unresolved {
+                sink.calls.push(CallEdge::Unresolved {
                     caller: caller.clone(),
                     name: name.clone(),
                     qualifier: qualifier.clone(),
                 });
-                self.status_edges.push(StatusEdge {
+                sink.status_edges.push(StatusEdge {
                     from: caller.clone(),
                     to: None,
                     kind: EdgeKind::Calls,
@@ -2126,21 +2187,28 @@ impl SymbolGraph {
                     text: Some(call.text.clone()),
                 });
                 if let Some(a) = from {
-                    self.poisoned.insert(a);
+                    sink.poisoned.push(a);
                 }
             }
-            Outcome::Hit(nodes, status) => self.record_hit(call, &nodes, status, capped),
+            Outcome::Hit(nodes, status) => self.record_hit(sink, call, &nodes, status, capped),
             Outcome::Dispatch(decl, impls) => {
-                self.record_hit(call, &[decl], Status::Must, capped);
+                self.record_hit(sink, call, &[decl], Status::Must, capped);
                 if !impls.is_empty() {
-                    self.record_hit(call, &impls, Status::May, capped);
+                    self.record_hit(sink, call, &impls, Status::May, capped);
                 }
             }
         }
     }
 
     /// Records the call edges from `call` to `nodes`, all with `status` (May when `capped`).
-    fn record_hit(&mut self, call: &CallSite, nodes: &[NodeIndex], status: Status, capped: bool) {
+    fn record_hit(
+        &self,
+        sink: &mut CallSink,
+        call: &CallSite,
+        nodes: &[NodeIndex],
+        status: Status,
+        capped: bool,
+    ) {
         let caller = &call.caller;
         let from = self.index.get(caller).copied();
         let status = if capped {
@@ -2156,12 +2224,12 @@ impl SymbolGraph {
         found.dedup();
         if let Some(a) = from {
             for &n in nodes {
-                self.link(a, n, EdgeKind::Calls, status);
-                self.link(a, n, EdgeKind::References, status);
+                sink.links.push((a, n, EdgeKind::Calls, status));
+                sink.links.push((a, n, EdgeKind::References, status));
             }
         }
         for to in &found {
-            self.status_edges.push(StatusEdge {
+            sink.status_edges.push(StatusEdge {
                 from: caller.clone(),
                 to: Some(to.clone()),
                 kind: EdgeKind::Calls,
@@ -2173,7 +2241,7 @@ impl SymbolGraph {
                 text: Some(call.text.clone()),
             });
         }
-        self.calls.push(match (status, found.len()) {
+        sink.calls.push(match (status, found.len()) {
             (Status::Must, 1) => CallEdge::Resolved {
                 caller: caller.clone(),
                 callee: found.remove(0),
