@@ -324,7 +324,8 @@ pub fn fold(kind: ObjectKind, id: ObjectId, events: &[PmEvent]) -> Result<Folded
             | PmBody::Other
             | PmBody::Evidence(_)
             | PmBody::Override(_)
-            | PmBody::Cut(_) => Ok(()),
+            | PmBody::Cut(_)
+            | PmBody::Adopt(_) => Ok(()),
             PmBody::Field(f) => {
                 let current = get_field(&object, &f.field);
                 if f.old != current {

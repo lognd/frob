@@ -33,8 +33,10 @@ use toml::Table;
 ///
 /// ## Remedy
 ///
-/// For a stray tag, delete it and run `frob release cut VERSION`, which bumps, commits, tags
-/// and records the release in one step. For a moved tag, restore it to the commit the cut
+/// For a stray tag that is already published, run `frob release adopt VERSION`: it records the
+/// existing tags as the version's cut without touching git or the remote. For one that is not
+/// published, delete it and run `frob release cut VERSION`, which bumps, commits, tags and
+/// records the release in one step. For a moved tag, restore it to the commit the cut
 /// recorded (the finding names it). For a version mismatch, the tag is on the wrong commit:
 /// delete it and cut the release again.
 #[derive(Debug, Clone, Copy, Default, Rule)]
@@ -221,7 +223,7 @@ fn check_tag(
                 tag,
                 "no-cut",
                 format!(
-                    "REL001: tag `{tag}` ({commit}) has no recorded release cut; delete the tag and run `frob release cut {version}`, which creates the tags and records the cut"
+                    "REL001: tag `{tag}` ({commit}) has no recorded release cut; record it with `frob release adopt {version}` (keeps the tag as it is), or delete the tag and run `frob release cut {version}`, which creates the tags and records the cut"
                 ),
             ));
         }

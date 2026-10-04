@@ -4,7 +4,7 @@
 //!
 //! Kinds: `create`, `field`, `member`, `criterion`, `transition` (releases.md
 //! section 6a) plus `cycle` (carried, ratio, retro at cycle close), `evidence`, which binds exit criteria exactly as it binds
-//! ticket acceptance, and `override` and `cut`, which `release cut` records on a
+//! ticket acceptance, and `override`, `cut` and `adopt`, which `release cut` records on a
 //! milestone (they fold to no change; REL001 reads `cut`). Any other kind parses as [`PmBody::Other`] and folds to
 //! no change, so a newer ledger still folds here.
 
@@ -138,6 +138,22 @@ pub struct CutData {
     pub tags: Vec<TagRecord>,
 }
 
+// frob:ticket 01M4235FC39ZQYF207H8ANQEZE
+/// Marks the `cut` of a version as adopted: the tags were made by hand, not by `release cut`.
+///
+/// A separate event kind, not a field of [`CutData`]: `CutData` denies unknown fields, so an
+/// older binary could not read a `cut` carrying a new key, while it reads an unknown kind as
+/// [`PmBody::Other`]. The `cut` itself stays byte-identical to one `release cut` writes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AdoptData {
+    /// The version whose cut was adopted.
+    pub version: String,
+    /// Why the tags are recorded as a cut instead of redone.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
 /// What a `cycle` event records.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -203,6 +219,8 @@ pub enum PmBody {
     Override(OverrideData),
     /// A completed release cut; folds to no change (the `transition` to released is separate).
     Cut(CutData),
+    /// Marks the version's `cut` as adopted from hand-made tags; folds to no change.
+    Adopt(AdoptData),
     /// A kind this version does not interpret; it folds to no change.
     #[serde(other)]
     Other,
@@ -221,6 +239,7 @@ impl PmBody {
             Self::Cycle(_) => "cycle",
             Self::Override(_) => "override",
             Self::Cut(_) => "cut",
+            Self::Adopt(_) => "adopt",
             Self::Other => "other",
         }
     }

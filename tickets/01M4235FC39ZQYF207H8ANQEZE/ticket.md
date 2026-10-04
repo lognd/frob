@@ -2,26 +2,27 @@
 id = "01M4235FC39ZQYF207H8ANQEZE"
 title = "frob release adopt VERSION: record an existing published tag as a cut instead of deleting it (REL001)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:56:36Z"
-updated = "2026-10-03T23:58:08Z"
+updated = "2026-10-04T00:57:38Z"
 scope = ["crates/frob-release/**", "crates/frob/src/release_cmd.rs", "crates/frob/tests/release.rs", "crates/frob/tests/release_cut.rs", "docs/design/releases.md", "docs/guides/release.md", "docs/reference/cli/frob.md", "docs/reference/rules/REL001.md", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs"]
 
 [[acceptance]]
 text = "Given a pushed tag v0.1.0 cut by hand, when frob release adopt 0.1.0 runs, then a cut event marked adopted is recorded, git and the remote are untouched, and REL001 is clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an adopted version, when adopt runs again, then it returns already and writes nothing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a tag with no cut, when REL001 reports it, then the remedy names frob release adopt first"
-bound = false
+bound = true
 +++
 
 Reported by cloc (FROB_FEEDBACK item 14, 2026-10-03): after ~B5DF7DD made the tag pattern configurable, REL001 recognizes cloc's hand-cut, pushed and published tags v0.1.0 and v0.1.1 and reports "no recorded release cut; delete the tag and run frob release cut". Deleting published tags is destructive and outward-facing, and the error blocks every land in cloc.

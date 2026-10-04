@@ -198,12 +198,32 @@ A tag of the same name that points at another commit is never moved; the cut
 stops with `E-CUT-TAG-EXISTS`. A recorded cut stops with `E-CUT-ALREADY`: cut
 the next version instead.
 
+### A tag was made by hand (REL001 fires)
+
+A release tagged with plain `git tag` and already pushed or published is reported by
+REL001 as "no recorded release cut". Do not delete a published tag. Record it instead:
+
+```text
+frob release adopt 0.1.0 --reason "cut by hand before frob"
+```
+
+`adopt` resolves the tags that `[release] tag` and `products` name for the version
+(`v{version}` for a one-product repository, so `v0.1.0`), checks that each exists and
+points at a commit (annotated or lightweight), and writes the same `cut` event
+`release cut` writes, plus an `adopt` event carrying the actor and the reason. The
+milestone for the version moves to released; when there is none, one is created already
+released to hold the record. Git and the remote are not touched. A repeat returns
+`already` and writes nothing. For several versions, run it once per version. REL001 can
+still fire afterwards if the workspace version committed at a tag differs from the tag's
+version; that is a wrong tag, not a missing record.
+
 ### `plan` failed
 
 The tag version differs from the `frob-cli` crate version, or the tag is not
 `frob-vMAJOR.MINOR.PATCH`. A tag made by `release cut` agrees by construction.
 If you tagged by hand, delete the bad tag locally and on origin, and use
-`release cut`.
+`release cut`; a tag that is already published and correct is recorded with
+`frob release adopt VERSION` instead.
 
 ### `build`, `wheel` or `smoke` failed
 

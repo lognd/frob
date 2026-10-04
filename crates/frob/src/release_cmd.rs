@@ -11,11 +11,12 @@ use std::collections::BTreeSet;
 use frob_ledger::index::ListFilter;
 use frob_ledger::model::Category;
 use frob_ledger::{Ledger, TicketId};
-use frob_pm::PmStore;
-use frob_pm::event::{CutData, OverrideData, PmBody, PmEvent};
+use frob_pm::event::{AdoptData, CutData, OverrideData, PmBody, PmEvent, TransitionData};
 use frob_pm::model::Milestone;
 use frob_pm::model::{ObjectKind, State};
 use frob_pm::rules::membership::{CLAIM_PREFIX, claimants, pm034};
+use frob_pm::{NewObject, PmStore};
+use frob_release::adopt::AdoptError;
 use frob_release::bump::{BumpError, BumpOptions, BumpReport, LockState};
 use frob_release::ci::{CiFacts, CiState, CiUnknown, check_tip};
 use frob_release::cut::{CutError, CutLedger, CutPlan};
@@ -968,6 +969,161 @@ fn refuse_cut(e: &CutError, version: &str, base: &str) -> CliError {
         .into()
 }
 
+// frob:ticket 01M4235FC39ZQYF207H8ANQEZE
+/// What `release adopt` recorded, or found already recorded.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct AdoptReport {
+    /// The version adopted.
+    pub version: String,
+    /// The milestone that holds the cut.
+    pub milestone: String,
+    /// True when no milestone existed and one was created, already released, to hold the cut.
+    pub milestone_created: bool,
+    /// The commit of the first tag.
+    pub commit: String,
+    /// The tags recorded, with the tag object of each.
+    pub tags: Vec<CutTag>,
+    /// The recorded reason, when one was given.
+    pub reason: Option<String>,
+}
+
+// frob:ticket 01M4235FC39ZQYF207H8ANQEZE
+/// Record tags made by hand as the version's release cut; git and the remote are never touched.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "release adopt",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ReleaseAdopt {
+    version: String,
+    reason: Option<String>,
+}
+
+impl Command for ReleaseAdopt {
+    type Data = AdoptReport;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        cmd.arg(
+            Arg::new("version")
+                .value_name("VERSION")
+                .required(true)
+                .help("The release version whose existing tags are recorded as its cut (for example 0.1.0)"),
+        )
+        .arg(text_flag("reason", "Why the tags are adopted instead of cut (recorded)"))
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            version: get(m, "version").unwrap_or_default(),
+            reason: get(m, "reason"),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<AdoptReport> {
+        let (_, root) = Located::discover(&ctx.cwd).into_repo()?;
+        let ledger = open(ctx)?;
+        let data = frob_release::adopt::resolve(&root, &self.version)
+            .map_err(|e| refuse_adopt(&e, &self.version))?;
+        let store = PmStore::new(&ledger);
+        let found = milestones(store)?
+            .into_iter()
+            .find(|m| m.version == self.version);
+        let report = |milestone: String, created: bool| AdoptReport {
+            version: data.version.clone(),
+            milestone,
+            milestone_created: created,
+            commit: data.commit.clone(),
+            tags: data
+                .tags
+                .iter()
+                .map(|t| CutTag {
+                    name: t.name.clone(),
+                    object: t.object.clone(),
+                })
+                .collect(),
+            reason: self.reason.clone(),
+        };
+        let (milestone, created) = match found {
+            Some(m) => (m, false),
+            None if ctx.dry_run => {
+                tracing::info!(version = %self.version, "release adopt dry run: would create a released milestone");
+                return Ok(Payload::new(report("(would be created)".to_owned(), true)));
+            }
+            None => {
+                let applied = store
+                    .create(NewObject::Milestone {
+                        version: self.version.clone(),
+                        goal: format!("Adopted release {}", self.version),
+                        target: None,
+                        criteria: Vec::new(),
+                    })
+                    .map_err(pm_err)?;
+                tracing::info!(version = %self.version, "milestone created to hold an adopted cut");
+                let frob_pm::Object::Milestone(m) = applied.object else {
+                    return Err(CliError::internal(
+                        "a created milestone folded to another kind",
+                    ));
+                };
+                (m, true)
+            }
+        };
+        let handle = milestone.id.handle();
+        let holder = MilestoneCut {
+            ledger: &ledger,
+            root: &root,
+            milestone,
+            override_reason: None,
+        };
+        let cut_err = |e: CutError| CliError::internal(e.to_string());
+        if holder.recorded().map_err(cut_err)? {
+            tracing::info!(version = %self.version, "release adopt: already recorded");
+            return Ok(Payload::new(report(handle, created)).with_already(true));
+        }
+        if ctx.dry_run {
+            return Ok(Payload::new(report(handle, created)));
+        }
+        let mut bodies = Vec::new();
+        if !holder.has_cut_event().map_err(cut_err)? {
+            bodies.push(PmBody::Cut(data.clone()));
+            bodies.push(PmBody::Adopt(AdoptData {
+                version: data.version.clone(),
+                reason: self.reason.clone(),
+            }));
+        }
+        let from = holder.state().map_err(cut_err)?;
+        if from != State::Released {
+            bodies.push(PmBody::Transition(TransitionData {
+                from,
+                to: State::Released,
+                reason: Some(format!("release adopt {}", data.version)),
+                ended: None,
+            }));
+        }
+        store
+            .append_many(ObjectKind::Milestone, holder.milestone.id, bodies)
+            .map_err(pm_err)?;
+        tracing::info!(version = %data.version, commit = %data.commit, tags = data.tags.len(), "release adopted");
+        Ok(Payload::new(report(handle, created)))
+    }
+}
+
+// frob:ticket 01M4235FC39ZQYF207H8ANQEZE
+/// Map an adopt error to its CLI error: a refusal (exit 3) with the remedy, else internal.
+fn refuse_adopt(e: &AdoptError, version: &str) -> CliError {
+    if !e.is_refusal() {
+        tracing::error!(%e, "release adopt failed");
+        return CliError::internal(e.to_string());
+    }
+    let msg = e.to_string();
+    let code = msg.split(':').next().unwrap_or("E-ADOPT").to_owned();
+    tracing::info!(%code, "release adopt refused");
+    Refusal::new(code, RefusalClass::GuardNeedsAction, msg)
+        .with_remedy(e.remedy(version))
+        .into()
+}
+
 /// Register the `release` verbs on the root.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<ReleaseChangelog>()
@@ -975,4 +1131,5 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<ReleaseStatus>()
         .register::<ReleaseBump>()
         .register::<ReleaseCut>()
+        .register::<ReleaseAdopt>()
 }

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "test and dev tooling only: suite structure, bench, budgets"
+at = "2026-10-04T00:54:18Z"
+actor = "lognd"
+rev = 1
