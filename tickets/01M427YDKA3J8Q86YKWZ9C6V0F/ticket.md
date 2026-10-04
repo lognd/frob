@@ -1,0 +1,23 @@
++++
+id = "01M427YDKA3J8Q86YKWZ9C6V0F"
+title = "Audit the sh dependency: 17 tests (gob-check, gob-exec, frob-check) fail on Windows without Git for Windows' sh on PATH"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M41S1JXXN380WPE29ATR5EP7"
+reporter = "lognd"
+created = "2026-10-04T01:20:08Z"
+updated = "2026-10-04T01:20:08Z"
+scope = ["crates/gob-check/**", "crates/gob-exec/**", "crates/frob-check/tests/**", "docs/design/paths.md"]
+
+[[acceptance]]
+text = "Given a Windows host without sh on PATH, when the product runs a configured tool stage and a command evidence provider, then neither needs sh"
+bound = false
+
+[[acceptance]]
+text = "Given the test suite on such a host, when it runs, then no test fails for lack of sh; shell-specific tests report a named prerequisite instead"
+bound = false
++++
+
+Found by goway running frob-v2's suite natively on the owner's Windows (aarch64-pc-windows-msvc, 2026-10-04): with Git for Windows' usr\\bin not on PATH, 17 tests in gob-check, gob-exec and frob-check fail because sh is missing; GitHub's windows-latest has it, so CI passes. Find out for each whether the product or only the test assumes sh: tool stages in [[check.tool]] (gob-check/src/tools.rs builds a 'sh' command), evidence command providers, fixtures. Product paths must not need a POSIX shell on Windows: run tools by argv through gob-exec, and where a shell line is configured by the user, run it with the platform shell via gob_exec::command_line (paths.md section 2) and document the rule. Tests that exercise shell behaviour either use the platform shell or declare the prerequisite (as cargo dev ci steps do) so a missing sh is a named skip reason in the report, never a confusing failure.
