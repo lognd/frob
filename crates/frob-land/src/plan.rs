@@ -10,6 +10,8 @@ use frob_ledger::model::Outcome;
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use crate::ratchet::FindingNote;
+
 /// Tuning of the stale-base retry loop `--wait` enables (frob:ticket ~VMHTBE7).
 #[derive(Clone)]
 pub struct RetryPolicy {
@@ -129,6 +131,12 @@ pub struct LandOutcome {
     pub attempts: u32,
     /// Non-fatal notices.
     pub warnings: Vec<String>,
+    /// Blocking findings that already exist on the base tip: reported, not refused (the ratchet).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub pre_existing: Vec<FindingNote>,
+    /// Base findings this ticket fixed.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub resolved: Vec<FindingNote>,
     /// The reason of the `--no-changelog` exemption this land recorded, when it did.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub changelog_exempt: Option<String>,

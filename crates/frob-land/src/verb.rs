@@ -130,7 +130,23 @@ impl Command for Land {
         opts.dry_run = ctx.dry_run;
         let out = land(&ctx.cwd, &opts)?;
         let already = out.already;
-        let warnings = out.warnings.clone();
+        let mut warnings = out.warnings.clone();
+        warnings.extend(out.pre_existing.iter().map(|n| {
+            format!(
+                "pre-existing finding on the base, not blocking: {} {}: {}",
+                n.rule,
+                n.path.as_deref().unwrap_or("-"),
+                n.message
+            )
+        }));
+        warnings.extend(out.resolved.iter().map(|n| {
+            format!(
+                "resolved finding: {} {}: {}",
+                n.rule,
+                n.path.as_deref().unwrap_or("-"),
+                n.message
+            )
+        }));
         let mut p = Payload::new(out).with_already(already);
         for w in warnings {
             p = p.with_warning(w);
