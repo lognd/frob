@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 `frob coverage --full` pytest-cov and xdist plumbing; the v2 coverage verb is a separate design (cli.md, M2)."
+at = "2026-10-04T21:06:21Z"
+actor = "lognd"
+rev = 1
