@@ -7,12 +7,12 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T22:57:50Z"
-updated = "2026-10-04T00:41:13Z"
+updated = "2026-10-04T00:42:28Z"
 scope = ["crates/frob-check/tests/perf.rs", "crates/frob-check/benches/**", "crates/frob-check/Cargo.toml", "crates/gob-ir/tests/deep.rs", "crates/frob-ack/tests/workspace.rs", "Cargo.toml", ".config/nextest.toml", "crates/gob-dev/src/ci.rs", "docs/design/build-test-ci.md", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given cargo nextest run --workspace --profile ci on the 12-core host, when it finishes, then the wall time is under 60 s and no test exceeds the per-test budget except named overrides"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the perf assertions, when the fixture test runs, then it checks timed stages and warm cache hits in under 1 s"
