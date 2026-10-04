@@ -2,11 +2,12 @@
 id = "01M43KP0RXKB1DJA8KGJTV288R"
 title = "DSL001 fires on 95 frob:waive directives quoted in imported ticket.md bodies (markdown HTML-comment scan reads them as directives)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T14:04:30Z"
-updated = "2026-10-04T15:17:23Z"
+updated = "2026-10-04T15:17:25Z"
 scope = ["crates/gob-walk/**", "crates/gob-directives/tests/scan.rs", "crates/frob-check/tests/ledger_inert.rs", "crates/frob-ack/src/inputs.rs", "crates/frob-obligations/src/collect.rs", "crates/grimble-bind/src/frob_owned.rs", "crates/grimble-check/src/config.rs", "docs/design/README.md", "docs/design/code-model.md", "Cargo.lock", "crates/frob-check/src/snapshot.rs", "crates/frob-check/src/filecheck.rs", "crates/gob-directives/src/comments.rs", "docs/design/tickets.md"]
 
 [[acceptance]]
