@@ -2,11 +2,12 @@
 id = "01M1088F3TEGJ5YA3TEDMM352M"
 title = "T-3128's land-proof points at a code-empty commit; real fix landed via sibling T-3139's squash"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 reporter = "human"
 created = "2026-08-27T00:00:00Z"
-updated = "2026-10-04T21:09:30Z"
+updated = "2026-10-04T21:09:31Z"
 aliases = ["T-3194"]
 labels = ["milestone:1.1.0", "v1-cluster:C1b"]
 scope = ["src/frob/tickets"]
