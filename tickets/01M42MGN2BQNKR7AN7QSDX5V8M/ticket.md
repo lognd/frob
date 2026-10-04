@@ -7,7 +7,7 @@ priority = "critical"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T04:59:48Z"
-updated = "2026-10-04T05:54:09Z"
+updated = "2026-10-04T05:58:57Z"
 scope = ["crates/frob-ledger/**"]
 
 [[acceptance]]
