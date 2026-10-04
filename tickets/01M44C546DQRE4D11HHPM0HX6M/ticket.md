@@ -6,7 +6,8 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T21:12:11Z"
-updated = "2026-10-04T21:12:25Z"
+updated = "2026-10-04T21:19:35Z"
+scope = ["crates/frob-ledger/**", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/triage_cmd.rs", "crates/frob/tests/triage.rs", "docs/design/tickets.md", "docs/design/cli.md", "docs/reference/cli/frob.md"]
 
 [[acceptance]]
 text = "Given tickets in triage labelled triage:accepted, when ticket triage accept --label triage:accepted runs, then each moves to todo in one ledger commit and the report lists every ticket"
