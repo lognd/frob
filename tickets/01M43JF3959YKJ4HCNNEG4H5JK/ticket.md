@@ -6,7 +6,11 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T13:43:14Z"
-updated = "2026-10-04T13:43:14Z"
+updated = "2026-10-04T13:43:28Z"
+
+[[links]]
+kind = "blocked-by"
+target = "01M42MGNE7XHTT1MR5CA6C2R1C"
 
 [[acceptance]]
 text = "Given a file changed between check and --fix, when frob check --fix runs, then the envelope error code is E-FIX-STALE with the guard-refusal exit class and a remedy"

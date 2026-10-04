@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T13:48:12Z"
+digest = "34ba61c303e6f725223c8a5f049f19c59bf63098a19d453353291392c8a0b9f3"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5bc8b183-a451-4c3d-ad27-bf7b19e8289b with nextest profile: default
+    Starting 1 test across 2 binaries (32 tests skipped)
+        PASS [   0.308s] frob-land::land a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.309s] 1 test run: 1 passed, 32 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E test(=a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses)"
+size = 590
+status = "measured"
+tests = ["a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses"]
+at = "2026-10-04T13:48:12Z"
+actor = "lognd"
+rev = 1
