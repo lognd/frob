@@ -2,11 +2,12 @@
 id = "01M12TN66M8RNP8DFRM4QC86JC"
 title = "frob-suggest false positives: raw-find-name blocks mtime queries it cannot answer, make-target contradicts the global prefer-make instruction"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 reporter = "human"
 created = "2026-08-28T00:00:00Z"
-updated = "2026-10-04T21:08:06Z"
+updated = "2026-10-04T21:08:07Z"
 aliases = ["T-3284"]
 labels = ["milestone:1.1.0", "v1-cluster:E1"]
 scope = [".claude/hooks/frob-suggest.py"]
