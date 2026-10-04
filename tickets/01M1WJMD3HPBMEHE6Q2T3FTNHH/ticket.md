@@ -2,12 +2,13 @@
 id = "01M1WJMD3HPBMEHE6Q2T3FTNHH"
 title = "TICK006: require a word boundary before T- so V-model ids (UT-/SIT-/SUBT-/CT-nnnn) are not misread as phantom ticket filings"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:02:16Z"
+updated = "2026-10-04T21:02:17Z"
 aliases = ["T-4209"]
 labels = ["milestone:1.1.0", "v1-cluster:B3d"]
 scope = ["src/frob/tickets"]
