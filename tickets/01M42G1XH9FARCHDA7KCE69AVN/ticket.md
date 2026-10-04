@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T03:41:51Z"
-updated = "2026-10-04T05:22:50Z"
+updated = "2026-10-04T05:30:26Z"
 scope = ["crates/gob-cache/**"]
 
 [[acceptance]]
