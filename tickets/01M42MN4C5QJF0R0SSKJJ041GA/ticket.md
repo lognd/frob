@@ -2,12 +2,12 @@
 id = "01M42MN4C5QJF0R0SSKJJ041GA"
 title = "shared_dir returns differently spelled paths for primary and linked worktrees on Windows (8.3 short name vs long name)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 1
 reporter = "lognd"
 created = "2026-10-04T05:02:15Z"
-updated = "2026-10-04T05:02:15Z"
+updated = "2026-10-04T05:02:27Z"
 scope = ["crates/gob-cache/src/lib.rs", "crates/gob-cache/tests/shared.rs"]
 
 [[acceptance]]
