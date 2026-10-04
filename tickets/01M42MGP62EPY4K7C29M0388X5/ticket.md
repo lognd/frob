@@ -2,12 +2,12 @@
 id = "01M42MGP62EPY4K7C29M0388X5"
 title = "One corrupt lease file blocks lease list and frob work for the whole clone"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:59:49Z"
-updated = "2026-10-04T04:59:49Z"
+updated = "2026-10-04T13:12:26Z"
 scope = ["crates/frob-lease/**"]
 
 [[acceptance]]
