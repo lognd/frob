@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T23:31:11Z"
-updated = "2026-10-04T05:47:42Z"
+updated = "2026-10-04T05:50:17Z"
 scope = ["crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/tests/gaps.rs"]
 
 [[acceptance]]
