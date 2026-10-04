@@ -2,13 +2,13 @@
 id = "01M3ZX7FG2JNTHKVQ5R535DAVZ"
 title = "gob-packs crate: pack.toml manifest model and validation"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-03T03:34:21Z"
+updated = "2026-10-04T04:25:06Z"
 idempotency_key = "m2-packs-manifest"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/gob-packs/**"]
