@@ -8,7 +8,7 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:02:23Z"
-updated = "2026-10-04T04:39:53Z"
+updated = "2026-10-04T05:43:54Z"
 scope = ["crates/gob-dev/src/publish.rs", "crates/gob-dev/src/main.rs", ".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs", "docs/guides/release.md", "docs/design/releases.md"]
 
 [[acceptance]]
