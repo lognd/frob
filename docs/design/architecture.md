@@ -349,7 +349,7 @@ list of private terms publishes them. Redaction rules are read from two local fi
 user config `<platform config dir>/frob/privacy.toml` (`XDG_CONFIG_HOME`, else `APPDATA` on Windows, `~/Library/Application Support`
 on macOS, `~/.config`) and `<git common dir>/frob/privacy.toml`, next to the check cache (`frob/cache/<product>/`). Both hold
 `[[rule]]` tables of `pattern`, `replace`, `regex = false`, `case_sensitive = true`. Nothing writes either file into a work
-tree; `frob init` and `frob doctor` log their locations; a malformed file makes writes refuse (fail closed). The locations
+tree; `frob doctor` logs their locations (`frob init` to follow); a malformed file makes writes refuse (fail closed). The locations
 are resolved by `gob-config` (`user_file`, `repo_file`); the engine is `frob-ledger::redact` (tickets.md section 9).
 
 Environment variables never change an enforcement outcome (the user config location above follows the platform
