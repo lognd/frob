@@ -6,7 +6,11 @@ category = "triage"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:09:11Z"
 aliases = ["T-3839"]
 labels = ["milestone:1.1.0", "v1-cluster:C3"]
+
+[[links]]
+kind = "duplicates"
+target = "01M1QDTYR2FFF5HYHVZP2W1WMP"
 +++
