@@ -7,9 +7,13 @@ priority = "high"
 points = 1
 reporter = "human"
 created = "2026-08-31T00:00:00Z"
-updated = "2026-08-31T00:00:00Z"
+updated = "2026-10-04T21:09:36Z"
 aliases = ["T-3611"]
 labels = ["milestone:1.0.0", "v1-cluster:C1a"]
+
+[[links]]
+kind = "duplicates"
+target = "01M12TN666HXM240AFAJ8HVP93"
 +++
 
 Epic: frob write-path latency and availability. The tool is correct but
