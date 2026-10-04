@@ -3,13 +3,13 @@ id = "01M3AXSD7VDBAJ8DNVFEWSM4J3"
 title = "Helm values ingestion"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD8TNZP3PQVKB7EKCR7M"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:57:56Z"
 aliases = ["T-6395"]
-labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/lang/_config_helm.py (new)", "tests/fixtures/sysdesign/config-helm/**"]
 
 [[links]]
