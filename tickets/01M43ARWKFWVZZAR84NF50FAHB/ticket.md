@@ -2,13 +2,14 @@
 id = "01M43ARWKFWVZZAR84NF50FAHB"
 title = "crunk as a frob sibling: discovery, doctor row, fake-sibling and bundle tests"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:47Z"
-updated = "2026-10-04T22:18:21Z"
+updated = "2026-10-04T22:18:22Z"
 idempotency_key = "crunk-plan-sib"
 labels = ["area:crunk"]
 scope = ["crates/frob-check/tests/**", "crates/frob-check/src/sibling/**", "crates/frob/tests/sibling_discovery.rs", "crates/frob/src/doctor.rs", "crates/gob-testsupport/**"]
