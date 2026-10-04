@@ -2,11 +2,12 @@
 id = "01M2PAKKJ730JH8KK6YGGSB61G"
 title = "csharp event_declaration has no RawSymbol (_walk_csharp.py)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-17T00:00:00Z"
-updated = "2026-09-17T00:00:00Z"
+updated = "2026-10-04T21:08:55Z"
 aliases = ["T-4679"]
 labels = ["milestone:0.540.0", "v1-cluster:D2"]
 scope = ["src/frob/lang/_walk_csharp.py"]
