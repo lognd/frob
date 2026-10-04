@@ -7,10 +7,14 @@ priority = "medium"
 parent = "01M1T07NYJGETZ4A744PSANMYZ"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:09:13Z"
 aliases = ["T-4049"]
 labels = ["milestone:1.1.0", "v1-cluster:C3"]
 scope = ["src/frob/gates/_tickets_gate.py"]
+
+[[links]]
+kind = "duplicates"
+target = "01M1QDTYR2FFF5HYHVZP2W1WMP"
 +++
 
 Consumer logand.app-v2 F-248, 2026-09-06:
