@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T22:43:50Z"
+digest = "3cf60837e13897b6802740dd0d009d82835fbf73517e942e789fabdb0e9c6e72"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1e46761a-b720-4e9a-81f8-a2674da07604 with nextest profile: default
+    Starting 3 tests across 8 binaries (133 tests skipped)
+        PASS [   0.006s] gob-directives comments::tests::segments_cover_exactly_the_shared_corpus_spans
+        PASS [   0.006s] gob-languages comments::tests::corpus_spans_are_exact
+        PASS [   0.007s] frob-obligations comments::tests::lines_cover_exactly_the_shared_corpus_spans
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 3 tests run: 3 passed, 133 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-directives -p frob-obligations -p gob-languages shared_corpus corpus_spans"
+size = 755
+status = "measured"
+tests = ["comments::tests::segments_cover_exactly_the_shared_corpus_spans", "comments::tests::corpus_spans_are_exact", "comments::tests::lines_cover_exactly_the_shared_corpus_spans"]
+at = "2026-10-04T22:43:50Z"
+actor = "lognd"
+rev = 1
