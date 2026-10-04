@@ -6,7 +6,8 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T13:43:14Z"
-updated = "2026-10-04T22:23:54Z"
+updated = "2026-10-04T22:36:23Z"
+scope = ["crates/gob-check/src/error.rs", "crates/gob-check/src/fix.rs", "crates/gob-check/src/lib.rs", "crates/frob-check/src/verb.rs", "docs/design/cli.md"]
 
 [[links]]
 kind = "blocked-by"
