@@ -3,12 +3,12 @@ id = "01M1T07NXSGQEK1JQ4XKQSJFAK"
 title = "F-236+: frontend delta audit -- substring-as-prefix is now a measured cross-language, cross-repo recurrence"
 type = "epic"
 category = "triage"
-priority = "high"
+priority = "low"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:05:18Z"
 aliases = ["T-4025"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 +++
 
 Consumer logand.app-v2, F-236 onward, verbatim from their

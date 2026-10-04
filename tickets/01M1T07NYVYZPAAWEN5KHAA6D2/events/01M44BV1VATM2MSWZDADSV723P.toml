@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. A wrong-direction frob:tests directive should be reported when parsed, not later as a coverage finding; uncertain how v2 gob-directives handles direction."
+at = "2026-10-04T21:06:41Z"
+actor = "lognd"
+rev = 1

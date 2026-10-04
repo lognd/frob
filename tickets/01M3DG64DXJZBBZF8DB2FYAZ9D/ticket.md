@@ -2,14 +2,19 @@
 id = "01M3DG64DXJZBBZF8DB2FYAZ9D"
 title = "ticket land applies Tier-A fixes across the WHOLE tree and squashes them under the landing ticket: restrict to scope, add a disable list, gate TEST010"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "critical"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-09-26T00:00:00Z"
+updated = "2026-10-04T21:09:38Z"
 aliases = ["T-6589"]
 labels = ["milestone:0.534.0", "v1-cluster:C1b"]
 scope = ["src/frob/app/ticket_runner/_land_cmd.py", "src/frob/gates/_fix_engine.py", "docs/modules/tickets-landing.md"]
+
+[[links]]
+kind = "duplicates"
+target = "01M3ZX81T4DCMKXZXNSR5QDX7H"
 +++
 
 Reported by the logand.app-v2 session (2026-09-26, dev332/dev338):

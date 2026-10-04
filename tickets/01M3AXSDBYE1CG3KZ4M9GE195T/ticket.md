@@ -2,11 +2,12 @@
 id = "01M3AXSDBYE1CG3KZ4M9GE195T"
 title = "a11y gate: give a11y_findings a real repo root so _locate_statement_page can leave test-only status"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T21:01:26Z"
 aliases = ["T-6526"]
 labels = ["milestone:0.534.0", "v1-cluster:B2", "area:crunk"]
 scope = ["src/frob/webapp/_a11y_statement.py", "src/frob/gates/_a11y_gate.py"]

@@ -3,12 +3,12 @@ id = "01M3DG64CHWHEGXVF4YG762T83"
 title = "test runners: 'typescript' and 'ts' (and js/javascript) are not aliased, so vitest evidence never binds; one canonical language table + loader refusal"
 type = "bug"
 category = "triage"
-priority = "critical"
+priority = "low"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-09-26T00:00:00Z"
+updated = "2026-10-04T21:07:07Z"
 aliases = ["T-6545"]
-labels = ["milestone:0.534.0", "v1-cluster:C4a"]
+labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/testing/_collect.py", "tests/unit/test_runner_language_aliases.py", "docs/modules/testing.md"]
 +++
 

@@ -3,12 +3,12 @@ id = "01M1WJMD2FWKPS1J7MPF18KDVY"
 title = "consumer round-4 backend audit: nine findings written as why the gates missed them, including a second independent report of waiver premises expiring unchecked"
 type = "epic"
 category = "triage"
-priority = "critical"
+priority = "low"
 reporter = "auditor"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:05:52Z"
 aliases = ["T-4175"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 
 [[acceptance]]
 text = "given the findings in this epic, when it is decomposed, then each has its own leaf or recorded evidence on an existing open ticket, with the choice stated per finding"

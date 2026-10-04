@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Resolve frob:verifies against the V-model graph (TIER002); v2 has TIER003 (~DC9FPPN) only."
+at = "2026-10-04T21:02:52Z"
+actor = "lognd"
+rev = 1

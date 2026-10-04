@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. PT-7 second half: record each rule's cheapest clearing action and refuse rules whose cheapest fix is deleting docs or adding a waiver."
+at = "2026-10-04T21:09:22Z"
+actor = "lognd"
+rev = 1

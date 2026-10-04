@@ -2,11 +2,12 @@
 id = "01M2Y1SS131BQE3S0JHA6W3M2C"
 title = "Declare frob run/build's exec site (src/frob/app/run_runner.py) on the cli node in design/frob.strata"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-09-20T00:00:00Z"
+updated = "2026-10-04T21:02:41Z"
 aliases = ["T-5155"]
 labels = ["v1-cluster:B3d"]
 scope = ["design/frob.strata"]

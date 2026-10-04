@@ -2,11 +2,12 @@
 id = "01M2VFD1Z7WFVE3ME1910TYA1C"
 title = "DOC006 also needs tickets/** skip for non-CLI pointer kinds (file/path, config, file::symbol) in open ticket bodies"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-09-19T00:00:00Z"
+updated = "2026-10-04T21:07:58Z"
 aliases = ["T-5095"]
 labels = ["milestone:0.534.0", "v1-cluster:F1"]
 scope = ["src/frob/gates/_docptr.py", "tests/gates/test_docptr.py"]

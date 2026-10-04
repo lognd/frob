@@ -3,12 +3,12 @@ id = "01M1WJMD1X14Z9P76XPX0QQ0NM"
 title = "consumer round-4 engine audit: findings frob or strata should have caught, including a waiver whose stated premise expired unnoticed"
 type = "epic"
 category = "triage"
-priority = "critical"
+priority = "low"
 reporter = "auditor"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:02:07Z"
 aliases = ["T-4157"]
-labels = ["milestone:1.1.0", "v1-cluster:B3d"]
+labels = ["v1-cluster:B3d", "triage:accepted"]
 
 [[acceptance]]
 text = "given the findings in this epic, when it is decomposed, then each has its own leaf ticket or recorded evidence on an existing open ticket, with the choice stated per finding"

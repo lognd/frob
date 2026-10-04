@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Outbound flow destination must be constrained to its declared node; grimble SYS rule content."
+at = "2026-10-04T21:05:46Z"
+actor = "lognd"
+rev = 1

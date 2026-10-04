@@ -2,11 +2,12 @@
 id = "01M35RZYA3EDEVTN8C8KTAJGNY"
 title = "Widen _a11y_gate file walk to include CSS/SCSS"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-23T00:00:00Z"
-updated = "2026-09-23T00:00:00Z"
+updated = "2026-10-04T21:01:09Z"
 aliases = ["T-5443"]
 labels = ["v1-cluster:B2", "area:crunk"]
 scope = ["src/frob/gates/_a11y_gate.py"]

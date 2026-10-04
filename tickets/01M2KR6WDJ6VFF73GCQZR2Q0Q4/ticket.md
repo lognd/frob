@@ -2,11 +2,12 @@
 id = "01M2KR6WDJ6VFF73GCQZR2Q0Q4"
 title = "strata: secret_prop reads-flows cannot carry a waive or timeout so REL200 is unfixable"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-16T00:00:00Z"
-updated = "2026-09-16T00:00:00Z"
+updated = "2026-10-04T21:02:39Z"
 aliases = ["T-4530"]
 labels = ["milestone:0.536.0", "v1-cluster:B3d"]
 scope = ["strata-core/src/parse/grammar_node.rs", "src/frob/strata/_secrets.py", "docs/strata/surface.md"]

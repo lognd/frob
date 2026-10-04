@@ -2,11 +2,12 @@
 id = "01M1J91GMBSASE290CGDKQGXRM"
 title = "frob coverage --full fails with no data to report, injects -n without xdist"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-03T00:00:00Z"
-updated = "2026-09-03T00:00:00Z"
+updated = "2026-10-04T21:06:21Z"
 aliases = ["T-3723"]
 labels = ["milestone:1.1.0", "v1-cluster:C4a"]
 scope = ["src/frob/coverage/**"]

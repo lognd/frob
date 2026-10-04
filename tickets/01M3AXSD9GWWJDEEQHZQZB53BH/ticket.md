@@ -2,11 +2,12 @@
 id = "01M3AXSD9GWWJDEEQHZQZB53BH"
 title = "DOC006: ticket-body pointers inside the ticket's own or blocker's scope are future-facing, not findings"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T21:08:00Z"
 aliases = ["T-6448"]
 labels = ["milestone:0.535.0", "v1-cluster:F1"]
 scope = ["src/frob/gates/_docptr.py", "tests/test_docptr_ticket_scope.py", "tests/fixtures/docptr_ticket_scope/", "docs/modules/gates.md"]

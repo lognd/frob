@@ -2,12 +2,13 @@
 id = "01M2VFD1P7S97B4YF7W7ZWT0A1"
 title = "Docstring half of the DOCARCH002 Tier-A --fix: keep paragraph 1, route the remainder to the cited ticket or to docs/modules with a frob:doc pointer (1055 docstrings, 39k lines)"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 parent = "01M2VFD1JK8W1752V73ERRYJS9"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-09-19T00:00:00Z"
+updated = "2026-10-04T21:07:56Z"
 aliases = ["T-4807"]
 labels = ["milestone:0.534.0", "v1-cluster:F1"]
 scope = ["src/frob/narrative", "src/frob/gates/_fix_engine.py", "docs/modules/docstrings.md", "tests/narrative"]

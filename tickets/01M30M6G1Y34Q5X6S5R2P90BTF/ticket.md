@@ -2,11 +2,12 @@
 id = "01M30M6G1Y34Q5X6S5R2P90BTF"
 title = "DOC011: docs/design/ticket-strata-shared-graph-inventory.md cites three draft ids (T-draft-5d5c1eb2, e7434c27, 452acd80) that were never filed"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-21T00:00:00Z"
-updated = "2026-09-21T00:00:00Z"
+updated = "2026-10-04T21:02:44Z"
 aliases = ["T-5182"]
 labels = ["milestone:0.534.0", "v1-cluster:B3d"]
 scope = ["docs/design/ticket-strata-shared-graph-inventory.md"]

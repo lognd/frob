@@ -3,12 +3,12 @@ id = "01M1WJMD174K541FJR85BEHX2T"
 title = "consumer backlog F-315 through F-338: 24 untriaged findings including four whole verbatim audits"
 type = "epic"
 category = "triage"
-priority = "critical"
+priority = "low"
 reporter = "auditor"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:05:49Z"
 aliases = ["T-4135"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 
 [[acceptance]]
 text = "given the 24 findings in this epic, when it is decomposed, then each has either its own leaf ticket or recorded evidence attached to an existing open ticket, with the choice stated per finding"

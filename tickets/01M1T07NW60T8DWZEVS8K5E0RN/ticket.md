@@ -2,12 +2,13 @@
 id = "01M1T07NW60T8DWZEVS8K5E0RN"
 title = "policy.norm: measure exercisability, document or redesign"
 type = "docs"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 parent = "01M1QDTYTGXZY6FBNW2W33B3A3"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:05:01Z"
 aliases = ["T-3974"]
 labels = ["milestone:1.1.0", "v1-cluster:B4"]
 scope = ["src/frob/policy/__init__.py"]

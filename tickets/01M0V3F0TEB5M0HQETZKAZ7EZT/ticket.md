@@ -2,11 +2,12 @@
 id = "01M0V3F0TEB5M0HQETZKAZ7EZT"
 title = "extend frob_core.py_function_metrics to carry exception_types/is_slice natively (unblocks T-2799)"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-08-25T00:00:00Z"
-updated = "2026-08-25T00:00:00Z"
+updated = "2026-10-04T21:08:45Z"
 aliases = ["T-2894"]
 labels = ["milestone:0.540.0", "v1-cluster:D2"]
 scope = ["frob-core/src/arch_python.rs", "frob-core/frob_core.pyi", "tests/unit/test_arch_python_native.py"]

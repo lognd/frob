@@ -3,12 +3,12 @@ id = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
 title = "consumer round-3 backend audit: ten defects frob or strata should have caught, each with a proposed rule (F-307)"
 type = "epic"
 category = "triage"
-priority = "critical"
+priority = "low"
 reporter = "auditor"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:02:03Z"
 aliases = ["T-4109"]
-labels = ["milestone:1.1.0", "v1-cluster:B3d"]
+labels = ["v1-cluster:B3d", "triage:accepted"]
 
 [[acceptance]]
 text = "given the ten findings in F-307, when this epic is decomposed, then each has its own leaf ticket with a must-fire fixture built from the consumer's code shape rather than frob's"

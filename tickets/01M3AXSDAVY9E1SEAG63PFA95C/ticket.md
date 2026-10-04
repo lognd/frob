@@ -3,13 +3,13 @@ id = "01M3AXSDAVY9E1SEAG63PFA95C"
 title = "STORE103: `SET`/`SETEX` on a cache-named key with no TTL (Redis)"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD9STSFC2MR8M369JNE8"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:44Z"
 aliases = ["T-6491"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_redis.py", "tests/fixtures/store/store103-redis-no-ttl/**"]
 
 [[links]]

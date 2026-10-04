@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Schema/session-level SQL performance rules; uncertain: the v1 sqlfluff plugin shape does not carry over."
+at = "2026-10-04T21:01:13Z"
+actor = "lognd"
+rev = 1

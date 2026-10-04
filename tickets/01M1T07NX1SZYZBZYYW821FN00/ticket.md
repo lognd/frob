@@ -3,12 +3,12 @@ id = "01M1T07NX1SZYZBZYYW821FN00"
 title = "Two different builds both report 0.530.0, so consumer bug reports cannot be checked against main (F-216 was already fixed and unverifiable)"
 type = "bug"
 category = "triage"
-priority = "high"
+priority = "medium"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:10:05Z"
 aliases = ["T-4001"]
-labels = ["milestone:1.1.0", "v1-cluster:E3"]
+labels = ["v1-cluster:E3", "triage:accepted"]
 scope = ["src/frob/app/doctor_runner.py"]
 +++
 

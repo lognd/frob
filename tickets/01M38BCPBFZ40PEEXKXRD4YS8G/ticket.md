@@ -2,12 +2,13 @@
 id = "01M38BCPBFZ40PEEXKXRD4YS8G"
 title = "Document T-3047's review/decision node kinds in docs/strata/vmodel.md (blocked by T-3010 lease)"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 parent = "01M0XNVQZ7V6VFKCBM4G9CR1C2"
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-09-24T00:00:00Z"
+updated = "2026-10-04T21:02:54Z"
 aliases = ["T-6511"]
 labels = ["v1-cluster:B3d"]
 scope = ["docs/strata/vmodel.md"]

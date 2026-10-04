@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. EXC008 on invariants (exceptions.md) is designed; uncertain whether v2 INV002 already has an escape hatch."
+at = "2026-10-04T21:04:49Z"
+actor = "lognd"
+rev = 1

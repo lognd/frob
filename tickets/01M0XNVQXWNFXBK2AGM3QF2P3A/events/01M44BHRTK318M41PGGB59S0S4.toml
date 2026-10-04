@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~QNDWNDM: vmod entity (grmb-spec.md, D75) and CLAIM/VMOD families are ported by G16; the test-first protocol part is carried by the imported T-3068 ticket."
+at = "2026-10-04T21:01:36Z"
+actor = "lognd"
+rev = 1

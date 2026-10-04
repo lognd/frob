@@ -2,14 +2,19 @@
 id = "01M1AHVBGV3R1TFE721QQDK7E5"
 title = "frob write-path latency: LandInProgress window starvation, land queue default, wait mode, guard false-positives"
 type = "epic"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "high"
 points = 1
 reporter = "human"
 created = "2026-08-31T00:00:00Z"
-updated = "2026-08-31T00:00:00Z"
+updated = "2026-10-04T21:09:37Z"
 aliases = ["T-3611"]
 labels = ["milestone:1.0.0", "v1-cluster:C1a"]
+
+[[links]]
+kind = "duplicates"
+target = "01M12TN666HXM240AFAJ8HVP93"
 +++
 
 Epic: frob write-path latency and availability. The tool is correct but

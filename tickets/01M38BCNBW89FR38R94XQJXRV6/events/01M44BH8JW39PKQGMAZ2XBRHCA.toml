@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. WEBSEC225 password-policy rule follow-up; grimble-websec (D89)."
+at = "2026-10-04T21:01:20Z"
+actor = "lognd"
+rev = 1

@@ -4,13 +4,13 @@ title = "WEBSEC authorization, business logic and LLM surface: admin routes with
 type = "story"
 flavour = "user_story"
 category = "triage"
-priority = "critical"
+priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-09-20T00:00:00Z"
+updated = "2026-10-04T21:00:46Z"
 aliases = ["T-5144"]
-labels = ["milestone:0.534.0", "component:gates", "v1-cluster:B2", "area:grimble"]
+labels = ["component:gates", "v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
 
 33 entries, 23 static, 9 config. Static rules: route handlers under /admin or with admin in name lacking the auth decorator/middleware the framework uses; permission checks only in client code (React route guards with no server counterpart for the same path); ORM lookups by id from request with no owner filter; request.json/params passed whole to create/update; Supabase tables without RLS policy in migrations, anon key used with service scope; webhook handlers without signature verification and timestamp tolerance (Stripe, GitHub, Twilio, Slack); payment calls without idempotency key; read-modify-write on balance/coupon without SELECT FOR UPDATE or atomic update; list endpoints without pagination; no per-user rate limit on auth and expensive endpoints. LLM rules: model output flowing to exec/SQL/HTML/shell sinks; tool definitions with write or spend capability and no confirmation gate; system prompt literals containing secrets or PII; no max_tokens or budget on completion calls; retrieval sources without access filtering. Cites in corpus.

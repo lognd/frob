@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Dependency vet hook must vet the delta a command introduces, not the whole resolution; grimble vet is designed (~RPQKHAV) and this requirement is not in it."
+at = "2026-10-04T21:08:12Z"
+actor = "lognd"
+rev = 1

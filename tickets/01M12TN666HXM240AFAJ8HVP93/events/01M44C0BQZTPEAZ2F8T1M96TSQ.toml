@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. PT-17: land.lock waiters need FIFO fairness and queue position in timeouts (flock polling is unfair); ~3WMXBBJ covers lease waits only."
+at = "2026-10-04T21:09:35Z"
+actor = "lognd"
+rev = 1

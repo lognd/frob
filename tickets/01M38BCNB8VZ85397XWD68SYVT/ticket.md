@@ -2,12 +2,13 @@
 id = "01M38BCNB8VZ85397XWD68SYVT"
 title = "Windows-only: dotnet/unity runner tests fail with RunFailed (toolchain/env?)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 3
 reporter = "agent"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-09-24T00:00:00Z"
+updated = "2026-10-04T21:06:58Z"
 aliases = ["T-5480"]
 labels = ["milestone:v0.534.0", "v1-cluster:C4a"]
 +++

@@ -4,13 +4,13 @@ title = "A11Y: WCAG 2.2 Level A and AA static rules over HTML/JSX/TSX/Vue/templa
 type = "story"
 flavour = "user_story"
 category = "triage"
-priority = "high"
+priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-09-20T00:00:00Z"
+updated = "2026-10-04T21:00:56Z"
 aliases = ["T-5146"]
-labels = ["milestone:0.534.0", "component:gates", "v1-cluster:B2", "area:crunk"]
+labels = ["component:gates", "v1-cluster:B2", "area:crunk", "triage:accepted", "milestone:0.538.0"]
 +++
 
 45 entries, 40 static: alt on img and svg role=img; heading order and single h1 (also SEO); html lang and lang on parts; page title unique; link and button accessible names; form inputs with labels; autocomplete on identity fields (1.3.5); skip link (2.4.1); focus visible not suppressed (outline:none without replacement); tabindex>0; aria-hidden on focusable; invalid ARIA role/attribute pairs; duplicate ids; autoplay media without controls; video without track kind=captions; target size 24px (2.5.8); prefers-reduced-motion respected when animations exist; color-only meaning (dynamic-only -> axe obligation); contrast (static where colors are literal in CSS, else axe). Accessibility statement page required with the W3C WAI statement contents (commitment, standard applied WCAG 2.2 AA, contact, known limitations, measures, technical prerequisites, tested environments). Authorities: WCAG 2.2, ADA Title II rule 28 CFR 35.200, EAA 2019/882, Section 508, EN 301 549. axe-core/pa11y as an optional adapter for dynamic-only criteria, registered in the tool registry.

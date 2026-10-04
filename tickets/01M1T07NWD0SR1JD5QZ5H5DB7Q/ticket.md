@@ -4,12 +4,12 @@ title = "F-195: unresolved evidence id asserts the test does not exist instead o
 type = "task"
 flavour = "ux"
 category = "triage"
-priority = "medium"
+priority = "low"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:05:08Z"
 aliases = ["T-3981"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/tickets/_evidence.py"]
 +++
 

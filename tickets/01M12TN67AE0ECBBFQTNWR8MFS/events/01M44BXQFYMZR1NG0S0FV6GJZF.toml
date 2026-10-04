@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: investigation of why five of six reported v1 protect-secrets false positives did not reproduce; the v2 hook is new (PT-3, ~KHCKTS3)."
+at = "2026-10-04T21:08:08Z"
+actor = "lognd"
+rev = 1

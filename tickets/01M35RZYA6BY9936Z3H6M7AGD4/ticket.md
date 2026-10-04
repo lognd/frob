@@ -3,12 +3,12 @@ id = "01M35RZYA6BY9936Z3H6M7AGD4"
 title = "sqlfluff plugin: schema/session-level performance rules split off T-5335"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 reporter = "human"
 created = "2026-09-23T00:00:00Z"
-updated = "2026-09-23T00:00:00Z"
+updated = "2026-10-04T21:01:13Z"
 aliases = ["T-5446"]
-labels = ["v1-cluster:B2", "area:grimble"]
+labels = ["v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sql/_sqlfluff_plugin.py"]
 +++
 

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 Windows dotnet/unity runner tests (RunFailed); v2 Windows work is the D86 path discipline epic ~ATR5EP7."
+at = "2026-10-04T21:06:58Z"
+actor = "lognd"
+rev = 1

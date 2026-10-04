@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "Superseded by D91: ledger text is inert data, so directive and doc rules never scan ticket bodies."
+at = "2026-10-04T21:07:58Z"
+actor = "lognd"
+rev = 1

@@ -2,12 +2,13 @@
 id = "01M1T07NYD0PP981S8YK828Q0N"
 title = "F-245: the vitest collect cache is never refreshed (error path skips the write; an empty result caches as legitimate), forcing ~15 tickets onto cmd: evidence"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 parent = "01M1T07NY4QCBYNNMPSJDNWN5E"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:06:36Z"
 aliases = ["T-4045"]
 labels = ["milestone:0.548.0", "v1-cluster:C4a"]
 scope = ["src/frob/testing/_collect_ts.py"]

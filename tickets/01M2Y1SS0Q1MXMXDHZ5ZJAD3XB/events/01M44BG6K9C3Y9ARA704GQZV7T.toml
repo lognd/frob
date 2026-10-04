@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. WEBSEC config/headers/supply-chain rules beyond the first slice ~8998PBE (D89)."
+at = "2026-10-04T21:00:45Z"
+actor = "lognd"
+rev = 1

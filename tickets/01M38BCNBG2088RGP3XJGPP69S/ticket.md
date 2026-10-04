@@ -2,11 +2,12 @@
 id = "01M38BCNBG2088RGP3XJGPP69S"
 title = "Widen a11y_gate hook contract so _locate_statement_page gets a repo root"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-09-24T00:00:00Z"
+updated = "2026-10-04T21:01:14Z"
 aliases = ["T-5488"]
 labels = ["v1-cluster:B2", "area:crunk"]
 scope = ["src/frob/webapp/_a11y_statement.py"]

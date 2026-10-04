@@ -3,13 +3,13 @@ id = "01M3AXSDAES8ZSK907ZEN6Q5YS"
 title = "SYSDESIGN101: declared tier-1 availability with no health-checked/multi-provider DNS failover"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD8RPMPFSYCWPM0XQY5G"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:31Z"
 aliases = ["T-6478"]
-labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_edge.py (new)", "tests/fixtures/sysdesign/sysdesign101/**"]
 
 [[links]]

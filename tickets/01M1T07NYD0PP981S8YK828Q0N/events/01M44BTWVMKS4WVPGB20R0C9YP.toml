@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 vitest collect cache never refreshed; v2 has no collect cache for providers."
+at = "2026-10-04T21:06:36Z"
+actor = "lognd"
+rev = 1

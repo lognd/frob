@@ -2,7 +2,7 @@
 // frob:ticket 01M40WS6200M99J09D5XGAS05X
 #![allow(dead_code)] // each test binary compiles this module and uses a subset
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// A fresh git repository in a temp dir on branch `main` with a repo-local identity (`Test` / `test@example.com`), so no test reads the host's git config.
 pub fn git_repo() -> tempfile::TempDir {
@@ -46,4 +46,28 @@ pub fn set_done_requires(root: &Path, requires: &[&str]) {
         })
         .collect();
     std::fs::write(&path, lines.join("\n") + "\n").expect("write frob.toml");
+}
+
+/// `PATH` with every directory that already holds a real sibling (`crunk`, `grimble`) removed, keeping git and the toolchain; so sibling discovery never depends on what the developer installed.
+pub fn hermetic_path() -> std::ffi::OsString {
+    hermetic_path_from(&std::env::var_os("PATH").unwrap_or_default())
+}
+
+/// `ambient` (a `PATH` value) with every directory holding a real sibling removed.
+pub fn hermetic_path_from(ambient: &std::ffi::OsStr) -> std::ffi::OsString {
+    let kept: Vec<PathBuf> = std::env::split_paths(ambient)
+        .filter(|d| {
+            ["crunk", "grimble"]
+                .iter()
+                .all(|name| !d.join(name).exists() && !d.join(format!("{name}.exe")).exists())
+        })
+        .collect();
+    std::env::join_paths(kept).expect("join PATH")
+}
+
+/// The `frob` binary under test with a hermetic `PATH` and `FROB_LOG` unset: the one way tests should build their command.
+pub fn frob_command() -> assert_cmd::Command {
+    let mut cmd = assert_cmd::Command::cargo_bin("frob").expect("frob binary");
+    cmd.env("PATH", hermetic_path()).env_remove("FROB_LOG");
+    cmd
 }

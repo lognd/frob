@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 check_runner.py frob:tests separator and DRIFT002 findings."
+at = "2026-10-04T21:06:20Z"
+actor = "lognd"
+rev = 1

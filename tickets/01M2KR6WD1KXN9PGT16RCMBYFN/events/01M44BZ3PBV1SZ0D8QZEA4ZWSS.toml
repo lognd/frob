@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. C# and Unity support; dotnet adapter and asmdef inference rule (binding.md B11) are designed and unticketed."
+at = "2026-10-04T21:08:54Z"
+actor = "lognd"
+rev = 1

@@ -2,11 +2,12 @@
 id = "01M2C10QBJXB647M8XYJHJ6HKH"
 title = "REF002: docs/design/macos-portability.md has only one inbound reference"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-13T00:00:00Z"
-updated = "2026-09-13T00:00:00Z"
+updated = "2026-10-04T21:07:51Z"
 aliases = ["T-4466"]
 labels = ["milestone:0.544.0", "v1-cluster:F1"]
 scope = ["docs/design/macos-portability.md"]
