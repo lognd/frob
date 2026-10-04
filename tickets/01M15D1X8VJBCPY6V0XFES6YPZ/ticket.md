@@ -2,11 +2,12 @@
 id = "01M15D1X8VJBCPY6V0XFES6YPZ"
 title = "frob:debt does not actually suppress the gate finding it documents suppressing"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-08-29T00:00:00Z"
-updated = "2026-08-29T00:00:00Z"
+updated = "2026-10-04T21:07:35Z"
 aliases = ["T-3355"]
 labels = ["milestone:0.541.0", "v1-cluster:F1"]
 scope = ["src/frob/gates/_waive.py", "src/frob/gates/_debt_deprecated.py"]
