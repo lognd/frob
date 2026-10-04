@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 code-kind ticket refusing vitest ids; v2 has no code kind and the provider list is tickets.md s9."
+at = "2026-10-04T21:06:37Z"
+actor = "lognd"
+rev = 1
