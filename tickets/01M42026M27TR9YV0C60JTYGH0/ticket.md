@@ -8,7 +8,7 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:02:23Z"
-updated = "2026-10-04T04:36:54Z"
+updated = "2026-10-04T04:36:55Z"
 scope = ["crates/gob-dev/src/publish.rs", "crates/gob-dev/src/main.rs", ".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs", "docs/guides/release.md", "docs/design/releases.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given publishable names missing from crates.io, when cargo dev publish --reserve runs without --apply, then it lists them and the pacing plan and publishes nothing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the release workflow, when the workflow test runs, then pypi does not need crates and both still need smoke"
