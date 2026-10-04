@@ -5,7 +5,7 @@ use std::path::Path;
 
 use frob_ledger::event::{ChangelogExemptData, EventBody, LandExemptData};
 use frob_ledger::guards::{CloseContext, CloseGuard, GuardFailure};
-use frob_ledger::model::{Category, Outcome, Ticket};
+use frob_ledger::model::{Category, LinkKind, Outcome, Ticket};
 use frob_ledger::{EventId, Ledger, TicketId};
 use frob_pm::{DoneRequirement, PmConfig};
 
@@ -15,6 +15,8 @@ use crate::error::{EvidenceError, Result as EvResult};
 pub const CODE_CRITERIA: &str = "E-DONE-CRITERIA-UNBOUND";
 /// Stable code of a ticket that still has open children.
 pub const CODE_CHILDREN: &str = "E-DONE-OPEN-CHILDREN";
+/// Stable code of a ticket that is still blocked by an open ticket (`no_open_blockers`, ~G7AXHR1).
+pub const CODE_BLOCKERS: &str = "E-DONE-OPEN-BLOCKERS";
 /// Stable code of a requirement that cannot be evaluated yet (Unresolved, never a silent pass).
 pub const CODE_UNRESOLVED: &str = "E-DONE-UNRESOLVED";
 /// Stable code of a missing changelog fragment (REL003).
@@ -72,6 +74,8 @@ enum FragmentState {
 pub struct DoneGuard {
     requires: Vec<DoneRequirement>,
     open_children: Vec<String>,
+    /// Blockers (`handle (title)`) whose category is not `done`.
+    open_blockers: Vec<String>,
     fragment: FragmentState,
     bypass: Option<String>,
     /// A `changelog-exempt` event already on the ticket.
@@ -95,6 +99,20 @@ impl DoneGuard {
             .filter(|c| c.category != Category::Done)
             .map(|c| format!("{} ({})", c.handle, c.title))
             .collect();
+        // frob:ticket 01M42MGNSY7N4NANEFNG7AXHR1
+        let open_blockers: Vec<String> = view
+            .outgoing
+            .iter()
+            .chain(&view.incoming)
+            .filter(|l| l.kind == LinkKind::BlockedBy && l.category != Some(Category::Done))
+            .map(|l| {
+                format!(
+                    "{} ({})",
+                    l.handle.as_deref().unwrap_or("dangling"),
+                    l.title.as_deref().unwrap_or("?")
+                )
+            })
+            .collect();
         let fragment = fragment_state(root, id, &view.summary.handle);
         let recorded_exemption =
             frob_ledger::event::changelog_exemption(&ledger.events(id)?).is_some();
@@ -102,6 +120,7 @@ impl DoneGuard {
         Ok(Self {
             requires: pm.pm.done_requires,
             open_children,
+            open_blockers,
             fragment,
             bypass: None,
             recorded_exemption,
@@ -217,6 +236,25 @@ impl DoneGuard {
         })
     }
 
+    // frob:ticket 01M42MGNSY7N4NANEFNG7AXHR1
+    fn blockers(&self, cx: &CloseContext<'_>) -> Result<(), GuardFailure> {
+        if self.open_blockers.is_empty() {
+            return Ok(());
+        }
+        Err(GuardFailure {
+            code: CODE_BLOCKERS.to_owned(),
+            message: format!(
+                "closing {} needs every blocker closed (no_open_blockers); open: {}",
+                cx.handle,
+                self.open_blockers.join("; ")
+            ),
+            remedy: Some(
+                "close each blocker, or remove the link with frob ticket unlink, then retry"
+                    .to_owned(),
+            ),
+        })
+    }
+
     fn objective(cx: &CloseContext<'_>) -> Result<(), GuardFailure> {
         if cx.ticket.front.flavour.as_deref() != Some(OBJECTIVE_FLAVOUR) {
             return Ok(());
@@ -308,6 +346,11 @@ impl CloseGuard for DoneGuard {
     fn check(&self, cx: &CloseContext<'_>) -> Result<(), GuardFailure> {
         if !guards_apply(cx.outcome) {
             return Ok(());
+        }
+        // Always on: not a `done_requires` entry, since the requirement enum lives outside this ticket's scope.
+        if let Err(f) = self.blockers(cx) {
+            tracing::info!(code = %f.code, "no_open_blockers refused");
+            return Err(f);
         }
         for req in &self.requires {
             let verdict = match req {
@@ -471,5 +514,58 @@ impl CloseGuard for MergedGuard {
                 h = cx.handle
             )),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use frob_ledger::LedgerConfig;
+    use frob_ledger::model::TicketType;
+    use frob_ledger::ops::NewTicket;
+
+    fn git(dir: &Path, args: &[&str]) {
+        let ok = std::process::Command::new("git")
+            .args(args)
+            .current_dir(dir)
+            .status()
+            .expect("git")
+            .success();
+        assert!(ok, "git {args:?}");
+    }
+
+    // frob:ticket 01M42MGNSY7N4NANEFNG7AXHR1
+    // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
+    #[test]
+    fn an_open_blocker_refuses_a_done_close_and_is_named_but_not_other_outcomes() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let p = dir.path();
+        git(p, &["init", "-q"]);
+        git(p, &["symbolic-ref", "HEAD", "refs/heads/main"]);
+        git(p, &["config", "user.name", "T"]);
+        git(p, &["config", "user.email", "t@example.com"]);
+        git(p, &["commit", "-q", "--allow-empty", "-m", "base"]);
+        let ledger = Ledger::open(
+            gob_git::Repo::discover(p).expect("repo"),
+            LedgerConfig::default(),
+        );
+        let blocker = ledger
+            .new_ticket(NewTicket::new("Blocker", TicketType::Chore))
+            .expect("blocker");
+        let mut req = NewTicket::new("Blocked", TicketType::Chore);
+        req.blocked_by = vec![blocker.ticket.front.id];
+        let blocked = ledger.new_ticket(req).expect("blocked");
+        let id = blocked.ticket.front.id;
+
+        let guard = DoneGuard::for_ticket(&ledger, id, p).expect("guard");
+        let cx = |outcome| CloseContext {
+            ticket: &blocked.ticket,
+            handle: &blocked.handle,
+            outcome,
+        };
+        let f = guard.check(&cx(Some(Outcome::Done))).expect_err("refused");
+        assert_eq!(f.code, CODE_BLOCKERS);
+        assert!(f.message.contains(&blocker.handle), "{}", f.message);
+        assert!(guard.check(&cx(Some(Outcome::WontFix))).is_ok());
     }
 }
