@@ -2,13 +2,13 @@
 id = "01M422D5YRH5TG4499Z24K7SMT"
 title = "Dev build fails: dist now archives frob-check's test helper binary; ship exactly one archive per product binary"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:43:20Z"
-updated = "2026-10-04T01:28:16Z"
+updated = "2026-10-04T01:28:23Z"
 scope = ["crates/frob-check/Cargo.toml", "crates/frob-check/tests/**", "dist-workspace.toml", "packaging/smoke/**", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", ".github/workflows/release.yml", "crates/frob-release/tests/**", "docs/design/releases.md", "Cargo.lock", "Cargo.toml", "crates/frob/Cargo.toml", "crates/grimble/Cargo.toml", "crates/gob-testsupport/**", "crates/frob/tests/sibling_discovery.rs"]
 
 [[acceptance]]

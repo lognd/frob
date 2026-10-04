@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-v2-wt/24K7SMT; scope: crates/frob-check/Cargo.toml, crates/frob-check/tests/**, dist-workspace.toml, packaging/smoke/**, .github/workflows/build-smoke.yml, .github/workflows/ci.yml, .github/workflows/release.yml, crates/frob-release/tests/**, docs/design/releases.md, Cargo.lock, Cargo.toml, crates/frob/Cargo.toml, crates/grimble/Cargo.toml, crates/gob-testsupport/**, crates/frob/tests/sibling_discovery.rs; ttl 7200s"
+at = "2026-10-04T01:28:23Z"
+actor = "lognd"
+rev = 1
