@@ -2,7 +2,8 @@
 id = "01M421FB3B2P9EMNKPDTPHS84G"
 title = "One wheel set per product: grimble standalone on PyPI, frob depends on it at the same version (D87)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
