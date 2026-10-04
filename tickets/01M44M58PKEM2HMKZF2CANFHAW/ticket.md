@@ -2,11 +2,11 @@
 id = "01M44M58PKEM2HMKZF2CANFHAW"
 title = "CI pytest step uses pip, which helpers refuse (PEP 668); install pytest with uv and declare uv in goway.toml"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T23:32:04Z"
-updated = "2026-10-04T23:32:04Z"
+updated = "2026-10-04T23:41:01Z"
 
 [[acceptance]]
 text = "Given a host where pip user installs are refused but uv is present, when cargo dev ci --step pytest runs, then pytest is installed at the pinned version and is on PATH"
