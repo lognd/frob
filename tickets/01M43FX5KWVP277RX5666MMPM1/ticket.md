@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T12:58:30Z"
-updated = "2026-10-04T13:47:30Z"
+updated = "2026-10-04T13:48:08Z"
 scope = ["crates/frob-land/src/land.rs", "crates/frob-land/tests/land.rs", "docs/design/tickets.md", "crates/frob-land/src/lockfile.rs", "crates/gob-config/src/load.rs", "crates/gob-config/src/lib.rs", "crates/frob-land/Cargo.toml"]
 
 [[acceptance]]
