@@ -8,6 +8,10 @@ repository.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 
+[package.metadata.dist]
+# crunk is a product binary (D87): it opts in to a dist archive of its own.
+dist = true
+
 [lib]
 name = "crunk"
 path = "src/lib.rs"

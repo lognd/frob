@@ -299,6 +299,7 @@ fn pass<P: Product>(
         inputs,
         findings: collected,
     };
+    let core_digests = snap.core.index.digests.clone();
 
     let scope = match &opts.scope {
         Some(reference) => Some(product.resolve_scope(&snap, table, reference)?),
@@ -416,6 +417,7 @@ fn pass<P: Product>(
         findings,
         suppressed,
         files,
+        digests: core_digests,
         timing: tally.timing,
         stats: tally.stats,
         fix: None,
@@ -456,7 +458,8 @@ pub fn run<P: Product>(
     let only = validate_only(product, &opts.only)?;
     let mut report = pass(product, root, opts, &table, &perf, &only)?;
     if opts.fix {
-        let applied = fix::apply(root, &report.findings, &report.files)?;
+        let raw = fix::raw_digests(root, &report.findings, &report.files);
+        let applied = fix::apply(root, &report.findings, &report.files, &report.digests, &raw)?;
         if !applied.applied.is_empty() {
             tracing::info!(
                 fixes = applied.applied.len(),
@@ -467,6 +470,8 @@ pub fn run<P: Product>(
         report.fix = Some(FixOutcome {
             applied: applied.applied,
             skipped_overlap: applied.skipped_overlap,
+            skipped_invalid: applied.skipped_invalid,
+            rolled_back: applied.rolled_back,
             remaining: report.findings.len(),
         });
     }

@@ -882,7 +882,7 @@ fn the_pypi_job_checks_each_products_wheel_count_before_uploading_both() {
     assert_eq!(upload["with"]["path"].as_str(), Some("target/wheels/*.whl"));
     // The wheel job checks one wheel per product, and the smoke runs on the whole directory.
     let text = serde_yaml_ng::to_string(&shared["jobs"]["wheel"]["steps"]).unwrap();
-    assert!(text.contains("for product in frob grimble; do"));
+    assert!(text.contains("for product in frob grimble crunk; do"));
     assert!(text.contains("packaging/pypi/smoke.sh target/wheels"));
     let fresh = serde_yaml_ng::to_string(&shared["jobs"]["smoke"]["steps"]).unwrap();
     assert!(fresh.contains("packaging/pypi/smoke.sh wheels"));

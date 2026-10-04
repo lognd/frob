@@ -29,7 +29,7 @@ pub enum CheckError {
         "E-CHECK-FIX-SCOPE: `--fix` needs `--ticket` because [check] fix_requires_scope is true"
     )]
     FixNeedsScope,
-    /// A fix could not be written to disk.
-    #[error("E-CHECK-FIX-IO: {0}")]
+    /// A fix could not be applied; the message leads with its code (`E-CHECK-FIX-IO` or `E-FIX-STALE`).
+    #[error("{0}")]
     FixIo(String),
 }
