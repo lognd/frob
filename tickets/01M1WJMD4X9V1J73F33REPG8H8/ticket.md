@@ -7,9 +7,9 @@ priority = "low"
 parent = "01M1WJMD2PECRZNJSZ2ZEZ45SB"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:02:35Z"
 aliases = ["T-4253"]
-labels = ["milestone:1.1.0", "v1-cluster:B3d"]
+labels = ["v1-cluster:B3d", "triage:accepted"]
 scope = ["src/frob/strata"]
 +++
 
