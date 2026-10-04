@@ -8,7 +8,7 @@ priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-10-04T21:00:44Z"
+updated = "2026-10-04T21:00:45Z"
 aliases = ["T-5143"]
 labels = ["component:gates", "v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
