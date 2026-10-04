@@ -2,12 +2,13 @@
 id = "01M0XNVQYEZ9Z0KN4K0DH63AWT"
 title = "Docs narrative bulk migration: 140 files still cite tickets in prose, split by file"
 type = "epic"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 parent = "01M0XNVQXJ1A3FA43N7AA0PAPK"
 reporter = "human"
 created = "2026-08-26T00:00:00Z"
-updated = "2026-08-26T00:00:00Z"
+updated = "2026-10-04T21:07:28Z"
 aliases = ["T-3022"]
 labels = ["milestone:1.0.0", "v1-cluster:F1"]
 +++
