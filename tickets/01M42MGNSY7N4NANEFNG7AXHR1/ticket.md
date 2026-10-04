@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:59:49Z"
-updated = "2026-10-04T11:57:53Z"
+updated = "2026-10-04T12:57:36Z"
 scope = ["crates/frob-evidence/src/done.rs"]
 
 [[acceptance]]
