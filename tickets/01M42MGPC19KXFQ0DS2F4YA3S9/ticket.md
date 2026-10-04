@@ -2,12 +2,12 @@
 id = "01M42MGPC19KXFQ0DS2F4YA3S9"
 title = "Land ratchet is count-blind: a second identical finding hides behind a pre-existing one"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:59:50Z"
-updated = "2026-10-04T04:59:50Z"
+updated = "2026-10-04T11:40:56Z"
 scope = ["crates/frob-land/src/ratchet.rs"]
 
 [[acceptance]]
