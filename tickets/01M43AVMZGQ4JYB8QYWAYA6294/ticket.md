@@ -8,7 +8,7 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:17Z"
-updated = "2026-10-04T11:30:17Z"
+updated = "2026-10-04T13:26:55Z"
 idempotency_key = "crunk-plan-release"
 labels = ["area:crunk"]
 scope = ["frob.toml", "changelog.d/**", "docs/crunk/release.md"]
@@ -39,6 +39,10 @@ bound = false
 
 [[acceptance]]
 text = "Given `uv tool install frob` on a clean machine, when run, then crunk is installed beside frob and `frob doctor` finds it"
+bound = false
+
+[[acceptance]]
+text = "Given the wheel set at the crunk preview release, when smoke runs from the directory only, then installing frob pulls crunk at the same version"
 bound = false
 +++
 

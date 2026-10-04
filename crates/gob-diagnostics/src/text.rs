@@ -1,5 +1,6 @@
 //! Text renderer: findings grouped by file with snippets and a summary.
 
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::io::IsTerminal;
@@ -8,6 +9,7 @@ use anstyle::{AnsiColor, Style};
 use gob_rules::{Finding, Registry, Severity};
 use gob_text::render_snippet;
 
+use crate::escape::escape_text;
 use crate::source::SourceProvider;
 
 /// Whether the renderer emits ANSI color; the caller decides (TTY, `NO_COLOR`).
@@ -97,7 +99,12 @@ pub fn render_text(report: &Report<'_>, opts: &TextOptions) -> String {
     let mut out = String::new();
     for (path, mut items) in ordered {
         items.sort_by_key(|l| l.line);
-        let _ = writeln!(out, "{}", path.as_deref().unwrap_or("(no location)"));
+        let _ = writeln!(
+            out,
+            "{}",
+            path.as_deref()
+                .map_or(Cow::Borrowed("(no location)"), escape_text)
+        );
         for item in &items {
             write_finding(&mut out, report, item, registry, *opts);
         }
@@ -137,7 +144,7 @@ fn write_finding(
         "  {col}{st}{}[{}{slug}]{st:#}: {}",
         severity_label(f.severity),
         f.rule,
-        f.message
+        escape_text(&f.message)
     );
     if opts.snippets
         && let Some(sp) = f.span
@@ -147,14 +154,14 @@ fn write_finding(
         let gutter = snip.line_number.to_string();
         let pad = " ".repeat(gutter.len());
         let _ = writeln!(out, "  {pad} |");
-        let _ = writeln!(out, "  {gutter} | {}", snip.line);
+        let _ = writeln!(out, "  {gutter} | {}", escape_text(&snip.line));
         let _ = writeln!(out, "  {pad} | {st}{}{st:#}", snip.caret_line);
     }
     if let Some(reason) = f.required.as_ref() {
-        let _ = writeln!(out, "  required: {reason}");
+        let _ = writeln!(out, "  required: {}", escape_text(&reason.to_string()));
     }
     if let Some(fix) = &f.fix {
-        let _ = writeln!(out, "  fix: {}", fix.title);
+        let _ = writeln!(out, "  fix: {}", escape_text(&fix.title));
     }
 }
 

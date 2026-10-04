@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Smoke the built wheel set (one wheel per product, D87) from the local wheels only: every
-# install uses --no-index --find-links WHEEL_DIR, never the network index. Three scenarios:
+# install uses --no-index --find-links WHEEL_DIR, never the network index. Four scenarios:
 #   a. grimble alone: only grimble is installed, and it runs;
 #   b. frob alone into a clean venv: grimble at the same version comes with it, both run, and
 #      the fixture repository loop (init through land) passes with the installed binaries;
 #   c. `uv tool install frob`: only frob is exposed on PATH, and frob still finds grimble
-#      beside itself (`frob doctor` reports it as beside-frob) and `frob check` runs.
+#      beside itself (`frob doctor` reports it as beside-frob) and `frob check` runs;
+#   d. crunk alone: only crunk is installed, and it runs (frob does not depend on crunk until the
+#      first crunk preview release, ~AYA6294, so b never pulls it).
 # Also checks each wheel's metadata (name, platform tag, frob's grimble==VERSION pin, and that
 # each wheel carries only its own binary).
 # Usage: smoke.sh WHEEL_DIR [EXPECTED_VERSION]   (the repository loop is packaging/smoke/fixture-loop.sh)
@@ -44,7 +46,7 @@ else:
 }
 
 # 0. Metadata of each wheel: name, tag, only its own binary; frob pins grimble at its own version.
-for product in frob grimble; do
+for product in frob grimble crunk; do
     w="$(one_wheel "$product")"
     tag="$(wheel_info "$w" WHEEL | sed -n 's/^Tag: //p')"
     say "wheel $(basename "$w") tag=$tag"
@@ -108,4 +110,12 @@ uv tool install -q "${install_args[@]}" frob
     case "$out" in *'"ok":true'*) ;; *) die "c: frob check failed: $out" ;; esac
 )
 say "c ok: uv tool install frob finds grimble without it on PATH"
+
+# d. crunk alone: its wheel has no dependencies, so only crunk is installed.
+uv venv -q "$work/d"
+uv pip install -q --python "$work/d/$sub/python" "${install_args[@]}" crunk
+[[ "$(installed "$work/d")" == crunk ]] || die "d: expected only crunk, got: $(installed "$work/d" | tr '\n' ' ')"
+[[ ! -e "$work/d/$sub/frob$exe" && ! -e "$work/d/$sub/grimble$exe" ]] || die "d: crunk alone installed another product"
+got="$("$work/d/$sub/crunk" --version | tr -d '\r')"; echo "$got"; check_version "$got" crunk
+say "d ok: crunk alone"
 say "ok"
