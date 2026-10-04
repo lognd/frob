@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:59:48Z"
-updated = "2026-10-04T12:01:38Z"
+updated = "2026-10-04T12:17:32Z"
 scope = ["crates/frob/src/ticket/**", "crates/frob/tests/terminal_lease.rs"]
 
 [[acceptance]]
