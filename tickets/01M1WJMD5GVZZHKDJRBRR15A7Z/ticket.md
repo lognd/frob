@@ -6,9 +6,9 @@ category = "triage"
 priority = "medium"
 reporter = "human"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:10:05Z"
 aliases = ["T-4272"]
-labels = ["milestone:0.543.0", "v1-cluster:F2"]
+labels = ["v1-cluster:F2", "triage:accepted"]
 
 [[acceptance]]
 text = "given a claimed epic and a collaborator with no network access, when they run any frob verb, then nothing is refused and the claim view reports its own age rather than appearing empty"
