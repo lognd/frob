@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:46Z"
-updated = "2026-10-04T11:40:48Z"
+updated = "2026-10-04T12:03:53Z"
 idempotency_key = "crunk-plan-corpus"
 labels = ["area:crunk"]
 scope = ["tests/crunk-parity/**"]
@@ -19,7 +19,7 @@ bound = false
 
 [[acceptance]]
 text = "Given the corpus, when listed, then every e2e scenario E2E-01..E2E-58 and INT-01..INT-12 names its fixture project and expected files in an index"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the corpus text, when scanned, then it holds no absolute home path and only ASCII"
