@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T13:44:04Z"
+digest = "6e0410ff746393188b57164d69ae9182363ce627f8d2bd689ef19bc178ecbf82"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 74c77b83-61de-4310-b9ae-7f3d147058a8 with nextest profile: default
+    Starting 8 tests across 3 binaries (31 tests skipped)
+        PASS [   0.042s] gob-check atomic::tests::killed_write_leaves_the_old_file_whole
+        PASS [   0.052s] gob-check fix::tests::a_fix_that_breaks_syntax_is_rolled_back_and_not_applied
+        PASS [   0.078s] gob-check atomic::tests::completed_write_is_wholly_new
+        PASS [   0.067s] gob-check fix::tests::refuses_a_file_edited_since_the_check_and_writes_nothing
+        PASS [   0.077s] gob-check fix::tests::one_out_of_range_edit_skips_the_whole_fix
+        PASS [   0.122s] gob-check fix::tests::a_line_ending_only_edit_since_the_check_is_refused
+        PASS [   0.122s] gob-check fix::tests::applies_a_fix_atomically_to_a_fresh_file
+        PASS [   0.139s] gob-check fix::tests::a_failed_second_write_restores_the_first_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.168s] 8 tests run: 8 passed, 31 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'test(/^(fix|atomic)::tests/)'"
+size = 1211
+status = "measured"
+tests = ["atomic::tests::killed_write_leaves_the_old_file_whole", "fix::tests::a_fix_that_breaks_syntax_is_rolled_back_and_not_applied", "atomic::tests::completed_write_is_wholly_new", "fix::tests::refuses_a_file_edited_since_the_check_and_writes_nothing", "fix::tests::one_out_of_range_edit_skips_the_whole_fix", "fix::tests::a_line_ending_only_edit_since_the_check_is_refused", "fix::tests::applies_a_fix_atomically_to_a_fresh_file", "fix::tests::a_failed_second_write_restores_the_first_file"]
+at = "2026-10-04T13:44:04Z"
+actor = "lognd"
+rev = 1

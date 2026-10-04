@@ -1,9 +1,21 @@
 # Building the PyPI wheels
 
-Not shipped in the wheels. PyPI gets one wheel set per product (D87): `frob` and `grimble`,
+Not shipped in the wheels. PyPI gets one wheel set per product (D87): `frob`, `grimble` and `crunk`,
 each a maturin `bindings = "bin"` build of that product's Cargo package and carrying only its
 own binary. `frob`'s wheel requires `grimble==<same version>`, so installing `frob` pulls
-`grimble` and installing `grimble` alone installs only `grimble`.
+`grimble` and installing `grimble` alone installs only `grimble`; `crunk` likewise installs alone.
+
+### Gates on crunk (D87)
+
+- `frob`'s wheel depends on `crunk` only from the first crunk preview release (~AYA6294); until
+  then `frob` depends on `grimble` alone. `products.rs` pins the current set, so adding the
+  dependency is a deliberate test change in that release ticket.
+- The crunk wheel is built and smoked on every release run but is not uploaded: the `pypi` job
+  deletes the five crunk wheels (counting them first) before its per-product checks, because the
+  Python crunk (lognd/crunk) keeps publishing the PyPI project `crunk` until it is retired. A
+  Rust wheel under that name would replace it. When it is retired, drop the hold-back step and add
+  crunk to the upload loop (a test pins the hold-back until then). The PyPI side of lognd/crunk
+  is never touched from here.
 
 The product list is `products.toml` (name, Cargo package and manifest, summary, keywords,
 dependencies). `render.py` turns each entry into a maturin project (`pyproject.toml`,
@@ -11,8 +23,8 @@ dependencies). `render.py` turns each entry into a maturin project (`pyproject.t
 `readme.template.md`; nothing per product is copied or checked in. The version is the Cargo
 lockstep version (`frob-cli`) read at render time, so every wheel and the `grimble==` pin equal
 it by construction and `frob release bump` has no Python metadata to edit. Adding a product
-(crunk, once its Rust crate exists) is one more `[[product]]` table, one more name in the
-workflow count loops (`for product in frob grimble`, pinned by
+(crunk was the last) is one more `[[product]]` table, one more name in the
+workflow count loops (`for product in frob grimble crunk`, pinned by
 `crates/frob-release/tests/products.rs`) and the archive/dist entries of products.md 6.
 
 ## Local build (this host)
@@ -46,7 +58,7 @@ grimble); the grimble wheel is built the same way after it.
 ## Release workflow wheel job (ticket 5Y75MX7)
 
 `.github/workflows/build-smoke.yml` job `wheel` (the reusable workflow `release.yml` calls
-with `wheels: true`), one matrix entry per target, each building both products' wheels; the pair is one
+with `wheels: true`), one matrix entry per target, each building every product's wheels; the set is one
 run artifact (`wheel-<target>`), nothing is published there.
 
 - Linux x86_64 / aarch64: native runners (`ubuntu-latest`, `ubuntu-24.04-arm`), the
@@ -83,10 +95,10 @@ run artifact (`wheel-<target>`), nothing is published there.
 
 `packaging/pypi/smoke.sh WHEEL_DIR [VERSION]` checks each wheel's metadata (name, platform
 tag, only its own binary, the `grimble==` pin), then installs from the directory only
-(`--no-index --find-links`, never the index) in three scenarios: (a) grimble alone into a clean
+(`--no-index --find-links`, never the index) in four scenarios: (a) grimble alone into a clean
 venv, which installs only grimble; (b) frob alone into a clean venv, which pulls grimble at
 the same version, then runs both and the fixture loop below; (c) `uv tool install frob`, where
-grimble is not on `PATH` and `frob doctor` still reports it `beside-frob`, then `frob check`.
+grimble is not on `PATH` and `frob doctor` still reports it `beside-frob`, then `frob check`; (d) crunk alone into a clean venv, which installs only crunk.
 The loop of (b) is `packaging/smoke/fixture-loop.sh`:
 a throwaway git repository with a tiny crate and a markdown file goes through `frob init`,
 `doctor`, `check`, `ticket new` (one criterion), `work`, an edit, `check --ticket`, command
