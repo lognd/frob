@@ -8,9 +8,9 @@ priority = "high"
 parent = "01M1T07NYJGETZ4A744PSANMYZ"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:09:03Z"
 aliases = ["T-3978"]
-labels = ["milestone:1.1.0", "v1-cluster:C2"]
+labels = ["v1-cluster:C2", "triage:accepted"]
 scope = ["src/frob/tickets/_scope.py"]
 +++
 
