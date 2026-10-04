@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "check",
+    "--json"
+  ],
+  "command": "python -m crunk check --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_17_cache.py::test_stylesheet_edit_invalidates_cache",
+  "setup_deleted": [],
+  "stdin": null
+}

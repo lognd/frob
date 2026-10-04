@@ -1,0 +1,25 @@
+crunk parity corpus provenance
+==============================
+Source repository : the Python crunk repository (MIT; same owner as frob v2, MIT)
+Source commit     : 8ce8c29f69ce577983460b14639239521f5153aa
+Commit date       : 2026-09-27T02:06:41-04:00
+crunk version     : 0.1.1.dev57 (python -m crunk --version, from the archived commit)
+Interpreter       : Python 3.11.15
+Corpus note       : first captured 2026-10-04; regen is deterministic
+
+Regenerate:
+  python tests/crunk-parity/regen.py --crunk-repo <crunk checkout> \
+      --python <interpreter with crunk deps> --commit 8ce8c29f69ce577983460b14639239521f5153aa
+
+Golden output commands (cwd = fixtures/static/<project>, NO_COLOR=1):
+  - e2e: every `python -m crunk ...` call made by crunk tests/system and
+    tests/integration, recorded by capture_plugin.py; the exact argv of each
+    call is in fixtures/e2e/<scenario>/NN.step.json (field `command`).
+  - matrix: expected/matrix/<project>/<name>.cmd.json (field `command`).
+  - int-04 golden: tokens.css extracted verbatim from
+    tests/integration/test_int_04_tokens_spec.py (_EXPECTED_CSS), spec _TOML.
+
+Normalization: pytest tmp roots -> <ROOT>, matrix work dir -> <WORK>,
+scratch, cache and home paths -> <CRUNK_SRC>/<CACHE>/<HOME>, timestamps ->
+<TIMESTAMP>.  Not captured: playwright-backed tests (E2E-60, 61, 70, web
+pages) skip without a browser; build/wheel tests are excluded.

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "query",
+    "dupes",
+    "--json"
+  ],
+  "command": "python -m crunk query dupes --json",
+  "cwd": "fixtures/static/gallery005_routes",
+  "exit": 0,
+  "project": "gallery005_routes"
+}

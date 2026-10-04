@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_29_utility_first.py::test_same_tree_under_buckets_model_shows_org001",
+  "setup_deleted": [],
+  "stdin": null
+}

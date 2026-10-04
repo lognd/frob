@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "fix"
+  ],
+  "command": "python -m crunk fix",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_15_output.py::test_fix_output_path_is_root_relative",
+  "setup_deleted": [],
+  "stdin": null
+}

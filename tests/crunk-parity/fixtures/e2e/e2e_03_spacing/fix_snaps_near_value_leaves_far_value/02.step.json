@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "fix"
+  ],
+  "command": "python -m crunk fix",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_03_spacing.py::test_fix_snaps_near_value_leaves_far_value",
+  "setup_deleted": [],
+  "stdin": null
+}

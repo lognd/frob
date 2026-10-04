@@ -92,6 +92,8 @@ pub enum SymbolKind {
     Pack,
     /// A model `boundary` entity.
     Boundary,
+    /// A Python class.
+    Class,
 }
 
 /// Item visibility as seen from outside the crate.

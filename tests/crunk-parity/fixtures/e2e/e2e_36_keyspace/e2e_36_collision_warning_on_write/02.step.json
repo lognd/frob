@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_36_keyspace.py::test_e2e_36_collision_warning_on_write",
+  "setup_deleted": [],
+  "stdin": null
+}

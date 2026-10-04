@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--contrast",
+    "--json"
+  ],
+  "command": "python -m crunk check --contrast --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_15_output.py::test_check_contrast_failing_pair_exits_1",
+  "setup_deleted": [],
+  "stdin": null
+}

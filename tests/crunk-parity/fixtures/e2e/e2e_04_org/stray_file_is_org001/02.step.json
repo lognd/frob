@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "check"
+  ],
+  "command": "python -m crunk check",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_04_org.py::test_stray_file_is_org001",
+  "setup_deleted": [],
+  "stdin": null
+}

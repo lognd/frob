@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--config",
+    "<ROOT>/crunk.toml"
+  ],
+  "command": "python -m crunk check --config <ROOT>/crunk.toml",
+  "cwd": "borrower",
+  "env": {},
+  "node": "tests/system/test_e2e_53_borrower.py::test_e2e_53_absent_css_root_borrower_still_runs_jsx",
+  "setup_deleted": [],
+  "stdin": null
+}

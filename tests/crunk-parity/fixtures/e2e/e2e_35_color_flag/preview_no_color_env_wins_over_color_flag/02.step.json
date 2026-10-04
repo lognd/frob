@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "preview",
+    "--color"
+  ],
+  "command": "python -m crunk preview --color",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_35_color_flag.py::test_preview_no_color_env_wins_over_color_flag",
+  "setup_deleted": [],
+  "stdin": null
+}

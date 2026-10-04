@@ -1,0 +1,39 @@
+{
+    "borderRadius": {
+        "0": "var(--radius-0)",
+        "4": "var(--radius-4)",
+        "8": "var(--radius-8)"
+    },
+    "colors": {
+        "accent": "var(--color-accent)",
+        "ink": "var(--color-ink)",
+        "paper": "var(--color-paper)"
+    },
+    "fontFamily": {
+        "base": [
+            "Inter",
+            "system-ui"
+        ]
+    },
+    "fontSize": {
+        "12": "var(--font-size-12)",
+        "16": "var(--font-size-16)",
+        "20": "var(--font-size-20)"
+    },
+    "height": {},
+    "maxHeight": {},
+    "maxWidth": {},
+    "minHeight": {},
+    "minWidth": {},
+    "spacing": {
+        "0": "var(--space-0)",
+        "12": "var(--space-12)",
+        "16": "var(--space-16)",
+        "4": "var(--space-4)",
+        "8": "var(--space-8)"
+    },
+    "width": {},
+    "zIndex": {
+        "base": "var(--layer-base)"
+    }
+}

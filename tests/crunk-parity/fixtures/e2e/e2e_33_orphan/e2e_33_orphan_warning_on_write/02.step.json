@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_33_orphan.py::test_e2e_33_orphan_warning_on_write",
+  "setup_deleted": [],
+  "stdin": null
+}

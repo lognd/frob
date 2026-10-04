@@ -3,6 +3,7 @@
 use std::path::Path;
 
 // frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
+// frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
 /// A language this crate can (feature permitting) parse.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Language {
@@ -14,15 +15,18 @@ pub enum Language {
     Toml,
     /// YAML (`.yml`, `.yaml`); comments and keys only, no tree-sitter grammar.
     Yaml,
+    /// Python source (`.py`, `.pyi`).
+    Python,
 }
 
 impl Language {
     /// Every variant, regardless of enabled features.
-    pub const ALL: [Language; 4] = [
+    pub const ALL: [Language; 5] = [
         Language::Rust,
         Language::Markdown,
         Language::Toml,
         Language::Yaml,
+        Language::Python,
     ];
 
     /// Detects the language from the file extension (case-insensitive).
@@ -33,6 +37,7 @@ impl Language {
             "md" | "markdown" => Some(Language::Markdown),
             "toml" => Some(Language::Toml),
             "yml" | "yaml" => Some(Language::Yaml),
+            "py" | "pyi" => Some(Language::Python),
             _ => None,
         };
         tracing::trace!(path = %path.as_ref().display(), ?found, "language detect");
@@ -46,6 +51,7 @@ impl Language {
             Language::Markdown => "markdown",
             Language::Toml => "toml",
             Language::Yaml => "yaml",
+            Language::Python => "python",
         }
     }
 }
@@ -60,7 +66,9 @@ mod tests {
         assert_eq!(Language::detect("README.MD"), Some(Language::Markdown));
         assert_eq!(Language::detect("x.markdown"), Some(Language::Markdown));
         assert_eq!(Language::detect("frob.toml"), Some(Language::Toml));
-        assert_eq!(Language::detect("a.py"), None);
+        assert_eq!(Language::detect("a.py"), Some(Language::Python));
+        assert_eq!(Language::detect("a.PYI"), Some(Language::Python));
+        assert_eq!(Language::detect("a.pyc"), None);
         assert_eq!(Language::detect("Makefile"), None);
     }
 
@@ -69,5 +77,6 @@ mod tests {
         assert_eq!(Language::Rust.name(), "rust");
         assert_eq!(Language::Markdown.name(), "markdown");
         assert_eq!(Language::Toml.name(), "toml");
+        assert_eq!(Language::Python.name(), "python");
     }
 }

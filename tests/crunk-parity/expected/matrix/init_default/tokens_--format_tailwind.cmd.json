@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens",
+    "--format",
+    "tailwind"
+  ],
+  "command": "python -m crunk tokens --format tailwind",
+  "cwd": "fixtures/static/init_default",
+  "exit": 0,
+  "project": "init_default"
+}

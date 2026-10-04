@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "kind": "unused",
+  "results": [
+    {
+      "name": "--color-ink"
+    },
+    {
+      "name": "--font-family-base"
+    },
+    {
+      "name": "--font-size-12"
+    },
+    {
+      "name": "--font-size-16"
+    },
+    {
+      "name": "--radius-0"
+    },
+    {
+      "name": "--radius-4"
+    },
+    {
+      "name": "--space-0"
+    },
+    {
+      "name": "--space-4"
+    },
+    {
+      "name": "--space-8"
+    }
+  ]
+}

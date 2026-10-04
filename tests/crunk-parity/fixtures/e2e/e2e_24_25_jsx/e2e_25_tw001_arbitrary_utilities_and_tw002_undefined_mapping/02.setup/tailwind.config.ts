@@ -1,0 +1,1 @@
+export default { theme: { extend: { colors: { brand: "var(--color-not-a-token)" } } } };

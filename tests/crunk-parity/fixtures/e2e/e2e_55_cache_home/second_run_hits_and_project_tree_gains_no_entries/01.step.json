@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_55_cache_home.py::test_second_run_hits_and_project_tree_gains_no_entries",
+  "setup_deleted": [],
+  "stdin": null
+}

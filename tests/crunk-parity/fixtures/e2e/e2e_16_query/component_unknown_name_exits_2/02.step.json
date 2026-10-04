@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "query",
+    "component",
+    "nope"
+  ],
+  "command": "python -m crunk query component nope",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_16_query.py::test_component_unknown_name_exits_2",
+  "setup_deleted": [],
+  "stdin": null
+}

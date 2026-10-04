@@ -1,0 +1,3 @@
+styles/components/card.css:2  SPACE001  error  padding: 13px is off the scale; between var(--space-12) and var(--space-16)
+styles/components/card.css:3  SPACE001  error  margin: 37px is off the scale; between var(--space-32) and var(--space-48)
+2 errors, 0 warnings, 0 waived

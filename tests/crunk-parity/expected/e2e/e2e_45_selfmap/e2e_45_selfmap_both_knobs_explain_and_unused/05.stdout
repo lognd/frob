@@ -1,0 +1,99 @@
+{
+  "version": 2,
+  "violations": [
+    {
+      "rule": "COLOR002",
+      "severity": "error",
+      "path": "styles/base/reset.css",
+      "line": 9,
+      "message": "var(--color-ink) references an undefined token",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "COLOR002",
+      "severity": "error",
+      "path": "styles/base/reset.css",
+      "line": 10,
+      "message": "var(--color-paper) references an undefined token",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    }
+  ],
+  "counts": {
+    "error": 2,
+    "warning": 0,
+    "waived": 0
+  },
+  "contrast": {
+    "pairs": [
+      {
+        "role": "body",
+        "foreground": "ink",
+        "background": "paper",
+        "ratio": 16.64,
+        "floor": 4.5,
+        "passes": true
+      }
+    ]
+  },
+  "tokens": {
+    "status": "clean"
+  },
+  "unused_tokens": [
+    "--accent",
+    "--accent-rgb",
+    "--font-size-12",
+    "--font-size-14",
+    "--font-size-16",
+    "--font-size-20",
+    "--font-size-24",
+    "--font-size-32",
+    "--font-size-48",
+    "--ink",
+    "--ink-rgb",
+    "--layer-dropdown",
+    "--layer-e2e45bothunused",
+    "--layer-overlay",
+    "--layer-toast",
+    "--paper",
+    "--paper-rgb",
+    "--radius-0",
+    "--radius-16",
+    "--radius-4",
+    "--radius-8",
+    "--space-0",
+    "--space-12",
+    "--space-16",
+    "--space-24",
+    "--space-32",
+    "--space-4",
+    "--space-48",
+    "--space-64",
+    "--space-8"
+  ],
+  "files": {
+    "frontend/Heading.tsx": {
+      "error": 0,
+      "warning": 0
+    },
+    "frontend/Modal.tsx": {
+      "error": 0,
+      "warning": 0
+    },
+    "frontend/a11y.ts": {
+      "error": 0,
+      "warning": 0
+    },
+    "styles/base/reset.css": {
+      "error": 2,
+      "warning": 0
+    },
+    "styles/tokens.css": {
+      "error": 0,
+      "warning": 0
+    }
+  }
+}

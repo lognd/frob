@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "kind": "explain",
+  "results": [
+    {
+      "name": "--accent-red",
+      "value": "#c0392b",
+      "group": "color",
+      "defined_in": "styles/tokens.css",
+      "sites": [
+        {
+          "path": "frontend/a11y.ts",
+          "line": 1
+        }
+      ],
+      "utilities": [
+        "text-accent-red"
+      ]
+    }
+  ]
+}

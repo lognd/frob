@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "fix",
+    "--dry-run"
+  ],
+  "command": "python -m crunk fix --dry-run",
+  "cwd": "fixtures/static/init_default",
+  "exit": 0,
+  "project": "init_default"
+}

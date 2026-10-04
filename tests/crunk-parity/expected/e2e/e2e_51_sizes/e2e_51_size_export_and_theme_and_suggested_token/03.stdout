@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "kind": "explain",
+  "results": [
+    {
+      "name": "--size-112",
+      "value": "112px",
+      "group": "size",
+      "defined_in": "styles/tokens.css",
+      "sites": [
+        {
+          "path": "frontend/components/Box.tsx",
+          "line": 2
+        }
+      ],
+      "utilities": [
+        "min-h-size-112"
+      ]
+    }
+  ]
+}

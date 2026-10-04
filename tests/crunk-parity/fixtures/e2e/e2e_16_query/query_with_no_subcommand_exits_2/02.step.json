@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "query"
+  ],
+  "command": "python -m crunk query",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_16_query.py::test_query_with_no_subcommand_exits_2",
+  "setup_deleted": [],
+  "stdin": null
+}

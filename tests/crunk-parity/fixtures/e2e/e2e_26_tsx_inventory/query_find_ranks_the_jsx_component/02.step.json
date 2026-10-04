@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "query",
+    "find",
+    "Badge",
+    "--json"
+  ],
+  "command": "python -m crunk query find Badge --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_26_tsx_inventory.py::test_query_find_ranks_the_jsx_component",
+  "setup_deleted": [],
+  "stdin": null
+}

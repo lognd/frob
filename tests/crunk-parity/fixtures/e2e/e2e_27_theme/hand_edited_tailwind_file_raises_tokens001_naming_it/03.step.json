@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "check"
+  ],
+  "command": "python -m crunk check",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_27_theme.py::test_hand_edited_tailwind_file_raises_tokens001_naming_it",
+  "setup_deleted": [],
+  "stdin": null
+}

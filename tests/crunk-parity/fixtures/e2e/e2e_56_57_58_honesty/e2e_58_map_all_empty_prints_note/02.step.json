@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "map"
+  ],
+  "command": "python -m crunk map",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_56_57_58_honesty.py::test_e2e_58_map_all_empty_prints_note",
+  "setup_deleted": [
+    "styles/base/reset.css",
+    "styles/tokens.css"
+  ],
+  "stdin": null
+}

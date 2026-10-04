@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "check",
+    "--json"
+  ],
+  "command": "python -m crunk check --json",
+  "cwd": "proj",
+  "env": {
+    "CRUNK_CACHE_DIR": "<TMP>/cache-home5"
+  },
+  "node": "tests/system/test_e2e_59_root_locator.py::test_borrowed_root_defaults_wrong_and_root_flag_fixes_it",
+  "setup_deleted": [],
+  "stdin": null
+}

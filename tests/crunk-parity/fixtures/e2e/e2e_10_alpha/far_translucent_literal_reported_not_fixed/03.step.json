@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "fix"
+  ],
+  "command": "python -m crunk fix",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_10_alpha.py::test_far_translucent_literal_reported_not_fixed",
+  "setup_deleted": [],
+  "stdin": null
+}

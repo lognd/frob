@@ -260,7 +260,10 @@ impl Scanner {
             start: seg.offset,
             end: seg.offset + seg.text.len(),
             allow_following: !seg.inner_doc && ctx.language != Language::Markdown,
-            hash_comments: matches!(ctx.language, Language::Toml | Language::Yaml),
+            hash_comments: matches!(
+                ctx.language,
+                Language::Toml | Language::Yaml | Language::Python
+            ),
         };
         let sym = bind(ctx.index, ctx.text, &ctx.symbols.symbols, site);
         if sym.is_none()
@@ -386,4 +389,35 @@ fn check_ticket_refs<'m>(
         });
     }
     None
+}
+
+#[cfg(test)]
+mod python_tests {
+    use super::*;
+    use crate::Binding;
+    use gob_symbols::extract_file;
+    use gob_walk::{Digest, FileEntry, LanguageHint};
+
+    // frob:tests crates/gob-directives/src/scan.rs::Scanner.scan_in
+    #[test]
+    fn stacked_python_directives_bind_to_the_next_def() {
+        let path = "pkg/a.py";
+        let text = "# frob:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E2\n# frob:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E3\n@deco\ndef target():\n    pass\n";
+        let entry = FileEntry {
+            path: path.to_owned(),
+            size: text.len() as u64,
+            digest: Digest::of(text.as_bytes()),
+            language: LanguageHint::from_path(path),
+        };
+        let syms = extract_file(&entry, text);
+        let r = Scanner::new(&ScanConfig::default()).scan(Language::Python, text, &syms);
+        assert!(r.findings.is_empty(), "{:?}", r.findings);
+        assert_eq!(r.directives.len(), 2);
+        for d in &r.directives {
+            assert_eq!(
+                d.bound,
+                Binding::Symbol("pkg/a.py::target".parse().expect("symref"))
+            );
+        }
+    }
 }

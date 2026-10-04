@@ -1,0 +1,2 @@
+styles/components/footer.css:2  COLOR001  error  color #2f6feeb2 is not a palette color; nearest is --color-accent (rgb distance 1.68); the fix preserves alpha
+1 errors, 0 warnings, 0 waived

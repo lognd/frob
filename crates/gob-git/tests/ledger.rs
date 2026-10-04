@@ -97,6 +97,28 @@ fn concurrent_writers_lose_nothing() {
 }
 
 #[test]
+fn twenty_four_concurrent_writers_all_win_with_backoff() {
+    let (dir, _repo) = fixture();
+    let barrier = Arc::new(Barrier::new(24));
+    let handles: Vec<_> = (0..24)
+        .map(|i| {
+            let (path, barrier) = (dir.path().to_path_buf(), barrier.clone());
+            std::thread::spawn(move || {
+                let repo = Repo::discover(&path).unwrap();
+                let p = format!("tickets/w{i}/ticket.md");
+                barrier.wait();
+                repo.commit_paths(MAIN, &[change(&p, "x\n")], "add", &opts())
+            })
+        })
+        .collect();
+    for h in handles {
+        h.join().unwrap().unwrap();
+    }
+    let repo = Repo::discover(dir.path()).unwrap();
+    assert_eq!(commit_count(&repo, MAIN), 25);
+}
+
+#[test]
 fn staged_unrelated_file_is_untouched() {
     let (dir, repo) = fixture();
     // Stage an unrelated file by hand using the index API.

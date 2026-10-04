@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "map"
+  ],
+  "command": "python -m crunk map",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_09_map.py::test_map_text_lists_component_and_flags_stray",
+  "setup_deleted": [],
+  "stdin": null
+}

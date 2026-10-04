@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "check"
+  ],
+  "command": "python -m crunk check",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_04_org.py::test_bad_case_and_missing_prefix_are_org002_and_org003",
+  "setup_deleted": [],
+  "stdin": null
+}

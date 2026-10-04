@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_12_ungoverned.py::test_org_ignore_glob_silences_exactly_it",
+  "setup_deleted": [],
+  "stdin": null
+}

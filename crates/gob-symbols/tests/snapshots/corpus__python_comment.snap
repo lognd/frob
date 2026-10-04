@@ -1,0 +1,16 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @python \1 (comment "# note") (python.expression_statement (python.assignment (ref #0) (lit "=" "=") (lit "integer" "1"))) (comment "# trailing"))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+D0 S1 Binder "_" Must
+R0 S1 must D0
+
+== file ==
+fidelity F2 status Complete
+== symbols ==
+== edges ==

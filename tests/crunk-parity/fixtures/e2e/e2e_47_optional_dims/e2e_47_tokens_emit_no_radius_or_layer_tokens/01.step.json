@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_47_optional_dims.py::test_e2e_47_tokens_emit_no_radius_or_layer_tokens",
+  "setup_deleted": [],
+  "stdin": null
+}

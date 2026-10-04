@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens",
+    "--format",
+    "css"
+  ],
+  "command": "python -m crunk tokens --format css",
+  "cwd": "fixtures/static/screens_v1_1",
+  "exit": 0,
+  "project": "screens_v1_1"
+}

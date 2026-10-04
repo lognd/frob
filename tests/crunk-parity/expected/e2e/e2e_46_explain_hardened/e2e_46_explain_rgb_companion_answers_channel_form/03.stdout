@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "kind": "explain",
+  "results": [
+    {
+      "name": "--color-accent-rgb",
+      "value": "47 111 237",
+      "group": "color-channels",
+      "defined_in": "styles/tokens.css",
+      "sites": [],
+      "utilities": []
+    }
+  ]
+}

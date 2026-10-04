@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_45_selfmap.py::test_e2e_45_selfmap_both_knobs_explain_and_unused",
+  "setup_deleted": [],
+  "stdin": null
+}

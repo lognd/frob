@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "kind": "dupes",
+  "results": [
+    {
+      "name_a": "card",
+      "name_b": "panel",
+      "path_a": "styles/components/card.css",
+      "path_b": "styles/components/panel.css",
+      "similarity": 1.0,
+      "shared": 2
+    }
+  ]
+}

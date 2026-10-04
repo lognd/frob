@@ -1,0 +1,1 @@
+ERROR: check: crunk.toml violates the design spec schema: [org].class_case: Value error, class_case must be kebab/snake/camel, got 'bogus'

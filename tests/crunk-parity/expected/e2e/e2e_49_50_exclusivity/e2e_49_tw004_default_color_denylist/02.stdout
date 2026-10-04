@@ -1,0 +1,104 @@
+{
+  "version": 2,
+  "violations": [
+    {
+      "rule": "TW004",
+      "severity": "warn",
+      "path": "frontend/components/Denylisted.tsx",
+      "line": 2,
+      "message": "utility 'bg-black/10' is unresolved-by-tailwind (no node/tailwindcss resolvable, or --static); skipped rather than guessed from its name",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "TOKENS001",
+      "severity": "error",
+      "path": "styles/tokens.css",
+      "line": 0,
+      "message": "tokens file drifted; run `crunk tokens` to regenerate",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "TOKENS001",
+      "severity": "error",
+      "path": "tailwind.tokens.json",
+      "line": 0,
+      "message": "tokens file missing; run `crunk tokens` to regenerate",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    }
+  ],
+  "counts": {
+    "error": 2,
+    "warning": 1,
+    "waived": 0
+  },
+  "contrast": {
+    "pairs": [
+      {
+        "role": "body",
+        "foreground": "ink",
+        "background": "paper",
+        "ratio": 16.64,
+        "floor": 4.5,
+        "passes": true
+      }
+    ]
+  },
+  "tokens": {
+    "status": "drifted"
+  },
+  "unused_tokens": [
+    "--color-accent",
+    "--font-size-12",
+    "--font-size-14",
+    "--font-size-16",
+    "--font-size-20",
+    "--font-size-24",
+    "--font-size-32",
+    "--font-size-48",
+    "--layer-base",
+    "--layer-dropdown",
+    "--layer-overlay",
+    "--layer-toast",
+    "--radius-0",
+    "--radius-16",
+    "--radius-4",
+    "--radius-8",
+    "--space-0",
+    "--space-12",
+    "--space-16",
+    "--space-24",
+    "--space-32",
+    "--space-4",
+    "--space-48",
+    "--space-64",
+    "--space-8"
+  ],
+  "files": {
+    "frontend/components/Clean.tsx": {
+      "error": 0,
+      "warning": 0
+    },
+    "frontend/components/Denylisted.tsx": {
+      "error": 0,
+      "warning": 1
+    },
+    "styles/base/reset.css": {
+      "error": 0,
+      "warning": 0
+    },
+    "styles/tokens.css": {
+      "error": 1,
+      "warning": 0
+    },
+    "tailwind.tokens.json": {
+      "error": 1,
+      "warning": 0
+    }
+  }
+}

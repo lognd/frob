@@ -1,0 +1,7 @@
+<ROOT>/crunk.toml
+<ROOT>/styles/base/.gitkeep
+<ROOT>/styles/base/reset.css
+<ROOT>/styles/components/.gitkeep
+<ROOT>/styles/layouts/.gitkeep
+<ROOT>/styles/tokens.css
+<ROOT>/styles/utilities/.gitkeep

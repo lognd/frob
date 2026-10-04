@@ -1,0 +1,2 @@
+styles/components/card.css:2  TYPE002  error  font-family stack ['helvetica', 'sans-serif'] is not a prefix of any declared stack ['body', 'display']
+1 errors, 0 warnings, 0 waived

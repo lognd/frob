@@ -1,0 +1,5 @@
+--space-12  12px  group=space
+  defined in: styles/tokens.css
+  frontend/Card.tsx:2
+  styles/components/card.css:1
+  utilities: p-space

@@ -1,0 +1,1565 @@
+{
+  "schema_version": 3,
+  "generated_at": "2026-09-27T01:30:41.440636Z",
+  "tool_version": "0.1.1.dev42",
+  "entries": [
+    {
+      "component_id": "admin",
+      "kind": "screen",
+      "source_path": "routes/admin.tsx",
+      "source_hash": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+      "states": [],
+      "artifacts": [
+        {
+          "path": "gallery-artifacts/admin-default-chromium-desktop.png",
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/admin-default-chromium-mobile.png",
+          "state_id": "default",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/admin-default-firefox-desktop.png",
+          "state_id": "default",
+          "platform": "firefox-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/admin-default-firefox-mobile.png",
+          "state_id": "default",
+          "platform": "firefox-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/admin-forbidden-non-admin-chromium-desktop.png",
+          "state_id": "forbidden-non-admin",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/admin-forbidden-non-admin-chromium-mobile.png",
+          "state_id": "forbidden-non-admin",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/admin-forbidden-non-admin-firefox-desktop.png",
+          "state_id": "forbidden-non-admin",
+          "platform": "firefox-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/admin-forbidden-non-admin-firefox-mobile.png",
+          "state_id": "forbidden-non-admin",
+          "platform": "firefox-mobile",
+          "captured_attrs": {}
+        }
+      ],
+      "verdicts": [
+        {
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "platform_hash": "72937209d3c88c919a01eb4ed56d2a4c936c45a76ae7c202f2b1bb95f0437fb0",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.430833Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "chromium-mobile",
+          "platform_hash": "c2c9635dbe0ed48bfea7de28a6e653c4e9faf82a08b2b86dbbe94e82a66812c5",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.430924Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "firefox-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.430984Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "forbidden-non-admin",
+          "platform": "chromium-desktop",
+          "platform_hash": "72937209d3c88c919a01eb4ed56d2a4c936c45a76ae7c202f2b1bb95f0437fb0",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.431218Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "forbidden-non-admin",
+          "platform": "chromium-mobile",
+          "platform_hash": "c2c9635dbe0ed48bfea7de28a6e653c4e9faf82a08b2b86dbbe94e82a66812c5",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.431269Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "forbidden-non-admin",
+          "platform": "firefox-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.431340Z",
+            "note": null
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "confirm-dialog",
+      "kind": "screen",
+      "source_path": "routes/confirm-dialog.tsx",
+      "source_hash": "86fd5dac2c99e62337cbd230a092ea84d30f0f9135905ba2d3c4c984b8863cf7",
+      "states": [],
+      "artifacts": [
+        {
+          "path": "gallery-artifacts/confirm-dialog-open-chromium-desktop.png",
+          "state_id": "open",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/confirm-dialog-open-chromium-mobile.png",
+          "state_id": "open",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/confirm-dialog-open-firefox-desktop.png",
+          "state_id": "open",
+          "platform": "firefox-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/confirm-dialog-open-firefox-mobile.png",
+          "state_id": "open",
+          "platform": "firefox-mobile",
+          "captured_attrs": {}
+        }
+      ],
+      "verdicts": [
+        {
+          "state_id": "open",
+          "platform": "chromium-desktop",
+          "platform_hash": "72937209d3c88c919a01eb4ed56d2a4c936c45a76ae7c202f2b1bb95f0437fb0",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.431553Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "open",
+          "platform": "chromium-mobile",
+          "platform_hash": "c2c9635dbe0ed48bfea7de28a6e653c4e9faf82a08b2b86dbbe94e82a66812c5",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.431594Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "open",
+          "platform": "firefox-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.431634Z",
+            "note": null
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "landing",
+      "kind": "screen",
+      "source_path": "routes/landing.tsx",
+      "source_hash": "d6709cd49ed879665227b65df1241d46d318b5f29e2ed08835652c9b407ca30b",
+      "states": [],
+      "artifacts": [
+        {
+          "path": "gallery-artifacts/landing-ascii-bg-cube-chromium-desktop.png",
+          "state_id": "ascii-bg-cube",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-ascii-bg-cube-chromium-mobile.png",
+          "state_id": "ascii-bg-cube",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-ascii-bg-donut-chromium-desktop.png",
+          "state_id": "ascii-bg-donut",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-ascii-bg-donut-chromium-mobile.png",
+          "state_id": "ascii-bg-donut",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-ascii-bg-rain-chromium-mobile.png",
+          "state_id": "ascii-bg-rain",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-ascii-bg-sphere-chromium-desktop.png",
+          "state_id": "ascii-bg-sphere",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-ascii-bg-sphere-chromium-mobile.png",
+          "state_id": "ascii-bg-sphere",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-default-chromium-desktop.png",
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-default-reflow-320.png",
+          "state_id": "default",
+          "platform": "reflow-320",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-default-webkit-desktop.png",
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-default-webkit-mobile.png",
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-mobile-nav-open-chromium-mobile.png",
+          "state_id": "mobile-nav-open",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-reduced-motion-chromium-desktop.png",
+          "state_id": "reduced-motion",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-reduced-motion-chromium-mobile.png",
+          "state_id": "reduced-motion",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-reduced-motion-firefox-desktop.png",
+          "state_id": "reduced-motion",
+          "platform": "firefox-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-reduced-motion-firefox-mobile.png",
+          "state_id": "reduced-motion",
+          "platform": "firefox-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-wasm-failed-chromium-desktop.png",
+          "state_id": "wasm-failed",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/landing-wasm-failed-chromium-mobile.png",
+          "state_id": "wasm-failed",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        }
+      ],
+      "verdicts": [
+        {
+          "state_id": "ascii-bg-cube",
+          "platform": "chromium-desktop",
+          "platform_hash": "72937209d3c88c919a01eb4ed56d2a4c936c45a76ae7c202f2b1bb95f0437fb0",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.431822Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "ascii-bg-cube",
+          "platform": "chromium-mobile",
+          "platform_hash": "c2c9635dbe0ed48bfea7de28a6e653c4e9faf82a08b2b86dbbe94e82a66812c5",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.431861Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "ascii-bg-donut",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.431902Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "ascii-bg-rain",
+          "platform": "chromium-mobile",
+          "platform_hash": "c2c9635dbe0ed48bfea7de28a6e653c4e9faf82a08b2b86dbbe94e82a66812c5",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.432073Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "ascii-bg-sphere",
+          "platform": "chromium-desktop",
+          "platform_hash": "72937209d3c88c919a01eb4ed56d2a4c936c45a76ae7c202f2b1bb95f0437fb0",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.432112Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "ascii-bg-sphere",
+          "platform": "chromium-mobile",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.432156Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "reflow-320",
+          "platform_hash": "eac678a5ef370131cfe149b2d9821670d7978f346090794255db3d0290da4ede",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.432314Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.432354Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.432391Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "reduced-motion",
+          "platform": "chromium-desktop",
+          "platform_hash": "72937209d3c88c919a01eb4ed56d2a4c936c45a76ae7c202f2b1bb95f0437fb0",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.432544Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "reduced-motion",
+          "platform": "chromium-mobile",
+          "platform_hash": "c2c9635dbe0ed48bfea7de28a6e653c4e9faf82a08b2b86dbbe94e82a66812c5",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.432595Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "reduced-motion",
+          "platform": "firefox-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.432634Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "wasm-failed",
+          "platform": "chromium-desktop",
+          "platform_hash": "72937209d3c88c919a01eb4ed56d2a4c936c45a76ae7c202f2b1bb95f0437fb0",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.432788Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "wasm-failed",
+          "platform": "chromium-mobile",
+          "platform_hash": "c2c9635dbe0ed48bfea7de28a6e653c4e9faf82a08b2b86dbbe94e82a66812c5",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.432828Z",
+            "note": null
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "login",
+      "kind": "screen",
+      "source_path": "routes/login.tsx",
+      "source_hash": "428821350e9691491f616b754cd8315fb86d797ab35d843479e732ef90665324",
+      "states": [],
+      "artifacts": [
+        {
+          "path": "gallery-artifacts/login-default-chromium-desktop.png",
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-default-chromium-mobile.png",
+          "state_id": "default",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-default-webkit-desktop.png",
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-default-webkit-mobile.png",
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-error-429-rate-limited-chromium-desktop.png",
+          "state_id": "error-429-rate-limited",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-error-429-rate-limited-chromium-mobile.png",
+          "state_id": "error-429-rate-limited",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-error-429-rate-limited-webkit-desktop.png",
+          "state_id": "error-429-rate-limited",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-error-429-rate-limited-webkit-mobile.png",
+          "state_id": "error-429-rate-limited",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-error-503-limiter-unavailable-chromium-desktop.png",
+          "state_id": "error-503-limiter-unavailable",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-error-503-limiter-unavailable-chromium-mobile.png",
+          "state_id": "error-503-limiter-unavailable",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-error-503-limiter-unavailable-webkit-desktop.png",
+          "state_id": "error-503-limiter-unavailable",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-error-503-limiter-unavailable-webkit-mobile.png",
+          "state_id": "error-503-limiter-unavailable",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-error-field-validation-chromium-desktop.png",
+          "state_id": "error-field-validation",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-error-field-validation-chromium-mobile.png",
+          "state_id": "error-field-validation",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-error-field-validation-webkit-desktop.png",
+          "state_id": "error-field-validation",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/login-error-field-validation-webkit-mobile.png",
+          "state_id": "error-field-validation",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        }
+      ],
+      "verdicts": [
+        {
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.432929Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.433089Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.433127Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-429-rate-limited",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.433198Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-429-rate-limited",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.433350Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-429-rate-limited",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.433388Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-503-limiter-unavailable",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.433427Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-503-limiter-unavailable",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.433581Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-503-limiter-unavailable",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.433618Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-field-validation",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.433655Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-field-validation",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.433812Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-field-validation",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.433850Z",
+            "note": null
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "portal",
+      "kind": "screen",
+      "source_path": "routes/portal.tsx",
+      "source_hash": "d0960501f8971be812f2e5494426e08cdbb2cbc3b3190ba60075f14b8da7178a",
+      "states": [],
+      "artifacts": [
+        {
+          "path": "gallery-artifacts/portal-default-chromium-desktop.png",
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/portal-default-chromium-mobile.png",
+          "state_id": "default",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/portal-default-webkit-desktop.png",
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/portal-default-webkit-mobile.png",
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/portal-empty-invoices-chromium-desktop.png",
+          "state_id": "empty-invoices",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/portal-empty-invoices-chromium-mobile.png",
+          "state_id": "empty-invoices",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/portal-empty-invoices-webkit-desktop.png",
+          "state_id": "empty-invoices",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/portal-empty-invoices-webkit-mobile.png",
+          "state_id": "empty-invoices",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/portal-unauthenticated-redirect-chromium-desktop.png",
+          "state_id": "unauthenticated-redirect",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/portal-unauthenticated-redirect-chromium-mobile.png",
+          "state_id": "unauthenticated-redirect",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/portal-unauthenticated-redirect-webkit-desktop.png",
+          "state_id": "unauthenticated-redirect",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/portal-unauthenticated-redirect-webkit-mobile.png",
+          "state_id": "unauthenticated-redirect",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        }
+      ],
+      "verdicts": [
+        {
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.433920Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.434073Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.434169Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "empty-invoices",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.434237Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "empty-invoices",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.434397Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "empty-invoices",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.434436Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "unauthenticated-redirect",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.434473Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "unauthenticated-redirect",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.434626Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "unauthenticated-redirect",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.434666Z",
+            "note": null
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "projects",
+      "kind": "screen",
+      "source_path": "routes/projects.tsx",
+      "source_hash": "2577c0f557b2e4b591e9587374c6330c9c64de8017d5a848a682a135251a6f6f",
+      "states": [],
+      "artifacts": [
+        {
+          "path": "gallery-artifacts/projects-default-chromium-desktop.png",
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-default-chromium-mobile.png",
+          "state_id": "default",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-default-webkit-desktop.png",
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-default-webkit-mobile.png",
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-empty-chromium-desktop.png",
+          "state_id": "empty",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-empty-chromium-mobile.png",
+          "state_id": "empty",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-empty-webkit-desktop.png",
+          "state_id": "empty",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-empty-webkit-mobile.png",
+          "state_id": "empty",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-error-api-chromium-desktop.png",
+          "state_id": "error-api",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-error-api-chromium-mobile.png",
+          "state_id": "error-api",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-error-api-webkit-desktop.png",
+          "state_id": "error-api",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-error-api-webkit-mobile.png",
+          "state_id": "error-api",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-loading-chromium-desktop.png",
+          "state_id": "loading",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-loading-chromium-mobile.png",
+          "state_id": "loading",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-loading-webkit-desktop.png",
+          "state_id": "loading",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/projects-loading-webkit-mobile.png",
+          "state_id": "loading",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        }
+      ],
+      "verdicts": [
+        {
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.434731Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.434887Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.434924Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "empty",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.434961Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "empty",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.435141Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "empty",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.435179Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-api",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.435218Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-api",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.435386Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-api",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.435429Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "loading",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.435486Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "loading",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.435642Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "loading",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.435680Z",
+            "note": null
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "register",
+      "kind": "screen",
+      "source_path": "routes/register.tsx",
+      "source_hash": "87780fa5de684e87cb92b279f0bc07b14f572851e73b8943a097c1770a5f38e6",
+      "states": [],
+      "artifacts": [
+        {
+          "path": "gallery-artifacts/register-default-chromium-desktop.png",
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/register-default-chromium-mobile.png",
+          "state_id": "default",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/register-default-webkit-desktop.png",
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/register-default-webkit-mobile.png",
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/register-success-check-your-inbox-chromium-desktop.png",
+          "state_id": "success-check-your-inbox",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/register-success-check-your-inbox-chromium-mobile.png",
+          "state_id": "success-check-your-inbox",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/register-success-check-your-inbox-webkit-desktop.png",
+          "state_id": "success-check-your-inbox",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/register-success-check-your-inbox-webkit-mobile.png",
+          "state_id": "success-check-your-inbox",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        }
+      ],
+      "verdicts": [
+        {
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.435750Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.436769Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.437054Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "success-check-your-inbox",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.437149Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "success-check-your-inbox",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.437332Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "success-check-your-inbox",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.437377Z",
+            "note": null
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "reset-password",
+      "kind": "screen",
+      "source_path": "routes/reset-password.tsx",
+      "source_hash": "fdf1b2b6f825f7d630892ddf916921c7323f8315703f728023def5307fdbabce",
+      "states": [],
+      "artifacts": [
+        {
+          "path": "gallery-artifacts/reset-password-default-chromium-desktop.png",
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/reset-password-default-chromium-mobile.png",
+          "state_id": "default",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/reset-password-default-webkit-desktop.png",
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/reset-password-default-webkit-mobile.png",
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/reset-password-success-reset-done-chromium-desktop.png",
+          "state_id": "success-reset-done",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/reset-password-success-reset-done-chromium-mobile.png",
+          "state_id": "success-reset-done",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/reset-password-success-reset-done-webkit-desktop.png",
+          "state_id": "success-reset-done",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/reset-password-success-reset-done-webkit-mobile.png",
+          "state_id": "success-reset-done",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        }
+      ],
+      "verdicts": [
+        {
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.437458Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.438250Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.438534Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "success-reset-done",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.438594Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "success-reset-done",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.438843Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "success-reset-done",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.438913Z",
+            "note": null
+          }
+        }
+      ]
+    },
+    {
+      "component_id": "verify-email",
+      "kind": "screen",
+      "source_path": "routes/verify-email.tsx",
+      "source_hash": "1492153a8d2edd334d0a858f46b5d782469b424d6fe03c931bedf140ba190a8a",
+      "states": [],
+      "artifacts": [
+        {
+          "path": "gallery-artifacts/verify-email-default-chromium-desktop.png",
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/verify-email-default-chromium-mobile.png",
+          "state_id": "default",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/verify-email-default-webkit-desktop.png",
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/verify-email-default-webkit-mobile.png",
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/verify-email-error-api-chromium-desktop.png",
+          "state_id": "error-api",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/verify-email-error-api-chromium-mobile.png",
+          "state_id": "error-api",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/verify-email-error-api-webkit-desktop.png",
+          "state_id": "error-api",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/verify-email-error-api-webkit-mobile.png",
+          "state_id": "error-api",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/verify-email-success-verified-chromium-desktop.png",
+          "state_id": "success-verified",
+          "platform": "chromium-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/verify-email-success-verified-chromium-mobile.png",
+          "state_id": "success-verified",
+          "platform": "chromium-mobile",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/verify-email-success-verified-webkit-desktop.png",
+          "state_id": "success-verified",
+          "platform": "webkit-desktop",
+          "captured_attrs": {}
+        },
+        {
+          "path": "gallery-artifacts/verify-email-success-verified-webkit-mobile.png",
+          "state_id": "success-verified",
+          "platform": "webkit-mobile",
+          "captured_attrs": {}
+        }
+      ],
+      "verdicts": [
+        {
+          "state_id": "default",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.439027Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.439317Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "default",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.439807Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-api",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.440021Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-api",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.440258Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "error-api",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.440305Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "success-verified",
+          "platform": "chromium-desktop",
+          "platform_hash": "stale-platform-hash-deadbeef",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.440346Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "success-verified",
+          "platform": "webkit-desktop",
+          "platform_hash": "f364194b7efdd7c246960c0703f2493fcd78153a76044f898328d9e4b2bd176d",
+          "verdict": {
+            "status": "approved",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.440505Z",
+            "note": null
+          }
+        },
+        {
+          "state_id": "success-verified",
+          "platform": "webkit-mobile",
+          "platform_hash": "0c1ef023a581066d98b2876ea3000c8682b79174207a33b06ec6e02bb512cbd1",
+          "verdict": {
+            "status": "rejected",
+            "reviewer": "logan",
+            "timestamp": "2026-09-27T01:30:41.440545Z",
+            "note": null
+          }
+        }
+      ]
+    }
+  ]
+}

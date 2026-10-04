@@ -1,0 +1,2 @@
+loose.css:0  ORG005  error  loose.css is a CSS file outside styles (css_root); add a matching glob to [org].ignore to exempt it
+1 errors, 0 warnings, 0 waived
