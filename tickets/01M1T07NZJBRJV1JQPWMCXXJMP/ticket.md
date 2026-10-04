@@ -6,10 +6,14 @@ category = "triage"
 priority = "medium"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:08:24Z"
 aliases = ["T-4082"]
 labels = ["milestone:0.535.0", "v1-cluster:E1"]
 scope = ["scripts/fleet_status.py"]
+
+[[links]]
+kind = "duplicates"
+target = "01M2VFD1ZDWWNTW1FFGKHCKTS3"
 +++
 
 THE .env SECRET-PROTECTION HOOK BLOCKS WRITING THE TEXT `import.meta.env` INTO A
