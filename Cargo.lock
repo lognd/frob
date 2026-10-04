@@ -2163,6 +2163,7 @@ dependencies = [
  "gob-rules",
  "gob-text",
  "insta",
+ "proptest",
  "schemars",
  "serde",
  "serde_json",
