@@ -2,12 +2,13 @@
 id = "01M1WJMD4QK765CA279CN2YENK"
 title = "a test bound as evidence that SKIPPED in the measured run must be reported with its skip reason recorded in the ledger"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:09:48Z"
+updated = "2026-10-04T21:09:49Z"
 aliases = ["T-4247"]
 labels = ["milestone:1.1.0", "v1-cluster:C2"]
 scope = ["src/frob/gates"]
