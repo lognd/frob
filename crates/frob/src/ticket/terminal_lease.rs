@@ -1,9 +1,9 @@
 //! Leases of terminal tickets: release on every terminal transition, reap leftovers.
 //!
-//! `ticket close` and `ticket drop` both end in [`release_on_terminal`], so a
+//! `ticket close` and `ticket drop` both end in `release_on_terminal`, so a
 //! done ticket never keeps blocking its scope or the holder's WIP limit.
-//! [`stale_leases`] finds leases an older binary left behind; `ticket doctor`
-//! reports them and `--fix` removes them with [`reap`].
+//! `stale_leases` finds leases an older binary left behind; `ticket doctor`
+//! reports them and `--fix` removes them with `reap`.
 
 // frob:ticket 01M42MGN8882Y65TVXH0V1WTNR
 
