@@ -2,12 +2,12 @@
 id = "01M42B6T28RX9PVM3X6TSK0M4Y"
 title = "land now takes about 10 minutes: the ratchet's base check runs cold in a fresh worktree without the shared cache"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T02:17:08Z"
-updated = "2026-10-04T02:17:08Z"
+updated = "2026-10-04T02:23:21Z"
 scope = ["crates/frob-land/src/ratchet.rs", "crates/frob-land/src/land.rs", "crates/frob-land/tests/land.rs", "crates/gob-cache/**", "docs/design/rules.md"]
 
 [[acceptance]]
