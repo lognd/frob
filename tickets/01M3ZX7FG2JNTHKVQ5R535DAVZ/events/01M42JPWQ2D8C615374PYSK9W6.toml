@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T04:28:15Z"
+digest = "ff6f055b6dd5ff7136312d9693061ee286b530ad88413476bb326202a951eaeb"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 617c82a4-4152-42b0-ac82-ae93a2d2721b with nextest profile: default
+    Starting 2 tests across 2 binaries (7 tests skipped)
+        PASS [   1.736s] gob-packs::manifest duplicate_family_is_pack004_naming_both
+        PASS [   1.770s] gob-packs::manifest unknown_key_is_pack005_naming_file_key_line
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.815s] 2 tests run: 2 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs -E 'test(duplicate_family_is_pack004_naming_both) | test(unknown_key_is_pack005_naming_file_key_line)'"
+size = 639
+status = "measured"
+tests = ["duplicate_family_is_pack004_naming_both", "unknown_key_is_pack005_naming_file_key_line"]
+at = "2026-10-04T04:28:15Z"
+actor = "lognd"
+rev = 1

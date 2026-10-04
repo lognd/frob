@@ -1,0 +1,22 @@
+[package]
+name = "gob-packs"
+version = "0.0.0"
+description = "Product-neutral pack.toml manifest model and validation shared by frob, grimble and crunk."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+toml = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+proptest = "1"
+tempfile = "3"
+
+[lints]
+workspace = true

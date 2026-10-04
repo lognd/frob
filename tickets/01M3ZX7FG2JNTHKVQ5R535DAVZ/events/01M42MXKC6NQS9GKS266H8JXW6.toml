@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "new internal library crate, no user-visible behaviour yet"
+at = "2026-10-04T05:06:52Z"
+actor = "lognd"
+rev = 1

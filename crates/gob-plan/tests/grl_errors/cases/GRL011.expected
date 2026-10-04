@@ -1,0 +1,17 @@
+error[GRL011]: rule `NOPE008` has no `clean` example
+ --> rules/GRL011.grl:1:1
+  |
+1 | rule NOPE008 "no-clean" {
+  | ^^^^^^^^^^^^^^^^^^^^^^^ every rule needs a `fire` and a `clean` example
+...
+7 |   example fire """
+  |   ------------ the only example
+  |
+  = help: add one, for example:
+          example clean """
+            fn f(x: u32) -> u32 { x }
+          """
+          code the rule must leave alone goes between the quotes
+  = explain: grimble explain GRL011
+
+error: aborting due to 1 previous error

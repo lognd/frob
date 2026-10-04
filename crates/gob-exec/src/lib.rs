@@ -12,6 +12,7 @@ mod cmdline;
 mod counter;
 mod discover;
 mod error;
+mod path;
 pub mod proc001;
 mod program;
 mod runner;
@@ -21,5 +22,9 @@ pub use cmdline::{Arg, Shell, command_line};
 pub use counter::{SpawnCount, assert_spawns};
 pub use discover::{Origin, Platform, Sibling, beside_dirs, executable_names, find_sibling, plan};
 pub use error::ExecError;
+pub use path::{
+    Style, canonical, has_dot_component, path_has_dot_component, path_strictly_inside,
+    simplify_verbatim, strictly_inside,
+};
 pub use program::Program;
 pub use runner::{DEFAULT_OUTPUT_CAP, Limits, Outcome, Output, Runner, Spec};

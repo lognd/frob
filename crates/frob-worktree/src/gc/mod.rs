@@ -39,4 +39,4 @@ pub mod stamp;
 pub mod worktrees;
 
 pub use config::GcConfig;
-pub use pass::{Env, Mode, Report, TicketOracle, TicketState, run};
+pub use pass::{Env, Mode, Report, TicketOracle, TicketState, report_only, run};

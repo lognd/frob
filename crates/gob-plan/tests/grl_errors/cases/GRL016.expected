@@ -1,0 +1,13 @@
+error[GRL016]: example `fire` of `NOPE013` does not match what the rule reports
+ --> rules/GRL016.grl:7:3
+  |
+7 |   example fire """
+  |   ^^^^^^^^^^^^ expected 1 finding, the rule reported 0
+  |
+  = diff: expected vs actual findings
+          - line 1: warn
+          + (no finding)
+  = help: the `//~ warn` marker is on line 1 of the example, but `dbg!($$$ARGS)` matches nothing there; fix the example or the rule
+  = explain: grimble explain GRL016
+
+error: rule test failed: 1 of 2 examples did not match

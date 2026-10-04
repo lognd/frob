@@ -1,2 +1,9 @@
 msrv = "1.98"
 doc-valid-idents = ["GitHub", "GitLab", "SQLite", "TypeScript", "JavaScript", "OAuth", "gob", "frob", "grimble", "crunk", ".."]
+
+# One canonicalization function (docs/design/paths.md section 3): std's returns verbatim
+# (`\\?\C:\...`) paths on Windows that git and other tools cannot use.
+disallowed-methods = [
+    { path = "std::fs::canonicalize", reason = "use gob_exec::canonical, which never returns a verbatim path when it can be avoided" },
+    { path = "std::path::Path::canonicalize", reason = "use gob_exec::canonical, which never returns a verbatim path when it can be avoided" },
+]

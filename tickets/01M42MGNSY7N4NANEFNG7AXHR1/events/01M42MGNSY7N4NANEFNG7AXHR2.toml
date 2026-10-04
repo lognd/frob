@@ -1,0 +1,12 @@
+kind = "create"
+title = "Closing a ticket blocked by an open ticket succeeds (no no_open_blockers guard)"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 2
+scope = ["crates/frob-evidence/src/done.rs"]
+acceptance = ["Given a ticket blocked by an open ticket, when it is closed as done, then it refuses naming the blocker"]
+body = "Reproduced; tickets.md names the guard (also slice A PT-3). Add no_open_blockers to the done guards for outcomes done and fixed. Evidence and repro: notes/review/v1-gap/D-incidents.md (probe list)."
+at = "2026-10-04T04:59:49Z"
+actor = "lognd"
+rev = 1

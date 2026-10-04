@@ -2056,6 +2056,7 @@ name = "gob-cache"
 version = "0.0.0"
 dependencies = [
  "criterion",
+ "gob-exec",
  "rusqlite",
  "tempfile",
  "thiserror",
@@ -2293,6 +2294,18 @@ dependencies = [
  "thiserror",
  "tracing",
  "walkdir",
+]
+
+[[package]]
+name = "gob-packs"
+version = "0.0.0"
+dependencies = [
+ "proptest",
+ "serde",
+ "tempfile",
+ "thiserror",
+ "toml",
+ "tracing",
 ]
 
 [[package]]
