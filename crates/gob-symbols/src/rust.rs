@@ -29,9 +29,7 @@
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
-use gob_ir::{
-    GroupOrder, NodeId, NodeSpec, Operator, Resolution, ScopeGraph, Sort, TermError, reserved,
-};
+use gob_ir::{GroupOrder, NodeId, NodeSpec, Operator, ScopeGraph, Sort, TermError, reserved};
 use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse};
 use tree_sitter::Node;
 
@@ -39,10 +37,13 @@ use crate::adapter::{
     Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
     Precision,
 };
-use crate::fold::{Cx, base_file, failed_file, file_root_spec};
+use crate::fold::{
+    Cx, base_file, call_text, children, failed_file, file_root_spec, line_of, local_binding,
+    text_of,
+};
 use crate::model::{
-    CallRef, CallSite, DeriveDecl, FieldDecl, FileSymbols, ImportEdge, LocalBinding, MapKind,
-    Receiver, RefKind, RefSite, RetType, SelfKind, UseBinding, Visibility, collapse_ws,
+    CallRef, CallSite, DeriveDecl, FieldDecl, FileSymbols, ImportEdge, MapKind, Receiver, RefKind,
+    RefSite, RetType, SelfKind, UseBinding, Visibility, collapse_ws,
 };
 use crate::paths::crate_and_module;
 use crate::pipeline::EXTRACTOR_VERSION;
@@ -352,18 +353,6 @@ fn first_named(n: Node<'_>) -> Option<Node<'_>> {
         .find(|c| c.is_named() && !matches!(c.kind(), "lifetime" | "lifetime_parameter"))
 }
 
-/// Longest callee text kept for diagnostics.
-const MAX_CALL_TEXT: usize = 80;
-
-fn call_text(raw: &str) -> String {
-    let mut t = collapse_ws(raw);
-    if t.chars().count() > MAX_CALL_TEXT {
-        t = t.chars().take(MAX_CALL_TEXT).collect();
-        t.push_str("...");
-    }
-    format!("{t}(..)")
-}
-
 struct Fold<'a> {
     cx: Cx<'a>,
     path: &'a str,
@@ -396,20 +385,6 @@ struct Fold<'a> {
     impl_types: Vec<String>,
     /// The derives of each struct and enum declared in this file.
     derives: Vec<DeriveDecl>,
-}
-
-/// One-based source line of `n`.
-fn line_of(n: Node<'_>) -> u32 {
-    u32::try_from(n.start_position().row + 1).unwrap_or(u32::MAX)
-}
-
-fn text_of<'t>(text: &'t str, n: Node<'_>) -> &'t str {
-    &text[n.start_byte()..n.end_byte()]
-}
-
-fn children(n: Node<'_>) -> Vec<Node<'_>> {
-    let mut c = n.walk();
-    n.children(&mut c).collect()
 }
 
 fn is_comment(n: Node<'_>) -> bool {
@@ -452,22 +427,8 @@ fn vis_text(v: Visibility) -> &'static str {
 }
 
 /// All leaf tokens of `n` in source order, comments skipped.
-fn leaves<'t>(n: Node<'t>) -> Vec<Node<'t>> {
-    let mut out = Vec::new();
-    let mut stack = vec![n];
-    while let Some(x) = stack.pop() {
-        if is_comment(x) {
-            continue;
-        }
-        if x.child_count() == 0 {
-            out.push(x);
-        } else {
-            let mut c = x.walk();
-            let kids: Vec<Node<'t>> = x.children(&mut c).collect();
-            stack.extend(kids.into_iter().rev());
-        }
-    }
-    out
+fn leaves(n: Node<'_>) -> Vec<Node<'_>> {
+    crate::fold::leaves(n, is_comment)
 }
 
 fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
@@ -583,24 +544,6 @@ fn push_site(file: &mut FileSymbols, scopes: &ScopeGraph, s: Site, caller: Symre
             qualifier: s.qualifier,
             kind: RefKind::Value,
         }),
-    }
-}
-
-/// What the file's scope graph says about the callee reference at `node`.
-fn local_binding(scopes: &ScopeGraph, node: Option<NodeId>, item_local: bool) -> LocalBinding {
-    let Some(r) = node.and_then(|n| scopes.ref_at(n)) else {
-        return LocalBinding::None;
-    };
-    let is_binder = |d| scopes.decl(d).kind == gob_ir::DeclKind::Binder;
-    let bound = match scopes.resolve(r) {
-        Resolution::Must(d) => is_binder(d),
-        Resolution::May(ds) => ds.iter().all(|&d| is_binder(d)),
-        Resolution::Unknown => false,
-    };
-    match (bound, item_local) {
-        (false, _) => LocalBinding::None,
-        (true, true) => LocalBinding::Item,
-        (true, false) => LocalBinding::Value,
     }
 }
 

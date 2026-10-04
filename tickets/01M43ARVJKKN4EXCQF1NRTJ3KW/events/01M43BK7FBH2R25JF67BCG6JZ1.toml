@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T11:43:10Z"
+digest = "df030b4f69830a900ce8e163dde145406959a15bd5a67670234a647208fb2781"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 093c82bd-621d-4c30-9e4f-bd473dd4324e with nextest profile: default
+    Starting 3 tests across 2 binaries (7 tests skipped)
+        PASS [   0.018s] crunk-values::values color_parse_hex_forms
+        PASS [   0.018s] crunk-values::values color_parse_matches_python_vectors
+        PASS [   0.022s] crunk-values::values color_parse_typed_errors
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 3 tests run: 3 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-values -E test(color_parse_matches_python_vectors)|test(color_parse_typed_errors)|test(color_parse_hex_forms)"
+size = 685
+status = "measured"
+tests = ["color_parse_hex_forms", "color_parse_matches_python_vectors", "color_parse_typed_errors"]
+at = "2026-10-04T11:43:10Z"
+actor = "lognd"
+rev = 1

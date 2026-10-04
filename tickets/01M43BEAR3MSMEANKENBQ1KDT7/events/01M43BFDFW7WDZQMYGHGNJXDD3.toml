@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-dev/src/import_v1.rs", "crates/gob-dev/src/import_v1/**", "crates/gob-dev/tests/import_v1.rs", "docs/design/migration.md"]
+new = ["crates/gob-dev/src/import_v1.rs", "crates/gob-dev/src/import_v1/**", "crates/gob-dev/tests/import_v1.rs", "docs/design/migration.md", "crates/gob-dev/src/main.rs"]
+at = "2026-10-04T11:41:05Z"
+actor = "lognd"
+rev = 1

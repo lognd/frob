@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T11:54:54Z"
+digest = "b9109149ee45983f090fe9346864f7aac8b63ecf0fa0f817adc3e57183968d53"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID db3b8b4d-836d-4141-8c49-186cfc068ad6 with nextest profile: default
+    Starting 1 test across 4 binaries (21 tests skipped)
+        PASS [   4.939s] gob-git::ledger twenty_four_concurrent_writers_all_win_with_backoff
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   4.945s] 1 test run: 1 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-git -E test(twenty_four_concurrent_writers_all_win_with_backoff)"
+size = 769
+status = "measured"
+tests = ["twenty_four_concurrent_writers_all_win_with_backoff"]
+at = "2026-10-04T11:54:56Z"
+actor = "lognd"
+rev = 1
