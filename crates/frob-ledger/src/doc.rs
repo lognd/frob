@@ -1,5 +1,7 @@
 //! The `ticket.md` document: TOML frontmatter between `+++` fences, then markdown.
 
+use std::fmt::Write as _;
+
 use crate::error::{LedgerError, Result};
 use crate::model::{Frontmatter, Ticket, normalize_body};
 
@@ -21,7 +23,9 @@ fn basic_string(s: &str) -> String {
             '\n' => out.push_str("\\n"),
             '\r' => out.push_str("\\r"),
             '\t' => out.push_str("\\t"),
-            c if c.is_control() => out.push_str(&format!("\\u{:04X}", u32::from(c))),
+            c if c.is_control() => {
+                let _ = write!(out, "\\u{:04X}", u32::from(c));
+            }
             c => out.push(c),
         }
     }
@@ -55,7 +59,7 @@ fn escape_fence_lines(front: &str) -> Option<String> {
         prefix.push('x');
     }
     let mut hidden = Vec::new();
-    for (_, v) in table.iter_mut() {
+    for (_, v) in &mut table {
         hide_fence_strings(v, &prefix, &mut hidden);
     }
     let mut out = toml::to_string(&table).ok()?;
