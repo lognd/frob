@@ -2,11 +2,12 @@
 id = "01M3DG64DB0MJWAP3FSY0YKP2N"
 title = 'frob serve prints "--- Logging error --- I/O operation on closed file" on stdin EOF because a handler writes after the stream closes'
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-09-26T00:00:00Z"
+updated = "2026-10-04T21:08:35Z"
 aliases = ["T-6571"]
 labels = ["milestone:0.535.0", "v1-cluster:E1"]
 scope = ["src/frob/serve/server.py", "src/frob/logging/"]
