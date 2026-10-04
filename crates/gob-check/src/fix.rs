@@ -345,7 +345,7 @@ mod tests {
         std::fs::write(fx.dir.path().join("b.txt"), "other, edited").unwrap();
         let err = fx.run(&[fa, fb]).unwrap_err();
         assert!(
-            matches!(&err, CheckError::FixStale(p) if p == "b.txt"),
+            matches!(&err, CheckError::FixIo(m) if m.starts_with("E-FIX-STALE: b.txt")),
             "{err}"
         );
         assert!(err.to_string().contains("E-FIX-STALE"));
