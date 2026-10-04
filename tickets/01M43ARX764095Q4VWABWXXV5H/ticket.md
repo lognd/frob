@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:47Z"
-updated = "2026-10-04T13:47:06Z"
+updated = "2026-10-04T13:47:07Z"
 idempotency_key = "crunk-plan-spec"
 labels = ["area:crunk"]
 scope = ["crates/crunk-spec/**", "docs/schemas/crunk.json", "docs/crunk/config.md", "Cargo.lock", "crates/gob-dev/Cargo.toml", "crates/gob-dev/src/lib.rs", "crates/gob-dev/src/render/mod.rs", "crates/gob-dev/src/render/crunk.rs", "crates/gob-dev/tests/generate.rs"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given each valid fixture config of the corpus, when loaded, then the DesignSpec equals the Python spec dump"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the crate, when `cargo dev gen --check` runs, then docs/schemas/crunk.json and docs/crunk/config.md are current"
