@@ -163,6 +163,7 @@ fn migrate(conn: &mut Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
+// frob:ticket 01M41ZSWGC86TY3K0NSA8AMNGF
 fn open_conn(dir: &Path, config: CacheConfig) -> Result<Connection, String> {
     std::fs::create_dir_all(dir).map_err(|e| format!("create dir: {e}"))?;
     let mut conn = Connection::open(dir.join(DB_FILE)).map_err(|e| format!("open: {e}"))?;
@@ -170,6 +171,10 @@ fn open_conn(dir: &Path, config: CacheConfig) -> Result<Connection, String> {
         .map_err(|e| format!("busy_timeout: {e}"))?;
     conn.pragma_update(None, "journal_mode", "WAL")
         .map_err(|e| format!("wal: {e}"))?;
+    // The cache is regenerable, and in WAL mode NORMAL only risks the last commits on power loss:
+    // FULL would fsync every one of the thousands of per-file puts of a cold run.
+    conn.pragma_update(None, "synchronous", "NORMAL")
+        .map_err(|e| format!("synchronous: {e}"))?;
     migrate(&mut conn).map_err(|e| format!("migrate: {e}"))?;
     Ok(conn)
 }
