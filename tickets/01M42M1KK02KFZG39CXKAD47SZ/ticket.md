@@ -2,12 +2,12 @@
 id = "01M42M1KK02KFZG39CXKAD47SZ"
 title = "Unreadable tracked files (non-UTF-8) vanish silently from frob check; make them a required Unresolved finding"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:51:35Z"
-updated = "2026-10-04T04:51:35Z"
+updated = "2026-10-04T05:59:44Z"
 scope = ["crates/gob-symbols/src/pipeline.rs", "crates/gob-check/src/**", "crates/frob-check/src/**", "crates/frob-check/tests/**"]
 
 [[acceptance]]
