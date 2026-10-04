@@ -1,0 +1,5 @@
+kind = "evidence-bypass"
+reason = "criterion 3 (windows-latest gc tests) is provable only by CI on the following push; nova-windows (aarch64) passed 1388/1388 and 363/363 after the final merge"
+at = "2026-10-04T04:44:47Z"
+actor = "lognd"
+rev = 1

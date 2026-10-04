@@ -106,7 +106,8 @@ impl Command for TicketDoctor {
 
     fn run(&self, ctx: &Context) -> CliOutcome<DoctorData> {
         let ledger = open(ctx)?;
-        let report = ledger.doctor(self.fix).map_err(cli_err)?;
+        let mut report = ledger.doctor(self.fix).map_err(cli_err)?;
+        report.issues.extend(unmerged_done_issues(&ledger)?);
         let scrub = if self.fix {
             scrub_ledger(&ledger)?
         } else {
@@ -181,4 +182,43 @@ fn scrub_ledger(ledger: &frob_ledger::Ledger) -> Result<ScrubReport, CliError> {
         "ticket doctor --fix scrubbed the ledger"
     );
     Ok(report)
+}
+
+// frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
+/// One `E-DOCTOR-UNMERGED` issue per done or fixed ticket whose branch still holds commits the base lacks and that carries no `land-exempt` audit event.
+fn unmerged_done_issues(ledger: &frob_ledger::Ledger) -> Result<Vec<Issue>, CliError> {
+    let base = frob_worktree::work::base_branch(ledger);
+    let filter = frob_ledger::index::ListFilter {
+        category: Some(frob_ledger::model::Category::Done),
+        ..Default::default()
+    };
+    let mut issues = Vec::new();
+    for s in ledger.list(&filter).map_err(cli_err)? {
+        if !frob_evidence::done::guards_apply(s.outcome) {
+            continue;
+        }
+        let (unmerged, more) =
+            frob_evidence::done::unmerged_commits(ledger.repo(), &base, &s.handle)
+                .map_err(CliError::internal)?;
+        if unmerged.is_empty() {
+            continue;
+        }
+        if frob_ledger::event::land_exemption(&ledger.events(s.id).map_err(cli_err)?).is_some() {
+            tracing::debug!(handle = %s.handle, "done ticket has unmerged commits but a land-exempt record");
+            continue;
+        }
+        tracing::warn!(handle = %s.handle, count = unmerged.len(), "done ticket with an unmerged branch");
+        issues.push(Issue {
+            code: "E-DOCTOR-UNMERGED".to_owned(),
+            ticket: s.id,
+            message: format!(
+                "{} is done but {} holds commits not merged into {base}: {}{}; land them or record why with a new ticket",
+                s.handle,
+                frob_evidence::done::ticket_branch(&s.handle),
+                unmerged.join("; "),
+                if more { "; and more" } else { "" }
+            ),
+        });
+    }
+    Ok(issues)
 }

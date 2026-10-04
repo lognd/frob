@@ -1,0 +1,17 @@
+rule NOPE009 "no-remedy" {
+  lang rust
+
+  find d: `dbg!($$$ARGS)`
+  report d "remove dbg! before committing"
+
+  example fire """
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+  """
+  example clean """
+    fn f(x: u32) -> u32 { x }
+  """
+
+  explain """
+    `dbg!` prints to stderr and is meant for local debugging only.
+  """
+}

@@ -97,7 +97,7 @@ fn init_writes_the_absolute_path_when_path_has_another_frob() {
     let other = stub_dir("9.9.9");
     let out = frob(dir.path(), other.path(), &["init"]);
     assert_eq!(out.status.code(), Some(0), "{}", json(&out));
-    let exe = frob_bin().canonicalize().expect("canonical");
+    let exe = gob_exec::canonical(&frob_bin()).expect("canonical");
     let cmd = driver(dir.path()).expect("driver set");
     assert_eq!(cmd, format!("{} merge-driver %O %A %B %P", exe.display()));
     let env = json(&out);
@@ -160,7 +160,7 @@ fn doctor_reports_a_mismatched_driver_with_the_fix() {
     let env = json(&out);
     let d = &env["data"]["driver"];
     assert_eq!(d["state"], "mismatch");
-    let exe = frob_bin().canonicalize().expect("canonical");
+    let exe = gob_exec::canonical(&frob_bin()).expect("canonical");
     assert_eq!(d["fix"], format!("{} init --fix-driver", exe.display()));
     assert!(
         env["warnings"].to_string().contains("init --fix-driver"),

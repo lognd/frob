@@ -39,5 +39,5 @@ pub fn lease_ticket(common_dir: &Path, worktree: &Path) -> Option<String> {
 }
 
 fn canonical(p: &Path) -> std::path::PathBuf {
-    std::fs::canonicalize(p).unwrap_or_else(|_| p.to_path_buf())
+    gob_exec::canonical(p).unwrap_or_else(|_| p.to_path_buf())
 }

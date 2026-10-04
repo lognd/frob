@@ -339,13 +339,13 @@ impl Repo {
                 return unsynced;
             }
         };
-        let me = self.work_dir().and_then(|p| std::fs::canonicalize(p).ok());
+        let me = self.work_dir().and_then(|p| gob_exec::canonical(p).ok());
         let short = full.strip_prefix("refs/heads/");
         for w in worktrees {
             if w.branch.as_deref() != short || short.is_none() {
                 continue;
             }
-            let Ok(canon) = std::fs::canonicalize(&w.path) else {
+            let Ok(canon) = gob_exec::canonical(&w.path) else {
                 debug!(path = %w.path.display(), "worktree directory missing; skipped");
                 continue;
             };

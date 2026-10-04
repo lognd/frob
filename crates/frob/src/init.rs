@@ -267,7 +267,7 @@ fn git(runner: &Runner, root: &Path, args: &[&str]) -> Result<(i32, String), Cli
 fn running_exe() -> Result<PathBuf, CliError> {
     let exe = std::env::current_exe()
         .map_err(|e| CliError::internal(format!("cannot locate the running executable: {e}")))?;
-    Ok(exe.canonicalize().unwrap_or(exe))
+    Ok(gob_exec::canonical(&exe).unwrap_or(exe))
 }
 
 /// The version line a frob prints for `--version`, as the running one would.
@@ -300,7 +300,7 @@ fn version_line_of(path: &Path) -> Option<String> {
 
 /// True when `path` is the running frob: the same canonical file, or else the same version line.
 fn is_running_frob(path: &Path, exe: &Path) -> bool {
-    let canon = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+    let canon = gob_exec::canonical(path).unwrap_or_else(|_| path.to_path_buf());
     if canon == exe {
         return true;
     }

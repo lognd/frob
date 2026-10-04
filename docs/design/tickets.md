@@ -118,6 +118,7 @@ any (provider, reference) pair's latest record for it passes.
 | `evidence` | ticket | evidence id, verdict, measured value, commit, store URI or inline text | evidence | close guard, done-report |
 | `evidence-bypass` | ticket | reason | `ticket close --no-evidence --reason` | audit, doctor |
 | `changelog-exempt` | ticket | reason | `ticket close` and `land` with `--no-changelog --reason` | audit, REL003, show, brief, release status (folds to no change, so old binaries read it as an uninterpreted kind) |
+| `land-exempt` | ticket | reason | `ticket close --outcome done --no-land --reason` | audit, doctor (folds to no change, so old binaries read it as an uninterpreted kind) |
 | `scrub` | ticket | reason, files rewritten, digests recomputed (file, old, new) | `ticket doctor --fix` (the `TICK004` and `TICK005` repair) | audit only; the fold ignores it, `updated` included |
 | `lease` | ticket | op (take, renew, release, steal), holder, scope | start, work, requeue, close | contention, wave |
 | `review` | ticket or exception | subject, verdict, reviewer | review, `exceptions` review of an accept | EXC012, cycle report |
@@ -542,7 +543,9 @@ recorded as a `changelog-exempt` event with the actor, written before the close 
 `changelog_fragment` and REL003 for that ticket (`check --ticket` included, and
 `land` passes the exemption to its own check), and is shown by `ticket show`,
 `ticket brief`, the close and land reports and `release status`, which lists the
-exempted tickets of the milestone. `objective_target_met` passes for a ticket that is not a
+exempted tickets of the milestone. A done close also needs the work on the base (`branch_merged`, ~CKZS2R3, code `E-DONE-UNMERGED`): `ticket close --outcome done` and `fixed` are refused while `ticket/<handle>` holds commits not reachable from the base branch, naming the first of them and the remedy, `frob land` or, audited, `--no-land --reason TEXT` (a `land-exempt` event, written before the close). `land` merges before it closes and so never trips the guard; a ticket whose branch was deleted after landing has nothing unmerged and closes cleanly; `wont-fix`, `duplicate` and `invalid` are exempt like the other done guards. `ticket doctor` reports every done or fixed ticket whose branch still holds unmerged commits and has no `land-exempt` event as `E-DOCTOR-UNMERGED`. The "no change to the scope paths on the base since the ticket started" doctor check is not built yet.
+
+`objective_target_met` passes for a ticket that is not a
 quality objective, and `docs_touched_or_excepted` and an objective's target
 are Unresolved today (no recorded docs exception, no stored target), so they
 refuse until they can be evaluated, so the default `done_requires` lists only

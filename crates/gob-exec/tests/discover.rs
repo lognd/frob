@@ -89,7 +89,7 @@ fn beside_dirs_resolve_symlinks_to_the_real_directory_first() {
     let link = link_dir.path().join("frob");
     std::os::unix::fs::symlink(&exe, &link).expect("symlink");
     let dirs = beside_dirs(&link);
-    let real_dir = real.path().canonicalize().expect("canonical");
+    let real_dir = gob_exec::canonical(real.path()).expect("canonical");
     assert_eq!(dirs.first(), Some(&real_dir));
     assert_eq!(dirs.get(1).map(PathBuf::as_path), Some(link_dir.path()));
 }

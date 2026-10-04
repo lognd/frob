@@ -64,7 +64,7 @@ pub struct Candidate {
 
 /// True when `path` is `of` or lies inside it, comparing canonical forms by components.
 fn inside(path: &Path, of: &Path) -> bool {
-    let canon = |p: &Path| p.canonicalize().unwrap_or_else(|_| p.to_path_buf());
+    let canon = |p: &Path| gob_exec::canonical(p).unwrap_or_else(|_| p.to_path_buf());
     canon(path).starts_with(canon(of))
 }
 
@@ -77,19 +77,11 @@ pub fn assess(env: &WorktreeEnv<'_>) -> Vec<Candidate> {
             return Vec::new();
         }
     };
-    let primary = env
-        .primary
-        .canonicalize()
-        .unwrap_or_else(|_| env.primary.to_path_buf());
-    let parent = env.parent.canonicalize().ok();
+    let primary = gob_exec::canonical(env.primary).unwrap_or_else(|_| env.primary.to_path_buf());
+    let parent = gob_exec::canonical(env.parent).ok();
     let mut out = Vec::new();
     for info in infos {
-        if info
-            .path
-            .canonicalize()
-            .unwrap_or_else(|_| info.path.clone())
-            == primary
-        {
+        if gob_exec::canonical(&info.path).unwrap_or_else(|_| info.path.clone()) == primary {
             continue;
         }
         let decision = decide(env, parent.as_deref(), &info.path, info.branch.as_deref());

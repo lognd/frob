@@ -1,0 +1,13 @@
+error[GRL015]: this fix edits outside the finding it belongs to
+ --> rules/GRL015.grl:7:3
+  |
+6 |   report d "remove dbg! before committing"
+  |   -------- the finding is reported on `d`
+7 |   fix f -> `fn gone() {}` [machine]
+  |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ replaces `f`, the whole function
+  |
+  = note: a pack fix may edit only inside the finding's own span
+  = help: fix `d` instead: `fix d -> `...` [machine]`; a fix elsewhere needs a pack that holds `fix.machine`
+  = explain: grimble explain GRL015
+
+error: aborting due to 1 previous error

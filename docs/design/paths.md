@@ -70,6 +70,24 @@ the owner's "one renderer, no `println!` scattered" rule, and it fails
 existing conversions in 105 files migrate crate by crate; each
 migration ticket ends with that crate free of the allow list.
 
+### 3.1 Canonicalization and the deletion jail (~EDPHHFS)
+
+`std::fs::canonicalize` returns a verbatim path (`\\?\C:\...`) on Windows that git and
+most tools reject, so it is in `disallowed-methods` (with `Path::canonicalize`) and
+`gob_exec::canonical` is the one function that calls it: it strips `\\?\` and `\\?\UNC\`
+when every component survives without the prefix (no dot component, reserved device name,
+trailing dot or space, `<>:"|?*`, and under `MAX_PATH`), else keeps the verbatim form. Every
+product and test call site goes through it. The pure style functions beside it
+(`has_dot_component`, `strictly_inside`, `simplify_verbatim`) work on text in either `Style`, so
+the Windows rules are tested on Linux.
+
+The garbage collector's jail refuses any `.` or `..` component, split on both `/` and `\\`
+in every style, before it touches the file system, and compares canonical forms by whole
+normalized components. Note that `PathBuf::join` and `push` onto a verbatim path resolve `..`
+lexically on Windows: a test that builds a dotdot path with `join` there tests a different
+path than it names, so such inputs are built as text. Until the fix is proven on Windows CI the
+automatic pass only reports on Windows (`report_only`).
+
 ## 4. Both path styles verified on one host
 
 gob-path's logic is written once over a path-style parameter using the

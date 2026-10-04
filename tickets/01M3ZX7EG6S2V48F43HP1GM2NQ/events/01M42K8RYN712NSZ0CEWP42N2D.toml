@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T04:38:01Z"
+digest = "c855d16ddcf7801abbfaa3f894f7c137da7542a6325c161832247d777d68cfba"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 082578cb-0317-4508-b398-be5abcc13368 with nextest profile: default
+    Starting 6 tests across 2 binaries (49 tests skipped)
+        PASS [   0.027s] gob-plan plan::tests::out_of_range_references_are_rejected
+        PASS [   0.031s] gob-plan plan::tests::every_truncation_is_an_error
+        PASS [   0.034s] gob-plan plan::tests::cycles_and_forward_references_are_rejected_from_bytes
+        PASS [   0.258s] gob-plan plan::tests::props::mutated_valid_plans_are_safe
+        PASS [   0.264s] gob-plan plan::tests::props::truncated_valid_plans_are_refused
+        PASS [   0.738s] gob-plan plan::tests::props::arbitrary_bytes_are_safe
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.741s] 6 tests run: 6 passed, 49 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(every_truncation_is_an_error) | test(out_of_range_references_are_rejected) | test(cycles_and_forward_references_are_rejected_from_bytes) | test(arbitrary_bytes_are_safe) | test(truncated_valid_plans_are_refused) | test(mutated_valid_plans_are_safe)'"
+size = 1030
+status = "measured"
+tests = ["plan::tests::out_of_range_references_are_rejected", "plan::tests::every_truncation_is_an_error", "plan::tests::cycles_and_forward_references_are_rejected_from_bytes", "plan::tests::props::mutated_valid_plans_are_safe", "plan::tests::props::truncated_valid_plans_are_refused", "plan::tests::props::arbitrary_bytes_are_safe"]
+at = "2026-10-04T04:38:01Z"
+actor = "lognd"
+rev = 1
