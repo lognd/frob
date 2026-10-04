@@ -2,12 +2,13 @@
 id = "01M42MGNE7XHTT1MR5CA6C2R1C"
 title = "A rule that fails to evaluate yields zero findings instead of a required Unresolved; a corrupt index makes frob check exit 0 clean"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T04:59:49Z"
-updated = "2026-10-04T15:02:37Z"
+updated = "2026-10-04T15:02:38Z"
 scope = ["crates/frob-check/src/**", "crates/frob-check/tests/check.rs", "crates/frob-check/tests/evaluation.rs", "crates/gob-rules/src/required.rs", "crates/grimble-check/src/sibling.rs", "docs/schemas/envelope.json", "crates/gob-check/src/repo.rs", "crates/gob-diagnostics/tests/contract.rs"]
 
 [[acceptance]]
