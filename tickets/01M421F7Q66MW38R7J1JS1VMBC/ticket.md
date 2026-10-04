@@ -2,7 +2,8 @@
 id = "01M421F7Q66MW38R7J1JS1VMBC"
 title = "frob finds sibling binaries next to its own executable first, then on PATH (D87)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
