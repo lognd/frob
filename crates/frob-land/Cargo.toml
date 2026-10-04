@@ -16,6 +16,7 @@ frob-lease = { version = "0.0.0", path = "../frob-lease" }
 frob-ledger = { version = "0.0.0", path = "../frob-ledger" }
 frob-worktree = { version = "0.0.0", path = "../frob-worktree" }
 gob-cache = { version = "0.0.0", path = "../gob-cache" }
+gob-config = { version = "0.0.0", path = "../gob-config" }
 gob-cli = { version = "0.0.0", path = "../gob-cli" }
 gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
 gob-exec = { version = "0.0.0", path = "../gob-exec" }

@@ -1,0 +1,82 @@
+{
+  "project": {
+    "css_root": ".",
+    "tokens_file": "t.css",
+    "root_font_size": 10.0
+  },
+  "palette": {
+    "a": {
+      "r": 1.0,
+      "g": 1.0,
+      "b": 1.0,
+      "a": 1.0
+    }
+  },
+  "roles": {},
+  "scales": {
+    "spacing": [
+      1.0
+    ],
+    "font_sizes": [
+      10.0
+    ],
+    "radii": [],
+    "sizes": []
+  },
+  "typography": {
+    "families": [
+      "x"
+    ],
+    "weights": [
+      400
+    ],
+    "stacks": {}
+  },
+  "layers": {},
+  "org": {
+    "buckets": [
+      "b"
+    ],
+    "class_case": "kebab",
+    "component_prefix": true,
+    "tokens_only_custom_props": true,
+    "model": "buckets",
+    "ignore": [],
+    "entry": []
+  },
+  "lint": {
+    "rules": {},
+    "fix_tolerance": 0.15,
+    "color_tolerance": 8.0
+  },
+  "tokens": {
+    "color": "color",
+    "space": "space",
+    "font_size": "font-size",
+    "radius": "radius",
+    "layer": "layer",
+    "font_family": "font-family",
+    "size": "size",
+    "header": "",
+    "json_file": ""
+  },
+  "jsx": {
+    "globs": []
+  },
+  "tailwind": {
+    "config": "",
+    "css_entry": "",
+    "tokens_file": "",
+    "namespace_keys": false,
+    "alpha_channels": false,
+    "version": "auto"
+  },
+  "breakpoints": {
+    "points": {},
+    "base_required": []
+  },
+  "platforms": {},
+  "screens": {},
+  "sessions": {},
+  "mock_sets": {}
+}

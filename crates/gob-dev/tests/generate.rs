@@ -129,3 +129,26 @@ fn one_required_reason_and_one_polarity() {
     }
     assert!(hits.is_empty(), "duplicates outside gob-rules: {hits:?}");
 }
+
+// frob:ticket 01M43ARX764095Q4VWABWXXV5H
+#[test]
+fn crunk_config_reference_and_schema_are_generated_apart_from_frobs() {
+    let files = generate(Kind::All, &crates_dir());
+    let get = |path: &str| {
+        files
+            .iter()
+            .find(|f| f.path == path)
+            .unwrap_or_else(|| panic!("{path} not generated"))
+    };
+    assert!(
+        get("docs/crunk/config.md")
+            .content
+            .contains("## `[project]`")
+    );
+    let schema: serde_json::Value =
+        serde_json::from_str(&get("docs/schemas/crunk.json").content).expect("valid json");
+    assert!(schema["properties"]["project"].is_object());
+    // crunk.toml keys must not leak into frob's own config reference or schema.
+    assert!(!get("docs/reference/config.md").content.contains("css_root"));
+    assert!(!get("docs/schemas/config.json").content.contains("css_root"));
+}

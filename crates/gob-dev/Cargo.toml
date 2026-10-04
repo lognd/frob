@@ -19,6 +19,7 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
+crunk-spec = { path = "../crunk-spec" }
 frob-cli = { path = "../frob" }
 frob-evidence = { path = "../frob-evidence" }
 frob-ledger = { path = "../frob-ledger" }

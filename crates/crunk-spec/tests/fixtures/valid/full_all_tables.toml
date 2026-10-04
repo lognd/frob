@@ -1,0 +1,142 @@
+[project]
+css_root = "web/styles"
+tokens_file = "tokens.css"
+root_font_size = 16
+
+[palette]
+paper = "#fafaf7"
+ink = "#1a1a1a"
+accent = "rgb(47 111 237)"
+muted = "hsl(210 10% 40% / 0.8)"
+rebecca = "rebeccapurple"
+zed = "#f00"
+
+[palette.roles]
+body = ["ink", "paper"]
+link = { pair = ["accent", "paper"], floor = 3.0 }
+
+[scales]
+spacing = [0, 4, 6.5, 8, 16]
+font_sizes = [12, 14, 16]
+radii = [0, 4]
+sizes = [16, 32, 64]
+
+[typography]
+families = ["Inter", "system-ui", "JetBrains Mono"]
+weights = [400, 700]
+
+[typography.stacks]
+sans = ["Inter", "system-ui"]
+mono = ["jetbrains mono"]
+
+[layers]
+toast = 300
+base = 0
+dropdown = 100
+
+[org]
+buckets = ["base", "components"]
+class_case = "snake"
+component_prefix = false
+tokens_only_custom_props = false
+model = "utility-first"
+ignore = ["vendor/**"]
+entry = ["src/main.css"]
+
+[lint]
+COLOR001 = "warn"
+GALLERY005 = "off"
+fix_tolerance = 0.2
+color_tolerance = 12
+
+[tokens]
+header = "/* project header */"
+json_file = "tokens.json"
+
+[tokens.prefixes]
+color = ""
+space = "sp"
+font_size = "fs"
+radius = "r"
+layer = "z"
+font_family = "ff"
+size = "sz"
+
+[jsx]
+globs = ["src/**/*.tsx", "src/**/*.jsx"]
+
+[tailwind]
+config = "tailwind.config.ts"
+css_entry = "src/index.css"
+tokens_file = "tailwind.tokens.json"
+namespace_keys = true
+alpha_channels = true
+version = "v3"
+
+[breakpoints]
+tablet = 700
+desktop = 1100
+base_required = ["flex", "w-"]
+
+[[platform]]
+id = "desk"
+renderer = "web"
+engine = "webkit"
+viewport = { width = 1280, height = 800 }
+device_scale = 2
+media = { reduced_motion = true, color_scheme = "light" }
+locale = "en-GB"
+settle_ms = 250
+init_scripts = ["window.x = 1;"]
+java_script_enabled = false
+cpu_throttle = 4
+network_throttle = { download = 100000, upload = 50000, latency = 80 }
+base_url = "https://example.test"
+tags = ["desktop", "wide"]
+
+[[platform]]
+id = "shot"
+renderer = "command"
+command = "shoot --url {url}"
+cwd = "tools"
+env = { MODE = "ci", A = "1" }
+
+[[session]]
+id = "admin"
+data = { role = "admin", ttl = 30, nested = { a = [1, 2] } }
+
+[[mock_set]]
+id = "empty"
+
+[[screen]]
+id = "home"
+entry = "/"
+applies_to = ["tag:desktop", "shot"]
+
+[[screen.states]]
+id = "default"
+fixture = "fx.json"
+
+[[screen.states]]
+id = "open"
+setup = "open.js"
+applies_to = ["desk"]
+media = { color_scheme = "dark" }
+actions = [
+  { kind = "click", selector = "#menu" },
+  { kind = "hover", selector = ".a" },
+  { kind = "focus", selector = ".b" },
+  { kind = "fill", selector = "input", value = "hi" },
+  { kind = "press", selector = "input", key = "Enter" },
+  { kind = "wait_for", selector = ".done", timeout_ms = 500 },
+]
+network = [
+  { url_pattern = "**/api", action = "status", status = 503 },
+  { url_pattern = "**/img", action = "delay", delay_ms = 200 },
+  { url_pattern = "**/x", action = "hold" },
+]
+session = "admin"
+mock = "empty"
+expect_url = "/open"
+diff_against = "default"
+settle_ms = 10

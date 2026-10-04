@@ -1,0 +1,126 @@
+{
+  "project": {
+    "css_root": "styles",
+    "tokens_file": "tokens.css",
+    "root_font_size": 16.0
+  },
+  "palette": {
+    "ink": {
+      "r": 0.06666666666666667,
+      "g": 0.06666666666666667,
+      "b": 0.06666666666666667,
+      "a": 1.0
+    },
+    "paper": {
+      "r": 1.0,
+      "g": 1.0,
+      "b": 1.0,
+      "a": 1.0
+    },
+    "accent": {
+      "r": 0.06666666666666667,
+      "g": 0.06666666666666667,
+      "b": 0.06666666666666667,
+      "a": 1.0
+    }
+  },
+  "roles": {
+    "body": {
+      "foreground": "ink",
+      "background": "paper",
+      "floor": 4.5
+    }
+  },
+  "scales": {
+    "spacing": [
+      0.0,
+      8.0,
+      16.0,
+      24.0,
+      32.0,
+      48.0,
+      64.0,
+      96.0
+    ],
+    "font_sizes": [
+      12.0,
+      16.0,
+      20.0,
+      24.0,
+      32.0,
+      48.0
+    ],
+    "radii": [
+      0.0,
+      8.0
+    ],
+    "sizes": []
+  },
+  "typography": {
+    "families": [
+      "ui-monospace",
+      "SFMono-Regular",
+      "monospace"
+    ],
+    "weights": [
+      400,
+      700
+    ],
+    "stacks": {}
+  },
+  "layers": {
+    "base": 0,
+    "dropdown": 100,
+    "overlay": 200,
+    "toast": 300
+  },
+  "org": {
+    "buckets": [
+      "base",
+      "components",
+      "layouts",
+      "utilities"
+    ],
+    "class_case": "kebab",
+    "component_prefix": true,
+    "tokens_only_custom_props": true,
+    "model": "buckets",
+    "ignore": [],
+    "entry": []
+  },
+  "lint": {
+    "rules": {},
+    "fix_tolerance": 0.15,
+    "color_tolerance": 8.0
+  },
+  "tokens": {
+    "color": "color",
+    "space": "space",
+    "font_size": "font-size",
+    "radius": "radius",
+    "layer": "layer",
+    "font_family": "font-family",
+    "size": "size",
+    "header": "",
+    "json_file": ""
+  },
+  "jsx": {
+    "globs": []
+  },
+  "tailwind": {
+    "config": "",
+    "css_entry": "",
+    "tokens_file": "",
+    "namespace_keys": false,
+    "alpha_channels": false,
+    "version": "auto"
+  },
+  "breakpoints": {
+    "points": {},
+    "base_required": []
+  },
+  "platforms": {},
+  "screens": {},
+  "sessions": {},
+  "mock_sets": {}
+}

@@ -80,7 +80,19 @@ pub(crate) fn cached(
             .or_default()
             .push(f.clone());
     }
-    for meta in metas {
+    // frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
+    // A failed evaluation is never stored: fixing its cause must re-evaluate, not replay the failure.
+    let failed = found.iter().any(|f| {
+        matches!(
+            f.required,
+            Some(gob_rules::RequiredReason::EvaluationFailed { .. })
+        )
+    });
+    if failed {
+        tracing::warn!(group = name, "evaluation failed; group result not cached");
+        by_rule.clear();
+    }
+    for meta in metas.iter().filter(|_| !failed) {
         let mine = by_rule.remove(meta.id).unwrap_or_default();
         cache.put_repo_rule(&key(digest, meta), meta.id, &store::encode(&mine, files));
     }
@@ -214,6 +226,49 @@ mod tests {
             },
         );
         computed
+    }
+
+    // frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
+    // frob:tests crates/gob-check/src/repo.rs::cached
+    #[test]
+    fn a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh() {
+        let dir = tempfile::tempdir().unwrap();
+        let cache = Cache::open(dir.path());
+        let metas = [Proc001.meta()];
+        let id: RuleId = "PROC001".parse().unwrap();
+        let run = |fail: bool| {
+            let mut computed = false;
+            let found = cached(
+                &cache,
+                "inputs",
+                "repo:process",
+                &metas,
+                &mut FileInterner::default(),
+                &mut Stats::default(),
+                |_| {
+                    computed = true;
+                    if !fail {
+                        return Vec::new();
+                    }
+                    vec![
+                        Finding::new(id.clone(), Severity::Unresolved, None, "boom", "repository")
+                            .with_required(gob_rules::RequiredReason::EvaluationFailed {
+                                rule: "PROC001".into(),
+                                error: "boom".into(),
+                            }),
+                    ]
+                },
+            );
+            (computed, found.len())
+        };
+        assert_eq!(run(true), (true, 1), "the failure is reported");
+        assert_eq!(run(true), (true, 1), "and recomputed, not replayed");
+        assert_eq!(
+            run(false),
+            (true, 0),
+            "after the fix the run is fresh and clean"
+        );
+        assert_eq!(run(false), (false, 0), "a clean result is cached as before");
     }
 
     // frob:tests crates/gob-check/src/repo.rs::cached
