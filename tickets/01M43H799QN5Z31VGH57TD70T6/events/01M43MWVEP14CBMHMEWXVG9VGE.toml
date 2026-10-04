@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "duplicate"
+reason = "folded into ~A6C2R1C: gob-check repo cache never stores a result containing an EvaluationFailed finding (test a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh)"
+at = "2026-10-04T14:25:42Z"
+actor = "lognd"
+rev = 1

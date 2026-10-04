@@ -2,11 +2,12 @@
 id = "01M43H799QN5Z31VGH57TD70T6"
 title = "Repo-group cache replays a failed evaluation after the ledger is repaired"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T13:21:30Z"
-updated = "2026-10-04T13:21:30Z"
+updated = "2026-10-04T14:25:42Z"
 scope = ["crates/gob-check/src/**"]
 +++
 
