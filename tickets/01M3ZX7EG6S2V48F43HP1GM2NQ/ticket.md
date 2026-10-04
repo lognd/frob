@@ -2,16 +2,16 @@
 id = "01M3ZX7EG6S2V48F43HP1GM2NQ"
 title = "Plan format: typed plan IR, serialization, full validation of untrusted bytes"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-03T03:34:20Z"
+updated = "2026-10-04T04:29:30Z"
 idempotency_key = "m2-plan-format"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/plan/**"]
+scope = ["crates/gob-plan/src/plan/**", "crates/gob-plan/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"

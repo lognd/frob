@@ -2,12 +2,12 @@
 id = "01M42A37XTPF2H1WXQQZWEYXGZ"
 title = "cargo dev ci can run its heavy steps on a goway host (opt-in), keeping the step list the single source"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T01:57:43Z"
-updated = "2026-10-04T01:57:43Z"
+updated = "2026-10-04T04:24:25Z"
 scope = ["crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/**", "docs/design/build-test-ci.md", "CONTRIBUTING.md"]
 
 [[acceptance]]

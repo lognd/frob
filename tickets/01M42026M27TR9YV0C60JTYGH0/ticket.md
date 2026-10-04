@@ -2,13 +2,13 @@
 id = "01M42026M27TR9YV0C60JTYGH0"
 title = "crates.io first publish of 31 new names hits the new-crate rate limit: handle 429, add a paced name-reservation mode, decouple PyPI from crates"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:02:23Z"
-updated = "2026-10-04T03:38:13Z"
+updated = "2026-10-04T04:24:26Z"
 scope = ["crates/gob-dev/src/publish.rs", "crates/gob-dev/src/main.rs", ".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs", "docs/guides/release.md", "docs/design/releases.md"]
 
 [[acceptance]]
