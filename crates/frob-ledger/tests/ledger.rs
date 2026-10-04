@@ -901,3 +901,14 @@ fn fence_text_survives_an_index_rebuild_and_doctor_repairs_a_corrupt_card() {
     assert!(ledger.doctor(false).expect("again").is_clean());
     assert_eq!(ledger.show(id).expect("show").ticket, shown);
 }
+
+// frob:ticket 01M42MGNZZ1BY6YCG49BDHEZAT
+#[test]
+fn local_edits_refusal_carries_a_remedy_naming_the_path() {
+    let e = LedgerError::Git(gob_git::GitError::LocalEdits {
+        path: "tickets/a/ticket.md".to_owned(),
+    });
+    let r = e.to_refusal().expect("refusal");
+    let remedy = r.remedy.expect("remedy");
+    assert!(remedy.contains("tickets/a/ticket.md"), "{remedy}");
+}

@@ -396,6 +396,7 @@ impl Command for Update {
         let out = warnings
             .into_iter()
             .chain(note)
+            .chain(applied.warnings.iter().cloned())
             .fold(out, gob_cli::Payload::with_warning);
         Ok(out)
     }
@@ -768,6 +769,7 @@ impl Command for Close {
         let out = gob_cli::Payload::new(data).with_already(applied.already);
         let out = release_warnings
             .into_iter()
+            .chain(applied.warnings.iter().cloned())
             .fold(out, gob_cli::Payload::with_warning);
         Ok(if applied.already {
             out

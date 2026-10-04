@@ -161,7 +161,10 @@ impl From<&Applied> for ChangeData {
 
 /// Wrap an [`Applied`] as the verb payload, carrying `already`.
 pub(crate) fn payload(a: &Applied) -> gob_cli::Payload<ChangeData> {
-    gob_cli::Payload::new(ChangeData::from(a)).with_already(a.already)
+    a.warnings.iter().cloned().fold(
+        gob_cli::Payload::new(ChangeData::from(a)).with_already(a.already),
+        gob_cli::Payload::with_warning,
+    )
 }
 
 /// Verbs of this module, registered on the root in one place.

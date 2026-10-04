@@ -197,9 +197,12 @@ impl LedgerError {
                 GitError::CasExhausted { .. } => {
                     Refusal::new("E-LEDGER-CAS", GuardRetryByWaiting, g.to_string())
                 }
-                GitError::LocalEdits { .. } | GitError::NoIdentity => {
-                    Refusal::new(g.code(), GuardNeedsAction, g.to_string())
+                GitError::LocalEdits { path } => {
+                    Refusal::new(g.code(), GuardNeedsAction, g.to_string()).with_remedy(format!(
+                        "git diff -- {path}, then commit it or `git restore --source=HEAD --staged --worktree -- {path}`, and retry"
+                    ))
                 }
+                GitError::NoIdentity => Refusal::new(g.code(), GuardNeedsAction, g.to_string()),
                 _ => return None,
             },
             Self::Malformed { .. } | Self::Fold { .. } | Self::Sql(_) | Self::Io(_) => return None,
