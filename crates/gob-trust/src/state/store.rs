@@ -159,9 +159,13 @@ impl StateStore {
     /// [`StateError`] on a bad name or an I/O failure other than absence.
     pub fn get(&self, kind: &str, id: &str) -> Result<Lookup, StateError> {
         let path = self.entry_path(kind, id)?;
-        let bytes = match fs::read(&path) {
+        let bytes = match read_with_retry(&path) {
             Ok(b) => b,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Lookup::Miss),
+            Err(e) if is_transient_read(&e) => {
+                tracing::debug!(error = %e, "state entry unreadable after retries; treating as miss");
+                return Ok(Lookup::Miss);
+            }
             Err(e) => return Err(io("read", &path)(e)),
         };
         match self.verify(kind, id, &bytes) {
@@ -248,4 +252,29 @@ fn write_private(tmp: &Path, bytes: &[u8]) -> Result<(), StateError> {
     let mut f = opts.open(tmp).map_err(io("create", tmp))?;
     f.write_all(bytes).map_err(io("write", tmp))?;
     f.sync_all().map_err(io("sync", tmp))
+}
+
+/// Attempts made to read an entry while a concurrent replace holds it.
+const READ_ATTEMPTS: u32 = 8;
+
+/// True for errors Windows raises while a file is mid-replace or delete-pending.
+fn is_transient_read(e: &std::io::Error) -> bool {
+    // 32 = ERROR_SHARING_VIOLATION, 33 = ERROR_LOCK_VIOLATION (Windows only).
+    e.kind() == std::io::ErrorKind::PermissionDenied
+        || (cfg!(windows) && matches!(e.raw_os_error(), Some(32 | 33)))
+}
+
+/// Read a file, retrying transient replace-window errors with a short bounded backoff.
+fn read_with_retry(path: &std::path::Path) -> std::io::Result<Vec<u8>> {
+    let mut attempt = 0;
+    loop {
+        match fs::read(path) {
+            Err(e) if is_transient_read(&e) && attempt + 1 < READ_ATTEMPTS => {
+                attempt += 1;
+                tracing::debug!(attempt, error = %e, "transient state read error; retrying");
+                std::thread::sleep(std::time::Duration::from_millis(1 << attempt.min(5)));
+            }
+            other => return other,
+        }
+    }
 }
