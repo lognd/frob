@@ -1,6 +1,6 @@
 //! Comment discovery for TODO001: every line of comment text with its file offset.
 
-use gob_languages::{Language, ParseLimits, ParseResult, parse};
+use gob_languages::{Language, ParseLimits, ParseResult, hash_comment_starts, parse};
 
 /// One line of comment text and where it starts in the file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -102,7 +102,7 @@ fn python_ranges(text: &str) -> Option<Vec<(usize, usize)>> {
 fn python_lines(text: &str) -> Vec<CommentLine<'_>> {
     let Some(ranges) = python_ranges(text) else {
         tracing::warn!("no python syntax tree; scanning `#` comments naively");
-        return toml_lines(text);
+        return toml_lines(text, false);
     };
     let mut out = Vec::new();
     for (s, e) in ranges {
@@ -162,25 +162,13 @@ fn markdown_lines(text: &str) -> Vec<CommentLine<'_>> {
     out
 }
 
-// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
-/// `#` comments of a TOML or YAML file, ignoring `#` inside quotes (naive).
-fn toml_lines(text: &str) -> Vec<CommentLine<'_>> {
+// frob:ticket 01M43HGBQ9YS0Z8YPKQ41MBK6Q
+/// `#` comments of a TOML, YAML or fallback-Python file; `#` inside strings is text.
+fn toml_lines(text: &str, yaml: bool) -> Vec<CommentLine<'_>> {
     let mut out = Vec::new();
-    let mut offset = 0;
-    for line in text.split_inclusive('\n') {
-        let mut quote: Option<char> = None;
-        for (i, c) in line.char_indices() {
-            match (quote, c) {
-                (None, '"' | '\'') => quote = Some(c),
-                (Some(q), c) if c == q => quote = None,
-                (None, '#') => {
-                    push_lines(&mut out, text, offset + i, offset + line.len());
-                    break;
-                }
-                _ => {}
-            }
-        }
-        offset += line.len();
+    for at in hash_comment_starts(text, yaml) {
+        let end = text[at..].find('\n').map_or(text.len(), |e| at + e + 1);
+        push_lines(&mut out, text, at, end);
     }
     out
 }
@@ -191,7 +179,8 @@ pub(crate) fn comment_lines(language: Language, text: &str) -> Vec<CommentLine<'
     let found = match language {
         Language::Rust => rust_lines(text),
         Language::Markdown => markdown_lines(text),
-        Language::Toml | Language::Yaml => toml_lines(text),
+        Language::Toml => toml_lines(text, false),
+        Language::Yaml => toml_lines(text, true),
         Language::Python => python_lines(text),
     };
     tracing::trace!(
@@ -241,5 +230,14 @@ mod tests {
             texts(&comment_lines(Language::Toml, src)),
             ["# yes", "# all"]
         );
+    }
+
+    #[test]
+    // frob:tests crates/frob-obligations/src/comments.rs::toml_lines
+    fn toml_multiline_strings_hide_hash() {
+        let src = "a = \"\"\"\n# TODO no\n\"\"\"\nb = \'\'\'\n# TODO no\n\'\'\' # yes\n";
+        assert_eq!(texts(&comment_lines(Language::Toml, src)), ["# yes"]);
+        let y = "a: |\n  # TODO no\n# real\n";
+        assert_eq!(texts(&comment_lines(Language::Yaml, y)), ["# real"]);
     }
 }
