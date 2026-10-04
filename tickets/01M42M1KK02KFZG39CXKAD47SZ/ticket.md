@@ -7,7 +7,7 @@ priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:51:35Z"
-updated = "2026-10-04T06:04:27Z"
+updated = "2026-10-04T06:13:55Z"
 scope = ["crates/gob-symbols/src/pipeline.rs", "crates/gob-check/src/**", "crates/frob-check/src/**", "crates/frob-check/tests/**", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/tests/symbols.rs", "crates/gob-symbols/tests/gaps.rs", "docs/design/architecture.md", "docs/reference/rules/README.md", "docs/reference/rules/READ001.md"]
 
 [[acceptance]]
