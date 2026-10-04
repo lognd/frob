@@ -2,11 +2,11 @@
 id = "01M421PY49MQ5WX8RGQ36ZXTMR"
 title = "Warm frob check still assembles the whole symbol graph (0.7 s release): link_calls is sequential and the assembled graph is not cached"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T23:31:11Z"
-updated = "2026-10-03T23:31:11Z"
+updated = "2026-10-04T04:24:30Z"
 scope = ["crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/pipeline.rs"]
 +++
 
