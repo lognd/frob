@@ -8,10 +8,10 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:47Z"
-updated = "2026-10-04T13:03:35Z"
+updated = "2026-10-04T13:04:23Z"
 idempotency_key = "crunk-plan-reg"
 labels = ["area:crunk"]
-scope = ["frob.toml", "packaging/pypi/products.toml", "packaging/pypi/**", "packaging/smoke/**", "crates/crunk/Cargo.toml", "dist-workspace.toml", ".github/workflows/release.yml", ".github/workflows/build-smoke.yml", "crates/frob-release/tests/products.rs", "crates/frob-release/tests/release_workflow.rs"]
+scope = ["frob.toml", "packaging/pypi/products.toml", "packaging/pypi/**", "packaging/smoke/**", "crates/crunk/Cargo.toml", "dist-workspace.toml", ".github/workflows/release.yml", ".github/workflows/build-smoke.yml", "crates/frob-release/tests/products.rs", "crates/frob-release/tests/release_workflow.rs", ".github/workflows/ci.yml"]
 
 [[links]]
 kind = "blocked-by"
