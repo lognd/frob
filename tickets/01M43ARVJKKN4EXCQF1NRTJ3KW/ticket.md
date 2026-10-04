@@ -2,13 +2,14 @@
 id = "01M43ARVJKKN4EXCQF1NRTJ3KW"
 title = "crunk-values: Color, Length, WCAG contrast and palette distance"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:46Z"
-updated = "2026-10-04T12:40:41Z"
+updated = "2026-10-04T12:40:42Z"
 idempotency_key = "crunk-plan-vals"
 labels = ["area:crunk"]
 scope = ["crates/crunk-values/**", "Cargo.lock"]
