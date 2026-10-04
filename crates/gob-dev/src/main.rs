@@ -1,6 +1,7 @@
 //! `cargo dev`: developer task runner for the frob monorepo.
 
 use std::path::PathBuf;
+use std::time::Duration;
 
 use clap::{Parser, Subcommand};
 use gob_dev::import_v1::{self, ImportOptions};
@@ -50,6 +51,17 @@ enum Task {
         /// Print the order and publish nothing.
         #[arg(long)]
         dry_run: bool,
+        /// Instead publish a 0.0.0 placeholder for each crate name missing from crates.io
+        /// (paced to the new-crate limit, resumable); lists them unless `--apply`.
+        #[arg(long)]
+        reserve: bool,
+        /// With `--reserve`: really publish the placeholders.
+        #[arg(long, requires = "reserve")]
+        apply: bool,
+        /// Longest total wait for crates.io rate limits, in minutes, before stopping
+        /// resumably (exit 75, naming the next crate and the retry time).
+        #[arg(long, default_value_t = 30)]
+        max_wait: u64,
     },
     /// Convert the v1 YAML ledger into v2 ULID tickets (one-off, T-0025).
     ImportV1Tickets {
@@ -99,7 +111,7 @@ fn main() -> Result<std::process::ExitCode, Failed> {
             });
         guard?;
     }
-    run(cli.command).map(|()| std::process::ExitCode::SUCCESS)
+    run(cli.command)
 }
 
 impl Task {
@@ -109,8 +121,9 @@ impl Task {
     }
 }
 
-/// Run one task in this process.
-fn run(command: Task) -> Result<(), Failed> {
+/// Run one task in this process; the exit code is success unless a task asks for another.
+fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
+    let ok = std::process::ExitCode::SUCCESS;
     match command {
         Task::ImportV1Tickets {
             from,
@@ -122,38 +135,47 @@ fn run(command: Task) -> Result<(), Failed> {
             &ImportOptions { from, to, dry_run },
             map_out.as_deref(),
             report_md.as_deref(),
-        ),
-        Task::Publish { dry_run } => publish_crates(dry_run),
+        )
+        .map(|()| ok),
+        Task::Publish {
+            dry_run,
+            reserve,
+            apply,
+            max_wait,
+        } => publish_crates(dry_run, reserve, apply, Duration::from_mins(max_wait)),
         Task::Ci {
             steps,
             keep_going,
             list,
-        } => ci_checks(&steps, keep_going, list),
-        Task::Gen { kind, check, root } => {
-            let workspace = match workspace_root() {
-                Ok(w) => w,
-                Err(e) => return Err(Failed(format!("error: {e}"))),
-            };
-            let root = root.unwrap_or_else(|| workspace.clone());
-            let mode = if check { Mode::Check } else { Mode::Write };
-            let files = generate(kind, &workspace.join("crates"));
-            match apply(&root, &files, mode) {
-                Ok(applied) if mode == Mode::Check && applied.differing > 0 => {
-                    emit(&format!(
-                        "GEN001: {} of {} generated files are stale; run `cargo dev gen all`",
-                        applied.differing, applied.total
-                    ));
-                    Err(Failed("check failed".to_owned()))
-                }
-                Ok(applied) => {
-                    emit(&format!("{} generated files up to date", applied.total));
-                    Ok(())
-                }
-                Err(e) => {
-                    tracing::error!(error = %e, "generation failed");
-                    Err(Failed(format!("error: {e}")))
-                }
-            }
+        } => ci_checks(&steps, keep_going, list).map(|()| ok),
+        Task::Gen { kind, check, root } => generate_files(kind, check, root).map(|()| ok),
+    }
+}
+
+/// Regenerate (or with `check`, diff) the derived files.
+fn generate_files(kind: Kind, check: bool, root: Option<PathBuf>) -> Result<(), Failed> {
+    let workspace = match workspace_root() {
+        Ok(w) => w,
+        Err(e) => return Err(Failed(format!("error: {e}"))),
+    };
+    let root = root.unwrap_or_else(|| workspace.clone());
+    let mode = if check { Mode::Check } else { Mode::Write };
+    let files = generate(kind, &workspace.join("crates"));
+    match apply(&root, &files, mode) {
+        Ok(applied) if mode == Mode::Check && applied.differing > 0 => {
+            emit(&format!(
+                "GEN001: {} of {} generated files are stale; run `cargo dev gen all`",
+                applied.differing, applied.total
+            ));
+            Err(Failed("check failed".to_owned()))
+        }
+        Ok(applied) => {
+            emit(&format!("{} generated files up to date", applied.total));
+            Ok(())
+        }
+        Err(e) => {
+            tracing::error!(error = %e, "generation failed");
+            Err(Failed(format!("error: {e}")))
         }
     }
 }
@@ -193,7 +215,14 @@ fn ci_checks(names: &[String], keep_going: bool, list: bool) -> Result<(), Faile
 }
 
 /// Plan and run the crates.io publish from the workspace root.
-fn publish_crates(dry_run: bool) -> Result<(), Failed> {
+///
+/// A run stopped by the rate limit prints its message and exits `RESUMABLE_EXIT`.
+fn publish_crates(
+    dry_run: bool,
+    reserve: bool,
+    apply: bool,
+    max_wait: Duration,
+) -> Result<std::process::ExitCode, Failed> {
     let fail = |e: &dyn std::fmt::Display| {
         tracing::error!(error = %e, "publish failed");
         Failed(format!("error: {e}"))
@@ -202,20 +231,48 @@ fn publish_crates(dry_run: bool) -> Result<(), Failed> {
     let order = publish::read_metadata(&root)
         .and_then(|json| publish::plan(&json))
         .map_err(|e| fail(&e))?;
-    let opts = publish::Options {
-        dry_run,
-        ..publish::Options::default()
+    let cargo = publish::CargoCli { root };
+    let say = &mut |line: &str| emit(line);
+    let result = if reserve {
+        let opts = publish::ReserveOptions {
+            apply,
+            max_wait,
+            ..publish::ReserveOptions::default()
+        };
+        publish::reserve(
+            &order,
+            &publish::CratesIo,
+            &cargo,
+            &opts,
+            say,
+            &std::thread::sleep,
+        )
+        .map(|_| ())
+    } else {
+        let opts = publish::Options {
+            dry_run,
+            max_wait,
+            ..publish::Options::default()
+        };
+        publish::run(
+            &order,
+            &publish::CratesIo,
+            &cargo,
+            &opts,
+            say,
+            &std::thread::sleep,
+        )
+        .map(|_| ())
     };
-    publish::run(
-        &order,
-        &publish::CratesIo,
-        &publish::CargoCli { root },
-        &opts,
-        &mut |line| emit(line),
-        &std::thread::sleep,
-    )
-    .map(|_| ())
-    .map_err(|e| fail(&e))
+    match result {
+        Ok(()) => Ok(std::process::ExitCode::SUCCESS),
+        Err(e @ publish::PublishError::RateLimitBudget { .. }) => {
+            tracing::warn!(error = %e, "stopped on the rate limit; resumable");
+            emit(&format!("stopped (resumable): {e}"));
+            Ok(std::process::ExitCode::from(publish::RESUMABLE_EXIT))
+        }
+        Err(e) => Err(fail(&e)),
+    }
 }
 
 /// Run the v1 import and print its summary table, counts and dropped fields.
@@ -280,7 +337,30 @@ mod tests {
     #[test]
     fn publish_parses() {
         let cli = Cli::try_parse_from(["gob-dev", "publish", "--dry-run"]).expect("parses");
-        assert!(matches!(cli.command, Task::Publish { dry_run: true }));
+        assert!(matches!(
+            cli.command,
+            Task::Publish {
+                dry_run: true,
+                reserve: false,
+                max_wait: 30,
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn publish_reserve_parses_and_apply_needs_reserve() {
+        let cli =
+            Cli::try_parse_from(["gob-dev", "publish", "--reserve", "--apply"]).expect("parses");
+        assert!(matches!(
+            cli.command,
+            Task::Publish {
+                reserve: true,
+                apply: true,
+                ..
+            }
+        ));
+        assert!(Cli::try_parse_from(["gob-dev", "publish", "--apply"]).is_err());
     }
 
     #[test]

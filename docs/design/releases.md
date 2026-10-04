@@ -229,7 +229,14 @@ part of the job's design:
   set and through the OIDC action otherwise (crates.io cannot configure
   trusted publishing for a crate that does not exist yet, so the first
   publish needs the token; the owner then configures trusted publishing
-  per crate and deletes the secret).
+  per crate and deletes the secret). crates.io rate-limits new crate
+  names (a small burst, then about one per ten minutes, answered with
+  429 and a retry time), so `cargo dev publish` waits out a 429 within
+  `--max-wait` and otherwise exits 75 naming the next crate and the retry
+  time, and `cargo dev publish --reserve [--apply]` pre-publishes 0.0.0
+  placeholders for missing names (paced, resumable, dry run by default).
+  The `pypi` job needs only `artifacts` (smoke), not `crates`: the two
+  registries publish independently.
 
 ## 6a. Details (closing the 0.532.0 planner's gaps)
 
