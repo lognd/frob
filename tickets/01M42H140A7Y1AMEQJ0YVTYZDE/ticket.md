@@ -6,11 +6,15 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T03:58:53Z"
-updated = "2026-10-04T03:58:53Z"
-scope = ["crates/frob/src/init.rs", "docs/design/architecture.md"]
+updated = "2026-10-04T04:11:59Z"
+scope = ["crates/frob/src/init.rs", "docs/design/architecture.md", "docs/reference/rules/TICK005.md", "crates/frob-ledger/src/rules.rs"]
 
 [[acceptance]]
 text = "frob init output names the user and git-common-dir privacy.toml paths and writes neither"
+bound = false
+
+[[acceptance]]
+text = "Given the TICK005 rule page and frob doctor, when a user reads them, then they show the privacy.toml format ([[rule]] with pattern, replace, regex, case_sensitive) and both file locations"
 bound = false
 +++
 
