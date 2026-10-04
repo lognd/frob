@@ -188,6 +188,30 @@ target dir for a rebuilding task (`ci` without `--list`, `publish`) fails
 fast naming `cargo dev-isolated` (`isolation::check`). A parity test pins
 both aliases and requires the same step names and order per OS.
 
+**Offloading heavy steps to a goway host (~ZWEYXGZ).** Opt-in:
+`CARGO_DEV_CI_REMOTE=<goway binary>` (a bare name or a path; a
+`--remote` flag will set the same once it can be registered in
+`main.rs`). Each step marked `offload` in `ci.rs` (clippy, clippy for
+the Windows target, docs, nextest, doctor, check) runs as
+`goway run --with-git --needs cores>=8 --needs mem>=2G --needs os=linux
+--report target/goway-ci-report.json [-e K=V]... -- <program> <args>`: the
+step's own program, args and env, so `steps()` stays the single source and
+the parity test still holds. `--with-git` ships a minimal `.git` (no
+remotes, credentials or hooks), so `doctor`, `check` and the git-dependent
+tests run remotely too. Cheap or host-bound steps (fmt, gen, zizmor,
+actionlint, `test --dry-run`, which needs the `origin/` ref) stay local.
+Declared prerequisites are probed on the host (`rustup target list
+--installed`, `which`), and the step is then pinned to that host
+(`--host`). goway exit 125 means goway failed or no host qualifies: it is
+retried five times with backoff (15 s doubling to 120 s) and then
+reported as `GOWAY` in the summary, distinct from a `FAILED` step; any
+other exit is the step's own. The summary names host, os and arch per
+remote step. Nextest's junit timing report stays on the host, so the
+local soft-budget report is skipped for a remote run. `RemoteOs` holds
+every OS-specific term (needs term, probe commands); a Windows host
+(`--remote-os windows`) is one more variant there, deliberately not built.
+CI never sets the variable.
+
 ## 5. Developer loop
 
 ```
