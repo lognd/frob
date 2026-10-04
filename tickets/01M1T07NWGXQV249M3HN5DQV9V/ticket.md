@@ -2,11 +2,12 @@
 id = "01M1T07NWGXQV249M3HN5DQV9V"
 title = "F-196..F-208: process tooling audit -- and the subject-count primitive that generalises the whole silent-zero class"
 type = "epic"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:05:09Z"
 aliases = ["T-3984"]
 labels = ["milestone:0.536.0", "v1-cluster:B4"]
 +++
