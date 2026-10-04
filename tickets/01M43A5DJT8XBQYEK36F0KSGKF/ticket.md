@@ -8,7 +8,7 @@ points = 8
 parent = "01M43A5349M17PED730HKNM4VV"
 reporter = "lognd"
 created = "2026-10-04T11:18:09Z"
-updated = "2026-10-04T11:52:04Z"
+updated = "2026-10-04T11:52:12Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/gob-directives/src/comments.rs", "crates/frob-obligations/src/comments.rs", "crates/frob-check/tests/**", "docs/reference/fidelity.md", "Cargo.toml", "crates/gob-directives/src/scan.rs", "crates/gob-directives/src/bind.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-tests/src/catalog.rs", "Cargo.lock", "crates/frob-tests/src/touched.rs"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a Python construct the adapter does not model, when check runs, then it is reported Unresolved, not clean"
-bound = false
+bound = true
 +++
 
 Owner decision 2026-10-04: Python support first. 7 of the owner's 9 fleet repositories are Python-dominant, and today v2 reads Python as an opaque F0 file: a `# TODO` is unflagged, frob directives in Python comments are ignored, and no symbol, call or test is known (notes/review/v1-gap/C-features.md P-03).
