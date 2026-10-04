@@ -7,7 +7,7 @@ priority = "critical"
 points = 1
 reporter = "lognd"
 created = "2026-10-04T05:02:15Z"
-updated = "2026-10-04T05:03:54Z"
+updated = "2026-10-04T05:16:47Z"
 scope = ["crates/gob-cache/src/lib.rs", "crates/gob-cache/tests/shared.rs"]
 
 [[acceptance]]
