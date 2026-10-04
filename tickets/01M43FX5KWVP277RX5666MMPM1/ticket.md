@@ -2,11 +2,12 @@
 id = "01M43FX5KWVP277RX5666MMPM1"
 title = "land leaves a conflicted merge in the worktree and reports E-CONFIG instead of a conflict"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T12:58:30Z"
-updated = "2026-10-04T14:51:49Z"
+updated = "2026-10-04T14:51:51Z"
 scope = ["crates/frob-land/src/land.rs", "crates/frob-land/tests/land.rs", "docs/design/tickets.md", "crates/frob-land/src/lockfile.rs", "crates/gob-config/src/load.rs", "crates/gob-config/src/lib.rs", "crates/frob-land/Cargo.toml"]
 
 [[acceptance]]
