@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T04:43:49Z"
+digest = "1058fffb16e3d815cc69ec94e9d379e1313732a0b574260491bed2db230c49e7"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f6fbea3b-88a8-46c3-978e-401f3d9e683d with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.042s] gob-trust::state truncation_at_every_length_is_discarded
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.048s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p gob-trust --test state -E 'test(tampered) | test(truncation) | test(different_key) | test(missing_key) | test(concurrent)'"
+size = 545
+status = "measured"
+tests = ["truncation_at_every_length_is_discarded"]
+at = "2026-10-04T04:43:49Z"
+actor = "lognd"
+rev = 1
