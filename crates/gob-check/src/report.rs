@@ -184,6 +184,8 @@ pub struct CheckReport {
     pub fidelity: FidelityReport,
     /// Fingerprints of external findings, mapped to their namespaced form (`grimble:<hex>`).
     pub namespaces: std::collections::HashMap<gob_rules::Fingerprint, String>,
+    /// Where each external product's binary was found and its version (D87).
+    pub siblings: Vec<crate::SiblingRow>,
 }
 
 impl CheckReport {

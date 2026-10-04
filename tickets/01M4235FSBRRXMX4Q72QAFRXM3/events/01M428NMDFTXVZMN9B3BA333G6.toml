@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T01:32:48Z"
+digest = "cbcc311be0b270da7963b2b5b4cb62af5e0f35c566ab9d40b40fd6af71f5f319"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ddfcb429-3220-4cc0-af10-4cfc21d4b76d with nextest profile: default
+    Starting 1 test across 153 binaries (1374 tests skipped)
+        PASS [   0.304s] frob-land::land a_release_finding_the_ticket_introduces_refuses
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.308s] 1 test run: 1 passed, 1374 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'test(a_release_finding_the_ticket_introduces_refuses)'"
+size = 560
+status = "measured"
+tests = ["a_release_finding_the_ticket_introduces_refuses"]
+at = "2026-10-04T01:32:48Z"
+actor = "lognd"
+rev = 1

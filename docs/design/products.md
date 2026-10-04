@@ -120,7 +120,7 @@ for this repository (`release.yml`, environment `pypi`).
 PATH; its dependencies' executables sit in the same tool environment.
 frob therefore looks for a sibling first next to its own executable
 (the same `bin`/`Scripts` directory, resolved through symlinks), then
-on PATH, and reports which one it used. A user who wants `grimble` on
+on PATH, and reports which one it used (`check`: `data.siblings`; `doctor`: `siblings`, with any second copy and its version). A user who wants `grimble` on
 PATH as well runs `uv tool install grimble`. frob can still link a
 sibling's crates in-process when built with the `bundle` feature; a
 build without it (crates.io `frob-cli`) that cannot find a configured

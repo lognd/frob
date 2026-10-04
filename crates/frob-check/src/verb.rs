@@ -65,6 +65,10 @@ pub struct CheckData {
     pub timing: Option<TimingView>,
     /// Per-language fidelity accounting (files examined, `NotApplicable` per family, Unresolved).
     pub fidelity: Option<gob_check::FidelityReport>,
+    /// Where each configured sibling binary was found (D87); text view only under `-v`.
+    pub siblings: Vec<gob_check::SiblingRow>,
+    /// `-v` text view: one line per sibling.
+    pub sibling_lines: Vec<String>,
     /// What `--fix` did, present with `--fix`.
     pub fix: Option<FixOutcome>,
     /// The ticket the run was scoped to.
@@ -92,6 +96,8 @@ impl CheckData {
             stats: None,
             timing: None,
             fidelity: None,
+            siblings: Vec::new(),
+            sibling_lines: Vec::new(),
             fix: None,
             ticket: None,
             fail_on: None,
@@ -383,6 +389,21 @@ fn lead_lines(
     (full, summary)
 }
 
+/// `grimble: beside-frob /path (version)`, one sibling for the `-v` text view.
+fn sibling_line(row: &gob_check::SiblingRow) -> String {
+    format!(
+        "sibling {}: {}{}{}",
+        row.product,
+        row.location,
+        row.path
+            .as_deref()
+            .map_or_else(String::new, |p| format!(" {p}")),
+        row.version
+            .as_deref()
+            .map_or_else(String::new, |v| format!(" ({v})")),
+    )
+}
+
 /// Build the verb data of `report`; `lead` is the ticket diff when the text view should lead with it.
 fn data_of(
     root: &std::path::Path,
@@ -419,6 +440,16 @@ fn data_of(
             tools_ms: report.timing.tools_ms(),
         }),
         fidelity: Some(report.fidelity.clone()),
+        siblings: if json || with_timing {
+            report.siblings.clone()
+        } else {
+            Vec::new()
+        },
+        sibling_lines: if json || !with_timing {
+            Vec::new()
+        } else {
+            report.siblings.iter().map(sibling_line).collect()
+        },
         fix: report.fix.clone(),
         ticket: report.scope.clone(),
         fail_on: Some(fail_on_name(report.fail_on).to_owned()),
