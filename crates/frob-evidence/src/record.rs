@@ -15,6 +15,8 @@ use crate::store::{BlobStore, Fetched};
 pub enum Provider {
     /// `cargo nextest run`: pass/fail and the executed test names.
     Nextest,
+    /// `pytest` with junit XML: pass/fail and the executed test node ids.
+    Pytest,
     /// An allowlisted tool: exit code and transcript digest.
     Command,
     /// A person's signed statement; never a tool measurement (see [`crate::attestation`]).
@@ -28,6 +30,7 @@ impl Provider {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Nextest => "nextest",
+            Self::Pytest => "pytest",
             Self::Command => "command",
             Self::File => "file",
             Self::Attestation => "attestation",
@@ -35,7 +38,8 @@ impl Provider {
     }
 
     /// The accepted spellings, for flag validation.
-    pub const NAMES: &'static [&'static str] = &["nextest", "command", "file", "attestation"];
+    pub const NAMES: &'static [&'static str] =
+        &["nextest", "pytest", "command", "file", "attestation"];
 }
 
 impl FromStr for Provider {
@@ -44,6 +48,7 @@ impl FromStr for Provider {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "nextest" => Ok(Self::Nextest),
+            "pytest" => Ok(Self::Pytest),
             "command" => Ok(Self::Command),
             "file" => Ok(Self::File),
             "attestation" => Ok(Self::Attestation),

@@ -1,4 +1,4 @@
-//! Touched-set test selection, nextest runs and the `TEST001` rule
+//! Touched-set test selection, nextest and pytest runs and the `TEST001` rule
 //! (design: `build-test-ci.md`, `tickets.md` section 9).
 //!
 //! # Flow
@@ -10,7 +10,11 @@
 //! every test of a touched `tests/` file, and [`run()`] executes exactly those
 //! through `cargo nextest run -p <pkg> -E '<filterset>'` via gob-exec. When the
 //! working directory is a worktree holding a lease ([`lease_ticket`]) the run is
-//! appended to that ticket as a nextest evidence event (`frob-evidence`).
+//! appended to that ticket as one evidence event per runner (`frob-evidence`).
+//!
+//! Python tests are selected the same way (their symbols and calls are in the
+//! graph) and run through `pytest <node id>...` via gob-exec; a pytest run needs
+//! `pytest` in `[evidence] allowed_tools`.
 //!
 //! What counts as a test is a heuristic documented in [`catalog`]; `TEST001`
 //! ([`test001`]) flags `frob:tests` directives that name nothing.
@@ -28,8 +32,8 @@ pub mod verb;
 pub use error::{Result, TestsError};
 pub use lease::lease_ticket;
 pub use rule::{Test001, test001, test001_with_sources};
-pub use run::{RunOptions, RunReport, nextest_args, run};
-pub use select::{TestTarget, select_tests};
+pub use run::{FrameworkRun, RunOptions, RunReport, nextest_args, pytest_args, run};
+pub use select::{Framework, TestTarget, select_tests};
 pub use touched::{TouchedSet, build_repo_graph, touched_set};
 
 /// Register the `test` verb on `cli`, mirroring how the binary registers `ticket`.

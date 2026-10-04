@@ -11,15 +11,38 @@ use crate::catalog::{Packages, is_test_file, is_test_fn, test_name};
 use crate::reach::{Sources, name_callers};
 use crate::touched::TouchedSet;
 
-/// One selected test: the owning package and the name nextest knows it by.
+// frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+/// The runner that executes a test.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum Framework {
+    /// `cargo nextest run`: Rust tests.
+    Nextest,
+    /// `pytest`: Python tests.
+    Pytest,
+}
+
+/// One selected test: the runner, the owning package and the name the runner knows it by.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, JsonSchema)]
 pub struct TestTarget {
-    /// Cargo package name (`-p`).
+    /// Which runner executes it.
+    pub framework: Framework,
+    /// Cargo package name (`-p`); empty for pytest.
     pub package: String,
-    /// The test's name inside its binary (`tests::doubles`, `integration_quad`).
+    /// The test's name inside its binary (`tests::doubles`, `integration_quad`), or its pytest node id (`tests/test_a.py::TestC::test_m`).
     pub test_path: String,
     /// The test function's symref.
     pub symref: String,
+}
+
+impl TestTarget {
+    /// One plan line: `package test_path` for nextest, `pytest node_id` for pytest.
+    pub fn plan_line(&self) -> String {
+        match self.framework {
+            Framework::Nextest => format!("{} {}", self.package, self.test_path),
+            Framework::Pytest => format!("pytest {}", self.test_path),
+        }
+    }
 }
 
 /// Seeds for `touched`: its symbols, widened for non-function items.
@@ -75,13 +98,19 @@ pub fn select_tests(root: &Path, graph: &SymbolGraph, touched: &TouchedSet) -> V
         let Some(rec) = graph.get(symref) else {
             continue;
         };
-        if rec.kind != SymbolKind::Function {
+        // frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+        if !matches!(rec.kind, SymbolKind::Function | SymbolKind::Method) {
             continue;
         }
         if !is_test_fn(rec, sources.get(rec.symref.path())) {
             continue;
         }
-        if let Some(target) = target_of(&mut packages, rec) {
+        let target = if gob_symbols::is_python_path(rec.symref.path()) {
+            Some(python_target(rec))
+        } else {
+            target_of(&mut packages, rec)
+        };
+        if let Some(target) = target {
             out.insert(target);
         } else {
             tracing::warn!(symref = %rec.symref, "test function has no owning cargo package; skipped");
@@ -95,9 +124,26 @@ pub fn select_tests(root: &Path, graph: &SymbolGraph, touched: &TouchedSet) -> V
     out.into_iter().collect()
 }
 
+// frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+/// The pytest target of a Python test: its node id is the file path then the class and function names.
+fn python_target(rec: &SymbolRecord) -> TestTarget {
+    let mut node = rec.symref.path().to_owned();
+    for seg in rec.symref.segments() {
+        node.push_str("::");
+        node.push_str(seg);
+    }
+    TestTarget {
+        framework: Framework::Pytest,
+        package: String::new(),
+        test_path: node,
+        symref: rec.symref.to_string(),
+    }
+}
+
 fn target_of(packages: &mut Packages, rec: &SymbolRecord) -> Option<TestTarget> {
     let (package, rel) = packages.owner(rec.symref.path())?;
     Some(TestTarget {
+        framework: Framework::Nextest,
         package,
         test_path: test_name(rec, &rel),
         symref: rec.symref.to_string(),

@@ -237,14 +237,14 @@ pub fn capture_args(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
             .required(true)
             .value_name("PROVIDER")
             .value_parser(PossibleValuesParser::new(Provider::NAMES))
-            .help("Measurer: nextest, command, file or attestation (a person's statement; needs a terminal and a listed attester)"),
+            .help("Measurer: nextest, pytest, command, file or attestation (a person's statement; needs a terminal and a listed attester)"),
     )
     .arg(
         Arg::new("ref")
             .long("ref")
             .value_name("REF")
             .allow_hyphen_values(true)
-            .help("Nextest filter args or the command line (POSIX shell quoting, no shell run), or the file path (not for attestation)"),
+            .help("Nextest filter args, pytest arguments (node ids) or the command line (POSIX shell quoting, no shell run), or the file path (not for attestation)"),
     )
     .arg(
         Arg::new("statement")
@@ -275,7 +275,7 @@ pub fn capture_args(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
 pub struct CaptureArgs {
     /// The measurer.
     pub provider: Provider,
-    /// Nextest filter args, the command line, or the file path (empty for an attestation).
+    /// Nextest filter args, pytest arguments, the command line, or the file path (empty for an attestation).
     pub reference: String,
     /// 1-based criteria the evidence is offered for.
     pub accepts: Vec<usize>,

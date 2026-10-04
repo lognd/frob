@@ -1,4 +1,4 @@
-//! Evidence providers: `nextest`, `command` and `file`.
+//! Evidence providers: `nextest`, `pytest`, `command` and `file`.
 //!
 //! Each provider turns one measurement into a [`Capture`] (or a hashed file),
 //! and [`build_record`] turns that into an [`EvidenceRecord`]: the transcript is
@@ -7,6 +7,7 @@
 //! timeout.
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use frob_ledger::model::Stamp;
@@ -113,7 +114,7 @@ pub fn split_args(input: &str) -> Result<Vec<String>> {
     Ok(out)
 }
 
-/// The tests a nextest run reported: every executed name and the failing subset.
+/// The tests a nextest or pytest run reported: every executed name and the failing subset.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Parsed {
     /// Names of the tests that executed, in first-seen order.
@@ -296,6 +297,176 @@ pub fn matched_no_tests(cap: &Capture) -> bool {
     cap.tests.is_empty() && (cap.exit_code == Some(4) || cap.transcript.contains("no tests to run"))
 }
 
+/// Decode the XML character and entity references in an attribute value.
+fn xml_unescape(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    let mut rest = raw;
+    while let Some(at) = rest.find('&') {
+        out.push_str(&rest[..at]);
+        rest = &rest[at..];
+        let Some(end) = rest.find(';') else { break };
+        let decoded = match &rest[1..end] {
+            "lt" => Some('<'),
+            "gt" => Some('>'),
+            "amp" => Some('&'),
+            "quot" => Some('"'),
+            "apos" => Some('\''),
+            num => num
+                .strip_prefix('#')
+                .and_then(|n| match n.strip_prefix(['x', 'X']) {
+                    Some(hex) => u32::from_str_radix(hex, 16).ok(),
+                    None => n.parse().ok(),
+                })
+                .and_then(char::from_u32),
+        };
+        if let Some(c) = decoded {
+            out.push(c);
+            rest = &rest[end + 1..];
+        } else {
+            out.push('&');
+            rest = &rest[1..];
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+/// The value of attribute `key` in the start-tag text `tag`, decoded.
+fn xml_attr(tag: &str, key: &str) -> Option<String> {
+    let needle = format!(" {key}=\"");
+    let from = tag.find(&needle)? + needle.len();
+    let len = tag[from..].find('"')?;
+    Some(xml_unescape(&tag[from..from + len]))
+}
+
+/// The pytest node id (`tests/test_m.py::TestC::test_m[1]`) of one junit `testcase` start tag.
+///
+/// Needs the xunit1 `file` attribute; `classname` minus the module's dotted path gives the
+/// classes. Without `file` (collection errors) the classname and name are joined with `::`.
+fn node_id(tag: &str) -> String {
+    let name = xml_attr(tag, "name").unwrap_or_default();
+    let class = xml_attr(tag, "classname").unwrap_or_default();
+    let Some(file) = xml_attr(tag, "file") else {
+        return if class.is_empty() {
+            name
+        } else {
+            format!("{class}::{name}")
+        };
+    };
+    let module = file.strip_suffix(".py").unwrap_or(&file).replace('/', ".");
+    let classes = class
+        .strip_prefix(&module)
+        .map_or("", |c| c.trim_start_matches('.'));
+    let mut id = file;
+    for c in classes.split('.').filter(|c| !c.is_empty()) {
+        id.push_str("::");
+        id.push_str(c);
+    }
+    id.push_str("::");
+    id.push_str(&name);
+    id
+}
+
+/// The tests in a pytest junit XML report (written with `-o junit_family=xunit1`).
+///
+/// Each `testcase` is named by its node id; one with a `failure` or `error` child failed, one
+/// with a `skipped` child did not execute and is left out.
+pub fn parse_junit(xml: &str) -> Parsed {
+    let mut parsed = Parsed::default();
+    let mut rest = xml;
+    while let Some(at) = rest.find("<testcase") {
+        rest = &rest[at + "<testcase".len()..];
+        let Some(tag_end) = rest.find('>') else { break };
+        let tag = &rest[..tag_end];
+        let (body, next) = if tag.ends_with('/') {
+            ("", &rest[tag_end + 1..])
+        } else {
+            let after = &rest[tag_end + 1..];
+            let close = after.find("</testcase>").unwrap_or(after.len());
+            (&after[..close], &after[close..])
+        };
+        rest = next;
+        if body.contains("<skipped") {
+            continue;
+        }
+        let failed = body.contains("<failure") || body.contains("<error");
+        parsed.note(&node_id(tag), failed);
+    }
+    parsed
+}
+
+static JUNIT_SEQ: AtomicU64 = AtomicU64::new(0);
+
+/// Run `pytest -o junit_family=xunit1 --junitxml=<tmp> <args>` in `cwd` and capture the verdict and executed tests.
+///
+/// `pytest` must be in `allowed` (`[evidence] allowed_tools`); the junit file is read, then removed. The transcript is
+/// pytest's stdout then stderr, left to [`build_record`] to redact and escape.
+///
+/// # Errors
+///
+/// [`EvidenceError::ToolNotAllowed`] when `pytest` is not allowlisted, [`EvidenceError::Exec`] when it cannot start.
+pub fn run_pytest(
+    runner: &Runner,
+    allowed: &[String],
+    cwd: &Path,
+    args: &[String],
+    timeout: Duration,
+) -> Result<Capture> {
+    if !allowed.iter().any(|a| a == "pytest") {
+        tracing::warn!("pytest evidence refused: tool not allowlisted");
+        return Err(EvidenceError::ToolNotAllowed {
+            tool: "pytest".to_owned(),
+        });
+    }
+    let junit = std::env::temp_dir().join(format!(
+        "frob-pytest-{}-{}.xml",
+        std::process::id(),
+        JUNIT_SEQ.fetch_add(1, Ordering::Relaxed)
+    ));
+    let mut full = vec![
+        "-o".to_owned(),
+        "junit_family=xunit1".to_owned(),
+        format!("--junitxml={}", junit.display()),
+    ];
+    full.extend(args.iter().cloned());
+    let program = Program::Tool {
+        name: "pytest".to_owned(),
+    };
+    let out = runner.run(&spec(program, full, cwd, timeout));
+    let xml = std::fs::read_to_string(&junit).unwrap_or_default();
+    if junit.exists()
+        && let Err(e) = std::fs::remove_file(&junit)
+    {
+        tracing::warn!(path = %junit.display(), error = %e, "could not remove the junit file");
+    }
+    let out = out?;
+    let seen = parse_junit(&xml);
+    let mut transcript = out.stdout;
+    transcript.push_str(&out.stderr);
+    let (exit_code, measured) = exit_of(out.status);
+    let passed = exit_code == Some(0) && seen.failed.is_empty();
+    tracing::info!(
+        ?exit_code,
+        passed,
+        tests = seen.tests.len(),
+        failed = ?seen.failed,
+        "pytest captured"
+    );
+    Ok(Capture {
+        exit_code,
+        passed,
+        measured,
+        tests: seen.tests,
+        failed_tests: seen.failed,
+        transcript,
+    })
+}
+
+/// True when a pytest run collected no test (pytest exits 5), which is no measurement rather than a failure.
+pub fn pytest_matched_no_tests(cap: &Capture) -> bool {
+    cap.tests.is_empty() && cap.exit_code == Some(5)
+}
+
 /// Run an allowlisted tool (`argv[0]` must be in `allowed`) and capture exit code and transcript.
 ///
 /// # Errors
@@ -444,7 +615,7 @@ pub fn hash_file(root: &Path, path: &str, accepts: &[usize]) -> Result<EvidenceR
 
 /// Run the provider named by `provider` for `reference` and return its record.
 ///
-/// `reference` is the nextest filter args, the command line or the file path.
+/// `reference` is the nextest filter args, the pytest arguments, the command line or the file path.
 ///
 /// # Errors
 ///
@@ -478,6 +649,26 @@ pub fn capture(
                 tracing::warn!(
                     filter = reference,
                     "nextest filter matched no tests; refusing to record"
+                );
+                return Err(EvidenceError::NoTestsMatched {
+                    filter: reference.to_owned(),
+                });
+            }
+            build_record(&ws.store, &ws.scrub(), provider, reference, &cap, accepts)
+        }
+        Provider::Pytest => {
+            let args = split_args(reference)?;
+            let cap = run_pytest(
+                &ws.runner(),
+                &ws.evidence.allowed_tools,
+                &ws.root,
+                &args,
+                ws.timeout(),
+            )?;
+            if pytest_matched_no_tests(&cap) {
+                tracing::warn!(
+                    filter = reference,
+                    "pytest collected no tests; refusing to record"
                 );
                 return Err(EvidenceError::NoTestsMatched {
                     filter: reference.to_owned(),
@@ -581,5 +772,71 @@ mod tests {
             "     TIMEOUT [  60.0s] pkg tests::slow\n        FAIL [   0.1s] pkg tests::slow\n";
         assert_eq!(parse_human(timeout).failed, ["tests::slow"]);
         assert_eq!(parse_human("nothing here"), Parsed::default());
+    }
+
+    #[test]
+    fn junit_cases_become_node_ids() {
+        let xml = concat!(
+            "<testsuites><testsuite>",
+            "<testcase classname=\"tests.test_m\" name=\"test_a\" file=\"tests/test_m.py\" line=\"1\" time=\"0.0\" />",
+            "<testcase classname=\"tests.test_m\" name=\"test_p[a&lt;b]\" file=\"tests/test_m.py\" />",
+            "<testcase classname=\"tests.test_m\" name=\"test_f\" file=\"tests/test_m.py\"><failure message=\"x &lt;y&gt;\">E &lt;boom&gt;</failure></testcase>",
+            "<testcase classname=\"tests.test_m\" name=\"test_s\" file=\"tests/test_m.py\"><skipped type=\"pytest.skip\" message=\"m\">t</skipped></testcase>",
+            "<testcase classname=\"tests.test_m.TestC\" name=\"test_e\" file=\"tests/test_m.py\"><error message=\"e\">t</error></testcase>",
+            "<testcase classname=\"\" name=\"tests.test_bad\"><error message=\"collect\">t</error></testcase>",
+            "</testsuite></testsuites>",
+        );
+        let parsed = parse_junit(xml);
+        assert_eq!(
+            parsed.tests,
+            [
+                "tests/test_m.py::test_a",
+                "tests/test_m.py::test_p[a<b]",
+                "tests/test_m.py::test_f",
+                "tests/test_m.py::TestC::test_e",
+                "tests.test_bad"
+            ]
+        );
+        assert_eq!(
+            parsed.failed,
+            [
+                "tests/test_m.py::test_f",
+                "tests/test_m.py::TestC::test_e",
+                "tests.test_bad"
+            ]
+        );
+        assert_eq!(parse_junit("not xml"), Parsed::default());
+    }
+
+    #[test]
+    fn xml_entities_decode() {
+        assert_eq!(
+            xml_unescape("a&lt;b&amp;&#10;&#x41;&bogus;"),
+            "a<b&\nA&bogus;"
+        );
+    }
+
+    #[test]
+    fn pytest_needs_its_allowlist_entry_and_no_collection_is_not_a_failure() {
+        let runner = Runner::new(gob_exec::Limits { jobs: 1 });
+        let err = run_pytest(
+            &runner,
+            &["cargo".to_owned()],
+            Path::new("."),
+            &[],
+            Duration::from_secs(5),
+        )
+        .unwrap_err();
+        assert!(matches!(err, EvidenceError::ToolNotAllowed { .. }), "{err}");
+        let cap = |code| Capture {
+            exit_code: Some(code),
+            passed: false,
+            measured: true,
+            tests: Vec::new(),
+            failed_tests: Vec::new(),
+            transcript: String::new(),
+        };
+        assert!(pytest_matched_no_tests(&cap(5)));
+        assert!(!pytest_matched_no_tests(&cap(1)));
     }
 }

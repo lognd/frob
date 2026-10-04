@@ -279,7 +279,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[lease] shared_files` (M1) | frob.toml | no | empty (append-shared files such as `Cargo.lock`) | frob-lease |
 | `[worktree] dir` (M1) | frob.toml | no | `"../{repo}-wt"` | frob-worktree |
 | `[gc]` (~BZXZK29: `enabled`, `interval_secs`, `time_limit_secs`, `guard_min_free_gb`, `incremental_max_age_secs`, `target_budget_gb`, `keep_recent_secs`, `keep_binaries`, `cache_budget_mb`, `artifact_retention_days`, `worktrees`) | frob.toml | no | on; 1 h interval, 30 s bound, 20 GiB guard, 6 h incremental age, 30 GiB per-checkout budget (see Garbage collection, section 3) | frob-worktree |
-| `[evidence] allowed_tools` (M1) | frob.toml | no | `["cargo", "git"]` | frob-evidence |
+| `[evidence] allowed_tools` (M1) | frob.toml | no | `["cargo", "git", "pytest"]` | frob-evidence |
 | `[evidence] inline_max_bytes` (M1) | frob.toml | no | 16384 | frob-evidence |
 | `[evidence] store` (M1) | frob.toml | no | `"dir:.git/frob/artifacts"` | frob-evidence |
 | `[evidence] timeout_secs` (M1) | frob.toml | no | 1800 | frob-evidence |

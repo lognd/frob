@@ -77,7 +77,7 @@ ref_mode = "trunk"
 
 [evidence]
 # Programs the `command` evidence provider may run; grimble runs bind as evidence.
-allowed_tools = ["cargo", "git", "grimble"]
+allowed_tools = ["cargo", "git", "grimble", "pytest"]
 # Identities (git `user.email`) that may attest a criterion; `frob init` and `config sync` write the repository owner's email, and an empty list means nobody may.
 attesters = ["logan@logandapp.com"]
 

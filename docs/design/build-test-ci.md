@@ -200,6 +200,11 @@ the parity test still holds. `--with-git` ships a minimal `.git` (no
 remotes, credentials or hooks), so `doctor`, `check` and the git-dependent
 tests run remotely too. Cheap or host-bound steps (fmt, gen, zizmor,
 actionlint, `test --dry-run`, which needs the `origin/` ref) stay local.
+Tests that run pytest (frob-evidence and frob-tests) need `python3` and
+`pytest` on `PATH` and skip with a named reason when they are absent
+(`gob_testsupport::python_test_prerequisites`); setting
+`FROB_REQUIRE_PYTHON_TESTS` turns the skip into a failure, so a host that
+installs both can never pass silently without them.
 Declared prerequisites are probed on the host (`rustup target list
 --installed`, `which`), and the step is then pinned to that host
 (`--host`). Missing items are reported as `HOSTREQ`, naming the host, each

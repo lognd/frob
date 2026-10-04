@@ -14,9 +14,9 @@ pub enum EvidenceError {
     /// The `command` or `nextest` reference was empty or could not be split.
     #[error("E-EVIDENCE-REF: {0}")]
     BadReference(String),
-    /// A nextest filter matched no test, so there is nothing to measure.
+    /// A nextest or pytest filter matched no test, so there is nothing to measure.
     #[error(
-        "E-EVIDENCE-NO-TESTS: the nextest filter `{filter}` matched no tests; nothing was recorded"
+        "E-EVIDENCE-NO-TESTS: the test filter `{filter}` matched no tests; nothing was recorded"
     )]
     NoTestsMatched {
         /// The filter arguments as given in `--ref`.
@@ -167,7 +167,7 @@ impl EvidenceError {
             Self::NoTestsMatched { filter } => Some(
                 Refusal::new("E-EVIDENCE-NO-TESTS", UsageError, self.to_string()).with_remedy(
                     format!(
-                        "list the test names the filter can match with: cargo nextest list {filter}"
+                        "list the test names the filter can match with: cargo nextest list {filter} (nextest) or pytest --collect-only -q {filter} (pytest)"
                     ),
                 ),
             ),

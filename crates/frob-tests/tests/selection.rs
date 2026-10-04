@@ -126,10 +126,7 @@ fn change_double(root: &Path) {
 }
 
 fn names(selected: &[TestTarget]) -> Vec<String> {
-    selected
-        .iter()
-        .map(|t| format!("{} {}", t.package, t.test_path))
-        .collect()
+    selected.iter().map(TestTarget::plan_line).collect()
 }
 
 #[test]
@@ -164,21 +161,21 @@ fn only_tests_reaching_the_changed_function_are_selected() {
 #[test]
 fn a_changed_file_with_no_adapter_is_unresolved_not_ignored() {
     let (dir, base) = fixture();
-    write(dir.path(), "tools/gen.py", "print(1)\n");
+    write(dir.path(), "tools/gen.lua", "print(1)\n");
     write(dir.path(), "README.md", "# Notes\n");
     let repo = Repo::discover(dir.path()).expect("repo");
     let graph = build_repo_graph(dir.path()).expect("graph");
     let touched = touched_set(&repo, &graph, &base).expect("touched");
     assert_eq!(
         touched.unresolved_files,
-        ["tools/gen.py"],
+        ["tools/gen.lua"],
         "markdown has an adapter"
     );
     let findings = touched.selection_findings();
     assert_eq!(findings.len(), 1);
     assert_eq!(findings[0].rule.as_str(), "TEST001");
     assert_eq!(findings[0].severity, gob_rules::Severity::Unresolved);
-    assert!(findings[0].message.contains("tools/gen.py"));
+    assert!(findings[0].message.contains("tools/gen.lua"));
 }
 
 #[test]
@@ -299,4 +296,188 @@ fn test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree() {
     ledger
         .close(id, Some(Outcome::Done), None, &[&guard])
         .expect("close with measured evidence");
+}
+
+const CALC: &str = "def double(x):
+    return x * 2
+
+
+def triple(x):
+    return x * 3
+";
+
+const TEST_CALC: &str = "from pkg.calc import double, triple
+
+
+def test_double():
+    assert double(2) == 4
+
+
+def test_triple():
+    assert triple(2) == 6
+
+
+class TestKit:
+    def test_method(self):
+        assert double(1) == 2
+
+    def test_other(self):
+        assert triple(1) == 3
+";
+
+/// A Python project (`pkg/calc.py`, `tests/test_calc.py`), committed on `main`; returns the dir and the base commit.
+fn python_fixture() -> (tempfile::TempDir, String) {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let p = dir.path();
+    git(p, &["init", "-q"]);
+    git(p, &["symbolic-ref", "HEAD", "refs/heads/main"]);
+    git(p, &["config", "user.name", "Test User"]);
+    git(p, &["config", "user.email", "test@example.com"]);
+    git(p, &["config", "core.autocrlf", "false"]);
+    write(p, "pkg/__init__.py", "");
+    write(p, "conftest.py", "");
+    write(p, "pkg/calc.py", CALC);
+    write(p, "tests/test_calc.py", TEST_CALC);
+    git(p, &["add", "-A"]);
+    git(p, &["commit", "-q", "-m", "base"]);
+    let base = git(p, &["rev-parse", "HEAD"]);
+    (dir, base)
+}
+
+// frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+#[test]
+fn a_changed_python_function_selects_the_pytest_tests_reaching_it() {
+    // frob:tests crates/frob-tests/src/select.rs::select_tests
+    let (dir, base) = python_fixture();
+    write(dir.path(), "pkg/calc.py", &CALC.replace("x * 2", "x + x"));
+    let repo = Repo::discover(dir.path()).expect("repo");
+    let graph = build_repo_graph(dir.path()).expect("graph");
+    let touched = touched_set(&repo, &graph, &base).expect("touched");
+    assert_eq!(touched.files, ["pkg/calc.py"]);
+    assert!(
+        touched.unresolved_files.is_empty(),
+        "Python files are resolved now: {:?}",
+        touched.unresolved_files
+    );
+    assert!(touched.selection_findings().is_empty());
+    let selected = select_tests(dir.path(), &graph, &touched);
+    assert_eq!(
+        names(&selected),
+        [
+            "pytest tests/test_calc.py::TestKit::test_method",
+            "pytest tests/test_calc.py::test_double"
+        ],
+        "triple tests must not be selected"
+    );
+    assert!(
+        selected
+            .iter()
+            .all(|t| t.framework == frob_tests::Framework::Pytest)
+    );
+    assert_eq!(
+        frob_tests::pytest_args(&selected),
+        [
+            "tests/test_calc.py::TestKit::test_method",
+            "tests/test_calc.py::test_double"
+        ]
+    );
+    assert!(frob_tests::nextest_args(&selected).is_empty());
+}
+
+// frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+#[test]
+fn a_touched_python_test_file_selects_its_tests() {
+    // frob:tests crates/frob-tests/src/select.rs::select_tests
+    let (dir, base) = python_fixture();
+    write(
+        dir.path(),
+        "tests/test_calc.py",
+        &format!("{TEST_CALC}\n# touched\n"),
+    );
+    let repo = Repo::discover(dir.path()).expect("repo");
+    let graph = build_repo_graph(dir.path()).expect("graph");
+    let touched = touched_set(&repo, &graph, &base).expect("touched");
+    assert_eq!(select_tests(dir.path(), &graph, &touched).len(), 4);
+}
+
+// frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+#[test]
+fn python_dry_run_lists_pytest_node_ids_and_runs_nothing() {
+    // frob:tests crates/frob-tests/src/verb.rs::TestVerb
+    let (dir, base) = python_fixture();
+    write(
+        dir.path(),
+        "pkg/calc.py",
+        &CALC.replace("x * 3", "x + x + x"),
+    );
+    let (code, out, err) = gob_cli::run_for_test(
+        &cli(),
+        &["--text", "test", "--base", &base, "--dry-run"],
+        dir.path(),
+    );
+    assert_eq!(code, 0, "{out}{err}");
+    assert!(
+        out.contains("- pytest tests/test_calc.py::test_triple"),
+        "{out}"
+    );
+    assert!(
+        out.contains("- pytest tests/test_calc.py::TestKit::test_other"),
+        "{out}"
+    );
+    assert!(!out.contains("test_double"), "{out}");
+    assert!(out.contains("ran: false"), "{out}");
+}
+
+// frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+#[test]
+fn test_verb_runs_selected_pytest_tests_and_appends_pytest_evidence() {
+    // frob:tests crates/frob-tests/src/verb.rs::TestVerb
+    if !gob_testsupport::python_test_prerequisites(
+        "test_verb_runs_selected_pytest_tests_and_appends_pytest_evidence",
+    ) {
+        return;
+    }
+    let (dir, base) = python_fixture();
+    let p = dir.path();
+    let ledger = Ledger::open(Repo::discover(p).expect("repo"), LedgerConfig::default());
+    let mut req = NewTicket::new("Speed up double", TicketType::Task);
+    req.acceptance = vec!["double is fast".into()];
+    let id = ledger.new_ticket(req).expect("ticket").ticket.front.id;
+    let leases = p.join(".git/frob/leases");
+    std::fs::create_dir_all(&leases).expect("leases dir");
+    std::fs::write(
+        leases.join("lease.toml"),
+        format!(
+            "ticket = \"{id}\"\n\n[holder]\nworktree = '{}'\n",
+            p.display()
+        ),
+    )
+    .expect("lease");
+    write(p, "pkg/calc.py", &CALC.replace("x * 2", "x + x"));
+
+    let (code, out, err) = gob_cli::run_for_test(&cli(), &["--json", "test", "--base", &base], p);
+    assert_eq!(code, 0, "{out}{err}");
+    let v: serde_json::Value = serde_json::from_str(&out).expect("json");
+    assert_eq!(v["data"]["passed"], true, "{out}");
+    let executed: Vec<&str> = v["data"]["executed"]
+        .as_array()
+        .expect("executed")
+        .iter()
+        .filter_map(|n| n.as_str())
+        .collect();
+    assert_eq!(
+        executed,
+        [
+            "tests/test_calc.py::TestKit::test_method",
+            "tests/test_calc.py::test_double"
+        ],
+        "{out}"
+    );
+    let stored = events::list(&ledger, id).expect("evidence");
+    assert_eq!(stored.len(), 1);
+    assert_eq!(
+        stored[0].record.provider,
+        frob_evidence::record::Provider::Pytest
+    );
+    assert_eq!(stored[0].record.passed, Some(true));
 }

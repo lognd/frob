@@ -39,7 +39,7 @@ impl Sources {
     }
 }
 
-/// Identifiers directly followed by `(` in `body` (calls and method calls, not macros or `fn` names).
+/// Identifiers directly followed by `(` in `body` (calls and method calls, not macros or `fn`/`def` names).
 pub fn called_names(body: &str) -> BTreeSet<String> {
     let bytes = body.as_bytes();
     let mut out = BTreeSet::new();
@@ -57,8 +57,11 @@ pub fn called_names(body: &str) -> BTreeSet<String> {
                 j += 1;
             }
             let before = body[..start].trim_end();
-            let after_fn = before.strip_suffix("fn").is_some_and(|head| {
-                !head.ends_with(|c: char| c == '_' || c.is_ascii_alphanumeric())
+            // frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
+            let after_fn = ["fn", "def"].iter().any(|kw| {
+                before.strip_suffix(kw).is_some_and(|head| {
+                    !head.ends_with(|c: char| c == '_' || c.is_ascii_alphanumeric())
+                })
             });
             if bytes.get(j) == Some(&b'(') && !after_fn {
                 out.insert(name.to_owned());

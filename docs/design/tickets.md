@@ -505,13 +505,33 @@ finds nothing and commits nothing. The GUI renders blobs through
 the same fetch. Changed: evidence providers are a trait
 (`pytest`, `cargo test`, `ctest`, `vitest`, `junit`, `command`) so
 Rust-only or docs-only repos close tickets natively (milestone 1 ships
-`nextest`, `command` and `file` providers; the `command` provider may
-run only programs in `[evidence] allowed_tools`); the close guard
+`nextest`, `pytest`, `command` and `file` providers; the `command` and
+`pytest` providers may run only programs in `[evidence] allowed_tools`,
+and `pytest` is listed by default like `cargo` and `git`); the close guard
 requires a Measured record for the code-changing types task, bug,
 security, story, incident and invariant, and `ticket close
 --no-evidence --reason` bypasses it with an audited `evidence-bypass`
 event; evidence verdicts
 are `Passed | Failed | Unmeasured` and Unmeasured never reads as Failed.
+
+**The pytest provider** (~M525Y1M). `ticket evidence add --provider pytest
+--ref '<pytest args>'` runs `pytest -o junit_family=xunit1 --junitxml=<tmp>
+<args>` through gob-exec (a `Tool` program, so `pytest` must be in
+`[evidence] allowed_tools`, else `E-EVIDENCE-TOOL`), reads the junit file and
+records one measured record whose `tests` are pytest node ids
+(`tests/test_a.py::TestC::test_m[param]`) and whose `failed_tests` are the
+cases with a `failure` or `error`; a skipped case did not execute and is not
+listed. The transcript (stdout then stderr) goes through the same redaction,
+path scrub and non-ASCII escape as every provider, so the stored text is
+ASCII. Exit code 5 (nothing collected) is `E-EVIDENCE-NO-TESTS`, not a failed
+measurement. `frob test` selects Python tests the same way as Rust ones (the
+Python adapter puts their symbols and calls in the graph; a changed `.py`
+file is no longer an `unresolved_files` entry), runs
+`pytest <node id>...` for them after the nextest run, and appends one
+evidence event per runner. With `--all`, pytest also runs when the work tree
+has Python test files. Tests that run pytest need `python3` and `pytest` on
+`PATH`: when absent they skip with the named reason on stderr, or fail when
+`FROB_REQUIRE_PYTHON_TESTS` is set.
 
 **Which outcomes the close guards apply to** (~8RZK7QV). Evidence, criteria,
 children and changelog fragment prove that a change was made, so they apply
