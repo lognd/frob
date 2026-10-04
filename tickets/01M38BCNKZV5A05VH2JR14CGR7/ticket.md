@@ -1,0 +1,19 @@
++++
+id = "01M38BCNKZV5A05VH2JR14CGR7"
+title = "Wire INVLVL001 into frob check's gate dispatch (blocked by T-3010 lease)"
+type = "task"
+category = "done"
+outcome = "wont-fix"
+priority = "high"
+parent = "01M0XNVQY0E0M7EDYDN0EA35F7"
+reporter = "human"
+created = "2026-09-24T00:00:00Z"
+updated = "2026-09-24T00:00:02Z"
+aliases = ["T-5759"]
+scope = ["src/frob/gates/__init__.py", "src/frob/gates/_waive.py"]
++++
+
+found while working T-3008: invariant_level_gate (src/frob/gates/_invariant_level.py) is written and tested but not registered in _ALL_GATES/_GATE_STAGE_GROUPS/_build_thread_jobs (src/frob/gates/__init__.py) or _KNOWN_GATE_RULES (src/frob/gates/_waive.py) because both files were held by T-3010's live scope lease at the time. Once T-3010 lands (or its lease frees), register invariant_level_gate the same way MSCLOSE001/VMOD001 are registered.
+
+## Drop reason
+- 2026-09-24: folded into T-3008 once T-3010's lease on gates/__init__.py and _waive.py released -- INVLVL001 registered directly in T-3008's own land (absorbed by T-3008)

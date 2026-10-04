@@ -1,0 +1,27 @@
+kind = "create"
+title = "DSTACK001: fire the stack merge on every directive stack (threshold 2 by default)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+aliases = ["T-5528"]
+labels = ["milestone:v0.534.0"]
+scope = ["src/frob/gates/_directive_stack.py", "frob.toml", "tests/test_gates_directive_stack.py"]
+body = """
+Owner decision (2026-09-24): DSTACK001 and its Tier-A merge fix (T-4713) must fire on EVERY
+directive stack, i.e. any run of 2 or more consecutive same-kind directive lines above one
+symbol, not only 4+. Tokens are never broken (owner decision 2 in tickets/T-4703/ticket.md
+stands).
+
+Work: change DEFAULT_STACK_THRESHOLD in src/frob/gates/_directive_stack.py from 4 to 2; make
+this repo's frob.toml [gates] dstack_threshold = 2 explicit; keep the [gates] dstack_threshold
+override read by src/frob/gates/__init__.py::_dstack_threshold; update docs/modules/gates.md's
+DSTACK001 and fix_dstack001_merge entries (T-4713 section) and any doc stating the default of
+4; add unit tests covering the 2-line stack as the positive control and a single directive line
+as the MUST-STAY-QUIET control.
+
+Measure and report in the done report: repo-wide DSTACK001 count at threshold 2 (residue size
+for the Tier-A auto-fix to converge as files are touched; no repo-wide apply in this ticket)."""
+at = "2026-09-24T00:00:00Z"
+actor = "human"
+rev = 1

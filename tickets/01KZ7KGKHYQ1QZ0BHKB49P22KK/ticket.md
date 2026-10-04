@@ -1,0 +1,47 @@
++++
+id = "01KZ7KGKHYQ1QZ0BHKB49P22KK"
+title = "Language expansion: research and rank the target set, define per-language semantics"
+type = "story"
+flavour = "user_story"
+category = "triage"
+priority = "medium"
+parent = "01KZ7KGKHXGS6W2YAVRY27W0D5"
+reporter = "human"
+created = "2026-08-05T00:00:00Z"
+updated = "2026-08-05T00:00:00Z"
+aliases = ["T-1598"]
+labels = ["milestone:1.1.0", "v1-cluster:D2"]
+scope = ["docs/**"]
++++
+
+Produce the evidence base for the expansion, so the language set is defensible rather than a guess.
+
+Deliverables:
+
+1. A ranked target list of 20-50 languages, each row citing its sources. Use several independent rankings and say where they disagree: TIOBE, RedMonk, GitHub Octoverse, Stack Overflow Developer Survey, and IEEE Spectrum are the usual five; weight by what a frob user is plausibly running in a repo that needs obligation tracking, not by raw popularity alone (COBOL and MATLAB rank higher than their relevance here; CUDA and Zig rank lower than theirs).
+
+2. Per language: tree-sitter grammar availability and maturity (this repo already depends on tree-sitter-language-pack -- record which targets it already ships, which need a separate crate, and which have no usable grammar at all, since that last group changes the cost dramatically).
+
+3. Per language: comment syntax for the directive DSL, including the awkward cases -- languages with no line comment, languages where the block comment cannot nest, and languages with significant indentation that constrains where a directive may sit.
+
+4. Per language: what "public symbol" even means. This is where the abstraction will strain. Header/implementation splits in C/C++, Java package-private, Rust pub(crate), Go capitalization, C# internal, and shell functions with no visibility concept at all do not share one definition. The research must state the intended per-language rule BEFORE any adapter is written.
+
+5. A recommended batch order, with the user's five named languages (C#, Java, CUDA, Zig, Bash) first.
+
+Output goes in docs/ as a durable reference, not just a ticket comment -- later batches read it.
+
+Deliberately NOT attempted this round: this ticket requires live
+multi-source web research (TIOBE, RedMonk, GitHub Octoverse, Stack
+Overflow Developer Survey, IEEE Spectrum), each row citing real,
+current sourcing per the ticket's own deliverable 1. That is a
+distinct, larger unit of work than a normal drain-queue slot, and its
+output (rankings, availability tables) would date quickly regardless.
+
+It must NOT be attempted from model memory -- fabricated ranking
+numbers or citations that merely look plausible would be worse than no
+document at all, and would be effectively undetectable later without
+re-doing the research from scratch. An implementer picking this up
+should budget it as a dedicated research pass with real web access,
+not fold it into a normal ticket dispatch.
+
+Left queued and untouched otherwise; no partial content added.

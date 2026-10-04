@@ -1,0 +1,18 @@
+kind = "create"
+title = "ticket new --points is not persisted"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+aliases = ["T-5815"]
+labels = ["milestone:v0.534.0"]
+scope = ["src/frob/tickets/_new_renumber.py", "tests/test_tickets_points.py", "docs/modules/tickets-data-storage.md"]
+body = """
+`frob ticket new --points N` accepted the flag but the created ticket
+carries `points: null` (measured 2026-09-24 filing the coord tree and the
+tiers tree; every filer script had to follow with `frob ticket points`).
+Fix: persist points at creation; positive control: new --points 3 then
+show must print points 3."""
+at = "2026-09-24T00:00:00Z"
+actor = "human"
+rev = 1

@@ -1,0 +1,22 @@
++++
+id = "01M336K75PBAVJE0SEABECQYQV"
+title = "webapp rule-family scaffolding: framework detection, fixture layout, strata nodes"
+type = "task"
+category = "done"
+outcome = "done"
+priority = "high"
+points = 3
+parent = "01M2Y1SS0MVHB8M891RN134SE7"
+reporter = "human"
+created = "2026-09-22T00:00:00Z"
+updated = "2026-09-22T00:00:02Z"
+aliases = ["T-5302"]
+labels = ["milestone:0.534.0"]
+scope = ["src/frob/webapp/__init__.py", "src/frob/webapp/_detect.py", "src/frob/sql/__init__.py", "tests/fixtures/webapp/**", "design/frob.strata", "frob.toml", "tests/unit/test_webapp_detect.py", "docs/modules/webapp.md"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M336K75MTJDB9QKKQ7EHCKRX"
++++
+
+New src/frob/webapp/__init__.py (mirrors src/frob/perf/__init__.py's docstring-as-map convention) and src/frob/webapp/_detect.py: pure file-presence/content-sniff framework detection (Next/Vite/Django/Flask/FastAPI/Rails/Laravel/SvelteKit/Astro) returning a FrameworkKind StrEnum and detected: frozenset[FrameworkKind]; a Python CLI repo with no detected framework returns the empty set and every WEBSEC/COMPLY/A11Y/SEO/WEBPERF rule short-circuits to 'not relevant', matching the owner directive verbatim. Also stub src/frob/sql/__init__.py (empty package, SQL family lives outside webapp/ since SQL literals appear in non-web code too). OWNER DIRECTIVE: declare frob.webapp and frob.sql as strata nodes in design/frob.strata with their capabilities (SYS100 refuses new modules otherwise) and add both to [arch.layering] in frob.toml -- do this in the SAME leaf, not a follow-up, since every other leaf in this epic imports one of these two packages and SYS100/layering would refuse them otherwise. Positive-control fixture: one fixture dir per framework asserting detect_frameworks(fixture_root) == {ExpectedKind}, plus a plain Python-CLI fixture asserting the empty set. Doc: docs/modules/webapp.md (new, shape of docs/modules/perf.md).

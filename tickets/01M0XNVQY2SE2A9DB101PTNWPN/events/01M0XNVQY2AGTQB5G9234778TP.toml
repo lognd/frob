@@ -1,0 +1,13 @@
+kind = "create"
+title = "Incremental releases: milestone-scoped closure over a configuration binding partial architectures with declared gaps (T-3004 section 6)"
+type = "task"
+category = "todo"
+priority = "high"
+points = 8
+parent = "01M0XNVQXWNFXBK2AGM3QF2P3A"
+aliases = ["T-3010"]
+labels = ["milestone:0.535.0"]
+scope = ["strata-core/src/graph/vmodel/closure.rs", "src/frob/gates/_strata_milestone_closure.py", "tests/unit/strata/test_vmodel_check.py", "tests/gates/test_milestone_closure.py", "docs/strata/vmodel.md", "strata-core/src/lib.rs", "src/frob/gates/__init__.py", "src/frob/gates/_waive.py", "design/frob.strata", "docs/design/registry/check-coverage.yaml", "docs/design/registry/capability-via-ratchet.lock.json", "strata-core/strata_core.pyi"]
+at = "2026-08-26T00:00:00Z"
+actor = "human"
+rev = 1

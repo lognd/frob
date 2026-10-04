@@ -1,0 +1,12 @@
+kind = "create"
+title = "Widen a11y_gate hook contract so _locate_statement_page gets a repo root"
+type = "task"
+category = "triage"
+priority = "medium"
+aliases = ["T-5488"]
+labels = ["v1-cluster:B2", "area:crunk"]
+scope = ["src/frob/webapp/_a11y_statement.py"]
+body = "T-5454's done report documents _locate_statement_page(root, frameworks) as a deliberate known gap: a11y_gate's per-file hook contract (T-5323) has no reliable repo root to pass it, so it stays unwired into any production caller, kept only for direct tests. Widen the hook contract (or give per-file hooks a memoized repo-root handle) so this can wire in for real. Found while working T-5470 (its WIRE001 waiver named T-5454, now done, as the follow-up -- repointed here)."
+at = "2026-09-24T00:00:00Z"
+actor = "human"
+rev = 1

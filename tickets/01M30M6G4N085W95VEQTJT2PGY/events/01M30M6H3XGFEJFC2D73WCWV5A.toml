@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-22: duplicate of T-5204 -- identical title/body (frob doctor lint-tool version lag), both filed from the same T-5138 DESIGN item 7 follow-up (absorbed by T-5204)"
+at = "2026-09-21T00:00:01Z"
+actor = "import"
+rev = 1

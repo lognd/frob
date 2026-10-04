@@ -1,0 +1,15 @@
++++
+id = "01M17ZEMDGGAGXV77M72218SHT"
+title = "Wire strata/graph/vet examined-sites into WAIVE004 (blocked pending a sound site-identity mapping)"
+type = "task"
+category = "triage"
+priority = "medium"
+reporter = "human"
+created = "2026-08-30T00:00:00Z"
+updated = "2026-08-30T00:00:00Z"
+aliases = ["T-3504"]
+labels = ["milestone:1.0.0", "v1-cluster:B3d"]
+scope = ["src/frob/gates/_coverage_sites.py"]
++++
+
+Re-filed replacement for T-2057, which this ticket's own title duplicates verbatim: T-2057 was DROPPED (blocked pending a sound site-identity mapping) but 12 separate frob:waive WIRE001 sites across src/frob/app/ticket_runner/_land_cmd.py, src/frob/gates/_arch.py, src/frob/gates/_coverage_sites.py, src/frob/gates/_render_lint.py, and tests/unit/test_new_ticket_scope_overlap_warning.py cite follow_up="T-2057" as their live-ticket accountability anchor for a deliberately-permanent (not actually pending) WIRE001 waiver posture -- T-2057 dropping orphaned all 12 (WIRE002, T-3490's sweep regression). This ticket exists ONLY to give those waivers a real, open follow_up target again; it carries no work of its own beyond what T-2057 already described (still blocked on the same sound site-identity mapping prerequisite T-2057 was).

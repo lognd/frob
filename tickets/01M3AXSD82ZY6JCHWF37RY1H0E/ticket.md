@@ -1,0 +1,47 @@
++++
+id = "01M3AXSD82ZY6JCHWF37RY1H0E"
+title = "STORE113: wildcard query with a leading wildcard (Elasticsearch)"
+type = "task"
+category = "triage"
+priority = "medium"
+parent = "01M3AXSD9STSFC2MR8M369JNE8"
+reporter = "agent"
+created = "2026-09-25T00:00:00Z"
+updated = "2026-09-25T00:00:00Z"
+aliases = ["T-6402"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+scope = ["src/frob/store/_elasticsearch.py", "tests/fixtures/store/store113-es-leading-wildcard/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3AXSD8EJE4SFMVFJJF41NMA"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3AXSD97HRBA035Y3FNX3ACG"
++++
+
+Rule id: STORE113.
+
+Authority: Elasticsearch Reference, "Wildcard query": example pattern
+`ki*y` shown as the supported shape --
+https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-wildcard-query.html.
+Research file flags this **partial gap**: the dedicated
+"leading-wildcards-are-expensive" caveat sentence was not isolated
+verbatim this pass. Blocked by T-STORE-401-GAPS.
+
+Call shapes:
+- Python: `es.search(body={"query": {"wildcard": {"field": {"value":
+  f"*{term}"}}}})`
+- TS/JS: `client.search({ query: { wildcard: { field: { value:
+  `*${term}` } } } })`
+
+Detection: parse the wildcard value string literal/f-string for a
+leading `*`.
+
+Positive-control fixture: `tests/fixtures/store/store113-es-leading-wildcard/`.
+
+Relevance gate: elasticsearch client import detected.
+
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its scaffold, none exists on dev yet"
