@@ -2,12 +2,12 @@
 id = "01M42MGNE7XHTT1MR5CA6C2R1C"
 title = "A rule that fails to evaluate yields zero findings instead of a required Unresolved; a corrupt index makes frob check exit 0 clean"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T04:59:49Z"
-updated = "2026-10-04T04:59:49Z"
+updated = "2026-10-04T13:12:19Z"
 scope = ["crates/frob-check/src/**"]
 
 [[acceptance]]
