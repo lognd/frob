@@ -7,9 +7,9 @@ priority = "low"
 parent = "01M1T07NXGXQ1VDNZ4FWF10TGF"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:06:32Z"
 aliases = ["T-4040"]
-labels = ["milestone:1.1.0", "v1-cluster:C4a"]
+labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/graph/dsl.py"]
 
 [[links]]
