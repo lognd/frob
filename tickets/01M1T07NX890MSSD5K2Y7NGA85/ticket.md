@@ -6,10 +6,14 @@ category = "triage"
 priority = "high"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:10:02Z"
 aliases = ["T-4008"]
 labels = ["milestone:0.540.0", "v1-cluster:C4b"]
 scope = ["src/frob/tickets/_mutation_evidence.py"]
+
+[[links]]
+kind = "duplicates"
+target = "01M1T07NX91GNHPAWC8Y32GVV7"
 +++
 
 Consumer logand.app-v2 F-221, 2026-09-06:
