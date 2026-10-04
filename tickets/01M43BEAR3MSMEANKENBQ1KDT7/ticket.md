@@ -2,7 +2,8 @@
 id = "01M43BEAR3MSMEANKENBQ1KDT7"
 title = "v1 importer: merge into an existing ledger and import open tickets as triage"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
