@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~J8HVP93: land lock starvation and wait mode is PT-17; the land queue part is dropped on purpose (D7, D8, D25)."
+at = "2026-10-04T21:09:37Z"
+actor = "lognd"
+rev = 1
