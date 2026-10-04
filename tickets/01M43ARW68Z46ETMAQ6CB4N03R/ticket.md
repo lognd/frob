@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:46Z"
-updated = "2026-10-04T12:08:50Z"
+updated = "2026-10-04T12:08:51Z"
 idempotency_key = "crunk-plan-corpus"
 labels = ["area:crunk"]
 scope = ["tests/crunk-parity/**"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the corpus text, when scanned, then it holds no absolute home path and only ASCII"
-bound = false
+bound = true
 +++
 
 Copy the crunk repository's tests/fixtures (web_pages, tailwind_v4, screens_v1_1, gallery005_routes), INT-04 golden files and the e2e project trees into tests/crunk-parity/fixtures with a PROVENANCE file (source commit, date; both repositories are MIT and one owner). For each project run the Python crunk (check --json, check --report, tokens --format css/json/tailwind, fix --dry-run, map --json, query verbs, explain, diff) and store the outputs as expected/*.json or text, regenerable by one script that is checked in. No Rust. Used by the parity harness ticket. Source: the crunk repository tests/integration and tests/system (58 e2e files, 12 INT).
