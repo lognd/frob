@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-04T04:29:30Z"
+updated = "2026-10-04T04:37:59Z"
 idempotency_key = "m2-plan-format"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/plan/**", "crates/gob-plan/src/lib.rs"]
@@ -19,7 +19,7 @@ target = "01M3ZX779NSRZ97ZQM5DP3BZJZ"
 
 [[acceptance]]
 text = "Given a plan value, when serialized and read back, then it is equal and carries provenance, polarity, needs and the prefilter kind set"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given truncated, out-of-range or cyclic plan bytes from disk, when loaded, then validation returns an Err naming the reason and never panics"
