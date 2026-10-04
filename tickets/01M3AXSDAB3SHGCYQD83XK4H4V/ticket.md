@@ -3,13 +3,13 @@ id = "01M3AXSDAB3SHGCYQD83XK4H4V"
 title = "SYSDESIGN302: outbound retry logic with a per-call max-attempts but no aggregate process-wide retry budget"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSDASH31CMNHAQ9JXR1YQ"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:28Z"
 aliases = ["T-6475"]
-labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/strata/_retry_budget.py (new)", "tests/fixtures/sysdesign/sysdesign302/**"]
 +++
 
