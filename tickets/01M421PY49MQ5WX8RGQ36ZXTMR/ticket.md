@@ -6,8 +6,8 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-03T23:31:11Z"
-updated = "2026-10-04T04:24:30Z"
-scope = ["crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/pipeline.rs"]
+updated = "2026-10-04T05:33:06Z"
+scope = ["crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/tests/gaps.rs"]
 +++
 
 found while working ~A8AMNGF. Release, warm, nothing changed: per-file stage 0.22 s (1163 cached, 0 extracted), then SymbolGraph::from_files_with_deps takes 0.71 s, of which link_calls is about 0.9 s of a 1.0 s cumulative total under -vv (add_file 39 ms, index_of 31 ms, imports 4 ms). Options: parallelise link_calls resolution over files (resolve_site reads the graph, record_call mutates), or cache the assembled graph keyed by the digest of all file digests plus the Cargo manifests CrateDeps reads. Acceptance: warm graph stage under 0.25 s in release on this repository with identical findings.
