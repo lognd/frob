@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T23:11:50Z"
+digest = "78ef2910eb7d4a19c469dea6415f506f9b2a37eb42af1c6621d5d47f1ad80ffc"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7b706243-f4a7-44ce-84b6-73dc4f628de2 with nextest profile: default
+    Starting 1 test across 3 binaries (49 tests skipped)
+        PASS [   0.026s] frob-evidence provider::tests::junit_windows_file_separators_give_portable_node_ids
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.027s] 1 test run: 1 passed, 49 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence junit_windows_file_separators"
+size = 574
+status = "measured"
+tests = ["provider::tests::junit_windows_file_separators_give_portable_node_ids"]
+at = "2026-10-04T23:11:50Z"
+actor = "lognd"
+rev = 1

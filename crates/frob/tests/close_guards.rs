@@ -703,3 +703,63 @@ fn doctor_reports_a_done_ticket_whose_branch_is_unmerged_unless_exempted() {
     let issues = v["data"]["issues"].as_array().expect("issues");
     assert_eq!(issues.len(), 1, "{v}");
 }
+
+/// Create a ticket of `ty` with `extra` flags and return its id.
+fn typed(dir: &Path, ty: &str, extra: &[&str]) -> String {
+    let mut args = vec!["ticket", "new", "--title", "t", "--type", ty];
+    args.extend_from_slice(extra);
+    ok(dir, &args)["data"]["id"]
+        .as_str()
+        .expect("id")
+        .to_owned()
+}
+
+// frob:ticket 01M1T07NXZ5WQR200M5H1NWDN9
+// frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
+#[test]
+fn story_bug_and_security_without_criteria_are_refused_on_that_close_naming_the_type() {
+    let dir = repo(&["criteria_evidenced"]);
+    for ty in ["story", "bug", "security"] {
+        let id = typed(dir.path(), ty, &[]);
+        // The evidence guard runs first, so clear it with the audited bypass to reach the criteria check.
+        let out = close(dir.path(), &id, &["--no-evidence", "--reason", "x"]);
+        assert_eq!(code(&out), 3, "{ty}");
+        assert_eq!(json(&out)["error"]["code"], "E-DONE-NO-CRITERIA", "{ty}");
+        assert!(
+            refusal_text(&out).contains(&format!("a {ty} ticket")),
+            "{ty}"
+        );
+        let shown = ok(dir.path(), &["ticket", "show", &id]);
+        assert_ne!(shown["data"]["summary"]["category"], "done", "{ty}");
+    }
+}
+
+// frob:ticket 01M1T07NXZ5WQR200M5H1NWDN9
+// frob:tests crates/frob-evidence/src/done.rs::criteria_required
+#[test]
+fn exempt_types_and_tickets_with_criteria_still_close() {
+    let dir = repo(&["criteria_evidenced"]);
+    for ty in ["chore", "docs", "epic"] {
+        let id = typed(dir.path(), ty, &[]);
+        let closed = ok(dir.path(), &["ticket", "close", &id, "--outcome", "done"]);
+        assert_eq!(closed["data"]["category"], "done", "{ty}");
+    }
+    let id = typed(dir.path(), "story", &["--acceptance", "it works"]);
+    ok(
+        dir.path(),
+        &[
+            "ticket",
+            "evidence",
+            "add",
+            &id,
+            "--provider",
+            "file",
+            "--ref",
+            "frob.toml",
+            "--accepts",
+            "1",
+        ],
+    );
+    let closed = ok(dir.path(), &["ticket", "close", &id, "--outcome", "done"]);
+    assert_eq!(closed["data"]["category"], "done");
+}

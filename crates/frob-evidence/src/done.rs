@@ -5,7 +5,7 @@ use std::path::Path;
 
 use frob_ledger::event::{ChangelogExemptData, EventBody, LandExemptData};
 use frob_ledger::guards::{CloseContext, CloseGuard, GuardFailure};
-use frob_ledger::model::{Category, LinkKind, Outcome, Ticket};
+use frob_ledger::model::{Category, LinkKind, Outcome, Ticket, TicketType};
 use frob_ledger::{EventId, Ledger, TicketId};
 use frob_pm::{DoneRequirement, PmConfig};
 
@@ -13,6 +13,8 @@ use crate::error::{EvidenceError, Result as EvResult};
 
 /// Stable code of a criterion that has no passing evidence or attestation bound to it.
 pub const CODE_CRITERIA: &str = "E-DONE-CRITERIA-UNBOUND";
+/// Stable code of a story, bug or security ticket closed with no acceptance criteria at all (~H1NWDN9).
+pub const CODE_NO_CRITERIA: &str = "E-DONE-NO-CRITERIA";
 /// Stable code of a ticket that still has open children.
 pub const CODE_CHILDREN: &str = "E-DONE-OPEN-CHILDREN";
 /// Stable code of a ticket that is still blocked by an open ticket (`no_open_blockers`, ~G7AXHR1).
@@ -56,6 +58,17 @@ pub fn missing_reason(outcome: Option<Outcome>, reason: Option<&str>) -> Option<
         "closing as {} needs --reason <text> saying why (no evidence or changelog is asked for)",
         outcome.map_or("this outcome", Outcome::as_str)
     ))
+}
+
+// frob:ticket 01M1T07NXZ5WQR200M5H1NWDN9
+/// Whether tickets of `ty` must state at least one acceptance criterion to close as completed work.
+///
+/// Story, bug and security claim a behaviour that can be given/when/then; chore, docs and epic (whose criteria are its children) have nothing to state, and a forced criterion there would be ceremonial text that looks like verification.
+pub fn criteria_required(ty: TicketType) -> bool {
+    matches!(
+        ty,
+        TicketType::Story | TicketType::Bug | TicketType::Security
+    )
 }
 
 /// What the ticket's changelog fragment looks like on disk, judged by the compile's own validator.
@@ -182,6 +195,7 @@ impl DoneGuard {
         if self.requires.contains(&DoneRequirement::CriteriaEvidenced)
             && matches!(ticket.front.outcome, Some(Outcome::Done | Outcome::Fixed))
             && ticket.front.acceptance.is_empty()
+            && !criteria_required(ticket.front.ty)
         {
             out.push(
                 "criteria_evidenced passed vacuously: the ticket has no acceptance criteria"
@@ -189,6 +203,29 @@ impl DoneGuard {
             );
         }
         out
+    }
+
+    // frob:ticket 01M1T07NXZ5WQR200M5H1NWDN9
+    /// Refuse a story, bug or security ticket with zero criteria: with nothing to bind, `criteria_evidenced` would pass vacuously.
+    fn has_criteria(cx: &CloseContext<'_>) -> Result<(), GuardFailure> {
+        let ty = cx.ticket.front.ty;
+        if !criteria_required(ty) || !cx.ticket.front.acceptance.is_empty() {
+            return Ok(());
+        }
+        Err(GuardFailure {
+            code: CODE_NO_CRITERIA.to_owned(),
+            message: format!(
+                "closing {} as completed work needs at least one acceptance criterion: a {} ticket with none cannot fail its acceptance check",
+                cx.handle,
+                ty.as_str()
+            ),
+            remedy: Some(format!(
+                "frob ticket update {} --add-acceptance \"<given/when/then>\", bind it with frob ticket evidence add, then retry; \
+                 chore, docs and epic tickets are exempt (change the type if this is not a {})",
+                cx.handle,
+                ty.as_str()
+            )),
+        })
     }
 
     fn criteria(&self, cx: &CloseContext<'_>) -> Result<(), GuardFailure> {
@@ -350,6 +387,11 @@ impl CloseGuard for DoneGuard {
         // Always on: not a `done_requires` entry, since the requirement enum lives outside this ticket's scope.
         if let Err(f) = self.blockers(cx) {
             tracing::info!(code = %f.code, "no_open_blockers refused");
+            return Err(f);
+        }
+        // Always on, before the configured requirements: zero criteria is a different defect from unbound ones and has no bypass.
+        if let Err(f) = Self::has_criteria(cx) {
+            tracing::info!(code = %f.code, ty = cx.ticket.front.ty.as_str(), "zero acceptance criteria refused");
             return Err(f);
         }
         for req in &self.requires {
