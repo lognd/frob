@@ -7,10 +7,14 @@ priority = "medium"
 parent = "01M1T07NWGXQV249M3HN5DQV9V"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:05:14Z"
 aliases = ["T-3992"]
 labels = ["milestone:0.536.0", "v1-cluster:B4"]
 scope = ["src/frob/repo_meta.py"]
+
+[[links]]
+kind = "duplicates"
+target = "01M3Z7157776CWEKRPG8886VJ4"
 
 [[acceptance]]
 text = "given this repo's own CI gates-fast workflow, land --dry-run, and a real land, when this ticket's first step runs, then it reports whether the three surfaces provably check the same rule set"
