@@ -3,13 +3,13 @@ id = "01M1T07NVV8B17507N24GRPKRR"
 title = "TAINT-IDENT001: store-read value used as identifier"
 type = "security"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M1QDTYV6Z35XFTPNT4QW70Y2"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:04:51Z"
 aliases = ["T-3963"]
-labels = ["milestone:0.539.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/vet/_taint.py"]
 
 [[acceptance]]
