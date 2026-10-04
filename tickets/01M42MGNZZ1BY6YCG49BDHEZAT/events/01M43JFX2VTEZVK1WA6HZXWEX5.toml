@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T13:43:41Z"
+digest = "498c45ba9f3d1e3d69899015c1de87d0a80ebb118418f2cc7879186f0edef9f4"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 02f1d98e-160b-4faa-a109-90c7ddfde7f2 with nextest profile: default
+    Starting 2 tests across 1 binary (18 tests skipped)
+        PASS [   0.019s] frob-ledger::ledger local_edits_refusal_carries_a_remedy_naming_the_path
+        PASS [   0.173s] frob-ledger::ledger trunk_mode_commits_to_trunk_even_on_another_branch
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.174s] 2 tests run: 2 passed, 18 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-ledger --test ledger local_edits_refusal"
+size = 659
+status = "measured"
+tests = ["local_edits_refusal_carries_a_remedy_naming_the_path", "trunk_mode_commits_to_trunk_even_on_another_branch"]
+at = "2026-10-04T13:43:41Z"
+actor = "lognd"
+rev = 1
