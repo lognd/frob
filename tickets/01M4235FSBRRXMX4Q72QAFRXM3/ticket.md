@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T23:56:37Z"
-updated = "2026-10-04T01:28:35Z"
+updated = "2026-10-04T01:28:36Z"
 scope = ["crates/frob-land/**", "crates/frob-check/src/delta.rs", "docs/design/tickets.md", "docs/design/rules.md"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the ticket fixes a pre-existing error, when land runs, then the report shows it resolved"
-bound = false
+bound = true
 +++
 
 Reported by cloc (FROB_FEEDBACK item 14): an error outside the ticket's diff that already exists on the base (REL001 on old tags) makes land refuse every unrelated ticket (E-LAND-CHECK-RED). verify_check in crates/frob-land/src/land.rs refuses any finding at fail_on in the ticket-scoped report, including findings that are pre-existing repository state.
