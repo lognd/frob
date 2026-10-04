@@ -7,8 +7,8 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:59:49Z"
-updated = "2026-10-04T13:25:01Z"
-scope = ["crates/frob-lease/**"]
+updated = "2026-10-04T13:39:12Z"
+scope = ["crates/frob-lease/**", "crates/frob/src/doctor.rs", "crates/frob/tests/gc.rs", "crates/frob/tests/snapshots/cli__doctor_fresh_repo.snap", "crates/frob/tests/snapshots/cli__doctor_schema.snap", "docs/design/cli.md"]
 
 [[acceptance]]
 text = "Given a corrupt lease file, when lease list and work run, then they proceed and report the corrupt file"
