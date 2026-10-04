@@ -2,11 +2,11 @@
 id = "01M43FX5KWVP277RX5666MMPM1"
 title = "land leaves a conflicted merge in the worktree and reports E-CONFIG instead of a conflict"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T12:58:30Z"
-updated = "2026-10-04T12:58:30Z"
+updated = "2026-10-04T13:12:16Z"
 
 [[acceptance]]
 text = "Given a ticket branch whose refresh merge with the trunk conflicts, when land runs, then it refuses with a conflict error listing the conflicted paths"
