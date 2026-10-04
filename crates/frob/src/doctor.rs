@@ -210,6 +210,18 @@ pub struct GcInfo {
     pub fixed: Option<GcFixed>,
 }
 
+/// Lease-file health: unreadable lease files and what `--fix` did about them.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct LeaseInfo {
+    /// `ok`, or `skipped: <why>` when there is no repository work tree or the store could not be read.
+    pub state: String,
+    /// Lease files that cannot be parsed (path and parse error); they are skipped by every verb.
+    pub corrupt: Vec<frob_lease::CorruptLease>,
+    /// Present with `--fix`: where each corrupt file was moved (`<name>.toml.corrupt`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quarantined: Option<Vec<String>>,
+}
+
 /// Output of `doctor`.
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct DoctorData {
@@ -229,6 +241,8 @@ pub struct DoctorData {
     pub siblings: Vec<SiblingRow>,
     /// Garbage collection: last pass, usage and what a pass would reclaim.
     pub gc: GcInfo,
+    /// Lease files: corrupt ones and their quarantine.
+    pub leases: LeaseInfo,
     /// Language adapters; present only with `--languages`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub languages: Option<LanguagesReport>,
@@ -381,6 +395,7 @@ impl Command for Doctor {
             .map(|p| sibling_row(&runner, p, &ctx.cwd))
             .collect();
         let gc = gc_info(&located, &cfg, self.fix);
+        let leases = lease_info(&located, &cfg, self.fix);
         let languages = self
             .languages
             .then(|| languages_report(&located.root, &cfg));
@@ -398,6 +413,13 @@ impl Command for Doctor {
             .map(|(d, f)| format!("{d}; fix: {f}"))
             .into_iter()
             .collect();
+        for c in &leases.corrupt {
+            warnings.push(format!(
+                "corrupt lease file {} ({}); remedy: run `frob doctor --fix` to move it aside as <name>.toml.corrupt",
+                c.path.display(),
+                c.message
+            ));
+        }
         for row in &siblings {
             if let Some(other) = row.other.as_ref().filter(|o| o.differs) {
                 warnings.push(format!(
@@ -417,6 +439,7 @@ impl Command for Doctor {
             driver,
             siblings,
             gc,
+            leases,
             languages,
         })
         .with_findings(findings);
@@ -611,6 +634,52 @@ fn ledger_info(located: &Located, cfg: &FrobConfig) -> LedgerInfo {
             oid: None,
             error: Some(e),
         },
+    }
+}
+
+/// The lease-file section: corrupt files, and with `fix` quarantine them (kept as `.toml.corrupt`, never deleted).
+// frob:ticket 01M42MGP62EPY4K7C29M0388X5
+fn lease_info(located: &Located, cfg: &FrobConfig, fix: bool) -> LeaseInfo {
+    let skipped = |why: String| LeaseInfo {
+        state: format!("skipped: {why}"),
+        corrupt: Vec::new(),
+        quarantined: None,
+    };
+    let Some(repo) = located.repo.as_ref().filter(|r| r.work_dir().is_some()) else {
+        return skipped("not a git work tree".to_owned());
+    };
+    let store = match frob_lease::LeaseStore::open(repo, cfg.lease.clone()) {
+        Ok(s) => s,
+        Err(e) => return skipped(format!("lease store: {e}")),
+    };
+    let corrupt = match store.corrupt_leases() {
+        Ok(c) => c,
+        Err(e) => return skipped(e.to_string()),
+    };
+    let quarantined = if fix && !corrupt.is_empty() {
+        match store.quarantine_corrupt() {
+            Ok(moved) => Some(moved.iter().map(|p| p.display().to_string()).collect()),
+            Err(e) => {
+                tracing::warn!(error = %e, "lease quarantine failed");
+                None
+            }
+        }
+    } else {
+        None
+    };
+    tracing::info!(
+        corrupt = corrupt.len(),
+        fixed = quarantined.is_some(),
+        "lease doctor section"
+    );
+    LeaseInfo {
+        state: "ok".to_owned(),
+        corrupt: if quarantined.is_some() {
+            Vec::new()
+        } else {
+            corrupt
+        },
+        quarantined,
     }
 }
 

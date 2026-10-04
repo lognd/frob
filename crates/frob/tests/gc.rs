@@ -145,3 +145,46 @@ fn doctor_reports_the_last_pass_and_fix_runs_one_unthrottled() {
         "findings never fail doctor"
     );
 }
+
+// frob:ticket 01M42MGP62EPY4K7C29M0388X5
+// frob:tests crates/frob-lease/src/store.rs::LeaseStore.quarantine_corrupt
+#[test]
+fn doctor_reports_a_corrupt_lease_and_fix_quarantines_it() {
+    let repo = Repo::new();
+    let leases = repo.path().join(".git").join("frob").join("leases");
+    std::fs::create_dir_all(&leases).expect("leases dir");
+    let bad = leases.join("01M42MGP62EPY4K7C29M0388X5.toml");
+    std::fs::write(&bad, "not = [valid").expect("corrupt");
+
+    let v = repo.ok(&["doctor"]);
+    let corrupt = v["data"]["leases"]["corrupt"].as_array().expect("corrupt");
+    assert_eq!(corrupt.len(), 1, "{v}");
+    assert!(corrupt[0]["message"].is_string(), "{v}");
+    assert!(
+        v["warnings"]
+            .as_array()
+            .expect("warnings")
+            .iter()
+            .any(|w| w.as_str().is_some_and(|w| w.contains("frob doctor --fix"))),
+        "{v}"
+    );
+    assert!(bad.exists(), "reporting never moves the file");
+
+    let v = repo.ok(&["doctor", "--fix"]);
+    assert_eq!(
+        v["data"]["leases"]["quarantined"].as_array().map(Vec::len),
+        Some(1),
+        "{v}"
+    );
+    assert!(!bad.exists());
+    assert!(
+        bad.with_extension("toml.corrupt").exists(),
+        "kept, not deleted"
+    );
+    let v = repo.ok(&["doctor"]);
+    assert_eq!(
+        v["data"]["leases"]["corrupt"].as_array().map(Vec::len),
+        Some(0),
+        "{v}"
+    );
+}
