@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T21:12:11Z"
-updated = "2026-10-04T21:20:49Z"
+updated = "2026-10-04T21:20:51Z"
 scope = ["crates/frob-ledger/**", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/triage_cmd.rs", "crates/frob/tests/triage.rs", "docs/design/tickets.md", "docs/design/cli.md", "docs/reference/cli/frob.md"]
 
 [[acceptance]]
@@ -15,7 +15,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a ticket not in triage, when triage accept names it, then it is refused with a remedy"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a snoozed ticket, when the inbox is listed before its until date, then it is hidden, and after, it is shown"
