@@ -148,6 +148,19 @@ pub fn tick001(id: TicketId, folded: &Ticket, stored: &Ticket) -> Option<Finding
     ))
 }
 
+/// `TICK001`: a finding for a `ticket.md` that cannot be parsed although its events fold.
+pub fn tick001_unreadable(id: TicketId, error: &str) -> Finding {
+    Finding::new(
+        id_of(&Tick001),
+        Severity::Error,
+        None,
+        format!(
+            "ticket {id}: ticket.md is unreadable ({error}); run `frob ticket doctor --fix` to re-render it from its events"
+        ),
+        &id.to_string(),
+    )
+}
+
 /// `TICK002`: a finding for each of `ids` that has no ticket on `base_ref`.
 ///
 /// `ids` are strings as found in tracked text; an abbreviated or malformed

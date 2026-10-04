@@ -556,7 +556,10 @@ impl Ledger {
             let hex = tip.to_string();
             let events = self.read_events_at(&hex, id)?;
             let folded = fold(id, &events)?;
-            let stored = self.read_ticket_at(&hex, id)?;
+            let stored = self.read_ticket_at(&hex, id).unwrap_or_else(|e| {
+                tracing::warn!(ticket = %id, error = %e, "ticket.md unreadable; re-rendering it from the events");
+                None
+            });
             if stored.as_ref() == Some(&folded.ticket) {
                 return Ok(None);
             }

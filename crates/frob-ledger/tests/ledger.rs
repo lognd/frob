@@ -865,3 +865,39 @@ fn is_ledger_path_matches_only_paths_under_the_ledger_directory() {
     assert!(slash.is_ledger_path("led/x"));
     assert!(!slash.is_ledger_path("ledx/x"));
 }
+
+#[test]
+fn fence_text_survives_an_index_rebuild_and_doctor_repairs_a_corrupt_card() {
+    let (dir, ledger) = fixture(RefMode::Trunk);
+    let mut nt = NewTicket::new("t\n+++\nu", TicketType::Task);
+    nt.persona = Some("+++".into());
+    nt.outcome_text = Some("o\n+++\np".into());
+    nt.acceptance = vec!["a\n+++\nb".into()];
+    let id = ledger.new_ticket(nt).expect("new").ticket.front.id;
+    // Drop the derived index: the next read rebuilds it from ticket.md.
+    std::fs::remove_dir_all(dir.path().join(".frob")).ok();
+    let shown = ledger.show(id).expect("show").ticket;
+    assert_eq!(shown.front.title, "t\n+++\nu");
+    assert_eq!(shown.front.persona.as_deref(), Some("+++"));
+    assert_eq!(shown.front.acceptance[0].text, "a\n+++\nb");
+    // Corrupt the card as an older binary would have: the fence closes early.
+    ledger
+        .repo()
+        .commit_paths(
+            MAIN,
+            &[(
+                RelPath::new(format!("tickets/{id}/ticket.md")).expect("path"),
+                Some(b"+++\ntitle = \"\"\"\na\n+++\nb\"\"\"\n+++\n".to_vec()),
+            )],
+            "corrupt",
+            &CommitOptions::default(),
+        )
+        .expect("corrupt");
+    let report = ledger.doctor(false).expect("doctor");
+    assert_eq!(report.findings.len(), 1, "{report:?}");
+    assert_eq!(report.findings[0].rule.as_str(), "TICK001");
+    assert!(report.issues.is_empty());
+    assert_eq!(ledger.doctor(true).expect("fix").fixed, vec![id]);
+    assert!(ledger.doctor(false).expect("again").is_clean());
+    assert_eq!(ledger.show(id).expect("show").ticket, shown);
+}

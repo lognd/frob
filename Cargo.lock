@@ -985,6 +985,7 @@ dependencies = [
  "gob-rules",
  "inventory",
  "jiff",
+ "proptest",
  "regex",
  "rusqlite",
  "schemars",
