@@ -1082,6 +1082,7 @@ mod tests {
         (runner, log)
     }
 
+    #[cfg(unix)]
     fn step_named(name: &str) -> Step {
         real().into_iter().find(|s| s.name == name).unwrap()
     }
