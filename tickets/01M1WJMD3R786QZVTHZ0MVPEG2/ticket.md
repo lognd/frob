@@ -3,13 +3,13 @@ id = "01M1WJMD3R786QZVTHZ0MVPEG2"
 title = "strata: declare page-wide/global capabilities distinctly from component-local ones, with a required scoping predicate"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M1WJMD1X14Z9P76XPX0QQ0NM"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:02:18Z"
 aliases = ["T-4216"]
-labels = ["milestone:1.1.0", "v1-cluster:B3d"]
+labels = ["v1-cluster:B3d", "triage:accepted"]
 scope = ["src/frob/strata"]
 +++
 
