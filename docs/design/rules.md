@@ -170,7 +170,13 @@ language whose adapter lacks the path-conversion roles reports
 Unresolved, never clean. This repository raises PATH002 and PATH003 to
 Error in its own config.
 
-Dropped from core (optional packs or gone): web families (249 ids),
+Moved to crunk (D88, owner decision 2026-10-04): the seven web-app
+families (WEBSEC, A11Y, SQL, SEO, COMPLY, WEBPERF, LAUNCH; 249 v1 ids plus
+the framework-specific ROUTE rules) and the STORE/SYSDESIGN/GRAMMAR
+system-design family (102 v1 backlog tickets). They are crunk rule packs
+on the same public pack mechanism (D76), not frob or grimble core.
+
+Dropped from core (optional packs or gone):
 PERF lexical set, EXHAUST/FFI/SUPPRESS/CONFIGPATH/PKG/NATIVE/PORT/
 LEXCHECK/CLAUDE/WIRE003, every `*SCHEMA001` (serde `deny_unknown_fields`
 does it), typestate PROTO unless a consumer commits.
