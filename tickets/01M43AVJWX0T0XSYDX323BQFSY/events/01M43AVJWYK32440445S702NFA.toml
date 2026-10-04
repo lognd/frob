@@ -1,0 +1,19 @@
+kind = "create"
+title = "crunk-web family LAUNCH: first slice of rules in GRL"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+idempotency_key = "crunk-plan-web_LAUNCH"
+labels = ["area:crunk"]
+scope = ["packs/crunk-web/rules/launch/**", "packs/crunk-web/tests/launch/**"]
+acceptance = ["Given a TSX file violating the first rule of the family, when `crunk check` runs, then the finding fires with its teaching text and fix suggestion if any", "Given the clean example, when `crunk rule test` runs, then it passes", "Given a file type with no adapter, when the family runs, then the result is NotApplicable or Unresolved with the reason"]
+body = "Follow-up to the crunk-web scaffold: launch-readiness checks on front-end artifacts: favicons, manifest, robots, social images, error pages. Take the requirement-bearing v1 tickets of the family (imported under area:crunk by ~TM4E1PN, catalog in notes/v1/gates-and-rules.md section 11) and write the first slice as GRL rules with examples; split this ticket per rule group at pickup if the slice exceeds 8 points. Adapter gaps (no HTML adapter) are reported as Unresolved, never clean."
+at = "2026-10-04T11:30:15Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M43AVHX91K72WYKYFX5W2SPP"
