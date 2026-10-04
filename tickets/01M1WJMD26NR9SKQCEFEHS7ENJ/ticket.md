@@ -3,12 +3,12 @@ id = "01M1WJMD26NR9SKQCEFEHS7ENJ"
 title = "consumer round-4 shell audit: nine findings, including outcomes that depend on wall-clock time and a suite that mutates tracked files"
 type = "epic"
 category = "triage"
-priority = "critical"
+priority = "low"
 reporter = "auditor"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:05:51Z"
 aliases = ["T-4166"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 
 [[acceptance]]
 text = "given the findings in this epic, when it is decomposed, then each has its own leaf ticket or recorded evidence on an existing open ticket, with the choice stated per finding"
