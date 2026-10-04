@@ -7,12 +7,12 @@ priority = "critical"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T04:59:48Z"
-updated = "2026-10-04T05:45:28Z"
+updated = "2026-10-04T05:54:09Z"
 scope = ["crates/frob-ledger/**"]
 
 [[acceptance]]
 text = "Given any field text containing a line +++, when the ticket is written, rebuilt and read, then it round-trips and doctor reports nothing"
-bound = false
+bound = true
 +++
 
 Reproduced against the v2 binary: a title, persona or acceptance line '+++' corrupts ticket.md (v1 T-1536 class). Render so no field line can equal the fence (escape or quote multi-line fields) and make doctor --fix re-render ticket.md from the events. Evidence and repro: notes/review/v1-gap/D-incidents.md (P-01).
