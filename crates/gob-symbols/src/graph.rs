@@ -220,7 +220,7 @@ struct Index {
     /// Names of types with an `impl Deref` or `impl DerefMut`: methods may come from the target.
     deref_types: HashSet<String>,
     /// Receiver types already worked out, per calling symbol (a method chain would otherwise be re-resolved at every link).
-    memo: Vec<Mutex<HashMap<(Symref, Receiver), Option<Ty>>>>,
+    memo: Vec<MemoShard>,
     /// Names of `Result`/`Option` aliases whose first parameter is not the Ok/Some type (`?` and `unwrap` cannot be trusted).
     opaque_aliases: HashSet<String>,
     /// Names of `macro_rules!` macros declared anywhere (they may shadow a std macro of the same name).
@@ -238,12 +238,15 @@ struct Index {
 /// Lock shards of the receiver-type memo (parallel call resolution would otherwise queue on one lock).
 const MEMO_SHARDS: usize = 64;
 
+/// One lock shard of the receiver-type memo.
+type MemoShard = Mutex<HashMap<(Symref, Receiver), Option<Ty>>>;
+
 impl Index {
     /// The memo shard owning `caller`'s entries.
-    fn memo_shard(&self, caller: &Symref) -> &Mutex<HashMap<(Symref, Receiver), Option<Ty>>> {
+    fn memo_shard(&self, caller: &Symref) -> &MemoShard {
         use std::hash::{BuildHasher, BuildHasherDefault, DefaultHasher};
         let h = BuildHasherDefault::<DefaultHasher>::default().hash_one(caller);
-        &self.memo[(h as usize) % MEMO_SHARDS]
+        &self.memo[usize::try_from(h % MEMO_SHARDS as u64).expect("shard index fits usize")]
     }
 
     /// Every function and method called `name` in the caller's crate and the crates it links.
@@ -766,15 +769,12 @@ impl SymbolGraph {
     }
 
     fn link(&mut self, a: NodeIndex, b: NodeIndex, kind: EdgeKind, status: Status) {
-        match self.edge_ix.get(&(a, b, kind)) {
-            Some(&id) => {
-                let w = &mut self.graph[id];
-                w.status = w.status.max(status);
-            }
-            None => {
-                let id = self.graph.add_edge(a, b, Edge { kind, status });
-                self.edge_ix.insert((a, b, kind), id);
-            }
+        if let Some(&id) = self.edge_ix.get(&(a, b, kind)) {
+            let w = &mut self.graph[id];
+            w.status = w.status.max(status);
+        } else {
+            let id = self.graph.add_edge(a, b, Edge { kind, status });
+            self.edge_ix.insert((a, b, kind), id);
         }
     }
 
