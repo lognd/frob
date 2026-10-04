@@ -77,6 +77,8 @@ pub struct CheckData {
     pub fail_on: Option<String>,
     /// Unresolved findings carrying a required reason.
     pub required_unresolved: usize,
+    /// Rules that could not be evaluated (each one a required Unresolved `evaluation-failed` finding).
+    pub not_evaluated: usize,
     /// The Unresolved gate in force (`required`, `never` or `all`).
     pub fail_on_unresolved: Option<String>,
     /// Non-fatal notes.
@@ -102,6 +104,7 @@ impl CheckData {
             ticket: None,
             fail_on: None,
             required_unresolved: 0,
+            not_evaluated: 0,
             fail_on_unresolved: None,
             notes: Vec::new(),
             explain: None,
@@ -454,6 +457,16 @@ fn data_of(
         ticket: report.scope.clone(),
         fail_on: Some(fail_on_name(report.fail_on).to_owned()),
         required_unresolved: report.required_unresolved(),
+        not_evaluated: report
+            .findings
+            .iter()
+            .filter(|f| {
+                matches!(
+                    f.required,
+                    Some(gob_rules::RequiredReason::EvaluationFailed { .. })
+                )
+            })
+            .count(),
         fail_on_unresolved: Some(report.fail_on_unresolved.name().to_owned()),
         notes: Vec::new(),
         explain: None,

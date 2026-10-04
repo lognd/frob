@@ -1,0 +1,334 @@
+# T-0185 acceptance fixture: logand.app-v2's draft crunk.toml (feedback.md,
+# scratchpad tickets/logand-feedback.md) rewritten to the v1.1 schema.
+#
+# The v1.0 draft doubled every platform for prefers-reduced-motion (7 base
+# platforms -> 14) and duplicated the "landing" screen twice
+# (landing-reduced-motion, landing-mobile-nav) just to narrow applies_to on
+# one state. v1.1 removes both doublings: platforms stay at 7 (tags replace
+# the reduced-motion twins), and "landing" is ONE screen whose states narrow
+# applies_to and overlay media themselves.
+
+[project]
+css_root = "src/styles"
+tokens_file = "tokens.css"
+root_font_size = 16
+
+[palette]
+bg-primary = "#282828"
+fg-primary = "#ebdbb2"
+
+[palette.roles]
+body = ["fg-primary", "bg-primary"]
+
+[scales]
+spacing = [0, 4, 8, 12, 16, 24, 32, 48, 64]
+font_sizes = [16, 18, 20, 24, 30, 36, 48]
+
+[typography]
+families = ["JetBrains Mono", "ui-monospace", "monospace"]
+weights = [400, 600, 700]
+
+[org]
+buckets = ["base", "components", "layouts", "utilities"]
+class_case = "kebab"
+
+[lint]
+fix_tolerance = 0.15
+color_tolerance = 8.0
+
+# --- Platforms: 7, not 14 -- reduced-motion is a per-state media overlay
+# (below), not a doubled platform. `tags` lets a state ask for "one
+# representative mobile platform" or "one representative desktop platform"
+# without enumerating ids.
+[[platform]]
+id = "chromium-mobile"
+renderer = "web"
+engine = "chromium"
+viewport = { width = 390, height = 844 }
+media = { color_scheme = "dark" }
+tags = ["mobile"]
+
+[[platform]]
+id = "chromium-desktop"
+renderer = "web"
+engine = "chromium"
+viewport = { width = 1440, height = 900 }
+media = { color_scheme = "dark" }
+tags = ["desktop"]
+
+[[platform]]
+id = "firefox-mobile"
+renderer = "web"
+engine = "firefox"
+viewport = { width = 390, height = 844 }
+media = { color_scheme = "dark" }
+tags = ["mobile"]
+
+[[platform]]
+id = "firefox-desktop"
+renderer = "web"
+engine = "firefox"
+viewport = { width = 1440, height = 900 }
+media = { color_scheme = "dark" }
+tags = ["desktop"]
+
+[[platform]]
+id = "webkit-mobile"
+renderer = "web"
+engine = "webkit"
+viewport = { width = 390, height = 844 }
+media = { color_scheme = "dark" }
+tags = ["mobile"]
+
+[[platform]]
+id = "webkit-desktop"
+renderer = "web"
+engine = "webkit"
+viewport = { width = 1440, height = 900 }
+media = { color_scheme = "dark" }
+tags = ["desktop"]
+
+[[platform]]
+id = "reflow-320"
+renderer = "web"
+engine = "chromium"
+viewport = { width = 320, height = 720 }
+media = { color_scheme = "dark" }
+tags = ["mobile"]
+
+# --- Rosters: session/auth fixtures and mock-handler sets are now schema
+# concepts (T-0185 gaps #2), not per-project string conventions.
+[[session]]
+id = "none"
+
+[[session]]
+id = "customer"
+data = { role = "customer" }
+
+[[session]]
+id = "admin"
+data = { role = "admin" }
+
+[[mock_set]]
+id = "projects-pending"
+
+[[mock_set]]
+id = "projects-empty"
+
+[[mock_set]]
+id = "projects-500"
+
+[[mock_set]]
+id = "auth-login-429"
+
+[[mock_set]]
+id = "auth-login-503"
+
+[[mock_set]]
+id = "auth-register-ok"
+
+[[mock_set]]
+id = "auth-verify-ok"
+
+[[mock_set]]
+id = "auth-verify-500"
+
+[[mock_set]]
+id = "auth-reset-ok"
+
+[[mock_set]]
+id = "portal-invoices-empty"
+
+# --- Screens ---
+
+[[screen]]
+id = "landing"
+entry = "/"
+
+[[screen.states]]
+id = "default"
+
+# The five ASCII backgrounds are one visual concern (does the canvas
+# render), reviewed at one desktop + one mobile platform each (coordinator
+# correction 2026-09-26: real regressions were per-shape and mobile-only,
+# so desktop alone was not enough) -- matching BACKGROUND_OPTIONS' real
+# picker ids (?bg=<id>): donut, cube, sphere, rain, doom. "spinning-shape",
+# "doom-lite" and "noise" are not selectable (noise is always on) and are
+# not states here.
+[[screen.states]]
+id = "ascii-bg-donut"
+setup = "query:?bg=donut"
+applies_to = ["chromium-desktop", "chromium-mobile"]
+
+[[screen.states]]
+id = "ascii-bg-cube"
+setup = "query:?bg=cube"
+applies_to = ["chromium-desktop", "chromium-mobile"]
+
+[[screen.states]]
+id = "ascii-bg-sphere"
+setup = "query:?bg=sphere"
+applies_to = ["chromium-desktop", "chromium-mobile"]
+
+[[screen.states]]
+id = "ascii-bg-rain"
+setup = "query:?bg=rain"
+applies_to = ["chromium-desktop", "chromium-mobile"]
+
+[[screen.states]]
+id = "ascii-bg-doom"
+setup = "query:?bg=doom"
+applies_to = ["chromium-desktop", "chromium-mobile"]
+
+# wasm-failed: a first-class network primitive (T-0185 gap #5) replaces the
+# unvalidated `setup = "wasm:force-load-failure"` string. Coordinator
+# correction 2026-09-26: narrows to one desktop + one mobile platform, not
+# all 7.
+[[screen.states]]
+id = "wasm-failed"
+network = [{ url_pattern = "*.wasm", action = "abort" }]
+applies_to = ["chromium-desktop", "chromium-mobile"]
+
+# reduced-motion: one state with a media overlay (T-0185 gap #3/#4)
+# instead of a duplicate "landing-reduced-motion" screen against doubled
+# platforms; diff_against reviews it as a delta on "default", not an
+# independent full-review cell (feedback.md suggestion #2).
+[[screen.states]]
+id = "reduced-motion"
+media = { reduced_motion = true }
+diff_against = "default"
+
+# mobile-nav-open: an interaction script (T-0185 gap #1) replaces the
+# unvalidated `setup = "interaction:click #mobile-nav-toggle"` string;
+# applies_to narrows to one representative platform per engine family via
+# the "mobile" tag (feedback.md gap #3, no longer a duplicate screen).
+[[screen.states]]
+id = "mobile-nav-open"
+applies_to = ["tag:mobile"]
+actions = [{ kind = "click", selector = "#mobile-nav-toggle" }]
+
+[[screen]]
+id = "projects"
+entry = "/projects"
+
+[[screen.states]]
+id = "default"
+
+[[screen.states]]
+id = "loading"
+mock = "projects-pending"
+
+[[screen.states]]
+id = "empty"
+mock = "projects-empty"
+
+[[screen.states]]
+id = "error-api"
+mock = "projects-500"
+
+[[screen]]
+id = "login"
+entry = "/login"
+
+[[screen.states]]
+id = "default"
+
+# error-field-validation: fill-then-submit reaches this state without a
+# renderer-invented DSL (T-0185 gap #1).
+[[screen.states]]
+id = "error-field-validation"
+actions = [
+  { kind = "fill", selector = "#email", value = "not-an-email" },
+  { kind = "click", selector = "#submit" },
+]
+
+[[screen.states]]
+id = "error-429-rate-limited"
+mock = "auth-login-429"
+
+[[screen.states]]
+id = "error-503-limiter-unavailable"
+mock = "auth-login-503"
+
+[[screen]]
+id = "register"
+entry = "/register"
+
+[[screen.states]]
+id = "default"
+
+[[screen.states]]
+id = "success-check-your-inbox"
+mock = "auth-register-ok"
+
+[[screen]]
+id = "verify-email"
+entry = "/verify-email"
+
+[[screen.states]]
+id = "default"
+
+[[screen.states]]
+id = "success-verified"
+mock = "auth-verify-ok"
+
+[[screen.states]]
+id = "error-api"
+mock = "auth-verify-500"
+
+[[screen]]
+id = "reset-password"
+entry = "/reset-password"
+
+[[screen.states]]
+id = "default"
+
+[[screen.states]]
+id = "success-reset-done"
+mock = "auth-reset-ok"
+
+[[screen]]
+id = "portal"
+entry = "/portal"
+
+[[screen.states]]
+id = "default"
+session = "customer"
+
+# unauthenticated-redirect: session is now a schema concept (T-0185 gap
+# #2), and expect_url declares that landing on /login IS the point of the
+# test (T-0185 gap: guard-redirect vs. login-page-render ambiguity).
+[[screen.states]]
+id = "unauthenticated-redirect"
+session = "none"
+expect_url = "/login"
+
+[[screen.states]]
+id = "empty-invoices"
+session = "customer"
+mock = "portal-invoices-empty"
+
+[[screen]]
+id = "confirm-dialog"
+entry = "/portal"
+
+[[screen.states]]
+id = "open"
+session = "customer"
+actions = [
+  { kind = "click", selector = "[data-testid=logout]" },
+  { kind = "wait_for", selector = "[role=dialog]" },
+]
+
+[[screen]]
+id = "admin"
+entry = "/admin"
+
+[[screen.states]]
+id = "default"
+session = "admin"
+
+[[screen.states]]
+id = "forbidden-non-admin"
+session = "customer"
+expect_url = "/admin"

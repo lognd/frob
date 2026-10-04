@@ -176,6 +176,29 @@
           "type": "object"
         },
         {
+          "description": "A rule could not be evaluated (unreadable ledger, config or milestones), so its silence is not a pass.",
+          "properties": {
+            "error": {
+              "description": "The underlying error, as text.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "evaluation_failed",
+              "type": "string"
+            },
+            "rule": {
+              "description": "The rule that was not evaluated.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "rule",
+            "error"
+          ],
+          "type": "object"
+        },
+        {
           "description": "A configured tool stage could not run, exited abnormally or printed unreadable output.",
           "properties": {
             "kind": {

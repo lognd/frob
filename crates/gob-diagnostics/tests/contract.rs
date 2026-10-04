@@ -157,6 +157,10 @@ fn reasons() -> Vec<RequiredReason> {
         RequiredReason::ZeroSubjects {
             rule: "COV001".into(),
         },
+        RequiredReason::EvaluationFailed {
+            rule: "TICK001".into(),
+            error: "index unreadable".into(),
+        },
     ]
 }
 

@@ -1,0 +1,895 @@
+{
+  "project": {
+    "css_root": "src/styles",
+    "tokens_file": "tokens.css",
+    "root_font_size": 16.0
+  },
+  "palette": {
+    "bg-primary": {
+      "r": 0.1568627450980392,
+      "g": 0.1568627450980392,
+      "b": 0.1568627450980392,
+      "a": 1.0
+    },
+    "fg-primary": {
+      "r": 0.9215686274509803,
+      "g": 0.8588235294117647,
+      "b": 0.6980392156862745,
+      "a": 1.0
+    }
+  },
+  "roles": {
+    "body": {
+      "foreground": "fg-primary",
+      "background": "bg-primary",
+      "floor": 4.5
+    }
+  },
+  "scales": {
+    "spacing": [
+      0.0,
+      4.0,
+      8.0,
+      12.0,
+      16.0,
+      24.0,
+      32.0,
+      48.0,
+      64.0
+    ],
+    "font_sizes": [
+      16.0,
+      18.0,
+      20.0,
+      24.0,
+      30.0,
+      36.0,
+      48.0
+    ],
+    "radii": [],
+    "sizes": []
+  },
+  "typography": {
+    "families": [
+      "JetBrains Mono",
+      "ui-monospace",
+      "monospace"
+    ],
+    "weights": [
+      400,
+      600,
+      700
+    ],
+    "stacks": {}
+  },
+  "layers": {},
+  "org": {
+    "buckets": [
+      "base",
+      "components",
+      "layouts",
+      "utilities"
+    ],
+    "class_case": "kebab",
+    "component_prefix": true,
+    "tokens_only_custom_props": true,
+    "model": "buckets",
+    "ignore": [],
+    "entry": []
+  },
+  "lint": {
+    "rules": {},
+    "fix_tolerance": 0.15,
+    "color_tolerance": 8.0
+  },
+  "tokens": {
+    "color": "color",
+    "space": "space",
+    "font_size": "font-size",
+    "radius": "radius",
+    "layer": "layer",
+    "font_family": "font-family",
+    "size": "size",
+    "header": "",
+    "json_file": ""
+  },
+  "jsx": {
+    "globs": []
+  },
+  "tailwind": {
+    "config": "",
+    "css_entry": "",
+    "tokens_file": "",
+    "namespace_keys": false,
+    "alpha_channels": false,
+    "version": "auto"
+  },
+  "breakpoints": {
+    "points": {},
+    "base_required": []
+  },
+  "platforms": {
+    "chromium-mobile": {
+      "id": "chromium-mobile",
+      "renderer": "web",
+      "params": {
+        "engine": "chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "device_scale": 1.0,
+        "media": {
+          "reduced_motion": false,
+          "color_scheme": "dark"
+        },
+        "locale": null,
+        "settle_ms": 500,
+        "init_scripts": [],
+        "java_script_enabled": true,
+        "cpu_throttle": null,
+        "network_throttle": null,
+        "base_url": null
+      },
+      "tags": [
+        "mobile"
+      ]
+    },
+    "chromium-desktop": {
+      "id": "chromium-desktop",
+      "renderer": "web",
+      "params": {
+        "engine": "chromium",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "device_scale": 1.0,
+        "media": {
+          "reduced_motion": false,
+          "color_scheme": "dark"
+        },
+        "locale": null,
+        "settle_ms": 500,
+        "init_scripts": [],
+        "java_script_enabled": true,
+        "cpu_throttle": null,
+        "network_throttle": null,
+        "base_url": null
+      },
+      "tags": [
+        "desktop"
+      ]
+    },
+    "firefox-mobile": {
+      "id": "firefox-mobile",
+      "renderer": "web",
+      "params": {
+        "engine": "firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "device_scale": 1.0,
+        "media": {
+          "reduced_motion": false,
+          "color_scheme": "dark"
+        },
+        "locale": null,
+        "settle_ms": 500,
+        "init_scripts": [],
+        "java_script_enabled": true,
+        "cpu_throttle": null,
+        "network_throttle": null,
+        "base_url": null
+      },
+      "tags": [
+        "mobile"
+      ]
+    },
+    "firefox-desktop": {
+      "id": "firefox-desktop",
+      "renderer": "web",
+      "params": {
+        "engine": "firefox",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "device_scale": 1.0,
+        "media": {
+          "reduced_motion": false,
+          "color_scheme": "dark"
+        },
+        "locale": null,
+        "settle_ms": 500,
+        "init_scripts": [],
+        "java_script_enabled": true,
+        "cpu_throttle": null,
+        "network_throttle": null,
+        "base_url": null
+      },
+      "tags": [
+        "desktop"
+      ]
+    },
+    "webkit-mobile": {
+      "id": "webkit-mobile",
+      "renderer": "web",
+      "params": {
+        "engine": "webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "device_scale": 1.0,
+        "media": {
+          "reduced_motion": false,
+          "color_scheme": "dark"
+        },
+        "locale": null,
+        "settle_ms": 500,
+        "init_scripts": [],
+        "java_script_enabled": true,
+        "cpu_throttle": null,
+        "network_throttle": null,
+        "base_url": null
+      },
+      "tags": [
+        "mobile"
+      ]
+    },
+    "webkit-desktop": {
+      "id": "webkit-desktop",
+      "renderer": "web",
+      "params": {
+        "engine": "webkit",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "device_scale": 1.0,
+        "media": {
+          "reduced_motion": false,
+          "color_scheme": "dark"
+        },
+        "locale": null,
+        "settle_ms": 500,
+        "init_scripts": [],
+        "java_script_enabled": true,
+        "cpu_throttle": null,
+        "network_throttle": null,
+        "base_url": null
+      },
+      "tags": [
+        "desktop"
+      ]
+    },
+    "reflow-320": {
+      "id": "reflow-320",
+      "renderer": "web",
+      "params": {
+        "engine": "chromium",
+        "viewport": {
+          "width": 320,
+          "height": 720
+        },
+        "device_scale": 1.0,
+        "media": {
+          "reduced_motion": false,
+          "color_scheme": "dark"
+        },
+        "locale": null,
+        "settle_ms": 500,
+        "init_scripts": [],
+        "java_script_enabled": true,
+        "cpu_throttle": null,
+        "network_throttle": null,
+        "base_url": null
+      },
+      "tags": [
+        "mobile"
+      ]
+    }
+  },
+  "screens": {
+    "landing": {
+      "id": "landing",
+      "entry": "/",
+      "states": [
+        {
+          "id": "default",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "ascii-bg-donut",
+          "fixture": null,
+          "setup": "query:?bg=donut",
+          "applies_to": [
+            "chromium-desktop",
+            "chromium-mobile"
+          ],
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "ascii-bg-cube",
+          "fixture": null,
+          "setup": "query:?bg=cube",
+          "applies_to": [
+            "chromium-desktop",
+            "chromium-mobile"
+          ],
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "ascii-bg-sphere",
+          "fixture": null,
+          "setup": "query:?bg=sphere",
+          "applies_to": [
+            "chromium-desktop",
+            "chromium-mobile"
+          ],
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "ascii-bg-rain",
+          "fixture": null,
+          "setup": "query:?bg=rain",
+          "applies_to": [
+            "chromium-desktop",
+            "chromium-mobile"
+          ],
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "ascii-bg-doom",
+          "fixture": null,
+          "setup": "query:?bg=doom",
+          "applies_to": [
+            "chromium-desktop",
+            "chromium-mobile"
+          ],
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "wasm-failed",
+          "fixture": null,
+          "setup": null,
+          "applies_to": [
+            "chromium-desktop",
+            "chromium-mobile"
+          ],
+          "media": null,
+          "actions": [],
+          "network": [
+            {
+              "url_pattern": "*.wasm",
+              "action": "abort",
+              "status": null,
+              "delay_ms": null
+            }
+          ],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "reduced-motion",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": {
+            "reduced_motion": true,
+            "color_scheme": "no-preference"
+          },
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": "default",
+          "settle_ms": null
+        },
+        {
+          "id": "mobile-nav-open",
+          "fixture": null,
+          "setup": null,
+          "applies_to": [
+            "tag:mobile"
+          ],
+          "media": null,
+          "actions": [
+            {
+              "kind": "click",
+              "selector": "#mobile-nav-toggle"
+            }
+          ],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        }
+      ],
+      "applies_to": null
+    },
+    "projects": {
+      "id": "projects",
+      "entry": "/projects",
+      "states": [
+        {
+          "id": "default",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "loading",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": "projects-pending",
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "empty",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": "projects-empty",
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "error-api",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": "projects-500",
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        }
+      ],
+      "applies_to": null
+    },
+    "login": {
+      "id": "login",
+      "entry": "/login",
+      "states": [
+        {
+          "id": "default",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "error-field-validation",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [
+            {
+              "kind": "fill",
+              "selector": "#email",
+              "value": "not-an-email"
+            },
+            {
+              "kind": "click",
+              "selector": "#submit"
+            }
+          ],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "error-429-rate-limited",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": "auth-login-429",
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "error-503-limiter-unavailable",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": "auth-login-503",
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        }
+      ],
+      "applies_to": null
+    },
+    "register": {
+      "id": "register",
+      "entry": "/register",
+      "states": [
+        {
+          "id": "default",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "success-check-your-inbox",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": "auth-register-ok",
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        }
+      ],
+      "applies_to": null
+    },
+    "verify-email": {
+      "id": "verify-email",
+      "entry": "/verify-email",
+      "states": [
+        {
+          "id": "default",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "success-verified",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": "auth-verify-ok",
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "error-api",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": "auth-verify-500",
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        }
+      ],
+      "applies_to": null
+    },
+    "reset-password": {
+      "id": "reset-password",
+      "entry": "/reset-password",
+      "states": [
+        {
+          "id": "default",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "success-reset-done",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": "auth-reset-ok",
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        }
+      ],
+      "applies_to": null
+    },
+    "portal": {
+      "id": "portal",
+      "entry": "/portal",
+      "states": [
+        {
+          "id": "default",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": "customer",
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "unauthenticated-redirect",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": "none",
+          "mock": null,
+          "expect_url": "/login",
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "empty-invoices",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": "customer",
+          "mock": "portal-invoices-empty",
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        }
+      ],
+      "applies_to": null
+    },
+    "confirm-dialog": {
+      "id": "confirm-dialog",
+      "entry": "/portal",
+      "states": [
+        {
+          "id": "open",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [
+            {
+              "kind": "click",
+              "selector": "[data-testid=logout]"
+            },
+            {
+              "kind": "wait_for",
+              "selector": "[role=dialog]",
+              "timeout_ms": null
+            }
+          ],
+          "network": [],
+          "session": "customer",
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        }
+      ],
+      "applies_to": null
+    },
+    "admin": {
+      "id": "admin",
+      "entry": "/admin",
+      "states": [
+        {
+          "id": "default",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": "admin",
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "forbidden-non-admin",
+          "fixture": null,
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": "customer",
+          "mock": null,
+          "expect_url": "/admin",
+          "diff_against": null,
+          "settle_ms": null
+        }
+      ],
+      "applies_to": null
+    }
+  },
+  "sessions": {
+    "none": {
+      "id": "none",
+      "data": {}
+    },
+    "customer": {
+      "id": "customer",
+      "data": {
+        "role": "customer"
+      }
+    },
+    "admin": {
+      "id": "admin",
+      "data": {
+        "role": "admin"
+      }
+    }
+  },
+  "mock_sets": {
+    "projects-pending": {
+      "id": "projects-pending",
+      "data": {}
+    },
+    "projects-empty": {
+      "id": "projects-empty",
+      "data": {}
+    },
+    "projects-500": {
+      "id": "projects-500",
+      "data": {}
+    },
+    "auth-login-429": {
+      "id": "auth-login-429",
+      "data": {}
+    },
+    "auth-login-503": {
+      "id": "auth-login-503",
+      "data": {}
+    },
+    "auth-register-ok": {
+      "id": "auth-register-ok",
+      "data": {}
+    },
+    "auth-verify-ok": {
+      "id": "auth-verify-ok",
+      "data": {}
+    },
+    "auth-verify-500": {
+      "id": "auth-verify-500",
+      "data": {}
+    },
+    "auth-reset-ok": {
+      "id": "auth-reset-ok",
+      "data": {}
+    },
+    "portal-invoices-empty": {
+      "id": "portal-invoices-empty",
+      "data": {}
+    }
+  }
+}

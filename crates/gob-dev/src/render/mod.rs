@@ -2,6 +2,7 @@
 
 pub mod cli;
 pub mod config;
+pub mod crunk;
 pub mod directives;
 pub mod rules;
 pub mod schemas;

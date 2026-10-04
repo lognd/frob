@@ -26,6 +26,13 @@ pub enum RequiredReason {
         /// The rule id that measured nothing.
         rule: String,
     },
+    /// A rule could not be evaluated (unreadable ledger, config or milestones), so its silence is not a pass.
+    EvaluationFailed {
+        /// The rule that was not evaluated.
+        rule: String,
+        /// The underlying error, as text.
+        error: String,
+    },
     /// A configured tool stage could not run, exited abnormally or printed unreadable output.
     ToolFailed {
         /// The name of the tool stage that did not produce evidence.
@@ -46,6 +53,9 @@ impl fmt::Display for RequiredReason {
                 if *public_surface { " (public)" } else { "" }
             ),
             Self::ZeroSubjects { rule } => write!(f, "zero-subjects: {rule}"),
+            Self::EvaluationFailed { rule, error } => {
+                write!(f, "evaluation-failed: {rule}: {error}")
+            }
             Self::ToolFailed { stage } => write!(f, "tool-failed: {stage}"),
         }
     }

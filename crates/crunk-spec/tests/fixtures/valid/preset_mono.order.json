@@ -1,0 +1,23 @@
+{
+  "palette": [
+    "ink",
+    "paper",
+    "accent"
+  ],
+  "roles": [
+    "body"
+  ],
+  "layers": [
+    "base",
+    "dropdown",
+    "overlay",
+    "toast"
+  ],
+  "stacks": [],
+  "lint_rules": [],
+  "breakpoints": [],
+  "platforms": [],
+  "screens": [],
+  "sessions": [],
+  "mock_sets": []
+}
