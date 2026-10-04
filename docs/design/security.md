@@ -75,6 +75,20 @@ not re-lock, but it does change the tree digest and so needs trust again.
   shipped `.cwasm` is therefore never loaded. Plan bytes from disk are
   always fully validated; unchecked access only for plans embedded with
   `include_bytes!`.
+- Location (~TX6YZZE): executable derived state is in the per-user
+  cache directory, not under the git common dir that holds the check
+  cache (~TSK0M4Y): the common dir is shared by every worktree and
+  writable by tool stages. `gob_trust::StateStore` writes entries as
+  magic, MAC, length, payload (MAC over kind, id and payload, so a moved
+  file fails), via temp file, fsync and rename, mode 0600 in 0700
+  directories. Truncated, malformed or badly MAC'd entries are deleted
+  and reported as `Discarded`; a missing key regenerates and so
+  invalidates every old entry. The key is the per-machine key in the
+  per-user config directory, never in the repository or the cache
+  directory. On Windows both live under the per-user `%APPDATA%` and
+  `%LOCALAPPDATA%`, whose default ACL admits only the owner, SYSTEM and
+  administrators (no explicit ACL: the crate forbids `unsafe`). The
+  store refuses a root inside the work tree.
 - Guard: if git tracks any state or cache directory (`.frob/`,
   `.grimble/`, `.crunk/`), the run refuses with exit 3
   (`E-STATE-TRACKED`) naming the files.

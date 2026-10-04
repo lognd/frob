@@ -2,13 +2,14 @@
 id = "01M3ZX7JACXBTB74QS6TX6YZZE"
 title = "Derived state outside the work tree with MAC and atomic writes"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-04T04:43:59Z"
+updated = "2026-10-04T05:34:46Z"
 idempotency_key = "m2-sec-state-dir"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-trust/src/state/**", "crates/gob-trust/src/lib.rs", "crates/gob-trust/Cargo.toml", "docs/design/security.md", "crates/gob-trust/tests/state.rs"]

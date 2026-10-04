@@ -1,0 +1,17 @@
+rule NOPE008 "no-clean" {
+  lang rust
+
+  find d: `dbg!($$$ARGS)`
+  report d "remove dbg! before committing"
+
+  example fire """
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+  """
+
+  explain """
+    `dbg!` prints to stderr and is meant for local debugging only.
+
+    ## Remedy
+    Delete the call, or log through `tracing` if the value matters.
+  """
+}

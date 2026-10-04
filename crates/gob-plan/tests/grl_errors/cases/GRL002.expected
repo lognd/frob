@@ -1,0 +1,16 @@
+error[GRL002]: this python snippet does not parse on its own
+ --> rules/GRL002.grl:4:11
+  |
+4 |   find e: python`except: $$$`
+  |           ^^^^^^^^^^^^^^^^^^^ python cannot read this as a complete piece of code
+  |
+  = note: python read the snippet as:
+          module
+            ERROR `except`
+            ERROR `:`
+            hole `$$$`
+  = help: write the context around it and select the node with `as KIND`:
+          python`try: $$$ except: $$$` as except_clause
+  = explain: grimble explain GRL002
+
+error: aborting due to 1 previous error

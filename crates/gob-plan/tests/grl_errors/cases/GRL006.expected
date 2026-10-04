@@ -1,0 +1,13 @@
+error[GRL006]: a plain snippet cannot be used in a rule for every language
+ --> rules/GRL006.grl:4:11
+  |
+2 |   lang *
+  |   ------ every language
+...
+4 |   find d: `dbg!($$$ARGS)`
+  |           ^^^^^^^^^^^^^^^ this snippet has no language
+  |
+  = help: use a role (`find c: call`), tag the snippet and add `as roles` (rust`dbg!($$$ARGS)` as roles), or narrow the rule with `lang rust`
+  = explain: grimble explain GRL006
+
+error: aborting due to 1 previous error
