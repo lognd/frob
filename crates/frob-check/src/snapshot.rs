@@ -19,7 +19,7 @@ use gob_lock::{LockFile, file_name};
 use gob_rules::Finding;
 use gob_symbols::{EXTRACTOR_VERSION, Symref, Target, build_graph_with_stats, extract_file};
 use gob_text::{FileId, FileInterner};
-use gob_walk::FileEntry;
+use gob_walk::{FileEntry, Roles};
 use rayon::prelude::*;
 
 use gob_check::CheckError;
@@ -181,7 +181,11 @@ fn scan_one(
     entry: &FileEntry,
     file: FileId,
     scanner: &Scanner,
+    roles: &Roles,
 ) -> Option<ScanOutcome> {
+    if !roles.role(&entry.path).scans_directives() {
+        return None;
+    }
     let lang = Language::detect(&entry.path)?;
     let key = ArtifactKey {
         content_digest: entry.digest.to_string(),
@@ -291,9 +295,17 @@ pub(crate) fn collect(
 
     let started = Instant::now();
     let scanner = Scanner::new(&ScanConfig::default());
+    // frob:ticket 01M43KP0RXKB1DJA8KGJTV288R
+    let ledger_cfg = opts.ledger.clone().unwrap_or_else(|| {
+        frob_evidence::workspace::ledger_config(root).unwrap_or_else(|err| {
+            tracing::warn!(%err, "ledger config unreadable; using defaults");
+            LedgerConfig::default()
+        })
+    });
+    let roles = Roles::new(&ledger_cfg.dir);
     let outcomes: Vec<ScanOutcome> = entries
         .par_iter()
-        .filter_map(|e| scan_one(root, cx.cache, e, index.ids[&e.path], &scanner))
+        .filter_map(|e| scan_one(root, cx.cache, e, index.ids[&e.path], &scanner, &roles))
         .collect();
     let mut directives = Vec::new();
     let mut scan_findings = Vec::new();
@@ -318,12 +330,6 @@ pub(crate) fn collect(
     cx.timing.push("directives", started.elapsed(), true);
 
     let started = Instant::now();
-    let ledger_cfg = opts.ledger.clone().unwrap_or_else(|| {
-        frob_evidence::workspace::ledger_config(root).unwrap_or_else(|err| {
-            tracing::warn!(%err, "ledger config unreadable; using defaults");
-            LedgerConfig::default()
-        })
-    });
     let ledger = open_ledger(root, ledger_cfg);
     cx.timing.push("ledger", started.elapsed(), true);
     let invariants = InvariantsConfig::load(root)?;

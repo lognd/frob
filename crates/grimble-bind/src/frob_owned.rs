@@ -2,8 +2,8 @@
 
 // frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
 
-/// The ledger directory when `[tickets] dir` is absent.
-pub const DEFAULT_LEDGER_DIR: &str = "tickets";
+/// The ledger directory when `[tickets] dir` is absent (one definition, in gob-walk).
+pub use gob_walk::DEFAULT_LEDGER_DIR;
 
 /// The changelog fragment directory (`changelog.d/<ULID>.<type>.md`).
 pub const FRAGMENT_DIR: &str = "changelog.d";

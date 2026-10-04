@@ -8,7 +8,7 @@ use gob_languages::Language;
 use gob_lock::LockFile;
 use gob_symbols::{SymbolGraph, extract_file};
 use gob_text::FileInterner;
-use gob_walk::{WalkConfig, walk};
+use gob_walk::{Roles, WalkConfig, walk};
 
 use crate::ObligationInputs;
 use crate::config::InvariantsConfig;
@@ -79,8 +79,13 @@ pub fn collect(root: &Path) -> Result<Collected, CollectError> {
     };
     let walked = walk(root, &config)?;
     let scanner = Scanner::new(&ScanConfig::default());
+    let roles = Roles::for_root(root);
     let mut directives = Vec::new();
     for entry in &walked.files {
+        // frob:ticket 01M43KP0RXKB1DJA8KGJTV288R
+        if !roles.role(&entry.path).scans_directives() {
+            continue;
+        }
         let Some(lang) = Language::detect(&entry.path) else {
             continue;
         };

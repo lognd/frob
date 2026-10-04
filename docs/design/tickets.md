@@ -25,6 +25,13 @@ in this section (ULID identity, handles, aliases, events) holds for
 both. In either layout a path is presentation and never a reference
 (navigation.md 1).
 
+Inert text (D91, ~JTV288R): everything under the ledger directory is
+data written through the ledger write path; text in it, such as a
+`frob:waive` quoted from a v1 ticket, is never a live directive.
+Directive and comment scanning skips ledger files (one `FileRole`
+classification in gob-walk, code-model.md section 4); the ledger rules
+(TICK, PM, privacy) still read them.
+
 - One directory per ticket, `tickets/<id>/`, containing `ticket.md`
   (TOML frontmatter + markdown body), `events/<ulid>.toml` (append-only
   state changes, field changes, comments, evidence, reviews), and

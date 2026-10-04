@@ -11,7 +11,7 @@ use gob_symbols::{
     Digests, EXTRACTOR_VERSION, FacetDigest, SymbolGraph, Symref, build_graph, extract_file,
 };
 use gob_text::{FileInterner, Span, TextRange, TextSize};
-use gob_walk::{ContentReader, ContentSource, FileEntry, WalkConfig, walk};
+use gob_walk::{ContentReader, ContentSource, FileEntry, Roles, WalkConfig, walk};
 use serde::{Deserialize, Serialize};
 
 use crate::error::AckError;
@@ -149,9 +149,14 @@ impl Inputs {
         let scanner = Scanner::new(&ScanConfig::default());
         let mut files = FileInterner::new();
         let mut docs = Vec::new();
+        let roles = Roles::for_root(root);
         let source = ContentSource::locate(root);
         source.with_reader(|reader| {
             for entry in &walked.files {
+                // frob:ticket 01M43KP0RXKB1DJA8KGJTV288R
+                if !roles.role(&entry.path).scans_directives() {
+                    continue;
+                }
                 let Some(lang) = Language::detect(&entry.path) else {
                     continue;
                 };

@@ -22,12 +22,14 @@ use rayon::prelude::*;
 
 mod content;
 pub mod owner;
+mod role;
 mod select;
 pub mod selector;
 mod specificity;
 
 pub use content::{ContentReader, ContentSource};
 pub use owner::{Candidate, EntityName, MatchStatus, Owner, Ownership};
+pub use role::{DEFAULT_LEDGER_DIR, FileRole, Roles, ledger_dir};
 pub use select::{PathMatch, owner_of_path, select_files, unseen_files};
 pub use selector::{Glob, Selector, wildcard_match};
 pub use specificity::Specificity;

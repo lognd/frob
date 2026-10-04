@@ -610,3 +610,21 @@ fn yaml_trailing_comment_binds_to_its_own_key() {
     let text = "on: # frob:accept CI006 because=\"gated by the plan job on a push run\"\n  push:\n";
     assert_eq!(bound("ci.yml", text), [sym("ci.yml::on")]);
 }
+
+// frob:ticket 01M43KP0RXKB1DJA8KGJTV288R
+// frob:tests crates/gob-directives/src/comments.rs::segments
+#[test]
+fn markdown_prose_and_front_matter_mentioning_waive_are_not_directives() {
+    let waive = "frob:waive DOC006 reason=\"x\"";
+    // Plain prose and an unquoted mention are text.
+    assert_eq!(md_count(&format!("# T\n\nwe write {waive} in prose\n")), 0);
+    // TOML and YAML front matter, including an HTML comment quoted in a string or a comment.
+    for fence in ["+++", "---"] {
+        let text =
+            format!("{fence}\nbody = \"- <!-- {waive} -->\"\n# <!-- {waive} -->\n{fence}\n\n# T\n");
+        assert_eq!(md_count(&text), 0, "front matter fenced by {fence}");
+    }
+    // A real HTML comment after the front matter is still a directive.
+    let live = format!("+++\nk = 1\n+++\n\n# T\n\n<!-- frob:invariant x -->\n");
+    assert_eq!(md_count(&live), 1);
+}

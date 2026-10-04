@@ -103,19 +103,5 @@ impl GrimbleTable {
 /// Read straight from the shared file (grimble links no frob crate); a missing or unreadable
 /// file, table or key, or a non-string value, gives [`grimble_bind::frob_owned::DEFAULT_LEDGER_DIR`].
 pub fn ledger_dir(root: &Path) -> String {
-    let default = grimble_bind::frob_owned::DEFAULT_LEDGER_DIR;
-    let dir = std::fs::read_to_string(root.join("frob.toml"))
-        .ok()
-        .and_then(|text| text.parse::<toml::Table>().ok())
-        .and_then(|t| t.get("tickets")?.get("dir")?.as_str().map(str::to_owned));
-    if let Some(d) = dir {
-        tracing::debug!(dir = %d, "ledger dir read from frob.toml [tickets]");
-        d
-    } else {
-        tracing::debug!(
-            dir = default,
-            "no [tickets] dir in frob.toml; default ledger dir"
-        );
-        default.to_owned()
-    }
+    gob_walk::ledger_dir(root)
 }

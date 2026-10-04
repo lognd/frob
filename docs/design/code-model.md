@@ -289,6 +289,18 @@ above the function or heading it describes") rather than as an unknown
 symref. Markdown HTML comments bind to the heading section that contains
 them (the preceding heading), so stacked comments agree by construction.
 
+Inert text (D91, ~JTV288R). Two things never yield directives. (1) The
+ticket ledger tree, the configured `[tickets] dir`, is data written through
+the ledger write path: gob-walk classifies every path once into a `FileRole`
+(`Source` or `Ledger`, `gob_walk::Roles`), and directive and comment scanning
+skips `Ledger` files, so a `frob:waive` quoted in an imported ticket body or
+event is text. Ledger rules (TICK, PM, privacy) read the ledger directly and
+still apply; the `ticket`-surface markers of a ticket body are read by the
+ledger, not by the file scanner. (2) In any markdown file only HTML comments
+outside code are directives: prose, code spans and fences, and a leading
+`---` (YAML) or `+++` (TOML) front matter block are never scanned, because
+front matter is data in another language.
+
 ## 5. Structural IR (pointer)
 
 Superseded by D56. The structural model that universal rules are

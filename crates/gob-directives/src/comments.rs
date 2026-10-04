@@ -163,6 +163,33 @@ fn html_regions<'t>(text: &'t str, skip: &[std::ops::Range<usize>]) -> Vec<Segme
     out
 }
 
+// frob:ticket 01M43KP0RXKB1DJA8KGJTV288R
+/// Byte range of a leading `---` (YAML) or `+++` (TOML) front matter block, fences included.
+///
+/// Front matter is data in another language, never markdown: an HTML comment inside it is a
+/// string or a comment of that language, not a directive. An unclosed fence is not front matter.
+fn front_matter(text: &str) -> Option<std::ops::Range<usize>> {
+    let fence = ["---", "+++"].into_iter().find(|f| {
+        text.strip_prefix(f)
+            .is_some_and(|r| r.trim_end_matches([' ', '\t']).starts_with(['\n', '\r']))
+    })?;
+    let mut pos = 0;
+    for (n, line) in text.split_inclusive('\n').enumerate() {
+        pos += line.len();
+        if n > 0 && line.trim_end() == fence {
+            return Some(0..pos);
+        }
+    }
+    None
+}
+
+/// HTML comments of markdown `text` outside code (`code`) and outside front matter.
+fn markdown_comments<'t>(text: &'t str, code: &[std::ops::Range<usize>]) -> Vec<Segment<'t>> {
+    let mut skip = code.to_vec();
+    skip.extend(front_matter(text));
+    html_regions(text, &skip)
+}
+
 // frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
 /// `#` comments of a TOML or YAML file, ignoring `#` inside quotes (naive).
 fn hash_comments(text: &str) -> Vec<Segment<'_>> {
@@ -229,9 +256,9 @@ pub(crate) fn segments<'t>(
         (Language::Rust, Some(t)) => rust_tree(t),
         (Language::Rust, None) => rust_plain(text),
         (Language::Markdown, Some(t)) => {
-            html_regions(text, &gob_languages::markdown_code_ranges(t))
+            markdown_comments(text, &gob_languages::markdown_code_ranges(t))
         }
-        (Language::Markdown, None) => html_regions(text, &[]),
+        (Language::Markdown, None) => markdown_comments(text, &[]),
         (Language::Toml | Language::Yaml, _) | (Language::Python, None) => hash_comments(text),
         (Language::Python, Some(t)) => python_tree(t),
     };
@@ -291,5 +318,19 @@ mod tests {
         let h = hash_comments(t);
         assert_eq!(texts(&h), ["yes", "all"]);
         assert_eq!(&t[h[0].offset..h[0].offset + 3], "yes");
+    }
+
+    // frob:tests crates/gob-directives/src/comments.rs::front_matter
+    #[test]
+    fn front_matter_is_not_markdown_but_a_later_html_comment_is() {
+        for fence in ["---", "+++"] {
+            let src = format!("{fence}\nk = \"<!-- in -->\"\n{fence}\n<!-- out -->\n");
+            let s = markdown_comments(&src, &[]);
+            assert_eq!(texts(&s), ["out"], "fence {fence}");
+        }
+        let unclosed = "---\n<!-- kept -->\n";
+        assert_eq!(texts(&markdown_comments(unclosed, &[])), ["kept"]);
+        let not_first = "text\n---\n<!-- kept -->\n---\n";
+        assert_eq!(texts(&markdown_comments(not_first, &[])), ["kept"]);
     }
 }
