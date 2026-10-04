@@ -513,7 +513,7 @@ fn ensure_clean(wt: &Repo, wt_path: &Path) -> Result<(), LandError> {
     ))
 }
 
-/// The repository config file, whose conflict markers make it unreadable mid-merge (frob:ticket ~66MMPM1).
+/// The repository config file, whose conflict markers make it unreadable mid-merge (frob:ticket 01M43FX5KWVP277RX5666MMPM1).
 const CONFIG_FILE: &str = "frob.toml";
 
 /// Merge `base` into the ticket branch inside its worktree; conflicts are listed (`E-LAND-CONFLICT`) and the merge aborted.
@@ -529,7 +529,7 @@ fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<
             Ok("merged".to_owned())
         }
         // frob:ticket 01M418TM2GZ24YPQE7ECTKE1J4
-        // frob:ticket ~66MMPM1
+        // frob:ticket 01M43FX5KWVP277RX5666MMPM1
         // A conflicted frob.toml is never read: the conflict is refused first.
         MergeOutcome::Conflicts(paths)
             if !paths.iter().any(|p| p == CONFIG_FILE)
