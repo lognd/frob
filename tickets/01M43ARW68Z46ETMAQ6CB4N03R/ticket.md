@@ -8,14 +8,14 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:46Z"
-updated = "2026-10-04T12:03:53Z"
+updated = "2026-10-04T12:08:50Z"
 idempotency_key = "crunk-plan-corpus"
 labels = ["area:crunk"]
 scope = ["tests/crunk-parity/**"]
 
 [[acceptance]]
 text = "Given the script and a Python crunk install, when it runs, then every expected file regenerates byte for byte"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the corpus, when listed, then every e2e scenario E2E-01..E2E-58 and INT-01..INT-12 names its fixture project and expected files in an index"
