@@ -240,7 +240,7 @@ fn doctor_reports_both_crunks_and_uses_the_one_beside_frob() {
     );
 }
 
-/// Crunk acceptance 3: a crunk whose `--json` carries another schema_version is a required Unresolved and exit 1.
+/// Crunk acceptance 3: a crunk whose `--json` carries another `schema_version` is a required Unresolved and exit 1.
 // frob:ticket 01M43ARWKFWVZZAR84NF50FAHB
 // frob:tests crates/frob-check/src/sibling/mod.rs::Sib001
 #[test]
