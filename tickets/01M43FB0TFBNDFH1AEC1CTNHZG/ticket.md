@@ -2,11 +2,12 @@
 id = "01M43FB0TFBNDFH1AEC1CTNHZG"
 title = "CI: install pytest and set FROB_REQUIRE_PYTHON_TESTS so pytest-backed tests cannot skip"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T12:48:35Z"
-updated = "2026-10-04T22:05:21Z"
+updated = "2026-10-04T22:05:22Z"
 scope = [".github/workflows/ci.yml", "crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/ci_parity.rs", "docs/design/build-test-ci.md"]
 +++
 
