@@ -513,7 +513,10 @@ fn ensure_clean(wt: &Repo, wt_path: &Path) -> Result<(), LandError> {
     ))
 }
 
-/// Merge `base` into the ticket branch inside its worktree; conflicts are listed and the merge aborted.
+/// The repository config file, whose conflict markers make it unreadable mid-merge (frob:ticket ~66MMPM1).
+const CONFIG_FILE: &str = "frob.toml";
+
+/// Merge `base` into the ticket branch inside its worktree; conflicts are listed (`E-LAND-CONFLICT`) and the merge aborted.
 fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<String, LandError> {
     match wt.merge_branch(wt_path, base)? {
         MergeOutcome::UpToDate => Ok("up-to-date".to_owned()),
@@ -526,7 +529,11 @@ fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<
             Ok("merged".to_owned())
         }
         // frob:ticket 01M418TM2GZ24YPQE7ECTKE1J4
-        MergeOutcome::Conflicts(paths) if lockfile::all_shared(wt_path, &paths)? => {
+        // frob:ticket ~66MMPM1 -- a conflicted frob.toml is never read: the conflict is refused first.
+        MergeOutcome::Conflicts(paths)
+            if !paths.iter().any(|p| p == CONFIG_FILE)
+                && lockfile::all_shared(wt_path, &paths)? =>
+        {
             tracing::info!(
                 count = paths.len(),
                 "base merge conflicts only in shared lockfiles"
