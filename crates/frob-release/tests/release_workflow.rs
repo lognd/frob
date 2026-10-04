@@ -582,7 +582,7 @@ fn smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemp
         BTreeSet::from(["plan", "build", "wheel"]),
         "smoke runs after every artifact exists"
     );
-    // Wheels are optional (dev.yml builds none), so `wheel` may be skipped; a failed or
+    // Wheels are optional (the dev jobs build none), so `wheel` may be skipped; a failed or
     // cancelled need must still stop the smoke.
     let cond = job["if"].as_str().unwrap();
     for needle in [
@@ -930,7 +930,7 @@ fn the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_
     // The dist version is pinned in the shared workflow alone.
     assert!(sh["env"]["DIST_VERSION"].as_str().is_some());
     assert!(!code_only(&workflow_text()).contains("DIST_VERSION"));
-    assert!(!code_only(&repo_file(".github/workflows/dev.yml")).contains("DIST_VERSION"));
+    assert!(!code_only(&repo_file(".github/workflows/ci.yml")).contains("DIST_VERSION"));
     // Inputs reach shell only through env, never interpolated into a `run`.
     for (name, job) in jobs(&sh) {
         for s in job["steps"].as_sequence().unwrap() {

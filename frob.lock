@@ -2,26 +2,16 @@ version = 2
 digest_scheme = 2
 
 [[symbol]]
-identity = ".github/workflows/dev.yml::jobs.artifacts.uses"
-symref = ".github/workflows/dev.yml::jobs.artifacts.uses"
+identity = ".github/workflows/ci.yml::jobs.dev-artifacts.uses"
+symref = ".github/workflows/ci.yml::jobs.dev-artifacts.uses"
 sig = "066731533155c2b9fa7cf9202e5d711cb899e470c3ab81d4bdfa5aa78fe37f28"
 body = "19deee02e196660c7443687532e3dbdd28db8d003d75f6a3d1415bd699674da1"
 doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
 attr = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
 contract = "60f8349cedf366eef6f475e9a29a6d3d3197b5bdbace6b1578b1ae48225d66f8"
 acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-10-03T18:50:49.848073329Z"
-
-[[symbol]]
-identity = ".github/workflows/dev.yml::on"
-symref = ".github/workflows/dev.yml::on"
-sig = "a3ead8f7e0a0ea7dd72a95016c0ba1c379ce75c3feded2aa2f1334851645866c"
-body = "8adee6889ac35b7a123eeeca820ce584055b6ae959796eb6b9a746c5f64194a8"
-doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
-attr = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
-contract = "bccddbca0abfe445f9011140542faac8ed2dcded489cc11c0e50bd070d283ce3"
-acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-10-03T18:04:02.35992277Z"
+acked_at = "2026-10-03T23:11:28.931959538Z"
+reason = "dev publish moved into ci.yml (~25QHMNX); same shared-workflow call as dev.yml had"
 
 [[symbol]]
 identity = ".github/workflows/release.yml::jobs.artifacts.uses"
