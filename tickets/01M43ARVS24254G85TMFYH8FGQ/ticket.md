@@ -8,14 +8,14 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:46Z"
-updated = "2026-10-04T11:40:40Z"
+updated = "2026-10-04T11:45:55Z"
 idempotency_key = "crunk-plan-bin"
 labels = ["area:crunk"]
 scope = ["crates/crunk/**", "crates/crunk-check/**", "docs/crunk/**", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given a directory with no crunk.toml, when `crunk check --json` runs, then it exits with the shared no-config code and the envelope names the remedy"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an empty valid config, when `crunk check --json` runs, then stdout is a gob.sibling/1 document with product crunk that validates against docs/schemas/sibling.json"
