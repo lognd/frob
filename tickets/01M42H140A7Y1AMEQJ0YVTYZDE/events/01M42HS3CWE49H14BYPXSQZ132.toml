@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["frob init output names the user and git-common-dir privacy.toml paths and writes neither"]
+new = ["frob init output names the user and git-common-dir privacy.toml paths and writes neither", "Given the TICK005 rule page and frob doctor, when a user reads them, then they show the privacy.toml format ([[rule]] with pattern, replace, regex, case_sensitive) and both file locations"]
+moved = [1]
+at = "2026-10-04T04:11:59Z"
+actor = "lognd"
+rev = 1

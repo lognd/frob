@@ -83,6 +83,26 @@ pub struct Tick003;
 )]
 pub struct Tick004;
 
+/// A committed ledger file or changelog fragment holds a private term.
+///
+/// Private terms are defined only in local files (the user config `frob/privacy.toml` and
+/// `frob/privacy.toml` under the git common dir), never in a committed file. This rule is local-only: it
+/// runs where those rules exist and reports nothing where they do not, so CI without the local files is
+/// silent. A finding names the rule's replace label and a hash of its pattern, never the term.
+/// `frob ticket doctor --fix` replaces the term in one forward commit (history is never rewritten).
+#[derive(Debug, Clone, Copy, Default, Rule)]
+#[rule(
+    id = "TICK005",
+    slug = "private-term",
+    family = "TICK",
+    severity = Error,
+    tier = Universal,
+    scope = Repo,
+    fix = Deterministic,
+    version = 1
+)]
+pub struct Tick005;
+
 pub(crate) fn id_of<R: Rule>(rule: &R) -> RuleId {
     rule.meta()
         .rule_id()

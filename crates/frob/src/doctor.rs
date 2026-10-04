@@ -342,6 +342,10 @@ impl Command for Doctor {
 
         let located = Located::discover(&ctx.cwd);
         let git = git_info(&located, &ctx.cwd);
+        // frob:ticket 01M42EZ8J63P84XFKTR2GXRW72
+        if let Some(repo) = &located.repo {
+            frob_ledger::redact::RuleSet::mention_local_files(repo.common_dir());
+        }
 
         let loaded = FrobConfig::load(&located.root);
         let (cfg, config_error) = match loaded {

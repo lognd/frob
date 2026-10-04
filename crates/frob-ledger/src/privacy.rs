@@ -202,3 +202,36 @@ impl Ledger {
         Ok(out)
     }
 }
+
+// frob:ticket 01M42EZ8J63P84XFKTR2GXRW72
+impl Ledger {
+    /// `TICK005` findings for every ledger file at the tip that matches a local private-term rule.
+    ///
+    /// Local-only: with no private rules (CI without the local files) it reads nothing and reports nothing.
+    ///
+    /// # Errors
+    ///
+    /// Git read failures, or an unusable local privacy file.
+    pub fn private_term_findings(&self) -> Result<Vec<Finding>> {
+        let rules = self.redaction()?;
+        if rules.no_private() {
+            tracing::debug!("no local private-term rules; TICK005 not evaluated");
+            return Ok(Vec::new());
+        }
+        let ref_name = self.ledger_ref()?;
+        let Some(tip) = self.tip_of(&ref_name)? else {
+            return Ok(Vec::new());
+        };
+        let hex = tip.to_string();
+        let dir = self.config().dir.clone();
+        let mut out = Vec::new();
+        for rel in self.list_files(&format!("{hex}:{dir}"))? {
+            let path = format!("{dir}/{rel}");
+            if let Some(bytes) = self.repo().read_blob_at(&hex, &path)? {
+                out.extend(crate::redact::tick005(&path, &bytes, rules));
+            }
+        }
+        tracing::info!(findings = out.len(), "ledger private-term scan finished");
+        Ok(out)
+    }
+}

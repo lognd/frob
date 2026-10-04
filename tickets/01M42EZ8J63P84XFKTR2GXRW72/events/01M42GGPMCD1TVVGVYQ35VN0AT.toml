@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-04T03:49:55Z"
+digest = "7a31185e78aedc5e607d3b400dd7c7827e6f79116445c0959cc33f109c9e471a"
+exit_code = 0
+inline = '''
+   Compiling frob-cli v0.0.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.99s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3a7be001-962e-4807-8fe6-75f1a93e0143 with nextest profile: default
+    Starting 1 test across 28 binaries (221 tests skipped)
+        PASS [  14.182s] frob-cli::redact the_repository_contains_neither_rule_nor_term
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  14.184s] 1 test run: 1 passed, 221 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(=the_repository_contains_neither_rule_nor_term)'"
+size = 611
+status = "measured"
+tests = ["the_repository_contains_neither_rule_nor_term"]
+at = "2026-10-04T03:49:55Z"
+actor = "lognd"
+rev = 1

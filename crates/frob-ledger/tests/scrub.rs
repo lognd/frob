@@ -126,7 +126,7 @@ fn fixture() -> Fixture {
 }
 
 /// One commit scrubs the files, every digest still covers its text, the fold is the same but for the text, and TICK004 is silent.
-// frob:tests crates/frob-ledger/src/scrub.rs::Ledger.scrub_home_paths
+// frob:tests crates/frob-ledger/src/scrub.rs::Ledger.scrub
 #[test]
 fn one_commit_scrubs_and_the_ledger_still_folds() {
     let f = fixture();
@@ -138,7 +138,7 @@ fn one_commit_scrubs_and_the_ledger_still_folds() {
         .expect("some");
     assert!(!f.ledger.home_path_findings().expect("scan").is_empty());
 
-    let report = f.ledger.scrub_home_paths(&tools()).expect("scrub");
+    let report = f.ledger.scrub(&tools()).expect("scrub");
     assert_eq!(report.tickets, vec![f.id]);
     assert_eq!(report.digests, 1, "{report:?}");
     assert!(report.unresolved.is_empty(), "{report:?}");
@@ -218,9 +218,9 @@ fn one_commit_scrubs_and_the_ledger_still_folds() {
 #[test]
 fn second_run_is_a_no_op() {
     let f = fixture();
-    f.ledger.scrub_home_paths(&tools()).expect("first");
+    f.ledger.scrub(&tools()).expect("first");
     let settled = tip(&f.ledger);
-    let again = f.ledger.scrub_home_paths(&tools()).expect("second");
+    let again = f.ledger.scrub(&tools()).expect("second");
     assert_eq!(again, frob_ledger::scrub::ScrubReport::default());
     assert_eq!(tip(&f.ledger), settled);
 }
@@ -235,7 +235,7 @@ fn survivors_are_reported_not_guessed() {
         rewrite: &id_rewrite,
         digest: &digest,
     };
-    let report = f.ledger.scrub_home_paths(&none).expect("scrub");
+    let report = f.ledger.scrub(&none).expect("scrub");
     assert!(report.files.is_empty() && report.commit.is_none());
     assert!(!report.unresolved.is_empty());
     assert_eq!(tip(&f.ledger), before_tip);
@@ -253,7 +253,7 @@ fn a_digest_that_never_matched_is_left_alone() {
         .id;
     let ev = evidence("at /home/ann/x\n", false, &[]);
     push_event(&ledger, id, &ev);
-    let report = ledger.scrub_home_paths(&tools()).expect("scrub");
+    let report = ledger.scrub(&tools()).expect("scrub");
     assert_eq!(report.digests, 0, "{report:?}");
     let commit = report.commit.expect("commit");
     let path = format!("tickets/{id}/events/{}", ev.file_name());
@@ -267,4 +267,79 @@ fn a_digest_that_never_matched_is_left_alone() {
         .parse()
         .expect("toml");
     assert_eq!(table["digest"].as_str(), Some("stale"));
+}
+
+// frob:ticket 01M42EZ8J63P84XFKTR2GXRW72
+const TERM: &str = "zorblax-7";
+
+fn with_rule(ledger: Ledger) -> Ledger {
+    let rules = frob_ledger::redact::RuleSet::from_toml(
+        &format!("[[rule]]\npattern = \"{TERM}\"\nreplace = \"<private-host>\"\n"),
+        "test",
+    )
+    .expect("rules");
+    ledger.with_redaction(rules)
+}
+
+/// Writing text with a private term is refused, naming the label and not the term, and writes nothing.
+// frob:tests crates/frob-ledger/src/ledger.rs::Ledger.refuse_private
+#[test]
+fn write_with_a_private_term_is_refused() {
+    let ledger = with_rule(fresh());
+    let before = ledger.tip_hex().expect("tip");
+    let mut req = NewTicket::new(format!("run on {TERM}"), TicketType::Task);
+    req.acceptance = vec!["ok".to_owned()];
+    let err = ledger.new_ticket(req).expect_err("refused");
+    let text = err.to_string();
+    assert!(
+        text.contains("<private-host>") && !text.contains(TERM),
+        "{text}"
+    );
+    let refusal = err.to_refusal().expect("refusal");
+    assert!(!format!("{refusal:?}").contains(TERM));
+    assert_eq!(ledger.tip_hex().expect("tip"), before);
+}
+
+/// Doctor-fix scrub replaces the term everywhere in one commit, recomputes digests, audits without the term, and is idempotent; TICK005 flags before and is silent after.
+// frob:tests crates/frob-ledger/src/scrub.rs::Ledger.scrub
+// frob:tests crates/frob-ledger/src/privacy.rs::Ledger.private_term_findings
+#[test]
+fn private_terms_are_scrubbed_like_home_paths() {
+    let plain = fresh();
+    let mut req = NewTicket::new("Clean title", TicketType::Task);
+    req.acceptance = vec!["it works".to_owned()];
+    req.body = format!("seen on {TERM}\n");
+    let id = plain.new_ticket(req).expect("ticket").ticket.front.id;
+    let ev = evidence(&format!("ran on {TERM}\nok\n"), true, &[1]);
+    push_event(&plain, id, &ev);
+    let ledger = with_rule(plain);
+    assert!(!ledger.private_term_findings().expect("scan").is_empty());
+    let base = tip(&ledger);
+
+    let report = ledger.scrub(&tools()).expect("scrub");
+    assert!(report.unresolved.is_empty(), "{report:?}");
+    assert_eq!(report.digests, 1);
+    assert_ne!(tip(&ledger), base);
+    let parents = ledger
+        .repo()
+        .rev_parse(&format!("{}^", tip(&ledger)))
+        .expect("parent");
+    assert_eq!(parents.to_string(), base);
+    assert!(ledger.private_term_findings().expect("scan").is_empty());
+    for e in ledger.events(id).expect("events") {
+        let text = e.to_toml().expect("toml");
+        assert!(!text.contains(TERM), "{text}");
+    }
+    let audit: Vec<String> = ledger
+        .events(id)
+        .expect("events")
+        .iter()
+        .map(|e| e.to_toml().expect("toml"))
+        .filter(|t| t.contains("kind = \"scrub\""))
+        .collect();
+    assert_eq!(audit.len(), 1);
+    assert!(audit[0].contains("<private-host>#"), "{}", audit[0]);
+
+    let again = ledger.scrub(&tools()).expect("again");
+    assert!(again.commit.is_none() && again.files.is_empty());
 }

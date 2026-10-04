@@ -2,29 +2,30 @@
 id = "01M42EZ8J63P84XFKTR2GXRW72"
 title = "Private-term redaction: local-only rules refuse, detect and scrub private names in the ledger (generalizes the TICK004 scrub)"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T03:22:55Z"
-updated = "2026-10-04T03:26:30Z"
-scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/scrub.rs", "crates/frob/src/ticket/**", "crates/frob/tests/**", "crates/gob-config/**", "docs/design/tickets.md", "docs/design/architecture.md", "docs/reference/rules/**"]
+updated = "2026-10-04T04:09:25Z"
+scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/scrub.rs", "crates/frob/src/ticket/**", "crates/frob/tests/**", "crates/gob-config/**", "docs/design/tickets.md", "docs/design/architecture.md", "docs/reference/rules/**", "crates/frob/src/doctor.rs", "crates/frob-check/src/product.rs"]
 
 [[acceptance]]
 text = "Given a local rule for a private term, when ticket new or update is given text containing it, then it exits 2 naming the rule label without echoing the term and writes nothing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given ledger files already containing the term, when ticket doctor --fix runs, then one commit replaces it everywhere, recomputes inline digests, records audit events without the term, and a second run changes nothing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the rules, when frob check runs, then the new rule reports any ledger file or fragment containing a term as an Error, and with no local rules it reports nothing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the repository, when its tracked files are searched, then no redaction rule or private term appears in any committed config"
-bound = false
+bound = true
 +++
 
 Requested by goway (2026-10-04): a goway ticket's acceptance text named one of the owner's private machines, and goway is public. Hand-editing event files breaks their digests, and dropping commits keeps getting undone when ticket branches merge the base back in. Generalize the TICK004 home-path scrub (~6JTAH9Q, ~SKCPWMA) to user-defined private terms.
