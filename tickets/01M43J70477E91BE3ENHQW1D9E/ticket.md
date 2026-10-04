@@ -2,11 +2,12 @@
 id = "01M43J70477E91BE3ENHQW1D9E"
 title = "gob-git: concurrent CAS writers test is flaky under load (CasExhausted)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T13:38:49Z"
-updated = "2026-10-04T21:46:46Z"
+updated = "2026-10-04T21:46:47Z"
 scope = ["crates/gob-git/src/ledger.rs", "crates/gob-git/tests/ledger.rs", "docs/design/git-io.md"]
 
 [[acceptance]]
