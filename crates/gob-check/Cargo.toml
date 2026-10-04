@@ -14,6 +14,7 @@ gob-cache = { version = "0.0.0", path = "../gob-cache" }
 gob-config = { version = "0.0.0", path = "../gob-config" }
 gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
 gob-exec = { version = "0.0.0", path = "../gob-exec" }
+gob-languages = { version = "0.0.0", path = "../gob-languages" }
 gob-lock = { version = "0.0.0", path = "../gob-lock" }
 gob-rules = { version = "0.0.0", path = "../gob-rules" }
 gob-symbols = { version = "0.0.0", path = "../gob-symbols" }

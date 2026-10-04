@@ -21,6 +21,7 @@ tracing = "0.1"
 
 [dev-dependencies]
 insta = "1"
+proptest = "1"
 
 [lints]
 workspace = true

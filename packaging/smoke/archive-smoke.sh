@@ -1,10 +1,11 @@
 #!/bin/sh
 # Smoke one product's standalone cargo-dist archive (.tar.xz or .zip): unpack it into a
 # clean directory and run the product's binary. The archives are named after the package
-# (frob-cli-<target>, grimble-<target>; docs/design/releases.md 6), so callers pass each
+# (frob-cli-<target>, grimble-<target>, crunk-<target>; docs/design/releases.md 6), so callers pass each
 # product archive explicitly. For `frob` this is the shared fixture-repository loop
-# (fixture-loop.sh); for `grimble` it is `grimble --version` (plus EXPECTED_VERSION when given).
-# Usage: archive-smoke.sh PRODUCT ARCHIVE [EXPECTED_VERSION]   (PRODUCT: frob or grimble;
+# (fixture-loop.sh); for `grimble` and `crunk` it is `<product> --version` (plus EXPECTED_VERSION when given) and
+# `<product> doctor`.
+# Usage: archive-smoke.sh PRODUCT ARCHIVE [EXPECTED_VERSION]   (PRODUCT: frob, grimble or crunk;
 # POSIX sh; Git Bash on Windows)
 set -eu
 
@@ -12,8 +13,8 @@ product="${1:?usage: archive-smoke.sh PRODUCT ARCHIVE [EXPECTED_VERSION]}"
 archive="${2:?usage: archive-smoke.sh PRODUCT ARCHIVE [EXPECTED_VERSION]}"
 want="${3:-}"
 case "$product" in
-    frob | grimble) ;;
-    *) echo "smoke-archive: unknown product: $product (expected frob or grimble)" >&2; exit 1 ;;
+    frob | grimble | crunk) ;;
+    *) echo "smoke-archive: unknown product: $product (expected frob, grimble or crunk)" >&2; exit 1 ;;
 esac
 [ -f "$archive" ] || { echo "smoke-archive: missing archive: $archive" >&2; exit 1; }
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -41,10 +42,13 @@ for other in frob grimble crunk fake-sibling; do
 done
 case "$product" in
     frob) "$here/fixture-loop.sh" "$(dirname "$exe")" "$want" ;;
-    grimble)
+    grimble | crunk)
         got="$("$exe" --version | tr -d '\r')"
         echo "smoke-archive: $got" >&2
-        case "$got" in "grimble ${want:-}"*) ;; *) echo "smoke-archive: expected 'grimble ${want:-}', got '$got'" >&2; exit 1 ;; esac
+        case "$got" in "$product ${want:-}"*) ;; *) echo "smoke-archive: expected '$product ${want:-}', got '$got'" >&2; exit 1 ;; esac
+        # doctor runs in an empty directory (no config); only a crash or a usage error fails.
+        mkdir "$work/doctor"
+        (cd "$work/doctor" && "$exe" doctor >/dev/null) || { echo "smoke-archive: $product doctor failed" >&2; exit 1; }
         ;;
 esac
 echo "smoke-archive: ok"
