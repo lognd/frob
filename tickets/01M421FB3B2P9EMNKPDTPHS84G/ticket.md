@@ -8,7 +8,7 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:27:02Z"
-updated = "2026-10-04T02:57:20Z"
+updated = "2026-10-04T02:57:22Z"
 scope = ["packaging/**", ".github/workflows/build-smoke.yml", ".github/workflows/release.yml", "crates/frob-release/**", "docs/guides/release.md", "docs/design/releases.md", "changelog.d/01M421FB3B2P9EMNKPDTPHS84G.changed.md"]
 
 [[links]]
@@ -29,7 +29,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the release workflow, when its tests run, then the pypi job uploads both products and each wheel set's count is checked"
-bound = false
+bound = true
 +++
 
 Owner decision D87 (products.md 6, releases.md 6): one binary per package, composed by dependencies. Today packaging/pypi builds one frob wheel that copies grimble into data/scripts (build-wheel.sh), so frob and grimble cannot be installed separately and side-by-side installs would put two grimble executables on PATH.
