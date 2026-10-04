@@ -8,9 +8,13 @@ priority = "high"
 parent = "01M0XNVQXJ1A3FA43N7AA0PAPK"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-09-19T00:00:00Z"
+updated = "2026-10-04T21:07:53Z"
 aliases = ["T-4691"]
 labels = ["milestone:0.534.0", "v1-cluster:F1"]
+
+[[links]]
+kind = "duplicates"
+target = "01M0XNVQXJ1A3FA43N7AA0PAPK"
 +++
 
 Child of T-2994 (DOCARCH001/NARR001 doctrine epic): code and docs carry UTILITY,
