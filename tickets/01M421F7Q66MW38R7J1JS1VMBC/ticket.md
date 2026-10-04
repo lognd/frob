@@ -8,8 +8,8 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:26:59Z"
-updated = "2026-10-04T00:56:06Z"
-scope = ["crates/frob-check/src/sibling.rs", "crates/frob-check/tests/sibling.rs", "docs/design/sibling-contract.md", "crates/gob-exec/src/discover.rs", "crates/gob-exec/src/lib.rs", "crates/gob-exec/src/program.rs", "crates/gob-exec/tests/discover.rs", "crates/frob/src/doctor.rs", "crates/frob/tests/sibling_discovery.rs", "crates/frob-check/src/sibling/mod.rs", "docs/design/products.md", "crates/frob/tests/snapshots/cli__doctor_schema.snap"]
+updated = "2026-10-04T00:56:21Z"
+scope = ["crates/frob-check/src/sibling.rs", "crates/frob-check/tests/sibling.rs", "docs/design/sibling-contract.md", "crates/gob-exec/src/discover.rs", "crates/gob-exec/src/lib.rs", "crates/gob-exec/src/program.rs", "crates/gob-exec/tests/discover.rs", "crates/frob/src/doctor.rs", "crates/frob/tests/sibling_discovery.rs", "crates/frob-check/src/sibling/mod.rs", "docs/design/products.md", "crates/frob/tests/snapshots/cli__doctor_schema.snap", "crates/frob/tests/cli.rs"]
 
 [[acceptance]]
 text = "Given grimble next to the running frob and not on PATH, when frob check runs, then it finds and runs that grimble"
