@@ -8,8 +8,8 @@ points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-04T03:34:50Z"
-updated = "2026-10-04T03:42:19Z"
-scope = ["crates/frob-worktree/**", "crates/gob-exec/**", "crates/gob-git/**", "crates/frob-land/**", "crates/frob-check/src/**", "clippy.toml", "docs/design/paths.md", "crates/gob-cache/src/lib.rs", "crates/gob-cache/Cargo.toml", "crates/gob-cache/tests/shared.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-evidence/Cargo.toml", "crates/frob-tests/src/lease.rs", "crates/frob/src/init.rs", "crates/frob/Cargo.toml", "crates/frob-check/benches/full_check.rs", "crates/frob-check/Cargo.toml", "crates/gob-cache/benches/cache.rs", "Cargo.lock", "changelog.d/01M42EDPHHFS000000000000000.fixed.md", "changelog.d/01M42FN1YDHJNZ5NM7QEDPHHFS.security.md"]
+updated = "2026-10-04T03:56:44Z"
+scope = ["crates/frob-worktree/**", "crates/gob-exec/**", "crates/gob-git/**", "crates/frob-land/**", "clippy.toml", "docs/design/paths.md", "crates/gob-cache/src/lib.rs", "crates/gob-cache/Cargo.toml", "crates/gob-cache/tests/shared.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-evidence/Cargo.toml", "crates/frob-tests/src/lease.rs", "crates/frob/src/init.rs", "crates/frob/Cargo.toml", "crates/frob-check/benches/full_check.rs", "crates/frob-check/Cargo.toml", "crates/gob-cache/benches/cache.rs", "Cargo.lock", "changelog.d/01M42EDPHHFS000000000000000.fixed.md", "changelog.d/01M42FN1YDHJNZ5NM7QEDPHHFS.security.md"]
 
 [[acceptance]]
 text = "Given Windows-style verbatim, UNC and mixed-separator inputs (tested on Linux), when the jail admits a path, then no admitted path lies outside a root and any path with a dot or dotdot component is refused"
