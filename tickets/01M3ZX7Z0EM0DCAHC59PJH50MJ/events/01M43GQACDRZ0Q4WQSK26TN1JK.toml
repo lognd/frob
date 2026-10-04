@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "lease expired after the implementer finished; work is complete on the branch, re-leasing to land"
+at = "2026-10-04T13:12:47Z"
+actor = "lognd"
+rev = 1
