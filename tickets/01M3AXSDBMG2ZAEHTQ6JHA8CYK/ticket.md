@@ -3,12 +3,12 @@ id = "01M3AXSDBMG2ZAEHTQ6JHA8CYK"
 title = "land: stacked successor hunks silently dropped after the base squash-lands; verify hunk presence post-merge"
 type = "bug"
 category = "triage"
-priority = "critical"
+priority = "medium"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T21:09:29Z"
 aliases = ["T-6516"]
-labels = ["milestone:0.535.0", "v1-cluster:C1a"]
+labels = ["v1-cluster:C1a", "triage:accepted"]
 scope = ["src/frob/tickets/_land.py", "src/frob/tickets/_land_verify.py", "src/frob/coord/_status.py", "tests/unit/tickets/test_land_hunk_presence.py", "docs/modules/tickets-landing.md"]
 +++
 
