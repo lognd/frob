@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--contrast",
+    "--json"
+  ],
+  "command": "python -m crunk check --contrast --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_22_floors.py::test_floor_role_json_field_parses",
+  "setup_deleted": [],
+  "stdin": null
+}

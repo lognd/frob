@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "kind": "violations",
+  "results": [
+    {
+      "rule": "TOKENS001",
+      "severity": "error",
+      "path": "styles/tokens.css",
+      "line": 0,
+      "message": "tokens file missing; run `crunk tokens` to regenerate",
+      "fixable": false,
+      "waived": false
+    }
+  ]
+}

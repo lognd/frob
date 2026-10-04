@@ -1,0 +1,32 @@
+# Violations
+
+src/router.tsx:19  GALLERY005  warn  discovered route '/settings' is not declared in [[screen]]
+
+crunk.toml:0  CONTRAST001  error  role 'body' (ink/ink) contrast 1.00 is below the 4.5 floor
+
+src/styles/tokens.css:0  TOKENS001  error  tokens file drifted; run `crunk tokens` to regenerate
+2 errors, 1 warnings, 0 waived
+
+# Contrast
+
+body  ink on ink  1.00 (floor 4.5)  FAIL
+
+# Tokens
+
+tokens: drifted
+
+# Unused
+- --color-ink
+- --font-family-base
+- --font-size-12
+- --font-size-16
+- --radius-0
+- --radius-4
+- --space-0
+- --space-4
+- --space-8
+
+# Files
+crunk.toml  errors=1 warnings=0
+src/router.tsx  errors=0 warnings=1
+src/styles/tokens.css  errors=1 warnings=0

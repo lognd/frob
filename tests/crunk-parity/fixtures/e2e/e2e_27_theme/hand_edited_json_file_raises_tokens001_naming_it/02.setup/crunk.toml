@@ -1,0 +1,44 @@
+[project]
+css_root = "styles"
+# tokens_file resolves against css_root; every other *_file key
+# ([tailwind] tokens_file, [tokens] json_file) resolves against the
+# project root (r8, A-030) -- this split is compat law, not taste.
+tokens_file = "tokens.css"
+root_font_size = 16
+
+[palette]
+ink = "#1a1a1a"
+paper = "#fafaf7"
+accent = "#2f6fed"
+
+[palette.roles]
+body = ["ink", "paper"]
+
+[scales]
+spacing = [0, 4, 8, 12, 16, 24, 32, 48, 64]
+font_sizes = [12, 14, 16, 20, 24, 32, 48]
+radii = [0, 4, 8, 16]
+
+[typography]
+families = ["Inter", "system-ui", "sans-serif"]
+weights = [400, 500, 700]
+
+[layers]
+base = 0
+dropdown = 100
+overlay = 200
+toast = 300
+
+[org]
+buckets = ["base", "components", "layouts", "utilities"]
+class_case = "kebab"
+component_prefix = true
+tokens_only_custom_props = true
+
+[lint]
+SPACE001 = "warn"
+fix_tolerance = 0.15
+color_tolerance = 8.0
+
+[tokens]
+json_file = "tokens.generated.json"

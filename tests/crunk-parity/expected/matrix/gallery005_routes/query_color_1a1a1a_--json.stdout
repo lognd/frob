@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "kind": "color",
+  "results": [
+    {
+      "name": "ink",
+      "value": "#1a1a1a",
+      "distance": 0.0,
+      "exact": true,
+      "alpha_variant": false
+    }
+  ]
+}

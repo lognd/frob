@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--report",
+    "--json"
+  ],
+  "command": "python -m crunk check --report --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_42_43_44_viewport.py::test_e2e_44_bp003_overflow_width_via_tailwind_default",
+  "setup_deleted": [],
+  "stdin": null
+}

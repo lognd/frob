@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!--
+T-0186 fixture: a tiny static app page exercising the four e2e states
+crunk's web renderer must execute -- mobile-nav-open and confirm-dialog
+via a click action, loading via a `hold` network override on `/api/data`,
+and error via a `status: 503` override on the same endpoint. No build
+step, no framework: crunk's system test serves this file directly.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>crunk web renderer fixture</title>
+  <style>
+    #mobile-nav { display: none; }
+    #mobile-nav.open { display: block; }
+    #confirm-dialog { display: none; }
+    #confirm-dialog.open { display: block; }
+    #status { display: none; }
+  </style>
+</head>
+<body>
+  <button id="mobile-nav-toggle" onclick="document.getElementById('mobile-nav').classList.add('open')">
+    menu
+  </button>
+  <nav id="mobile-nav" role="navigation">mobile nav open</nav>
+
+  <button id="logout" onclick="document.getElementById('confirm-dialog').classList.add('open')">
+    log out
+  </button>
+  <div id="confirm-dialog" role="dialog">confirm log out?</div>
+
+  <div id="status">loading</div>
+  <script>
+    fetch("/api/data")
+      .then((r) => {
+        document.getElementById("status").textContent = r.ok
+          ? "loaded"
+          : "error " + r.status;
+      })
+      .catch(() => {
+        document.getElementById("status").textContent = "network error";
+      })
+      .finally(() => {
+        document.getElementById("status").style.display = "block";
+      });
+  </script>
+</body>
+</html>

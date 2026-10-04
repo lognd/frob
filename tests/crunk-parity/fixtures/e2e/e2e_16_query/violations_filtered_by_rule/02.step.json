@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "query",
+    "violations",
+    "--rule",
+    "COLOR001",
+    "--json"
+  ],
+  "command": "python -m crunk query violations --rule COLOR001 --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_16_query.py::test_violations_filtered_by_rule",
+  "setup_deleted": [],
+  "stdin": null
+}

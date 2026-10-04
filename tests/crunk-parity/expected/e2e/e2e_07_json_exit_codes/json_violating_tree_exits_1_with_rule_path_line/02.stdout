@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "violations": [
+    {
+      "rule": "COLOR001",
+      "severity": "error",
+      "path": "styles/components/card.css",
+      "line": 1,
+      "message": "color #ee2211 is not a palette color; nearest is --color-ink (distance 336.93)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": "--color-ink"
+    }
+  ],
+  "counts": {
+    "error": 1,
+    "warning": 0,
+    "waived": 0
+  }
+}

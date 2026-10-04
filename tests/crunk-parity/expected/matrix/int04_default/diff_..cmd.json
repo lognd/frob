@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "diff",
+    "../gallery005_routes"
+  ],
+  "command": "python -m crunk diff ../gallery005_routes",
+  "cwd": "fixtures/static/int04_default",
+  "exit": 0,
+  "project": "int04_default"
+}

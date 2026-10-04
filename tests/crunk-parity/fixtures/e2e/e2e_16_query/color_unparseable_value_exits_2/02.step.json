@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "query",
+    "color",
+    "not-a-color"
+  ],
+  "command": "python -m crunk query color not-a-color",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_16_query.py::test_color_unparseable_value_exits_2",
+  "setup_deleted": [],
+  "stdin": null
+}

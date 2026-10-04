@@ -1,0 +1,8 @@
+Badge  frontend/Badge.tsx
+  elements: (none)
+  modifiers: (none)
+  tokens: --color-accent
+  utilities: bg-primary, p-[13px]
+  colors: (none)
+  spacings: (none)
+  layers: 5

@@ -1,0 +1,14 @@
+kind = "create"
+title = "Wire CSS/SCSS grammar into frob.lang (contrast/target-size/hidden-text substrate)"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M2Y1SS0MVHB8M891RN134SE7"
+aliases = ["T-5303"]
+labels = ["milestone:0.534.0"]
+scope = ["src/frob/lang/__init__.py", "src/frob/lang/_walk_css.py", "docs/modules/lang.md", "tests/fixtures/lang/sample.css", "tests/fixtures/lang/sample.scss", "src/frob/lang/_extract.py", "tests/test_lang_css.py", "src/frob/lang/_support.py"]
+body = "NEW leaf (owner-added): A11Y (T-5146-3, T-5146-4) and SEO (T-5147-3) need a real CSS/SCSS grammar for contrast-ratio computation, outline:none detection, target-size box computation, and hidden-text (color==background/font-size:0/opacity:0) detection -- confirm tree-sitter-language-pack's css grammar covers SCSS syntax or pin a dedicated tree-sitter-scss grammar if not. Wire .css/.scss into _EXTENSION_TABLE the same way WEBSUB-1 wires html/js/jsx/vue; write a thin _walk_css.py walker. Positive-control fixture: tests/fixtures/lang/sample.{css,scss}. T-5146-3, T-5146-4, and T-5147-3 block on this leaf."
+at = "2026-09-22T00:00:00Z"
+actor = "human"
+rev = 1

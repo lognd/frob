@@ -1,0 +1,14 @@
+kind = "create"
+title = "Post-land sweep residue 2026-09-23_0726: FLAGCOV001:frob.toml "
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+aliases = ["T-5389"]
+scope = ["src/frob/app/_config_external.py"]
+body = """
+Findings raised by a post-land sweep and disposed against this ticket by the coordinator's runner to keep the quarantine clear. Fix each in scope:
+FLAGCOV001:frob.toml"""
+at = "2026-09-23T00:00:00Z"
+actor = "human"
+rev = 1

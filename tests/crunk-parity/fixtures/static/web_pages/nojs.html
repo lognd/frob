@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<!--
+T-0224 fixture: a no-JS/crawler-style low-effort-client page. The
+`<noscript>` block is the ONLY thing a `java_script_enabled=False`
+platform (CONSUMER-VALIDATED SHAPE, 2026-09-26, logand) ever renders --
+a JS-driven script would flip `data-renderer` to "js-ran" and the system
+test asserts it never does on this platform, while a plain
+`java_script_enabled=True` platform DOES flip it, proving the setting
+reaches playwright's `new_context` for real (not just a doctor/schema
+change).
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>crunk no-js fixture</title>
+</head>
+<body data-renderer="server-rendered">
+  <noscript>
+    <p id="label">no-js fallback content</p>
+  </noscript>
+  <p id="js-label" style="display:none">js placeholder</p>
+  <script>
+    document.body.setAttribute("data-renderer", "js-ran");
+    document.getElementById("js-label").style.display = "block";
+  </script>
+</body>
+</html>

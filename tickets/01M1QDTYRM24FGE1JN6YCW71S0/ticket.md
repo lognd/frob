@@ -1,0 +1,14 @@
++++
+id = "01M1QDTYRM24FGE1JN6YCW71S0"
+title = "comment placement (CPLACE001/CPLACE002) burn-down: 2149 unwaived findings"
+type = "bug"
+category = "triage"
+priority = "medium"
+reporter = "agent"
+created = "2026-09-05T00:00:00Z"
+updated = "2026-09-05T00:00:00Z"
+aliases = ["T-3860"]
+labels = ["milestone:0.541.0", "v1-cluster:F1"]
++++
+
+T-3844 burn-down: this rule/cluster (CPLACE001,CPLACE002) carried 2149 unwaived warning-level findings on the 2026-09-05 full unscoped 'frob check --no-cache' baseline measured for T-3844 (see that ticket's body for the full histogram). It is intentionally NOT promoted to error by T-3844 -- promoting a rule that still fires reds the build for everyone. This ticket's job: drive the live unwaived finding count for CPLACE001,CPLACE002 to zero (real fixes and/or reasoned frob:waive entries), then promote CPLACE001,CPLACE002 from warn to error in frob.toml's [gates.severity] T-1002 managed zone as a follow-up to this same campaign.

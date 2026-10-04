@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_07_json_exit_codes.py::test_json_violating_tree_exits_1_with_rule_path_line",
+  "setup_deleted": [],
+  "stdin": null
+}

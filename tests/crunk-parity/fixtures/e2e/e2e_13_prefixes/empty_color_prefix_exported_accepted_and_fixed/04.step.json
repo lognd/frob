@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "check"
+  ],
+  "command": "python -m crunk check",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_13_prefixes.py::test_empty_color_prefix_exported_accepted_and_fixed",
+  "setup_deleted": [],
+  "stdin": null
+}

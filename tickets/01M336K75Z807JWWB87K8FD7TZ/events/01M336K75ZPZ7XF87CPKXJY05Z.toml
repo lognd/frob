@@ -1,0 +1,18 @@
+kind = "create"
+title = "WEBSEC123-125: resource-exhaustion input-bounds"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M2Y1SS0NVJMAC21FPVPYYSEE"
+aliases = ["T-5311"]
+labels = ["milestone:0.534.0"]
+scope = ["src/frob/webapp/_websec_bounds.py", "tests/fixtures/webapp/websec1xx/bounds/**", "docs/modules/webapp-websec-bounds.md", "tests/unit/test_websec_bounds.py", "src/frob/gates/_taint_gate.py"]
+body = "Unbounded input length (Pydantic/Zod/class-validator schema AST for missing max_length/maxLength/maxItems), XML entity bomb/XXE (XML-parser-instantiation AST for missing resolve_entities=False/defusedxml), JSON bomb/unbounded nesting depth (body-parser config for missing depth/size limit), unbounded recursion on user-controlled input (recursive function with no max-depth guard). Item 28 (business-logic step-skipping) is dynamic-only per the corpus -- file as a frob:tests obligation in this leaf's Done report, not a static rule. Fixture per rule id."
+at = "2026-09-22T00:00:00Z"
+actor = "human"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M336K75VAADETHRZ71MT5J2W"

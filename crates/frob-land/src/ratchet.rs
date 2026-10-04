@@ -2,13 +2,15 @@
 //!
 //! The base side is the same check run without a ticket scope on the base tip,
 //! in a throwaway detached worktree under the git common dir. Its finding
-//! fingerprints are cached per base commit in `<git common dir>/frob/land-base/<oid>.json`,
-//! shared by every worktree, so a second land on the same base (from any ticket, or a `--wait`
-//! retry that did not move it) costs nothing; a moved base has a new oid and so is recomputed.
+//! fingerprints are cached per base commit, engine version and config digest in
+//! `<git common dir>/frob/land-base/<oid>-<key>.json`, shared by every worktree, so a second land on
+//! the same base (from any ticket, or a `--wait` retry that did not move it) costs nothing; a moved
+//! base, a new engine or a changed config has a new key and so is recomputed (~F4YA3S9).
+//! Findings are compared as multisets: a second occurrence of a fingerprint the base has once is new.
 //! The throwaway worktree's check opens the repository-shared cache (gob-cache), so every file
 //! unchanged since an earlier check is a cache hit (~TSK0M4Y).
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use frob_check::CheckOptions;
@@ -42,6 +44,8 @@ pub struct FindingNote {
 struct BaseSet {
     /// Full commit oid the set belongs to.
     oid: String,
+    /// Cache key (engine version and config digest) the set was computed under.
+    key: String,
     /// Every finding of the unscoped check at that commit.
     findings: Vec<FindingNote>,
 }
@@ -73,6 +77,16 @@ pub(crate) fn notes(report: &CheckReport) -> Vec<FindingNote> {
         .collect()
 }
 
+/// The cache key of a base set: engine version plus a digest of the ledger config the check runs with.
+// frob:ticket 01M42MGPC19KXFQ0DS2F4YA3S9
+#[must_use]
+pub fn cache_key(ledger: &LedgerConfig) -> String {
+    let mut h = blake3::Hasher::new();
+    h.update(format!("{ledger:?}").as_bytes());
+    let digest = h.finalize().to_hex();
+    format!("{}-{}", env!("CARGO_PKG_VERSION"), &digest.as_str()[..16])
+}
+
 /// The unscoped findings at the base commit `oid`, from the cache or a fresh run.
 pub(crate) fn base_findings(
     wt: &Repo,
@@ -80,12 +94,13 @@ pub(crate) fn base_findings(
     oid: &str,
     ledger: &LedgerConfig,
 ) -> Result<Vec<FindingNote>, LandError> {
+    let key = cache_key(ledger);
     let cache = wt
         .common_dir()
         .join(gob_cache::SHARED_DIR)
         .join(LAND_BASE_DIR)
-        .join(format!("{oid}.json"));
-    if let Some(set) = read_cache(&cache, oid) {
+        .join(format!("{oid}-{key}.json"));
+    if let Some(set) = read_cache(&cache, oid, &key) {
         tracing::info!(
             oid,
             findings = set.findings.len(),
@@ -98,6 +113,7 @@ pub(crate) fn base_findings(
         &cache,
         &BaseSet {
             oid: oid.to_owned(),
+            key,
             findings: findings.clone(),
         },
     );
@@ -105,10 +121,10 @@ pub(crate) fn base_findings(
 }
 
 /// Read a cached set, ignoring a missing, unreadable or mismatched file.
-fn read_cache(path: &Path, oid: &str) -> Option<BaseSet> {
+fn read_cache(path: &Path, oid: &str, key: &str) -> Option<BaseSet> {
     let text = std::fs::read_to_string(path).ok()?;
     match serde_json::from_str::<BaseSet>(&text) {
-        Ok(set) if set.oid == oid => Some(set),
+        Ok(set) if set.oid == oid && set.key == key => Some(set),
         Ok(_) | Err(_) => {
             tracing::warn!(path = %path.display(), "land base cache unusable; recomputing");
             None
@@ -244,7 +260,7 @@ fn blocking(report: &CheckReport) -> Vec<FindingNote> {
 /// finding of a rule both runs produce is judged on the unscoped side only, so repository-level text
 /// that differs between the two runs cannot read as new.
 pub(crate) fn verdict(scoped: &CheckReport, head: &CheckReport, base: &[FindingNote]) -> Verdict {
-    let known: HashSet<&str> = base.iter().map(|n| n.fingerprint.as_str()).collect();
+    let mut budget = counts(base);
     let head_notes = notes(head);
     let head_fps: HashSet<&str> = head_notes.iter().map(|n| n.fingerprint.as_str()).collect();
     let head_rules: HashSet<&str> = head_notes.iter().map(|n| n.rule.as_str()).collect();
@@ -261,22 +277,77 @@ pub(crate) fn verdict(scoped: &CheckReport, head: &CheckReport, base: &[FindingN
             out.new.push(n);
         }
     }
+    // Multiset comparison: each base occurrence of a fingerprint absorbs one head occurrence.
     for n in blocking(head) {
-        if !seen.insert(n.fingerprint.clone()) {
-            continue;
-        }
-        if known.contains(n.fingerprint.as_str()) {
-            out.pre_existing.push(n);
-        } else {
-            out.new.push(n);
+        match budget.get_mut(n.fingerprint.as_str()) {
+            Some(left) if *left > 0 => {
+                *left -= 1;
+                out.pre_existing.push(n);
+            }
+            _ => out.new.push(n),
         }
     }
-    out.resolved = base
-        .iter()
-        .filter(|n| !head_fps.contains(n.fingerprint.as_str()))
-        .cloned()
-        .collect();
+    let mut head_left = counts(&head_notes);
+    for n in base {
+        match head_left.get_mut(n.fingerprint.as_str()) {
+            Some(left) if *left > 0 => *left -= 1,
+            _ => out.resolved.push(n.clone()),
+        }
+    }
     out
+}
+
+/// How many times each fingerprint occurs in `notes`.
+fn counts(notes: &[FindingNote]) -> HashMap<&str, usize> {
+    let mut m = HashMap::new();
+    for n in notes {
+        *m.entry(n.fingerprint.as_str()).or_insert(0) += 1;
+    }
+    m
+}
+
+#[cfg(test)]
+mod count_tests {
+    use super::*;
+
+    fn note(fp: &str) -> FindingNote {
+        FindingNote {
+            fingerprint: fp.to_owned(),
+            rule: "X001".to_owned(),
+            path: Some("a.rs".to_owned()),
+            message: "m".to_owned(),
+        }
+    }
+
+    // frob:tests crates/frob-land/src/ratchet.rs::counts
+    #[test]
+    fn counts_are_per_fingerprint_multiplicities() {
+        let notes = [note("x"), note("x"), note("y")];
+        let c = counts(&notes);
+        assert_eq!((c["x"], c["y"]), (2, 1));
+    }
+
+    // frob:tests crates/frob-land/src/ratchet.rs::cache_key
+    #[test]
+    fn a_config_change_invalidates_the_cached_base_set() {
+        let a = LedgerConfig::default();
+        let b = LedgerConfig {
+            dir: "other".to_owned(),
+            ..LedgerConfig::default()
+        };
+        assert_eq!(cache_key(&a), cache_key(&a));
+        assert_ne!(cache_key(&a), cache_key(&b));
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let path = tmp.path().join("s.json");
+        let set = BaseSet {
+            oid: "o".to_owned(),
+            key: cache_key(&a),
+            findings: vec![note("x")],
+        };
+        write_cache(&path, &set);
+        assert!(read_cache(&path, "o", &cache_key(&a)).is_some());
+        assert!(read_cache(&path, "o", &cache_key(&b)).is_none());
+    }
 }
 
 #[cfg(all(test, unix))]

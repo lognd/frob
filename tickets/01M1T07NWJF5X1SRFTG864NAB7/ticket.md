@@ -1,0 +1,28 @@
++++
+id = "01M1T07NWJF5X1SRFTG864NAB7"
+title = "POL000: policy.pattern matching zero nodes is a config error"
+type = "security"
+category = "done"
+outcome = "done"
+priority = "high"
+parent = "01M1T07NWGXQV249M3HN5DQV9V"
+reporter = "agent"
+created = "2026-09-06T00:00:00Z"
+updated = "2026-09-06T00:00:02Z"
+aliases = ["T-3986"]
+scope = ["src/frob/policy/__init__.py"]
+
+[[acceptance]]
+text = "given a [[policy.pattern]] entry whose query matches zero nodes across its full declared glob set, when frob check runs, then POL000 fires distinct from a clean pass"
+bound = false
+
+[[acceptance]]
+text = "given a pattern that matches at least one node with zero violations, when frob check runs, then POL000 stays quiet"
+bound = false
++++
+
+F-196 (T-3984 item 1). VERIFIED: git grep for POL000 across src/frob found nothing -- no existing rule checks whether a [[policy.pattern]] entry ever matches. An INSTANCE of the subject-count primitive (T-3985): a policy.pattern is precisely a gate configured to be enforcing over a glob set, and matching zero nodes across its whole glob set today is invisible.
+
+FINDING THIS WOULD HAVE CAUGHT: a malformed or over-narrow policy.pattern query silently matching nothing across its entire configured glob set -- indistinguishable today from a pattern that correctly finds no violations because the code is clean. A malformed query is a hard config error, not silence, per the consumer.
+
+Depends on T-3985 (the subject-count primitive): once ToolResult/policy evaluation reports a per-pattern match count, POL000 is "an enforcing policy.pattern entry whose match count (nodes visited, not violations found) is zero across its full glob set" -- flag it as a configuration error distinct from a clean pass.

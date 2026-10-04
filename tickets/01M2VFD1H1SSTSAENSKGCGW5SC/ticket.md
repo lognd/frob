@@ -1,0 +1,16 @@
++++
+id = "01M2VFD1H1SSTSAENSKGCGW5SC"
+title = "TICK008 real-repo smoke test exceeds 120s on posix under fleet load"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "medium"
+reporter = "human"
+created = "2026-09-19T00:00:00Z"
+updated = "2026-09-19T00:00:02Z"
+aliases = ["T-4641"]
+labels = ["milestone:0.533.0"]
+scope = ["tests/gates_suite/test_tick.py"]
++++
+
+CI run 35448990233 (dev tip beedd71c4) failed mac+ubuntu (NOT windows) with a STALL-DETECTED worker crash: tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_real_repo_ledger_is_tick008_clean exceeded its 120s per-test timeout (thread-method os._exit, 120.1-120.3s elapsed), cascading into 3 collateral land-lock-guard test failures in the same aborted xdist run (test_ticket_reconcile/_parent/_priority LandInProgressGuard tests). This test calls frob.tickets.load_queue(root) against this repo's OWN live tickets/ directory (currently 1000+ ticket dirs and growing under active multi-agent fleet load) and runs the full TICK008 gate over it -- a real-repo smoke test whose cost scales with the live ledger size and is exposed to lock contention from concurrent frob ticket writers, not a fixed-cost unit test. Only mac/ubuntu hit the 120s ceiling in this run; windows completed the full suite without stalling. Investigate whether this is a genuine hang (deadlock/livelock in load_queue under concurrent ticket writes) or purely load/scale-dependent (ledger has grown well past whatever baseline the 120s timeout was calibrated against); reproduce locally with faulthandler and measure wall time outside CI load. If load-dependent, raise the timeout with a measured justification citing current ledger size; if a genuine hang, fix it.

@@ -1,6 +1,8 @@
 //! The ledger write primitive: commit a set of paths onto a ref by compare-and-swap.
 
+use std::hash::{BuildHasher, Hasher};
 use std::path::Path;
+use std::time::Duration;
 
 use gix::bstr::{BString, ByteSlice};
 use gix::object::tree::EntryKind;
@@ -10,6 +12,23 @@ use tracing::{debug, info, warn};
 
 use crate::read::odb_err;
 use crate::{GitError, Oid, RelPath, Repo};
+
+/// Backoff window after the first lost compare-and-swap; doubles per loss up to [`BACKOFF_CAP`].
+const BACKOFF_BASE: Duration = Duration::from_millis(100);
+/// Largest backoff window, so the whole retry budget stays bounded (about 3 s of sleep at 5 retries).
+const BACKOFF_CAP: Duration = Duration::from_millis(3200);
+
+/// Sleep time for the `retries`-th lost compare-and-swap: full jitter in `[0, min(cap, base * 2^(n-1))]`.
+fn backoff_delay(retries: u32) -> Duration {
+    let window = BACKOFF_BASE
+        .saturating_mul(1u32 << retries.saturating_sub(1).min(16))
+        .min(BACKOFF_CAP);
+    // RandomState is seeded per process from the OS, which de-synchronises racing writers.
+    let mut h = std::collections::hash_map::RandomState::new().build_hasher();
+    h.write_u32(retries);
+    let nanos = u64::try_from(window.as_nanos()).unwrap_or(u64::MAX).max(1);
+    Duration::from_nanos(h.finish() % nanos)
+}
 
 /// Tuning for [`Repo::commit_paths`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -163,7 +182,13 @@ impl Repo {
                 }
                 Err(CasError::Lost(why)) => {
                     retries += 1;
-                    debug!(ref_name = %full, attempt, %why, "cas lost; re-reading tip");
+                    if attempt + 1 < attempts {
+                        let pause = backoff_delay(retries);
+                        debug!(ref_name = %full, attempt, %why, ?pause, "cas lost; backing off before re-reading tip");
+                        std::thread::sleep(pause);
+                    } else {
+                        debug!(ref_name = %full, attempt, %why, "cas lost on the final attempt");
+                    }
                 }
                 Err(CasError::Fatal(e)) => return Err(e),
             }

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_05_tokens.py::test_edit_accent_drifts_then_regenerates_tokens",
+  "setup_deleted": [],
+  "stdin": null
+}

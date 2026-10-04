@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_26_tsx_inventory.py::test_map_shows_jsx_group_terminal_and_json",
+  "setup_deleted": [],
+  "stdin": null
+}

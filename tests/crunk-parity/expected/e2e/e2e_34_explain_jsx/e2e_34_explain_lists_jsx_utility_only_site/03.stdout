@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "kind": "explain",
+  "results": [
+    {
+      "name": "--bg-primary",
+      "value": "#0d1117",
+      "group": "color",
+      "defined_in": "styles/tokens.css",
+      "sites": [
+        {
+          "path": "frontend/Shell.tsx",
+          "line": 2
+        }
+      ],
+      "utilities": [
+        "bg-bg-primary"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "kind": "uses",
+  "results": [
+    {
+      "path": "styles/base/reset.css",
+      "line": 9
+    },
+    {
+      "path": "styles/components/card.css",
+      "line": 2
+    },
+    {
+      "path": "styles/components/panel.css",
+      "line": 2
+    }
+  ]
+}

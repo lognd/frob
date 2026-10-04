@@ -1,0 +1,241 @@
+# Violations
+
+.:0  GALLERY001  error  missing render for cell admin/default@reflow-320
+.:0  GALLERY001  error  missing render for cell admin/default@webkit-desktop
+.:0  GALLERY001  error  missing render for cell admin/default@webkit-mobile
+.:0  GALLERY001  error  missing render for cell admin/forbidden-non-admin@reflow-320
+.:0  GALLERY001  error  missing render for cell admin/forbidden-non-admin@webkit-desktop
+.:0  GALLERY001  error  missing render for cell admin/forbidden-non-admin@webkit-mobile
+.:0  GALLERY001  error  missing render for cell confirm-dialog/open@reflow-320
+.:0  GALLERY001  error  missing render for cell confirm-dialog/open@webkit-desktop
+.:0  GALLERY001  error  missing render for cell confirm-dialog/open@webkit-mobile
+.:0  GALLERY001  error  missing render for cell landing/ascii-bg-doom@chromium-desktop
+.:0  GALLERY001  error  missing render for cell landing/ascii-bg-doom@chromium-mobile
+.:0  GALLERY001  error  missing render for cell landing/ascii-bg-rain@chromium-desktop
+.:0  GALLERY001  error  missing render for cell landing/default@chromium-mobile
+.:0  GALLERY001  error  missing render for cell landing/default@firefox-desktop
+.:0  GALLERY001  error  missing render for cell landing/default@firefox-mobile
+.:0  GALLERY001  error  missing render for cell landing/mobile-nav-open@firefox-mobile
+.:0  GALLERY001  error  missing render for cell landing/mobile-nav-open@reflow-320
+.:0  GALLERY001  error  missing render for cell landing/mobile-nav-open@webkit-mobile
+.:0  GALLERY001  error  missing render for cell landing/reduced-motion@reflow-320
+.:0  GALLERY001  error  missing render for cell landing/reduced-motion@webkit-desktop
+.:0  GALLERY001  error  missing render for cell landing/reduced-motion@webkit-mobile
+.:0  GALLERY001  error  missing render for cell login/default@firefox-desktop
+.:0  GALLERY001  error  missing render for cell login/default@firefox-mobile
+.:0  GALLERY001  error  missing render for cell login/default@reflow-320
+.:0  GALLERY001  error  missing render for cell login/error-429-rate-limited@firefox-desktop
+.:0  GALLERY001  error  missing render for cell login/error-429-rate-limited@firefox-mobile
+.:0  GALLERY001  error  missing render for cell login/error-429-rate-limited@reflow-320
+.:0  GALLERY001  error  missing render for cell login/error-503-limiter-unavailable@firefox-desktop
+.:0  GALLERY001  error  missing render for cell login/error-503-limiter-unavailable@firefox-mobile
+.:0  GALLERY001  error  missing render for cell login/error-503-limiter-unavailable@reflow-320
+.:0  GALLERY001  error  missing render for cell login/error-field-validation@firefox-desktop
+.:0  GALLERY001  error  missing render for cell login/error-field-validation@firefox-mobile
+.:0  GALLERY001  error  missing render for cell login/error-field-validation@reflow-320
+.:0  GALLERY001  error  missing render for cell portal/default@firefox-desktop
+.:0  GALLERY001  error  missing render for cell portal/default@firefox-mobile
+.:0  GALLERY001  error  missing render for cell portal/default@reflow-320
+.:0  GALLERY001  error  missing render for cell portal/empty-invoices@firefox-desktop
+.:0  GALLERY001  error  missing render for cell portal/empty-invoices@firefox-mobile
+.:0  GALLERY001  error  missing render for cell portal/empty-invoices@reflow-320
+.:0  GALLERY001  error  missing render for cell portal/unauthenticated-redirect@firefox-desktop
+.:0  GALLERY001  error  missing render for cell portal/unauthenticated-redirect@firefox-mobile
+.:0  GALLERY001  error  missing render for cell portal/unauthenticated-redirect@reflow-320
+.:0  GALLERY001  error  missing render for cell projects/default@firefox-desktop
+.:0  GALLERY001  error  missing render for cell projects/default@firefox-mobile
+.:0  GALLERY001  error  missing render for cell projects/default@reflow-320
+.:0  GALLERY001  error  missing render for cell projects/empty@firefox-desktop
+.:0  GALLERY001  error  missing render for cell projects/empty@firefox-mobile
+.:0  GALLERY001  error  missing render for cell projects/empty@reflow-320
+.:0  GALLERY001  error  missing render for cell projects/error-api@firefox-desktop
+.:0  GALLERY001  error  missing render for cell projects/error-api@firefox-mobile
+.:0  GALLERY001  error  missing render for cell projects/error-api@reflow-320
+.:0  GALLERY001  error  missing render for cell projects/loading@firefox-desktop
+.:0  GALLERY001  error  missing render for cell projects/loading@firefox-mobile
+.:0  GALLERY001  error  missing render for cell projects/loading@reflow-320
+.:0  GALLERY001  error  missing render for cell register/default@firefox-desktop
+.:0  GALLERY001  error  missing render for cell register/default@firefox-mobile
+.:0  GALLERY001  error  missing render for cell register/default@reflow-320
+.:0  GALLERY001  error  missing render for cell register/success-check-your-inbox@firefox-desktop
+.:0  GALLERY001  error  missing render for cell register/success-check-your-inbox@firefox-mobile
+.:0  GALLERY001  error  missing render for cell register/success-check-your-inbox@reflow-320
+.:0  GALLERY001  error  missing render for cell reset-password/default@firefox-desktop
+.:0  GALLERY001  error  missing render for cell reset-password/default@firefox-mobile
+.:0  GALLERY001  error  missing render for cell reset-password/default@reflow-320
+.:0  GALLERY001  error  missing render for cell reset-password/success-reset-done@firefox-desktop
+.:0  GALLERY001  error  missing render for cell reset-password/success-reset-done@firefox-mobile
+.:0  GALLERY001  error  missing render for cell reset-password/success-reset-done@reflow-320
+.:0  GALLERY001  error  missing render for cell verify-email/default@firefox-desktop
+.:0  GALLERY001  error  missing render for cell verify-email/default@firefox-mobile
+.:0  GALLERY001  error  missing render for cell verify-email/default@reflow-320
+.:0  GALLERY001  error  missing render for cell verify-email/error-api@firefox-desktop
+.:0  GALLERY001  error  missing render for cell verify-email/error-api@firefox-mobile
+.:0  GALLERY001  error  missing render for cell verify-email/error-api@reflow-320
+.:0  GALLERY001  error  missing render for cell verify-email/success-verified@firefox-desktop
+.:0  GALLERY001  error  missing render for cell verify-email/success-verified@firefox-mobile
+.:0  GALLERY001  error  missing render for cell verify-email/success-verified@reflow-320
+.:0  GALLERY002  error  unapproved cell admin/default@firefox-mobile
+.:0  GALLERY002  error  unapproved cell admin/forbidden-non-admin@firefox-mobile
+.:0  GALLERY002  error  unapproved cell confirm-dialog/open@firefox-mobile
+.:0  GALLERY002  error  unapproved cell landing/ascii-bg-donut@chromium-mobile
+.:0  GALLERY002  error  unapproved cell landing/default@chromium-desktop
+.:0  GALLERY002  error  unapproved cell landing/mobile-nav-open@chromium-mobile
+.:0  GALLERY002  error  unapproved cell landing/reduced-motion@firefox-mobile
+.:0  GALLERY002  error  unapproved cell login/default@chromium-mobile
+.:0  GALLERY002  error  unapproved cell login/error-429-rate-limited@chromium-mobile
+.:0  GALLERY002  error  unapproved cell login/error-503-limiter-unavailable@chromium-mobile
+.:0  GALLERY002  error  unapproved cell login/error-field-validation@chromium-mobile
+.:0  GALLERY002  error  unapproved cell portal/default@chromium-mobile
+.:0  GALLERY002  error  unapproved cell portal/empty-invoices@chromium-mobile
+.:0  GALLERY002  error  unapproved cell portal/unauthenticated-redirect@chromium-mobile
+.:0  GALLERY002  error  unapproved cell projects/default@chromium-mobile
+.:0  GALLERY002  error  unapproved cell projects/empty@chromium-mobile
+.:0  GALLERY002  error  unapproved cell projects/error-api@chromium-mobile
+.:0  GALLERY002  error  unapproved cell projects/loading@chromium-mobile
+.:0  GALLERY002  error  unapproved cell register/default@chromium-mobile
+.:0  GALLERY002  error  unapproved cell register/success-check-your-inbox@chromium-mobile
+.:0  GALLERY002  error  unapproved cell reset-password/default@chromium-mobile
+.:0  GALLERY002  error  unapproved cell reset-password/success-reset-done@chromium-mobile
+.:0  GALLERY002  error  unapproved cell verify-email/default@chromium-mobile
+.:0  GALLERY002  error  unapproved cell verify-email/error-api@chromium-mobile
+.:0  GALLERY002  error  unapproved cell verify-email/success-verified@chromium-mobile
+.:0  GALLERY003  error  expired cell admin/default@chromium-desktop (source changed)
+.:0  GALLERY003  error  expired cell admin/default@chromium-mobile (source changed)
+.:0  GALLERY003  error  expired cell admin/default@firefox-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell admin/forbidden-non-admin@chromium-desktop (source changed)
+.:0  GALLERY003  error  expired cell admin/forbidden-non-admin@chromium-mobile (source changed)
+.:0  GALLERY003  error  expired cell admin/forbidden-non-admin@firefox-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell confirm-dialog/open@chromium-desktop (source changed)
+.:0  GALLERY003  error  expired cell confirm-dialog/open@chromium-mobile (source changed)
+.:0  GALLERY003  error  expired cell confirm-dialog/open@firefox-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell landing/ascii-bg-cube@chromium-desktop (source changed)
+.:0  GALLERY003  error  expired cell landing/ascii-bg-cube@chromium-mobile (source changed)
+.:0  GALLERY003  error  expired cell landing/ascii-bg-donut@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell landing/ascii-bg-rain@chromium-mobile (source changed)
+.:0  GALLERY003  error  expired cell landing/ascii-bg-sphere@chromium-desktop (source changed)
+.:0  GALLERY003  error  expired cell landing/ascii-bg-sphere@chromium-mobile (platform declaration changed)
+.:0  GALLERY003  error  expired cell landing/default@reflow-320 (source changed)
+.:0  GALLERY003  error  expired cell landing/default@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell landing/default@webkit-mobile (platform declaration changed)
+.:0  GALLERY003  error  expired cell landing/reduced-motion@chromium-desktop (source changed)
+.:0  GALLERY003  error  expired cell landing/reduced-motion@chromium-mobile (source changed)
+.:0  GALLERY003  error  expired cell landing/reduced-motion@firefox-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell landing/wasm-failed@chromium-desktop (source changed)
+.:0  GALLERY003  error  expired cell landing/wasm-failed@chromium-mobile (source changed)
+.:0  GALLERY003  error  expired cell login/default@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell login/default@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell login/default@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell login/error-429-rate-limited@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell login/error-429-rate-limited@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell login/error-429-rate-limited@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell login/error-503-limiter-unavailable@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell login/error-503-limiter-unavailable@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell login/error-503-limiter-unavailable@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell login/error-field-validation@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell login/error-field-validation@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell login/error-field-validation@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell portal/default@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell portal/default@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell portal/default@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell portal/empty-invoices@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell portal/empty-invoices@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell portal/empty-invoices@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell portal/unauthenticated-redirect@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell portal/unauthenticated-redirect@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell portal/unauthenticated-redirect@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell projects/default@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell projects/default@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell projects/default@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell projects/empty@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell projects/empty@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell projects/empty@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell projects/error-api@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell projects/error-api@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell projects/error-api@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell projects/loading@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell projects/loading@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell projects/loading@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell register/default@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell register/default@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell register/default@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell register/success-check-your-inbox@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell register/success-check-your-inbox@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell register/success-check-your-inbox@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell reset-password/default@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell reset-password/default@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell reset-password/default@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell reset-password/success-reset-done@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell reset-password/success-reset-done@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell reset-password/success-reset-done@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell verify-email/default@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell verify-email/default@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell verify-email/default@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell verify-email/error-api@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell verify-email/error-api@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell verify-email/error-api@webkit-mobile (source changed)
+.:0  GALLERY003  error  expired cell verify-email/success-verified@chromium-desktop (platform declaration changed)
+.:0  GALLERY003  error  expired cell verify-email/success-verified@webkit-desktop (source changed)
+.:0  GALLERY003  error  expired cell verify-email/success-verified@webkit-mobile (source changed)
+.:0  GALLERY004  error  rejected cell admin/default@chromium-mobile
+.:0  GALLERY004  error  rejected cell admin/forbidden-non-admin@chromium-mobile
+.:0  GALLERY004  error  rejected cell confirm-dialog/open@chromium-mobile
+.:0  GALLERY004  error  rejected cell landing/ascii-bg-cube@chromium-mobile
+.:0  GALLERY004  error  rejected cell landing/ascii-bg-sphere@chromium-desktop
+.:0  GALLERY004  error  rejected cell landing/default@webkit-desktop
+.:0  GALLERY004  error  rejected cell landing/reduced-motion@chromium-mobile
+.:0  GALLERY004  error  rejected cell landing/wasm-failed@chromium-mobile
+.:0  GALLERY004  error  rejected cell login/default@webkit-mobile
+.:0  GALLERY004  error  rejected cell login/error-429-rate-limited@webkit-mobile
+.:0  GALLERY004  error  rejected cell login/error-503-limiter-unavailable@webkit-mobile
+.:0  GALLERY004  error  rejected cell login/error-field-validation@webkit-mobile
+.:0  GALLERY004  error  rejected cell portal/default@webkit-mobile
+.:0  GALLERY004  error  rejected cell portal/empty-invoices@webkit-mobile
+.:0  GALLERY004  error  rejected cell portal/unauthenticated-redirect@webkit-mobile
+.:0  GALLERY004  error  rejected cell projects/default@webkit-mobile
+.:0  GALLERY004  error  rejected cell projects/empty@webkit-mobile
+.:0  GALLERY004  error  rejected cell projects/error-api@webkit-mobile
+.:0  GALLERY004  error  rejected cell projects/loading@webkit-mobile
+.:0  GALLERY004  error  rejected cell register/default@webkit-mobile
+.:0  GALLERY004  error  rejected cell register/success-check-your-inbox@webkit-mobile
+.:0  GALLERY004  error  rejected cell reset-password/default@webkit-mobile
+.:0  GALLERY004  error  rejected cell reset-password/success-reset-done@webkit-mobile
+.:0  GALLERY004  error  rejected cell verify-email/default@webkit-mobile
+.:0  GALLERY004  error  rejected cell verify-email/error-api@webkit-mobile
+.:0  GALLERY004  error  rejected cell verify-email/success-verified@webkit-mobile
+
+src/styles/tokens.css:0  TOKENS001  error  tokens file missing; run `crunk tokens` to regenerate
+204 errors, 0 warnings, 0 waived
+
+# Contrast
+
+body  fg-primary on bg-primary  10.75 (floor 4.5)  PASS
+
+# Tokens
+
+tokens: missing
+
+# Unused
+- --color-bg-primary
+- --color-fg-primary
+- --font-family-base
+- --font-size-16
+- --font-size-18
+- --font-size-20
+- --font-size-24
+- --font-size-30
+- --font-size-36
+- --font-size-48
+- --space-0
+- --space-12
+- --space-16
+- --space-24
+- --space-32
+- --space-4
+- --space-48
+- --space-64
+- --space-8
+
+# Files
+.  errors=203 warnings=0
+src/styles/tokens.css  errors=1 warnings=0

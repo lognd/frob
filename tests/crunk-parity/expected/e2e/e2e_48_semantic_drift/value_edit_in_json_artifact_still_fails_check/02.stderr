@@ -1,0 +1,5 @@
+WARNING: theme.extend.spacing key '0' collides with Tailwind's default spacing key; it will redefine p-4 etc. -- set namespace_keys = true or rename the scale step
+WARNING: theme.extend.spacing key '4' collides with Tailwind's default spacing key; it will redefine p-4 etc. -- set namespace_keys = true or rename the scale step
+WARNING: theme.extend.spacing key '8' collides with Tailwind's default spacing key; it will redefine p-4 etc. -- set namespace_keys = true or rename the scale step
+WARNING: theme.extend.spacing key '12' collides with Tailwind's default spacing key; it will redefine p-4 etc. -- set namespace_keys = true or rename the scale step
+WARNING: theme.extend.spacing key '16' collides with Tailwind's default spacing key; it will redefine p-4 etc. -- set namespace_keys = true or rename the scale step

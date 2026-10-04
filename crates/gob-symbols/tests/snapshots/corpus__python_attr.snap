@@ -1,0 +1,18 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @python (unit "function" "impl" name="f" (attr "doc" (lit "str" "Doc.")) (attr "dec" (lit "(" "(") (lit "integer" "1") (lit ")" ")")) (group "sequence" (attr "dec" (lit "(" "(") (lit "integer" "1") (lit ")" ")")) (lit "name" "f") (lit "(" "(") (lit ")" ")")) (group "sequence")))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+D0 S1 Unit "f" Must
+
+== file ==
+fidelity F2 status Complete
+== symbols ==
+tests/corpus/python/ops/attr.py::f Function Public parent=
+== edges ==
+Calls tests/corpus/python/ops/attr.py -> ? Unknown Some(Unbound) Some("dec")

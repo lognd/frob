@@ -1,0 +1,39 @@
++++
+id = "01M3AXSDBSB3QWP6W7R1XN4AN6"
+title = "DSTACK001 autofix emits unparsable multi-target frob:tests lines; verify edge-set round-trip before applying"
+type = "bug"
+category = "triage"
+priority = "high"
+reporter = "agent"
+created = "2026-09-25T00:00:00Z"
+updated = "2026-09-25T00:00:00Z"
+aliases = ["T-6521"]
+labels = ["milestone:0.535.0", "v1-cluster:C4a"]
+scope = ["src/frob/gates/_fix_engine_tier_b.py", "src/frob/gates/_directive_stack.py", "tests/unit/gates/test_dstack_autofix_roundtrip.py", "docs/modules/gates.md"]
++++
+
+Measured 2026-09-25 on T-5767 (LAYOUT F-3): the land engine's Tier-A
+DSTACK001 autofix merged the four production-side `# frob:tests` lines
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->above `src/frob/webapp/_layout_structure.py::layout_findings` into ONE
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->line on the test file, tests/unit/test_layout_gate.py:78, with a missing
+comma between the first two targets and a backslash-continued target
+whose trailing `# noqa: E501` was folded into the target string. That
+line never parsed into a resolvable Edge, so the land then refused with
+"new public symbol 'layout_findings' has no frob:tests edge (T-2114)" --
+an autofix that made the tree worse and cost a full land cycle; the
+repair (one well-formed test-side directive, df705c5e65) took a debugger
+agent 80 minutes.
+
+Deliver:
+1. The DSTACK001 autofix (and every Tier-A directive rewriter) must
+   re-parse every line it emits through the same directive grammar
+   `frob.graph.dsl` uses and refuse to apply a rewrite whose output does
+   not round-trip to the same set of edges it started from (edge-set
+   equality before/after; on mismatch: leave the file untouched and log
+   the intended rewrite at WARNING).
+2. Multi-target `frob:tests` lines: emit one directive per target, never
+   a comma list, and never split a target across a backslash
+   continuation; strip any trailing `# noqa` before composing.
+3. Positive control: fixture with four production-side frob:tests lines
+   above one symbol; the autofix output parses to the same four edges on
+   the test side; a planted malformed rewrite is refused and logged.

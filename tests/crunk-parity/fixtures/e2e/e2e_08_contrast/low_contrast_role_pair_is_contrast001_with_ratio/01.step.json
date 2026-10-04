@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_08_contrast.py::test_low_contrast_role_pair_is_contrast001_with_ratio",
+  "setup_deleted": [],
+  "stdin": null
+}

@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "query",
+    "component",
+    "card",
+    "--json"
+  ],
+  "command": "python -m crunk query component card --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_16_query.py::test_component_card",
+  "setup_deleted": [],
+  "stdin": null
+}

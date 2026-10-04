@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "tokens",
+    "--format",
+    "tailwind"
+  ],
+  "command": "python -m crunk tokens --format tailwind",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_27_theme.py::test_format_tailwind_previews_without_writing",
+  "setup_deleted": [],
+  "stdin": null
+}

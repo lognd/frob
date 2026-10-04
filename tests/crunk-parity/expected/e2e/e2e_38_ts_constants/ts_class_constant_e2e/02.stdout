@@ -1,0 +1,112 @@
+{
+  "version": 2,
+  "violations": [
+    {
+      "rule": "TW001",
+      "severity": "warn",
+      "path": "frontend/a11y.ts",
+      "line": 1,
+      "message": "utility 'p-[13px]' is unresolved-by-tailwind (no node/tailwindcss resolvable, or --static); skipped rather than guessed from its name",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "COLOR002",
+      "severity": "error",
+      "path": "styles/base/reset.css",
+      "line": 9,
+      "message": "var(--color-ink) references an undefined token",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "COLOR002",
+      "severity": "error",
+      "path": "styles/base/reset.css",
+      "line": 10,
+      "message": "var(--color-paper) references an undefined token",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "TOKENS001",
+      "severity": "error",
+      "path": "styles/tokens.css",
+      "line": 0,
+      "message": "tokens file drifted; run `crunk tokens` to regenerate",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    }
+  ],
+  "counts": {
+    "error": 3,
+    "warning": 1,
+    "waived": 0
+  },
+  "contrast": {
+    "pairs": [
+      {
+        "role": "body",
+        "foreground": "ink",
+        "background": "paper",
+        "ratio": 16.64,
+        "floor": 4.5,
+        "passes": true
+      }
+    ]
+  },
+  "tokens": {
+    "status": "drifted"
+  },
+  "unused_tokens": [
+    "--accent",
+    "--font-size-12",
+    "--font-size-14",
+    "--font-size-16",
+    "--font-size-20",
+    "--font-size-24",
+    "--font-size-32",
+    "--font-size-48",
+    "--ink",
+    "--layer-base",
+    "--layer-dropdown",
+    "--layer-overlay",
+    "--layer-toast",
+    "--paper",
+    "--radius-0",
+    "--radius-16",
+    "--radius-4",
+    "--radius-8",
+    "--space-0",
+    "--space-12",
+    "--space-16",
+    "--space-24",
+    "--space-32",
+    "--space-4",
+    "--space-48",
+    "--space-64",
+    "--space-8"
+  ],
+  "files": {
+    "frontend/Shell.tsx": {
+      "error": 0,
+      "warning": 0
+    },
+    "frontend/a11y.ts": {
+      "error": 0,
+      "warning": 1
+    },
+    "styles/base/reset.css": {
+      "error": 2,
+      "warning": 0
+    },
+    "styles/tokens.css": {
+      "error": 1,
+      "warning": 0
+    }
+  }
+}

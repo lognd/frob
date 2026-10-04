@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_48_semantic_drift.py::test_tokens_css_byte_edit_still_fails_check",
+  "setup_deleted": [],
+  "stdin": null
+}

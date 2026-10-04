@@ -1,0 +1,4 @@
+usage: crunk check [-h] [--json] [--contrast | --report] [--no-cache]
+                   [--config CONFIG] [--root ROOT]
+                   [PATH ...]
+crunk check: error: argument --contrast: not allowed with argument --report

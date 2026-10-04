@@ -1,0 +1,12 @@
+kind = "create"
+title = "register PRECHECK001-006 in gates _KNOWN_GATE_RULES and src/frob/agent/_precheck.py in design/frob.strata"
+type = "docs"
+category = "triage"
+priority = "medium"
+aliases = ["T-6600"]
+labels = ["v1-cluster:B3d"]
+scope = ["src/frob/gates/_waive.py", "design/frob.strata"]
+body = "found while working T-5642: frob.agent._precheck constructs 6 new rule ids (PRECHECK001..006) that GATERULE001 flags as unregistered in frob.gates._waive._KNOWN_GATE_RULES, and the module's own fs.read/git-subprocess capability (SELFAUDIT001 SYS103/SYS106) is not covered by any design/frob.strata node code= glob, the same gap T-draft-6d585d1b already tracks for frob.agent._brief. Could not fix either within T-5642 itself: src/frob/gates/_waive.py is leased by T-3008 and design/frob.strata is leased by other in-progress tickets. T-5642 carries interim frob:waive directives citing this ticket at each site."
+at = "2026-09-24T00:00:00Z"
+actor = "human"
+rev = 1

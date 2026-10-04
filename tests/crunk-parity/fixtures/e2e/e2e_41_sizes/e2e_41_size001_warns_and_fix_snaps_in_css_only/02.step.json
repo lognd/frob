@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--report",
+    "--json"
+  ],
+  "command": "python -m crunk check --report --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_41_sizes.py::test_e2e_41_size001_warns_and_fix_snaps_in_css_only",
+  "setup_deleted": [],
+  "stdin": null
+}

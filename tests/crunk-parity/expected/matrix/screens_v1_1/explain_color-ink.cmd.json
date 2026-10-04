@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "explain",
+    "color-ink"
+  ],
+  "command": "python -m crunk explain color-ink",
+  "cwd": "fixtures/static/screens_v1_1",
+  "exit": 2,
+  "project": "screens_v1_1"
+}

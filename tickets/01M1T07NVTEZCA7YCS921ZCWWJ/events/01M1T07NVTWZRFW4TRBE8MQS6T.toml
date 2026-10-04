@@ -1,0 +1,17 @@
+kind = "create"
+title = "invariant obligation: forbidden-constant reachability"
+type = "story"
+category = "todo"
+priority = "high"
+flavour = "quality_objective"
+parent = "01M1QDTYV6Z35XFTPNT4QW70Y2"
+aliases = ["T-3962"]
+scope = ["src/frob/gates/_design_invariants.py", "src/frob/graph/callgraph.py", "src/frob/gates/__init__.py", "tests/unit/test_design_invariants.py", "docs/modules/gate-inv011-forbidden-constant-reachability.md"]
+acceptance = ["given a module-level frozenset named matching *_FORBIDDEN/*_EXCLUDED/*_ALLOWED and a declared sink it must guard, when a call-graph path from a declared entrypoint to that sink never references the frozenset, then the new invariant obligation fires naming the unguarded path", "given the existing COV006 BFS reachability code in callgraph.py, when this obligation is implemented, then it reuses that machinery rather than adding a second call-graph traversal"]
+body = """
+F-175 (T-3942 item 1). The consumer explicitly asserts frob ALREADY HAS the machinery this needs: call-graph reachability via a frob:invariant plus frob check --only invariant. PARTIALLY VERIFIED: src/frob/gates/_cov006_third_file_reachable and the COV006 rule (frob:tests call-graph reachability, T-0483) do bounded-BFS reachability over the private-callee call graph (src/frob/graph/callgraph.py) -- so the underlying callgraph/reachability primitive frob would need is proven to already exist and be reused across gates. It is wired for TEST reachability (COV006), not for a security-constant-guard obligation; no existing rule currently checks "is this frozenset consulted on every path to its sink."
+
+FINDING THIS WOULD HAVE CAUGHT: EXCLUDED_TABLES/FORBIDDEN_COLUMNS checked on three write paths and skipped on the fourth (revert_change). Generalise as a frob:invariant obligation form: a module-level frozenset named matching *_FORBIDDEN/*_EXCLUDED/*_ALLOWED must be read (referenced) on every call-graph path from a declared set of entrypoints to the sink function it guards. Reuse the existing callgraph.py reachability machinery (the same BFS used by COV006) rather than building new call-graph code -- this is the specific thing to verify before building, and it is TRUE: the machinery exists, only the obligation form (a new frob:invariant flavor, not a new graph engine) is missing."""
+at = "2026-09-06T00:00:00Z"
+actor = "agent"
+rev = 1
