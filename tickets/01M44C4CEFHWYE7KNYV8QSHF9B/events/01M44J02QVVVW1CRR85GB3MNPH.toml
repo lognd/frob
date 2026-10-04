@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T22:54:17Z"
+digest = "99b703a69ee9cb28e12a50fa9755dd0f5cfbeec039556f1e7b4d37450a6b7b6b"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c9bdd670-749a-40f2-8cc7-b7408403027e with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.034s] gob-testsupport tests::python_launchers_are_tried_in_order_and_find_python3
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.036s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-testsupport python_launchers"
+size = 561
+status = "measured"
+tests = ["tests::python_launchers_are_tried_in_order_and_find_python3"]
+at = "2026-10-04T22:54:17Z"
+actor = "lognd"
+rev = 1
