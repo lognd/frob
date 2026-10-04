@@ -6,7 +6,7 @@ category = "triage"
 priority = "low"
 reporter = "human"
 created = "2026-09-23T00:00:00Z"
-updated = "2026-10-04T21:01:07Z"
+updated = "2026-10-04T21:01:08Z"
 aliases = ["T-5402"]
 labels = ["v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
