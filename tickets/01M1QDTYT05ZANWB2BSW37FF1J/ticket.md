@@ -2,11 +2,12 @@
 id = "01M1QDTYT05ZANWB2BSW37FF1J"
 title = "port frob.serve.server to mcp 2.x API (FastMCP -> MCPServer)"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:08:19Z"
 aliases = ["T-3904"]
 labels = ["milestone:1.0.0", "v1-cluster:E1"]
 scope = ["src/frob/serve/**"]
