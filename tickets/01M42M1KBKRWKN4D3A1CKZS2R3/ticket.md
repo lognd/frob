@@ -2,12 +2,12 @@
 id = "01M42M1KBKRWKN4D3A1CKZS2R3"
 title = "ticket close --outcome done succeeds while the ticket branch holds unmerged commits; doctor stays green"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T04:51:35Z"
-updated = "2026-10-04T04:51:35Z"
+updated = "2026-10-04T04:51:56Z"
 scope = ["crates/frob-evidence/src/done.rs", "crates/frob-evidence/src/guard.rs", "crates/frob/src/ticket/**", "crates/frob/tests/close_guards.rs", "crates/frob-ledger/src/doctor.rs", "docs/design/tickets.md"]
 
 [[acceptance]]
