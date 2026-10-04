@@ -6,7 +6,7 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T03:58:53Z"
-updated = "2026-10-04T04:11:59Z"
+updated = "2026-10-04T04:12:00Z"
 scope = ["crates/frob/src/init.rs", "docs/design/architecture.md", "docs/reference/rules/TICK005.md", "crates/frob-ledger/src/rules.rs"]
 
 [[acceptance]]

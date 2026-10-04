@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Coordinator: the rule page and doctor must document the file format; I misremembered the table name ([[redact]] instead of [[rule]]) when instructing goway, which would have made its rules file malformed and refused every write. A worked example in the generated page prevents that."
+at = "2026-10-04T04:12:00Z"
+actor = "lognd"
+rev = 1
