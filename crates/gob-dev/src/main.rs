@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use gob_dev::import_v1::{self, ImportOptions};
 use gob_dev::out::emit;
-use gob_dev::{Kind, Mode, apply, ci, generate, publish, workspace_root};
+use gob_dev::{Kind, Mode, apply, ci, generate, publish, selfcopy, workspace_root};
 
 /// Command-line interface of the developer task runner.
 #[derive(Debug, Parser)]
@@ -81,12 +81,41 @@ impl std::fmt::Debug for Failed {
 }
 
 // Returning Err from main exits 1 without std::process (PROC001 keeps it out of this crate).
-fn main() -> Result<(), Failed> {
+fn main() -> Result<std::process::ExitCode, Failed> {
     let cli = Cli::parse();
     if let Err(e) = gob_log::init("dev", 0, false) {
         emit(&format!("warning: logging not initialised: {e}"));
     }
-    match cli.command {
+    let plan = selfcopy::plan(
+        cfg!(windows),
+        std::env::var_os(selfcopy::MARKER).is_some(),
+        cli.command.rebuilds_workspace(),
+    );
+    if plan == selfcopy::Plan::ReExec {
+        let args: Vec<String> = std::env::args().skip(1).collect();
+        return match selfcopy::reexec(&args) {
+            Ok(code) => Ok(std::process::ExitCode::from(
+                u8::try_from(code).unwrap_or(1),
+            )),
+            Err(e) => {
+                tracing::error!(error = %e, "self-copy re-exec failed");
+                Err(Failed(format!("error: {e}")))
+            }
+        };
+    }
+    run(cli.command).map(|()| std::process::ExitCode::SUCCESS)
+}
+
+impl Task {
+    /// Whether the task runs a build that can replace `target/debug/gob-dev.exe`.
+    fn rebuilds_workspace(&self) -> bool {
+        matches!(self, Task::Ci { list: false, .. } | Task::Publish { .. })
+    }
+}
+
+/// Run one task in this process.
+fn run(command: Task) -> Result<(), Failed> {
+    match command {
         Task::ImportV1Tickets {
             from,
             to,

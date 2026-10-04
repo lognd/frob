@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T01:58:11Z"
+digest = "8f593c5e7ba8731322374f196d1041c3d95dbdc2e2d6dafa57fc77da9423138c"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 94c1c0a5-8555-4e7a-a0f9-c45df2b3835f with nextest profile: default
+    Starting 2 tests across 13 binaries (124 tests skipped)
+        PASS [   0.009s] frob-release::products publish_jobs_accept_only_product_archives
+        PASS [   0.061s] frob-release::products dist_distributes_exactly_the_product_packages
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.063s] 2 tests run: 2 passed, 124 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E 'test(dist_distributes_exactly_the_product_packages) | test(publish_jobs_accept_only_product_archives)'"
+size = 654
+status = "measured"
+tests = ["publish_jobs_accept_only_product_archives", "dist_distributes_exactly_the_product_packages"]
+at = "2026-10-04T01:58:11Z"
+actor = "lognd"
+rev = 1

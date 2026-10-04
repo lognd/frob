@@ -301,7 +301,7 @@ fn red_check_lists_only_blocking_findings_and_counts_the_rest() {
 
     let err = land(&fx.root, &Fixture::opts(&s)).expect_err("red check");
     let msg = refusal(&err).message.clone();
-    assert!(msg.contains("has 1 blocking finding(s)"), "{msg}");
+    assert!(msg.contains("has 1 new blocking finding(s)"), "{msg}");
     assert!(msg.contains("TODO001 src/b.rs"), "error is listed: {msg}");
     let (listed, tail) = msg.split_once("; and ").expect("tail counts the rest");
     assert_eq!(
@@ -794,4 +794,156 @@ fn a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts() {
     assert_eq!(fx.main_tip(), before);
     let (_, status) = git_out(&s.wt, &["status", "--porcelain"]);
     assert!(!status.lines().any(|l| l.starts_with("UU")), "{status}");
+}
+
+/// Commit `rel` onto `main` of the fixture (a finding that exists on the base before the ticket starts).
+fn commit_on_main(fx: &Fixture, rel: &str, text: &str) {
+    fx.repo()
+        .commit_paths(
+            MAIN,
+            &[(
+                RelPath::new(rel).expect("path"),
+                Some(text.as_bytes().to_vec()),
+            )],
+            "add base file",
+            &CommitOptions::default(),
+        )
+        .expect("main commit");
+}
+
+/// The text of a source file carrying one unfinished-work marker finding.
+fn marked(body: &str) -> String {
+    format!("// {}: finish this\nfn old() {{}}\n{body}", marker())
+}
+
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn a_finding_already_on_the_base_lands_and_is_reported_pre_existing() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    commit_on_main(&fx, "src/old.rs", &marked(""));
+    let s = fx.start("Touch old", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/old.rs", &marked("fn more() {}\n"));
+    Fixture::evidence(&s, "src/old.rs");
+
+    let out = land(&fx.root, &Fixture::opts(&s)).expect("pre-existing finding does not block");
+    assert!(out.closed);
+    assert!(
+        out.pre_existing
+            .iter()
+            .any(|n| n.rule == "TODO001" && n.path.as_deref() == Some("src/old.rs")),
+        "{:?}",
+        out.pre_existing
+    );
+    assert!(out.resolved.is_empty(), "{:?}", out.resolved);
+}
+
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn a_new_finding_refuses_naming_only_the_new_one() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    commit_on_main(&fx, "src/old.rs", &marked(""));
+    let s = fx.start("Touch old and add new", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/old.rs", &marked("fn more() {}\n"));
+    Fixture::commit_in(&s.wt, "src/new.rs", &marked(""));
+    Fixture::evidence(&s, "src/new.rs");
+    let before = fx.main_tip();
+
+    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("new finding refuses");
+    let msg = refusal(&err).message.clone();
+    assert_eq!(refusal(&err).code, "E-LAND-CHECK-RED");
+    assert!(msg.contains("has 1 new blocking finding(s)"), "{msg}");
+    assert!(msg.contains("TODO001 src/new.rs"), "{msg}");
+    assert!(!msg.contains("TODO001 src/old.rs"), "{msg}");
+    assert_eq!(fx.main_tip(), before, "base did not move");
+}
+
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn fixing_a_base_finding_is_reported_resolved() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    commit_on_main(&fx, "src/old.rs", &marked(""));
+    let s = fx.start("Fix old", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/old.rs", "fn old() {}\n");
+    Fixture::evidence(&s, "src/old.rs");
+
+    let out = land(&fx.root, &Fixture::opts(&s)).expect("land");
+    assert!(
+        out.resolved
+            .iter()
+            .any(|n| n.rule == "TODO001" && n.path.as_deref() == Some("src/old.rs")),
+        "{:?}",
+        out.resolved
+    );
+    assert!(out.pre_existing.is_empty(), "{:?}", out.pre_existing);
+}
+
+/// Make `v0.1.0` a hand-made release tag (no recorded cut): REL001 fires wherever it is checked.
+fn stray_tag(fx: &Fixture, name: &str) {
+    git(&fx.root, &["tag", name, "main"]);
+}
+
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    stray_tag(&fx, "v0.1.0");
+    let s = fx.start("Unrelated", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+
+    let out = land(&fx.root, &Fixture::opts(&s)).expect("REL001 on the base does not block");
+    assert!(out.closed);
+    assert!(
+        out.pre_existing.iter().any(|n| n.rule == "REL001"),
+        "{:?}",
+        out.pre_existing
+    );
+}
+
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn a_release_finding_the_ticket_introduces_refuses() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    // Base: only `v0.1.0` is a product tag (it is stray, so REL001 already fires); `app-v0.2.0` is not a product tag yet.
+    commit_on_main(
+        &fx,
+        "frob.toml",
+        "[pm]\ndone_requires = [\"criteria_evidenced\"]\n[release]\ntag = \"v{version}\"\n",
+    );
+    stray_tag(&fx, "v0.1.0");
+    stray_tag(&fx, "app-v0.2.0");
+    let s = fx.start("Rename tags", &["src/**", "frob.toml"]);
+    Fixture::commit_in(
+        &s.wt,
+        "frob.toml",
+        "[pm]\ndone_requires = [\"criteria_evidenced\"]\n[release]\ntag = \"{product}-v{version}\"\nproducts = [\"app\"]\n",
+    );
+    Fixture::evidence(&s, "frob.toml");
+    let before = fx.main_tip();
+
+    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("new REL001 refuses");
+    let msg = refusal(&err).message.clone();
+    assert_eq!(refusal(&err).code, "E-LAND-CHECK-RED");
+    assert!(msg.contains("REL001"), "{msg}");
+    assert!(msg.contains("app-v0.2.0"), "names the new tag: {msg}");
+    assert!(
+        !msg.contains("v0.1.0:") && !msg.contains("`v0.1.0`"),
+        "{msg}"
+    );
+    assert_eq!(fx.main_tip(), before, "base did not move");
 }

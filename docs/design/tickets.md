@@ -565,6 +565,11 @@ process under the land lock (`.git/frob/land.lock`); there are no jobs
 and no job records (D25). No merge queue daemon, no deferred sweep, no
 mirror, no rapid debt; `land --wait <secs>` bounds only the wait for the
 land lock and exits 3 `E-WAIT-TIMEOUT` (retryable) when it expires.
+The land check is a ratchet (~QAFRXM3): it refuses only blocking findings
+that are new relative to the base tip by fingerprint (rules.md section 6).
+Findings already on the base are reported as `pre_existing`, fixed ones as
+`resolved`, and neither blocks. When `--wait` re-merges a moved base the base
+side is recomputed for the new tip.
 `[land] verify = "ci"` and the quarantine that goes with it are
 Milestone 2 or later (D36). Push is opt-in (`[land] push`). Version bump
 and changelog fragments stay land-owned; the fragment check is rule

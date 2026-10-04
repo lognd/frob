@@ -24,7 +24,7 @@ use frob_ledger::guards::{CloseContext, CloseGuard, default_close_guards};
 use frob_ledger::model::Category;
 use frob_ledger::ops::TicketView;
 use frob_ledger::{Ledger, RefMode, TicketId};
-use gob_diagnostics::{ExitCode, Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass};
 use gob_git::{MergeOutcome, Oid, Repo, StatusOptions, TreeRef};
 
 use crate::error::{LandError, needs_action};
@@ -33,6 +33,7 @@ use crate::git::git;
 use crate::lock::LandLock;
 use crate::lockfile;
 use crate::plan::{LandOptions, LandOutcome, PlanInputs, RetryPolicy, digest, steps};
+use crate::ratchet::{self, Ratchet};
 
 /// Stable code of the refusal when the base moved during the land.
 const CODE_STALE: &str = "E-LAND-STALE";
@@ -127,8 +128,9 @@ fn prepare(
         base_merge = Some("up-to-date".to_owned());
     }
     let mut warnings = Vec::new();
+    let mut ratchet = Ratchet::default();
     if base_merged {
-        verify_check(&wt_path, &here.ledger, &handle, base, opts)?;
+        ratchet = verify_check(&wt, &wt_path, &here.ledger, &handle, base, opts)?;
     } else {
         // A dry run leaves the base unmerged, so the ticket-scoped diff would
         // include the base's own changes; the real land merges first.
@@ -162,6 +164,8 @@ fn prepare(
         worktree: Some(wt_path.clone()),
         base_merge,
         warnings,
+        pre_existing: ratchet.pre_existing,
+        resolved: ratchet.resolved,
         ..empty_outcome(id, &handle, base, opts)
     };
     Ok(Ready {
@@ -251,7 +255,12 @@ impl Ready {
             });
             match advanced {
                 Err(LandError::Refused(r)) if retrying && r.code == CODE_STALE => {
-                    ctx.recover_stale(&site.ledger, opts, attempt, started, budget)?;
+                    if let Some(r) =
+                        ctx.recover_stale(&site.ledger, opts, attempt, started, budget)?
+                    {
+                        self.out.pre_existing = r.pre_existing;
+                        self.out.resolved = r.resolved;
+                    }
                 }
                 other => break other?,
             }
@@ -313,6 +322,8 @@ fn empty_outcome(id: TicketId, handle: &str, base: &str, opts: &LandOptions) -> 
         plan: Vec::new(),
         attempts: 0,
         warnings: Vec::new(),
+        pre_existing: Vec::new(),
+        resolved: Vec::new(),
         changelog_exempt: None,
     }
 }
@@ -509,57 +520,78 @@ fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<
     }
 }
 
-/// Run the ticket-scoped check in the worktree; any finding at the configured `fail_on` refuses.
+/// Run the checks in the worktree; refuse on a finding at the configured `fail_on` that is new relative to the base tip.
+///
+/// The ratchet (rules.md section 6) compares like with like: the unscoped
+/// check at the head against the unscoped check at the base, so repository
+/// level findings such as REL001 match across the two. The ticket-scoped run
+/// adds the ticket-only findings (SCOPE001, done rules) that no unscoped run
+/// has. Blocking findings already on the base are returned as pre-existing,
+/// base findings that are gone as resolved.
 fn verify_check(
+    wt: &Repo,
     wt_path: &Path,
     ledger: &Ledger,
     handle: &str,
     base: &str,
     opts: &LandOptions,
-) -> Result<(), LandError> {
-    let report = frob_check::run(
-        wt_path,
-        &CheckOptions {
-            ticket: Some(handle.to_owned()),
-            base: Some(base.to_owned()),
-            ledger: Some(ledger.config().clone()),
-            skip_telemetry: true,
-            changelog_exempt: opts.no_changelog_reason.is_some(),
-            ..CheckOptions::default()
-        },
-    )?;
-    if report.exit_code() == ExitCode::Ok {
-        tracing::info!(findings = report.findings.len(), "land check green");
-        return Ok(());
+) -> Result<Ratchet, LandError> {
+    let run = |ticket: Option<&str>| {
+        frob_check::run(
+            wt_path,
+            &CheckOptions {
+                ticket: ticket.map(str::to_owned),
+                base: ticket.map(|_| base.to_owned()),
+                ledger: Some(ledger.config().clone()),
+                skip_telemetry: true,
+                changelog_exempt: opts.no_changelog_reason.is_some(),
+                ..CheckOptions::default()
+            },
+        )
+    };
+    let scoped = run(Some(handle))?;
+    let head = run(None)?;
+    let base_oid = wt.rev_parse(base)?.to_string();
+    let base_set = ratchet::base_findings(wt, wt_path, &base_oid, ledger.config())?;
+    let verdict = ratchet::verdict(&scoped, &head, &base_set);
+    tracing::info!(
+        new = verdict.new.len(),
+        pre_existing = verdict.pre_existing.len(),
+        resolved = verdict.resolved.len(),
+        non_blocking = verdict.non_blocking,
+        "land check ratchet"
+    );
+    if verdict.new.is_empty() {
+        return Ok(Ratchet {
+            pre_existing: verdict.pre_existing,
+            resolved: verdict.resolved,
+        });
     }
-    // Reuse the gate's own predicate on one finding at a time so the list matches the verdict.
-    let mut blocking: Vec<_> = report
-        .findings
-        .iter()
-        .filter(|f| {
-            gob_diagnostics::fail_on(
-                std::slice::from_ref(*f),
-                report.fail_on.threshold(),
-                report.fail_on_unresolved,
-            ) != ExitCode::Ok
-        })
-        .collect();
-    blocking.sort_by_key(|f| std::cmp::Reverse(f.severity));
-    let non_blocking = report.findings.len() - blocking.len();
-    tracing::warn!(blocking = blocking.len(), non_blocking, "land check red");
-    let listed: Vec<String> = blocking
+    tracing::warn!(blocking = verdict.new.len(), "land check red");
+    Err(refuse(&scoped, &verdict, (handle, base)))
+}
+
+/// The `E-LAND-CHECK-RED` refusal naming only the new blocking findings of `verdict`.
+fn refuse(
+    report: &frob_check::CheckReport,
+    verdict: &ratchet::Verdict,
+    (handle, base): (&str, &str),
+) -> LandError {
+    let new = &verdict.new;
+    let (non_blocking, pre_existing) = (verdict.non_blocking, verdict.pre_existing.len());
+    let listed: Vec<String> = new
         .iter()
         .take(LIST_CAP)
-        .map(|f| {
-            let at = f
-                .span
-                .as_ref()
-                .and_then(|s| report.files.path(s.file))
-                .unwrap_or("-");
-            format!("{} {at}: {}", f.rule, f.message)
+        .map(|n| {
+            format!(
+                "{} {}: {}",
+                n.rule,
+                n.path.as_deref().unwrap_or("-"),
+                n.message
+            )
         })
         .collect();
-    let hidden = blocking.len().saturating_sub(LIST_CAP);
+    let hidden = new.len().saturating_sub(LIST_CAP);
     let mut tail = String::new();
     if hidden > 0 {
         let _ = write!(tail, "; and {hidden} more blocking finding(s)");
@@ -567,19 +599,25 @@ fn verify_check(
     if non_blocking > 0 {
         let _ = write!(tail, "; and {non_blocking} non-blocking findings");
     }
-    Err(LandError::Refused(
+    if pre_existing > 0 {
+        let _ = write!(
+            tail,
+            "; {pre_existing} pre-existing blocking finding(s) on {base} do not block"
+        );
+    }
+    LandError::Refused(
         Refusal::new(
             "E-LAND-CHECK-RED",
             RefusalClass::GuardNeedsAction,
             format!(
-                "frob check --ticket {handle} has {} blocking finding(s) at or above fail_on ({:?}): {}{tail}",
-                blocking.len(),
+                "frob check --ticket {handle} has {} new blocking finding(s) at or above fail_on ({:?}): {}{tail}",
+                new.len(),
                 report.fail_on,
                 listed.join("; ")
             ),
         )
         .with_remedy(format!("frob check --ticket {handle}")),
-    ))
+    )
 }
 
 /// Evaluate the same close guards `ticket close` applies, before anything moves.
@@ -651,7 +689,7 @@ impl Publish<'_> {
         attempt: u32,
         started: Instant,
         budget: Duration,
-    ) -> Result<(), LandError> {
+    ) -> Result<Option<Ratchet>, LandError> {
         let elapsed = started.elapsed();
         if elapsed >= budget {
             tracing::warn!(attempt, ?elapsed, ?budget, "land retry budget spent");
@@ -684,9 +722,10 @@ impl Publish<'_> {
         };
         tracing::info!(attempt, merge = %how, code_changed, "stale base re-merged");
         if code_changed {
-            verify_check(&wt_path, ledger, self.handle, self.base, opts)?;
+            // The base moved, so its fingerprints are recomputed for the new tip (the cache is keyed by oid).
+            return verify_check(self.wt, &wt_path, ledger, self.handle, self.base, opts).map(Some);
         }
-        Ok(())
+        Ok(None)
     }
 
     /// Fast-forward the base branch to the ticket branch tip; `before` runs first in `branch` ref mode.

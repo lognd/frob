@@ -14,12 +14,14 @@ pub mod land;
 pub mod lock;
 mod lockfile;
 pub mod plan;
+mod ratchet;
 pub mod verb;
 
 pub use error::LandError;
 pub use land::land;
 pub use lock::LandLock;
 pub use plan::{LandOptions, LandOutcome, RetryPolicy};
+pub use ratchet::FindingNote;
 
 /// Register `land` on a product root.
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {

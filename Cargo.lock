@@ -937,6 +937,7 @@ dependencies = [
  "gob-diagnostics",
  "gob-exec",
  "gob-git",
+ "gob-rules",
  "schemars",
  "serde",
  "serde_json",
