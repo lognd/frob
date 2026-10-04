@@ -23,7 +23,7 @@ struct Edit {
 
 /// Fixes written and fixes dropped for overlapping an earlier one.
 #[derive(Debug)]
-pub(crate) struct Applied {
+pub(crate) struct FixRun {
     /// The fixes that were written.
     pub applied: Vec<AppliedFix>,
     /// Fixes skipped because an edit overlapped an accepted one.
@@ -105,7 +105,7 @@ pub(crate) fn apply(
     findings: &[Finding],
     files: &FileInterner,
     analysed: &HashMap<String, String>,
-) -> Result<Applied, CheckError> {
+) -> Result<FixRun, CheckError> {
     let mut candidates = Vec::new();
     for f in findings {
         let Some(fix) = f.fix.as_ref().filter(|x| x.kind == FixKind::Deterministic) else {
@@ -200,7 +200,7 @@ pub(crate) fn apply(
         })
         .collect();
     applied.sort_by(|a, b| (&a.file, &a.rule).cmp(&(&b.file, &b.rule)));
-    Ok(Applied {
+    Ok(FixRun {
         applied,
         skipped_overlap,
         skipped_invalid,
@@ -313,7 +313,7 @@ mod tests {
             })
         }
 
-        fn run(&self, findings: &[Finding]) -> Result<Applied, CheckError> {
+        fn run(&self, findings: &[Finding]) -> Result<FixRun, CheckError> {
             apply(self.dir.path(), findings, &self.files, &self.analysed)
         }
 

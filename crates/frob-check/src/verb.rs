@@ -208,6 +208,12 @@ fn cli_error(err: CheckError) -> CliError {
             &err,
             "repair frob.lock or regenerate it with `frob ack --all`",
         ),
+        CheckError::FixStale(_) => refusal(
+            "E-FIX-STALE",
+            RefusalClass::GuardNeedsAction,
+            &err,
+            "rerun `frob check --fix` so the fix is computed from the current file",
+        ),
         CheckError::Walk(_) | CheckError::FixIo(_) => CliError::internal(err),
     }
 }

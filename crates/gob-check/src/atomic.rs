@@ -42,7 +42,7 @@ pub(crate) fn write_atomic_with(
 
 /// Write `bytes` to `path` atomically (temp sibling, fsync, rename).
 pub(crate) fn write_atomic(path: &Path, bytes: &[u8]) -> io::Result<()> {
-    write_atomic_with(path, bytes, |f, b| f.write_all(b))
+    write_atomic_with(path, bytes, Write::write_all)
 }
 
 #[cfg(test)]
