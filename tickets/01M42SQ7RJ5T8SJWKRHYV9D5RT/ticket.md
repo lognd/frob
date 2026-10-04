@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-04T06:30:47Z"
-updated = "2026-10-04T06:34:32Z"
+updated = "2026-10-04T06:37:19Z"
 scope = ["crates/gob-trust/src/state/**", "crates/gob-trust/tests/state.rs"]
 
 [[acceptance]]
