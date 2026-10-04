@@ -2,12 +2,12 @@
 id = "01M3AXSD9Y63ETVPHNP3V0WSN0"
 title = "SYSDESIGN304: high-fanout cache-fill flow with `stampede_guard` undeclared or unproven"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSDASH31CMNHAQ9JXR1YQ"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:17Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6462"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/strata/_stampede.py (new)", "tests/fixtures/sysdesign/sysdesign304/**"]

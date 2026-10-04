@@ -2,12 +2,12 @@
 id = "01M1WJMD3TQM3XY04FW9BAGVE9"
 title = "strata: declare client-persisted browser storage as a capability with cleared_on triggers, and require a code path per trigger"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1WJMD1X14Z9P76XPX0QQ0NM"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:02:22Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4218"]
 labels = ["v1-cluster:B3d", "triage:accepted"]
 scope = ["src/frob/strata"]

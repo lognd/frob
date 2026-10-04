@@ -2,12 +2,12 @@
 id = "01M3AXSDBA0K29RPNWT7GQ564A"
 title = "STORE120: file-read/upload bytes bound directly into an `INSERT`/`UPDATE` (blob-in-relational)"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD9STSFC2MR8M369JNE8"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:55Z"
+updated = "2026-10-04T22:22:26Z"
 aliases = ["T-6506"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_relational.py", "tests/fixtures/store/store120-relational-blob-insert/**"]

@@ -2,11 +2,11 @@
 id = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
 title = "consumer round-3 backend audit: ten defects frob or strata should have caught, each with a proposed rule (F-307)"
 type = "epic"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "auditor"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:02:03Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4109"]
 labels = ["v1-cluster:B3d", "triage:accepted"]
 

@@ -3,12 +3,12 @@ id = "01M2Y1SS0V388SVN54W7PX2ZBW"
 title = "SEO and WEBPERF: Google spam policies, per-page title/description/canonical/og/structured data, robots and sitemap and llms.txt, hreflang, favicon, Core Web Vitals causes, bundle budget, image and font loading, caching headers, CDN and compression, API payload and pagination, DB pooling and caching"
 type = "story"
 flavour = "quality_objective"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-10-04T21:01:03Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-5147"]
 labels = ["component:gates", "v1-cluster:B2", "area:crunk", "triage:accepted", "milestone:0.538.0"]
 +++

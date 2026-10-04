@@ -2,12 +2,12 @@
 id = "01M3AXSDB5MA9GBDXBZ6RGC19M"
 title = "SYSDESIGN502: high-write-volume store with no declared partition/shard key"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD8X08Y5AGX1VX1CH4QH"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:50Z"
+updated = "2026-10-04T22:22:26Z"
 aliases = ["T-6501"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_data_tier.py", "tests/fixtures/sysdesign/sysdesign502/**"]

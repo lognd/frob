@@ -2,12 +2,12 @@
 id = "01M1T07NWQRGSD3D4X76FV77F5"
 title = "GEN001: declared-generated-files block plus drift gate"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1T07NWGXQV249M3HN5DQV9V"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:05:13Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3991"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/policy/__init__.py"]

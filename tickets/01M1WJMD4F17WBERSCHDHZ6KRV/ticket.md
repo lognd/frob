@@ -2,12 +2,12 @@
 id = "01M1WJMD4F17WBERSCHDHZ6KRV"
 title = "bind a shell component to its runtime image and shellcheck/lint it with that image's actual dialect"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:06:15Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4239"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/strata"]

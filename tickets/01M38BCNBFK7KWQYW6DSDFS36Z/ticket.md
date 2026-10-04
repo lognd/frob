@@ -2,11 +2,11 @@
 id = "01M38BCNBFK7KWQYW6DSDFS36Z"
 title = "Wire dotnet/unity test runners into ticket-runner CLI for csharp/Unity node ids"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-10-04T21:07:00Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-5487"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/app/ticket_runner/**"]

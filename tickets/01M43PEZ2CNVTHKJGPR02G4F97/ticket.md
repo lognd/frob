@@ -2,11 +2,11 @@
 id = "01M43PEZ2CNVTHKJGPR02G4F97"
 title = "One comment discovery: frob-obligations duplicates gob-directives comment scanning"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T14:53:04Z"
-updated = "2026-10-04T14:53:04Z"
+updated = "2026-10-04T22:24:07Z"
 
 [[acceptance]]
 text = "Given the workspace, when searched, then comment discovery per language exists in exactly one crate"

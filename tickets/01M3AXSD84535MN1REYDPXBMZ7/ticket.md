@@ -2,12 +2,12 @@
 id = "01M3AXSD84535MN1REYDPXBMZ7"
 title = "SYSDESIGN106: default-allow security group / broad ingress on data tier / public subnet for data resource"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD8RPMPFSYCWPM0XQY5G"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:58:08Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-6404"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_segmentation.py (new)", "tests/fixtures/sysdesign/sysdesign106/**"]

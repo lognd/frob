@@ -2,12 +2,12 @@
 id = "01M3AXSD90JGPF7RCATZDBKHYB"
 title = "STORE111: Cartesian product from disconnected `MATCH` patterns (Neo4j)"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD9STSFC2MR8M369JNE8"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:58:40Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6432"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_neo4j.py", "tests/fixtures/store/store111-neo4j-disconnected-match/**"]

@@ -3,12 +3,12 @@ id = "01M2Y1SS0Q1MXMXDHZ5ZJAD3XB"
 title = "WEBSEC configuration, headers and supply chain: CSP/HSTS/COOP/CORP set, CORS, debug flags, source maps, stack traces, public buckets, secrets in bundles and CI, Actions SHA pinning, Dockerfile root, timeouts and body limits, audit logging (ASVS V3 V13 V14 V16)"
 type = "story"
 flavour = "user_story"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-10-04T21:00:45Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-5143"]
 labels = ["component:gates", "v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++

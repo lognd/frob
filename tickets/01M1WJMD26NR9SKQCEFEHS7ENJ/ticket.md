@@ -2,11 +2,11 @@
 id = "01M1WJMD26NR9SKQCEFEHS7ENJ"
 title = "consumer round-4 shell audit: nine findings, including outcomes that depend on wall-clock time and a suite that mutates tracked files"
 type = "epic"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "auditor"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:05:51Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4166"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 

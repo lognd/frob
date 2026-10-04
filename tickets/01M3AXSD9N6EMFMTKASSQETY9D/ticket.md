@@ -2,12 +2,12 @@
 id = "01M3AXSD9N6EMFMTKASSQETY9D"
 title = "STORE2xx repo-fact rules"
 type = "story"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M38BCP8YSPMT8SG9Y3VM7F8C"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:05Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6453"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 +++

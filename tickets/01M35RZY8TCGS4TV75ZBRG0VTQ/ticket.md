@@ -2,11 +2,11 @@
 id = "01M35RZY8TCGS4TV75ZBRG0VTQ"
 title = "Add EXPRESS to FrameworkKind and extend WEBSEC authz substrate to Express handlers"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "human"
 created = "2026-09-23T00:00:00Z"
-updated = "2026-10-04T21:01:08Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-5402"]
 labels = ["v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++

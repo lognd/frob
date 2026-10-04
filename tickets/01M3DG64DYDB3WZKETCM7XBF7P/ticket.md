@@ -2,11 +2,11 @@
 id = "01M3DG64DYDB3WZKETCM7XBF7P"
 title = "frob check: csharp/unity project type -- detection via detect_unity_project or *.asmdef and a dispatcher that runs gates plus a configurable [[test.runner]] step"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-04T21:07:16Z"
+updated = "2026-10-04T22:22:26Z"
 aliases = ["T-6590"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/check/__init__.py", "src/frob/app/check_runner.py", "src/frob/lang/_project_detect.py", "src/frob/app/config.py", "docs/modules/check.md"]

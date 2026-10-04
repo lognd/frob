@@ -2,12 +2,12 @@
 id = "01M3AXSDAP90JYC2SP1ZZZPVWP"
 title = "SYSDESIGN402: session middleware configured with an in-memory/file-based backend"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD8AD5W7ECRJX8VGNKVM"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:39Z"
+updated = "2026-10-04T22:22:26Z"
 aliases = ["T-6486"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_horizontal.py", "tests/fixtures/sysdesign/sysdesign402/**"]

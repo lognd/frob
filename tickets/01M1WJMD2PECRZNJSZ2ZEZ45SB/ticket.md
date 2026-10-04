@@ -2,11 +2,11 @@
 id = "01M1WJMD2PECRZNJSZ2ZEZ45SB"
 title = "consumer round-5 shell audit: findings written as why the gates, the design language and the sibling tool each missed them"
 type = "epic"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "auditor"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:05:54Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4182"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 

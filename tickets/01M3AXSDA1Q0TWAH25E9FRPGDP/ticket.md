@@ -2,12 +2,12 @@
 id = "01M3AXSDA1Q0TWAH25E9FRPGDP"
 title = "SYSDESIGN102: hardcoded TLS cert/key material in ingress/LB config, no cert-manager/ACM annotation"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD8RPMPFSYCWPM0XQY5G"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:20Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6465"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_edge.py", "tests/fixtures/sysdesign/sysdesign102/**"]

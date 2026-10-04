@@ -2,12 +2,12 @@
 id = "01M1WJMD3ZARH5W9SRDRG8GTGX"
 title = "split a display-only error-code list into a display axis and a needs-client-recovery axis, and require the totality test to answer both"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1WJMD26NR9SKQCEFEHS7ENJ"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:06:04Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4223"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates"]

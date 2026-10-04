@@ -2,11 +2,11 @@
 id = "01M3AXSDBPJTBS91A20T9WKA9Z"
 title = "verify: single-instance full checks with memory admission; name the stage when the pass is unmeasurable; stop 30-min blocks on a stale watermark"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T21:09:42Z"
+updated = "2026-10-04T22:22:26Z"
 aliases = ["T-6518"]
 labels = ["v1-cluster:C1a", "triage:accepted"]
 scope = ["src/frob/verify/", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/coord/_status.py", "tests/unit/verify/", "docs/modules/tickets-verify-sweep.md"]

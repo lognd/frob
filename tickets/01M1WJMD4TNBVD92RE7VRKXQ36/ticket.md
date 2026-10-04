@@ -2,12 +2,12 @@
 id = "01M1WJMD4TNBVD92RE7VRKXQ36"
 title = "strata flow-participation: a shared contract implemented by more than one component must have both declare participation in one flow node"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:02:34Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4250"]
 labels = ["v1-cluster:B3d", "triage:accepted"]
 scope = ["src/frob/strata"]

@@ -2,11 +2,11 @@
 id = "01M1QDTYS7DYX8E4AR27VYS0DH"
 title = "establish a tail-me result-block contract for every verb, and collapse high-cardinality warnings by default"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-04T21:09:00Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3879"]
 labels = ["v1-cluster:G2", "triage:accepted"]
 +++

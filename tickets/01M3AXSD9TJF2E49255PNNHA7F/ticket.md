@@ -2,12 +2,12 @@
 id = "01M3AXSD9TJF2E49255PNNHA7F"
 title = "SYSDESIGN501: read-only traffic routed to the primary write endpoint, no replica configured"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD8X08Y5AGX1VX1CH4QH"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:11Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6458"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_data_tier.py (new)", "tests/fixtures/sysdesign/sysdesign501/**"]

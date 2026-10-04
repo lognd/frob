@@ -2,11 +2,11 @@
 id = "01M1T07NYT7C24J05PW3A1W4FQ"
 title = "F-262: the vitest stage reports a failure COUNT with no node ids, so a flake cannot be told from a regression"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:06:39Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4058"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/check/_native.py"]

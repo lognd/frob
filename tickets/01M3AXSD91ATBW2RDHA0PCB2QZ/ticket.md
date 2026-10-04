@@ -2,12 +2,12 @@
 id = "01M3AXSD91ATBW2RDHA0PCB2QZ"
 title = "SYSDESIGN201: trust-escalating boundary with no `admit.rate_limit`/`admit.max_size` declared"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSDAZX9B4327J18H8GE7S"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:58:42Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6433"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/strata/_boundary_admission.py (new)", "tests/fixtures/sysdesign/sysdesign201/**"]

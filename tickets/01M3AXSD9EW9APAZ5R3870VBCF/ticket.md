@@ -2,12 +2,12 @@
 id = "01M3AXSD9EW9APAZ5R3870VBCF"
 title = "SYSDESIGN301: outbound call sets a fresh fixed timeout instead of deriving from the inbound deadline"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSDASH31CMNHAQ9JXR1YQ"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:58:59Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6446"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/strata/_deadline_propagation.py (new)", "tests/fixtures/sysdesign/sysdesign301/**"]

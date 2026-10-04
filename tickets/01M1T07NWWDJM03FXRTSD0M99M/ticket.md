@@ -2,12 +2,12 @@
 id = "01M1T07NWWDJM03FXRTSD0M99M"
 title = "required_file: declared surface for untracked-but-mandatory artifacts"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1T07NWGXQV249M3HN5DQV9V"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:05:16Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3996"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_refs_schema.py"]

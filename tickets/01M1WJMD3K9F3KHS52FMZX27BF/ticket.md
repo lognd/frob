@@ -2,12 +2,12 @@
 id = "01M1WJMD3K9F3KHS52FMZX27BF"
 title = "exported check*/*Check symbol with no reference from a declared entrypoint list is a finding; PUBLIC_ALLOWLIST-shaped invariants are its concrete instance"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:05:59Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4211"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates"]

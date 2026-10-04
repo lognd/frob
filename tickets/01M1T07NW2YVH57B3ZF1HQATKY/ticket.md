@@ -2,12 +2,12 @@
 id = "01M1T07NW2YVH57B3ZF1HQATKY"
 title = "PROTO001: protocol conformance at wiring sites"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1QDTYTFZHQYMDHNFBSGQXJJ"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:04:57Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3970"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/arch/_protocol_excuse.py"]

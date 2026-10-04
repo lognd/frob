@@ -2,12 +2,12 @@
 id = "01M1T07NVKXTRT11XJCTHC05AJ"
 title = "shell grammar for ops/**.sh plus starter policy"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1QDTYTRW714S858S0TP6YWM"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:04:43Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3955"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/lang/_walk_bash.py"]

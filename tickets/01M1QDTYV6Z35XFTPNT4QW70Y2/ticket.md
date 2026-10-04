@@ -2,11 +2,11 @@
 id = "01M1QDTYV6Z35XFTPNT4QW70Y2"
 title = "F-175..F-185: backend delta audit -- and the recurrence signal that 3 first-audit asks were never built"
 type = "epic"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-04T21:04:40Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3942"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 +++

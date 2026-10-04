@@ -2,12 +2,12 @@
 id = "01M3AXSDAGXPHDNE84W0BC3QYX"
 title = "STORE202: `*_cache`-named table with no expiry column (relational)"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD9N6EMFMTKASSQETY9D"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:33Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6480"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_relational.py", "tests/fixtures/store/store202-relational-cache-table-no-ttl/**"]

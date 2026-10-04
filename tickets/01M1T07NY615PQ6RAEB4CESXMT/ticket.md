@@ -2,12 +2,12 @@
 id = "01M1T07NY615PQ6RAEB4CESXMT"
 title = "unpaired resource acquisition: known acquire/release API table"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1T07NY4QCBYNNMPSJDNWN5E"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:05:21Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4038"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_protocol_summary.py"]

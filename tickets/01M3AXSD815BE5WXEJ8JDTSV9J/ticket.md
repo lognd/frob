@@ -2,12 +2,12 @@
 id = "01M3AXSD815BE5WXEJ8JDTSV9J"
 title = "authority gaps and dropped rows"
 type = "story"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSDACKS00T3E853M1J0DR"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:58:04Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-6401"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++

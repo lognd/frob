@@ -2,12 +2,12 @@
 id = "01M3DG64EBREVXRQER8DSYX0M9"
 title = "frob test reports NoRunner when a touched set contains test fixture data files (tests/fixtures/*.html): runner selection must ignore non-source fixtures or map them to the tests that reference them"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "low"
 points = 2
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-04T21:07:18Z"
+updated = "2026-10-04T22:22:26Z"
 aliases = ["T-6603"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/testing/_runners.py", "src/frob/testing/_collect.py", "docs/modules/testing.md"]

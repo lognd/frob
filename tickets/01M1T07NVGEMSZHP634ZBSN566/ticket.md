@@ -2,12 +2,12 @@
 id = "01M1T07NVGEMSZHP634ZBSN566"
 title = "ASSERT001: no bare assert in src/**"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1QDTYV6Z35XFTPNT4QW70Y2"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:04:41Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3952"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/**"]

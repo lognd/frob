@@ -2,12 +2,12 @@
 id = "01M3AXSDANMPFY9P9T3JBEEJ2B"
 title = "STORE203: Redis as durable primary store with no AOF/RDB persistence config reviewed"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD9N6EMFMTKASSQETY9D"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:38Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6485"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_redis.py", "tests/fixtures/store/store203-redis-no-persistence-config/**"]

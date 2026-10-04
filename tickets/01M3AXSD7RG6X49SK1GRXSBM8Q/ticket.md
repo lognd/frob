@@ -2,12 +2,12 @@
 id = "01M3AXSD7RG6X49SK1GRXSBM8Q"
 title = "STORE201: JSON/JSONB column queried by many distinct paths, no expression index (relational)"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD9N6EMFMTKASSQETY9D"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:57:34Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-6392"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_relational.py", "tests/fixtures/store/store201-relational-json-blob-schema/**"]

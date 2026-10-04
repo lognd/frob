@@ -2,12 +2,12 @@
 id = "01M1WJMD2VDW136FA4JQ576RV4"
 title = "DRIFT: compare a module's own docstring against its own module's code, not only doc files against acked refs"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:07:45Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4187"]
 labels = ["v1-cluster:F1", "triage:accepted"]
 scope = ["src/frob/gates/_docblocks.py"]

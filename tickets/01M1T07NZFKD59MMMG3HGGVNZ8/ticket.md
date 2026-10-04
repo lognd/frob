@@ -2,12 +2,12 @@
 id = "01M1T07NZFKD59MMMG3HGGVNZ8"
 title = "L-1: document.cookie write pattern for client_storage scanner"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1T07NZ7QPBX3WD3ZVWSJX8H"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:05:31Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4079"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/vet/_capability_registry/_dangerous_ops_other.py"]

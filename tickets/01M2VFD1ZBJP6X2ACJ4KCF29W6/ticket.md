@@ -2,12 +2,12 @@
 id = "01M2VFD1ZBJP6X2ACJ4KCF29W6"
 title = "frob-suggest: replace blanket FROB_SUGGEST_ACK with per-rule token, update docs"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M2VFD1ZDWWNTW1FFGKHCKTS3"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-10-04T21:08:30Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-5099"]
 labels = ["v1-cluster:E1", "triage:accepted"]
 scope = [".claude/hooks/*", "tests/test_hook_frob_suggest.py", "docs/guides/*"]

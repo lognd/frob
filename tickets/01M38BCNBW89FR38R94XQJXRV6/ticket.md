@@ -2,11 +2,11 @@
 id = "01M38BCNBW89FR38R94XQJXRV6"
 title = "WEBSEC225 reserved id follow-up (password policy family)"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-10-04T21:01:20Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-5500"]
 labels = ["v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/webapp/_websec_password.py"]

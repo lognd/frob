@@ -2,12 +2,12 @@
 id = "01M3AXSD9D6VGS7NS3X1R5MECT"
 title = "SYSDESIGN403: horizontally-scaled Deployment with HPA minReplicas 1 or no HPA at all"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD8AD5W7ECRJX8VGNKVM"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:58:58Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6445"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_horizontal.py", "tests/fixtures/sysdesign/sysdesign403/**"]

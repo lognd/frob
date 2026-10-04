@@ -2,11 +2,11 @@
 id = "01M1QDTYTRW714S858S0TP6YWM"
 title = "the edge/ops and frontend audit lists, and the five asks that four independent audits converged on"
 type = "epic"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-04T21:04:39Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3928"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 +++

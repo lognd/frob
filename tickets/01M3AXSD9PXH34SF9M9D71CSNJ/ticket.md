@@ -2,12 +2,12 @@
 id = "01M3AXSD9PXH34SF9M9D71CSNJ"
 title = "STORE204: blocking command (`BLPOP`/`BRPOP`/`WAIT`/long `SUBSCRIBE`) issued on a shared/pooled client object"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD9N6EMFMTKASSQETY9D"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:06Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6454"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_redis.py", "tests/fixtures/store/store204-redis-blocking-on-shared-conn/**"]

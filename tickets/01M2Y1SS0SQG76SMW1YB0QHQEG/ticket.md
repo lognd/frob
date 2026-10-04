@@ -3,12 +3,12 @@ id = "01M2Y1SS0SQG76SMW1YB0QHQEG"
 title = "COMPLY: required pages, disclosures and config for CCPA/CPRA, CalOPPA, GDPR and ePrivacy, UK, Canada, Brazil, Australia, Japan, India, US state laws, HIPAA/GLBA/COPPA/FERPA, AI transparency laws, CASL/CAN-SPAM/TCPA, DSA, breach notification -- each rule cites the section"
 type = "story"
 flavour = "user_story"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-10-04T21:00:51Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-5145"]
 labels = ["component:gates", "v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++

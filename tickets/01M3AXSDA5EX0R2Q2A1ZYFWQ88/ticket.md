@@ -2,12 +2,12 @@
 id = "01M3AXSDA5EX0R2Q2A1ZYFWQ88"
 title = "SYSDESIGN303: `hedge_after`-marked flow whose destination is not idempotent"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSDASH31CMNHAQ9JXR1YQ"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:23Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6469"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/strata/_hedge.py (new)", "tests/fixtures/sysdesign/sysdesign303/**"]

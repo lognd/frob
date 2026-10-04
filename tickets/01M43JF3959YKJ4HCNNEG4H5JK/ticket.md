@@ -2,11 +2,11 @@
 id = "01M43JF3959YKJ4HCNNEG4H5JK"
 title = "E-FIX-STALE is reported as an internal error instead of a guard refusal"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T13:43:14Z"
-updated = "2026-10-04T13:43:28Z"
+updated = "2026-10-04T22:23:54Z"
 
 [[links]]
 kind = "blocked-by"

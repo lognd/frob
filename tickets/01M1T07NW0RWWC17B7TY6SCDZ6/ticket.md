@@ -2,12 +2,12 @@
 id = "01M1T07NW0RWWC17B7TY6SCDZ6"
 title = "route/guard inventory: CSRF, confirm-gate and pagination axes"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1QDTYTFZHQYMDHNFBSGQXJJ"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:04:54Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3968"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/vet/_capability.py"]

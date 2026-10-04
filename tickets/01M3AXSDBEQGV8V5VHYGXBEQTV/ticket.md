@@ -2,12 +2,12 @@
 id = "01M3AXSDBEQGV8V5VHYGXBEQTV"
 title = "strata expressiveness: model any scaled system"
 type = "story"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSDACKS00T3E853M1J0DR"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:59Z"
+updated = "2026-10-04T22:22:26Z"
 aliases = ["T-6510"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
