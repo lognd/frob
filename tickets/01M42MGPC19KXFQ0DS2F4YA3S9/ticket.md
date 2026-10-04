@@ -7,8 +7,8 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:59:50Z"
-updated = "2026-10-04T11:40:56Z"
-scope = ["crates/frob-land/src/ratchet.rs"]
+updated = "2026-10-04T11:41:54Z"
+scope = ["crates/frob-land/src/ratchet.rs", "crates/frob-land/src/lib.rs", "crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
 text = "Given the base has one finding X and the ticket adds a second X, when land runs, then it refuses naming the new occurrence"
