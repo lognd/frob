@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Connect browser capability grants to CSP/edge policy; grimble-sysdesign edge family."
+at = "2026-10-04T21:02:37Z"
+actor = "lognd"
+rev = 1

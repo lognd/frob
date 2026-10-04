@@ -2,11 +2,12 @@
 id = "01M336K75HMQZNEGNNXN6F970Y"
 title = "LANDPARITY001/T-2114 check ignores test-side frob:tests declarations (T-4710)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-22T00:00:00Z"
-updated = "2026-09-22T00:00:00Z"
+updated = "2026-10-04T21:06:56Z"
 aliases = ["T-5297"]
 labels = ["v1-cluster:C4a"]
 scope = ["src/frob/gates/_land_parity.py", "tests/test_land_parity.py", "tests/gates_suite/test_land_parity.py"]

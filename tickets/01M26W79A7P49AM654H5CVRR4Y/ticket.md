@@ -2,12 +2,13 @@
 id = "01M26W79A7P49AM654H5CVRR4Y"
 title = "Promote DOCARCH001/DOC012/NARR001 to error once denominators reach zero"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 parent = "01M0XNVQXJ1A3FA43N7AA0PAPK"
 reporter = "human"
 created = "2026-09-11T00:00:00Z"
-updated = "2026-09-11T00:00:00Z"
+updated = "2026-10-04T21:08:01Z"
 aliases = ["T-4423"]
 labels = ["milestone:0.534.0", "v1-cluster:F1"]
 

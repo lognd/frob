@@ -3,12 +3,12 @@ id = "01M1QDTYRJ3P3GT8828GCNECVB"
 title = "frob:waive is silently inert in files with no registered grammar: the suppression mechanism fails without telling anyone"
 type = "bug"
 category = "triage"
-priority = "high"
+priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:09:17Z"
 aliases = ["T-3858"]
-labels = ["milestone:1.1.0", "v1-cluster:G1"]
+labels = ["v1-cluster:G1", "triage:accepted"]
 +++
 
 Reported as logand.app-v2 FROBLEMS F-041. A `frob:waive` written in a file whose

@@ -2,11 +2,12 @@
 id = "01M1QDTYQF61KDANSHJKEN8VCM"
 title = "F-018: docs/strata secret grammar vs charter prose mismatch (rotate within/revoke via ... within reads like syntax but impl is issued_by/lifetime/revoke; no way to name the revocation FLOW) -- reconcile grammar and prose"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:01:48Z"
 aliases = ["T-3823"]
 labels = ["milestone:1.1.0", "v1-cluster:B3d"]
 scope = ["strata-core/src/parse/grammar_policy.rs", "design/litmus/secret_lifecycle.strata"]

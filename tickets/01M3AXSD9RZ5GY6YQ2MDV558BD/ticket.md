@@ -3,13 +3,13 @@ id = "01M3AXSD9RZ5GY6YQ2MDV558BD"
 title = "vet capability kinds per store client library (redis, mongo, dynamodb, neo4j, elasticsearch, clickhouse, s3) so SYS100/SYS101 refuse an undeclared store client in a bound file"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSDBCZ0WN62JE8P0BQRA2"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:09Z"
 aliases = ["T-6456"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/vet/_capability_registry/_kinds.py", "src/frob/vet/_capability_registry/_matrix.py", "src/frob/vet/_capability_registry/_store_clients.py"]
 
 [[links]]

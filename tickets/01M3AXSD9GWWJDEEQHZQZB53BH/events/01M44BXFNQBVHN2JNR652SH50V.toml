@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "Superseded by D81 and D91: ticket paths are presentation and ledger text is inert, so ticket-body pointers are never findings."
+at = "2026-10-04T21:08:00Z"
+actor = "lognd"
+rev = 1

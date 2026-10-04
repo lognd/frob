@@ -222,7 +222,9 @@ described in their own files, and are Milestone 2 or later (D36).
 | `ticket wave` | frob | frob-lease | yes, read-only | 0 2 4 | 2 |
 | `ticket query\|board` | frob | frob-ledger | yes, read-only | 0 2 4 | 2 |
 | `ticket update\|link\|unlink\|comment\|body\|accept` | frob | frob-ledger | yes, same request | 0 2 3 4 | 1 |
-| `ticket attach\|component\|triage accept\|decline\|snooze\|duplicate` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
+| `ticket attach\|component` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
+| `ticket triage accept\|decline\|snooze\|duplicate` | frob | frob-ledger | yes; a repeat of the same decision is `already`, one ledger commit per call (tickets.md section 11.1) | 0 2 3 4 | 1 |
+| `ticket triage list` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
 | `ticket evidence`, `ticket done-report` | frob | frob-evidence | yes | 0 2 3 4 | 1 |
 | `ticket evidence fetch` (the action `fetch` is a positional of `ticket evidence`) | frob | frob-evidence | yes | 0 2 3 4 | 2 |
 | `ticket start\|requeue` | frob | frob-lease | `start` only for the same holder; others get 3 | 0 2 3 4 | 1 |

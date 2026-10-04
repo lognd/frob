@@ -2,12 +2,13 @@
 id = "01M1T07NYNHWXC7Z19K1J5QQ21"
 title = "F-253: code-kind tickets refuse vitest ids and the help denies the path that works, so an agent abandoned a finished ticket"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 parent = "01M1T07NY4QCBYNNMPSJDNWN5E"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:06:37Z"
 aliases = ["T-4053"]
 labels = ["milestone:0.548.0", "v1-cluster:C4a"]
 scope = ["src/frob/app/ticket_runner/_verify.py"]

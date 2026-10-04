@@ -2,11 +2,12 @@
 id = "01M35RZY9XQCVZ8B1V0GF703QJ"
 title = "claude sync: keep user-level registrations for hooks materialized for global use"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-23T00:00:00Z"
-updated = "2026-09-23T00:00:00Z"
+updated = "2026-10-04T21:08:34Z"
 aliases = ["T-5437"]
 labels = ["milestone:v0.535.0", "v1-cluster:E1"]
 +++

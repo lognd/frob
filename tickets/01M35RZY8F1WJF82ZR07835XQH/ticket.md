@@ -2,11 +2,12 @@
 id = "01M35RZY8F1WJF82ZR07835XQH"
 title = "frob-exports: frob.lang._walk_css.walk_scss missing from src/frob/lang export policy"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-23T00:00:00Z"
-updated = "2026-09-23T00:00:00Z"
+updated = "2026-10-04T21:08:57Z"
 aliases = ["T-5391"]
 labels = ["milestone:v0.534.0", "v1-cluster:D2"]
 scope = ["src/frob/lang/__init__.py"]

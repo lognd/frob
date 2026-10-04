@@ -269,6 +269,71 @@ fn crunk_runs_only_when_crunk_toml_exists() {
     );
 }
 
+/// A copy of the fake sibling named `crunk` inside `dir`, so it answers as crunk.
+fn fake_crunk(dir: &Path) -> PathBuf {
+    let path = dir.join("crunk");
+    std::fs::copy(fake(), &path).expect("copy fake as crunk");
+    path
+}
+
+/// Options that run only a crunk program (no grimble configured in the repository).
+fn crunk_opts(program: PathBuf) -> CheckOptions {
+    CheckOptions {
+        sibling_programs: vec![("crunk".to_owned(), program)],
+        ..opts()
+    }
+}
+
+/// A repository configured for crunk alone, its fake in `mode`.
+fn crunk_repo(mode: &str) -> tempfile::TempDir {
+    let dir = repo(mode, "");
+    std::fs::remove_file(dir.path().join("grimble.toml")).expect("remove");
+    write(dir.path(), "crunk.toml", "");
+    dir
+}
+
+// frob:ticket 01M43ARWKFWVZZAR84NF50FAHB
+// frob:tests crates/frob-check/src/sibling/mod.rs::Siblings
+#[test]
+fn crunk_findings_are_merged_under_crunks_namespace() {
+    let bin = tempfile::tempdir().expect("tempdir");
+    let dir = crunk_repo("valid -");
+    let r = run(dir.path(), &crunk_opts(fake_crunk(bin.path()))).expect("run");
+    assert!(of_rule(&r, "SIB001").is_empty(), "{:?}", r.findings);
+    let warn = of_rule(&r, "SYS006");
+    assert_eq!(warn.len(), 1, "{:?}", r.findings);
+    assert_eq!(
+        r.fingerprint_of(warn[0]),
+        format!("crunk:{}", "a".repeat(64))
+    );
+    assert!(r.timing.stages.iter().any(|s| s.name == "sibling:crunk"));
+    assert!(r.fidelity.languages.contains_key("crunk:grmb"));
+}
+
+// frob:ticket 01M43ARWKFWVZZAR84NF50FAHB
+// frob:tests crates/frob-check/src/sibling/mod.rs::Sib001
+#[test]
+fn a_crunk_with_another_schema_version_is_a_required_unresolved_and_exit_one() {
+    let bin = tempfile::tempdir().expect("tempdir");
+    let dir = crunk_repo("incompatible");
+    let r = run(dir.path(), &crunk_opts(fake_crunk(bin.path()))).expect("run");
+    let sib = of_rule(&r, "SIB001");
+    assert_eq!(sib.len(), 1, "{:?}", r.findings);
+    assert_eq!(sib[0].severity, Severity::Unresolved);
+    assert_eq!(
+        sib[0].required,
+        Some(RequiredReason::SiblingMissing {
+            product: "crunk".to_owned()
+        })
+    );
+    assert!(
+        sib[0].message.contains("(incompatible)"),
+        "{}",
+        sib[0].message
+    );
+    assert_eq!(r.exit_code(), ExitCode::Negative);
+}
+
 /// A repository with a ledger holding an open ticket scoped to `src/a/**` and a dropped one.
 fn ledger_repo(mode_for: impl Fn(&str, &str) -> String) -> (tempfile::TempDir, String, String) {
     let dir = tempfile::tempdir().expect("tempdir");

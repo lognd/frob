@@ -2,12 +2,13 @@
 id = "01M1WJMD3BRP73FG6PKCRB9NNR"
 title = "test.runner rootdir resolution must not depend on which path subset pytest was invoked with"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:06:46Z"
 aliases = ["T-4203"]
 labels = ["milestone:1.1.0", "v1-cluster:C4a"]
 scope = ["src/frob/testing"]

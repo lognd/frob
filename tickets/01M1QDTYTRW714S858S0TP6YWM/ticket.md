@@ -3,12 +3,12 @@ id = "01M1QDTYTRW714S858S0TP6YWM"
 title = "the edge/ops and frontend audit lists, and the five asks that four independent audits converged on"
 type = "epic"
 category = "triage"
-priority = "high"
+priority = "low"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:04:39Z"
 aliases = ["T-3928"]
-labels = ["milestone:0.547.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 +++
 
 Two further audit lists from the same consumer repo (logand.app-v2), both

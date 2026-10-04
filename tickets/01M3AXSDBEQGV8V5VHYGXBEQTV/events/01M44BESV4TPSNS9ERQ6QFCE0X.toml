@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Uncertain: v1 strata wording; map to grmb/pack equivalent when building."
+at = "2026-10-04T20:59:59Z"
+actor = "lognd"
+rev = 1

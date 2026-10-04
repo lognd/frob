@@ -1,10 +1,11 @@
 //! `ticket update` and `lease widen` keep a held lease in step with the ticket scope.
 
+mod common;
+
 use std::path::{Path, PathBuf};
 use std::process::Output;
 use std::time::Duration;
 
-use assert_cmd::Command;
 use frob_lease::{Holder, LeaseConfig, LeaseStore};
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use serde_json::Value;
@@ -52,8 +53,7 @@ impl Repo {
     }
 
     fn frob(&self, args: &[&str]) -> Output {
-        Command::cargo_bin("frob")
-            .expect("frob binary")
+        common::frob_command()
             .current_dir(self.path())
             .env_remove("FROB_LOG")
             .arg("--json")

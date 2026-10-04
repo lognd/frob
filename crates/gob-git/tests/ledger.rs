@@ -96,8 +96,12 @@ fn concurrent_writers_lose_nothing() {
     );
 }
 
+// frob:ticket 01M43J70477E91BE3ENHQW1D9E
+/// Documented guarantee under any scheduling: every writer either wins or reports
+/// `CasExhausted`, at least one wins, and the ref holds exactly the winners' commits.
 #[test]
-fn twenty_four_concurrent_writers_all_win_with_backoff() {
+fn twenty_four_concurrent_writers_never_lose_an_update() {
+    // frob:tests crates/gob-git/src/ledger.rs::Repo.commit_paths
     let (dir, _repo) = fixture();
     let barrier = Arc::new(Barrier::new(24));
     let handles: Vec<_> = (0..24)
@@ -107,15 +111,28 @@ fn twenty_four_concurrent_writers_all_win_with_backoff() {
                 let repo = Repo::discover(&path).unwrap();
                 let p = format!("tickets/w{i}/ticket.md");
                 barrier.wait();
-                repo.commit_paths(MAIN, &[change(&p, "x\n")], "add", &opts())
+                (
+                    p.clone(),
+                    repo.commit_paths(MAIN, &[change(&p, "x\n")], "add", &opts()),
+                )
             })
         })
         .collect();
+    let mut winners = Vec::new();
     for h in handles {
-        h.join().unwrap().unwrap();
+        let (p, res) = h.join().unwrap();
+        match res {
+            Ok(_) => winners.push(p),
+            Err(GitError::CasExhausted { attempts, .. }) => assert_eq!(attempts, 6),
+            Err(e) => panic!("unexpected {e}"),
+        }
     }
+    assert!(!winners.is_empty(), "lock-free progress: someone must win");
     let repo = Repo::discover(dir.path()).unwrap();
-    assert_eq!(commit_count(&repo, MAIN), 25);
+    assert_eq!(commit_count(&repo, MAIN), 1 + winners.len());
+    for p in &winners {
+        assert!(repo.read_blob_at(MAIN, p).unwrap().is_some(), "{p} lost");
+    }
 }
 
 #[test]

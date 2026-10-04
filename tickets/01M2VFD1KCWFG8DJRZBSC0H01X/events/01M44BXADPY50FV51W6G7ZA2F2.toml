@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 gate registry owning rule descriptions and DOCENUM002; v2 derives rule docs and generates pages (D3, D84)."
+at = "2026-10-04T21:07:55Z"
+actor = "lognd"
+rev = 1

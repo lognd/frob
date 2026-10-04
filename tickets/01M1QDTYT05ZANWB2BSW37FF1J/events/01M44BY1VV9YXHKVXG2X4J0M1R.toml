@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: porting the v1 Python frob.serve to the mcp 2.x API; v2 serve is ~MQ1NM4Q in Rust."
+at = "2026-10-04T21:08:19Z"
+actor = "lognd"
+rev = 1

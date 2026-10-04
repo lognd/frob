@@ -3,13 +3,13 @@ id = "01M3AXSD8JD64V94CNYSRJKZF4"
 title = "STORE101: `KEYS pattern` in application/production code (Redis)"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD9STSFC2MR8M369JNE8"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:58:26Z"
 aliases = ["T-6418"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_redis.py", "tests/fixtures/store/store101-redis-keys/**"]
 
 [[links]]

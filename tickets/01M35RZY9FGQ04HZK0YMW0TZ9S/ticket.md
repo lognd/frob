@@ -2,11 +2,12 @@
 id = "01M35RZY9FGQ04HZK0YMW0TZ9S"
 title = "Gate registry derived views are not consumed by the check job runner; @gate registration does not run a detector"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-23T00:00:00Z"
-updated = "2026-09-23T00:00:00Z"
+updated = "2026-10-04T21:06:57Z"
 aliases = ["T-5423"]
 labels = ["milestone:v0.535.0", "v1-cluster:C4a"]
 +++

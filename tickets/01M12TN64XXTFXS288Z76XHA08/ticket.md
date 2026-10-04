@@ -2,14 +2,19 @@
 id = "01M12TN64XXTFXS288Z76XHA08"
 title = "frob-suggest promises a verbatim re-run will be allowed; it blocks again as repeat #4"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 reporter = "human"
 created = "2026-08-28T00:00:00Z"
-updated = "2026-08-28T00:00:00Z"
+updated = "2026-10-04T21:08:05Z"
 aliases = ["T-3229"]
 labels = ["milestone:1.0.0", "v1-cluster:E1"]
 scope = [".claude/hooks/frob-suggest.py"]
+
+[[links]]
+kind = "duplicates"
+target = "01M2VFD1ZDWWNTW1FFGKHCKTS3"
 +++
 
 CONFIRMED by two independent observers 2026-08-28.

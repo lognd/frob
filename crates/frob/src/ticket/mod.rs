@@ -4,13 +4,14 @@
 //! resolves ticket references (full ULID, `~handle` or alias), calls one
 //! ledger operation and renders its result. Verbs: [`mod@write`] (new, update,
 //! link, unlink, comment, close, drop, reopen), [`mod@read`] (show, list, doable,
-//! brief), [`doctor_cmd`] and the hidden [`merge_cmd`].
+//! brief), [`triage_cmd`] (the inbox verbs), [`doctor_cmd`] and the hidden [`merge_cmd`].
 
 pub mod doctor_cmd;
 pub mod fragment_cmd;
 pub mod merge_cmd;
 pub mod read;
 pub mod terminal_lease;
+pub mod triage_cmd;
 pub mod write;
 
 use frob_ledger::model::{Category, Class, Outcome, Priority, TicketType};
@@ -167,6 +168,7 @@ pub(crate) fn payload(a: &Applied) -> gob_cli::Payload<ChangeData> {
     )
 }
 
+// frob:ticket 01M44C546DQRE4D11HHPM0HX6M
 /// Verbs of this module, registered on the root in one place.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<write::New>()
@@ -181,6 +183,11 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<read::List>()
         .register::<read::Doable>()
         .register::<read::Brief>()
+        .register::<triage_cmd::Accept>()
+        .register::<triage_cmd::Decline>()
+        .register::<triage_cmd::Snooze>()
+        .register::<triage_cmd::Duplicate>()
+        .register::<triage_cmd::InboxList>()
         .register::<fragment_cmd::Fragment>()
         .register::<doctor_cmd::TicketDoctor>()
         .register::<merge_cmd::MergeDriver>()

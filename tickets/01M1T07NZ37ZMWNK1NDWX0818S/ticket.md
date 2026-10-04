@@ -2,11 +2,12 @@
 id = "01M1T07NZ37ZMWNK1NDWX0818S"
 title = "F-272: the TS walker rejects syntax vitest runs fine, and the parse failure cascades into false TEST002/REF002 findings"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:08:52Z"
 aliases = ["T-4067"]
 labels = ["milestone:0.540.0", "v1-cluster:D2"]
 scope = ["src/frob/lang/_walk_typescript.py"]

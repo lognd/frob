@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "tests only: proves the existing D87 sibling mechanism for crunk; no behaviour change"
+at = "2026-10-04T22:18:22Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. PT-6: land must prove every ticket-owned hunk is present in the published tree (E-LAND-HUNK-LOST); LAND-PROOF in crates/frob-land checks ancestry only."
+at = "2026-10-04T21:09:30Z"
+actor = "lognd"
+rev = 1

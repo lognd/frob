@@ -3,13 +3,13 @@ id = "01M3AXSD82ZY6JCHWF37RY1H0E"
 title = "STORE113: wildcard query with a leading wildcard (Elasticsearch)"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD9STSFC2MR8M369JNE8"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:58:05Z"
 aliases = ["T-6402"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_elasticsearch.py", "tests/fixtures/store/store113-es-leading-wildcard/**"]
 
 [[links]]

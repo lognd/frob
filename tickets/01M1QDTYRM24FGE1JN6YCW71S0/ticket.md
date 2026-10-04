@@ -2,11 +2,12 @@
 id = "01M1QDTYRM24FGE1JN6YCW71S0"
 title = "comment placement (CPLACE001/CPLACE002) burn-down: 2149 unwaived findings"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:07:37Z"
 aliases = ["T-3860"]
 labels = ["milestone:0.541.0", "v1-cluster:F1"]
 +++

@@ -3,13 +3,13 @@ id = "01M3AXSD7TTVWH9XEP3NH163QX"
 title = "Kubernetes manifest ingestion (Deployment/Service/Ingress/HPA/PDB/NetworkPolicy/probes/resources)"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD8TNZP3PQVKB7EKCR7M"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:57:51Z"
 aliases = ["T-6394"]
-labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/lang/_config_k8s.py (new)", "tests/fixtures/sysdesign/config-k8s/**"]
 
 [[links]]

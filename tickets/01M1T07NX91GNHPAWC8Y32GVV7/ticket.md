@@ -6,9 +6,9 @@ category = "triage"
 priority = "medium"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:09:53Z"
 aliases = ["T-4009"]
-labels = ["milestone:1.1.0", "v1-cluster:C4c"]
+labels = ["v1-cluster:C4c", "triage:accepted"]
 scope = ["src/frob/gates/_bug_repro.py"]
 +++
 

@@ -12,8 +12,8 @@
 //! (ULID time, `at`, id) order; a `field` event carries the previous value so a
 //! concurrent conflicting pair is reported, never silently picked.
 //!
-//! The M1 event kinds are `create`, `field`, `transition`, `comment`, `link`
-//! and `exception`; every other kind of the design table parses as an
+//! The M1 event kinds are `create`, `field`, `transition`, `comment`, `link`,
+//! `exception` and `triage` (the inbox decisions of [`triage`]); every other kind of the design table parses as an
 //! uninterpreted event so a newer ledger still folds. The `create` event (not in
 //! the design table yet) carries a ticket's initial values; `rev` in each file
 //! is the event-format revision ([`event::EVENT_REV`]).
@@ -75,6 +75,7 @@ pub mod redact;
 pub mod rules;
 pub mod schema;
 pub mod scrub;
+pub mod triage;
 
 pub use error::{Candidate, LedgerError, Result};
 pub use id::{EventId, TicketId};

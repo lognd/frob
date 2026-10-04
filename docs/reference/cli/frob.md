@@ -58,6 +58,11 @@
 | `ticket new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a ticket; with `--idempotency-key` a repeat returns the first ticket. |
 | `ticket reopen` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Reopen a done ticket into todo with a required reason. |
 | `ticket show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one ticket from the index; `--events` adds its timeline. |
+| `ticket triage accept` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Accept tickets from the inbox: triage becomes todo, all in one ledger commit. |
+| `ticket triage decline` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Decline tickets from the inbox: close them as wont-fix with a required reason. |
+| `ticket triage duplicate` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a ticket from the inbox as a duplicate of another, linking the two. |
+| `ticket triage list` | yes | no | 0 ok, 2 usage, 4 internal | List the triage inbox; snoozed tickets stay hidden until their date. |
+| `ticket triage snooze` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Snooze tickets: hide them from the inbox until a date. |
 | `ticket unlink` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove a typed link between two tickets; removing a missing link is a no-op. |
 | `ticket update` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Patch fields of a ticket: `--set key=value`, dedicated flags, label, scope and acceptance edits. |
 | `work` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Lease a ticket, create its worktree and branch, and move it to in-progress. |

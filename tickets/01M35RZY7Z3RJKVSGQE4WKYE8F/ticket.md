@@ -2,11 +2,12 @@
 id = "01M35RZY7Z3RJKVSGQE4WKYE8F"
 title = "Checked-in _KNOWN_RULE_FIXABILITY literal missing DOCARCH002/DSTACK001/FMT002 (landed rules never updated it)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-23T00:00:00Z"
-updated = "2026-09-23T00:00:00Z"
+updated = "2026-10-04T21:07:59Z"
 aliases = ["T-5375"]
 labels = ["v1-cluster:F1"]
 scope = ["src/frob/gates/_fixability_scan.py"]

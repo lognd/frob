@@ -2,11 +2,12 @@
 id = "01M336K771Y93MMPNSEEDNQB6S"
 title = "Bulk-remove T-#### prose citations from docs/modules and docs/strata (T-5134 follow-up)"
 type = "docs"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-22T00:00:00Z"
-updated = "2026-09-22T00:00:00Z"
+updated = "2026-10-04T21:02:46Z"
 aliases = ["T-5345"]
 labels = ["v1-cluster:B3d"]
 scope = ["docs/modules/*.md", "docs/strata/*.md", "docs/guides/*.md"]

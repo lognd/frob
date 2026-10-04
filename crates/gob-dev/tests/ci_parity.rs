@@ -4,6 +4,7 @@
 //! order of `gob_dev::ci::steps`, on the platforms the step list says, and every step is run.
 // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
 // frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
+// frob:ticket 01M43FB0TFBNDFH1AEC1CTNHZG
 
 use std::path::PathBuf;
 
@@ -255,4 +256,32 @@ fn windows_steps_use_the_isolated_alias_with_the_same_names_and_order() {
     );
     let err = parity(&broken, &real_steps()).unwrap_err();
     assert!(err.contains("nextest"), "{err}");
+}
+
+// frob:ticket 01M43FB0TFBNDFH1AEC1CTNHZG
+// frob:tests crates/gob-dev/tests/ci_parity.rs::ci_definition_sets_require_python_tests_and_pins_pytest
+#[test]
+fn ci_definition_sets_require_python_tests_and_pins_pytest() {
+    let steps = ci::steps_with(&root(), true).unwrap();
+    let nextest = steps.iter().find(|s| s.name == "nextest").unwrap();
+    assert!(
+        nextest
+            .env
+            .contains(&("FROB_REQUIRE_PYTHON_TESTS".to_owned(), "1".to_owned())),
+        "nextest env {:?}",
+        nextest.env
+    );
+    let pytest = steps.iter().find(|s| s.name == "pytest").unwrap();
+    assert!(
+        pytest.args.iter().any(|a| a == ci::PYTEST_REQUIREMENT)
+            && ci::PYTEST_REQUIREMENT.contains("=="),
+        "pytest step must install a pinned version: {:?}",
+        pytest.args
+    );
+    let lenient = ci::steps_with(&root(), false).unwrap();
+    let nextest = lenient.iter().find(|s| s.name == "nextest").unwrap();
+    assert!(
+        nextest.env.is_empty(),
+        "a local run must keep the named skips"
+    );
 }

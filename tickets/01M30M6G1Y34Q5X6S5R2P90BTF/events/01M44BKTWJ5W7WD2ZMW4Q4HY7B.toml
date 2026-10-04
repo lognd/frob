@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "Draft ids no longer exist (D2, D24: ULID ids only), so cited draft ids cannot dangle."
+at = "2026-10-04T21:02:44Z"
+actor = "lognd"
+rev = 1

@@ -2,12 +2,13 @@
 id = "01M3AXSD926S7M96AQB9BTK4E2"
 title = "strata attr registry: shared AttrKey table, ATTR001 unknown key, ATTR002 registered key with zero readers"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 parent = "01M3AXSDBCZ0WN62JE8P0BQRA2"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:58:43Z"
 aliases = ["T-6434"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
 scope = ["src/frob/strata/_attr_registry.py", "docs/modules/strata.md"]

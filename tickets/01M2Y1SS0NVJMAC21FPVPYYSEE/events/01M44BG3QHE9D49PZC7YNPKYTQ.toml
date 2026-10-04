@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. WEBSEC injection rules beyond the first slice ~8998PBE (D89 grimble-websec)."
+at = "2026-10-04T21:00:42Z"
+actor = "lognd"
+rev = 1

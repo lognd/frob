@@ -2,11 +2,12 @@
 id = "01M1QDTYRDPQB3KAX501R80SQV"
 title = "enforce the V-model from the get-go: scaffold both arms plus design/vmodel.strata, generate rather than hand-author, promote VMOD001 to error"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:01:49Z"
 aliases = ["T-3853"]
 labels = ["milestone:1.1.0", "v1-cluster:B3d"]
 +++

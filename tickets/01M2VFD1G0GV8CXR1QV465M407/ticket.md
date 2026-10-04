@@ -2,11 +2,12 @@
 id = "01M2VFD1G0GV8CXR1QV465M407"
 title = "macOS CI: test_overhead_under_five_percent crashes its xdist worker, aborting the whole suite via rerunfailures IPC"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-09-19T00:00:00Z"
+updated = "2026-10-04T21:06:49Z"
 aliases = ["T-4608"]
 labels = ["milestone:0.542.0", "v1-cluster:C4a"]
 scope = ["tests/unit/perf/test_hotgraph.py"]

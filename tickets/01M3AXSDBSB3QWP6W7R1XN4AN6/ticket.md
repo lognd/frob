@@ -2,11 +2,12 @@
 id = "01M3AXSDBSB3QWP6W7R1XN4AN6"
 title = "DSTACK001 autofix emits unparsable multi-target frob:tests lines; verify edge-set round-trip before applying"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T21:07:03Z"
 aliases = ["T-6521"]
 labels = ["milestone:0.535.0", "v1-cluster:C4a"]
 scope = ["src/frob/gates/_fix_engine_tier_b.py", "src/frob/gates/_directive_stack.py", "tests/unit/gates/test_dstack_autofix_roundtrip.py", "docs/modules/gates.md"]

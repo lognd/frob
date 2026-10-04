@@ -3,13 +3,13 @@ id = "01M3AXSDAKF1KYZ3JFG4G0B1Q4"
 title = "SYSDESIGN202: bursty-ingress/fixed-capacity design declaration with no interposed queue"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSDAZX9B4327J18H8GE7S"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:36Z"
 aliases = ["T-6483"]
-labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_admission.py", "tests/fixtures/sysdesign/sysdesign202/**"]
 +++
 

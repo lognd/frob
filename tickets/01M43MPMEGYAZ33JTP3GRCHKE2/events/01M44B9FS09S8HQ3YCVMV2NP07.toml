@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T20:57:01Z"
+digest = "3bb8b1f3dd4477c43d30e0da993134d2bc1f9fae905127c6a677b45e25316e90"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+warning: unused import: `assert_cmd::Command`
+ --> crates/frob/tests/cli.rs:6:5
+  |
+6 | use assert_cmd::Command;
+  |     ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `frob-cli` (test "cli") generated 1 warning (run `cargo fix --test "cli" -p frob-cli` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f10b746d-65da-4fdc-a7d0-01ea018a38fc with nextest profile: default
+    Starting 3 tests across 1 binary (15 tests skipped)
+        PASS [   0.298s] frob-cli::cli dry_run_is_rejected_on_verbs_that_do_not_opt_in
+        PASS [   0.838s] frob-cli::cli init_dry_run_writes_nothing
+        PASS [   2.520s] frob-cli::cli foreign_crunk_on_ambient_path_leaves_doctor_unchanged
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.524s] 3 tests run: 3 passed, 15 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-cli --test cli foreign_crunk_on_ambient_path_leaves_doctor_unchanged"
+size = 1106
+status = "measured"
+tests = ["dry_run_is_rejected_on_verbs_that_do_not_opt_in", "init_dry_run_writes_nothing", "foreign_crunk_on_ambient_path_leaves_doctor_unchanged"]
+at = "2026-10-04T20:57:05Z"
+actor = "lognd"
+rev = 1

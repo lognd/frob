@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~VZBDJTE: same defect (module-level names selected as test ids from the touched set); v1 T-4070 and T-6606."
+at = "2026-10-04T21:07:20Z"
+actor = "lognd"
+rev = 1

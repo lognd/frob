@@ -3,7 +3,6 @@
 use std::path::Path;
 use std::process::Output;
 
-use assert_cmd::Command;
 use insta::{assert_json_snapshot, assert_snapshot};
 use serde_json::Value;
 
@@ -15,8 +14,7 @@ fn repo() -> tempfile::TempDir {
 }
 
 fn frob(cwd: &Path, args: &[&str]) -> Output {
-    Command::cargo_bin("frob")
-        .expect("frob binary")
+    common::frob_command()
         .current_dir(cwd)
         .env_remove("FROB_LOG")
         .args(args)
@@ -397,4 +395,38 @@ fn every_verb_is_in_the_command_inventory() {
     ] {
         assert!(verbs.contains(&v), "{v} missing from {verbs:?}");
     }
+}
+
+/// A foreign `crunk` on the ambient PATH must not change `doctor` output: the harness PATH is hermetic.
+// frob:ticket 01M43MPMEGYAZ33JTP3GRCHKE2
+// frob:tests crates/frob/tests/common/mod.rs::hermetic_path_from
+#[cfg(unix)]
+#[test]
+fn foreign_crunk_on_ambient_path_leaves_doctor_unchanged() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = repo();
+    let before = frob(dir.path(), &["doctor"]);
+    let foreign = tempfile::tempdir().expect("tempdir");
+    let crunk = foreign.path().join("crunk");
+    std::fs::write(&crunk, "#!/bin/sh\nexit 3\n").expect("write crunk");
+    std::fs::set_permissions(&crunk, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+    let mut ambient = vec![foreign.path().to_path_buf()];
+    ambient.extend(std::env::split_paths(
+        &std::env::var_os("PATH").unwrap_or_default(),
+    ));
+    let ambient = std::env::join_paths(ambient).expect("join PATH");
+    let hermetic = common::hermetic_path_from(&ambient);
+    assert!(
+        !std::env::split_paths(&hermetic).any(|d| d == foreign.path()),
+        "the foreign crunk directory is dropped from the harness PATH"
+    );
+    let after = frob(dir.path(), &["doctor"]);
+    let strip = |out: &Output| {
+        let mut v = json(out);
+        v["data"]["siblings"] = Value::Null;
+        v["data"]["gc"] = Value::Null;
+        v["data"]["cache"] = Value::Null;
+        v
+    };
+    assert_eq!(strip(&before), strip(&after));
 }

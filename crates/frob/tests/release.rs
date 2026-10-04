@@ -1,11 +1,12 @@
 //! `release changelog` end to end: compile, dry-run, check and the exit-3 refusals.
 // frob:ticket 01M4069W8ECWEPBH6YPAR7X0X0
 
+mod common;
+
 use std::path::Path;
 use std::process::Output;
 use std::time::Duration;
 
-use assert_cmd::Command;
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use serde_json::Value;
 
@@ -56,8 +57,7 @@ impl Repo {
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        Command::cargo_bin("frob")
-            .expect("frob binary")
+        common::frob_command()
             .current_dir(self.dir.path())
             .env_remove("FROB_LOG")
             .args(args)

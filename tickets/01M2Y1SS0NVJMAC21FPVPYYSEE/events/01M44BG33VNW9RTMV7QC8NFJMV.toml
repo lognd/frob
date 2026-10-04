@@ -1,0 +1,7 @@
+kind = "field"
+field = "priority"
+old = "critical"
+new = "low"
+at = "2026-10-04T21:00:41Z"
+actor = "lognd"
+rev = 1

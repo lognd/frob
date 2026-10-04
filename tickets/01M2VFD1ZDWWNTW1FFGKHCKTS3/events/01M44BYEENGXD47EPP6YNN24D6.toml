@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Carries PT-3 (`frob hook <event>` with measured precision, a decision log and per-rule tokens; designed in architecture.md s7 and git-io.md s5, no crate and no ticket). The v1 false-positive tickets were closed as duplicates of this one and form its precision corpus."
+at = "2026-10-04T21:08:32Z"
+actor = "lognd"
+rev = 1

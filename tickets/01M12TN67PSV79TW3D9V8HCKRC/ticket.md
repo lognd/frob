@@ -2,11 +2,12 @@
 id = "01M12TN67PSV79TW3D9V8HCKRC"
 title = "CPLACE001 2-line cap fights a wrapped waiver reason plus mandatory follow_up on 88-col lines"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 reporter = "human"
 created = "2026-08-28T00:00:00Z"
-updated = "2026-08-28T00:00:00Z"
+updated = "2026-10-04T21:07:32Z"
 aliases = ["T-3318"]
 labels = ["milestone:1.1.0", "v1-cluster:F1"]
 scope = ["src/frob/gates/_comment_placement.py"]

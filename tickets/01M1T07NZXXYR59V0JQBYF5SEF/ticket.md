@@ -3,13 +3,13 @@ id = "01M1T07NZXXYR59V0JQBYF5SEF"
 title = "H3-4/H3-5: ticket-referenced exhaustive-deps disables, per-file-vs-interaction gap"
 type = "security"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M1T07NZSWG65V1BFPEJK6SE6"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:05:39Z"
 aliases = ["T-4093"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_waive.py"]
 
 [[acceptance]]

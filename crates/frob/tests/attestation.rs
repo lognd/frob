@@ -3,11 +3,12 @@
 //! A subprocess never has a terminal, so the binary-level tests prove the refusals; the
 //! success paths run in process through the presence seam (`Presence`), never a global.
 
+mod common;
+
 use std::path::Path;
 use std::process::Output;
 use std::time::Duration;
 
-use assert_cmd::Command;
 use frob_cli::milestone_evidence_cmd::add_evidence;
 use frob_evidence::attestation::{Presence, Request, attest};
 use frob_evidence::verbs::CaptureArgs;
@@ -68,7 +69,7 @@ impl Repo {
     }
 
     fn frob_env(&self, args: &[&str], env: &[(&str, &str)]) -> Output {
-        let mut cmd = Command::cargo_bin("frob").expect("frob binary");
+        let mut cmd = common::frob_command();
         cmd.current_dir(self.dir.path())
             .env_remove("FROB_LOG")
             .env_remove("CLAUDECODE")

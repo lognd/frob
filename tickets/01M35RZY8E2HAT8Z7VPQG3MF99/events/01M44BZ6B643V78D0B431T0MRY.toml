@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: wiring html/javascript/vue into v1 facets."
+at = "2026-10-04T21:08:56Z"
+actor = "lognd"
+rev = 1

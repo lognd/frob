@@ -3,13 +3,13 @@ id = "01M3AXSD9HXZXAR6CW4MATNJYX"
 title = "STORE301: many-to-many relationship modeled in a document store with manual application-side join loops"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSDBCZ0WN62JE8P0BQRA2"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:02Z"
 aliases = ["T-6449"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_strata_mismatch.py", "tests/fixtures/store/store301-document-manual-join-loop/**"]
 
 [[links]]

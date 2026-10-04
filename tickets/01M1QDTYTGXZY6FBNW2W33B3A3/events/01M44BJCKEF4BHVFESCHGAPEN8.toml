@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Container epic for eight strata expressiveness gaps (children T-4216, T-4218, T-4222, T-4232, T-4245, T-4250, T-4253 are imported); map to grmb capabilities."
+at = "2026-10-04T21:01:57Z"
+actor = "lognd"
+rev = 1

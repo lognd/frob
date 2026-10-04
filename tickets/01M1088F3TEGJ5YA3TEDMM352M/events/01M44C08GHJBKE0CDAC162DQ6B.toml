@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~JHA8CYK: a land-proof pointing at a code-empty commit is the PT-6 content-proof case."
+at = "2026-10-04T21:09:31Z"
+actor = "lognd"
+rev = 1

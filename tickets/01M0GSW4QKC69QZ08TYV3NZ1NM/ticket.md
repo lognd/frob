@@ -2,11 +2,12 @@
 id = "01M0GSW4QKC69QZ08TYV3NZ1NM"
 title = "Document and enforce: drop --absorbed-by for already-resolved findings, fail only for genuine blockers"
 type = "docs"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-08-21T00:00:00Z"
-updated = "2026-08-21T00:00:00Z"
+updated = "2026-10-04T21:07:24Z"
 aliases = ["T-2803"]
 labels = ["milestone:1.0.0", "v1-cluster:F1"]
 scope = ["docs/guides/agent-playbook.md"]

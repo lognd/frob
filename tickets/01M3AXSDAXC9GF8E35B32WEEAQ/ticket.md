@@ -2,12 +2,13 @@
 id = "01M3AXSDAXC9GF8E35B32WEEAQ"
 title = "GRAMMAR: `lattice` top-level declaration (trust/labels declarable in .strata)"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 parent = "01M3AXSDBEQGV8V5VHYGXBEQTV"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:46Z"
 aliases = ["T-6493"]
 labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
 scope = ["strata-core/src/parse/grammar_core.rs", "docs/strata/kernel.md#lattice-semantics", "src/frob/strata/_models.py (Lattice.__init__ desugar path)"]

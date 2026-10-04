@@ -3,12 +3,12 @@ id = "01M12TN666HXM240AFAJ8HVP93"
 title = "frob ticket land's fixed wall-clock timeout races variable-cost contention, killing progressing lands"
 type = "bug"
 category = "triage"
-priority = "medium"
+priority = "low"
 reporter = "human"
 created = "2026-08-28T00:00:00Z"
-updated = "2026-08-28T00:00:00Z"
+updated = "2026-10-04T21:09:35Z"
 aliases = ["T-3270"]
-labels = ["milestone:1.0.0", "v1-cluster:C1b"]
+labels = ["v1-cluster:C1b", "triage:accepted"]
 scope = ["src/frob/tickets/_land.py", "src/frob/app/ticket_runner/_land_cmd.py"]
 +++
 

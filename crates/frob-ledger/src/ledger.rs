@@ -18,7 +18,7 @@ use crate::model::Ticket;
 use crate::redact::{RedactError, RuleSet};
 
 const EMPTY_TREE: &str = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
-const MAX_RECONCILE: u32 = 3;
+pub(crate) const MAX_RECONCILE: u32 = 3;
 
 /// Where ledger commits go.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -122,7 +122,7 @@ pub struct Applied {
 }
 
 /// One envelope warning per checkout the ledger commit could not sync, naming its paths and the remedy.
-fn unsynced_warnings(unsynced: &[gob_git::UnsyncedCheckout]) -> Vec<String> {
+pub(crate) fn unsynced_warnings(unsynced: &[gob_git::UnsyncedCheckout]) -> Vec<String> {
     unsynced
         .iter()
         .map(|u| {
@@ -569,7 +569,12 @@ impl Ledger {
         self.reconcile_with(&ref_name, id, MAX_RECONCILE)
     }
 
-    fn reconcile_with(&self, ref_name: &str, id: TicketId, attempts: u32) -> Result<Option<Oid>> {
+    pub(crate) fn reconcile_with(
+        &self,
+        ref_name: &str,
+        id: TicketId,
+        attempts: u32,
+    ) -> Result<Option<Oid>> {
         for _ in 0..attempts {
             let Some(tip) = self.tip_of(ref_name)? else {
                 return Ok(None);

@@ -4,6 +4,9 @@
 //! behaviour from `.fake-sibling` in the working directory (the repository root):
 //! `valid <ticket>`, `incompatible`, `baddigest`, `flood`, `badproduct`, `malformed`, `nomark`, `hang`,
 //! `exit3` or `failenv`.
+//!
+//! It answers as `crunk` when its executable is named `crunk` (a test copies it there),
+//! and as `grimble` under any other name.
 
 use serde_json::{Value, json};
 
@@ -24,10 +27,20 @@ fn finding(
     })
 }
 
+/// The product this copy answers as: `crunk` when run under that name, else `grimble`.
+fn product() -> &'static str {
+    let exe = std::env::current_exe().unwrap_or_default();
+    if exe.file_stem().is_some_and(|n| n == "crunk") {
+        "crunk"
+    } else {
+        "grimble"
+    }
+}
+
 /// The digest of the `[compute]` knobs the repository's config files resolve to.
 fn own_digest() -> String {
     let (table, _) =
-        gob_config::ComputeTable::load_for_product(std::path::Path::new("."), "grimble")
+        gob_config::ComputeTable::load_for_product(std::path::Path::new("."), product())
             .expect("compute knobs load");
     gob_config::compute_digest(&table)
 }
@@ -44,7 +57,7 @@ fn valid(ticket: &Value, args: &str) -> Value {
     );
     unresolved["reason"] = json!("annotation-required");
     json!({
-        "schema_version": "gob.sibling/1", "product": "grimble", "product_version": "0.0.0",
+        "schema_version": "gob.sibling/1", "product": product(), "product_version": "0.0.0",
         "compute_digest": own_digest(),
         "compute": {}, "invocation": {"verb": "check", "root": ".", "ticket_scope": null, "base": null},
         "fidelity": [{"language": "grmb", "adapter": "grimble", "adapter_version": "0", "level": "F3",
@@ -92,7 +105,11 @@ fn main() {
         }
         "badproduct" => {
             let mut doc = valid(&Value::Null, "");
-            doc["product"] = json!("crunk");
+            doc["product"] = json!(if product() == "crunk" {
+                "grimble"
+            } else {
+                "crunk"
+            });
             println!("{}", envelope(&doc));
         }
         "nomark" => {

@@ -2,11 +2,12 @@
 id = "01M1QDTYS567KHB84Q076W9AYY"
 title = "misc lint/ref hygiene cluster (unused-ignore-comment/possibly-missing-submodule/NEGEXIST001/REF003) burn-down: 11 unwaived findings"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:07:42Z"
 aliases = ["T-3877"]
 labels = ["milestone:0.541.0", "v1-cluster:F1"]
 +++

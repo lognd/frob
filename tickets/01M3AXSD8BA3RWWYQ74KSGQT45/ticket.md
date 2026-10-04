@@ -2,12 +2,13 @@
 id = "01M3AXSD8BA3RWWYQ74KSGQT45"
 title = "GRAMMAR consistency: resolve `Flow.timeout` typed-field-with-no-grammar-production gap"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 parent = "01M3AXSDBEQGV8V5VHYGXBEQTV"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:58:15Z"
 aliases = ["T-6411"]
 labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
 scope = ["strata-core/src/parse/grammar_flow.rs", "docs/strata/kernel.md", "src/frob/strata/_models.py"]

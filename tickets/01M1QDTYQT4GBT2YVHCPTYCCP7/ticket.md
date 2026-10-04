@@ -2,11 +2,12 @@
 id = "01M1QDTYQT4GBT2YVHCPTYCCP7"
 title = "F-029: frob coverage --full defaults to --cov=src/frob when pyproject has no [tool.coverage.run] source -- misleading RED"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:06:23Z"
 aliases = ["T-3834"]
 labels = ["milestone:1.1.0", "v1-cluster:C4a"]
 +++

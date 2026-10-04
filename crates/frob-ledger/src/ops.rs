@@ -271,7 +271,8 @@ impl Ledger {
         }
     }
 
-    fn load(s: &Synced, id: TicketId) -> Result<(Summary, Ticket)> {
+    // frob:ticket 01M44C546DQRE4D11HHPM0HX6M
+    pub(crate) fn load(s: &Synced, id: TicketId) -> Result<(Summary, Ticket)> {
         let not_found = || LedgerError::NotFound {
             input: id.to_string(),
         };
