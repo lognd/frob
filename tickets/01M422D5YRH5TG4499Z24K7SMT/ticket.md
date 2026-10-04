@@ -2,7 +2,8 @@
 id = "01M422D5YRH5TG4499Z24K7SMT"
 title = "Dev build fails: dist now archives frob-check's test helper binary; ship exactly one archive per product binary"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
