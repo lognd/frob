@@ -8,14 +8,14 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:46Z"
-updated = "2026-10-04T11:40:39Z"
+updated = "2026-10-04T11:53:56Z"
 idempotency_key = "crunk-plan-tw"
 labels = ["area:crunk"]
 scope = ["crates/crunk-tailwind/**", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given the class `md:hover:-mt-[13px]/50`, when parsed, then variants, negation, utility, arbitrary value and alpha are separate fields"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given each v3 and v4 default key table, when compared to the Python tw_defaults, then the key sets are equal"
