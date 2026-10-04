@@ -2,12 +2,12 @@
 id = "01M424BWCSSMVHA9X5DJ9BCSXD"
 title = "cargo dev builds the workspace twice (target/dev-tool, 2.7 GB per checkout); replace the separate target dir with a self-copy re-exec on Windows"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T00:17:35Z"
-updated = "2026-10-04T00:17:35Z"
+updated = "2026-10-04T01:35:22Z"
 scope = [".cargo/config.toml", "crates/gob-dev/src/**", "crates/gob-dev/tests/ci_parity.rs", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
