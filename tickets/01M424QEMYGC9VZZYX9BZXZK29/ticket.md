@@ -7,8 +7,8 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-04T00:23:54Z"
-updated = "2026-10-04T01:37:37Z"
-scope = ["crates/frob-worktree/**", "crates/frob-land/src/land.rs", "crates/frob/src/doctor_cmd.rs", "crates/gob-config/**", "docs/design/architecture.md", "docs/design/tickets.md", "docs/reference/config.md", "docs/schemas/config.json", "crates/frob/src/doctor.rs", "crates/frob/src/config.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/snapshots/cli__doctor_schema.snap", "crates/frob/tests/snapshots/cli__doctor_fresh_repo.snap", "crates/frob/tests/snapshots/cli__init_frob_toml.snap", "frob.toml", "docs/reference/cli/frob.md", "Cargo.lock"]
+updated = "2026-10-04T01:55:46Z"
+scope = ["crates/frob-worktree/**", "crates/frob-land/src/land.rs", "crates/frob/src/doctor_cmd.rs", "crates/gob-config/**", "docs/design/architecture.md", "docs/design/tickets.md", "docs/reference/config.md", "docs/schemas/config.json", "crates/frob/src/doctor.rs", "crates/frob/src/config.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/snapshots/cli__doctor_schema.snap", "crates/frob/tests/snapshots/cli__doctor_fresh_repo.snap", "crates/frob/tests/snapshots/cli__init_frob_toml.snap", "frob.toml", "docs/reference/cli/frob.md", "Cargo.lock", "crates/frob/tests/gc.rs"]
 
 [[acceptance]]
 text = "Given a target dir over its budget with old and recent artifacts, when a GC pass runs, then old artifacts are evicted until under budget and the latest build's artifacts and the frob and grimble binaries remain"
