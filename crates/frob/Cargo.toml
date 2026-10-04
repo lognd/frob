@@ -32,6 +32,7 @@ gob-symbols = { version = "0.0.0", path = "../gob-symbols" }
 gob-walk = { version = "0.0.0", path = "../gob-walk" }
 frob-ack = { version = "0.0.0", path = "../frob-ack" }
 frob-check = { version = "0.0.0", path = "../frob-check" }
+gob-check = { version = "0.0.0", path = "../gob-check" }
 frob-evidence = { version = "0.0.0", path = "../frob-evidence" }
 frob-land = { version = "0.0.0", path = "../frob-land" }
 frob-lease = { version = "0.0.0", path = "../frob-lease" }

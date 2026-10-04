@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use std::time::Duration;
 
 use gob_cache::{Cache, CacheConfig};
+use gob_check::{OtherCopy, SiblingRow};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec, find_sibling};
 use gob_symbols::{Fidelity, adapter_for, fidelity_report};
@@ -156,32 +157,6 @@ pub struct DriverCheck {
     pub detail: Option<String>,
     /// The exact command that fixes it, when not `ok`.
     pub fix: Option<String>,
-}
-
-/// A second copy of a sibling in the other location (D87).
-#[derive(Debug, Serialize, JsonSchema)]
-pub struct OtherCopy {
-    /// Where it is: `path` (the copy beside frob is the one in use).
-    pub path: String,
-    /// First line of its `--version`, when it ran.
-    pub version: Option<String>,
-    /// True when its version differs from the copy in use.
-    pub differs: bool,
-}
-
-/// One sibling product as frob discovers it: beside the running executable first, then on `PATH`.
-#[derive(Debug, Serialize, JsonSchema)]
-pub struct SiblingRow {
-    /// Product (`grimble`, `crunk`).
-    pub product: String,
-    /// `beside-frob`, `path` or `absent`.
-    pub location: String,
-    /// The executable in use, when found.
-    pub path: Option<String>,
-    /// First line of its `--version`, when it ran.
-    pub version: Option<String>,
-    /// A different second copy, when one exists.
-    pub other: Option<OtherCopy>,
 }
 
 /// Output of `doctor`.

@@ -278,7 +278,7 @@ expression: v
           "type": "boolean"
         },
         "path": {
-          "description": "Where it is: `path` (the copy beside frob is the one in use).",
+          "description": "The executable of the copy not in use.",
           "type": "string"
         },
         "version": {
@@ -296,7 +296,7 @@ expression: v
       "type": "object"
     },
     "SiblingRow": {
-      "description": "One sibling product as frob discovers it: beside the running executable first, then on `PATH`.",
+      "description": "One sibling product as discovered: beside the running executable first, then on `PATH` (D87).",
       "properties": {
         "location": {
           "description": "`beside-frob`, `path` or `absent`.",
@@ -311,7 +311,7 @@ expression: v
               "type": "null"
             }
           ],
-          "description": "A different second copy, when one exists."
+          "description": "A different second copy, when one exists (`doctor` only)."
         },
         "path": {
           "description": "The executable in use, when found.",
@@ -325,7 +325,7 @@ expression: v
           "type": "string"
         },
         "version": {
-          "description": "First line of its `--version`, when it ran.",
+          "description": "The version of the copy in use, when known.",
           "type": [
             "string",
             "null"

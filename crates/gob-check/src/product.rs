@@ -104,6 +104,8 @@ pub struct External {
     pub languages: Vec<(String, LanguageFidelity)>,
     /// Non-fatal notes for the report's warnings.
     pub warnings: Vec<String>,
+    /// Where each external product's binary was found and its version.
+    pub siblings: Vec<crate::SiblingRow>,
 }
 
 /// A repo group's computation: the snapshot and the extendable interner in, raw findings out.

@@ -368,7 +368,9 @@ design model owes grimble nothing). For a configured sibling frob does:
    frob executable (symlinks resolved; `bin/` or `Scripts\`, `.exe` on
    Windows) and then on PATH (D87). `gob_exec::find_sibling` is the one
    discovery, shared with `frob doctor`; `check` records the location
-   used as the fidelity row `<product>:binary` (`beside-frob` or `path`).
+   used in `data.siblings` (`product`, `location` `beside-frob`, `path` or
+   `absent`, `path`, `version` from the document; additive, no
+   `schema_version` change), listed in the text view only under `-v`.
    In-process
    runs build the same typed document without a JSON round trip and go
    through steps 4 to 6 unchanged.

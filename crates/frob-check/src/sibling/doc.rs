@@ -141,6 +141,9 @@ pub(super) struct DocRule {
 pub(super) struct Doc {
     /// The producing product.
     pub product: String,
+    /// The producer's own version, when it reports one.
+    #[serde(default)]
+    pub product_version: Option<String>,
     /// `blake3:` plus 64 hex digits.
     pub compute_digest: String,
     /// Per language fidelity.

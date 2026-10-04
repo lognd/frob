@@ -57,7 +57,11 @@ fn run(frob: &Path, cwd: &Path, path_first: Option<&Path>, args: &[&str]) -> Out
         .current_dir(cwd)
         .env_remove("FROB_LOG")
         .env("PATH", path)
-        .arg("--json")
+        .args(if args.contains(&"--text") {
+            None
+        } else {
+            Some("--json")
+        })
         .args(args)
         .output()
         .expect("run frob")
@@ -136,4 +140,35 @@ fn doctor_reports_a_path_only_grimble() {
     assert!(row["other"].is_null());
     let crunk = rows.iter().find(|r| r["product"] == "crunk").expect("row");
     assert_eq!(crunk["location"], "absent", "{crunk}");
+}
+
+/// `check` reports where each configured sibling was found as `data.siblings`; the text view lists them only under `-v`.
+// frob:tests crates/frob-check/src/sibling/mod.rs::Siblings
+#[test]
+fn check_reports_sibling_locations_in_json_and_only_under_verbose_in_text() {
+    let (env, frob) = tool_env();
+    let repo = repo();
+    std::fs::write(
+        repo.path().join("frob.toml"),
+        "[check]\nrequire_siblings = false\n",
+    )
+    .expect("write");
+    let absent = json(&run(&frob, repo.path(), None, &["check"]));
+    let row = &absent["data"]["siblings"][0];
+    assert_eq!(row["product"], "grimble", "{absent}");
+    assert_eq!(row["location"], "absent");
+    assert!(row["path"].is_null());
+    stub(&env.path().join("bin"), "echo not-a-document");
+    let beside = json(&run(&frob, repo.path(), None, &["check"]));
+    let row = &beside["data"]["siblings"][0];
+    assert_eq!(row["location"], "beside-frob", "{beside}");
+    assert!(row["path"].as_str().is_some_and(|p| p.ends_with("grimble")));
+    let quiet = run(&frob, repo.path(), None, &["--text", "check"]);
+    assert!(!String::from_utf8_lossy(&quiet.stdout).contains("sibling grimble"));
+    let loud = run(&frob, repo.path(), None, &["--text", "-v", "check"]);
+    assert!(
+        String::from_utf8_lossy(&loud.stdout).contains("sibling grimble: beside-frob"),
+        "{}",
+        String::from_utf8_lossy(&loud.stdout)
+    );
 }

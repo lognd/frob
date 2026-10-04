@@ -878,6 +878,7 @@ dependencies = [
  "frob-tests",
  "frob-worktree",
  "gob-cache",
+ "gob-check",
  "gob-cli",
  "gob-config",
  "gob-diagnostics",

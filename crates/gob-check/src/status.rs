@@ -203,6 +203,33 @@ pub struct LanguageFidelity {
     pub unresolved: BTreeMap<String, usize>,
 }
 
+/// A second copy of a sibling in the other location (D87).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct OtherCopy {
+    /// The executable of the copy not in use.
+    pub path: String,
+    /// First line of its `--version`, when it ran.
+    pub version: Option<String>,
+    /// True when its version differs from the copy in use.
+    pub differs: bool,
+}
+
+/// One sibling product as discovered: beside the running executable first, then on `PATH` (D87).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct SiblingRow {
+    /// Product (`grimble`, `crunk`).
+    pub product: String,
+    /// `beside-frob`, `path` or `absent`.
+    pub location: String,
+    /// The executable in use, when found.
+    pub path: Option<String>,
+    /// The version of the copy in use, when known.
+    pub version: Option<String>,
+    /// A different second copy, when one exists (`doctor` only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub other: Option<OtherCopy>,
+}
+
 /// The per-language fidelity report of one run.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct FidelityReport {

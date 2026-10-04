@@ -383,6 +383,7 @@ fn pass<P: Product>(
         subjects_examined: tally.subjects,
         fidelity: tally.fidelity,
         namespaces: external.namespaces,
+        siblings: external.siblings,
     })
 }
 
