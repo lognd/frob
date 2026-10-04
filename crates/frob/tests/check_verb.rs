@@ -1,13 +1,13 @@
 //! `frob check` through the binary: exit codes, `--fail-on`, `--explain`, `--timing`.
 
+mod common;
+
 use std::path::Path;
 
-use assert_cmd::Command;
 use serde_json::Value;
 
 fn frob(dir: &Path, args: &[&str]) -> std::process::Output {
-    Command::cargo_bin("frob")
-        .expect("frob binary")
+    common::frob_command()
         .current_dir(dir)
         .args(args)
         .output()

@@ -2,6 +2,8 @@
 // frob:ticket 01M40SG11J388ZYWB7YJD0NPX1
 #![cfg(unix)]
 
+mod common;
+
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
 use std::process::Output;
@@ -53,8 +55,7 @@ fn running_dir() -> tempfile::TempDir {
 
 /// Run `frob --json <args>` in `cwd` with `path_dir` first on PATH.
 fn frob(cwd: &Path, path_dir: &Path, args: &[&str]) -> Output {
-    Command::cargo_bin("frob")
-        .expect("frob binary")
+    common::frob_command()
         .current_dir(cwd)
         .env_remove("FROB_LOG")
         .env("PATH", path_with(path_dir))

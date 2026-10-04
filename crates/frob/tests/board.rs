@@ -1,12 +1,13 @@
 //! `frob board`: the text snapshot at a fixed width and clock, card age from events, and the JSON shape.
 // frob:ticket 01M4069W45P08YPC4YH4XZVMNC
 
+mod common;
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::process::Output;
 use std::time::Duration;
 
-use assert_cmd::Command;
 use frob_cli::board_cmd::{FALLBACK_WIDTH, resolve_width};
 use frob_ledger::TicketId;
 use frob_ledger::event::{Event, EventBody, TransitionData};
@@ -287,8 +288,7 @@ fn git(dir: &Path, args: &[&str]) {
 }
 
 fn frob(dir: &Path, args: &[&str]) -> Output {
-    Command::cargo_bin("frob")
-        .expect("frob binary")
+    common::frob_command()
         .current_dir(dir)
         .env_remove("FROB_LOG")
         .env_remove("COLUMNS")
