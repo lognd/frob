@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T21:11:46Z"
-updated = "2026-10-04T22:54:21Z"
+updated = "2026-10-04T23:20:55Z"
 scope = ["crates/gob-testsupport/src/lib.rs", "crates/gob-dev/src/ci.rs"]
 
 [[acceptance]]
