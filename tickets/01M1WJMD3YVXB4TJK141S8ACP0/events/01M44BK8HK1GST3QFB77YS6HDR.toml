@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. volatility=external for outbound fetch capabilities; grmb attr plus SYS rule."
+at = "2026-10-04T21:02:25Z"
+actor = "lognd"
+rev = 1
