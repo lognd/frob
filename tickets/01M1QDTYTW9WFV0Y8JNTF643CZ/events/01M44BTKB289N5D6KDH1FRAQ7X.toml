@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 mutation-evidence spawning pytest for foreign node ids; v2 evidence runs per-provider records (frob-evidence provider.rs)."
+at = "2026-10-04T21:06:26Z"
+actor = "lognd"
+rev = 1
