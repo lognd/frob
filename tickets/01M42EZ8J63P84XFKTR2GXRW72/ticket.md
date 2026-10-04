@@ -2,12 +2,12 @@
 id = "01M42EZ8J63P84XFKTR2GXRW72"
 title = "Private-term redaction: local-only rules refuse, detect and scrub private names in the ledger (generalizes the TICK004 scrub)"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T03:22:55Z"
-updated = "2026-10-04T03:22:55Z"
+updated = "2026-10-04T03:26:30Z"
 scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/scrub.rs", "crates/frob/src/ticket/**", "crates/frob/tests/**", "crates/gob-config/**", "docs/design/tickets.md", "docs/design/architecture.md", "docs/reference/rules/**"]
 
 [[acceptance]]
