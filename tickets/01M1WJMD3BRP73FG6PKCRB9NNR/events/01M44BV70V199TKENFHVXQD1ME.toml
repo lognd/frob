@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: pytest rootdir resolution for [[test.runner]]; v2 has no pytest runner in frob test (evidence provider M525Y1M is a separate design)."
+at = "2026-10-04T21:06:46Z"
+actor = "lognd"
+rev = 1
