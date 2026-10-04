@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T01:57:43Z"
-updated = "2026-10-04T04:42:29Z"
+updated = "2026-10-04T04:42:35Z"
 scope = ["crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/**", "docs/design/build-test-ci.md", "CONTRIBUTING.md"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given goway exits 125, when a remote step runs, then the summary reports a goway failure distinct from a test failure"
-bound = false
+bound = true
 +++
 
 The owner's goway dev build (~/.local/opt/goway-dev/current/goway, LAN helpers quasar and xanders-laptop, x86_64 Linux) ran frob-v2's suite remotely: 1383 of 1385 pass, the 2 needing .git until goway's --with-git. Offloading the heavy steps (nextest, clippy for the Windows target, docs) frees the aarch64 laptop that runs many agent builds.
