@@ -2,11 +2,12 @@
 id = "01M0GSW4RKC7BNMCJN7V9SQD8N"
 title = "Evaluate real decomposition seams for _close_cmd/_land_cmd/_lifecycle (ticket_runner)"
 type = "docs"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-08-21T00:00:00Z"
-updated = "2026-08-21T00:00:00Z"
+updated = "2026-10-04T21:06:19Z"
 aliases = ["T-2835"]
 labels = ["milestone:1.0.0", "v1-cluster:C4a"]
 scope = ["src/frob/app/ticket_runner/_close_cmd.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_lifecycle.py"]
