@@ -2,12 +2,12 @@
 id = "01M3AXSDAJ8YB45QEY8G9Z8DWV"
 title = "close the marked authority gaps in sysdesign-research.md with primary sources"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD815BE5WXEJ8JDTSV9J"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:35Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6482"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["scratchpad/sysdesign-research.md"]

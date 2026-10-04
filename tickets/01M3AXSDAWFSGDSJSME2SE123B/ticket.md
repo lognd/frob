@@ -2,12 +2,12 @@
 id = "01M3AXSDAWFSGDSJSME2SE123B"
 title = "STORE207: single-table DynamoDB design with no documented access-pattern key schema"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD9N6EMFMTKASSQETY9D"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:45Z"
+updated = "2026-10-04T22:22:26Z"
 aliases = ["T-6492"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_dynamodb.py", "tests/fixtures/store/store207-dynamodb-single-table-no-schema/**"]

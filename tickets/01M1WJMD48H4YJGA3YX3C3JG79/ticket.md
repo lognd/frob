@@ -2,12 +2,12 @@
 id = "01M1WJMD48H4YJGA3YX3C3JG79"
 title = "strata: model a node's runtime-mounted artifact set; check relative import/include targets in a config file resolve within it"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:02:28Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4232"]
 labels = ["v1-cluster:B3d", "triage:accepted"]
 scope = ["src/frob/strata"]

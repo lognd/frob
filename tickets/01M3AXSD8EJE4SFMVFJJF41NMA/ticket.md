@@ -2,12 +2,12 @@
 id = "01M3AXSD8EJE4SFMVFJJF41NMA"
 title = "close the 13 authority gaps in db-paradigm-research.md with primary sources"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD9Z2T54HFHNCZ91W3YV"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:58:19Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-6414"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 +++

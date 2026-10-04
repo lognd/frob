@@ -2,12 +2,12 @@
 id = "01M1WJMD4W9XT5BWK9TVAN56Z5"
 title = "AFFECT-style check: on ticket close, flag sibling symbols with the same shape that still match the PRE-CHANGE form of the symbol just tightened"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:06:18Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4252"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates"]

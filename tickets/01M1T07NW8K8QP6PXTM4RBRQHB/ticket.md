@@ -2,12 +2,12 @@
 id = "01M1T07NW8K8QP6PXTM4RBRQHB"
 title = "refs.artifact: declared surface for verbatim build-output directories"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1QDTYTRW714S858S0TP6YWM"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:05:06Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3976"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_refs_schema.py"]

@@ -2,12 +2,12 @@
 id = "01M1T07NW47BKQA0BTWGT0S8M0"
 title = "LOOP001: asyncio.run inside a loop"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1QDTYTFZHQYMDHNFBSGQXJJ"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:04:59Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3972"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/perf/_hotpath_smells.py"]

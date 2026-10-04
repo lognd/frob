@@ -2,11 +2,11 @@
 id = "01M38BCP8YSPMT8SG9Y3VM7F8C"
 title = "STORE: database-paradigm misuse lint family"
 type = "epic"
-category = "triage"
+category = "todo"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-10-04T20:56:54Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-6430"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++

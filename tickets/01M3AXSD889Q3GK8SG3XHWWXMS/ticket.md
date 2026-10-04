@@ -2,12 +2,12 @@
 id = "01M3AXSD889Q3GK8SG3XHWWXMS"
 title = "SYSDESIGN407: no SIGTERM handler / no preStop hook covering LB deregistration lag"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD8AD5W7ECRJX8VGNKVM"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:58:12Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-6408"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_horizontal.py", "tests/fixtures/sysdesign/sysdesign407/**"]

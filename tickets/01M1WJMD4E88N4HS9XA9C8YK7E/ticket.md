@@ -2,12 +2,12 @@
 id = "01M1WJMD4E88N4HS9XA9C8YK7E"
 title = "deploy-script semantic checks: an image a script pulls must be one a job pushes; an unauthenticated smoke check must not assert against an admin-guarded route"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:06:14Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4238"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates"]

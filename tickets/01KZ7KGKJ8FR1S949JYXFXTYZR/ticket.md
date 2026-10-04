@@ -2,12 +2,12 @@
 id = "01KZ7KGKJ8FR1S949JYXFXTYZR"
 title = "Cross-language inspection stress test: one repo, every supported language, one obligation graph"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01KZ7KGKHXGS6W2YAVRY27W0D5"
 reporter = "human"
 created = "2026-08-05T00:00:00Z"
-updated = "2026-10-04T21:08:43Z"
+updated = "2026-10-04T22:22:20Z"
 aliases = ["T-1608"]
 labels = ["v1-cluster:D2", "triage:accepted"]
 scope = ["tests/**", "src/frob/**", "docs/**"]

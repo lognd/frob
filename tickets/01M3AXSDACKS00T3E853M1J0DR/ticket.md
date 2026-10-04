@@ -2,11 +2,11 @@
 id = "01M3AXSDACKS00T3E853M1J0DR"
 title = "SYSDESIGN: system-design linting and strata architecture expressiveness"
 type = "epic"
-category = "triage"
+category = "todo"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:29Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6476"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++

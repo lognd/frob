@@ -2,12 +2,12 @@
 id = "01M1T07NWK81XW0XJB4F7RBEX4"
 title = "cmd: evidence: reproducibility hardening (cwd, re-run, empty-output)"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1T07NWGXQV249M3HN5DQV9V"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:05:10Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3987"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/tickets/_evidence.py"]

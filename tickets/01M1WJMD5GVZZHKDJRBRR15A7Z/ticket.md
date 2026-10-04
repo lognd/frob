@@ -2,11 +2,11 @@
 id = "01M1WJMD5GVZZHKDJRBRR15A7Z"
 title = "multi-contributor epic claims: a remote collaborator claims an epic, everyone else sees it advisorily, and an abandoned claim expires without starving the ticket"
 type = "epic"
-category = "triage"
+category = "todo"
 priority = "medium"
 reporter = "human"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:10:06Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4272"]
 labels = ["v1-cluster:F2", "triage:accepted"]
 

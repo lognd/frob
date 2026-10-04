@@ -2,12 +2,12 @@
 id = "01M1WJMD3WSE2YVHTWHAHHJZJ7"
 title = "purity/ownership invariant: a controller documented Pure must not be wired to a caller that writes its output back into the buffers it read"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1WJMD1X14Z9P76XPX0QQ0NM"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:06:02Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4220"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_inv.py"]

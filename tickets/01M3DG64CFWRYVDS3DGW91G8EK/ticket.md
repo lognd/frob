@@ -2,11 +2,11 @@
 id = "01M3DG64CFWRYVDS3DGW91G8EK"
 title = "`frob ticket done-report` (no --fix) mutates the tree: its internal scoped check wrote 60 frob:tests directive lines into test files"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-04T21:09:50Z"
+updated = "2026-10-04T22:22:26Z"
 aliases = ["T-6543"]
 labels = ["v1-cluster:C2", "triage:accepted"]
 scope = ["src/frob/tickets/_done_report.py", "src/frob/check/__init__.py", "src/frob/gates/_fix_engine.py", "tests/unit/tickets/test_done_report_readonly.py", "docs/modules/tickets-lifecycle.md"]

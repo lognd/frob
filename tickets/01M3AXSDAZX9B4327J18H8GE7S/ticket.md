@@ -2,12 +2,12 @@
 id = "01M3AXSDAZX9B4327J18H8GE7S"
 title = "admission and rate limiting (SYSDESIGN201+)"
 type = "story"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSDACKS00T3E853M1J0DR"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:47Z"
+updated = "2026-10-04T22:22:26Z"
 aliases = ["T-6495"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++

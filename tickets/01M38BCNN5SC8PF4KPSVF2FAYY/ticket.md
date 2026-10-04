@@ -2,12 +2,12 @@
 id = "01M38BCNN5SC8PF4KPSVF2FAYY"
 title = "TIER002: resolve frob:verifies against the strata V-model graph"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 points = 3
 reporter = "agent"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-10-04T21:02:52Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-5797"]
 labels = ["v1-cluster:B3d", "triage:accepted"]
 scope = ["src/frob/gates/_tickets_gate.py"]

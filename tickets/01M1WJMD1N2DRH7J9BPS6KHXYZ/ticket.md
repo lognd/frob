@@ -2,11 +2,11 @@
 id = "01M1WJMD1N2DRH7J9BPS6KHXYZ"
 title = "decide and document the no-[[test.runner]]-declared fallback policy"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "human"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:06:45Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4149"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
 +++

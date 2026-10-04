@@ -2,12 +2,12 @@
 id = "01M2VFD1ZAS7PZERWYPQDMB8GH"
 title = "frob-suggest: log every block/allow/ignored-ack decision to .frob/telemetry.jsonl"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M2VFD1ZDWWNTW1FFGKHCKTS3"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-10-04T21:08:28Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-5098"]
 labels = ["v1-cluster:E1", "triage:accepted"]
 scope = [".claude/hooks/*", "tests/test_hook_frob_suggest.py"]

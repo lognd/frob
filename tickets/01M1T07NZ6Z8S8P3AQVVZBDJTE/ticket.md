@@ -2,11 +2,11 @@
 id = "01M1T07NZ6Z8S8P3AQVVZBDJTE"
 title = "frob test's touched-set selector calls any symbol in a test file a test, so a module-level constant is emitted as a pytest node id"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:06:43Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4070"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/testing/_select.py"]

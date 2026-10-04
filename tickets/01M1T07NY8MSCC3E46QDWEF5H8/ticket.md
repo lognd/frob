@@ -2,12 +2,12 @@
 id = "01M1T07NY8MSCC3E46QDWEF5H8"
 title = "waived frob:tests must still record its claimed kind"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1T07NXGXQ1VDNZ4FWF10TGF"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:06:33Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4040"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/graph/dsl.py"]

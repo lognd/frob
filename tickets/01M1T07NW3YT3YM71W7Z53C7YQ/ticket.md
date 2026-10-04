@@ -2,12 +2,12 @@
 id = "01M1T07NW3YT3YM71W7Z53C7YQ"
 title = "ENVVAR002: every config field has a non-test reader"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1QDTYTFZHQYMDHNFBSGQXJJ"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:04:58Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3971"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/app/config.py"]

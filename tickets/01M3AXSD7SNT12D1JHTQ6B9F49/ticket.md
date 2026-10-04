@@ -2,12 +2,12 @@
 id = "01M3AXSD7SNT12D1JHTQ6B9F49"
 title = "STORE302: per-request full-collection/table/index scan reachable from a request handler, regardless of declared paradigm"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSDBCZ0WN62JE8P0BQRA2"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:57:37Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-6393"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_strata_mismatch.py", "tests/fixtures/store/store302-full-scan-reachable-from-handler/**"]

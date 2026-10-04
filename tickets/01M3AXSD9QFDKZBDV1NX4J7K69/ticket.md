@@ -2,12 +2,12 @@
 id = "01M3AXSD9QFDKZBDV1NX4J7K69"
 title = "GRAMMAR: module-level `owner STRING` declaration"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSDBEQGV8V5VHYGXBEQTV"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:59:08Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6455"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["strata-core/src/parse/grammar_module.rs", "docs/strata/surface.md#module", "src/frob/strata/_models.py"]

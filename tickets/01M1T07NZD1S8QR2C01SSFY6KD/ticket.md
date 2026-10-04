@@ -2,12 +2,12 @@
 id = "01M1T07NZD1S8QR2C01SSFY6KD"
 title = "M-8: error-state a11y assertion plus RHF aria-invalid lint"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1T07NZ7QPBX3WD3ZVWSJX8H"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:00:36Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4077"]
 labels = ["v1-cluster:B2", "area:crunk", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/graph/dsl.py"]

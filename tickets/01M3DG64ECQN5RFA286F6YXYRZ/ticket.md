@@ -2,12 +2,12 @@
 id = "01M3DG64ECQN5RFA286F6YXYRZ"
 title = "frob check --ticket: refuse a second concurrent full check for the same worktree (per-worktree lock), --allow-concurrent to override, so stacked agent checks cannot starve the shared host"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "medium"
 points = 3
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-04T21:09:40Z"
+updated = "2026-10-04T22:22:26Z"
 aliases = ["T-6604"]
 labels = ["v1-cluster:C1b", "triage:accepted"]
 scope = ["src/frob/app/check_runner.py", "src/frob/process/", "src/frob/_cli_parsers/_check.py", "docs/modules/check.md"]

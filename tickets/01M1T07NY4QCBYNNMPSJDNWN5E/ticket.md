@@ -2,11 +2,11 @@
 id = "01M1T07NY4QCBYNNMPSJDNWN5E"
 title = "F-240+: engine delta audit -- a rule-shaped remediation must not be closable by fixing instances"
 type = "epic"
-category = "triage"
+category = "todo"
 priority = "medium"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:09:20Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4036"]
 labels = ["v1-cluster:G1", "triage:accepted"]
 +++

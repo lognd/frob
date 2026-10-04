@@ -2,12 +2,12 @@
 id = "01M1WJMD318EJWXB4CS50S27S8"
 title = "playbook: a failure-injection repro test must assert every field of the response, not only the test-plan's named field"
 type = "docs"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:07:47Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4193"]
 labels = ["v1-cluster:F1", "triage:accepted"]
 scope = ["docs/modules"]

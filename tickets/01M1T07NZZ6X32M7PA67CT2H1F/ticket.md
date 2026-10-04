@@ -2,12 +2,12 @@
 id = "01M1T07NZZ6X32M7PA67CT2H1F"
 title = "H3-11: wasm-bearing dynamic import as fetch_url capability"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1T07NZSWG65V1BFPEJK6SE6"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:05:42Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4095"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/vet/_capability_registry/_dangerous_ops_other.py"]

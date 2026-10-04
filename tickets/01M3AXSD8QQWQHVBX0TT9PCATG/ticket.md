@@ -2,12 +2,12 @@
 id = "01M3AXSD8QQWQHVBX0TT9PCATG"
 title = "SYSDESIGN108: declared `may` egress capability with no matching firewall/NAT egress allow-rule"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD8RPMPFSYCWPM0XQY5G"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:58:33Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-6423"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_segmentation.py", "tests/fixtures/sysdesign/sysdesign108/**"]

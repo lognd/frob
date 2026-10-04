@@ -2,11 +2,11 @@
 id = "01M1T07NZ5544DN9ZZK8RAXTMJ"
 title = "Three gates were satisfied today by making the code worse: state and audit the 'cheapest clearing action' principle"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:09:22Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4069"]
 labels = ["v1-cluster:G1", "triage:accepted"]
 scope = ["docs/modules/gates.md"]

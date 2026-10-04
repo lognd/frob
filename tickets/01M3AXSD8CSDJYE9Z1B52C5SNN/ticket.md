@@ -2,12 +2,12 @@
 id = "01M3AXSD8CSDJYE9Z1B52C5SNN"
 title = "SYSDESIGN409: single migration both adds a required NOT NULL column and drops/renames an old one"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD8AD5W7ECRJX8VGNKVM"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:58:16Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-6412"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_migrations.py (new)", "tests/fixtures/sysdesign/sysdesign409/**"]

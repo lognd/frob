@@ -2,11 +2,11 @@
 id = "01M2Y1SS11G9KFME2MGJHBNG21"
 title = "frob check: the sys stage takes 1268s of a 1900s root check and --files scoping does not skip it, so every sized agent check hangs past 10 minutes under fleet load"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "medium"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-10-04T21:09:23Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-5153"]
 labels = ["v1-cluster:G1", "triage:accepted"]
 scope = ["src/frob/gates/_sys.py", "src/frob/check/_python.py"]

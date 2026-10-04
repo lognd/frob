@@ -2,12 +2,12 @@
 id = "01M1T07NXZ5WQR200M5H1NWDN9"
 title = "F-238: a ticket with zero acceptance criteria passes the acceptance check vacuously and lands"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "high"
 parent = "01M1T07NXSGQEK1JQ4XKQSJFAK"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:12:10Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-4031"]
 labels = ["v1-cluster:C2", "triage:accepted"]
 scope = ["src/frob/tickets/_evidence.py"]

@@ -2,11 +2,11 @@
 id = "01M1WJMD2FWKPS1J7MPF18KDVY"
 title = "consumer round-4 backend audit: nine findings written as why the gates missed them, including a second independent report of waiver premises expiring unchecked"
 type = "epic"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "auditor"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:05:52Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4175"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 

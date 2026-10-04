@@ -2,11 +2,11 @@
 id = "01KZ7KGKHXGS6W2YAVRY27W0D5"
 title = "Language support expansion: C#, Java, CUDA, Zig, Bash and the top 20-50 languages"
 type = "epic"
-category = "triage"
+category = "todo"
 priority = "medium"
 reporter = "human"
 created = "2026-08-05T00:00:00Z"
-updated = "2026-10-04T21:08:38Z"
+updated = "2026-10-04T22:22:20Z"
 aliases = ["T-1597"]
 labels = ["v1-cluster:D2", "triage:accepted"]
 scope = ["tickets/T-1597/**"]

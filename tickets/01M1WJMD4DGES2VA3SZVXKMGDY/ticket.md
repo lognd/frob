@@ -2,12 +2,12 @@
 id = "01M1WJMD4DGES2VA3SZVXKMGDY"
 title = "classify a documented command's path arguments by execution context (container namespace vs host) against declared mounts"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:06:13Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4237"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates"]

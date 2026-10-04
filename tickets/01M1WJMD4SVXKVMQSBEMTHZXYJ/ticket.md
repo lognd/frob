@@ -2,12 +2,12 @@
 id = "01M1WJMD4SVXKVMQSBEMTHZXYJ"
 title = "client-side totality mirror: export a server registry's total code/field set and require the consumer to enumerate and handle/ignore every entry"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:06:17Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4249"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates"]

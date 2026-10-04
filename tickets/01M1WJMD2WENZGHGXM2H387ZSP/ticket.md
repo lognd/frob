@@ -2,12 +2,12 @@
 id = "01M1WJMD2WENZGHGXM2H387ZSP"
 title = "frob:invariant call-graph-closure kind: a symbol reading a guard state must have a reachable in-tree writer"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:05:55Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4188"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_wire.py"]

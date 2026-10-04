@@ -2,12 +2,12 @@
 id = "01M1WJMD3YVXB4TJK141S8ACP0"
 title = "strata: mark outbound fetch capabilities volatility=external; a volatility=external source may not ground a build-failing equality check"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1WJMD26NR9SKQCEFEHS7ENJ"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:02:25Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4222"]
 labels = ["v1-cluster:B3d", "triage:accepted"]
 scope = ["src/frob/strata"]

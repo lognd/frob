@@ -2,12 +2,12 @@
 id = "01M1T07NW78MGWRF7HZQMPSRAV"
 title = "evidence satisfaction must exclude xfail/xpass/skip by default"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "medium"
 parent = "01M1QDTYTRW714S858S0TP6YWM"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:05:03Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3975"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/testing/_models.py"]

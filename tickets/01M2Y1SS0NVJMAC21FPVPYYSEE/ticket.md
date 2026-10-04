@@ -3,12 +3,12 @@ id = "01M2Y1SS0NVJMAC21FPVPYYSEE"
 title = "WEBSEC injection and output encoding: XSS sinks, SSTI, eval/exec, unsafe deserialization, command/NoSQL/LDAP/log/header injection, input bounds (ASVS V1 V2 V5 V15)"
 type = "story"
 flavour = "user_story"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-10-04T21:00:42Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-5141"]
 labels = ["component:gates", "v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++

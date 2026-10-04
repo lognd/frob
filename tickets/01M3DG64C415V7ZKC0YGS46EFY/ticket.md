@@ -2,11 +2,11 @@
 id = "01M3DG64C415V7ZKC0YGS46EFY"
 title = "strata/source `frob:waive SYS113` applies on one run and not the next identical run (cache); make waiver resolution deterministic"
 type = "bug"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-04T21:10:08Z"
+updated = "2026-10-04T22:22:26Z"
 aliases = ["T-6532"]
 labels = ["v1-cluster:B3c", "triage:accepted"]
 scope = ["src/frob/gates/_waive.py", "src/frob/strata/_selfconform.py", "src/frob/graph/cache.py", "tests/unit/strata/test_sys113_waiver_determinism.py", "docs/modules/gates.md"]

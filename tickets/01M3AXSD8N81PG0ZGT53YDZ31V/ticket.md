@@ -2,12 +2,12 @@
 id = "01M3AXSD8N81PG0ZGT53YDZ31V"
 title = "STORE121: `WITH RECURSIVE` issued in a loop with an increasing depth parameter"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD9STSFC2MR8M369JNE8"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:58:28Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-6421"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_relational.py", "tests/fixtures/store/store121-relational-recursive-cte-loop/**"]

@@ -2,12 +2,12 @@
 id = "01M3AXSD98B7YWA3X9VS85YXVC"
 title = "STORE208: collection query missing index coverage (`find({})`/leading-wildcard `$regex`, MongoDB)"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD9N6EMFMTKASSQETY9D"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:58:52Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6440"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_mongo.py", "tests/fixtures/store/store208-mongo-scan-no-index/**"]

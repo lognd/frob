@@ -2,11 +2,11 @@
 id = "01M1QDTYTGXZY6FBNW2W33B3A3"
 title = "what strata could not express in a real threat-model pass: eight expressiveness gaps, including trust-as-identity having no construct"
 type = "epic"
-category = "triage"
+category = "todo"
 priority = "low"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-04T21:01:57Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3920"]
 labels = ["v1-cluster:B3d", "triage:accepted"]
 +++

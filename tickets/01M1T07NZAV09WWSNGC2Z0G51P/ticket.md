@@ -2,12 +2,12 @@
 id = "01M1T07NZAV09WWSNGC2Z0G51P"
 title = "H-2: unguarded default for required build-time env config"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1T07NZ7QPBX3WD3ZVWSJX8H"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:05:25Z"
+updated = "2026-10-04T22:22:22Z"
 aliases = ["T-4074"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_secrets.py"]

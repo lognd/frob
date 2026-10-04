@@ -2,12 +2,12 @@
 id = "01M1T07NVR9MKW4P9JFRFX8DJX"
 title = "known-dangerous-comparison-idiom rule (substring vs prefix)"
 type = "security"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1QDTYTRW714S858S0TP6YWM"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:04:50Z"
+updated = "2026-10-04T22:22:21Z"
 aliases = ["T-3960"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_cve_fingerprint_scan.py"]

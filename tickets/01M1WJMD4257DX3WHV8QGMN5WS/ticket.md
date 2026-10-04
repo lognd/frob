@@ -2,12 +2,12 @@
 id = "01M1WJMD4257DX3WHV8QGMN5WS"
 title = "cross-artifact producer/consumer check: a value one script writes and another parses must be verified as one contract, not per-half unit tests"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M1WJMD2FWKPS1J7MPF18KDVY"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T21:06:06Z"
+updated = "2026-10-04T22:22:23Z"
 aliases = ["T-4226"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates"]

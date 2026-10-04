@@ -2,12 +2,12 @@
 id = "01M3AXSD7PNT7RJ8TTNEZC1FTE"
 title = "SYSDESIGN202: autoscaled service with no local admission-control/load-shedding check"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSDAZX9B4327J18H8GE7S"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:57:33Z"
+updated = "2026-10-04T22:22:24Z"
 aliases = ["T-6390"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_admission.py (new)", "tests/fixtures/sysdesign/sysdesign202/**"]

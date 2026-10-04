@@ -2,12 +2,12 @@
 id = "01M3AXSD99GCZ81KDBFR23NRVT"
 title = "SYSDESIGN503: data store with no declared consistency model"
 type = "task"
-category = "triage"
+category = "todo"
 priority = "low"
 parent = "01M3AXSD8X08Y5AGX1VX1CH4QH"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T20:58:53Z"
+updated = "2026-10-04T22:22:25Z"
 aliases = ["T-6441"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_data_tier.py", "tests/fixtures/sysdesign/sysdesign503/**"]
