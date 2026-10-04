@@ -1161,7 +1161,7 @@ mod tests {
     }
 
     #[test]
-    // frob:tests crates/gob-symbols/src/python.rs::Fold::record_call
+    // frob:tests crates/gob-symbols/src/python.rs::Fold.record_call
     fn calls_carry_qualifiers_and_locals() {
         let f = fold_src("pkg/a.py", SAMPLE);
         let calls: Vec<(String, String, Option<String>, bool, crate::LocalBinding)> = f
@@ -1219,7 +1219,7 @@ mod tests {
     }
 
     #[test]
-    // frob:tests crates/gob-symbols/src/python.rs::Fold::import
+    // frob:tests crates/gob-symbols/src/python.rs::Fold.import
     fn imports_become_use_bindings() {
         let f = fold_src("pkg/a.py", SAMPLE);
         let uses: Vec<(String, String)> = f
@@ -1253,7 +1253,7 @@ mod tests {
     }
 
     #[test]
-    // frob:tests crates/gob-symbols/src/python.rs::Fold::tr
+    // frob:tests crates/gob-symbols/src/python.rs::Fold.tr
     fn match_statement_is_reported_unmodelled() {
         let src = "def f(x):\n    match x:\n        case 1:\n            g()\n";
         let f = fold_src("m.py", src);
@@ -1288,7 +1288,7 @@ mod tests {
     }
 
     #[test]
-    // frob:tests crates/gob-symbols/src/python.rs::Fold::collapse
+    // frob:tests crates/gob-symbols/src/python.rs::Fold.collapse
     fn deep_nesting_collapses_without_losing_calls() {
         let expr = (0..400).map(|_| "1").collect::<Vec<_>>().join(" + ");
         let src = format!("def f():\n    x = {expr}\n    g()\n");

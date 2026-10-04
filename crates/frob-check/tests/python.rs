@@ -78,7 +78,7 @@ fn cov001_sees_which_python_functions_tests_reach() {
     );
 }
 
-// frob:tests crates/gob-symbols/src/python.rs::Fold::tr
+// frob:tests crates/gob-symbols/src/python.rs::Fold.tr
 #[test]
 fn an_unmodelled_python_construct_is_unresolved_not_clean() {
     let dir = fixture();

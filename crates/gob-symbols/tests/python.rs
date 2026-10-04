@@ -95,7 +95,7 @@ fn the_package_yields_modules_classes_methods_and_functions() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/graph/python.rs::SymbolGraph::resolve_python
+// frob:tests crates/gob-symbols/src/graph/python.rs::SymbolGraph.resolve_python
 fn imports_and_self_calls_resolve_to_must_edges() {
     let g = graph();
     assert_eq!(
@@ -119,7 +119,7 @@ fn imports_and_self_calls_resolve_to_must_edges() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/graph/python.rs::SymbolGraph::resolve_python
+// frob:tests crates/gob-symbols/src/graph/python.rs::SymbolGraph.resolve_python
 fn tests_reach_through_constructors_reexports_and_unknown_receivers() {
     let g = graph();
     assert_eq!(
@@ -150,7 +150,7 @@ fn tests_reach_through_constructors_reexports_and_unknown_receivers() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/graph/python.rs::SymbolGraph::resolve_python
+// frob:tests crates/gob-symbols/src/graph/python.rs::SymbolGraph.resolve_python
 fn local_dynamic_and_external_callees_are_unknown_never_clean() {
     let g = graph();
     let mut reasons: Vec<(String, Option<GapReason>)> = g
@@ -176,7 +176,7 @@ fn local_dynamic_and_external_callees_are_unknown_never_clean() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/graph/python.rs::SymbolGraph::link_python_imports
+// frob:tests crates/gob-symbols/src/graph/python.rs::SymbolGraph.link_python_imports
 fn imports_link_files_and_symbols() {
     let g = graph();
     let imports: Vec<String> = g
