@@ -184,6 +184,13 @@ pub struct ChangelogExemptData {
     pub reason: String,
 }
 
+/// A done close that skipped the branch-merged guard (`--no-land --reason`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct LandExemptData {
+    /// Why the ticket is done although its branch holds commits not on the base.
+    pub reason: String,
+}
+
 /// One digest recomputed by a scrub: the event file and the digest before and after.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct DigestChange {
@@ -242,6 +249,8 @@ pub enum EventBody {
     EvidenceBypass(EvidenceBypassData),
     /// The ticket was exempted from the changelog-fragment requirement; audit only.
     ChangelogExempt(ChangelogExemptData),
+    /// The ticket closed done without its branch merged into the base (`--no-land`); audit only.
+    LandExempt(LandExemptData),
     /// The ticket's branch was landed; audit only.
     Land(LandData),
     /// A doctor repair scrubbed absolute home paths from the ticket's files; audit only.
@@ -375,6 +384,18 @@ pub fn changelog_exemption(events: &[Event]) -> Option<ChangelogExemption> {
     })
 }
 
+/// The latest `land-exempt` event among `events`, if any (audit only; the fold ignores it).
+pub fn land_exemption(events: &[Event]) -> Option<ChangelogExemption> {
+    events.iter().rev().find_map(|e| match &e.body {
+        EventBody::LandExempt(d) => Some(ChangelogExemption {
+            actor: e.actor.clone(),
+            at: e.at.to_string(),
+            reason: d.reason.clone(),
+        }),
+        _ => None,
+    })
+}
+
 /// Sort events into fold order.
 pub fn sort_events(events: &mut [Event]) {
     events.sort_by_key(Event::order_key);
@@ -392,6 +413,7 @@ pub const fn kind_name(body: &EventBody) -> &'static str {
         EventBody::Evidence(_) => "evidence",
         EventBody::EvidenceBypass(_) => "evidence-bypass",
         EventBody::ChangelogExempt(_) => "changelog-exempt",
+        EventBody::LandExempt(_) => "land-exempt",
         EventBody::Land(_) => "land",
         EventBody::Scrub(_) => "scrub",
         EventBody::Other => "other",
@@ -480,6 +502,9 @@ mod tests {
             }),
             EventBody::ChangelogExempt(ChangelogExemptData {
                 reason: "design document".into(),
+            }),
+            EventBody::LandExempt(LandExemptData {
+                reason: "work lives on another branch".into(),
             }),
             EventBody::Land(LandData {
                 base_ref: "refs/heads/main".into(),
