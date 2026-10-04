@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T06:34:32Z"
+digest = "85dfb4e993075cfc1997f1df5f4a164a5acf4d5d9cdad3072785be39d4ec1c9b"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7e786871-7b27-49d2-ba1a-3cde1ade9e6e with nextest profile: default
+    Starting 11 tests across 1 binary
+        PASS [   0.010s] gob-trust::state bad_kind_is_rejected
+        PASS [   0.011s] gob-trust::state different_key_discards_and_missing_key_is_an_error
+        PASS [   0.013s] gob-trust::state files_and_dirs_are_owner_only
+        PASS [   0.013s] gob-trust::state ci_ignores_in_tree_cache_and_tree_root_is_refused
+        PASS [   0.013s] gob-trust::state tampered_tag_and_forged_entry_are_discarded
+        PASS [   0.014s] gob-trust::state entry_moved_to_another_slot_is_discarded
+        PASS [   0.015s] gob-trust::state tampered_payload_is_discarded_and_rebuilt
+        PASS [   0.016s] gob-trust::state truncation_at_every_length_is_discarded
+        PASS [   0.018s] gob-trust::state missing_key_file_regenerates_and_invalidates_old_entries
+        PASS [   0.019s] gob-trust::state round_trip_and_miss
+        PASS [   0.129s] gob-trust::state concurrent_writers_never_expose_a_torn_entry
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.130s] 11 tests run: 11 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-trust --test state"
+size = 1351
+status = "measured"
+tests = ["bad_kind_is_rejected", "different_key_discards_and_missing_key_is_an_error", "files_and_dirs_are_owner_only", "ci_ignores_in_tree_cache_and_tree_root_is_refused", "tampered_tag_and_forged_entry_are_discarded", "entry_moved_to_another_slot_is_discarded", "tampered_payload_is_discarded_and_rebuilt", "truncation_at_every_length_is_discarded", "missing_key_file_regenerates_and_invalidates_old_entries", "round_trip_and_miss", "concurrent_writers_never_expose_a_torn_entry"]
+at = "2026-10-04T06:34:32Z"
+actor = "lognd"
+rev = 1
