@@ -18,6 +18,7 @@
 
 // frob:ticket 01M3WYJ80SRC0JBM9T7DFTJSB7
 // frob:ticket 01M43A53W5X4PBCXWCTTM4E1PN
+// frob:ticket 01M43BEAR3MSMEANKENBQ1KDT7
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
@@ -205,6 +206,9 @@ pub enum ImportError {
     /// The ledger integrity check over the converted tree failed.
     #[error("integrity check failed:\n{0}")]
     Integrity(String),
+    /// A generated ticket id or alias is already in the ledger being merged into; nothing was written.
+    #[error("merge refused, nothing written:\n{0}")]
+    Collision(String),
 }
 
 fn io_err(path: &Path, e: &std::io::Error) -> ImportError {
@@ -234,6 +238,10 @@ pub struct ImportOptions {
     pub selection: Option<PathBuf>,
     /// The git common dir whose local privacy file supplies private-term rules; `None` loads none.
     pub privacy_dir: Option<PathBuf>,
+    /// `to` may be an existing v2 ledger: write only new ticket directories, refusing on any id or alias collision.
+    pub merge: bool,
+    /// The category recorded in the create event of imported open tickets (`todo` or `triage`).
+    pub open_category: Category,
 }
 
 #[derive(Debug, Deserialize)]
@@ -651,6 +659,7 @@ fn links_of(
 fn create_data(
     v1: &V1Ticket,
     decision: &Decision,
+    category: Category,
     ids: &BTreeMap<String, TicketId>,
     report: &mut ImportReport,
 ) -> Result<CreateData, ImportError> {
@@ -675,7 +684,7 @@ fn create_data(
     Ok(CreateData {
         title: f.title.clone(),
         ty,
-        category: Category::Todo,
+        category,
         priority,
         class: frob_ledger::model::Class::Standard,
         due: None,
@@ -702,16 +711,29 @@ fn convert(
     decision: &Decision,
     id: TicketId,
     ids: &BTreeMap<String, TicketId>,
+    open_category: Category,
     report: &mut ImportReport,
 ) -> Result<Rendered, ImportError> {
     let f = &v1.front;
     let mut clock = Clock::new(&f.id, day_start(&f.id, &f.created)?, ticket_number(&f.id)?);
     let actor = f.origin.as_deref().unwrap_or(IMPORT_ACTOR);
     let (category, outcome) = map_state(f, decision)?;
+    // Closed tickets are created in todo and transitioned; open ones are created where the run says.
+    let create_category = if category == Category::Done {
+        Category::Todo
+    } else {
+        open_category
+    };
     let mut events = vec![event_text(
         &mut clock,
         actor,
-        EventBody::Create(Box::new(create_data(v1, decision, ids, report)?)),
+        EventBody::Create(Box::new(create_data(
+            v1,
+            decision,
+            create_category,
+            ids,
+            report,
+        )?)),
     )?];
     events.extend(evidence_events(v1, &mut clock, report)?);
     let dropped_reason = (f.state == "dropped")
@@ -844,41 +866,113 @@ pub fn load_tree(dir: &Path) -> Result<Vec<Rendered>, ImportError> {
     let mut out = Vec::new();
     for entry in std::fs::read_dir(dir).map_err(|e| io_err(dir, &e))? {
         let path = entry.map_err(|e| io_err(dir, &e))?.path();
+        out.push(load_ticket(&path)?);
+    }
+    out.sort_by_key(|t| t.id);
+    Ok(out)
+}
+
+/// Read one written ticket directory (its name is the id) back as a [`Rendered`].
+fn load_ticket(path: &Path) -> Result<Rendered, ImportError> {
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let id: TicketId = name
+        .parse()
+        .map_err(|_| ticket_err(&name, "directory is not a ULID"))?;
+    let md = path.join("ticket.md");
+    let ticket_md = std::fs::read_to_string(&md).map_err(|e| io_err(&md, &e))?;
+    let mut events = Vec::new();
+    let events_dir = path.join("events");
+    for ev in std::fs::read_dir(&events_dir).map_err(|e| io_err(&events_dir, &e))? {
+        let ev_path = ev.map_err(|e| io_err(&events_dir, &e))?.path();
+        let stem = ev_path
+            .file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let ev_id: EventId = stem
+            .parse()
+            .map_err(|_| ticket_err(&name, format!("event file {stem} is not a ULID")))?;
+        events.push((
+            ev_id,
+            std::fs::read_to_string(&ev_path).map_err(|e| io_err(&ev_path, &e))?,
+        ));
+    }
+    events.sort_by_key(|(id, _)| *id);
+    Ok(Rendered {
+        v1_id: name,
+        id,
+        ticket_md,
+        events,
+    })
+}
+
+/// Ids and aliases already in the ledger at `to` (ticket directories only; other entries are ignored).
+///
+/// A missing `to` is an empty ledger.
+fn existing_keys(
+    to: &Path,
+) -> Result<(BTreeSet<TicketId>, BTreeMap<String, TicketId>), ImportError> {
+    let mut ids = BTreeSet::new();
+    let mut aliases = BTreeMap::new();
+    let entries = match std::fs::read_dir(to) {
+        Ok(it) => it,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok((ids, aliases)),
+        Err(e) => return Err(io_err(to, &e)),
+    };
+    for entry in entries {
+        let path = entry.map_err(|e| io_err(to, &e))?.path();
         let name = path
             .file_name()
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_default();
-        let id: TicketId = name
-            .parse()
-            .map_err(|_| ticket_err(&name, "directory is not a ULID"))?;
+        let Ok(id) = name.parse::<TicketId>() else {
+            tracing::debug!(entry = %name, "merge: not a ticket directory, ignored");
+            continue;
+        };
         let md = path.join("ticket.md");
-        let ticket_md = std::fs::read_to_string(&md).map_err(|e| io_err(&md, &e))?;
-        let mut events = Vec::new();
-        let events_dir = path.join("events");
-        for ev in std::fs::read_dir(&events_dir).map_err(|e| io_err(&events_dir, &e))? {
-            let ev_path = ev.map_err(|e| io_err(&events_dir, &e))?.path();
-            let stem = ev_path
-                .file_stem()
-                .map(|s| s.to_string_lossy().into_owned())
-                .unwrap_or_default();
-            let ev_id: EventId = stem
-                .parse()
-                .map_err(|_| ticket_err(&name, format!("event file {stem} is not a ULID")))?;
-            events.push((
-                ev_id,
-                std::fs::read_to_string(&ev_path).map_err(|e| io_err(&ev_path, &e))?,
-            ));
+        let text = std::fs::read_to_string(&md).map_err(|e| io_err(&md, &e))?;
+        let stored = doc::parse(&name, &text).map_err(|e| ticket_err(&name, e.to_string()))?;
+        ids.insert(id);
+        for alias in stored.front.aliases {
+            aliases.insert(alias, id);
         }
-        events.sort_by_key(|(id, _)| *id);
-        out.push(Rendered {
-            v1_id: name,
-            id,
-            ticket_md,
-            events,
-        });
     }
-    out.sort_by_key(|t| t.id);
-    Ok(out)
+    tracing::info!(
+        tickets = ids.len(),
+        aliases = aliases.len(),
+        "merge: existing ledger scanned"
+    );
+    Ok((ids, aliases))
+}
+
+/// Refuse (before anything is written) when a new ticket id or alias is already in the ledger at `to`.
+///
+/// # Errors
+///
+/// [`ImportError::Collision`] listing every collision; [`ImportError::Io`] when the ledger is unreadable.
+fn check_merge(to: &Path, rendered: &[Rendered]) -> Result<(), ImportError> {
+    let (ids, aliases) = existing_keys(to)?;
+    let mut clashes = Vec::new();
+    for t in rendered {
+        if ids.contains(&t.id) {
+            clashes.push(format!("{}: id {} already exists", t.v1_id, t.id));
+        }
+        let stored =
+            doc::parse(&t.v1_id, &t.ticket_md).map_err(|e| ticket_err(&t.v1_id, e.to_string()))?;
+        for alias in &stored.front.aliases {
+            if let Some(owner) = aliases.get(alias) {
+                clashes.push(format!("{}: alias {alias} already on {owner}", t.v1_id));
+            }
+        }
+    }
+    if clashes.is_empty() {
+        Ok(())
+    } else {
+        tracing::error!(count = clashes.len(), "merge refused: collisions");
+        Err(ImportError::Collision(clashes.join("\n")))
+    }
 }
 
 fn write_tree(to: &Path, tickets: &[Rendered]) -> Result<(), ImportError> {
@@ -1066,16 +1160,32 @@ pub fn run(opts: &ImportOptions) -> Result<ImportReport, ImportError> {
                     .push(format!("{}: unmapped v1 key `{key}`", v.front.id));
             }
         }
-        rendered.push(convert(v, decision, ids[&v.front.id], &ids, &mut report)?);
+        rendered.push(convert(
+            v,
+            decision,
+            ids[&v.front.id],
+            &ids,
+            opts.open_category,
+            &mut report,
+        )?);
     }
     let problems = verify(&rendered);
     if !problems.is_empty() {
         return Err(ImportError::Integrity(problems.join("\n")));
     }
+    if opts.merge {
+        check_merge(&opts.to, &rendered)?;
+    }
     if !opts.dry_run {
-        target_is_free(&opts.to)?;
+        if !opts.merge {
+            target_is_free(&opts.to)?;
+        }
         write_tree(&opts.to, &rendered)?;
-        let problems = verify(&load_tree(&opts.to)?);
+        let written = rendered
+            .iter()
+            .map(|r| load_ticket(&opts.to.join(r.id.to_string())))
+            .collect::<Result<Vec<_>, _>>()?;
+        let problems = verify(&written);
         if !problems.is_empty() {
             return Err(ImportError::Integrity(problems.join("\n")));
         }
