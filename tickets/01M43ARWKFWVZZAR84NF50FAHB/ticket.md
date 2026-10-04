@@ -8,7 +8,7 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:47Z"
-updated = "2026-10-04T20:54:57Z"
+updated = "2026-10-04T20:55:00Z"
 idempotency_key = "crunk-plan-sib"
 labels = ["area:crunk"]
 scope = ["crates/frob-check/tests/**", "crates/frob-check/src/sibling/**", "crates/frob/tests/sibling_discovery.rs", "crates/frob/src/doctor.rs", "crates/gob-testsupport/**"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given crunk versions beside frob and on PATH that differ, when frob doctor runs, then both are reported and the one beside frob is used"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a crunk whose --json has another schema_version, when frob check runs, then a required Unresolved finding is reported and the exit is 1"
