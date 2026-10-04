@@ -3,12 +3,12 @@ id = "01M1T07NZ7QPBX3WD3ZVWSJX8H"
 title = "F-273: auth-pages audit -- V-model closure is satisfied by existence, never by reachability"
 type = "epic"
 category = "triage"
-priority = "high"
+priority = "low"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:01:58Z"
 aliases = ["T-4071"]
-labels = ["milestone:1.1.0", "v1-cluster:B3d"]
+labels = ["v1-cluster:B3d", "triage:accepted"]
 +++
 
 Consumer logand.app-v2 F-273 (auth-pages audit, 2026-09-06), verbatim in their
