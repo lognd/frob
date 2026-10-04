@@ -114,6 +114,8 @@ cycle_days = 2
 min_history = 3
 # Safety factor k in `capacity = rolling_mean - k * stddev` for cycle commitment; 0.5 trades a little throughput for commitments that are usually met.
 capacity_k = 0.5
+# Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.
+strict = false
 
 [pm.classes]
 # Expedite tickets that may exceed the repository WIP limit at once; 1 lets one critical fix through without opening the floodgates.

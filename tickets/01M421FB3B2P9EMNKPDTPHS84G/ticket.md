@@ -8,8 +8,8 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:27:02Z"
-updated = "2026-10-04T02:23:35Z"
-scope = ["packaging/**", ".github/workflows/build-smoke.yml", ".github/workflows/release.yml", "crates/frob-release/**", "docs/guides/release.md", "docs/design/releases.md"]
+updated = "2026-10-04T02:57:22Z"
+scope = ["packaging/**", ".github/workflows/build-smoke.yml", ".github/workflows/release.yml", "crates/frob-release/**", "docs/guides/release.md", "docs/design/releases.md", "changelog.d/01M421FB3B2P9EMNKPDTPHS84G.changed.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -17,19 +17,19 @@ target = "01M421F7Q66MW38R7J1JS1VMBC"
 
 [[acceptance]]
 text = "Given the built wheels, when grimble is installed alone, then only grimble is installed and runs"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the built wheels and no network index, when frob is installed into a clean venv, then grimble at the same version is installed with it and both run"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given uv tool install frob from the built wheels, when frob check runs, then it finds grimble without grimble on PATH"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the release workflow, when its tests run, then the pypi job uploads both products and each wheel set's count is checked"
-bound = false
+bound = true
 +++
 
 Owner decision D87 (products.md 6, releases.md 6): one binary per package, composed by dependencies. Today packaging/pypi builds one frob wheel that copies grimble into data/scripts (build-wheel.sh), so frob and grimble cannot be installed separately and side-by-side installs would put two grimble executables on PATH.

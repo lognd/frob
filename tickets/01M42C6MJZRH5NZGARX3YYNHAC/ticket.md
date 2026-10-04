@@ -2,12 +2,12 @@
 id = "01M42C6MJZRH5NZGARX3YYNHAC"
 title = "Windows CI still locks gob-dev.exe: the self-copy cannot work under cargo run; isolate the dev tool on Windows only"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T02:34:31Z"
-updated = "2026-10-04T02:35:01Z"
+updated = "2026-10-04T02:35:21Z"
 scope = [".cargo/config.toml", "crates/gob-dev/**", ".github/workflows/ci.yml", "CONTRIBUTING.md", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
