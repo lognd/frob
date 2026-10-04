@@ -1,0 +1,508 @@
+# Selection for the v1 ticket import (~TM4E1PN), generated from notes/review/v1-gap/B-backlog.md.
+#
+# Data, not code: the importer reads this file. Every open v1 ticket must be named here
+# (by cluster membership or an override); an unmapped open ticket stops the run.
+# area: D89 splits the moved families: crunk takes the rendered front end (A11Y, SEO, LAUNCH,
+# front-end WEBPERF), grimble takes WEBSEC, SQL, COMPLY, ROUTE, server WEBPERF and STORE/SYSDESIGN/
+# GRAMMAR. A cluster `area` is the default; the [area] table sets one ticket (by family).
+# Closed v1 tickets (done, dropped) always import as closed history and are not listed.
+#
+# disposition values: import-open | wont-fix-history | skip-dropped-on-purpose | skip-built |
+# skip-v1-internal | skip-ticketed | skip-superseded. Only import-open creates open work;
+# wont-fix-history imports closed with outcome wont-fix and the reason; skip-* import nothing.
+# Switch a cluster to wont-fix-history to keep a closed record of it.
+
+[cluster.A1]
+title = "Auto-filed sweep residue, regressions, phantom-citation recoveries, fixture drift"
+status = "DROPPED-ON-PURPOSE"
+disposition = "skip-dropped-on-purpose"
+ids = [
+  "T-3503", "T-4126", "T-4400", "T-4497", "T-4500", "T-4567", "T-4573", "T-4600",
+  "T-4601", "T-4606", "T-4610", "T-4617", "T-4992", "T-5089", "T-5100", "T-5127",
+  "T-5128", "T-5129", "T-5158", "T-5159", "T-5163", "T-5165", "T-5168", "T-5213",
+  "T-5229", "T-5248", "T-5252", "T-5260", "T-5262", "T-5263", "T-5264", "T-5265",
+  "T-5266", "T-5271", "T-5273", "T-5276", "T-5277", "T-5282", "T-5310", "T-5312",
+  "T-5314", "T-5318", "T-5327", "T-5328", "T-5330", "T-5336", "T-5338", "T-5340",
+  "T-5342", "T-5343", "T-5348", "T-5355", "T-5367", "T-5368", "T-5385", "T-5387",
+  "T-5422", "T-5442", "T-5444", "T-5447", "T-5449", "T-5455", "T-5457", "T-5458",
+  "T-5459", "T-5527", "T-5629", "T-5742",
+]
+
+[cluster.B1]
+title = "STORE / SYSDESIGN / GRAMMAR system-design lint family"
+status = "MISSING"
+disposition = "import-open"
+area = "grimble"
+ids = [
+  "T-6388", "T-6390", "T-6392", "T-6393", "T-6394", "T-6395", "T-6396", "T-6397",
+  "T-6398", "T-6399", "T-6400", "T-6401", "T-6402", "T-6403", "T-6404", "T-6406",
+  "T-6407", "T-6408", "T-6410", "T-6411", "T-6412", "T-6413", "T-6414", "T-6415",
+  "T-6416", "T-6417", "T-6418", "T-6420", "T-6421", "T-6422", "T-6423", "T-6424",
+  "T-6425", "T-6426", "T-6427", "T-6429", "T-6430", "T-6432", "T-6433", "T-6434",
+  "T-6435", "T-6436", "T-6437", "T-6438", "T-6439", "T-6440", "T-6441", "T-6442",
+  "T-6444", "T-6445", "T-6446", "T-6447", "T-6449", "T-6450", "T-6451", "T-6453",
+  "T-6454", "T-6455", "T-6456", "T-6457", "T-6458", "T-6459", "T-6460", "T-6461",
+  "T-6462", "T-6463", "T-6465", "T-6467", "T-6469", "T-6470", "T-6471", "T-6472",
+  "T-6474", "T-6475", "T-6476", "T-6477", "T-6478", "T-6479", "T-6480", "T-6481",
+  "T-6482", "T-6483", "T-6484", "T-6485", "T-6486", "T-6487", "T-6489", "T-6490",
+  "T-6491", "T-6492", "T-6493", "T-6495", "T-6500", "T-6501", "T-6502", "T-6503",
+  "T-6504", "T-6505", "T-6506", "T-6508", "T-6509", "T-6510",
+]
+
+[cluster.B2]
+title = "Web-app lint families (WEBSEC, A11Y, SEO, COMPLY, SQL)"
+status = "DROPPED-ON-PURPOSE"
+disposition = "import-open"
+area = "grimble"
+ids = [
+  "T-3814", "T-4034", "T-4077", "T-5140", "T-5141", "T-5142", "T-5143", "T-5144",
+  "T-5145", "T-5146", "T-5147", "T-5148", "T-5365", "T-5402", "T-5443", "T-5445",
+  "T-5446", "T-5488", "T-5490", "T-5496", "T-5500", "T-5508", "T-6526", "T-6534",
+  "T-6536", "T-6540", "T-6610",
+]
+
+[cluster.B3a]
+title = "Strata monolith split into modules (design/frob.strata)"
+status = "V1-INTERNAL"
+disposition = "skip-v1-internal"
+ids = [
+  "T-4848", "T-4853", "T-4855", "T-4856", "T-4857", "T-4863", "T-4869", "T-4870",
+  "T-4871", "T-4874", "T-5081", "T-5086", "T-5087", "T-5091", "T-5093", "T-5094",
+  "T-5097", "T-5102", "T-5103", "T-5104", "T-5109", "T-5110", "T-5111", "T-5112",
+  "T-5113", "T-5114", "T-5115", "T-5116",
+]
+
+[cluster.B3b]
+title = "Strata ratchet lock, kernel DECISION tickets, Story A-D, SF-nn"
+status = "V1-INTERNAL"
+disposition = "skip-v1-internal"
+ids = [
+  "T-3833", "T-3862", "T-3990", "T-4242", "T-4598", "T-4662", "T-4664", "T-4665",
+  "T-4666", "T-4667", "T-4668", "T-4670", "T-4671", "T-4672", "T-4674", "T-4676",
+  "T-4681", "T-4804", "T-4996", "T-5033", "T-5037", "T-5074", "T-5076", "T-5077",
+  "T-5078", "T-5079", "T-5080",
+]
+
+[cluster.B3c]
+title = "SYS rule bugs and design-quality rules"
+status = "BUILT"
+disposition = "skip-built"
+ids = [
+  "T-2676", "T-2837", "T-3213", "T-3821", "T-3824", "T-3825", "T-3826", "T-3827",
+  "T-3828", "T-3832", "T-4063", "T-4296", "T-4330", "T-4994", "T-4995", "T-4997",
+  "T-5214", "T-5425", "T-5427", "T-5462", "T-5483", "T-6532", "T-6533", "T-6584",
+  "T-6592",
+]
+
+[cluster.B3d]
+title = "V-model closure, TIER closers on strata, strata expressiveness asks"
+status = "DESIGNED"
+disposition = "import-open"
+ids = [
+  "T-3004", "T-3239", "T-3504", "T-3815", "T-3822", "T-3823", "T-3853", "T-3915",
+  "T-3916", "T-3920", "T-4071", "T-4109", "T-4127", "T-4157", "T-4189", "T-4202",
+  "T-4209", "T-4216", "T-4218", "T-4222", "T-4232", "T-4245", "T-4250", "T-4253",
+  "T-4530", "T-5155", "T-5180", "T-5182", "T-5345", "T-5768", "T-5771", "T-5797",
+  "T-6511", "T-6514", "T-6600",
+]
+
+[cluster.B4]
+title = "Consumer-audit rule and feature requests (security-kind asks, H3-, M-, L- items)"
+status = "MISSING"
+disposition = "import-open"
+ids = [
+  "T-3919", "T-3928", "T-3942", "T-3952", "T-3954", "T-3955", "T-3959", "T-3960",
+  "T-3963", "T-3965", "T-3966", "T-3967", "T-3968", "T-3969", "T-3970", "T-3971",
+  "T-3972", "T-3973", "T-3974", "T-3975", "T-3976", "T-3977", "T-3981", "T-3984",
+  "T-3987", "T-3988", "T-3991", "T-3992", "T-3994", "T-3996", "T-4025", "T-4033",
+  "T-4035", "T-4038", "T-4039", "T-4072", "T-4074", "T-4075", "T-4076", "T-4078",
+  "T-4079", "T-4080", "T-4081", "T-4089", "T-4090", "T-4091", "T-4092", "T-4093",
+  "T-4094", "T-4095", "T-4096", "T-4113", "T-4117", "T-4135", "T-4166", "T-4175",
+  "T-4182", "T-4188", "T-4190", "T-4192", "T-4211", "T-4215", "T-4217", "T-4220",
+  "T-4223", "T-4225", "T-4226", "T-4227", "T-4228", "T-4229", "T-4231", "T-4233",
+  "T-4237", "T-4238", "T-4239", "T-4249", "T-4252",
+]
+
+[cluster.C1a]
+title = "Land machinery: queue, drain, coord drain/freeze, verify watermark, quarantine, saga, kernel decoupling, splice, curated landing"
+status = "DROPPED-ON-PURPOSE"
+disposition = "skip-dropped-on-purpose"
+ids = [
+  "T-1686", "T-3053", "T-3102", "T-3193", "T-3221", "T-3459", "T-3505", "T-3564",
+  "T-3611", "T-3728", "T-4051", "T-4062", "T-4357", "T-4410", "T-4504", "T-4575",
+  "T-4580", "T-4603", "T-4609", "T-4651", "T-4652", "T-4653", "T-4654", "T-4655",
+  "T-4656", "T-4738", "T-4739", "T-4740", "T-4741", "T-4772", "T-4810", "T-5106",
+  "T-5156", "T-5178", "T-5249", "T-5250", "T-5251", "T-5253", "T-5255", "T-5281",
+  "T-5358", "T-5438", "T-5489", "T-5492", "T-5520", "T-5532", "T-5630", "T-5631",
+  "T-5632", "T-5633", "T-5637", "T-5638", "T-5639", "T-5708", "T-5784", "T-5785",
+  "T-5816", "T-6512", "T-6513", "T-6515", "T-6516", "T-6517", "T-6518", "T-6519",
+  "T-6537", "T-6572", "T-6595", "T-6605", "T-6607", "T-6608",
+]
+
+[cluster.C1b]
+title = "Land contract and state-sync bugs (preconditions, stale base, dry-run parity, mirror lag, Tier-A scope)"
+status = "BUILT"
+disposition = "skip-built"
+ids = [
+  "T-2886", "T-3194", "T-3270", "T-3319", "T-3340", "T-3882", "T-3883", "T-3896",
+  "T-3939", "T-4029", "T-4152", "T-4164", "T-4194", "T-4206", "T-4261", "T-4300",
+  "T-4571", "T-5162", "T-5256", "T-5424", "T-5461", "T-5636", "T-5642", "T-6496",
+  "T-6507", "T-6529", "T-6538", "T-6539", "T-6544", "T-6548", "T-6573", "T-6582",
+  "T-6589", "T-6593", "T-6597", "T-6604", "T-6611",
+]
+
+[cluster.C2]
+title = "Ledger store, ticket verbs, draft ids, leases, merge driver, archive"
+status = "BUILT"
+disposition = "skip-built"
+ids = [
+  "T-0969", "T-2856", "T-2889", "T-3226", "T-3282", "T-3313", "T-3329", "T-3337",
+  "T-3357", "T-3359", "T-3377", "T-3542", "T-3559", "T-3620", "T-3639", "T-3710",
+  "T-3789", "T-3800", "T-3835", "T-3836", "T-3838", "T-3873", "T-3898", "T-3902",
+  "T-3929", "T-3946", "T-3957", "T-3958", "T-3978", "T-3983", "T-3998", "T-4002",
+  "T-4006", "T-4010", "T-4017", "T-4021", "T-4022", "T-4031", "T-4048", "T-4052",
+  "T-4061", "T-4066", "T-4068", "T-4086", "T-4097", "T-4098", "T-4101", "T-4120",
+  "T-4134", "T-4140", "T-4141", "T-4180", "T-4198", "T-4199", "T-4200", "T-4247",
+  "T-4364", "T-4383", "T-4422", "T-4640", "T-4648", "T-4685", "T-4721", "T-4724",
+  "T-4735", "T-4737", "T-4743", "T-4766", "T-4910", "T-5085", "T-5149", "T-5154",
+  "T-5157", "T-5160", "T-5176", "T-5204", "T-5290", "T-5415", "T-5757", "T-5770",
+  "T-5791", "T-5819", "T-6498", "T-6542", "T-6543", "T-6575", "T-6577", "T-6579",
+  "T-6580", "T-6581", "T-6594", "T-6602", "T-6609",
+]
+
+[cluster.C3]
+title = "Scope and lease semantics, SCOPE001/002 closure"
+status = "BUILT"
+disposition = "skip-built"
+ids = [
+  "T-3127", "T-3299", "T-3300", "T-3304", "T-3775", "T-3839", "T-3841", "T-3842",
+  "T-3918", "T-3926", "T-3927", "T-3944", "T-3949", "T-4004", "T-4032", "T-4049",
+  "T-4050", "T-4100", "T-4123", "T-4128", "T-4129", "T-4144", "T-4156", "T-4174",
+  "T-4283", "T-4311", "T-5152", "T-5756", "T-6499",
+]
+
+[cluster.C4a]
+title = "Per-language test runners and collectors (vitest, jest, cargo ids, kotlin, dotnet, Playwright)"
+status = "DESIGNED"
+disposition = "import-open"
+ids = [
+  "T-2835", "T-3351", "T-3723", "T-3834", "T-3921", "T-3932", "T-3933", "T-3945",
+  "T-3999", "T-4040", "T-4042", "T-4045", "T-4053", "T-4058", "T-4059", "T-4070",
+  "T-4149", "T-4203", "T-4541", "T-4558", "T-4608", "T-4643", "T-4644", "T-5270",
+  "T-5297", "T-5423", "T-5480", "T-5487", "T-5523", "T-6521", "T-6535", "T-6545",
+  "T-6549", "T-6587", "T-6590", "T-6591", "T-6603", "T-6606",
+]
+
+[cluster.C4b]
+title = "Python test gates, coverage floors, xdist flakes, TEST0xx/COV0xx burn-downs"
+status = "V1-INTERNAL"
+disposition = "skip-v1-internal"
+ids = [
+  "T-1273", "T-1661", "T-1953", "T-3068", "T-3278", "T-3331", "T-3352", "T-3729",
+  "T-3864", "T-3869", "T-3950", "T-3951", "T-4007", "T-4008", "T-4014", "T-4161",
+  "T-4162", "T-4168", "T-4176", "T-4363", "T-4389", "T-4484", "T-4720", "T-5171",
+  "T-5179", "T-5388", "T-5426", "T-5468", "T-5519", "T-6541", "T-6596",
+]
+
+[cluster.C4c]
+title = "Evidence semantics (frozen evidence, doc-anchor evidence, import-as-done, bare id resolution)"
+status = "BUILT"
+disposition = "skip-built"
+ids = [
+  "T-3063", "T-3234", "T-4009", "T-4119", "T-6547", "T-6550", "T-6585",
+]
+
+[cluster.D1]
+title = "Scaffold, project types, facets, templates"
+status = "DROPPED-ON-PURPOSE"
+disposition = "skip-dropped-on-purpose"
+ids = [
+  "T-3262", "T-3307", "T-3330", "T-3335", "T-3415", "T-3513", "T-3719", "T-3804",
+  "T-3805", "T-3806", "T-3807", "T-3808", "T-4084", "T-4757", "T-4759", "T-4762",
+  "T-4765", "T-4768", "T-4769", "T-4771", "T-4773", "T-4774", "T-4809", "T-4989",
+  "T-5090", "T-5107", "T-6588",
+]
+
+[cluster.D2]
+title = "Language support (C#/Unity, Zig, CSS/JS/Vue, tree-sitter walkers, per-language scanners)"
+status = "DESIGNED"
+disposition = "import-open"
+ids = [
+  "T-1597", "T-1598", "T-1607", "T-1608", "T-2799", "T-2894", "T-3231", "T-3321",
+  "T-3872", "T-3917", "T-4003", "T-4016", "T-4067", "T-4513", "T-4679", "T-5386",
+  "T-5390", "T-5391",
+]
+
+[cluster.E1]
+title = "Hooks, frob-suggest, protect-secrets, MCP/serve, agent guards"
+status = "DESIGNED"
+disposition = "import-open"
+ids = [
+  "T-2963", "T-3229", "T-3284", "T-3306", "T-3334", "T-3714", "T-3803", "T-3817",
+  "T-3831", "T-3904", "T-3924", "T-3938", "T-4082", "T-4574", "T-5098", "T-5099",
+  "T-5101", "T-5254", "T-5437", "T-6571", "T-6576",
+]
+
+[cluster.E2]
+title = "Windows/macOS portability and CI infrastructure"
+status = "V1-INTERNAL"
+disposition = "skip-v1-internal"
+ids = [
+  "T-1382", "T-2939", "T-2982", "T-3076", "T-3267", "T-3274", "T-3659", "T-3783",
+  "T-3811", "T-3923", "T-3936", "T-4011", "T-4124", "T-4268", "T-5812", "T-6601",
+]
+
+[cluster.E3]
+title = "Release, versioning, vet, dependencies, doctor, typani/ruff tooling"
+status = "V1-INTERNAL"
+disposition = "skip-v1-internal"
+ids = [
+  "T-2802", "T-3073", "T-3083", "T-3327", "T-3602", "T-3716", "T-3717", "T-3718",
+  "T-3809", "T-3849", "T-3850", "T-3894", "T-4001", "T-4169", "T-4181", "T-4213",
+  "T-4259", "T-4332", "T-4717", "T-5092", "T-5096", "T-5205", "T-6530", "T-6546",
+]
+
+[cluster.F1]
+title = "Docs, narrative placement, comment placement, docstring archaeology"
+status = "DESIGNED"
+disposition = "import-open"
+ids = [
+  "T-1609", "T-1778", "T-2752", "T-2803", "T-2987", "T-2994", "T-3022", "T-3248",
+  "T-3309", "T-3317", "T-3318", "T-3323", "T-3355", "T-3418", "T-3860", "T-3866",
+  "T-3867", "T-3874", "T-3876", "T-3877", "T-3897", "T-4187", "T-4193", "T-4204",
+  "T-4418", "T-4423", "T-4466", "T-4605", "T-4691", "T-4716", "T-4807", "T-4808",
+  "T-5095", "T-5375", "T-6448",
+]
+
+[cluster.F2]
+title = "PM model: tiers, velocity, due/rank, WIP, epics, milestones"
+status = "BUILT"
+disposition = "skip-built"
+ids = [
+  "T-2964", "T-3002", "T-3241", "T-4272", "T-5279", "T-5284", "T-5706", "T-5715",
+  "T-5717", "T-5718", "T-5748", "T-5755", "T-5758", "T-5760", "T-5761", "T-5763",
+  "T-5765", "T-5766", "T-5772", "T-5774", "T-5775", "T-5776", "T-5780", "T-5817",
+  "T-6405", "T-6419",
+]
+
+[cluster.G1]
+title = "Gate engine: false positives, wiring, registry, burn-downs, waivers, formatter"
+status = "V1-INTERNAL"
+disposition = "skip-v1-internal"
+ids = [
+  "T-1820", "T-1831", "T-2202", "T-2371", "T-2377", "T-2451", "T-2819", "T-2962",
+  "T-2998", "T-3048", "T-3091", "T-3202", "T-3203", "T-3204", "T-3205", "T-3269",
+  "T-3310", "T-3312", "T-3332", "T-3333", "T-3338", "T-3343", "T-3381", "T-3405",
+  "T-3663", "T-3703", "T-3739", "T-3758", "T-3812", "T-3813", "T-3816", "T-3829",
+  "T-3830", "T-3854", "T-3855", "T-3858", "T-3859", "T-3863", "T-3868", "T-3870",
+  "T-3871", "T-3875", "T-3878", "T-3880", "T-3881", "T-3888", "T-3889", "T-3911",
+  "T-3982", "T-3989", "T-4005", "T-4012", "T-4015", "T-4020", "T-4036", "T-4043",
+  "T-4044", "T-4054", "T-4064", "T-4069", "T-4083", "T-4087", "T-4099", "T-4133",
+  "T-4151", "T-4158", "T-4160", "T-4165", "T-4196", "T-4205", "T-4224", "T-4235",
+  "T-4248", "T-4370", "T-4371", "T-4385", "T-4533", "T-4647", "T-4686", "T-4703",
+  "T-4736", "T-4742", "T-4950", "T-4990", "T-5153", "T-5177", "T-5344", "T-5470",
+  "T-5526", "T-5747", "T-5798", "T-6391", "T-6524", "T-6531", "T-6574", "T-6578",
+  "T-6583", "T-6599",
+]
+
+[cluster.G2]
+title = "CLI surface and UX"
+status = "DESIGNED"
+disposition = "import-open"
+ids = [
+  "T-3840", "T-3879", "T-4687", "T-4811", "T-5088", "T-5285",
+]
+
+[cluster.H1]
+title = "Refactor and architecture tooling (refactor split/move, frob-arch)"
+status = "V1-INTERNAL"
+disposition = "skip-v1-internal"
+ids = [
+  "T-3573", "T-3646", "T-3660", "T-3677", "T-5181",
+]
+
+[override."T-3068"]
+disposition = "import-open"
+reason = "PT-4 test-first commit protocol"
+
+[override."T-3194"]
+disposition = "import-open"
+reason = "PT-6 land proof"
+
+[override."T-3270"]
+disposition = "import-open"
+reason = "PT-17 land timeout racing contention"
+
+[override."T-3611"]
+disposition = "import-open"
+reason = "PT-17 land lock fairness"
+
+[override."T-3839"]
+disposition = "import-open"
+reason = "PT-10 stacked tickets"
+
+[override."T-3841"]
+disposition = "import-open"
+reason = "PT-2 scope entry lint"
+
+[override."T-3842"]
+disposition = "import-open"
+reason = "PT-10 stacked tickets"
+
+[override."T-3858"]
+disposition = "import-open"
+reason = "PT-11 directive in unscanned file"
+
+[override."T-3896"]
+disposition = "import-open"
+reason = "PT-6 land proof"
+
+[override."T-3975"]
+disposition = "import-open"
+reason = "PT-13 skipped tests never satisfy evidence"
+
+[override."T-3978"]
+disposition = "import-open"
+reason = "PT-2 scope entry lint"
+
+[override."T-4001"]
+disposition = "import-open"
+reason = "PT-9 build identity"
+
+[override."T-4008"]
+disposition = "import-open"
+reason = "PT-4 empty subject set score"
+
+[override."T-4009"]
+disposition = "import-open"
+reason = "PT-4 bare id resolution gap"
+
+[override."T-4015"]
+disposition = "import-open"
+reason = "PT-18 id alias token boundary"
+
+[override."T-4031"]
+disposition = "import-open"
+reason = "PT-12 zero acceptance criteria"
+
+[override."T-4036"]
+disposition = "import-open"
+reason = "PT-7 rule-kind finding closure"
+
+[override."T-4049"]
+disposition = "import-open"
+reason = "PT-10 stacked tickets"
+
+[override."T-4050"]
+disposition = "import-open"
+reason = "PT-2 scope denominator glob quality"
+
+[override."T-4052"]
+disposition = "import-open"
+reason = "PT-1 close with unlanded scope changes"
+
+[override."T-4069"]
+disposition = "import-open"
+reason = "PT-7 cheapest-clearing-action audit"
+
+[override."T-4174"]
+disposition = "import-open"
+reason = "PT-2 scope entry lint"
+
+[override."T-4247"]
+disposition = "import-open"
+reason = "PT-13 skipped bound tests reported"
+
+[override."T-4272"]
+disposition = "import-open"
+reason = "PT-14 cross-clone epic claims (owner request)"
+
+[override."T-5153"]
+disposition = "import-open"
+reason = "PT-8 stage progress"
+
+[override."T-5344"]
+disposition = "import-open"
+reason = "PT-11 directive text in string literals"
+
+[override."T-6516"]
+disposition = "import-open"
+reason = "PT-6 land content proof"
+
+[override."T-6517"]
+disposition = "import-open"
+reason = "PT-10 stacked tickets"
+
+[override."T-6518"]
+disposition = "import-open"
+reason = "PT-8 cross-process check admission"
+
+[override."T-6519"]
+disposition = "import-open"
+reason = "PT-8 cross-process check admission"
+
+[override."T-6532"]
+disposition = "import-open"
+reason = "PT-11 waiver cache inconsistency"
+
+[override."T-6535"]
+disposition = "import-open"
+reason = "PT-5 fixer corrupts files"
+
+[override."T-6543"]
+disposition = "import-open"
+reason = "PT-5 read-only verb writes"
+
+[override."T-6545"]
+disposition = "import-open"
+reason = "PT-16 runner aliasing, other runners"
+
+[override."T-6549"]
+disposition = "import-open"
+reason = "PT-16 exit-code-only PASS, other runners"
+
+[override."T-6589"]
+disposition = "import-open"
+reason = "PT-5 land applies fixes tree-wide"
+
+[override."T-6604"]
+disposition = "import-open"
+reason = "PT-8 cross-process check admission"
+
+[override."T-3965"]
+disposition = "skip-built"
+reason = "shellcheck as a tool stage is built"
+
+[override."T-3973"]
+disposition = "skip-ticketed"
+reason = "GRL error goldens ticketed in v2"
+
+[override."T-3988"]
+disposition = "skip-built"
+reason = "TOOL001 tool-failed is built"
+
+[override."T-3994"]
+disposition = "skip-ticketed"
+reason = "GATE001 policy-weakened is ticketed in v2"
+
+[override."T-4687"]
+disposition = "skip-superseded"
+reason = "52 verbs to a dozen is superseded by cli.md"
+
+[override."T-5149"]
+disposition = "skip-built"
+reason = "v1.0.0 definition of done superseded by D83"
+
+# Per-ticket area (D89). Everything else in B1/B2 takes the cluster area, grimble.
+# Umbrella or mixed tickets T-5140, T-6534, T-6536, T-6540 default to grimble; owner to confirm.
+[area]
+"T-3814" = "crunk"  # Playwright collector for front-end specs
+"T-4034" = "crunk"  # a11y obligation
+"T-4077" = "crunk"  # a11y error-state assertion
+"T-5146" = "crunk"  # A11Y family
+"T-5147" = "crunk"  # SEO and WEBPERF markup/asset family
+"T-5365" = "crunk"  # SEO detectors
+"T-5443" = "crunk"  # a11y gate
+"T-5488" = "crunk"  # a11y gate
+"T-6526" = "crunk"  # a11y gate
+"T-6610" = "crunk"  # SEO detectors
