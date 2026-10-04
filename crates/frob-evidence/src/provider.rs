@@ -343,7 +343,7 @@ fn xml_attr(tag: &str, key: &str) -> Option<String> {
 ///
 /// pytest writes the host's separators (`tests\\test_m.py` on Windows); the components are rebuilt
 /// through [`gob_git::RelPath`]. A path it refuses (`..`, absolute) keeps its joined components.
-// frob:ticket ~VTN9C8B
+// frob:ticket 01M44J072TEWFTCB1AFVTN9C8B
 fn portable_file(file: &str) -> String {
     let joined = file
         .split(['/', '\\'])
@@ -830,7 +830,7 @@ mod tests {
     }
 
     #[test]
-    // frob:ticket ~VTN9C8B
+    // frob:ticket 01M44J072TEWFTCB1AFVTN9C8B
     fn junit_windows_file_separators_give_portable_node_ids() {
         let xml = concat!(
             "<testsuite>",
