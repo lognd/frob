@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T13:38:49Z"
-updated = "2026-10-04T21:46:45Z"
+updated = "2026-10-04T21:46:46Z"
 scope = ["crates/gob-git/src/ledger.rs", "crates/gob-git/tests/ledger.rs", "docs/design/git-io.md"]
 
 [[acceptance]]
