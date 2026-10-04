@@ -2,12 +2,13 @@
 id = "01M38BCNCKJ3FC2ZD148X0BT2N"
 title = "Route ticket-runner CLI to run_dotnet_tests/run_unity_batchmode for csharp/unity node ids"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 points = 3
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-10-04T21:07:01Z"
+updated = "2026-10-04T21:07:02Z"
 aliases = ["T-5523"]
 labels = ["milestone:v0.534.0", "v1-cluster:C4a"]
 scope = ["src/frob/app/ticket_runner/__init__.py"]
