@@ -98,8 +98,8 @@ fn overlaps(accepted: &[(usize, usize)], start: usize, end: usize) -> bool {
 ///
 /// # Errors
 ///
-/// [`CheckError::FixStale`] when a file changed since the check;
-/// [`CheckError::FixIo`] when a file cannot be read or written.
+/// [`CheckError::FixIo`] with `E-FIX-STALE` when a file changed since the check;
+/// [`CheckError::FixIo`] with `E-CHECK-FIX-IO` when a file cannot be read or written.
 pub(crate) fn apply(
     root: &Path,
     findings: &[Finding],
@@ -223,13 +223,15 @@ fn load_checked(
     for path in paths {
         let now = source
             .with_reader(|r| r.read(path))
-            .map_err(|e| CheckError::FixIo(format!("read {path}: {e}")))?;
+            .map_err(|e| CheckError::FixIo(format!("E-CHECK-FIX-IO: read {path}: {e}")))?;
         if analysed.get(path).map(String::as_str) != Some(Digest::of(&now).to_string().as_str()) {
             tracing::warn!(path, "file changed since analysis; --fix refused");
-            return Err(CheckError::FixStale(path.clone()));
+            return Err(CheckError::FixIo(format!(
+                "E-FIX-STALE: {path} changed since the check; rerun `check --fix`"
+            )));
         }
         let text = std::fs::read_to_string(root.join(path))
-            .map_err(|e| CheckError::FixIo(format!("read {path}: {e}")))?;
+            .map_err(|e| CheckError::FixIo(format!("E-CHECK-FIX-IO: read {path}: {e}")))?;
         originals.insert(path.clone(), text);
     }
     Ok(originals)
@@ -249,7 +251,9 @@ fn write_all(
                     tracing::error!(path = %done, err = %e, "restore after failed fix failed");
                 }
             }
-            return Err(CheckError::FixIo(format!("write {path}: {err}")));
+            return Err(CheckError::FixIo(format!(
+                "E-CHECK-FIX-IO: write {path}: {err}"
+            )));
         }
         tracing::info!(path, "fix written");
         written.push(path);
@@ -322,7 +326,7 @@ mod tests {
         }
     }
 
-    // frob:tests gob-check::fix::apply
+    // frob:tests crates/gob-check/src/fix.rs::apply
     #[test]
     fn applies_a_fix_atomically_to_a_fresh_file() {
         let mut fx = Fx::new(&[("a.txt", "hello world")]);
@@ -332,7 +336,7 @@ mod tests {
         assert_eq!(fx.read("a.txt"), "howdy world");
     }
 
-    // frob:tests gob-check::fix::apply
+    // frob:tests crates/gob-check/src/fix.rs::apply
     #[test]
     fn refuses_a_file_edited_since_the_check_and_writes_nothing() {
         let mut fx = Fx::new(&[("a.txt", "hello world"), ("b.txt", "other")]);
@@ -349,7 +353,7 @@ mod tests {
         assert_eq!(fx.read("b.txt"), "other, edited");
     }
 
-    // frob:tests gob-check::fix::apply
+    // frob:tests crates/gob-check/src/fix.rs::apply
     #[test]
     fn one_out_of_range_edit_skips_the_whole_fix() {
         let mut fx = Fx::new(&[("a.txt", "hello world")]);
@@ -363,7 +367,7 @@ mod tests {
         assert_eq!(fx.read("a.txt"), "hello world");
     }
 
-    // frob:tests gob-check::fix::apply
+    // frob:tests crates/gob-check/src/fix.rs::apply
     #[test]
     fn a_fix_that_breaks_syntax_is_rolled_back_and_not_applied() {
         let mut fx = Fx::new(&[("a.rs", "fn a() {}\n"), ("b.txt", "keep")]);
@@ -376,7 +380,7 @@ mod tests {
         assert_eq!(fx.read("b.txt"), "kept");
     }
 
-    // frob:tests gob-check::fix::write_all
+    // frob:tests crates/gob-check/src/fix.rs::write_all
     #[test]
     fn a_failed_second_write_restores_the_first_file() {
         let fx = Fx::new(&[("a.txt", "one"), ("b.txt", "two")]);

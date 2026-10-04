@@ -49,7 +49,7 @@ pub(crate) fn write_atomic(path: &Path, bytes: &[u8]) -> io::Result<()> {
 mod tests {
     use super::*;
 
-    // frob:tests gob-check::atomic::write_atomic_with
+    // frob:tests crates/gob-check/src/atomic.rs::write_atomic_with
     #[test]
     fn killed_write_leaves_the_old_file_whole() {
         let dir = tempfile::tempdir().unwrap();
@@ -65,7 +65,7 @@ mod tests {
         assert_eq!(leftovers, 1, "temp file removed");
     }
 
-    // frob:tests gob-check::atomic::write_atomic
+    // frob:tests crates/gob-check/src/atomic.rs::write_atomic
     #[test]
     fn completed_write_is_wholly_new() {
         let dir = tempfile::tempdir().unwrap();
