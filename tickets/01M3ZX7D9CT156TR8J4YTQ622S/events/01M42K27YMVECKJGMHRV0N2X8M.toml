@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T04:34:27Z"
+digest = "551a03f1ae7ff6397b376d119bf9f6f35ec0b979d4ee75f12e689fee93dec18f"
+exit_code = 0
+inline = '''
+   Compiling gob-plan v0.0.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2fa8f114-88bb-43e8-8ca8-8d4246d4e1d9 with nextest profile: default
+    Starting 5 tests across 1 binary (18 tests skipped)
+        PASS [   0.008s] gob-plan::grl_errors declared_status_matches_registry
+        PASS [   0.015s] gob-plan::grl_errors pending_codes_are_reported_by_code
+        PASS [   0.014s] gob-plan::grl_errors every_code_has_a_case_and_the_table_lists_them_all
+        PASS [   0.019s] gob-plan::grl_errors every_input_parses_because_the_mistakes_are_semantic
+        PASS [   0.019s] gob-plan::grl_errors every_golden_is_well_formed_and_agrees_with_its_input
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 5 tests run: 5 passed, 18 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test grl_errors every_code_has_a_case_and_the_table_lists_them_all every_input_parses_because_the_mistakes_are_semantic every_golden_is_well_formed_and_agrees_with_its_input pending_codes_are_reported_by_code declared_status_matches_registry"
+size = 979
+status = "measured"
+tests = ["declared_status_matches_registry", "pending_codes_are_reported_by_code", "every_code_has_a_case_and_the_table_lists_them_all", "every_input_parses_because_the_mistakes_are_semantic", "every_golden_is_well_formed_and_agrees_with_its_input"]
+at = "2026-10-04T04:34:27Z"
+actor = "lognd"
+rev = 1
