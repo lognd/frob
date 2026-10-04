@@ -1,0 +1,133 @@
+{
+  "project": {
+    "css_root": "styles",
+    "tokens_file": "tokens.css",
+    "root_font_size": 16.0
+  },
+  "palette": {
+    "ink": {
+      "r": 0.10196078431372549,
+      "g": 0.10196078431372549,
+      "b": 0.10196078431372549,
+      "a": 1.0
+    },
+    "paper": {
+      "r": 0.9803921568627451,
+      "g": 0.9803921568627451,
+      "b": 0.9686274509803922,
+      "a": 1.0
+    },
+    "accent": {
+      "r": 0.1843137254901961,
+      "g": 0.43529411764705883,
+      "b": 0.9294117647058824,
+      "a": 1.0
+    }
+  },
+  "roles": {
+    "body": {
+      "foreground": "ink",
+      "background": "paper",
+      "floor": 4.5
+    }
+  },
+  "scales": {
+    "spacing": [
+      0.0,
+      4.0,
+      8.0,
+      12.0,
+      16.0,
+      24.0,
+      32.0,
+      48.0,
+      64.0
+    ],
+    "font_sizes": [
+      12.0,
+      14.0,
+      16.0,
+      20.0,
+      24.0,
+      32.0,
+      48.0
+    ],
+    "radii": [
+      0.0,
+      4.0,
+      8.0,
+      16.0
+    ],
+    "sizes": []
+  },
+  "typography": {
+    "families": [
+      "Inter",
+      "system-ui",
+      "sans-serif"
+    ],
+    "weights": [
+      400,
+      500,
+      700
+    ],
+    "stacks": {}
+  },
+  "layers": {
+    "base": 0,
+    "dropdown": 100,
+    "overlay": 200,
+    "toast": 300
+  },
+  "org": {
+    "buckets": [
+      "base",
+      "components",
+      "layouts",
+      "utilities"
+    ],
+    "class_case": "kebab",
+    "component_prefix": true,
+    "tokens_only_custom_props": true,
+    "model": "buckets",
+    "ignore": [],
+    "entry": []
+  },
+  "lint": {
+    "rules": {
+      "SPACE001": "warn"
+    },
+    "fix_tolerance": 0.15,
+    "color_tolerance": 8.0
+  },
+  "tokens": {
+    "color": "color",
+    "space": "space",
+    "font_size": "font-size",
+    "radius": "radius",
+    "layer": "layer",
+    "font_family": "font-family",
+    "size": "size",
+    "header": "",
+    "json_file": ""
+  },
+  "jsx": {
+    "globs": []
+  },
+  "tailwind": {
+    "config": "",
+    "css_entry": "",
+    "tokens_file": "",
+    "namespace_keys": false,
+    "alpha_channels": false,
+    "version": "auto"
+  },
+  "breakpoints": {
+    "points": {},
+    "base_required": []
+  },
+  "platforms": {},
+  "screens": {},
+  "sessions": {},
+  "mock_sets": {}
+}

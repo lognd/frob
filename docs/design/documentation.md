@@ -53,6 +53,7 @@ This table is the one path table; every other file links here.
 | config reference and schema | `docs/reference/config.md`, `docs/schemas/config.json` | `ConfigTable` derive and schemars | `cargo dev gen config` |
 | rule pages | `docs/reference/rules/<ID>.md` (each embeds the rule's mdtest fire and clean examples; rows for severity, tier, scope, polarity and needs) | `Rule` derive doc comment (must contain a Remedy section or it does not compile) | `cargo dev gen rules` |
 | directives (shared by all products) | `docs/reference/directives.md`, `docs/schemas/directives.json` | the `Directive` derive | `cargo dev gen directives` |
+| crunk.toml reference and schema | `docs/crunk/config.md`, `docs/schemas/crunk.json` | the `crunk-spec` table types (serde and schemars; not registered in the frob config inventory) | `cargo dev gen config` and `cargo dev gen schemas` |
 | envelope schema | `docs/schemas/envelope.json` | `gob-diagnostics` types | `cargo dev gen schemas` |
 | errors, languages and fidelity (Milestone 2 or later (D36)) | `docs/reference/errors.md`, `docs/reference/languages.md` | the error codes, the adapter matrix and the `frob doctor --languages` fidelity report (level, capability precision, NotApplicable rules per language) | `cargo dev gen` |
 | capabilities | `docs/grimble/reference/capabilities.md` | `Capability` derive | `cargo dev gen` |

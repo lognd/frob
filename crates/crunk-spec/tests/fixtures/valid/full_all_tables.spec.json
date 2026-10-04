@@ -1,0 +1,325 @@
+{
+  "project": {
+    "css_root": "web/styles",
+    "tokens_file": "tokens.css",
+    "root_font_size": 16.0
+  },
+  "palette": {
+    "paper": {
+      "r": 0.9803921568627451,
+      "g": 0.9803921568627451,
+      "b": 0.9686274509803922,
+      "a": 1.0
+    },
+    "ink": {
+      "r": 0.10196078431372549,
+      "g": 0.10196078431372549,
+      "b": 0.10196078431372549,
+      "a": 1.0
+    },
+    "accent": {
+      "r": 0.1843137254901961,
+      "g": 0.43529411764705883,
+      "b": 0.9294117647058824,
+      "a": 1.0
+    },
+    "muted": {
+      "r": 0.36,
+      "g": 0.39999999999999997,
+      "b": 0.44000000000000006,
+      "a": 0.8
+    },
+    "rebecca": {
+      "r": 0.4,
+      "g": 0.2,
+      "b": 0.6,
+      "a": 1.0
+    },
+    "zed": {
+      "r": 1.0,
+      "g": 0.0,
+      "b": 0.0,
+      "a": 1.0
+    }
+  },
+  "roles": {
+    "body": {
+      "foreground": "ink",
+      "background": "paper",
+      "floor": 4.5
+    },
+    "link": {
+      "foreground": "accent",
+      "background": "paper",
+      "floor": 3.0
+    }
+  },
+  "scales": {
+    "spacing": [
+      0.0,
+      4.0,
+      6.5,
+      8.0,
+      16.0
+    ],
+    "font_sizes": [
+      12.0,
+      14.0,
+      16.0
+    ],
+    "radii": [
+      0.0,
+      4.0
+    ],
+    "sizes": [
+      16.0,
+      32.0,
+      64.0
+    ]
+  },
+  "typography": {
+    "families": [
+      "Inter",
+      "system-ui",
+      "JetBrains Mono"
+    ],
+    "weights": [
+      400,
+      700
+    ],
+    "stacks": {
+      "sans": [
+        "Inter",
+        "system-ui"
+      ],
+      "mono": [
+        "jetbrains mono"
+      ]
+    }
+  },
+  "layers": {
+    "toast": 300,
+    "base": 0,
+    "dropdown": 100
+  },
+  "org": {
+    "buckets": [
+      "base",
+      "components"
+    ],
+    "class_case": "snake",
+    "component_prefix": false,
+    "tokens_only_custom_props": false,
+    "model": "utility-first",
+    "ignore": [
+      "vendor/**"
+    ],
+    "entry": [
+      "src/main.css"
+    ]
+  },
+  "lint": {
+    "rules": {
+      "COLOR001": "warn",
+      "GALLERY005": "off"
+    },
+    "fix_tolerance": 0.2,
+    "color_tolerance": 12.0
+  },
+  "tokens": {
+    "color": "",
+    "space": "sp",
+    "font_size": "fs",
+    "radius": "r",
+    "layer": "z",
+    "font_family": "ff",
+    "size": "sz",
+    "header": "/* project header */",
+    "json_file": "tokens.json"
+  },
+  "jsx": {
+    "globs": [
+      "src/**/*.tsx",
+      "src/**/*.jsx"
+    ]
+  },
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css_entry": "src/index.css",
+    "tokens_file": "tailwind.tokens.json",
+    "namespace_keys": true,
+    "alpha_channels": true,
+    "version": "v3"
+  },
+  "breakpoints": {
+    "points": {
+      "tablet": 700,
+      "desktop": 1100
+    },
+    "base_required": [
+      "flex",
+      "w-"
+    ]
+  },
+  "platforms": {
+    "desk": {
+      "id": "desk",
+      "renderer": "web",
+      "params": {
+        "engine": "webkit",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "device_scale": 2.0,
+        "media": {
+          "reduced_motion": true,
+          "color_scheme": "light"
+        },
+        "locale": "en-GB",
+        "settle_ms": 250,
+        "init_scripts": [
+          "window.x = 1;"
+        ],
+        "java_script_enabled": false,
+        "cpu_throttle": 4.0,
+        "network_throttle": {
+          "download": 100000.0,
+          "upload": 50000.0,
+          "latency": 80.0
+        },
+        "base_url": "https://example.test"
+      },
+      "tags": [
+        "desktop",
+        "wide"
+      ]
+    },
+    "shot": {
+      "id": "shot",
+      "renderer": "command",
+      "params": {
+        "command": "shoot --url {url}",
+        "cwd": "tools",
+        "env": {
+          "MODE": "ci",
+          "A": "1"
+        }
+      },
+      "tags": []
+    }
+  },
+  "screens": {
+    "home": {
+      "id": "home",
+      "entry": "/",
+      "states": [
+        {
+          "id": "default",
+          "fixture": "fx.json",
+          "setup": null,
+          "applies_to": null,
+          "media": null,
+          "actions": [],
+          "network": [],
+          "session": null,
+          "mock": null,
+          "expect_url": null,
+          "diff_against": null,
+          "settle_ms": null
+        },
+        {
+          "id": "open",
+          "fixture": null,
+          "setup": "open.js",
+          "applies_to": [
+            "desk"
+          ],
+          "media": {
+            "reduced_motion": false,
+            "color_scheme": "dark"
+          },
+          "actions": [
+            {
+              "kind": "click",
+              "selector": "#menu"
+            },
+            {
+              "kind": "hover",
+              "selector": ".a"
+            },
+            {
+              "kind": "focus",
+              "selector": ".b"
+            },
+            {
+              "kind": "fill",
+              "selector": "input",
+              "value": "hi"
+            },
+            {
+              "kind": "press",
+              "selector": "input",
+              "key": "Enter"
+            },
+            {
+              "kind": "wait_for",
+              "selector": ".done",
+              "timeout_ms": 500
+            }
+          ],
+          "network": [
+            {
+              "url_pattern": "**/api",
+              "action": "status",
+              "status": 503,
+              "delay_ms": null
+            },
+            {
+              "url_pattern": "**/img",
+              "action": "delay",
+              "status": null,
+              "delay_ms": 200
+            },
+            {
+              "url_pattern": "**/x",
+              "action": "hold",
+              "status": null,
+              "delay_ms": null
+            }
+          ],
+          "session": "admin",
+          "mock": "empty",
+          "expect_url": "/open",
+          "diff_against": "default",
+          "settle_ms": 10
+        }
+      ],
+      "applies_to": [
+        "tag:desktop",
+        "shot"
+      ]
+    }
+  },
+  "sessions": {
+    "admin": {
+      "id": "admin",
+      "data": {
+        "role": "admin",
+        "ttl": 30,
+        "nested": {
+          "a": [
+            1,
+            2
+          ]
+        }
+      }
+    }
+  },
+  "mock_sets": {
+    "empty": {
+      "id": "empty",
+      "data": {}
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "palette": [
+    "paper",
+    "ink",
+    "accent",
+    "muted",
+    "rebecca",
+    "zed"
+  ],
+  "roles": [
+    "body",
+    "link"
+  ],
+  "layers": [
+    "toast",
+    "base",
+    "dropdown"
+  ],
+  "stacks": [
+    "sans",
+    "mono"
+  ],
+  "lint_rules": [
+    "COLOR001",
+    "GALLERY005"
+  ],
+  "breakpoints": [
+    "tablet",
+    "desktop"
+  ],
+  "platforms": [
+    "desk",
+    "shot"
+  ],
+  "screens": [
+    "home"
+  ],
+  "sessions": [
+    "admin"
+  ],
+  "mock_sets": [
+    "empty"
+  ]
+}

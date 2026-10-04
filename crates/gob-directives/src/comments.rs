@@ -1,6 +1,6 @@
 //! Comment discovery: comment texts split into candidate directive lines.
 
-use gob_languages::{Language, ParsedTree};
+use gob_languages::{Language, ParsedTree, hash_comment_starts};
 #[cfg(test)]
 use gob_languages::{ParseLimits, ParseResult, parse};
 
@@ -163,32 +163,19 @@ fn html_regions<'t>(text: &'t str, skip: &[std::ops::Range<usize>]) -> Vec<Segme
     out
 }
 
-// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
-/// `#` comments of a TOML or YAML file, ignoring `#` inside quotes (naive).
-fn hash_comments(text: &str) -> Vec<Segment<'_>> {
+/// `#` comments of a TOML, YAML or fallback-Python file, one segment per comment.
+fn hash_comments(text: &str, yaml: bool) -> Vec<Segment<'_>> {
     let mut out = Vec::new();
-    let mut offset = 0;
-    for line in text.split_inclusive('\n') {
-        let mut quote: Option<char> = None;
-        for (i, c) in line.char_indices() {
-            match (quote, c) {
-                (None, '"' | '\'') => quote = Some(c),
-                (Some(q), c) if c == q => quote = None,
-                (None, '#') => {
-                    let body = line[i..].trim_start_matches('#');
-                    let skip = line.len() - i - body.len();
-                    push(
-                        &mut out,
-                        offset + i + skip,
-                        body.trim_end_matches(['\n', '\r']),
-                        false,
-                    );
-                    break;
-                }
-                _ => {}
-            }
-        }
-        offset += line.len();
+    for at in hash_comment_starts(text, yaml) {
+        let end = text[at..].find('\n').map_or(text.len(), |e| at + e + 1);
+        let line = &text[at..end];
+        let body = line.trim_start_matches('#');
+        push(
+            &mut out,
+            at + line.len() - body.len(),
+            body.trim_end_matches(['\n', '\r']),
+            false,
+        );
     }
     out
 }
@@ -232,7 +219,8 @@ pub(crate) fn segments<'t>(
             html_regions(text, &gob_languages::markdown_code_ranges(t))
         }
         (Language::Markdown, None) => html_regions(text, &[]),
-        (Language::Toml | Language::Yaml, _) | (Language::Python, None) => hash_comments(text),
+        (Language::Toml, _) | (Language::Python, None) => hash_comments(text, false),
+        (Language::Yaml, _) => hash_comments(text, true),
         (Language::Python, Some(t)) => python_tree(t),
     };
     tracing::trace!(
@@ -288,7 +276,7 @@ mod tests {
         assert_eq!(texts(&s), ["a", "b"]);
         assert_eq!(&src[s[1].offset..=s[1].offset], "b");
         let t = "k = \"#no\" # yes\n# all\n";
-        let h = hash_comments(t);
+        let h = hash_comments(t, false);
         assert_eq!(texts(&h), ["yes", "all"]);
         assert_eq!(&t[h[0].offset..h[0].offset + 3], "yes");
     }
