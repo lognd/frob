@@ -7,7 +7,7 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-04T00:23:54Z"
-updated = "2026-10-04T02:09:36Z"
+updated = "2026-10-04T02:13:00Z"
 scope = ["crates/frob-worktree/**", "crates/frob-land/src/land.rs", "crates/frob/src/doctor_cmd.rs", "crates/gob-config/**", "docs/design/architecture.md", "docs/design/tickets.md", "docs/reference/config.md", "docs/schemas/config.json", "crates/frob/src/doctor.rs", "crates/frob/src/config.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/snapshots/cli__doctor_schema.snap", "crates/frob/tests/snapshots/cli__doctor_fresh_repo.snap", "crates/frob/tests/snapshots/cli__init_frob_toml.snap", "frob.toml", "docs/reference/cli/frob.md", "Cargo.lock", "crates/frob/tests/gc.rs", "crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
@@ -24,7 +24,7 @@ bound = true
 
 [[acceptance]]
 text = "Given frob doctor, when it runs, then it shows the last pass, bytes reclaimed and usage per category"
-bound = false
+bound = true
 +++
 
 Owner request 2026-10-03: garbage collection must be automatic so stale data never builds up again (today the primary checkout's target/ held 127 GB, 74 GB of it build artifacts untouched for over 6 hours plus 28 GB of incremental state; ~107 GB were freed by hand). No new verb unless it is the best way. frob owns local state and the build output of the checkouts it manages; goway owns its remote hosts (its own gc).
