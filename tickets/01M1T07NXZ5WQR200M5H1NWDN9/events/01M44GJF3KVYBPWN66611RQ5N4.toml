@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T22:29:22Z"
+digest = "18c3bade0b858f8f01971e0e75615cc58a1a7c6d556cea1db42839d123be14d2"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8465b28d-87b3-4ccc-8c8e-65b641afc425 with nextest profile: default
+    Starting 2 tests across 1 binary (21 tests skipped)
+        PASS [   5.690s] frob-cli::close_guards the_running_frob_is_an_allowed_command_tool_without_listing_it
+        PASS [   9.070s] frob-cli::close_guards story_bug_and_security_without_criteria_are_refused_on_that_close_naming_the_type
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   9.071s] 2 tests run: 2 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-cli --test close_guards story_bug_and_security_without_criteria"
+size = 706
+status = "measured"
+tests = ["the_running_frob_is_an_allowed_command_tool_without_listing_it", "story_bug_and_security_without_criteria_are_refused_on_that_close_naming_the_type"]
+at = "2026-10-04T22:29:22Z"
+actor = "lognd"
+rev = 1

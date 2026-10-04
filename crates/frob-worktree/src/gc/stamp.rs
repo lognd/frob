@@ -64,10 +64,8 @@ pub fn save(common_dir: &Path, stamp: &Stamp) -> Result<(), String> {
     let p = path(common_dir);
     let dir = p.parent().unwrap_or(common_dir);
     std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-    let tmp = dir.join(format!("gc.json.{}.tmp", std::process::id()));
     let json = serde_json::to_string_pretty(stamp).map_err(|e| e.to_string())?;
-    std::fs::write(&tmp, json).map_err(|e| format!("{}: {e}", tmp.display()))?;
-    std::fs::rename(&tmp, &p).map_err(|e| format!("{}: {e}", p.display()))?;
+    gob_fs::write_atomic(&p, json.as_bytes()).map_err(|e| format!("{}: {e}", p.display()))?;
     tracing::debug!(path = %p.display(), "gc stamp saved");
     Ok(())
 }

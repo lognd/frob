@@ -9,6 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
+gob-fs = { version = "0.0.0", path = "../gob-fs" }
 gob-ir = { version = "0.0.0", path = "../gob-ir" }
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"

@@ -16,6 +16,7 @@ frob-release = { version = "0.0.0", path = "../frob-release" }
 gob-cli = { version = "0.0.0", path = "../gob-cli" }
 gob-config = { version = "0.0.0", path = "../gob-config" }
 gob-exec = { version = "0.0.0", path = "../gob-exec" }
+gob-fs = { version = "0.0.0", path = "../gob-fs" }
 gob-git = { version = "0.0.0", path = "../gob-git" }
 gob-log = { version = "0.0.0", path = "../gob-log" }
 schemars = "1"
@@ -23,8 +24,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
 toml = "1"
-which = "8"
 tracing = "0.1"
+which = "8"
 
 [dev-dependencies]
 proptest = "1"

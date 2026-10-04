@@ -1,7 +1,6 @@
 //! The authenticated, atomically written entry store.
 
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use crate::error::TrustError;
@@ -136,14 +135,7 @@ impl StateStore {
         bytes.extend_from_slice(self.tag(kind, id, payload).as_bytes());
         bytes.extend_from_slice(&(payload.len() as u64).to_le_bytes());
         bytes.extend_from_slice(payload);
-        let mut nonce = [0u8; 8];
-        getrandom::fill(&mut nonce).map_err(|e| TrustError::Random(e.to_string()))?;
-        let tmp = dir.join(format!(".tmp.{:x}", u64::from_le_bytes(nonce)));
-        let written = write_private(&tmp, &bytes);
-        let result = written.and_then(|()| fs::rename(&tmp, &path).map_err(io("rename", &path)));
-        if result.is_err() {
-            let _ = fs::remove_file(&tmp);
-        }
+        let result = gob_fs::write_atomic_private(&path, &bytes).map_err(io("write", &path));
         tracing::debug!(
             kind,
             bytes = bytes.len(),
@@ -239,19 +231,6 @@ fn make_dir(dir: &Path) -> Result<(), StateError> {
 #[cfg(not(unix))]
 fn make_dir(dir: &Path) -> Result<(), StateError> {
     fs::create_dir_all(dir).map_err(io("create dir", dir))
-}
-
-fn write_private(tmp: &Path, bytes: &[u8]) -> Result<(), StateError> {
-    let mut opts = fs::OpenOptions::new();
-    opts.write(true).create_new(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        opts.mode(0o600);
-    }
-    let mut f = opts.open(tmp).map_err(io("create", tmp))?;
-    f.write_all(bytes).map_err(io("write", tmp))?;
-    f.sync_all().map_err(io("sync", tmp))
 }
 
 /// Attempts made to read an entry while a concurrent replace holds it.

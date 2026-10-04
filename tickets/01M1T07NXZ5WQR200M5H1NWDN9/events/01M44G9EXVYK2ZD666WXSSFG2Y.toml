@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/tickets/_evidence.py"]
+new = ["crates/frob-evidence/src/done.rs", "crates/frob/tests/close_guards.rs", "crates/frob-land/tests/land.rs", "docs/design/tickets.md", "docs/design/README.md"]
+at = "2026-10-04T22:24:27Z"
+actor = "lognd"
+rev = 1
