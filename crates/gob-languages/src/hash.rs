@@ -106,10 +106,8 @@ pub fn hash_comment_starts(text: &str, yaml: bool) -> Vec<usize> {
             i += 1;
         }
         // Single-line TOML strings end at the newline; YAML quoted scalars may continue.
-        if let Str::Quoted { multi: false, .. } = state {
-            if !yaml {
-                state = Str::None;
-            }
+        if !yaml && matches!(state, Str::Quoted { multi: false, .. }) {
+            state = Str::None;
         }
         offset += line.len();
     }
