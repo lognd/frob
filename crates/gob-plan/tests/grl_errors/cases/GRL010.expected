@@ -1,0 +1,10 @@
+error[GRL010]: `reaches` needs a bound on how far to look
+ --> rules/GRL010.grl:6:11
+  |
+6 |   where f reaches g via calls
+  |           ^^^^^^^^^^^^^^^^^^^ no `within` here
+  |
+  = help: add `within knob.depth` (after `knob depth: int = 6 "how many call levels to follow"`) or a number such as `within 6`
+  = explain: grimble explain GRL010
+
+error: aborting due to 1 previous error
