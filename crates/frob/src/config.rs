@@ -86,6 +86,9 @@ pub struct FrobConfig {
     pub lease: frob_lease::LeaseConfig,
     /// `[worktree]`, owned by `frob-worktree`.
     pub worktree: frob_worktree::WorktreeConfig,
+    // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
+    /// `[gc]`, owned by `frob-worktree`.
+    pub gc: frob_worktree::GcConfig,
     /// `[evidence]`, owned by `frob-evidence`.
     pub evidence: frob_evidence::EvidenceTable,
     /// `[pm]`, `[pm.wip]` and `[pm.classes]`, owned by `frob-pm`.
@@ -122,6 +125,8 @@ impl FrobConfig {
             git: gob_config::load::<GitTable>(root, PRODUCT)?.value,
             lease: gob_config::load::<frob_lease::LeaseConfig>(root, PRODUCT)?.value,
             worktree: gob_config::load::<frob_worktree::WorktreeConfig>(root, PRODUCT)?.value,
+            // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
+            gc: gob_config::load::<frob_worktree::GcConfig>(root, PRODUCT)?.value,
             evidence: gob_config::load::<frob_evidence::EvidenceTable>(root, PRODUCT)?.value,
             pm: frob_pm::PmConfig::load(root)?,
             release: gob_config::load::<frob_release::ReleaseConfig>(root, PRODUCT)?.value,

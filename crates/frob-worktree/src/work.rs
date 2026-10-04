@@ -409,27 +409,38 @@ impl Workspace<'_> {
     }
 
     fn primary_root(&self) -> PathBuf {
-        let repo = self.ledger.repo();
-        repo.list_worktrees()
-            .ok()
-            .and_then(|w| w.into_iter().next().map(|i| i.path))
-            .unwrap_or_else(|| self.cwd())
+        primary_root(self.ledger)
     }
 
     fn default_path(&self, name: &str) -> PathBuf {
-        let primary = self.primary_root();
-        let repo_name = primary
-            .file_name()
-            .map_or_else(|| "repo".to_owned(), |n| n.to_string_lossy().into_owned());
-        let dir = self.config.dir.replace("{repo}", &repo_name);
-        let dir = PathBuf::from(dir);
-        let parent = if dir.is_absolute() {
-            dir
-        } else {
-            primary.join(dir)
-        };
-        clean(&parent.join(name))
+        worktree_parent(&self.primary_root(), self.config).join(name)
     }
+}
+
+// frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
+/// The primary checkout of the repository behind `ledger`: the first worktree git lists, else the current directory.
+pub fn primary_root(ledger: &Ledger) -> PathBuf {
+    let repo = ledger.repo();
+    repo.list_worktrees()
+        .ok()
+        .and_then(|w| w.into_iter().next().map(|i| i.path))
+        .or_else(|| repo.work_dir().map(Path::to_path_buf))
+        .unwrap_or_else(|| PathBuf::from("."))
+}
+
+// frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
+/// The directory `[worktree] dir` names for the primary checkout `primary`, cleaned of `.` and `..`.
+pub fn worktree_parent(primary: &Path, config: &WorktreeConfig) -> PathBuf {
+    let repo_name = primary
+        .file_name()
+        .map_or_else(|| "repo".to_owned(), |n| n.to_string_lossy().into_owned());
+    let dir = PathBuf::from(config.dir.replace("{repo}", &repo_name));
+    let parent = if dir.is_absolute() {
+        dir
+    } else {
+        primary.join(dir)
+    };
+    clean(&parent)
 }
 
 /// What creating the worktree did.

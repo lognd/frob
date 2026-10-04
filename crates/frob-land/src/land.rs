@@ -297,9 +297,41 @@ impl Ready {
                 &mut self.out.warnings,
             );
         }
+        // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
+        collect_garbage(&self.primary, leases, &mut self.out.warnings);
         tracing::info!(ticket = %self.id, commit = %oid, pushed = self.out.pushed, "land complete");
         Ok(self.out)
     }
+}
+
+// frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
+/// Run the throttled garbage-collection pass from the primary checkout once the worktree is gone.
+///
+/// The land is already done, so nothing here can fail it: every problem, and every
+/// worktree the pass kept because it holds unsaved work, becomes a warning. The ledger
+/// is opened on the primary checkout, not the removed worktree, so no index is
+/// recreated inside a directory that no longer exists. Also sweeps abandoned
+/// ratchet base checkouts under the git common dir (`land-base-*`).
+fn collect_garbage(primary: &Path, leases: &LeaseStore, warnings: &mut Vec<String>) {
+    let opened = Repo::discover(primary)
+        .map_err(|e| e.to_string())
+        .and_then(|repo| {
+            let ledger_cfg = frob_worktree::ledger_config(primary)?;
+            let wt = frob_worktree::WorktreeConfig::load(primary).map_err(|e| e.to_string())?;
+            let gc = frob_worktree::GcConfig::load(primary).map_err(|e| e.to_string())?;
+            Ok((Ledger::open(repo, ledger_cfg), wt, gc))
+        });
+    let (ledger, wt, gc) = match opened {
+        Ok(o) => o,
+        Err(e) => {
+            tracing::warn!(error = %e, "gc after land skipped");
+            warnings.push(format!("garbage collection skipped: {e}"));
+            return;
+        }
+    };
+    let report =
+        frob_worktree::gc::glue::run_for(&ledger, leases, &wt, &gc, frob_worktree::gc::Mode::Auto);
+    warnings.extend(frob_worktree::gc::glue::notices(&report));
 }
 
 /// A blank outcome for `id`; callers fill in what they did.

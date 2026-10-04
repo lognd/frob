@@ -121,7 +121,8 @@ crate measures the fresh-process case.
 | config | `frob.toml`, `grimble.toml`, `crunk.toml` (one per product) | yes |
 | pack drift-lock | `grimble.packs.lock` (one per repository, written only by `grimble packs update`; packs.md section 4) | yes |
 | leases | `<common_dir>/frob/leases/<ulid>.toml` plus one `<common_dir>/frob/leases.lock`; single clone, shared by its worktrees | no |
-| local evidence artifacts | `.git/frob/artifacts/` (non-authoritative; a missing blob reads as Unmeasured) | no |
+| local evidence artifacts | `.git/frob/artifacts/` (non-authoritative; a missing blob reads as Unmeasured; old unreferenced blobs are collected) | no |
+| garbage-collection stamp | `<common_dir>/frob/gc.json` (last pass, throttle) | no |
 | cache, index, telemetry | `.frob/` per worktree: `cache.sqlite` (gob-cache), `tickets.sqlite` (frob-ledger index, keyed by the tickets subtree id, not the whole tree) | no, delete-safe |
 
 Nothing authoritative under `.frob/`. Deleting it costs one cold parse.
@@ -130,6 +131,43 @@ vanish; no data is lost), local evidence artifacts (loss degrades
 verdicts to Unmeasured, which is never a finding on a terminal ticket),
 and the per-worktree cache. Plan tokens are digests recomputed at apply
 and stored nowhere; there is no job store in milestone 1.
+
+### Garbage collection (~BZXZK29)
+
+frob owns local state and the build output of the checkouts it manages, so
+it also keeps them under budget; goway owns its remote hosts and their own
+collection. There is no collection verb. An opportunistic pass runs inside
+verbs that already run often and are about to need disk: `frob work` (before
+a new worktree builds) and `frob land` (after the worktree is removed), and
+unthrottled from `frob doctor --fix`. `frob doctor` itself runs a dry pass and
+reports it. A stamp `<common_dir>/frob/gc.json` throttles automatic passes to
+one per `[gc] interval_secs` (default 1 h) and records the last pass for
+`doctor`; free space below `[gc] guard_min_free_gb` (default 20 GiB, 0 turns it
+off) overrides the interval. The pass is bounded by `[gc] time_limit_secs`,
+never fails the verb (every problem is a warning in the verb's output and a log
+line), and logs a summary at info.
+
+What is collected, in order, each category with its own knob:
+
+| Category | Rule |
+|---|---|
+| worktrees | finished ticket worktrees (tickets.md, "Worktree garbage collection"); never one with uncommitted changes |
+| `land-base` | abandoned ratchet base checkouts `<common_dir>/frob/land-base-*` older than an hour (a land that crashed; a running land refreshes its own) |
+| build | per checkout (the primary and the live worktrees), through a `BuildAdapter` (Cargo first, `target/<profile>`): incremental directories unused for `incremental_max_age_secs` (6 h) go regardless of size; then the oldest artifacts (a compilation unit's `deps/` files, `build/` script directories) go until the target dir is under `target_budget_gb` (30 GiB). Anything within `keep_recent_secs` (1 h) of the newest artifact belongs to the latest build and stays, as do `keep_binaries` (`frob`, `grimble`) |
+| caches | per checkout, an allowlist under `.frob/` (`cache.sqlite` with its companions and `land-base/*.json`), least recently modified first over `cache_budget_mb`; a cache touched in the last hour may be open and stays; locks, the ticket index, journals and repair state are never touched |
+| artifacts | `<common_dir>/frob/artifacts` blobs (named by 64-hex digest) older than `artifact_retention_days` that no open ticket's events mention; if the open tickets' events cannot be read nothing is removed |
+
+Safety is structural. Every path goes through a `Jail` before anything touches
+it: the roots are the target dirs of the checkouts, frob's own state under the
+common dir (`<common_dir>/frob`), a checkout's `.frob/`, and the worktree
+parent; containment is decided on path components (never string prefixes, so
+`target-old` is not inside `target`), a path with `..` or one that is itself a
+symlink is refused, a symlinked parent canonicalises outside the roots and is
+refused, and a root is never removed itself. Tree removal unlinks a symlink
+inside the tree instead of following it. Worktrees are additionally removed
+only through `git worktree remove` without `--force`. A new ecosystem adds a
+`BuildAdapter` (output directories, removable units); the eviction plan over
+the units is shared.
 
 ## 4. Errors
 
@@ -223,6 +261,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[lease] lock_timeout_ms` (M1) | frob.toml | no | 5000 | frob-lease |
 | `[lease] shared_files` (M1) | frob.toml | no | empty (append-shared files such as `Cargo.lock`) | frob-lease |
 | `[worktree] dir` (M1) | frob.toml | no | `"../{repo}-wt"` | frob-worktree |
+| `[gc]` (~BZXZK29: `enabled`, `interval_secs`, `time_limit_secs`, `guard_min_free_gb`, `incremental_max_age_secs`, `target_budget_gb`, `keep_recent_secs`, `keep_binaries`, `cache_budget_mb`, `artifact_retention_days`, `worktrees`) | frob.toml | no | on; 1 h interval, 30 s bound, 20 GiB guard, 6 h incremental age, 30 GiB per-checkout budget (see Garbage collection, section 3) | frob-worktree |
 | `[evidence] allowed_tools` (M1) | frob.toml | no | `["cargo", "git"]` | frob-evidence |
 | `[evidence] inline_max_bytes` (M1) | frob.toml | no | 16384 | frob-evidence |
 | `[evidence] store` (M1) | frob.toml | no | `"dir:.git/frob/artifacts"` | frob-evidence |

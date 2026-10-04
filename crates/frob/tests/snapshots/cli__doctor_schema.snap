@@ -1,6 +1,5 @@
 ---
 source: crates/frob/tests/cli.rs
-assertion_line: 206
 expression: v
 ---
 {
@@ -130,6 +129,148 @@ expression: v
       ],
       "type": "object"
     },
+    "GcCategory": {
+      "description": "Bytes and item count of one garbage-collection category.",
+      "properties": {
+        "bytes": {
+          "description": "Their total bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "category": {
+          "description": "`worktrees`, `build`, `caches`, `artifacts` or `land-base`.",
+          "type": "string"
+        },
+        "items": {
+          "description": "How many items.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "category",
+        "items",
+        "bytes"
+      ],
+      "type": "object"
+    },
+    "GcFixed": {
+      "description": "What `doctor --fix` collected.",
+      "properties": {
+        "by_category": {
+          "description": "Reclaimed per category.",
+          "items": {
+            "$ref": "#/$defs/GcCategory"
+          },
+          "type": "array"
+        },
+        "reclaimed_bytes": {
+          "description": "Bytes reclaimed by the pass.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "warnings": {
+          "description": "Problems the pass met (they never fail it).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "reclaimed_bytes",
+        "by_category",
+        "warnings"
+      ],
+      "type": "object"
+    },
+    "GcInfo": {
+      "description": "Garbage-collection state: the last pass, current usage, and what a pass would reclaim now.",
+      "properties": {
+        "fixed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GcFixed"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Present with `--fix`: what the pass just collected."
+        },
+        "kept": {
+          "description": "Things a pass keeps on purpose, with reasons.",
+          "items": {
+            "$ref": "#/$defs/Kept"
+          },
+          "type": "array"
+        },
+        "last_reclaimed_bytes": {
+          "description": "Bytes the last pass reclaimed.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "last_run_unix": {
+          "description": "Unix seconds of the last pass, absent when none ran.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "passes": {
+          "description": "Passes so far.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "state": {
+          "description": "`ok`, or `skipped: <why>` when there is no repository or the report could not be built.",
+          "type": "string"
+        },
+        "total_reclaimed_bytes": {
+          "description": "Bytes reclaimed over all passes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "usage": {
+          "description": "Current usage per category.",
+          "items": {
+            "$ref": "#/$defs/Usage"
+          },
+          "type": "array"
+        },
+        "would_reclaim": {
+          "description": "What a pass would reclaim now (a dry run), per category.",
+          "items": {
+            "$ref": "#/$defs/GcCategory"
+          },
+          "type": "array"
+        },
+        "would_reclaim_bytes": {
+          "description": "Total bytes a pass would reclaim now.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "state",
+        "last_reclaimed_bytes",
+        "total_reclaimed_bytes",
+        "passes",
+        "usage",
+        "would_reclaim",
+        "would_reclaim_bytes",
+        "kept"
+      ],
+      "type": "object"
+    },
     "GitInfo": {
       "description": "Git discovery result.",
       "properties": {
@@ -173,6 +314,24 @@ expression: v
       "required": [
         "discovered",
         "linked_worktree"
+      ],
+      "type": "object"
+    },
+    "Kept": {
+      "description": "Something the pass deliberately left alone, and why.",
+      "properties": {
+        "reason": {
+          "description": "Why it stays.",
+          "type": "string"
+        },
+        "target": {
+          "description": "What it is.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target",
+        "reason"
       ],
       "type": "object"
     },
@@ -387,6 +546,26 @@ expression: v
         "files"
       ],
       "type": "object"
+    },
+    "Usage": {
+      "description": "Disk used by one category of collectable data.",
+      "properties": {
+        "bytes": {
+          "description": "Bytes in use after the pass.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "category": {
+          "description": "Category: `build`, `worktrees`, `caches`, `artifacts`, `land-base`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "category",
+        "bytes"
+      ],
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -403,6 +582,10 @@ expression: v
     "driver": {
       "$ref": "#/$defs/DriverCheck",
       "description": "Merge driver resolution."
+    },
+    "gc": {
+      "$ref": "#/$defs/GcInfo",
+      "description": "Garbage collection: last pass, usage and what a pass would reclaim."
     },
     "git": {
       "$ref": "#/$defs/GitInfo",
@@ -442,7 +625,8 @@ expression: v
     "config",
     "ledger",
     "driver",
-    "siblings"
+    "siblings",
+    "gc"
   ],
   "title": "DoctorData",
   "type": "object"

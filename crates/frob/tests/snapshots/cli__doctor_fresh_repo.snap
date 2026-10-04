@@ -24,6 +24,38 @@ expression: v
       "fix": null,
       "state": "unset"
     },
+    "gc": {
+      "kept": [],
+      "last_reclaimed_bytes": 0,
+      "last_run_unix": null,
+      "passes": 0,
+      "state": "ok",
+      "total_reclaimed_bytes": 0,
+      "usage": [
+        {
+          "bytes": "[bytes]",
+          "category": "build"
+        },
+        {
+          "bytes": "[bytes]",
+          "category": "worktrees"
+        },
+        {
+          "bytes": "[bytes]",
+          "category": "caches"
+        },
+        {
+          "bytes": "[bytes]",
+          "category": "artifacts"
+        },
+        {
+          "bytes": "[bytes]",
+          "category": "land-base"
+        }
+      ],
+      "would_reclaim": [],
+      "would_reclaim_bytes": 0
+    },
     "git": {
       "branch": "[branch]",
       "discovered": true,

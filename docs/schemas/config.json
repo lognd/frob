@@ -214,6 +214,90 @@
       },
       "type": "object"
     },
+    "gc": {
+      "additionalProperties": false,
+      "description": "Garbage-collection settings: what the throttled pass may reclaim and how much to keep.",
+      "properties": {
+        "artifact_retention_days": {
+          "default": 30,
+          "description": "Evidence blobs under `.git/frob/artifacts` older than this many days and unreferenced by an open ticket are removed.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "cache_budget_mb": {
+          "default": 256,
+          "description": "Budget in MiB of the regenerable caches under each checkout's `.frob/`.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "enabled": {
+          "default": true,
+          "description": "Run the automatic pass at all; `frob doctor --fix` still runs it on request.",
+          "type": "boolean"
+        },
+        "guard_min_free_gb": {
+          "default": 20,
+          "description": "Free GiB below which a pass runs regardless of the interval; 0 turns the guard off.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "incremental_max_age_secs": {
+          "default": 21600,
+          "description": "Remove build incremental directories not used within this many seconds.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "interval_secs": {
+          "default": 3600,
+          "description": "Minimum seconds between automatic passes (the stamp lives under the git common dir).",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "keep_binaries": {
+          "default": [
+            "frob",
+            "grimble"
+          ],
+          "description": "Binary names (without extension) whose build output is never collected.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "keep_recent_secs": {
+          "default": 3600,
+          "description": "Artifacts within this many seconds of the newest one belong to the latest build and are kept.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "target_budget_gb": {
+          "default": 30,
+          "description": "Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "time_limit_secs": {
+          "default": 30,
+          "description": "Wall-clock bound in seconds of one pass; the rest waits for the next one.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "worktrees": {
+          "default": true,
+          "description": "Remove worktrees of closed tickets and of expired leases with nothing unsaved.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "git": {
       "additionalProperties": false,
       "description": "Settings of in-process git access.",

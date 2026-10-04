@@ -76,6 +76,26 @@ Materialized: yes.
 | `store` | `String` | `"dir:.git/frob/artifacts"` | no | Blob store: `dir:<path>` (relative paths start at the repository root, `.git/` at the common dir) or an `https://` URL (recorded only). |
 | `timeout_secs` | `u64` | `1800` | no | Wall-clock limit in seconds for one provider process. |
 
+## `[gc]`
+
+Garbage-collection settings: what the throttled pass may reclaim and how much to keep.
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `artifact_retention_days` | `u64` | `30` | no | Evidence blobs under `.git/frob/artifacts` older than this many days and unreferenced by an open ticket are removed. |
+| `cache_budget_mb` | `u64` | `256` | no | Budget in MiB of the regenerable caches under each checkout's `.frob/`. |
+| `enabled` | `bool` | `true` | no | Run the automatic pass at all; `frob doctor --fix` still runs it on request. |
+| `guard_min_free_gb` | `u64` | `20` | no | Free GiB below which a pass runs regardless of the interval; 0 turns the guard off. |
+| `incremental_max_age_secs` | `u64` | `21600` | no | Remove build incremental directories not used within this many seconds. |
+| `interval_secs` | `u64` | `3600` | no | Minimum seconds between automatic passes (the stamp lives under the git common dir). |
+| `keep_binaries` | `Vec<String>` | `["frob", "grimble"]` | no | Binary names (without extension) whose build output is never collected. |
+| `keep_recent_secs` | `u64` | `3600` | no | Artifacts within this many seconds of the newest one belong to the latest build and are kept. |
+| `target_budget_gb` | `u64` | `30` | no | Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it. |
+| `time_limit_secs` | `u64` | `30` | no | Wall-clock bound in seconds of one pass; the rest waits for the next one. |
+| `worktrees` | `bool` | `true` | no | Remove worktrees of closed tickets and of expired leases with nothing unsaved. |
+
 ## `[git]`
 
 Settings of in-process git access.

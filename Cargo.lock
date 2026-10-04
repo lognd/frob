@@ -1098,6 +1098,7 @@ dependencies = [
  "gob-diagnostics",
  "gob-exec",
  "gob-git",
+ "nix",
  "schemars",
  "serde",
  "serde_json",

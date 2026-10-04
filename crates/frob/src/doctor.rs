@@ -3,6 +3,7 @@
 use std::collections::BTreeMap;
 use std::time::Duration;
 
+use frob_worktree::gc::{self, Mode, pass::Report};
 use gob_cache::{Cache, CacheConfig};
 use gob_check::{OtherCopy, SiblingRow};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
@@ -31,6 +32,8 @@ const PROBE_TIMEOUT: Duration = Duration::from_secs(10);
 pub struct Doctor {
     /// Also report each language adapter's fidelity and capability precisions.
     languages: bool,
+    /// Run the garbage-collection pass now, unthrottled, and report what it reclaimed.
+    fix: bool,
 }
 
 /// One capability of an adapter with its precision label.
@@ -159,6 +162,54 @@ pub struct DriverCheck {
     pub fix: Option<String>,
 }
 
+/// Bytes and item count of one garbage-collection category.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct GcCategory {
+    /// `worktrees`, `build`, `caches`, `artifacts` or `land-base`.
+    pub category: String,
+    /// How many items.
+    pub items: usize,
+    /// Their total bytes.
+    pub bytes: u64,
+}
+
+/// What `doctor --fix` collected.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct GcFixed {
+    /// Bytes reclaimed by the pass.
+    pub reclaimed_bytes: u64,
+    /// Reclaimed per category.
+    pub by_category: Vec<GcCategory>,
+    /// Problems the pass met (they never fail it).
+    pub warnings: Vec<String>,
+}
+
+/// Garbage-collection state: the last pass, current usage, and what a pass would reclaim now.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct GcInfo {
+    /// `ok`, or `skipped: <why>` when there is no repository or the report could not be built.
+    pub state: String,
+    /// Unix seconds of the last pass, absent when none ran.
+    pub last_run_unix: Option<i64>,
+    /// Bytes the last pass reclaimed.
+    pub last_reclaimed_bytes: u64,
+    /// Bytes reclaimed over all passes.
+    pub total_reclaimed_bytes: u64,
+    /// Passes so far.
+    pub passes: u64,
+    /// Current usage per category.
+    pub usage: Vec<frob_worktree::gc::stamp::Usage>,
+    /// What a pass would reclaim now (a dry run), per category.
+    pub would_reclaim: Vec<GcCategory>,
+    /// Total bytes a pass would reclaim now.
+    pub would_reclaim_bytes: u64,
+    /// Things a pass keeps on purpose, with reasons.
+    pub kept: Vec<frob_worktree::gc::pass::Kept>,
+    /// Present with `--fix`: what the pass just collected.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fixed: Option<GcFixed>,
+}
+
 /// Output of `doctor`.
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct DoctorData {
@@ -176,6 +227,8 @@ pub struct DoctorData {
     pub driver: DriverCheck,
     /// Sibling binaries: which location is used and any second copy with its version.
     pub siblings: Vec<SiblingRow>,
+    /// Garbage collection: last pass, usage and what a pass would reclaim.
+    pub gc: GcInfo,
     /// Language adapters; present only with `--languages`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub languages: Option<LanguagesReport>,
@@ -259,11 +312,18 @@ impl Command for Doctor {
                 .action(gob_cli::clap::ArgAction::SetTrue)
                 .help("Report each adapter's fidelity and capability precisions"),
         )
+        .arg(
+            gob_cli::clap::Arg::new("fix")
+                .long("fix")
+                .action(gob_cli::clap::ArgAction::SetTrue)
+                .help("Run the garbage-collection pass now, unthrottled, and report it"),
+        )
     }
 
     fn from_matches(matches: &gob_cli::clap::ArgMatches) -> Result<Self, CliError> {
         Ok(Self {
             languages: matches.get_flag("languages"),
+            fix: matches.get_flag("fix"),
         })
     }
 
@@ -316,6 +376,7 @@ impl Command for Doctor {
             .iter()
             .map(|p| sibling_row(&runner, p, &ctx.cwd))
             .collect();
+        let gc = gc_info(&located, &cfg, self.fix);
         let languages = self
             .languages
             .then(|| languages_report(&located.root, &cfg));
@@ -351,6 +412,7 @@ impl Command for Doctor {
             ledger,
             driver,
             siblings,
+            gc,
             languages,
         })
         .with_findings(findings);
@@ -545,5 +607,83 @@ fn ledger_info(located: &Located, cfg: &FrobConfig) -> LedgerInfo {
             oid: None,
             error: Some(e),
         },
+    }
+}
+
+/// Group `report`'s actions by category.
+fn by_category(report: &Report) -> Vec<GcCategory> {
+    let mut map: BTreeMap<&str, (usize, u64)> = BTreeMap::new();
+    for a in &report.actions {
+        let e = map.entry(a.category.as_str()).or_default();
+        e.0 += 1;
+        e.1 += a.bytes;
+    }
+    map.into_iter()
+        .map(|(category, (items, bytes))| GcCategory {
+            category: category.to_owned(),
+            items,
+            bytes,
+        })
+        .collect()
+}
+
+/// An empty garbage-collection section carrying why nothing was measured.
+fn gc_skipped(why: &str) -> GcInfo {
+    GcInfo {
+        state: format!("skipped: {why}"),
+        last_run_unix: None,
+        last_reclaimed_bytes: 0,
+        total_reclaimed_bytes: 0,
+        passes: 0,
+        usage: Vec::new(),
+        would_reclaim: Vec::new(),
+        would_reclaim_bytes: 0,
+        kept: Vec::new(),
+        fixed: None,
+    }
+}
+
+/// The garbage-collection section: with `fix` run a forced pass first, then a dry run for the current picture.
+// frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
+fn gc_info(located: &Located, cfg: &FrobConfig, fix: bool) -> GcInfo {
+    let Some(repo) = located.repo.as_ref().filter(|r| r.work_dir().is_some()) else {
+        return gc_skipped("not a git work tree");
+    };
+    let leases = match frob_lease::LeaseStore::open(repo, cfg.lease.clone()) {
+        Ok(l) => l,
+        Err(e) => return gc_skipped(&format!("lease store: {e}")),
+    };
+    let ledger = match gob_git::Repo::discover(&located.root) {
+        Ok(r) => frob_ledger::Ledger::open(r, cfg.ledger()),
+        Err(e) => return gc_skipped(&e.to_string()),
+    };
+    let run = |mode| gc::glue::run_for(&ledger, &leases, &cfg.worktree, &cfg.gc, mode);
+    let fixed = fix.then(|| {
+        let r = run(Mode::Forced);
+        GcFixed {
+            reclaimed_bytes: r.reclaimed_bytes,
+            by_category: by_category(&r),
+            warnings: r.warnings,
+        }
+    });
+    let plan = run(Mode::DryRun);
+    let stamp = gc::stamp::load(repo.common_dir());
+    tracing::info!(
+        passes = stamp.passes,
+        would_reclaim = plan.reclaimed_bytes,
+        fixed = fixed.is_some(),
+        "gc doctor section"
+    );
+    GcInfo {
+        state: "ok".to_owned(),
+        last_run_unix: (stamp.last_run_unix != 0).then_some(stamp.last_run_unix),
+        last_reclaimed_bytes: stamp.last_reclaimed_bytes,
+        total_reclaimed_bytes: stamp.total_reclaimed_bytes,
+        passes: stamp.passes,
+        usage: plan.usage.clone(),
+        would_reclaim: by_category(&plan),
+        would_reclaim_bytes: plan.reclaimed_bytes,
+        kept: plan.kept,
+        fixed,
     }
 }

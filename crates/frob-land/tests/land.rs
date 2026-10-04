@@ -252,6 +252,23 @@ fn happy_path_lands_closes_and_cleans_up() {
     assert!(again.already && !again.closed, "second land is a no-op");
 }
 
+// frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
+#[test]
+fn land_runs_the_throttled_gc_pass_after_removing_the_worktree() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add g", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/g.rs", "fn g() {}\n");
+    Fixture::evidence(&s, "src/g.rs");
+    let out = land(&fx.root, &Fixture::opts(&s)).expect("land");
+    assert!(out.closed && !s.wt.exists());
+    let stamp = fx.repo().common_dir().join("frob").join("gc.json");
+    let text = std::fs::read_to_string(&stamp).expect("land left a gc stamp");
+    assert!(text.contains("\"passes\": 1"), "{text}");
+}
+
 #[test]
 fn red_check_refuses_with_exit_3_and_moves_nothing() {
     if !git_available() {

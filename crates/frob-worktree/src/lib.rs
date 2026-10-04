@@ -13,12 +13,15 @@
 
 pub mod config;
 pub mod error;
+pub mod gc;
 pub mod verbs;
 pub mod wip;
 pub mod work;
 
 pub use config::{WorktreeConfig, ledger_config};
 pub use error::WorktreeError;
+// frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
+pub use gc::GcConfig;
 pub use work::{Requeued, Started, WorkOptions, Workspace};
 
 /// Register `work`, `start` and `requeue` on a product root.

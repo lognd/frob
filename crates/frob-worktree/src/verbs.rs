@@ -13,6 +13,7 @@ use serde::Serialize;
 
 use crate::config::{WorktreeConfig, ledger_config};
 use crate::error::WorktreeError;
+use crate::gc::{GcConfig, Mode, glue};
 use crate::work::{Requeued, Started, WorkOptions, Workspace};
 
 /// The opened pieces a verb needs.
@@ -20,6 +21,7 @@ struct Opened {
     ledger: Ledger,
     leases: LeaseStore,
     config: WorktreeConfig,
+    gc: GcConfig,
 }
 
 impl Opened {
@@ -38,6 +40,7 @@ impl Opened {
         let ledger_cfg = ledger_config(&root).map_err(WorktreeError::Config)?;
         let config =
             WorktreeConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
+        let gc = GcConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
         let pm = PmConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
         let wip = pm.wip;
         let (leases, _) = frob_lease::open_store_from_file(&root)?;
@@ -48,7 +51,21 @@ impl Opened {
                 .with_repo_limit(wip.in_progress)
                 .with_expedite_max(pm.classes.expedite_max),
             config,
+            gc,
         })
+    }
+
+    /// The throttled garbage-collection pass before `work` builds anything; its problems are warnings, never errors.
+    // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
+    fn collect_garbage(&self) -> Vec<String> {
+        let report = glue::run_for(
+            &self.ledger,
+            &self.leases,
+            &self.config,
+            &self.gc,
+            Mode::Auto,
+        );
+        glue::notices(&report)
     }
 
     fn workspace(&self) -> Workspace<'_> {
@@ -181,8 +198,11 @@ impl Command for Work {
 
     fn run(&self, ctx: &Context) -> Outcome<StartData> {
         let opened = Opened::new(ctx)?;
+        let notices = opened.collect_garbage();
         let started = opened.workspace().work(&self.ticket, &self.opts)?;
-        Ok(start_payload(started))
+        Ok(notices
+            .into_iter()
+            .fold(start_payload(started), Payload::with_warning))
     }
 }
 

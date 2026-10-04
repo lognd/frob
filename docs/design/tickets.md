@@ -344,6 +344,22 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   The repository count runs inside the lease-store lock together with the
   lease write (`acquire_admitting`), counting live leases, so two concurrent
   `work` calls cannot both take the last slot.
+- Worktree garbage collection (~BZXZK29). A worktree outlives its ticket
+  unless something removes it, and each one carries its own `target/`
+  (15 to 20 GB), so `frob work` and `frob land` run a throttled pass that
+  removes finished worktrees (architecture.md section 3, "Garbage
+  collection"). A linked worktree is a candidate only when it lies, by path
+  components, under the directory `[worktree] dir` names, is on branch
+  `ticket/<handle>`, holds no live lease, is not the current directory, and
+  its ticket is in the ledger. A candidate with uncommitted changes
+  (`.frob/` excluded) is kept and reported, whatever its ticket's state.
+  For a closed ticket anything else is removable, and the branch is deleted
+  when it is merged into the base. For a ticket that is still open (an
+  expired lease, nothing unsaved) the worktree goes only when its branch tip
+  is in the base or on a remote; a branch with unpushed commits is kept and
+  reported, and the open ticket always keeps its branch, so a later `frob work`
+  re-attaches it. Removal is plain `git worktree remove` without `--force`,
+  so git's own refusal is a second guard.
 - Edits outside any symbol (imports, module headers) belong to the
   file-level scope: a symbol-level entry claims only symbol bodies, so
   such edits need a file-level entry or conflict with any symbol-level
