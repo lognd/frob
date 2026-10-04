@@ -1,6 +1,9 @@
 //! Comment discovery for TODO001: every line of comment text with its file offset.
+//!
+//! The comments themselves come from `gob_languages::parse_comment_spans`, the one owner of
+//! per-language comment discovery; this module only cuts the spans into lines.
 
-use gob_languages::{Language, ParseLimits, ParseResult, hash_comment_starts, parse};
+use gob_languages::{Language, parse_comment_spans};
 
 /// One line of comment text and where it starts in the file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -11,184 +14,27 @@ pub(crate) struct CommentLine<'t> {
     pub(crate) text: &'t str,
 }
 
-/// Push each line of `text[start..end]` as a comment line.
-fn push_lines<'t>(out: &mut Vec<CommentLine<'t>>, text: &'t str, start: usize, end: usize) {
-    let mut pos = start;
-    for line in text[start..end].split_inclusive('\n') {
-        out.push(CommentLine {
-            offset: pos,
-            text: line.trim_end_matches(['\n', '\r']),
-        });
-        pos += line.len();
-    }
-}
-
-/// Byte ranges of the comment nodes of a parsed Rust file.
-fn rust_ranges(text: &str) -> Option<Vec<(usize, usize)>> {
-    let ParseResult::Parsed(tree) = parse(Language::Rust, text, &ParseLimits::default()) else {
-        return None;
-    };
-    let mut out = Vec::new();
-    let mut cursor = tree.root().walk();
-    loop {
-        let n = cursor.node();
-        if matches!(n.kind(), "line_comment" | "block_comment") {
-            out.push((n.start_byte(), n.end_byte()));
-        }
-        if cursor.goto_first_child() || cursor.goto_next_sibling() {
-            continue;
-        }
-        loop {
-            if !cursor.goto_parent() {
-                return Some(out);
-            }
-            if cursor.goto_next_sibling() {
-                break;
-            }
-        }
-    }
-}
-
-/// Comment lines of a Rust file; whole-line `//` comments when no tree exists.
-fn rust_lines(text: &str) -> Vec<CommentLine<'_>> {
-    let mut out = Vec::new();
-    if let Some(ranges) = rust_ranges(text) {
-        for (s, e) in ranges {
-            push_lines(&mut out, text, s, e);
-        }
-        return out;
-    }
-    tracing::warn!("no syntax tree; scanning whole-line comments only");
-    let mut offset = 0;
-    for line in text.split_inclusive('\n') {
-        let lead = line.len() - line.trim_start().len();
-        if line[lead..].starts_with("//") {
-            push_lines(&mut out, text, offset + lead, offset + line.len());
-        }
-        offset += line.len();
-    }
-    out
-}
-
-// frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
-/// Byte ranges of the `comment` nodes of a parsed Python file.
-fn python_ranges(text: &str) -> Option<Vec<(usize, usize)>> {
-    let ParseResult::Parsed(tree) = parse(Language::Python, text, &ParseLimits::default()) else {
-        return None;
-    };
-    let mut out = Vec::new();
-    let mut cursor = tree.root().walk();
-    loop {
-        let n = cursor.node();
-        if n.kind() == "comment" {
-            out.push((n.start_byte(), n.end_byte()));
-        }
-        if cursor.goto_first_child() || cursor.goto_next_sibling() {
-            continue;
-        }
-        loop {
-            if !cursor.goto_parent() {
-                return Some(out);
-            }
-            if cursor.goto_next_sibling() {
-                break;
-            }
-        }
-    }
-}
-
-// frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
-/// Comment lines of a Python file; the naive `#` scan when no tree exists.
-fn python_lines(text: &str) -> Vec<CommentLine<'_>> {
-    let Some(ranges) = python_ranges(text) else {
-        tracing::warn!("no python syntax tree; scanning `#` comments naively");
-        return toml_lines(text, false);
-    };
-    let mut out = Vec::new();
-    for (s, e) in ranges {
-        push_lines(&mut out, text, s, e);
-    }
-    out
-}
-
-/// True when `line` opens or closes a fenced code block; updates `fence`.
-fn toggles_fence(line: &str, fence: &mut Option<char>) -> bool {
-    let t = line.trim_start();
-    let Some(c) = t.chars().next().filter(|c| matches!(c, '`' | '~')) else {
-        return false;
-    };
-    if !t.starts_with(&c.to_string().repeat(3)) {
-        return false;
-    }
-    match *fence {
-        None => *fence = Some(c),
-        Some(open) if open == c => *fence = None,
-        Some(_) => return false,
-    }
-    true
-}
-
-/// HTML comment lines of a markdown file, outside fenced code.
-fn markdown_lines(text: &str) -> Vec<CommentLine<'_>> {
-    let mut out = Vec::new();
-    let mut fence: Option<char> = None;
-    let mut in_comment = false;
-    let mut offset = 0;
-    for line in text.split_inclusive('\n') {
-        let start = offset;
-        offset += line.len();
-        if !in_comment && (toggles_fence(line, &mut fence) || fence.is_some()) {
-            continue;
-        }
-        let mut pos = 0;
-        loop {
-            if in_comment {
-                if let Some(e) = line[pos..].find("-->") {
-                    push_lines(&mut out, text, start + pos, start + pos + e);
-                    in_comment = false;
-                    pos += e + 3;
-                } else {
-                    push_lines(&mut out, text, start + pos, start + line.len());
-                    break;
-                }
-            } else if let Some(s) = line[pos..].find("<!--") {
-                in_comment = true;
-                pos += s + 4;
-            } else {
-                break;
-            }
-        }
-    }
-    out
-}
-
-// frob:ticket 01M43HGBQ9YS0Z8YPKQ41MBK6Q
-/// `#` comments of a TOML, YAML or fallback-Python file; `#` inside strings is text.
-fn toml_lines(text: &str, yaml: bool) -> Vec<CommentLine<'_>> {
-    let mut out = Vec::new();
-    for at in hash_comment_starts(text, yaml) {
-        let end = text[at..].find('\n').map_or(text.len(), |e| at + e + 1);
-        push_lines(&mut out, text, at, end);
-    }
-    out
-}
-
 // frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
+// frob:ticket 01M43PEZ2CNVTHKJGPR02G4F97
 /// All comment lines of `text`.
 pub(crate) fn comment_lines(language: Language, text: &str) -> Vec<CommentLine<'_>> {
-    let found = match language {
-        Language::Rust => rust_lines(text),
-        Language::Markdown => markdown_lines(text),
-        Language::Toml => toml_lines(text, false),
-        Language::Yaml => toml_lines(text, true),
-        Language::Python => python_lines(text),
-    };
+    let mut out = Vec::new();
+    for span in parse_comment_spans(language, text) {
+        let mut pos = span.start;
+        for line in text[span].split_inclusive('\n') {
+            out.push(CommentLine {
+                offset: pos,
+                text: line.trim_end_matches(['\n', '\r']),
+            });
+            pos += line.len();
+        }
+    }
     tracing::trace!(
         language = language.name(),
-        lines = found.len(),
+        lines = out.len(),
         "comment lines"
     );
-    found
+    out
 }
 
 #[cfg(test)]
@@ -209,35 +55,44 @@ mod tests {
     }
 
     #[test]
-    // frob:tests crates/frob-obligations/src/comments.rs::python_lines
-    fn python_comments_skip_strings() {
-        let src = "# a\nx = \"# no\"  # b\n";
-        assert_eq!(texts(&comment_lines(Language::Python, src)), ["# a", "# b"]);
-    }
-
-    #[test]
-    fn markdown_comments_skip_fences() {
+    fn markdown_lines_keep_markers_and_offsets() {
         let src = "<!-- a -->\n```\n<!-- no -->\n```\n<!--\nb\n-->\n";
         let got = comment_lines(Language::Markdown, src);
-        assert_eq!(texts(&got), [" a ", "", "b"]);
+        assert_eq!(texts(&got), ["<!-- a -->", "<!--", "b", "-->"]);
         assert_eq!(&src[got[2].offset..=got[2].offset], "b");
     }
 
+    /// The lines are exactly the shared corpus spans cut at newlines.
+    // frob:tests crates/frob-obligations/src/comments.rs::comment_lines
     #[test]
-    fn toml_comments_skip_quotes() {
-        let src = "k = \"#no\" # yes\n# all\n";
-        assert_eq!(
-            texts(&comment_lines(Language::Toml, src)),
-            ["# yes", "# all"]
-        );
-    }
-
-    #[test]
-    // frob:tests crates/frob-obligations/src/comments.rs::toml_lines
-    fn toml_multiline_strings_hide_hash() {
-        let src = "a = \"\"\"\n# TODO no\n\"\"\"\nb = \'\'\'\n# TODO no\n\'\'\' # yes\n";
-        assert_eq!(texts(&comment_lines(Language::Toml, src)), ["# yes"]);
-        let y = "a: |\n  # TODO no\n# real\n";
-        assert_eq!(texts(&comment_lines(Language::Yaml, y)), ["# real"]);
+    fn lines_cover_exactly_the_shared_corpus_spans() {
+        for (language, text) in [
+            (
+                Language::Toml,
+                include_str!("../../gob-languages/tests/corpus/strings.toml"),
+            ),
+            (
+                Language::Yaml,
+                include_str!("../../gob-languages/tests/corpus/strings.yaml"),
+            ),
+            (
+                Language::Python,
+                include_str!("../../gob-languages/tests/corpus/strings.py"),
+            ),
+            (
+                Language::Markdown,
+                include_str!("../../gob-languages/tests/corpus/doc.md"),
+            ),
+        ] {
+            let want: Vec<&str> = parse_comment_spans(language, text)
+                .into_iter()
+                .flat_map(|r| text[r].lines().collect::<Vec<_>>())
+                .collect();
+            let got = comment_lines(language, text);
+            assert_eq!(texts(&got), want, "{language:?}");
+            for l in &got {
+                assert_eq!(&text[l.offset..l.offset + l.text.len()], l.text);
+            }
+        }
     }
 }

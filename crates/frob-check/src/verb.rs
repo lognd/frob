@@ -211,6 +211,12 @@ fn cli_error(err: CheckError) -> CliError {
             &err,
             "repair frob.lock or regenerate it with `frob ack --all`",
         ),
+        CheckError::FixStale(_) => refusal(
+            "E-FIX-STALE",
+            RefusalClass::GuardNeedsAction,
+            &err,
+            "rerun `frob check`, then `frob check --fix`",
+        ),
         CheckError::Walk(_) | CheckError::FixIo(_) => CliError::internal(err),
     }
 }
@@ -489,4 +495,28 @@ fn explain(id: &str) -> Outcome<CheckData> {
         explanation: meta.explanation.to_owned(),
     });
     Ok(Payload::new(data))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use gob_diagnostics::EnvelopeError;
+
+    // frob:tests crates/frob-check/src/verb.rs::cli_error
+    #[test]
+    fn a_stale_fix_is_a_guard_refusal_with_its_own_code_and_a_remedy() {
+        let err = cli_error(CheckError::FixStale("a.txt".to_owned()));
+        assert_eq!(err.exit_code(), ExitCode::Refused);
+        let CliError::Refusal(refusal) = err else {
+            panic!("expected a refusal, got {err}");
+        };
+        let envelope = EnvelopeError::from(&refusal);
+        assert_eq!(envelope.code, "E-FIX-STALE");
+        assert!(!envelope.retryable);
+        assert!(envelope.message.contains("a.txt"), "{}", envelope.message);
+        assert_eq!(
+            envelope.remedy.as_deref(),
+            Some("rerun `frob check`, then `frob check --fix`")
+        );
+    }
 }

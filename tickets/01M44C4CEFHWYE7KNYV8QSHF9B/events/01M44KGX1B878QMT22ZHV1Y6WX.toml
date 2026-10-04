@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "internal test-support change: python probe resolves python3, python or py -3"
+at = "2026-10-04T23:20:57Z"
+actor = "lognd"
+rev = 1

@@ -1,8 +1,6 @@
 //! Comment discovery: comment texts split into candidate directive lines.
 
-use gob_languages::{Language, ParsedTree, hash_comment_starts};
-#[cfg(test)]
-use gob_languages::{ParseLimits, ParseResult, parse};
+use gob_languages::{Language, ParsedTree, comment_spans};
 
 /// One logical comment line: its content (prefix stripped, trimmed) and file offset.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -93,183 +91,63 @@ fn html_comment<'t>(out: &mut Vec<Segment<'t>>, text: &'t str, offset: usize) {
     }
 }
 
-/// Visit every descendant of `root` in document order.
-fn walk<'a>(root: tree_sitter::Node<'a>, f: &mut impl FnMut(tree_sitter::Node<'a>)) {
-    let mut cursor = root.walk();
-    loop {
-        f(cursor.node());
-        if cursor.goto_first_child() || cursor.goto_next_sibling() {
-            continue;
-        }
-        loop {
-            if !cursor.goto_parent() {
-                return;
-            }
-            if cursor.goto_next_sibling() {
-                break;
-            }
-        }
-    }
-}
-
-/// Comment segments of a Rust file from its syntax tree.
-fn rust_tree(tree: &ParsedTree) -> Vec<Segment<'_>> {
-    let mut out = Vec::new();
-    let text: &str = &tree.text;
-    walk(tree.root(), &mut |n| match n.kind() {
-        "line_comment" => line_comment(&mut out, &text[n.byte_range()], n.start_byte()),
-        "block_comment" => block_comment(&mut out, &text[n.byte_range()], n.start_byte()),
-        _ => {}
-    });
-    out
-}
-
-// frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
-/// Comment segments of a Python file from its syntax tree (`#` inside strings is not a comment).
-fn python_tree(tree: &ParsedTree) -> Vec<Segment<'_>> {
-    let mut out = Vec::new();
-    let text: &str = &tree.text;
-    walk(tree.root(), &mut |n| {
-        if n.kind() == "comment" {
-            let raw = &text[n.byte_range()];
-            let body = raw.trim_start_matches('#');
-            let skip = raw.len() - body.len();
-            push(
-                &mut out,
-                n.start_byte() + skip,
-                body.trim_end_matches(['\n', '\r']),
-                false,
-            );
-        }
-    });
-    out
-}
-
-/// HTML comments in `text`, skipping those inside `skip` ranges.
-fn html_regions<'t>(text: &'t str, skip: &[std::ops::Range<usize>]) -> Vec<Segment<'t>> {
-    let mut out = Vec::new();
-    let mut from = 0;
-    while let Some(p) = text[from..].find("<!--") {
-        let start = from + p;
-        let end = text[start..]
-            .find("-->")
-            .map_or(text.len(), |e| start + e + 3);
-        from = end;
-        if skip.iter().any(|r| r.contains(&start)) {
-            continue;
-        }
-        html_comment(&mut out, &text[start..end], start);
-    }
-    out
-}
-
-// frob:ticket 01M43KP0RXKB1DJA8KGJTV288R
-/// Byte range of a leading `---` (YAML) or `+++` (TOML) front matter block, fences included.
-///
-/// Front matter is data in another language, never markdown: an HTML comment inside it is a
-/// string or a comment of that language, not a directive. An unclosed fence is not front matter.
-fn front_matter(text: &str) -> Option<std::ops::Range<usize>> {
-    let fence = ["---", "+++"].into_iter().find(|f| {
-        text.strip_prefix(f)
-            .is_some_and(|r| r.trim_end_matches([' ', '\t']).starts_with(['\n', '\r']))
-    })?;
-    let mut pos = 0;
-    for (n, line) in text.split_inclusive('\n').enumerate() {
-        pos += line.len();
-        if n > 0 && line.trim_end() == fence {
-            return Some(0..pos);
-        }
-    }
-    None
-}
-
-/// HTML comments of markdown `text` outside code (`code`) and outside front matter.
-fn markdown_comments<'t>(text: &'t str, code: &[std::ops::Range<usize>]) -> Vec<Segment<'t>> {
-    let mut skip = code.to_vec();
-    skip.extend(front_matter(text));
-    html_regions(text, &skip)
-}
-
-/// `#` comments of a TOML, YAML or fallback-Python file, one segment per comment.
-fn hash_comments(text: &str, yaml: bool) -> Vec<Segment<'_>> {
-    let mut out = Vec::new();
-    for at in hash_comment_starts(text, yaml) {
-        let end = text[at..].find('\n').map_or(text.len(), |e| at + e + 1);
-        let line = &text[at..end];
-        let body = line.trim_start_matches('#');
-        push(
-            &mut out,
-            at + line.len() - body.len(),
-            body.trim_end_matches(['\n', '\r']),
-            false,
-        );
-    }
-    out
-}
-
-/// Plain-text Rust fallback: whole-line `//` comments and `/* */` regions.
-fn rust_plain(text: &str) -> Vec<Segment<'_>> {
-    let mut out = Vec::new();
-    let mut offset = 0;
-    for line in text.split_inclusive('\n') {
-        let lead = line.len() - line.trim_start().len();
-        if line[lead..].starts_with("//") {
-            let l = line[lead..].trim_end_matches(['\n', '\r']);
-            line_comment(&mut out, l, offset + lead);
-        }
-        offset += line.len();
-    }
-    let mut from = 0;
-    while let Some(p) = text[from..].find("/*") {
-        let start = from + p;
-        let end = text[start..]
-            .find("*/")
-            .map_or(text.len(), |e| start + e + 2);
-        block_comment(&mut out, &text[start..end], start);
-        from = end;
-    }
-    out.sort_by_key(|s| s.offset);
-    out
+/// Split one `#` comment (text includes the hashes) into its segment.
+fn hash_comment<'t>(out: &mut Vec<Segment<'t>>, text: &'t str, offset: usize) {
+    let body = text.trim_start_matches('#');
+    push(
+        out,
+        offset + text.len() - body.len(),
+        body.trim_end_matches(['\n', '\r']),
+        false,
+    );
 }
 
 // frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
-/// All comment segments of `text`, using `tree` when one was produced.
+// frob:ticket 01M43PEZ2CNVTHKJGPR02G4F97
+/// All comment segments of `text`, split from the spans `gob_languages::comment_spans` finds.
 pub(crate) fn segments<'t>(
     language: Language,
     text: &'t str,
     tree: Option<&'t ParsedTree>,
 ) -> Vec<Segment<'t>> {
-    let found = match (language, tree) {
-        (Language::Rust, Some(t)) => rust_tree(t),
-        (Language::Rust, None) => rust_plain(text),
-        (Language::Markdown, Some(t)) => {
-            markdown_comments(text, &gob_languages::markdown_code_ranges(t))
+    let mut out = Vec::new();
+    for span in comment_spans(language, text, tree) {
+        let raw = &text[span.clone()];
+        if raw.starts_with("//") {
+            line_comment(&mut out, raw, span.start);
+        } else if raw.starts_with("/*") {
+            block_comment(&mut out, raw, span.start);
+        } else if raw.starts_with("<!--") {
+            html_comment(&mut out, raw, span.start);
+        } else {
+            hash_comment(&mut out, raw, span.start);
         }
-        (Language::Markdown, None) => markdown_comments(text, &[]),
-        (Language::Toml, _) | (Language::Python, None) => hash_comments(text, false),
-        (Language::Yaml, _) => hash_comments(text, true),
-        (Language::Python, Some(t)) => python_tree(t),
-    };
+    }
     tracing::trace!(
         language = language.name(),
-        count = found.len(),
+        count = out.len(),
         "comment segments"
     );
-    found
+    out
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gob_languages::parse_comment_spans;
 
     fn texts(v: &[Segment<'_>]) -> Vec<String> {
         v.iter().map(|s| s.text.to_owned()).collect()
     }
 
+    fn segs(language: Language, src: &str) -> Vec<Segment<'_>> {
+        segments(language, src, None)
+    }
+
     #[test]
     fn line_and_doc_prefixes() {
         let src = "// a\n/// b\n//! c\n";
-        let s = rust_plain(src);
+        let s = segs(Language::Rust, src);
         assert_eq!(texts(&s), ["a", "b", "c"]);
         assert!(s[2].inner_doc && !s[1].inner_doc);
         assert_eq!(&src[s[1].offset..=s[1].offset], "b");
@@ -278,47 +156,72 @@ mod tests {
     #[test]
     fn block_lines() {
         let src = "/* x\n * y\n */\n";
-        let s = rust_plain(src);
+        let s = segs(Language::Rust, src);
         assert_eq!(texts(&s), ["x", "y"]);
         assert_eq!(&src[s[1].offset..=s[1].offset], "y");
     }
 
     #[test]
-    // frob:tests crates/gob-directives/src/comments.rs::python_tree
-    fn python_comments_skip_strings_and_docstrings() {
-        let src = "# a\nx = \"# no\"  # yes\n\"\"\"# doc\"\"\"\n#!shebang\n";
-        let ParseResult::Parsed(tree) = parse(Language::Python, src, &ParseLimits::default())
-        else {
-            panic!("python parses");
-        };
-        let s = python_tree(&tree);
-        assert_eq!(texts(&s), ["a", "yes", "!shebang"]);
-        assert_eq!(&src[s[1].offset..s[1].offset + 3], "yes");
-    }
-
-    #[test]
+    // frob:tests crates/gob-directives/src/comments.rs::segments
     fn html_and_hash() {
         let src = "<!-- a -->\n<!--\n b\n-->\n";
-        let s = html_regions(src, &[]);
+        let s = segs(Language::Markdown, src);
         assert_eq!(texts(&s), ["a", "b"]);
         assert_eq!(&src[s[1].offset..=s[1].offset], "b");
         let t = "k = \"#no\" # yes\n# all\n";
-        let h = hash_comments(t, false);
+        let h = segs(Language::Toml, t);
         assert_eq!(texts(&h), ["yes", "all"]);
         assert_eq!(&t[h[0].offset..h[0].offset + 3], "yes");
     }
 
-    // frob:tests crates/gob-directives/src/comments.rs::front_matter
+    /// Every segment lies inside a shared span and every non-empty span yields a segment.
+    // frob:tests crates/gob-directives/src/comments.rs::segments
     #[test]
-    fn front_matter_is_not_markdown_but_a_later_html_comment_is() {
-        for fence in ["---", "+++"] {
-            let src = format!("{fence}\nk = \"<!-- in -->\"\n{fence}\n<!-- out -->\n");
-            let s = markdown_comments(&src, &[]);
-            assert_eq!(texts(&s), ["out"], "fence {fence}");
+    fn segments_cover_exactly_the_shared_corpus_spans() {
+        for (language, text) in [
+            (
+                Language::Toml,
+                include_str!("../../gob-languages/tests/corpus/strings.toml"),
+            ),
+            (
+                Language::Yaml,
+                include_str!("../../gob-languages/tests/corpus/strings.yaml"),
+            ),
+            (
+                Language::Python,
+                include_str!("../../gob-languages/tests/corpus/strings.py"),
+            ),
+            (
+                Language::Markdown,
+                include_str!("../../gob-languages/tests/corpus/doc.md"),
+            ),
+        ] {
+            let spans = parse_comment_spans(language, text);
+            let tree = match gob_languages::parse(
+                language,
+                text,
+                &gob_languages::ParseLimits::default(),
+            ) {
+                gob_languages::ParseResult::Parsed(t) => Some(t),
+                gob_languages::ParseResult::Unresolved(_) => None,
+            };
+            let segs = segments(language, text, tree.as_ref());
+            for s in &segs {
+                assert!(
+                    spans
+                        .iter()
+                        .any(|r| r.start <= s.offset && s.offset + s.text.len() <= r.end),
+                    "{language:?}: segment {:?} outside every span",
+                    s.text
+                );
+            }
+            for r in &spans {
+                assert!(
+                    segs.iter().any(|s| r.start <= s.offset && s.offset < r.end),
+                    "{language:?}: span {:?} has no segment",
+                    &text[r.clone()]
+                );
+            }
         }
-        let unclosed = "---\n<!-- kept -->\n";
-        assert_eq!(texts(&markdown_comments(unclosed, &[])), ["kept"]);
-        let not_first = "text\n---\n<!-- kept -->\n---\n";
-        assert_eq!(texts(&markdown_comments(not_first, &[])), ["kept"]);
     }
 }

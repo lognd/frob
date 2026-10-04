@@ -69,26 +69,43 @@ fn build_fake_sibling() -> PathBuf {
 /// Environment variable that turns a missing Python prerequisite from a named skip into a failure.
 pub const REQUIRE_PYTHON_TESTS: &str = "FROB_REQUIRE_PYTHON_TESTS";
 
-/// True when `tool --version` runs on this host.
-fn tool_runs(tool: &str) -> bool {
+/// Python launchers tried in order: `python3`, `python`, then the Windows `py -3` launcher.
+const PYTHON_LAUNCHERS: [(&str, &[&str]); 3] = [("python3", &[]), ("python", &[]), ("py", &["-3"])];
+
+/// True when `tool args... --version` runs; with `expect`, its output must also start with it.
+fn tool_runs(tool: &str, lead: &[&str], expect: Option<&str>) -> bool {
+    let mut args: Vec<String> = lead.iter().map(|a| (*a).to_owned()).collect();
+    args.push("--version".to_owned());
     let spec = Spec {
         program: Program::Tool {
             name: tool.to_owned(),
         },
-        args: vec!["--version".to_owned()],
+        args,
         cwd: None,
         env: Vec::new(),
         timeout: Duration::from_secs(60),
         capture: true,
     };
-    let ok = Runner::new(Limits { jobs: 1 })
-        .run(&spec)
-        .is_ok_and(|o| o.status == Outcome::Exited(0));
-    tracing::debug!(tool, ok, "python prerequisite probed");
+    let ok = Runner::new(Limits { jobs: 1 }).run(&spec).is_ok_and(|o| {
+        o.status == Outcome::Exited(0)
+            && expect.is_none_or(|e| {
+                // Python 2 printed its version on stderr; a Windows store stub prints nothing.
+                o.stdout.trim_start().starts_with(e) || o.stderr.trim_start().starts_with(e)
+            })
+    });
+    tracing::debug!(tool, ?lead, ok, "python prerequisite probed");
     ok
 }
 
-/// Probe the prerequisites of a pytest-running test: `python3` and `pytest` on `PATH`.
+/// True when a Python 3 interpreter is reachable as `python3`, `python` or `py -3` (first hit wins).
+fn python3_runs() -> bool {
+    PYTHON_LAUNCHERS
+        .iter()
+        .any(|(tool, lead)| tool_runs(tool, lead, Some("Python 3")))
+}
+
+/// Probe the prerequisites of a pytest-running test: a Python 3 interpreter (`python3`, `python`
+/// or `py -3`) and `pytest` on `PATH`.
 ///
 /// Returns true when both run. When one is absent the test must return early: this
 /// prints `skipped: <tool> not on PATH (<test>)` naming the missing tool, and never
@@ -100,7 +117,12 @@ fn tool_runs(tool: &str) -> bool {
 #[must_use]
 pub fn python_test_prerequisites(test: &str) -> bool {
     for tool in ["python3", "pytest"] {
-        if tool_runs(tool) {
+        let found = if tool == "python3" {
+            python3_runs()
+        } else {
+            tool_runs(tool, &[], None)
+        };
+        if found {
             continue;
         }
         let reason = format!("{tool} not on PATH ({test})");
@@ -112,4 +134,25 @@ pub fn python_test_prerequisites(test: &str) -> bool {
         return false;
     }
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A tool name no host has is reported as not runnable.
+    #[test]
+    fn a_missing_tool_is_not_runnable() {
+        assert!(!tool_runs("frob-no-such-tool-xyz", &[], None));
+    }
+
+    /// The launcher list is python3, python, then `py -3`, and a Python 3 on the host is found.
+    #[test]
+    fn python_launchers_are_tried_in_order_and_find_python3() {
+        let names: Vec<_> = PYTHON_LAUNCHERS.iter().map(|(n, _)| *n).collect();
+        assert_eq!(names, ["python3", "python", "py"]);
+        assert_eq!(PYTHON_LAUNCHERS[2].1, ["-3"]);
+        // Presence depends on the host; the probe must simply not panic and agree with itself.
+        assert_eq!(python3_runs(), python3_runs());
+    }
 }

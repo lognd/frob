@@ -39,6 +39,7 @@
 //!    and exact version (the pin test checks it against `Cargo.toml`).
 //! 5. Add a sample parse test and a query-capture test.
 
+mod comments;
 mod grammar;
 pub mod grmb;
 mod hash;
@@ -48,6 +49,7 @@ mod language;
 mod parse;
 mod query;
 
+pub use comments::{comment_spans, parse_comment_spans};
 pub use grammar::grammar_identity;
 pub use hash::hash_comment_starts;
 #[cfg(feature = "markdown")]

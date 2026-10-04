@@ -2271,7 +2271,6 @@ dependencies = [
  "strsim",
  "thiserror",
  "tracing",
- "tree-sitter",
 ]
 
 [[package]]
