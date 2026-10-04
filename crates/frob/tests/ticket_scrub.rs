@@ -1,10 +1,11 @@
 //! `ticket doctor --fix` scrubs absolute home paths out of the ledger in one commit and the ledger still folds the same.
 
+mod common;
+
 use std::path::{Path, PathBuf};
 use std::process::Output;
 use std::time::Duration;
 
-use assert_cmd::Command;
 use frob_evidence::record::digest_hex;
 use frob_ledger::event::{Event, EventBody, EvidenceData};
 use frob_ledger::{Ledger, LedgerConfig, RefMode};
@@ -64,8 +65,7 @@ impl Repo {
     }
 
     fn frob(&self, args: &[&str]) -> Output {
-        Command::cargo_bin("frob")
-            .expect("frob binary")
+        common::frob_command()
             .current_dir(self.path())
             .env_remove("FROB_LOG")
             .env("HOME", "/home/ann")

@@ -2,11 +2,12 @@
 id = "01M12TN67V4ZDWR934C439DB86"
 title = "WAIVE009 ignores follow_up=, only scans reason= prose for a resolving ticket id"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-08-28T00:00:00Z"
-updated = "2026-08-28T00:00:00Z"
+updated = "2026-10-04T21:07:33Z"
 aliases = ["T-3323"]
 labels = ["milestone:1.1.0", "v1-cluster:F1"]
 scope = ["src/frob/gates/_waive.py"]

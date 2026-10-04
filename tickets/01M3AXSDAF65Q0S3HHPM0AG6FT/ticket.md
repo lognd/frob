@@ -3,13 +3,13 @@ id = "01M3AXSDAF65Q0S3HHPM0AG6FT"
 title = "SYSDESIGN408: (pool_size_per_replica * max_replicas) exceeds declared DB max_connections"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD8AD5W7ECRJX8VGNKVM"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:32Z"
 aliases = ["T-6479"]
-labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_horizontal.py", "tests/fixtures/sysdesign/sysdesign408/**"]
 
 [[links]]

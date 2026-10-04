@@ -3,12 +3,12 @@ id = "01M38BCPEJMFJYSW8TG5YW9FSX"
 title = "SEO119/SEO120: split scaled-content vs. doorway-page detectors"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-09-24T00:00:00Z"
+updated = "2026-10-04T21:01:25Z"
 aliases = ["T-6610"]
-labels = ["v1-cluster:B2", "area:crunk"]
+labels = ["v1-cluster:B2", "area:crunk", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/webapp/_seo_spam.py"]
 +++
 

@@ -3,13 +3,13 @@ id = "01M3DG64C6PZ56HT8CEGR4ZPYH"
 title = "WEBSEC/A11Y precision pass: 12 false-positive shapes measured on a real app (about 5 percent true positives)"
 type = "bug"
 category = "triage"
-priority = "high"
+priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-09-26T00:00:00Z"
+updated = "2026-10-04T21:01:29Z"
 aliases = ["T-6534"]
-labels = ["milestone:0.535.0", "v1-cluster:B2", "area:grimble"]
+labels = ["v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/webapp/", "tests/fixtures/webapp/", "tests/unit/test_webapp_precision.py", "docs/modules/webapp.md"]
 +++
 

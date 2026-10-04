@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "SCOPE002 import-closure explosions cannot recur: v2 has no closure rule, SCOPE001 is diff-based (crates/frob-lease rule.rs)."
+at = "2026-10-04T21:02:05Z"
+actor = "lognd"
+rev = 1

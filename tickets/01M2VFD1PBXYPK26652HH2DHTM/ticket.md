@@ -2,11 +2,12 @@
 id = "01M2VFD1PBXYPK26652HH2DHTM"
 title = "Wire frob run/build --help into _build_parser's subcommand tree"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-09-19T00:00:00Z"
+updated = "2026-10-04T21:09:01Z"
 aliases = ["T-4811"]
 labels = ["milestone:0.537.0", "v1-cluster:G2"]
 scope = ["src/frob/_cli_parsers/_root.py"]

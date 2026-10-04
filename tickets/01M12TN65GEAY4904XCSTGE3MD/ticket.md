@@ -2,11 +2,12 @@
 id = "01M12TN65GEAY4904XCSTGE3MD"
 title = "Migrate docstring archaeology into cited tickets (DOCARCH001 findings)"
 type = "docs"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-08-28T00:00:00Z"
-updated = "2026-08-28T00:00:00Z"
+updated = "2026-10-04T21:07:29Z"
 aliases = ["T-3248"]
 labels = ["milestone:0.541.0", "v1-cluster:F1"]
 scope = ["src/**/*.py"]

@@ -2,15 +2,20 @@
 id = "01M3AXSD97HRBA035Y3FNX3ACG"
 title = "STORE family scaffold: client-library detection, findings function, gate wiring, gates.md rows, registry entries"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 parent = "01M3AXSD9STSFC2MR8M369JNE8"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:58:51Z"
 aliases = ["T-6439"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
 scope = ["src/frob/store/__init__.py", "src/frob/store/_detect.py", "src/frob/store/_findings.py", "src/frob/gates/_waive.py", "docs/modules/gates.md", "docs/modules/store.md"]
+
+[[links]]
+kind = "duplicates"
+target = "01M43AYJ2RMDD8DGZ5Q060142M"
 +++
 
 Every STORE rule leaf needs three things before it can ship a finding:

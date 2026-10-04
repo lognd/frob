@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 docs/strata secret grammar mismatch; v2 grammar is grmb-spec.md."
+at = "2026-10-04T21:01:48Z"
+actor = "lognd"
+rev = 1

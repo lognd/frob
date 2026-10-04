@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Page-wide versus component-local capabilities with a required scoping predicate; grmb capability scoping."
+at = "2026-10-04T21:02:20Z"
+actor = "lognd"
+rev = 1

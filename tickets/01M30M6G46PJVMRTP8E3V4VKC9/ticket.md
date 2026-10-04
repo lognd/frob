@@ -2,11 +2,12 @@
 id = "01M30M6G46PJVMRTP8E3V4VKC9"
 title = "MCP tools frob_land_enqueue, frob_land_status, frob_land_queue over the socket daemon; agents enqueue through the tool"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 reporter = "human"
 created = "2026-09-21T00:00:00Z"
-updated = "2026-09-21T00:00:00Z"
+updated = "2026-10-04T21:08:33Z"
 aliases = ["T-5254"]
 labels = ["milestone:0.535.0", "v1-cluster:E1"]
 scope = ["src/frob/serve/_tools.py", "src/frob/serve/_socketd.py", "docs/guides/agent-playbook.md", "tests/unit/serve/**"]

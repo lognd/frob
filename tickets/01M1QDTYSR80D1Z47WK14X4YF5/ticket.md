@@ -2,13 +2,18 @@
 id = "01M1QDTYSR80D1Z47WK14X4YF5"
 title = "post-merge re-verification missed tests the merge itself broke through a shared contract: a semantic merge conflict lands green"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "high"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:09:33Z"
 aliases = ["T-3896"]
 labels = ["milestone:1.0.0", "v1-cluster:C1b"]
+
+[[links]]
+kind = "duplicates"
+target = "01M3AXSDBMG2ZAEHTQ6JHA8CYK"
 +++
 
 Reported in logand.app-v2 FROBLEMS as an addendum, 2026-09-05. A land's

@@ -2,12 +2,13 @@
 id = "01M1T07NYAS84GKTWSH40HSCZ9"
 title = "F-241: a pytest-shaped id validator rejects legitimate deep cargo ids our own collector produced, forcing a consumer to restructure source"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 parent = "01M1T07NY4QCBYNNMPSJDNWN5E"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:06:34Z"
 aliases = ["T-4042"]
 labels = ["milestone:0.548.0", "v1-cluster:C4a"]
 scope = ["src/frob/tickets/__init__.py"]

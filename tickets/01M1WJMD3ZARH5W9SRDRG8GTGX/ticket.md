@@ -7,9 +7,9 @@ priority = "low"
 parent = "01M1WJMD26NR9SKQCEFEHS7ENJ"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:06:04Z"
 aliases = ["T-4223"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates"]
 +++
 

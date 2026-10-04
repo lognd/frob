@@ -2,11 +2,12 @@
 id = "01M35RZY8E2HAT8Z7VPQG3MF99"
 title = "Wire html/javascript/vue into capability/dup/docblock FACETS"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-23T00:00:00Z"
-updated = "2026-09-23T00:00:00Z"
+updated = "2026-10-04T21:08:56Z"
 aliases = ["T-5390"]
 labels = ["v1-cluster:D2"]
 scope = ["src/frob/lang/_support.py"]

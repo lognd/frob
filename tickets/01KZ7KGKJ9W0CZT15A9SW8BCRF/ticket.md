@@ -2,11 +2,12 @@
 id = "01KZ7KGKJ9W0CZT15A9SW8BCRF"
 title = "Tail-end repo hygiene: docs completeness, detector-gap audit, vestigial cleanup, waiver audit"
 type = "epic"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-08-05T00:00:00Z"
-updated = "2026-08-05T00:00:00Z"
+updated = "2026-10-04T21:07:21Z"
 aliases = ["T-1609"]
 labels = ["milestone:1.1.0", "v1-cluster:F1"]
 scope = ["docs/**", "src/frob/**", "tests/**"]

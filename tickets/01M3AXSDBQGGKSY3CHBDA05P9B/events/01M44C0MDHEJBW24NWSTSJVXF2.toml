@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~T9WKA9Z: exact duplicate title (v1 T-6518 and T-6519)."
+at = "2026-10-04T21:09:43Z"
+actor = "lognd"
+rev = 1

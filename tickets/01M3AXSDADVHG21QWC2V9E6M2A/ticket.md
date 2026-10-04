@@ -3,13 +3,13 @@ id = "01M3AXSDADVHG21QWC2V9E6M2A"
 title = "STORE303: multi-entity ACID write pattern issued against a store declared with no native multi-record transactions"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSDBCZ0WN62JE8P0BQRA2"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:30Z"
 aliases = ["T-6477"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_strata_mismatch.py", "tests/fixtures/store/store303-multi-entity-acid-no-txn/**"]
 
 [[links]]

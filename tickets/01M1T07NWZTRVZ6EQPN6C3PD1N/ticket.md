@@ -2,11 +2,12 @@
 id = "01M1T07NWZTRVZ6EQPN6C3PD1N"
 title = "F-213: close resolves a pytest verdict for rust-only evidence, emitting BUG002 NotImportable about a question it could not ask"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:06:31Z"
 aliases = ["T-3999"]
 labels = ["milestone:1.1.0", "v1-cluster:C4a"]
 scope = ["src/frob/app/ticket_runner/_close_cmd.py"]

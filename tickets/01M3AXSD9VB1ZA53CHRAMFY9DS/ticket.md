@@ -3,13 +3,13 @@ id = "01M3AXSD9VB1ZA53CHRAMFY9DS"
 title = "STORE102: unbounded `SMEMBERS`/`HGETALL`/`LRANGE key 0 -1` (Redis)"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD9STSFC2MR8M369JNE8"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:12Z"
 aliases = ["T-6459"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_redis.py", "tests/fixtures/store/store102-redis-unbounded-read/**"]
 
 [[links]]

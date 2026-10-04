@@ -2,11 +2,12 @@
 id = "01M1QDTYTDGAAG3EPCJ8TCCXP0"
 title = "tree-sitter-language-pack's >=0.13 lower bound has crossed a major (now 1.16.1 upstream), unbounded upper"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:08:49Z"
 aliases = ["T-3917"]
 labels = ["milestone:1.0.0", "v1-cluster:D2"]
 scope = ["pyproject.toml"]

@@ -4,12 +4,12 @@ title = "Claude Code hooks: 10% precision on frob-suggest, double registration d
 type = "story"
 flavour = "user_story"
 category = "triage"
-priority = "high"
+priority = "medium"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-09-19T00:00:00Z"
+updated = "2026-10-04T21:08:32Z"
 aliases = ["T-5101"]
-labels = ["milestone:0.536.0", "v1-cluster:E1"]
+labels = ["v1-cluster:E1", "triage:accepted"]
 +++
 
 Audit at scratchpad/HOOK-AUDIT.md. frob-suggest.py precision 10.4%, dual hook registration double-counts attempts per Bash call, FROB_SUGGEST_ACK is a blind blanket bypass used blindly in 97.3% of uses, hook logs nothing. Story tracks 4 leaves: registration/counter fix, rule verdict narrowing, per-rule ack token, and decision logging.

@@ -2,11 +2,12 @@
 id = "01M2VFD1EYPX8Q4EYDA30YS80Z"
 title = "WIRE001 cannot resolve cross-file callers through .claude/hooks/ sys.path imports"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-09-19T00:00:00Z"
+updated = "2026-10-04T21:08:26Z"
 aliases = ["T-4574"]
 labels = ["milestone:0.535.0", "v1-cluster:E1"]
 scope = ["src/frob/gates/_wire.py"]

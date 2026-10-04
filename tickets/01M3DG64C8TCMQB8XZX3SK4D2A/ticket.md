@@ -2,12 +2,13 @@
 id = "01M3DG64C8TCMQB8XZX3SK4D2A"
 title = "web rule modules print progress to stdout from library calls; route through the module logger"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-09-26T00:00:00Z"
+updated = "2026-10-04T21:01:30Z"
 aliases = ["T-6536"]
 labels = ["milestone:0.534.0", "v1-cluster:B2", "area:grimble"]
 scope = ["src/frob/webapp/_websec_sinks.py", "src/frob/gates/_a11y_gate.py", "src/frob/gates/_taint_gate.py", "tests/unit/test_webapp_no_stdout.py"]

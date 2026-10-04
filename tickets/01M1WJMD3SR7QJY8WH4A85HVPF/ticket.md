@@ -3,13 +3,13 @@ id = "01M1WJMD3SR7QJY8WH4A85HVPF"
 title = "interface/adapter parity: every optional member of an invariant-marked port must be implemented by every adapter, or the adapter must declare the omission"
 type = "task"
 category = "triage"
-priority = "high"
+priority = "low"
 parent = "01M1WJMD1X14Z9P76XPX0QQ0NM"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:06:01Z"
 aliases = ["T-4217"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates"]
 +++
 

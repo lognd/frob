@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~P2W1WMP: siblings sharing a series worktree is the PT-10 stacked-ticket question."
+at = "2026-10-04T21:09:12Z"
+actor = "lognd"
+rev = 1

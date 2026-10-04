@@ -3,13 +3,13 @@ id = "01M1T07NW98M34RV6EK5J61JYM"
 title = "frob:pending T-#### directive for spec-first red tests"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M1QDTYTRW714S858S0TP6YWM"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:05:07Z"
 aliases = ["T-3977"]
-labels = ["milestone:0.539.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_tdd_order.py"]
 
 [[acceptance]]

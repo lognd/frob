@@ -4,13 +4,13 @@ title = "M-9: rate-limit invariant for unauthenticated PII-returning routes"
 type = "story"
 flavour = "quality_objective"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M1T07NZ7QPBX3WD3ZVWSJX8H"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:05:30Z"
 aliases = ["T-4078"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_inv.py"]
 
 [[acceptance]]

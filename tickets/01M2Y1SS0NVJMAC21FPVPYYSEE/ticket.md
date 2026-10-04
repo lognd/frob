@@ -4,13 +4,13 @@ title = "WEBSEC injection and output encoding: XSS sinks, SSTI, eval/exec, unsaf
 type = "story"
 flavour = "user_story"
 category = "triage"
-priority = "critical"
+priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-09-20T00:00:00Z"
+updated = "2026-10-04T21:00:42Z"
 aliases = ["T-5141"]
-labels = ["milestone:0.534.0", "component:gates", "v1-cluster:B2", "area:grimble"]
+labels = ["component:gates", "v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
 
 28 entries in the attached corpus, 25 static. Sinks by framework: innerHTML, dangerouslySetInnerHTML, v-html, Jinja |safe and autoescape=False, Django mark_safe, Rails raw/html_safe; yaml.load without SafeLoader, pickle.loads on untrusted, subprocess shell=True with non-literal argv, eval/exec/Function; CRLF in log calls, header values from input; XML parsers with external entities; JSON/XML depth and size limits. Each rule reason cites the ASVS 5.0 id and CWE from the corpus. Frob's existing SEC005 taint substrate is the engine: extend sources (request params, headers, body, URL, cookies, file names) and sinks per framework.

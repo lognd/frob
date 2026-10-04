@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T20:55:00Z"
+digest = "134cb61ca64290d711140b1679f7bd0c808d32a4d1fc1fbbdc162cf18dced119"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID abbf06b5-eaa6-42f2-a58f-47ea66187c6f with nextest profile: default
+    Starting 1 test across 1 binary (6 tests skipped)
+        PASS [   0.983s] frob-cli::sibling_discovery doctor_reports_both_crunks_and_uses_the_one_beside_frob
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.984s] 1 test run: 1 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-cli --test sibling_discovery -E 'test(doctor_reports_both_crunks_and_uses_the_one_beside_frob)'"
+size = 726
+status = "measured"
+tests = ["doctor_reports_both_crunks_and_uses_the_one_beside_frob"]
+at = "2026-10-04T20:55:00Z"
+actor = "lognd"
+rev = 1

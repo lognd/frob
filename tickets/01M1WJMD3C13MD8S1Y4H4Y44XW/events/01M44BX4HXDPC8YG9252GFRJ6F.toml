@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~S4GVE49: always name a copy-pastable remedy is structured remedies checked against the CLI registry; the self-citation wording is v1-only (no drafts, D2)."
+at = "2026-10-04T21:07:49Z"
+actor = "lognd"
+rev = 1

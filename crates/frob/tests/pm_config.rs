@@ -1,10 +1,11 @@
 //! `frob init`, `config sync` and `doctor` and the `[pm]` tables.
 // frob:ticket 01M4069R19D2KZENDGEH83JZSW
 
+mod common;
+
 use std::path::Path;
 use std::process::Output;
 
-use assert_cmd::Command;
 use serde_json::Value;
 
 const PM_KEYS: [&str; 12] = [
@@ -35,8 +36,7 @@ fn repo() -> tempfile::TempDir {
 }
 
 fn frob(cwd: &Path, args: &[&str]) -> Output {
-    Command::cargo_bin("frob")
-        .expect("frob binary")
+    common::frob_command()
         .current_dir(cwd)
         .env_remove("FROB_LOG")
         .args(args)

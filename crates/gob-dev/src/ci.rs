@@ -9,6 +9,7 @@
 // frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
 // frob:ticket 01M41ZSW6DZMBE5QWNGB6VY10G
 // frob:ticket 01M42A37XTPF2H1WXQQZWEYXGZ
+// frob:ticket 01M43FB0TFBNDFH1AEC1CTNHZG
 
 use std::path::Path;
 use std::time::Duration;
@@ -18,6 +19,11 @@ use serde::Deserialize;
 
 /// Rust target whose clippy run catches Windows-only breakage from a Linux host.
 pub const WINDOWS_TARGET: &str = "x86_64-pc-windows-gnu";
+
+/// Pinned pytest requirement the `pytest` step installs, so the pytest-backed tests never skip.
+pub const PYTEST_REQUIREMENT: &str = "pytest==8.4.2";
+/// Environment variable that turns a missing python or pytest from a named skip into a failure.
+pub const REQUIRE_PYTHON_TESTS_ENV: &str = "FROB_REQUIRE_PYTHON_TESTS";
 
 /// Wall-clock limit for one step (a cold nextest run is the longest).
 const STEP_TIMEOUT: Duration = Duration::from_mins(60);
@@ -196,11 +202,47 @@ fn pinned_uvx(frob_toml: &toml::Table, tool: &str) -> Result<Vec<String>, CiErro
         .collect()
 }
 
+/// The `pytest` step: install [`PYTEST_REQUIREMENT`] with the host's python (`py -3` on Windows).
+fn pytest_install() -> Step {
+    let (name, lead): (&str, &[&str]) = if cfg!(windows) {
+        ("py", &["-3"])
+    } else {
+        ("python3", &[])
+    };
+    let mut args = strings(lead);
+    args.extend(strings(&["-m", "pip", "install", PYTEST_REQUIREMENT]));
+    Step {
+        name: "pytest",
+        program: Program::Tool {
+            name: name.to_owned(),
+        },
+        args,
+        env: Vec::new(),
+        linux_only: false,
+        needs: Vec::new(),
+        offload: false,
+    }
+}
+
 /// Every CI check in the order `ci.yml` runs it; zizmor and actionlint pins come from `frob.toml`.
 ///
 /// # Errors
 /// [`CiError::Config`] when `frob.toml` cannot supply the pinned tool versions.
 pub fn steps(root: &Path) -> Result<Vec<Step>, CiError> {
+    // GitHub (and most CI systems) set `CI`; only there is a missing pytest a failure, so a
+    // developer machine without pytest still runs `cargo dev ci` with the named skips. The
+    // Windows job does not require it yet: its python lacks the `python3` name the test probe
+    // looks for (the probe lives in gob-testsupport).
+    let require_python = std::env::var_os("CI").is_some() && !cfg!(windows);
+    steps_with(root, require_python)
+}
+
+/// [`steps`] with the python requirement explicit (tests pass it without touching the process
+/// environment).
+///
+/// # Errors
+/// [`CiError::Config`] when `frob.toml` cannot supply the pinned tool versions.
+pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiError> {
     let text = std::fs::read_to_string(root.join("frob.toml")).map_err(|e| {
         tracing::error!(error = %e, "frob.toml unreadable");
         CiError::Config(e.to_string())
@@ -245,6 +287,11 @@ pub fn steps(root: &Path) -> Result<Vec<Step>, CiError> {
     let mut docs = cargo("docs", &["doc", "--no-deps", "--all-features"]);
     docs.env = vec![("RUSTDOCFLAGS".to_owned(), "-D warnings".to_owned())];
     docs.offload = true;
+    let mut nextest = offloaded(cargo("nextest", &["nextest", "run", "--profile", "ci"]));
+    if require_python {
+        tracing::info!("nextest requires python and pytest (no skips)");
+        nextest.env = vec![(REQUIRE_PYTHON_TESTS_ENV.to_owned(), "1".to_owned())];
+    }
     Ok(vec![
         cargo("fmt", &["fmt", "--all", "--check"]),
         offloaded(cargo(
@@ -260,7 +307,8 @@ pub fn steps(root: &Path) -> Result<Vec<Step>, CiError> {
         )),
         clippy_windows,
         docs,
-        offloaded(cargo("nextest", &["nextest", "run", "--profile", "ci"])),
+        pytest_install(),
+        nextest,
         cargo("gen", &["dev", "gen", "all", "--check"]),
         uvx("zizmor", "zizmor")?,
         uvx("actionlint", "actionlint")?,

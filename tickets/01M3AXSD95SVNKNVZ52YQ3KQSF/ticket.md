@@ -3,13 +3,13 @@ id = "01M3AXSD95SVNKNVZ52YQ3KQSF"
 title = "SYSDESIGN105: internet-facing listener with no managed WAF ruleset bound"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD8RPMPFSYCWPM0XQY5G"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:58:47Z"
 aliases = ["T-6437"]
-labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_waf.py (new)", "tests/fixtures/sysdesign/sysdesign105/**"]
 
 [[links]]

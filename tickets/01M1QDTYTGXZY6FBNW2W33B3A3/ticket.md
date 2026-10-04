@@ -3,12 +3,12 @@ id = "01M1QDTYTGXZY6FBNW2W33B3A3"
 title = "what strata could not express in a real threat-model pass: eight expressiveness gaps, including trust-as-identity having no construct"
 type = "epic"
 category = "triage"
-priority = "high"
+priority = "low"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:01:57Z"
 aliases = ["T-3920"]
-labels = ["milestone:1.1.0", "v1-cluster:B3d"]
+labels = ["v1-cluster:B3d", "triage:accepted"]
 +++
 
 A threat-model pass on a consumer repo (logand.app-v2, 2026-09-05) recorded what

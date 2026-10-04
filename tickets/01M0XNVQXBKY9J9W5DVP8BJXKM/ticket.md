@@ -2,12 +2,13 @@
 id = "01M0XNVQXBKY9J9W5DVP8BJXKM"
 title = "Comment bloat: 39.8% of src is prose; frob:waive directives reach 20 lines of essay that belongs in the ticket"
 type = "docs"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 parent = "01M0XNVQXJ1A3FA43N7AA0PAPK"
 reporter = "human"
 created = "2026-08-26T00:00:00Z"
-updated = "2026-08-26T00:00:00Z"
+updated = "2026-10-04T21:07:25Z"
 aliases = ["T-2987"]
 labels = ["milestone:0.534.0", "v1-cluster:F1"]
 +++

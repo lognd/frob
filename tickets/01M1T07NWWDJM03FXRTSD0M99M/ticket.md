@@ -7,9 +7,9 @@ priority = "low"
 parent = "01M1T07NWGXQV249M3HN5DQV9V"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:05:16Z"
 aliases = ["T-3996"]
-labels = ["milestone:0.536.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_refs_schema.py"]
 
 [[acceptance]]

@@ -3,13 +3,13 @@ id = "01M3AXSD80C8G3KZH96SW6V62Y"
 title = "STORE205: leading/trailing `LIKE`/`ILIKE '%x%'` on a column with no trigram/tsvector index"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD9N6EMFMTKASSQETY9D"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:58:02Z"
 aliases = ["T-6400"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_relational.py", "tests/fixtures/store/store205-relational-like-no-index/**"]
 
 [[links]]

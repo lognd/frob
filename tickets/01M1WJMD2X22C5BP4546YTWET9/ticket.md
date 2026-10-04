@@ -3,13 +3,13 @@ id = "01M1WJMD2X22C5BP4546YTWET9"
 title = "strata: require a rate attribute on inbound writes to a carries-bearing store from an unauthenticated route"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:02:11Z"
 aliases = ["T-4189"]
-labels = ["milestone:1.1.0", "v1-cluster:B3d"]
+labels = ["v1-cluster:B3d", "triage:accepted"]
 scope = ["src/frob/strata"]
 +++
 

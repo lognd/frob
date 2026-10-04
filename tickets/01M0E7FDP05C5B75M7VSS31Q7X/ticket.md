@@ -2,11 +2,12 @@
 id = "01M0E7FDP05C5B75M7VSS31Q7X"
 title = "document T-2740's waiver-liveness classifier (WaiverLiveness/classify_waiver_liveness/render001_scans) in docs/modules/app.md and docs/modules/render.md"
 type = "docs"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-08-20T00:00:00Z"
-updated = "2026-08-20T00:00:00Z"
+updated = "2026-10-04T21:07:23Z"
 aliases = ["T-2752"]
 labels = ["milestone:1.0.0", "v1-cluster:F1"]
 scope = ["docs/modules/app.md", "docs/modules/render.md"]

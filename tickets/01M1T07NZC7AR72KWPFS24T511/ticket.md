@@ -3,13 +3,13 @@ id = "01M1T07NZC7AR72KWPFS24T511"
 title = "M-7: allowlist check for public/-style static-assets directories"
 type = "security"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M1T07NZ7QPBX3WD3ZVWSJX8H"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:05:28Z"
 aliases = ["T-4076"]
-labels = ["milestone:0.538.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_refs_schema.py"]
 
 [[links]]

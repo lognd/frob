@@ -2,11 +2,12 @@
 id = "01M3AXSDDZ0VQBYVPAH23G6HY3"
 title = "10 bare-node-id frob:tests directives in _land.py:602-620 (same Windows stat bug as T-6527)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T21:07:04Z"
 aliases = ["T-6591"]
 labels = ["milestone:0.534.0", "v1-cluster:C4a"]
 scope = ["src/frob/tickets/_land.py"]

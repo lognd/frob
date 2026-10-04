@@ -3,13 +3,13 @@ id = "01M1T07NZYBQ9HWDJZ80FPQXHD"
 title = "H3-7: empty catch/degrade path with no logging in src/"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M1T07NZSWG65V1BFPEJK6SE6"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:05:41Z"
 aliases = ["T-4094"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/arch/_logging_checks.py"]
 
 [[acceptance]]

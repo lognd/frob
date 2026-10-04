@@ -3,13 +3,13 @@ id = "01M1WJMD47JFMT0AQKF2EAXR0A"
 title = "extend the PII-structural gate to model the message/extra split inside a log record"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M1WJMD2FWKPS1J7MPF18KDVY"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:06:11Z"
 aliases = ["T-4231"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_pii_structural"]
 +++
 

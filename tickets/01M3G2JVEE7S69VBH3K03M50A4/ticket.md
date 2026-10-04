@@ -2,15 +2,20 @@
 id = "01M3G2JVEE7S69VBH3K03M50A4"
 title = "frob test --base selects module-level names (tests/...::_TOML) as test ids from the touched symbol set and exits 4 while plain pytest passes; selection must come only from collected pytest items"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "high"
 points = 2
 reporter = "agent"
 created = "2026-09-27T00:00:00Z"
-updated = "2026-09-27T00:00:00Z"
+updated = "2026-10-04T21:07:20Z"
 aliases = ["T-6606"]
 labels = ["milestone:0.535.0", "v1-cluster:C4a"]
 scope = ["src/frob/testing/_collect.py", "src/frob/testing/_select.py", "docs/modules/testing.md"]
+
+[[links]]
+kind = "duplicates"
+target = "01M1T07NZ6Z8S8P3AQVVZBDJTE"
 +++
 
 Reported by the crunk session (2026-09-26, crunk T-0211): `frob test

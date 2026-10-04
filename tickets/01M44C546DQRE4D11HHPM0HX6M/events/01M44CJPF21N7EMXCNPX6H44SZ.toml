@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/frob-ledger/**", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/triage_cmd.rs", "crates/frob/tests/triage.rs", "docs/design/tickets.md", "docs/design/cli.md", "docs/reference/cli/frob.md"]
+at = "2026-10-04T21:19:35Z"
+actor = "lognd"
+rev = 1

@@ -7,9 +7,9 @@ priority = "low"
 parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:07:47Z"
 aliases = ["T-4193"]
-labels = ["milestone:1.1.0", "v1-cluster:F1"]
+labels = ["v1-cluster:F1", "triage:accepted"]
 scope = ["docs/modules"]
 +++
 

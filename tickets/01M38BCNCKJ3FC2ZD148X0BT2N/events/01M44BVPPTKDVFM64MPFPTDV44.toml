@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~SDFS36Z: same ask as T-5487: route csharp/unity node ids to the dotnet and Unity batchmode runners."
+at = "2026-10-04T21:07:02Z"
+actor = "lognd"
+rev = 1

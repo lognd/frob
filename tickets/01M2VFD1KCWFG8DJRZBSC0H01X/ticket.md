@@ -2,11 +2,12 @@
 id = "01M2VFD1KCWFG8DJRZBSC0H01X"
 title = "Gate registry owns each rule's one-sentence description; DOCENUM002 flags mismatched/unregistered docs table rows"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-09-19T00:00:00Z"
+updated = "2026-10-04T21:07:55Z"
 aliases = ["T-4716"]
 labels = ["milestone:0.535.0", "v1-cluster:F1"]
 scope = ["src/frob/gates/_registry.py", "docs/modules/gate-registration.md"]

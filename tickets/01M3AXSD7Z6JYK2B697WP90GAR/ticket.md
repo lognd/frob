@@ -3,13 +3,13 @@ id = "01M3AXSD7Z6JYK2B697WP90GAR"
 title = "SYSDESIGN401: request-scoped data written to local disk/in-process cache reused across requests"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD8AD5W7ECRJX8VGNKVM"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:58:01Z"
 aliases = ["T-6399"]
-labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/sysdesign/_horizontal.py (new)", "tests/fixtures/sysdesign/sysdesign401/**"]
 +++
 

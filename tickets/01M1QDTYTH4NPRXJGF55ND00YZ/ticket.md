@@ -3,12 +3,12 @@ id = "01M1QDTYTH4NPRXJGF55ND00YZ"
 title = "add a jest test collector (frob.testing._collect_ts currently vitest-only)"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:06:25Z"
 aliases = ["T-3921"]
-labels = ["milestone:1.1.0", "v1-cluster:C4a"]
+labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/testing/_collect_ts.py"]
 +++
 
