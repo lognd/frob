@@ -288,6 +288,7 @@ impl Ledger {
             events: Vec::new(),
             already: true,
             commit: None,
+            warnings: Vec::new(),
         })
     }
 

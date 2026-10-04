@@ -117,6 +117,24 @@ pub struct Applied {
     pub already: bool,
     /// The ledger commit, when one was made.
     pub commit: Option<Oid>,
+    /// Notes the caller must surface, e.g. checkouts the commit could not sync.
+    pub warnings: Vec<String>,
+}
+
+/// One envelope warning per checkout the ledger commit could not sync, naming its paths and the remedy.
+fn unsynced_warnings(unsynced: &[gob_git::UnsyncedCheckout]) -> Vec<String> {
+    unsynced
+        .iter()
+        .map(|u| {
+            let paths = u.paths_with_local_edits.join(", ");
+            tracing::warn!(checkout = %u.path.display(), %paths, "checkout left stale by ledger commit");
+            format!(
+                "checkout {dir} was not synced to the ledger commit: local edits to {paths}; \
+                 run `git -C {dir} diff -- {paths}`, then commit it or `git restore --source=HEAD --staged --worktree -- {paths}`",
+                dir = u.path.display(),
+            )
+        })
+        .collect()
 }
 
 fn full_ref(name: &str) -> String {
@@ -468,6 +486,8 @@ impl Ledger {
             .repo
             .commit_paths(&ref_name, &changes, &message, &opts)?;
         tracing::info!(verb, ticket = %id, commit = %out.oid, events = new.len(), retries = out.retries, "ledger commit");
+        // frob:ticket 01M42MGNZZ1BY6YCG49BDHEZAT
+        let warnings = unsynced_warnings(&out.unsynced);
         self.after_commit(&mut index, tree, &key, &ref_name, out.oid, id, new, &ticket)?;
         Ok(Applied {
             ticket,
@@ -475,6 +495,7 @@ impl Ledger {
             events: new.iter().map(|e| e.id).collect(),
             already: false,
             commit: Some(out.oid),
+            warnings,
         })
     }
 

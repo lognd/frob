@@ -405,11 +405,25 @@ impl Repo {
             runner: self.runner.clone(),
         };
         let blocked = other.check_local_edits(planned, old_tree)?;
-        if !blocked.is_empty() {
-            return Ok(Some(blocked));
+        // frob:ticket 01M42MGNZZ1BY6YCG49BDHEZAT
+        // Sync every unblocked path so a blocked sibling never
+        // leaves the new paths staged-deleted in the other checkout.
+        let free: Vec<Planned<'_>> = planned
+            .iter()
+            .filter(|p| !blocked.iter().any(|b| b == p.path.as_str()))
+            .map(|p| Planned {
+                path: p.path,
+                blob: p.blob,
+            })
+            .collect();
+        if !free.is_empty() {
+            other.sync_checkout(&free, old_tree)?;
         }
-        other.sync_checkout(planned, old_tree)?;
-        Ok(None)
+        if blocked.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(blocked))
+        }
     }
 
     /// Write files and stage entries for exactly the changed paths; nothing else in the index moves.

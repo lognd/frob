@@ -544,3 +544,40 @@ fn primary_with_local_edit_is_reported_and_keeps_it() {
         "mine\n"
     );
 }
+
+// frob:ticket 01M42MGNZZ1BY6YCG49BDHEZAT
+// frob:tests primary_with_local_edit_still_receives_the_unblocked_new_paths
+#[test]
+fn primary_with_local_edit_still_receives_the_unblocked_new_paths() {
+    if !have_git() {
+        eprintln!("skipped: git binary absent");
+        return;
+    }
+    let (dir, _repo, _wt_dir, linked) = primary_and_linked();
+    std::fs::write(dir.path().join("tickets/a.md"), "mine\n").unwrap();
+    let out = linked
+        .commit_paths(
+            MAIN,
+            &[
+                change("tickets/a.md", "two\n"),
+                change("tickets/b.md", "new\n"),
+            ],
+            "update",
+            &opts(),
+        )
+        .unwrap();
+    assert_eq!(out.unsynced.len(), 1);
+    assert_eq!(out.unsynced[0].paths_with_local_edits, ["tickets/a.md"]);
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("tickets/b.md")).unwrap(),
+        "new\n"
+    );
+    let status = Repo::discover(dir.path())
+        .unwrap()
+        .status(&StatusOptions::default())
+        .unwrap();
+    assert!(
+        !status.iter().any(|e| format!("{e:?}").contains("b.md")),
+        "new path must not appear as a staged deletion: {status:?}"
+    );
+}
