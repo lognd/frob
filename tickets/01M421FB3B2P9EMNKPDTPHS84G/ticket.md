@@ -8,7 +8,7 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:27:02Z"
-updated = "2026-10-04T02:56:51Z"
+updated = "2026-10-04T02:57:20Z"
 scope = ["packaging/**", ".github/workflows/build-smoke.yml", ".github/workflows/release.yml", "crates/frob-release/**", "docs/guides/release.md", "docs/design/releases.md", "changelog.d/01M421FB3B2P9EMNKPDTPHS84G.changed.md"]
 
 [[links]]
@@ -17,7 +17,7 @@ target = "01M421F7Q66MW38R7J1JS1VMBC"
 
 [[acceptance]]
 text = "Given the built wheels, when grimble is installed alone, then only grimble is installed and runs"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the built wheels and no network index, when frob is installed into a clean venv, then grimble at the same version is installed with it and both run"
