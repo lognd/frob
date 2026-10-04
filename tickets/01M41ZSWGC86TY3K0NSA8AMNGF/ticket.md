@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T22:57:51Z"
-updated = "2026-10-04T00:32:35Z"
+updated = "2026-10-04T00:34:28Z"
 scope = ["crates/frob-check/src/**", "crates/gob-cache/**", "crates/gob-symbols/src/pipeline.rs", "crates/gob-directives/src/**", "crates/frob-check/tests/warm_cache.rs", "crates/gob-check/src/report.rs", "crates/gob-directives/Cargo.toml", "Cargo.lock", "notes/perf-warm-check.md"]
 
 [[acceptance]]
