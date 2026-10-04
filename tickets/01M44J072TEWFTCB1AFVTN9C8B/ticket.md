@@ -6,12 +6,12 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T22:54:21Z"
-updated = "2026-10-04T22:57:31Z"
+updated = "2026-10-04T23:11:50Z"
 scope = ["crates/frob-evidence/src/provider.rs"]
 
 [[acceptance]]
 text = "Given a junit report whose testcase file attribute uses Windows backslash separators, when parse_junit builds node ids, then they are portable slash paths with the class segments kept (tests/test_probe.py::TestK::test_bad)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given Windows CI with python and pytest installed, when FROB_REQUIRE_PYTHON_TESTS=1, then the pytest evidence and frob-tests pytest tests pass on Windows"
