@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:19Z"
-updated = "2026-10-04T04:34:27Z"
+updated = "2026-10-04T04:34:31Z"
 idempotency_key = "m2-grl-goldens"
 labels = ["milestone:2", "area:grl", "kind:test"]
 scope = ["crates/gob-plan/tests/grl_errors/**"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a landed checker for a code, when its golden is enabled and the output differs by one byte, then the harness fails and prints the diff"
-bound = false
+bound = true
 +++
 
 Implements grl-spec.md sections 10 and 13.2.
