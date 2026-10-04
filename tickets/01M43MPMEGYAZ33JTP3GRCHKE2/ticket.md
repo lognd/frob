@@ -6,7 +6,8 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T14:22:19Z"
-updated = "2026-10-04T20:57:05Z"
+updated = "2026-10-04T21:11:28Z"
+scope = ["crates/frob/tests/attestation.rs", "crates/frob/tests/board.rs", "crates/frob/tests/check_verb.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/close_guards.rs", "crates/frob/tests/common/mod.rs", "crates/frob/tests/cycle.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/frob/tests/first_run.rs", "crates/frob/tests/fragment.rs", "crates/frob/tests/gc.rs", "crates/frob/tests/init_adopt.rs", "crates/frob/tests/lease_widen.rs", "crates/frob/tests/merge_driver_path.rs", "crates/frob/tests/milestone.rs", "crates/frob/tests/pm_config.rs", "crates/frob/tests/pm_wiring.rs", "crates/frob/tests/redact.rs", "crates/frob/tests/release.rs", "crates/frob/tests/release_cut.rs", "crates/frob/tests/release_status.rs", "crates/frob/tests/shared_files.rs", "crates/frob/tests/terminal_lease.rs", "crates/frob/tests/ticket.rs", "crates/frob/tests/ticket_scrub.rs", "crates/frob/tests/ticket_unsynced.rs", "crates/frob/tests/wiring.rs"]
 
 [[acceptance]]
 text = "Given a foreign crunk executable on the ambient PATH, when the CLI test suite runs, then every snapshot is unchanged"
