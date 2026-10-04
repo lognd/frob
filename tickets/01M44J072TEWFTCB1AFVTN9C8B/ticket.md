@@ -6,8 +6,8 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T22:54:21Z"
-updated = "2026-10-04T23:11:53Z"
-scope = ["crates/frob-evidence/src/provider.rs"]
+updated = "2026-10-04T23:33:24Z"
+scope = ["crates/frob-evidence/src/provider.rs", "crates/gob-dev/src/ci.rs"]
 
 [[acceptance]]
 text = "Given a junit report whose testcase file attribute uses Windows backslash separators, when parse_junit builds node ids, then they are portable slash paths with the class segments kept (tests/test_probe.py::TestK::test_bad)"
