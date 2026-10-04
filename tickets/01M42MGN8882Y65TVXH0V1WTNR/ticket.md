@@ -2,12 +2,12 @@
 id = "01M42MGN8882Y65TVXH0V1WTNR"
 title = "ticket close and drop leave the lease behind, blocking the next work on overlapping scope"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:59:48Z"
-updated = "2026-10-04T04:59:48Z"
+updated = "2026-10-04T11:40:51Z"
 scope = ["crates/frob/src/ticket/**"]
 
 [[acceptance]]
