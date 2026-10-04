@@ -85,7 +85,7 @@ fn err(p: PlanParts) -> PlanError {
     Plan::new(p).expect_err("plan should be rejected")
 }
 
-// frob:tests crates/gob-plan/src/plan/mod.rs::Plan::to_bytes
+// frob:tests crates/gob-plan/src/plan/mod.rs::Plan.to_bytes
 #[test]
 fn round_trip_keeps_every_header_field() {
     let plan = Plan::new(sample()).expect("sample is valid");
@@ -131,7 +131,7 @@ fn embedded_load_matches_checked_load() {
     );
 }
 
-// frob:tests crates/gob-plan/src/plan/mod.rs::Plan::load
+// frob:tests crates/gob-plan/src/plan/mod.rs::Plan.load
 #[test]
 fn every_truncation_is_an_error() {
     let bytes = Plan::new(sample()).expect("valid").to_bytes();
@@ -356,4 +356,25 @@ fn a_find_nested_in_a_condition_is_misplaced() {
     p.reports[0].when = Some(8);
     p.reports[1].when = Some(7);
     assert!(matches!(err(p), PlanError::Misplaced { op: 2, .. }));
+}
+
+// frob:tests crates/gob-plan/src/plan/mod.rs::Plan.parts
+// frob:tests crates/gob-plan/src/plan/mod.rs::Plan.rule
+// frob:tests crates/gob-plan/src/plan/mod.rs::Plan.polarity
+// frob:tests crates/gob-plan/src/plan/mod.rs::Plan.cost
+// frob:tests crates/gob-plan/src/plan/ir.rs::NeedSet.iter
+#[test]
+fn accessors_expose_the_validated_fields() {
+    let plan = Plan::new(sample()).expect("valid");
+    assert_eq!(plan.parts(), &sample());
+    assert_eq!(plan.rule(), "NEAT013");
+    assert_eq!(plan.polarity(), Polarity::Pminus);
+    assert_eq!(plan.cost(), CostClass::Closure(3));
+    assert_eq!(plan.needs().iter().collect::<Vec<_>>(), [Need::Diff]);
+    assert_eq!(
+        NeedSet::of(&[Need::Model, Need::Config])
+            .iter()
+            .collect::<Vec<_>>(),
+        [Need::Config, Need::Model]
+    );
 }

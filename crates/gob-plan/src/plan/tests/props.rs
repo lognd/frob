@@ -27,7 +27,6 @@ fn seed() -> Vec<u8> {
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(2000))]
 
-    // frob:tests crates/gob-plan/src/plan/mod.rs::Plan::load
     #[test]
     fn arbitrary_bytes_are_safe(bytes in proptest::collection::vec(any::<u8>(), 0..600)) {
         check_bytes(&bytes);
@@ -146,7 +145,6 @@ fn arb_parts() -> impl Strategy<Value = PlanParts> {
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(5000))]
 
-    // frob:tests crates/gob-plan/src/plan/validate.rs::validate
     #[test]
     fn any_plan_value_is_either_refused_or_round_trips(parts in arb_parts()) {
         let bytes = codec::encode(&parts);
@@ -217,7 +215,6 @@ fn arb_valid() -> impl Strategy<Value = PlanParts> {
 }
 
 proptest! {
-    // frob:tests crates/gob-plan/src/plan/mod.rs::Plan::to_bytes
     #[test]
     fn valid_plans_round_trip_exactly(parts in arb_valid()) {
         let plan = Plan::new(parts).expect("valid by construction");
