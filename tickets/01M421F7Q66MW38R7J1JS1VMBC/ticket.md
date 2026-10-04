@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:26:59Z"
-updated = "2026-10-04T01:24:42Z"
+updated = "2026-10-04T01:27:08Z"
 scope = ["crates/frob-check/src/sibling.rs", "crates/frob-check/tests/sibling.rs", "docs/design/sibling-contract.md", "crates/gob-exec/src/discover.rs", "crates/gob-exec/src/lib.rs", "crates/gob-exec/src/program.rs", "crates/gob-exec/tests/discover.rs", "crates/frob/src/doctor.rs", "crates/frob/tests/sibling_discovery.rs", "crates/frob-check/src/sibling/mod.rs", "docs/design/products.md", "crates/frob/tests/snapshots/cli__doctor_schema.snap", "crates/frob/tests/cli.rs", "Cargo.lock", "crates/frob/tests/snapshots/cli__doctor_fresh_repo.snap", "crates/gob-exec/Cargo.toml", "docs/design/cli.md", "changelog.d/01M421F7Q66MW38R7J1JS1VMBC.added.md", "crates/gob-check/src/status.rs", "crates/gob-check/src/lib.rs", "crates/gob-check/src/product.rs", "crates/gob-check/src/report.rs", "crates/gob-check/src/pipeline.rs", "crates/frob-check/src/verb.rs", "crates/frob-check/src/sibling/doc.rs", "crates/frob/Cargo.toml"]
 
 [[acceptance]]
