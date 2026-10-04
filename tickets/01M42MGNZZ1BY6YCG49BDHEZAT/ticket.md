@@ -2,12 +2,13 @@
 id = "01M42MGNZZ1BY6YCG49BDHEZAT"
 title = "A ledger commit from a linked worktree reports success while the primary checkout is left with a staged deletion of the new event"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T04:59:49Z"
-updated = "2026-10-04T15:09:47Z"
+updated = "2026-10-04T15:09:48Z"
 scope = ["crates/gob-git/src/ledger.rs", "crates/gob-git/tests/ledger.rs", "crates/frob-ledger/src/ledger.rs", "crates/frob-ledger/src/error.rs", "crates/frob-ledger/tests/ledger.rs", "crates/frob-ledger/src/ops.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/ticket_unsynced.rs", "crates/frob/src/ticket/write.rs"]
 
 [[acceptance]]
