@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:46Z"
-updated = "2026-10-04T11:53:56Z"
+updated = "2026-10-04T11:53:58Z"
 idempotency_key = "crunk-plan-tw"
 labels = ["area:crunk"]
 scope = ["crates/crunk-tailwind/**", "Cargo.lock"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given each v3 and v4 default key table, when compared to the Python tw_defaults, then the key sets are equal"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a computed className fragment, when parsed, then only static fragments yield candidates and the rest is reported as dynamic"
