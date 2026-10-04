@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "internal CI change: pytest installed with uv; goway.toml declares uv"
+at = "2026-10-04T23:50:57Z"
+actor = "lognd"
+rev = 1

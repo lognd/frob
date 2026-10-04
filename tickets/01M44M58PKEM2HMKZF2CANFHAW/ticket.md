@@ -2,11 +2,12 @@
 id = "01M44M58PKEM2HMKZF2CANFHAW"
 title = "CI pytest step uses pip, which helpers refuse (PEP 668); install pytest with uv and declare uv in goway.toml"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T23:32:04Z"
-updated = "2026-10-04T23:50:56Z"
+updated = "2026-10-04T23:50:57Z"
 scope = ["crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/ci_parity.rs", ".github/workflows/ci.yml", "goway.toml", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
