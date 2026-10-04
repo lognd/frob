@@ -3,13 +3,13 @@ id = "01M3DG64CCYCERCGN8D5E0V6W3"
 title = "detect_frameworks only sniffs the repo root: follow workspace members so web families run on monorepos"
 type = "bug"
 category = "triage"
-priority = "high"
+priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-09-26T00:00:00Z"
+updated = "2026-10-04T21:01:31Z"
 aliases = ["T-6540"]
-labels = ["milestone:0.535.0", "v1-cluster:B2", "area:grimble"]
+labels = ["v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/webapp/__init__.py", "src/frob/lang/_project_detect.py", "tests/unit/test_webapp_workspace_detection.py", "docs/modules/webapp.md"]
 +++
 
