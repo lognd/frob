@@ -5,8 +5,8 @@
 //! the two facts it needs from here: detection by extension and a cache-key identity.
 //!
 //! It is deliberately not a [`crate::Language`] variant yet: adding one breaks the
-//! exhaustive matches in `gob-directives` (`comments::segments`) and `frob-obligations`
-//! (`comments::comment_lines`), which are outside the scope of the ticket that added this.
+//! exhaustive match in `gob-languages` (`comments::comment_spans`), the one owner of comment
+//! discovery, which is outside the scope of the ticket that added this.
 
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
 

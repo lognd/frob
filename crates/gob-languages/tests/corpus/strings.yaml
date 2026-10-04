@@ -1,0 +1,10 @@
+# real one
+a: "# in double"
+b: 'x # in single'
+c: url#fragment
+d: |
+  # in block scalar
+  more
+e: >-
+  # folded text
+f: 1 # real two

@@ -1,0 +1,11 @@
+# real one
+a = "# in basic"
+b = 'in # literal'
+c = "esc \" # still string"
+d = """
+# in multi-line basic
+"""
+e = '''
+# in multi-line literal
+''' # real two
+f = [1, 2] # real three
