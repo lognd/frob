@@ -7,7 +7,7 @@ priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T02:34:31Z"
-updated = "2026-10-04T02:35:21Z"
+updated = "2026-10-04T03:17:48Z"
 scope = [".cargo/config.toml", "crates/gob-dev/**", ".github/workflows/ci.yml", "CONTRIBUTING.md", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
