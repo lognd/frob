@@ -2,7 +2,8 @@
 id = "01M42A37XTPF2H1WXQQZWEYXGZ"
 title = "cargo dev ci can run its heavy steps on a goway host (opt-in), keeping the step list the single source"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
