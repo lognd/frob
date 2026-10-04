@@ -44,7 +44,7 @@ pub use describe::{
 pub use error::ConfigError;
 pub use gob_macros::ConfigTable;
 pub use inventory;
-pub use load::{ConfigSource, Loaded, Provenance, load, load_with};
+pub use load::{ConfigSource, Loaded, Provenance, load, load_str, load_with};
 pub use local::{repo_file, user_config_dir, user_config_dir_with, user_file};
 pub use materialize::{MaterializeReport, materialize};
 pub use schema::schema;

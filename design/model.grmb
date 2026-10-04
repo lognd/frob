@@ -23,3 +23,11 @@ node grimble : trusted {
   owns "crates/grimble-*/**";
   owns "crates/grimble/**";
 }
+
+/// The style goblin.
+node crunk : trusted {
+  kind component;
+  clearance Internal;
+  owns "crates/crunk-*/**";
+  owns "crates/crunk/**";
+}

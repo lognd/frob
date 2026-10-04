@@ -2,11 +2,12 @@
 id = "01M43HGBQ9YS0Z8YPKQ41MBK6Q"
 title = "TOML comment scanner reads # inside multi-line strings as comments, so quoted directives fire"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 reporter = "lognd"
 created = "2026-10-04T13:26:27Z"
-updated = "2026-10-04T13:56:20Z"
+updated = "2026-10-04T14:44:19Z"
 scope = ["crates/frob-obligations/src/comments.rs", "crates/gob-directives/src/comments.rs", "crates/gob-languages/src/hash.rs", "crates/gob-languages/src/lib.rs"]
 
 [[acceptance]]
