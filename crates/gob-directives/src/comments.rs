@@ -163,29 +163,127 @@ fn html_regions<'t>(text: &'t str, skip: &[std::ops::Range<usize>]) -> Vec<Segme
     out
 }
 
-// frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
-/// `#` comments of a TOML or YAML file, ignoring `#` inside quotes (naive).
-fn hash_comments(text: &str) -> Vec<Segment<'_>> {
+/// Lexer state carried across lines by [`hash_comments`].
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Str {
+    /// Outside any string.
+    None,
+    /// Inside a quoted string (`"` or `'`); `multi` strings span lines.
+    Quoted { quote: u8, multi: bool },
+    /// Inside a YAML block scalar whose content is indented deeper than `parent`.
+    Block { parent: usize },
+}
+
+/// True when `rest` (text after a block-scalar indicator) is only header modifiers and a comment.
+fn block_header_tail(rest: &str) -> bool {
+    let t = rest.trim_start_matches(|c: char| c == '+' || c == '-' || c.is_ascii_digit());
+    let t = t.trim_start();
+    t.is_empty() || t.starts_with('#')
+}
+
+// frob:ticket 01M43HGBQ9YS0Z8YPKQ41MBK6Q
+/// `#` comments of a TOML, YAML or fallback-Python file, lexing strings so quoted `#` is text.
+///
+/// TOML: basic, literal, multi-line basic and multi-line literal strings (escapes honoured).
+/// YAML: quoted scalars (also multi-line), block scalars (`|`, `>`), and `#` only after whitespace.
+fn hash_comments(text: &str, yaml: bool) -> Vec<Segment<'_>> {
     let mut out = Vec::new();
     let mut offset = 0;
+    let mut state = Str::None;
     for line in text.split_inclusive('\n') {
-        let mut quote: Option<char> = None;
-        for (i, c) in line.char_indices() {
-            match (quote, c) {
-                (None, '"' | '\'') => quote = Some(c),
-                (Some(q), c) if c == q => quote = None,
-                (None, '#') => {
-                    let body = line[i..].trim_start_matches('#');
-                    let skip = line.len() - i - body.len();
-                    push(
-                        &mut out,
-                        offset + i + skip,
-                        body.trim_end_matches(['\n', '\r']),
-                        false,
-                    );
+        let b = line.as_bytes();
+        let indent = line.len() - line.trim_start().len();
+        if let Str::Block { parent } = state {
+            if line.trim().is_empty() || indent > parent {
+                offset += line.len();
+                continue;
+            }
+            state = Str::None;
+        }
+        let mut i = 0;
+        while i < b.len() {
+            match state {
+                Str::Block { .. } => {
+                    // Rest of the header line: only modifiers and an optional comment.
+                    if let Some(h) = line[i..].find('#') {
+                        let at = i + h;
+                        let body = line[at..].trim_start_matches('#');
+                        let skip = line.len() - at - body.len();
+                        push(
+                            &mut out,
+                            offset + at + skip,
+                            body.trim_end_matches(['\n', '\r']),
+                            false,
+                        );
+                    }
                     break;
                 }
-                _ => {}
+                Str::None => match b[i] {
+                    q @ (b'"' | b'\'') => {
+                        let value_start = !yaml
+                            || i == 0
+                            || matches!(b[i - 1], b' ' | b'\t' | b'[' | b'{' | b',' | b':');
+                        if value_start {
+                            let triple = !yaml && b[i..].starts_with(&[q, q, q]);
+                            state = Str::Quoted {
+                                quote: q,
+                                multi: triple,
+                            };
+                            i += if triple { 3 } else { 1 };
+                            continue;
+                        }
+                    }
+                    b'|' | b'>'
+                        if yaml
+                            && (i == 0 || matches!(b[i - 1], b' ' | b'\t'))
+                            && block_header_tail(&line[i + 1..]) =>
+                    {
+                        state = Str::Block { parent: indent };
+                    }
+                    b'#' if !yaml || i == 0 || matches!(b[i - 1], b' ' | b'\t') => {
+                        let body = line[i..].trim_start_matches('#');
+                        let skip = line.len() - i - body.len();
+                        push(
+                            &mut out,
+                            offset + i + skip,
+                            body.trim_end_matches(['\n', '\r']),
+                            false,
+                        );
+                        break;
+                    }
+                    _ => {}
+                },
+                Str::Quoted { quote, multi } => {
+                    let escapes = quote == b'"';
+                    if b[i] == b'\\' && escapes {
+                        i += 2;
+                        continue;
+                    }
+                    if b[i] == quote {
+                        if multi {
+                            if b[i..].starts_with(&[quote, quote, quote]) {
+                                // A run of 3..=5 quotes closes; extras are content.
+                                let run = b[i..].iter().take_while(|&&c| c == quote).count();
+                                state = Str::None;
+                                i += run;
+                                continue;
+                            }
+                        } else if yaml && quote == b'\'' && b.get(i + 1) == Some(&quote) {
+                            // YAML `''` is an escaped quote, not a close.
+                            i += 2;
+                            continue;
+                        } else {
+                            state = Str::None;
+                        }
+                    }
+                }
+            }
+            i += 1;
+        }
+        // Single-line TOML strings end at the newline; YAML quoted scalars may continue.
+        if let Str::Quoted { multi: false, .. } = state {
+            if !yaml {
+                state = Str::None;
             }
         }
         offset += line.len();
@@ -232,7 +330,8 @@ pub(crate) fn segments<'t>(
             html_regions(text, &gob_languages::markdown_code_ranges(t))
         }
         (Language::Markdown, None) => html_regions(text, &[]),
-        (Language::Toml | Language::Yaml, _) | (Language::Python, None) => hash_comments(text),
+        (Language::Toml, _) | (Language::Python, None) => hash_comments(text, false),
+        (Language::Yaml, _) => hash_comments(text, true),
         (Language::Python, Some(t)) => python_tree(t),
     };
     tracing::trace!(
@@ -288,8 +387,50 @@ mod tests {
         assert_eq!(texts(&s), ["a", "b"]);
         assert_eq!(&src[s[1].offset..=s[1].offset], "b");
         let t = "k = \"#no\" # yes\n# all\n";
-        let h = hash_comments(t);
+        let h = hash_comments(t, false);
         assert_eq!(texts(&h), ["yes", "all"]);
         assert_eq!(&t[h[0].offset..h[0].offset + 3], "yes");
+    }
+
+    #[test]
+    // frob:tests crates/gob-directives/src/comments.rs::hash_comments
+    fn toml_strings_hide_hash_in_every_form() {
+        let cases: &[(&str, &[&str])] = &[
+            ("a = \"# no\" # yes\n", &["yes"]),
+            ("a = '# no' # yes\n", &["yes"]),
+            ("a = \"x \\\" # no\" # yes\n", &["yes"]),
+            (
+                "a = \"\"\"\n# frob:doc no\n  # frob:doc no\n\"\"\" # yes\n# after\n",
+                &["yes", "after"],
+            ),
+            ("a = '''\n# frob:doc no\n''' # yes\n", &["yes"]),
+            ("a = \"\"\"\nesc \\\"\"\" # no\n\"\"\"\n# real\n", &["real"]),
+            ("a = \"\"\"\nx\"\"\"\"\n# real\n", &["real"]),
+            ("a = '''\nx''''\n# real\n", &["real"]),
+            ("a = \"\"\"\nline \\\n# no\n\"\"\"\n# real\n", &["real"]),
+            ("a = ''\n# real\n", &["real"]),
+            ("a = \"\"\n# real\n", &["real"]),
+            ("a = \"unterminated\n# real\n", &["real"]),
+        ];
+        for (src, want) in cases {
+            assert_eq!(texts(&hash_comments(src, false)), *want, "{src:?}");
+        }
+    }
+
+    #[test]
+    // frob:tests crates/gob-directives/src/comments.rs::hash_comments
+    fn yaml_strings_and_block_scalars_hide_hash() {
+        let cases: &[(&str, &[&str])] = &[
+            ("a: \"# no\" # yes\n", &["yes"]),
+            ("a: 'it''s # no' # yes\n", &["yes"]),
+            ("a: x#no # yes\n", &["yes"]),
+            ("a: |\n  # no\n  # no\n# real\n", &["real"]),
+            ("a: >-  # yes\n  # no\nb: 1\n", &["yes"]),
+            ("a: \"two\n  # no\n  lines\" # yes\n", &["yes"]),
+            ("- it's fine # yes\n", &["yes"]),
+        ];
+        for (src, want) in cases {
+            assert_eq!(texts(&hash_comments(src, true)), *want, "{src:?}");
+        }
     }
 }
