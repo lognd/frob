@@ -7,12 +7,12 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T00:17:35Z"
-updated = "2026-10-04T01:35:22Z"
+updated = "2026-10-04T01:57:14Z"
 scope = [".cargo/config.toml", "crates/gob-dev/src/**", "crates/gob-dev/tests/ci_parity.rs", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
 text = "Given the dev alias, when cargo dev gen all runs after a code change, then the workspace is compiled once, into target/"
-bound = false
+bound = true
 
 [[acceptance]]
 text = 'Given Windows, when cargo dev ci rebuilds the workspace, then gob-dev runs from a temporary copy and the build can replace target\\debug\\gob-dev.exe'
