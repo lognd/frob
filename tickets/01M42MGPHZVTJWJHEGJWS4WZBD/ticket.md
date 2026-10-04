@@ -2,12 +2,12 @@
 id = "01M42MGPHZVTJWJHEGJWS4WZBD"
 title = "frob check --fix writes non-atomically and without checking the file is unchanged since the check"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T04:59:50Z"
-updated = "2026-10-04T04:59:50Z"
+updated = "2026-10-04T13:12:29Z"
 scope = ["crates/gob-check/src/**"]
 
 [[acceptance]]
