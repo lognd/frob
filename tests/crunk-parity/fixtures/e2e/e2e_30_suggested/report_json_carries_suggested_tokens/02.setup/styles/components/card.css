@@ -1,0 +1,7 @@
+.card {
+  color: #2f6eec;
+  padding: 13px;
+  font-size: 22px;
+  border-radius: 5px;
+  outline-color: var(--color-nonexistent);
+}

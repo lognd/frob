@@ -1,0 +1,13 @@
+kind = "create"
+title = "Export missing Unity/dotnet runner symbols from scaffold and testing packages"
+type = "bug"
+category = "todo"
+priority = "medium"
+aliases = ["T-4991"]
+labels = ["milestone:0.537.0"]
+scope = ["src/frob/scaffold/__init__.py", "src/frob/testing/__init__.py"]
+acceptance = ["test_all_nine_packages_report_zero_missing_symbols passes"]
+body = "CI run 35476139324 on dev: tests/unit/test_exports.py TestFrobExportsPolicyResidue test_all_nine_packages_report_zero_missing_symbols fails: src/frob/scaffold reports scaffold._unity_project.render_unity_project missing from its exports, and src/frob/testing reports testing._dotnet_runner.run_dotnet_tests, testing._unity_batchmode.resolve_unity_editor, testing._unity_batchmode.parse_unity_batchmode_xml, testing._unity_batchmode.run_unity_batchmode and testing._unity_batchmode.UnityBatchmodeError missing. Add each to its package's public exports (__init__.py __all__/re-export) so the exports-residue scan reports zero missing symbols."
+at = "2026-09-19T00:00:00Z"
+actor = "human"
+rev = 1

@@ -1,0 +1,46 @@
++++
+id = "01M3AXSDBA0K29RPNWT7GQ564A"
+title = "STORE120: file-read/upload bytes bound directly into an `INSERT`/`UPDATE` (blob-in-relational)"
+type = "task"
+category = "triage"
+priority = "medium"
+parent = "01M3AXSD9STSFC2MR8M369JNE8"
+reporter = "agent"
+created = "2026-09-25T00:00:00Z"
+updated = "2026-09-25T00:00:00Z"
+aliases = ["T-6506"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+scope = ["src/frob/store/_relational.py", "tests/fixtures/store/store120-relational-blob-insert/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3AXSD97HRBA035Y3FNX3ACG"
++++
+
+Rule id: STORE120.
+
+Authority: Postgres itself documents the size/perf tradeoff: TOAST caps
+at 1 GB per field and "most operations on a TOASTed field will read or
+write the whole value as a unit" versus large objects allowing up to
+4 TB with efficient partial I/O -- Postgres 18 docs, "33.1. Introduction"
+(Large Objects), https://www.postgresql.org/docs/current/lo-intro.html.
+
+Call shapes:
+- Python: `cursor.execute("INSERT INTO files (data) VALUES (%s)",
+  (file_bytes,))` where `file_bytes` comes from an uploaded file object;
+  SQLAlchemy `Column(LargeBinary)`
+- TS/JS: `pg` query with a `Buffer` parameter from `multer`/upload
+  middleware, Prisma `Bytes` field fed directly from request body
+- Rust (sqlx): `Vec<u8>` bound param from a file read
+
+Detection: binary/bytes parameter sourced from a file-upload/read call,
+bound directly into an `INSERT`/`UPDATE` call -- data-flow from
+read/upload call to the query call's argument, within one function body.
+
+Positive-control fixture:
+`tests/fixtures/store/store120-relational-blob-insert/`.
+
+Relevance gate: relational SQL surface detected.
+
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its scaffold, none exists on dev yet"

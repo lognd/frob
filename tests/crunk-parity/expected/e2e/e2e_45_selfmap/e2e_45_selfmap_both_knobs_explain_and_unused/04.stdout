@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "kind": "explain",
+  "results": [
+    {
+      "name": "--layer-base",
+      "value": "0",
+      "group": "layer",
+      "defined_in": "styles/tokens.css",
+      "sites": [
+        {
+          "path": "frontend/Modal.tsx",
+          "line": 2
+        }
+      ],
+      "utilities": [
+        "z-base"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "explain",
+    "color-ink",
+    "--json"
+  ],
+  "command": "python -m crunk explain color-ink --json",
+  "cwd": "fixtures/static/init_default",
+  "exit": 0,
+  "project": "init_default"
+}

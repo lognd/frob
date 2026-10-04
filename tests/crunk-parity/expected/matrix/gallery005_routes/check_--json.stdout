@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "violations": [
+    {
+      "rule": "GALLERY005",
+      "severity": "warn",
+      "path": "src/router.tsx",
+      "line": 19,
+      "message": "discovered route '/settings' is not declared in [[screen]]",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "CONTRAST001",
+      "severity": "error",
+      "path": "crunk.toml",
+      "line": 0,
+      "message": "role 'body' (ink/ink) contrast 1.00 is below the 4.5 floor",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "TOKENS001",
+      "severity": "error",
+      "path": "src/styles/tokens.css",
+      "line": 0,
+      "message": "tokens file drifted; run `crunk tokens` to regenerate",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    }
+  ],
+  "counts": {
+    "error": 2,
+    "warning": 1,
+    "waived": 0
+  }
+}

@@ -1,0 +1,37 @@
+kind = "create"
+title = "normalize_evidence_separator mangles real kotlin node ids (dot-form classname.method)"
+type = "bug"
+category = "triage"
+priority = "medium"
+aliases = ["T-3945"]
+labels = ["milestone:0.540.0", "v1-cluster:C4a"]
+scope = ["src/frob/tickets/__init__.py"]
+body = """
+Found while working T-3937 (evidence binding real-collector fixtures).
+
+normalize_evidence_separator (src/frob/tickets/__init__.py) rewrites the
+FIRST dot found after a node id's '::' prefix into another '::' -- this is
+correct for python's path::Class.method convention, but every real kotlin
+node id collect_kotlin_tests produces (_collect_kotlin.py::_kotlin_node_id)
+is dotted classname.method (path::classname.method, or dotted
+package.Class.method in the fallback shape), and gets silently mangled by
+this rewrite before it ever reaches matches_collected -- so a real,
+correctly-collected kotlin id taken verbatim from the collection cache can
+never bind via 'frob ticket evidence', identically to F-172's
+UnknownEvidence symptom but caused by a different function.
+
+Repro: collect_kotlin_tests produces 'app::com.example.FooTest.doesThing'.
+normalize_evidence_separator turns that into
+'app::com::example.FooTest.doesThing' (rewrites only the first dot after
+'::'), which does not exact-match the collected id, so add_evidence
+rejects it as UnknownEvidence even though the test genuinely exists and
+was genuinely collected.
+
+Fix should make normalize_evidence_separator either a no-op for a kotlin-
+shaped remainder (multiple dots) or otherwise not applicable outside
+python's specific Class.method (single dot) shape -- needs care not to
+regress the existing T-0293/T-0282/T-0217 python dot-form fix this
+function exists for."""
+at = "2026-09-06T00:00:00Z"
+actor = "human"
+rev = 1

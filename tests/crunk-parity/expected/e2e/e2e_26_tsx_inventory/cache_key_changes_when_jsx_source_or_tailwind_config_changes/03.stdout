@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "buckets": {
+    "base": [
+      {
+        "path": "styles/base/reset.css",
+        "component": null,
+        "classes": 0
+      }
+    ],
+    "components": [],
+    "layouts": [],
+    "utilities": [],
+    "entry": [],
+    "jsx": [
+      {
+        "path": "frontend/Badge.tsx",
+        "component": "Badge",
+        "declarations": 1,
+        "utilities": 3
+      }
+    ],
+    "tokens": [
+      {
+        "path": "styles/tokens.css",
+        "component": null,
+        "classes": 0
+      }
+    ]
+  },
+  "strays": []
+}

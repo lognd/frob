@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "check",
+    "--json"
+  ],
+  "command": "python -m crunk check --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_06_waiver.py::test_waiver_with_reason_silences_and_counts_waived",
+  "setup_deleted": [],
+  "stdin": null
+}

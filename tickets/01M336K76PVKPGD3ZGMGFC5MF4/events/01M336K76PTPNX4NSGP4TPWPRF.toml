@@ -1,0 +1,22 @@
+kind = "create"
+title = "SQL substrate: literal extraction from host languages + sqlfluff relevance"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M2Y1SS0WSW1HNM4S14V8BH51"
+aliases = ["T-5334"]
+labels = ["milestone:0.534.0"]
+scope = ["src/frob/sql/_extract.py", "tests/fixtures/sql/**", "frob.toml", "docs/modules/sql.md", "tests/unit/sql/**"]
+body = "tree-sitter AST walk (Python for cursor.execute/.raw()/SQLAlchemy text(); TS for Prisma queryRaw/sqlx macros) extracting string literals and f-string/template skeletons passed to known SQL-executing call sites, feeding sqlfluff's parser; any non-literal string composition reaching a sink is itself a WEBSEC-class injection finding -- this leaf calls into 5141-1's sink registry rather than re-detecting, EXCEPT psycopg.sql composition (a safe API, explicitly excluded per the corpus). OWNER DIRECTIVE: this leaf's relevance predicate (a .sql file OR an SQL-executing call site exists in the repo) is what makes sqlfluff REQUIRED-for-the-family in 5148-2's tool-registry entry -- define the predicate here as a reusable function so 5148-2 imports it rather than re-detecting. Fixture: one extraction case per host-language/ORM call shape."
+at = "2026-09-22T00:00:00Z"
+actor = "human"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M336K75PBAVJE0SEABECQYQV"
+
+[[links]]
+kind = "blocked-by"
+target = "01M336K75VAADETHRZ71MT5J2W"

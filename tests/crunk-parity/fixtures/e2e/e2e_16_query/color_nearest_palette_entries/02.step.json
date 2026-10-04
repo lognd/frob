@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "query",
+    "color",
+    "#1a1a1a",
+    "--json"
+  ],
+  "command": "python -m crunk query color #1a1a1a --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_16_query.py::test_color_nearest_palette_entries",
+  "setup_deleted": [],
+  "stdin": null
+}

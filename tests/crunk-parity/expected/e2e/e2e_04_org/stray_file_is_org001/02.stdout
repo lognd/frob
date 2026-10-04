@@ -1,0 +1,3 @@
+styles/oops.css:0  ORG001  error  <ROOT>/styles/oops.css is outside every declared org bucket
+styles/oops.css:1  COLOR001  error  color #ff0000 is not a palette color; nearest is --color-ink (distance 371.51)
+2 errors, 0 warnings, 0 waived

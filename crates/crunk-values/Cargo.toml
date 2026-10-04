@@ -1,0 +1,19 @@
+[package]
+name = "crunk-values"
+version = "0.0.0"
+description = "Pure CSS value math for crunk: color and length parsing, WCAG contrast and palette distance."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+readme = "README.md"
+keywords = ["css", "color", "wcag", "contrast", "design-system"]
+categories = ["parser-implementations", "web-programming"]
+
+[lints]
+workspace = true
+
+[dependencies]
+thiserror = "2"
+tracing = "0.1"

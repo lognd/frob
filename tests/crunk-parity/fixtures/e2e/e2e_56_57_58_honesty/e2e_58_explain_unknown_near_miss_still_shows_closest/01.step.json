@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_56_57_58_honesty.py::test_e2e_58_explain_unknown_near_miss_still_shows_closest",
+  "setup_deleted": [],
+  "stdin": null
+}

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T11:58:16Z"
+digest = "a7130acbcc5aad6ee6012ea93602dd48861c1051b2ee248fad85368386581335"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 213b06bd-20db-4dc4-89b8-9f0f9bdd253f with nextest profile: default
+    Starting 1 test across 4 binaries (5 tests skipped)
+        PASS [   0.312s] crunk::verbs check_json_with_an_empty_config_is_a_valid_sibling_document
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.312s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E 'test(check_json_with_an_empty_config)'"
+size = 561
+status = "measured"
+tests = ["check_json_with_an_empty_config_is_a_valid_sibling_document"]
+at = "2026-10-04T11:58:16Z"
+actor = "lognd"
+rev = 1

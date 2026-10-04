@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_55_cache_home.py::test_without_override_resolves_under_xdg_fallback",
+  "setup_deleted": [],
+  "stdin": null
+}

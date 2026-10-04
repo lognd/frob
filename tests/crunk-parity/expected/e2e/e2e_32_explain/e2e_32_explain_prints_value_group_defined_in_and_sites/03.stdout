@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "kind": "explain",
+  "results": [
+    {
+      "name": "--space-12",
+      "value": "12px",
+      "group": "space",
+      "defined_in": "styles/tokens.css",
+      "sites": [
+        {
+          "path": "frontend/Card.tsx",
+          "line": 2
+        },
+        {
+          "path": "styles/components/card.css",
+          "line": 1
+        }
+      ],
+      "utilities": [
+        "p-space"
+      ]
+    }
+  ]
+}

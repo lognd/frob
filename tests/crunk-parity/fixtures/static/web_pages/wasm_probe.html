@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<!--
+T-0224 fixture: a tiny static page proving the no-wasm low-effort-client
+init_script (a CONSUMER-VALIDATED SHAPE, 2026-09-26, logand): a real page
+script (not crunk itself) checks `globalThis.WebAssembly` at load time and
+writes "js" to `data-renderer` when it is undefined/absent (the no-wasm
+platform's fallback path) or "wasm" otherwise (the default path) -- the
+system test asserts on this attribute rather than the visual pixels, since
+whether the init_script actually ran before this script is exactly the
+thing under test.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>crunk wasm-probe fixture</title>
+</head>
+<body data-renderer="pending">
+  <p id="label">pending</p>
+  <script>
+    (function () {
+      var mode = (typeof WebAssembly === "undefined") ? "js" : "wasm";
+      document.body.setAttribute("data-renderer", mode);
+      document.getElementById("label").textContent = mode;
+    })();
+  </script>
+</body>
+</html>

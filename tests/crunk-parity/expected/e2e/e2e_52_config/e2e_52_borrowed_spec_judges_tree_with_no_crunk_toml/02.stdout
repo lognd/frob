@@ -1,0 +1,5 @@
+spec: <ROOT>/crunk.toml  root: <ROOT>/sibling
+styles/components/button.css:1  COLOR001  error  color #123456 is not a palette color; nearest is --color-ink (distance 115.39)
+
+styles/tokens.css:0  TOKENS001  error  tokens file missing; run `crunk tokens` to regenerate
+2 errors, 0 warnings, 0 waived

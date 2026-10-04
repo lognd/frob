@@ -1,0 +1,33 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+render_unity_fragment's per-node fragments carry no module declaration, so frob check's strata loader ParseFailed every design/*.strata file in a freshly scaffolded unity-project (T-5198, found while working T-4509). Verified empirically that a companion module file alone does not fix this -- each file is parsed independently before the T-1196 multi-file merge -- so every fragment is now stamped with the same module line a new starter design/frob.strata also declares, at write time, leaving render_unity_fragment's own pure output untouched.
+
+### Changed
+```
+ docs/commands/scaffold.md                          | 22 +++++---
+ docs/guides/unity.md                               |  5 +-
+ src/frob/scaffold/_unity_project.py                | 59 ++++++++++++++++++----
+ .../data/types/unity-project/design/frob.strata.j2 | 14 +++++
+ tests/system/test_unity_e2e.py                     | 31 +++++++-----
+ tests/unit/test_scaffold_unity_project.py          | 49 +++++++++++++++++-
+ tickets/T-5198/ticket.md                           | 19 ++++++-
+ 7 files changed, 166 insertions(+), 33 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_scaffold_unity_project.py::TestModuleDeclaration::test_every_fragment_has_its_own_module_line` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold_unity_project.py::TestModuleDeclaration::test_load_design_ids_reports_zero_parse_errors` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold_unity_project.py::TestRenderUnityProject::test_one_strata_file_per_asmdef` (pytest node id, verified passing when recorded)
+- `tests/system/test_unity_e2e.py::TestUnityScaffoldAndAsmdefNodes::test_scaffold_succeeds_and_nodes_match_the_two_asmdefs` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)"""
+at = "2026-09-19T00:00:01Z"
+actor = "import"
+rev = 1

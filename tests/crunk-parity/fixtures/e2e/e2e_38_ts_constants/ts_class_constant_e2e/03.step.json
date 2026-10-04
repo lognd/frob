@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "explain",
+    "bg-primary",
+    "--json"
+  ],
+  "command": "python -m crunk explain bg-primary --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_38_ts_constants.py::test_ts_class_constant_e2e",
+  "setup_deleted": [],
+  "stdin": null
+}

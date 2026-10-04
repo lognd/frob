@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-21: duplicate of T-5172: draft-adoption helper re-promoted a stale worktree copy of T-draft-1b1cebcb (second occurrence)"
+at = "2026-09-20T00:00:01Z"
+actor = "import"
+rev = 1

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_36_keyspace.py::test_e2e_36_no_warning_without_tailwind_file",
+  "setup_deleted": [],
+  "stdin": null
+}

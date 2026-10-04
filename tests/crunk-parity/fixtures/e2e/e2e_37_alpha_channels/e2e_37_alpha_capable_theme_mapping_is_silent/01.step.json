@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_37_alpha_channels.py::test_e2e_37_alpha_capable_theme_mapping_is_silent",
+  "setup_deleted": [],
+  "stdin": null
+}

@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "violations": [
+    {
+      "rule": "TW001",
+      "severity": "warn",
+      "path": "frontend/a11y.ts",
+      "line": 1,
+      "message": "utility 'max-h-[32dvh]' is unresolved-by-tailwind (no node/tailwindcss resolvable, or --static); skipped rather than guessed from its name",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "TW005",
+      "severity": "warn",
+      "path": "frontend/a11y.ts",
+      "line": 1,
+      "message": "utility 'p-4' is unresolved-by-tailwind (no node/tailwindcss resolvable, or --static); skipped rather than guessed from its name",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    }
+  ],
+  "counts": {
+    "error": 0,
+    "warning": 2,
+    "waived": 0
+  }
+}

@@ -70,6 +70,47 @@ fn rust_lines(text: &str) -> Vec<CommentLine<'_>> {
     out
 }
 
+// frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
+/// Byte ranges of the `comment` nodes of a parsed Python file.
+fn python_ranges(text: &str) -> Option<Vec<(usize, usize)>> {
+    let ParseResult::Parsed(tree) = parse(Language::Python, text, &ParseLimits::default()) else {
+        return None;
+    };
+    let mut out = Vec::new();
+    let mut cursor = tree.root().walk();
+    loop {
+        let n = cursor.node();
+        if n.kind() == "comment" {
+            out.push((n.start_byte(), n.end_byte()));
+        }
+        if cursor.goto_first_child() || cursor.goto_next_sibling() {
+            continue;
+        }
+        loop {
+            if !cursor.goto_parent() {
+                return Some(out);
+            }
+            if cursor.goto_next_sibling() {
+                break;
+            }
+        }
+    }
+}
+
+// frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
+/// Comment lines of a Python file; the naive `#` scan when no tree exists.
+fn python_lines(text: &str) -> Vec<CommentLine<'_>> {
+    let Some(ranges) = python_ranges(text) else {
+        tracing::warn!("no python syntax tree; scanning `#` comments naively");
+        return toml_lines(text);
+    };
+    let mut out = Vec::new();
+    for (s, e) in ranges {
+        push_lines(&mut out, text, s, e);
+    }
+    out
+}
+
 /// True when `line` opens or closes a fenced code block; updates `fence`.
 fn toggles_fence(line: &str, fence: &mut Option<char>) -> bool {
     let t = line.trim_start();
@@ -151,6 +192,7 @@ pub(crate) fn comment_lines(language: Language, text: &str) -> Vec<CommentLine<'
         Language::Rust => rust_lines(text),
         Language::Markdown => markdown_lines(text),
         Language::Toml | Language::Yaml => toml_lines(text),
+        Language::Python => python_lines(text),
     };
     tracing::trace!(
         language = language.name(),
@@ -175,6 +217,13 @@ mod tests {
             texts(&comment_lines(Language::Rust, src)),
             ["// a", "/* b", " c */"]
         );
+    }
+
+    #[test]
+    // frob:tests crates/frob-obligations/src/comments.rs::python_lines
+    fn python_comments_skip_strings() {
+        let src = "# a\nx = \"# no\"  # b\n";
+        assert_eq!(texts(&comment_lines(Language::Python, src)), ["# a", "# b"]);
     }
 
     #[test]

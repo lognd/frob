@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T11:51:55Z"
+digest = "6ac9cd37ec0ec88fba80234f1b38854492c39c8fdf815644db547bc6929e552c"
+exit_code = 0
+inline = '''
+   Compiling gob-symbols v0.0.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-directives v0.0.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.0.0 (<worktree>/crates/gob-check)
+   Compiling frob-ack v0.0.0 (<worktree>/crates/frob-ack)
+   Compiling frob-tests v0.0.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7061b557-c21b-4b02-9eed-03b3c70b4168 with nextest profile: default
+    Starting 3 tests across 1 binary
+        PASS [   0.351s] frob-check::python cov001_sees_which_python_functions_tests_reach
+        PASS [   0.374s] frob-check::python an_unmodelled_python_construct_is_unresolved_not_clean
+        PASS [   0.449s] frob-check::python a_bare_marker_in_a_python_comment_fires_todo001
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.456s] 3 tests run: 3 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check --test python"
+size = 1178
+status = "measured"
+tests = ["cov001_sees_which_python_functions_tests_reach", "an_unmodelled_python_construct_is_unresolved_not_clean", "a_bare_marker_in_a_python_comment_fires_todo001"]
+at = "2026-10-04T11:51:58Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+@layer base {
+  .glass-panel {
+    --glass-border: 40 40 40;
+    --glass-bg: rgba(26, 26, 26, 0.7);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+  }
+}

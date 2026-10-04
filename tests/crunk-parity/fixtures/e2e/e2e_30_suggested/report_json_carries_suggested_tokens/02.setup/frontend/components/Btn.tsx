@@ -1,0 +1,1 @@
+<button className="bg-[#2f6eec]" />

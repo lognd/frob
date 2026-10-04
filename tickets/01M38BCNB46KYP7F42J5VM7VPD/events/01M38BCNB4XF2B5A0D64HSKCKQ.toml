@@ -1,0 +1,25 @@
+kind = "create"
+title = "vet fingerprint scan: self-exclusion regression matches its own catalog file"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+aliases = ["T-5476"]
+labels = ["milestone:v0.534.0"]
+scope = ["src/frob/vet/_capability_scan.py", "tests/vet_suite/test_fingerprint.py"]
+body = """
+Found while draining CI run 35951365410 (dev 9e0c89bb19). Failing:
+tests/vet_suite/test_fingerprint.py::TestFingerprintScan::test_scan_directory_fingerprints_excludes_the_catalog_itself
+
+The vet fingerprint directory scanner now matches its OWN fingerprint
+catalog file with rule FP-DESERIALIZE-YAML-001, where this test asserts
+it must not (self-exclusion regression -- the scanner is supposed to skip
+the catalog file it reads its own fingerprints from).
+
+Fix: restore/extend the self-exclusion glob/path-check in the scan-
+directory implementation under test so the catalog file is excluded
+again. In touch-scope (tests/vet_suite/test_fingerprint.py and its
+production symbol are not webapp/sql/strata-core)."""
+at = "2026-09-24T00:00:00Z"
+actor = "agent"
+rev = 1

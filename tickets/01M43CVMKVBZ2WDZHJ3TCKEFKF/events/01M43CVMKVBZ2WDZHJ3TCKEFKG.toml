@@ -1,0 +1,13 @@
+kind = "create"
+title = "DOC rules read Python docstrings"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M43A5349M17PED730HKNM4VV"
+scope = ["crates/frob-obligations/**"]
+acceptance = ["Given a public Python function without a docstring, when frob check runs, then DOC001 reports it"]
+body = "~F0KSGKF records Python docstrings in the doc facet but DOC001 examines only Rust; extend the DOC family to Python units (public functions, classes and methods without a docstring)."
+at = "2026-10-04T12:05:14Z"
+actor = "lognd"
+rev = 1

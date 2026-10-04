@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_15_output.py::test_check_contrast_clean_exits_0",
+  "setup_deleted": [],
+  "stdin": null
+}

@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "query",
+    "component",
+    "Badge"
+  ],
+  "command": "python -m crunk query component Badge",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_26_tsx_inventory.py::test_query_component_cards_a_jsx_component",
+  "setup_deleted": [],
+  "stdin": null
+}
