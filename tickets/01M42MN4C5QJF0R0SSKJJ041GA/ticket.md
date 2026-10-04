@@ -15,4 +15,4 @@ text = "Given a primary checkout and a linked worktree, when shared_dir runs for
 bound = true
 +++
 
-CI run 37177956559 (windows-latest): gob-cache::shared primary_and_linked_worktree_share_one_cache_dir fails: primary resolves to C:\Users\RUNNER~1\... (8.3 short name from the temp dir) while the linked worktree resolves through its gitdir to C:\Users\runneradmin\... . Both name the same directory but the strings differ, so anything keyed or compared by the path disagrees. shared_dir and git_common_dir must return gob_exec::canonical forms on every branch (paths.md section 3.1).
+CI run 37177956559 (windows-latest): gob-cache::shared primary_and_linked_worktree_share_one_cache_dir fails: primary resolves to C:\Users\RUNNER~1\... (8.3 short name from the temp dir) while the linked worktree resolves through its gitdir to ~other\... . Both name the same directory but the strings differ, so anything keyed or compared by the path disagrees. shared_dir and git_common_dir must return gob_exec::canonical forms on every branch (paths.md section 3.1).
