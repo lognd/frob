@@ -1,0 +1,38 @@
++++
+id = "01M42EZ8J63P84XFKTR2GXRW72"
+title = "Private-term redaction: local-only rules refuse, detect and scrub private names in the ledger (generalizes the TICK004 scrub)"
+type = "security"
+category = "todo"
+priority = "high"
+points = 5
+reporter = "lognd"
+created = "2026-10-04T03:22:55Z"
+updated = "2026-10-04T03:22:55Z"
+scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/scrub.rs", "crates/frob/src/ticket/**", "crates/frob/tests/**", "crates/gob-config/**", "docs/design/tickets.md", "docs/design/architecture.md", "docs/reference/rules/**"]
+
+[[acceptance]]
+text = "Given a local rule for a private term, when ticket new or update is given text containing it, then it exits 2 naming the rule label without echoing the term and writes nothing"
+bound = false
+
+[[acceptance]]
+text = "Given ledger files already containing the term, when ticket doctor --fix runs, then one commit replaces it everywhere, recomputes inline digests, records audit events without the term, and a second run changes nothing"
+bound = false
+
+[[acceptance]]
+text = "Given the rules, when frob check runs, then the new rule reports any ledger file or fragment containing a term as an Error, and with no local rules it reports nothing"
+bound = false
+
+[[acceptance]]
+text = "Given the repository, when its tracked files are searched, then no redaction rule or private term appears in any committed config"
+bound = false
++++
+
+Requested by goway (2026-10-04): a goway ticket's acceptance text named one of the owner's private machines, and goway is public. Hand-editing event files breaks their digests, and dropping commits keeps getting undone when ticket branches merge the base back in. Generalize the TICK004 home-path scrub (~6JTAH9Q, ~SKCPWMA) to user-defined private terms.
+
+Design (document in tickets.md next to the TICK004 scrub and in architecture.md config locations):
+1. Where the terms live: never in frob.toml or anything committed, because listing a private term publishes it. Read redaction rules from local config only: the user config (the platform config dir, frob/privacy.toml) and a per-repository file under the git common dir (frob/privacy.toml), merged. Each rule: { pattern, replace, regex = false, case_sensitive = true }. frob init and frob doctor mention the files; nothing writes them into the repository.
+2. One matcher for everything: the TICK004 home-path matcher becomes one built-in rule in the same redaction engine, so home paths and private terms share detection, scrub and audit.
+3. Prevention at write time: ticket new, update, comment, close reasons, evidence refs and fragments refuse text that matches a rule, naming the rule's replace label (never echoing the matched term into logs or errors, since logs may be shared), exit 2.
+4. Detection: a check rule (next free TICK id after TICK004, Error) flags ledger files and changelog fragments containing a term; it only runs where the local rules exist (CI without them reports nothing for this rule, which is stated in the rule page).
+5. Repair: ticket doctor --fix applies every rule in one forward commit, exactly like the TICK004 scrub: rewrite ticket.md, event and milestone/cycle files, recompute inline evidence digests, one audit event per ticket naming files and old/new digests but not the term (record the rule's replace label and a hash of the term). Idempotent.
+6. Out of scope here, follow-up later: commit messages and staged source files (a pre-commit hook verb or a frob check source rule).

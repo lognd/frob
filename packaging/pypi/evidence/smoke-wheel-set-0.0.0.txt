@@ -1,0 +1,23 @@
+# Local wheel-set build and smoke for ~TPHS84G (aarch64 Linux host), workspace version 0.0.0
+# build: WHEEL_COMPAT=off packaging/pypi/build-wheel.sh --out target/wheels (host glibc tag; the release job builds in manylinux_2_28)
+# wheels: frob-0.0.0-py3-none-manylinux_2_34_aarch64.whl grimble-0.0.0-py3-none-manylinux_2_34_aarch64.whl 
+$ WHEEL_COMPAT=off packaging/pypi/smoke.sh target/wheels 0.0.0
+smoke: wheel frob-0.0.0-py3-none-manylinux_2_34_aarch64.whl tag=py3-none-manylinux_2_34_aarch64
+smoke: wheel grimble-0.0.0-py3-none-manylinux_2_34_aarch64.whl tag=py3-none-manylinux_2_34_aarch64
+Using Python 3.11.15 environment at: /tmp/tmp.wlTYZyiK8U/a
+grimble 0.0.0
+smoke: a ok: grimble alone
+Using Python 3.11.15 environment at: /tmp/tmp.wlTYZyiK8U/b
+frob 0.0.0
+grimble 0.0.0
+smoke-loop: frob 0.0.0
+smoke-loop: init ok
+smoke-loop: ticket ~YK9N71X (01M42DG48HMGFK8KAE5YK9N71X)
+smoke-loop: check ok
+smoke-loop: evidence ok
+smoke-loop: land ok
+smoke-loop: ok
+smoke: b ok: frob pulled grimble at the same version
+smoke: c ok: uv tool install frob finds grimble without it on PATH
+smoke: ok
+exit: 0

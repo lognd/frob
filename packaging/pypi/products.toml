@@ -1,0 +1,22 @@
+# The PyPI product list: the one source of the wheel set (docs/design/products.md 6, D87).
+# One entry per product binary; render.py turns each entry into a maturin project and
+# build-wheel.sh builds every entry, so adding a product (crunk, once its Rust crate exists) is
+# one more [[product]] table here plus its row in the workflow's count steps (a test pins both).
+# Each wheel carries only its own binary; `depends` names sibling products pinned at the same
+# lockstep version (`grimble==<version>`), so the package manager composes the install.
+
+[[product]]
+name = "frob"                      # PyPI project, wheel name and binary
+package = "frob-cli"               # Cargo package that carries the [[bin]]
+manifest = "crates/frob/Cargo.toml"
+summary = "The enforcement layer for agentic development: ticket queue, obligation graph and gates."
+keywords = ["tickets", "agentic", "enforcement", "git", "ci"]
+depends = ["grimble"]
+
+[[product]]
+name = "grimble"
+package = "grimble"
+manifest = "crates/grimble/Cargo.toml"
+summary = "The design goblin: design-model checks, init, doctor and fmt (preview). frob depends on it."
+keywords = ["design", "agentic", "git", "ci"]
+depends = []

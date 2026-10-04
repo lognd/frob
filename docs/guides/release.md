@@ -11,14 +11,15 @@ in the last section, "Not verified".
 
 ## What a release does
 
-1. `frob release cut` bumps every crate and the wheel to one version, compiles
+1. `frob release cut` bumps every crate to one version (the wheels take it from
+   Cargo at build time), compiles
    `CHANGELOG.md` from `changelog.d/` fragments, makes one commit on the base
    branch (`experimental` in this repository) and creates one annotated tag per
    product: `frob-v0.532.0` and `grimble-v0.532.0`.
 2. Pushing the tags starts `.github/workflows/release.yml`. Only the tag
    `frob-v*` triggers it.
 3. The workflow runs these jobs: `plan` (the tag version must equal the
-   `frob-cli` crate version), `build` (five archives), `wheel` (five wheels),
+   `frob-cli` crate version), `build` (five archives per product), `wheel` (five wheels per product),
    `smoke` (installs every artifact on a fresh runner), then `release` (GitHub
    release with the archives), `crates` (crates.io) and `pypi` (PyPI).
 4. `crates` waits for your approval in the `crates-io` environment. `pypi` runs
@@ -46,8 +47,10 @@ Same as above with the name `pypi`: you as required reviewer, and a tag rule
 
 ### 3. PyPI trusted publisher
 
-The PyPI project `frob` already exists (it holds v1 up to 0.531.0). On PyPI:
-project `frob`, Manage, Publishing, add a GitHub trusted publisher with:
+Two PyPI projects are published, `frob` and `grimble` (the `frob` wheel
+depends on `grimble` at the same version). `frob` holds v1 up to 0.531.0. Each
+project must list this repository's workflow as a trusted publisher. On PyPI: project, Manage, Publishing, add a
+GitHub trusted publisher with:
 
 | Field | Value |
 |---|---|
@@ -152,7 +155,7 @@ Open the run in the repository's Actions tab (workflow `release`).
    environment. The job prints the publish order in a dry run, then publishes
    the crates in dependency order.
 3. When `crates` has succeeded, `pypi` shows "Waiting for review". Approve the
-   `pypi` environment. It uploads the five smoked wheels.
+   `pypi` environment. It uploads the ten smoked wheels (five per product).
 
 Timeouts are in the workflow: `build` and `wheel` 60 minutes, `smoke` 30,
 `crates` 120, `pypi` 30. A job whose runner never schedules fails at its timeout
@@ -171,7 +174,7 @@ cargo search frob-cli
 `frob release notes` prints the CHANGELOG section of that version, which is
 what the `release` job uses as the GitHub release body (any lead `notice`
 fragment comes first); compare it with what `gh release view` shows. Check also
-that PyPI shows 0.532.0 with five files, and that crates.io shows the
+that PyPI shows 0.532.0 of `frob` and of `grimble`, each with five files, and that crates.io shows the
 version for every published crate. (`cargo search frob-cli` is an example name;
 use any shipped crate.)
 
@@ -261,7 +264,7 @@ a message that the version did not appear on the index; re-run the job.
 
 Choose "Re-run failed jobs" and approve `pypi` again. The upload uses
 skip-existing, so files already on PyPI are skipped. The job refuses to run
-unless exactly five wheels are present.
+unless exactly five wheels of each product are present.
 
 ### Trusted publishing is rejected
 

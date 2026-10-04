@@ -7,7 +7,7 @@ name: release
 # timeouts are ours (docs/decisions/2026-10-03-release-workflow-hand-written.md).
 # Plan, build and smoke live in the reusable build-smoke.yml, shared with the dev jobs of ci.yml:
 # the matrix, the dist pin and the smoke steps have one source there. It also builds
-# the five PyPI wheels (packaging/pypi) as run artifacts only.
+# the PyPI wheel sets (five wheels per product) (packaging/pypi) as run artifacts only.
 # The `crates` job publishes the workspace crates to crates.io
 # (`cargo dev publish`, resumable) from the protected `crates-io` environment
 # through trusted publishing (OIDC, no stored token) once the crates exist;
@@ -152,8 +152,10 @@ jobs:
         run: cargo dev publish
 
   # PyPI, trusted publishing (OIDC, no stored token) from the protected `pypi`
-  # environment, which carries the owner's required-reviewer approval. It builds
-  # nothing: it uploads exactly the wheels the shared workflow built and smoked
+  # environment, which carries the owner's required-reviewer approval. Two PyPI projects,
+  # frob and grimble (one wheel set per product, D87; each project trusts this workflow and
+  # this environment). It builds nothing: it uploads exactly the wheels the shared workflow
+  # built and smoked
   # on fresh runners, and runs only after the crates.io publish
   # succeeded. pypa/gh-action-pypi-publish is used rather than the uv upload command
   # because it also uploads PEP 740 attestations by default and needs no tool
@@ -173,12 +175,21 @@ jobs:
           pattern: wheel-*
           path: dist
           merge-multiple: true
-      - name: Exactly the five wheels are present
+      - name: Exactly five wheels per product are present
         shell: bash
         run: |
-          count=$(find dist -maxdepth 1 -name 'frob-*.whl' | wc -l)
-          if [ "$count" -ne 5 ] || [ "$(find dist -type f | wc -l)" -ne 5 ]; then
-            echo "expected exactly five wheels in dist, found:" >&2
+          total=0
+          for product in frob grimble; do
+            count=$(find dist -maxdepth 1 -name "$product-*.whl" | wc -l)
+            if [ "$count" -ne 5 ]; then
+              echo "expected exactly five $product wheels in dist, found $count:" >&2
+              find dist -type f >&2
+              exit 1
+            fi
+            total=$((total + count))
+          done
+          if [ "$(find dist -type f | wc -l)" -ne "$total" ]; then
+            echo "unexpected files in dist:" >&2
             find dist -type f >&2
             exit 1
           fi

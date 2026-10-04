@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-land/src/ratchet.rs", "crates/frob-land/src/land.rs", "crates/frob-land/tests/land.rs", "crates/gob-cache/**", "docs/design/rules.md"]
+new = ["crates/frob-land/src/ratchet.rs", "crates/frob-land/src/land.rs", "crates/frob-land/tests/land.rs", "crates/gob-cache/**", "docs/design/rules.md", "crates/gob-check/src/pipeline.rs", "crates/frob-worktree/src/gc/caches.rs", "crates/frob-worktree/src/gc/pass.rs", "crates/frob-worktree/tests/gc.rs", "docs/design/architecture.md", "crates/gob-cache/Cargo.toml", "crates/frob-land/Cargo.toml", "changelog/**"]
+at = "2026-10-04T02:24:04Z"
+actor = "lognd"
+rev = 1

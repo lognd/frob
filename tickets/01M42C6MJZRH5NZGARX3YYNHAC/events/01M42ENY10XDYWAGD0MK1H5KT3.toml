@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "criterion 1 (windows-latest rebuilds gob-dev.exe) is provable only by CI on the following push; CI and dev tooling only"
+at = "2026-10-04T03:17:50Z"
+actor = "lognd"
+rev = 1

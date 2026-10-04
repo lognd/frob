@@ -39,6 +39,7 @@ Only the full ULID is ever written into a file or a directive.
    `x86_64-pc-windows-gnu`, rustdoc with `-D warnings`, nextest
    `--profile ci`, `cargo dev gen all --check`, the pinned zizmor and
    actionlint, `frob doctor`, `frob check`, `frob test --dry-run`).
+   On Windows use `cargo dev-isolated ci` (a running `gob-dev.exe` cannot be rebuilt).
    `--keep-going` runs every step, `--step <name>` one, `--list` names them.
    The Windows clippy step needs `rustup target add
    x86_64-pc-windows-gnu` and the MinGW C compiler (`sudo apt-get install
@@ -106,7 +107,7 @@ clippy (`-D warnings`, host and Windows target), rustdoc (`-D warnings`),
 nextest, `cargo dev gen all --check`, and on Linux the self-hosted gates
 `frob doctor`, `frob check` and a dry run of
 `frob test --base origin/experimental`. Each check is `cargo dev ci --step
-<name>`; the argv lives in `crates/gob-dev/src/ci.rs` and a parity test
+<name>` (`cargo dev-isolated` on Windows); the argv lives in `crates/gob-dev/src/ci.rs` and a parity test
 fails when the workflow and `cargo dev ci` disagree. A change that does not pass
 `frob check` is not merged.
 

@@ -13,10 +13,10 @@
 pub mod ci;
 pub mod files;
 pub mod import_v1;
+pub mod isolation;
 pub mod out;
 pub mod publish;
 pub mod render;
-pub mod selfcopy;
 
 use std::path::{Path, PathBuf};
 
