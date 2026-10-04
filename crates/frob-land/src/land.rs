@@ -529,7 +529,8 @@ fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<
             Ok("merged".to_owned())
         }
         // frob:ticket 01M418TM2GZ24YPQE7ECTKE1J4
-        // frob:ticket ~66MMPM1 -- a conflicted frob.toml is never read: the conflict is refused first.
+        // frob:ticket ~66MMPM1
+        // A conflicted frob.toml is never read: the conflict is refused first.
         MergeOutcome::Conflicts(paths)
             if !paths.iter().any(|p| p == CONFIG_FILE)
                 && lockfile::all_shared(wt_path, &paths)? =>
