@@ -43,7 +43,7 @@ pub fn check(
 mod tests {
     use super::*;
 
-    // frob:tests crates/gob-dev/src/isolation.rs::tests::windows_rebuild_from_the_shared_target_dir_names_the_alias
+    // frob:tests crates/gob-dev/src/isolation.rs::check
     #[test]
     fn windows_rebuild_from_the_shared_target_dir_names_the_alias() {
         let root = Path::new("/w");
@@ -51,7 +51,7 @@ mod tests {
         assert!(err.to_string().contains("cargo dev-isolated"), "{err}");
     }
 
-    // frob:tests crates/gob-dev/src/isolation.rs::tests::isolated_non_windows_and_non_rebuilding_runs_pass
+    // frob:tests crates/gob-dev/src/isolation.rs::check
     #[test]
     fn isolated_non_windows_and_non_rebuilding_runs_pass() {
         let root = Path::new("/w");
