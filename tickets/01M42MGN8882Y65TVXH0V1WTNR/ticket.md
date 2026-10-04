@@ -7,8 +7,8 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:59:48Z"
-updated = "2026-10-04T11:48:53Z"
-scope = ["crates/frob/src/ticket/**"]
+updated = "2026-10-04T12:01:38Z"
+scope = ["crates/frob/src/ticket/**", "crates/frob/tests/terminal_lease.rs"]
 
 [[acceptance]]
 text = "Given a leased ticket, when it is closed or dropped, then its lease is released and an overlapping work succeeds"
