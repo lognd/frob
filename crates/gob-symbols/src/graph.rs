@@ -25,6 +25,10 @@ use crate::qualifier::{Admit, CallQualifier};
 use crate::stdtypes;
 use crate::symref::{Symref, Target, split_qual};
 
+mod python;
+
+use python::{PyIndex, is_python};
+
 /// Kind of a graph edge.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum EdgeKind {
@@ -233,6 +237,8 @@ struct Index {
     callable_names: HashSet<String>,
     /// (crate dir, name) of module-level type aliases: a declared type of these says nothing about the callee.
     aliases: HashSet<(String, String)>,
+    /// Lookup tables of the Python files (their calls resolve by name and import, not by crate).
+    py: PyIndex,
 }
 
 /// Lock shards of the receiver-type memo (parallel call resolution would otherwise queue on one lock).
@@ -742,6 +748,7 @@ impl SymbolGraph {
         let idx = g.index_of(&files, deps);
         lap("index_of");
         g.link_imports(&idx);
+        g.link_python_imports(&idx.py, &files);
         g.link_reexports(&files, &idx);
         lap("imports");
         g.link_calls(&files, &idx);
@@ -847,6 +854,7 @@ impl SymbolGraph {
             derives: HashMap::new(),
             file_types: HashMap::new(),
             enums: HashSet::new(),
+            py: PyIndex::build(self, files),
         };
         for f in files.iter().filter(|f| is_rust(&f.path)) {
             let (krate, module) = crate_and_module(&f.path);
@@ -2011,6 +2019,11 @@ impl SymbolGraph {
             .map(|chunk| {
                 let mut sink = CallSink::default();
                 for &call in chunk {
+                    if is_python(call.caller.path()) {
+                        let outcome = self.resolve_python(&idx.py, call);
+                        self.record_call(&mut sink, call, outcome, None, false);
+                        continue;
+                    }
                     let outcome = self.resolve_site(
                         idx,
                         &call.caller,
@@ -2266,6 +2279,16 @@ impl SymbolGraph {
 
     /// A function used as a value is a May reference edge (G4).
     fn link_value(&mut self, r: &RefSite, idx: &Index) {
+        if is_python(r.from.path()) {
+            let (Some(nodes), Some(&from)) = (
+                self.resolve_python_value(&idx.py, r),
+                self.index.get(&r.from),
+            ) else {
+                return;
+            };
+            self.record_value_edges(r, from, nodes);
+            return;
+        }
         let outcome = self.resolve_site(
             idx,
             &r.from,
@@ -2283,6 +2306,11 @@ impl SymbolGraph {
         let (Outcome::Hit(nodes, _), Some(&from)) = (outcome, self.index.get(&r.from)) else {
             return;
         };
+        self.record_value_edges(r, from, nodes);
+    }
+
+    /// Records the May reference edges of the value reference `r` (in `from`) to `nodes`.
+    fn record_value_edges(&mut self, r: &RefSite, from: NodeIndex, nodes: Vec<NodeIndex>) {
         for n in nodes {
             self.link(from, n, EdgeKind::References, Status::May);
             let to = self.graph[n].symref.clone();

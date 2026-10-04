@@ -1,0 +1,18 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @python \2 (python.expression_statement (python.assignment (ref #0) (lit "=" "=") (hole "parse-error") (lit "integer" "1"))) (python.expression_statement (python.assignment (ref #1) (lit "=" "=") (lit "integer" "2"))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+D0 S1 Binder "_" Must
+D1 S1 Binder "_" Must
+R0 S1 must D0
+R1 S1 must D1
+
+== file ==
+fidelity F2 status Partial { holes: 1 }
+== symbols ==
+== edges ==

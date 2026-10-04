@@ -1,6 +1,8 @@
 //! Comment discovery: comment texts split into candidate directive lines.
 
 use gob_languages::{Language, ParsedTree};
+#[cfg(test)]
+use gob_languages::{ParseLimits, ParseResult, parse};
 
 /// One logical comment line: its content (prefix stripped, trimmed) and file offset.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -122,6 +124,27 @@ fn rust_tree(tree: &ParsedTree) -> Vec<Segment<'_>> {
     out
 }
 
+// frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
+/// Comment segments of a Python file from its syntax tree (`#` inside strings is not a comment).
+fn python_tree(tree: &ParsedTree) -> Vec<Segment<'_>> {
+    let mut out = Vec::new();
+    let text: &str = &tree.text;
+    walk(tree.root(), &mut |n| {
+        if n.kind() == "comment" {
+            let raw = &text[n.byte_range()];
+            let body = raw.trim_start_matches('#');
+            let skip = raw.len() - body.len();
+            push(
+                &mut out,
+                n.start_byte() + skip,
+                body.trim_end_matches(['\n', '\r']),
+                false,
+            );
+        }
+    });
+    out
+}
+
 /// HTML comments in `text`, skipping those inside `skip` ranges.
 fn html_regions<'t>(text: &'t str, skip: &[std::ops::Range<usize>]) -> Vec<Segment<'t>> {
     let mut out = Vec::new();
@@ -209,7 +232,8 @@ pub(crate) fn segments<'t>(
             html_regions(text, &gob_languages::markdown_code_ranges(t))
         }
         (Language::Markdown, None) => html_regions(text, &[]),
-        (Language::Toml | Language::Yaml, _) => hash_comments(text),
+        (Language::Toml | Language::Yaml, _) | (Language::Python, None) => hash_comments(text),
+        (Language::Python, Some(t)) => python_tree(t),
     };
     tracing::trace!(
         language = language.name(),
@@ -242,6 +266,19 @@ mod tests {
         let s = rust_plain(src);
         assert_eq!(texts(&s), ["x", "y"]);
         assert_eq!(&src[s[1].offset..=s[1].offset], "y");
+    }
+
+    #[test]
+    // frob:tests crates/gob-directives/src/comments.rs::python_tree
+    fn python_comments_skip_strings_and_docstrings() {
+        let src = "# a\nx = \"# no\"  # yes\n\"\"\"# doc\"\"\"\n#!shebang\n";
+        let ParseResult::Parsed(tree) = parse(Language::Python, src, &ParseLimits::default())
+        else {
+            panic!("python parses");
+        };
+        let s = python_tree(&tree);
+        assert_eq!(texts(&s), ["a", "yes", "!shebang"]);
+        assert_eq!(&src[s[1].offset..s[1].offset + 3], "yes");
     }
 
     #[test]
