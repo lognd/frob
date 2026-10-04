@@ -6,10 +6,14 @@ category = "triage"
 priority = "critical"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T21:09:42Z"
 aliases = ["T-6519"]
 labels = ["milestone:0.535.0", "v1-cluster:C1a"]
 scope = ["src/frob/verify/", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/coord/_status.py", "tests/unit/verify/", "docs/modules/tickets-verify-sweep.md"]
+
+[[links]]
+kind = "duplicates"
+target = "01M3AXSDBPJTBS91A20T9WKA9Z"
 +++
 
 Measured 2026-09-25 12:30 UTC on the coordinator host (23 GB RAM): four
