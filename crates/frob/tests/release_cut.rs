@@ -435,3 +435,144 @@ fn a_red_or_unknown_ci_tip_refuses_the_cut_without_override() {
         assert_eq!(git_out(d, &["rev-parse", "main"]), before, "nothing cut");
     }
 }
+
+// frob:ticket 01M4235FC39ZQYF207H8ANQEZE
+/// A repository whose release 0.1.0 was cut by hand: the workspace version committed, an annotated `frob` tag and a lightweight `grimble` tag.
+fn hand_cut() -> Repo {
+    let repo = Repo::new();
+    write(&repo, "Cargo.toml", &ROOT.replace("0.0.0", "0.1.0"));
+    write(&repo, "crates/a/Cargo.toml", A);
+    write(&repo, "crates/a/src/lib.rs", "");
+    git(repo.dir.path(), &["add", "-A"]);
+    git(repo.dir.path(), &["commit", "-q", "-m", "release 0.1.0"]);
+    git(
+        repo.dir.path(),
+        &["tag", "-a", "frob-v0.1.0", "-m", "frob 0.1.0"],
+    );
+    git(repo.dir.path(), &["tag", "grimble-v0.1.0"]);
+    repo
+}
+
+/// Every REL001 finding line `frob check` reports (the check output lists findings in the error message).
+fn rel001(repo: &Repo) -> Vec<String> {
+    let out = repo.frob(&["check"]);
+    let v = json(&out);
+    let message = v["error"]["message"].as_str().unwrap_or_default();
+    message
+        .lines()
+        .filter(|l| l.contains("REL001: tag"))
+        .map(str::to_owned)
+        .collect()
+}
+
+/// Every tag with the object it names, as git reports them.
+fn tag_refs(repo: &Repo) -> String {
+    git_out(
+        repo.dir.path(),
+        &[
+            "for-each-ref",
+            "--format=%(refname) %(objectname)",
+            "refs/tags",
+        ],
+    )
+}
+
+#[test]
+fn adopt_records_hand_made_tags_as_an_adopted_cut_and_clears_rel001() {
+    // frob:tests crates/frob/src/release_cmd.rs::ReleaseAdopt.run
+    // frob:tests crates/frob-release/src/adopt.rs::resolve
+    let repo = hand_cut();
+    let refs = tag_refs(&repo);
+    let head = git_out(repo.dir.path(), &["rev-parse", "HEAD"]);
+    let remotes = git_out(repo.dir.path(), &["remote"]);
+    assert_eq!(rel001(&repo).len(), 2, "both tags are strays before adopt");
+
+    let v = repo.ok(&[
+        "release",
+        "adopt",
+        "0.1.0",
+        "--reason",
+        "cut by hand before frob",
+    ]);
+    assert_eq!(v["already"], false);
+    let d = &v["data"];
+    assert_eq!(d["version"], "0.1.0");
+    assert_eq!(d["milestone_created"], true);
+    assert_eq!(d["commit"], head.as_str());
+    assert_eq!(d["tags"].as_array().expect("tags").len(), 2);
+
+    let events = milestone_events(&repo);
+    assert!(events.contains("kind = \"cut\""), "{events}");
+    assert!(events.contains("kind = \"adopt\""), "{events}");
+    assert!(events.contains("cut by hand before frob"), "{events}");
+    assert!(events.contains("frob-v0.1.0") && events.contains("grimble-v0.1.0"));
+    assert!(events.contains("to = \"released\""), "{events}");
+    let milestone = repo.ok(&["milestone", "show", "0.1.0"]);
+    assert!(milestone.to_string().contains("released"), "{milestone}");
+
+    assert_eq!(tag_refs(&repo), refs, "tags untouched");
+    // Only the ledger (tickets/) moved; no source file and no ref other than the branch.
+    let changed = git_out(repo.dir.path(), &["diff", "--name-only", &head, "HEAD"]);
+    assert!(
+        changed.lines().all(|p| p.starts_with("tickets/")),
+        "{changed}"
+    );
+    assert_eq!(
+        git_out(repo.dir.path(), &["remote"]),
+        remotes,
+        "no remote added or used"
+    );
+    assert!(rel001(&repo).is_empty(), "REL001 is clean after adopt");
+}
+
+#[test]
+fn a_repeated_adopt_returns_already_and_writes_nothing() {
+    // frob:tests crates/frob/src/release_cmd.rs::ReleaseAdopt.run
+    let repo = hand_cut();
+    repo.ok(&["release", "adopt", "0.1.0"]);
+    let events = milestone_events(&repo);
+    let ledger_tip = git_out(
+        repo.dir.path(),
+        &["for-each-ref", "--format=%(objectname)", "refs/frob"],
+    );
+    let again = repo.ok(&["release", "adopt", "0.1.0", "--reason", "a second time"]);
+    assert_eq!(again["already"], true);
+    assert_eq!(milestone_events(&repo), events);
+    assert_eq!(
+        git_out(
+            repo.dir.path(),
+            &["for-each-ref", "--format=%(objectname)", "refs/frob"]
+        ),
+        ledger_tip
+    );
+}
+
+#[test]
+fn adopt_releases_an_existing_milestone_instead_of_creating_one() {
+    // frob:tests crates/frob/src/release_cmd.rs::ReleaseAdopt.run
+    let repo = hand_cut();
+    repo.ok(&["milestone", "new", "0.1.0", "--goal", "First"]);
+    let v = repo.ok(&["release", "adopt", "0.1.0"]);
+    assert_eq!(v["data"]["milestone_created"], false);
+    let events = milestone_events(&repo);
+    assert!(events.contains("kind = \"cut\"") && events.contains("to = \"released\""));
+    assert!(rel001(&repo).is_empty());
+}
+
+#[test]
+fn adopt_without_tags_is_refused_with_a_remedy_and_writes_nothing() {
+    // frob:tests crates/frob/src/release_cmd.rs::ReleaseAdopt.run
+    let repo = hand_cut();
+    let out = repo.frob(&["release", "adopt", "0.2.0"]);
+    assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stdout));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("E-ADOPT-NO-TAG"), "{text}");
+    assert!(
+        text.contains("frob-v0.2.0") && text.contains("grimble-v0.2.0"),
+        "{text}"
+    );
+    assert!(
+        !repo.dir.path().join("tickets/_milestones").exists()
+            || !milestone_events(&repo).contains("0.2.0")
+    );
+}

@@ -44,6 +44,18 @@ fn a_tag_made_by_plain_tag_creation_fires() {
 }
 
 #[test]
+fn the_stray_tag_remedy_names_adopt_before_deletion() {
+    // frob:tests crates/frob-release/src/rel001.rs::evaluate
+    let (_d, repo) = fixture();
+    let c = commit(&repo, "0.0.1");
+    tag(&repo, "frob-v0.0.1", c);
+    let m = evaluate(&repo, &[]).findings[0].message.clone();
+    let adopt = m.find("frob release adopt 0.0.1").expect("adopt named");
+    let delete = m.find("delete the tag").expect("deletion named");
+    assert!(adopt < delete, "adopt comes first: {m}");
+}
+
+#[test]
 fn a_matching_recorded_cut_is_silent() {
     // frob:tests crates/frob-release/src/rel001.rs::evaluate
     let (_d, repo) = fixture();
