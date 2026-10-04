@@ -2,11 +2,12 @@
 id = "01M1T07NV9BFE61CP3HYKRJ14T"
 title = "normalize_evidence_separator mangles real kotlin node ids (dot-form classname.method)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:06:30Z"
 aliases = ["T-3945"]
 labels = ["milestone:0.540.0", "v1-cluster:C4a"]
 scope = ["src/frob/tickets/__init__.py"]
