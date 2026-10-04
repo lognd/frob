@@ -3,12 +3,12 @@ id = "01M1WJMD1N2DRH7J9BPS6KHXYZ"
 title = "decide and document the no-[[test.runner]]-declared fallback policy"
 type = "bug"
 category = "triage"
-priority = "medium"
+priority = "low"
 reporter = "human"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:06:44Z"
 aliases = ["T-4149"]
-labels = ["milestone:0.540.0", "v1-cluster:C4a"]
+labels = ["v1-cluster:C4a", "triage:accepted"]
 +++
 
 T-3887's open question: what happens when a project declares no [[test.runner]] and has no resolvable environment for project_tool_argv/pytest spawns. Options: refuse the affected gates with a clear message, or fall back to frob's own interpreter WITH an explicit, unmissable capability statement that the result is measured in frob's environment (never a silent fallback). Decide, document in docs/modules/process.md and docs/modules/testing.md, and add a MUST-FIRE fixture.
