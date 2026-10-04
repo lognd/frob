@@ -2,11 +2,12 @@
 id = "01M1T07NZJBRJV1JQPWMCXXJMP"
 title = "the secrets hook blocks writing the text import.meta.env into a ticket, pushing an agent into filing with no acceptance criteria"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T21:08:24Z"
+updated = "2026-10-04T21:08:25Z"
 aliases = ["T-4082"]
 labels = ["milestone:0.535.0", "v1-cluster:E1"]
 scope = ["scripts/fleet_status.py"]
