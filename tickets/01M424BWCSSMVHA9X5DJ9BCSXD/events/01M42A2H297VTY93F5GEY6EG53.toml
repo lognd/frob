@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T01:57:20Z"
+digest = "15083d1eb3e79d66b0de7f249f77d31689c492213ac6cd2626c017237aac5212"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0e4a5faa-34b6-42c5-bf30-161e5ad3579e with nextest profile: default
+    Starting 6 tests across 5 binaries (52 tests skipped)
+        PASS [   0.014s] gob-dev selfcopy::tests::copy_names_are_unique_and_keep_the_extension
+        PASS [   0.025s] gob-dev::ci_parity windows_ci_runs_from_a_self_copy
+        PASS [   0.026s] gob-dev selfcopy::tests::only_windows_rebuilding_tasks_without_marker_reexec
+        PASS [   0.026s] gob-dev selfcopy::tests::stale_copies_are_removed
+        PASS [   0.048s] gob-dev selfcopy::tests::noop
+        PASS [   0.564s] gob-dev selfcopy::tests::reexec_relays_the_exit_code_and_deletes_the_copy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.565s] 6 tests run: 6 passed, 52 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(windows_ci_runs_from_a_self_copy) | test(selfcopy::tests)'"
+size = 1022
+status = "measured"
+tests = ["windows_ci_runs_from_a_self_copy", "selfcopy::tests::copy_names_are_unique_and_keep_the_extension", "selfcopy::tests::only_windows_rebuilding_tasks_without_marker_reexec", "selfcopy::tests::stale_copies_are_removed", "selfcopy::tests::noop", "selfcopy::tests::reexec_relays_the_exit_code_and_deletes_the_copy"]
+at = "2026-10-04T01:57:20Z"
+actor = "lognd"
+rev = 1
