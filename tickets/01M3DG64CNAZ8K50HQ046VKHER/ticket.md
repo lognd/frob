@@ -3,12 +3,12 @@ id = "01M3DG64CNAZ8K50HQ046VKHER"
 title = "test runners: exit-code-only outcome records PASS when the filter selects nothing; require executed-and-passed per bound id from the runner report"
 type = "bug"
 category = "triage"
-priority = "critical"
+priority = "medium"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-09-26T00:00:00Z"
+updated = "2026-10-04T21:07:12Z"
 aliases = ["T-6549"]
-labels = ["milestone:0.534.0", "v1-cluster:C4a"]
+labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/testing/_runners.py", "src/frob/testing/_collect.py", "src/frob/tickets/_land_verify.py", "src/frob/app/config.py", "tests/unit/test_runner_outcome_executed.py", "docs/modules/testing.md"]
 +++
 
