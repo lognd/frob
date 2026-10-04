@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T01:57:43Z"
-updated = "2026-10-04T04:24:25Z"
+updated = "2026-10-04T04:42:29Z"
 scope = ["crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/**", "docs/design/build-test-ci.md", "CONTRIBUTING.md"]
 
 [[acceptance]]
 text = "Given --remote and a fake goway that records its argv, when cargo dev ci runs, then offloadable steps call goway run with the exact argv and env of the step and the summary names the host"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given goway exits 125, when a remote step runs, then the summary reports a goway failure distinct from a test failure"
