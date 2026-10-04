@@ -7,8 +7,8 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T04:59:50Z"
-updated = "2026-10-04T13:12:29Z"
-scope = ["crates/gob-check/src/**"]
+updated = "2026-10-04T13:13:30Z"
+scope = ["crates/gob-check/src/**", "crates/gob-check/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given a file edited between check and fix, when --fix runs, then it refuses that file; and an interrupted fix never leaves a partial file"
