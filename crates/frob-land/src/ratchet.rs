@@ -163,6 +163,7 @@ fn run_at_base(
         )));
     }
     tracing::info!(oid, dir = %dir.display(), "land base checkout");
+    share_build_dir(wt_path, &dir);
     let result = frob_check::run(
         &dir,
         &CheckOptions {
@@ -178,6 +179,30 @@ fn run_at_base(
         let _ = git(wt, wt_path, &["worktree", "prune"]);
     }
     Ok(notes(&result?))
+}
+
+/// Point the base checkout's `target/` at the ticket worktree's, so the cargo tool stages of the
+/// base check reuse the dependency builds the head checks just made instead of compiling the
+/// workspace from nothing in a fresh directory (measured: minutes in a debug build, ~TSK0M4Y).
+/// Only for a real `target/` directory; failures are logged and the base check simply runs cold.
+// frob:ticket 01M42B6T28RX9PVM3X6TSK0M4Y
+fn share_build_dir(wt_path: &Path, base_dir: &Path) {
+    let from = wt_path.join("target");
+    if !std::fs::symlink_metadata(&from).is_ok_and(|m| m.is_dir()) {
+        tracing::debug!(from = %from.display(), "no build directory to share with the base checkout");
+        return;
+    }
+    #[cfg(unix)]
+    match std::os::unix::fs::symlink(&from, base_dir.join("target")) {
+        Ok(()) => {
+            tracing::info!(from = %from.display(), "base checkout shares the worktree's build directory");
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "base checkout build directory not shared; its cargo stages run cold");
+        }
+    }
+    #[cfg(not(unix))]
+    tracing::debug!(base = %base_dir.display(), "build directory sharing is unix-only");
 }
 
 /// The ratchet's decision for one land.
@@ -252,4 +277,30 @@ pub(crate) fn verdict(scoped: &CheckReport, head: &CheckReport, base: &[FindingN
         .cloned()
         .collect();
     out
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/frob-land/src/ratchet.rs::share_build_dir
+    #[test]
+    fn the_base_checkout_shares_a_real_target_directory_and_only_then() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let (wt, base) = (tmp.path().join("wt"), tmp.path().join("base"));
+        std::fs::create_dir_all(&wt).expect("wt");
+        std::fs::create_dir_all(&base).expect("base");
+        share_build_dir(&wt, &base);
+        assert!(!base.join("target").exists(), "no target to share");
+        std::fs::create_dir_all(wt.join("target")).expect("target");
+        std::fs::write(wt.join("target").join("marker"), "x").expect("marker");
+        share_build_dir(&wt, &base);
+        assert!(base.join("target").join("marker").is_file());
+        assert!(
+            std::fs::symlink_metadata(base.join("target"))
+                .expect("meta")
+                .file_type()
+                .is_symlink()
+        );
+    }
 }

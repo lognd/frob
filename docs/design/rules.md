@@ -341,7 +341,9 @@ section, never dropped.
   `<git common dir>/frob/land-base/<oid>.json`, shared by every worktree, so a
   second ticket landing on the same base runs no base check (a moved base has
   a new oid, so it is recomputed). The base worktree's check uses the shared
-  cache, so every file unchanged since an earlier check is a hit (~TSK0M4Y). The ticket-scoped run still supplies the
+  cache, so every file unchanged since an earlier check is a hit (~TSK0M4Y); the base worktree's `target/` is a symlink to the ticket worktree's, so its
+  cargo tool stages reuse the dependency builds of the head checks instead of
+  compiling from nothing, which dominated land's wall time in a debug build. The ticket-scoped run still supplies the
   ticket-only findings (SCOPE001, ticket-scoped rules) that no unscoped run
   has, and a repository-level finding such as REL001 is judged only on the
   unscoped side, so text that differs between the scoped and unscoped runs
