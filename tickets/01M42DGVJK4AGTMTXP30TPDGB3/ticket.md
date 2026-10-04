@@ -2,11 +2,12 @@
 id = "01M42DGVJK4AGTMTXP30TPDGB3"
 title = "frob check fails CFG001: frob.toml lacks materialized knob pm.strict"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T02:57:35Z"
-updated = "2026-10-04T03:00:07Z"
+updated = "2026-10-04T03:00:08Z"
 scope = ["frob.toml"]
 
 [[acceptance]]
