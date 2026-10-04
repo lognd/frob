@@ -2,16 +2,16 @@
 id = "01M43ARX764095Q4VWABWXXV5H"
 title = "crunk-spec: crunk.toml schema through gob-config, DesignSpec, naming, JSON Schema"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:47Z"
-updated = "2026-10-04T11:28:47Z"
+updated = "2026-10-04T13:16:29Z"
 idempotency_key = "crunk-plan-spec"
 labels = ["area:crunk"]
-scope = ["crates/crunk-spec/**", "docs/schemas/crunk.json", "docs/crunk/config.md", "Cargo.lock"]
+scope = ["crates/crunk-spec/**", "docs/schemas/crunk.json", "docs/crunk/config.md", "Cargo.lock", "crates/gob-dev/Cargo.toml", "crates/gob-dev/src/lib.rs", "crates/gob-dev/src/render/mod.rs", "crates/gob-dev/src/render/crunk.rs", "crates/gob-dev/tests/generate.rs"]
 
 [[links]]
 kind = "blocked-by"
