@@ -2,12 +2,13 @@
 id = "01M2VFD1P87TV6KWTEMB3KWNQ8"
 title = "docs/modules size lint: a per-symbol section over N lines is a finding, so relocated prose cannot pile up at the destination"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 parent = "01M2VFD1JK8W1752V73ERRYJS9"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-09-19T00:00:00Z"
+updated = "2026-10-04T21:07:57Z"
 aliases = ["T-4808"]
 labels = ["v1-cluster:F1"]
 scope = ["src/frob/gates", "docs/modules/docstrings.md", "frob.toml"]
