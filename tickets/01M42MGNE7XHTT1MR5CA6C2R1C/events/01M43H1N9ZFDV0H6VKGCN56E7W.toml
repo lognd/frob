@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T13:18:26Z"
+digest = "9b7b1722e99a76dad51095fa8b89eabf48541de4fa69642483b5676d4426b674"
+exit_code = 0
+inline = '''
+   Compiling frob-check v0.0.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.09s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4fd94693-67fe-4c16-a0f9-4a346f8353fe with nextest profile: default
+    Starting 3 tests across 1 binary (32 tests skipped)
+        PASS [   9.413s] frob-check::check bare_marker_fires_and_second_run_hits_the_cache_with_identical_output
+        PASS [  14.998s] frob-check::check fix_rewrites_the_file_and_the_next_run_is_clean
+        PASS [  24.945s] frob-check::check a_corrupt_ledger_index_is_required_unresolved_findings_and_fails_the_gate
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  24.957s] 3 tests run: 3 passed, 32 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-check --test check a_corrupt_ledger_index"
+size = 848
+status = "measured"
+tests = ["bare_marker_fires_and_second_run_hits_the_cache_with_identical_output", "fix_rewrites_the_file_and_the_next_run_is_clean", "a_corrupt_ledger_index_is_required_unresolved_findings_and_fails_the_gate"]
+at = "2026-10-04T13:18:26Z"
+actor = "lognd"
+rev = 1
