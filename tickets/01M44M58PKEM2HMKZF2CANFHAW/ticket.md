@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T23:32:04Z"
-updated = "2026-10-04T23:44:11Z"
+updated = "2026-10-04T23:44:12Z"
 scope = ["crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/ci_parity.rs", ".github/workflows/ci.yml", "goway.toml", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
@@ -15,7 +15,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the repo root, when goway doctor reads it, then goway.toml declares uv as a required tool"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the GitHub workflow, when zizmor and actionlint run, then the uv setup step is pinned and clean"
