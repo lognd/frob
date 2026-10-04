@@ -558,6 +558,8 @@ fn unmerged_branch(dir: &Path, id: &str) -> String {
 
 // frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
 // frob:tests crates/frob-evidence/src/done.rs::MergedGuard.check
+// frob:tests crates/frob-evidence/src/done.rs::MergedGuard.for_ticket
+// frob:tests crates/frob-evidence/src/done.rs::ticket_branch
 #[test]
 fn a_done_close_with_an_unmerged_ticket_branch_is_refused_naming_commits_and_remedy() {
     let dir = repo(&[]);
@@ -576,6 +578,8 @@ fn a_done_close_with_an_unmerged_ticket_branch_is_refused_naming_commits_and_rem
 
 // frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
 // frob:tests crates/frob-evidence/src/done.rs::MergedGuard.record_exemption
+// frob:tests crates/frob-evidence/src/done.rs::MergedGuard.allow_no_land
+// frob:tests crates/frob-ledger/src/event.rs::land_exemption
 #[test]
 fn no_land_with_a_reason_closes_and_audits_and_without_a_reason_is_a_usage_error() {
     let dir = repo(&[]);
