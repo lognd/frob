@@ -420,6 +420,52 @@ fn a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_workt
     assert_ne!(merge_head, 0, "no merge in progress");
 }
 
+// frob:tests crates/frob-land/src/land.rs::merge_base_in
+#[test]
+fn a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    fx.repo()
+        .commit_paths(
+            MAIN,
+            &[(
+                RelPath::new("uv.lock").expect("path"),
+                Some(b"base\n".to_vec()),
+            )],
+            "uv base",
+            &CommitOptions::default(),
+        )
+        .expect("commit");
+    let s = fx.start("Edit config and lock", &["frob.toml", "uv.lock"]);
+    Fixture::commit_in(&s.wt, "uv.lock", "ticket\n");
+    Fixture::commit_in(
+        &s.wt,
+        "frob.toml",
+        "[pm]\ndone_requires = [\"criteria_evidenced\", \"ticket\"]\n",
+    );
+    move_main(&fx.root, "uv.lock", "moved\n");
+    move_main(
+        &fx.root,
+        "frob.toml",
+        "[pm]\ndone_requires = [\"criteria_evidenced\", \"base\"]\n",
+    );
+    let head = git_out(&s.wt, &["rev-parse", "HEAD"]).1;
+    let status = git_out(&s.wt, &["status", "--porcelain"]).1;
+    let toml = std::fs::read(s.wt.join("frob.toml")).expect("read");
+
+    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("conflict");
+    let r = refusal(&err);
+    assert_eq!(r.code, "E-LAND-CONFLICT", "{err}");
+    assert!(r.message.contains("frob.toml"), "{}", r.message);
+    assert_eq!(git_out(&s.wt, &["rev-parse", "HEAD"]).1, head);
+    assert_eq!(git_out(&s.wt, &["status", "--porcelain"]).1, status);
+    assert_eq!(std::fs::read(s.wt.join("frob.toml")).expect("read"), toml);
+    let (merge_head, _) = git_out(&s.wt, &["rev-parse", "-q", "--verify", "MERGE_HEAD"]);
+    assert_ne!(merge_head, 0, "no merge in progress");
+}
+
 #[test]
 fn lock_contention_refuses_retryably_naming_the_holder() {
     if !git_available() {

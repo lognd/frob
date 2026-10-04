@@ -21,13 +21,29 @@ use crate::git::{cargo, git};
 /// Stable code of the refusal when a lockfile conflict cannot be regenerated.
 const CODE_LOCKFILE: &str = "E-LAND-LOCKFILE";
 
-/// True when every conflicted path is a shared lockfile under `[lease] shared_files`.
-pub(crate) fn all_shared(wt_path: &Path, paths: &[String]) -> Result<bool, LandError> {
+/// The `[lease] shared_files` globs committed at `base`, read before any merge starts (frob:ticket 01M43FX5KWVP277RX5666MMPM1).
+///
+/// Land never reads configuration from the worktree while a merge may be in
+/// progress: its `frob.toml` can hold conflict markers. The base is the
+/// authority land merges toward, so its committed file decides.
+pub(crate) fn committed_shared_files(wt: &Repo, base: &str) -> Result<Vec<String>, LandError> {
+    let label = Path::new("frob.toml");
+    let text = match wt.read_blob_at(base, "frob.toml")? {
+        Some(bytes) => String::from_utf8(bytes)
+            .map_err(|e| LandError::Config(format!("{base}:frob.toml is not UTF-8: {e}")))?,
+        None => String::new(),
+    };
+    let cfg = LeaseConfig::from_toml_str(&text, label)
+        .map_err(|e| LandError::Config(format!("{base}:frob.toml: {e}")))?;
+    Ok(cfg.shared_files)
+}
+
+/// True when every conflicted path is a shared lockfile matching `shared_files`.
+pub(crate) fn all_shared(shared_files: &[String], paths: &[String]) -> Result<bool, LandError> {
     if paths.is_empty() {
         return Ok(false);
     }
-    let cfg = LeaseConfig::load(wt_path).map_err(|e| LandError::Config(e.to_string()))?;
-    let shared = glob_set(&cfg.shared_files).map_err(|e| LandError::Config(e.to_string()))?;
+    let shared = glob_set(shared_files).map_err(|e| LandError::Config(e.to_string()))?;
     Ok(paths.iter().all(|p| shared.is_match(p)))
 }
 
