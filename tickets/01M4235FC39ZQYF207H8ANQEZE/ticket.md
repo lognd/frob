@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:56:36Z"
-updated = "2026-10-04T00:37:14Z"
+updated = "2026-10-04T00:37:18Z"
 scope = ["crates/frob-release/**", "crates/frob/src/release_cmd.rs", "crates/frob/tests/release.rs", "crates/frob/tests/release_cut.rs", "docs/design/releases.md", "docs/guides/release.md", "docs/reference/cli/frob.md", "docs/reference/rules/REL001.md", "crates/frob-pm/src/event.rs", "crates/frob-pm/src/fold.rs"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an adopted version, when adopt runs again, then it returns already and writes nothing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a tag with no cut, when REL001 reports it, then the remedy names frob release adopt first"
