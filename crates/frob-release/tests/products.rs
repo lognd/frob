@@ -12,6 +12,11 @@ use serde_json::Value;
 /// The products: binary name to the package that carries it (and names its archive).
 const PRODUCTS: [(&str, &str); 2] = [("frob", "frob-cli"), ("grimble", "grimble")];
 
+// frob:ticket 01M43ARVS24254G85TMFYH8FGQ
+/// Products whose binary package exists but whose release wiring (dist opt-in, smoke, workflows) does
+/// not yet; ~8CRC1ZH folds each entry into [`PRODUCTS`] when it registers the product.
+const UNWIRED_PRODUCTS: [(&str, &str); 1] = [("crunk", "crunk")];
+
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
@@ -60,7 +65,11 @@ fn published_packages_declare_only_product_binaries() {
     for pkg in publishable(&meta) {
         let name = pkg["name"].as_str().unwrap();
         for bin in bins(pkg) {
-            let expected = PRODUCTS.iter().find(|(b, _)| *b == bin).map(|(_, p)| *p);
+            let expected = PRODUCTS
+                .iter()
+                .chain(&UNWIRED_PRODUCTS)
+                .find(|(b, _)| *b == bin)
+                .map(|(_, p)| *p);
             assert_eq!(
                 expected,
                 Some(name),
@@ -71,6 +80,7 @@ fn published_packages_declare_only_product_binaries() {
     }
     let want: BTreeMap<String, String> = PRODUCTS
         .iter()
+        .chain(&UNWIRED_PRODUCTS)
         .map(|(b, p)| ((*b).to_owned(), (*p).to_owned()))
         .collect();
     assert_eq!(found, want, "every product binary ships from its package");
