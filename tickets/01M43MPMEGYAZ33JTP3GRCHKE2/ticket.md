@@ -2,11 +2,11 @@
 id = "01M43MPMEGYAZ33JTP3GRCHKE2"
 title = "CLI tests depend on siblings installed on the developer PATH (doctor snapshot gains a crunk warning)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T14:22:19Z"
-updated = "2026-10-04T14:22:19Z"
+updated = "2026-10-04T20:52:03Z"
 
 [[acceptance]]
 text = "Given a foreign crunk executable on the ambient PATH, when the CLI test suite runs, then every snapshot is unchanged"
