@@ -2,7 +2,8 @@
 id = "01M424QEMYGC9VZZYX9BZXZK29"
 title = "Automatic garbage collection: throttled pass in work and land keeps build output, worktrees, caches and artifacts under budget"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 reporter = "lognd"
