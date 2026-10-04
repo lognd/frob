@@ -2,12 +2,12 @@
 id = "01M4235FSBRRXMX4Q72QAFRXM3"
 title = "land refuses only findings the ticket introduces; pre-existing base findings are reported, not blocking (ratchet)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T23:56:37Z"
-updated = "2026-10-03T23:56:37Z"
+updated = "2026-10-04T00:58:59Z"
 scope = ["crates/frob-land/**", "crates/frob-check/src/delta.rs", "docs/design/tickets.md", "docs/design/rules.md"]
 
 [[acceptance]]
