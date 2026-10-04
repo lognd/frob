@@ -364,7 +364,12 @@ not run and produces nothing, not even a note (a repository with no
 design model owes grimble nothing). For a configured sibling frob does:
 
 1. Discovery (products.md section 6): in-process with the `bundle`
-   feature, otherwise the binary `grimble` or `crunk` on PATH. In-process
+   feature, otherwise the binary `grimble` or `crunk` next to the running
+   frob executable (symlinks resolved; `bin/` or `Scripts\`, `.exe` on
+   Windows) and then on PATH (D87). `gob_exec::find_sibling` is the one
+   discovery, shared with `frob doctor`; `check` records the location
+   used as the fidelity row `<product>:binary` (`beside-frob` or `path`).
+   In-process
    runs build the same typed document without a JSON round trip and go
    through steps 4 to 6 unchanged.
 2. Spawn through `gob-exec` with the argv of section 2, the timeout of

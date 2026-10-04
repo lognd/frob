@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use gob_cache::{Cache, CacheConfig};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
-use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec};
+use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec, find_sibling};
 use gob_symbols::{Fidelity, adapter_for, fidelity_report};
 use gob_walk::{WalkConfig, walk};
 use schemars::JsonSchema;
@@ -158,6 +158,32 @@ pub struct DriverCheck {
     pub fix: Option<String>,
 }
 
+/// A second copy of a sibling in the other location (D87).
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct OtherCopy {
+    /// Where it is: `path` (the copy beside frob is the one in use).
+    pub path: String,
+    /// First line of its `--version`, when it ran.
+    pub version: Option<String>,
+    /// True when its version differs from the copy in use.
+    pub differs: bool,
+}
+
+/// One sibling product as frob discovers it: beside the running executable first, then on `PATH`.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct SiblingRow {
+    /// Product (`grimble`, `crunk`).
+    pub product: String,
+    /// `beside-frob`, `path` or `absent`.
+    pub location: String,
+    /// The executable in use, when found.
+    pub path: Option<String>,
+    /// First line of its `--version`, when it ran.
+    pub version: Option<String>,
+    /// A different second copy, when one exists.
+    pub other: Option<OtherCopy>,
+}
+
 /// Output of `doctor`.
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct DoctorData {
@@ -173,6 +199,8 @@ pub struct DoctorData {
     pub ledger: LedgerInfo,
     /// Merge driver resolution.
     pub driver: DriverCheck,
+    /// Sibling binaries: which location is used and any second copy with its version.
+    pub siblings: Vec<SiblingRow>,
     /// Language adapters; present only with `--languages`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub languages: Option<LanguagesReport>,
@@ -201,6 +229,48 @@ fn probe(runner: &Runner, program: Program, cwd: &std::path::Path) -> Option<Str
             tracing::warn!(tool = %label, error = %e, "version probe unavailable");
             None
         }
+    }
+}
+
+/// The siblings frob spawns, in discovery order.
+const SIBLING_PRODUCTS: [&str; 2] = ["grimble", "crunk"];
+
+/// Discover `product` with [`find_sibling`] and probe the copy in use and any second copy.
+// frob:ticket 01M421F7Q66MW38R7J1JS1VMBC
+fn sibling_row(runner: &Runner, product: &str, cwd: &std::path::Path) -> SiblingRow {
+    let version_of = |path: &std::path::Path| {
+        probe(
+            runner,
+            Program::Hook {
+                path: path.to_path_buf(),
+            },
+            cwd,
+        )
+    };
+    let Ok(found) = find_sibling(product) else {
+        return SiblingRow {
+            product: product.to_owned(),
+            location: "absent".to_owned(),
+            path: None,
+            version: None,
+            other: None,
+        };
+    };
+    let version = version_of(&found.path);
+    let other = found.other.as_deref().map(|p| {
+        let other_version = version_of(p);
+        OtherCopy {
+            path: p.display().to_string(),
+            differs: other_version != version,
+            version: other_version,
+        }
+    });
+    SiblingRow {
+        product: product.to_owned(),
+        location: found.origin.label().to_owned(),
+        path: Some(found.path.display().to_string()),
+        version,
+        other,
     }
 }
 
@@ -267,6 +337,10 @@ impl Command for Doctor {
 
         let ledger = ledger_info(&located, &cfg);
         let driver = driver_check(&located)?;
+        let siblings: Vec<SiblingRow> = SIBLING_PRODUCTS
+            .iter()
+            .map(|p| sibling_row(&runner, p, &ctx.cwd))
+            .collect();
         let languages = self
             .languages
             .then(|| languages_report(&located.root, &cfg));
@@ -277,11 +351,23 @@ impl Command for Doctor {
             missing_knobs = config.missing_knobs,
             "doctor finished"
         );
-        let warning = driver
+        let mut warnings: Vec<String> = driver
             .detail
             .as_ref()
             .zip(driver.fix.as_ref())
-            .map(|(d, f)| format!("{d}; fix: {f}"));
+            .map(|(d, f)| format!("{d}; fix: {f}"))
+            .into_iter()
+            .collect();
+        for row in &siblings {
+            if let Some(other) = row.other.as_ref().filter(|o| o.differs) {
+                warnings.push(format!(
+                    "{} on PATH ({}) differs from the one next to frob ({}); frob uses the one next to it",
+                    row.product,
+                    other.version.as_deref().unwrap_or("version unknown"),
+                    row.version.as_deref().unwrap_or("version unknown"),
+                ));
+            }
+        }
         let payload = Payload::new(DoctorData {
             toolchain,
             git,
@@ -289,13 +375,13 @@ impl Command for Doctor {
             config,
             ledger,
             driver,
+            siblings,
             languages,
         })
         .with_findings(findings);
-        Ok(match warning {
-            Some(w) => payload.with_warning(w),
-            None => payload,
-        })
+        Ok(warnings
+            .into_iter()
+            .fold(payload, gob_cli::Payload::with_warning))
     }
 }
 

@@ -59,23 +59,13 @@ impl Program {
                 }
             }
             Self::Tool { name } => bare_name(name).and_then(which_name),
-            Self::Sibling { name } => {
-                let name = bare_name(name)?;
-                let beside = std::env::current_exe()
-                    .ok()
-                    .and_then(|exe| exe.parent().map(|d| d.join(name)))
-                    .filter(|p| p.is_file());
-                match beside {
-                    Some(p) => Ok(p),
-                    None => which_name(name),
-                }
-            }
+            Self::Sibling { name } => crate::discover::find_sibling(name).map(|s| s.path),
         }
     }
 }
 
 /// Reject empty names and names containing path separators.
-fn bare_name(name: &str) -> Result<&str, ExecError> {
+pub(crate) fn bare_name(name: &str) -> Result<&str, ExecError> {
     if name.is_empty() || name.contains(['/', '\\']) {
         return Err(ExecError::NotAllowed {
             program: name.to_owned(),

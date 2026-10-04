@@ -10,6 +10,7 @@
 
 mod cmdline;
 mod counter;
+mod discover;
 mod error;
 pub mod proc001;
 mod program;
@@ -18,6 +19,7 @@ mod semaphore;
 
 pub use cmdline::{Arg, Shell, command_line};
 pub use counter::{SpawnCount, assert_spawns};
+pub use discover::{Origin, Platform, Sibling, beside_dirs, executable_names, find_sibling, plan};
 pub use error::ExecError;
 pub use program::Program;
 pub use runner::{DEFAULT_OUTPUT_CAP, Limits, Outcome, Output, Runner, Spec};

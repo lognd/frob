@@ -270,6 +270,74 @@ expression: v
       ],
       "type": "object"
     },
+    "OtherCopy": {
+      "description": "A second copy of a sibling in the other location (D87).",
+      "properties": {
+        "differs": {
+          "description": "True when its version differs from the copy in use.",
+          "type": "boolean"
+        },
+        "path": {
+          "description": "Where it is: `path` (the copy beside frob is the one in use).",
+          "type": "string"
+        },
+        "version": {
+          "description": "First line of its `--version`, when it ran.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "differs"
+      ],
+      "type": "object"
+    },
+    "SiblingRow": {
+      "description": "One sibling product as frob discovers it: beside the running executable first, then on `PATH`.",
+      "properties": {
+        "location": {
+          "description": "`beside-frob`, `path` or `absent`.",
+          "type": "string"
+        },
+        "other": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OtherCopy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "A different second copy, when one exists."
+        },
+        "path": {
+          "description": "The executable in use, when found.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "product": {
+          "description": "Product (`grimble`, `crunk`).",
+          "type": "string"
+        },
+        "version": {
+          "description": "First line of its `--version`, when it ran.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "product",
+        "location"
+      ],
+      "type": "object"
+    },
     "Toolchain": {
       "description": "Versions of the tools frob shells out to.",
       "properties": {
@@ -355,6 +423,13 @@ expression: v
       "$ref": "#/$defs/LedgerInfo",
       "description": "Ledger ref."
     },
+    "siblings": {
+      "description": "Sibling binaries: which location is used and any second copy with its version.",
+      "items": {
+        "$ref": "#/$defs/SiblingRow"
+      },
+      "type": "array"
+    },
     "toolchain": {
       "$ref": "#/$defs/Toolchain",
       "description": "Tool versions."
@@ -366,7 +441,8 @@ expression: v
     "cache",
     "config",
     "ledger",
-    "driver"
+    "driver",
+    "siblings"
   ],
   "title": "DoctorData",
   "type": "object"

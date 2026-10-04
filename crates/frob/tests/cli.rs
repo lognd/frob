@@ -56,6 +56,7 @@ fn doctor_piped_is_json_envelope_even_with_cfg001() {
         ".data.git.root" => "[path]",
         ".data.git.branch" => "[branch]",
         ".data.ledger.error" => "[error]",
+        ".data.siblings" => "[environment]",
     });
 }
 

@@ -22,8 +22,8 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use frob_obligations::sibling_exception_findings;
-use gob_check::{CheckTable, External, Timing};
-use gob_exec::Program;
+use gob_check::{CheckTable, External, LanguageFidelity, Timing};
+use gob_exec::{Origin, Program, find_sibling};
 use gob_rules::{Finding, RequiredReason, Rule, Severity};
 use gob_text::FileInterner;
 
@@ -62,6 +62,8 @@ const SIBLINGS: &[(&str, &str)] = &[("grimble", "grimble.toml"), ("crunk", "crun
 struct Pending {
     product: &'static str,
     require: bool,
+    /// Where discovery found the binary; `None` for a configured override or when not found.
+    origin: Option<Origin>,
     handle: JoinHandle<Spawned>,
 }
 
@@ -104,16 +106,22 @@ impl Siblings {
                 tracing::debug!(product, "sibling not configured");
                 continue;
             }
-            let program = opts
-                .sibling_programs
-                .iter()
-                .find(|(p, _)| p == product)
-                .map_or_else(
-                    || Program::Sibling {
-                        name: (*product).to_owned(),
-                    },
-                    |(_, path)| Program::Hook { path: path.clone() },
-                );
+            let (program, origin) = match opts.sibling_programs.iter().find(|(p, _)| p == product) {
+                Some((_, path)) => (Program::Hook { path: path.clone() }, None),
+                None => match find_sibling(product) {
+                    Ok(found) => {
+                        tracing::info!(product, origin = found.origin.label(), "sibling located");
+                        (Program::Hook { path: found.path }, Some(found.origin))
+                    }
+                    // Not found: the sibling program fails the same way and yields the SIB001.
+                    Err(_) => (
+                        Program::Sibling {
+                            name: (*product).to_owned(),
+                        },
+                        None,
+                    ),
+                },
+            };
             let compute_digest = match gob_config::ComputeTable::load_for_product(root, product) {
                 Ok((table, _)) => Some(gob_config::compute_digest(&table)),
                 Err(e) => {
@@ -141,6 +149,7 @@ impl Siblings {
             pending.push(Pending {
                 product,
                 require: table.require_siblings,
+                origin,
                 handle,
             });
         }
@@ -164,6 +173,7 @@ impl Siblings {
         for Pending {
             product,
             require,
+            origin,
             handle,
         } in pending
         {
@@ -179,6 +189,16 @@ impl Siblings {
             match spawned.result {
                 Ok(doc) => match merge::merge(product, &doc, files, &mut out) {
                     Ok(exceptions) => {
+                        if let Some(origin) = origin {
+                            // frob:ticket 01M421F7Q66MW38R7J1JS1VMBC
+                            out.languages.push((
+                                format!("{product}:binary"),
+                                LanguageFidelity {
+                                    fidelity: origin.label().to_owned(),
+                                    ..LanguageFidelity::default()
+                                },
+                            ));
+                        }
                         out.findings.extend(sibling_exception_findings(
                             root,
                             ledger,

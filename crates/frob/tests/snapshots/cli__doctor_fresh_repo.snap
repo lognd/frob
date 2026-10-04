@@ -38,6 +38,7 @@ expression: v
       "reachable": false,
       "ref": "refs/heads/main"
     },
+    "siblings": "[environment]",
     "toolchain": {
       "cargo": "[version]",
       "rustc": "[version]"
