@@ -20,6 +20,24 @@ struct Cli {
     command: Task,
 }
 
+/// Category an imported open v1 ticket is created in.
+#[derive(Debug, Clone, Copy, clap::ValueEnum)]
+enum OpenCategory {
+    /// Ready to start.
+    Todo,
+    /// Awaiting triage.
+    Triage,
+}
+
+impl From<OpenCategory> for frob_ledger::model::Category {
+    fn from(c: OpenCategory) -> Self {
+        match c {
+            OpenCategory::Todo => Self::Todo,
+            OpenCategory::Triage => Self::Triage,
+        }
+    }
+}
+
 /// Tasks the runner can perform.
 #[derive(Debug, Subcommand)]
 enum Task {
@@ -80,6 +98,12 @@ enum Task {
         /// Import every v1 ticket as open work, ignoring the selection (the pre-selection behaviour).
         #[arg(long)]
         all: bool,
+        /// `--to` may be an existing v2 ledger: write only new ticket directories; refuse on any id or alias collision.
+        #[arg(long)]
+        merge: bool,
+        /// Category recorded in the create event of imported open tickets.
+        #[arg(long, value_enum, default_value = "todo")]
+        open_category: OpenCategory,
         /// Also write the `T-NNNN<TAB>ulid` id map to this file.
         #[arg(long)]
         map_out: Option<PathBuf>,
@@ -137,6 +161,8 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
             dry_run,
             selection,
             all,
+            merge,
+            open_category,
             map_out,
             report_md,
         } => import_tickets(
@@ -145,6 +171,8 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
                 to,
                 dry_run,
                 selection: (!all).then_some(selection),
+                merge,
+                open_category: open_category.into(),
                 privacy_dir: gob_git::Repo::discover(".")
                     .ok()
                     .map(|r| r.common_dir().to_path_buf()),

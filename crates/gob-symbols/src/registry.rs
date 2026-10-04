@@ -15,19 +15,22 @@ use gob_walk::LanguageHint;
 use crate::adapter::{Adapter, Capability, Fidelity, Precision};
 use crate::markdown::MarkdownAdapter;
 use crate::opaque::OpaqueAdapter;
+use crate::python::PythonAdapter;
 use crate::rust::RustAdapter;
 use crate::yaml::YamlAdapter;
 
 static RUST: RustAdapter = RustAdapter;
 static MARKDOWN: MarkdownAdapter = MarkdownAdapter;
 static YAML: YamlAdapter = YamlAdapter;
+static PYTHON: PythonAdapter = PythonAdapter;
 static OPAQUE: OpaqueAdapter = OpaqueAdapter;
 
 /// Extensions (no dot, lowercase) claimed by the built-in adapters, by language.
-const BUILTIN_EXTENSIONS: [(&str, &[&str]); 3] = [
+const BUILTIN_EXTENSIONS: [(&str, &[&str]); 4] = [
     ("rust", &["rs"]),
     ("markdown", &["md", "markdown"]),
     ("yaml", &["yml", "yaml"]),
+    ("python", &["py", "pyi"]),
 ];
 
 /// A registrable adapter: submit one with `inventory::submit!` to make it visible here.
@@ -137,7 +140,7 @@ pub fn registry_conflicts() -> Vec<DuplicateExtension> {
 
 /// Every real adapter (F1 and above): the built-ins, then registered ones by language name.
 pub fn adapters() -> Vec<&'static dyn Adapter> {
-    let mut out: Vec<&'static dyn Adapter> = vec![&RUST, &MARKDOWN, &YAML];
+    let mut out: Vec<&'static dyn Adapter> = vec![&RUST, &MARKDOWN, &YAML, &PYTHON];
     out.extend(registry().registered.iter().map(|r| r.adapter));
     out
 }
@@ -155,6 +158,7 @@ pub fn adapter_for(hint: &LanguageHint) -> Option<&'static dyn Adapter> {
         LanguageHint::Markdown => Some(&MARKDOWN),
         LanguageHint::Toml => None,
         LanguageHint::Other(ext) if matches!(ext.as_str(), "yml" | "yaml") => Some(&YAML),
+        LanguageHint::Other(ext) if matches!(ext.as_str(), "py" | "pyi") => Some(&PYTHON),
         LanguageHint::Other(ext) => {
             let reg = registry();
             reg.by_ext

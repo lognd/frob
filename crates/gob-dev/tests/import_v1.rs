@@ -64,6 +64,8 @@ fn opts(root: &Path, dry_run: bool) -> ImportOptions {
         dry_run,
         selection: None,
         privacy_dir: None,
+        merge: false,
+        open_category: Category::Todo,
     }
 }
 
@@ -317,4 +319,110 @@ fn home_paths_and_private_terms_are_redacted() {
     assert!(!text.contains("/home/alice"), "home path leaked");
     assert!(!text.contains("zorblax"), "private term leaked");
     assert!(text.contains("<customer>"));
+}
+
+fn dir_count(dir: &Path) -> usize {
+    std::fs::read_dir(dir).expect("ls").count()
+}
+
+// frob:ticket 01M43BEAR3MSMEANKENBQ1KDT7
+// frob:tests crates/gob-dev/src/import_v1.rs::run
+#[test]
+fn merge_adds_only_new_ticket_directories() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    std::fs::create_dir(tmp.path().join("v1")).expect("v1");
+    fixture(&tmp.path().join("v1"));
+    run(&opts(tmp.path(), false)).expect("first import");
+    let before = load_tree(&tmp.path().join("v2")).expect("load");
+    std::fs::write(tmp.path().join("v2/README"), "not a ticket").expect("stray file");
+    let second = tmp.path().join("v1b");
+    std::fs::create_dir(&second).expect("v1b");
+    write(
+        &second,
+        "T-0050",
+        "title: Later\nstate: queued\nkind: bug\norigin: agent\ncreated: '2026-10-03'\n",
+        "later",
+        None,
+    );
+    let mut o = opts(tmp.path(), false);
+    o.from = second;
+    o.merge = true;
+    let report = run(&o).expect("merge");
+    assert_eq!(report.rows.len(), 1);
+    assert_eq!(dir_count(&tmp.path().join("v2")), before.len() + 2);
+    for t in &before {
+        let md = std::fs::read_to_string(tmp.path().join(format!("v2/{}/ticket.md", t.id)))
+            .expect("old ticket");
+        assert_eq!(md, t.ticket_md, "existing ticket untouched");
+    }
+}
+
+// frob:ticket 01M43BEAR3MSMEANKENBQ1KDT7
+// frob:tests crates/gob-dev/src/import_v1.rs::run
+#[test]
+fn merge_refuses_id_and_alias_collisions_without_writing() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    std::fs::create_dir(tmp.path().join("v1")).expect("v1");
+    fixture(&tmp.path().join("v1"));
+    run(&opts(tmp.path(), false)).expect("first import");
+    let v2 = tmp.path().join("v2");
+    let count = dir_count(&v2);
+    // Same alias, different creation date: a fresh id but the alias T-0001 is taken.
+    let other = tmp.path().join("v1b");
+    std::fs::create_dir(&other).expect("v1b");
+    write(
+        &other,
+        "T-0001",
+        "title: Clash\nstate: queued\nkind: bug\norigin: agent\ncreated: '2026-09-01'\n",
+        "x",
+        None,
+    );
+    write(
+        &other,
+        "T-0060",
+        "title: Fine\nstate: queued\nkind: bug\norigin: agent\ncreated: '2026-09-02'\n",
+        "x",
+        None,
+    );
+    let mut o = opts(tmp.path(), false);
+    o.from = other;
+    o.merge = true;
+    let err = run(&o).expect_err("alias refused");
+    assert!(matches!(&err, ImportError::Collision(m) if m.contains("alias T-0001")));
+    assert_eq!(dir_count(&v2), count, "nothing written");
+    // Same ledger again: ids carry a random tail, so every alias collides.
+    o.from = tmp.path().join("v1");
+    let err = run(&o).expect_err("repeat refused");
+    assert!(matches!(&err, ImportError::Collision(m) if m.contains("alias T-0003")));
+    assert_eq!(dir_count(&v2), count, "nothing written");
+}
+
+// frob:ticket 01M43BEAR3MSMEANKENBQ1KDT7
+// frob:tests crates/gob-dev/src/import_v1.rs::run
+#[test]
+fn open_category_triage_places_open_tickets_in_triage() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    std::fs::create_dir(tmp.path().join("v1")).expect("v1");
+    fixture(&tmp.path().join("v1"));
+    let mut o = opts(tmp.path(), false);
+    o.open_category = Category::Triage;
+    run(&o).expect("import");
+    let tree = load_tree(&tmp.path().join("v2")).expect("load");
+    assert!(verify(&tree).is_empty());
+    let docs: Vec<_> = tree
+        .iter()
+        .map(|t| doc::parse("t", &t.ticket_md).expect("parse"))
+        .collect();
+    let by = |alias: &str| {
+        docs.iter()
+            .find(|d| d.front.aliases == [alias])
+            .expect("alias")
+    };
+    assert_eq!(by("T-0001").front.category, Category::Triage);
+    assert_eq!(
+        by("T-0002").front.category,
+        Category::Done,
+        "closed stays done"
+    );
+    assert_eq!(by("T-0003").front.category, Category::Done);
 }

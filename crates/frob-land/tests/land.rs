@@ -880,6 +880,28 @@ fn a_new_finding_refuses_naming_only_the_new_one() {
     assert_eq!(fx.main_tip(), before, "base did not move");
 }
 
+// frob:tests crates/frob-land/src/ratchet.rs::verdict
+#[test]
+fn a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    commit_on_main(&fx, "src/old.rs", &marked(""));
+    let s = fx.start("Duplicate the marker", &["src/**"]);
+    let twice = format!("{}{}", marked(""), marked(""));
+    Fixture::commit_in(&s.wt, "src/old.rs", &twice);
+    Fixture::evidence(&s, "src/old.rs");
+    let before = fx.main_tip();
+
+    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("duplicate occurrence refuses");
+    let msg = refusal(&err).message.clone();
+    assert_eq!(refusal(&err).code, "E-LAND-CHECK-RED");
+    assert!(msg.contains("has 1 new blocking finding(s)"), "{msg}");
+    assert!(msg.contains("TODO001 src/old.rs"), "{msg}");
+    assert_eq!(fx.main_tip(), before, "base did not move");
+}
+
 // frob:tests crates/frob-land/src/land.rs::land
 #[test]
 fn fixing_a_base_finding_is_reported_resolved() {
@@ -982,11 +1004,12 @@ fn a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_ch
     Fixture::evidence(&s, "src/a.rs");
     // A set no real base check would produce, planted where any ticket's land reads it.
     let oid = fx.main_tip();
+    let key = frob_land::cache_key(&LedgerConfig::default());
     let planted = shared_state(&fx)
         .join("land-base")
-        .join(format!("{oid}.json"));
+        .join(format!("{oid}-{key}.json"));
     std::fs::create_dir_all(planted.parent().expect("parent")).expect("mkdir");
-    let fake = serde_json::json!({"oid": oid, "findings": [{
+    let fake = serde_json::json!({"oid": oid, "key": key, "findings": [{
         "fingerprint": "feedface", "rule": "PLANTED", "path": null, "message": "from the cached set"
     }]});
     std::fs::write(&planted, fake.to_string()).expect("plant");
