@@ -8,20 +8,20 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:02:23Z"
-updated = "2026-10-04T04:24:26Z"
+updated = "2026-10-04T04:39:53Z"
 scope = ["crates/gob-dev/src/publish.rs", "crates/gob-dev/src/main.rs", ".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs", "docs/guides/release.md", "docs/design/releases.md"]
 
 [[acceptance]]
 text = "Given the registry answers 429 with a retry time, when publish runs within its wait budget, then it waits and continues; past the budget it exits resumably naming the next crate and the retry time"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given publishable names missing from crates.io, when cargo dev publish --reserve runs without --apply, then it lists them and the pacing plan and publishes nothing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the release workflow, when the workflow test runs, then pypi does not need crates and both still need smoke"
-bound = false
+bound = true
 +++
 
 Owner hit the crates.io rate limit while reserving names. State 2026-10-03: 35 crates are publishable; gob-macros, gob-rules, grimble (and crunk, not in this workspace) are reserved at 0.0.0 by the owner; the other 31 names are free, so the first release publishes 31 new crates. crates.io rate-limits new crate names much more tightly than new versions (a small burst, then on the order of one new crate per ten minutes; it answers 429 with the time to retry). cargo dev publish has no rate-limit handling, the crates job has a 120-minute timeout, and the pypi job needs crates, so the first tag would fail partway and block PyPI for hours.

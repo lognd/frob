@@ -17,9 +17,7 @@ const WARM_BUDGET_MS: u64 = 2000;
 const COLD_BUDGET_MS: u64 = 60_000;
 
 fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
+    gob_exec::canonical(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."))
         .expect("repository root")
 }
 

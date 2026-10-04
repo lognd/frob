@@ -8,13 +8,24 @@ use std::time::{Duration, SystemTime};
 use frob_worktree::gc::adapter::{BuildPolicy, Unit, UnitKind, plan};
 use frob_worktree::gc::cargo::CargoAdapter;
 use frob_worktree::gc::jail::{Jail, JailError};
-use frob_worktree::gc::pass::{Env, Mode, TicketOracle, TicketState, default_adapters, run};
+use frob_worktree::gc::pass::{
+    Env, Mode, TicketOracle, TicketState, default_adapters, report_only, run,
+};
 use frob_worktree::gc::{GcConfig, artifacts, caches, stamp};
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use gob_git::{CommitOptions, RelPath, Repo};
 
 const MAIN: &str = "refs/heads/main";
 const HOUR: u64 = 3600;
+
+/// The mode that deletes on this host: the automatic pass, except on Windows where it only reports (~EDPHHFS).
+fn sweep_mode() -> Mode {
+    if cfg!(windows) {
+        Mode::Forced
+    } else {
+        Mode::Auto
+    }
+}
 
 fn git(dir: &Path, args: &[&str]) -> String {
     let spec = Spec {
@@ -45,7 +56,7 @@ struct Fixture {
 impl Fixture {
     fn new() -> Self {
         let tmp = tempfile::tempdir().expect("tempdir");
-        let root = tmp.path().canonicalize().expect("canon").join("repo");
+        let root = gob_exec::canonical(tmp.path()).expect("canon").join("repo");
         std::fs::create_dir(&root).expect("mkdir");
         let repo = Repo::init(&root).expect("init");
         std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").expect("head");
@@ -271,7 +282,7 @@ fn target_over_budget_evicts_old_artifacts_and_keeps_latest_build_and_binaries()
     let oracle = Oracle::default();
     let mut c = ctx(&fx, &oracle);
     c.cfg.target_budget_gb = 0;
-    let report = c.run(Mode::Auto);
+    let report = c.run(sweep_mode());
     assert!(report.ran, "{report:?}");
     let left = names(&debug.join("deps"));
     assert!(
@@ -301,7 +312,7 @@ fn stale_incremental_directories_are_removed_and_fresh_ones_kept() {
     write(&inc.join("fresh-1").join("f.bin"), 2000, 60);
     age(&inc.join("stale-1"), 8 * HOUR);
     let oracle = Oracle::default();
-    let report = ctx(&fx, &oracle).run(Mode::Auto);
+    let report = ctx(&fx, &oracle).run(sweep_mode());
     assert_eq!(
         names(&inc),
         BTreeSet::from(["fresh-1".to_owned()]),
@@ -363,7 +374,7 @@ fn clean_closed_ticket_worktree_is_removed_and_a_merged_branch_deleted() {
     oracle
         .states
         .insert("~DONE001".to_owned(), TicketState::Closed);
-    let report = ctx(&fx, &oracle).run(Mode::Auto);
+    let report = ctx(&fx, &oracle).run(sweep_mode());
     assert!(!wt.exists(), "{report:?}");
     assert!(report.actions.iter().any(|a| a.category == "worktrees"));
     let branches = git(&fx.root, &["branch", "--list", "ticket/DONE001"]);
@@ -512,7 +523,7 @@ fn disabled_gc_skips_auto_and_a_dry_run_changes_nothing() {
 #[test]
 fn jail_admits_by_components_not_string_prefix_and_refuses_roots_and_dotdot() {
     let tmp = tempfile::tempdir().expect("tempdir");
-    let base = tmp.path().canonicalize().expect("canon");
+    let base = gob_exec::canonical(tmp.path()).expect("canon");
     let target = base.join("target");
     let sibling = base.join("target-old");
     std::fs::create_dir_all(target.join("debug")).expect("mkdir");
@@ -527,16 +538,23 @@ fn jail_admits_by_components_not_string_prefix_and_refuses_roots_and_dotdot() {
         matches!(jail.admit(&target), Err(JailError::Outside(_))),
         "the root itself"
     );
-    assert!(matches!(
-        jail.admit(
-            &target
-                .join("debug")
-                .join("..")
-                .join("..")
-                .join("target-old")
-        ),
-        Err(JailError::NotAbsolute(_))
-    ));
+    // Built as text so the dots survive: on a Windows verbatim base `Path::join("..")` pops
+    // a component lexically (std documents this), which silently removed the dotdot from the
+    // old fixture. Both separators are tried; none may be admitted on any platform.
+    for sep in ["/", "\\"] {
+        let mut text = target.clone().into_os_string();
+        text.push(format!("{sep}debug{sep}..{sep}..{sep}target-old"));
+        assert!(
+            matches!(jail.admit(Path::new(&text)), Err(JailError::NotAbsolute(_))),
+            "dotdot with {sep:?}"
+        );
+        let mut dot = target.clone().into_os_string();
+        dot.push(format!("{sep}debug{sep}.{sep}deps"));
+        assert!(
+            matches!(jail.admit(Path::new(&dot)), Err(JailError::NotAbsolute(_))),
+            "dot with {sep:?}"
+        );
+    }
     assert!(matches!(
         jail.admit(Path::new("target/debug")),
         Err(JailError::NotAbsolute(_))
@@ -544,11 +562,62 @@ fn jail_admits_by_components_not_string_prefix_and_refuses_roots_and_dotdot() {
 }
 
 // frob:tests crates/frob-worktree/src/gc/jail.rs::Jail
+/// What `admit` returned for the Windows CI input, modelled on Linux with the pure style functions.
+///
+/// The failing input was `target.join("debug").join("..").join("..").join("target-old")` on a
+/// verbatim base. `PathBuf::push` on a verbatim path resolves `..` lexically, so the jail was
+/// given `\\?\C:\w\target-old`, an existing sibling: it returned `Outside` (refused, not
+/// `NotAbsolute`, and never `Ok`). The same path with a literal `..` is refused up front.
+#[test]
+fn windows_verbatim_dotdot_was_outside_not_admitted_and_literal_dotdot_is_refused() {
+    use gob_exec::{Style, has_dot_component, strictly_inside};
+    let root = r"\\?\C:\w\target";
+    let as_joined_on_windows = r"\\?\C:\w\target-old";
+    assert!(!has_dot_component(as_joined_on_windows));
+    assert!(
+        !strictly_inside(Style::Windows, root, as_joined_on_windows),
+        "Outside"
+    );
+    let literal = r"\\?\C:\w\target\debug\..\..\target-old";
+    assert!(has_dot_component(literal), "NotAbsolute");
+    assert!(!strictly_inside(Style::Windows, root, literal));
+    let slashes = r"\\?\C:\w\target\debug/../../target-old";
+    assert!(has_dot_component(slashes), "NotAbsolute");
+    assert!(!strictly_inside(Style::Windows, root, slashes));
+}
+
+// frob:tests crates/frob-worktree/src/gc/pass.rs::report_only
+#[test]
+fn the_automatic_pass_only_reports_on_windows_and_nothing_else_does() {
+    assert!(report_only(Mode::Auto, true));
+    assert!(!report_only(Mode::Auto, false));
+    for mode in [Mode::Forced, Mode::DryRun] {
+        assert!(!report_only(mode, true), "{mode:?} is explicit");
+    }
+}
+
+// frob:tests crates/frob-worktree/src/gc/pass.rs::run
+#[cfg(windows)]
+#[test]
+fn the_automatic_pass_deletes_nothing_on_windows() {
+    let fx = Fixture::new();
+    let debug = fx.root.join("target").join("debug");
+    let old = debug.join("deps").join("libold-aaa.rlib");
+    write(&old, 4000, 40 * HOUR);
+    let oracle = Oracle::default();
+    let mut c = ctx(&fx, &oracle);
+    c.cfg.target_budget_gb = 0;
+    let report = c.run(Mode::Auto);
+    assert!(report.dry_run, "reports only");
+    assert!(old.is_file(), "nothing is deleted");
+}
+
+// frob:tests crates/frob-worktree/src/gc/jail.rs::Jail
 #[cfg(unix)]
 #[test]
 fn jail_refuses_symlinks_out_of_the_tree_and_never_deletes_their_target() {
     let tmp = tempfile::tempdir().expect("tempdir");
-    let base = tmp.path().canonicalize().expect("canon");
+    let base = gob_exec::canonical(tmp.path()).expect("canon");
     let target = base.join("target");
     let outside = base.join("precious");
     std::fs::create_dir_all(&target).expect("mkdir");
@@ -715,7 +784,7 @@ fn abandoned_land_base_checkouts_are_swept_and_recent_ones_left() {
         digests: Some(BTreeSet::new()),
         ..Oracle::default()
     };
-    ctx(&fx, &oracle).run(Mode::Auto);
+    ctx(&fx, &oracle).run(sweep_mode());
     assert!(!stale.exists());
     assert!(recent.exists());
 }

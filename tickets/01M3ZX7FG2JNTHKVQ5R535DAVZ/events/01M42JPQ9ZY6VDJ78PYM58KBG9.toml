@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T04:28:10Z"
+digest = "03718a027629b241f43cee26e488d1b00b049a7c546d2490befb938d4a76d0cc"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.06s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1898f7ce-89df-4bcd-8474-4f9d651fd9ae with nextest profile: default
+    Starting 1 test across 2 binaries (8 tests skipped)
+        PASS [   0.063s] gob-packs::manifest example_manifest_loads_typed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.107s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs -E 'test(example_manifest_loads_typed)'"
+size = 693
+status = "measured"
+tests = ["example_manifest_loads_typed"]
+at = "2026-10-04T04:28:10Z"
+actor = "lognd"
+rev = 1

@@ -343,13 +343,13 @@ pub fn run_command(
 
 /// Canonical paths of the running executable and its `frob`/`grimble` siblings, allowed as command tools without listing.
 pub fn builtin_tools() -> Vec<PathBuf> {
-    let Ok(exe) = std::env::current_exe().and_then(|e| e.canonicalize()) else {
+    let Ok(exe) = std::env::current_exe().and_then(|e| gob_exec::canonical(&e)) else {
         return Vec::new();
     };
     let mut out = vec![exe.clone()];
     if let Some(dir) = exe.parent() {
         for name in ["frob", "grimble"] {
-            if let Ok(p) = dir.join(name).canonicalize()
+            if let Ok(p) = gob_exec::canonical(&dir.join(name))
                 && p.is_file()
                 && !out.contains(&p)
             {
@@ -367,7 +367,7 @@ pub fn builtin_tool(tool: &str, builtins: &[PathBuf]) -> Option<PathBuf> {
     } else {
         which::which(tool).ok()?
     };
-    let canon = found.canonicalize().ok()?;
+    let canon = gob_exec::canonical(&found).ok()?;
     builtins.contains(&canon).then_some(canon)
 }
 

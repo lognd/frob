@@ -205,7 +205,7 @@ pub fn git_common_dir(root: &Path) -> Option<PathBuf> {
         Ok(rel) => private.join(rel.trim()),
         Err(_) => private,
     };
-    common.canonicalize().ok()
+    gob_exec::canonical(&common).ok()
 }
 
 /// The repository-wide cache directory for the state directory `state_dir` (for example `.frob`) of `root`.

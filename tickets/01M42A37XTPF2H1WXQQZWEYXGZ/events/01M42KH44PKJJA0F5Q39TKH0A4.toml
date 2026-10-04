@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T04:42:35Z"
+digest = "13d48eae7ae88c944191d2651a817800ea7a2437946da573b0ac59881d4bab52"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 15131c26-df9a-4adc-a06e-3aab81392bd6 with nextest profile: default
+    Starting 1 test across 5 binaries (62 tests skipped)
+        PASS [   0.050s] gob-dev ci::tests::goway_exit_125_is_a_goway_failure_after_retries_not_a_test_failure
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.060s] 1 test run: 1 passed, 62 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(goway_exit_125_is_a_goway_failure)'"
+size = 576
+status = "measured"
+tests = ["ci::tests::goway_exit_125_is_a_goway_failure_after_retries_not_a_test_failure"]
+at = "2026-10-04T04:42:35Z"
+actor = "lognd"
+rev = 1

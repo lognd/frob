@@ -1,0 +1,13 @@
++++
+id = "01M42KHBJ5GC8DVKND63WK9JKE"
+title = "cargo dev ci --remote flag registered in main.rs (env CARGO_DEV_CI_REMOTE already works)"
+type = "task"
+category = "todo"
+priority = "medium"
+reporter = "lognd"
+created = "2026-10-04T04:42:43Z"
+updated = "2026-10-04T04:42:43Z"
+scope = ["crates/gob-dev/src/main.rs", "crates/gob-dev/src/ci.rs"]
++++
+
+found while working ~ZWEYXGZ: ci.rs reads CARGO_DEV_CI_REMOTE (REMOTE_ENV) so main.rs was not touched while ~0JTYGH0 holds it. Add clap flag --remote [GOWAY] (num_args 0..=1, default_missing_value goway, env CARGO_DEV_CI_REMOTE) and build ci::GowayRunner::new(bin, RemoteOs::default()) in ci_checks; ExecRunner then no longer needs to read the env. Later: --remote-os windows via a RemoteOs variant.
