@@ -5,5 +5,19 @@ slow-timeout = { period = "30s" }
 [profile.ci]
 fail-fast = false
 retries = 0
-slow-timeout = { period = "60s", terminate-after = 4 }
+# Per-test budget: a test running past 30 s (3 periods of 10 s) is terminated and fails, so a
+# slow test is a named failure instead of a slow suite. A test that legitimately needs longer
+# gets an entry in the reviewed override list below, with the reason; it is never ignored.
+slow-timeout = { period = "10s", terminate-after = 3 }
 failure-output = "immediate-final"
+
+# junit feeds the "five slowest tests" report of `cargo dev ci` (target/nextest/ci/junit.xml).
+[profile.ci.junit]
+path = "junit.xml"
+
+# Reviewed overrides: tests that legitimately exceed the 30 s budget. Add an entry only with a
+# reason; the budget is the guard, not an ignore list.
+[[profile.ci.overrides]]
+# trybuild compiles every ui fixture crate with rustc, about 25 s alone and more under load.
+filter = 'package(gob-macros) & test(=ui)'
+slow-timeout = { period = "30s", terminate-after = 4 }
