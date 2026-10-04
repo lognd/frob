@@ -2,11 +2,12 @@
 id = "01M1QDTYTM9SZVTKMDNSG9JRK7"
 title = "the protect-secrets hook blocks commands that MENTION a protected filename rather than commands that read one"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "high"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-04T21:08:20Z"
+updated = "2026-10-04T21:08:21Z"
 aliases = ["T-3924"]
 labels = ["milestone:1.1.0", "v1-cluster:E1"]
 
