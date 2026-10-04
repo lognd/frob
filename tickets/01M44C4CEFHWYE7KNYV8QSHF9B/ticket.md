@@ -6,12 +6,12 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T21:11:46Z"
-updated = "2026-10-04T22:54:00Z"
+updated = "2026-10-04T22:54:17Z"
 scope = ["crates/gob-testsupport/src/lib.rs", "crates/gob-dev/src/ci.rs"]
 
 [[acceptance]]
 text = "Given a host with only python, or only py -3, when python_test_prerequisites probes, then it resolves a Python 3 interpreter (python3, python, py -3 in that order)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a host with no Python 3 or no pytest, when FROB_REQUIRE_PYTHON_TESTS is unset, then the probe returns false (a named skip)"
