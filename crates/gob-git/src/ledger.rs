@@ -405,7 +405,8 @@ impl Repo {
             runner: self.runner.clone(),
         };
         let blocked = other.check_local_edits(planned, old_tree)?;
-        // frob:ticket ~BDHEZAT -- sync every unblocked path so a blocked sibling never
+        // frob:ticket 01M42MGNZZ1BY6YCG49BDHEZAT
+        // Sync every unblocked path so a blocked sibling never
         // leaves the new paths staged-deleted in the other checkout.
         let free: Vec<Planned<'_>> = planned
             .iter()
