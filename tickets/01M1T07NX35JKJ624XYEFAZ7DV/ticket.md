@@ -2,11 +2,12 @@
 id = "01M1T07NX35JKJ624XYEFAZ7DV"
 title = "F-219: TEST002/TEST003 report 0 collected cases for tested TS symbols although the ts collector is wired (cache path unproven)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:08:50Z"
 aliases = ["T-4003"]
 labels = ["milestone:0.540.0", "v1-cluster:D2"]
 scope = ["src/frob/gates/__init__.py"]

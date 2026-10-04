@@ -7,9 +7,9 @@ priority = "low"
 parent = "01KZ7KGKHXGS6W2YAVRY27W0D5"
 reporter = "human"
 created = "2026-08-05T00:00:00Z"
-updated = "2026-08-05T00:00:00Z"
+updated = "2026-10-04T21:08:42Z"
 aliases = ["T-1607"]
-labels = ["milestone:1.1.0", "v1-cluster:D2"]
+labels = ["v1-cluster:D2", "triage:accepted"]
 scope = ["tickets/T-1607/**"]
 +++
 

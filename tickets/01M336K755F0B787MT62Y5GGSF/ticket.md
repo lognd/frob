@@ -2,12 +2,13 @@
 id = "01M336K755F0B787MT62Y5GGSF"
 title = "CLI shim announce_shim logs at INFO, leaking a stray line onto every shimmed command's stdout (breaks --json)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "critical"
 points = 2
 reporter = "human"
 created = "2026-09-22T00:00:00Z"
-updated = "2026-09-22T00:00:01Z"
+updated = "2026-10-04T21:09:03Z"
 aliases = ["T-5285"]
 labels = ["milestone:0.534.0", "v1-cluster:G2"]
 scope = ["src/frob/_cli_parsers/_shims.py"]

@@ -3,13 +3,13 @@ id = "01M3AXSD8V4QRHX1H7T1YB26XK"
 title = "STORE107: `Scan` used where `Query` (key condition) would suffice, in a request handler (DynamoDB)"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD9STSFC2MR8M369JNE8"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:58:38Z"
 aliases = ["T-6427"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_dynamodb.py", "tests/fixtures/store/store107-dynamodb-scan-vs-query/**"]
 
 [[links]]

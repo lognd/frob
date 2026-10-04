@@ -2,11 +2,12 @@
 id = "01M1QDTYRTYDH8X7XSAD0WMD9H"
 title = "DOCARCH001 (doc/architecture drift) burn-down: 474 unwaived findings"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:07:38Z"
 aliases = ["T-3866"]
 labels = ["milestone:0.541.0", "v1-cluster:F1"]
 +++

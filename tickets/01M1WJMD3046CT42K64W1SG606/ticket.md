@@ -3,13 +3,13 @@ id = "01M1WJMD3046CT42K64W1SG606"
 title = "route-inventory check: a handler returning a dict/mapping literal response must declare a response model"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:05:58Z"
 aliases = ["T-4192"]
-labels = ["milestone:1.1.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates"]
 +++
 

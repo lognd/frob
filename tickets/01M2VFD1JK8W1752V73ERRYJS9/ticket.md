@@ -3,14 +3,19 @@ id = "01M2VFD1JK8W1752V73ERRYJS9"
 title = "Source narrative: 447 comment blocks of 15+ lines (10.7k lines) migrate to tickets, NARR001 covers untagged comment runs"
 type = "story"
 flavour = "user_story"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "high"
 parent = "01M0XNVQXJ1A3FA43N7AA0PAPK"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-09-19T00:00:00Z"
+updated = "2026-10-04T21:07:54Z"
 aliases = ["T-4691"]
 labels = ["milestone:0.534.0", "v1-cluster:F1"]
+
+[[links]]
+kind = "duplicates"
+target = "01M0XNVQXJ1A3FA43N7AA0PAPK"
 +++
 
 Child of T-2994 (DOCARCH001/NARR001 doctrine epic): code and docs carry UTILITY,

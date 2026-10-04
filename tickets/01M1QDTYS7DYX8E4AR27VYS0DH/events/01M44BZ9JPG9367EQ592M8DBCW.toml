@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Uncertain: v2 has the envelope (D13) and renderer (~MHSZ4M6), but collapsing high-cardinality warnings by default is not specified."
+at = "2026-10-04T21:09:00Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 frob-exports policy for a Python walker function."
+at = "2026-10-04T21:08:57Z"
+actor = "lognd"
+rev = 1

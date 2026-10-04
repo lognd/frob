@@ -2,11 +2,12 @@
 id = "01M12TN67AE0ECBBFQTNWR8MFS"
 title = "protect-secrets F-003: only 1 of 6 reported false positives reproduced, determine why the other 5 did not"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 reporter = "human"
 created = "2026-08-28T00:00:00Z"
-updated = "2026-08-28T00:00:00Z"
+updated = "2026-10-04T21:08:08Z"
 aliases = ["T-3306"]
 labels = ["milestone:1.1.0", "v1-cluster:E1"]
 scope = [".claude/hooks/protect-secrets.py"]

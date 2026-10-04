@@ -3,12 +3,12 @@ id = "01M1QDTYTFZHQYMDHNFBSGQXJJ"
 title = "every HIGH in a consumer backend audit sat behind green gates: the false-negative list and ten ranked gate proposals"
 type = "epic"
 category = "triage"
-priority = "critical"
+priority = "low"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:04:39Z"
 aliases = ["T-3919"]
-labels = ["milestone:1.0.0", "v1-cluster:B4"]
+labels = ["v1-cluster:B4", "triage:accepted"]
 +++
 
 An external backend audit of a consumer repo (logand.app-v2, 2026-09-05) found

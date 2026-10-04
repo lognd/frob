@@ -2,11 +2,12 @@
 id = "01KZCRA1QJA2Y8XGEXB17Y63PH"
 title = "Re-home a dangling WIRE001 follow_up citation off T-1743"
 type = "docs"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 reporter = "human"
 created = "2026-08-07T00:00:00Z"
-updated = "2026-08-07T00:00:01Z"
+updated = "2026-10-04T21:07:22Z"
 aliases = ["T-1778"]
 labels = ["milestone:1.0.0", "v1-cluster:F1"]
 scope = ["tests/unit/test_land_finish_guard.py"]

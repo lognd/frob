@@ -2,11 +2,12 @@
 id = "01M3DG64DVXNGRZDQTC0ZDYFEV"
 title = "frob coverage --full: subprocess-coverage .pth hook raises in spawned children and fails subprocess-honesty tests that pass under plain pytest"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-09-26T00:00:00Z"
+updated = "2026-10-04T21:07:14Z"
 aliases = ["T-6587"]
 labels = ["milestone:0.534.0", "v1-cluster:C4a"]
 scope = ["src/frob/testing/_coverage_refresh.py"]

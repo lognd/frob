@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "Dropped on purpose: v1 `frob claude sync` hook registration; cli.md lists `claude` among the verbs removed from frob."
+at = "2026-10-04T21:08:34Z"
+actor = "lognd"
+rev = 1

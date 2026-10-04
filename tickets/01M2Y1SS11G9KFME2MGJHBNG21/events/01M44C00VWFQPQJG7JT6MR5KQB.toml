@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. PT-8: per-stage progress on long checks (a stage with no output for 21 minutes made agents give up)."
+at = "2026-10-04T21:09:23Z"
+actor = "lognd"
+rev = 1

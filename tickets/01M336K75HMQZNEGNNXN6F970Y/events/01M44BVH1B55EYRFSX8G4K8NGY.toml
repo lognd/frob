@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 LANDPARITY001 and T-2114; v2 land has no such gate (D7, D8, crates/frob-land)."
+at = "2026-10-04T21:06:56Z"
+actor = "lognd"
+rev = 1

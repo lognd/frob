@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 vitest run under the evidence-cmd channel (import.meta.url); a v2 vitest provider is new work under tickets.md s9."
+at = "2026-10-04T21:06:29Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. dotnet/Unity test runner wiring; dotnet adapter is designed (code-model.md s3, binding.md B11) and unticketed."
+at = "2026-10-04T21:07:00Z"
+actor = "lognd"
+rev = 1

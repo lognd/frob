@@ -2,14 +2,19 @@
 id = "01M1WJMD2EPMYEB455HYJG1634"
 title = "a scope entry containing a space is accepted and matches nothing, so every scope-derived judgement about that ticket is vacuous"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "high"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:00Z"
+updated = "2026-10-04T21:09:07Z"
 aliases = ["T-4174"]
 labels = ["milestone:0.535.0", "v1-cluster:C3"]
 scope = ["src/frob/tickets/_models.py"]
+
+[[links]]
+kind = "duplicates"
+target = "01M1T07NWAFVRT2V4RAPVJ9SQM"
 
 [[acceptance]]
 text = "given a scope entry containing a space, when it is declared, then it is either split into its parts or refused with a message naming it"

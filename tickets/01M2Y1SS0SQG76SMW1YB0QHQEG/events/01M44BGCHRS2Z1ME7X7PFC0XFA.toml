@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. COMPLY rules beyond the first slice ~QVSC54Z (D89 grimble-websec)."
+at = "2026-10-04T21:00:51Z"
+actor = "lognd"
+rev = 1

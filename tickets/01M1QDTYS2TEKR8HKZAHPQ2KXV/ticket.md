@@ -2,11 +2,12 @@
 id = "01M1QDTYS2TEKR8HKZAHPQ2KXV"
 title = "DOCENUM001 burn-down: 8 unwaived findings"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:07:40Z"
 aliases = ["T-3874"]
 labels = ["milestone:0.541.0", "v1-cluster:F1"]
 +++

@@ -3,13 +3,13 @@ id = "01M3AXSDAQKCZWGY6XWJFZHKS8"
 title = "GRAMMAR: node operational axis (`drain`, `cert_expiry`, `health` closed vocabulary, `owner`, typed `slo`/`error_budget`, `scale_on`)"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSDBEQGV8V5VHYGXBEQTV"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:41Z"
 aliases = ["T-6487"]
-labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 scope = ["strata-core/src/parse/grammar_node.rs", "docs/strata/surface.md#node", "src/frob/strata/_models.py"]
 
 [[links]]

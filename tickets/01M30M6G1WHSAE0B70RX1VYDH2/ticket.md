@@ -2,11 +2,12 @@
 id = "01M30M6G1WHSAE0B70RX1VYDH2"
 title = "INV003: seven new gate/strata docs make 'only' claims with no frob:invariant marker"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-21T00:00:00Z"
-updated = "2026-09-21T00:00:00Z"
+updated = "2026-10-04T21:02:43Z"
 aliases = ["T-5180"]
 labels = ["milestone:0.534.0", "v1-cluster:B3d"]
 scope = ["docs/modules/gate-inv011-forbidden-constant-reachability.md", "docs/modules/gate-race001.md", "docs/modules/gate-registration.md", "docs/modules/gate-sys111-ratchet-auto-accept.md", "docs/modules/gate-testmock001.md", "docs/modules/gate-time-stable-invariant.md", "docs/strata/dataset-construct.md"]

@@ -3,12 +3,13 @@ id = "01M26W79A2PAT8PMCRQ9P7CYAX"
 title = "Clean src/frob docstrings of change-narrative (DOCARCH001)"
 type = "story"
 flavour = "user_story"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 parent = "01M0XNVQXJ1A3FA43N7AA0PAPK"
 reporter = "human"
 created = "2026-09-11T00:00:00Z"
-updated = "2026-09-11T00:00:00Z"
+updated = "2026-10-04T21:07:50Z"
 aliases = ["T-4418"]
 labels = ["milestone:0.534.0", "v1-cluster:F1"]
 

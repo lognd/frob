@@ -2,12 +2,13 @@
 id = "01M38BCNMBVAQ0TW7YB3Y2XMXS"
 title = "Docs: ledger tiers -- milestone tier, story flavour, due/rank, TIER001-006 family across tickets docs, ticket-kinds-states guide and vmodel"
 type = "docs"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 5
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-09-24T00:00:00Z"
+updated = "2026-10-04T21:02:50Z"
 aliases = ["T-5771"]
 labels = ["milestone:v0.536.0", "v1-cluster:B3d"]
 scope = ["docs/guides/extending/ticket-kinds-states.md", "docs/strata/vmodel.md", "docs/modules/tickets-data-storage.md", "docs/modules/tickets-lifecycle.md", "docs/modules/tickets.md", "scripts/check_ledger_tiers_doc_drift.py", "tests/gates_suite/test_tier_gate.py"]

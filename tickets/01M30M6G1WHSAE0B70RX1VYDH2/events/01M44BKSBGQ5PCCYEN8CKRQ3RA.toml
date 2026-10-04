@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: INV003 burn-down over v1 docs; v2 repository starts clean (A: DOC/INV baseline)."
+at = "2026-10-04T21:02:43Z"
+actor = "lognd"
+rev = 1

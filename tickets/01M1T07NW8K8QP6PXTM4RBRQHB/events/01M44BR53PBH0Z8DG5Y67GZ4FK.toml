@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Uncertain: v1 refs.artifact has no direct v2 counterpart; keep as a requirement for NEAT/doc-consistency declared surfaces."
+at = "2026-10-04T21:05:06Z"
+actor = "lognd"
+rev = 1

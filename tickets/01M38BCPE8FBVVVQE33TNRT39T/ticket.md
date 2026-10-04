@@ -2,11 +2,12 @@
 id = "01M38BCPE8FBVVVQE33TNRT39T"
 title = "register PRECHECK001-006 in gates _KNOWN_GATE_RULES and src/frob/agent/_precheck.py in design/frob.strata"
 type = "docs"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-09-24T00:00:00Z"
+updated = "2026-10-04T21:02:57Z"
 aliases = ["T-6600"]
 labels = ["v1-cluster:B3d"]
 scope = ["src/frob/gates/_waive.py", "design/frob.strata"]

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. PT-18: id alias scanning needs a token boundary (UT-0042 must not match T-0042)."
+at = "2026-10-04T21:09:19Z"
+actor = "lognd"
+rev = 1

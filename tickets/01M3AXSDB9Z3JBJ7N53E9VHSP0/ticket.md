@@ -3,13 +3,13 @@ id = "01M3AXSDB9Z3JBJ7N53E9VHSP0"
 title = "STORE106: `$lookup` issued in a per-request hot path (MongoDB)"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 parent = "01M3AXSD9STSFC2MR8M369JNE8"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T20:59:54Z"
 aliases = ["T-6505"]
-labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 scope = ["src/frob/store/_mongo.py", "tests/fixtures/store/store106-mongo-lookup-hotpath/**"]
 
 [[links]]

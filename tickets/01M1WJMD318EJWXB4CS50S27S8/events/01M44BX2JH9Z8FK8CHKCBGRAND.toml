@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Uncertain: v1 playbook text (failure-injection repro asserts every response field); keep as a docs item for the v2 test guide."
+at = "2026-10-04T21:07:47Z"
+actor = "lognd"
+rev = 1

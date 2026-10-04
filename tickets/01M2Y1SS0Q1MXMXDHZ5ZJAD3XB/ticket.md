@@ -4,13 +4,13 @@ title = "WEBSEC configuration, headers and supply chain: CSP/HSTS/COOP/CORP set,
 type = "story"
 flavour = "user_story"
 category = "triage"
-priority = "critical"
+priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-09-20T00:00:00Z"
+updated = "2026-10-04T21:00:45Z"
 aliases = ["T-5143"]
-labels = ["milestone:0.534.0", "component:gates", "v1-cluster:B2", "area:grimble"]
+labels = ["component:gates", "v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
 
 39 entries in the attached corpus, 26 static, 13 config. Config rules read next.config, vite.config, nginx/caddy, helmet or secure-headers usage, Django SECURE_* and DEBUG, Flask debug, NODE_ENV, tsconfig/webpack sourcemap in prod build, .github/workflows uses: pinned by tag, pull_request_target with checkout of PR head, Dockerfile USER and :latest, storage bucket policies (S3 public-read, Supabase storage policies), CORS * with credentials or reflected origin, Cache-Control on authenticated responses, outbound HTTP calls without timeout, upload and body size limits absent, auth events not logged, PII in log format strings. Every rule cites the ASVS id from the corpus; header values cite the OWASP Secure Headers Project. Extends SEC001-003 (secrets) with front-end bundle and CI-log scanning.

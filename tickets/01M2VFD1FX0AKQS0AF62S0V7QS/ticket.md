@@ -2,11 +2,12 @@
 id = "01M2VFD1FX0AKQS0AF62S0V7QS"
 title = "Wire CONFIGPATH001/ROUTE001 gates into the gate registry and docs/modules/gates.md"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-09-19T00:00:00Z"
+updated = "2026-10-04T21:07:52Z"
 aliases = ["T-4605"]
 labels = ["milestone:0.540.0", "v1-cluster:F1"]
 scope = ["src/frob/gates/__init__.py", "src/frob/gates/_waive.py", "docs/modules/gates.md"]

@@ -2,11 +2,12 @@
 id = "01M1QDTYSSX12KQETTSPEJBQGK"
 title = "T-0133 degrade docs must state parity is NOT guaranteed between native and pure-Python parser backends (cross-ref T-3895, T-3845)"
 type = "docs"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:07:43Z"
 aliases = ["T-3897"]
 labels = ["milestone:1.1.0", "v1-cluster:F1"]
 scope = ["docs/guides/install.md"]

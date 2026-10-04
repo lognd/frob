@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: registering rules in the closed _KNOWN_GATE_RULES registry; v2 rules register by derive and inventory (D3)."
+at = "2026-10-04T21:01:39Z"
+actor = "lognd"
+rev = 1

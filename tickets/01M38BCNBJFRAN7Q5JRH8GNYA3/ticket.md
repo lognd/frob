@@ -2,11 +2,12 @@
 id = "01M38BCNBJFRAN7Q5JRH8GNYA3"
 title = "WEBSEC317 + T-5141 secret-pattern reuse for WEBSEC316"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-09-24T00:00:00Z"
+updated = "2026-10-04T21:01:16Z"
 aliases = ["T-5490"]
 labels = ["v1-cluster:B2", "area:grimble"]
 scope = ["src/frob/webapp/_websec_debug_config.py"]
