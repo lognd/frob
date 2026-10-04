@@ -339,6 +339,26 @@ fn xml_attr(tag: &str, key: &str) -> Option<String> {
     Some(xml_unescape(&tag[from..from + len]))
 }
 
+/// A junit `file` attribute as a portable repo-relative path (`/` separators on every host).
+///
+/// pytest writes the host's separators (`tests\\test_m.py` on Windows); the components are rebuilt
+/// through [`gob_git::RelPath`]. A path it refuses (`..`, absolute) keeps its joined components.
+// frob:ticket ~VTN9C8B
+fn portable_file(file: &str) -> String {
+    let joined = file
+        .split(['/', '\\'])
+        .filter(|c| !c.is_empty())
+        .collect::<Vec<_>>()
+        .join("/");
+    match gob_git::RelPath::new(joined.clone()) {
+        Ok(rel) => rel.to_string(),
+        Err(e) => {
+            tracing::debug!(file, error = %e, "junit file is not a repo-relative path; keeping it joined");
+            joined
+        }
+    }
+}
+
 /// The pytest node id (`tests/test_m.py::TestC::test_m[1]`) of one junit `testcase` start tag.
 ///
 /// Needs the xunit1 `file` attribute; `classname` minus the module's dotted path gives the
@@ -353,6 +373,7 @@ fn node_id(tag: &str) -> String {
             format!("{class}::{name}")
         };
     };
+    let file = portable_file(&file);
     let module = file.strip_suffix(".py").unwrap_or(&file).replace('/', ".");
     let classes = class
         .strip_prefix(&module)
@@ -806,6 +827,26 @@ mod tests {
             ]
         );
         assert_eq!(parse_junit("not xml"), Parsed::default());
+    }
+
+    #[test]
+    // frob:ticket ~VTN9C8B
+    fn junit_windows_file_separators_give_portable_node_ids() {
+        let xml = concat!(
+            "<testsuite>",
+            "<testcase classname=\"tests.test_probe.TestK\" name=\"test_bad\" file=\"tests\\test_probe.py\"><failure message=\"x\">t</failure></testcase>",
+            "<testcase classname=\"tests.test_probe\" name=\"test_ok\" file=\"tests\\test_probe.py\" />",
+            "</testsuite>",
+        );
+        let parsed = parse_junit(xml);
+        assert_eq!(
+            parsed.tests,
+            [
+                "tests/test_probe.py::TestK::test_bad",
+                "tests/test_probe.py::test_ok"
+            ]
+        );
+        assert_eq!(parsed.failed, ["tests/test_probe.py::TestK::test_bad"]);
     }
 
     #[test]
