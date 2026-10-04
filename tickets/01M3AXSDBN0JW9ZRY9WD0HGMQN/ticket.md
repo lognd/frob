@@ -6,10 +6,14 @@ category = "triage"
 priority = "critical"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-09-25T00:00:00Z"
+updated = "2026-10-04T21:09:14Z"
 aliases = ["T-6517"]
 labels = ["milestone:0.535.0", "v1-cluster:C1a"]
 scope = ["src/frob/tickets/_land.py", "src/frob/tickets/_land_queue.py", "src/frob/tickets/_start.py", "tests/unit/tickets/test_land_state_precheck.py", "docs/modules/tickets-landing.md"]
+
+[[links]]
+kind = "duplicates"
+target = "01M1QDTYR2FFF5HYHVZP2W1WMP"
 +++
 
 Measured 2026-09-25 on the ledger-tiers stack (15 stacked leaves under
