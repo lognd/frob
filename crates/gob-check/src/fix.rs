@@ -1,11 +1,16 @@
 //! `--fix` tier A: apply the edits of Deterministic fixes.
 
-use std::collections::BTreeMap;
+// frob:ticket 01M42MGPHZVTJWJHEGJWS4WZBD
+
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::Path;
 
+use gob_languages::{Language, ParseLimits, ParseResult, parse};
 use gob_rules::{Finding, FixKind};
 use gob_text::FileInterner;
+use gob_walk::{ContentSource, Digest};
 
+use crate::atomic::write_atomic;
 use crate::error::CheckError;
 use crate::report::AppliedFix;
 
@@ -17,11 +22,63 @@ struct Edit {
 }
 
 /// Fixes written and fixes dropped for overlapping an earlier one.
+#[derive(Debug)]
 pub(crate) struct Applied {
     /// The fixes that were written.
     pub applied: Vec<AppliedFix>,
     /// Fixes skipped because an edit overlapped an accepted one.
     pub skipped_overlap: usize,
+    /// Fixes skipped because an edit was out of range for the file.
+    pub skipped_invalid: usize,
+    /// Fixes dropped because their result no longer parsed.
+    pub rolled_back: usize,
+}
+
+/// One Deterministic fix resolved to paths and byte ranges.
+struct Candidate {
+    rule: String,
+    title: String,
+    edits: Vec<(String, Edit)>,
+}
+
+impl Candidate {
+    fn touches(&self, files: &BTreeSet<String>) -> bool {
+        self.edits.iter().any(|(p, _)| files.contains(p))
+    }
+}
+
+fn in_range(text: &str, e: &Edit) -> bool {
+    e.start <= e.end
+        && e.end <= text.len()
+        && text.is_char_boundary(e.start)
+        && text.is_char_boundary(e.end)
+}
+
+/// The text of `old` after applying every accepted edit of `path`.
+fn rewritten(path: &str, old: &str, accepted: &[Candidate]) -> String {
+    let mut list: Vec<&Edit> = accepted
+        .iter()
+        .flat_map(|c| c.edits.iter().filter(|(p, _)| p == path).map(|(_, e)| e))
+        .collect();
+    list.sort_by_key(|e| std::cmp::Reverse(e.start));
+    let mut text = old.to_owned();
+    for e in list {
+        text.replace_range(e.start..e.end, &e.replacement);
+    }
+    text
+}
+
+/// Whether `new` fails to parse in its language while `old` parsed cleanly.
+fn breaks_syntax(path: &str, old: &str, new: &str) -> bool {
+    let Some(lang) = Language::detect(path) else {
+        return false;
+    };
+    let limits = ParseLimits::default();
+    let errors = |text: &str| match parse(lang, text, &limits) {
+        ParseResult::Parsed(t) => Some(t.has_errors()),
+        ParseResult::Unresolved(_) => None,
+    };
+    errors(new) == Some(true) && errors(old) == Some(false)
 }
 
 fn overlaps(accepted: &[(usize, usize)], start: usize, end: usize) -> bool {
@@ -32,21 +89,24 @@ fn overlaps(accepted: &[(usize, usize)], start: usize, end: usize) -> bool {
 
 /// Apply every Deterministic fix among `findings` and write the files.
 ///
-/// A fix is atomic: when any of its edits overlaps an edit already accepted
-/// for the same file, the whole fix is skipped (the next run offers it again).
+/// A fix is atomic: when any of its edits is out of range, overlaps an edit
+/// already accepted for the same file, or leaves its file unparsable, the whole
+/// fix is skipped (the next run offers it again). Every touched file is first
+/// checked against its digest at analysis (`analysed`); a changed file refuses
+/// the run before anything is written. Writes are atomic per file and a failed
+/// write restores the files already written.
 ///
 /// # Errors
 ///
+/// [`CheckError::FixStale`] when a file changed since the check;
 /// [`CheckError::FixIo`] when a file cannot be read or written.
 pub(crate) fn apply(
     root: &Path,
     findings: &[Finding],
     files: &FileInterner,
+    analysed: &HashMap<String, String>,
 ) -> Result<Applied, CheckError> {
-    let mut accepted: BTreeMap<String, Vec<(usize, usize)>> = BTreeMap::new();
-    let mut edits: BTreeMap<String, Vec<Edit>> = BTreeMap::new();
-    let mut applied = Vec::new();
-    let mut skipped_overlap = 0;
+    let mut candidates = Vec::new();
     for f in findings {
         let Some(fix) = f.fix.as_ref().filter(|x| x.kind == FixKind::Deterministic) else {
             continue;
@@ -67,59 +127,272 @@ pub(crate) fn apply(
                 })
             })
             .collect();
-        let Some(resolved) = resolved.filter(|r| !r.is_empty()) else {
+        let Some(edits) = resolved.filter(|r| !r.is_empty()) else {
             tracing::warn!(rule = %f.rule, "fix names an unknown file; skipped");
             continue;
         };
-        if resolved
+        candidates.push(Candidate {
+            rule: f.rule.to_string(),
+            title: fix.title.clone(),
+            edits,
+        });
+    }
+
+    let originals = load_checked(root, &candidates, analysed)?;
+
+    let mut accepted: Vec<Candidate> = Vec::new();
+    let mut ranges: BTreeMap<String, Vec<(usize, usize)>> = BTreeMap::new();
+    let mut skipped_overlap = 0;
+    let mut skipped_invalid = 0;
+    for c in candidates {
+        if c.edits.iter().any(|(p, e)| !in_range(&originals[p], e)) {
+            tracing::warn!(rule = %c.rule, title = %c.title, "fix has an out-of-range edit; whole fix skipped");
+            skipped_invalid += 1;
+            continue;
+        }
+        if c.edits
             .iter()
-            .any(|(p, e)| accepted.get(p).is_some_and(|a| overlaps(a, e.start, e.end)))
+            .any(|(p, e)| ranges.get(p).is_some_and(|a| overlaps(a, e.start, e.end)))
         {
-            tracing::info!(rule = %f.rule, title = %fix.title, "fix overlaps an accepted fix; skipped");
+            tracing::info!(rule = %c.rule, title = %c.title, "fix overlaps an accepted fix; skipped");
             skipped_overlap += 1;
             continue;
         }
-        let first = resolved[0].0.clone();
-        for (path, e) in resolved {
-            accepted
-                .entry(path.clone())
-                .or_default()
-                .push((e.start, e.end));
-            edits.entry(path).or_default().push(e);
+        for (p, e) in &c.edits {
+            ranges.entry(p.clone()).or_default().push((e.start, e.end));
         }
-        applied.push(AppliedFix {
-            rule: f.rule.to_string(),
-            file: first,
-            title: fix.title.clone(),
-        });
+        accepted.push(c);
     }
-    for (path, mut list) in edits {
-        let full = root.join(&path);
-        let mut text = std::fs::read_to_string(&full)
-            .map_err(|e| CheckError::FixIo(format!("read {path}: {e}")))?;
-        list.sort_by_key(|e| std::cmp::Reverse(e.start));
-        for e in &list {
-            if e.end > text.len()
-                || e.start > e.end
-                || !text.is_char_boundary(e.start)
-                || !text.is_char_boundary(e.end)
-            {
-                tracing::warn!(
-                    path,
-                    start = e.start,
-                    end = e.end,
-                    "edit out of range; skipped"
-                );
-                continue;
-            }
-            text.replace_range(e.start..e.end, &e.replacement);
+
+    let mut rolled_back = 0;
+    let outputs = loop {
+        let touched: BTreeSet<&String> = accepted
+            .iter()
+            .flat_map(|c| c.edits.iter().map(|(p, _)| p))
+            .collect();
+        let outputs: BTreeMap<String, String> = touched
+            .into_iter()
+            .map(|p| (p.clone(), rewritten(p, &originals[p], &accepted)))
+            .collect();
+        let broken: BTreeSet<String> = outputs
+            .iter()
+            .filter(|(p, new)| breaks_syntax(p, &originals[*p], new))
+            .map(|(p, _)| p.clone())
+            .collect();
+        if broken.is_empty() {
+            break outputs;
         }
-        std::fs::write(&full, text).map_err(|e| CheckError::FixIo(format!("write {path}: {e}")))?;
-        tracing::info!(path, edits = list.len(), "fix written");
-    }
+        let before = accepted.len();
+        accepted.retain(|c| !c.touches(&broken));
+        let dropped = before - accepted.len();
+        rolled_back += dropped;
+        tracing::warn!(files = ?broken, dropped, "fix result no longer parses; fixes rolled back");
+    };
+
+    write_all(root, &outputs, &originals)?;
+
+    let mut applied: Vec<AppliedFix> = accepted
+        .iter()
+        .map(|c| AppliedFix {
+            rule: c.rule.clone(),
+            file: c.edits[0].0.clone(),
+            title: c.title.clone(),
+        })
+        .collect();
     applied.sort_by(|a, b| (&a.file, &a.rule).cmp(&(&b.file, &b.rule)));
     Ok(Applied {
         applied,
         skipped_overlap,
+        skipped_invalid,
+        rolled_back,
     })
+}
+
+/// Read every file the candidates touch and refuse any whose digest is not the analysed one.
+fn load_checked(
+    root: &Path,
+    candidates: &[Candidate],
+    analysed: &HashMap<String, String>,
+) -> Result<BTreeMap<String, String>, CheckError> {
+    let paths: BTreeSet<&String> = candidates
+        .iter()
+        .flat_map(|c| c.edits.iter().map(|(p, _)| p))
+        .collect();
+    let source = ContentSource::locate(root);
+    let mut originals = BTreeMap::new();
+    for path in paths {
+        let now = source
+            .with_reader(|r| r.read(path))
+            .map_err(|e| CheckError::FixIo(format!("read {path}: {e}")))?;
+        if analysed.get(path).map(String::as_str) != Some(Digest::of(&now).to_string().as_str()) {
+            tracing::warn!(path, "file changed since analysis; --fix refused");
+            return Err(CheckError::FixStale(path.clone()));
+        }
+        let text = std::fs::read_to_string(root.join(path))
+            .map_err(|e| CheckError::FixIo(format!("read {path}: {e}")))?;
+        originals.insert(path.clone(), text);
+    }
+    Ok(originals)
+}
+
+/// Write every output atomically; on a failure restore the files already written.
+fn write_all(
+    root: &Path,
+    outputs: &BTreeMap<String, String>,
+    originals: &BTreeMap<String, String>,
+) -> Result<(), CheckError> {
+    let mut written: Vec<&String> = Vec::new();
+    for (path, text) in outputs {
+        if let Err(err) = write_atomic(&root.join(path), text.as_bytes()) {
+            for done in &written {
+                if let Err(e) = write_atomic(&root.join(done), originals[*done].as_bytes()) {
+                    tracing::error!(path = %done, err = %e, "restore after failed fix failed");
+                }
+            }
+            return Err(CheckError::FixIo(format!("write {path}: {err}")));
+        }
+        tracing::info!(path, "fix written");
+        written.push(path);
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use gob_rules::{Fix, Severity, TextEdit};
+    use gob_text::{FileId, TextRange, TextSize};
+
+    struct Fx {
+        dir: tempfile::TempDir,
+        files: FileInterner,
+        analysed: HashMap<String, String>,
+    }
+
+    impl Fx {
+        fn new(files: &[(&str, &str)]) -> Self {
+            let dir = tempfile::tempdir().unwrap();
+            let mut interner = FileInterner::new();
+            let mut analysed = HashMap::new();
+            for (name, text) in files {
+                std::fs::write(dir.path().join(name), text).unwrap();
+                interner.intern(name);
+                analysed.insert((*name).to_owned(), Digest::of(text.as_bytes()).to_string());
+            }
+            Self {
+                dir,
+                files: interner,
+                analysed,
+            }
+        }
+
+        fn id(&mut self, name: &str) -> FileId {
+            self.files.intern(name)
+        }
+
+        fn edit(&mut self, name: &str, start: u32, end: u32, with: &str) -> TextEdit {
+            TextEdit {
+                file: self.id(name),
+                range: TextRange::new(TextSize::from(start), TextSize::from(end)),
+                replacement: with.to_owned(),
+            }
+        }
+
+        fn finding(edits: Vec<TextEdit>) -> Finding {
+            Finding::new(
+                "TOY001".parse().unwrap(),
+                Severity::Warn,
+                None,
+                "fixable",
+                "anchor",
+            )
+            .with_fix(Fix {
+                kind: FixKind::Deterministic,
+                title: "fix".to_owned(),
+                edits,
+            })
+        }
+
+        fn run(&self, findings: &[Finding]) -> Result<Applied, CheckError> {
+            apply(self.dir.path(), findings, &self.files, &self.analysed)
+        }
+
+        fn read(&self, name: &str) -> String {
+            std::fs::read_to_string(self.dir.path().join(name)).unwrap()
+        }
+    }
+
+    // frob:tests gob-check::fix::apply
+    #[test]
+    fn applies_a_fix_atomically_to_a_fresh_file() {
+        let mut fx = Fx::new(&[("a.txt", "hello world")]);
+        let f = Fx::finding(vec![fx.edit("a.txt", 0, 5, "howdy")]);
+        let out = fx.run(&[f]).unwrap();
+        assert_eq!(out.applied.len(), 1);
+        assert_eq!(fx.read("a.txt"), "howdy world");
+    }
+
+    // frob:tests gob-check::fix::apply
+    #[test]
+    fn refuses_a_file_edited_since_the_check_and_writes_nothing() {
+        let mut fx = Fx::new(&[("a.txt", "hello world"), ("b.txt", "other")]);
+        let fa = Fx::finding(vec![fx.edit("a.txt", 0, 5, "howdy")]);
+        let fb = Fx::finding(vec![fx.edit("b.txt", 0, 5, "OTHER")]);
+        std::fs::write(fx.dir.path().join("b.txt"), "other, edited").unwrap();
+        let err = fx.run(&[fa, fb]).unwrap_err();
+        assert!(
+            matches!(&err, CheckError::FixStale(p) if p == "b.txt"),
+            "{err}"
+        );
+        assert!(err.to_string().contains("E-FIX-STALE"));
+        assert_eq!(fx.read("a.txt"), "hello world");
+        assert_eq!(fx.read("b.txt"), "other, edited");
+    }
+
+    // frob:tests gob-check::fix::apply
+    #[test]
+    fn one_out_of_range_edit_skips_the_whole_fix() {
+        let mut fx = Fx::new(&[("a.txt", "hello world")]);
+        let bad = Fx::finding(vec![
+            fx.edit("a.txt", 0, 5, "howdy"),
+            fx.edit("a.txt", 6, 99, "x"),
+        ]);
+        let out = fx.run(&[bad]).unwrap();
+        assert!(out.applied.is_empty());
+        assert_eq!(out.skipped_invalid, 1);
+        assert_eq!(fx.read("a.txt"), "hello world");
+    }
+
+    // frob:tests gob-check::fix::apply
+    #[test]
+    fn a_fix_that_breaks_syntax_is_rolled_back_and_not_applied() {
+        let mut fx = Fx::new(&[("a.rs", "fn a() {}\n"), ("b.txt", "keep")]);
+        let breaker = Fx::finding(vec![fx.edit("a.rs", 8, 9, "")]);
+        let fine = Fx::finding(vec![fx.edit("b.txt", 0, 4, "kept")]);
+        let out = fx.run(&[breaker, fine]).unwrap();
+        assert_eq!(out.rolled_back, 1);
+        assert_eq!(out.applied.len(), 1);
+        assert_eq!(fx.read("a.rs"), "fn a() {}\n");
+        assert_eq!(fx.read("b.txt"), "kept");
+    }
+
+    // frob:tests gob-check::fix::write_all
+    #[test]
+    fn a_failed_second_write_restores_the_first_file() {
+        let fx = Fx::new(&[("a.txt", "one"), ("b.txt", "two")]);
+        // A directory in place of b.txt makes its rename fail after a.txt was written.
+        let outputs: BTreeMap<String, String> = [("a.txt", "ONE"), ("b.txt", "TWO")]
+            .iter()
+            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+            .collect();
+        let originals: BTreeMap<String, String> = [("a.txt", "one"), ("b.txt", "two")]
+            .iter()
+            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+            .collect();
+        std::fs::remove_file(fx.dir.path().join("b.txt")).unwrap();
+        std::fs::create_dir(fx.dir.path().join("b.txt")).unwrap();
+        let err = write_all(fx.dir.path(), &outputs, &originals).unwrap_err();
+        assert!(matches!(err, CheckError::FixIo(_)));
+        assert_eq!(fx.read("a.txt"), "one");
+    }
 }

@@ -38,7 +38,9 @@
 //! # Fixes
 //!
 //! `--fix` writes every finding's Deterministic [`gob_rules::Fix`] (atomic
-//! per fix, overlapping fixes skipped), then runs the pipeline once more and
+//! per fix; overlapping, out-of-range and unparsable fixes skipped; a file
+//! changed since the check refused with `E-FIX-STALE`; files written by
+//! temp-and-rename and restored when a later write fails), then runs the pipeline once more and
 //! reports applied and remaining findings.
 //!
 //! # Boundaries
@@ -46,6 +48,7 @@
 //! This crate depends on no frob crate (a test enforces it with `cargo
 //! metadata`), so grimble links it without pulling frob in.
 
+mod atomic;
 mod config;
 mod core;
 mod error;

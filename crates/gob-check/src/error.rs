@@ -32,4 +32,7 @@ pub enum CheckError {
     /// A fix could not be written to disk.
     #[error("E-CHECK-FIX-IO: {0}")]
     FixIo(String),
+    /// A file changed between the check and `--fix`; nothing was written.
+    #[error("E-FIX-STALE: {0} changed since the check; rerun `check --fix`")]
+    FixStale(String),
 }
