@@ -3,13 +3,13 @@ id = "01M38BCNM8NMNAJZNY7HFD9PDF"
 title = "Review verdict as ticket evidence + strata verification node"
 type = "task"
 category = "triage"
-priority = "medium"
+priority = "low"
 points = 3
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-09-24T00:00:00Z"
+updated = "2026-10-04T21:02:47Z"
 aliases = ["T-5768"]
-labels = ["milestone:v0.537.0", "v1-cluster:B3d"]
+labels = ["v1-cluster:B3d", "triage:accepted"]
 scope = ["src/frob/tickets/_evidence.py", "docs/strata/vmodel.md", "tests/system/test_cli_evidence_enforcement.py"]
 
 [[links]]
