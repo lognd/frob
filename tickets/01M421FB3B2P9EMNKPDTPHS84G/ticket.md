@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the built wheels and no network index, when frob is installed into a clean venv, then grimble at the same version is installed with it and both run"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given uv tool install frob from the built wheels, when frob check runs, then it finds grimble without grimble on PATH"
