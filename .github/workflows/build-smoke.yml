@@ -7,7 +7,8 @@ name: build-smoke
 #          the tag to be `frob-v<that version>`;
 #   build  one cargo-dist archive per product binary per target (frob-cli-<target>
 #          and grimble-<target>), each smoked on the build runner;
-#   wheel  the five PyPI wheels (only when `wheels` is true; the dev jobs build none);
+#   wheel  the PyPI wheels, one per product per target (only when `wheels` is true; the dev
+#          jobs build none);
 #   smoke  every artifact re-run on a fresh runner (not the build runner).
 # It needs no secrets and declares none; callers must not pass `secrets:` (pinned by
 # crates/frob-release/tests/release_workflow.rs). Its jobs ask for `contents: read`
@@ -211,13 +212,15 @@ jobs:
             target/distrib/grimble-${{ matrix.target }}.zip.sha256
           if-no-files-found: error
 
-  # Five PyPI wheels, uploaded as run artifacts (packaging/pypi/BUILDING.md).
+  # The PyPI wheel set per target: one wheel per product (packaging/pypi/products.toml: frob
+  # and grimble, each carrying only its own binary, D87), uploaded as one run artifact per
+  # target (packaging/pypi/BUILDING.md).
   # Linux wheels are built natively per architecture inside the pinned
   # manylinux_2_28 image (the image lacks the repository's clang and mold, so
   # the linker is overridden to gcc and RUSTFLAGS replaces the config's).
-  # Every wheel is smoked (install into a clean venv, run frob and grimble, then
-  # the fixture repository loop of packaging/smoke/fixture-loop.sh)
-  # except the macOS x86_64 one: it is cross-built on the arm64 macos-latest
+  # Every wheel set is smoked from the local wheels only (grimble alone; frob alone, which pulls
+  # grimble; `uv tool install frob` finding grimble off PATH; then the fixture repository loop
+  # of packaging/smoke/fixture-loop.sh) except the macOS x86_64 one: it is cross-built on the arm64 macos-latest
   # runner, which cannot execute it. That exemption is the matrix entry with
   # `smoke: false`; crates/frob-release/tests/release_workflow.rs pins the
   # exempt set and fails if any other entry skips the smoke.
@@ -323,28 +326,38 @@ jobs:
           args=(--out target/wheels)
           if [ "$CROSS" = "true" ]; then args+=(--target "$TARGET"); fi
           packaging/pypi/build-wheel.sh "${args[@]}"
-      - name: Smoke the wheel (install, run frob and grimble, the fixture repository loop)
+      - name: Exactly one wheel per product was built
+        shell: bash
+        run: |
+          for product in frob grimble; do
+            [ "$(find target/wheels -maxdepth 1 -name "$product-*.whl" | wc -l)" -eq 1 ] \
+              || { echo "expected exactly one $product wheel in target/wheels:" >&2; ls target/wheels >&2; exit 1; }
+          done
+          [ "$(find target/wheels -type f | wc -l)" -eq 2 ] \
+            || { echo "unexpected files in target/wheels:" >&2; ls target/wheels >&2; exit 1; }
+      - name: Smoke the wheel set (local wheels only; grimble alone, frob pulling grimble, uv tool install)
         if: matrix.smoke
         shell: bash
         env:
           VERSION: ${{ needs.plan.outputs.version }}
-        run: packaging/pypi/smoke.sh target/wheels/frob-*.whl "$VERSION"
-      - name: Cross-built wheel is not executable here (explicit smoke exemption)
+        run: packaging/pypi/smoke.sh target/wheels "$VERSION"
+      - name: Cross-built wheels are not executable here (explicit smoke exemption)
         if: ${{ !matrix.smoke }}
         shell: bash
         env:
           TARGET: ${{ matrix.target }}
         run: |
           arch="${TARGET%%-*}"
-          wheel=$(ls target/wheels/frob-*.whl)
-          case "$wheel" in
-            *"$arch"*) echo "::notice::smoke exempt for $TARGET: wheel built but not executed on this runner ($wheel)" ;;
-            *) echo "wheel $wheel does not carry the $arch platform tag" >&2; exit 1 ;;
-          esac
+          for wheel in target/wheels/*.whl; do
+            case "$wheel" in
+              *"$arch"*) echo "::notice::smoke exempt for $TARGET: wheel built but not executed on this runner ($wheel)" ;;
+              *) echo "wheel $wheel does not carry the $arch platform tag" >&2; exit 1 ;;
+            esac
+          done
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: wheel-${{ matrix.target }}
-          path: target/wheels/frob-*.whl
+          path: target/wheels/*.whl
           if-no-files-found: error
 
   # Artifact smoke on fresh runners: every artifact built above is downloaded
@@ -413,12 +426,12 @@ jobs:
         with:
           name: archives-${{ matrix.target }}
           path: archives
-      - name: Smoke the downloaded wheel (clean venv, fixture repository loop)
+      - name: Smoke the downloaded wheel set (local wheels only, three install scenarios, fixture repository loop)
         if: matrix.smoke && inputs.wheels
         shell: bash
         env:
           VERSION: ${{ needs.plan.outputs.version }}
-        run: packaging/pypi/smoke.sh wheels/frob-*.whl "$VERSION"
+        run: packaging/pypi/smoke.sh wheels "$VERSION"
       - name: Smoke the downloaded product archives (unpack, run each binary)
         if: matrix.smoke
         shell: bash
