@@ -2,11 +2,11 @@
 id = "01M44J072TEWFTCB1AFVTN9C8B"
 title = "Windows: pytest evidence reports backslash node ids and drops class names; then require python tests on Windows CI"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T22:54:21Z"
-updated = "2026-10-04T22:57:25Z"
+updated = "2026-10-04T22:57:31Z"
 scope = ["crates/frob-evidence/src/provider.rs"]
 
 [[acceptance]]
