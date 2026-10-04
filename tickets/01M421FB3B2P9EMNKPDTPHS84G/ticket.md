@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "Given uv tool install frob from the built wheels, when frob check runs, then it finds grimble without grimble on PATH"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the release workflow, when its tests run, then the pypi job uploads both products and each wheel set's count is checked"
