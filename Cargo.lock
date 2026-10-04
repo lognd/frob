@@ -2053,6 +2053,7 @@ name = "gob-cache"
 version = "0.0.0"
 dependencies = [
  "criterion",
+ "gob-exec",
  "rusqlite",
  "tempfile",
  "thiserror",

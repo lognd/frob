@@ -12,6 +12,7 @@ authors.workspace = true
 workspace = true
 
 [dependencies]
+gob-exec = { version = "0.0.0", path = "../gob-exec" }
 rusqlite = { version = "0.32", features = ["bundled"] }
 thiserror = "2"
 tracing = "0.1"

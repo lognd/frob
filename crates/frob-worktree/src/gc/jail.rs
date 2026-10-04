@@ -1,21 +1,23 @@
 //! The path discipline of every deletion: admit a path only inside a known root.
 //!
-//! Roots are canonicalised once. A candidate is admitted when it is absolute, free of
-//! `..`, is not itself a symlink, and its canonical form lies strictly below a root
-//! (compared by components through [`Path::starts_with`], never by string prefix, so
+//! Roots are canonicalised once (through `gob_exec::canonical`). A candidate is admitted when it
+//! is absolute, free of any `.` or `..` component in any path style (refused before any
+//! comparison), is not itself a symlink, and its canonical form lies strictly below a root
+//! (compared by whole normalized components through `gob_exec::path_strictly_inside`, never by
+//! string prefix, so
 //! `/a/target-old` is not inside `/a/target`). A path that reaches outside through a
 //! symlinked parent canonicalises outside the roots and is refused. The admitted,
 //! canonical path is what callers delete, so no check is made on one path and the
 //! delete on another.
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
 
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 /// Why a path was not admitted.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum JailError {
-    /// The path is relative or contains `..`.
-    #[error("{0} is not an absolute path without `..` components")]
+    /// The path is relative or contains a `.` or `..` component.
+    #[error("{0} is not an absolute path without `.` or `..` components")]
     NotAbsolute(PathBuf),
     /// The path itself is a symlink; frob never deletes through or instead of one.
     #[error("{0} is a symlink")]
@@ -44,7 +46,7 @@ impl Jail {
     pub fn new(roots: impl IntoIterator<Item = PathBuf>) -> Self {
         let roots = roots
             .into_iter()
-            .filter_map(|r| match r.canonicalize() {
+            .filter_map(|r| match gob_exec::canonical(&r) {
                 Ok(c) => Some(c),
                 Err(e) => {
                     tracing::debug!(root = %r.display(), error = %e, "gc root absent; dropped");
@@ -67,7 +69,7 @@ impl Jail {
     /// A [`JailError`] for a relative or `..` path, a symlink, an unresolvable path
     /// or one that resolves outside (or equal to) every root.
     pub fn admit(&self, path: &Path) -> Result<PathBuf, JailError> {
-        if !path.is_absolute() || path.components().any(|c| c == Component::ParentDir) {
+        if !path.is_absolute() || gob_exec::path_has_dot_component(path) {
             return Err(JailError::NotAbsolute(path.to_path_buf()));
         }
         let meta = std::fs::symlink_metadata(path).map_err(|e| JailError::Unresolvable {
@@ -77,14 +79,14 @@ impl Jail {
         if meta.file_type().is_symlink() {
             return Err(JailError::Symlink(path.to_path_buf()));
         }
-        let canon = path.canonicalize().map_err(|e| JailError::Unresolvable {
+        let canon = gob_exec::canonical(path).map_err(|e| JailError::Unresolvable {
             path: path.to_path_buf(),
             reason: e.to_string(),
         })?;
         if self
             .roots
             .iter()
-            .any(|r| canon.starts_with(r) && canon != *r)
+            .any(|r| gob_exec::path_strictly_inside(r, &canon))
         {
             Ok(canon)
         } else {
