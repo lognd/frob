@@ -2,12 +2,13 @@
 id = "01M43BEAR3MSMEANKENBQ1KDT7"
 title = "v1 importer: merge into an existing ledger and import open tickets as triage"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T11:40:29Z"
-updated = "2026-10-04T11:45:33Z"
+updated = "2026-10-04T12:13:42Z"
 scope = ["crates/gob-dev/src/import_v1.rs", "crates/gob-dev/src/import_v1/**", "crates/gob-dev/tests/import_v1.rs", "docs/design/migration.md", "crates/gob-dev/src/main.rs"]
 
 [[acceptance]]

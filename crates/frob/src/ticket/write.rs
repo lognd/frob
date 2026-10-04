@@ -759,11 +759,16 @@ impl Command for Close {
             tracing::info!(ticket = %id, bypass = recorded.is_some(), "evidence bypass audited");
         }
         tracing::info!(ticket = %id, already = applied.already, "ticket close");
+        // frob:ticket 01M42MGN8882Y65TVXH0V1WTNR
+        let release_warnings = super::terminal_lease::release_on_terminal(ctx, id);
         let mut data = ChangeData::from(&applied);
         if !applied.already {
             data.changelog_exempt = done.exemption_reason().map(str::to_owned);
         }
         let out = gob_cli::Payload::new(data).with_already(applied.already);
+        let out = release_warnings
+            .into_iter()
+            .fold(out, gob_cli::Payload::with_warning);
         Ok(if applied.already {
             out
         } else {
@@ -807,7 +812,10 @@ impl Command for DropTicket {
         let id = resolve(&ledger, &self.ticket)?;
         let applied = ledger.drop_ticket(id, &self.reason).map_err(cli_err)?;
         tracing::info!(ticket = %id, already = applied.already, "ticket drop");
-        Ok(payload(&applied))
+        // frob:ticket 01M42MGN8882Y65TVXH0V1WTNR
+        Ok(super::terminal_lease::release_on_terminal(ctx, id)
+            .into_iter()
+            .fold(payload(&applied), gob_cli::Payload::with_warning))
     }
 }
 
