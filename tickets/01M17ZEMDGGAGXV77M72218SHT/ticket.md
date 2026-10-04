@@ -2,11 +2,12 @@
 id = "01M17ZEMDGGAGXV77M72218SHT"
 title = "Wire strata/graph/vet examined-sites into WAIVE004 (blocked pending a sound site-identity mapping)"
 type = "task"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-08-30T00:00:00Z"
-updated = "2026-08-30T00:00:00Z"
+updated = "2026-10-04T21:01:41Z"
 aliases = ["T-3504"]
 labels = ["milestone:1.0.0", "v1-cluster:B3d"]
 scope = ["src/frob/gates/_coverage_sites.py"]
