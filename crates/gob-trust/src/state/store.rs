@@ -97,8 +97,8 @@ impl StateStore {
     ) -> Result<Self, StateError> {
         make_dir(&root)?;
         if let Some(tree) = work_tree {
-            let real = fs::canonicalize(&root).map_err(io("canonicalize", &root))?;
-            let tree_real = fs::canonicalize(tree).map_err(io("canonicalize", tree))?;
+            let real = gob_exec::canonical(&root).map_err(io("canonicalize", &root))?;
+            let tree_real = gob_exec::canonical(tree).map_err(io("canonicalize", tree))?;
             if real.starts_with(&tree_real) {
                 tracing::error!(root = %real.display(), "state root inside work tree refused");
                 return Err(StateError::InsideWorkTree {
