@@ -2,11 +2,12 @@
 id = "01M1T07P0ZD90MHQ7XPG939DPM"
 title = "SCOPE002 explodes on hub files (design/frob.strata, docs/modules/gates.md)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:00Z"
+updated = "2026-10-04T21:02:05Z"
 aliases = ["T-4127"]
 labels = ["milestone:1.1.0", "v1-cluster:B3d"]
 scope = ["src/frob/gates/__init__.py"]
