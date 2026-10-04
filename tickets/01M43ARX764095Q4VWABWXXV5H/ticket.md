@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:47Z"
-updated = "2026-10-04T13:16:29Z"
+updated = "2026-10-04T13:47:06Z"
 idempotency_key = "crunk-plan-spec"
 labels = ["area:crunk"]
 scope = ["crates/crunk-spec/**", "docs/schemas/crunk.json", "docs/crunk/config.md", "Cargo.lock", "crates/gob-dev/Cargo.toml", "crates/gob-dev/src/lib.rs", "crates/gob-dev/src/render/mod.rs", "crates/gob-dev/src/render/crunk.rs", "crates/gob-dev/tests/generate.rs"]
@@ -23,7 +23,7 @@ target = "01M43ARVS24254G85TMFYH8FGQ"
 
 [[acceptance]]
 text = "Given a crunk.toml with an unknown key, when loaded, then the error names the key, its line and a did-you-mean, and the exit is 2"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given each valid fixture config of the corpus, when loaded, then the DesignSpec equals the Python spec dump"
