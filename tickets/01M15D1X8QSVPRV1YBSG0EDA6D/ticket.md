@@ -2,11 +2,12 @@
 id = "01M15D1X8QSVPRV1YBSG0EDA6D"
 title = "Fix frob:tests Class::method separator in check_runner.py (2 DRIFT002 findings)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-08-29T00:00:00Z"
-updated = "2026-08-29T00:00:00Z"
+updated = "2026-10-04T21:06:20Z"
 aliases = ["T-3351"]
 labels = ["milestone:1.0.0", "v1-cluster:C4a"]
 scope = ["src/frob/app/check_runner.py"]
