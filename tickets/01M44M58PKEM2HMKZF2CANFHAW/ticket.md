@@ -6,12 +6,12 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T23:32:04Z"
-updated = "2026-10-04T23:43:56Z"
+updated = "2026-10-04T23:44:11Z"
 scope = ["crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/ci_parity.rs", ".github/workflows/ci.yml", "goway.toml", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
 text = "Given a host where pip user installs are refused but uv is present, when cargo dev ci --step pytest runs, then pytest is installed at the pinned version and is on PATH"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the repo root, when goway doctor reads it, then goway.toml declares uv as a required tool"

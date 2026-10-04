@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T23:44:11Z"
+digest = "9ce3fd29e28bf538cd9d1d5fe7d7db513e0255b52c8c430a5974f3880ad414d5"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9821412d-91c8-4b6c-b0da-f4b17430fee2 with nextest profile: default
+    Starting 1 test across 5 binaries (82 tests skipped)
+        PASS [   0.005s] gob-dev::ci_parity pytest_step_installs_with_uv_not_pip_and_nextest_sees_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 82 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E test(pytest_step_installs_with_uv_not_pip_and_nextest_sees_it)"
+size = 566
+status = "measured"
+tests = ["pytest_step_installs_with_uv_not_pip_and_nextest_sees_it"]
+at = "2026-10-04T23:44:11Z"
+actor = "lognd"
+rev = 1
