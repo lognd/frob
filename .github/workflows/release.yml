@@ -1,6 +1,7 @@
 name: release
 
-# Standalone binary archives for the `frob` binary, built with cargo-dist
+# Standalone binary archives for the `frob` and `grimble` binaries (one archive per
+# product per platform: frob-cli-<target>, grimble-<target>), built with cargo-dist
 # (dist-workspace.toml) and attached to a GitHub release. Hand-written
 # around `dist build` so the trigger, SHA pins, per-job permissions and
 # timeouts are ours (docs/decisions/2026-10-03-release-workflow-hand-written.md).
@@ -80,12 +81,19 @@ jobs:
           # linux archive's own `frob release notes`; no markdown is parsed in shell.
           # The section is the whole body; no generated list is appended.
           mkdir unpacked
-          tar -xJf archives/*x86_64-unknown-linux-gnu*.tar.xz -C unpacked
+          tar -xJf archives/frob-cli-x86_64-unknown-linux-gnu.tar.xz -C unpacked
           frob_bin=$(find unpacked -name frob -type f | head -n 1)
           chmod +x "$frob_bin"
           "$frob_bin" release notes --version "$VERSION" --text > notes.md
+          # Every product archive and checksum is named by its product (frob-cli, grimble); any
+          # other file in archives/ is a bug and stops the release.
+          assets=()
+          for product in frob-cli grimble; do
+            for f in archives/"$product"-*; do assets+=("$f"); done
+          done
+          [ "${#assets[@]}" -eq "$(ls archives | wc -l)" ] || { echo "unexpected files in archives/" >&2; ls archives >&2; exit 1; }
           gh release create "$TAG" --repo "$REPO" --verify-tag --title "frob $VERSION" \
-            --notes-file notes.md "${flags[@]}" archives/*
+            --notes-file notes.md "${flags[@]}" "${assets[@]}"
 
   # crates.io in dependency order (crates/gob-dev/src/publish.rs). Resumable:
   # versions already on the index are skipped, so re-running a failed run

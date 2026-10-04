@@ -1,13 +1,18 @@
 [workspace]
 members = ["cargo:."]
 
-# cargo-dist configuration. Only `crates/frob` (package frob-cli, binary
-# `frob`) is distributable; it opts in through [package.metadata.dist].
+# cargo-dist configuration. Exactly the product binaries are distributed (D87,
+# docs/design/products.md 6): `dist = false` below is the workspace default, and
+# `crates/frob` (package frob-cli, binary `frob`) and `crates/grimble` (package
+# grimble, binary `grimble`) each opt in through [package.metadata.dist]; crunk
+# joins as one more entry. No other package ships an archive.
 # The release workflow is hand-written (docs/decisions/2026-10-03-release-workflow-hand-written.md)
 # and calls `dist build --artifacts=local` per target, so dist produces the
 # archives and checksums while the workflow owns trigger, SHA pins,
 # permissions and timeouts.
 [dist]
+# Nothing is distributed unless its manifest opts in (the product list above).
+dist = false
 # The dist version the workflow pins (with checksums) and local runs use.
 cargo-dist-version = "0.32.0"
 # CI backend; the workflow file is owned by hand, so dist must not rewrite it.

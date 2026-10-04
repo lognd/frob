@@ -1,0 +1,28 @@
+[package]
+name = "gob-testsupport"
+version = "0.0.0"
+description = "Test-only helpers shared across the monorepo (never published, never distributed)."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish = false
+
+[lib]
+name = "gob_testsupport"
+path = "src/lib.rs"
+
+[[bin]]
+name = "fake-sibling"
+path = "src/bin/fake_sibling.rs"
+test = false
+
+[dependencies]
+gob-config = { path = "../gob-config" }
+gob-exec = { path = "../gob-exec" }
+serde_json = "1"
+tracing = "0.1"
+
+[lints]
+workspace = true

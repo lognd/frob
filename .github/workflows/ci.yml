@@ -152,6 +152,8 @@ jobs:
             base=$(basename "$f")
             # cargo-dist checksums name the unstaged archive; they are regenerated below.
             case "$base" in *.sha256) continue ;; esac
+            # Only the product archives (frob-cli, grimble) may be published.
+            case "$base" in frob-cli-*|grimble-*) ;; *) echo "unexpected file $base" >&2; exit 1 ;; esac
             stem="${base%%.*}"
             new="${stem}-${SHORT}.${base#*.}"
             cp "$f" "staged/$new"

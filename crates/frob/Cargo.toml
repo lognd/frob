@@ -9,7 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [package.metadata.dist]
-# frob-cli is the only distributable binary; dist ignores publish = false without this.
+# frob-cli is a product binary (D87): it opts in to a dist archive of its own.
 dist = true
 
 [lib]

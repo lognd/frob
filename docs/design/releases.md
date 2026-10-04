@@ -168,7 +168,23 @@ part of the job's design:
   only the build machine has is caught); every publishing job needs
   `smoke`. A target that cannot be executed on its runner
   is listed as an explicit, tested exemption, never faked (v1's
-  `_SMOKE_EXEMPT_TARGETS`).
+  `_SMOKE_EXEMPT_TARGETS`). `archive-smoke.sh PRODUCT ARCHIVE` smokes one
+  product archive (frob runs the fixture loop, grimble runs
+  `grimble --version`); the workflow names each archive explicitly and a
+  step fails if `target/distrib` holds anything but the product archives.
+- **Archives:** exactly one per product binary per target (D87,
+  products.md 6), named after the dist package: `frob-cli-<target>.tar.xz`
+  (`.zip` on windows) holding `frob`, and `grimble-<target>` holding
+  `grimble`, each with a `.sha256`; crunk joins as one more entry,
+  `crunk-<target>`. cargo-dist 0.32 names an archive after its package
+  and has no rename option, so the frob archive keeps the `frob-cli`
+  package name (the crates.io name, products.md 6). `dist-workspace.toml`
+  sets `dist = false` as the workspace default and each product package
+  opts in with `[package.metadata.dist] dist = true`; no published crate
+  declares a binary that is not a product (test helpers such as
+  `fake-sibling` live in the `publish = false` crate `gob-testsupport`).
+  `crates/frob-release/tests/products.rs` pins the binary set, the dist
+  set and the archive names the smoke and upload steps use.
 - **Build matrix:** cargo-dist per binary (monorepo.md 4): linux
   x86_64 and aarch64, macOS arm64 and x86_64 (cross), windows x86_64.
   PyPI gets one wheel set per product, each carrying only its own

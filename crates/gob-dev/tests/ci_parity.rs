@@ -195,23 +195,25 @@ fn a_missing_prerequisite_install_fails_naming_it() {
     );
 }
 
-// frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
-// frob:tests crates/gob-dev/tests/ci_parity.rs::dev_alias_builds_into_a_separate_target_dir
+// frob:ticket 01M424BWCSSMVHA9X5DJ9BCSXD
+// frob:tests crates/gob-dev/tests/ci_parity.rs::dev_alias_shares_the_workspace_target_dir
 #[test]
-fn dev_alias_builds_into_a_separate_target_dir() {
+fn dev_alias_shares_the_workspace_target_dir() {
     let text = std::fs::read_to_string(root().join(".cargo/config.toml")).unwrap();
     let cfg: toml::Table = text.parse().unwrap();
     let alias = cfg["alias"]["dev"].as_str().unwrap();
-    let words: Vec<&str> = alias.split_whitespace().collect();
-    let dir = words
-        .windows(2)
-        .find(|w| w[0] == "--target-dir")
-        .map_or_else(
-            || panic!("dev alias {alias:?} shares the workspace target dir"),
-            |w| w[1].trim_end_matches('/'),
-        );
     assert!(
-        dir != "target" && dir.starts_with("target/"),
-        "dev alias target dir {dir:?} must be a subdirectory of target/"
+        !alias.contains("target-dir") && !alias.contains("target/dev-tool"),
+        "dev alias {alias:?} builds a second copy of the workspace"
     );
+}
+
+// frob:ticket 01M424BWCSSMVHA9X5DJ9BCSXD
+// frob:tests crates/gob-dev/tests/ci_parity.rs::windows_ci_runs_from_a_self_copy
+#[test]
+fn windows_ci_runs_from_a_self_copy() {
+    use gob_dev::selfcopy::{Plan, plan};
+    assert_eq!(plan(true, false, true), Plan::ReExec);
+    assert_eq!(plan(false, false, true), Plan::InPlace);
+    assert_eq!(plan(true, true, true), Plan::InPlace);
 }

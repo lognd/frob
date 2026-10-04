@@ -851,6 +851,7 @@ dependencies = [
  "gob-lock",
  "gob-rules",
  "gob-symbols",
+ "gob-testsupport",
  "gob-text",
  "gob-walk",
  "rayon",
@@ -2337,6 +2338,16 @@ dependencies = [
  "thiserror",
  "tracing",
  "tree-sitter",
+]
+
+[[package]]
+name = "gob-testsupport"
+version = "0.0.0"
+dependencies = [
+ "gob-config",
+ "gob-exec",
+ "serde_json",
+ "tracing",
 ]
 
 [[package]]

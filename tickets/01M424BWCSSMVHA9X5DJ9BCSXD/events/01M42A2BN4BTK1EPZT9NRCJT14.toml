@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T01:57:14Z"
+digest = "bcaeadfc9c783b9019bf8fbc537e07075a54540364fe6386abb834db2a09a177"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+   Compiling gob-dev v0.0.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 58617db5-df9a-40f9-b6d6-957f42d757ae with nextest profile: default
+    Starting 1 test across 5 binaries (57 tests skipped)
+        PASS [   0.023s] gob-dev::ci_parity dev_alias_shares_the_workspace_target_dir
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 1 test run: 1 passed, 57 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(dev_alias_shares_the_workspace_target_dir)'"
+size = 659
+status = "measured"
+tests = ["dev_alias_shares_the_workspace_target_dir"]
+at = "2026-10-04T01:57:14Z"
+actor = "lognd"
+rev = 1

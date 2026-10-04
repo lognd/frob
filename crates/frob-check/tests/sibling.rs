@@ -2,8 +2,9 @@
 //!
 //! The real grimble cannot be a dev-dependency binary of this crate (cargo builds
 //! only the bins of the package under test, and frob never depends on a grimble
-//! crate), so the fake in `tests/support/fake_sibling.rs` speaks the contract and the
+//! crate), so the fake in `crates/gob-testsupport/src/bin/fake_sibling.rs` speaks the contract and the
 //! workspace-level run against the built grimble is recorded on the ticket.
+// frob:ticket 01M422D5YRH5TG4499Z24K7SMT
 
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -16,7 +17,10 @@ use gob_diagnostics::{ExitCode, RequiredReason};
 use gob_git::{CommitOptions, RelPath, Repo};
 use gob_rules::Severity;
 
-const FAKE: &str = env!("CARGO_BIN_EXE_fake-sibling");
+/// The fake sibling binary, built once by the test-support crate.
+fn fake() -> PathBuf {
+    gob_testsupport::fake_sibling()
+}
 
 fn write(root: &Path, path: &str, text: &str) {
     let full = root.join(path);
@@ -28,7 +32,7 @@ fn opts() -> CheckOptions {
     CheckOptions {
         skip_telemetry: true,
         skip_tools: true,
-        sibling_programs: vec![("grimble".to_owned(), PathBuf::from(FAKE))],
+        sibling_programs: vec![("grimble".to_owned(), fake())],
         ..CheckOptions::default()
     }
 }
@@ -244,9 +248,7 @@ fn an_unconfigured_sibling_is_not_run_and_says_nothing() {
 #[test]
 fn crunk_runs_only_when_crunk_toml_exists() {
     let mut options = opts();
-    options
-        .sibling_programs
-        .push(("crunk".to_owned(), PathBuf::from(FAKE)));
+    options.sibling_programs.push(("crunk".to_owned(), fake()));
     let dir = repo("valid -", "");
     let r = run(dir.path(), &options).expect("run");
     assert!(r.timing.stages.iter().all(|s| s.name != "sibling:crunk"));
