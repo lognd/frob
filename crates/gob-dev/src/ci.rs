@@ -107,6 +107,14 @@ pub enum CiError {
     /// A process could not be run at all.
     #[error("{0}")]
     Spawn(String),
+    /// The goway host lacks declared prerequisites: a host setup problem, not a code failure.
+    #[error("host {host} lacks: {}", missing.join("; "))]
+    HostPrerequisite {
+        /// Pool host that was probed.
+        host: String,
+        /// Each missing item with the command that installs it.
+        missing: Vec<String>,
+    },
     /// goway itself failed (exit 125: no host, ssh, sync), not the step's command.
     #[error("goway failed: {0}")]
     Goway(String),
@@ -119,6 +127,8 @@ pub enum StepStatus {
     Passed,
     /// Failed, with the reason.
     Failed(String),
+    /// The goway host lacks a declared prerequisite (named in the reason); the code was not run.
+    HostPrerequisite(String),
     /// goway failed before or around the step (exit 125); says nothing about the step itself.
     GowayFailed(String),
     /// Not run on this host, with the reason (never silent).
@@ -526,7 +536,7 @@ impl GowayRunner {
     fn invoke(
         &self,
         root: &Path,
-        argv: Vec<String>,
+        argv: &[String],
         capture: bool,
     ) -> Result<(Outcome, String, Option<Remote>), CiError> {
         let report = root.join(REPORT_PATH);
@@ -540,7 +550,7 @@ impl GowayRunner {
             let out = runner()
                 .run(&Spec {
                     program: self.goway.clone(),
-                    args: argv.clone(),
+                    args: argv.to_vec(),
                     cwd: Some(root.to_path_buf()),
                     env: Vec::new(),
                     timeout: STEP_TIMEOUT,
@@ -571,13 +581,14 @@ impl GowayRunner {
     /// Check `step`'s prerequisites on a goway host; returns that host so the step runs on it.
     fn require_remote(&self, root: &Path, step: &Step) -> Result<Option<String>, CiError> {
         let mut host: Option<String> = None;
+        let mut missing = Vec::new();
         for need in &step.needs {
             let (command, probe) = match need {
                 Prerequisite::RustTarget(_) => (self.os.target_list(), "rustup target list"),
                 Prerequisite::SystemTool { tool, .. } => (self.os.tool_probe(tool), "which"),
             };
             let argv = self.argv(root, host.as_deref(), &[], &command);
-            let (status, stdout, remote) = self.invoke(root, argv, true)?;
+            let (status, stdout, remote) = self.invoke(root, &argv, true)?;
             if host.is_none() {
                 host = remote.map(|r| r.host);
             }
@@ -589,17 +600,22 @@ impl GowayRunner {
             };
             tracing::info!(step = step.name, probe, found, host = ?host, "remote prerequisite");
             if !found {
-                return Err(match need {
-                    Prerequisite::RustTarget(t) => CiError::TargetMissing {
-                        target: (*t).to_owned(),
+                missing.push(format!(
+                    "{} (run: {})",
+                    match need {
+                        Prerequisite::RustTarget(t) => format!("rust target {t}"),
+                        Prerequisite::SystemTool { tool, .. } => (*tool).to_owned(),
                     },
-                    Prerequisite::SystemTool { tool, install } => CiError::ToolMissing {
-                        tool: (*tool).to_owned(),
-                        step: step.name.to_owned(),
-                        install: (*install).to_owned(),
-                    },
-                });
+                    need.install_command()
+                ));
             }
+        }
+        if !missing.is_empty() {
+            tracing::error!(step = step.name, ?missing, "goway host lacks prerequisites");
+            return Err(CiError::HostPrerequisite {
+                host: host.unwrap_or_else(|| "unknown".to_owned()),
+                missing,
+            });
         }
         Ok(host)
     }
@@ -622,7 +638,7 @@ impl StepRunner for GowayRunner {
         let mut command = vec![remote_program(&step.program)];
         command.extend(step.args.iter().cloned());
         let argv = self.argv(root, host.as_deref(), &step.env, &command);
-        let (status, _, remote) = self.invoke(root, argv, false)?;
+        let (status, _, remote) = self.invoke(root, &argv, false)?;
         let at = remote
             .as_ref()
             .map_or_else(String::new, |r| format!(" on {} ({})", r.host, r.arch));
@@ -763,6 +779,10 @@ pub fn run(
                     remote = at;
                     StepStatus::Passed
                 }
+                Err(e @ CiError::HostPrerequisite { .. }) => {
+                    tracing::error!(step = step.name, error = %e, "host prerequisite missing");
+                    StepStatus::HostPrerequisite(e.to_string())
+                }
                 Err(e @ CiError::Goway(_)) => {
                     tracing::error!(step = step.name, error = %e, "goway failed");
                     StepStatus::GowayFailed(e.to_string())
@@ -773,7 +793,10 @@ pub fn run(
                 }
             }
         };
-        let failed = matches!(status, StepStatus::Failed(_) | StepStatus::GowayFailed(_));
+        let failed = matches!(
+            status,
+            StepStatus::Failed(_) | StepStatus::GowayFailed(_) | StepStatus::HostPrerequisite(_)
+        );
         // The junit report stays on a remote host; reading the local copy would show a stale run.
         if step.name == "nextest" && status == StepStatus::Passed && remote.is_none() {
             report_nextest(root, say);
@@ -820,6 +843,7 @@ pub fn summary(results: &[StepResult]) -> (Vec<String>, bool) {
             StepStatus::Passed => ("ok     ", String::new()),
             StepStatus::Failed(why) => ("FAILED ", format!("  {why}")),
             StepStatus::GowayFailed(why) => ("GOWAY  ", format!("  {why}")),
+            StepStatus::HostPrerequisite(why) => ("HOSTREQ", format!("  {why}")),
             StepStatus::Skipped(why) => ("skipped", format!("  {why}")),
         };
         let at = r.remote.as_ref().map_or_else(String::new, |h| {
@@ -831,9 +855,12 @@ pub fn summary(results: &[StepResult]) -> (Vec<String>, bool) {
             r.elapsed.as_secs_f64()
         ));
     }
-    let ok = !results
-        .iter()
-        .any(|r| matches!(r.status, StepStatus::Failed(_) | StepStatus::GowayFailed(_)));
+    let ok = !results.iter().any(|r| {
+        matches!(
+            r.status,
+            StepStatus::Failed(_) | StepStatus::GowayFailed(_) | StepStatus::HostPrerequisite(_)
+        )
+    });
     lines.push(if ok {
         "ci: all steps passed".to_owned()
     } else {
@@ -1180,7 +1207,12 @@ mod tests {
             true,
             &mut |_| {},
         );
-        assert!(matches!(&r[0].status, StepStatus::Failed(w) if w.contains("rustup target add")));
+        assert!(
+            matches!(&r[0].status, StepStatus::HostPrerequisite(w)
+                if w.contains("fakehost") && w.contains("rustup target add")),
+            "{:?}",
+            r[0].status
+        );
         let text = std::fs::read_to_string(&log).unwrap();
         assert!(text.lines().any(|l| l == "rustup"), "{text}");
     }

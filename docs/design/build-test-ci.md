@@ -202,7 +202,8 @@ tests run remotely too. Cheap or host-bound steps (fmt, gen, zizmor,
 actionlint, `test --dry-run`, which needs the `origin/` ref) stay local.
 Declared prerequisites are probed on the host (`rustup target list
 --installed`, `which`), and the step is then pinned to that host
-(`--host`). goway exit 125 means goway failed or no host qualifies: it is
+(`--host`). Missing items are reported as `HOSTREQ`, naming the host, each
+item and its install command: a host setup problem, not a code failure. goway exit 125 means goway failed or no host qualifies: it is
 retried five times with backoff (15 s doubling to 120 s) and then
 reported as `GOWAY` in the summary, distinct from a `FAILED` step; any
 other exit is the step's own. The summary names host, os and arch per
