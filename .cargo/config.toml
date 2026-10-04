@@ -1,8 +1,8 @@
 [alias]
-# gob-dev builds into its own target dir (the xtask pattern): on Windows a running
-# target/debug/gob-dev.exe cannot be replaced, and `cargo dev ci` rebuilds the workspace
-# (nextest) while it runs. Swatinem/rust-cache covers target/ whole, so CI keys need no change.
-dev = "run -p gob-dev --target-dir target/dev-tool --"
+# gob-dev shares the workspace target dir (one build, not two). On Windows a running
+# target/debug/gob-dev.exe cannot be replaced while `cargo dev ci` rebuilds the workspace, so
+# gob-dev re-executes from a temporary copy of itself first (crates/gob-dev/src/selfcopy.rs).
+dev = "run -p gob-dev --"
 
 # Fast linking on Linux: clang driver delegating to mold.
 # To disable: delete this block, or override per invocation with

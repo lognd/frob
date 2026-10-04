@@ -16,6 +16,7 @@ pub mod import_v1;
 pub mod out;
 pub mod publish;
 pub mod render;
+pub mod selfcopy;
 
 use std::path::{Path, PathBuf};
 

@@ -172,6 +172,23 @@ implementer runs before reporting. The windows-latest job stays the
 real-platform check; `goway run --host win` adds it before push
 (paths.md section 4).
 
+**`cargo dev` builds once (~J9BCSXD).** The `dev` alias runs
+`gob-dev` from the shared `target/` (`run -p gob-dev --`); a separate
+target dir (the earlier xtask-style fix) compiled nearly the whole
+workspace a second time, 2.7 GB per checkout, and made `cargo dev gen
+all` wait on that build. On Windows a running `target\debug\gob-dev.exe`
+cannot be replaced while `cargo dev ci` rebuilds the workspace, so
+gob-dev, before a task that rebuilds (`ci` without `--list`, `publish`),
+copies its own executable to a unique file under
+`%TEMP%\gob-dev-selfcopy`, runs the copy through gob-exec with the same
+arguments and the `GOB_DEV_SELF_COPY` marker (so the copy does not copy
+itself), relays its exit code and deletes it. A copy left by a crash is
+removed on the next run (a copy still running cannot be deleted, so
+concurrent runs are safe). Unix runs in place: a running binary can be
+replaced. The decision is the pure function `selfcopy::plan(windows,
+marker_set, rebuilds_workspace)`, tested on Linux; a parity test pins
+the alias to the shared target dir.
+
 ## 5. Developer loop
 
 ```
