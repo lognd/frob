@@ -230,10 +230,9 @@ fn pytest_install() -> Step {
 /// [`CiError::Config`] when `frob.toml` cannot supply the pinned tool versions.
 pub fn steps(root: &Path) -> Result<Vec<Step>, CiError> {
     // GitHub (and most CI systems) set `CI`; only there is a missing pytest a failure, so a
-    // developer machine without pytest still runs `cargo dev ci` with the named skips. The
-    // Windows job does not require it yet: its python lacks the `python3` name the test probe
-    // looks for (the probe lives in gob-testsupport).
-    let require_python = std::env::var_os("CI").is_some() && !cfg!(windows);
+    // developer machine without pytest still runs `cargo dev ci` with the named skips.
+    // frob:ticket ~VTN9C8B
+    let require_python = std::env::var_os("CI").is_some();
     steps_with(root, require_python)
 }
 
