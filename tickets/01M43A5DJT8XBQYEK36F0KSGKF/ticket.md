@@ -2,13 +2,14 @@
 id = "01M43A5DJT8XBQYEK36F0KSGKF"
 title = "First-party Python adapter: language, comments, symbols, imports, calls, tests"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M43A5349M17PED730HKNM4VV"
 reporter = "lognd"
 created = "2026-10-04T11:18:09Z"
-updated = "2026-10-04T12:04:47Z"
+updated = "2026-10-04T12:04:48Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/gob-directives/src/comments.rs", "crates/frob-obligations/src/comments.rs", "crates/frob-check/tests/**", "docs/reference/fidelity.md", "Cargo.toml", "crates/gob-directives/src/scan.rs", "crates/gob-directives/src/bind.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-tests/src/catalog.rs", "Cargo.lock", "crates/frob-tests/src/touched.rs"]
 
 [[acceptance]]
