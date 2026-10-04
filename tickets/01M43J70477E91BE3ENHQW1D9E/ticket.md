@@ -6,12 +6,12 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-04T13:38:49Z"
-updated = "2026-10-04T21:21:20Z"
+updated = "2026-10-04T21:23:51Z"
 scope = ["crates/gob-git/src/ledger.rs", "crates/gob-git/tests/ledger.rs", "docs/design/git-io.md"]
 
 [[acceptance]]
 text = "Given a heavily loaded host, when the concurrent CAS writers test runs 50 times, then it passes every time"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the CAS retry policy, when it is documented, then the guarantee the test asserts matches the documented guarantee"
