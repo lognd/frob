@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~PVJ9SQM: bare filename scope globs are the PT-2 bare-name case."
+at = "2026-10-04T21:09:06Z"
+actor = "lognd"
+rev = 1
