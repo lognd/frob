@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:46Z"
-updated = "2026-10-04T11:58:14Z"
+updated = "2026-10-04T11:58:16Z"
 idempotency_key = "crunk-plan-bin"
 labels = ["area:crunk"]
 scope = ["crates/crunk/**", "crates/crunk-check/**", "docs/crunk/**", "Cargo.lock"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an empty valid config, when `crunk check --json` runs, then stdout is a gob.sibling/1 document with product crunk that validates against docs/schemas/sibling.json"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given `crunk --version`, then it prints the workspace lockstep version"
