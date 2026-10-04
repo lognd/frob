@@ -7,12 +7,12 @@ priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:51:35Z"
-updated = "2026-10-04T06:01:35Z"
+updated = "2026-10-04T06:04:26Z"
 scope = ["crates/gob-symbols/src/pipeline.rs", "crates/gob-check/src/**", "crates/frob-check/src/**", "crates/frob-check/tests/**", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/tests/symbols.rs", "crates/gob-symbols/tests/gaps.rs", "docs/design/architecture.md", "docs/reference/rules/README.md", "docs/reference/rules/READ001.md"]
 
 [[acceptance]]
 text = "Given a tracked non-UTF-8 markdown file, when frob check runs, then the report has a required Unresolved finding naming the file and the decode error, and the gate fails under the default fail_on_unresolved"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the fidelity section, when files were skipped, then their count and reasons appear"

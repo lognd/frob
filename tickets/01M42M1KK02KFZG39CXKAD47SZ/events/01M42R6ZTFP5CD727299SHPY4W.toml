@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T06:04:26Z"
+digest = "779489c61c9b9b34a715952c027bc1436b57e1bcc95d5baa46916ff1fab2c424"
+exit_code = 0
+inline = '''
+   Compiling similar v2.7.0
+   Compiling frob-release v0.0.0 (<worktree>/crates/frob-release)
+   Compiling frob-evidence v0.0.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (<worktree>/crates/frob-lease)
+   Compiling frob-tests v0.0.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9cdb4e93-8774-4926-8475-998102e45fa9 with nextest profile: default
+    Starting 3 tests across 10 binaries (64 tests skipped)
+        PASS [   0.246s] frob-check::unreadable an_excluded_file_is_never_read_or_reported
+        PASS [   0.257s] frob-check::unreadable a_non_utf8_markdown_file_is_a_required_unresolved_that_fails_the_gate
+        PASS [   0.301s] frob-check::check ticket_text_never_folds_a_required_unreadable_finding_into_a_count
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.302s] 3 tests run: 3 passed, 64 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -E 'test(a_non_utf8_markdown_file_is_a_required_unresolved_that_fails_the_gate) or test(an_excluded_file_is_never_read_or_reported) or test(ticket_text_never_folds_a_required_unreadable_finding_into_a_count)'"
+size = 1209
+status = "measured"
+tests = ["an_excluded_file_is_never_read_or_reported", "a_non_utf8_markdown_file_is_a_required_unresolved_that_fails_the_gate", "ticket_text_never_folds_a_required_unreadable_finding_into_a_count"]
+at = "2026-10-04T06:04:26Z"
+actor = "lognd"
+rev = 1
