@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T03:22:55Z"
-updated = "2026-10-04T03:49:17Z"
+updated = "2026-10-04T03:49:23Z"
 scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/scrub.rs", "crates/frob/src/ticket/**", "crates/frob/tests/**", "crates/gob-config/**", "docs/design/tickets.md", "docs/design/architecture.md", "docs/reference/rules/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given ledger files already containing the term, when ticket doctor --fix runs, then one commit replaces it everywhere, recomputes inline digests, records audit events without the term, and a second run changes nothing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the rules, when frob check runs, then the new rule reports any ledger file or fragment containing a term as an Error, and with no local rules it reports nothing"
