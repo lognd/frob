@@ -8,14 +8,14 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:46Z"
-updated = "2026-10-04T11:40:35Z"
+updated = "2026-10-04T11:43:10Z"
 idempotency_key = "crunk-plan-vals"
 labels = ["area:crunk"]
 scope = ["crates/crunk-values/**", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given the Python test vectors for hex, rgb() and hsl() literals, when parsed, then the sRGB values equal the Python results and malformed literals return a typed error"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given two colors, when the weighted-sRGB distance and the WCAG contrast ratio are computed, then they match the Python crunk to 1e-9"
