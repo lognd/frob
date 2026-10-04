@@ -1,4 +1,8 @@
 //! Reference vectors generated from the Python crunk.values; do not hand edit.
+#![allow(clippy::unreadable_literal)] // WHY: full-precision floats copied verbatim from Python.
+
+/// Expected `(px, kind)` of an accepted length; kind is the Python `LengthKind` value.
+pub type LengthWant = Option<(Option<f64>, &'static str)>;
 
 /// `(input, Some([r, g, b, a]))` for accepted literals, `None` for rejected ones.
 pub const PARSE: &[(&str, Option<[f64; 4]>)] = &[
@@ -547,7 +551,7 @@ pub const HEX: &[([f64; 4], &str, &str)] = &[
 ];
 
 /// `(input, root_font_size, Some((px, kind)))` or `None`; kind is the Python `LengthKind` value.
-pub const LENGTHS: &[(&str, f64, Option<(Option<f64>, &str)>)] = &[
+pub const LENGTHS: &[(&str, f64, LengthWant)] = &[
     ("16px", 16.0, Some((Some(16.0), "px"))),
     ("16px", 20.0, Some((Some(16.0), "px"))),
     ("2rem", 16.0, Some((Some(32.0), "rem"))),
