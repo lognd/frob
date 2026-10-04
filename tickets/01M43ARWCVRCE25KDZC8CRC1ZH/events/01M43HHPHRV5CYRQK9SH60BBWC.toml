@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T13:27:11Z"
+digest = "12ad50d6796a8a2d71d13db8e903fcd971d1c4cfd339f695b78f87865d68b9db"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6ae7430b-d2a3-48ac-9d43-e4fcc46e4be2 with nextest profile: default
+    Starting 7 tests across 2 binaries (23 tests skipped)
+        PASS [   0.023s] frob-release::products frob_depends_on_grimble_at_the_same_version_and_grimble_and_crunk_on_nothing
+        PASS [   0.025s] frob-release::release_workflow retired_runner_and_manylinux_auto_never_appear
+        PASS [   0.032s] frob-release::products crunk_is_a_preview_release_product_whose_wheel_is_not_uploaded_yet
+        PASS [   0.037s] frob-release::release_workflow rustup_init_is_a_versioned_download_verified_by_sha256_before_it_runs
+        PASS [   0.037s] frob-release::release_workflow every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archive
+        PASS [   0.069s] frob-release::products the_smoke_steps_name_each_product_archive_and_run_each_binary
+        PASS [   0.077s] frob-release::release_workflow smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemption
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.079s] 7 tests run: 7 passed, 23 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-release --test products --test release_workflow"
+size = 1319
+status = "measured"
+tests = ["frob_depends_on_grimble_at_the_same_version_and_grimble_and_crunk_on_nothing", "crunk_is_a_preview_release_product_whose_wheel_is_not_uploaded_yet", "the_smoke_steps_name_each_product_archive_and_run_each_binary", "retired_runner_and_manylinux_auto_never_appear", "rustup_init_is_a_versioned_download_verified_by_sha256_before_it_runs", "every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archive", "smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemption"]
+at = "2026-10-04T13:27:11Z"
+actor = "lognd"
+rev = 1

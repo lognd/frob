@@ -6,7 +6,7 @@ name: build-smoke
 #   plan   resolves the version of `frob-cli` and, when `tag` is given, requires
 #          the tag to be `frob-v<that version>`;
 #   build  one cargo-dist archive per product binary per target (frob-cli-<target>
-#          and grimble-<target>), each smoked on the build runner;
+#          grimble-<target> and crunk-<target>), each smoked on the build runner;
 #   wheel  the PyPI wheels, one per product per target (only when `wheels` is true; the dev
 #          jobs build none);
 #   smoke  every artifact re-run on a fresh runner (not the build runner).
@@ -176,13 +176,14 @@ jobs:
           case "$RUNNER_OS" in Windows) ext=zip ;; *) ext=tar.xz ;; esac
           packaging/smoke/archive-smoke.sh frob "target/distrib/frob-cli-$TARGET.$ext" "$VERSION"
           packaging/smoke/archive-smoke.sh grimble "target/distrib/grimble-$TARGET.$ext"
+          packaging/smoke/archive-smoke.sh crunk "target/distrib/crunk-$TARGET.$ext"
       - name: Cross-built archives are not executable here (explicit smoke exemption)
         if: ${{ !matrix.smoke }}
         shell: bash
         env:
           TARGET: ${{ matrix.target }}
         run: |
-          for archive in "target/distrib/frob-cli-$TARGET.tar.xz" "target/distrib/grimble-$TARGET.tar.xz"; do
+          for archive in "target/distrib/frob-cli-$TARGET.tar.xz" "target/distrib/grimble-$TARGET.tar.xz" "target/distrib/crunk-$TARGET.tar.xz"; do
             [ -f "$archive" ] || { echo "missing archive $archive" >&2; exit 1; }
             echo "::notice::smoke exempt for $TARGET: archive built but not executed on this runner ($archive)"
           done
@@ -192,7 +193,7 @@ jobs:
           TARGET: ${{ matrix.target }}
         run: |
           case "$RUNNER_OS" in Windows) ext=zip ;; *) ext=tar.xz ;; esac
-          expected=$(printf '%s\n' "frob-cli-$TARGET.$ext" "grimble-$TARGET.$ext" | sort)
+          expected=$(printf '%s\n' "frob-cli-$TARGET.$ext" "grimble-$TARGET.$ext" "crunk-$TARGET.$ext" | sort)
           found=$(cd target/distrib && ls | grep -E '\.(tar\.xz|zip)$' | sort)
           if [ "$found" != "$expected" ]; then
             printf 'target/distrib holds:\n%s\nexpected exactly:\n%s\n' "$found" "$expected" >&2
@@ -210,15 +211,19 @@ jobs:
             target/distrib/grimble-${{ matrix.target }}.tar.xz.sha256
             target/distrib/grimble-${{ matrix.target }}.zip
             target/distrib/grimble-${{ matrix.target }}.zip.sha256
+            target/distrib/crunk-${{ matrix.target }}.tar.xz
+            target/distrib/crunk-${{ matrix.target }}.tar.xz.sha256
+            target/distrib/crunk-${{ matrix.target }}.zip
+            target/distrib/crunk-${{ matrix.target }}.zip.sha256
           if-no-files-found: error
 
-  # The PyPI wheel set per target: one wheel per product (packaging/pypi/products.toml: frob
-  # and grimble, each carrying only its own binary, D87), uploaded as one run artifact per
+  # The PyPI wheel set per target: one wheel per product (packaging/pypi/products.toml: frob,
+  # grimble and crunk, each carrying only its own binary, D87), uploaded as one run artifact per
   # target (packaging/pypi/BUILDING.md).
   # Linux wheels are built natively per architecture inside the pinned
   # manylinux_2_28 image (the image lacks the repository's clang and mold, so
   # the linker is overridden to gcc and RUSTFLAGS replaces the config's).
-  # Every wheel set is smoked from the local wheels only (grimble alone; frob alone, which pulls
+  # Every wheel set is smoked from the local wheels only (grimble alone; crunk alone; frob alone, which pulls
   # grimble; `uv tool install frob` finding grimble off PATH; then the fixture repository loop
   # of packaging/smoke/fixture-loop.sh) except the macOS x86_64 one: it is cross-built on the arm64 macos-latest
   # runner, which cannot execute it. That exemption is the matrix entry with
@@ -329,13 +334,13 @@ jobs:
       - name: Exactly one wheel per product was built
         shell: bash
         run: |
-          for product in frob grimble; do
+          for product in frob grimble crunk; do
             [ "$(find target/wheels -maxdepth 1 -name "$product-*.whl" | wc -l)" -eq 1 ] \
               || { echo "expected exactly one $product wheel in target/wheels:" >&2; ls target/wheels >&2; exit 1; }
           done
-          [ "$(find target/wheels -type f | wc -l)" -eq 2 ] \
+          [ "$(find target/wheels -type f | wc -l)" -eq 3 ] \
             || { echo "unexpected files in target/wheels:" >&2; ls target/wheels >&2; exit 1; }
-      - name: Smoke the wheel set (local wheels only; grimble alone, frob pulling grimble, uv tool install)
+      - name: Smoke the wheel set (local wheels only; grimble alone, crunk alone, frob pulling grimble, uv tool install)
         if: matrix.smoke
         shell: bash
         env:
@@ -442,3 +447,4 @@ jobs:
           case "$RUNNER_OS" in Windows) ext=zip ;; *) ext=tar.xz ;; esac
           packaging/smoke/archive-smoke.sh frob "archives/frob-cli-$TARGET.$ext" "$VERSION"
           packaging/smoke/archive-smoke.sh grimble "archives/grimble-$TARGET.$ext"
+          packaging/smoke/archive-smoke.sh crunk "archives/crunk-$TARGET.$ext"

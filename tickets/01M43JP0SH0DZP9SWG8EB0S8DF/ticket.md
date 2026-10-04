@@ -1,0 +1,16 @@
++++
+id = "01M43JP0SH0DZP9SWG8EB0S8DF"
+title = "gob-walk records raw-byte digests so the --fix stale guard has no window"
+type = "bug"
+category = "todo"
+priority = "low"
+reporter = "lognd"
+created = "2026-10-04T13:47:01Z"
+updated = "2026-10-04T13:47:01Z"
+
+[[acceptance]]
+text = "Given a file whose line endings change after it was read for analysis, when check --fix applies, then it refuses with E-FIX-STALE"
+bound = false
++++
+
+~WS4WZBD guards check --fix with a digest of the raw bytes, but that digest is captured just after the analysis pass because gob-walk only records git-normalized digests. A line-ending-only change in the gap between analysis and that capture still passes the guard. Make gob-walk record the raw-byte digest of each file it reads for analysis (alongside the normalized one), and have fix apply compare against that, so the guard covers the whole interval from the bytes analysed to the bytes rewritten. Remove the separate raw_digests pass.
