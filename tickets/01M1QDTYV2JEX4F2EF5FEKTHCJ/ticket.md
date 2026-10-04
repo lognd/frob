@@ -2,11 +2,12 @@
 id = "01M1QDTYV2JEX4F2EF5FEKTHCJ"
 title = "REPEATED_FAILURE streak counter treats converging retries as stuck (apollo, second report)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-04T21:08:22Z"
+updated = "2026-10-04T21:08:23Z"
 aliases = ["T-3938"]
 labels = ["milestone:1.1.0", "v1-cluster:E1"]
 scope = ["src/frob/tickets/_leases.py"]
