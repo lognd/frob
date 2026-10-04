@@ -17,6 +17,7 @@
 //! sorts first. These instants are synthetic: real times live in git history.
 
 // frob:ticket 01M3WYJ80SRC0JBM9T7DFTJSB7
+// frob:ticket 01M43A53W5X4PBCXWCTTM4E1PN
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
@@ -34,6 +35,14 @@ use frob_ledger::rules::{tick001, tick003};
 use frob_ledger::{EventId, TicketId, doc};
 use serde::{Deserialize, Serialize};
 use ulid::Ulid;
+
+mod sanitize;
+mod select;
+
+pub use sanitize::{Sanitizer, Touched};
+pub use select::{
+    Cluster, Decision, Disposition, OpenRow, Override, Selection, SkipRow, render_selection,
+};
 
 /// Actor recorded on every imported event that has no better attribution.
 pub const IMPORT_ACTOR: &str = "import";
@@ -221,6 +230,10 @@ pub struct ImportOptions {
     pub to: PathBuf,
     /// Convert and verify in memory, write nothing.
     pub dry_run: bool,
+    /// The selection file (`docs/migration/v1-selection.toml`); `None` imports every v1 ticket as before.
+    pub selection: Option<PathBuf>,
+    /// The git common dir whose local privacy file supplies private-term rules; `None` loads none.
+    pub privacy_dir: Option<PathBuf>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -319,6 +332,18 @@ pub struct ImportReport {
     pub warnings: Vec<String>,
     /// Events written (or that would be written).
     pub events: usize,
+    /// Count of v1 tickets per disposition (see [`Disposition::name`]).
+    pub dispositions: BTreeMap<String, usize>,
+    /// Open v1 tickets that import as open work, in v1 id order.
+    pub open: Vec<OpenRow>,
+    /// Open v1 tickets that do not import as open work, in v1 id order.
+    pub skipped: Vec<SkipRow>,
+    /// Tickets whose text was rewritten by redaction: `(v1 id, what)`; never the matched text.
+    pub redactions: Vec<(String, String)>,
+    /// Tickets whose text still holds an absolute home path after redaction (blocks a real import).
+    pub blocked: Vec<String>,
+    /// Whether any local private-term rule was loaded (a dry run finds only terms it knows).
+    pub private_rules_loaded: bool,
 }
 
 /// Mint a ULID for `unix_secs` plus `millis` milliseconds with a random tail.
@@ -470,7 +495,13 @@ fn map_type(v1: &V1Front) -> Result<(TicketType, Option<String>), ImportError> {
     Ok((ty, forced.or(flavour)))
 }
 
-fn map_state(v1: &V1Front) -> Result<(Category, Option<Outcome>), ImportError> {
+fn map_state(
+    v1: &V1Front,
+    decision: &Decision,
+) -> Result<(Category, Option<Outcome>), ImportError> {
+    if decision.disposition == Disposition::WontFixHistory {
+        return Ok((Category::Done, Some(Outcome::WontFix)));
+    }
     match v1.state.as_str() {
         "queued" | "planned" | "in-progress" => Ok((Category::Todo, None)),
         "done" | "archived" => Ok((Category::Done, Some(Outcome::Done))),
@@ -619,6 +650,7 @@ fn links_of(
 
 fn create_data(
     v1: &V1Ticket,
+    decision: &Decision,
     ids: &BTreeMap<String, TicketId>,
     report: &mut ImportReport,
 ) -> Result<CreateData, ImportError> {
@@ -638,6 +670,8 @@ fn create_data(
     let mut labels = f.labels.clone();
     labels.extend(f.milestone.iter().map(|m| format!("milestone:{m}")));
     labels.extend(f.component.iter().map(|c| format!("component:{c}")));
+    labels.extend(decision.cluster.iter().map(|c| format!("v1-cluster:{c}")));
+    labels.extend(decision.area.iter().map(|a| format!("area:{a}")));
     Ok(CreateData {
         title: f.title.clone(),
         ty,
@@ -665,6 +699,7 @@ fn create_data(
 /// Convert one v1 ticket into rendered v2 text.
 fn convert(
     v1: &V1Ticket,
+    decision: &Decision,
     id: TicketId,
     ids: &BTreeMap<String, TicketId>,
     report: &mut ImportReport,
@@ -672,11 +707,11 @@ fn convert(
     let f = &v1.front;
     let mut clock = Clock::new(&f.id, day_start(&f.id, &f.created)?, ticket_number(&f.id)?);
     let actor = f.origin.as_deref().unwrap_or(IMPORT_ACTOR);
-    let (category, outcome) = map_state(f)?;
+    let (category, outcome) = map_state(f, decision)?;
     let mut events = vec![event_text(
         &mut clock,
         actor,
-        EventBody::Create(Box::new(create_data(v1, ids, report)?)),
+        EventBody::Create(Box::new(create_data(v1, decision, ids, report)?)),
     )?];
     events.extend(evidence_events(v1, &mut clock, report)?);
     let dropped_reason = (f.state == "dropped")
@@ -709,7 +744,13 @@ fn convert(
             from: Category::Todo,
             to: category,
             outcome,
-            reason: Some(format!("imported from v1 state `{}`", f.state)),
+            reason: Some(match (&decision.disposition, &decision.reason) {
+                (Disposition::WontFixHistory, Some(why)) => format!(
+                    "imported from v1 state `{}` as history only, not open work: {why}",
+                    f.state
+                ),
+                _ => format!("imported from v1 state `{}`", f.state),
+            }),
         };
         events.push(event_text(
             &mut clock,
@@ -869,6 +910,90 @@ fn target_is_free(to: &Path) -> Result<(), ImportError> {
     }
 }
 
+/// Decide every v1 ticket: closed ones import as history, open ones follow the selection (or all import when there is none).
+///
+/// Fills the disposition counts and the skip list of `report`; returns the tickets to import.
+///
+/// # Errors
+///
+/// [`ImportError::Ticket`] listing every open ticket that the selection does not name.
+fn decide_all(
+    opts: &ImportOptions,
+    v1s: Vec<V1Ticket>,
+    report: &mut ImportReport,
+) -> Result<Vec<(V1Ticket, Decision)>, ImportError> {
+    let selection = match &opts.selection {
+        Some(path) => {
+            let text = std::fs::read_to_string(path).map_err(|e| io_err(path, &e))?;
+            Some(Selection::parse(&text)?)
+        }
+        None => None,
+    };
+    let is_open = |v: &V1Ticket| !matches!(v.front.state.as_str(), "done" | "archived" | "dropped");
+    let open_ids: BTreeSet<String> = v1s
+        .iter()
+        .filter(|v| is_open(v))
+        .map(|v| v.front.id.clone())
+        .collect();
+    let mut unmapped = Vec::new();
+    let mut kept = Vec::new();
+    for v in v1s {
+        let id = v.front.id.clone();
+        let decision = if is_open(&v) {
+            match &selection {
+                Some(sel) => {
+                    let Some(d) = sel.decide(&id) else {
+                        unmapped.push(id);
+                        continue;
+                    };
+                    d
+                }
+                None => Decision {
+                    disposition: Disposition::ImportOpen,
+                    cluster: None,
+                    area: None,
+                    reason: None,
+                },
+            }
+        } else {
+            select::closed_decision(v.front.state == "dropped")
+        };
+        *report
+            .dispositions
+            .entry(decision.disposition.name().to_owned())
+            .or_default() += 1;
+        if decision.disposition.imports() {
+            kept.push((v, decision));
+        } else {
+            tracing::info!(ticket = %id, disposition = decision.disposition.name(), "not imported");
+            report.skipped.push(SkipRow {
+                v1: id,
+                disposition: decision.disposition.name().to_owned(),
+                cluster: decision.cluster.unwrap_or_default(),
+                reason: decision.reason.unwrap_or_default(),
+            });
+        }
+    }
+    if !unmapped.is_empty() {
+        return Err(ticket_err(
+            "selection",
+            format!(
+                "{} open v1 tickets are not named by the selection: {}",
+                unmapped.len(),
+                unmapped.join(" ")
+            ),
+        ));
+    }
+    if let Some(sel) = &selection {
+        for id in sel.stale(&open_ids) {
+            report.warnings.push(format!(
+                "selection names {id}, which is not an open v1 ticket"
+            ));
+        }
+    }
+    Ok(kept)
+}
+
 /// Convert the v1 ledger at `opts.from` into v2 tickets, verify them and (unless dry-run) write them.
 ///
 /// # Errors
@@ -876,15 +1001,62 @@ fn target_is_free(to: &Path) -> Result<(), ImportError> {
 /// [`ImportError`] for unreadable or unmappable v1 tickets, a non-empty target, or a failed integrity check.
 pub fn run(opts: &ImportOptions) -> Result<ImportReport, ImportError> {
     let v1s = read_v1(&opts.from)?;
+    let mut report = ImportReport::default();
+    let sanitizer = Sanitizer::new(&opts.from, opts.privacy_dir.as_deref())?;
+    report.private_rules_loaded = sanitizer.has_private_rules();
+    let mut kept = decide_all(opts, v1s, &mut report)?;
+    for (v, decision) in &mut kept {
+        let touched = sanitizer.ticket(v);
+        let id = v.front.id.clone();
+        if touched.paths {
+            report
+                .redactions
+                .push((id.clone(), "home or checkout path rewritten".to_owned()));
+        }
+        for hit in &touched.private {
+            report
+                .redactions
+                .push((id.clone(), format!("private term rule {hit} applied")));
+        }
+        let residual = Sanitizer::residual(&v.front.title)
+            || Sanitizer::residual(&v.body)
+            || v.done_report.as_deref().is_some_and(Sanitizer::residual);
+        if residual {
+            tracing::error!(ticket = %id, "absolute home path survived redaction");
+            report.blocked.push(id.clone());
+        }
+        if decision.disposition == Disposition::ImportOpen {
+            report.open.push(OpenRow {
+                v1: id,
+                cluster: decision.cluster.clone().unwrap_or_else(|| "-".to_owned()),
+                area: decision.area.clone(),
+                priority: v
+                    .front
+                    .priority
+                    .clone()
+                    .unwrap_or_else(|| "medium".to_owned()),
+                title: v.front.title.clone(),
+                reason: decision.reason.clone(),
+            });
+        }
+    }
+    if !opts.dry_run && !report.blocked.is_empty() {
+        return Err(ticket_err(
+            "redaction",
+            format!(
+                "absolute home paths remain in: {}",
+                report.blocked.join(", ")
+            ),
+        ));
+    }
     let mut ids = BTreeMap::new();
-    for v in &v1s {
+    for (v, _) in &kept {
         let f = &v.front;
         let ulid = mint(day_start(&f.id, &f.created)?, ticket_number(&f.id)?)?;
         ids.insert(f.id.clone(), TicketId::from_ulid(ulid));
     }
-    let mut report = ImportReport::default();
     let mut rendered = Vec::new();
-    for v in &v1s {
+    for (v, decision) in &kept {
         for key in &v.present {
             if DROPPED_FIELDS.iter().any(|(k, _)| k == key) {
                 *report.dropped.entry(key.clone()).or_default() += 1;
@@ -894,7 +1066,7 @@ pub fn run(opts: &ImportOptions) -> Result<ImportReport, ImportError> {
                     .push(format!("{}: unmapped v1 key `{key}`", v.front.id));
             }
         }
-        rendered.push(convert(v, ids[&v.front.id], &ids, &mut report)?);
+        rendered.push(convert(v, decision, ids[&v.front.id], &ids, &mut report)?);
     }
     let problems = verify(&rendered);
     if !problems.is_empty() {
@@ -976,6 +1148,12 @@ pub fn render_report_md(report: &ImportReport) -> String {
          the v1 ticket number as milliseconds, so creation order is preserved and ids never \
          share a prefix. Event `i` of a ticket sits `i` seconds after the date (ULID time and \
          `at` agree). These instants are synthetic; real times are in git history.\n\n\
+         ## Selection\n\n\
+         Closed v1 tickets import as closed history. Open v1 tickets import as open work only when \
+         `docs/migration/v1-selection.toml` marks their cluster (or the ticket) `import-open`; the \
+         ticket then carries `v1-cluster:<id>` (and `area:crunk` or `area:grimble` for the moved web-app and \
+         system-design families, D88 and D89). Text is redacted (home paths, private terms) before it is written. See \
+         `docs/design/migration.md` section 1.1.\n\n\
          ## Field mapping\n\n\
          | v1 | v2 |\n|---|---|\n\
          | `kind` feature, ux | type `task` (ux also sets flavour `ux`) |\n\

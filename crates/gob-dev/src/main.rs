@@ -74,6 +74,12 @@ enum Task {
         /// Convert and verify in memory; write nothing.
         #[arg(long)]
         dry_run: bool,
+        /// The selection file naming which open v1 tickets import (generated from the v1 gap report).
+        #[arg(long, default_value = "docs/migration/v1-selection.toml")]
+        selection: PathBuf,
+        /// Import every v1 ticket as open work, ignoring the selection (the pre-selection behaviour).
+        #[arg(long)]
+        all: bool,
         /// Also write the `T-NNNN<TAB>ulid` id map to this file.
         #[arg(long)]
         map_out: Option<PathBuf>,
@@ -129,10 +135,20 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
             from,
             to,
             dry_run,
+            selection,
+            all,
             map_out,
             report_md,
         } => import_tickets(
-            &ImportOptions { from, to, dry_run },
+            &ImportOptions {
+                from,
+                to,
+                dry_run,
+                selection: (!all).then_some(selection),
+                privacy_dir: gob_git::Repo::discover(".")
+                    .ok()
+                    .map(|r| r.common_dir().to_path_buf()),
+            },
             map_out.as_deref(),
             report_md.as_deref(),
         )
@@ -287,6 +303,25 @@ fn import_tickets(
     })?;
     for line in import_v1::render_table(&report.rows) {
         emit(&line);
+    }
+    emit("");
+    for line in import_v1::render_selection(&report.dispositions, &report.open, &report.skipped) {
+        emit(&line);
+    }
+    emit("");
+    emit(&format!(
+        "== redaction: private-term rules loaded: {}; tickets rewritten: {}; blocked: {} ==",
+        report.private_rules_loaded,
+        report.redactions.len(),
+        report.blocked.len()
+    ));
+    for (id, what) in &report.redactions {
+        emit(&format!("{id}: {what}"));
+    }
+    for id in &report.blocked {
+        emit(&format!(
+            "{id}: BLOCKED, an absolute home path survived redaction"
+        ));
     }
     emit(&format!(
         "{} tickets, {} events{}",

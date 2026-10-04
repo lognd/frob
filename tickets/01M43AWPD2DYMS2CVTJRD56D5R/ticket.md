@@ -1,0 +1,37 @@
++++
+id = "01M43AWPD2DYMS2CVTJRD56D5R"
+title = "Pack scaffold: grimble-websec (WEBSEC into SEC, SQL, COMPLY and PII, ROUTE, WEBPERF server)"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M43AWG308SDDDQTE35NR79CM"
+reporter = "lognd"
+created = "2026-10-04T11:30:51Z"
+updated = "2026-10-04T11:30:51Z"
+idempotency_key = "crunk-plan-g_sec"
+labels = ["area:grimble"]
+scope = ["packs/grimble-websec/**", "docs/grimble/packs/grimble-websec.md"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7FYE5D1N2SY01VNVVACK"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7K7BN0CEADJFMCTGEA64"
+
+[[acceptance]]
+text = "Given the scaffold, when `grimble rule catalog` runs, then WEBSEC, SQL, COMPLY, ROUTE and WEBPERF show with one rule each and WEBSEC ids sit under SEC"
+bound = false
+
+[[acceptance]]
+text = "Given the pack lock, when verified, then the digest matches the pack tree and PACK001-008 are clean"
+bound = false
+
+[[acceptance]]
+text = "Given a rule without examples, when the pack compiles, then it fails"
+bound = false
++++
+
+Create the pack directory and manifest (packs.md tier-1 data file: families, languages, vocabularies, atoms), pack lock entry, one worked GRL rule per family with firing and clean example, std-pack registration in grimble. WEBSEC registers its ids inside the SEC family namespace (rules.md section 3); because no SEC or PII family ticket exists, this ticket also adds the SEC and PII family rows to the registry (metadata only) and records whether they live in the pack or in grimble-lints (design gap). Capability atoms for db.query and net come from the core-effects pack, not redefined here.

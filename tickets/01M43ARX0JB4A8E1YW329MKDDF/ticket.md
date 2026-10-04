@@ -1,0 +1,33 @@
++++
+id = "01M43ARX0JB4A8E1YW329MKDDF"
+title = "gob-fix: Edit, Fix tiers, overlap resolution, dry-run diff, atomic write"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+reporter = "lognd"
+created = "2026-10-04T11:28:47Z"
+updated = "2026-10-04T11:28:47Z"
+idempotency_key = "crunk-plan-fix"
+labels = ["area:crunk"]
+scope = ["crates/gob-fix/**", "Cargo.lock"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7E968R74N08V8DW4RJVG"
+
+[[acceptance]]
+text = "Given two overlapping edits in one file, when planned, then the first is kept and the dropped one is returned with its rule and span"
+bound = false
+
+[[acceptance]]
+text = "Given a plan, when applied with dry-run and then for real, then the dry-run diff equals the real diff and bytes outside edited spans are unchanged"
+bound = false
+
+[[acceptance]]
+text = "Given a file changed after the check, when apply runs, then it refuses that file and writes nothing to it"
+bound = false
++++
+
+No crate or ticket exists for gob-fix although boundaries.md 2.1 and architecture.md name it and crunk, grimble and frob all fix. Build it: Edit (byte range plus replacement), Fix with applicability from ~DW4RJVG, overlap resolution that is deterministic (earlier span wins, the loser is reported not just logged), dry-run diff identical to the real run, atomic write (tmp plus rename) with a check that the file is unchanged since the check ran (also the cure for ~WS4WZBD), a fix journal. Python source: crunk.fixes (205 LOC: plan_fixes, apply_plans) and INV-FIX-01/02. Applicability location is an open design point (plugins.md 324 says gob-fix, ~DW4RJVG puts it in gob-rules); keep the type in one place.

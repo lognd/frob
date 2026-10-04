@@ -1,0 +1,23 @@
+kind = "create"
+title = "Pack scaffold: grimble-sysdesign (STORE, SYSDESIGN, GRAMMAR)"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M43AWG308SDDDQTE35NR79CM"
+idempotency_key = "crunk-plan-g_sd"
+labels = ["area:grimble"]
+scope = ["packs/grimble-sysdesign/**", "docs/grimble/packs/grimble-sysdesign.md"]
+acceptance = ["Given the scaffold, when `grimble rule catalog` runs, then STORE, SYSDESIGN and GRAMMAR show with one rule each", "Given the pack lock, when verified, then the digest matches", "Given a rule without examples, when the pack compiles, then it fails"]
+body = "Pack directory, manifest, lock entry, one worked rule per family with examples, std-pack registration. These families lint stores, data and infrastructure design against the model; decide at pickup which rules read .grmb entities (grimble-model) and which read code (record in the manifest)."
+at = "2026-10-04T11:31:53Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7FYE5D1N2SY01VNVVACK"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7K7BN0CEADJFMCTGEA64"
