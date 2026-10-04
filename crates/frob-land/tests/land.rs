@@ -381,7 +381,7 @@ fn conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean() {
     );
 }
 
-/// frob:tests land::land::merge_base_in
+// frob:tests crates/frob-land/src/land.rs::merge_base_in
 #[test]
 fn a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_worktree() {
     if !git_available() {
