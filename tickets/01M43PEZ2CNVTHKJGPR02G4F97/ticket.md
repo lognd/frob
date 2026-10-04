@@ -6,12 +6,12 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T14:53:04Z"
-updated = "2026-10-04T22:43:32Z"
+updated = "2026-10-04T22:43:49Z"
 scope = ["crates/gob-languages/src/comments.rs", "crates/gob-languages/src/lib.rs", "crates/gob-languages/src/grmb.rs", "crates/gob-languages/tests/corpus/*", "crates/gob-directives/src/comments.rs", "crates/gob-directives/Cargo.toml", "crates/frob-obligations/src/comments.rs", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given the workspace, when searched, then comment discovery per language exists in exactly one crate"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a shared corpus with strings, front matter and fenced code, when both consumers scan it, then they see identical comment spans"
