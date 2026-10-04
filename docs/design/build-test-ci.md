@@ -172,22 +172,21 @@ implementer runs before reporting. The windows-latest job stays the
 real-platform check; `goway run --host win` adds it before push
 (paths.md section 4).
 
-**`cargo dev` builds once (~J9BCSXD).** The `dev` alias runs
+**`cargo dev` builds once (~J9BCSXD, ~3YYNHAC).** The `dev` alias runs
 `gob-dev` from the shared `target/` (`run -p gob-dev --`); a separate
 target dir (the earlier xtask-style fix) compiled nearly the whole
-workspace a second time, 2.7 GB per checkout, and made `cargo dev gen
-all` wait on that build. On Windows a running `target\debug\gob-dev.exe`
-cannot be replaced while `cargo dev ci` rebuilds the workspace, so
-gob-dev, before a task that rebuilds (`ci` without `--list`, `publish`),
-copies its own executable to a unique file under
-`%TEMP%\gob-dev-selfcopy`, runs the copy through gob-exec with the same
-arguments and the `GOB_DEV_SELF_COPY` marker (so the copy does not copy
-itself), relays its exit code and deletes it. A copy left by a crash is
-removed on the next run (a copy still running cannot be deleted, so
-concurrent runs are safe). Unix runs in place: a running binary can be
-replaced. The decision is the pure function `selfcopy::plan(windows,
-marker_set, rebuilds_workspace)`, tested on Linux; a parity test pins
-the alias to the shared target dir.
+workspace a second time, 2.7 GB per checkout. On Windows a running
+`target\debug\gob-dev.exe` cannot be replaced while `cargo dev ci`
+rebuilds the workspace, and a self-copy re-exec cannot fix that under
+`cargo run` (the original must stay alive to relay the exit code, so it
+stays locked). Windows therefore uses the second alias `dev-isolated`
+(`run -p gob-dev --target-dir target/dev-tool --`), which builds the tool
+into its own target dir at the cost of one extra build. The windows-latest
+job calls `cargo dev-isolated ci --step <name>`; the Linux job keeps
+`cargo dev ci --step <name>`. On Windows, gob-dev run from the shared
+target dir for a rebuilding task (`ci` without `--list`, `publish`) fails
+fast naming `cargo dev-isolated` (`isolation::check`). A parity test pins
+both aliases and requires the same step names and order per OS.
 
 ## 5. Developer loop
 

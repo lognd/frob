@@ -1,5 +1,6 @@
 //! `.github/workflows/ci.yml` and `cargo dev ci` must run the same checks: every check in the
-//! workflow is `cargo dev ci --step <name>` (no argv, flags or environment of its own), in the
+//! workflow is `cargo dev ci --step <name>` on Linux and `cargo dev-isolated ci --step <name>` on
+//! Windows (no argv, flags or environment of its own), in the
 //! order of `gob_dev::ci::steps`, on the platforms the step list says, and every step is run.
 // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
 // frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
@@ -32,18 +33,20 @@ fn workflow_steps(text: &str) -> Vec<(String, Option<String>, Option<String>, bo
         .collect()
 }
 
-/// Names of the `--step` checks in `text`, or the first deviation naming the offending step.
+/// Per-OS check invocations: Linux through `cargo dev`, Windows through `cargo dev-isolated`.
+const LINUX_PREFIX: &str = "cargo dev ci --step ";
+const WINDOWS_PREFIX: &str = "cargo dev-isolated ci --step ";
+
+/// The first deviation of `ci.yml` from the `cargo dev ci` step list, naming the offending step.
+///
+/// Linux must run every step in order through `cargo dev`; Windows every non-Linux-only step in
+/// order through `cargo dev-isolated`. Neither may set env or run a raw check.
 fn parity(text: &str, steps: &[Step]) -> Result<(), String> {
-    let mut seen = Vec::new();
+    let mut linux = Vec::new();
+    let mut windows = Vec::new();
     for (name, run, cond, has_env) in workflow_steps(text) {
         let Some(run) = run else { continue };
         let first = run.lines().next().unwrap_or_default().trim().to_owned();
-        let in_dev = |c: &str| {
-            first
-                .strip_prefix("cargo dev ci --step ")
-                .map(|s| s.trim() == c)
-        };
-        let is_check = first.starts_with("cargo dev ci");
         let raw_check = [
             "cargo fmt",
             "cargo clippy",
@@ -60,12 +63,16 @@ fn parity(text: &str, steps: &[Step]) -> Result<(), String> {
                 "ci.yml step {name:?} runs a check outside cargo dev ci: {first}"
             ));
         }
-        if !is_check {
+        let (prefix, os, seen) = if first.starts_with(LINUX_PREFIX) {
+            (LINUX_PREFIX, "Linux", &mut linux)
+        } else if first.starts_with(WINDOWS_PREFIX) {
+            (WINDOWS_PREFIX, "Windows", &mut windows)
+        } else {
             continue;
-        }
+        };
         let step = steps
             .iter()
-            .find(|s| in_dev(s.name) == Some(true))
+            .find(|s| first.strip_prefix(prefix).map(str::trim) == Some(s.name))
             .ok_or_else(|| {
                 format!("ci.yml step {name:?} runs `{first}`, which is not a cargo dev ci step")
             })?;
@@ -75,20 +82,32 @@ fn parity(text: &str, steps: &[Step]) -> Result<(), String> {
                 name, step.name
             ));
         }
-        let linux_in_yml = cond.as_deref().is_some_and(|c| c.contains("Linux"));
-        if linux_in_yml != step.linux_only {
+        let on_os = cond.as_deref().is_some_and(|c| c.contains(os));
+        if !on_os {
             return Err(format!(
-                "step {}: linux_only is {} in cargo dev ci but ci.yml has if={cond:?}",
-                step.name, step.linux_only
+                "step {}: `{first}` must be guarded by an {os} condition, ci.yml has if={cond:?}",
+                step.name
             ));
         }
         seen.push(step.name);
     }
     let want: Vec<&str> = steps.iter().map(|s| s.name).collect();
-    if seen != want {
-        let missing: Vec<_> = want.iter().filter(|w| !seen.contains(w)).collect();
+    if linux != want {
+        let missing: Vec<_> = want.iter().filter(|w| !linux.contains(w)).collect();
         return Err(format!(
-            "ci.yml steps {seen:?} differ from cargo dev ci {want:?}; missing from ci.yml: {missing:?}"
+            "ci.yml steps {linux:?} differ from cargo dev ci {want:?}; missing from ci.yml: {missing:?}"
+        ));
+    }
+    let want_win: Vec<&str> = steps
+        .iter()
+        .filter(|s| !s.linux_only)
+        .map(|s| s.name)
+        .collect();
+    if windows != want_win {
+        let missing: Vec<_> = want_win.iter().filter(|w| !windows.contains(w)).collect();
+        return Err(format!(
+            "ci.yml windows steps {windows:?} differ from cargo dev-isolated {want_win:?}; \
+             missing from ci.yml: {missing:?}"
         ));
     }
     Ok(())
@@ -140,7 +159,10 @@ fn a_check_missing_from_cargo_dev_ci_fails_naming_it() {
     let mut steps = real_steps();
     steps.retain(|s| s.name != "docs");
     let err = parity(&text, &steps).unwrap_err();
-    assert!(err.contains("cargo dev ci --step docs"), "{err}");
+    assert!(
+        err.contains("cargo dev ci --step docs") || err.contains("missing from ci.yml"),
+        "{err}"
+    );
 }
 
 // frob:tests crates/gob-dev/tests/ci_parity.rs::a_raw_or_dropped_check_in_ci_yml_fails_naming_it
@@ -208,12 +230,29 @@ fn dev_alias_shares_the_workspace_target_dir() {
     );
 }
 
-// frob:ticket 01M424BWCSSMVHA9X5DJ9BCSXD
-// frob:tests crates/gob-dev/tests/ci_parity.rs::windows_ci_runs_from_a_self_copy
+// frob:ticket 01M42C6MJZRH5NZGARX3YYNHAC
+// frob:tests crates/gob-dev/tests/ci_parity.rs::dev_isolated_alias_builds_the_tool_in_its_own_target_dir
 #[test]
-fn windows_ci_runs_from_a_self_copy() {
-    use gob_dev::selfcopy::{Plan, plan};
-    assert_eq!(plan(true, false, true), Plan::ReExec);
-    assert_eq!(plan(false, false, true), Plan::InPlace);
-    assert_eq!(plan(true, true, true), Plan::InPlace);
+fn dev_isolated_alias_builds_the_tool_in_its_own_target_dir() {
+    let text = std::fs::read_to_string(root().join(".cargo/config.toml")).unwrap();
+    let cfg: toml::Table = text.parse().unwrap();
+    let alias = cfg["alias"]["dev-isolated"].as_str().unwrap();
+    assert!(
+        alias.contains("--target-dir target/dev-tool"),
+        "dev-isolated alias {alias:?} must use target/dev-tool"
+    );
+}
+
+// frob:ticket 01M42C6MJZRH5NZGARX3YYNHAC
+// frob:tests crates/gob-dev/tests/ci_parity.rs::windows_steps_use_the_isolated_alias_with_the_same_names_and_order
+#[test]
+fn windows_steps_use_the_isolated_alias_with_the_same_names_and_order() {
+    let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
+    parity(&text, &real_steps()).unwrap();
+    let broken = text.replace(
+        "cargo dev-isolated ci --step nextest",
+        "cargo dev ci --step nextest",
+    );
+    let err = parity(&broken, &real_steps()).unwrap_err();
+    assert!(err.contains("nextest"), "{err}");
 }

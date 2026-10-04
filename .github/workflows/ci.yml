@@ -49,22 +49,44 @@ jobs:
       - name: Install the MinGW C compiler (libsqlite3-sys for clippy-windows)
         if: runner.os == 'Linux'
         run: sudo apt-get install -y gcc-mingw-w64-x86-64
-      # Every check below is `cargo dev ci --step <name>`: the argv, flags and environment live
-      # in crates/gob-dev/src/ci.rs, so `cargo dev ci` locally runs exactly this list.
+      # Every check below is `cargo dev ci --step <name>` on Linux and `cargo dev-isolated ci --step
+      # <name>` on Windows (a running gob-dev.exe cannot be rebuilt, so the tool lives in
+      # target/dev-tool there): the argv, flags and environment live in crates/gob-dev/src/ci.rs,
+      # so `cargo dev ci` locally runs exactly this list.
       # crates/gob-dev/tests/ci_parity.rs fails when the two diverge.
       - name: rustfmt
+        if: runner.os == 'Linux'
         run: cargo dev ci --step fmt
+      - name: rustfmt (Windows, isolated tool)
+        if: runner.os == 'Windows'
+        run: cargo dev-isolated ci --step fmt
       - name: clippy
+        if: runner.os == 'Linux'
         run: cargo dev ci --step clippy
+      - name: clippy (Windows, isolated tool)
+        if: runner.os == 'Windows'
+        run: cargo dev-isolated ci --step clippy
       - name: clippy for the Windows target
         if: runner.os == 'Linux'
         run: cargo dev ci --step clippy-windows
       - name: Docs
+        if: runner.os == 'Linux'
         run: cargo dev ci --step docs
+      - name: Docs (Windows, isolated tool)
+        if: runner.os == 'Windows'
+        run: cargo dev-isolated ci --step docs
       - name: nextest
+        if: runner.os == 'Linux'
         run: cargo dev ci --step nextest
+      - name: nextest (Windows, isolated tool)
+        if: runner.os == 'Windows'
+        run: cargo dev-isolated ci --step nextest
       - name: Generated files are current (GEN001)
+        if: runner.os == 'Linux'
         run: cargo dev ci --step gen
+      - name: Generated files are current (GEN001) (Windows, isolated tool)
+        if: runner.os == 'Windows'
+        run: cargo dev-isolated ci --step gen
       - name: Make the ledger ref resolvable
         if: runner.os == 'Linux'
         shell: bash

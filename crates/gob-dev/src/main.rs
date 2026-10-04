@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use gob_dev::import_v1::{self, ImportOptions};
 use gob_dev::out::emit;
-use gob_dev::{Kind, Mode, apply, ci, generate, publish, selfcopy, workspace_root};
+use gob_dev::{Kind, Mode, apply, ci, generate, isolation, publish, workspace_root};
 
 /// Command-line interface of the developer task runner.
 #[derive(Debug, Parser)]
@@ -86,28 +86,24 @@ fn main() -> Result<std::process::ExitCode, Failed> {
     if let Err(e) = gob_log::init("dev", 0, false) {
         emit(&format!("warning: logging not initialised: {e}"));
     }
-    let plan = selfcopy::plan(
-        cfg!(windows),
-        std::env::var_os(selfcopy::MARKER).is_some(),
-        cli.command.rebuilds_workspace(),
-    );
-    if plan == selfcopy::Plan::ReExec {
-        let args: Vec<String> = std::env::args().skip(1).collect();
-        return match selfcopy::reexec(&args) {
-            Ok(code) => Ok(std::process::ExitCode::from(
-                u8::try_from(code).unwrap_or(1),
-            )),
-            Err(e) => {
-                tracing::error!(error = %e, "self-copy re-exec failed");
-                Err(Failed(format!("error: {e}")))
-            }
-        };
+    if cli.command.rebuilds_workspace() {
+        let guard = workspace_root()
+            .map_err(|e| Failed(format!("error: {e}")))
+            .and_then(|root| {
+                let exe = std::env::current_exe()
+                    .map_err(|e| Failed(format!("error: current_exe: {e}")))?;
+                isolation::check(cfg!(windows), true, &exe, &root).map_err(|e| {
+                    tracing::error!(error = %e, "refusing to rebuild the running tool");
+                    Failed(format!("error: {e}"))
+                })
+            });
+        guard?;
     }
     run(cli.command).map(|()| std::process::ExitCode::SUCCESS)
 }
 
 impl Task {
-    /// Whether the task runs a build that can replace `target/debug/gob-dev.exe`.
+    /// Whether the task runs a build that can replace the running gob-dev executable.
     fn rebuilds_workspace(&self) -> bool {
         matches!(self, Task::Ci { list: false, .. } | Task::Publish { .. })
     }
