@@ -23,7 +23,7 @@ use gob_check::{
     ScopedFindings, Snapshot, Timing,
 };
 use gob_languages::Language;
-use gob_rules::{Finding, Resolved, Rule, RuleMeta};
+use gob_rules::{Finding, RequiredReason, Resolved, Rule, RuleMeta, Severity};
 use gob_text::FileInterner;
 
 use crate::filecheck::builtin_checks;
@@ -66,37 +66,103 @@ impl Frob {
     }
 }
 
+/// A rule producer that could not evaluate: the rules it covers and why.
+///
+/// The only way an evaluation error leaves a producer; [`settle`] is the only
+/// consumer and renders it as required Unresolved findings, so an error can
+/// never be rendered as zero findings (unknown is never a pass).
+// frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
+struct EvalFailure {
+    /// Ids of the rules that were not evaluated.
+    rules: &'static [&'static str],
+    /// The underlying error, as text.
+    error: String,
+}
+
+/// The outcome of one rule producer: its findings, or the typed failure to produce them.
+type Evaluated = Result<Vec<Finding>, EvalFailure>;
+
+/// Record that `rules` were not evaluated because of `err` (logged at warn).
+// frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
+fn failed(rules: &'static [&'static str], err: impl std::fmt::Display) -> EvalFailure {
+    let error = err.to_string();
+    tracing::warn!(rules = ?rules, %error, "rules not evaluated; reporting required Unresolved");
+    EvalFailure { rules, error }
+}
+
+/// The single place a producer outcome becomes findings: each failure is one required Unresolved per affected rule.
+// frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
+fn settle(parts: impl IntoIterator<Item = Evaluated>) -> Vec<Finding> {
+    let mut out = Vec::new();
+    for part in parts {
+        match part {
+            Ok(found) => out.extend(found),
+            Err(EvalFailure { rules, error }) => {
+                for rule in rules {
+                    let id = rule
+                        .parse()
+                        .unwrap_or_else(|e| unreachable!("rule id literal {rule}: {e}"));
+                    out.push(
+                        Finding::new(
+                            id,
+                            Severity::Unresolved,
+                            None,
+                            format!("evaluation-failed: {rule} was not evaluated: {error}"),
+                            "repository",
+                        )
+                        .with_required(RequiredReason::ZeroSubjects {
+                            rule: (*rule).to_owned(),
+                        }),
+                    );
+                }
+            }
+        }
+    }
+    out
+}
+
+/// The ledger of `inputs`, or the failure when it exists but could not be read (`rules` are then not evaluated); `Ok(None)` when there is none.
+// frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
+fn ledger_of<'a>(
+    inputs: &'a FrobInputs,
+    rules: &'static [&'static str],
+) -> Result<Option<&'a snapshot::LedgerState>, EvalFailure> {
+    match &inputs.ledger_error {
+        Some(err) => Err(failed(rules, format_args!("ledger unreadable: {err}"))),
+        None => Ok(inputs.ledger.as_ref()),
+    }
+}
+
 /// `TICK001` and `TICK003` from the ledger doctor and `TICK004` from the home-path scan (read-only); empty without a ledger.
 // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
 fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
-    let Some(state) = &inputs.ledger else {
-        return Vec::new();
+    const ALL: &[&str] = &["TICK001", "TICK003", "TICK004", "TICK005"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
     };
-    let mut out = match state.ledger.doctor(false) {
-        Ok(report) => report.findings,
-        Err(err) => {
-            tracing::warn!(%err, "ledger doctor failed; TICK001 and TICK003 not evaluated");
-            Vec::new()
-        }
-    };
-    match state.ledger.home_path_findings() {
-        Ok(found) => out.extend(found),
-        Err(err) => tracing::warn!(%err, "ledger home-path scan failed; TICK004 not evaluated"),
-    }
-    out.extend(private_term_findings(inputs, state));
-    out
+    settle([
+        state
+            .ledger
+            .doctor(false)
+            .map(|r| r.findings)
+            .map_err(|e| failed(&["TICK001", "TICK003"], e)),
+        state
+            .ledger
+            .home_path_findings()
+            .map_err(|e| failed(&["TICK004"], e)),
+        private_term_findings(inputs, state),
+    ])
 }
 
 // frob:ticket 01M42EZ8J63P84XFKTR2GXRW72
 /// `TICK005` for ledger files and changelog fragments holding a local private term; local-only, so none without local rules.
-fn private_term_findings(inputs: &FrobInputs, state: &snapshot::LedgerState) -> Vec<Finding> {
-    let mut out = match state.ledger.private_term_findings() {
-        Ok(found) => found,
-        Err(err) => {
-            tracing::warn!(%err, "private-term scan failed; TICK005 not evaluated");
-            return Vec::new();
-        }
-    };
+fn private_term_findings(inputs: &FrobInputs, state: &snapshot::LedgerState) -> Evaluated {
+    let mut out = state
+        .ledger
+        .private_term_findings()
+        .map_err(|e| failed(&["TICK005"], e))?;
     if let Ok(rules) = state.ledger.redaction() {
         out.extend(frob_ledger::redact::fragment_findings(
             &inputs.root,
@@ -104,7 +170,7 @@ fn private_term_findings(inputs: &FrobInputs, state: &snapshot::LedgerState) -> 
             rules,
         ));
     }
-    out
+    Ok(out)
 }
 
 /// Apply `[pm] strict` to a PM group's `findings`; an unreadable `[pm]` table means not strict, logged.
@@ -123,30 +189,24 @@ fn strict_pm(inputs: &FrobInputs, findings: Vec<Finding>) -> Vec<Finding> {
     frob_pm::rules::apply_strict(strict, findings)
 }
 
-/// `PM034`, `PM001` and `PM002` findings for the `repo:pm` group; empty without a ledger, milestones or on a read failure.
+/// `PM034`, `PM001` and `PM002` findings for the `repo:pm` group; empty without a ledger or milestones.
 // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
 // frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
 fn pm_findings(inputs: &FrobInputs) -> Vec<Finding> {
-    let Some(state) = &inputs.ledger else {
-        return Vec::new();
+    const ALL: &[&str] = &["PM034", "PM001", "PM002"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
     };
-    let mut out = frob_pm::rules::membership::evaluate(&state.ledger).map_or_else(
-        |err| {
-            tracing::warn!(%err, "PM034 not evaluated");
-            Vec::new()
-        },
-        |e| e.findings,
-    );
-    out.extend(
-        frob_pm::rules::milestone::evaluate(&state.ledger).map_or_else(
-            |err| {
-                tracing::warn!(%err, "PM001 and PM002 not evaluated");
-                Vec::new()
-            },
-            |e| e.findings,
-        ),
-    );
-    out
+    settle([
+        frob_pm::rules::membership::evaluate(&state.ledger)
+            .map(|e| e.findings)
+            .map_err(|e| failed(&["PM034"], e)),
+        frob_pm::rules::milestone::evaluate(&state.ledger)
+            .map(|e| e.findings)
+            .map_err(|e| failed(&["PM001", "PM002"], e)),
+    ])
 }
 
 /// Ticket ids holding a live lease, the liveness input of `PM013`; `None` (every in-progress ticket counts) when the lease store cannot be read.
@@ -172,42 +232,53 @@ fn live_leases(
 // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
 // frob:ticket 01M416Z11V5GR012FR47HWFTBP
 fn wip_findings(inputs: &FrobInputs) -> Vec<Finding> {
-    let Some(state) = &inputs.ledger else {
-        return Vec::new();
+    const ALL: &[&str] = &["PM013"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
     };
-    let limits = match frob_pm::PmConfig::load(&inputs.root) {
-        Ok(cfg) => frob_pm::rules::wip::WipLimits {
-            in_progress: cfg.wip.in_progress,
-            expedite_max: cfg.classes.expedite_max,
-        },
-        Err(err) => {
-            tracing::warn!(%err, "pm config unreadable; PM013 not evaluated");
-            return Vec::new();
-        }
+    settle([wip_evaluated(inputs, state)])
+}
+
+/// `PM013` for `state`, or the failure when `[pm]` or the ledger cannot be read.
+// frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
+fn wip_evaluated(inputs: &FrobInputs, state: &snapshot::LedgerState) -> Evaluated {
+    let cfg = frob_pm::PmConfig::load(&inputs.root)
+        .map_err(|e| failed(&["PM013"], format_args!("pm config unreadable: {e}")))?;
+    let limits = frob_pm::rules::wip::WipLimits {
+        in_progress: cfg.wip.in_progress,
+        expedite_max: cfg.classes.expedite_max,
     };
     let live = live_leases(state, &inputs.root);
-    frob_pm::rules::wip::evaluate_with(&state.ledger, limits, live.as_ref()).map_or_else(
-        |err| {
-            tracing::warn!(%err, "PM013 not evaluated");
-            Vec::new()
-        },
-        |e| e.findings,
-    )
+    frob_pm::rules::wip::evaluate_with(&state.ledger, limits, live.as_ref())
+        .map(|e| e.findings)
+        .map_err(|e| failed(&["PM013"], e))
 }
 
 /// `PM033` findings for the `repo:replenish` group; ready is `Ledger::doable` under the live lease check, as `ticket doable` computes it.
 // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
 fn replenish_findings(inputs: &FrobInputs, lease_cfg: Option<&LeaseConfig>) -> Vec<Finding> {
-    let Some(state) = &inputs.ledger else {
-        return Vec::new();
+    const ALL: &[&str] = &["PM033"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
     };
-    let ready_min = match frob_pm::PmConfig::load(&inputs.root) {
-        Ok(cfg) => cfg.pm.ready_min,
-        Err(err) => {
-            tracing::warn!(%err, "pm config unreadable; PM033 not evaluated");
-            return Vec::new();
-        }
-    };
+    settle([replenish_evaluated(inputs, state, lease_cfg)])
+}
+
+/// `PM033` for `state`, or the failure when `[pm]` or the ledger cannot be read.
+// frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
+fn replenish_evaluated(
+    inputs: &FrobInputs,
+    state: &snapshot::LedgerState,
+    lease_cfg: Option<&LeaseConfig>,
+) -> Evaluated {
+    let ready_min = frob_pm::PmConfig::load(&inputs.root)
+        .map_err(|e| failed(&["PM033"], format_args!("pm config unreadable: {e}")))?
+        .pm
+        .ready_min;
     let cfg = match lease_cfg {
         Some(c) => Ok(c.clone()),
         None => LeaseConfig::load(&inputs.root),
@@ -223,13 +294,9 @@ fn replenish_findings(inputs: &FrobInputs, lease_cfg: Option<&LeaseConfig>) -> V
             Box::new(NoLeases)
         }
     };
-    frob_pm::rules::replenish::evaluate(&state.ledger, &*leases, ready_min).map_or_else(
-        |err| {
-            tracing::warn!(%err, "PM033 not evaluated");
-            Vec::new()
-        },
-        |e| e.findings,
-    )
+    frob_pm::rules::replenish::evaluate(&state.ledger, &*leases, ready_min)
+        .map(|e| e.findings)
+        .map_err(|e| failed(&["PM033"], e))
 }
 
 impl Product for Frob {
@@ -433,18 +500,27 @@ impl Product for Frob {
     fn applicable(&self, snap: &Snapshot<Self>, meta: &RuleMeta) -> bool {
         // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
         if matches!(meta.id, "PM034" | "PM001" | "PM002") {
-            let ok = snap
-                .inputs
-                .ledger
-                .as_ref()
-                .is_some_and(|l| l.milestones > 0);
+            // An unreadable ledger is applicable: its failure must surface, not hide as "not applicable".
+            let ok = snap.inputs.ledger_error.is_some()
+                || snap
+                    .inputs
+                    .ledger
+                    .as_ref()
+                    .is_some_and(|l| l.milestones > 0);
             if !ok {
                 tracing::info!(rule = meta.id, why = PM034_NA, "not applicable");
             }
             ok
         } else if meta.id == "REL001" {
             // frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
-            rel001_inputs(snap).is_some_and(|(repo, cuts)| {
+            rel001_repo(snap).is_some_and(|repo| {
+                let cuts = match ledger_of(&snap.inputs, &["REL001"]) {
+                    Ok(None) => Ok(Vec::new()),
+                    Ok(Some(state)) => recorded_cuts(&state.ledger),
+                    Err(e) => Err(e.error),
+                };
+                // A failed cut read is applicable so REL001 reports it.
+                let Ok(cuts) = cuts else { return true };
                 let why = frob_release::rel001::not_applicable(&repo, &cuts);
                 if let Some(why) = &why {
                     tracing::info!(rule = meta.id, %why, "not applicable");
@@ -465,7 +541,7 @@ impl Product for Frob {
             let ok = ledger_rule_applicable(
                 meta.id,
                 &snap.inputs.directives,
-                snap.shared.has_ledger,
+                snap.shared.has_ledger || snap.inputs.ledger_error.is_some(),
                 snap.inputs.tickets_configured,
             );
             if !ok {
@@ -476,7 +552,9 @@ impl Product for Frob {
             }
             ok
         } else if LEDGER_RULES.contains(&meta.id) {
-            snap.shared.has_ledger || snap.inputs.tickets_configured
+            snap.shared.has_ledger
+                || snap.inputs.ledger_error.is_some()
+                || snap.inputs.tickets_configured
         } else if meta.id == "COV001" {
             // COV001 needs a language with a test capability; only Rust has one today.
             snap.core
@@ -566,8 +644,8 @@ fn rel003_missing(snap: &Snapshot<Frob>, scope: &TicketScope) -> Option<Finding>
 }
 
 // frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
-/// The repository and every recorded release cut, the two inputs of `REL001`; `None` outside a git work tree.
-fn rel001_inputs(snap: &Snapshot<Frob>) -> Option<(gob_git::Repo, Vec<frob_pm::event::CutData>)> {
+/// The git repository of the snapshot, the input of `REL001`; `None` outside a git work tree.
+fn rel001_repo(snap: &Snapshot<Frob>) -> Option<gob_git::Repo> {
     let repo = match gob_git::Repo::discover(&snap.core.root) {
         Ok(r) if r.work_dir().is_some() => r,
         Ok(_) | Err(_) => {
@@ -575,48 +653,46 @@ fn rel001_inputs(snap: &Snapshot<Frob>) -> Option<(gob_git::Repo, Vec<frob_pm::e
             return None;
         }
     };
-    let cuts = snap
-        .inputs
-        .ledger
-        .as_ref()
-        .map(|l| recorded_cuts(&l.ledger))
-        .unwrap_or_default();
-    Some((repo, cuts))
+    Some(repo)
 }
 
 // frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
-/// Every `cut` event on every milestone at the ledger tip; an unreadable ledger yields none (logged).
-fn recorded_cuts(ledger: &frob_ledger::Ledger) -> Vec<frob_pm::event::CutData> {
+/// Every `cut` event on every milestone at the ledger tip; an unreadable ledger is an error, never "no cuts".
+// frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
+// frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
+fn recorded_cuts(ledger: &frob_ledger::Ledger) -> Result<Vec<frob_pm::event::CutData>, String> {
     use frob_pm::event::PmBody;
     use frob_pm::{ObjectKind, PmStore};
-    let read = || -> Result<Vec<frob_pm::event::CutData>, String> {
-        let Some(tip) = ledger.tip_hex().map_err(|e| e.to_string())? else {
-            return Ok(Vec::new());
-        };
-        let store = PmStore::new(ledger);
-        let mut cuts = Vec::new();
-        for m in frob_pm::rules::membership::milestones(ledger).map_err(|e| e.to_string())? {
-            for e in store
-                .read_events_at(&tip, ObjectKind::Milestone, m.id)
-                .map_err(|e| e.to_string())?
-            {
-                if let PmBody::Cut(d) = e.body {
-                    cuts.push(d);
-                }
+    let Some(tip) = ledger.tip_hex().map_err(|e| e.to_string())? else {
+        return Ok(Vec::new());
+    };
+    let store = PmStore::new(ledger);
+    let mut cuts = Vec::new();
+    for m in frob_pm::rules::membership::milestones(ledger).map_err(|e| e.to_string())? {
+        for e in store
+            .read_events_at(&tip, ObjectKind::Milestone, m.id)
+            .map_err(|e| e.to_string())?
+        {
+            if let PmBody::Cut(d) = e.body {
+                cuts.push(d);
             }
         }
-        Ok(cuts)
-    };
-    read().unwrap_or_else(|err| {
-        tracing::warn!(%err, "REL001: recorded cuts unreadable");
-        Vec::new()
-    })
+    }
+    Ok(cuts)
 }
 
 // frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
+// frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
 /// `REL001` findings for the snapshot's repository.
 fn rel001_findings(snap: &Snapshot<Frob>) -> Vec<Finding> {
-    rel001_inputs(snap)
-        .map(|(repo, cuts)| frob_release::rel001::evaluate(&repo, &cuts).findings)
-        .unwrap_or_default()
+    const ALL: &[&str] = &["REL001"];
+    let Some(repo) = rel001_repo(snap) else {
+        return Vec::new();
+    };
+    let cuts = match ledger_of(&snap.inputs, ALL) {
+        Err(e) => return settle([Err(e)]),
+        Ok(None) => Ok(Vec::new()),
+        Ok(Some(state)) => recorded_cuts(&state.ledger).map_err(|e| failed(ALL, e)),
+    };
+    settle([cuts.map(|c| frob_release::rel001::evaluate(&repo, &c).findings)])
 }

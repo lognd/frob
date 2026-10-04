@@ -76,6 +76,8 @@ pub struct FrobInputs {
     pub(crate) directives: Vec<DirectiveRecord>,
     /// The ledger when the repository has one holding tickets or milestones.
     pub(crate) ledger: Option<LedgerState>,
+    /// Why the ledger exists but could not be read; ledger rules then report required Unresolved, never silence.
+    pub(crate) ledger_error: Option<String>,
     /// `[invariants]`.
     pub(crate) invariants: InvariantsConfig,
     /// True when `frob.toml` carries a `[tickets]` table, so a ledger is expected.
@@ -99,13 +101,17 @@ impl FrobInputs {
     }
 }
 
-/// Open the repository's ledger; `None` without a git work tree or without tickets and milestones.
-fn open_ledger(root: &Path, cfg: LedgerConfig) -> Option<LedgerState> {
+/// Open the repository's ledger.
+///
+/// `(None, None)` without a git work tree, ledger ref or tickets and milestones;
+/// `(None, Some(why))` when the ledger exists but cannot be read, so its rules fail loudly.
+// frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
+fn open_ledger(root: &Path, cfg: LedgerConfig) -> (Option<LedgerState>, Option<String>) {
     let repo = match gob_git::Repo::discover(root) {
         Ok(r) if r.work_dir().is_some() => r,
         Ok(_) | Err(_) => {
             tracing::info!(root = %root.display(), "no git work tree: ledger rules are skipped");
-            return None;
+            return (None, None);
         }
     };
     let ledger = Ledger::open(repo, cfg);
@@ -116,25 +122,25 @@ fn open_ledger(root: &Path, cfg: LedgerConfig) -> Option<LedgerState> {
         Ok(oid) => oid.to_string(),
         Err(err) => {
             tracing::info!(%err, "ledger ref does not resolve: ledger rules are skipped");
-            return None;
+            return (None, None);
         }
     };
     let tickets = match ledger.ticket_ids_at(&tip) {
         Ok(ids) => ids.len(),
         Err(err) => {
-            tracing::warn!(%err, "ledger unreadable: ledger rules are skipped");
-            return None;
+            tracing::warn!(%err, "ledger unreadable: ledger rules report required Unresolved");
+            return (None, Some(err.to_string()));
         }
     };
     // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
     // frob:ticket 01M41DQF8CJG567CJ1AWETTCK4
-    let milestones = frob_pm::rules::membership::milestones(&ledger).map_or_else(
-        |err| {
-            tracing::warn!(%err, "milestones unreadable: PM034 not evaluated");
-            0
-        },
-        |m| m.len(),
-    );
+    let milestones = match frob_pm::rules::membership::milestones(&ledger) {
+        Ok(m) => m.len(),
+        Err(err) => {
+            tracing::warn!(%err, "milestones unreadable: ledger rules report required Unresolved");
+            return (None, Some(format!("milestones unreadable: {err}")));
+        }
+    };
     let state = LedgerState {
         ledger,
         tip,
@@ -143,10 +149,10 @@ fn open_ledger(root: &Path, cfg: LedgerConfig) -> Option<LedgerState> {
     };
     if state.is_populated() {
         tracing::info!(tickets, milestones, tip = %state.tip, "ledger present");
-        Some(state)
+        (Some(state), None)
     } else {
         tracing::info!(tip = %state.tip, "ledger holds no tickets or milestones: ledger rules are skipped");
-        None
+        (None, None)
     }
 }
 
@@ -324,7 +330,7 @@ pub(crate) fn collect(
             LedgerConfig::default()
         })
     });
-    let ledger = open_ledger(root, ledger_cfg);
+    let (ledger, ledger_error) = open_ledger(root, ledger_cfg);
     cx.timing.push("ledger", started.elapsed(), true);
     let invariants = InvariantsConfig::load(root)?;
 
@@ -366,6 +372,7 @@ pub(crate) fn collect(
             },
             directives,
             ledger,
+            ledger_error,
             invariants,
             tickets_configured: tickets_configured(root),
             changelog_exempt: opts.changelog_exempt,

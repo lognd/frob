@@ -1204,3 +1204,32 @@ fn ticket_text_never_folds_a_required_unreadable_finding_into_a_count() {
         "named in full although outside the diff: {err}"
     );
 }
+
+// frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
+// frob:tests crates/frob-check/src/product.rs::settle
+#[test]
+fn a_corrupt_ledger_index_is_required_unresolved_findings_and_fails_the_gate() {
+    let (dir, _id) = ticket_fixture();
+    let index = dir.path().join(".frob/tickets.sqlite");
+    assert!(index.exists(), "the fixture builds the index");
+    // No prior check run: a cached clean result would be replayed for the unchanged ledger tip.
+    std::fs::write(
+        &index,
+        b"this is not a sqlite database at all, just bytes\n",
+    )
+    .expect("corrupt");
+    for ext in ["-wal", "-shm"] {
+        let _ = std::fs::remove_file(dir.path().join(format!(".frob/tickets.sqlite{ext}")));
+    }
+    let report = run(dir.path(), &quiet()).expect("corrupt run");
+    let failed: Vec<&Finding> = report
+        .findings
+        .iter()
+        .filter(|f| f.required.is_some() && f.message.contains("evaluation-failed"))
+        .collect();
+    assert!(!failed.is_empty(), "{:?}", report.findings);
+    for f in &failed {
+        assert_eq!(f.severity, gob_rules::Severity::Unresolved);
+    }
+    assert_eq!(report.exit_code(), ExitCode::Negative, "the gate fails");
+}
