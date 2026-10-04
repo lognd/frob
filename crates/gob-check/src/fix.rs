@@ -98,7 +98,7 @@ fn overlaps(accepted: &[(usize, usize)], start: usize, end: usize) -> bool {
 ///
 /// # Errors
 ///
-/// [`CheckError::FixIo`] with `E-FIX-STALE` when a file changed since the check;
+/// [`CheckError::FixStale`] when a file changed since the check;
 /// [`CheckError::FixIo`] with `E-CHECK-FIX-IO` when a file cannot be read or written.
 pub(crate) fn apply(
     root: &Path,
@@ -211,9 +211,7 @@ pub(crate) fn apply(
 
 /// The `E-FIX-STALE` refusal for `path`.
 fn stale(path: &str) -> CheckError {
-    CheckError::FixIo(format!(
-        "E-FIX-STALE: {path} changed since the check; rerun `check --fix`"
-    ))
+    CheckError::FixStale(path.to_owned())
 }
 
 /// Digest the exact raw bytes of every file a Deterministic fix edits (the offsets' basis).
@@ -391,7 +389,7 @@ mod tests {
         std::fs::write(fx.dir.path().join("b.txt"), "other, edited").unwrap();
         let err = fx.run(&[fa, fb]).unwrap_err();
         assert!(
-            matches!(&err, CheckError::FixIo(m) if m.starts_with("E-FIX-STALE: b.txt")),
+            matches!(&err, CheckError::FixStale(p) if p == "b.txt"),
             "{err}"
         );
         assert!(err.to_string().contains("E-FIX-STALE"));

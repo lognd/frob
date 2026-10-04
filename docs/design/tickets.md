@@ -560,8 +560,13 @@ outcome `done` or `fixed` also evaluates every entry of `[pm] done_requires`
 the configured order, and refuses on the first that fails.
 `criteria_evidenced`: every acceptance criterion is bound (a measured
 passing record or an attestation, latest per provider, reference and
-criterion, through the moved maps); a ticket without criteria passes with a
-warning; `--no-evidence --reason` bypasses this requirement only and records
+criterion, through the moved maps); a story, bug or security ticket with no criteria at all is
+refused (`E-DONE-NO-CRITERIA`, ~H1NWDN9, D92: with nothing to bind the requirement would pass
+vacuously; always on, checked before `done_requires`, and not excused by the evidence bypass, so
+it is refused on its own close or land, never on a later one), while chore, docs, epic and every
+other type may close with none, since there is nothing to state as given/when/then and a forced
+criterion would be ceremonial (an exempt ticket without criteria closes with a warning);
+`--no-evidence --reason` bypasses this requirement only and records
 the `evidence-bypass` event. `no_open_children`: every child is done.
 `changelog_fragment`: `changelog.d/<ULID>.<type>.md` exists and passes the
 compile's own validator (REL003, ~HE2EX99): an unknown type, an empty or

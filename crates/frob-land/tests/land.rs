@@ -140,10 +140,21 @@ impl Fixture {
 
     /// Like `start`, with acceptance criteria on the ticket.
     fn start_with(&self, title: &str, scope: &[&str], acceptance: &[&str]) -> Started {
+        self.start_typed(title, TicketType::Task, scope, acceptance)
+    }
+
+    /// Like `start_with`, with an explicit ticket type.
+    fn start_typed(
+        &self,
+        title: &str,
+        ty: TicketType,
+        scope: &[&str],
+        acceptance: &[&str],
+    ) -> Started {
         let ledger = self.ledger();
         let leases = self.leases();
         let cfg = WorktreeConfig::load(&self.root).expect("config");
-        let mut req = NewTicket::new(title, TicketType::Task);
+        let mut req = NewTicket::new(title, ty);
         req.scope = scope.iter().map(|s| (*s).to_owned()).collect();
         req.acceptance = acceptance.iter().map(|s| (*s).to_owned()).collect();
         let created = ledger.new_ticket(req).expect("new");
@@ -600,6 +611,31 @@ fn an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_noth
         fx.ledger().show(s.id).expect("show").summary.category,
         Category::InProgress
     );
+}
+
+// frob:ticket 01M1T07NXZ5WQR200M5H1NWDN9
+// frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
+#[test]
+fn a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start_typed("Add h", TicketType::Story, &["src/**"], &[]);
+    Fixture::commit_in(&s.wt, "src/h.rs", "fn h() {}\n");
+    Fixture::evidence(&s, "src/h.rs");
+    let before = fx.main_tip();
+
+    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("zero criteria");
+    let r = refusal(&err);
+    assert_eq!(r.code, "E-DONE-NO-CRITERIA");
+    assert!(r.message.contains("story"), "{}", r.message);
+    assert_eq!(fx.main_tip(), before, "base did not move");
+
+    let t = fx.start_typed("Add i", TicketType::Task, &["lib/**"], &[]);
+    Fixture::commit_in(&t.wt, "lib/i.rs", "fn i() {}\n");
+    Fixture::evidence(&t, "lib/i.rs");
+    land(&fx.root, &Fixture::opts(&t)).expect("task is exempt");
 }
 
 #[test]

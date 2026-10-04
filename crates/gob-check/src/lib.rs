@@ -39,7 +39,7 @@
 //!
 //! `--fix` writes every finding's Deterministic [`gob_rules::Fix`] (atomic
 //! per fix; overlapping, out-of-range and unparsable fixes skipped; a file
-//! changed since the check refused with `E-FIX-STALE` (carried by `CheckError::FixIo`); files written by
+//! changed since the check refused with `E-FIX-STALE` (`CheckError::FixStale`); files written by
 //! temp-and-rename and restored when a later write fails), then runs the pipeline once more and
 //! reports applied and remaining findings.
 //!
