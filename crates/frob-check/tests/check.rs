@@ -1232,4 +1232,20 @@ fn a_corrupt_ledger_index_is_required_unresolved_findings_and_fails_the_gate() {
         assert_eq!(f.severity, gob_rules::Severity::Unresolved);
     }
     assert_eq!(report.exit_code(), ExitCode::Negative, "the gate fails");
+    assert!(
+        failed
+            .iter()
+            .all(|f| matches!(f.required, Some(RequiredReason::EvaluationFailed { .. })))
+    );
+    // Repair the index: the failure was never cached, so the next run evaluates fresh and is clean.
+    std::fs::remove_file(&index).expect("remove corrupt index");
+    let repaired = run(dir.path(), &quiet()).expect("repaired run");
+    assert!(
+        repaired
+            .findings
+            .iter()
+            .all(|f| !matches!(f.required, Some(RequiredReason::EvaluationFailed { .. }))),
+        "{:?}",
+        repaired.findings
+    );
 }

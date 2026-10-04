@@ -110,8 +110,9 @@ fn settle(parts: impl IntoIterator<Item = Evaluated>) -> Vec<Finding> {
                             format!("evaluation-failed: {rule} was not evaluated: {error}"),
                             "repository",
                         )
-                        .with_required(RequiredReason::ZeroSubjects {
+                        .with_required(RequiredReason::EvaluationFailed {
                             rule: (*rule).to_owned(),
+                            error: error.clone(),
                         }),
                     );
                 }
@@ -412,6 +413,11 @@ impl Product for Frob {
             .and_then(|l| l.ledger.redaction().ok())
         {
             out.extend_from_slice(rules.fingerprint().as_bytes());
+        }
+        // An unreadable ledger keys differently from a healthy one, so repairing it never replays the failure.
+        if let Some(err) = &snap.inputs.ledger_error {
+            out.extend_from_slice(b"ledger-error\0");
+            out.extend_from_slice(err.as_bytes());
         }
         out.extend_from_slice(format!("{:?}", snap.inputs.invariants.forbid_imports).as_bytes());
         out
