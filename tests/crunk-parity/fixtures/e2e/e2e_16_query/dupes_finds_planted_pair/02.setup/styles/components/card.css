@@ -1,0 +1,10 @@
+.card {
+  color: var(--color-ink);
+  padding: var(--space-8);
+}
+.card__title {
+  color: var(--color-accent);
+}
+.card--large {
+  padding: var(--space-16);
+}

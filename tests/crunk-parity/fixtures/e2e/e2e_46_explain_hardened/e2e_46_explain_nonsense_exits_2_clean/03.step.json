@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "explain",
+    "totally-bogus-token-name"
+  ],
+  "command": "python -m crunk explain totally-bogus-token-name",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_46_explain_hardened.py::test_e2e_46_explain_nonsense_exits_2_clean",
+  "setup_deleted": [],
+  "stdin": null
+}

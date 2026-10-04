@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_40_channel_triplets.py::test_glass_panel_definition_sites_both_yield_org004",
+  "setup_deleted": [],
+  "stdin": null
+}

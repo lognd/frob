@@ -1,0 +1,2 @@
+styles/components/card.css:3  SPACE001  warn  margin: 37px is off the scale; between var(--space-32) and var(--space-48)
+0 errors, 1 warnings, 0 waived

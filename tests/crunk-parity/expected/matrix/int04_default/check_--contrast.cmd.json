@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "check",
+    "--contrast"
+  ],
+  "command": "python -m crunk check --contrast",
+  "cwd": "fixtures/static/int04_default",
+  "exit": 0,
+  "project": "int04_default"
+}

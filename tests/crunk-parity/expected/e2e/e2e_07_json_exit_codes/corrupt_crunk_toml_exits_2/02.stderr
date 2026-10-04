@@ -1,0 +1,1 @@
+ERROR: check: crunk.toml has a TOML syntax error: Expected '=' after a key in a key/value pair (at line 1, column 6)

@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "check",
+    "--report"
+  ],
+  "command": "python -m crunk check --report",
+  "cwd": "fixtures/static/gallery005_routes",
+  "exit": 1,
+  "project": "gallery005_routes"
+}

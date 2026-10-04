@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "check",
+    "--json"
+  ],
+  "command": "python -m crunk check --json",
+  "cwd": "fixtures/static/gallery005_routes",
+  "exit": 1,
+  "project": "gallery005_routes"
+}

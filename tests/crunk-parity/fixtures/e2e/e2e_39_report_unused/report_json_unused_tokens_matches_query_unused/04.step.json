@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "query",
+    "unused",
+    "--json"
+  ],
+  "command": "python -m crunk query unused --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_39_report_unused.py::test_report_json_unused_tokens_matches_query_unused",
+  "setup_deleted": [],
+  "stdin": null
+}

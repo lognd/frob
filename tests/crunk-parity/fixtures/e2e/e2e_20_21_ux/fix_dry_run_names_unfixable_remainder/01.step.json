@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_20_21_ux.py::test_fix_dry_run_names_unfixable_remainder",
+  "setup_deleted": [],
+  "stdin": null
+}

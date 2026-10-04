@@ -1,0 +1,3 @@
+styles/components/card.css:1  WAIVE001  error  waiver for COLOR001 has no reason
+styles/components/card.css:3  COLOR001  error  color #ee2211 is not a palette color; nearest is --color-ink (distance 336.93)  [waived]
+1 errors, 0 warnings, 1 waived

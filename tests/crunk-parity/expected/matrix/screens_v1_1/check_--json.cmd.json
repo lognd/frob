@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "check",
+    "--json"
+  ],
+  "command": "python -m crunk check --json",
+  "cwd": "fixtures/static/screens_v1_1",
+  "exit": 1,
+  "project": "screens_v1_1"
+}

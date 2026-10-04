@@ -8,7 +8,8 @@ sections 4.1, 4.2 and 4.6).
 |---|---|---|
 | Opaque F0 (no adapter), text, comments scanned (TOML) | NotApplicable | examined |
 | YAML F1 (`.yml`, `.yaml`: block-mapping keys as nested units `path::outer.inner`), comments scanned | NotApplicable | examined |
-| Opaque F0, text, not scanned (for example `.py`, `.json`) | NotApplicable | one Unresolved per rule naming the file count |
+| Python F2 (`.py`, `.pyi`: modules, classes, functions, methods, imports, calls, decorators, docstrings), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
+| Opaque F0, text, not scanned (for example `.json`) | NotApplicable | one Unresolved per rule naming the file count |
 | Opaque F0, binary (NUL byte or known extension) | NotApplicable | NotApplicable |
 | Parse failed | Unresolved | Unresolved |
 | Partial parse (holes) | examined, plus an Unresolved for symbol rules | examined |
@@ -96,6 +97,31 @@ A call is Must only when the syntax proves one target; anything else stays May
   repository declares a macro of that name or the arguments are not plain
   expressions. Closure parameters and patterns inside them are scoped and typed
   like those outside.
+
+## Python
+
+The Python adapter (F2) reads units (`path::Class.method`, nested `outer.inner`),
+imports (plain, from, relative, star), decorators as attributes, docstrings as
+the doc facet and calls with qualifiers. Binders follow Python scoping
+(parameters and every name assigned in a function). Calls resolve as follows:
+
+- Must: a name defined in an enclosing scope or the module, a `from ... import`
+  name (re-exports through `__init__.py` followed), a module attribute reached
+  through `import`, a `self.m()` the enclosing class defines, a class call to its
+  `__init__`.
+- May: a module matched only by path suffix, several definitions of a name, an
+  inherited method, a star import, and any call on a value of unknown type
+  (`obj.m()` names every repository method `m`).
+- Unknown (never clean): a parameter or assigned name called as a function, an
+  expression callee (`fns[0]()`), and names no repository file defines.
+- Not modelled, reported as a partial parse (Unresolved for symbol rules): `match`
+  statements. Calls inside decorators and parameter defaults are attributed to the
+  enclosing scope. Dynamic features (`getattr`, `exec`, metaclasses, monkey patching)
+  are invisible except as Unknown callees.
+
+A test is a module-level `test*` function or a `test*` method of a class in a
+`test*.py`, `*_test.py` or `*_tests.py` module (pytest and unittest naming).
+`frob test` still lists changed Python files as unresolved until pytest selection lands.
 
 ## Test selection
 

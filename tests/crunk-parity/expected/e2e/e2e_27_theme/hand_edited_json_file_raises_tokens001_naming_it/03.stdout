@@ -1,0 +1,2 @@
+tokens.generated.json:0  TOKENS001  error  tokens file drifted; run `crunk tokens` to regenerate
+1 errors, 0 warnings, 0 waived

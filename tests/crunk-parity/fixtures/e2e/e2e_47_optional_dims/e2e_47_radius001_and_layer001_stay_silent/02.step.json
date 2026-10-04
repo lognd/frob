@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--report",
+    "--json"
+  ],
+  "command": "python -m crunk check --report --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_47_optional_dims.py::test_e2e_47_radius001_and_layer001_stay_silent",
+  "setup_deleted": [],
+  "stdin": null
+}

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_06_waiver.py::test_waiver_without_reason_is_waive001",
+  "setup_deleted": [],
+  "stdin": null
+}

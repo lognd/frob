@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "explain",
+    "bg-primary"
+  ],
+  "command": "python -m crunk explain bg-primary",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_34_explain_jsx.py::test_e2e_34_explain_lists_jsx_utility_only_site",
+  "setup_deleted": [],
+  "stdin": null
+}

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "preview"
+  ],
+  "command": "python -m crunk preview",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_31_preview_diff.py::test_e2e_31_preview_every_entry_and_step_deterministic",
+  "setup_deleted": [],
+  "stdin": null
+}

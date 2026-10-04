@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_48_semantic_drift.py::test_value_edit_in_json_artifact_still_fails_check",
+  "setup_deleted": [],
+  "stdin": null
+}

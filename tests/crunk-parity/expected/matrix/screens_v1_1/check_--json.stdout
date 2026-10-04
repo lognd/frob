@@ -1,0 +1,2050 @@
+{
+  "version": 1,
+  "violations": [
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell admin/default@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell admin/default@webkit-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell admin/default@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell admin/forbidden-non-admin@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell admin/forbidden-non-admin@webkit-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell admin/forbidden-non-admin@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell confirm-dialog/open@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell confirm-dialog/open@webkit-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell confirm-dialog/open@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell landing/ascii-bg-doom@chromium-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell landing/ascii-bg-doom@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell landing/ascii-bg-rain@chromium-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell landing/default@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell landing/default@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell landing/default@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell landing/mobile-nav-open@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell landing/mobile-nav-open@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell landing/mobile-nav-open@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell landing/reduced-motion@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell landing/reduced-motion@webkit-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell landing/reduced-motion@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell login/default@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell login/default@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell login/default@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell login/error-429-rate-limited@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell login/error-429-rate-limited@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell login/error-429-rate-limited@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell login/error-503-limiter-unavailable@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell login/error-503-limiter-unavailable@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell login/error-503-limiter-unavailable@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell login/error-field-validation@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell login/error-field-validation@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell login/error-field-validation@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell portal/default@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell portal/default@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell portal/default@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell portal/empty-invoices@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell portal/empty-invoices@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell portal/empty-invoices@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell portal/unauthenticated-redirect@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell portal/unauthenticated-redirect@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell portal/unauthenticated-redirect@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell projects/default@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell projects/default@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell projects/default@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell projects/empty@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell projects/empty@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell projects/empty@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell projects/error-api@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell projects/error-api@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell projects/error-api@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell projects/loading@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell projects/loading@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell projects/loading@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell register/default@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell register/default@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell register/default@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell register/success-check-your-inbox@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell register/success-check-your-inbox@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell register/success-check-your-inbox@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell reset-password/default@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell reset-password/default@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell reset-password/default@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell reset-password/success-reset-done@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell reset-password/success-reset-done@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell reset-password/success-reset-done@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell verify-email/default@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell verify-email/default@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell verify-email/default@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell verify-email/error-api@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell verify-email/error-api@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell verify-email/error-api@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell verify-email/success-verified@firefox-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell verify-email/success-verified@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY001",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "missing render for cell verify-email/success-verified@reflow-320",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell admin/default@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell admin/forbidden-non-admin@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell confirm-dialog/open@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell landing/ascii-bg-donut@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell landing/default@chromium-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell landing/mobile-nav-open@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell landing/reduced-motion@firefox-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell login/default@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell login/error-429-rate-limited@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell login/error-503-limiter-unavailable@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell login/error-field-validation@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell portal/default@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell portal/empty-invoices@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell portal/unauthenticated-redirect@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell projects/default@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell projects/empty@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell projects/error-api@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell projects/loading@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell register/default@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell register/success-check-your-inbox@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell reset-password/default@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell reset-password/success-reset-done@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell verify-email/default@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell verify-email/error-api@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY002",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "unapproved cell verify-email/success-verified@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell admin/default@chromium-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell admin/default@chromium-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell admin/default@firefox-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell admin/forbidden-non-admin@chromium-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell admin/forbidden-non-admin@chromium-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell admin/forbidden-non-admin@firefox-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell confirm-dialog/open@chromium-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell confirm-dialog/open@chromium-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell confirm-dialog/open@firefox-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/ascii-bg-cube@chromium-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/ascii-bg-cube@chromium-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/ascii-bg-donut@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/ascii-bg-rain@chromium-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/ascii-bg-sphere@chromium-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/ascii-bg-sphere@chromium-mobile (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/default@reflow-320 (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/default@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/default@webkit-mobile (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/reduced-motion@chromium-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/reduced-motion@chromium-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/reduced-motion@firefox-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/wasm-failed@chromium-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell landing/wasm-failed@chromium-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell login/default@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell login/default@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell login/default@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell login/error-429-rate-limited@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell login/error-429-rate-limited@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell login/error-429-rate-limited@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell login/error-503-limiter-unavailable@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell login/error-503-limiter-unavailable@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell login/error-503-limiter-unavailable@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell login/error-field-validation@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell login/error-field-validation@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell login/error-field-validation@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell portal/default@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell portal/default@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell portal/default@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell portal/empty-invoices@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell portal/empty-invoices@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell portal/empty-invoices@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell portal/unauthenticated-redirect@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell portal/unauthenticated-redirect@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell portal/unauthenticated-redirect@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell projects/default@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell projects/default@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell projects/default@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell projects/empty@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell projects/empty@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell projects/empty@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell projects/error-api@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell projects/error-api@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell projects/error-api@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell projects/loading@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell projects/loading@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell projects/loading@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell register/default@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell register/default@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell register/default@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell register/success-check-your-inbox@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell register/success-check-your-inbox@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell register/success-check-your-inbox@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell reset-password/default@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell reset-password/default@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell reset-password/default@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell reset-password/success-reset-done@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell reset-password/success-reset-done@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell reset-password/success-reset-done@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell verify-email/default@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell verify-email/default@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell verify-email/default@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell verify-email/error-api@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell verify-email/error-api@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell verify-email/error-api@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell verify-email/success-verified@chromium-desktop (platform declaration changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell verify-email/success-verified@webkit-desktop (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY003",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "expired cell verify-email/success-verified@webkit-mobile (source changed)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell admin/default@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell admin/forbidden-non-admin@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell confirm-dialog/open@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell landing/ascii-bg-cube@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell landing/ascii-bg-sphere@chromium-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell landing/default@webkit-desktop",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell landing/reduced-motion@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell landing/wasm-failed@chromium-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell login/default@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell login/error-429-rate-limited@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell login/error-503-limiter-unavailable@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell login/error-field-validation@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell portal/default@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell portal/empty-invoices@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell portal/unauthenticated-redirect@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell projects/default@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell projects/empty@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell projects/error-api@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell projects/loading@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell register/default@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell register/success-check-your-inbox@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell reset-password/default@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell reset-password/success-reset-done@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell verify-email/default@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell verify-email/error-api@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "GALLERY004",
+      "severity": "error",
+      "path": ".",
+      "line": 0,
+      "message": "rejected cell verify-email/success-verified@webkit-mobile",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "TOKENS001",
+      "severity": "error",
+      "path": "src/styles/tokens.css",
+      "line": 0,
+      "message": "tokens file missing; run `crunk tokens` to regenerate",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    }
+  ],
+  "counts": {
+    "error": 204,
+    "warning": 0,
+    "waived": 0
+  }
+}

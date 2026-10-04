@@ -1,0 +1,10 @@
+spec: <ROOT>/proj/crunk.toml  root: <ROOT>/proj
+{
+  "version": 1,
+  "violations": [],
+  "counts": {
+    "error": 0,
+    "warning": 0,
+    "waived": 0
+  }
+}

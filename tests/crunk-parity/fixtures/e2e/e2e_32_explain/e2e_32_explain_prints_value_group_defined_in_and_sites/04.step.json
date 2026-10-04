@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "explain",
+    "space-999"
+  ],
+  "command": "python -m crunk explain space-999",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_32_explain.py::test_e2e_32_explain_prints_value_group_defined_in_and_sites",
+  "setup_deleted": [],
+  "stdin": null
+}

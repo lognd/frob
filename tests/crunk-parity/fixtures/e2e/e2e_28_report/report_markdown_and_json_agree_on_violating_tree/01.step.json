@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_28_report.py::test_report_markdown_and_json_agree_on_violating_tree",
+  "setup_deleted": [],
+  "stdin": null
+}

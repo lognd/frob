@@ -1,0 +1,30 @@
+{
+  "borderRadius": {
+    "0": "var(--radius-0)",
+    "4": "var(--radius-4)"
+  },
+  "colors": {
+    "ink": "var(--color-ink)"
+  },
+  "fontFamily": {
+    "base": [
+      "Inter"
+    ]
+  },
+  "fontSize": {
+    "12": "var(--font-size-12)",
+    "16": "var(--font-size-16)"
+  },
+  "height": {},
+  "maxHeight": {},
+  "maxWidth": {},
+  "minHeight": {},
+  "minWidth": {},
+  "spacing": {
+    "0": "var(--space-0)",
+    "4": "var(--space-4)",
+    "8": "var(--space-8)"
+  },
+  "width": {},
+  "zIndex": {}
+}

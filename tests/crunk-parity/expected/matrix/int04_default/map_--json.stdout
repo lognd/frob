@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "buckets": {
+    "base": [],
+    "components": [],
+    "layouts": [],
+    "utilities": [],
+    "entry": [],
+    "jsx": [],
+    "tokens": []
+  },
+  "strays": []
+}

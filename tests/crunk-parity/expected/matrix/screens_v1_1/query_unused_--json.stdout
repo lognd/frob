@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "kind": "unused",
+  "results": [
+    {
+      "name": "--color-bg-primary"
+    },
+    {
+      "name": "--color-fg-primary"
+    },
+    {
+      "name": "--font-family-base"
+    },
+    {
+      "name": "--font-size-16"
+    },
+    {
+      "name": "--font-size-18"
+    },
+    {
+      "name": "--font-size-20"
+    },
+    {
+      "name": "--font-size-24"
+    },
+    {
+      "name": "--font-size-30"
+    },
+    {
+      "name": "--font-size-36"
+    },
+    {
+      "name": "--font-size-48"
+    },
+    {
+      "name": "--space-0"
+    },
+    {
+      "name": "--space-12"
+    },
+    {
+      "name": "--space-16"
+    },
+    {
+      "name": "--space-24"
+    },
+    {
+      "name": "--space-32"
+    },
+    {
+      "name": "--space-4"
+    },
+    {
+      "name": "--space-48"
+    },
+    {
+      "name": "--space-64"
+    },
+    {
+      "name": "--space-8"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "explain",
+    "color-accent-rgb"
+  ],
+  "command": "python -m crunk explain color-accent-rgb",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_46_explain_hardened.py::test_e2e_46_explain_rgb_companion_answers_channel_form",
+  "setup_deleted": [],
+  "stdin": null
+}

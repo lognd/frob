@@ -3,12 +3,14 @@
 
 // frob:ticket 01M3Z713F6VY15YSMS15033RN1
 
-use gob_ir::{Location, NodeId, NodeSpec, Operator, ScopeGraph, TermBuilder, TermError};
+use gob_ir::{
+    DeclKind, Location, NodeId, NodeSpec, Operator, Resolution, ScopeGraph, TermBuilder, TermError,
+};
 use gob_languages::UnresolvedReason;
 use gob_text::FileInterner;
 
 use crate::adapter::{Fidelity, FileInput, FoldError, Folded, ParseStatus};
-use crate::model::FileSymbols;
+use crate::model::{FileSymbols, LocalBinding, collapse_ws};
 use crate::view::{self, Naming};
 
 /// The context of one fold: the term builder, the file id and the source text.
@@ -143,4 +145,75 @@ pub(crate) fn failed_file(
 /// The root unit spec of a parsed file of `size` bytes.
 pub(crate) fn file_root_spec(cx: &Cx<'_>, size: usize) -> NodeSpec {
     NodeSpec::new(Operator::unit("file", "impl"), cx.loc(0, size))
+}
+
+/// Longest callee text kept for diagnostics.
+const MAX_CALL_TEXT: usize = 80;
+
+/// The callee expression `raw` as shown in diagnostics (`x.run(..)`), whitespace collapsed and capped.
+pub(crate) fn call_text(raw: &str) -> String {
+    let mut t = collapse_ws(raw);
+    if t.chars().count() > MAX_CALL_TEXT {
+        t = t.chars().take(MAX_CALL_TEXT).collect();
+        t.push_str("...");
+    }
+    format!("{t}(..)")
+}
+
+/// One-based source line of `n`.
+pub(crate) fn line_of(n: tree_sitter::Node<'_>) -> u32 {
+    u32::try_from(n.start_position().row + 1).unwrap_or(u32::MAX)
+}
+
+/// The source text of `n`.
+pub(crate) fn text_of<'t>(text: &'t str, n: tree_sitter::Node<'_>) -> &'t str {
+    &text[n.start_byte()..n.end_byte()]
+}
+
+/// All children of `n` (named and anonymous) in source order.
+pub(crate) fn children(n: tree_sitter::Node<'_>) -> Vec<tree_sitter::Node<'_>> {
+    let mut c = n.walk();
+    n.children(&mut c).collect()
+}
+
+/// All leaf tokens of `n` in source order, skipping subtrees for which `is_comment` holds.
+pub(crate) fn leaves<'t>(
+    n: tree_sitter::Node<'t>,
+    is_comment: impl Fn(tree_sitter::Node<'t>) -> bool,
+) -> Vec<tree_sitter::Node<'t>> {
+    let mut out = Vec::new();
+    let mut stack = vec![n];
+    while let Some(x) = stack.pop() {
+        if is_comment(x) {
+            continue;
+        }
+        if x.child_count() == 0 {
+            out.push(x);
+        } else {
+            stack.extend(children(x).into_iter().rev());
+        }
+    }
+    out
+}
+
+/// What the file's scope graph says about the callee reference at `node`.
+pub(crate) fn local_binding(
+    scopes: &ScopeGraph,
+    node: Option<NodeId>,
+    item_local: bool,
+) -> LocalBinding {
+    let Some(r) = node.and_then(|n| scopes.ref_at(n)) else {
+        return LocalBinding::None;
+    };
+    let is_binder = |d| scopes.decl(d).kind == DeclKind::Binder;
+    let bound = match scopes.resolve(r) {
+        Resolution::Must(d) => is_binder(d),
+        Resolution::May(ds) => ds.iter().all(|&d| is_binder(d)),
+        Resolution::Unknown => false,
+    };
+    match (bound, item_local) {
+        (false, _) => LocalBinding::None,
+        (true, true) => LocalBinding::Item,
+        (true, false) => LocalBinding::Value,
+    }
 }

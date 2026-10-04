@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "explain",
+  "results": [
+    {
+      "name": "--color-ink",
+      "value": "#1a1a1a",
+      "group": "color",
+      "defined_in": "styles/tokens.css",
+      "sites": [
+        {
+          "path": "styles/base/reset.css",
+          "line": 9
+        }
+      ],
+      "utilities": []
+    }
+  ]
+}

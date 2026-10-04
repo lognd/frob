@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--report",
+    "--json"
+  ],
+  "command": "python -m crunk check --report --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_24_25_jsx.py::test_e2e_24_jsx_style_props_judged_never_fixable",
+  "setup_deleted": [],
+  "stdin": null
+}

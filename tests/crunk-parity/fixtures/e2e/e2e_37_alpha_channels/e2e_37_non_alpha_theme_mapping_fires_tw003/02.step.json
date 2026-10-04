@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--report",
+    "--json"
+  ],
+  "command": "python -m crunk check --report --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_37_alpha_channels.py::test_e2e_37_non_alpha_theme_mapping_fires_tw003",
+  "setup_deleted": [],
+  "stdin": null
+}

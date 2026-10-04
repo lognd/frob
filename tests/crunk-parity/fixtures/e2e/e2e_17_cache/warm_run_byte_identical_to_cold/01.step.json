@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_17_cache.py::test_warm_run_byte_identical_to_cold",
+  "setup_deleted": [],
+  "stdin": null
+}

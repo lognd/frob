@@ -1,0 +1,45 @@
+# Violations
+
+styles/tokens.css:0  TOKENS001  error  tokens file missing; run `crunk tokens` to regenerate
+1 errors, 0 warnings, 0 waived
+
+# Contrast
+
+body  ink on paper  16.64 (floor 4.5)  PASS
+
+# Tokens
+
+tokens: missing
+
+# Unused
+- --color-accent
+- --color-ink
+- --color-paper
+- --font-family-base
+- --font-size-12
+- --font-size-14
+- --font-size-16
+- --font-size-20
+- --font-size-24
+- --font-size-32
+- --font-size-48
+- --layer-base
+- --layer-dropdown
+- --layer-overlay
+- --layer-toast
+- --radius-0
+- --radius-16
+- --radius-4
+- --radius-8
+- --space-0
+- --space-12
+- --space-16
+- --space-24
+- --space-32
+- --space-4
+- --space-48
+- --space-64
+- --space-8
+
+# Files
+styles/tokens.css  errors=1 warnings=0

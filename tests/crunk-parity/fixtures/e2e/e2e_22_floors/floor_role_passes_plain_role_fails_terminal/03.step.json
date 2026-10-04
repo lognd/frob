@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "check"
+  ],
+  "command": "python -m crunk check",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_22_floors.py::test_floor_role_passes_plain_role_fails_terminal",
+  "setup_deleted": [],
+  "stdin": null
+}

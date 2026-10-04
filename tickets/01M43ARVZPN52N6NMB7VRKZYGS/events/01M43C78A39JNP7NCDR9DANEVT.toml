@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T11:54:06Z"
+digest = "73d9f46a93c4e5161d225718e1af01513e09b5ab6689d74782219de43d31a8b7"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1a1ce69c-e7f1-4d9b-9ffc-36d7aabf07a0 with nextest profile: default
+    Starting 1 test across 3 binaries (13 tests skipped)
+        PASS [   0.036s] crunk-tailwind::candidate computed_fragments_are_dynamic_not_guessed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.037s] 1 test run: 1 passed, 13 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-tailwind -E 'test(computed_fragments_are_dynamic_not_guessed)'"
+size = 559
+status = "measured"
+tests = ["computed_fragments_are_dynamic_not_guessed"]
+at = "2026-10-04T11:54:06Z"
+actor = "lognd"
+rev = 1
