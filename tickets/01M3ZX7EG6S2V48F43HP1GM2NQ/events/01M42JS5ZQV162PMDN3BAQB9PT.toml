@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-plan/src/plan/**"]
+new = ["crates/gob-plan/src/plan/**", "crates/gob-plan/src/lib.rs"]
+at = "2026-10-04T04:29:30Z"
+actor = "lognd"
+rev = 1
