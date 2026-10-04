@@ -41,6 +41,10 @@ pub(crate) const HOLE_PARSE_ERROR: &str = "parse-error";
 /// Hole kind of a token the parser inserted.
 pub(crate) const HOLE_MISSING: &str = "missing";
 
+// frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
+/// Hole kind of a construct the adapter does not model (never a clean answer).
+pub(crate) const HOLE_UNMODELLED: &str = "unmodelled";
+
 /// How legacy symrefs are spelled for a term.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Naming {
@@ -50,6 +54,8 @@ pub(crate) enum Naming {
     Markdown,
     /// Model entities: `path::name`, kinds from the entity keyword.
     Model,
+    /// `path::Class.method`, nested functions as `outer.inner`.
+    Python,
     /// Only the file node exists.
     Opaque,
 }
@@ -73,7 +79,7 @@ pub(crate) fn parse_status_of(term: &Term) -> ParseStatus {
             matches!(
                 term.node(n).op(),
                 Operator::Universal(Universal::Hole { kind })
-                    if kind == HOLE_PARSE_ERROR || kind == HOLE_MISSING
+                    if kind == HOLE_PARSE_ERROR || kind == HOLE_MISSING || kind == HOLE_UNMODELLED
             )
         })
         .count();
@@ -115,6 +121,7 @@ fn kind_of(naming: Naming, kind: &str) -> SymbolKind {
         (Naming::Model, "boundary") => SymbolKind::Boundary,
         (_, "function") => SymbolKind::Function,
         (_, "method") => SymbolKind::Method,
+        (Naming::Python, "class") => SymbolKind::Class,
         (_, "struct") => SymbolKind::Struct,
         (_, "enum") => SymbolKind::Enum,
         (_, "variant") => SymbolKind::Variant,
@@ -312,7 +319,7 @@ pub(crate) fn build(term: &Term, path: &str, naming: Naming) -> View {
     match naming {
         Naming::Rust => patch_impl_visibility(&mut view.symbols),
         Naming::Markdown => subtree_digests(&mut view),
-        Naming::Model | Naming::Opaque => {}
+        Naming::Model | Naming::Python | Naming::Opaque => {}
     }
     view
 }

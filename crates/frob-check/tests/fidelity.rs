@@ -16,7 +16,7 @@ fn write(root: &Path, path: &str, bytes: &[u8]) {
     std::fs::write(full, bytes).expect("write");
 }
 
-/// A `.rs` with a parse hole, a `.png`, an adapter-less `.py` and a markdown file.
+/// A `.rs` with a parse hole, a `.png`, an adapter-less `.json` and a markdown file.
 fn fixture() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path();
@@ -28,7 +28,7 @@ fn fixture() -> tempfile::TempDir {
     write(root, "logo.png", &[0x89, b'P', b'N', b'G', 0, 1, 2, 3]);
     write(
         root,
-        "tool.py",
+        "tool.json",
         format!("# {} fix this\nprint(1)\n", marker()).as_bytes(),
     );
     write(root, "README.md", b"# Title\n\nSome text.\n");
@@ -55,11 +55,11 @@ fn of<'a>(findings: &'a [Finding], rule: &str) -> Vec<&'a Finding> {
 fn a_p_plus_rule_over_an_opaque_text_file_is_unresolved_not_silent() {
     let dir = fixture();
     let report = run(dir.path(), &options()).expect("run");
-    // The bare marker in the adapter-less .py is invisible to TODO001: Unresolved, never Warn or Error.
+    // The bare marker in the adapter-less .json is invisible to TODO001: Unresolved, never Warn or Error.
     let todo = of(&report.findings, "TODO001");
     assert_eq!(todo.len(), 1, "{todo:?}");
     assert_eq!(todo[0].severity, Severity::Unresolved);
-    assert!(todo[0].message.contains("tool.py"), "{}", todo[0].message);
+    assert!(todo[0].message.contains("tool.json"), "{}", todo[0].message);
     assert!(
         !todo[0].message.contains("logo.png"),
         "binary is NotApplicable"

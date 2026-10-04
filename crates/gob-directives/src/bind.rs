@@ -140,6 +140,10 @@ pub(crate) fn bind<'s>(
 /// path, or an attribute line above it mentions `test`.
 pub(crate) fn is_test_item(index: &LineIndex, text: &str, sym: &SymbolRecord) -> bool {
     let path = sym.symref.path();
+    // frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
+    if gob_symbols::is_python_test_fn(sym) {
+        return true;
+    }
     if path.starts_with("tests/") || path.contains("/tests/") {
         return true;
     }
