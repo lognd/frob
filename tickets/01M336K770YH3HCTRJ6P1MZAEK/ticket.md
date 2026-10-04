@@ -2,12 +2,13 @@
 id = "01M336K770YH3HCTRJ6P1MZAEK"
 title = "FMT001 directive-wrap Tier-A pass rewrites directive-shaped lines inside string literals (lexical scan, not token-based)"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 points = 2
 reporter = "human"
 created = "2026-09-22T00:00:00Z"
-updated = "2026-09-22T00:00:00Z"
+updated = "2026-10-04T21:09:28Z"
 aliases = ["T-5344"]
 labels = ["milestone:0.534.0", "v1-cluster:G1"]
 scope = ["src/frob/gates/_fmt_directives.py", "tests/test_gates_fmt_directives.py"]
