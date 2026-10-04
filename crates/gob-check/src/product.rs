@@ -255,6 +255,12 @@ pub trait Product: Sized + Sync {
         None
     }
 
+    // frob:ticket 01M42M1KK02KFZG39CXKAD47SZ
+    /// Walked files the product's analysis could not read, with reasons (`READ001`); empty by default.
+    fn unreadable(&self, _shared: &Self::Shared) -> Vec<gob_symbols::SkippedFile> {
+        Vec::new()
+    }
+
     /// True when the product's scanner reads comments and directives of `path` without an adapter.
     fn scans_text(&self, _path: &str) -> bool {
         false

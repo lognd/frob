@@ -1,4 +1,4 @@
-//! Rules declared by this crate: `PROC001`, `TOOL001`, `TOOL002`, `PERF001` and the bound `CI` ids.
+//! Rules declared by this crate: `PROC001`, `TOOL001`, `TOOL002`, `PERF001`, `READ001` and the bound `CI` ids.
 
 use gob_rules::Rule;
 
@@ -61,6 +61,29 @@ pub struct Tool001;
     version = 1
 )]
 pub struct Perf001;
+
+// frob:ticket 01M42M1KK02KFZG39CXKAD47SZ
+/// A walked file could not be read, so no rule examined it.
+///
+/// Raised as a required Unresolved finding for every file the walk includes
+/// but the analysis cannot read: content that is not UTF-8, a permission
+/// failure or any other read error, or a file over `[check] size_cap`. Such a
+/// file must never look clean. Fix the encoding or permissions, raise
+/// `size_cap`, or list the file under `[check] exclude` when it is binary or
+/// generated; an excluded file is never walked, read or reported.
+#[derive(Debug, Clone, Copy, Default, Rule)]
+#[rule(
+    id = "READ001",
+    slug = "unreadable-file",
+    family = "READ",
+    severity = Warn,
+    tier = Universal,
+    scope = Repo,
+    fix = Manual,
+    polarity = Pplus,
+    version = 1
+)]
+pub struct Read001;
 
 /// An external `uses:` reference is not pinned to a full commit SHA.
 ///

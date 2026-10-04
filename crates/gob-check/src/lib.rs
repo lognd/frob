@@ -76,9 +76,11 @@ pub use product::{
     ScopedFindings, Snapshot,
 };
 pub use report::{AppliedFix, CheckReport, Counts, FixOutcome, StageTime, Stats, Timing};
-pub use rules::{Ci001, Ci003, Ci006, Ci007, Ci010, Ci014, Perf001, Proc001, Tool001, Tool002};
+pub use rules::{
+    Ci001, Ci003, Ci006, Ci007, Ci010, Ci014, Perf001, Proc001, Read001, Tool001, Tool002,
+};
 pub use status::{
-    FidelityReport, LanguageFidelity, Need, OtherCopy, RuleNeed, SiblingRow, SubjectStatus,
-    hole_caveat, is_binary, need_of, opaque_finding, subject_status, subject_status_for,
-    unresolved_finding,
+    FidelityReport, LanguageFidelity, Need, OtherCopy, RuleNeed, SiblingRow, SkippedReport,
+    SubjectStatus, hole_caveat, is_binary, need_of, opaque_finding, subject_status,
+    subject_status_for, unreadable_finding, unresolved_finding,
 };

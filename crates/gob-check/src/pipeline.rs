@@ -17,8 +17,8 @@ use crate::product::{CollectCx, Collected, Product, ScopeView, Snapshot};
 use crate::repo::run_repo_rules;
 use crate::report::{CheckReport, Counts, FixOutcome, Tally, Timing};
 use crate::required::{mark_annotations, zero_subjects};
-use crate::rules::Perf001;
-use crate::status::{FidelityReport, Need, need_of, opaque_finding};
+use crate::rules::{Perf001, Read001};
+use crate::status::{FidelityReport, Need, is_binary, need_of, opaque_finding, unreadable_finding};
 use crate::telemetry;
 use crate::tools::run_tools;
 
@@ -222,6 +222,42 @@ fn opaque_repo_findings<P: Product>(
     out
 }
 
+// frob:ticket 01M42M1KK02KFZG39CXKAD47SZ
+/// One required Unresolved `READ001` per walked file nobody could read, counted in `fidelity`.
+///
+/// Sources: files over `size_cap` (the walk) and files the product's analysis
+/// failed to read or decode. A file excluded by `[check] exclude` is never
+/// walked, so it never appears; an oversized file with a binary extension is
+/// declared binary and is not reported. Scope does not filter these: a file
+/// no gate read must stay visible whatever the run examined.
+fn unreadable_findings<P: Product>(
+    product: &P,
+    snap: &Snapshot<P>,
+    only: &[String],
+    fidelity: &mut FidelityReport,
+) -> Vec<Finding> {
+    let mut skipped: Vec<_> = snap
+        .core
+        .skipped
+        .iter()
+        .filter(|s| !is_binary(&s.path, &[]))
+        .cloned()
+        .collect();
+    skipped.extend(product.unreadable(&snap.shared));
+    skipped.sort_by(|a, b| a.path.cmp(&b.path));
+    skipped.dedup_by(|a, b| a.path == b.path);
+    let emit = matches_only(only, "READ", "READ001");
+    skipped
+        .iter()
+        .map(|s| {
+            tracing::warn!(path = %s.path, kind = s.kind.as_str(), detail = %s.detail, "READ001: file not read");
+            fidelity.add_skipped(s.kind);
+            unreadable_finding(&Read001::META, snap.core.index.ids.get(&s.path).copied(), s)
+        })
+        .filter(|_| emit)
+        .collect()
+}
+
 /// One full evaluation of the rules (no tool-less shortcuts, no fixes).
 #[allow(
     clippy::too_many_lines,
@@ -318,6 +354,12 @@ fn pass<P: Product>(
         product,
         &snap,
         &wanted,
+        &mut tally.fidelity,
+    ));
+    raw.extend(unreadable_findings(
+        product,
+        &snap,
+        only,
         &mut tally.fidelity,
     ));
 

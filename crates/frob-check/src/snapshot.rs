@@ -62,6 +62,8 @@ pub struct FrobShared {
     pub has_ledger: bool,
     /// Fidelity and parse facts of every walked file, by path.
     pub file_info: std::collections::BTreeMap<String, gob_symbols::FileInfo>,
+    /// Walked files the graph build could not read, with reasons (`READ001`).
+    pub unreadable: Vec<gob_symbols::SkippedFile>,
 }
 
 /// Everything frob's rules read besides the walk, built once per pass.
@@ -346,6 +348,7 @@ pub(crate) fn collect(
         ledger_tip: ledger.as_ref().map_or_else(String::new, |l| l.tip.clone()),
         obligation_paths,
         has_ledger: ledger.is_some(),
+        unreadable: built.unreadable,
         file_info: graph
             .files()
             .map(|(p, i)| (p.to_owned(), i.clone()))

@@ -3,6 +3,7 @@
 // frob:ticket 01M3Z713F6VY15YSMS15033RN1
 
 use std::path::Path;
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use gob_cache::{ArtifactKey, Cache};
@@ -24,15 +25,63 @@ pub const EXTRACTOR_VERSION: u32 = 14;
 /// Files read per filter pipeline (building one loads the index and attributes).
 const READ_CHUNK: usize = 256;
 
+/// Why a walked file was never read; the gate reads it as a required Unresolved (never a clean pass).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum SkipKind {
+    /// The content is not valid UTF-8.
+    Encoding,
+    /// The operating system refused the read.
+    Permission,
+    /// Any other read failure.
+    Io,
+    /// The file is over `[check] size_cap`.
+    Size,
+}
+
+impl SkipKind {
+    /// The stable report spelling (`encoding`, `permission`, `io`, `size`).
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Encoding => "encoding",
+            Self::Permission => "permission",
+            Self::Io => "io",
+            Self::Size => "size",
+        }
+    }
+
+    /// The kind of a read failure `err`.
+    pub fn of_io(err: &std::io::Error) -> Self {
+        match err.kind() {
+            std::io::ErrorKind::InvalidData => Self::Encoding,
+            std::io::ErrorKind::PermissionDenied => Self::Permission,
+            _ => Self::Io,
+        }
+    }
+}
+
+/// A walked file the analysis could not read, with the reason (never silently dropped).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SkippedFile {
+    /// Path relative to the root, forward-slash separated.
+    pub path: String,
+    /// The class of failure.
+    pub kind: SkipKind,
+    /// The error text (decode error, OS error, or size against the cap).
+    pub detail: String,
+}
+
+// frob:ticket 01M42M1KK02KFZG39CXKAD47SZ
 /// Counters from one [`build_graph_with_stats`] run.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct BuildStats {
     /// Files extracted from source (cache misses).
     pub extracted: usize,
     /// Files served from the cache.
     pub cached: usize,
-    /// Files that could not be read.
+    /// Files that could not be read (the length of `unreadable`).
     pub skipped: usize,
+    /// The unreadable files with their reasons, sorted by path.
+    pub unreadable: Vec<SkippedFile>,
     /// Files no adapter claims, folded as one opaque unit each (G19).
     pub opaque: usize,
 }
@@ -127,7 +176,7 @@ pub fn build_graph_with_stats(
     let started = std::time::Instant::now();
     let extracted = AtomicUsize::new(0);
     let cached = AtomicUsize::new(0);
-    let skipped = AtomicUsize::new(0);
+    let unreadable: Mutex<Vec<SkippedFile>> = Mutex::new(Vec::new());
     let opaque = AtomicUsize::new(0);
     // Text is read as git would store it, matching the walk's digests (CRLF checkouts parse as LF).
     let source = ContentSource::locate(root);
@@ -160,8 +209,15 @@ pub fn build_graph_with_stats(
             let text = match reader.read_text(&entry.path) {
                 Ok(t) => t,
                 Err(err) => {
-                    tracing::warn!(path = %entry.path, %err, "unreadable file skipped");
-                    skipped.fetch_add(1, Ordering::Relaxed);
+                    tracing::warn!(path = %entry.path, %err, "unreadable file; reported as READ001");
+                    unreadable
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .push(SkippedFile {
+                            path: entry.path.clone(),
+                            kind: SkipKind::of_io(&err),
+                            detail: err.to_string(),
+                        });
                     return None;
                 }
             };
@@ -180,14 +236,26 @@ pub fn build_graph_with_stats(
             })
         })
         .collect();
+    let mut unreadable = unreadable
+        .into_inner()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    unreadable.sort_by(|a, b| a.path.cmp(&b.path));
     let stats = BuildStats {
         extracted: extracted.load(Ordering::Relaxed),
         cached: cached.load(Ordering::Relaxed),
-        skipped: skipped.load(Ordering::Relaxed),
+        skipped: unreadable.len(),
+        unreadable,
         opaque: opaque.load(Ordering::Relaxed),
     };
     let per_file_ms = started.elapsed().as_millis();
-    tracing::info!(?stats, per_file_ms, "symbol extraction done");
+    tracing::info!(
+        extracted = stats.extracted,
+        cached = stats.cached,
+        skipped = stats.skipped,
+        opaque = stats.opaque,
+        per_file_ms,
+        "symbol extraction done"
+    );
     let graph = SymbolGraph::from_files_with_deps(per_file, &mut CrateDeps::new(root));
     tracing::info!(
         assemble_ms = started.elapsed().as_millis() - per_file_ms,

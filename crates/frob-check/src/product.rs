@@ -421,6 +421,11 @@ impl Product for Frob {
         shared.file_info.get(path).cloned()
     }
 
+    // frob:ticket 01M42M1KK02KFZG39CXKAD47SZ
+    fn unreadable(&self, shared: &FrobShared) -> Vec<gob_symbols::SkippedFile> {
+        shared.unreadable.clone()
+    }
+
     fn scans_text(&self, path: &str) -> bool {
         Language::detect(path).is_some()
     }

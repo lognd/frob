@@ -399,3 +399,27 @@ fn graph_is_identical_at_one_and_many_threads() {
     }
     assert!(!one.call_edges().is_empty());
 }
+
+// frob:ticket 01M42M1KK02KFZG39CXKAD47SZ
+// frob:tests crates/gob-symbols/src/pipeline.rs::build_graph_with_stats
+#[test]
+fn an_undecodable_file_is_listed_with_its_reason_not_only_counted() {
+    let root = tempfile::tempdir().unwrap();
+    std::fs::write(root.path().join("bad.md"), [0xff, 0xfe, b'\n']).unwrap();
+    let e = entry("bad.md", "x");
+    let cache = gob_cache::Cache::null();
+    let (g, stats) = build_graph_with_stats(root.path(), &[e], &cache);
+    assert_eq!(stats.skipped, 1);
+    assert_eq!(stats.unreadable.len(), 1);
+    assert_eq!(stats.unreadable[0].path, "bad.md");
+    assert_eq!(stats.unreadable[0].kind, gob_symbols::SkipKind::Encoding);
+    assert!(
+        stats.unreadable[0].detail.contains("utf-8"),
+        "{:?}",
+        stats.unreadable
+    );
+    assert!(
+        g.file_info("bad.md").is_none(),
+        "no file node for an unread file"
+    );
+}

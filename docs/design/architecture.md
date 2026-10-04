@@ -78,6 +78,23 @@ without it).
    writes are best-effort with a `busy_timeout`, and a failed write is a
    logged cache miss, never an error. A long-lived `frob serve` keeps
    the same data warm in memory (Milestone 2 or later (D36)).
+   Files the walk includes but the analysis cannot read are never
+   silent (`READ001`). Every such file (content that is not UTF-8, a
+   permission or other read failure, a file over `[check] size_cap`)
+   becomes one required Unresolved finding naming the path and the reason,
+   so the default `fail_on_unresolved = "required"` gate fails, and the
+   `fidelity.skipped` section of the report counts them by reason
+   (`encoding`, `permission`, `io`, `size`). Unreadable files are in no
+   language row and are not "examined". The `--ticket` fold of findings
+   outside the diff into counts never hides them: a required finding
+   always prints in full. Declared binary or generated files are
+   excluded, not reported, by two routes only: a `[check] exclude` glob
+   keeps the file out of the walk, so it is never read, hashed or
+   reported; and an opaque file with a binary extension or a NUL in its
+   head is `NotApplicable` for the text rules, and when it is over
+   `size_cap` it is not reported either. A file claimed by an adapter
+   (`.md`, `.rs`, `.toml`) that cannot be decoded is always reported;
+   exclude it explicitly if it is generated.
 4. Render through `gob-diagnostics`; every finding carries a remedy
    string generated from the rule's `fix_title` or `remedy` doc section.
 5. Exit code per the table in cli.md section 2: 0 ok (domain state such

@@ -80,7 +80,8 @@ pub use model::{
 };
 pub use opaque::OpaqueAdapter;
 pub use pipeline::{
-    BuildStats, EXTRACTOR_VERSION, build_graph, build_graph_with_stats, extract_file, fold_file,
+    BuildStats, EXTRACTOR_VERSION, SkipKind, SkippedFile, build_graph, build_graph_with_stats,
+    extract_file, fold_file,
 };
 pub use qualifier::{Admit, CallQualifier};
 pub use registry::{

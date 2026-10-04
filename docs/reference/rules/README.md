@@ -99,6 +99,12 @@
 |---|---|---|---|---|---|---|
 | [PROC001](PROC001.md) | process-outside-exec | error | manual | P+ | false | A crate outside the repository's declared spawners uses a process-spawning API. |
 
+## READ
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [READ001](READ001.md) | unreadable-file | warn | manual | P+ | false | A walked file could not be read, so no rule examined it. |
+
 ## REF
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
