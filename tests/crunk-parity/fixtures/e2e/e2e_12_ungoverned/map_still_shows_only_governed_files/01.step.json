@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_12_ungoverned.py::test_map_still_shows_only_governed_files",
+  "setup_deleted": [],
+  "stdin": null
+}

@@ -1,0 +1,44 @@
++++
+id = "01M3AXSD9J64T4YEMYAFFVW7WX"
+title = "STORE206: high-cardinality tag column (unique IDs/timestamps/hashes as InfluxDB tags)"
+type = "task"
+category = "triage"
+priority = "medium"
+parent = "01M3AXSD9N6EMFMTKASSQETY9D"
+reporter = "agent"
+created = "2026-09-25T00:00:00Z"
+updated = "2026-09-25T00:00:00Z"
+aliases = ["T-6450"]
+labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+scope = ["src/frob/store/_timeseries.py", "tests/fixtures/store/store206-influx-high-cardinality-tag/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3AXSD97HRBA035Y3FNX3ACG"
++++
+
+Rule id: STORE206.
+
+Authority: InfluxDB OSS v2 docs, "Resolve high series cardinality":
+"Tags containing highly variable information like unique IDs, hashes,
+and random strings lead to a large number of series... a primary driver
+of high memory usage" and specifically calls out "Writing log messages
+to tags... Writing timestamps to tags... Unique tag values that grow
+over time" as common causes --
+https://docs.influxdata.com/influxdb/v2/write-data/best-practices/resolve-high-cardinality/.
+
+Call shapes: `Point("measurement").tag("request_id", uuid).tag(
+"timestamp", ts)` (influxdb-client-python) -- tagging with UUID/
+timestamp-like values; TS/JS: `new Point('m').tag('requestId', uuid)`.
+
+Repo fact needed: the tag value's semantic source -- heuristic: variable
+name matches `id`/`uuid`/`timestamp`/`hash` bound into `.tag()` rather
+than `.field()`.
+
+Positive-control fixture:
+`tests/fixtures/store/store206-influx-high-cardinality-tag/`.
+
+Relevance gate: influxdb client detected.
+
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its scaffold, none exists on dev yet"

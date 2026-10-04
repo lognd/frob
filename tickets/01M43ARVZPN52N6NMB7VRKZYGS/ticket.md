@@ -2,13 +2,14 @@
 id = "01M43ARVZPN52N6NMB7VRKZYGS"
 title = "crunk-tailwind: default-theme tables and utility candidate parser"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:46Z"
-updated = "2026-10-04T11:54:06Z"
+updated = "2026-10-04T12:36:10Z"
 idempotency_key = "crunk-plan-tw"
 labels = ["area:crunk"]
 scope = ["crates/crunk-tailwind/**", "Cargo.lock"]

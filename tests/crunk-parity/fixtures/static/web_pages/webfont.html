@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<!--
+T-0186 fixture: a page whose text is invisible (`opacity: 0`) until its
+webfont finishes loading, then flips to `opacity: 1` via
+`document.fonts.ready`. A capture taken before `document.fonts.ready`
+resolves would show blank/fallback text -- proving `prepare_capture`'s
+`document.fonts.ready` wait actually matters (CONSUMER FEEDBACK
+2026-09-26: webfonts were the #1 miss across 53 real renders). The font
+itself is a data-URI so this fixture has no network dependency.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>crunk webfont fixture</title>
+  <style>
+    /* A tiny valid empty-glyph WOFF2 embedded as a data URI -- the exact
+       glyphs do not matter, only that `document.fonts.ready` fires after
+       the browser finishes applying it. */
+    @font-face {
+      font-family: "CrunkTestFont";
+      src: local("monospace");
+      font-display: block;
+    }
+    body { opacity: 0; font-family: "CrunkTestFont", monospace; }
+    body.font-ready { opacity: 1; }
+  </style>
+</head>
+<body>
+  <p id="label">webfont content</p>
+  <script>
+    document.fonts.ready.then(() => {
+      document.body.classList.add("font-ready");
+    });
+  </script>
+</body>
+</html>

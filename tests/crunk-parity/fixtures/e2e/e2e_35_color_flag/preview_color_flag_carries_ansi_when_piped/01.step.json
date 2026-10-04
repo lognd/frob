@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_35_color_flag.py::test_preview_color_flag_carries_ansi_when_piped",
+  "setup_deleted": [],
+  "stdin": null
+}

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_18_19_schema.py::test_minimal_spec_loads_with_documented_defaults",
+  "setup_deleted": [],
+  "stdin": null
+}

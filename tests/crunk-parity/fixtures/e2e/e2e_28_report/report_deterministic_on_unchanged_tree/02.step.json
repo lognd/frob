@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--report",
+    "--json"
+  ],
+  "command": "python -m crunk check --report --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_28_report.py::test_report_deterministic_on_unchanged_tree",
+  "setup_deleted": [],
+  "stdin": null
+}

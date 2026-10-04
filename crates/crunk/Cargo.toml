@@ -1,0 +1,37 @@
+[package]
+name = "crunk"
+version = "0.0.0"
+description = "The crunk binary: check and doctor over the shared goblin CLI root."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[lib]
+name = "crunk"
+path = "src/lib.rs"
+
+[[bin]]
+name = "crunk"
+path = "src/main.rs"
+
+[dependencies]
+crunk-check = { version = "0.0.0", path = "../crunk-check" }
+gob-check = { version = "0.0.0", path = "../gob-check" }
+gob-cli = { version = "0.0.0", path = "../gob-cli" }
+gob-config = { version = "0.0.0", path = "../gob-config" }
+gob-rules = { version = "0.0.0", path = "../gob-rules" }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+assert_cmd = "2"
+jsonschema = { version = "0.58.5", default-features = false }
+tempfile = "3"
+toml = "1"
+
+[lints]
+workspace = true

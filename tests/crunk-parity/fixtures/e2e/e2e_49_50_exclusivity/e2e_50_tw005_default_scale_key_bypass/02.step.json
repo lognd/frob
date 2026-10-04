@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "check",
+    "--report",
+    "--json"
+  ],
+  "command": "python -m crunk check --report --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_49_50_exclusivity.py::test_e2e_50_tw005_default_scale_key_bypass",
+  "setup_deleted": [],
+  "stdin": null
+}

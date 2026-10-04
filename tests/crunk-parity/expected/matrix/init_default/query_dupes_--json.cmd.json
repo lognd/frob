@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "query",
+    "dupes",
+    "--json"
+  ],
+  "command": "python -m crunk query dupes --json",
+  "cwd": "fixtures/static/init_default",
+  "exit": 0,
+  "project": "init_default"
+}

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_56_57_58_honesty.py::test_e2e_57_cache_ls_and_prune",
+  "setup_deleted": [],
+  "stdin": null
+}

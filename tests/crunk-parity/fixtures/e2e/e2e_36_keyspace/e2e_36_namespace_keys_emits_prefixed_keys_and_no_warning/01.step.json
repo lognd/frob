@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_36_keyspace.py::test_e2e_36_namespace_keys_emits_prefixed_keys_and_no_warning",
+  "setup_deleted": [],
+  "stdin": null
+}

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "preview"
+  ],
+  "command": "python -m crunk preview",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_35_color_flag.py::test_preview_unflagged_piped_run_stays_plain",
+  "setup_deleted": [],
+  "stdin": null
+}

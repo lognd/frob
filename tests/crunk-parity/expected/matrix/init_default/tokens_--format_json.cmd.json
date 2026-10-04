@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens",
+    "--format",
+    "json"
+  ],
+  "command": "python -m crunk tokens --format json",
+  "cwd": "fixtures/static/init_default",
+  "exit": 0,
+  "project": "init_default"
+}

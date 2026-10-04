@@ -1,0 +1,95 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T12:17:16Z"
+digest = "ff902e18c98b13f505338f234aeb75b42cd778508443a6bd4a39b04ae97f35ed"
+exit_code = 0
+inline = '''
+   Compiling memchr v2.8.3
+   Compiling aho-corasick v1.1.5
+   Compiling serde_json v1.0.151
+   Compiling regex-automata v0.4.18
+   Compiling regex v1.13.1
+   Compiling bstr v1.13.1
+   Compiling matchers v0.2.0
+   Compiling error_set_impl v0.9.2
+   Compiling gix-validate v0.11.4
+   Compiling gix-utils v0.3.6
+   Compiling gix-path v0.12.6
+   Compiling gix-error v0.3.2
+   Compiling gix-quote v0.8.0
+   Compiling gix-date v0.16.0
+   Compiling gix-chunk v0.8.0
+   Compiling gix-actor v0.42.0
+   Compiling gix-bitmap v0.4.0
+   Compiling gix-packetline v0.22.2
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling gix-config-value v0.19.1
+   Compiling gix-url v0.38.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-ignore v0.22.1
+   Compiling schemars v1.2.2
+   Compiling gix-pathspec v0.20.0
+   Compiling gix-imara-diff v0.2.5
+   Compiling gob-log v0.0.0 (<worktree>/crates/gob-log)
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-traverse v0.61.0
+   Compiling gob-rules v0.0.0 (<worktree>/crates/gob-rules)
+   Compiling gix-revision v0.49.1
+   Compiling gix-index v0.55.0
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-shallow v0.13.0
+   Compiling gix-refspec v0.45.1
+   Compiling gix-worktree v0.56.0
+   Compiling gix-transport v0.59.2
+   Compiling gix-submodule v0.34.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-odb v0.84.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-status v0.34.1
+   Compiling gix-merge v0.20.1
+   Compiling gob-config v0.0.0 (<worktree>/crates/gob-config)
+   Compiling gob-exec v0.0.0 (<worktree>/crates/gob-exec)
+   Compiling gob-diagnostics v0.0.0 (<worktree>/crates/gob-diagnostics)
+   Compiling error_set v0.9.2
+   Compiling gix v0.87.1
+   Compiling gob-cli v0.0.0 (<worktree>/crates/gob-cli)
+   Compiling gob-testsupport v0.0.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-git v0.0.0 (<worktree>/crates/gob-git)
+   Compiling frob-ledger v0.0.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.0.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.0.0 (<worktree>/crates/frob-release)
+   Compiling frob-evidence v0.0.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 35.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ad5f583d-756d-4385-90e5-5b017244ad48 with nextest profile: default
+    Starting 2 tests across 3 binaries (46 tests skipped)
+        PASS [   0.920s] frob-evidence::evidence a_pytest_node_id_runs_just_that_test
+        PASS [   0.943s] frob-evidence::evidence pytest_evidence_records_per_test_results_as_a_measured_record
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.944s] 2 tests run: 2 passed, 46 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E 'test(=pytest_evidence_records_per_test_results_as_a_measured_record) | test(=a_pytest_node_id_runs_just_that_test)'"
+size = 3304
+status = "measured"
+tests = ["a_pytest_node_id_runs_just_that_test", "pytest_evidence_records_per_test_results_as_a_measured_record"]
+at = "2026-10-04T12:17:16Z"
+actor = "lognd"
+rev = 1

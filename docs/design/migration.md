@@ -51,6 +51,14 @@ reviewed like any other change. The selection is data:
   cluster, every open ticket that would import with its cluster, and the
   redaction notes; `--all` restores the unselective import.
 
+- `--merge` lets `--to` be an existing v2 ledger instead of an empty one: only
+  new ticket directories are written, and the run refuses up front, before
+  writing anything, if any generated id or alias collides with the ledger.
+  Redaction and the home-path rule apply as for a fresh import. The importer
+  does not commit; the files are left for the caller to commit.
+- `--open-category triage|todo` (default `todo`) sets the category in the
+  create event of imported open tickets; closed history is unaffected.
+
 Imported text is redacted before it becomes an event, with the same rules as
 the ledger write path: absolute home paths become `<repo>`, `~` or `~other`,
 and local private-term rules (`privacy.toml` in the user config and the git

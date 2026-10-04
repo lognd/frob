@@ -1,0 +1,24 @@
+[package]
+name = "crunk-check"
+version = "0.0.0"
+description = "crunk check: the Crunk product over the shared check pipeline and the gob.sibling/1 document."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[dependencies]
+gob-check = { version = "0.0.0", path = "../gob-check" }
+gob-config = { version = "0.0.0", path = "../gob-config" }
+gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
+gob-rules = { version = "0.0.0", path = "../gob-rules" }
+gob-text = { version = "0.0.0", path = "../gob-text" }
+serde_json = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true

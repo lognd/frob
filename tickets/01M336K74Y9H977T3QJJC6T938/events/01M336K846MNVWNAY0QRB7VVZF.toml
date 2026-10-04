@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-22: filed twice; T-5279 is the promoted copy (absorbed by T-5279)"
+at = "2026-09-22T00:00:01Z"
+actor = "import"
+rev = 1

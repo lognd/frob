@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "map",
+    "--json"
+  ],
+  "command": "python -m crunk map --json",
+  "cwd": "fixtures/static/init_default",
+  "exit": 0,
+  "project": "init_default"
+}

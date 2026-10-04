@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "violations": [
+    {
+      "rule": "COLOR001",
+      "severity": "error",
+      "path": "styles/components/layout.css",
+      "line": 2,
+      "message": "color #ff0000 is not a palette color; nearest is --color-ink (distance 371.51)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": "--color-ink"
+    },
+    {
+      "rule": "ORG003",
+      "severity": "error",
+      "path": "styles/components/layout.css",
+      "line": 2,
+      "message": "class 'sidebar' does not carry the component prefix 'layout'",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    }
+  ],
+  "counts": {
+    "error": 2,
+    "warning": 0,
+    "waived": 0
+  },
+  "contrast": {
+    "pairs": [
+      {
+        "role": "body",
+        "foreground": "ink",
+        "background": "paper",
+        "ratio": 16.64,
+        "floor": 4.5,
+        "passes": true
+      }
+    ]
+  },
+  "tokens": {
+    "status": "clean"
+  },
+  "unused_tokens": [
+    "--color-accent",
+    "--font-size-12",
+    "--font-size-14",
+    "--font-size-16",
+    "--font-size-20",
+    "--font-size-24",
+    "--font-size-32",
+    "--font-size-48",
+    "--layer-base",
+    "--layer-dropdown",
+    "--layer-overlay",
+    "--layer-toast",
+    "--radius-0",
+    "--radius-16",
+    "--radius-4",
+    "--radius-8",
+    "--space-0",
+    "--space-12",
+    "--space-16",
+    "--space-24",
+    "--space-32",
+    "--space-4",
+    "--space-48",
+    "--space-64",
+    "--space-8"
+  ],
+  "files": {
+    "styles/base/reset.css": {
+      "error": 0,
+      "warning": 0
+    },
+    "styles/components/layout.css": {
+      "error": 2,
+      "warning": 0
+    },
+    "styles/tokens.css": {
+      "error": 0,
+      "warning": 0
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "kind": "find",
+  "results": [
+    {
+      "kind": "component",
+      "name": "Badge",
+      "path": "frontend/Badge.tsx",
+      "classes": 0,
+      "declarations": 1,
+      "value": null,
+      "uses": 3
+    }
+  ]
+}

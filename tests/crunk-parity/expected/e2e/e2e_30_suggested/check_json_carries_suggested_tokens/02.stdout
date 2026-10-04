@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "violations": [
+    {
+      "rule": "TW001",
+      "severity": "warn",
+      "path": "frontend/components/Btn.tsx",
+      "line": 1,
+      "message": "utility 'bg-[#2f6eec]' is unresolved-by-tailwind (no node/tailwindcss resolvable, or --static); skipped rather than guessed from its name",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "COLOR001",
+      "severity": "error",
+      "path": "styles/components/card.css",
+      "line": 2,
+      "message": "color #2f6eec is not a palette color; nearest is --color-accent (distance 2.61)",
+      "fixable": true,
+      "waived": false,
+      "suggested_token": "--color-accent"
+    },
+    {
+      "rule": "SPACE001",
+      "severity": "warn",
+      "path": "styles/components/card.css",
+      "line": 3,
+      "message": "padding: 13px is off the scale; between var(--space-12) and var(--space-16)",
+      "fixable": true,
+      "waived": false,
+      "suggested_token": "--space-12"
+    },
+    {
+      "rule": "TYPE001",
+      "severity": "error",
+      "path": "styles/components/card.css",
+      "line": 4,
+      "message": "font-size: 22px is off the scale; between var(--font-size-20) and var(--font-size-24)",
+      "fixable": true,
+      "waived": false,
+      "suggested_token": "--font-size-20"
+    },
+    {
+      "rule": "RADIUS001",
+      "severity": "warn",
+      "path": "styles/components/card.css",
+      "line": 5,
+      "message": "border-radius: 5px is off the scale; between var(--radius-4) and var(--radius-8)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": "--radius-4"
+    },
+    {
+      "rule": "COLOR002",
+      "severity": "error",
+      "path": "styles/components/card.css",
+      "line": 6,
+      "message": "var(--color-nonexistent) references an undefined token",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    }
+  ],
+  "counts": {
+    "error": 3,
+    "warning": 3,
+    "waived": 0
+  }
+}

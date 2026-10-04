@@ -1,0 +1,43 @@
++++
+id = "01M3AXSDAKF1KYZ3JFG4G0B1Q4"
+title = "SYSDESIGN202: bursty-ingress/fixed-capacity design declaration with no interposed queue"
+type = "task"
+category = "triage"
+priority = "medium"
+parent = "01M3AXSDAZX9B4327J18H8GE7S"
+reporter = "agent"
+created = "2026-09-25T00:00:00Z"
+updated = "2026-09-25T00:00:00Z"
+aliases = ["T-6483"]
+labels = ["milestone:0.539.0", "v1-cluster:B1", "area:grimble"]
+scope = ["src/frob/sysdesign/_admission.py", "tests/fixtures/sysdesign/sysdesign202/**"]
++++
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its story scaffold, none exists on dev yet"
+title: SYSDESIGN203: bursty-ingress/fixed-capacity design declaration with no interposed queue
+kind: feature
+tier: leaf
+parent: T-SYS-SD
+milestone: 0.539.0
+sprint: sysdesign
+points: 2
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its story scaffold" -->
+scope: src/frob/sysdesign/_admission.py, docs/modules/gates.md (SYSDESIGN203 row),
+       tests/fixtures/sysdesign/sysdesign203/**
+blocked_by: []
+tag: Static: design
+
+Research row 5.6: Azure Architecture Center, Queue-Based Load Leveling pattern,
+https://learn.microsoft.com/en-us/azure/architecture/patterns/queue-based-load-leveling
+(fetched, 208 lines). Lint condition: "Design model marks a workload as 'bursty ingress,
+fixed-capacity consumer' with no queue declared between them flags."
+
+Distinct from REL260/261 (queue.bounded_intake, existing): this rule is about the ABSENCE of a
+queue at all between a declared-bursty producer and a declared-fixed-capacity consumer, not
+about a queue's own intake bound once one exists -- REL260/261 has nothing to say if no queue
+node is present in the graph at all.
+
+Acceptance criteria: flags a strata design where a node with `attr bursty` (or equivalent
+high-fanout/high-skew declaration) flows directly (no intervening `queue` node) into a node
+with a fixed `capacity replicas N..N` (no autoscale range). Positive-control fixture:
+tests/fixtures/sysdesign/sysdesign203/bursty-direct-to-fixed-capacity/**.

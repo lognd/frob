@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "explain",
+    "size-112",
+    "--json"
+  ],
+  "command": "python -m crunk explain size-112 --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_51_sizes.py::test_e2e_51_size_export_and_theme_and_suggested_token",
+  "setup_deleted": [],
+  "stdin": null
+}

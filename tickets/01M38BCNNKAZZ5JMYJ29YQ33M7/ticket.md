@@ -1,0 +1,46 @@
++++
+id = "01M38BCNNKAZZ5JMYJ29YQ33M7"
+title = "CI: make core-wheels narrows uv sync to --extra serve, dropping sqlfluff before Typecheck (all 3 legs)"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "high"
+points = 1
+reporter = "agent"
+created = "2026-09-24T00:00:00Z"
+updated = "2026-09-24T00:00:02Z"
+aliases = ["T-5811"]
+labels = ["milestone:v0.534.0"]
+scope = ["Makefile", "tests/test_ci_workflow_core_wheels.py"]
++++
+
+Found while draining CI run 36086669322 (dev 2d0da515df). ALL THREE
+platform legs (ubuntu/macos/windows) fail at the SAME "Typecheck" step
+with identical errors:
+
+  error[unresolved-import]: Cannot resolve imported module `sqlfluff.core.config`
+  src/frob/sql/_sqlfluff_plugin.py:45
+  (same for sqlfluff.core.plugin, sqlfluff.core.rules, sqlfluff.core.rules.crawlers)
+
+Root-caused directly from the raw job logs: CI's first "Sync deps" step
+runs `uv sync --all-extras --all-groups` (installs sqlfluff==3.5.0,
+confirmed by the log's own "+ sqlfluff==3.5.0" line). A LATER step,
+`make core-wheels` (which depends on the `core` -> `$(STAMP)` Makefile
+chain), re-runs `uv sync --extra serve` via the `$(STAMP): pyproject.toml`
+rule -- this NARROWS the already-full sync back down to just the "serve"
+extra, uninstalling sqlfluff (and chardet/colorama/diff-cover/
+platformdirs/regex/tblib/tqdm) before the "Typecheck" step ever runs
+(confirmed by the log's own "- sqlfluff==3.5.0" uninstall line
+immediately after "uv sync --extra serve").
+
+Because Typecheck fails, every subsequent Test step is skipped on all
+three platforms (and self-gate too, except on windows where it runs
+`if: always()` and then hits its own separate CacheLocked infra failure
+-- see the sibling finding for that, filed/owned separately if not
+already).
+
+Fix: `$(STAMP): pyproject.toml`'s recipe (Makefile) syncs a narrower
+extra set than CI's own initial full sync assumed would persist through
+the rest of the job -- either widen it to match (`--all-extras
+--all-groups`), or reorder ci.yml so nothing re-narrows the sync between
+the initial "Sync deps" step and "Typecheck".

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_45_selfmap.py::test_e2e_45_selfmap_explain_and_unused",
+  "setup_deleted": [],
+  "stdin": null
+}

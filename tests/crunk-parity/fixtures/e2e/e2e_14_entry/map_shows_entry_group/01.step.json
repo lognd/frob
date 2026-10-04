@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_14_entry.py::test_map_shows_entry_group",
+  "setup_deleted": [],
+  "stdin": null
+}

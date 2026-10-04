@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "kind": "find",
+  "results": [
+    {
+      "kind": "component",
+      "name": "card",
+      "path": "styles/components/card.css",
+      "classes": 3,
+      "declarations": 4,
+      "value": null,
+      "uses": 3
+    },
+    {
+      "kind": "class",
+      "name": "card--large",
+      "path": "styles/components/card.css",
+      "classes": null,
+      "declarations": null,
+      "value": null,
+      "uses": 1
+    },
+    {
+      "kind": "class",
+      "name": "card__title",
+      "path": "styles/components/card.css",
+      "classes": null,
+      "declarations": null,
+      "value": null,
+      "uses": 1
+    }
+  ]
+}

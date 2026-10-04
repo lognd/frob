@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "query",
+    "find",
+    "card",
+    "--json"
+  ],
+  "command": "python -m crunk query find card --json",
+  "cwd": "fixtures/static/screens_v1_1",
+  "exit": 0,
+  "project": "screens_v1_1"
+}

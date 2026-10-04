@@ -1,0 +1,10 @@
+kind = "create"
+title = "F-015: frob-suggest hook hand-rename-sed fires on ANY sed -i (markdown/TOML edits included); should only fire when the sed expression touches a Python import statement/module path"
+type = "bug"
+category = "triage"
+priority = "medium"
+aliases = ["T-3817"]
+labels = ["milestone:1.1.0", "v1-cluster:E1"]
+at = "2026-09-05T00:00:00Z"
+actor = "human"
+rev = 1

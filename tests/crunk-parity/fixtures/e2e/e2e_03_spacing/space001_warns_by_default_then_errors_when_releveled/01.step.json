@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_03_spacing.py::test_space001_warns_by_default_then_errors_when_releveled",
+  "setup_deleted": [],
+  "stdin": null
+}

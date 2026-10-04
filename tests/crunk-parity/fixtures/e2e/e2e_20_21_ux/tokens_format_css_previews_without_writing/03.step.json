@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "tokens",
+    "--check",
+    "--format",
+    "css"
+  ],
+  "command": "python -m crunk tokens --check --format css",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_20_21_ux.py::test_tokens_format_css_previews_without_writing",
+  "setup_deleted": [],
+  "stdin": null
+}

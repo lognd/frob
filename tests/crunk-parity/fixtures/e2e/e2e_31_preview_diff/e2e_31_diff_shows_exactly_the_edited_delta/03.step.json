@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "diff",
+    "<ROOT>/other-project"
+  ],
+  "command": "python -m crunk diff <ROOT>/other-project",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_31_preview_diff.py::test_e2e_31_diff_shows_exactly_the_edited_delta",
+  "setup_deleted": [],
+  "stdin": null
+}

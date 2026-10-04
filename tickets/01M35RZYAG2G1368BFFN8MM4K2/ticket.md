@@ -1,0 +1,34 @@
++++
+id = "01M35RZYAG2G1368BFFN8MM4K2"
+title = "Post-land sweep residue 2026-09-23_2251: COV001:src/frob/gates/_sql_explain_obligation.py COV002:src/frob/webapp/_a11y_forms_contrast.py COV002:src/frob/webapp/_a11y_statement.py CO"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "medium"
+points = 3
+reporter = "human"
+created = "2026-09-23T00:00:00Z"
+updated = "2026-09-23T00:00:02Z"
+aliases = ["T-5456"]
+labels = ["milestone:0.534.0"]
+scope = ["src/frob/gates/_sql_explain_obligation.py"]
++++
+
+Findings raised by a post-land sweep and disposed against this ticket by the coordinator's runner to keep the quarantine clear. Fix each in scope:
+COV001:src/frob/gates/_sql_explain_obligation.py
+COV002:src/frob/webapp/_a11y_forms_contrast.py
+COV002:src/frob/webapp/_a11y_statement.py
+COV002:src/frob/webapp/_websec_xss.py
+COV002:tests/unit/test_webapp_a11y_forms_contrast.py
+COV002:tests/unit/test_webapp_a11y_statement.py
+COV002:tests/unit/test_websec_sinks.py
+DOC006:docs/modules/webapp-a11y-interaction.md
+DUP002:tests/unit/test_websec_deser.py
+INV003:docs/modules/webapp-websec-deser.md
+OPAQUE001:src/frob/gates/_sql_explain_obligation.py
+OPAQUE001:tests/fixtures/webapp/websec1xx/deser/webesc110_negative/app.py
+OPAQUE001:tests/fixtures/webapp/websec1xx/deser/webesc110_positive/app.py
+OPAQUE001:tests/unit/test_websec_deser.py
+PERF002:src/frob/webapp/_websec_deser.py
+REF002:docs/modules/webapp-websec-deser.md
+WIRE001:src/frob/gates/_sql_explain_obligation.py

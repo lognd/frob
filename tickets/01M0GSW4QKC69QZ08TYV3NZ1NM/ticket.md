@@ -1,0 +1,33 @@
++++
+id = "01M0GSW4QKC69QZ08TYV3NZ1NM"
+title = "Document and enforce: drop --absorbed-by for already-resolved findings, fail only for genuine blockers"
+type = "docs"
+category = "triage"
+priority = "medium"
+reporter = "human"
+created = "2026-08-21T00:00:00Z"
+updated = "2026-08-21T00:00:00Z"
+aliases = ["T-2803"]
+labels = ["milestone:1.0.0", "v1-cluster:F1"]
+scope = ["docs/guides/agent-playbook.md"]
++++
+
+Found while working T-2796 (backlog reproduction measurement).
+
+Agents were instructed to run `frob ticket fail` when a ticket's stated
+defect turned out to already be resolved by landed work. `fail` REQUEUES
+the ticket, so this verdict returns it to the pool for the next agent to
+rediscover and re-measure at full cost (one instance sat requeued this
+way until dropped by hand: T-2692).
+
+The correct split, which needs to be documented and enforced:
+- already resolved by landed work -> `frob ticket drop --absorbed-by <id>`
+  (terminal, names the survivor, preserves the measurement)
+- blocker still genuinely real     -> `frob ticket fail` (requeue is right)
+
+Document this distinction in docs/guides/agent-playbook.md (near section
+5, evidence recording, or a new subsection in section 0) since that page
+is the canonical home this repo already uses for exactly this class of
+process lesson, and every worktree agent reads it per-ticket. Consider
+also a one-line addition to `frob ticket fail --help` noting it requeues
+and is the wrong verb for "already resolved".

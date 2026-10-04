@@ -1,0 +1,1 @@
+export default { theme: { extend: { colors: { accent: "var(--color-accent)" } } } };

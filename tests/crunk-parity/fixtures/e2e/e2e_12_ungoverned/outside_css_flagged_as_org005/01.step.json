@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_12_ungoverned.py::test_outside_css_flagged_as_org005",
+  "setup_deleted": [],
+  "stdin": null
+}

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "tokens"
+  ],
+  "command": "python -m crunk tokens",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_11_stacks.py::test_declared_stacks_pass_check_and_export_tokens",
+  "setup_deleted": [],
+  "stdin": null
+}

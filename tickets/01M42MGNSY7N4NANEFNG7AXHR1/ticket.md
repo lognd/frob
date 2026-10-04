@@ -2,12 +2,13 @@
 id = "01M42MGNSY7N4NANEFNG7AXHR1"
 title = "Closing a ticket blocked by an open ticket succeeds (no no_open_blockers guard)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:59:49Z"
-updated = "2026-10-04T11:57:53Z"
+updated = "2026-10-04T12:57:37Z"
 scope = ["crates/frob-evidence/src/done.rs"]
 
 [[acceptance]]

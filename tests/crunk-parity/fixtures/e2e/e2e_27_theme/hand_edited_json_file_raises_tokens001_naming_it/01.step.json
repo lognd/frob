@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_27_theme.py::test_hand_edited_json_file_raises_tokens001_naming_it",
+  "setup_deleted": [],
+  "stdin": null
+}

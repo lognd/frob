@@ -2,16 +2,17 @@
 id = "01M43ARVS24254G85TMFYH8FGQ"
 title = "crunk binary and crunk-check: Product scaffold, --version, doctor, exit codes"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:46Z"
-updated = "2026-10-04T11:58:18Z"
+updated = "2026-10-04T12:51:36Z"
 idempotency_key = "crunk-plan-bin"
 labels = ["area:crunk"]
-scope = ["crates/crunk/**", "crates/crunk-check/**", "docs/crunk/**", "Cargo.lock"]
+scope = ["crates/crunk/**", "crates/crunk-check/**", "docs/crunk/**", "Cargo.lock", "crates/frob-release/tests/products.rs"]
 
 [[acceptance]]
 text = "Given a directory with no crunk.toml, when `crunk check --json` runs, then it exits with the shared no-config code and the envelope names the remedy"

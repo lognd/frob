@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "check",
+    "--json"
+  ],
+  "command": "python -m crunk check --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_54_pathmode.py::test_e2e_54_path_scoped_run_matches_repo_wide_findings",
+  "setup_deleted": [],
+  "stdin": null
+}

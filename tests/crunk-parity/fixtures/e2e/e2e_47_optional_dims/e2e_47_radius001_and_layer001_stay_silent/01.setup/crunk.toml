@@ -1,0 +1,24 @@
+
+[project]
+css_root = "styles"
+tokens_file = "tokens.css"
+root_font_size = 16
+
+[palette]
+ink = "#1a1a1a"
+paper = "#fafaf7"
+
+[palette.roles]
+body = ["ink", "paper"]
+
+[scales]
+spacing = [0, 4, 8, 12, 16, 24, 32, 48, 64]
+font_sizes = [12, 14, 16, 20, 24, 32, 48]
+radii = []
+
+[typography]
+families = ["Inter", "system-ui", "sans-serif"]
+weights = [400, 500, 700]
+
+[org]
+buckets = ["base", "components", "layouts", "utilities"]

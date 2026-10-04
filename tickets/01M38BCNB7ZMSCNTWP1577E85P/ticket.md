@@ -1,0 +1,38 @@
++++
+id = "01M38BCNB7ZMSCNTWP1577E85P"
+title = "Windows-only: frob-suggest hook dedup-on-repeat fails (4 node ids)"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "medium"
+points = 3
+reporter = "agent"
+created = "2026-09-24T00:00:00Z"
+updated = "2026-09-24T00:00:02Z"
+aliases = ["T-5479"]
+labels = ["milestone:v0.534.0"]
+scope = ["tests/test_hook_frob_suggest.py"]
++++
+
+Found while draining CI run 35951365410 (dev 9e0c89bb19), windows-latest job
+only. 4 failing node ids, all in tests/test_hook_frob_suggest.py:
+- test_second_identical_check_pipeline_is_allowed_through
+- test_second_identical_fleet_probe_is_allowed_through
+- test_third_identical_command_is_blocked_again
+- TestHandRenameEditMultifile::test_frob_suggest_ack_env_var_bypasses_it
+
+Sample failure: test_second_identical_check_pipeline_is_allowed_through
+expects a SECOND identical command to be silently allowed through (the
+frob-suggest hook's own de-dup-on-repeat behavior) but gets the hook's
+BLOCK response again, as if it were treated as a first-time/different
+command. This points at the hook's "have I seen this exact command
+before" cache/dedup key being computed differently on Windows -- likely a
+path-separator or line-ending difference in the command string used as
+the dedup key, so the same logical command hashes/matches differently
+across two invocations on Windows.
+
+Needs someone to read the frob-suggest hook's dedup-key implementation
+with Windows path/newline normalization in mind; not root-caused further
+in this drain pass.
+
+frob:waive BUG002 reason="the defect is windows-only (os.getppid() instability across sequential sibling subprocess.run calls, measured directly on the real Windows mirror) -- BUG002's own re-verification runs on this Linux checkout, where os.getppid() is stable and the bound evidence tests pass at dev regardless of the fix; the defect and the fix were both measured directly on the real Windows mirror instead (winrun, recorded in the done-report): failing with the exact CI symptom at dev, passing after the fix, confirmed on two consecutive Windows runs"

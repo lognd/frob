@@ -1,0 +1,83 @@
+{
+  "version": 2,
+  "violations": [
+    {
+      "rule": "COLOR001",
+      "severity": "error",
+      "path": "styles/entry.css",
+      "line": 3,
+      "message": "color #282828 is not a palette color; nearest is --color-ink (distance 41.99)",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": "--color-ink"
+    },
+    {
+      "rule": "ORG004",
+      "severity": "error",
+      "path": "styles/entry.css",
+      "line": 3,
+      "message": "custom property '--glass-border' defined outside the tokens file",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    },
+    {
+      "rule": "ORG004",
+      "severity": "error",
+      "path": "styles/entry.css",
+      "line": 4,
+      "message": "custom property '--glass-bg' defined outside the tokens file",
+      "fixable": false,
+      "waived": false,
+      "suggested_token": null
+    }
+  ],
+  "counts": {
+    "error": 3,
+    "warning": 0,
+    "waived": 0
+  },
+  "contrast": {
+    "pairs": [
+      {
+        "role": "body",
+        "foreground": "ink",
+        "background": "paper",
+        "ratio": 16.64,
+        "floor": 4.5,
+        "passes": true
+      }
+    ]
+  },
+  "tokens": {
+    "status": "clean"
+  },
+  "unused_tokens": [
+    "--color-accent",
+    "--color-ink",
+    "--color-paper",
+    "--font-family-base",
+    "--font-size-12",
+    "--font-size-16",
+    "--font-size-20",
+    "--layer-base",
+    "--radius-0",
+    "--radius-4",
+    "--radius-8",
+    "--space-0",
+    "--space-12",
+    "--space-16",
+    "--space-4",
+    "--space-8"
+  ],
+  "files": {
+    "styles/entry.css": {
+      "error": 3,
+      "warning": 0
+    },
+    "styles/tokens.css": {
+      "error": 0,
+      "warning": 0
+    }
+  }
+}

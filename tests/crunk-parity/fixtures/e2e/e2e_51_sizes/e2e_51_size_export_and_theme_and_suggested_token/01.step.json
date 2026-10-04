@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "init"
+  ],
+  "command": "python -m crunk init",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_51_sizes.py::test_e2e_51_size_export_and_theme_and_suggested_token",
+  "setup_deleted": [],
+  "stdin": null
+}

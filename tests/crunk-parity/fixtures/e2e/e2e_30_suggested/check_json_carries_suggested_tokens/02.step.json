@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "check",
+    "--json"
+  ],
+  "command": "python -m crunk check --json",
+  "cwd": ".",
+  "env": {},
+  "node": "tests/system/test_e2e_30_suggested.py::test_check_json_carries_suggested_tokens",
+  "setup_deleted": [],
+  "stdin": null
+}

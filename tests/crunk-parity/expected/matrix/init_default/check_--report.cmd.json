@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "check",
+    "--report"
+  ],
+  "command": "python -m crunk check --report",
+  "cwd": "fixtures/static/init_default",
+  "exit": 0,
+  "project": "init_default"
+}

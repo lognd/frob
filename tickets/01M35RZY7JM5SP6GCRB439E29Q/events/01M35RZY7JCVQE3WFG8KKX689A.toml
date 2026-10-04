@@ -1,0 +1,18 @@
+kind = "create"
+title = "SEO121-127: crawl/discovery config"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M2Y1SS0V388SVN54W7PX2ZBW"
+aliases = ["T-5362"]
+labels = ["milestone:0.534.0"]
+scope = ["src/frob/webapp/_seo_crawl.py", "tests/fixtures/webapp/seo1xx/crawl/**", "tests/unit/test_seo_crawl.py", "docs/modules/webapp-seo-crawl.md"]
+body = "robots.txt malformed/Google-Extended decision-record, sitemap.xml schema validation against the sitemaps.org structure, llms.txt advisory-only presence, hreflang, canonical for query-string variants. robots.txt is line-oriented (no grammar needed); sitemap.xml via stdlib xml.etree. Fixture per rule id."
+at = "2026-09-23T00:00:00Z"
+actor = "human"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M336K75PBAVJE0SEABECQYQV"
