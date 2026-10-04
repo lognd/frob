@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Per-rule override tokens instead of a blanket variable is a PT-3 acceptance line for the new frob hook."
+at = "2026-10-04T21:08:30Z"
+actor = "lognd"
+rev = 1
