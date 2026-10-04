@@ -2,11 +2,12 @@
 id = "01M15D1XATQ7CTVE0GEX1B68VK"
 title = "DOC006 cannot express a citation that argues a command must not exist; waiving it measurably increased the error count 5 to 9"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-08-29T00:00:00Z"
-updated = "2026-08-29T00:00:00Z"
+updated = "2026-10-04T21:07:36Z"
 aliases = ["T-3418"]
 labels = ["milestone:0.541.0", "v1-cluster:F1"]
 +++
