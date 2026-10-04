@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Coordinator decision 2026-10-04 (owner delegated): the Python crunk is retired at this preview release, and only once the Rust crunk passes the parity corpus for every command the Python crunk exposes (check, fix, tokens, doctor) on the owner's crunk-using repositories. Until then the crunk wheels stay out of the PyPI upload and frob does not depend on crunk. Retirement steps belong to this ticket: final Python release pointing to the Rust package, archive lognd/crunk, move trusted publishing here, then lift the upload hold-back and add depends = [grimble, crunk] to frob."
+at = "2026-10-04T20:51:28Z"
+actor = "lognd"
+rev = 1
