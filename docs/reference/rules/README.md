@@ -139,6 +139,7 @@
 | [TICK002](TICK002.md) | ticket-not-on-base | error | manual | P+ | true | A ticket id is referenced but absent from the base ref. |
 | [TICK003](TICK003.md) | dangling-link | error | manual | P+ | false | A link or parent names a ticket that does not exist. |
 | [TICK004](TICK004.md) | absolute-home-path | error | deterministic | P+ | false | A committed ledger file holds an absolute home path. |
+| [TICK005](TICK005.md) | private-term | error | deterministic | P+ | false | A committed ledger file or changelog fragment holds a private term. |
 
 ## TODO
 

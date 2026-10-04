@@ -100,6 +100,13 @@ impl Command for Fragment {
                 view.summary.handle
             )));
         }
+        // frob:ticket 01M42EZ8J63P84XFKTR2GXRW72
+        for text in [Some(front.title.as_str()), self.text.as_deref()]
+            .into_iter()
+            .flatten()
+        {
+            ledger.refuse_private(text).map_err(cli_err)?;
+        }
         let kind = self
             .kind
             .as_deref()

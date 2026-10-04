@@ -118,7 +118,7 @@ any (provider, reference) pair's latest record for it passes.
 | `evidence` | ticket | evidence id, verdict, measured value, commit, store URI or inline text | evidence | close guard, done-report |
 | `evidence-bypass` | ticket | reason | `ticket close --no-evidence --reason` | audit, doctor |
 | `changelog-exempt` | ticket | reason | `ticket close` and `land` with `--no-changelog --reason` | audit, REL003, show, brief, release status (folds to no change, so old binaries read it as an uninterpreted kind) |
-| `scrub` | ticket | reason, files rewritten, digests recomputed (file, old, new) | `ticket doctor --fix` (the `TICK004` repair) | audit only; the fold ignores it, `updated` included |
+| `scrub` | ticket | reason, files rewritten, digests recomputed (file, old, new) | `ticket doctor --fix` (the `TICK004` and `TICK005` repair) | audit only; the fold ignores it, `updated` included |
 | `lease` | ticket | op (take, renew, release, steal), holder, scope | start, work, requeue, close | contention, wave |
 | `review` | ticket or exception | subject, verdict, reviewer | review, `exceptions` review of an accept | EXC012, cycle report |
 | `exception` | ticket | kind (accept, defer, hotfix), rule, site | check --fix, land --hotfix | ticket page, close guard |
@@ -474,6 +474,18 @@ repository root and home directory rewritten to `<worktree>`, `<repo>` and `~` b
 computed (the digest covers the stored, scrubbed text), and lease events record the worktree relative
 to the repository parent, so a pushed ledger never carries the local user name; `TICK004` reports
 committed ledger files that still hold an absolute home path (an Error).
+
+Private terms (~2GXRW72) generalize the same scrub. One redaction engine (`frob-ledger::redact`) holds the built-in
+home-path rule and the user's private rules, so detection, repair and audit are shared. Rules are local-only
+(`frob/privacy.toml` in the user config dir and under the git common dir, architecture.md section 6), never committed, and
+a matched term is never echoed anywhere: errors, logs, findings and audit events carry the rule's `replace` label and a
+12-character blake3 hash of its pattern. Write time: every ledger write (new, update, comment, close and drop reasons,
+evidence, milestone and cycle files) and `ticket fragment` refuse text matching a private rule with exit 2
+(`E-REDACT-PRIVATE`) and write nothing. Detection: `TICK005` (Error) flags ledger files and changelog fragments holding a
+term; it is local-only, so where no local rules exist (CI) it reports nothing. Repair: `ticket doctor --fix` applies every
+rule in the one forward `tickets(scrub)` commit with the TICK004 scrub, recomputing inline digests and writing one `scrub`
+audit event per ticket naming files, digests, and each rule by label and hash. Idempotent. Out of scope: commit messages and
+staged source files.
 
 `ticket doctor --fix` repairs a ledger written before that scrub existed, in place and in one forward commit
 (`tickets(scrub): ...`) through the same write path as every other repair; git history is never rewritten. Every ledger

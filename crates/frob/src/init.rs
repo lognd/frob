@@ -597,6 +597,8 @@ impl Command for Init {
         let repo = located.require_repo()?;
         let root = &located.root;
         let cfg = FrobConfig::load(root).map_err(|e| config_refusal(&e))?;
+        // frob:ticket 01M42EZ8J63P84XFKTR2GXRW72
+        frob_ledger::redact::RuleSet::mention_local_files(repo.common_dir());
         let config = sync_config(
             root,
             ctx.dry_run,

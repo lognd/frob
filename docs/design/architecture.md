@@ -344,7 +344,16 @@ frob-ledger reads just the keys it needs and ignores the rest, because
 the binary depends on the crate. The ledger reads the `[tickets]` keys
 without the alias folding that `[lease] shared_files` receives.
 
-Environment variables never change an enforcement outcome. Only two
+Local-only config (owner request, ~2GXRW72). Anything private cannot live in `frob.toml`, because a committed
+list of private terms publishes them. Redaction rules are read from two local files and merged (user first): the
+user config `<platform config dir>/frob/privacy.toml` (`XDG_CONFIG_HOME`, else `APPDATA` on Windows, `~/Library/Application Support`
+on macOS, `~/.config`) and `<git common dir>/frob/privacy.toml`, next to the check cache (`frob/cache/<product>/`). Both hold
+`[[rule]]` tables of `pattern`, `replace`, `regex = false`, `case_sensitive = true`. Nothing writes either file into a work
+tree; `frob init` and `frob doctor` log their locations; a malformed file makes writes refuse (fail closed). The locations
+are resolved by `gob-config` (`user_file`, `repo_file`); the engine is `frob-ledger::redact` (tickets.md section 9).
+
+Environment variables never change an enforcement outcome (the user config location above follows the platform
+convention and only selects which local rule files exist). Only two
 exist: `FROB_LOG` (log filter) and `FROB_AGENT` (actor label, also
 `--actor`). Every other behaviour switch is a flag or a knob above.
 

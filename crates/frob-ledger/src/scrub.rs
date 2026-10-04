@@ -1,4 +1,4 @@
-//! The `TICK004` repair: scrub absolute home paths out of committed ledger files in one forward commit.
+//! The `TICK004` and `TICK005` repair: scrub absolute home paths and private terms out of committed ledger files in one forward commit.
 //!
 //! History is never rewritten. Every file below the tickets directory that holds an absolute
 //! home path is rewritten in place through a caller-supplied text rewrite (the evidence crate's
@@ -27,7 +27,7 @@ use crate::event::{DigestChange, Event, EventBody, ScrubData};
 use crate::fold::fold;
 use crate::id::TicketId;
 use crate::ledger::Ledger;
-use crate::privacy::find_home_path;
+use crate::redact::{Hit, RuleSet};
 
 // frob:ticket 01M41RHBJ03PGD6JY0J6JTAH9Q
 
@@ -35,16 +35,20 @@ use crate::privacy::find_home_path;
 pub const SCRUB_REASON: &str =
     "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)";
 
+/// Why the audit event says private terms were replaced (the rules are named after it, by label and pattern hash).
+pub const REDACT_REASON: &str =
+    "TICK005: private terms replaced by their rule labels (forward commit, history untouched)";
+
 /// The two text functions a scrub needs from the layers above this crate.
 #[derive(Clone, Copy)]
 pub struct ScrubTools<'a> {
-    /// Rewrite absolute paths in a text; identity when there is nothing to do.
+    /// Rewrite absolute paths in a text (the built-in home-path rule); identity when there is nothing to do.
     pub rewrite: &'a dyn Fn(&str) -> String,
     /// Hex digest of bytes, the same function evidence records use.
     pub digest: &'a dyn Fn(&[u8]) -> String,
 }
 
-/// What [`Ledger::scrub_home_paths`] did.
+/// What [`Ledger::scrub`] did.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ScrubReport {
     /// Repo-relative paths of the files rewritten.
@@ -64,19 +68,24 @@ pub struct ScrubReport {
 struct Touched {
     files: Vec<String>,
     digests: Vec<DigestChange>,
+    /// Rules that fired in this ticket's files (labels and hashes, never terms).
+    rules: std::collections::BTreeSet<Hit>,
     /// New text by path relative to the tickets directory.
     new_text: BTreeMap<String, String>,
 }
 
 impl Ledger {
-    /// Scrub every ledger file at the tip that holds an absolute home path, in one commit.
+    /// Scrub every ledger file at the tip that holds an absolute home path or a local private term, in one commit.
     ///
+    /// One engine: detection and the audit come from the local [`RuleSet`] plus the built-in home-path
+    /// rule; the home-path rewrite is `tools.rewrite`, private terms become their rule labels.
     /// Idempotent: a clean ledger yields an empty report and no commit.
     ///
     /// # Errors
     ///
     /// Git read or commit failures, or a ticket whose scrubbed events no longer fold.
-    pub fn scrub_home_paths(&self, tools: &ScrubTools<'_>) -> Result<ScrubReport> {
+    pub fn scrub(&self, tools: &ScrubTools<'_>) -> Result<ScrubReport> {
+        let rules = self.redaction()?.clone().with_home_path();
         let mut report = ScrubReport::default();
         let ref_name = self.ledger_ref()?;
         let Some(tip) = self.tip_of(&ref_name)? else {
@@ -92,21 +101,22 @@ impl Ledger {
             let Some(bytes) = self.repo().read_blob_at(&hex, &path)? else {
                 continue;
             };
-            if find_home_path(&bytes).is_none() {
+            let fired = rules.hits(&bytes);
+            if fired.is_empty() {
                 continue;
             }
             let Ok(old) = String::from_utf8(bytes) else {
                 tracing::warn!(
                     path,
-                    "ledger file with a home path is not UTF-8; left alone"
+                    "ledger file with a redaction hit is not UTF-8; left alone"
                 );
                 report.unresolved.push(path);
                 continue;
             };
-            let Some((new, digests)) = rewrite_file(&path, &old, tools) else {
+            let Some((new, digests)) = rewrite_file(&path, &old, tools, &rules) else {
                 tracing::warn!(
                     path,
-                    "home path survives the rewrite; reported, not guessed"
+                    "a redaction hit survives the rewrite; reported, not guessed"
                 );
                 report.unresolved.push(path);
                 continue;
@@ -117,6 +127,7 @@ impl Ledger {
                     let t = touched.entry(id).or_default();
                     t.files.push(path.clone());
                     t.digests.extend(digests);
+                    t.rules.extend(fired);
                     t.new_text.insert(rel.clone(), new.clone());
                 }
                 None => others.push(path.clone()),
@@ -137,7 +148,7 @@ impl Ledger {
             let ev = Event::new(
                 &actor,
                 EventBody::Scrub(ScrubData {
-                    reason: SCRUB_REASON.to_owned(),
+                    reason: reason_of(&t.rules),
                     files: t.files.clone(),
                     digests: t.digests.clone(),
                 }),
@@ -149,7 +160,7 @@ impl Ledger {
             report.tickets.push(*id);
         }
         let message = format!(
-            "tickets(scrub): absolute home paths removed from {} files ({} tickets, {} digests recomputed)",
+            "tickets(scrub): home paths and private terms removed from {} files ({} tickets, {} digests recomputed)",
             report.files.len(),
             report.tickets.len(),
             report.digests
@@ -218,6 +229,21 @@ impl Ledger {
     }
 }
 
+/// The audit reason for a ticket: the home-path text, the private-term text, and the rules by label and hash.
+fn reason_of(rules: &std::collections::BTreeSet<Hit>) -> String {
+    let home = rules.iter().any(|h| h.builtin);
+    let private: Vec<String> = rules
+        .iter()
+        .filter(|h| !h.builtin)
+        .map(Hit::to_string)
+        .collect();
+    match (home, private.is_empty()) {
+        (_, true) => SCRUB_REASON.to_owned(),
+        (false, false) => format!("{REDACT_REASON}: {}", private.join(", ")),
+        (true, false) => format!("{SCRUB_REASON}; {REDACT_REASON}: {}", private.join(", ")),
+    }
+}
+
 /// The ticket directory a path (relative to the tickets directory) belongs to.
 fn ticket_of(rel: &str) -> Option<TicketId> {
     rel.split('/').next()?.parse().ok()
@@ -228,9 +254,10 @@ fn rewrite_file(
     path: &str,
     old: &str,
     tools: &ScrubTools<'_>,
+    rules: &RuleSet,
 ) -> Option<(String, Vec<DigestChange>)> {
-    let mut new = (tools.rewrite)(old);
-    if new == old || find_home_path(new.as_bytes()).is_some() {
+    let mut new = rules.apply_private(&(tools.rewrite)(old));
+    if new == old || !rules.hits(new.as_bytes()).is_empty() {
         return None;
     }
     let mut digests = Vec::new();

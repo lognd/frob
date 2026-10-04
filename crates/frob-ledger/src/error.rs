@@ -51,6 +51,14 @@ error_set! {
             /// What is wrong.
             message: String,
         },
+        /// The text matches a local private-term rule (exit 2); carries the rule label and pattern hash, never the term.
+        #[display("E-REDACT-PRIVATE: text matches the private-term rule `{label}` (pattern hash {hash}); nothing was written")]
+        Redacted {
+            /// The rule's replace label.
+            label: String,
+            /// Short hash of the rule's pattern.
+            hash: String,
+        },
         /// A link breaks a topology rule (self link, cycle, second origin, ...).
         #[display("{code}: {message}")]
         LinkRejected {
@@ -127,6 +135,12 @@ impl LedgerError {
         use RefusalClass::{GuardNeedsAction, GuardRetryByWaiting, UsageError};
         let r = match self {
             Self::Invalid { message } => Refusal::new("E-TICKET-INPUT", UsageError, message),
+            Self::Redacted { label, hash } => Refusal::new(
+                "E-REDACT-PRIVATE",
+                UsageError,
+                format!("text matches the private-term rule `{label}` (pattern hash {hash}); nothing was written"),
+            )
+            .with_remedy("reword the text without the private term (rules live only in local privacy.toml files)"),
             Self::LinkRejected { code, message } => Refusal::new(*code, GuardNeedsAction, message),
             Self::Terminal { message } => {
                 Refusal::new("E-TICKET-TERMINAL", GuardNeedsAction, message)

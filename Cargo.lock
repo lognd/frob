@@ -975,14 +975,17 @@ dependencies = [
 name = "frob-ledger"
 version = "0.0.0"
 dependencies = [
+ "blake3",
  "criterion",
  "error_set",
+ "gob-config",
  "gob-diagnostics",
  "gob-git",
  "gob-macros",
  "gob-rules",
  "inventory",
  "jiff",
+ "regex",
  "rusqlite",
  "schemars",
  "serde",

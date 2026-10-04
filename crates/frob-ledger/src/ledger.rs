@@ -15,6 +15,7 @@ use crate::fold::fold;
 use crate::id::{EventId, TicketId, compute_handles, display_handle};
 use crate::index::Index;
 use crate::model::Ticket;
+use crate::redact::{RedactError, RuleSet};
 
 const EMPTY_TREE: &str = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 const MAX_RECONCILE: u32 = 3;
@@ -90,6 +91,8 @@ pub struct Ledger {
     pub(crate) repo: Repo,
     pub(crate) cfg: LedgerConfig,
     index_path: PathBuf,
+    /// Local private-term rules, loaded on first use; a load failure is kept so writes fail closed.
+    redact: std::sync::OnceLock<std::result::Result<RuleSet, RedactError>>,
 }
 
 /// The index synced to one ledger tip, with the facts a writer needs.
@@ -140,7 +143,49 @@ impl Ledger {
             repo,
             cfg,
             index_path,
+            redact: std::sync::OnceLock::new(),
         }
+    }
+
+    /// Replace the local private-term rules (tests and callers that load rules themselves).
+    #[must_use]
+    pub fn with_redaction(self, rules: RuleSet) -> Self {
+        let cell = std::sync::OnceLock::new();
+        let _ = cell.set(Ok(rules));
+        Self {
+            redact: cell,
+            ..self
+        }
+    }
+
+    /// The local private-term rules (user file plus git-common-dir file), loaded once.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::Invalid`] when a local privacy file is unreadable or malformed: writes refuse
+    /// rather than run unprotected.
+    pub fn redaction(&self) -> Result<&RuleSet> {
+        self.redact
+            .get_or_init(|| RuleSet::load_local(self.repo.common_dir()))
+            .as_ref()
+            .map_err(|e| LedgerError::invalid(e.to_string()))
+    }
+
+    /// Refuse `text` that matches a private-term rule, naming the rule label and a pattern hash, never the term.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::Redacted`], or [`LedgerError::Invalid`] when the local rules cannot be loaded.
+    pub fn refuse_private(&self, text: &str) -> Result<()> {
+        let rules = self.redaction()?;
+        if let Some(hit) = rules.first_private_hit(text) {
+            tracing::warn!(rule = %hit, "write refused: text matches a private-term rule");
+            return Err(LedgerError::Redacted {
+                label: hit.label,
+                hash: hit.hash,
+            });
+        }
+        Ok(())
     }
 
     /// The underlying repository.
@@ -380,6 +425,9 @@ impl Ledger {
     /// The frontmatter is re-folded from every event (existing plus new), so
     /// the commit always satisfies `fold == frontmatter`.
     pub(crate) fn commit_events(&self, verb: &str, id: TicketId, new: &[Event]) -> Result<Applied> {
+        for ev in new {
+            self.refuse_private(&ev.to_toml()?)?;
+        }
         let Synced {
             mut index,
             ref_name,

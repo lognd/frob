@@ -61,6 +61,9 @@ impl Ledger {
         let ref_name = self.ledger_ref()?;
         let mut rel = Vec::with_capacity(changes.len());
         for (path, bytes) in changes {
+            if let Some(b) = bytes {
+                self.refuse_private(&String::from_utf8_lossy(b))?;
+            }
             rel.push((RelPath::new(path.clone())?, bytes.clone()));
         }
         let opts = CommitOptions {

@@ -7,7 +7,7 @@ use frob_ack::{Affect001, Drift001, Drift002, Drift003};
 use frob_lease::{LeaseConfig, LeaseStore};
 use frob_ledger::TicketId;
 use frob_ledger::guards::{LeaseCheck, NoLeases};
-use frob_ledger::rules::{Tick001, Tick003, Tick004};
+use frob_ledger::rules::{Tick001, Tick003, Tick004, Tick005};
 use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
@@ -82,6 +82,27 @@ fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
     match state.ledger.home_path_findings() {
         Ok(found) => out.extend(found),
         Err(err) => tracing::warn!(%err, "ledger home-path scan failed; TICK004 not evaluated"),
+    }
+    out.extend(private_term_findings(inputs, state));
+    out
+}
+
+// frob:ticket 01M42EZ8J63P84XFKTR2GXRW72
+/// `TICK005` for ledger files and changelog fragments holding a local private term; local-only, so none without local rules.
+fn private_term_findings(inputs: &FrobInputs, state: &snapshot::LedgerState) -> Vec<Finding> {
+    let mut out = match state.ledger.private_term_findings() {
+        Ok(found) => found,
+        Err(err) => {
+            tracing::warn!(%err, "private-term scan failed; TICK005 not evaluated");
+            return Vec::new();
+        }
+    };
+    if let Ok(rules) = state.ledger.redaction() {
+        out.extend(frob_ledger::redact::fragment_findings(
+            &inputs.root,
+            "changelog.d",
+            rules,
+        ));
     }
     out
 }
@@ -302,7 +323,12 @@ impl Product for Frob {
             ),
             RepoGroup::new(
                 "repo:ledger",
-                vec![Tick001.meta(), Tick003.meta(), Tick004.meta()],
+                vec![
+                    Tick001.meta(),
+                    Tick003.meta(),
+                    Tick004.meta(),
+                    Tick005.meta(),
+                ],
                 |s: &Snapshot<Self>, _| ledger_findings(&s.inputs),
             ),
         ]
@@ -311,6 +337,15 @@ impl Product for Frob {
     fn repo_digest(&self, snap: &Snapshot<Self>) -> Vec<u8> {
         let mut out = b"ledger\0".to_vec();
         out.extend_from_slice(snap.shared.ledger_tip.as_bytes());
+        // Local private rules decide TICK005; a changed rule set must not replay a cached result.
+        if let Some(rules) = snap
+            .inputs
+            .ledger
+            .as_ref()
+            .and_then(|l| l.ledger.redaction().ok())
+        {
+            out.extend_from_slice(rules.fingerprint().as_bytes());
+        }
         out.extend_from_slice(format!("{:?}", snap.inputs.invariants.forbid_imports).as_bytes());
         out
     }

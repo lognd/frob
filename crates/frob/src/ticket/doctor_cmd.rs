@@ -94,7 +94,7 @@ impl Command for TicketDoctor {
             Arg::new("fix")
                 .long("fix")
                 .action(ArgAction::SetTrue)
-                .help("Rewrite frontmatter that differs from its events (TICK001, E-PM-DRIFT) and scrub absolute home paths from the ledger in one commit (TICK004)"),
+                .help("Rewrite frontmatter that differs from its events (TICK001, E-PM-DRIFT) and scrub absolute home paths (TICK004) and local private terms (TICK005) from the ledger in one commit"),
         )
     }
 
@@ -134,6 +134,8 @@ impl Command for TicketDoctor {
         );
         let mut findings = report.findings;
         findings.extend(ledger.home_path_findings().map_err(cli_err)?);
+        // frob:ticket 01M42EZ8J63P84XFKTR2GXRW72
+        findings.extend(ledger.private_term_findings().map_err(cli_err)?);
         let ok = report.issues.is_empty() && findings.is_empty() && pm.is_clean();
         let data = DoctorData {
             tickets: report.tickets,
@@ -170,7 +172,7 @@ fn scrub_ledger(ledger: &frob_ledger::Ledger) -> Result<ScrubReport, CliError> {
         rewrite: &rewrite,
         digest: &|b: &[u8]| digest_hex(b),
     };
-    let report = ledger.scrub_home_paths(&tools).map_err(cli_err)?;
+    let report = ledger.scrub(&tools).map_err(cli_err)?;
     tracing::info!(
         files = report.files.len(),
         tickets = report.tickets.len(),
