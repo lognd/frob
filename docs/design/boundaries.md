@@ -161,7 +161,8 @@ namespaces families by product so a foreign family is never unknown.
 | GPOL | grimble | grimble-lints | user policy over code; `rules/*.grl.toml` next to grimble.toml and `[[policy]]` in grimble.toml |
 | PATH | grimble | grimble-lints | host-path portability, PATH001-PATH003 (rules.md section 3.1, D86); GRL rules in the standard pack; knobs in `grimble.toml` `[path]` |
 | COLOR, SPACE, TYPE, RADIUS, SIZE, LAYER, CONTRAST, ORG, TW, BP | crunk | crunk-rules | notes/crunk.md section 4 |
-| WEBSEC, A11Y, SQL, SEO, COMPLY, WEBPERF, LAUNCH, ROUTE; STORE, SYSDESIGN, GRAMMAR | crunk | crunk packs (crunk-web, crunk-sysdesign) | D88: web-app and system-design lint, moved from v1 frob; GRL rules in crunk packs; v1 catalogs in notes/v1/gates-and-rules.md section 11 and the v1 backlog clusters B1-B2 |
+| A11Y, SEO, LAUNCH, WEBPERF (markup and assets) | crunk | crunk pack crunk-web | D88/D89: front-end web lint moved from v1 frob; v1 catalog in notes/v1/gates-and-rules.md section 11 |
+| WEBSEC (into SEC), SQL, COMPLY (with PII), ROUTE, WEBPERF (server); STORE, SYSDESIGN, GRAMMAR | grimble | grimble packs grimble-websec and grimble-sysdesign | D89: code, data and system-design lint moved from v1 frob; v1 catalog section 11 and v1 backlog clusters B1-B2 |
 | GALLERY | crunk | crunk-gallery | gallery checks |
 | GEN | this repo only | not a registry family | `cargo dev gen --check` runs as a `[[check.tool]]` stage in this repo's frob.toml; its output maps to GEN001 |
 | PROC and the layering rules | this repo only | gob-dev | repo-internal rules over Cargo metadata; not shipped |

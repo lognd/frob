@@ -1,0 +1,37 @@
++++
+id = "01M43ATDG0RG5DP9PVFAKETJJH"
+title = "crunk-gallery (opt-in): manifest v1-v3, schemas, enumerate and GALLERY001-005"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+reporter = "lognd"
+created = "2026-10-04T11:29:37Z"
+updated = "2026-10-04T11:29:37Z"
+idempotency_key = "crunk-plan-gal1"
+labels = ["area:crunk"]
+scope = ["crates/crunk-gallery/**", "docs/schemas/crunk-gallery-*.json", "crates/crunk/Cargo.toml", "Cargo.lock"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M43ARX764095Q4VWABWXXV5H"
+
+[[links]]
+kind = "blocked-by"
+target = "01M43ATASM383KB9130JY79XVV"
+
+[[acceptance]]
+text = "Given the manifest fixtures v1-v3, when validated, then they pass the shipped schemas and a broken one fails with a located error"
+bound = false
+
+[[acceptance]]
+text = "Given screens and platforms, when enumerated, then the cell list equals the Python list"
+bound = false
+
+[[acceptance]]
+text = "Given the default build, when `crunk gallery check` is run, then it reports the feature is not built in with the remedy"
+bound = false
++++
+
+Opt-in crate behind a `gallery` cargo feature of `crunk` (off by default, so the default binary and PyPI wheel stay small; owner decision recorded as a design gap). Port gallery manifest (v1, v2, v3 schemas from the crunk repository schemas/ into docs/schemas), enumerate (V*S*B cells), cells, check_report, and GALLERY001-005 (005 warn). Config comes from crunk-spec [[platform]]/[[screen]]. Port tests/unit/test_gallery_manifest.py, _enumerate, _cells, _check_report, test_rules_gallery.py and the fixtures screens_v1_1, gallery005_routes.

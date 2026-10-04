@@ -170,11 +170,13 @@ language whose adapter lacks the path-conversion roles reports
 Unresolved, never clean. This repository raises PATH002 and PATH003 to
 Error in its own config.
 
-Moved to crunk (D88, owner decision 2026-10-04): the seven web-app
-families (WEBSEC, A11Y, SQL, SEO, COMPLY, WEBPERF, LAUNCH; 249 v1 ids plus
-the framework-specific ROUTE rules) and the STORE/SYSDESIGN/GRAMMAR
-system-design family (102 v1 backlog tickets). They are crunk rule packs
-on the same public pack mechanism (D76), not frob or grimble core.
+Moved out of frob core (D88, refined by D89, owner decisions 2026-10-04),
+split by the products.md boundary (grimble models systems and code in any
+language; crunk models the rendered front end): to crunk as packs, A11Y,
+SEO, LAUNCH and the markup and asset part of WEBPERF; to grimble as packs,
+WEBSEC (joining the SEC security family), SQL, COMPLY (with PII), ROUTE,
+the server part of WEBPERF, and the STORE/SYSDESIGN/GRAMMAR system-design
+family. All are packs on the public pack mechanism (D76), not core.
 
 Dropped from core (optional packs or gone):
 PERF lexical set, EXHAUST/FFI/SUPPRESS/CONFIGPATH/PKG/NATIVE/PORT/

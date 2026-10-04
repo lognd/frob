@@ -1,0 +1,8 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-dev/src/import_v1.rs", "crates/gob-dev/src/import_v1/**", "docs/migration/**", "docs/design/migration.md"]
+new = ["crates/gob-dev/src/import_v1.rs", "crates/gob-dev/src/import_v1/**", "docs/migration/**", "docs/design/migration.md", "crates/gob-dev/src/main.rs", "crates/gob-dev/tests/import_v1.rs", "crates/gob-dev/Cargo.toml", "Cargo.lock"]
+reason = "dry-run flags, test updates, gob-git dependency"
+at = "2026-10-04T11:19:50Z"
+actor = "lognd"
+rev = 1

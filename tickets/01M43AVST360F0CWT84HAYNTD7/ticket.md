@@ -1,0 +1,37 @@
++++
+id = "01M43AVST360F0CWT84HAYNTD7"
+title = "OWNER STEP: switch the PyPI trusted publisher of `crunk` to this repository's release.yml"
+type = "chore"
+category = "todo"
+priority = "medium"
+points = 1
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+reporter = "lognd"
+created = "2026-10-04T11:30:22Z"
+updated = "2026-10-04T11:30:22Z"
+idempotency_key = "crunk-plan-owner_pypi"
+labels = ["area:crunk", "owner"]
+scope = ["docs/crunk/retire.md"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M43AVKMT52QCG7DGNQ4J906S"
+
+[[links]]
+kind = "blocked-by"
+target = "01M43AVMZGQ4JYB8QYWAYA6294"
+
+[[acceptance]]
+text = "Given the PyPI project settings, when listed, then this repository's release.yml is a trusted publisher and lognd/crunk is not"
+bound = false
+
+[[acceptance]]
+text = "Given the next crunk release, when published from this repository, then pip resolves it above every Python-era version"
+bound = false
+
+[[acceptance]]
+text = "Given docs/crunk/retire.md, when read, then it records the date and who performed the step"
+bound = false
++++
+
+Owner only (an agent must not do this). On PyPI project crunk: add this repository's release.yml with environment pypi as a trusted publisher, verify one release published from here, then remove the lognd/crunk publisher (D87: both are publishers meanwhile). Record the date in docs/crunk/retire.md. Version must be above the last Python release (0.1.1.dev57 line).
