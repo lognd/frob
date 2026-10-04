@@ -3,12 +3,12 @@ id = "01M3DG64C705481E6V5X4W9S9S"
 title = "`frob check --fix` TEST010 MOVE handler corrupts Python: re-parse after every Tier-A edit and roll back on failure"
 type = "bug"
 category = "triage"
-priority = "critical"
+priority = "medium"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-09-26T00:00:00Z"
+updated = "2026-10-04T21:07:05Z"
 aliases = ["T-6535"]
-labels = ["milestone:0.534.0", "v1-cluster:C4a"]
+labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/gates/_fix_engine_tier_b.py", "src/frob/gates/_fix_engine_text.py", "src/frob/gates/_fix_engine.py", "tests/unit/gates/test_fix_engine_roundtrip.py", "docs/modules/gates.md"]
 +++
 
