@@ -2,13 +2,13 @@
 id = "01M421F7Q66MW38R7J1JS1VMBC"
 title = "frob finds sibling binaries next to its own executable first, then on PATH (D87)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-03T23:26:59Z"
-updated = "2026-10-03T23:26:59Z"
+updated = "2026-10-04T00:36:08Z"
 scope = ["crates/frob-check/src/sibling.rs", "crates/frob-check/tests/sibling.rs", "docs/design/sibling-contract.md"]
 
 [[acceptance]]
