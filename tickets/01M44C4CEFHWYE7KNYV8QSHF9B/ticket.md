@@ -2,11 +2,11 @@
 id = "01M44C4CEFHWYE7KNYV8QSHF9B"
 title = "gob-testsupport: python probe fails on Windows runners (no python3 name); then require python tests there"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-04T21:11:46Z"
-updated = "2026-10-04T21:11:46Z"
+updated = "2026-10-04T22:24:09Z"
 scope = ["crates/gob-testsupport/src/lib.rs"]
 +++
 
