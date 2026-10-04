@@ -1,0 +1,21 @@
+error[GRL009]: `inner` is used before it is defined
+ --> rules/GRL009.grl:5:18
+  |
+5 |   def outer(x) = inner(x)
+  |                  ^^^^^ used here
+6 |   def inner(x) = x is call
+  |       ----- defined here, after its use
+  |
+  = help: a def may call only the defs written above it; move `def inner` above `def outer`
+  = explain: grimble explain GRL009
+
+error[GRL009]: `walk` calls itself
+ --> rules/GRL009.grl:7:31
+  |
+7 |   def walk(x) = x is call and walk(x)
+  |                               ^^^^^^^ a def cannot recurse
+  |
+  = help: to follow a chain of calls use `reaches ... via calls within N`, which is bounded
+  = explain: grimble explain GRL009
+
+error: aborting due to 2 previous errors

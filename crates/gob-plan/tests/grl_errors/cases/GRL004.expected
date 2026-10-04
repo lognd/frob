@@ -1,0 +1,12 @@
+error[GRL004]: `f` is bound twice
+ --> rules/GRL004.grl:5:8
+  |
+4 |   find f: function
+  |        - first bound here
+5 |   find f: call
+  |        ^ `f` is already bound
+  |
+  = help: rename the second one (`find g: call`); to compare two things, use `==`, which never binds
+  = explain: grimble explain GRL004
+
+error: aborting due to 1 previous error

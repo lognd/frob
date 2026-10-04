@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T04:42:29Z"
+digest = "7d412820fb37360360431486a9343af0313d8eb9d2dc7ea46be2103d92fdaca7"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.10s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 36cb7220-0043-44c3-81c6-c4ef95b2ed55 with nextest profile: default
+    Starting 1 test across 5 binaries (62 tests skipped)
+        PASS [   0.079s] gob-dev ci::tests::remote_step_calls_goway_with_the_exact_argv_and_env_and_names_the_host
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.079s] 1 test run: 1 passed, 62 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(remote_step_calls_goway_with_the_exact_argv)'"
+size = 580
+status = "measured"
+tests = ["ci::tests::remote_step_calls_goway_with_the_exact_argv_and_env_and_names_the_host"]
+at = "2026-10-04T04:42:29Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "test-only: GRL error goldens and harness"
+at = "2026-10-04T05:13:16Z"
+actor = "lognd"
+rev = 1

@@ -211,7 +211,7 @@ fn rewrite_foreign_homes(text: &str) -> String {
 /// The spellings of `root` worth matching: as given, canonical, with `/` separators and with doubled backslashes.
 fn forms(root: &Path) -> Vec<String> {
     let mut bases = vec![root.to_string_lossy().into_owned()];
-    if let Ok(c) = std::fs::canonicalize(root) {
+    if let Ok(c) = gob_exec::canonical(root) {
         bases.push(c.to_string_lossy().into_owned());
     }
     let mut out = Vec::new();

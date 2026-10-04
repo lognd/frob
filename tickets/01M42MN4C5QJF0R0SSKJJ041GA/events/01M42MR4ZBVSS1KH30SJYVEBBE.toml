@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T05:03:54Z"
+digest = "18bb5501f38231002741bbd2fc9cbdd0913c0014dd7751dbda4ae87432f7b36f"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6bbf482d-e779-4465-b955-c765c7762bdf with nextest profile: default
+    Starting 9 tests across 2 binaries
+        PASS [   0.008s] gob-cache::shared primary_and_linked_worktree_share_one_cache_dir
+        PASS [   0.008s] gob-cache tests::null_cache_when_dir_is_a_file
+        PASS [   0.105s] gob-cache tests::artifacts_and_repo_rules_round_trip
+        PASS [   0.105s] gob-cache tests::findings_miss_when_any_key_part_changes
+        PASS [   0.105s] gob-cache tests::engines_never_share_findings_or_repo_rules
+        PASS [   0.105s] gob-cache tests::persists_across_reopen
+        PASS [   0.106s] gob-cache tests::migrates_from_empty_db
+        PASS [   0.107s] gob-cache::shared a_row_written_from_one_checkout_hits_from_the_other
+        PASS [   0.184s] gob-cache::shared two_processes_open_and_write_one_fresh_cache_without_loss
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.185s] 9 tests run: 9 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-cache"
+size = 1181
+status = "measured"
+tests = ["tests::null_cache_when_dir_is_a_file", "tests::artifacts_and_repo_rules_round_trip", "tests::findings_miss_when_any_key_part_changes", "tests::engines_never_share_findings_or_repo_rules", "tests::persists_across_reopen", "tests::migrates_from_empty_db", "primary_and_linked_worktree_share_one_cache_dir", "a_row_written_from_one_checkout_hits_from_the_other", "two_processes_open_and_write_one_fresh_cache_without_loss"]
+at = "2026-10-04T05:03:54Z"
+actor = "lognd"
+rev = 1

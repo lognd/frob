@@ -1,0 +1,23 @@
+rule NOPE006 "recursive-def" {
+  lang rust
+
+  find c: call
+  def outer(x) = inner(x)
+  def inner(x) = x is call
+  def walk(x) = x is call and walk(x)
+  report c "this call matched" when outer(c) and walk(c)
+
+  example fire """
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+  """
+  example clean """
+    fn f(x: u32) -> u32 { x }
+  """
+
+  explain """
+    `dbg!` prints to stderr and is meant for local debugging only.
+
+    ## Remedy
+    Delete the call, or log through `tracing` if the value matters.
+  """
+}
