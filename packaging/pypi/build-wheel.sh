@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the PyPI wheel of every product (products.toml: frob, grimble) for this host, one wheel
+# Build the PyPI wheel of every product (products.toml: frob, grimble, crunk) for this host, one wheel
 # each, each carrying only its own binary (D87). render.py writes each product's maturin project
 # under <target>/pypi/<product>; maturin (bindings=bin) builds it. Never publishes.
 # Usage: build-wheel.sh [--out DIR] [--target TRIPLE] [--product NAME]...
