@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T00:17:35Z"
-updated = "2026-10-04T01:57:20Z"
+updated = "2026-10-04T02:04:44Z"
 scope = [".cargo/config.toml", "crates/gob-dev/src/**", "crates/gob-dev/tests/ci_parity.rs", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
