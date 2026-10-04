@@ -1,0 +1,103 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T23:11:53Z"
+digest = "b0fb4f2be2836cfa6ad909cb1dfc66715a2709f4fad2465ae773e036402d8254"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e8c9ebae-95b4-45ba-b07e-a21b89080661 with nextest profile: default
+    Starting 81 tests across 5 binaries
+        PASS [   0.012s] gob-dev ci::tests::junit_report_gives_suite_time_and_slowest_tests_first
+        PASS [   0.013s] gob-dev ci::tests::goway_binary_path_or_bare_name
+        PASS [   0.016s] gob-dev ci::tests::linux_only_steps_are_reported_skipped_elsewhere
+        PASS [   0.016s] gob-dev ci::tests::missing_target_error_carries_the_rustup_command
+        PASS [   0.017s] gob-dev ci::tests::clippy_windows_declares_target_and_mingw
+        PASS [   0.017s] gob-dev ci::tests::nextest_ci_profile_is_a_hang_guard_not_a_speed_budget
+        PASS [   0.017s] gob-dev ci::tests::host_platform_matches_the_target_os
+        PASS [   0.017s] gob-dev ci::tests::docs_step_sets_rustdocflags_and_nextest_uses_ci_profile
+        PASS [   0.014s] gob-dev ci::tests::pins_come_from_frob_toml
+        PASS [   0.027s] gob-dev ci::tests::a_remote_command_failure_is_a_step_failure_naming_the_host
+        PASS [   0.028s] gob-dev ci::tests::only_heavy_steps_are_offloadable
+        PASS [   0.014s] gob-dev isolation::tests::isolated_non_windows_and_non_rebuilding_runs_pass
+        PASS [   0.014s] gob-dev ci::tests::unknown_step_names_the_valid_ones
+        PASS [   0.014s] gob-dev ci::tests::soft_budget_warns_on_slow_tests_and_a_slow_suite_only
+        PASS [   0.018s] gob-dev ci::tests::stops_at_first_failure_and_keep_going_continues
+        PASS [   0.037s] gob-dev ci::tests::goway_exit_125_is_a_goway_failure_after_retries_not_a_test_failure
+        PASS [   0.014s] gob-dev isolation::tests::windows_rebuild_from_the_shared_target_dir_names_the_alias
+        PASS [   0.024s] gob-dev ci::tests::remote_step_calls_goway_with_the_exact_argv_and_env_and_names_the_host
+        PASS [   0.013s] gob-dev publish::tests::a_failure_stops_the_run_and_a_rerun_resumes_at_the_failed_crate
+        PASS [   0.014s] gob-dev publish::tests::a_different_version_on_the_index_does_not_count
+        PASS [   0.024s] gob-dev ci::tests::steps_not_marked_offload_stay_local
+        PASS [   0.010s] gob-dev publish::tests::cycles_are_an_error_naming_the_stuck_crates
+        PASS [   0.011s] gob-dev publish::tests::cargo_output_is_classified_into_success_rate_limit_or_failure
+        PASS [   0.013s] gob-dev publish::tests::dry_run_prints_the_order_and_publishes_nothing
+        PASS [   0.012s] gob-dev publish::tests::index_lists_matches_the_exact_version_including_yanked
+        PASS [   0.014s] gob-dev publish::tests::index_paths_follow_the_sparse_layout
+        PASS [   0.011s] gob-dev publish::tests::publish_starts_at_the_first_unpublished_crate
+        PASS [   0.012s] gob-dev publish::tests::orders_dependencies_first_and_leaves_out_publish_false
+        PASS [   0.012s] gob-dev publish::tests::path_only_dev_dependencies_do_not_order_or_cycle_but_versioned_ones_do
+        PASS [   0.015s] gob-dev publish::tests::rate_limit_past_the_budget_stops_resumably_naming_the_next_crate
+        PASS [   0.012s] gob-dev publish::tests::reserve_without_apply_lists_missing_names_and_the_plan_and_publishes_nothing
+        PASS [   0.015s] gob-dev publish::tests::reserve_waits_out_a_rate_limit_and_stops_resumably_past_the_budget
+        PASS [   0.016s] gob-dev publish::tests::rate_limit_within_the_budget_waits_and_continues
+        PASS [   0.017s] gob-dev publish::tests::reserve_apply_paces_after_the_burst_and_resumes_past_reserved_names
+        PASS [   0.014s] gob-dev publish::tests::retry_time_comes_from_the_message_or_the_header
+        PASS [   0.011s] gob-dev publish::tests::the_budget_is_shared_across_crates
+        PASS [   0.010s] gob-dev publish::tests::the_placeholder_manifest_has_no_code_and_points_at_the_repository
+        PASS [   0.052s] gob-dev ci::tests::remote_prerequisites_are_probed_on_the_host_and_the_step_is_pinned_to_it
+        PASS [   0.013s] gob-dev publish::tests::unreadable_metadata_is_an_error
+        PASS [   0.010s] gob-dev render::rules::tests::fence_grows_past_inner_backticks
+        PASS [   0.017s] gob-dev publish::tests::waits_for_the_index_between_dependents_and_times_out_if_it_never_shows
+        PASS [   0.019s] gob-dev render::rules::tests::index_row_shows_polarity_and_must_measure
+        PASS [   0.015s] gob-dev render::rules::tests::page_without_examples_has_no_examples_section
+        PASS [   0.012s] gob-dev::ci_parity a_check_missing_from_cargo_dev_ci_fails_naming_it
+        PASS [   0.018s] gob-dev render::rules::tests::page_has_title_table_explanation_examples
+        PASS [   0.022s] gob-dev render::rules::tests::index_groups_by_family_and_escapes
+        PASS [   0.019s] gob-dev tests::finds_workspace_root_from_nested_dir
+        PASS [   0.007s] gob-dev::ci_parity ci_yml_installs_the_windows_target
+        PASS [   0.008s] gob-dev::ci_parity ci_yml_installs_every_linux_step_prerequisite
+        PASS [   0.015s] gob-dev::ci_parity dev_alias_shares_the_workspace_target_dir
+        PASS [   0.026s] gob-dev::ci_parity a_missing_prerequisite_install_fails_naming_it
+        PASS [   0.030s] gob-dev tests::real_workspace_found_regardless_of_compile_time_path
+        PASS [   0.018s] gob-dev::ci_parity ci_definition_sets_require_python_tests_and_pins_pytest
+        PASS [   0.027s] gob-dev::ci_parity a_raw_or_dropped_check_in_ci_yml_fails_naming_it
+        PASS [   0.015s] gob-dev::ci_parity dev_isolated_alias_builds_the_tool_in_its_own_target_dir
+        PASS [   0.017s] gob-dev::ci_parity ci_yml_runs_exactly_the_cargo_dev_ci_steps
+        PASS [   0.016s] gob-dev::generate committed_pages_have_no_orphans_on_disk
+        PASS [   0.022s] gob-dev::ci_parity windows_steps_use_the_isolated_alias_with_the_same_names_and_order
+        PASS [   0.031s] gob-dev::import_v1 imports_maps_and_verifies
+        PASS [   0.031s] gob-dev::generate every_rule_has_a_page_and_every_page_a_rule
+        PASS [   0.031s] gob-dev::import_v1 an_unmapped_open_ticket_stops_the_run
+        PASS [   0.031s] gob-dev::import_v1 home_paths_and_private_terms_are_redacted
+        PASS [   0.026s] gob-dev::import_v1 merge_adds_only_new_ticket_directories
+        PASS [   0.016s] gob-dev::import_v1 renders_the_id_map
+        PASS [   0.053s] gob-dev::generate crunk_config_reference_and_schema_are_generated_apart_from_frobs
+        PASS [   0.019s] gob-dev::import_v1 renders_the_summary_table
+        PASS [   0.068s] gob-dev::generate check_reports_stale_and_missing_files_without_writing
+        PASS [   0.028s] gob-dev::import_v1 refuses_a_non_empty_target
+        PASS [   0.009s] gob-dev::bin/gob-dev tests::gen_check_parses
+        PASS [   0.030s] gob-dev::import_v1 renders_the_migration_report
+        PASS [   0.055s] gob-dev::import_v1 merge_refuses_id_and_alias_collisions_without_writing
+        PASS [   0.009s] gob-dev::bin/gob-dev tests::import_parses
+        PASS [   0.017s] gob-dev::import_v1 ulids_keep_creation_order
+        PASS [   0.009s] gob-dev::bin/gob-dev tests::publish_reserve_parses_and_apply_needs_reserve
+        PASS [   0.040s] gob-dev::import_v1 open_category_triage_places_open_tickets_in_triage
+        PASS [   0.014s] gob-dev::bin/gob-dev tests::publish_parses
+        PASS [   0.028s] gob-dev::import_v1 selection_imports_requirement_bearing_open_tickets_only
+        PASS [   0.122s] gob-dev publish::tests::this_workspace_reads_and_plans_without_a_cycle
+        PASS [   0.251s] gob-dev ci::tests::missing_system_tool_fails_before_running_and_names_the_install_command
+        PASS [   0.183s] gob-dev::generate output_is_deterministic_and_check_passes
+        PASS [   0.503s] gob-dev::generate one_required_reason_and_one_polarity
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.600s] 81 tests run: 81 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev"
+size = 7999
+status = "measured"
+tests = ["a_check_missing_from_cargo_dev_ci_fails_naming_it", "ci_yml_installs_the_windows_target", "ci_yml_installs_every_linux_step_prerequisite", "dev_alias_shares_the_workspace_target_dir", "a_missing_prerequisite_install_fails_naming_it", "ci_definition_sets_require_python_tests_and_pins_pytest", "a_raw_or_dropped_check_in_ci_yml_fails_naming_it", "dev_isolated_alias_builds_the_tool_in_its_own_target_dir", "ci_yml_runs_exactly_the_cargo_dev_ci_steps", "windows_steps_use_the_isolated_alias_with_the_same_names_and_order", "tests::gen_check_parses", "tests::import_parses", "tests::publish_reserve_parses_and_apply_needs_reserve", "tests::publish_parses", "imports_maps_and_verifies", "an_unmapped_open_ticket_stops_the_run", "home_paths_and_private_terms_are_redacted", "merge_adds_only_new_ticket_directories", "renders_the_id_map", "renders_the_summary_table", "refuses_a_non_empty_target", "renders_the_migration_report", "merge_refuses_id_and_alias_collisions_without_writing", "ulids_keep_creation_order", "open_category_triage_places_open_tickets_in_triage", "selection_imports_requirement_bearing_open_tickets_only", "ci::tests::junit_report_gives_suite_time_and_slowest_tests_first", "ci::tests::goway_binary_path_or_bare_name", "ci::tests::linux_only_steps_are_reported_skipped_elsewhere", "ci::tests::missing_target_error_carries_the_rustup_command", "ci::tests::clippy_windows_declares_target_and_mingw", "ci::tests::nextest_ci_profile_is_a_hang_guard_not_a_speed_budget", "ci::tests::host_platform_matches_the_target_os", "ci::tests::docs_step_sets_rustdocflags_and_nextest_uses_ci_profile", "ci::tests::pins_come_from_frob_toml", "ci::tests::a_remote_command_failure_is_a_step_failure_naming_the_host", "ci::tests::only_heavy_steps_are_offloadable", "isolation::tests::isolated_non_windows_and_non_rebuilding_runs_pass", "ci::tests::unknown_step_names_the_valid_ones", "ci::tests::soft_budget_warns_on_slow_tests_and_a_slow_suite_only", "ci::tests::stops_at_first_failure_and_keep_going_continues", "ci::tests::goway_exit_125_is_a_goway_failure_after_retries_not_a_test_failure", "isolation::tests::windows_rebuild_from_the_shared_target_dir_names_the_alias", "ci::tests::remote_step_calls_goway_with_the_exact_argv_and_env_and_names_the_host", "publish::tests::a_failure_stops_the_run_and_a_rerun_resumes_at_the_failed_crate", "publish::tests::a_different_version_on_the_index_does_not_count", "ci::tests::steps_not_marked_offload_stay_local", "publish::tests::cycles_are_an_error_naming_the_stuck_crates", "publish::tests::cargo_output_is_classified_into_success_rate_limit_or_failure", "publish::tests::dry_run_prints_the_order_and_publishes_nothing", "publish::tests::index_lists_matches_the_exact_version_including_yanked", "publish::tests::index_paths_follow_the_sparse_layout", "publish::tests::publish_starts_at_the_first_unpublished_crate", "publish::tests::orders_dependencies_first_and_leaves_out_publish_false", "publish::tests::path_only_dev_dependencies_do_not_order_or_cycle_but_versioned_ones_do", "publish::tests::rate_limit_past_the_budget_stops_resumably_naming_the_next_crate", "publish::tests::reserve_without_apply_lists_missing_names_and_the_plan_and_publishes_nothing", "publish::tests::reserve_waits_out_a_rate_limit_and_stops_resumably_past_the_budget", "publish::tests::rate_limit_within_the_budget_waits_and_continues", "publish::tests::reserve_apply_paces_after_the_burst_and_resumes_past_reserved_names", "publish::tests::retry_time_comes_from_the_message_or_the_header", "publish::tests::the_budget_is_shared_across_crates", "publish::tests::the_placeholder_manifest_has_no_code_and_points_at_the_repository", "ci::tests::remote_prerequisites_are_probed_on_the_host_and_the_step_is_pinned_to_it", "publish::tests::unreadable_metadata_is_an_error", "render::rules::tests::fence_grows_past_inner_backticks", "publish::tests::waits_for_the_index_between_dependents_and_times_out_if_it_never_shows", "render::rules::tests::index_row_shows_polarity_and_must_measure", "render::rules::tests::page_without_examples_has_no_examples_section", "render::rules::tests::page_has_title_table_explanation_examples", "render::rules::tests::index_groups_by_family_and_escapes", "tests::finds_workspace_root_from_nested_dir", "tests::real_workspace_found_regardless_of_compile_time_path", "publish::tests::this_workspace_reads_and_plans_without_a_cycle", "ci::tests::missing_system_tool_fails_before_running_and_names_the_install_command", "committed_pages_have_no_orphans_on_disk", "every_rule_has_a_page_and_every_page_a_rule", "crunk_config_reference_and_schema_are_generated_apart_from_frobs", "check_reports_stale_and_missing_files_without_writing", "output_is_deterministic_and_check_passes", "one_required_reason_and_one_polarity"]
+at = "2026-10-04T23:11:53Z"
+actor = "lognd"
+rev = 1
