@@ -7,7 +7,7 @@ priority = "critical"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T04:51:35Z"
-updated = "2026-10-04T05:13:53Z"
+updated = "2026-10-04T05:26:14Z"
 scope = ["crates/frob-evidence/src/done.rs", "crates/frob-evidence/src/guard.rs", "crates/frob/src/ticket/**", "crates/frob/tests/close_guards.rs", "crates/frob-ledger/src/doctor.rs", "docs/design/tickets.md", "crates/gob-git/src/read.rs", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a ledger with a done ticket whose branch has unmerged commits, when ticket doctor runs, then it reports it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a ticket landed through land, when it closes, then the guard passes"
