@@ -7,8 +7,8 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T04:59:49Z"
-updated = "2026-10-04T13:13:59Z"
-scope = ["crates/gob-git/src/ledger.rs"]
+updated = "2026-10-04T13:31:26Z"
+scope = ["crates/gob-git/src/ledger.rs", "crates/gob-git/tests/ledger.rs"]
 
 [[acceptance]]
 text = "Given a ledger commit made from a linked worktree, when it completes, then the primary checkout has no staged deletion, or the result names the checkout that could not be synced"
