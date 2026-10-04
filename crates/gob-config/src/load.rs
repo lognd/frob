@@ -65,7 +65,7 @@ pub fn load<T: ConfigTable>(root: &Path, product: &str) -> Result<Loaded<T>, Con
 /// wrong-shaped table or mistyped value.
 pub fn load_with<T: ConfigTable>(source: &ConfigSource) -> Result<Loaded<T>, ConfigError> {
     let (root, file_present) = read_table(&source.file)?;
-    build(root, file_present, source)
+    build(&root, file_present, source)
 }
 
 /// Load table `T` from TOML `text` (for example a committed blob) labelled `label`, with no overrides.
@@ -84,17 +84,17 @@ pub fn load_str<T: ConfigTable>(text: &str, label: &Path) -> Result<Loaded<T>, C
         file: label.to_owned(),
         overrides: BTreeMap::new(),
     };
-    build(toml::Value::Table(table), true, &source)
+    build(&toml::Value::Table(table), true, &source)
 }
 
 /// Layer defaults < `root` table < overrides into `T`.
 fn build<T: ConfigTable>(
-    root: toml::Value,
+    root: &toml::Value,
     file_present: bool,
     source: &ConfigSource,
 ) -> Result<Loaded<T>, ConfigError> {
     let desc = T::describe();
-    let mut merged = match lookup(&root, &desc.table) {
+    let mut merged = match lookup(root, &desc.table) {
         Some(toml::Value::Table(t)) => t.clone(),
         Some(_) => {
             return Err(ConfigError::Invalid {
