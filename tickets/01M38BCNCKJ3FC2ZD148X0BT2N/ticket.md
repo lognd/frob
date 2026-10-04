@@ -7,10 +7,14 @@ priority = "medium"
 points = 3
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-09-24T00:00:00Z"
+updated = "2026-10-04T21:07:01Z"
 aliases = ["T-5523"]
 labels = ["milestone:v0.534.0", "v1-cluster:C4a"]
 scope = ["src/frob/app/ticket_runner/__init__.py"]
+
+[[links]]
+kind = "duplicates"
+target = "01M38BCNBFK7KWQYW6DSDFS36Z"
 +++
 
 Found draining CI run 35951365410 (windows-latest self-gate, dev 9e0c89bb19),
