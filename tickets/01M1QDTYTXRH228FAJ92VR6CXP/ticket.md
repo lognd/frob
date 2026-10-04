@@ -2,11 +2,12 @@
 id = "01M1QDTYTXRH228FAJ92VR6CXP"
 title = "F-171: vitest execution under frob's evidence-cmd channel fails with import.meta.url not a file: URL"
 type = "bug"
-category = "triage"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:00Z"
+updated = "2026-10-04T21:06:29Z"
 aliases = ["T-3933"]
 labels = ["milestone:1.1.0", "v1-cluster:C4a"]
 scope = ["src/frob/testing/_collect_ts.py", "src/frob/testing/_runners.py"]
