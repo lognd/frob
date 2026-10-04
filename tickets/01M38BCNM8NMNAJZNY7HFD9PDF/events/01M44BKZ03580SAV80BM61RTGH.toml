@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Review verdict as ticket evidence plus a verification node; uncertain: v2 has review events and attestation providers (tickets.md 2.3) but no verdict-to-node link."
+at = "2026-10-04T21:02:48Z"
+actor = "lognd"
+rev = 1
