@@ -7,7 +7,8 @@ priority = "high"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-05T02:55:52Z"
-updated = "2026-10-05T02:56:03Z"
+updated = "2026-10-05T02:56:21Z"
+scope = [".github/workflows/release.yml", "crates/frob-release/tests/release_workflow.rs", "docs/guides/release.md", "docs/design/releases.md"]
 
 [[acceptance]]
 text = "Given release.yml, when a workflow_dispatch event runs it, then every publishing job is skipped and the tag input is empty"
