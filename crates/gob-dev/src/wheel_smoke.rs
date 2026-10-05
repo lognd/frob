@@ -46,7 +46,7 @@ print(json.dumps({
                       if ".data/scripts/" in n and not n.endswith("/")),
 }))"#;
 
-/// What [`WHEEL_INFO_PY`] reports about one wheel.
+/// What `WHEEL_INFO_PY` reports about one wheel.
 #[derive(Debug, serde::Deserialize)]
 pub struct WheelInfo {
     /// Metadata `Name`.
