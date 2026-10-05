@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
 reporter = "lognd"
 created = "2026-10-05T00:42:18Z"
-updated = "2026-10-05T00:42:47Z"
+updated = "2026-10-05T00:54:11Z"
 
 [[acceptance]]
 text = "Given the workspace, when clippy runs, then any wall-clock or local-zone read outside gob-time is an error"
@@ -15,6 +15,10 @@ bound = false
 
 [[acceptance]]
 text = "Given a command that writes two dates, when it runs across midnight UTC, then both dates come from one clock snapshot"
+bound = false
+
+[[acceptance]]
+text = "Given a release cut at 00:06 UTC while the local zone is on the previous day, when the changelog section is dated, then the date is the UTC day of the command clock (folds ~3SM4VWS)"
 bound = false
 +++
 
