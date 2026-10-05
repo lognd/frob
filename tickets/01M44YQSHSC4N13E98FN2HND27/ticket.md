@@ -2,7 +2,8 @@
 id = "01M44YQSHSC4N13E98FN2HND27"
 title = "gob-languages: C# grammar and comment scanners"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
