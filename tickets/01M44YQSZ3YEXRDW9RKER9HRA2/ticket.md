@@ -2,13 +2,13 @@
 id = "01M44YQSZ3YEXRDW9RKER9HRA2"
 title = "gob-symbols: C# units, attributes, partial types and preprocessor conditions"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:57Z"
-updated = "2026-10-05T02:36:57Z"
+updated = "2026-10-05T03:44:26Z"
 idempotency_key = "d94-sym"
 scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/adapter.rs", "crates/gob-symbols/src/model.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/src/symref.rs", "crates/gob-symbols/Cargo.toml", "crates/gob-symbols/tests/csharp.rs", "Cargo.lock"]
 
