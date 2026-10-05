@@ -1,0 +1,20 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @csharp (comment "// leading note") (unit "class" "impl" name="C" (group "sequence" (lit "name" "C") (lit "public" "public") (lit "class" "class")) (group "sequence" (comment "/// <summary>Does the thing.</summary>") (unit "method" "impl" name="Run" (group "sequence" (lit "name" "Run") (lit "public" "public") (lit "predefined_type" "void") (lit "(" "(") (lit ")" ")")) (group "sequence" (csharp.block (lit "{" "{") (comment "// inside the body") (lit "}" "}")))))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+S3 lexical>S2:Must
+D0 S1 Unit "C" Must
+D1 S2 Unit "Run" Must
+
+== file ==
+fidelity F1 status Complete
+== symbols ==
+tests/corpus/csharp/ops/comment.cs::C Class Public parent=
+tests/corpus/csharp/ops/comment.cs::C.Run Method Public parent=tests/corpus/csharp/ops/comment.cs::C
+== edges ==

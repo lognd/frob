@@ -1,0 +1,23 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @csharp (unit "class" "impl" name="Names" (group "sequence" (lit "name" "Names") (lit "public" "public") (lit "class" "class")) (group "sequence" (unit "const" "impl" name="Title" (group "sequence" (lit "name" "Title") (lit "public" "public") (lit "const" "const") (lit ";" ";") (lit "predefined_type" "string")) (group "sequence" (lit "=" "=") (lit "string_literal" "\"frob // not a comment\""))) (unit "const" "impl" name="Count" (group "sequence" (lit "name" "Count") (lit "public" "public") (lit "const" "const") (lit ";" ";") (lit "predefined_type" "int")) (group "sequence" (lit "=" "=") (lit "integer_literal" "3"))))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+S3 lexical>S2:Must
+S4 lexical>S2:Must
+D0 S1 Unit "Names" Must
+D1 S2 Unit "Title" Must
+D2 S2 Unit "Count" Must
+
+== file ==
+fidelity F1 status Complete
+== symbols ==
+tests/corpus/csharp/ops/lit.cs::Names Class Public parent=
+tests/corpus/csharp/ops/lit.cs::Names.Title Const Public parent=tests/corpus/csharp/ops/lit.cs::Names
+tests/corpus/csharp/ops/lit.cs::Names.Count Const Public parent=tests/corpus/csharp/ops/lit.cs::Names
+== edges ==

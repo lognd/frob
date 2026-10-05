@@ -5,7 +5,7 @@
 //! # Overview
 //!
 //! - [`Adapter`]: the contract `parse`, `fold`, `capabilities`, `fidelity`.
-//!   [`RustAdapter`] (F3), [`PythonAdapter`] (F2), [`MarkdownAdapter`] (F4) and [`OpaqueAdapter`] (F0, for
+//!   [`RustAdapter`] (F3), [`PythonAdapter`] (F2), [`CSharpAdapter`] (F1), [`MarkdownAdapter`] (F4) and [`OpaqueAdapter`] (F0, for
 //!   every file with no adapter) each produce a [`gob_ir::Term`] and a
 //!   [`gob_ir::ScopeGraph`] ([`Folded`]); [`adapters`] lists them and the `inventory`-based registry
 //!   ([`AdapterEntry`]) lets crates that depend on this one add more.
@@ -46,6 +46,8 @@
 
 mod adapter;
 mod crates;
+// frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
+mod csharp;
 mod fold;
 mod graph;
 mod markdown;
@@ -67,6 +69,7 @@ pub use adapter::{
     ParseStatus, Precision,
 };
 pub use crates::CrateDeps;
+pub use csharp::{CSharpAdapter, is_csharp_path};
 /// The facet digest scheme these digests are computed under (recorded in every lock file).
 pub use gob_ir::DIGEST_SCHEME;
 pub use graph::{
@@ -75,9 +78,9 @@ pub use graph::{
 };
 pub use markdown::{MarkdownAdapter, slugify};
 pub use model::{
-    CallRef, CallSite, DeriveDecl, Digests, FacetDigest, FieldDecl, FileSymbols, ImportEdge,
-    LocalBinding, MapKind, MethodSig, Receiver, RefKind, RefSite, RetType, SelfKind, SymbolKind,
-    SymbolRecord, UnitExtras, UseBinding, Visibility, collapse_ws,
+    AttributeFact, CallRef, CallSite, DeriveDecl, Digests, FacetDigest, FieldDecl, FileSymbols,
+    ImportEdge, LocalBinding, MapKind, MethodSig, Receiver, RefKind, RefSite, RetType, SelfKind,
+    SymbolKind, SymbolRecord, UnitExtras, UnitFacts, UnitSpan, UseBinding, Visibility, collapse_ws,
 };
 pub use opaque::OpaqueAdapter;
 pub use pipeline::{

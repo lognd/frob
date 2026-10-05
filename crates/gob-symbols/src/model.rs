@@ -2,6 +2,7 @@
 
 // frob:ticket 01M3Z713F6VY15YSMS15033RN1
 
+use std::collections::HashMap;
 use std::fmt;
 
 use gob_text::{TextRange, TextSize};
@@ -92,8 +93,28 @@ pub enum SymbolKind {
     Pack,
     /// A model `boundary` entity.
     Boundary,
-    /// A Python class.
+    /// A Python or C# class.
     Class,
+    /// A C# namespace (one unit per dotted component).
+    Namespace,
+    /// A C# interface.
+    Interface,
+    /// A C# record or record struct.
+    Record,
+    /// A C# delegate type.
+    Delegate,
+    /// A C# property.
+    Property,
+    /// A C# indexer.
+    Indexer,
+    /// A C# field.
+    Field,
+    /// A C# event (field-like or with accessors).
+    Event,
+    /// A C# instance or static constructor.
+    Constructor,
+    /// A C# user-defined or conversion operator.
+    Operator,
 }
 
 /// Item visibility as seen from outside the crate.
@@ -474,6 +495,48 @@ impl UseBinding {
     }
 }
 
+// frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
+/// One attribute applied to a unit, kept for later vocabulary matching (`[MenuItem("x")]`).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct AttributeFact {
+    /// The attribute type name as written, whitespace removed (`SerializeField`, `UnityEngine.Header`).
+    pub name: String,
+    /// The argument text between the parentheses, whitespace collapsed; empty when there are none.
+    pub args: String,
+    /// The attribute target (`field` in `[field: SerializeField]`), if one is written.
+    pub target: Option<String>,
+}
+
+/// One declaring span of a partial type, with the preprocessor conditions it sits under.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UnitSpan {
+    /// Repo-relative path of the declaring file.
+    pub path: String,
+    /// Byte range of this part inside that file.
+    #[serde(with = "range_serde")]
+    pub span: TextRange,
+    /// The conditions of this part (see [`UnitFacts::conditions`]).
+    pub conditions: Vec<String>,
+}
+
+/// Language facts about one unit that the symbol record has no field for (C# today).
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct UnitFacts {
+    /// The attributes applied to the unit, in source order.
+    pub attributes: Vec<AttributeFact>,
+    /// Preprocessor conditions the unit is declared under, outermost first: `UNITY_EDITOR` for the
+    /// `#if` branch, `!(UNITY_EDITOR)` for its `#else`; both branches always yield units.
+    pub conditions: Vec<String>,
+    /// Base types and interfaces of a type unit, whitespace removed (`MonoBehaviour`, `IFoo<int>`).
+    pub bases: Vec<String>,
+    /// The modifier keywords written on the unit (`public`, `static`, `partial`).
+    pub modifiers: Vec<String>,
+    /// True for a `partial` type: the graph merges its parts into one unit.
+    pub partial: bool,
+    /// The declaring spans of a partial type, one per part in path order; empty for any other unit.
+    pub spans: Vec<UnitSpan>,
+}
+
 /// Facts about one symbol that do not fit [`SymbolRecord`] (no new fields there).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UnitExtras {
@@ -483,6 +546,8 @@ pub struct UnitExtras {
     pub unknown: Vec<String>,
     /// Markdown: sig, own body and all nested sections (G9); `None` elsewhere.
     pub subtree: Option<FacetDigest>,
+    /// C# facts: attributes, conditions, base types, modifiers and partial spans.
+    pub facts: UnitFacts,
 }
 
 /// The per-file extraction result (the cached payload).
@@ -521,4 +586,143 @@ pub struct FileSymbols {
     /// The `#[derive(..)]` traits of each struct and enum declared here.
     #[serde(default)]
     pub derives: Vec<DeriveDecl>,
+}
+
+// frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
+/// The unit key of a partial type: its symref segments without the `[dupN]` mark on the last one.
+fn partial_key(symref: &Symref) -> Vec<String> {
+    let mut segs = symref.segments().to_vec();
+    if let Some(last) = segs.last_mut()
+        && let Some(i) = last.rfind("[dup")
+        && last.ends_with(']')
+    {
+        last.truncate(i);
+    }
+    segs
+}
+
+/// Digest of `parts` in order under a fixed domain, standing in for the digest of a merged unit.
+fn merged_digest(parts: &[FacetDigest]) -> FacetDigest {
+    let mut h = blake3::Hasher::new();
+    h.update(b"gob-symbols/partial/1");
+    for p in parts {
+        h.update(p.as_bytes());
+    }
+    FacetDigest::from_bytes(*h.finalize().as_bytes())
+}
+
+/// Merges the parts of every `partial` type into one unit with several spans (D94).
+///
+/// `files` must be sorted by path. Parts are matched by namespace-qualified name across all
+/// files (until the project model maps files to assemblies, two assemblies declaring the same
+/// partial name merge); the first part in path order keeps its symref and record. Later parts
+/// are removed, their members re-parented onto the kept unit, and the kept unit gains every
+/// part's span, attributes and base types plus a digest over all parts.
+pub(crate) fn merge_partials(files: &mut [FileSymbols]) {
+    let mut kept: HashMap<Vec<String>, Symref> = HashMap::new();
+    let mut canon_of: HashMap<Symref, Symref> = HashMap::new();
+    let mut merged: HashMap<Symref, Symref> = HashMap::new();
+    for f in files.iter() {
+        for (s, e) in f.symbols.iter().zip(&f.extras) {
+            if !e.facts.partial {
+                continue;
+            }
+            let canon = kept
+                .entry(partial_key(&s.symref))
+                .or_insert_with(|| s.symref.clone());
+            if *canon != s.symref {
+                merged.insert(s.symref.clone(), canon.clone());
+            }
+            canon_of.insert(s.symref.clone(), canon.clone());
+        }
+    }
+    if merged.is_empty() {
+        return;
+    }
+    // Collect each part (kept first, then later parts in file order) before editing anything.
+    let mut parts: HashMap<Symref, Vec<(SymbolRecord, UnitExtras)>> = HashMap::new();
+    for f in files.iter() {
+        for (s, e) in f.symbols.iter().zip(&f.extras) {
+            if let Some(c) = canon_of.get(&s.symref) {
+                parts
+                    .entry(c.clone())
+                    .or_default()
+                    .push((s.clone(), e.clone()));
+            }
+        }
+    }
+    for f in files.iter_mut() {
+        let path = f.path.clone();
+        let mut i = 0;
+        while i < f.symbols.len() {
+            if merged.contains_key(&f.symbols[i].symref) {
+                f.symbols.remove(i);
+                f.extras.remove(i);
+                continue;
+            }
+            if let Some(p) = f.symbols[i]
+                .parent
+                .as_ref()
+                .and_then(|p| merged.get(p))
+                .cloned()
+            {
+                f.symbols[i].parent = Some(p);
+            }
+            if let Some(all) = parts.get(&f.symbols[i].symref).filter(|a| a.len() > 1) {
+                fold_parts(&mut f.symbols[i], &mut f.extras[i], all);
+                tracing::debug!(
+                    path = %path,
+                    symref = %f.symbols[i].symref,
+                    parts = all.len(),
+                    "partial type parts merged"
+                );
+            }
+            i += 1;
+        }
+    }
+}
+
+/// Folds `all` parts of one partial type into its kept `rec` and `extras`.
+fn fold_parts(rec: &mut SymbolRecord, extras: &mut UnitExtras, all: &[(SymbolRecord, UnitExtras)]) {
+    let mut spans = Vec::new();
+    let mut attributes: Vec<AttributeFact> = Vec::new();
+    let mut bases: Vec<String> = Vec::new();
+    for (r, e) in all {
+        spans.extend(e.facts.spans.iter().cloned());
+        for a in &e.facts.attributes {
+            if !attributes.contains(a) {
+                attributes.push(a.clone());
+            }
+        }
+        for b in &e.facts.bases {
+            if !bases.contains(b) {
+                bases.push(b.clone());
+            }
+        }
+        for u in &e.unknown {
+            if !extras.unknown.contains(u) {
+                extras.unknown.push(u.clone());
+            }
+        }
+        if r.visibility == Visibility::Public {
+            rec.visibility = Visibility::Public;
+        }
+    }
+    let of = |pick: fn(&Digests) -> FacetDigest| -> FacetDigest {
+        merged_digest(
+            &all.iter()
+                .map(|(r, _)| pick(&r.digests))
+                .collect::<Vec<_>>(),
+        )
+    };
+    rec.digests = Digests {
+        sig: of(|d| d.sig),
+        body: of(|d| d.body),
+        doc: of(|d| d.doc),
+        attr: of(|d| d.attr),
+        contract: of(|d| d.contract),
+    };
+    extras.facts.spans = spans;
+    extras.facts.attributes = attributes;
+    extras.facts.bases = bases;
 }

@@ -9,7 +9,7 @@ sections 4.1, 4.2 and 4.6).
 | Opaque F0 (no adapter), text, comments scanned (TOML) | NotApplicable | examined |
 | YAML F1 (`.yml`, `.yaml`: block-mapping keys as nested units `path::outer.inner`), comments scanned | NotApplicable | examined |
 | Python F2 (`.py`, `.pyi`: modules, classes, functions, methods, imports, calls, decorators, docstrings), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
-| C# (`.cs`; `.csx` is not C#): grammar and comment scanning only until the symbol adapter lands | NotApplicable | examined once the file walker classifies `.cs` |
+| C# F1 (`.cs`; `.csx` is not C#: namespaces, types, members, attributes, preprocessor conditions; imports and calls land next), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
 | Opaque F0, text, not scanned (for example `.json`) | NotApplicable | one Unresolved per rule naming the file count |
 | Opaque F0, binary (NUL byte or known extension) | NotApplicable | NotApplicable |
 | Parse failed | Unresolved | Unresolved |
@@ -123,6 +123,35 @@ the doc facet and calls with qualifiers. Binders follow Python scoping
 A test is a module-level `test*` function or a `test*` method of a class in a
 `test*.py`, `*_test.py` or `*_tests.py` module (pytest and unittest naming).
 `frob test` still lists changed Python files as unresolved until pytest selection lands.
+
+## C# symbols
+
+The C# adapter (F1) reads units as `path::Ns.Type.member`: a namespace is one unit per dotted
+component (a file-scoped `namespace A;` owns the rest of the file), types are class, struct,
+interface, record, enum and delegate units, enum members are variants, and members are methods,
+constructors (named like the type, `$cctor` for a static one), finalizers (`~T`), properties,
+indexers (`this`), events, fields and constants (one unit per declarator, spanning the whole
+declaration), operators (`operator+`, `operator-implicit[Type]`) and local functions nested in the
+member that declares them. Overloads and explicit interface implementations are told apart by
+the `[dupN]` mark and the `implements` text, as in Rust. Accessibility follows the keywords
+(`internal` and `private protected` read as crate-private) with the language defaults.
+
+- Attributes are kept on the unit with their type name, argument text and target
+  (`[field: SerializeField]`) for later vocabulary matching (`SymbolGraph::extras`, `facts`).
+  A change to an attribute changes the unit's `attr` and `sig` digests.
+- Base types (`: MonoBehaviour, IFoo`) are facts on the type unit.
+- Preprocessor: every `#if`, `#elif` and `#else` branch is scanned and each unit under a branch
+  carries its condition stack (`UNITY_EDITOR`; `!(UNITY_EDITOR)` in the `#else`), so editor-only
+  code is neither dead in player builds nor the reverse. The branch of a duplicated declaration
+  gets the `[dupN]` mark. No condition is evaluated.
+- A `partial` type is one unit per part in a file; the graph merges the parts, by namespace-qualified
+  name across the repository (until the project model maps files to assemblies), into the first part
+  in path order: its `facts.spans` list every part, attributes and base types are the union, the digests
+  cover all parts and members of later parts are re-parented onto the merged unit.
+- Not modelled, reported as a partial parse (Unresolved for symbol rules): top-level statements,
+  a conditional inside a member body or around an attribute list or other part of a declaration
+  header (the enclosing member's digests are unknown), unrecognized member kinds, syntax errors,
+  and declarations below the depth cap. `using` imports, references and calls are tokens only.
 
 ## Test selection
 

@@ -14,7 +14,7 @@ use gob_ir::{Digest, Facet, FacetDigest as IrFacet, NodeId, Operator, Segment, T
 use crate::adapter::ParseStatus;
 use crate::model::{
     Digests, FacetDigest, MethodSig, RetType, SelfKind, SymbolKind, SymbolRecord, UnitExtras,
-    Visibility,
+    UnitFacts, Visibility,
 };
 use crate::symref::Symref;
 
@@ -45,6 +45,7 @@ pub(crate) const HOLE_MISSING: &str = "missing";
 /// Hole kind of a construct the adapter does not model (never a clean answer).
 pub(crate) const HOLE_UNMODELLED: &str = "unmodelled";
 
+// frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
 /// How legacy symrefs are spelled for a term.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Naming {
@@ -56,6 +57,8 @@ pub(crate) enum Naming {
     Model,
     /// `path::Class.method`, nested functions as `outer.inner`.
     Python,
+    /// `path::Ns.Type.member`: namespaces nest one unit per dotted component.
+    CSharp,
     /// Only the file node exists.
     Opaque,
 }
@@ -121,7 +124,17 @@ fn kind_of(naming: Naming, kind: &str) -> SymbolKind {
         (Naming::Model, "boundary") => SymbolKind::Boundary,
         (_, "function") => SymbolKind::Function,
         (_, "method") => SymbolKind::Method,
-        (Naming::Python, "class") => SymbolKind::Class,
+        (Naming::Python | Naming::CSharp, "class") => SymbolKind::Class,
+        (Naming::CSharp, "namespace") => SymbolKind::Namespace,
+        (Naming::CSharp, "interface") => SymbolKind::Interface,
+        (Naming::CSharp, "record") => SymbolKind::Record,
+        (Naming::CSharp, "delegate") => SymbolKind::Delegate,
+        (Naming::CSharp, "property") => SymbolKind::Property,
+        (Naming::CSharp, "indexer") => SymbolKind::Indexer,
+        (Naming::CSharp, "field") => SymbolKind::Field,
+        (Naming::CSharp, "event") => SymbolKind::Event,
+        (Naming::CSharp, "constructor") => SymbolKind::Constructor,
+        (Naming::CSharp, "operator") => SymbolKind::Operator,
         (_, "struct") => SymbolKind::Struct,
         (_, "enum") => SymbolKind::Enum,
         (_, "variant") => SymbolKind::Variant,
@@ -304,6 +317,7 @@ pub(crate) fn build(term: &Term, path: &str, naming: Naming) -> View {
             symref: symref.clone(),
             unknown,
             subtree: None,
+            facts: UnitFacts::default(),
         });
         view.symbols.push(SymbolRecord {
             symref,
@@ -319,7 +333,7 @@ pub(crate) fn build(term: &Term, path: &str, naming: Naming) -> View {
     match naming {
         Naming::Rust => patch_impl_visibility(&mut view.symbols),
         Naming::Markdown => subtree_digests(&mut view),
-        Naming::Model | Naming::Python | Naming::Opaque => {}
+        Naming::Model | Naming::Python | Naming::CSharp | Naming::Opaque => {}
     }
     view
 }

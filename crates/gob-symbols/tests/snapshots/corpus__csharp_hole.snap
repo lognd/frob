@@ -1,0 +1,20 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @csharp (unit "class" "impl" name="WithConditional" (group "sequence" (lit "name" "WithConditional") (lit "public" "public") (lit "class" "class")) (group "sequence" (unit "method" "impl" name="Pick" (group "sequence" (lit "name" "Pick") (lit "public" "public") (lit "predefined_type" "int") (lit "(" "(") (lit ")" ")")) (group "sequence" (csharp.block (lit "{" "{") (csharp.preproc_if (lit "#if" "#if") (lit "identifier" "DEBUG") (csharp.return_statement (lit "return" "return") (lit "integer_literal" "1") (lit ";" ";")) (csharp.preproc_else (lit "#else" "#else") (csharp.return_statement (lit "return" "return") (lit "integer_literal" "2") (lit ";" ";"))) (lit "#endif" "#endif") (hole "unmodelled")) (lit "}" "}")))))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+S3 lexical>S2:Must
+D0 S1 Unit "WithConditional" Must
+D1 S2 Unit "Pick" Must
+
+== file ==
+fidelity F1 status Partial { holes: 1 }
+== symbols ==
+tests/corpus/csharp/ops/hole.cs::WithConditional Class Public parent=
+tests/corpus/csharp/ops/hole.cs::WithConditional.Pick Method Public parent=tests/corpus/csharp/ops/hole.cs::WithConditional
+== edges ==

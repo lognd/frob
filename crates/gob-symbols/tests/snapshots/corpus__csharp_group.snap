@@ -1,0 +1,23 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @csharp (unit "class" "impl" name="Grid" (group "sequence" (lit "name" "Grid") (lit "public" "public") (lit "class" "class")) (group "sequence" (unit "method" "impl" name="Total" (group "sequence" (lit "name" "Total") (lit "public" "public") (lit "predefined_type" "int") (lit "(" "(") (lit "predefined_type" "int") (lit "identifier" "a") (lit ")" ")")) (group "sequence" (csharp.block (lit "{" "{") (unit "function" "impl" name="Twice" (group "sequence" (lit "name" "Twice") (lit "predefined_type" "int") (lit "(" "(") (lit "predefined_type" "int") (lit "identifier" "v") (lit ")" ")") (lit ";" ";")) (group "sequence" (csharp.arrow_expression_clause (lit "=>" "=>") (csharp.binary_expression (lit "identifier" "v") (lit "*" "*") (lit "integer_literal" "2"))))) (csharp.return_statement (lit "return" "return") (csharp.invocation_expression (lit "identifier" "Twice") (csharp.argument_list (lit "(" "(") (csharp.argument (lit "identifier" "a")) (lit ")" ")"))) (lit ";" ";")) (lit "}" "}")))))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+S3 lexical>S2:Must
+S4 lexical>S3:Must
+D0 S1 Unit "Grid" Must
+D1 S2 Unit "Total" Must
+D2 S3 Unit "Twice" Must
+
+== file ==
+fidelity F1 status Complete
+== symbols ==
+tests/corpus/csharp/ops/group.cs::Grid Class Public parent=
+tests/corpus/csharp/ops/group.cs::Grid.Total Method Public parent=tests/corpus/csharp/ops/group.cs::Grid
+tests/corpus/csharp/ops/group.cs::Grid.Total.Twice Function Private parent=tests/corpus/csharp/ops/group.cs::Grid.Total
+== edges ==

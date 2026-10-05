@@ -1,0 +1,23 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @csharp (unit "class" "impl" name="Hud" (group "sequence" (lit "name" "Hud") (lit "public" "public") (lit "class" "class")) (group "sequence" (unit "field" "impl" name="speed" (attr "SerializeField") (attr "Tooltip" (lit "(" "(") (lit "\"" "\"") (lit "string_literal_content" "speed") (lit "\"" "\"") (lit ")" ")")) (group "sequence" (attr "SerializeField") (attr "Tooltip" (lit "(" "(") (lit "\"" "\"") (lit "string_literal_content" "speed") (lit "\"" "\"") (lit ")" ")")) (lit "name" "speed") (lit ";" ";") (lit "predefined_type" "float")) (group "sequence" (lit "=" "=") (lit "real_literal" "1f"))) (unit "method" "impl" name="Build" (attr "MenuItem" (lit "(" "(") (lit "\"" "\"") (lit "string_literal_content" "Tools/Build") (lit "\"" "\"") (lit ")" ")")) (group "sequence" (attr "MenuItem" (lit "(" "(") (lit "\"" "\"") (lit "string_literal_content" "Tools/Build") (lit "\"" "\"") (lit ")" ")")) (lit "name" "Build") (lit "static" "static") (lit "predefined_type" "void") (lit "(" "(") (lit ")" ")")) (group "sequence" (csharp.block (lit "{" "{") (lit "}" "}")))))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+S3 lexical>S2:Must
+S4 lexical>S2:Must
+D0 S1 Unit "Hud" Must
+D1 S2 Unit "speed" Must
+D2 S2 Unit "Build" Must
+
+== file ==
+fidelity F1 status Complete
+== symbols ==
+tests/corpus/csharp/ops/attr.cs::Hud Class Public parent=
+tests/corpus/csharp/ops/attr.cs::Hud.speed Field Private parent=tests/corpus/csharp/ops/attr.cs::Hud
+tests/corpus/csharp/ops/attr.cs::Hud.Build Method Private parent=tests/corpus/csharp/ops/attr.cs::Hud
+== edges ==

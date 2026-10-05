@@ -1,0 +1,32 @@
+---
+source: crates/gob-symbols/tests/corpus.rs
+expression: out
+---
+== term ==
+(unit "file" "impl" @csharp (unit "namespace" "impl" name="Game" (group "sequence" (lit "name" "Game")) (group "sequence" (unit "namespace" "impl" name="Core" (group "sequence" (lit "name" "Core")) (group "sequence" (unit "class" "impl" name="Ship" (group "sequence" (lit "name" "Ship") (lit "public" "public") (lit "partial" "partial") (lit "class" "class") (lit ":" ":") (lit "identifier" "MonoBehaviour")) (group "sequence" (unit "field" "impl" name="Hull" (group "sequence" (lit "name" "Hull") (lit "public" "public") (lit ";" ";") (lit "predefined_type" "int")) (group "sequence")) (unit "property" "impl" name="Armor" (group "sequence" (lit "name" "Armor") (lit "public" "public") (lit "predefined_type" "int")) (group "sequence" (csharp.accessor_list (lit "{" "{") (csharp.accessor_declaration (lit "get" "get") (lit ";" ";")) (csharp.accessor_declaration (lit "set" "set") (lit ";" ";")) (lit "}" "}")))) (unit "method" "impl" name="Repair" (group "sequence" (lit "name" "Repair") (lit "public" "public") (lit "predefined_type" "void") (lit "(" "(") (lit ")" ")")) (group "sequence" (csharp.block (lit "{" "{") (lit "}" "}")))))))))))
+== scope graph ==
+S0
+S1 lexical>S0:Must
+S2 lexical>S1:Must
+S3 lexical>S2:Must
+S4 lexical>S3:Must
+S5 lexical>S4:Must
+S6 lexical>S4:Must
+S7 lexical>S4:Must
+D0 S1 Unit "Game" Must
+D1 S2 Unit "Core" Must
+D2 S3 Unit "Ship" Must
+D3 S4 Unit "Hull" Must
+D4 S4 Unit "Armor" Must
+D5 S4 Unit "Repair" Must
+
+== file ==
+fidelity F1 status Complete
+== symbols ==
+tests/corpus/csharp/ops/unit.cs::Game Namespace Public parent=
+tests/corpus/csharp/ops/unit.cs::Game.Core Namespace Public parent=tests/corpus/csharp/ops/unit.cs::Game
+tests/corpus/csharp/ops/unit.cs::Game.Core.Ship Class Public parent=tests/corpus/csharp/ops/unit.cs::Game.Core
+tests/corpus/csharp/ops/unit.cs::Game.Core.Ship.Hull Field Public parent=tests/corpus/csharp/ops/unit.cs::Game.Core.Ship
+tests/corpus/csharp/ops/unit.cs::Game.Core.Ship.Armor Property Public parent=tests/corpus/csharp/ops/unit.cs::Game.Core.Ship
+tests/corpus/csharp/ops/unit.cs::Game.Core.Ship.Repair Method Public parent=tests/corpus/csharp/ops/unit.cs::Game.Core.Ship
+== edges ==

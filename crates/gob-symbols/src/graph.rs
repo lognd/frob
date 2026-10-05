@@ -740,6 +740,8 @@ impl SymbolGraph {
             );
         };
         files.sort_by(|a, b| a.path.cmp(&b.path));
+        // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
+        crate::model::merge_partials(&mut files);
         let mut g = Self::default();
         for f in &files {
             g.add_file(f);

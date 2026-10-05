@@ -7,7 +7,8 @@ use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
 use gob_symbols::{
-    Adapter, Fidelity, MarkdownAdapter, PythonAdapter, RustAdapter, SymbolGraph, fold_file,
+    Adapter, CSharpAdapter, Fidelity, MarkdownAdapter, PythonAdapter, RustAdapter, SymbolGraph,
+    fold_file,
 };
 use gob_walk::{Digest, FileEntry, LanguageHint};
 
@@ -21,6 +22,9 @@ const RUST_CLAIMS: [&str; 12] = [
 const PYTHON_CLAIMS: [&str; 9] = [
     "unit", "anon", "ref", "apply", "group", "lit", "attr", "comment", "hole",
 ];
+
+/// Operators the C# adapter claims at F1 (units, tokens, attributes, comments and holes; no references or calls yet).
+const CSHARP_CLAIMS: [&str; 6] = ["unit", "group", "lit", "attr", "comment", "hole"];
 
 /// Operators the markdown adapter claims at F4.
 const MARKDOWN_CLAIMS: [&str; 5] = ["unit", "ref", "apply", "group", "lit"];
@@ -159,6 +163,13 @@ fn rust_corpus_covers_every_claimed_operator() {
 fn python_corpus_covers_every_claimed_operator() {
     assert_eq!(PythonAdapter.fidelity(), Fidelity::F2);
     run_corpus("python", "py", &PYTHON_CLAIMS);
+}
+
+// frob:tests crates/gob-symbols/src/adapter.rs::Adapter.fidelity
+#[test]
+fn csharp_corpus_covers_every_claimed_operator() {
+    assert_eq!(CSharpAdapter.fidelity(), Fidelity::F1);
+    run_corpus("csharp", "cs", &CSHARP_CLAIMS);
 }
 
 #[test]
