@@ -314,7 +314,7 @@ impl Event {
         let kind = kind_name(&body).to_owned();
         let event = Self {
             id: EventId::mint(),
-            at,
+            at: at.seconds(),
             actor: actor.to_owned(),
             rev: EVENT_REV,
             kind,

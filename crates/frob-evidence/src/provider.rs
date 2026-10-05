@@ -596,7 +596,7 @@ pub fn build_record(
         } else {
             Status::Unmeasured
         },
-        captured_at: at,
+        captured_at: at.seconds(),
         accepts: accepts.to_vec(),
         passed: capture.measured.then_some(capture.passed),
         exit_code: capture.exit_code,
@@ -623,7 +623,7 @@ pub fn hash_file(root: &Path, path: &str, accepts: &[usize], at: Stamp) -> Resul
         digest: digest_hex(&bytes),
         uri: None,
         status: Status::Measured,
-        captured_at: at,
+        captured_at: at.seconds(),
         accepts: accepts.to_vec(),
         passed: None,
         exit_code: None,

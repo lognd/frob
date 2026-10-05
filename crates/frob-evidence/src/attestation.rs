@@ -315,7 +315,7 @@ pub fn attest(ws: &Workspace, presence: &Presence, req: &Request) -> Result<Evid
         digest,
         uri: None,
         status: Status::Measured,
-        captured_at: ws.ledger.clock().now(),
+        captured_at: ws.ledger.clock().now().seconds(),
         accepts: req.accepts.clone(),
         passed: Some(true),
         exit_code: None,

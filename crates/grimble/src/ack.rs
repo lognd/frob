@@ -189,7 +189,7 @@ impl Command for Ack {
                 reason: self.reason.clone(),
                 renames: self.renames.clone(),
                 actor,
-                at: ctx.clock.now().to_string(),
+                at: ctx.clock.now().precise(),
             },
         )
         .map_err(cli_error)?;

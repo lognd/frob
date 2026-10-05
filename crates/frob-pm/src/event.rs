@@ -274,7 +274,7 @@ impl PmEvent {
     pub fn new(at: Stamp, actor: &str, body: PmBody) -> Self {
         let ev = Self {
             id: EventId::mint(),
-            at,
+            at: at.seconds(),
             actor: actor.to_owned(),
             rev: EVENT_REV,
             body,

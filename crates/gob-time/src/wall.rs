@@ -5,9 +5,9 @@
     reason = "gob-time is the one crate allowed to read the wall clock and the local zone (docs/design/time.md section 3); every other crate takes a Clock"
 )]
 
-/// Unix seconds now.
-pub(crate) fn unix_seconds() -> i64 {
-    jiff::Timestamp::now().as_second()
+/// The current instant at full clock precision.
+pub(crate) fn now() -> jiff::Timestamp {
+    jiff::Timestamp::now()
 }
 
 /// Unix nanoseconds now, zero before the epoch.

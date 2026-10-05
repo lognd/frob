@@ -29,7 +29,7 @@ pub(crate) fn append(
     counts: Counts,
 ) {
     let line = Line {
-        at: at.to_string(),
+        at: at.precise(),
         duration_ms: &timing.stages,
         budget_ms: timing.budget_ms(),
         tools_ms: timing.tools_ms(),

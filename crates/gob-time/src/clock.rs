@@ -48,7 +48,7 @@ impl SystemClock {
 
 impl Clock for SystemClock {
     fn now(&self) -> Stamp {
-        Stamp::from_unix(crate::wall::unix_seconds())
+        Stamp::from_timestamp(crate::wall::now())
     }
 }
 

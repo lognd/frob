@@ -174,3 +174,30 @@ fn clippy_confines_wall_clock_and_local_zone_reads_to_gob_time() {
     );
     assert!(wall.contains("reason ="));
 }
+
+// frob:tests crates/gob-time/src/stamp.rs::Stamp.precise
+#[test]
+fn frob_lock_ack_text_round_trips_byte_identically() {
+    // acked_at values captured from the frob.lock of experimental before this migration.
+    let fixture = include_str!("fixtures/lock_acked_at.txt");
+    let mut seen = 0;
+    for line in fixture.lines().filter(|l| !l.is_empty()) {
+        let stamp: Stamp = line.parse().expect("ack stamp");
+        assert_eq!(
+            stamp.precise(),
+            line,
+            "ack text keeps its sub-second digits"
+        );
+        seen += 1;
+    }
+    assert!(seen >= 2, "fixture holds real acks");
+}
+
+// frob:tests crates/gob-time/src/stamp.rs::Stamp.seconds
+#[test]
+fn whole_second_text_drops_the_fraction_and_seconds_truncates() {
+    let s: Stamp = "2026-10-03T23:11:28.931959538Z".parse().expect("stamp");
+    assert_eq!(s.to_string(), "2026-10-03T23:11:28Z");
+    assert_eq!(s.seconds().precise(), "2026-10-03T23:11:28Z");
+    assert!(s > s.seconds());
+}

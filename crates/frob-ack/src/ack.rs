@@ -138,7 +138,7 @@ pub fn plan_ack(
     let repo = Repo::discover(root).ok();
     let options = PlanOptions {
         actor: actor_of(repo.as_ref()),
-        at: at.to_string(),
+        at: at.precise(),
         reason: reason.map(str::to_owned),
         all,
     };

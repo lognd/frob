@@ -95,7 +95,7 @@ pub(crate) fn resolve(
         {
             let globs = view.ticket.front.scope.clone();
             tracing::info!(%handle, scope = ?globs, "no live lease; scoping to the ticket scope");
-            let now = ledger.clock().now();
+            let now = ledger.clock().now().seconds();
             let lease = Lease {
                 ticket: id,
                 holder: Holder {

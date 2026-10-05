@@ -938,3 +938,32 @@ fn local_edits_refusal_carries_a_remedy_naming_the_path() {
     let remedy = r.remedy.expect("remedy");
     assert!(remedy.contains("tickets/a/ticket.md"), "{remedy}");
 }
+
+// frob:tests crates/frob-ledger/src/event.rs::Event.parse
+#[test]
+fn event_files_from_before_the_clock_migration_round_trip_byte_identically() {
+    // Captured from tickets/ of experimental before gob-time: whole-second `at`, same key order.
+    let fixtures = [
+        (
+            "01M44BYMAV2NSB9E8NXQTEW6QE",
+            include_str!("fixtures/event_comment.toml"),
+        ),
+        (
+            "01KZ7KGKHX12E2EVS5JEXM2DYN",
+            include_str!("fixtures/event_create.toml"),
+        ),
+    ];
+    for (id, text) in fixtures {
+        let event =
+            frob_ledger::event::Event::parse(id.parse().expect("event id"), text).expect("parse");
+        assert_eq!(event.to_toml().expect("render"), text, "{id}");
+    }
+}
+
+// frob:tests crates/frob-ledger/src/event.rs::Event.new
+#[test]
+fn a_new_event_is_stamped_in_whole_seconds_even_from_a_precise_clock() {
+    let at: gob_time::Stamp = "2026-10-05T01:02:03.987654321Z".parse().expect("stamp");
+    let event = frob_ledger::event::Event::new(at, "a", frob_ledger::event::EventBody::Other);
+    assert_eq!(event.at.precise(), "2026-10-05T01:02:03Z");
+}

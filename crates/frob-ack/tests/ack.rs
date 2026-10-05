@@ -109,7 +109,7 @@ impl Fixture {
             &t,
             false,
             Some("reviewed the contract in full"),
-            gob_time::Stamp::from_unix(1_800_000_000),
+            gob_time::Clock::now(&gob_time::SystemClock),
         )
         .expect("ack")
     }
@@ -275,7 +275,7 @@ fn path_target_acks_every_symbol_and_all_reacks_tracked() {
         &[],
         true,
         None,
-        gob_time::Stamp::from_unix(1_800_000_000),
+        gob_time::Clock::now(&gob_time::SystemClock),
     )
     .unwrap();
     assert!(
@@ -295,7 +295,7 @@ fn unknown_target_and_empty_request_are_errors() {
             &["nope".to_owned()],
             false,
             None,
-            gob_time::Stamp::from_unix(1_800_000_000)
+            gob_time::Clock::now(&gob_time::SystemClock)
         )
         .is_err()
     );
@@ -305,7 +305,7 @@ fn unknown_target_and_empty_request_are_errors() {
             &[],
             false,
             None,
-            gob_time::Stamp::from_unix(1_800_000_000)
+            gob_time::Clock::now(&gob_time::SystemClock)
         )
         .is_err()
     );
@@ -436,7 +436,7 @@ fn version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it() {
             &t,
             false,
             Some("reviewed the contract"),
-            gob_time::Stamp::from_unix(1_800_000_000)
+            gob_time::Clock::now(&gob_time::SystemClock)
         )
         .is_err()
     );
@@ -446,7 +446,7 @@ fn version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it() {
             &[],
             true,
             None,
-            gob_time::Stamp::from_unix(1_800_000_000)
+            gob_time::Clock::now(&gob_time::SystemClock)
         )
         .is_err(),
         "migration needs a reason"
@@ -457,7 +457,7 @@ fn version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it() {
         &[],
         true,
         Some("re-attest under digest scheme 2"),
-        gob_time::Stamp::from_unix(1_800_000_000),
+        gob_time::Clock::now(&gob_time::SystemClock),
     )
     .unwrap();
     assert_eq!(out.acked, ["src/lib.rs::greet", "src/lib.rs::plain"]);
@@ -493,7 +493,7 @@ fn scheme_one_lock_under_version_two_is_all_reattest() {
         &[],
         true,
         Some("re-attest under scheme 2"),
-        gob_time::Stamp::from_unix(1_800_000_000),
+        gob_time::Clock::now(&gob_time::SystemClock),
     )
     .unwrap();
     assert_eq!(out.acked, ["src/lib.rs::greet", "src/lib.rs::plain"]);
