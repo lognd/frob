@@ -38,7 +38,7 @@ has() { case "$1" in *"$2"*) ;; *) die "$3: missing $2 in $1" ;; esac; }
 got="$(frob --version | tr -d '\r')"
 say "$got"
 if [ -n "$want" ] && [ "$got" != "frob $want" ]; then die "expected 'frob $want', got '$got'"; fi
-# A standalone archive ships frob alone; the wheel also bundles grimble (smoke.sh requires it).
+# A standalone archive ships frob alone; the wheel also bundles grimble (`cargo dev wheel-smoke` requires it).
 if [ -x "$bin/grimble" ] || [ -x "$bin/grimble.exe" ]; then grimble --version >/dev/null || die "grimble --version"; fi
 
 # 1. Fixture repository: a tiny crate, one markdown file, one commit on `main`.

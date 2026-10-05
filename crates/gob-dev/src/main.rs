@@ -6,7 +6,9 @@ use std::time::Duration;
 use clap::{Parser, Subcommand};
 use gob_dev::import_v1::{self, ImportOptions};
 use gob_dev::out::emit;
-use gob_dev::{Kind, Mode, apply, ci, generate, isolation, publish, workspace_root};
+use gob_dev::{
+    Kind, Mode, apply, ci, generate, isolation, publish, wheel, wheel_smoke, workspace_root,
+};
 
 /// Command-line interface of the developer task runner.
 #[derive(Debug, Parser)]
@@ -80,6 +82,25 @@ enum Task {
         /// resumably (exit 75, naming the next crate and the retry time).
         #[arg(long, default_value_t = 30)]
         max_wait: u64,
+    },
+    /// Build the Python wheel of every product for this host (never publishes).
+    Wheel {
+        /// Directory the wheels are written to (default: target/wheels).
+        #[arg(long)]
+        out: Option<PathBuf>,
+        /// Rust target triple for a cross build (for example x86_64-apple-darwin on an arm64 runner).
+        #[arg(long)]
+        target: Option<String>,
+        /// Build only this product (repeatable; default: every product of products.toml).
+        #[arg(long = "product")]
+        products: Vec<String>,
+    },
+    /// Smoke a built wheel set from the local wheels only (grimble alone, crunk alone, frob, uv tool install).
+    WheelSmoke {
+        /// Directory holding the wheel set.
+        dir: PathBuf,
+        /// Version every tool must report.
+        version: Option<String>,
     },
     /// Convert the v1 YAML ledger into v2 ULID tickets (one-off, T-0025).
     ImportV1Tickets {
@@ -192,8 +213,29 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
             keep_going,
             list,
         } => ci_checks(&steps, keep_going, list).map(|()| ok),
+        Task::Wheel {
+            out,
+            target,
+            products,
+        } => wheel_task(|root| wheel::build_from_env(root, out.as_deref(), target, products))
+            .map(|()| ok),
+        Task::WheelSmoke { dir, version } => {
+            wheel_task(|root| wheel_smoke::smoke_from_env(root, &dir, version)).map(|()| ok)
+        }
         Task::Gen { kind, check, root } => generate_files(kind, check, root).map(|()| ok),
     }
+}
+
+/// Run a wheel task from the workspace root, logging and reporting its error.
+fn wheel_task(
+    task: impl FnOnce(&std::path::Path) -> Result<(), wheel::WheelError>,
+) -> Result<(), Failed> {
+    let fail = |e: &dyn std::fmt::Display| {
+        tracing::error!(error = %e, "wheel task failed");
+        Failed(format!("error: {e}"))
+    };
+    let root = workspace_root().map_err(|e| fail(&e))?;
+    task(&root).map_err(|e| fail(&e))
 }
 
 /// Regenerate (or with `check`, diff) the derived files.
@@ -398,6 +440,34 @@ mod tests {
         };
         assert_eq!(kind, Kind::All);
         assert!(check);
+    }
+
+    // frob:ticket 01M450VBPVEBZQZ5ANM1T8TCTA
+    // frob:tests crates/gob-dev/src/main.rs::Task
+    #[test]
+    fn wheel_and_wheel_smoke_parse_the_workflow_arguments() {
+        let cli = Cli::try_parse_from([
+            "gob-dev",
+            "wheel",
+            "--out",
+            "target/wheels",
+            "--target",
+            "x86_64-apple-darwin",
+        ])
+        .expect("parses");
+        assert!(matches!(
+            cli.command,
+            Task::Wheel { out: Some(_), target: Some(_), ref products } if products.is_empty()
+        ));
+        let cli =
+            Cli::try_parse_from(["gob-dev", "wheel-smoke", "wheels", "1.2.3"]).expect("parses");
+        assert!(matches!(
+            cli.command,
+            Task::WheelSmoke {
+                version: Some(_),
+                ..
+            }
+        ));
     }
 
     #[test]

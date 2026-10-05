@@ -1,0 +1,23 @@
++++
+id = "01M450VBPVEBZQZ5ANM1T8TCTA"
+title = "Wheel build fails on macOS and Windows (GNU realpath, venv path in build-wheel.sh); port it to cargo dev wheel"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "high"
+parent = "01M4065Y4N6DQG30TRSP2QNP8T"
+reporter = "lognd"
+created = "2026-10-05T03:13:51Z"
+updated = "2026-10-05T03:26:14Z"
+scope = [".github/workflows/build-smoke.yml", "crates/frob-release/tests/products.rs", "crates/frob-release/tests/release_workflow.rs", "crates/gob-dev/Cargo.toml", "Cargo.lock", "crates/gob-dev/src/lib.rs", "crates/gob-dev/src/main.rs", "crates/gob-dev/src/wheel.rs", "crates/gob-dev/src/wheel_smoke.rs", "docs/design/releases.md", "docs/guides/release.md", "packaging/pypi/**", "packaging/smoke/fixture-loop.sh", "changelog.d/*1T8TCTA*"]
+
+[[acceptance]]
+text = "Given the release workflow dry run, when the wheel job runs on all five targets, then every wheel builds and the smoke installs it, with x86_64-apple-darwin smoke exempt as documented"
+bound = true
+
+[[acceptance]]
+text = "Given the repository, when searched, then the wheel build has no shell script and runs through cargo dev wheel on every OS"
+bound = true
++++
+
+The 0.532.0 release dry run (workflow_dispatch run 37257734759 on bdae757fe) built every archive on all five targets but the wheel job failed on three: aarch64-apple-darwin and x86_64-apple-darwin with "realpath: illegal option -- m" (packaging/pypi/build-wheel.sh uses GNU realpath -m; BSD realpath on macOS has no -m), and x86_64-pc-windows-msvc with "No virtual environment or system Python installation found for path target/maturin-venv/Scripts/python" (the script's venv creation or interpreter path does not hold on Windows). Linux wheels passed only because Linux userland is GNU. Fix structurally rather than patching the shell: port the wheel build (and the wheel smoke, if it is also a shell script) into gob-dev as a Rust subcommand (cargo dev wheel, with the same arguments the workflow passes: --out, --target), using gob-exec argv and Path APIs (paths.md D86), uv for the build environment (uv is a declared CI prerequisite since ~CANFHAW), and call it from the release workflow's wheel job on every OS; delete build-wheel.sh. Prove it on the dry run: re-run gh workflow run release.yml --ref experimental after landing and all five wheel jobs pass and smoke.

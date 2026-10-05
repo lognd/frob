@@ -159,7 +159,7 @@ part of the job's design:
   waiting.
 - **Artifact smoke:** each built artifact is installed into a clean
   environment and runs real commands (`frob doctor`, `frob check` on a
-  fixture repository). As built, wheels (`packaging/pypi/smoke.sh`) and
+  fixture repository). As built, wheels (`cargo dev wheel-smoke`) and
   standalone archives (`packaging/smoke/archive-smoke.sh`) share
   `packaging/smoke/fixture-loop.sh`: init, doctor, check, a ticket with
   one criterion, work, edit, check, command-provider evidence, a changelog
@@ -178,6 +178,11 @@ part of the job's design:
   product archive (frob runs the fixture loop, grimble runs
   `grimble --version`); the workflow names each archive explicitly and a
   step fails if `target/distrib` holds anything but the product archives.
+- **Dry run:** `release.yml` also has a `workflow_dispatch` trigger that runs the
+  shared plan, build, wheel and smoke from the dispatched ref with no tag
+  check; every publishing job (`release`, `crates`, `pypi`) is guarded by
+  `github.event_name == 'push'`, so a dispatch publishes nowhere and never
+  requests an environment (pinned by `release_workflow.rs`).
 - **Archives:** exactly one per product binary per target (D87,
   products.md 6), named after the dist package: `frob-cli-<target>.tar.xz`
   (`.zip` on windows) holding `frob`, and `grimble-<target>` holding

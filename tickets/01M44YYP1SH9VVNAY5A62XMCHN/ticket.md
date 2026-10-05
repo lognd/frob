@@ -2,12 +2,13 @@
 id = "01M44YYP1SH9VVNAY5A62XMCHN"
 title = "frob migrate tickets: import a consumer repository's v1 ledger"
 type = "story"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 parent = "01M44YYN4E7SXWHQB3H7EHD37P"
 reporter = "lognd"
 created = "2026-10-05T02:40:43Z"
-updated = "2026-10-05T02:40:43Z"
+updated = "2026-10-05T02:43:01Z"
 
 [[acceptance]]
 text = "Given a v1 tickets directory, when frob migrate tickets --apply runs, then every ticket is in the v2 ledger with its v1 id as an alias and ticket doctor is clean"

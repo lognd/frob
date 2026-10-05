@@ -203,6 +203,22 @@ that PyPI shows 0.532.0 of `frob` and of `grimble`, each with five files, and th
 version for every published crate. (`cargo search frob-cli` is an example name;
 use any shipped crate.)
 
+## Dry run (builds and smokes everything, publishes nothing)
+
+Before the first real release, or after changing the build, run the workflow by
+hand: `gh workflow run release.yml --ref <branch>` (or Actions, release, Run
+workflow). The `workflow_dispatch` trigger builds the five archive sets and the
+five wheel sets from that ref and smokes every artifact on fresh runners. No
+tag is needed (the tag check is skipped) and the `release`, `crates` and `pypi`
+jobs are skipped by `if: github.event_name == 'push'`, so no environment is
+requested and nothing is uploaded anywhere. The only exempt target is macOS
+x86_64, which is cross-built on an arm64 runner that cannot execute it.
+
+The wheel build and the wheel smoke are the same on every OS: `cargo dev wheel
+--out DIR [--target TRIPLE]` and `cargo dev wheel-smoke DIR VERSION` (Rust, in
+`crates/gob-dev`; uv builds the maturin environment). Run them locally to
+reproduce a wheel failure; there is no shell script to port per platform.
+
 ## Resume after a failure
 
 Find the failing point, then use the matching row. Re-running never needs a new

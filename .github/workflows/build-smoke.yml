@@ -41,7 +41,7 @@ env:
   DIST_VERSION: "0.32.0"
   # Exact pins for the wheel job. maturin is pinned by version and sha256 in
   # packaging/pypi/maturin-requirements.txt (installed with --require-hashes by
-  # build-wheel.sh); uv is pinned by setup-uv and inside the container; rustup-init
+  # `cargo dev wheel`); uv is pinned by setup-uv and inside the container; rustup-init
   # is downloaded from its versioned static URL and checked against the per-target
   # sha256 in the wheel matrix (`rustup_sha`, from the published .sha256 file).
   RUSTUP_INIT_VERSION: "1.28.2"
@@ -320,7 +320,7 @@ jobs:
               /tmp/rustup-init -y --profile minimal --default-toolchain "$CHANNEL"
               export PATH="$HOME/.cargo/bin:/opt/python/cp312-cp312/bin:$PATH"
               pip install --quiet "uv==$UV_VERSION"
-              packaging/pypi/build-wheel.sh --out /work/target/wheels'
+              cargo dev wheel --out /work/target/wheels'
       - name: Build the wheel natively
         if: matrix.image == ''
         shell: bash
@@ -330,7 +330,7 @@ jobs:
         run: |
           args=(--out target/wheels)
           if [ "$CROSS" = "true" ]; then args+=(--target "$TARGET"); fi
-          packaging/pypi/build-wheel.sh "${args[@]}"
+          cargo dev wheel "${args[@]}"
       - name: Exactly one wheel per product was built
         shell: bash
         run: |
@@ -345,7 +345,7 @@ jobs:
         shell: bash
         env:
           VERSION: ${{ needs.plan.outputs.version }}
-        run: packaging/pypi/smoke.sh target/wheels "$VERSION"
+        run: cargo dev wheel-smoke target/wheels "$VERSION"
       - name: Cross-built wheels are not executable here (explicit smoke exemption)
         if: ${{ !matrix.smoke }}
         shell: bash
@@ -436,7 +436,7 @@ jobs:
         shell: bash
         env:
           VERSION: ${{ needs.plan.outputs.version }}
-        run: packaging/pypi/smoke.sh wheels "$VERSION"
+        run: cargo dev wheel-smoke wheels "$VERSION"
       - name: Smoke the downloaded product archives (unpack, run each binary)
         if: matrix.smoke
         shell: bash

@@ -21,6 +21,11 @@ on:
   push:
     tags:
       - "frob-v*"
+  # Dry run: builds, wheels and smoke on all five targets from the dispatched ref, publishing
+  # nowhere (every publishing job below is guarded by `if: github.event_name == 'push'`, so a
+  # dispatch never reaches the `release`, `crates` or `pypi` jobs, nor their environments). No
+  # tag is involved, so the plan job skips the tag check and builds the Cargo version as is.
+  workflow_dispatch:
 
 permissions: {}
 
@@ -48,12 +53,13 @@ jobs:
     permissions:
       contents: read
     with:
-      tag: ${{ github.ref_name }}
+      tag: ${{ github.event_name == 'push' && github.ref_name || '' }}
       wheels: true
 
   release:
     name: release (GitHub release with archives)
     needs: artifacts
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -104,6 +110,7 @@ jobs:
   crates:
     name: crates (crates.io publish in dependency order)
     needs: artifacts
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     environment: crates-io
@@ -165,6 +172,7 @@ jobs:
   pypi:
     name: pypi (PyPI publish of the smoked wheels)
     needs: artifacts
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: pypi
