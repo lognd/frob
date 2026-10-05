@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-05T03:23:43Z"
+digest = "a69d86fcd43ec56ebae7f1eec15bf09faea2d101e0f978850e8af8bbf251d892"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cdb04306-9132-410a-a0f3-1387ddb7ba2c with nextest profile: default
+    Starting 11 tests across 5 binaries (83 tests skipped)
+        PASS [   0.008s] gob-dev wheel_smoke::tests::tool_install_sets_isolated_tool_and_bin_dirs
+        PASS [   0.008s] gob-dev wheel_smoke::tests::installs_use_the_local_wheels_only_for_each_venv_layout
+        PASS [   0.008s] gob-dev wheel::tests::product_filter_keeps_order_and_rejects_unknown_names
+        PASS [   0.008s] gob-dev::bin/gob-dev tests::wheel_and_wheel_smoke_parse_the_workflow_arguments
+        PASS [   0.009s] gob-dev wheel_smoke::tests::wheel_info_script_is_valid_json_producer
+        PASS [   0.009s] gob-dev wheel::tests::the_real_products_file_lists_frob_grimble_and_crunk
+        PASS [   0.009s] gob-dev wheel::tests::compatibility_defaults_on_linux_and_honours_the_override
+        PASS [   0.006s] gob-dev wheel::tests::venv_executables_follow_the_os_layout_never_a_bare_python
+        PASS [   0.007s] gob-dev wheel_smoke::tests::fixture_loop_gets_a_forward_slash_script_path_and_the_bin_dir
+        PASS [   0.011s] gob-dev wheel_smoke::tests::on_path_finds_executables_with_the_host_suffix
+        PASS [   0.011s] gob-dev wheel::tests::plan_builds_every_product_for_each_of_the_five_targets
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 11 tests run: 11 passed, 83 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev wheel"
+size = 1600
+status = "measured"
+tests = ["tests::wheel_and_wheel_smoke_parse_the_workflow_arguments", "wheel_smoke::tests::tool_install_sets_isolated_tool_and_bin_dirs", "wheel_smoke::tests::installs_use_the_local_wheels_only_for_each_venv_layout", "wheel::tests::product_filter_keeps_order_and_rejects_unknown_names", "wheel_smoke::tests::wheel_info_script_is_valid_json_producer", "wheel::tests::the_real_products_file_lists_frob_grimble_and_crunk", "wheel::tests::compatibility_defaults_on_linux_and_honours_the_override", "wheel::tests::venv_executables_follow_the_os_layout_never_a_bare_python", "wheel_smoke::tests::fixture_loop_gets_a_forward_slash_script_path_and_the_bin_dir", "wheel_smoke::tests::on_path_finds_executables_with_the_host_suffix", "wheel::tests::plan_builds_every_product_for_each_of_the_five_targets"]
+at = "2026-10-05T03:23:43Z"
+actor = "lognd"
+rev = 1
