@@ -1,0 +1,9 @@
+# Outside repositories for 0.532.0 (exit criterion as relaxed by the owner 2026-10-05, D94/D95 context, ~9RZMKJ1)
+# taken 2026-10-05T05:14:44Z with frob built from 8d8ec8932
+== cloc head 873a73e8d
+ticket doctor ok=True issues=0 tickets=20 events=165
+cycles closed=12
+== mdcat head a3d94f0b4
+ticket doctor ok=True issues=0 tickets=14 events=88
+cycles closed=3
+# baseline: no earlier recorded counts; these are the first recorded, so no count decreased
