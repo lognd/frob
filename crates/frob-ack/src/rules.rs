@@ -300,9 +300,11 @@ fn containers(inputs: &Inputs, rec: &SymbolRecord) -> HashSet<Symref> {
     out
 }
 
+/// True when `dependent` was acked at or after `entry`; stamps are whole seconds, so a tie counts as after.
+// frob:ticket 01M44R5VQ21TNKGEC31V8FWY2P
 fn acked_after(entry: &LockEntry, dependent: &LockEntry) -> bool {
     let parse = |s: &str| s.parse::<jiff::Timestamp>().ok();
-    matches!((parse(&dependent.acked_at), parse(&entry.acked_at)), (Some(d), Some(e)) if d > e)
+    matches!((parse(&dependent.acked_at), parse(&entry.acked_at)), (Some(d), Some(e)) if d >= e)
 }
 
 fn drift004(inputs: &Inputs) -> Vec<Raw> {
