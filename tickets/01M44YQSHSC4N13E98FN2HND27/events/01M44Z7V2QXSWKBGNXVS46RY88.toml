@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-05T02:45:42Z"
+digest = "d53ce7990e45c5c3cdb55da6ae68cfd05604299f218eb9fdb36746167d7d05b6"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bd48ce0d-5c8f-4abe-b52b-e3e3803997f2 with nextest profile: default
+    Starting 2 tests across 1 binary (30 tests skipped)
+        PASS [   0.006s] gob-languages inline::tests::unmatched_run_is_not_a_span
+        PASS [   0.007s] gob-languages comments::tests::csharp_syntax_error_is_a_partial_tree_with_errors
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 2 tests run: 2 passed, 30 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p gob-languages csharp_syntax_error"
+size = 653
+status = "measured"
+tests = ["inline::tests::unmatched_run_is_not_a_span", "comments::tests::csharp_syntax_error_is_a_partial_tree_with_errors"]
+at = "2026-10-05T02:45:42Z"
+actor = "lognd"
+rev = 1
