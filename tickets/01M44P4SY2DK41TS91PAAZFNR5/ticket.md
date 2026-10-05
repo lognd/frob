@@ -6,11 +6,11 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-05T00:06:46Z"
-updated = "2026-10-05T00:11:24Z"
+updated = "2026-10-05T00:11:38Z"
 
 [[acceptance]]
 text = "Given a clock at 00:06 UTC and a zone still on the previous day, when a cycle is created with the default start, then its state is the documented one and matches at any other time of day"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the cycle CLI tests, when they run at any wall-clock time, then their results do not change"
