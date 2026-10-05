@@ -7,7 +7,11 @@ priority = "medium"
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
 reporter = "lognd"
 created = "2026-10-05T00:42:18Z"
-updated = "2026-10-05T00:42:18Z"
+updated = "2026-10-05T00:42:31Z"
+
+[[links]]
+kind = "blocked-by"
+target = "01M41RV691XZQ5W2EW821PHK3V"
 
 [[acceptance]]
 text = "Given a Python datetime.now() without tz whose value is stored, when grimble checks it, then TIME001 fires; and a value only displayed stays quiet"
