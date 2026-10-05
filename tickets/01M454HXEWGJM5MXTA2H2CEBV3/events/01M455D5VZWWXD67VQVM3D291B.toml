@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "internal CI: shared linker setup action for every Linux Rust build"
+at = "2026-10-05T04:29:33Z"
+actor = "lognd"
+rev = 1
