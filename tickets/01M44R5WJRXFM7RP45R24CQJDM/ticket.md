@@ -7,7 +7,11 @@ priority = "low"
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
 reporter = "lognd"
 created = "2026-10-05T00:42:19Z"
-updated = "2026-10-05T00:42:19Z"
+updated = "2026-10-05T00:42:32Z"
+
+[[links]]
+kind = "blocked-by"
+target = "01M44R5W4WJEXFM000S8KVQQN5"
 
 [[acceptance]]
 text = "Given a test with a hardcoded future date reaching a today() read with no clock injected, when grimble checks it, then TIME003 fires"
