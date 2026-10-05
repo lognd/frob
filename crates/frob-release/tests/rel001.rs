@@ -2,6 +2,7 @@
 //! The mdtest corpus (`tests/mdtest/rel001.md`) runs from the `rel002` test binary, which owns the shared directory.
 // frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
 
+use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
@@ -247,9 +248,11 @@ fn real_cut_event(commit: &str, tags: &[(&str, &str)]) -> String {
         "kind = \"cut\"\nversion = \"0.0.1\"\ncommit = \"{commit}\"\nat = \"2026-10-05T05:50:35Z\"\nactor = \"lognd\"\nrev = 1\n"
     );
     for (name, object) in tags {
-        text.push_str(&format!(
+        write!(
+            text,
             "\n[[tags]]\nname = \"{name}\"\nobject = \"{object}\"\ncommit = \"{commit}\"\n"
-        ));
+        )
+        .unwrap();
     }
     text
 }
