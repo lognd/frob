@@ -178,7 +178,7 @@ fn new_takes_its_end_from_cycle_days_and_a_repeat_is_already() {
         "cycle",
         "new",
         "--start",
-        "2026-10-05",
+        d(0),
         "--goal",
         "Ship PM",
         "--capacity",
@@ -187,15 +187,15 @@ fn new_takes_its_end_from_cycle_days_and_a_repeat_is_already() {
     assert_eq!(v["verb"], "cycle.new");
     assert_eq!(v["already"], false);
     let c = &v["data"]["cycle"];
-    assert_eq!(c["end"], "2026-10-11");
-    assert_eq!(c["alias"], "2026-10-05..2026-10-11");
+    assert_eq!(c["end"], d(6));
+    assert_eq!(c["alias"], span(0, 6));
     assert_eq!(c["capacity_points"], 13);
     assert_eq!(c["state"], "planned");
     let again = repo.ok(&[
         "cycle",
         "new",
         "--start",
-        "2026-10-05",
+        d(0),
         "--goal",
         "Ship PM",
         "--capacity",
@@ -207,16 +207,16 @@ fn new_takes_its_end_from_cycle_days_and_a_repeat_is_already() {
         "cycle",
         "new",
         "--start",
-        "2026-10-05",
+        d(0),
         "--end",
-        "2026-10-11",
+        d(6),
         "--goal",
         "Ship PM",
         "--capacity-points",
         "13",
     ]);
     assert_eq!(explicit["already"], true);
-    let out = repo.frob(&["cycle", "new", "--start", "2026-10-05", "--goal", "Other"]);
+    let out = repo.frob(&["cycle", "new", "--start", d(0), "--goal", "Other"]);
     assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stdout));
     assert_eq!(json(&out)["error"]["code"], "E-CYCLE-EXISTS");
     assert_eq!(repo.ok(&["cycle", "list"])["data"]["count"], 1);
@@ -226,8 +226,8 @@ fn new_takes_its_end_from_cycle_days_and_a_repeat_is_already() {
 fn overlapping_an_open_cycle_is_refused_with_a_remedy() {
     // frob:tests crates/frob/src/cycle_cmd.rs::CycleNew
     let repo = Repo::new();
-    repo.new_cycle("2026-10-05", "first");
-    let out = repo.frob(&["cycle", "new", "--start", "2026-10-11", "--goal", "second"]);
+    repo.new_cycle(d(0), "first");
+    let out = repo.frob(&["cycle", "new", "--start", d(6), "--goal", "second"]);
     assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stdout));
     let e = &json(&out)["error"];
     assert_eq!(e["code"], "E-CYCLE-OVERLAP");
@@ -235,21 +235,21 @@ fn overlapping_an_open_cycle_is_refused_with_a_remedy() {
         e["remedy"]
             .as_str()
             .expect("remedy")
-            .contains("--start 2026-10-12")
+            .contains(&format!("--start {}", d(7)))
     );
     let out = repo.frob(&[
         "cycle",
         "new",
         "--start",
-        "2026-10-12",
+        d(7),
         "--end",
-        "2026-10-01",
+        d(-4),
         "--goal",
         "g",
     ]);
     assert_eq!(code(&out), 2);
     assert_eq!(json(&out)["error"]["code"], "E-CYCLE-WINDOW");
-    repo.new_cycle("2026-10-12", "second");
+    repo.new_cycle(d(7), "second");
     assert_eq!(repo.ok(&["cycle", "list"])["data"]["count"], 2);
 }
 
@@ -257,13 +257,13 @@ fn overlapping_an_open_cycle_is_refused_with_a_remedy() {
 fn close_is_refused_while_a_member_is_in_progress_with_a_live_lease() {
     // frob:tests crates/frob/src/cycle_cmd.rs::CycleClose
     let repo = Repo::new();
-    let c = repo.new_cycle("2026-10-05", "first");
-    repo.new_cycle("2026-10-12", "second");
+    let c = repo.new_cycle(d(0), "first");
+    repo.new_cycle(d(7), "second");
     let busy = repo.ticket("in-progress", "3");
     repo.assign(id(&c), &busy);
     repo.lease(&busy);
     let handle = format!("~{}", &busy[19..]);
-    let out = repo.frob(&["cycle", "close", "2026-10-05..2026-10-11"]);
+    let out = repo.frob(&["cycle", "close", span(0, 6)]);
     assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stdout));
     let e = &json(&out)["error"];
     assert_eq!(e["code"], "E-CYCLE-LEASE");
@@ -277,8 +277,8 @@ fn close_carries_incomplete_members_and_records_the_ratio_and_retro() {
     // frob:tests crates/frob/src/cycle_cmd.rs::CycleClose
     // frob:tests crates/frob-pm/src/store.rs::PmStore.append_many
     let repo = Repo::new();
-    let c = repo.new_cycle("2026-10-05", "first");
-    let next = repo.new_cycle("2026-10-12", "second");
+    let c = repo.new_cycle(d(0), "first");
+    let next = repo.new_cycle(d(7), "second");
     let done = repo.done_ticket("5");
     let todo = repo.ticket("todo", "3");
     let idle = repo.ticket("in-progress", "2");
@@ -304,7 +304,7 @@ fn close_carries_incomplete_members_and_records_the_ratio_and_retro() {
     let carried = closed["carried"].as_array().expect("carried");
     assert_eq!(carried.len(), 2);
     assert!(carried.iter().all(|x| x["to"] == next["id"]));
-    let target = repo.ok(&["cycle", "show", "2026-10-12..2026-10-18"]);
+    let target = repo.ok(&["cycle", "show", span(7, 13)]);
     let members: Vec<&str> = target["data"]["cycle"]["tickets"]
         .as_array()
         .expect("tickets")
@@ -338,12 +338,12 @@ fn close_without_a_next_cycle_is_refused_unless_carry_to_names_one() {
         // Started in the past and never closed: active, as the refused close left it.
         "active"
     );
-    let far = repo.new_cycle("2026-12-01", "far");
-    let skipped = repo.new_cycle("2026-11-01", "mid");
+    let far = repo.new_cycle(d(100), "far");
+    let skipped = repo.new_cycle(d(60), "mid");
     let v = repo.ok(&["cycle", "close", id(&c), "--carry-to", id(&far)]);
     assert_eq!(v["data"]["cycle"]["carried"][0]["to"], far["id"]);
     assert_ne!(far["id"], skipped["id"]);
-    let all_done = repo.new_cycle("2027-01-01", "empty");
+    let all_done = repo.new_cycle(d(200), "empty");
     let v = repo.ok(&["cycle", "close", id(&all_done)]);
     assert_eq!(v["data"]["cycle"]["commitment"]["ratio"], Value::Null);
 }
@@ -354,16 +354,12 @@ fn show_and_list_report_cycles_and_unknown_references_suggest() {
     // frob:tests crates/frob/src/cycle_cmd.rs::CycleList
     // frob:tests crates/frob-pm/src/model.rs::Day.today
     let repo = Repo::new();
-    let a = repo.new_cycle("2026-10-12", "second");
-    repo.new_cycle("2026-10-05", "first");
+    let a = repo.new_cycle(d(7), "second");
+    repo.new_cycle(d(0), "first");
     let list = repo.ok(&["cycle", "list"]);
     assert_eq!(list["data"]["count"], 2);
     assert_eq!(list["data"]["cycles"][0]["goal"], "first");
-    for r in [
-        id(&a),
-        a["handle"].as_str().expect("handle"),
-        "2026-10-12..2026-10-18",
-    ] {
+    for r in [id(&a), a["handle"].as_str().expect("handle"), span(7, 13)] {
         assert_eq!(
             repo.ok(&["cycle", "show", r])["data"]["cycle"]["goal"],
             "second",
@@ -371,19 +367,29 @@ fn show_and_list_report_cycles_and_unknown_references_suggest() {
         );
     }
     assert!(repo.ok(&["cycle", "show"])["data"]["cycle"]["goal"].is_string());
-    let out = repo.frob(&["cycle", "show", "2026-10-12..2026-10-19"]);
+    let out = repo.frob(&["cycle", "show", span(7, 14)]);
     assert_eq!(code(&out), 3);
     let e = &json(&out)["error"];
     assert_eq!(e["code"], "E-CYCLE-NOT-FOUND");
-    assert_eq!(e["remedy"], "frob cycle show 2026-10-12..2026-10-18");
+    assert_eq!(e["remedy"], format!("frob cycle show {}", span(7, 13)));
 }
 
-/// `today` shifted by `days`, as `YYYY-MM-DD`.
+/// The UTC day `days` from now, as `YYYY-MM-DD`: the one zone and clock `frob cycle` derives states from.
 fn rel(days: i64) -> String {
     frob_pm::Day::today()
         .plus_days(days)
         .expect("in range")
         .to_string()
+}
+
+/// A fixture date `offset` days after a point 40 days ahead of the UTC today, so a cycle starting there is `planned` whenever the test runs (leaked: test-only, lets dates sit in `&str` arg arrays).
+fn d(offset: i64) -> &'static str {
+    Box::leak(rel(40 + offset).into_boxed_str())
+}
+
+/// The alias `d(a)..d(b)`.
+fn span(a: i64, b: i64) -> &'static str {
+    Box::leak(format!("{}..{}", d(a), d(b)).into_boxed_str())
 }
 
 /// A cycle from `start` to `end` days relative to today, with an optional capacity.
@@ -581,10 +587,7 @@ fn assigning_to_another_cycle_moves_the_ticket() {
 
 /// The UTC day `days` from now, as `YYYY-MM-DD` (the day an early close records).
 fn utc(days: i64) -> String {
-    frob_pm::Day::from_unix(frob_ledger::model::Stamp::now().unix())
-        .plus_days(days)
-        .expect("in range")
-        .to_string()
+    rel(days)
 }
 
 /// A cycle from `start` to `end` days from the UTC today.
@@ -691,11 +694,7 @@ fn velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once() {
     assert_eq!(closed["carried"][0]["to"], b["id"]);
     // Work after the early close and inside A's planned week counts in no cycle; work
     // in B's window counts there once.
-    let on = |days: i64| {
-        frob_pm::Day::from_unix(frob_ledger::model::Stamp::now().unix())
-            .plus_days(days)
-            .expect("day")
-    };
+    let on = |days: i64| frob_pm::Day::today().plus_days(days).expect("day");
     let fact = |points, done_on| frob_pm::cycle::velocity::DoneFact {
         ty: frob_ledger::model::TicketType::Task,
         points,

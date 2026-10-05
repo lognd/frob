@@ -476,6 +476,22 @@ mod tests {
     }
 
     #[test]
+    fn the_day_is_the_utc_day_even_when_a_local_zone_is_still_on_the_previous_one() {
+        // frob:tests crates/frob-pm/src/cycle/lifecycle.rs::state_on
+        // frob:tests crates/frob-pm/src/model.rs::Day.from_unix
+        // frob:ticket 01M44P4SY2DK41TS91PAAZFNR5
+        // 00:06 UTC on the 5th is still the 4th at -07:00; both spellings are one instant.
+        let utc: Stamp = "2026-10-05T00:06:00Z".parse().expect("stamp");
+        let local: Stamp = "2026-10-04T17:06:00-07:00".parse().expect("stamp");
+        assert_eq!(utc, local);
+        let today = Day::from_unix(local.unix());
+        assert_eq!(today, day("2026-10-05"));
+        let c = cycle("2026-10-05", "2026-10-11", State::Planned);
+        assert_eq!(state_on(&c, today), State::Active);
+        assert_eq!(state_on(&c, day("2026-10-04")), State::Planned);
+    }
+
+    #[test]
     fn end_defaults_to_start_plus_days_minus_one() {
         assert_eq!(
             resolve_end(day("2026-10-05"), None, 7),

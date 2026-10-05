@@ -100,9 +100,10 @@ impl fmt::Display for Day {
 }
 
 impl Day {
-    /// Today's date in the local time zone.
+    /// Today's UTC calendar day: the one clock and zone every cycle date and state is judged by.
     pub fn today() -> Self {
-        Self(jiff::Zoned::now().date())
+        // frob:ticket 01M44P4SY2DK41TS91PAAZFNR5
+        Self::from_unix(Stamp::now().unix())
     }
 
     /// The UTC calendar day of Unix time `secs`; the epoch day when out of range.

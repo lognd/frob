@@ -122,6 +122,11 @@ Milestone 2 or later (D36).
 
 - A cycle is an object: `frob cycle new --start --end --goal`,
   with `capacity_points` either set or derived.
+- Every cycle date and state is judged by one clock in one zone: the UTC
+  calendar day (`Day::today`), never the machine's local zone, so a run at
+  00:06 UTC agrees everywhere. Tests do not pin the clock (no environment
+  variable may change an outcome, architecture.md section 6); they build
+  fixture dates relative to the UTC today instead.
 - Velocity is measured from events: per cycle, the points of the
   tickets committed to that cycle (story, task, bug and chore with
   points; epics and milestones never count; PM029's committed points

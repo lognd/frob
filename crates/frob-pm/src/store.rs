@@ -20,7 +20,6 @@ use crate::event::{
 };
 use crate::fold::{Folded, fold, get_field};
 use crate::model::{Day, Object, ObjectId, ObjectKind, State};
-use frob_ledger::model::Stamp;
 
 const MAX_RECONCILE: u32 = 3;
 
@@ -490,7 +489,7 @@ impl<'a> PmStore<'a> {
         // frob:ticket 01M41KS5P8EGFFGBQSMRFBAJ8P
         let from = match &current.object {
             Object::Milestone(m) => m.state,
-            Object::Cycle(c) => state_on(c, Day::from_unix(Stamp::now().unix())),
+            Object::Cycle(c) => state_on(c, Day::today()),
         };
         self.append(
             kind,
