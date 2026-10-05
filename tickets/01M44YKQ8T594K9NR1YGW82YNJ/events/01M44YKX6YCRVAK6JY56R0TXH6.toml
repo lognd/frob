@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Planner probe of ticket new output shape; not part of the D94 tree"
+at = "2026-10-05T02:34:49Z"
+actor = "lognd"
+rev = 1
