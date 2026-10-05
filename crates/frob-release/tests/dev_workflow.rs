@@ -253,6 +253,9 @@ fn every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permission
         }
         for s in job["steps"].as_sequence().into_iter().flatten() {
             if let Some(u) = s["uses"].as_str() {
+                if u == "./.github/actions/install-linker" {
+                    continue; // the repository's own composite action: same ref, no pin
+                }
                 let sha = u.split('@').nth(1).unwrap_or_default();
                 assert!(
                     sha.len() == 40 && sha.chars().all(|c| c.is_ascii_hexdigit()),

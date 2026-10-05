@@ -53,6 +53,9 @@ fn code_only(text: &str) -> String {
         .join("\n")
 }
 
+/// The local composite action that installs the Linux linker (clang and mold) once, for every workflow.
+const LINKER_ACTION: &str = "./.github/actions/install-linker";
+
 /// The `uses:` path both callers must use: local, so caller and callee are the same ref.
 const SHARED_USES: &str = "./.github/workflows/build-smoke.yml";
 
@@ -682,6 +685,9 @@ fn triggers_are_tag_only_and_every_action_is_sha_pinned() {
         }
         for s in job["steps"].as_sequence().unwrap() {
             if let Some(u) = s["uses"].as_str() {
+                if u == LINKER_ACTION {
+                    continue; // local composite action: same ref as the caller, no pin
+                }
                 let sha = u.split('@').nth(1).unwrap_or_default();
                 assert!(
                     sha.len() == 40 && sha.chars().all(|c| c.is_ascii_hexdigit()),
@@ -1017,4 +1023,94 @@ fn every_publishing_job_runs_only_on_a_tag_push_so_a_dispatch_publishes_nowhere(
     // The dispatch builds the ref as is: the tag input of the shared call is empty off a push.
     let tag = wf["jobs"]["artifacts"]["with"]["tag"].as_str().unwrap();
     assert!(tag.contains("github.event_name == 'push'") && tag.ends_with("|| '' }}"));
+}
+
+/// Cargo invocations that compile and link Rust (`cargo metadata` and friends do not link).
+const LINKING_CARGO: [&str; 9] = [
+    "cargo dev",
+    "cargo build",
+    "cargo run",
+    "cargo test",
+    "cargo nextest",
+    "cargo clippy",
+    "cargo doc",
+    "cargo install",
+    "cargo publish",
+];
+
+/// Jobs that may run on Linux and compile Rust on the host before installing the linker.
+///
+/// The repository config links Linux with clang and mold, which a stock runner lacks, so such a
+/// job needs the `LINKER_ACTION` step before its first host compile; a job-level
+/// `CARGO_TARGET_*_LINKER` override (the `crates` job's stock linker) is the other accepted setup.
+/// A step that only runs `docker run` compiles inside the container and is exempt.
+fn unlinked_rust_jobs(wf: &Value) -> Vec<String> {
+    let mut bad = Vec::new();
+    for (name, job) in jobs(wf) {
+        let runs_on = serde_yaml_ng::to_string(&job["runs-on"]).unwrap();
+        let linux_capable = runs_on.contains("ubuntu") || runs_on.contains("matrix.os");
+        let Some(steps) = job["steps"].as_sequence() else {
+            continue;
+        };
+        let overridden = job["env"].as_mapping().is_some_and(|m| {
+            m.keys()
+                .filter_map(Value::as_str)
+                .any(|k| k.starts_with("CARGO_TARGET_") && k.ends_with("_LINKER"))
+        });
+        let mut linker = false;
+        for step in steps {
+            if step["uses"].as_str() == Some(LINKER_ACTION) {
+                linker = true;
+            }
+            let run = step["run"].as_str().unwrap_or_default();
+            let compiles =
+                LINKING_CARGO.iter().any(|c| run.contains(c)) && !run.contains("docker run");
+            if linux_capable && compiles && !linker && !overridden {
+                bad.push(format!(
+                    "job {name:?} step {:?} compiles Rust before the linker setup",
+                    step["name"].as_str().unwrap_or("(unnamed)")
+                ));
+                break;
+            }
+        }
+    }
+    bad
+}
+
+/// Binds ~H2CEBV3: a job that compiles Rust on a Linux host installs clang and mold first, through the one shared action.
+// frob:ticket 01M454HXEWGJM5MXTA2H2CEBV3
+#[test]
+fn every_job_that_compiles_rust_on_linux_installs_the_linker_first() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../.github");
+    for file in ["ci.yml", "release.yml", "build-smoke.yml"] {
+        let text = fs::read_to_string(root.join("workflows").join(file)).unwrap();
+        let wf: Value = serde_yaml_ng::from_str(&text).unwrap();
+        let bad = unlinked_rust_jobs(&wf);
+        assert!(bad.is_empty(), "{file}: {bad:#?}");
+    }
+    // One definition: the install command lives only in the action.
+    let action = fs::read_to_string(root.join("actions/install-linker/action.yml")).unwrap();
+    assert!(action.contains("apt-get install -y mold clang"));
+    for file in ["ci.yml", "release.yml", "build-smoke.yml"] {
+        let text = fs::read_to_string(root.join("workflows").join(file)).unwrap();
+        assert!(
+            !text.contains("install -y mold"),
+            "{file} copies the linker install"
+        );
+    }
+}
+
+// frob:tests crates/frob-release/tests/release_workflow.rs::unlinked_rust_jobs
+#[test]
+fn the_linker_check_rejects_a_linux_job_that_compiles_without_it() {
+    let bad = "jobs:\n  j:\n    runs-on: ubuntu-latest\n    steps:\n      - name: build\n        run: cargo dev wheel-smoke x\n";
+    let wf: Value = serde_yaml_ng::from_str(bad).unwrap();
+    assert_eq!(unlinked_rust_jobs(&wf).len(), 1);
+    let good = format!(
+        "jobs:\n  j:\n    runs-on: ${{{{ matrix.os }}}}\n    steps:\n      - uses: {LINKER_ACTION}\n      - run: cargo dev wheel-smoke x\n"
+    );
+    assert!(unlinked_rust_jobs(&serde_yaml_ng::from_str(&good).unwrap()).is_empty());
+    let mac =
+        "jobs:\n  j:\n    runs-on: macos-latest\n    steps:\n      - run: cargo dev wheel x\n";
+    assert!(unlinked_rust_jobs(&serde_yaml_ng::from_str(mac).unwrap()).is_empty());
 }

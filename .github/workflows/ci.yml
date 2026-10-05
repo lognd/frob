@@ -46,9 +46,8 @@ jobs:
           python-version: "3.12"
       - name: Install uv (pytest step, zizmor and actionlint tool stages)
         uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-      - name: Install mold (linux linker)
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y mold clang
+      # frob:accept TOOL002 because="a local composite action must be addressed with ./; actionlint rejects the $/ form zizmor suggests"
+      - uses: ./.github/actions/install-linker
       - name: Install the Windows cross-check target (clippy-windows step)
         if: runner.os == 'Linux'
         run: rustup target add x86_64-pc-windows-gnu

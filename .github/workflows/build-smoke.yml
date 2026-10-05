@@ -288,6 +288,10 @@ jobs:
         uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           version: ${{ env.UV_VERSION }}
+      # Host-side Rust builds (the tool build of `cargo dev`) link Linux with clang and mold per
+      # .cargo/config.toml; a no-op off Linux, and the container step brings its own gcc.
+      # frob:accept TOOL002 because="a local composite action must be addressed with ./; actionlint rejects the $/ form zizmor suggests"
+      - uses: ./.github/actions/install-linker
       - name: Install pinned Rust toolchain and target
         if: matrix.image == ''
         shell: bash
@@ -437,6 +441,10 @@ jobs:
         with:
           name: archives-${{ matrix.target }}
           path: archives
+      # wheel-smoke builds gob-dev here; the repository config links Linux with clang and mold.
+      # frob:accept TOOL002 because="a local composite action must be addressed with ./; actionlint rejects the $/ form zizmor suggests"
+      - uses: ./.github/actions/install-linker
+        if: matrix.smoke && inputs.wheels
       - name: Smoke the downloaded wheel set (local wheels only, three install scenarios, fixture repository loop)
         if: matrix.smoke && inputs.wheels
         shell: bash
