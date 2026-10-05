@@ -137,6 +137,7 @@ scope and content.
 | CI, DK | ci | CI001-CI015 over GitHub Actions and DK001-DK004 over Dockerfiles (cicd.md); owner grimble, crate grimble-ci; tool-bound findings arrive through `[[check.tool]]` stages |
 | POL, GPOL | config | user-declared policy rules: `POL` over tickets and docs from `[[policy]]` in `frob.toml`, `GPOL` over code from `rules/*.grl.toml` next to `grimble.toml` |
 | PATH | code | host-path portability (section 3.1): PATH001 absolute host path literal, PATH002 separator literal applied to a path turned into a string, PATH003 host path pasted into a command-line string; owner grimble, crate grimble-lints; universal over U |
+| TIME | code | time and zone discipline (section 3.2): TIME001 local or naive current-time read whose value is stored, compared or sent, TIME002 naive and aware datetime mixed, TIME003 test date literal against code that reads the wall clock; owner grimble, crate grimble-lints; universal over U |
 
 ### 3.1 PATH: host-path portability (D86)
 
@@ -169,6 +170,30 @@ the standard pack and among the first written in GRL (grl-spec.md); a
 language whose adapter lacks the path-conversion roles reports
 Unresolved, never clean. This repository raises PATH002 and PATH003 to
 Error in its own config.
+
+### 3.2 TIME: one clock, one zone (D93)
+
+~AAZFNR5 turned CI red at 00:06 UTC: cycle state used the UTC day, the
+library's "today" used the local zone, and a test's hardcoded future
+date became today. TIME is the second line of the time discipline in
+time.md (typed instants and days, one injected clock, clippy
+confinement come first) and the product feature that brings it to other
+repositories.
+
+| Rule | Fires on | Default |
+|---|---|---|
+| TIME001 `local-clock-read` | a current-time read in the local zone or without a zone (Python `datetime.now()` without `tz`, `date.today()`, `datetime.utcnow()`, `time.localtime()`; JS `new Date()` read through local getters; Rust `chrono::Local::now`, `jiff::Zoned::now`) whose value is stored, compared, serialized or sent, not only displayed | Warn |
+| TIME002 `naive-aware-mix` | arithmetic or comparison between a naive and a zone-aware datetime, or parsing a timestamp without a zone into a value later compared with an aware one | Warn |
+| TIME003 `test-date-vs-wall-clock` | a test that builds or asserts a calendar date or timestamp literal while the code it reaches reads the wall clock with no clock injected | Advisory; Unresolved where reach is undecided |
+
+Remedies name the portable form: one UTC instant type for anything
+stored or compared, one day type with a documented zone, a clock passed
+in and read once per operation, local time only for display, and test
+dates built relative to the clock (or a fixed clock in the test).
+TIME002 and TIME003 need def-use and reach, so they are GRL relational
+rules in the standard pack; a language whose adapter lacks the
+clock-read roles reports Unresolved, never clean. This repository raises
+TIME001 and TIME002 to Error in its own config.
 
 Moved out of frob core (D88, refined by D89, owner decisions 2026-10-04),
 split by the products.md boundary (grimble models systems and code in any

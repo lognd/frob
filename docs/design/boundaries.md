@@ -160,6 +160,7 @@ namespaces families by product so a foreign family is never unknown.
 | CI, DK | grimble | grimble-ci | CI001-CI015 and DK001-DK004 (cicd.md); knobs in `grimble.toml` `[ci]`; adapters in gob-languages (features `actions`, `dockerfile`) and gob-symbols; CI012 reads manifests through the F2 manifest adapter; frob adopts zizmor and actionlint through `[[check.tool]]` before the adapters exist |
 | GPOL | grimble | grimble-lints | user policy over code; `rules/*.grl.toml` next to grimble.toml and `[[policy]]` in grimble.toml |
 | PATH | grimble | grimble-lints | host-path portability, PATH001-PATH003 (rules.md section 3.1, D86); GRL rules in the standard pack; knobs in `grimble.toml` `[path]` |
+| TIME | grimble | grimble-lints | time and zone discipline, TIME001-TIME003 (rules.md section 3.2, D93); GRL rules in the standard pack; knobs in `grimble.toml` `[time]` |
 | COLOR, SPACE, TYPE, RADIUS, SIZE, LAYER, CONTRAST, ORG, TW, BP | crunk | crunk-rules | notes/crunk.md section 4 |
 | A11Y, SEO, LAUNCH, WEBPERF (markup and assets) | crunk | crunk pack crunk-web | D88/D89: front-end web lint moved from v1 frob; v1 catalog in notes/v1/gates-and-rules.md section 11 |
 | WEBSEC (into SEC), SQL, COMPLY (with PII), ROUTE, WEBPERF (server); STORE, SYSDESIGN, GRAMMAR | grimble | grimble packs grimble-websec and grimble-sysdesign | D89: code, data and system-design lint moved from v1 frob; v1 catalog section 11 and v1 backlog clusters B1-B2 |
