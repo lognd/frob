@@ -83,7 +83,7 @@ enum Task {
         #[arg(long, default_value_t = 30)]
         max_wait: u64,
     },
-    /// Build the PyPI wheel of every product for this host (never publishes).
+    /// Build the Python wheel of every product for this host (never publishes).
     Wheel {
         /// Directory the wheels are written to (default: target/wheels).
         #[arg(long)]

@@ -643,10 +643,7 @@ fn smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemp
             "exactly the wheel steps are gated on the wheels input: {s:?}"
         );
     }
-    assert_eq!(
-        smoke_steps(&wf, "smoke", "cargo dev wheel-smoke").len(),
-        1
-    );
+    assert_eq!(smoke_steps(&wf, "smoke", "cargo dev wheel-smoke").len(), 1);
     assert_eq!(
         smoke_steps(&wf, "smoke", "packaging/smoke/archive-smoke.sh").len(),
         1

@@ -251,7 +251,11 @@ fn the_wheel_smoke_installs_from_local_wheels_only_in_four_scenarios() {
         .filter(|l| !l.trim_start().starts_with("//"))
         .filter(|l| l.contains("local_index_args(dir)"))
         .collect();
-    assert_eq!(installs.len(), 2, "pip install and tool install: {installs:?}");
+    assert_eq!(
+        installs.len(),
+        2,
+        "pip install and tool install: {installs:?}"
+    );
     for scenario in [
         "Scenario: install product `name` alone",
         "Scenario: `uv tool install frob`",

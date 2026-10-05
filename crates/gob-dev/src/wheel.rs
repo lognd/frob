@@ -1,4 +1,4 @@
-//! `cargo dev wheel`: build the PyPI wheel of every product for this host, portably.
+//! `cargo dev wheel`: build the `PyPI` wheel of every product for this host, portably.
 //!
 //! One wheel per product of `packaging/pypi/products.toml` (D87), each carrying only its own
 //! binary. `render.py` writes each product's maturin project under `<target>/pypi/<product>` and
@@ -127,7 +127,7 @@ pub enum WheelError {
 /// One product of `products.toml`.
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct Product {
-    /// PyPI project, wheel name and binary.
+    /// `PyPI` project, wheel name and binary.
     pub name: String,
     /// Sibling products pinned at the same version.
     #[serde(default)]
@@ -404,9 +404,12 @@ pub fn wheels_of(dir: &Path, name: &str) -> Result<Vec<PathBuf>, WheelError> {
         .map(|e| e.path())
         .filter(|p| {
             p.is_file()
-                && p.file_name()
-                    .and_then(|n| n.to_str())
-                    .is_some_and(|n| n.starts_with(&prefix) && n.ends_with(".whl"))
+                && p.file_name().and_then(|n| n.to_str()).is_some_and(|n| {
+                    n.starts_with(&prefix)
+                        && Path::new(n)
+                            .extension()
+                            .is_some_and(|x| x.eq_ignore_ascii_case("whl"))
+                })
         })
         .collect();
     found.sort();

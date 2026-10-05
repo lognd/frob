@@ -81,6 +81,9 @@ fn fail<T>(msg: String) -> Result<T, WheelError> {
 }
 
 /// `uv venv -q <venv>`.
+///
+/// # Errors
+/// [`WheelError::Path`] when a path is not valid UTF-8.
 pub fn venv_spec(venv: &Path, cwd: &Path) -> Result<Spec, WheelError> {
     Ok(tool(
         "uv",
@@ -91,6 +94,9 @@ pub fn venv_spec(venv: &Path, cwd: &Path) -> Result<Spec, WheelError> {
 }
 
 /// The local-only index arguments: `--no-index --find-links <dir>`.
+///
+/// # Errors
+/// [`WheelError::Path`] when a path is not valid UTF-8.
 pub fn local_index_args(dir: &Path) -> Result<Vec<String>, WheelError> {
     Ok(vec![
         "--no-index".into(),
@@ -100,6 +106,9 @@ pub fn local_index_args(dir: &Path) -> Result<Vec<String>, WheelError> {
 }
 
 /// `uv pip install -q --python <python> --no-index --find-links <dir> <name>`.
+///
+/// # Errors
+/// [`WheelError::Path`] when a path is not valid UTF-8.
 pub fn install_spec(python: &Path, dir: &Path, name: &str, cwd: &Path) -> Result<Spec, WheelError> {
     let mut args = vec![
         "pip".to_owned(),
@@ -114,6 +123,9 @@ pub fn install_spec(python: &Path, dir: &Path, name: &str, cwd: &Path) -> Result
 }
 
 /// `uv tool install -q --no-index --find-links <dir> <name>` with the tool and bin dirs set.
+///
+/// # Errors
+/// [`WheelError::Path`] when a path is not valid UTF-8.
 pub fn tool_install_spec(
     dir: &Path,
     name: &str,
@@ -133,6 +145,9 @@ pub fn tool_install_spec(
 }
 
 /// `sh packaging/smoke/fixture-loop.sh <bin_dir> [version]`, run from the workspace root.
+///
+/// # Errors
+/// [`WheelError::Path`] when a path is not valid UTF-8.
 pub fn fixture_loop_spec(
     root: &Path,
     bin_dir: &Path,
