@@ -2,7 +2,7 @@
 id = "01M416233QBRZYW9001M3JKSGA"
 version = "0.532.0"
 goal = "someone outside this repository can install frob and run its whole loop"
-state = "open"
+state = "released"
 epics = ["01M4065Y4N6DQG30TRSP2QNP8T"]
 created = "2026-10-03T15:27:57Z"
 updated = "2026-10-05T05:50:35Z"
