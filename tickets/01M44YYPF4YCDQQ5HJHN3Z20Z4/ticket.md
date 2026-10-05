@@ -2,12 +2,13 @@
 id = "01M44YYPF4YCDQQ5HJHN3Z20Z4"
 title = "frob migrate directives and exceptions: rewrite v1 frob:ticket ids and frob:waive into v2 forms"
 type = "story"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 parent = "01M44YYN4E7SXWHQB3H7EHD37P"
 reporter = "lognd"
 created = "2026-10-05T02:40:43Z"
-updated = "2026-10-05T02:40:43Z"
+updated = "2026-10-05T02:43:01Z"
 
 [[acceptance]]
 text = "Given v1 source with frob:ticket T-ids and frob:waive comments, when frob migrate directives and exceptions --apply run, then ids are ULIDs, waivers are exceptions, and every dropped waiver is reported"
