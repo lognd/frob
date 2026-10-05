@@ -9,7 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
-anstream = "0.6"
+anstream = "1.0"
 anstyle = "1"
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
