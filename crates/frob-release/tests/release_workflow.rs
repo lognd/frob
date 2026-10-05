@@ -666,7 +666,12 @@ fn smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemp
 fn triggers_are_tag_only_and_every_action_is_sha_pinned() {
     let wf = workflow();
     let on = wf["on"].as_mapping().unwrap();
-    assert_eq!(on.len(), 1, "only the push trigger");
+    assert_eq!(
+        on.len(),
+        2,
+        "the push trigger and the publish-nothing dry-run dispatch"
+    );
+    assert!(on.contains_key("workflow_dispatch"));
     let push = on["push"].as_mapping().unwrap();
     assert_eq!(
         push.len(),
@@ -978,7 +983,10 @@ fn the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_
     assert_eq!(call["permissions"].as_mapping().unwrap().len(), 1);
     assert_eq!(call["permissions"]["contents"].as_str(), Some("read"));
     assert_eq!(call["with"]["wheels"].as_bool(), Some(true));
-    assert_eq!(call["with"]["tag"].as_str(), Some("${{ github.ref_name }}"));
+    assert_eq!(
+        call["with"]["tag"].as_str(),
+        Some("${{ github.event_name == 'push' && github.ref_name || '' }}")
+    );
     // The dist version is pinned in the shared workflow alone.
     assert!(sh["env"]["DIST_VERSION"].as_str().is_some());
     assert!(!code_only(&workflow_text()).contains("DIST_VERSION"));
@@ -994,4 +1002,26 @@ fn the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_
             }
         }
     }
+}
+
+/// Binds acceptance criterion 1 of ~Y3S3WBF: a `workflow_dispatch` dry run reaches no publishing job.
+// frob:ticket 01M4069Z4MQBBH3Q938Y3S3WBF
+#[test]
+fn every_publishing_job_runs_only_on_a_tag_push_so_a_dispatch_publishes_nowhere() {
+    let wf = workflow();
+    let mut publishers = 0;
+    for (name, job) in jobs(&wf) {
+        if publishes(job) {
+            publishers += 1;
+            assert_eq!(
+                job["if"].as_str(),
+                Some("github.event_name == 'push'"),
+                "publishing job {name:?} must be guarded to the tag push"
+            );
+        }
+    }
+    assert_eq!(publishers, 3, "release, crates and pypi");
+    // The dispatch builds the ref as is: the tag input of the shared call is empty off a push.
+    let tag = wf["jobs"]["artifacts"]["with"]["tag"].as_str().unwrap();
+    assert!(tag.contains("github.event_name == 'push'") && tag.ends_with("|| '' }}"));
 }
