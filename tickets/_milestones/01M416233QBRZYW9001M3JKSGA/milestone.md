@@ -5,11 +5,11 @@ goal = "someone outside this repository can install frob and run its whole loop"
 state = "open"
 epics = ["01M4065Y4N6DQG30TRSP2QNP8T"]
 created = "2026-10-03T15:27:57Z"
-updated = "2026-10-05T02:32:42Z"
+updated = "2026-10-05T05:14:26Z"
 
 [[criteria]]
 text = "binaries and wheel install on the five targets with artifact smoke"
-bound = false
+bound = true
 
 [[criteria]]
 text = "CHANGELOG compiled from fragments"
