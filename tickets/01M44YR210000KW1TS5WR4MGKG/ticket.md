@@ -8,7 +8,7 @@ points = 8
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:05Z"
-updated = "2026-10-05T02:40:47Z"
+updated = "2026-10-05T02:43:22Z"
 idempotency_key = "d94-miggame"
 scope = ["docs/migration/**", "notes/**"]
 

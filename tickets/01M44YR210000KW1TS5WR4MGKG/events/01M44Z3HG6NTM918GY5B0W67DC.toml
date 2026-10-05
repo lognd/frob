@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "D95 (owner decision 2026-10-05): migrate by hand, not with frob migrate verbs (dropped). Steps: frob init for v2 config using the v1 frob.toml as reference (migration.md section 1 table), import tickets worth keeping with cargo dev import-v1-tickets and a selection file or recreate them, rewrite directives and waivers as touched, ticket doctor and frob check clean at the end. The migrate blockers are closed wont-fix."
+at = "2026-10-05T02:43:22Z"
+actor = "lognd"
+rev = 1
