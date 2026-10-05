@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-05T02:45:40Z"
+digest = "1bd5303db76143fa9cdfb9d96a0519b102bd7173318371e40b3b19901ad89fe3"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e92d3126-b0bc-4e85-babc-b0517d578de7 with nextest profile: default
+    Starting 6 tests across 8 binaries (134 tests skipped)
+        PASS [   0.007s] gob-languages comments::tests::csharp_syntax_error_is_a_partial_tree_with_errors
+        PASS [   0.007s] gob-languages inline::tests::unmatched_run_is_not_a_span
+        PASS [   0.008s] gob-languages comments::tests::csharp_block_and_doc_forms_and_unterminated_strings
+        PASS [   0.008s] gob-directives scan::python_tests::csharp_directives_come_from_comments_not_strings
+        PASS [   0.009s] frob-obligations comments::tests::csharp_doc_lines_and_strings
+        PASS [   0.058s] frob-obligations::repo evaluate_file_runs_the_per_file_rules_on_toml_text
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.059s] 6 tests run: 6 passed, 134 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p gob-languages -p frob-obligations -p gob-directives csharp"
+size = 1061
+status = "measured"
+tests = ["comments::tests::csharp_syntax_error_is_a_partial_tree_with_errors", "inline::tests::unmatched_run_is_not_a_span", "comments::tests::csharp_block_and_doc_forms_and_unterminated_strings", "scan::python_tests::csharp_directives_come_from_comments_not_strings", "comments::tests::csharp_doc_lines_and_strings", "evaluate_file_runs_the_per_file_rules_on_toml_text"]
+at = "2026-10-05T02:45:40Z"
+actor = "lognd"
+rev = 1

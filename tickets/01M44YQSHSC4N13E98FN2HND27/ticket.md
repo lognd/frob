@@ -8,13 +8,13 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:57Z"
-updated = "2026-10-05T02:41:02Z"
+updated = "2026-10-05T02:45:40Z"
 idempotency_key = "d94-lang"
 scope = ["crates/gob-languages/**", "crates/gob-directives/src/comments.rs", "crates/gob-directives/src/scan.rs", "crates/frob-obligations/src/comments.rs", "docs/reference/directives.md", "docs/reference/fidelity.md", "Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given a C# file with a frob directive in a // comment and a bare TODO in a /// comment, when frob check runs, then the directive binds to the member below and TODO001 fires"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a C# string literal (regular, verbatim, interpolated, raw) containing // or /*, when the comment scanners run, then no comment is reported inside the string"
