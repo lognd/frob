@@ -8,9 +8,9 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:57Z"
-updated = "2026-10-05T03:44:26Z"
+updated = "2026-10-05T03:46:42Z"
 idempotency_key = "d94-sym"
-scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/adapter.rs", "crates/gob-symbols/src/model.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/src/symref.rs", "crates/gob-symbols/Cargo.toml", "crates/gob-symbols/tests/csharp.rs", "Cargo.lock"]
+scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/adapter.rs", "crates/gob-symbols/src/model.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/src/symref.rs", "crates/gob-symbols/Cargo.toml", "crates/gob-symbols/tests/csharp.rs", "Cargo.lock", "crates/gob-symbols/src/view.rs", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/tests/corpus.rs", "crates/gob-symbols/tests/corpus/csharp/**", "crates/gob-symbols/tests/snapshots/corpus__csharp_*.snap", "docs/reference/fidelity.md"]
 
 [[links]]
 kind = "blocked-by"
