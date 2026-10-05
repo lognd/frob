@@ -2,11 +2,12 @@
 id = "01M44P4SY2DK41TS91PAAZFNR5"
 title = "cycle state depends on wall-clock time near midnight UTC (planned vs active); tests flake"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-05T00:06:46Z"
-updated = "2026-10-05T00:34:53Z"
+updated = "2026-10-05T00:34:59Z"
 scope = ["crates/frob/tests/cycle.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/model.rs", "crates/frob-pm/src/store.rs", "crates/frob-pm/src/cycle/lifecycle.rs", "docs/design/pm-enforcement.md"]
 
 [[acceptance]]
