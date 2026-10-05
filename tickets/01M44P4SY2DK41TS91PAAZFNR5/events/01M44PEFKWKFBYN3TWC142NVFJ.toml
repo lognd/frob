@@ -1,0 +1,63 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-05T00:12:03Z"
+digest = "893c0f6e604f7b61d7490ab2888cbb3c48e85341598955838e73a48deb33a420"
+exit_code = 0
+inline = '''
+   Compiling frob-pm v0.0.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.0.0 (<worktree>/crates/frob-release)
+   Compiling frob-evidence v0.0.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (<worktree>/crates/frob-lease)
+   Compiling frob-worktree v0.0.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.0.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.0.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.36s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 32439cfe-410d-46e2-b08b-46e3bc9965d1 with nextest profile: default
+    Starting 31 tests across 1 binary
+        PASS [   1.607s] frob-cli::cycle a_cycle_starting_tomorrow_is_planned_and_a_closed_cycle_stays_closed
+        PASS [   1.828s] frob-cli::cycle close_early_without_next_goal_refuses_and_the_remedy_names_it
+        PASS [   2.223s] frob-cli::cycle assign_refuses_epics_and_tickets_without_points_with_remedies
+        PASS [   2.507s] frob-cli::cycle close_retries_after_a_failure_between_the_create_and_the_carry
+        PASS [   2.584s] frob-cli::cycle close_is_refused_while_a_member_is_in_progress_with_a_live_lease
+        PASS [   2.819s] frob-cli::cycle close_next_days_defaults_to_cycle_days
+        PASS [   2.836s] frob-cli::cycle assign_and_unassign_are_idempotent_and_say_capacity_is_not_enforced_yet
+        PASS [   3.123s] frob-cli::cycle assigning_to_another_cycle_moves_the_ticket
+        PASS [   3.406s] frob-cli::cycle assign_defaults_to_the_open_cycle_holding_today_else_the_next_planned
+        PASS [   4.478s] frob-cli::cycle close_early_with_next_goal_creates_the_next_cycle_carries_members_and_counts_them
+        PASS [   2.263s] frob-cli::cycle closing_on_the_last_day_or_a_legacy_close_keeps_the_planned_end
+        PASS [   3.183s] frob-cli::cycle close_with_next_goal_on_a_reused_range_gets_a_unique_alias
+        PASS [   5.067s] frob-cli::cycle close_carries_incomplete_members_and_records_the_ratio_and_retro
+        PASS [   2.907s] frob-cli::cycle closing_on_the_first_day_frees_the_next_day_and_shows_both_ends
+        PASS [   5.406s] frob-cli::cycle a_closed_cycle_does_not_block_the_same_dates_and_the_new_alias_is_suffixed
+        PASS [   2.848s] frob-cli::cycle doctor_is_clean_after_an_early_close_and_a_same_day_recreate
+        PASS [   4.592s] frob-cli::cycle close_without_a_next_cycle_is_refused_unless_carry_to_names_one
+        PASS [   3.023s] frob-cli::cycle new_takes_its_end_from_cycle_days_and_a_repeat_is_already
+        PASS [   3.809s] frob-cli::cycle explicit_capacity_is_enforced_and_over_commit_records_the_reason
+        PASS [   2.587s] frob-cli::cycle overlapping_an_open_cycle_is_refused_with_a_remedy
+        PASS [   4.280s] frob-cli::cycle doctor_fix_numbers_existing_duplicate_aliases_in_creation_order
+        PASS [   2.660s] frob-cli::cycle plan_without_enforced_capacity_is_refused_unless_points_is_given
+        PASS [   2.894s] frob-cli::cycle state_is_derived_from_the_clock_in_show_list_and_assign
+        PASS [   1.888s] frob-cli::cycle velocity_with_no_closed_cycles_says_so_and_exits_zero
+        PASS [   4.079s] frob-cli::cycle show_and_list_report_cycles_and_unknown_references_suggest
+        PASS [   3.028s] frob-cli::cycle velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero
+        PASS [   4.735s] frob-cli::cycle plan_proposes_a_fill_to_capacity_and_apply_assigns_idempotently
+        PASS [   3.840s] frob-cli::cycle velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once
+        PASS [   4.596s] frob-cli::cycle velocity_agrees_with_the_close_record_and_ignores_unassigned_done_work
+        PASS [   9.817s] frob-cli::cycle computed_capacity_applies_once_min_history_cycles_have_closed
+        PASS [   8.476s] frob-cli::cycle velocity_lists_closed_cycles_and_its_capacity_is_what_assign_reports
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  14.898s] 31 tests run: 31 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test cycle"
+size = 4307
+status = "measured"
+tests = ["a_cycle_starting_tomorrow_is_planned_and_a_closed_cycle_stays_closed", "close_early_without_next_goal_refuses_and_the_remedy_names_it", "assign_refuses_epics_and_tickets_without_points_with_remedies", "close_retries_after_a_failure_between_the_create_and_the_carry", "close_is_refused_while_a_member_is_in_progress_with_a_live_lease", "close_next_days_defaults_to_cycle_days", "assign_and_unassign_are_idempotent_and_say_capacity_is_not_enforced_yet", "assigning_to_another_cycle_moves_the_ticket", "assign_defaults_to_the_open_cycle_holding_today_else_the_next_planned", "close_early_with_next_goal_creates_the_next_cycle_carries_members_and_counts_them", "closing_on_the_last_day_or_a_legacy_close_keeps_the_planned_end", "close_with_next_goal_on_a_reused_range_gets_a_unique_alias", "close_carries_incomplete_members_and_records_the_ratio_and_retro", "closing_on_the_first_day_frees_the_next_day_and_shows_both_ends", "a_closed_cycle_does_not_block_the_same_dates_and_the_new_alias_is_suffixed", "doctor_is_clean_after_an_early_close_and_a_same_day_recreate", "close_without_a_next_cycle_is_refused_unless_carry_to_names_one", "new_takes_its_end_from_cycle_days_and_a_repeat_is_already", "explicit_capacity_is_enforced_and_over_commit_records_the_reason", "overlapping_an_open_cycle_is_refused_with_a_remedy", "doctor_fix_numbers_existing_duplicate_aliases_in_creation_order", "plan_without_enforced_capacity_is_refused_unless_points_is_given", "state_is_derived_from_the_clock_in_show_list_and_assign", "velocity_with_no_closed_cycles_says_so_and_exits_zero", "show_and_list_report_cycles_and_unknown_references_suggest", "velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero", "plan_proposes_a_fill_to_capacity_and_apply_assigns_idempotently", "velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once", "velocity_agrees_with_the_close_record_and_ignores_unassigned_done_work", "computed_capacity_applies_once_min_history_cycles_have_closed", "velocity_lists_closed_cycles_and_its_capacity_is_what_assign_reports"]
+at = "2026-10-05T00:12:03Z"
+actor = "lognd"
+rev = 1
