@@ -8,13 +8,17 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:05Z"
-updated = "2026-10-05T02:37:05Z"
+updated = "2026-10-05T02:40:43Z"
 idempotency_key = "d94-migplat"
 scope = ["docs/migration/**", "notes/**"]
 
 [[links]]
 kind = "blocked-by"
 target = "01M3Z714TX00GDEADXET0GMFJA"
+
+[[links]]
+kind = "blocked-by"
+target = "01M44YYNMG7X03Z76JY8PFY636"
 
 [[acceptance]]
 text = "Given a scratch clone of platform, when frob migrate runs with --dry-run, then the counts per ticket disposition, unmapped config keys and waiver ids are listed with no file written"
