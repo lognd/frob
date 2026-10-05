@@ -43,9 +43,9 @@ impl Opened {
         let gc = GcConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
         let pm = PmConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
         let wip = pm.wip;
-        let (leases, _) = frob_lease::open_store_from_file(&root)?;
+        let (leases, _) = frob_lease::open_store_from_file(&root, ctx.clock.clone())?;
         Ok(Self {
-            ledger: Ledger::open(repo, ledger_cfg),
+            ledger: Ledger::open(repo, ledger_cfg, ctx.clock.clone()),
             leases: leases
                 .with_holder_limit(wip.in_progress_per_identity)
                 .with_repo_limit(wip.in_progress)

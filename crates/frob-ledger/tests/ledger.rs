@@ -38,7 +38,10 @@ fn fixture(mode: RefMode) -> (tempfile::TempDir, Ledger) {
         mode,
         ..LedgerConfig::default()
     };
-    (dir, Ledger::open(repo, cfg))
+    (
+        dir,
+        Ledger::open(repo, cfg, std::sync::Arc::new(gob_time::SystemClock)),
+    )
 }
 
 fn commits_since_root(repo: &Repo) -> Vec<String> {
@@ -466,7 +469,11 @@ fn index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise() 
 
     // Another writer moves the ledger ref behind our back: the key differs, the index rebuilds.
     let other = Repo::discover(dir.path()).expect("discover");
-    let other_ledger = Ledger::open(other, LedgerConfig::default());
+    let other_ledger = Ledger::open(
+        other,
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
     let second = other_ledger
         .new_ticket(NewTicket::new("Second", TicketType::Task))
         .expect("new")
@@ -503,7 +510,11 @@ fn branch_mode_commits_to_the_current_branch() {
     .expect("topic");
     std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/topic\n").expect("head");
     let repo2 = Repo::discover(dir.path()).expect("discover");
-    let ledger = Ledger::open(repo2, ledger.config().clone());
+    let ledger = Ledger::open(
+        repo2,
+        ledger.config().clone(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
     ledger
         .new_ticket(NewTicket::new("On topic", TicketType::Task))
         .expect("new");
@@ -526,7 +537,11 @@ fn trunk_mode_commits_to_trunk_even_on_another_branch() {
     .expect("topic");
     std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/topic\n").expect("head");
     let repo2 = Repo::discover(dir.path()).expect("discover");
-    let ledger = Ledger::open(repo2, ledger.config().clone());
+    let ledger = Ledger::open(
+        repo2,
+        ledger.config().clone(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
     let t = ledger
         .new_ticket(NewTicket::new("On trunk", TicketType::Task))
         .expect("new");
@@ -546,6 +561,7 @@ fn merge_driver_unions_events_and_refolds() {
     let dir = tempfile::tempdir().expect("tempdir");
     let id = TicketId::mint();
     let create = Event::new(
+        gob_time::Clock::now(&gob_time::SystemClock),
         "a",
         EventBody::Create(Box::new(frob_ledger::event::CreateData {
             title: "T".into(),
@@ -571,6 +587,7 @@ fn merge_driver_unions_events_and_refolds() {
         })),
     );
     let ours = Event::new(
+        gob_time::Clock::now(&gob_time::SystemClock),
         "a",
         EventBody::Field(FieldChange {
             field: "priority".into(),
@@ -581,6 +598,7 @@ fn merge_driver_unions_events_and_refolds() {
         }),
     );
     let theirs = Event::new(
+        gob_time::Clock::now(&gob_time::SystemClock),
         "b",
         EventBody::Comment(CommentData {
             subtype: CommentSubtype::Note,
@@ -634,7 +652,11 @@ fn concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_con
         .map(|who| {
             let (path, cfg, barrier) = (dir.path().to_path_buf(), cfg.clone(), barrier.clone());
             std::thread::spawn(move || {
-                let ledger = Ledger::open(Repo::discover(&path).expect("discover"), cfg);
+                let ledger = Ledger::open(
+                    Repo::discover(&path).expect("discover"),
+                    cfg,
+                    std::sync::Arc::new(gob_time::SystemClock),
+                );
                 barrier.wait();
                 for n in 0..5 {
                     ledger
@@ -647,7 +669,11 @@ fn concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_con
     for h in handles {
         h.join().expect("thread");
     }
-    let ledger = Ledger::open(Repo::discover(dir.path()).expect("discover"), cfg);
+    let ledger = Ledger::open(
+        Repo::discover(dir.path()).expect("discover"),
+        cfg,
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
     let report = ledger.doctor(false).expect("doctor");
     assert_eq!(report.events, 11, "create plus ten comments");
     assert!(report.findings.is_empty(), "{report:?}");

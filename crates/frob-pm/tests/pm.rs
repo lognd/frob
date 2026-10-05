@@ -22,6 +22,7 @@ fn open(dir: &Path, ref_name: &str) -> Ledger {
             ref_name: ref_name.to_owned(),
             ..LedgerConfig::default()
         },
+        std::sync::Arc::new(gob_time::SystemClock),
     )
 }
 

@@ -134,7 +134,11 @@ fn new_update_close_makes_three_commits_and_frontmatter_equals_the_fold() {
     }
     assert_eq!(commits.len(), 3, "new, update, close");
 
-    let ledger = frob_ledger::Ledger::open(ledger_repo, frob_ledger::LedgerConfig::default());
+    let ledger = frob_ledger::Ledger::open(
+        ledger_repo,
+        frob_ledger::LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
     let tip = ledger
         .repo()
         .rev_parse("refs/heads/main")

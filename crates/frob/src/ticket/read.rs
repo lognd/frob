@@ -339,7 +339,7 @@ impl Command for Doable {
 ///
 /// The store is opened with the materialized `[lease]` config, like every other verb.
 fn lease_check(ctx: &Context) -> (Box<dyn LeaseCheck>, Option<String>) {
-    match build_lease_guard(&ctx.cwd) {
+    match build_lease_guard(&ctx.cwd, ctx.clock.clone()) {
         Ok(g) => (Box::new(g), None),
         Err(msg) => {
             tracing::warn!(error = %msg, "lease check unavailable; showing every ticket");
@@ -354,14 +354,17 @@ fn lease_check(ctx: &Context) -> (Box<dyn LeaseCheck>, Option<String>) {
 }
 
 /// Snapshot live leases with the materialized `[lease]` config.
-fn build_lease_guard(cwd: &std::path::Path) -> Result<frob_lease::LeaseGuard, String> {
+fn build_lease_guard(
+    cwd: &std::path::Path,
+    clock: std::sync::Arc<dyn gob_time::Clock>,
+) -> Result<frob_lease::LeaseGuard, String> {
     let repo = gob_git::Repo::discover(cwd).map_err(|e| e.to_string())?;
     let root = repo
         .work_dir()
         .map(std::path::Path::to_path_buf)
         .ok_or_else(|| format!("{} is not inside a git work tree", cwd.display()))?;
     let cfg = FrobConfig::load(&root).map_err(|e| e.to_string())?.lease;
-    let store = frob_lease::LeaseStore::open(&repo, cfg).map_err(|e| e.to_string())?;
+    let store = frob_lease::LeaseStore::open(&repo, cfg, clock).map_err(|e| e.to_string())?;
     frob_lease::LeaseGuard::new(store).map_err(|e| e.to_string())
 }
 

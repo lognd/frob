@@ -34,8 +34,12 @@ impl LeaseGuard {
     /// # Errors
     ///
     /// [`LeaseError::Repo`] when `cwd` is not in a work tree, plus [`LeaseGuard::new`] failures.
-    pub fn discover(cwd: &Path, cfg: crate::LeaseConfig) -> Result<Self, LeaseError> {
-        Self::new(crate::open_store(cwd, cfg)?.0)
+    pub fn discover(
+        cwd: &Path,
+        cfg: crate::LeaseConfig,
+        clock: std::sync::Arc<dyn gob_time::Clock>,
+    ) -> Result<Self, LeaseError> {
+        Self::new(crate::open_store(cwd, cfg, clock)?.0)
     }
 }
 

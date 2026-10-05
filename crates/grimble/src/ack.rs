@@ -189,7 +189,7 @@ impl Command for Ack {
                 reason: self.reason.clone(),
                 renames: self.renames.clone(),
                 actor,
-                at: jiff::Timestamp::now().to_string(),
+                at: ctx.clock.now().to_string(),
             },
         )
         .map_err(cli_error)?;

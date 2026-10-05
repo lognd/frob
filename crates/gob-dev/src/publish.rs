@@ -660,6 +660,8 @@ impl Registry for CratesIo {
 pub struct CargoCli {
     /// Workspace root to publish from.
     pub root: PathBuf,
+    /// The run's clock, read for a rate-limit retry time.
+    pub clock: std::sync::Arc<dyn gob_time::Clock>,
 }
 
 impl CargoCli {
@@ -681,7 +683,12 @@ impl CargoCli {
         for line in out.stdout.lines().chain(out.stderr.lines()) {
             crate::out::emit(line);
         }
-        publish_outcome(out.status, &out.stderr, krate, jiff::Timestamp::now())
+        publish_outcome(
+            out.status,
+            &out.stderr,
+            krate,
+            jiff::Timestamp::from_second(self.clock.now().unix()).unwrap_or_default(),
+        )
     }
 }
 

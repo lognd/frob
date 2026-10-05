@@ -28,6 +28,7 @@ gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
 gob-exec = { version = "0.0.0", path = "../gob-exec" }
 gob-git = { version = "0.0.0", path = "../gob-git" }
 gob-rules = { version = "0.0.0", path = "../gob-rules" }
+gob-time = { version = "0.0.0", path = "../gob-time" }
 gob-symbols = { version = "0.0.0", path = "../gob-symbols" }
 gob-walk = { version = "0.0.0", path = "../gob-walk" }
 frob-ack = { version = "0.0.0", path = "../frob-ack" }
@@ -41,7 +42,6 @@ frob-release = { version = "0.0.0", path = "../frob-release" }
 frob-ledger = { version = "0.0.0", path = "../frob-ledger" }
 frob-tests = { version = "0.0.0", path = "../frob-tests" }
 frob-worktree = { version = "0.0.0", path = "../frob-worktree" }
-jiff = "0.2"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

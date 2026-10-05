@@ -12,7 +12,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, UNIX_EPOCH};
 
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 
@@ -103,6 +103,7 @@ pub struct CacheStats {
 pub struct Cache {
     conn: Option<Mutex<Connection>>,
     engine: String,
+    clock: std::sync::Arc<dyn gob_time::Clock>,
 }
 
 /// The default engine fingerprint of the running binary: crate version plus the executable's size and mtime.
@@ -136,15 +137,14 @@ pub fn default_engine() -> &'static str {
     })
 }
 
+/// The clock a cache uses until [`Cache::with_clock`] replaces it: rows are dated, never compared across runs.
+fn default_clock() -> std::sync::Arc<dyn gob_time::Clock> {
+    std::sync::Arc::new(gob_time::SystemClock)
+}
+
 /// Folds `engine` into a stored key so two engines never share a row.
 fn scoped(engine: &str, key: &str) -> String {
     format!("{engine}|{key}")
-}
-
-fn now_secs() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |d| i64::try_from(d.as_secs()).unwrap_or(i64::MAX))
 }
 
 // frob:ticket 01M42B6T28RX9PVM3X6TSK0M4Y
@@ -279,6 +279,7 @@ impl Cache {
                 Self {
                     conn: Some(Mutex::new(conn)),
                     engine: default_engine().to_owned(),
+                    clock: default_clock(),
                 }
             }
             Err(err) => {
@@ -293,7 +294,15 @@ impl Cache {
         Self {
             conn: None,
             engine: default_engine().to_owned(),
+            clock: default_clock(),
         }
+    }
+
+    /// Replaces the clock that dates stored rows (the command's clock; the system clock otherwise).
+    #[must_use]
+    pub fn with_clock(mut self, clock: std::sync::Arc<dyn gob_time::Clock>) -> Self {
+        self.clock = clock;
+        self
     }
 
     /// Replaces the engine fingerprint that scopes findings and repo-rule rows.
@@ -347,7 +356,12 @@ impl Cache {
             c.execute(
                 "INSERT OR REPLACE INTO artifacts(key, producer, bytes, created_at)
                  VALUES (?1, ?2, ?3, ?4)",
-                params![key.row_key(), key.producer_identity, bytes, now_secs()],
+                params![
+                    key.row_key(),
+                    key.producer_identity,
+                    bytes,
+                    self.clock.now().unix()
+                ],
             )
         });
         if done.is_some() {

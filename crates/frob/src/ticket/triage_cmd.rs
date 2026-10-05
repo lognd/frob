@@ -102,7 +102,7 @@ fn decide(
     build: impl FnOnce(&Ledger) -> Result<TriageRequest, CliError>,
 ) -> CliOutcome<TriageReport> {
     let ledger = open(ctx)?;
-    let now = Stamp::now();
+    let now = ctx.clock.now();
     let req = build(&ledger)?;
     let ids = sel.resolve(&ledger, now)?;
     let report = ledger.triage(&ids, &req, now).map_err(cli_err)?;
@@ -347,7 +347,7 @@ impl Command for InboxList {
             .as_deref()
             .map(|a| parse_when("at", a))
             .transpose()?
-            .unwrap_or_else(Stamp::now);
+            .unwrap_or_else(|| ctx.clock.now());
         let ledger = open(ctx)?;
         let filter = ListFilter {
             label: self.label.clone(),

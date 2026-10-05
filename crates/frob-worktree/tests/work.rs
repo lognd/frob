@@ -72,12 +72,21 @@ impl Fixture {
             actor: actor.map(str::to_owned),
             ..LedgerConfig::default()
         };
-        Ledger::open(Repo::discover(&self.root).expect("repo"), cfg)
+        Ledger::open(
+            Repo::discover(&self.root).expect("repo"),
+            cfg,
+            std::sync::Arc::new(gob_time::SystemClock),
+        )
     }
 
     fn leases(&self) -> LeaseStore {
         let repo = Repo::discover(&self.root).expect("repo");
-        LeaseStore::open(&repo, LeaseConfig::default()).expect("leases")
+        LeaseStore::open(
+            &repo,
+            LeaseConfig::default(),
+            std::sync::Arc::new(gob_time::SystemClock),
+        )
+        .expect("leases")
     }
 
     fn ticket(ledger: &Ledger, title: &str, ty: TicketType, scope: &[&str]) -> TicketId {
@@ -301,12 +310,17 @@ fn concurrent_work_on_overlapping_tickets_grants_exactly_one() {
             let barrier = std::sync::Arc::clone(&barrier);
             std::thread::spawn(move || {
                 let repo = Repo::discover(&root).expect("repo");
-                let leases = LeaseStore::open(&repo, LeaseConfig::default()).expect("leases");
+                let leases = LeaseStore::open(
+                    &repo,
+                    LeaseConfig::default(),
+                    std::sync::Arc::new(gob_time::SystemClock),
+                )
+                .expect("leases");
                 let cfg = LedgerConfig {
                     actor: Some(who.to_owned()),
                     ..LedgerConfig::default()
                 };
-                let ledger = Ledger::open(repo, cfg);
+                let ledger = Ledger::open(repo, cfg, std::sync::Arc::new(gob_time::SystemClock));
                 let wt = WorktreeConfig::load(&root).expect("config");
                 let ws = Workspace {
                     ledger: &ledger,
@@ -471,8 +485,12 @@ fn doable_hides_tickets_overlapping_a_live_lease() {
     let b = Fixture::ticket(&ledger, "B", TicketType::Task, &["src/newmod/x.rs"]);
     let c = Fixture::ticket(&ledger, "C", TicketType::Task, &["docs/**"]);
     ws.start(&a.to_string(), &fx.root, None).expect("start a");
-    let guard = frob_lease::LeaseGuard::discover(&fx.root, frob_lease::LeaseConfig::default())
-        .expect("guard");
+    let guard = frob_lease::LeaseGuard::discover(
+        &fx.root,
+        frob_lease::LeaseConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    )
+    .expect("guard");
     let ids: Vec<TicketId> = ledger
         .doable(&guard)
         .expect("doable")
@@ -631,14 +649,19 @@ fn concurrent_work_for_the_last_wip_slot_grants_exactly_one() {
                 let barrier = std::sync::Arc::clone(&barrier);
                 std::thread::spawn(move || {
                     let repo = Repo::discover(&root).expect("repo");
-                    let leases = LeaseStore::open(&repo, LeaseConfig::default())
-                        .expect("leases")
-                        .with_repo_limit(2);
+                    let leases = LeaseStore::open(
+                        &repo,
+                        LeaseConfig::default(),
+                        std::sync::Arc::new(gob_time::SystemClock),
+                    )
+                    .expect("leases")
+                    .with_repo_limit(2);
                     let cfg = LedgerConfig {
                         actor: Some(who.to_owned()),
                         ..LedgerConfig::default()
                     };
-                    let ledger = Ledger::open(repo, cfg);
+                    let ledger =
+                        Ledger::open(repo, cfg, std::sync::Arc::new(gob_time::SystemClock));
                     let wt = WorktreeConfig::load(&root).expect("config");
                     let ws = Workspace {
                         ledger: &ledger,

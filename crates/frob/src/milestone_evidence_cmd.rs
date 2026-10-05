@@ -281,7 +281,7 @@ impl Command for EvidenceAdd {
     }
 
     fn run(&self, ctx: &Context) -> Outcome<EvidenceAddData> {
-        let ws = Workspace::open(&ctx.cwd).map_err(EvidenceError::into_cli)?;
+        let ws = Workspace::open(&ctx.cwd, ctx.clock.clone()).map_err(EvidenceError::into_cli)?;
         add_evidence(&ws, &self.version, &self.args, &Presence::detect())
     }
 }
@@ -362,7 +362,7 @@ impl Command for EvidenceList {
     }
 
     fn run(&self, ctx: &Context) -> Outcome<ListData> {
-        let ws = Workspace::open(&ctx.cwd).map_err(EvidenceError::into_cli)?;
+        let ws = Workspace::open(&ctx.cwd, ctx.clock.clone()).map_err(EvidenceError::into_cli)?;
         let store = PmStore::new(&ws.ledger);
         let m = find(store, &self.version)?;
         let mut records = Vec::new();

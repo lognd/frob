@@ -21,6 +21,7 @@ name = "grimble"
 path = "src/main.rs"
 
 [dependencies]
+gob-time = { version = "0.0.0", path = "../gob-time" }
 gob-check = { version = "0.0.0", path = "../gob-check" }
 gob-cli = { version = "0.0.0", path = "../gob-cli" }
 gob-config = { version = "0.0.0", path = "../gob-config" }
@@ -33,7 +34,6 @@ gob-walk = { version = "0.0.0", path = "../gob-walk" }
 grimble-bind = { version = "0.0.0", path = "../grimble-bind" }
 grimble-check = { version = "0.0.0", path = "../grimble-check" }
 grimble-model = { version = "0.0.0", path = "../grimble-model" }
-jiff = "0.2"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

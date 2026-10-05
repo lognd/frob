@@ -29,13 +29,13 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    /// Open the repository containing `cwd` with its `frob.toml` settings.
+    /// Open the repository containing `cwd` with its `frob.toml` settings, stamping from `clock`.
     ///
     /// # Errors
     ///
     /// [`EvidenceError::NotARepo`] outside a work tree, [`EvidenceError::Config`]
     /// for an unreadable or invalid `frob.toml`.
-    pub fn open(cwd: &Path) -> Result<Self> {
+    pub fn open(cwd: &Path, clock: std::sync::Arc<dyn gob_time::Clock>) -> Result<Self> {
         let repo = Repo::discover(cwd).map_err(|e| {
             tracing::debug!(error = %e, "no repository");
             EvidenceError::NotARepo(cwd.display().to_string())
@@ -51,7 +51,7 @@ impl Workspace {
         let store = BlobStore::open(&evidence, &repo)?;
         tracing::debug!(root = %root.display(), "evidence workspace opened");
         Ok(Self {
-            ledger: Ledger::open(repo, ledger_cfg),
+            ledger: Ledger::open(repo, ledger_cfg, clock),
             root,
             evidence,
             store,

@@ -34,6 +34,8 @@ use crate::lock::LandLock;
 use crate::lockfile;
 use crate::plan::{LandOptions, LandOutcome, PlanInputs, RetryPolicy, digest, steps};
 use crate::ratchet::{self, Ratchet};
+use gob_time::Clock;
+use std::sync::Arc;
 
 /// Stable code of the refusal when the base moved during the land.
 const CODE_STALE: &str = "E-LAND-STALE";
@@ -49,11 +51,15 @@ const LIST_CAP: usize = 10;
 /// `E-LAND-WRONG-WORKTREE`, `E-LAND-DIRTY`, `E-LAND-CONFLICT`,
 /// `E-LAND-CHECK-RED`, the evidence guard's code, `E-LAND-LOCKED`,
 /// `E-LAND-STALE`), plus ledger, lease, git and I/O failures.
-pub fn land(root: &Path, opts: &LandOptions) -> Result<LandOutcome, LandError> {
+pub fn land(
+    root: &Path,
+    opts: &LandOptions,
+    clock: &Arc<dyn Clock>,
+) -> Result<LandOutcome, LandError> {
     let repo = Repo::discover(root).map_err(|e| LandError::Config(e.to_string()))?;
     let cwd_root = work_dir(&repo)?;
-    let here = Workspace::open(&cwd_root)?;
-    let (leases, _) = frob_lease::open_store_from_file(&cwd_root)?;
+    let here = Workspace::open(&cwd_root, clock.clone())?;
+    let (leases, _) = frob_lease::open_store_from_file(&cwd_root, clock.clone())?;
     let id = resolve(&here.ledger, &leases, &cwd_root, opts.handle.as_deref())?;
     let view = here.ledger.show(id)?;
     let handle = view.summary.handle.clone();
@@ -102,6 +108,7 @@ fn prepare(
     base: &str,
     opts: &LandOptions,
 ) -> Result<Ready, LandError> {
+    let clock = here.ledger.clock().clone();
     let id = view.ticket.front.id;
     let handle = view.summary.handle.clone();
     let lease = held_lease(leases, &here.ledger, view, id, &handle)?;
@@ -140,11 +147,11 @@ fn prepare(
     }
 
     let site = if here.ledger.config().mode == RefMode::Branch {
-        Workspace::open(&wt_path)?
+        Workspace::open(&wt_path, clock.clone())?
     } else if primary == cwd_root {
         here
     } else {
-        Workspace::open(&primary)?
+        Workspace::open(&primary, clock.clone())?
     };
     let mut evidence = EvidenceGuard::for_ticket(&site.ledger, &site.store, id)?;
     let mut done = DoneGuard::for_ticket(&site.ledger, id, &wt_path)?;
@@ -298,7 +305,12 @@ impl Ready {
             );
         }
         // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
-        collect_garbage(&self.primary, leases, &mut self.out.warnings);
+        collect_garbage(
+            &self.primary,
+            leases,
+            self.site.ledger.clock().clone(),
+            &mut self.out.warnings,
+        );
         tracing::info!(ticket = %self.id, commit = %oid, pushed = self.out.pushed, "land complete");
         Ok(self.out)
     }
@@ -312,14 +324,19 @@ impl Ready {
 /// is opened on the primary checkout, not the removed worktree, so no index is
 /// recreated inside a directory that no longer exists. Also sweeps abandoned
 /// ratchet base checkouts under the git common dir (`land-base-*`).
-fn collect_garbage(primary: &Path, leases: &LeaseStore, warnings: &mut Vec<String>) {
+fn collect_garbage(
+    primary: &Path,
+    leases: &LeaseStore,
+    clock: Arc<dyn Clock>,
+    warnings: &mut Vec<String>,
+) {
     let opened = Repo::discover(primary)
         .map_err(|e| e.to_string())
         .and_then(|repo| {
             let ledger_cfg = frob_worktree::ledger_config(primary)?;
             let wt = frob_worktree::WorktreeConfig::load(primary).map_err(|e| e.to_string())?;
             let gc = frob_worktree::GcConfig::load(primary).map_err(|e| e.to_string())?;
-            Ok((Ledger::open(repo, ledger_cfg), wt, gc))
+            Ok((Ledger::open(repo, ledger_cfg, clock), wt, gc))
         });
     let (ledger, wt, gc) = match opened {
         Ok(o) => o,
@@ -579,6 +596,7 @@ fn verify_check(
                 ticket: ticket.map(str::to_owned),
                 base: ticket.map(|_| base.to_owned()),
                 ledger: Some(ledger.config().clone()),
+                clock: Some(ledger.clock().clone()),
                 skip_telemetry: true,
                 changelog_exempt: opts.no_changelog_reason.is_some(),
                 ..CheckOptions::default()
@@ -840,9 +858,7 @@ fn jitter(policy: &RetryPolicy, attempt: u32, salt: &str) -> Duration {
         .backoff_base
         .saturating_mul(1_u32 << attempt.min(16))
         .min(policy.backoff_max);
-    let nanos = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |d| d.as_nanos());
+    let nanos = gob_time::SystemClock::entropy_nanos();
     let mut h = blake3::Hasher::new();
     h.update(&nanos.to_le_bytes());
     h.update(&attempt.to_le_bytes());

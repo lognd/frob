@@ -17,4 +17,6 @@ pub struct RunOptions {
     pub skip_tools: bool,
     /// Do not write the telemetry line even when `[check] telemetry` is true.
     pub skip_telemetry: bool,
+    /// The command's clock; when absent the run pins the system clock once at its start.
+    pub clock: Option<std::sync::Arc<dyn gob_time::Clock>>,
 }

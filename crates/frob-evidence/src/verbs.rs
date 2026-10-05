@@ -46,7 +46,7 @@ struct EvidenceAdd {
 
 impl EvidenceAdd {
     fn run(&self, ctx: &Context) -> Result<Payload<AddData>, CliError> {
-        let ws = Workspace::open(&ctx.cwd).map_err(EvidenceError::into_cli)?;
+        let ws = Workspace::open(&ctx.cwd, ctx.clock.clone()).map_err(EvidenceError::into_cli)?;
         let id = resolve(&ws, &self.ticket)?;
         let view = ws.ledger.show(id).map_err(cli)?;
         let criteria = view.ticket.front.acceptance.len();
@@ -123,7 +123,7 @@ struct EvidenceList {
 
 impl EvidenceList {
     fn run(&self, ctx: &Context) -> Result<Payload<ListData>, CliError> {
-        let ws = Workspace::open(&ctx.cwd).map_err(EvidenceError::into_cli)?;
+        let ws = Workspace::open(&ctx.cwd, ctx.clock.clone()).map_err(EvidenceError::into_cli)?;
         let id = resolve(&ws, &self.ticket)?;
         let records: Vec<Listed> = events::list(&ws.ledger, id)
             .map_err(cli)?
@@ -169,7 +169,7 @@ struct EvidenceFetch {
 
 impl EvidenceFetch {
     fn run(&self, ctx: &Context) -> Result<Payload<FetchData>, CliError> {
-        let ws = Workspace::open(&ctx.cwd).map_err(EvidenceError::into_cli)?;
+        let ws = Workspace::open(&ctx.cwd, ctx.clock.clone()).map_err(EvidenceError::into_cli)?;
         let id = resolve(&ws, &self.ticket)?;
         let all = events::list(&ws.ledger, id).map_err(cli)?;
         let stored = self

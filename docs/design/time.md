@@ -1,6 +1,7 @@
 # Time: one clock, one zone, from type to lint (D93)
 
-Status: accepted direction, owner request 2026-10-04 ("Can we add a time
+Status: section 5 step 1 built (gob-time, one pinned clock in the command context, clippy
+confinement); steps 2 and 3 follow. Accepted direction, owner request 2026-10-04 ("Can we add a time
 lint?"). ~AAZFNR5 turned CI red at 00:06 UTC: `frob cycle` derived a
 cycle's state from the UTC day while the library's `Day::today()` used
 the machine's local zone, and the cycle tests hardcoded a "future" date
@@ -48,10 +49,13 @@ library test with `FixedClock`.
 
 `clippy.toml` `disallowed-methods` forbids reading the wall clock
 outside `gob-time`: `std::time::SystemTime::now`,
-`jiff::Timestamp::now`, `jiff::Zoned::now`, `jiff::civil::Date::today`
-equivalents, and any local-zone constructor (`jiff::tz::TimeZone::system`).
+`std::time::SystemTime::elapsed`, `jiff::Timestamp::now`, `jiff::Zoned::now`
+and the local-zone constructors (`jiff::tz::TimeZone::system`, `try_system`;
+jiff has no civil `Date::today`). The lint is `deny` in the workspace.
 `std::time::Instant::now` stays allowed (elapsed time is not a date).
-`gob-time` carries the one `#[allow]` with a reason. A crate that needs
+`gob-time` carries the one `#[allow]` with a reason (`src/wall.rs`, the only file that reads the wall clock). As built, the command
+context holds one `SystemClock::pin()` snapshot (`Context::clock`), `Ledger`, `LeaseStore` and `Workspace` take the
+clock at open, and `Cache` defaults to `SystemClock` (rows are dated, never compared) until `with_clock` replaces it. A crate that needs
 the time takes a `Clock`.
 
 ## 4. The lint family (product feature)

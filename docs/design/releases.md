@@ -105,6 +105,8 @@ REL001 treats a tag as a product tag when it matches the pattern for a
 configured product and the rest parses as a version; all other tags (for
 example v1's `v0.531.0` here) are ignored.
 
+The date of a compiled changelog section is the UTC calendar day of the command's clock (`--date` overrides it), never the machine's local zone, so a cut at 00:06 UTC is dated the same everywhere (time.md, D93).
+
 The compiled changelog section has product headings (`### frob`) only when
 several products are configured; with one product the entries are listed
 under their type headings, whatever product prefix a fragment names. A `notice`

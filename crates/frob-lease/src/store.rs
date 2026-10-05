@@ -12,12 +12,14 @@
 use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions, TryLockError};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use frob_ledger::TicketId;
 use frob_ledger::model::Stamp;
 use globset::GlobSet;
 use gob_git::Repo;
+use gob_time::Clock;
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -87,21 +89,21 @@ pub struct LeaseStore {
     expedite_max: u32,
     shared: GlobSet,
     resolver: Resolver,
-    clock: fn() -> Stamp,
+    clock: Arc<dyn Clock>,
 }
 
 impl LeaseStore {
-    /// The store of `repo`: leases in its common dir, scopes resolved in its work tree.
+    /// The store of `repo`: leases in its common dir, scopes resolved in its work tree, ages judged by `clock`.
     ///
     /// # Errors
     ///
     /// [`LeaseError::BadGlob`] when `[lease] shared_files` holds an invalid glob.
-    pub fn open(repo: &Repo, cfg: LeaseConfig) -> Result<Self, LeaseError> {
+    pub fn open(repo: &Repo, cfg: LeaseConfig, clock: Arc<dyn Clock>) -> Result<Self, LeaseError> {
         let root = repo
             .work_dir()
             .unwrap_or_else(|| repo.common_dir())
             .to_path_buf();
-        Self::open_at(repo.common_dir(), root, cfg)
+        Self::open_at(repo.common_dir(), root, cfg, clock)
     }
 
     /// A store over an explicit common dir and work tree root.
@@ -109,7 +111,12 @@ impl LeaseStore {
     /// # Errors
     ///
     /// [`LeaseError::BadGlob`] when `[lease] shared_files` holds an invalid glob.
-    pub fn open_at(common_dir: &Path, root: PathBuf, cfg: LeaseConfig) -> Result<Self, LeaseError> {
+    pub fn open_at(
+        common_dir: &Path,
+        root: PathBuf,
+        cfg: LeaseConfig,
+        clock: Arc<dyn Clock>,
+    ) -> Result<Self, LeaseError> {
         let base = common_dir.join("frob");
         let shared = glob_set(&cfg.shared_files)?;
         tracing::debug!(dir = %base.display(), ttl_secs = cfg.ttl_secs, "lease store opened");
@@ -122,13 +129,13 @@ impl LeaseStore {
             expedite_max: 1,
             shared,
             resolver: Resolver::new(root),
-            clock: Stamp::now,
+            clock,
         })
     }
 
     /// Replace the clock (tests of TTL expiry).
     #[must_use]
-    pub fn with_clock(mut self, clock: fn() -> Stamp) -> Self {
+    pub fn with_clock(mut self, clock: Arc<dyn Clock>) -> Self {
         self.clock = clock;
         self
     }
@@ -356,7 +363,7 @@ impl LeaseStore {
         admit: impl FnOnce(&[Lease]) -> Result<(), E>,
     ) -> Result<Acquired, E> {
         let lock = self.lock()?;
-        let now = (self.clock)();
+        let now = self.clock.now();
         if let Some(c) = self
             .corrupt_leases()?
             .into_iter()
@@ -445,7 +452,7 @@ impl LeaseStore {
     /// [`LeaseError::NotHeld`] with no lease, [`LeaseError::Held`] for another holder, plus lock and I/O failures.
     pub fn renew(&self, ticket: TicketId, holder: &Holder) -> Result<Lease, LeaseError> {
         let lock = self.lock()?;
-        let now = (self.clock)();
+        let now = self.clock.now();
         let mut lease = self.find(ticket)?.ok_or(LeaseError::NotHeld { ticket })?;
         if &lease.holder != holder {
             return Err(held_by(&lease, SAME_TICKET));
@@ -480,7 +487,7 @@ impl LeaseStore {
         cfg: &LeaseConfig,
     ) -> Result<Lease, LeaseError> {
         let lock = self.lock()?;
-        let now = (self.clock)();
+        let now = self.clock.now();
         let live = self.live_pruned(&lock, now)?;
         let mut lease = live
             .iter()
@@ -553,7 +560,7 @@ impl LeaseStore {
         as_actor: Option<&str>,
     ) -> Result<Option<Lease>, LeaseError> {
         let _lock = self.lock()?;
-        let now = (self.clock)();
+        let now = self.clock.now();
         let Some(lease) = self.find(ticket)? else {
             tracing::debug!(%ticket, "release: no lease");
             return Ok(None);
@@ -581,7 +588,7 @@ impl LeaseStore {
     /// [`LeaseError::NotHeld`] when the ticket has no lease (acquire instead), lock and I/O failures.
     pub fn steal(&self, ticket: TicketId, by: &Holder, reason: &str) -> Result<Stolen, LeaseError> {
         let lock = self.lock()?;
-        let now = (self.clock)();
+        let now = self.clock.now();
         let mut lease = self.find(ticket)?.ok_or(LeaseError::NotHeld { ticket })?;
         let previous = lease.holder.clone();
         if &previous != by {
@@ -608,7 +615,7 @@ impl LeaseStore {
     /// Lock, I/O and format failures.
     pub fn list(&self) -> Result<Vec<Lease>, LeaseError> {
         let lock = self.lock()?;
-        let live = self.live_pruned(&lock, (self.clock)())?;
+        let live = self.live_pruned(&lock, self.clock.now())?;
         tracing::debug!(count = live.len(), "leases listed");
         Ok(live)
     }
@@ -619,7 +626,7 @@ impl LeaseStore {
     ///
     /// I/O and format failures.
     pub fn live_snapshot(&self) -> Result<Vec<Lease>, LeaseError> {
-        let now = (self.clock)();
+        let now = self.clock.now();
         Ok(self
             .read_all()?
             .into_iter()
@@ -633,7 +640,7 @@ impl LeaseStore {
     ///
     /// I/O and format failures.
     pub fn live_lease(&self, ticket: TicketId) -> Result<Option<Lease>, LeaseError> {
-        let now = (self.clock)();
+        let now = self.clock.now();
         Ok(self.find(ticket)?.filter(|l| l.is_live(now)))
     }
 

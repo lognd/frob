@@ -286,6 +286,11 @@ impl<'a> PmStore<'a> {
         }
     }
 
+    /// Today's UTC day on the ledger's clock: the one day every judgement of this command uses.
+    pub fn today(self) -> Day {
+        self.ledger.clock().today()
+    }
+
     /// Create a milestone or cycle: one `create` event and its frontmatter in one commit.
     ///
     /// # Errors
@@ -302,7 +307,11 @@ impl<'a> PmStore<'a> {
             let ordinal = self.next_ordinal(start, end)?;
             data.ordinal = (ordinal > 1).then_some(ordinal);
         }
-        let event = PmEvent::new(&self.ledger.actor()?, PmBody::Create(Box::new(data)));
+        let event = PmEvent::new(
+            self.ledger.clock().now(),
+            &self.ledger.actor()?,
+            PmBody::Create(Box::new(data)),
+        );
         let folded = fold(kind, id, std::slice::from_ref(&event))?;
         let alias = folded.object.alias();
         // A closed cycle never holds its date range: only open or planned cycles (and any milestone) block the alias.
@@ -335,7 +344,7 @@ impl<'a> PmStore<'a> {
                 "append takes an interpreted, non-create event body",
             ));
         }
-        let event = PmEvent::new(&self.ledger.actor()?, body);
+        let event = PmEvent::new(self.ledger.clock().now(), &self.ledger.actor()?, body);
         self.commit(kind, id, &[event])
     }
 
@@ -363,7 +372,7 @@ impl<'a> PmStore<'a> {
         let actor = self.ledger.actor()?;
         let events: Vec<PmEvent> = bodies
             .into_iter()
-            .map(|b| PmEvent::new(&actor, b))
+            .map(|b| PmEvent::new(self.ledger.clock().now(), &actor, b))
             .collect();
         self.commit(kind, id, &events)
     }
@@ -489,7 +498,7 @@ impl<'a> PmStore<'a> {
         // frob:ticket 01M41KS5P8EGFFGBQSMRFBAJ8P
         let from = match &current.object {
             Object::Milestone(m) => m.state,
-            Object::Cycle(c) => state_on(c, Day::today()),
+            Object::Cycle(c) => state_on(c, self.today()),
         };
         self.append(
             kind,

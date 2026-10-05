@@ -394,8 +394,8 @@ impl Command for Doctor {
             .iter()
             .map(|p| sibling_row(&runner, p, &ctx.cwd))
             .collect();
-        let gc = gc_info(&located, &cfg, self.fix);
-        let leases = lease_info(&located, &cfg, self.fix);
+        let gc = gc_info(&located, &cfg, self.fix, &ctx.clock);
+        let leases = lease_info(&located, &cfg, self.fix, &ctx.clock);
         let languages = self
             .languages
             .then(|| languages_report(&located.root, &cfg));
@@ -639,7 +639,12 @@ fn ledger_info(located: &Located, cfg: &FrobConfig) -> LedgerInfo {
 
 /// The lease-file section: corrupt files, and with `fix` quarantine them (kept as `.toml.corrupt`, never deleted).
 // frob:ticket 01M42MGP62EPY4K7C29M0388X5
-fn lease_info(located: &Located, cfg: &FrobConfig, fix: bool) -> LeaseInfo {
+fn lease_info(
+    located: &Located,
+    cfg: &FrobConfig,
+    fix: bool,
+    clock: &std::sync::Arc<dyn gob_time::Clock>,
+) -> LeaseInfo {
     let skipped = |why: String| LeaseInfo {
         state: format!("skipped: {why}"),
         corrupt: Vec::new(),
@@ -648,7 +653,7 @@ fn lease_info(located: &Located, cfg: &FrobConfig, fix: bool) -> LeaseInfo {
     let Some(repo) = located.repo.as_ref().filter(|r| r.work_dir().is_some()) else {
         return skipped("not a git work tree".to_owned());
     };
-    let store = match frob_lease::LeaseStore::open(repo, cfg.lease.clone()) {
+    let store = match frob_lease::LeaseStore::open(repo, cfg.lease.clone(), clock.clone()) {
         Ok(s) => s,
         Err(e) => return skipped(format!("lease store: {e}")),
     };
@@ -718,16 +723,21 @@ fn gc_skipped(why: &str) -> GcInfo {
 
 /// The garbage-collection section: with `fix` run a forced pass first, then a dry run for the current picture.
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
-fn gc_info(located: &Located, cfg: &FrobConfig, fix: bool) -> GcInfo {
+fn gc_info(
+    located: &Located,
+    cfg: &FrobConfig,
+    fix: bool,
+    clock: &std::sync::Arc<dyn gob_time::Clock>,
+) -> GcInfo {
     let Some(repo) = located.repo.as_ref().filter(|r| r.work_dir().is_some()) else {
         return gc_skipped("not a git work tree");
     };
-    let leases = match frob_lease::LeaseStore::open(repo, cfg.lease.clone()) {
+    let leases = match frob_lease::LeaseStore::open(repo, cfg.lease.clone(), clock.clone()) {
         Ok(l) => l,
         Err(e) => return gc_skipped(&format!("lease store: {e}")),
     };
     let ledger = match gob_git::Repo::discover(&located.root) {
-        Ok(r) => frob_ledger::Ledger::open(r, cfg.ledger()),
+        Ok(r) => frob_ledger::Ledger::open(r, cfg.ledger(), clock.clone()),
         Err(e) => return gc_skipped(&e.to_string()),
     };
     let run = |mode| gc::glue::run_for(&ledger, &leases, &cfg.worktree, &cfg.gc, mode);

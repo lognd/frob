@@ -275,7 +275,10 @@ fn publish_crates(
     let order = publish::read_metadata(&root)
         .and_then(|json| publish::plan(&json))
         .map_err(|e| fail(&e))?;
-    let cargo = publish::CargoCli { root };
+    let cargo = publish::CargoCli {
+        root,
+        clock: std::sync::Arc::new(gob_time::SystemClock::pin()),
+    };
     let say = &mut |line: &str| emit(line);
     let result = if reserve {
         let opts = publish::ReserveOptions {

@@ -303,6 +303,7 @@ impl Command for Check {
             fix: self.fix,
             fail_on: self.fail_on,
             base: self.base.clone(),
+            clock: Some(ctx.clock.clone()),
             ..CheckOptions::default()
         };
         let (report, diff) = run_with_diff(&root, &opts).map_err(cli_error)?;

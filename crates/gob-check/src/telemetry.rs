@@ -20,9 +20,16 @@ struct Line<'a> {
 }
 
 /// Append the telemetry line; failures are logged, never raised.
-pub(crate) fn append(root: &Path, state_dir: &str, timing: &Timing, stats: &Stats, counts: Counts) {
+pub(crate) fn append(
+    at: gob_time::Stamp,
+    root: &Path,
+    state_dir: &str,
+    timing: &Timing,
+    stats: &Stats,
+    counts: Counts,
+) {
     let line = Line {
-        at: jiff::Timestamp::now().to_string(),
+        at: at.to_string(),
         duration_ms: &timing.stages,
         budget_ms: timing.budget_ms(),
         tools_ms: timing.tools_ms(),

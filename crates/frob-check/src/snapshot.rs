@@ -2,6 +2,7 @@
 
 use std::collections::BTreeSet;
 use std::path::Path;
+use std::sync::Arc;
 use std::time::Instant;
 
 use frob_ack::{DocDirective, Inputs};
@@ -108,7 +109,11 @@ impl FrobInputs {
 /// `(None, None)` without a git work tree, ledger ref or tickets and milestones;
 /// `(None, Some(why))` when the ledger exists but cannot be read, so its rules fail loudly.
 // frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
-fn open_ledger(root: &Path, cfg: LedgerConfig) -> (Option<LedgerState>, Option<String>) {
+fn open_ledger(
+    root: &Path,
+    cfg: LedgerConfig,
+    clock: Arc<dyn gob_time::Clock>,
+) -> (Option<LedgerState>, Option<String>) {
     let repo = match gob_git::Repo::discover(root) {
         Ok(r) if r.work_dir().is_some() => r,
         Ok(_) | Err(_) => {
@@ -116,7 +121,7 @@ fn open_ledger(root: &Path, cfg: LedgerConfig) -> (Option<LedgerState>, Option<S
             return (None, None);
         }
     };
-    let ledger = Ledger::open(repo, cfg);
+    let ledger = Ledger::open(repo, cfg, clock);
     let tip = ledger
         .ledger_ref()
         .and_then(|name| ledger.repo().rev_parse(&name).map_err(Into::into));
@@ -338,7 +343,11 @@ pub(crate) fn collect(
     cx.timing.push("directives", started.elapsed(), true);
 
     let started = Instant::now();
-    let (ledger, ledger_error) = open_ledger(root, ledger_cfg);
+    let clock = opts
+        .clock
+        .clone()
+        .unwrap_or_else(|| Arc::new(gob_time::SystemClock::pin()));
+    let (ledger, ledger_error) = open_ledger(root, ledger_cfg, clock);
     cx.timing.push("ledger", started.elapsed(), true);
     let invariants = InvariantsConfig::load(root)?;
 

@@ -177,6 +177,7 @@ impl Ledger {
                     let ty_of = |t: TicketId| s.index.summary(t).ok().flatten().map(|x| x.ty);
                     check_add(&edges, &ty_of, id, LinkKind::Duplicates, target)?;
                     events.push(Event::new(
+                        self.now(),
                         &actor,
                         EventBody::Link(LinkData {
                             op: LinkOp::Add,
@@ -188,6 +189,7 @@ impl Ledger {
             }
             if let Some((to, outcome)) = destination(req.action) {
                 events.push(Event::new(
+                    self.now(),
                     &actor,
                     EventBody::Transition(TransitionData {
                         from: Category::Triage,
@@ -198,6 +200,7 @@ impl Ledger {
                 ));
             }
             events.push(Event::new(
+                self.now(),
                 &actor,
                 EventBody::Triage(TriageData {
                     action: req.action,

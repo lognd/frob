@@ -445,8 +445,8 @@ mod tests {
             capacity_points: None,
             state,
             tickets: Vec::new(),
-            created: Stamp::now(),
-            updated: Stamp::now(),
+            created: Stamp::from_unix(1_800_000_000),
+            updated: Stamp::from_unix(1_800_000_000),
             ordinal: 1,
         }
     }
@@ -478,7 +478,7 @@ mod tests {
     #[test]
     fn the_day_is_the_utc_day_even_when_a_local_zone_is_still_on_the_previous_one() {
         // frob:tests crates/frob-pm/src/cycle/lifecycle.rs::state_on
-        // frob:tests crates/frob-pm/src/model.rs::Day.from_unix
+        // frob:tests crates/gob-time/src/day.rs::Day.from_unix
         // frob:ticket 01M44P4SY2DK41TS91PAAZFNR5
         // 00:06 UTC on the 5th is still the 4th at -07:00; both spellings are one instant.
         let utc: Stamp = "2026-10-05T00:06:00Z".parse().expect("stamp");

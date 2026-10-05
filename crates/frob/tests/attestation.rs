@@ -113,7 +113,8 @@ impl Repo {
     }
 
     fn workspace(&self) -> Workspace {
-        Workspace::open(self.dir.path()).expect("workspace")
+        Workspace::open(self.dir.path(), std::sync::Arc::new(gob_time::SystemClock))
+            .expect("workspace")
     }
 }
 

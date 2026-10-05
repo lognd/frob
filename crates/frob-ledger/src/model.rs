@@ -6,7 +6,6 @@
 use std::fmt;
 use std::str::FromStr;
 
-use jiff::Timestamp;
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -294,66 +293,7 @@ impl JsonSchema for Points {
     }
 }
 
-/// An RFC 3339 instant with whole-second precision, always rendered in UTC (`Z`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Stamp(Timestamp);
-
-impl Stamp {
-    /// The current time, truncated to the second.
-    pub fn now() -> Self {
-        Self::from_unix(Timestamp::now().as_second())
-    }
-
-    /// An instant from Unix seconds (clamped into jiff's range).
-    pub fn from_unix(secs: i64) -> Self {
-        Self(Timestamp::from_second(secs).unwrap_or(Timestamp::UNIX_EPOCH))
-    }
-
-    /// Unix seconds.
-    pub fn unix(self) -> i64 {
-        self.0.as_second()
-    }
-}
-
-impl fmt::Display for Stamp {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0.strftime("%Y-%m-%dT%H:%M:%SZ"))
-    }
-}
-
-impl FromStr for Stamp {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        s.parse::<Timestamp>()
-            .map(|t| Self::from_unix(t.as_second()))
-            .map_err(|e| format!("`{s}` is not an RFC 3339 timestamp: {e}"))
-    }
-}
-
-impl Serialize for Stamp {
-    fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        s.collect_str(self)
-    }
-}
-
-impl<'de> Deserialize<'de> for Stamp {
-    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
-        String::deserialize(d)?
-            .parse()
-            .map_err(serde::de::Error::custom)
-    }
-}
-
-impl JsonSchema for Stamp {
-    fn schema_name() -> std::borrow::Cow<'static, str> {
-        "Stamp".into()
-    }
-
-    fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
-        schemars::json_schema!({ "type": "string", "format": "date-time" })
-    }
-}
+pub use gob_time::Stamp;
 
 string_enum!(
     /// Link kinds of the canonical table (tickets.md section 3), both directions.

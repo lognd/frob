@@ -46,7 +46,11 @@ pub fn tickets() -> Tickets {
         &CommitOptions::default(),
     )
     .expect("root commit");
-    let ledger = Ledger::open(repo, LedgerConfig::default());
+    let ledger = Ledger::open(
+        repo,
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
     let open = ledger
         .new_ticket(NewTicket::new("Open work", TicketType::Task))
         .expect("open ticket")

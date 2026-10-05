@@ -144,7 +144,7 @@ impl Command for Fragment {
 fn fragment_root(ctx: &Context, id: frob_ledger::TicketId) -> Result<PathBuf, CliError> {
     let (_, root) = Located::discover(&ctx.cwd).into_repo()?;
     let cfg = FrobConfig::load(&root).map_err(|e| crate::workspace::config_refusal(&e))?;
-    let held = frob_lease::open_store(&ctx.cwd, cfg.lease)
+    let held = frob_lease::open_store(&ctx.cwd, cfg.lease, ctx.clock.clone())
         .ok()
         .and_then(|(store, _)| store.live_lease(id).ok().flatten())
         .map(|l| l.holder.worktree);

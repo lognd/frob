@@ -87,7 +87,7 @@ impl Repo {
             mode: RefMode::Branch,
             ..LedgerConfig::default()
         };
-        Ledger::open(repo, cfg)
+        Ledger::open(repo, cfg, std::sync::Arc::new(gob_time::SystemClock))
     }
 }
 
@@ -134,7 +134,9 @@ fn dirty() -> (Repo, String, PathBuf) {
     record.insert("status".into(), "measured".into());
     record.insert(
         "captured_at".into(),
-        frob_ledger::model::Stamp::now().to_string().into(),
+        gob_time::Clock::now(&gob_time::SystemClock)
+            .to_string()
+            .into(),
     );
     record.insert("passed".into(), true.into());
     record.insert("inline".into(), transcript.clone().into());
@@ -143,6 +145,7 @@ fn dirty() -> (Repo, String, PathBuf) {
         i64::try_from(transcript.len()).expect("len").into(),
     );
     let ev = Event::new(
+        gob_time::Clock::now(&gob_time::SystemClock),
         "ann",
         EventBody::Evidence(EvidenceData {
             accepts: vec![1],
@@ -153,7 +156,7 @@ fn dirty() -> (Repo, String, PathBuf) {
     std::fs::write(repo.path().join(&path), ev.to_toml().expect("toml")).expect("write event");
     let lease = format!(
         "kind = \"lease\"\nat = \"{}\"\nactor = \"a\"\nrev = 1\nreason = \"lease: ann in /home/ann/projects/{name}-wt/T2 and C:\\\\Users\\\\bo\\\\p\\\\{name}-wt\\\\T3; scope: x\"\n",
-        frob_ledger::model::Stamp::now()
+        gob_time::Clock::now(&gob_time::SystemClock)
     );
     let lease_ev = Event::parse(frob_ledger::EventId::mint(), &lease).expect("lease");
     std::fs::write(

@@ -17,7 +17,7 @@ gob-git = { version = "0.0.0", path = "../gob-git" }
 gob-macros = { version = "0.0.0", path = "../gob-macros" }
 gob-rules = { version = "0.0.0", path = "../gob-rules" }
 inventory = "0.3"
-jiff = "0.2"
+gob-time = { version = "0.0.0", path = "../gob-time" }
 regex = "1"
 rusqlite = { version = "0.32", features = ["bundled"] }
 schemars = "1"

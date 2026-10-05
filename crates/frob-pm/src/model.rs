@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 use frob_ledger::TicketId;
 use frob_ledger::model::Stamp;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 
 /// The two kinds of PM object; each has its own sub-directory of the tickets directory.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
@@ -89,65 +89,7 @@ impl FromStr for ObjectId {
     }
 }
 
-/// A calendar day (`YYYY-MM-DD`), the unit of targets and cycle bounds.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Day(jiff::civil::Date);
-
-impl fmt::Display for Day {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Day {
-    /// Today's UTC calendar day: the one clock and zone every cycle date and state is judged by.
-    pub fn today() -> Self {
-        // frob:ticket 01M44P4SY2DK41TS91PAAZFNR5
-        Self::from_unix(Stamp::now().unix())
-    }
-
-    /// The UTC calendar day of Unix time `secs`; the epoch day when out of range.
-    pub fn from_unix(secs: i64) -> Self {
-        let ts = jiff::Timestamp::from_second(secs).unwrap_or(jiff::Timestamp::UNIX_EPOCH);
-        Self(ts.to_zoned(jiff::tz::TimeZone::UTC).date())
-    }
-
-    /// This day shifted by `days` (negative goes back); `Err` when the result leaves the calendar.
-    ///
-    /// # Errors
-    ///
-    /// A message when the shifted date is out of range.
-    pub fn plus_days(self, days: i64) -> std::result::Result<Self, String> {
-        self.0
-            .checked_add(jiff::Span::new().days(days))
-            .map(Self)
-            .map_err(|e| format!("{self} plus {days} days is out of range: {e}"))
-    }
-}
-
-impl FromStr for Day {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, String> {
-        s.parse::<jiff::civil::Date>()
-            .map(Self)
-            .map_err(|e| format!("`{s}` is not a YYYY-MM-DD date: {e}"))
-    }
-}
-
-impl Serialize for Day {
-    fn serialize<S: Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
-        s.collect_str(self)
-    }
-}
-
-impl<'de> Deserialize<'de> for Day {
-    fn deserialize<D: Deserializer<'de>>(d: D) -> std::result::Result<Self, D::Error> {
-        String::deserialize(d)?
-            .parse()
-            .map_err(serde::de::Error::custom)
-    }
-}
+pub use gob_time::Day;
 
 /// Where an object is in its life; which values are legal depends on the kind.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]

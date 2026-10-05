@@ -30,7 +30,13 @@ fn cfg(shared: &[&str]) -> LeaseConfig {
 }
 
 fn store_in(dir: &Path, cfg: LeaseConfig) -> LeaseStore {
-    LeaseStore::open_at(&dir.join(".git"), dir.to_path_buf(), cfg).expect("store")
+    LeaseStore::open_at(
+        &dir.join(".git"),
+        dir.to_path_buf(),
+        cfg,
+        std::sync::Arc::new(gob_time::SystemClock),
+    )
+    .expect("store")
 }
 
 fn write(dir: &Path, rel: &str) {
@@ -169,8 +175,14 @@ fn same_holder_reacquire_is_already() {
 
 static NOW: AtomicI64 = AtomicI64::new(1_800_000_000);
 
-fn fake_now() -> Stamp {
-    Stamp::from_unix(NOW.load(Ordering::SeqCst))
+/// A clock a test moves by hand through `NOW`.
+#[derive(Debug)]
+struct TestClock;
+
+impl gob_time::Clock for TestClock {
+    fn now(&self) -> Stamp {
+        Stamp::from_unix(NOW.load(Ordering::SeqCst))
+    }
 }
 
 #[test]
@@ -183,7 +195,7 @@ fn ttl_expiry_frees_and_prunes() {
             ..LeaseConfig::default()
         },
     )
-    .with_clock(fake_now);
+    .with_clock(std::sync::Arc::new(TestClock));
     let a = TicketId::mint();
     store
         .acquire(a, &holder("alice"), &scope(&["src/**"]))
@@ -393,7 +405,12 @@ fn scope001_flags_outside_paths_only() {
 fn verbs_list_leases_and_contention() {
     let dir = tempfile::tempdir().expect("tempdir");
     gob_git::Repo::init(dir.path()).expect("init");
-    let (store, _) = frob_lease::open_store(dir.path(), LeaseConfig::default()).expect("open");
+    let (store, _) = frob_lease::open_store(
+        dir.path(),
+        LeaseConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    )
+    .expect("open");
     store
         .acquire(TicketId::mint(), &holder("a"), &scope(&["src/**"]))
         .expect("a");
@@ -518,7 +535,12 @@ fn open_store_uses_the_callers_config_not_the_file() {
     let dir = tempfile::tempdir().expect("tempdir");
     gob_git::Repo::init(dir.path()).expect("init");
     std::fs::write(dir.path().join("frob.toml"), "[lease]\nshared_files = []\n").expect("toml");
-    let (store, _) = frob_lease::open_store(dir.path(), cfg(&["Cargo.lock"])).expect("open");
+    let (store, _) = frob_lease::open_store(
+        dir.path(),
+        cfg(&["Cargo.lock"]),
+        std::sync::Arc::new(gob_time::SystemClock),
+    )
+    .expect("open");
     store
         .acquire(
             TicketId::mint(),
@@ -753,7 +775,12 @@ fn a_lockfile_only_overlap_names_shared_files_in_the_remedy() {
 fn a_corrupt_lease_file_is_skipped_reported_and_kept() {
     let dir = tempfile::tempdir().expect("tempdir");
     gob_git::Repo::init(dir.path()).expect("init");
-    let (store, _) = frob_lease::open_store(dir.path(), LeaseConfig::default()).expect("open");
+    let (store, _) = frob_lease::open_store(
+        dir.path(),
+        LeaseConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    )
+    .expect("open");
     let good = TicketId::mint();
     store
         .acquire(good, &holder("a"), &scope(&["src/**"]))

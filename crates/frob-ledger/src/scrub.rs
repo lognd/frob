@@ -146,6 +146,7 @@ impl Ledger {
         for (id, t) in &touched {
             self.settle_ticket(&hex, *id, t, &mut changes)?;
             let ev = Event::new(
+                self.now(),
                 &actor,
                 EventBody::Scrub(ScrubData {
                     reason: reason_of(&t.rules),

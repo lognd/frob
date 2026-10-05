@@ -41,13 +41,17 @@ pub use store::{Acquired, Contended, CorruptLease, LeaseStore, Stolen};
 ///
 /// [`LeaseError::Repo`] when `cwd` is not inside a git work tree, or
 /// [`LeaseError::BadGlob`] when `cfg.shared_files` holds an invalid glob.
-pub fn open_store(cwd: &Path, cfg: LeaseConfig) -> Result<(LeaseStore, PathBuf), LeaseError> {
+pub fn open_store(
+    cwd: &Path,
+    cfg: LeaseConfig,
+    clock: std::sync::Arc<dyn gob_time::Clock>,
+) -> Result<(LeaseStore, PathBuf), LeaseError> {
     let repo = gob_git::Repo::discover(cwd).map_err(|e| LeaseError::Repo(e.to_string()))?;
     let root = repo.work_dir().map(Path::to_path_buf).ok_or_else(|| {
         LeaseError::Repo(format!("{} is not inside a git work tree", cwd.display()))
     })?;
     tracing::debug!(root = %root.display(), shared = cfg.shared_files.len(), "opening lease store");
-    Ok((LeaseStore::open(&repo, cfg)?, root))
+    Ok((LeaseStore::open(&repo, cfg, clock)?, root))
 }
 
 /// Open the lease store of `cwd` with `[lease]` loaded from its `frob.toml`.
@@ -57,13 +61,16 @@ pub fn open_store(cwd: &Path, cfg: LeaseConfig) -> Result<(LeaseStore, PathBuf),
 /// # Errors
 ///
 /// [`LeaseError::Repo`] when `cwd` is not in a work tree or the config is invalid.
-pub fn open_store_from_file(cwd: &Path) -> Result<(LeaseStore, PathBuf), LeaseError> {
+pub fn open_store_from_file(
+    cwd: &Path,
+    clock: std::sync::Arc<dyn gob_time::Clock>,
+) -> Result<(LeaseStore, PathBuf), LeaseError> {
     let repo = gob_git::Repo::discover(cwd).map_err(|e| LeaseError::Repo(e.to_string()))?;
     let root = repo.work_dir().map(Path::to_path_buf).ok_or_else(|| {
         LeaseError::Repo(format!("{} is not inside a git work tree", cwd.display()))
     })?;
     let cfg = LeaseConfig::load(&root).map_err(|e| LeaseError::Repo(e.to_string()))?;
-    open_store(cwd, cfg)
+    open_store(cwd, cfg, clock)
 }
 
 /// Register `lease list` and `ticket contention` on a product root.

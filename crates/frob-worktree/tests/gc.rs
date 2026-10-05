@@ -127,7 +127,7 @@ fn config() -> GcConfig {
 }
 
 fn age(path: &Path, secs: u64) {
-    let when = SystemTime::now() - Duration::from_secs(secs);
+    let when = wall_now() - Duration::from_secs(secs);
     // A directory cannot be opened for writing; a read handle sets its time on unix.
     let file = std::fs::OpenOptions::new()
         .write(true)
@@ -165,7 +165,7 @@ impl Ctx<'_> {
             config: &self.cfg,
             tickets: self.oracle,
             live_worktrees: &self.live,
-            now: SystemTime::now(),
+            now: wall_now(),
             free_bytes: &free_fn,
             adapters: &adapters,
         };
@@ -215,7 +215,7 @@ fn policy(budget: u64) -> BuildPolicy {
 // frob:tests crates/frob-worktree/src/gc/adapter.rs::plan
 #[test]
 fn plan_evicts_oldest_artifacts_until_under_budget_and_keeps_the_latest_build() {
-    let now = SystemTime::now();
+    let now = wall_now();
     let units = vec![
         unit("old-a", UnitKind::Artifact, 100, 30 * HOUR, now),
         unit("old-b", UnitKind::Artifact, 100, 20 * HOUR, now),
@@ -237,7 +237,7 @@ fn plan_evicts_oldest_artifacts_until_under_budget_and_keeps_the_latest_build() 
 // frob:tests crates/frob-worktree/src/gc/adapter.rs::plan
 #[test]
 fn plan_never_evicts_the_latest_build_even_over_budget() {
-    let now = SystemTime::now();
+    let now = wall_now();
     let units = vec![
         unit("old", UnitKind::Artifact, 100, 30 * HOUR, now),
         unit("new-a", UnitKind::Artifact, 400, 0, now),
@@ -252,7 +252,7 @@ fn plan_never_evicts_the_latest_build_even_over_budget() {
 // frob:tests crates/frob-worktree/src/gc/adapter.rs::plan
 #[test]
 fn plan_removes_stale_incremental_regardless_of_budget_and_keeps_fresh_incremental() {
-    let now = SystemTime::now();
+    let now = wall_now();
     let units = vec![
         unit("inc-stale", UnitKind::Incremental, 50, 7 * HOUR, now),
         unit("inc-fresh", UnitKind::Incremental, 50, HOUR, now),
@@ -682,7 +682,7 @@ fn cache_budget_evicts_least_recent_and_only_allowlisted_files() {
     write(&frob.join("land.lock"), 10, 99 * HOUR);
     let entries = caches::entries(&fx.root);
     assert_eq!(entries.len(), 4, "tickets index and locks are not caches");
-    let evict = caches::plan(entries, 2500, SystemTime::now());
+    let evict = caches::plan(entries, 2500, wall_now());
     assert_eq!(evict.len(), 2, "oldest two evicted until under budget");
     assert!(evict.iter().any(|e| e.paths[0].ends_with("aaa.json")));
     assert!(evict.iter().any(|e| e.paths[0].ends_with("cache.sqlite")));
@@ -713,7 +713,7 @@ fn shared_cache_and_base_sets_under_the_common_dir_are_evictable_and_nothing_els
     write(&frob.join("land.lock"), 10, 99 * HOUR);
     let entries = caches::shared_entries(&common);
     assert_eq!(entries.len(), 2, "database with companions, one base set");
-    let evict = caches::plan(entries, 1500, SystemTime::now());
+    let evict = caches::plan(entries, 1500, wall_now());
     assert_eq!(evict.len(), 2, "both are over the budget and old enough");
     assert!(
         evict.iter().any(|e| e.paths.len() == 2),
@@ -741,7 +741,7 @@ fn only_old_unreferenced_digest_named_blobs_are_collected() {
         &common,
         &refs,
         Duration::from_secs(30 * 24 * HOUR),
-        SystemTime::now(),
+        wall_now(),
     );
     assert_eq!(blobs.len(), 1);
     assert!(blobs[0].path.ends_with(&old));
@@ -787,4 +787,9 @@ fn abandoned_land_base_checkouts_are_swept_and_recent_ones_left() {
     ctx(&fx, &oracle).run(sweep_mode());
     assert!(!stale.exists());
     assert!(recent.exists());
+}
+
+/// The current wall time through the one clock, as a `SystemTime` for file-time arithmetic.
+fn wall_now() -> SystemTime {
+    gob_time::Clock::now(&gob_time::SystemClock).to_system_time()
 }

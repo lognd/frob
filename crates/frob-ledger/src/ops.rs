@@ -345,6 +345,7 @@ impl Ledger {
         let actor = self.actor()?;
         let id = TicketId::mint();
         let event = Event::new(
+            self.now(),
             &actor,
             EventBody::Create(Box::new(CreateData {
                 title: req.title.trim().to_owned(),
@@ -490,6 +491,7 @@ impl Ledger {
             }
             set_field(&mut work, name, new.as_ref()).map_err(LedgerError::invalid)?;
             events.push(Event::new(
+                self.now(),
                 &actor,
                 EventBody::Field(FieldChange {
                     field: name.clone(),
@@ -518,6 +520,7 @@ impl Ledger {
             set_field(&mut work, name, None).map_err(LedgerError::invalid)?;
             tracing::info!(ticket = %id, field = %name, "list field cleared");
             events.push(Event::new(
+                self.now(),
                 &actor,
                 EventBody::Field(FieldChange {
                     field: name.clone(),
@@ -530,7 +533,7 @@ impl Ledger {
         }
         if let Some(change) = edit_acceptance(&mut work, patch)? {
             tracing::info!(ticket = %id, "acceptance criteria edited");
-            events.push(Event::new(&actor, EventBody::Field(change)));
+            events.push(Event::new(self.now(), &actor, EventBody::Field(change)));
         }
         let edits = [
             ("labels", &patch.add_labels, &patch.remove_labels),
@@ -539,6 +542,7 @@ impl Ledger {
         for (name, add, remove) in edits {
             if let Some(change) = edit_list(&mut work, name, add, remove)? {
                 events.push(Event::new(
+                    self.now(),
                     &actor,
                     EventBody::Field(FieldChange {
                         reason: patch.reason.clone(),
@@ -569,6 +573,7 @@ impl Ledger {
         check_add(&edges, &ty_of, id, kind, target)?;
         let actor = self.actor()?;
         let event = Event::new(
+            self.now(),
             &actor,
             EventBody::Link(LinkData {
                 op: LinkOp::Add,
@@ -604,6 +609,7 @@ impl Ledger {
         };
         let actor = self.actor()?;
         let event = Event::new(
+            self.now(),
             &actor,
             EventBody::Link(LinkData {
                 op: LinkOp::Remove,
@@ -627,6 +633,7 @@ impl Ledger {
         let s = self.synced()?;
         Self::load(&s, id)?;
         let event = Event::new(
+            self.now(),
             &self.actor()?,
             EventBody::Comment(CommentData {
                 subtype,
@@ -657,7 +664,7 @@ impl Ledger {
         }
         let s = self.synced()?;
         Self::require_exists(&s, id)?;
-        let event = Event::new(&self.actor()?, body);
+        let event = Event::new(self.now(), &self.actor()?, body);
         drop(s);
         let verb = event.kind.clone();
         tracing::debug!(ticket = %id, event = %event.id, kind = %verb, "appending event");
@@ -702,6 +709,7 @@ impl Ledger {
             return Self::already(&s, id);
         }
         let event = Event::new(
+            self.now(),
             &self.actor()?,
             EventBody::Transition(TransitionData {
                 from: current.front.category,

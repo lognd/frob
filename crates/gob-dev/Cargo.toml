@@ -18,6 +18,7 @@ name = "gob-dev"
 path = "src/main.rs"
 
 [dependencies]
+gob-time = { version = "0.0.0", path = "../gob-time" }
 clap = { version = "4", features = ["derive"] }
 crunk-spec = { path = "../crunk-spec" }
 frob-cli = { path = "../frob" }

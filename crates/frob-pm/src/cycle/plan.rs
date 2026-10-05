@@ -245,8 +245,8 @@ mod tests {
             capacity_points: cap,
             state,
             tickets: Vec::new(),
-            created: Stamp::now(),
-            updated: Stamp::now(),
+            created: Stamp::from_unix(1_800_000_000),
+            updated: Stamp::from_unix(1_800_000_000),
             ordinal: 1,
         }
     }
@@ -359,8 +359,8 @@ mod tests {
             state,
             epics: Vec::new(),
             criteria: Vec::new(),
-            created: Stamp::now(),
-            updated: Stamp::now(),
+            created: Stamp::from_unix(1_800_000_000),
+            updated: Stamp::from_unix(1_800_000_000),
         };
         let ms = vec![
             mk("3.0", None, State::Open),
@@ -397,8 +397,8 @@ mod tests {
             state: State::Open,
             epics: vec![epic],
             criteria: Vec::new(),
-            created: Stamp::now(),
-            updated: Stamp::now(),
+            created: Stamp::from_unix(1_800_000_000),
+            updated: Stamp::from_unix(1_800_000_000),
         };
         let got = milestone_members(&m, &tickets);
         assert!(got.contains(&child) && got.contains(&claimer) && !got.contains(&stray));

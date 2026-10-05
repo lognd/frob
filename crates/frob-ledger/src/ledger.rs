@@ -93,6 +93,8 @@ pub struct Ledger {
     index_path: PathBuf,
     /// Local private-term rules, loaded on first use; a load failure is kept so writes fail closed.
     redact: std::sync::OnceLock<std::result::Result<RuleSet, RedactError>>,
+    /// The command's clock: every event and date this ledger stamps comes from it.
+    clock: std::sync::Arc<dyn gob_time::Clock>,
 }
 
 /// The index synced to one ledger tip, with the facts a writer needs.
@@ -150,8 +152,8 @@ fn is_rev_error(e: &gob_git::GitError) -> bool {
 }
 
 impl Ledger {
-    /// Open the ledger of `repo` under `cfg`.
-    pub fn open(repo: Repo, cfg: LedgerConfig) -> Self {
+    /// Open the ledger of `repo` under `cfg`, stamping every event from `clock`.
+    pub fn open(repo: Repo, cfg: LedgerConfig, clock: std::sync::Arc<dyn gob_time::Clock>) -> Self {
         let index_path = repo.work_dir().map_or_else(
             || repo.git_dir().join("frob").join("tickets.sqlite"),
             |w| w.join(".frob").join("tickets.sqlite"),
@@ -162,7 +164,18 @@ impl Ledger {
             cfg,
             index_path,
             redact: std::sync::OnceLock::new(),
+            clock,
         }
+    }
+
+    /// The clock this ledger stamps with; the one a command reads its dates from.
+    pub fn clock(&self) -> &std::sync::Arc<dyn gob_time::Clock> {
+        &self.clock
+    }
+
+    /// The current instant of the ledger's clock.
+    pub(crate) fn now(&self) -> gob_time::Stamp {
+        self.clock.now()
     }
 
     /// Replace the local private-term rules (tests and callers that load rules themselves).

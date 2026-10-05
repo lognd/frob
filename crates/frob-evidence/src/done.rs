@@ -599,6 +599,7 @@ mod tests {
         let ledger = Ledger::open(
             gob_git::Repo::discover(p).expect("repo"),
             LedgerConfig::default(),
+            std::sync::Arc::new(gob_time::SystemClock),
         );
         let upstream = ledger
             .new_ticket(NewTicket::new("Blocker", TicketType::Chore))

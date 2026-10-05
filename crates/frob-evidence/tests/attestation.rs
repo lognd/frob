@@ -65,7 +65,8 @@ fn an_attester_at_a_terminal_binds_a_ticket_criterion() {
     // frob:ticket 01M40AKKXBN7K30090V7KQSA8Z
     // frob:tests crates/frob-evidence/src/attestation.rs::attest
     let dir = repo(r#"["owner@example.com"]"#);
-    let ws = Workspace::open(dir.path()).expect("workspace");
+    let ws =
+        Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
     let mut t = NewTicket::new("Manage two repos", TicketType::Task);
     t.acceptance = vec!["two outside repositories managed for two cycles".into()];
     let a = ws.ledger.new_ticket(t).expect("ticket");
@@ -110,7 +111,8 @@ fn an_agent_marker_or_a_pipe_refuses_and_names_a_human_remedy() {
     // frob:ticket 01M40AKKXBN7K30090V7KQSA8Z
     // frob:tests crates/frob-evidence/src/attestation.rs::Presence.require_human
     let dir = repo(r#"["owner@example.com"]"#);
-    let ws = Workspace::open(dir.path()).expect("workspace");
+    let ws =
+        Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
     let agent = Presence::from_parts(true, true, |n| (n == "CLAUDECODE").then(|| "1".to_owned()));
     let err = refused(&ws, &agent, &request("fine", &[]));
     assert!(matches!(err, EvidenceError::NotHuman { .. }), "{err}");
@@ -134,12 +136,14 @@ fn a_non_attester_and_an_empty_list_refuse() {
     // frob:ticket 01M40AKKXBN7K30090V7KQSA8Z
     // frob:tests crates/frob-evidence/src/attestation.rs::attest
     let other = repo(r#"["someone-else@example.com"]"#);
-    let ws = Workspace::open(other.path()).expect("workspace");
+    let ws = Workspace::open(other.path(), std::sync::Arc::new(gob_time::SystemClock))
+        .expect("workspace");
     let err = refused(&ws, &Presence::interactive(), &request("fine", &[]));
     assert!(matches!(err, EvidenceError::NotAttester { .. }), "{err}");
     assert!(err.to_string().contains("owner@example.com"));
     let empty = repo("[]");
-    let ws = Workspace::open(empty.path()).expect("workspace");
+    let ws = Workspace::open(empty.path(), std::sync::Arc::new(gob_time::SystemClock))
+        .expect("workspace");
     let err = refused(&ws, &Presence::interactive(), &request("fine", &[]));
     assert!(err.to_string().contains("nobody may attest"), "{err}");
 }
@@ -149,7 +153,8 @@ fn an_empty_statement_refuses() {
     // frob:ticket 01M40AKKXBN7K30090V7KQSA8Z
     // frob:tests crates/frob-evidence/src/attestation.rs::attest
     let dir = repo(r#"["owner@example.com"]"#);
-    let ws = Workspace::open(dir.path()).expect("workspace");
+    let ws =
+        Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
     for s in ["", "   \n"] {
         let err = refused(&ws, &Presence::interactive(), &request(s, &[]));
         assert!(matches!(err, EvidenceError::EmptyStatement), "{err}");
@@ -161,7 +166,8 @@ fn facts_must_have_a_shape_and_commits_and_tickets_must_exist() {
     // frob:ticket 01M40AKKXBN7K30090V7KQSA8Z
     // frob:tests crates/frob-evidence/src/attestation.rs::validate_facts
     let dir = repo(r#"["owner@example.com"]"#);
-    let ws = Workspace::open(dir.path()).expect("workspace");
+    let ws =
+        Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
     let at = |fact: &str| refused(&ws, &Presence::interactive(), &request("fine", &[fact]));
     assert!(matches!(
         at("deadbeefdeadbeef"),
@@ -187,7 +193,8 @@ fn a_tampered_statement_degrades_to_unmeasured() {
     // frob:ticket 01M40AKKXBN7K30090V7KQSA8Z
     // frob:tests crates/frob-evidence/src/record.rs::EvidenceRecord.effective_status
     let dir = repo(r#"["owner@example.com"]"#);
-    let ws = Workspace::open(dir.path()).expect("workspace");
+    let ws =
+        Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
     let mut rec = attest(
         &ws,
         &Presence::interactive(),
@@ -211,7 +218,8 @@ fn a_non_ascii_statement_or_fact_is_refused_naming_the_character() {
     // frob:tests crates/frob-evidence/src/attestation.rs::attest
     // frob:tests crates/frob-evidence/src/attestation.rs::validate_facts
     let dir = repo(r#"["owner@example.com"]"#);
-    let ws = Workspace::open(dir.path()).expect("workspace");
+    let ws =
+        Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
     let human = Presence::interactive();
     let err = refused(&ws, &human, &request("caf\u{e9} works", &[]));
     let EvidenceError::NonAscii {
@@ -243,7 +251,8 @@ fn an_ascii_statement_still_attests() {
     // frob:ticket 01M415HTAQ7YSKXW09DG39YHBW
     // frob:tests crates/frob-evidence/src/attestation.rs::attest
     let dir = repo(r#"["owner@example.com"]"#);
-    let ws = Workspace::open(dir.path()).expect("workspace");
+    let ws =
+        Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
     let rec = attest(
         &ws,
         &Presence::interactive(),

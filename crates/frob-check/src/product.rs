@@ -220,7 +220,9 @@ fn live_leases(
         tracing::warn!(%err, "lease config unreadable; default used for PM013 liveness");
         LeaseConfig::default()
     });
-    match LeaseStore::open(state.ledger.repo(), cfg).and_then(|s| s.live_snapshot()) {
+    match LeaseStore::open(state.ledger.repo(), cfg, state.ledger.clock().clone())
+        .and_then(|s| s.live_snapshot())
+    {
         Ok(live) => Some(live.into_iter().map(|l| l.ticket).collect()),
         Err(err) => {
             tracing::warn!(%err, "leases unreadable; PM013 counts every in-progress ticket");
@@ -286,7 +288,10 @@ fn replenish_evaluated(
     };
     let guard = cfg
         .map_err(|e| e.to_string())
-        .and_then(|c| frob_lease::open_store(&inputs.root, c).map_err(|e| e.to_string()))
+        .and_then(|c| {
+            frob_lease::open_store(&inputs.root, c, state.ledger.clock().clone())
+                .map_err(|e| e.to_string())
+        })
         .and_then(|(store, _)| frob_lease::LeaseGuard::new(store).map_err(|e| e.to_string()));
     let leases: Box<dyn LeaseCheck> = match guard {
         Ok(g) => Box::new(g),

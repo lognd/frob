@@ -315,6 +315,7 @@ impl Cli {
             verbosity,
             quiet: leaf.get_flag("quiet"),
             dry_run,
+            clock: std::sync::Arc::new(gob_time::SystemClock::pin()),
         })
     }
 

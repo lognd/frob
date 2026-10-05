@@ -707,7 +707,8 @@ impl Command for Close {
         }
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;
-        let ws = frob_evidence::Workspace::open(&ctx.cwd).map_err(CliError::internal)?;
+        let ws = frob_evidence::Workspace::open(&ctx.cwd, ctx.clock.clone())
+            .map_err(CliError::internal)?;
         let mut evidence = frob_evidence::EvidenceGuard::for_ticket(&ledger, &ws.store, id)
             .map_err(CliError::internal)?;
         if self.no_evidence {

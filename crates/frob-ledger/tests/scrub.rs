@@ -43,7 +43,11 @@ fn fresh() -> Ledger {
         &CommitOptions::default(),
     )
     .expect("root commit");
-    Ledger::open(repo, LedgerConfig::default())
+    Ledger::open(
+        repo,
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    )
 }
 
 /// Write `event` into ticket `id` as a raw commit, then re-fold the frontmatter.
@@ -82,6 +86,7 @@ fn evidence(inline: &str, good_digest: bool, accepts: &[usize]) -> Event {
         i64::try_from(inline.len()).expect("len").into(),
     );
     Event::new(
+        gob_time::Clock::now(&gob_time::SystemClock),
         "ann",
         EventBody::Evidence(EvidenceData {
             accepts: accepts.to_vec(),
@@ -116,7 +121,7 @@ fn fixture() -> Fixture {
     let ev = evidence("Compiling x (/home/ann/work/app/x)\nok\n", true, &[1]);
     let old_ev = format!("tickets/{id}/events/{}", ev.file_name());
     push_event(&ledger, id, &ev);
-    let now = frob_ledger::model::Stamp::now();
+    let now = gob_time::Clock::now(&gob_time::SystemClock);
     let lease = format!(
         "kind = \"lease\"\nat = \"{now}\"\nactor = \"a\"\nrev = 1\nreason = \"lease: ann in /home/ann/work/app-wt/T1; scope: x\"\n"
     );

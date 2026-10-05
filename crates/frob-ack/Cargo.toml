@@ -9,6 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
+gob-time = { version = "0.0.0", path = "../gob-time" }
 blake3 = "1"
 gob-cache = { version = "0.0.0", path = "../gob-cache" }
 gob-cli = { version = "0.0.0", path = "../gob-cli" }

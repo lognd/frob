@@ -322,6 +322,7 @@ mod tests {
 
     fn create_event(actor: &str) -> Event {
         Event::new(
+            gob_time::Stamp::from_unix(1_800_000_000),
             actor,
             EventBody::Create(Box::new(CreateData {
                 title: "T".into(),
@@ -350,6 +351,7 @@ mod tests {
 
     fn set(field: &str, old: Option<&str>, new: &str) -> Event {
         Event::new(
+            gob_time::Stamp::from_unix(1_800_000_000),
             "a",
             EventBody::Field(FieldChange {
                 field: field.into(),
@@ -368,6 +370,7 @@ mod tests {
             create_event("logan"),
             set("title", Some("T"), "Renamed"),
             Event::new(
+                gob_time::Stamp::from_unix(1_800_000_000),
                 "a",
                 EventBody::Comment(CommentData {
                     subtype: CommentSubtype::Note,
@@ -375,6 +378,7 @@ mod tests {
                 }),
             ),
             Event::new(
+                gob_time::Stamp::from_unix(1_800_000_000),
                 "a",
                 EventBody::Transition(TransitionData {
                     from: Category::Todo,
@@ -439,6 +443,7 @@ mod tests {
 
     fn acceptance_edit(old: &[&str], new: &[&str], moved: &[usize]) -> Event {
         Event::new(
+            gob_time::Stamp::from_unix(1_800_000_000),
             "a",
             EventBody::Field(FieldChange {
                 field: "acceptance".into(),
@@ -455,9 +460,17 @@ mod tests {
     fn acceptance_events_fold_and_remap_recorded_positions() {
         let id = TicketId::mint();
         let create = create_event("a");
-        let evidence = Event::new("a", EventBody::Other);
+        let evidence = Event::new(
+            gob_time::Stamp::from_unix(1_800_000_000),
+            "a",
+            EventBody::Other,
+        );
         let first = acceptance_edit(&["a"], &["a", "b, c"], &[1]);
-        let later = Event::new("a", EventBody::Other);
+        let later = Event::new(
+            gob_time::Stamp::from_unix(1_800_000_000),
+            "a",
+            EventBody::Other,
+        );
         let second = acceptance_edit(&["a", "b, c"], &["b, c"], &[0, 1]);
         let evs = vec![create, evidence.clone(), first, later.clone(), second];
         let f = fold(id, &evs).expect("fold");

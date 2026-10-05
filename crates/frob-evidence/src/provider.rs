@@ -577,6 +577,7 @@ pub fn build_record(
     reference: &str,
     capture: &Capture,
     accepts: &[usize],
+    at: Stamp,
 ) -> Result<EvidenceRecord> {
     // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
     let redacted = escape_non_ascii(&scrub.apply(&gob_log::redact(&capture.transcript)));
@@ -595,7 +596,7 @@ pub fn build_record(
         } else {
             Status::Unmeasured
         },
-        captured_at: Stamp::now(),
+        captured_at: at,
         accepts: accepts.to_vec(),
         passed: capture.measured.then_some(capture.passed),
         exit_code: capture.exit_code,
@@ -612,7 +613,7 @@ pub fn build_record(
 /// # Errors
 ///
 /// [`EvidenceError::Io`] when the file cannot be read.
-pub fn hash_file(root: &Path, path: &str, accepts: &[usize]) -> Result<EvidenceRecord> {
+pub fn hash_file(root: &Path, path: &str, accepts: &[usize], at: Stamp) -> Result<EvidenceRecord> {
     let full = root.join(path);
     let bytes = std::fs::read(&full).map_err(|e| EvidenceError::io(&full, e))?;
     tracing::info!(path, bytes = bytes.len(), "file evidence hashed");
@@ -622,7 +623,7 @@ pub fn hash_file(root: &Path, path: &str, accepts: &[usize]) -> Result<EvidenceR
         digest: digest_hex(&bytes),
         uri: None,
         status: Status::Measured,
-        captured_at: Stamp::now(),
+        captured_at: at,
         accepts: accepts.to_vec(),
         passed: None,
         exit_code: None,
@@ -653,7 +654,7 @@ pub fn capture(
         "capturing evidence"
     );
     match provider {
-        Provider::File => hash_file(&ws.root, reference, accepts),
+        Provider::File => hash_file(&ws.root, reference, accepts, ws.ledger.clock().now()),
         Provider::Attestation => Err(EvidenceError::BadReference(
             "an attestation is made with --statement through attestation::attest, never captured from a reference".to_owned(),
         )),
@@ -675,7 +676,15 @@ pub fn capture(
                     filter: reference.to_owned(),
                 });
             }
-            build_record(&ws.store, &ws.scrub(), provider, reference, &cap, accepts)
+            build_record(
+                &ws.store,
+                &ws.scrub(),
+                provider,
+                reference,
+                &cap,
+                accepts,
+                ws.ledger.clock().now(),
+            )
         }
         Provider::Pytest => {
             let args = split_args(reference)?;
@@ -695,7 +704,15 @@ pub fn capture(
                     filter: reference.to_owned(),
                 });
             }
-            build_record(&ws.store, &ws.scrub(), provider, reference, &cap, accepts)
+            build_record(
+                &ws.store,
+                &ws.scrub(),
+                provider,
+                reference,
+                &cap,
+                accepts,
+                ws.ledger.clock().now(),
+            )
         }
         Provider::Command => {
             let argv = split_args(reference)?;
@@ -706,7 +723,15 @@ pub fn capture(
                 &argv,
                 ws.timeout(),
             )?;
-            build_record(&ws.store, &ws.scrub(), provider, reference, &cap, accepts)
+            build_record(
+                &ws.store,
+                &ws.scrub(),
+                provider,
+                reference,
+                &cap,
+                accepts,
+                ws.ledger.clock().now(),
+            )
         }
     }
 }

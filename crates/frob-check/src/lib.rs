@@ -39,6 +39,7 @@ mod snapshot;
 mod verb;
 
 use std::path::Path;
+use std::sync::Arc;
 
 pub use gob_check::{
     AppliedFix, CheckError, CheckReport, CheckTable, Ci001, Ci003, Ci006, Ci007, Ci010, Ci014,
@@ -86,6 +87,9 @@ pub fn run_with_diff(
     root: &Path,
     opts: &CheckOptions,
 ) -> Result<(CheckReport, Option<std::collections::BTreeSet<String>>), CheckError> {
+    let mut opts = opts.clone();
+    opts.clock
+        .get_or_insert_with(|| Arc::new(gob_time::SystemClock::pin()));
     let product = Frob::new(opts.clone());
     let report = gob_check::run(&product, root, &opts.run_options())?;
     Ok((report, product.diff_paths()))

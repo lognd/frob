@@ -28,6 +28,7 @@ private_intra_doc_links = "deny"
 all = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
 doc_markdown = "deny"
+disallowed_methods = "deny"  # clippy.toml confines wall-clock and local-zone reads to gob-time (D93)
 missing_errors_doc = "deny"
 missing_panics_doc = "deny"
 # Allowed pedantic lints (one-line reason each):

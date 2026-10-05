@@ -97,7 +97,13 @@ impl Command for Ack {
     fn run(&self, ctx: &Context) -> Outcome<AckData> {
         let root = root_of(ctx);
         let data = if ctx.dry_run {
-            let plan = plan_ack(&root, &self.targets, self.all, self.reason.as_deref())?;
+            let plan = plan_ack(
+                &root,
+                &self.targets,
+                self.all,
+                self.reason.as_deref(),
+                ctx.clock.now(),
+            )?;
             AckData {
                 acked: plan.acked,
                 commit: None,
@@ -106,7 +112,13 @@ impl Command for Ack {
                 dry_run: true,
             }
         } else {
-            let out = ack(&root, &self.targets, self.all, self.reason.as_deref())?;
+            let out = ack(
+                &root,
+                &self.targets,
+                self.all,
+                self.reason.as_deref(),
+                ctx.clock.now(),
+            )?;
             AckData {
                 acked: out.acked,
                 commit: out.commit,

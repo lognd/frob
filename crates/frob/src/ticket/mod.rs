@@ -28,7 +28,7 @@ use crate::workspace::{Located, config_refusal};
 pub(crate) fn open(ctx: &Context) -> Result<Ledger, CliError> {
     let (repo, root) = Located::discover(&ctx.cwd).into_repo()?;
     let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
-    Ok(Ledger::open(repo, cfg.ledger()))
+    Ok(Ledger::open(repo, cfg.ledger(), ctx.clock.clone()))
 }
 
 /// Open the lease store of `ctx.cwd` with the materialized `[lease]` table of `frob.toml`.
@@ -37,7 +37,11 @@ pub(crate) fn open_lease_store(
 ) -> Result<(frob_lease::LeaseStore, std::path::PathBuf), CliError> {
     let (_, root) = Located::discover(&ctx.cwd).into_repo()?;
     let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
-    Ok(frob_lease::open_store(&ctx.cwd, cfg.lease)?)
+    Ok(frob_lease::open_store(
+        &ctx.cwd,
+        cfg.lease,
+        ctx.clock.clone(),
+    )?)
 }
 
 /// Map a ledger failure to the CLI error: a refusal when the caller can fix it, else internal.

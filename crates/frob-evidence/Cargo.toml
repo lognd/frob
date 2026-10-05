@@ -9,6 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
+gob-time = { version = "0.0.0", path = "../gob-time" }
 blake3 = "1"
 frob-ledger = { version = "0.0.0", path = "../frob-ledger" }
 frob-pm = { version = "0.0.0", path = "../frob-pm" }

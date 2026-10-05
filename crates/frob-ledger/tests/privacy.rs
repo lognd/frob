@@ -92,7 +92,11 @@ fn ledger_walk_reports_only_dirty_files() {
         &CommitOptions::default(),
     )
     .expect("root commit");
-    let ledger = Ledger::open(repo, LedgerConfig::default());
+    let ledger = Ledger::open(
+        repo,
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
     ledger
         .new_ticket(NewTicket::new("Clean", TicketType::Task))
         .expect("clean");

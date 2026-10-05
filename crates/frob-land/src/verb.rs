@@ -128,7 +128,7 @@ impl Command for Land {
     fn run(&self, ctx: &Context) -> Outcome<LandOutcome> {
         let mut opts = self.opts.clone();
         opts.dry_run = ctx.dry_run;
-        let out = land(&ctx.cwd, &opts)?;
+        let out = land(&ctx.cwd, &opts, &ctx.clock)?;
         let already = out.already;
         let mut warnings = out.warnings.clone();
         warnings.extend(out.pre_existing.iter().map(|n| {

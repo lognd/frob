@@ -349,7 +349,7 @@ fn cycle_pm_err(e: PmError) -> CliError {
 /// Every cycle folded at the current tip with its state derived for today, earliest start first.
 fn cycles(store: PmStore<'_>) -> Result<Vec<Cycle>, CliError> {
     // frob:ticket 01M413V82EXMRXXVWZN0MQNY3G
-    let today = Day::today();
+    let today = store.today();
     let mut out: Vec<Cycle> = store
         .list(ObjectKind::Cycle)
         .map_err(cycle_pm_err)?
@@ -366,7 +366,7 @@ fn cycles(store: PmStore<'_>) -> Result<Vec<Cycle>, CliError> {
 /// Resolve `reference` (ULID, `~handle` or `START..END`) to a cycle, suggesting aliases when none match.
 fn find(store: PmStore<'_>, reference: &str) -> Result<Cycle, CliError> {
     match store.resolve(ObjectKind::Cycle, reference) {
-        Ok(frob_pm::Object::Cycle(c)) => Ok(with_state(c, Day::today())),
+        Ok(frob_pm::Object::Cycle(c)) => Ok(with_state(c, store.today())),
         Ok(frob_pm::Object::Milestone(_)) => unreachable!("resolve of a cycle returns a cycle"),
         Err(PmError::NotFound { .. }) => {
             tracing::info!(reference, "unknown cycle");
@@ -486,7 +486,7 @@ impl Command for CycleNew {
                 (c, events, Some(a.commit), false)
             }
         };
-        let c = with_state(c, Day::today());
+        let c = with_state(c, ctx.clock.today());
         tracing::info!(cycle = %c.alias(), already, "cycle new");
         Ok(Payload::new(CycleData {
             cycle: CycleView::of(&c, store),
@@ -530,7 +530,7 @@ impl Command for CycleShow {
             find(store, r)?
         } else {
             let all = cycles(store)?;
-            current(&all, Day::today()).cloned().ok_or_else(|| {
+            current(&all, ctx.clock.today()).cloned().ok_or_else(|| {
                 CliError::from(
                     Refusal::new(
                         "E-CYCLE-NONE",
@@ -728,7 +728,7 @@ fn create_next(
             let frob_pm::Object::Cycle(m) = a.object else {
                 unreachable!("a created cycle folds to a cycle")
             };
-            Ok(with_state(m, Day::today()))
+            Ok(with_state(m, ctx.clock.today()))
         }
     }
 }
@@ -825,7 +825,7 @@ impl Command for CycleClose {
             .transpose()?;
         let others = cycles(store)?;
         let members = member_facts(ctx, &ledger, &c)?;
-        let closed_on = Day::today();
+        let closed_on = ctx.clock.today();
         let mut next: Option<Cycle> = None;
         let mut planned = plan_close(&c, &others, carry_to.as_ref(), &members, closed_on);
         if let (Err(CycleError::NoNextCycle { .. }), Some(goal)) =
@@ -1070,7 +1070,7 @@ impl Command for CycleAssign {
         let all = cycles(store)?;
         let target = match &self.cycle {
             Some(r) => find(store, r)?,
-            None => default_cycle(&all, Day::today())
+            None => default_cycle(&all, ctx.clock.today())
                 .map_err(|e| assign_refusal(&e, "CYCLE"))?
                 .clone(),
         };
@@ -1505,7 +1505,7 @@ impl Command for CyclePlan {
         let all = cycles(store)?;
         let target = match &self.cycle {
             Some(r) => find(store, r)?,
-            None => default_cycle(&all, Day::today())
+            None => default_cycle(&all, ctx.clock.today())
                 .map_err(|e| assign_refusal(&e, "CYCLE"))?
                 .clone(),
         };

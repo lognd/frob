@@ -1,6 +1,7 @@
 //! The resolved global flags handed to every verb.
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use clap::ValueEnum;
 use gob_diagnostics::ColorChoice;
@@ -42,4 +43,6 @@ pub struct Context {
     pub quiet: bool,
     /// `--dry-run` was passed (only verbs that opt in accept it).
     pub dry_run: bool,
+    /// The command's one clock snapshot (docs/design/time.md section 2): every date and stamp a verb writes comes from it.
+    pub clock: Arc<dyn gob_time::Clock>,
 }

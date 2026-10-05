@@ -122,11 +122,20 @@ impl Fixture {
     }
 
     fn ledger(&self) -> Ledger {
-        Ledger::open(self.repo(), LedgerConfig::default())
+        Ledger::open(
+            self.repo(),
+            LedgerConfig::default(),
+            std::sync::Arc::new(gob_time::SystemClock),
+        )
     }
 
     fn leases(&self) -> LeaseStore {
-        LeaseStore::open(&self.repo(), LeaseConfig::default()).expect("leases")
+        LeaseStore::open(
+            &self.repo(),
+            LeaseConfig::default(),
+            std::sync::Arc::new(gob_time::SystemClock),
+        )
+        .expect("leases")
     }
 
     fn main_tip(&self) -> String {
@@ -185,12 +194,19 @@ impl Fixture {
 
     /// Record a measured file evidence record for `rel` on the ticket.
     fn evidence(s: &Started, rel: &str) {
-        let rec = hash_file(&s.wt, rel, &[]).expect("hash");
+        let rec = hash_file(
+            &s.wt,
+            rel,
+            &[],
+            frob_ledger::model::Stamp::from_unix(1_800_000_000),
+        )
+        .expect("hash");
         // From the worktree, as `frob ticket evidence add` runs there: the ledger commit moves
         // `main` without syncing the primary checkout, which land must cope with.
         let from_wt = Ledger::open(
             Repo::discover(&s.wt).expect("repo"),
             LedgerConfig::default(),
+            std::sync::Arc::new(gob_time::SystemClock),
         );
         events::append(&from_wt, s.id, &rec).expect("append");
     }
@@ -217,7 +233,12 @@ fn happy_path_lands_closes_and_cleans_up() {
     Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
     Fixture::evidence(&s, "src/a.rs");
 
-    let out = land(&fx.root, &Fixture::opts(&s)).expect("land");
+    let out = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("land");
     assert!(!out.already && out.closed && !out.dry_run);
     assert_eq!(out.outcome, Some(Outcome::Done));
     let blob = fx.repo().read_blob_at("main", "src/a.rs").expect("read");
@@ -259,7 +280,12 @@ fn happy_path_lands_closes_and_cleans_up() {
         "{log}"
     );
 
-    let again = land(&fx.root, &Fixture::opts(&s)).expect("second land");
+    let again = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("second land");
     assert!(again.already && !again.closed, "second land is a no-op");
 }
 
@@ -273,7 +299,12 @@ fn land_runs_the_throttled_gc_pass_after_removing_the_worktree() {
     let s = fx.start("Add g", &["src/**"]);
     Fixture::commit_in(&s.wt, "src/g.rs", "fn g() {}\n");
     Fixture::evidence(&s, "src/g.rs");
-    let out = land(&fx.root, &Fixture::opts(&s)).expect("land");
+    let out = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("land");
     assert!(out.closed && !s.wt.exists());
     let stamp = fx.repo().common_dir().join("frob").join("gc.json");
     let text = std::fs::read_to_string(&stamp).expect("land left a gc stamp");
@@ -295,7 +326,12 @@ fn red_check_refuses_with_exit_3_and_moves_nothing() {
     Fixture::evidence(&s, "src/b.rs");
     let before = fx.main_tip();
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("red check");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("red check");
     let r = refusal(&err);
     assert_eq!(r.code, "E-LAND-CHECK-RED");
     assert_eq!(r.class, RefusalClass::GuardNeedsAction);
@@ -327,7 +363,12 @@ fn red_check_lists_only_blocking_findings_and_counts_the_rest() {
     );
     Fixture::evidence(&s, "src/b.rs");
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("red check");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("red check");
     let msg = refusal(&err).message.clone();
     assert!(msg.contains("has 1 new blocking finding(s)"), "{msg}");
     assert!(msg.contains("TODO001 src/b.rs"), "error is listed: {msg}");
@@ -351,7 +392,12 @@ fn dirty_worktree_refuses_and_lists_paths() {
     std::fs::write(s.wt.join("src/scratch.rs"), "fn x() {}\n").expect("write");
     let before = fx.main_tip();
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("dirty");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("dirty");
     let r = refusal(&err);
     assert_eq!(r.code, "E-LAND-DIRTY");
     assert_eq!(r.class, RefusalClass::GuardNeedsAction);
@@ -380,7 +426,12 @@ fn conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean() {
         .expect("base commit");
     let before = fx.main_tip();
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("conflict");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("conflict");
     let r = refusal(&err);
     assert_eq!(r.code, "E-LAND-CONFLICT");
     assert!(r.message.contains("README.md"), "{}", r.message);
@@ -420,7 +471,12 @@ fn a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_workt
     let status = git_out(&s.wt, &["status", "--porcelain"]).1;
     let toml = std::fs::read(s.wt.join("frob.toml")).expect("read");
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("conflict");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("conflict");
     let r = refusal(&err);
     assert_eq!(r.code, "E-LAND-CONFLICT", "{err}");
     assert!(r.message.contains("frob.toml"), "{}", r.message);
@@ -466,7 +522,12 @@ fn a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_r
     let status = git_out(&s.wt, &["status", "--porcelain"]).1;
     let toml = std::fs::read(s.wt.join("frob.toml")).expect("read");
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("conflict");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("conflict");
     let r = refusal(&err);
     assert_eq!(r.code, "E-LAND-CONFLICT", "{err}");
     assert!(r.message.contains("frob.toml"), "{}", r.message);
@@ -490,7 +551,12 @@ fn lock_contention_refuses_retryably_naming_the_holder() {
         .expect("lock");
     let before = fx.main_tip();
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("locked");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("locked");
     let r = refusal(&err);
     assert_eq!(r.code, "E-LAND-LOCKED");
     assert_eq!(r.class, RefusalClass::GuardRetryByWaiting);
@@ -498,7 +564,12 @@ fn lock_contention_refuses_retryably_naming_the_holder() {
     assert!(r.message.contains("someone landing ~x"), "{}", r.message);
     assert_eq!(fx.main_tip(), before);
     drop(held);
-    land(&fx.root, &Fixture::opts(&s)).expect("lands once the lock is free");
+    land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("lands once the lock is free");
 }
 
 #[test]
@@ -516,8 +587,18 @@ fn dry_run_plan_is_deterministic_and_changes_nothing() {
         ..Fixture::opts(&s)
     };
 
-    let a = land(&fx.root, &dry).expect("dry run");
-    let b = land(&fx.root, &dry).expect("dry run again");
+    let a = land(
+        &fx.root,
+        &dry,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("dry run");
+    let b = land(
+        &fx.root,
+        &dry,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("dry run again");
     assert!(a.dry_run && !a.closed);
     assert_eq!(a.plan, b.plan);
     assert_eq!(a.digest, b.digest);
@@ -540,14 +621,24 @@ fn missing_evidence_refuses_unless_bypassed_with_a_reason() {
     let s = fx.start("Add f", &["src/**"]);
     Fixture::commit_in(&s.wt, "src/f.rs", "fn f() {}\n");
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("no evidence");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("no evidence");
     assert_eq!(refusal(&err).code, "E-EVIDENCE-MISSING");
 
     let opts = LandOptions {
         no_evidence_reason: Some("covered elsewhere".to_owned()),
         ..Fixture::opts(&s)
     };
-    let out = land(&fx.root, &opts).expect("bypassed land");
+    let out = land(
+        &fx.root,
+        &opts,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("bypassed land");
     assert!(out.closed);
 }
 
@@ -563,7 +654,12 @@ fn no_changelog_with_a_reason_lands_without_a_fragment_and_records_the_event() {
     Fixture::commit_in(&s.wt, "docs/d.md", "design\n");
     Fixture::evidence(&s, "docs/d.md");
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("no fragment");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("no fragment");
     let r = refusal(&err);
     assert!(
         r.code == "E-DONE-CHANGELOG-FRAGMENT" || r.code == "E-LAND-CHECK-RED",
@@ -575,7 +671,12 @@ fn no_changelog_with_a_reason_lands_without_a_fragment_and_records_the_event() {
         no_changelog_reason: Some("design only".to_owned()),
         ..Fixture::opts(&s)
     };
-    let out = land(&fx.root, &opts).expect("exempt land");
+    let out = land(
+        &fx.root,
+        &opts,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("exempt land");
     assert!(out.closed);
     assert_eq!(out.changelog_exempt.as_deref(), Some("design only"));
     let events = fx.ledger().events(s.id).expect("events");
@@ -595,7 +696,12 @@ fn an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_noth
     Fixture::evidence(&s, "src/g.rs");
     let before = fx.main_tip();
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("unbound criterion");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("unbound criterion");
     let r = refusal(&err);
     assert_eq!(r.code, "E-DONE-CRITERIA-UNBOUND");
     assert!(r.message.contains("g answers"), "{}", r.message);
@@ -626,7 +732,12 @@ fn a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands(
     Fixture::evidence(&s, "src/h.rs");
     let before = fx.main_tip();
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("zero criteria");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("zero criteria");
     let r = refusal(&err);
     assert_eq!(r.code, "E-DONE-NO-CRITERIA");
     assert!(r.message.contains("story"), "{}", r.message);
@@ -635,7 +746,12 @@ fn a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands(
     let t = fx.start_typed("Add i", TicketType::Task, &["lib/**"], &[]);
     Fixture::commit_in(&t.wt, "lib/i.rs", "fn i() {}\n");
     Fixture::evidence(&t, "lib/i.rs");
-    land(&fx.root, &Fixture::opts(&t)).expect("task is exempt");
+    land(
+        &fx.root,
+        &Fixture::opts(&t),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("task is exempt");
 }
 
 #[test]
@@ -654,13 +770,19 @@ fn an_unleased_ticket_and_another_worktree_are_refused() {
             handle: Some(idle.handle.clone()),
             ..LandOptions::default()
         },
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
     )
     .expect_err("not leased");
     assert_eq!(refusal(&err).code, "E-LAND-NOT-LEASED");
 
     let a = fx.start("A", &["src/a/**"]);
     let b = fx.start("B", &["src/b/**"]);
-    let err = land(&b.wt, &Fixture::opts(&a)).expect_err("wrong worktree");
+    let err = land(
+        &b.wt,
+        &Fixture::opts(&a),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("wrong worktree");
     assert_eq!(refusal(&err).code, "E-LAND-WRONG-WORKTREE");
 }
 
@@ -674,7 +796,12 @@ fn landing_from_inside_the_worktree_defaults_to_its_ticket() {
     Fixture::commit_in(&s.wt, "src/g.rs", "fn g() {}\n");
     Fixture::evidence(&s, "src/g.rs");
 
-    let out = land(&s.wt, &LandOptions::default()).expect("land from the worktree");
+    let out = land(
+        &s.wt,
+        &LandOptions::default(),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("land from the worktree");
     assert_eq!(out.id, s.id);
     assert!(out.closed && !s.wt.exists());
 }
@@ -723,7 +850,12 @@ fn wait_retries_a_base_that_moved_once_with_ledger_only_commits() {
         }
     });
 
-    let out = land(&fx.root, &opts).expect("land retried");
+    let out = land(
+        &fx.root,
+        &opts,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("land retried");
     assert!(out.closed, "landed without a manual retry");
     assert_eq!(out.attempts, 2);
     let blob = fx.repo().read_blob_at("main", "src/a.rs").expect("read");
@@ -754,7 +886,12 @@ fn wait_retries_a_base_that_moved_with_a_code_change() {
         }
     });
 
-    let out = land(&fx.root, &opts).expect("land retried");
+    let out = land(
+        &fx.root,
+        &opts,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("land retried");
     assert!(out.closed);
     assert_eq!(out.attempts, 2);
 }
@@ -776,7 +913,12 @@ fn wait_gives_up_naming_the_attempts_when_the_base_keeps_moving() {
         move_main(&root, &format!("tickets/zz-note-{n}.txt"), "note\n");
     });
 
-    let err = land(&fx.root, &opts).expect_err("budget spent");
+    let err = land(
+        &fx.root,
+        &opts,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("budget spent");
     let r = refusal(&err);
     assert_eq!(r.code, "E-LAND-STALE");
     assert_eq!(r.class, RefusalClass::GuardRetryByWaiting);
@@ -806,10 +948,20 @@ fn without_wait_a_moved_base_is_not_retried() {
         }
     });
 
-    let err = land(&fx.root, &opts).expect_err("stale");
+    let err = land(
+        &fx.root,
+        &opts,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("stale");
     assert_eq!(refusal(&err).code, "E-LAND-STALE");
     assert!(refusal(&err).message.ends_with("moved while landing"));
-    let out = land(&fx.root, &Fixture::opts(&s)).expect("rerun resumes");
+    let out = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("rerun resumes");
     assert!(out.closed);
     assert_eq!(out.attempts, 1);
 }
@@ -888,8 +1040,18 @@ fn a_conflict_confined_to_cargo_lock_is_regenerated_at_land() {
     Fixture::evidence(&one, "crates/one/src/lib.rs");
     Fixture::evidence(&two, "crates/two/src/lib.rs");
 
-    land(&fx.root, &Fixture::opts(&one)).expect("first land");
-    let out = land(&fx.root, &Fixture::opts(&two)).expect("second land regenerates the lockfile");
+    land(
+        &fx.root,
+        &Fixture::opts(&one),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("first land");
+    let out = land(
+        &fx.root,
+        &Fixture::opts(&two),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("second land regenerates the lockfile");
     assert!(out.closed);
     assert_eq!(
         out.base_merge.as_deref(),
@@ -925,7 +1087,12 @@ fn a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts() {
     Fixture::commit_in(&s.wt, "uv.lock", "ticket\n");
     move_main(&fx.root, "uv.lock", "moved\n");
     let before = fx.main_tip();
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("no resolver");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("no resolver");
     let r = refusal(&err);
     assert_eq!(r.code, "E-LAND-LOCKFILE");
     assert!(r.message.contains("uv.lock"), "{}", r.message);
@@ -966,7 +1133,12 @@ fn a_finding_already_on_the_base_lands_and_is_reported_pre_existing() {
     Fixture::commit_in(&s.wt, "src/old.rs", &marked("fn more() {}\n"));
     Fixture::evidence(&s, "src/old.rs");
 
-    let out = land(&fx.root, &Fixture::opts(&s)).expect("pre-existing finding does not block");
+    let out = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("pre-existing finding does not block");
     assert!(out.closed);
     assert!(
         out.pre_existing
@@ -992,7 +1164,12 @@ fn a_new_finding_refuses_naming_only_the_new_one() {
     Fixture::evidence(&s, "src/new.rs");
     let before = fx.main_tip();
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("new finding refuses");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("new finding refuses");
     let msg = refusal(&err).message.clone();
     assert_eq!(refusal(&err).code, "E-LAND-CHECK-RED");
     assert!(msg.contains("has 1 new blocking finding(s)"), "{msg}");
@@ -1015,7 +1192,12 @@ fn a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one() {
     Fixture::evidence(&s, "src/old.rs");
     let before = fx.main_tip();
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("duplicate occurrence refuses");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("duplicate occurrence refuses");
     let msg = refusal(&err).message.clone();
     assert_eq!(refusal(&err).code, "E-LAND-CHECK-RED");
     assert!(msg.contains("has 1 new blocking finding(s)"), "{msg}");
@@ -1035,7 +1217,12 @@ fn fixing_a_base_finding_is_reported_resolved() {
     Fixture::commit_in(&s.wt, "src/old.rs", "fn old() {}\n");
     Fixture::evidence(&s, "src/old.rs");
 
-    let out = land(&fx.root, &Fixture::opts(&s)).expect("land");
+    let out = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("land");
     assert!(
         out.resolved
             .iter()
@@ -1063,7 +1250,12 @@ fn a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket() {
     Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
     Fixture::evidence(&s, "src/a.rs");
 
-    let out = land(&fx.root, &Fixture::opts(&s)).expect("REL001 on the base does not block");
+    let out = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("REL001 on the base does not block");
     assert!(out.closed);
     assert!(
         out.pre_existing.iter().any(|n| n.rule == "REL001"),
@@ -1096,7 +1288,12 @@ fn a_release_finding_the_ticket_introduces_refuses() {
     Fixture::evidence(&s, "frob.toml");
     let before = fx.main_tip();
 
-    let err = land(&fx.root, &Fixture::opts(&s)).expect_err("new REL001 refuses");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("new REL001 refuses");
     let msg = refusal(&err).message.clone();
     assert_eq!(refusal(&err).code, "E-LAND-CHECK-RED");
     assert!(msg.contains("REL001"), "{msg}");
@@ -1135,7 +1332,12 @@ fn a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_ch
     }]});
     std::fs::write(&planted, fake.to_string()).expect("plant");
 
-    let out = land(&fx.root, &Fixture::opts(&s)).expect("land");
+    let out = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("land");
     assert!(
         out.resolved.iter().any(|n| n.rule == "PLANTED"),
         "the cached set was not used: {:?}",

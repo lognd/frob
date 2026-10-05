@@ -270,11 +270,11 @@ pub struct PmEvent {
 }
 
 impl PmEvent {
-    /// A new event stamped now, with a fresh id.
-    pub fn new(actor: &str, body: PmBody) -> Self {
+    /// A new event stamped `at`, with a fresh id.
+    pub fn new(at: Stamp, actor: &str, body: PmBody) -> Self {
         let ev = Self {
             id: EventId::mint(),
-            at: Stamp::now(),
+            at,
             actor: actor.to_owned(),
             rev: EVENT_REV,
             body,

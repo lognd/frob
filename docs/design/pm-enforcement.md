@@ -123,7 +123,7 @@ Milestone 2 or later (D36).
 - A cycle is an object: `frob cycle new --start --end --goal`,
   with `capacity_points` either set or derived.
 - Every cycle date and state is judged by one clock in one zone: the UTC
-  calendar day (`Day::today`), never the machine's local zone, so a run at
+  calendar day (`gob_time::Clock::today`, one clock per command), never the machine's local zone, so a run at
   00:06 UTC agrees everywhere. Tests do not pin the clock (no environment
   variable may change an outcome, architecture.md section 6); they build
   fixture dates relative to the UTC today instead.

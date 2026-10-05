@@ -39,6 +39,8 @@ pub struct CheckOptions {
     pub sibling_programs: Vec<(String, PathBuf)>,
     /// Do not write `.frob/telemetry.jsonl` even when `[check] telemetry` is true.
     pub skip_telemetry: bool,
+    /// The command's clock; when absent the run pins the system clock once at its start.
+    pub clock: Option<Arc<dyn gob_time::Clock>>,
     /// Treat the `--ticket` ticket as exempt from the changelog fragment (`land --no-changelog --reason`, not yet recorded).
     pub changelog_exempt: bool,
 }
@@ -53,6 +55,7 @@ impl CheckOptions {
             fail_on: self.fail_on,
             skip_tools: self.skip_tools,
             skip_telemetry: self.skip_telemetry,
+            clock: self.clock.clone(),
         }
     }
 }

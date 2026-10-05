@@ -309,12 +309,12 @@ pub struct Event {
 }
 
 impl Event {
-    /// A new event stamped now, with a fresh id.
-    pub fn new(actor: &str, body: EventBody) -> Self {
+    /// A new event stamped `at`, with a fresh id.
+    pub fn new(at: Stamp, actor: &str, body: EventBody) -> Self {
         let kind = kind_name(&body).to_owned();
         let event = Self {
             id: EventId::mint(),
-            at: Stamp::now(),
+            at,
             actor: actor.to_owned(),
             rev: EVENT_REV,
             kind,
@@ -550,7 +550,7 @@ mod tests {
             }),
         ];
         for body in bodies {
-            let ev = Event::new("logan", body);
+            let ev = Event::new(gob_time::Stamp::from_unix(1_800_000_000), "logan", body);
             let text = ev.to_toml().expect("render");
             assert!(text.starts_with("kind = "), "kind first: {text}");
             let back = Event::parse(ev.id, &text).expect("parse");
@@ -571,9 +571,13 @@ mod tests {
         assert!(!text.contains("class"), "{text}");
         let mut hot = create();
         hot.class = Class::Expedite;
-        let text = Event::new("a", EventBody::Create(Box::new(hot)))
-            .to_toml()
-            .expect("render");
+        let text = Event::new(
+            gob_time::Stamp::from_unix(1_800_000_000),
+            "a",
+            EventBody::Create(Box::new(hot)),
+        )
+        .to_toml()
+        .expect("render");
         assert!(text.contains("class = \"expedite\""), "{text}");
     }
 

@@ -3,7 +3,6 @@
 
 use std::collections::BTreeSet;
 use std::path::PathBuf;
-use std::time::SystemTime;
 
 use frob_lease::LeaseStore;
 use frob_ledger::Ledger;
@@ -79,7 +78,7 @@ pub fn run_for(
         config: gc,
         tickets: &oracle,
         live_worktrees: &live,
-        now: SystemTime::now(),
+        now: ledger.clock().now().to_system_time(),
         free_bytes: &free::free_bytes,
         adapters: &adapters,
     };

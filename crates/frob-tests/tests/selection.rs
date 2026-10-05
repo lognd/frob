@@ -236,7 +236,11 @@ fn dry_run_prints_the_selection_and_runs_nothing() {
 fn test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree() {
     let (dir, base) = fixture();
     let p = dir.path();
-    let ledger = Ledger::open(Repo::discover(p).expect("repo"), LedgerConfig::default());
+    let ledger = Ledger::open(
+        Repo::discover(p).expect("repo"),
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
     let mut req = NewTicket::new("Speed up double", TicketType::Task);
     req.acceptance = vec!["double is fast".into()];
     let applied = ledger.new_ticket(req).expect("ticket");
@@ -291,7 +295,9 @@ fn test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree() {
     );
 
     // The recorded run now satisfies the close guard.
-    let store = frob_evidence::Workspace::open(p).expect("ws").store;
+    let store = frob_evidence::Workspace::open(p, std::sync::Arc::new(gob_time::SystemClock))
+        .expect("ws")
+        .store;
     let guard = EvidenceGuard::for_ticket(&ledger, &store, id).expect("guard");
     ledger
         .close(id, Some(Outcome::Done), None, &[&guard])
@@ -439,7 +445,11 @@ fn test_verb_runs_selected_pytest_tests_and_appends_pytest_evidence() {
     }
     let (dir, base) = python_fixture();
     let p = dir.path();
-    let ledger = Ledger::open(Repo::discover(p).expect("repo"), LedgerConfig::default());
+    let ledger = Ledger::open(
+        Repo::discover(p).expect("repo"),
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
     let mut req = NewTicket::new("Speed up double", TicketType::Task);
     req.acceptance = vec!["double is fast".into()];
     let id = ledger.new_ticket(req).expect("ticket").ticket.front.id;

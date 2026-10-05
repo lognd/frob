@@ -73,7 +73,7 @@ impl Command for LeaseList {
     }
 
     fn run(&self, ctx: &Context) -> Outcome<LeaseListData> {
-        let (store, _) = open_store(&ctx.cwd)?;
+        let (store, _) = open_store(&ctx.cwd, ctx.clock.clone())?;
         let leases = store.list()?;
         let corrupt = store.corrupt_leases()?;
         let mut payload = Payload::new(LeaseListData { leases, corrupt });
@@ -134,7 +134,7 @@ impl Command for Contention {
     }
 
     fn run(&self, ctx: &Context) -> Outcome<ContentionData> {
-        let (store, _) = open_store(&ctx.cwd)?;
+        let (store, _) = open_store(&ctx.cwd, ctx.clock.clone())?;
         let files = store.contention()?.into_iter().map(Into::into).collect();
         Ok(Payload::new(ContentionData { files }))
     }

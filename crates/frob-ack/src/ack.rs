@@ -107,6 +107,7 @@ pub fn plan_ack(
     targets: &[String],
     all: bool,
     reason: Option<&str>,
+    at: gob_time::Stamp,
 ) -> Result<Plan, AckError> {
     let inputs = Inputs::collect(root)?;
     let mut selected: Vec<&SymbolRecord> = Vec::new();
@@ -137,7 +138,7 @@ pub fn plan_ack(
     let repo = Repo::discover(root).ok();
     let options = PlanOptions {
         actor: actor_of(repo.as_ref()),
-        at: jiff::Timestamp::now().to_string(),
+        at: at.to_string(),
         reason: reason.map(str::to_owned),
         all,
     };
@@ -159,8 +160,9 @@ pub fn ack(
     targets: &[String],
     all: bool,
     reason: Option<&str>,
+    at: gob_time::Stamp,
 ) -> Result<AckOutcome, AckError> {
-    let plan = plan_ack(root, targets, all, reason)?;
+    let plan = plan_ack(root, targets, all, reason, at)?;
     let lock_file = file_name(PRODUCT);
     let mut out = AckOutcome {
         acked: plan.acked,

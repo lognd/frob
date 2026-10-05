@@ -86,7 +86,11 @@ impl Repo {
     fn ledger(&self) -> frob_ledger::Ledger {
         let repo = gob_git::Repo::discover(self.path()).expect("discover");
         let cfg = frob_cli::config::FrobConfig::load(self.path()).expect("config");
-        frob_ledger::Ledger::open(repo, cfg.ledger())
+        frob_ledger::Ledger::open(
+            repo,
+            cfg.ledger(),
+            std::sync::Arc::new(gob_time::SystemClock),
+        )
     }
 
     /// A ticket with `points` story points, started when `category` is `in-progress`; returns its ULID.
@@ -142,7 +146,12 @@ impl Repo {
     /// Hold a live lease on `t` as someone else.
     fn lease(&self, t: &str) {
         let repo = gob_git::Repo::discover(self.path()).expect("discover");
-        let store = LeaseStore::open(&repo, LeaseConfig::default()).expect("store");
+        let store = LeaseStore::open(
+            &repo,
+            LeaseConfig::default(),
+            std::sync::Arc::new(gob_time::SystemClock),
+        )
+        .expect("store");
         let holder = Holder {
             actor: "Someone Else".to_owned(),
             worktree: std::path::PathBuf::from("/wt/other"),
@@ -352,7 +361,7 @@ fn close_without_a_next_cycle_is_refused_unless_carry_to_names_one() {
 fn show_and_list_report_cycles_and_unknown_references_suggest() {
     // frob:tests crates/frob/src/cycle_cmd.rs::CycleShow
     // frob:tests crates/frob/src/cycle_cmd.rs::CycleList
-    // frob:tests crates/frob-pm/src/model.rs::Day.today
+    // frob:tests crates/gob-time/src/clock.rs::Clock.today
     let repo = Repo::new();
     let a = repo.new_cycle(d(7), "second");
     repo.new_cycle(d(0), "first");
@@ -376,7 +385,7 @@ fn show_and_list_report_cycles_and_unknown_references_suggest() {
 
 /// The UTC day `days` from now, as `YYYY-MM-DD`: the one zone and clock `frob cycle` derives states from.
 fn rel(days: i64) -> String {
-    frob_pm::Day::today()
+    gob_time::Clock::today(&gob_time::SystemClock)
         .plus_days(days)
         .expect("in range")
         .to_string()
@@ -694,7 +703,11 @@ fn velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once() {
     assert_eq!(closed["carried"][0]["to"], b["id"]);
     // Work after the early close and inside A's planned week counts in no cycle; work
     // in B's window counts there once.
-    let on = |days: i64| frob_pm::Day::today().plus_days(days).expect("day");
+    let on = |days: i64| {
+        gob_time::Clock::today(&gob_time::SystemClock)
+            .plus_days(days)
+            .expect("day")
+    };
     let fact = |points, done_on| frob_pm::cycle::velocity::DoneFact {
         ty: frob_ledger::model::TicketType::Task,
         points,

@@ -50,7 +50,11 @@ fn repo(message: &str) -> tempfile::TempDir {
 }
 
 fn ledger(dir: &Path) -> Ledger {
-    Ledger::open(Repo::discover(dir).expect("repo"), LedgerConfig::default())
+    Ledger::open(
+        Repo::discover(dir).expect("repo"),
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    )
 }
 
 fn ticket(ledger: &Ledger, ty: TicketType) -> (TicketId, String) {
@@ -92,7 +96,13 @@ fn guard_refuses_a_task_without_evidence_and_passes_with_a_measured_record() {
         other => panic!("unexpected {other}"),
     }
 
-    let rec = hash_file(dir.path(), "data.txt", &[1]).expect("hash");
+    let rec = hash_file(
+        dir.path(),
+        "data.txt",
+        &[1],
+        frob_ledger::model::Stamp::from_unix(1_800_000_000),
+    )
+    .expect("hash");
     events::append(&ledger, id, &rec).expect("append");
     let guard = EvidenceGuard::for_ticket(&ledger, &st, id).expect("guard");
     assert_eq!(guard.measured(), 1);
@@ -147,7 +157,13 @@ fn non_code_tickets_need_no_evidence_and_bypass_is_recorded() {
 fn failing_runs_and_unmeasured_records_do_not_satisfy_the_guard() {
     let dir = repo("base");
     let st = store(dir.path(), 16_384);
-    let mut rec = hash_file(dir.path(), "data.txt", &[]).expect("hash");
+    let mut rec = hash_file(
+        dir.path(),
+        "data.txt",
+        &[],
+        frob_ledger::model::Stamp::from_unix(1_800_000_000),
+    )
+    .expect("hash");
     rec.passed = Some(false);
     assert_eq!(
         EvidenceGuard::from_records(&[rec.clone()], &st).measured(),
@@ -195,6 +211,7 @@ fn a_missing_blob_is_unmeasured_not_failed() {
         "git status",
         &cap,
         &[],
+        frob_ledger::model::Stamp::from_unix(1_800_000_000),
     )
     .expect("record");
     let uri = rec.uri.clone().expect("stored by uri");
@@ -216,7 +233,8 @@ fn a_missing_blob_is_unmeasured_not_failed() {
 fn command_transcripts_are_redacted_before_they_are_stored() {
     const TOKEN: &str = "ghp_0123456789abcdefghijklmnopqrstuvwxyz";
     let dir = repo(&format!("leak {TOKEN}"));
-    let ws = Workspace::open(dir.path()).expect("workspace");
+    let ws =
+        Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
     let rec =
         provider::capture(&ws, Provider::Command, "git log -1 --format=%B", &[]).expect("capture");
     let text = rec.inline.as_deref().expect("inline");
@@ -233,7 +251,8 @@ fn command_transcripts_are_redacted_before_they_are_stored() {
 #[test]
 fn command_tools_outside_the_allowlist_are_refused() {
     let dir = repo("base");
-    let ws = Workspace::open(dir.path()).expect("workspace");
+    let ws =
+        Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
     let err = provider::capture(&ws, Provider::Command, "rm -rf /", &[]).expect_err("refused");
     assert!(err.to_string().starts_with("E-EVIDENCE-TOOL"), "{err}");
 }
@@ -659,6 +678,7 @@ fn captured_paths_become_placeholders_in_the_event_data() {
         "ls /home/ann/projects/app",
         &cap,
         &[],
+        frob_ledger::model::Stamp::from_unix(1_800_000_000),
     )
     .expect("record");
     let data = events::to_data(&rec).expect("data");

@@ -92,7 +92,12 @@ impl Repo {
 
     fn store(&self) -> LeaseStore {
         let repo = gob_git::Repo::discover(self.path()).expect("discover");
-        LeaseStore::open(&repo, LeaseConfig::default()).expect("store")
+        LeaseStore::open(
+            &repo,
+            LeaseConfig::default(),
+            std::sync::Arc::new(gob_time::SystemClock),
+        )
+        .expect("store")
     }
 }
 

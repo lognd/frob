@@ -28,6 +28,7 @@ thiserror = "2"
 tracing = "0.1"
 
 [dev-dependencies]
+gob-time = { version = "0.0.0", path = "../gob-time" }
 gob-git = { path = "../gob-git" }
 gob-mdtest = { path = "../gob-mdtest" }
 tempfile = "3"

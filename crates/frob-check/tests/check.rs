@@ -399,7 +399,11 @@ fn ticket_fixture_scoped(scope: &[&str]) -> (tempfile::TempDir, String) {
         &CommitOptions::default(),
     )
     .expect("root commit");
-    let ledger = Ledger::open(repo, LedgerConfig::default());
+    let ledger = Ledger::open(
+        repo,
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
     let mut new = NewTicket::new("Scoped work", TicketType::Task);
     new.scope = scope.iter().map(|g| (*g).to_owned()).collect();
     let id = ledger.new_ticket(new).expect("ticket").ticket.front.id;
@@ -1004,7 +1008,11 @@ fn rel003_is_clean_for_an_exempted_ticket_by_event_or_by_option() {
             .all(|f| f.rule.as_str() != "REL003")
     );
     let repo = Repo::discover(dir.path()).expect("discover");
-    let ledger = Ledger::open(repo, LedgerConfig::default());
+    let ledger = Ledger::open(
+        repo,
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
     let ticket: frob_ledger::TicketId = id.parse().expect("id");
     ledger
         .append(

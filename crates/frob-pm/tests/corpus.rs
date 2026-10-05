@@ -39,7 +39,11 @@ fn ledger(dir: &std::path::Path) -> Ledger {
         &CommitOptions::default(),
     )
     .expect("root commit");
-    Ledger::open(repo, LedgerConfig::default())
+    Ledger::open(
+        repo,
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    )
 }
 
 /// `key=value` words of a DSL line.

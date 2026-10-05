@@ -4,7 +4,6 @@ use std::collections::{BTreeSet, HashMap};
 
 use frob_lease::{Holder, Lease, LeaseConfig, LeaseStore, overlap::glob_set, scope001};
 use frob_ledger::LedgerConfig;
-use frob_ledger::model::Stamp;
 use gob_git::{GitError, RelPath, Repo, TreeRef};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 use gob_symbols::{CallEdge, SymbolGraph};
@@ -80,7 +79,9 @@ pub(crate) fn resolve(
         .show(id)
         .map_err(|e| CheckError::Ticket(format!("{reference}: {e}")))?;
     let handle = view.summary.handle.clone();
-    let live = match LeaseStore::open(ledger.repo(), lease_cfg).and_then(|s| s.live_lease(id)) {
+    let live = match LeaseStore::open(ledger.repo(), lease_cfg, ledger.clock().clone())
+        .and_then(|s| s.live_lease(id))
+    {
         Ok(l) => l,
         Err(err) => {
             tracing::warn!(%err, "lease lookup failed; using the ticket scope");
@@ -94,7 +95,7 @@ pub(crate) fn resolve(
         {
             let globs = view.ticket.front.scope.clone();
             tracing::info!(%handle, scope = ?globs, "no live lease; scoping to the ticket scope");
-            let now = Stamp::now();
+            let now = ledger.clock().now();
             let lease = Lease {
                 ticket: id,
                 holder: Holder {

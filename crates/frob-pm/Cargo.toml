@@ -12,7 +12,7 @@ authors.workspace = true
 frob-ledger = { version = "0.0.0", path = "../frob-ledger" }
 gob-config = { version = "0.0.0", path = "../gob-config" }
 gob-rules = { version = "0.0.0", path = "../gob-rules" }
-jiff = "0.2"
+gob-time = { version = "0.0.0", path = "../gob-time" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 strsim = "0.11"

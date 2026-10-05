@@ -357,7 +357,11 @@ fn ledger_repo(mode_for: impl Fn(&str, &str) -> String) -> (tempfile::TempDir, S
         &CommitOptions::default(),
     )
     .expect("root commit");
-    let ledger = Ledger::open(repo, LedgerConfig::default());
+    let ledger = Ledger::open(
+        repo,
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
     let mut open = NewTicket::new("Open work", TicketType::Task);
     open.scope = vec!["src/a/**".to_owned()];
     let open = ledger.new_ticket(open).expect("ticket").ticket.front.id;

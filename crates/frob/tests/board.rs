@@ -60,6 +60,7 @@ fn summary(
 
 fn transition(to: &str, when: Stamp) -> Event {
     let mut e = Event::new(
+        gob_time::Clock::now(&gob_time::SystemClock),
         "lognd",
         EventBody::Transition(TransitionData {
             from: Category::Todo,
@@ -367,9 +368,13 @@ fn repo() -> tempfile::TempDir {
         .to_owned();
     let repo = gob_git::Repo::discover(p).expect("discover");
     let cfg = frob_cli::config::FrobConfig::load(p).expect("config");
-    frob_ledger::Ledger::open(repo, cfg.ledger())
-        .transition(id.parse().expect("ulid"), Category::InProgress, None, None)
-        .expect("start");
+    frob_ledger::Ledger::open(
+        repo,
+        cfg.ledger(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    )
+    .transition(id.parse().expect("ulid"), Category::InProgress, None, None)
+    .expect("start");
     dir
 }
 

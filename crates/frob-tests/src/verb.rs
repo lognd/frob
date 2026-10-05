@@ -111,6 +111,7 @@ fn record_runs(
                         &join_args(&one.args),
                         &one.capture,
                         &[],
+                        ws.ledger.clock().now(),
                     )
                     .map_err(EvidenceError::into_cli)?;
                     let appended = events::append(&ws.ledger, id, &record)
@@ -165,7 +166,7 @@ impl Command for TestVerb {
     }
 
     fn run(&self, ctx: &Context) -> Outcome<TestData> {
-        let ws = Workspace::open(&ctx.cwd).map_err(EvidenceError::into_cli)?;
+        let ws = Workspace::open(&ctx.cwd, ctx.clock.clone()).map_err(EvidenceError::into_cli)?;
         let repo = ws.ledger.repo();
         let (touched, selected) = match (&self.base, self.all) {
             (Some(base), false) => {

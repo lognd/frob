@@ -14,7 +14,7 @@ use std::io::IsTerminal;
 use frob_ledger::TicketId;
 use frob_ledger::guards::NoLeases;
 use frob_ledger::index::ListFilter;
-use frob_ledger::model::{Category, Stamp};
+use frob_ledger::model::Category;
 use frob_pm::board::{self, Board, Input, RenderOptions};
 use frob_pm::rules::wip::{self, WipLimits};
 use gob_cli::clap::{Arg, ArgMatches, Command as ClapCommand};
@@ -100,7 +100,7 @@ impl Command for BoardVerb {
             in_progress: cfg.pm.wip.in_progress,
             expedite_max: cfg.pm.classes.expedite_max,
         };
-        let now = Stamp::now();
+        let now = ctx.clock.now();
 
         let mut warnings = Vec::new();
         let (holders, live) = match open_lease_store(ctx)

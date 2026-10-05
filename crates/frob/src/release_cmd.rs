@@ -99,7 +99,7 @@ impl Command for ReleaseChangelog {
     fn run(&self, ctx: &Context) -> Outcome<ChangelogData> {
         let (repo, root) = Located::discover(&ctx.cwd).into_repo()?;
         let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
-        let ledger = Ledger::open(repo, cfg.ledger());
+        let ledger = Ledger::open(repo, cfg.ledger(), ctx.clock.clone());
         let mode = if self.check {
             Mode::Check
         } else if ctx.dry_run {
@@ -110,7 +110,7 @@ impl Command for ReleaseChangelog {
         let date = self
             .date
             .clone()
-            .unwrap_or_else(|| jiff::Zoned::now().date().to_string());
+            .unwrap_or_else(|| ctx.clock.today().to_string());
         let opts = Options {
             version: self.version.clone(),
             date,
@@ -536,7 +536,7 @@ fn exempt_tickets(
 fn changelog_facts(root: &std::path::Path, ledger: &Ledger, version: &str) -> ChangelogFacts {
     let opts = Options {
         version: version.to_owned(),
-        date: jiff::Zoned::now().date().to_string(),
+        date: ledger.clock().today().to_string(),
         mode: Mode::DryRun,
     };
     let resolver = |ulid: &str| -> Option<String> {
@@ -804,7 +804,7 @@ impl Command for ReleaseCut {
         let plan = CutPlan {
             root: &root,
             version: self.version.clone(),
-            date: jiff::Zoned::now().date().to_string(),
+            date: ctx.clock.today().to_string(),
             base: base.clone(),
             push: self.push,
             stop_after: None,

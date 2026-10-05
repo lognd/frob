@@ -187,8 +187,8 @@ mod tests {
             capacity_points: None,
             state,
             tickets: Vec::new(),
-            created: Stamp::now(),
-            updated: Stamp::now(),
+            created: Stamp::from_unix(1_800_000_000),
+            updated: Stamp::from_unix(1_800_000_000),
             ordinal: 1,
         }
     }

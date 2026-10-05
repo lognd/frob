@@ -109,6 +109,7 @@ impl Fixture {
             &t,
             false,
             Some("reviewed the contract in full"),
+            gob_time::Stamp::from_unix(1_800_000_000),
         )
         .expect("ack")
     }
@@ -269,7 +270,14 @@ fn path_target_acks_every_symbol_and_all_reacks_tracked() {
         "x + 1\n}\n\npub fn base",
         "x + 2\n}\n\npub fn base",
     );
-    let all = ack(fx.root(), &[], true, None).unwrap();
+    let all = ack(
+        fx.root(),
+        &[],
+        true,
+        None,
+        gob_time::Stamp::from_unix(1_800_000_000),
+    )
+    .unwrap();
     assert!(
         all.acked.contains(&"src/lib.rs::plain".to_owned()),
         "{:?}",
@@ -281,8 +289,26 @@ fn path_target_acks_every_symbol_and_all_reacks_tracked() {
 #[test]
 fn unknown_target_and_empty_request_are_errors() {
     let fx = Fixture::new();
-    assert!(ack(fx.root(), &["nope".to_owned()], false, None).is_err());
-    assert!(ack(fx.root(), &[], false, None).is_err());
+    assert!(
+        ack(
+            fx.root(),
+            &["nope".to_owned()],
+            false,
+            None,
+            gob_time::Stamp::from_unix(1_800_000_000)
+        )
+        .is_err()
+    );
+    assert!(
+        ack(
+            fx.root(),
+            &[],
+            false,
+            None,
+            gob_time::Stamp::from_unix(1_800_000_000)
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -404,9 +430,25 @@ fn version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it() {
     );
 
     let t = vec!["src/lib.rs::plain".to_owned()];
-    assert!(ack(fx.root(), &t, false, Some("reviewed the contract")).is_err());
     assert!(
-        ack(fx.root(), &[], true, None).is_err(),
+        ack(
+            fx.root(),
+            &t,
+            false,
+            Some("reviewed the contract"),
+            gob_time::Stamp::from_unix(1_800_000_000)
+        )
+        .is_err()
+    );
+    assert!(
+        ack(
+            fx.root(),
+            &[],
+            true,
+            None,
+            gob_time::Stamp::from_unix(1_800_000_000)
+        )
+        .is_err(),
         "migration needs a reason"
     );
 
@@ -415,6 +457,7 @@ fn version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it() {
         &[],
         true,
         Some("re-attest under digest scheme 2"),
+        gob_time::Stamp::from_unix(1_800_000_000),
     )
     .unwrap();
     assert_eq!(out.acked, ["src/lib.rs::greet", "src/lib.rs::plain"]);
@@ -445,7 +488,14 @@ fn scheme_one_lock_under_version_two_is_all_reattest() {
     let found = fx.findings();
     assert_eq!(ids(&found), ["DRIFT004"], "{found:?}");
     assert!(messages(&found, "DRIFT004")[0].contains("digest scheme 1"));
-    let out = ack(fx.root(), &[], true, Some("re-attest under scheme 2")).unwrap();
+    let out = ack(
+        fx.root(),
+        &[],
+        true,
+        Some("re-attest under scheme 2"),
+        gob_time::Stamp::from_unix(1_800_000_000),
+    )
+    .unwrap();
     assert_eq!(out.acked, ["src/lib.rs::greet", "src/lib.rs::plain"]);
     assert_eq!(ids(&fx.findings()), Vec::<String>::new());
 }

@@ -14,8 +14,6 @@
 use std::fmt::Write as _;
 use std::io::IsTerminal;
 
-use frob_ledger::model::Stamp;
-
 use crate::error::{EvidenceError, Result};
 use crate::record::{Attestation, EvidenceRecord, Provider, Status, digest_hex};
 use crate::workspace::Workspace;
@@ -317,7 +315,7 @@ pub fn attest(ws: &Workspace, presence: &Presence, req: &Request) -> Result<Evid
         digest,
         uri: None,
         status: Status::Measured,
-        captured_at: Stamp::now(),
+        captured_at: ws.ledger.clock().now(),
         accepts: req.accepts.clone(),
         passed: Some(true),
         exit_code: None,

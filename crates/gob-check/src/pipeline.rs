@@ -479,7 +479,12 @@ pub fn run<P: Product>(
     mark_annotations(&mut report.findings);
     sort_findings(&mut report.findings, &report.files);
     if table.telemetry && !opts.skip_telemetry {
+        let at = opts
+            .clock
+            .as_ref()
+            .map_or_else(|| gob_time::Clock::now(&gob_time::SystemClock), |c| c.now());
         telemetry::append(
+            at,
             root,
             &product.state_dir(),
             &report.timing,
