@@ -2,11 +2,11 @@
 id = "01M45AYN8TNWRM2NWXW7PER6T9"
 title = "After the first real cut, REL001 does not recognise the cut's own tags and a changelog test reads a removed live fragment"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 reporter = "lognd"
 created = "2026-10-05T06:10:22Z"
-updated = "2026-10-05T06:10:22Z"
+updated = "2026-10-05T06:10:40Z"
 
 [[acceptance]]
 text = "Given this repository after frob release cut 0.532.0, when REL001 runs, then the three tags are recognised as cut and no finding is reported"
