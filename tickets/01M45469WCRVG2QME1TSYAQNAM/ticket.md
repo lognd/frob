@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-05T04:12:15Z"
-updated = "2026-10-05T04:19:51Z"
+updated = "2026-10-05T04:23:54Z"
 scope = ["crates/gob-dev/src/wheel_smoke.rs"]
 
 [[acceptance]]
