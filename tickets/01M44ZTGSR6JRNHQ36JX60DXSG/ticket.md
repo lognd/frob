@@ -2,12 +2,12 @@
 id = "01M44ZTGSR6JRNHQ36JX60DXSG"
 title = "release.yml: workflow_dispatch dry run that builds and smokes everything and publishes nothing"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-05T02:55:52Z"
-updated = "2026-10-05T02:55:52Z"
+updated = "2026-10-05T02:56:03Z"
 
 [[acceptance]]
 text = "Given release.yml, when a workflow_dispatch event runs it, then every publishing job is skipped and the tag input is empty"
