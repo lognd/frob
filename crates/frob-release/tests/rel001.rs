@@ -241,13 +241,72 @@ fn no_tags_and_no_cuts_is_not_applicable_with_a_reason() {
     assert!(not_applicable(&repo, &[recorded("0.0.2", c, vec![t])]).is_none());
 }
 
+/// The `cut` event file the first real cut (0.532.0) wrote, with its commit and tag ids replaced.
+fn real_cut_event(commit: &str, tags: &[(&str, &str)]) -> String {
+    let mut text = format!(
+        "kind = \"cut\"\nversion = \"0.0.1\"\ncommit = \"{commit}\"\nat = \"2026-10-05T05:50:35Z\"\nactor = \"lognd\"\nrev = 1\n"
+    );
+    for (name, object) in tags {
+        text.push_str(&format!(
+            "\n[[tags]]\nname = \"{name}\"\nobject = \"{object}\"\ncommit = \"{commit}\"\n"
+        ));
+    }
+    text
+}
+
+/// The `CutData` inside an event file's text: the envelope keys dropped, the rest read as the body.
+fn cut_of_event(text: &str) -> CutData {
+    let mut table: toml::Table = toml::from_str(text).unwrap();
+    for key in ["kind", "at", "actor", "rev"] {
+        table.remove(key);
+    }
+    table.try_into().unwrap()
+}
+
+#[test]
+fn annotated_tags_recorded_in_the_real_event_shape_are_silent() {
+    // frob:ticket 01M45AYN8TNWRM2NWXW7PER6T9
+    // frob:tests crates/frob-release/src/rel001.rs::evaluate
+    let (_d, repo) = fixture();
+    let c = commit(&repo, "0.0.1");
+    let t = tag(&repo, "frob-v0.0.1", c);
+    assert_ne!(
+        t.object, t.commit,
+        "the tag is annotated: object is not the commit"
+    );
+    let text = real_cut_event(&t.commit, &[("frob-v0.0.1", &t.object)]);
+    let e = evaluate(&repo, &[cut_of_event(&text)]);
+    assert_eq!(e.subjects, 1);
+    assert!(e.findings.is_empty(), "{:?}", e.findings);
+    // Recording the peeled commit as the object is what REL001 reports as a moved tag.
+    let wrong = real_cut_event(&t.commit, &[("frob-v0.0.1", &t.commit)]);
+    let e = evaluate(&repo, &[cut_of_event(&wrong)]);
+    assert_eq!(e.findings.len(), 1, "{:?}", e.findings);
+    // And with no recorded cut at all, the same tag is a stray.
+    assert!(
+        evaluate(&repo, &[]).findings[0]
+            .message
+            .contains("no recorded release cut")
+    );
+}
+
 #[test]
 fn this_repository_is_clean_or_not_applicable() {
+    // frob:ticket 01M45AYN8TNWRM2NWXW7PER6T9
     // frob:tests crates/frob-release/src/rel001.rs::evaluate
+    // The ledger is not readable from this crate, so every product tag is judged as unrecorded
+    // unless the repository has none; the recorded cuts are exercised by the tests above and by
+    // `frob check` itself, which reads the ledger.
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let repo = Repo::discover(&root).unwrap();
     let e = evaluate(&repo, &[]);
-    assert!(e.findings.is_empty(), "{:?}", e.findings);
+    assert!(
+        e.findings
+            .iter()
+            .all(|f| f.message.contains("no recorded release cut")),
+        "{:?}",
+        e.findings
+    );
 }
 
 #[test]

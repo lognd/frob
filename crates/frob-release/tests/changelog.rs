@@ -387,8 +387,11 @@ fn a_second_notice_is_refused_naming_both_files() {
 fn the_v2_notice_fragment_is_a_lead_notice() {
     // frob:ticket 01M41BWB5H544DN5ADDV50ZAVN
     // frob:tests crates/frob-release/src/fragment.rs::parse_name
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../changelog.d");
-    let (ulid, kind) = frob_release::parse_name("01M4069YE7SYCYT7YGT2FCV344.notice.md").unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let dir = dir.path();
+    let name = "01M4069YE7SYCYT7YGT2FCV344.notice.md";
+    fs::write(dir.join(name), "frob: 0.532.0 is the v2 Rust rewrite.\n").unwrap();
+    let (ulid, kind) = frob_release::parse_name(name).unwrap();
     assert_eq!(kind, frob_release::Kind::Notice);
     let text = fs::read_to_string(dir.join(format!("{ulid}.notice.md"))).unwrap();
     assert!(text.contains("0.532.0 is the v2 Rust rewrite"));
