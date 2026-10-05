@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-05T03:52:37Z"
+digest = "b5d676a4646fae11eadbb916763c60d57281ea28fe935f76431687ae3e478d9e"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID aedc6bbd-4ea1-415d-8b99-050c663b7b41 with nextest profile: default
+    Starting 1 test across 13 binaries (132 tests skipped)
+        PASS [   0.008s] frob-release::release_workflow the_pypi_job_checks_each_products_wheel_count_before_uploading_both
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 132 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release the_pypi_job_checks_each_products_wheel_count"
+size = 592
+status = "measured"
+tests = ["the_pypi_job_checks_each_products_wheel_count_before_uploading_both"]
+at = "2026-10-05T03:52:37Z"
+actor = "lognd"
+rev = 1

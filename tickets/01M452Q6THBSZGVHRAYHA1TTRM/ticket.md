@@ -7,12 +7,12 @@ priority = "high"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-05T03:46:32Z"
-updated = "2026-10-05T03:50:39Z"
+updated = "2026-10-05T03:52:37Z"
 scope = [".github/workflows/build-smoke.yml", "crates/frob-release/tests/release_workflow.rs", "crates/gob-exec/src/discover.rs", "crates/gob-exec/src/lib.rs", "crates/gob-exec/tests/discover.rs", "crates/gob-dev/src/wheel_smoke.rs", "docs/design/products.md", "packaging/pypi/BUILDING.md"]
 
 [[acceptance]]
 text = "Given the manylinux container wheel step, when cargo dev wheel runs on the Linux runners, then the gob-dev tool build and the wheel build use separate target directories and no Permission denied occurs"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a frob installed by uv tool install on Windows (trampoline exe in the tool bin dir), when frob doctor runs, then grimble and crunk installed in the same tool environment are found, covered by a unit test of the Windows layout"
