@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-05T00:06:46Z"
-updated = "2026-10-05T00:15:06Z"
+updated = "2026-10-05T00:34:53Z"
 scope = ["crates/frob/tests/cycle.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/model.rs", "crates/frob-pm/src/store.rs", "crates/frob-pm/src/cycle/lifecycle.rs", "docs/design/pm-enforcement.md"]
 
 [[acceptance]]
