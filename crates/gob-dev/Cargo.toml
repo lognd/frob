@@ -42,7 +42,7 @@ tempfile = "3"
 thiserror = "2"
 toml = "1"
 tracing = "0.1"
-ulid = "1"
+ulid = "3"
 
 [lints]
 workspace = true
