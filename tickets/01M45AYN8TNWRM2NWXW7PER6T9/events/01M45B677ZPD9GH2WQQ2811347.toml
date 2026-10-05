@@ -1,0 +1,40 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-05T06:14:32Z"
+digest = "3157cb80cb140972cf8478cec241b5d1a4afdd3811abfb6fa2f7b4c69f9742fb"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f1c5ea0f-be2c-48af-acee-a996952bd2ef with nextest profile: default
+    Starting 18 tests across 1 binary
+        PASS [   0.010s] frob-release::changelog dry_run_touches_nothing
+        PASS [   0.012s] frob-release::changelog a_notice_leads_the_section_above_the_product_and_type_groups
+        PASS [   0.012s] frob-release::changelog a_second_notice_is_refused_naming_both_files
+        PASS [   0.012s] frob-release::changelog fragments_survive_a_failed_write
+        PASS [   0.013s] frob-release::changelog bad_version_and_non_ascii_are_refused
+        PASS [   0.015s] frob-release::changelog an_adopted_changelog_without_version_headings_gets_the_section_appended
+        PASS [   0.015s] frob-release::changelog empty_changelog_d_adds_nothing
+        PASS [   0.008s] frob-release::changelog invalid_names_are_refused_with_the_remedy
+        PASS [   0.018s] frob-release::changelog a_single_product_has_no_product_heading_and_no_v1_link
+        PASS [   0.007s] frob-release::changelog same_type_entries_sort_by_ulid
+        PASS [   0.008s] frob-release::changelog near_miss_product_prefix_is_refused_with_a_suggestion_but_plain_words_pass
+        PASS [   0.018s] frob-release::changelog groups_by_product_type_then_ulid_and_removes_fragments
+        PASS [   0.007s] frob-release::changelog the_v2_notice_fragment_is_a_lead_notice
+        PASS [   0.017s] frob-release::changelog check_detects_a_hand_edit_of_an_older_section
+        PASS [   0.006s] frob-release::changelog ulid_without_a_ticket_is_refused_naming_the_file
+        PASS [   0.021s] frob-release::changelog existing_version_is_refused
+        PASS [   0.023s] frob-release::changelog a_hand_written_changelog_is_adopted_above_its_first_version_heading
+        PASS [   0.014s] frob-release::changelog second_release_goes_above_the_first
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.027s] 18 tests run: 18 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release --test changelog"
+size = 2159
+status = "measured"
+tests = ["dry_run_touches_nothing", "a_notice_leads_the_section_above_the_product_and_type_groups", "a_second_notice_is_refused_naming_both_files", "fragments_survive_a_failed_write", "bad_version_and_non_ascii_are_refused", "an_adopted_changelog_without_version_headings_gets_the_section_appended", "empty_changelog_d_adds_nothing", "invalid_names_are_refused_with_the_remedy", "a_single_product_has_no_product_heading_and_no_v1_link", "same_type_entries_sort_by_ulid", "near_miss_product_prefix_is_refused_with_a_suggestion_but_plain_words_pass", "groups_by_product_type_then_ulid_and_removes_fragments", "the_v2_notice_fragment_is_a_lead_notice", "check_detects_a_hand_edit_of_an_older_section", "ulid_without_a_ticket_is_refused_naming_the_file", "existing_version_is_refused", "a_hand_written_changelog_is_adopted_above_its_first_version_heading", "second_release_goes_above_the_first"]
+at = "2026-10-05T06:14:32Z"
+actor = "lognd"
+rev = 1

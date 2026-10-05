@@ -2,19 +2,20 @@
 id = "01M45AYN8TNWRM2NWXW7PER6T9"
 title = "After the first real cut, REL001 does not recognise the cut's own tags and a changelog test reads a removed live fragment"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 reporter = "lognd"
 created = "2026-10-05T06:10:22Z"
-updated = "2026-10-05T06:10:22Z"
+updated = "2026-10-05T06:14:32Z"
+scope = ["crates/frob-release/tests/rel001.rs", "crates/frob-release/tests/changelog.rs"]
 
 [[acceptance]]
 text = "Given this repository after frob release cut 0.532.0, when REL001 runs, then the three tags are recognised as cut and no finding is reported"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the changelog tests, when they run after a cut removed every live fragment, then they pass from their own fixtures"
-bound = false
+bound = true
 +++
 
 The first real release cut (frob release cut 0.532.0 --push, commit 8612ab142, tags frob-v0.532.0, grimble-v0.532.0 and crunk-v0.532.0, ledger events milestone-cut 66d1fe4ab and milestone-transition 49baad66c) turned CI red on experimental, reproducible locally:
