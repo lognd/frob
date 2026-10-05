@@ -1,0 +1,9 @@
+kind = "create"
+title = "Time discipline (D93): gob-time, one clock, TIME lint family"
+type = "epic"
+category = "todo"
+priority = "high"
+body = "Implements docs/design/time.md (D93), owner request 2026-10-04. Children: gob-time and clock migration with clippy confinement; TIME001/TIME002 in grimble-lints; TIME003 on the call graph."
+at = "2026-10-05T00:42:03Z"
+actor = "lognd"
+rev = 1
