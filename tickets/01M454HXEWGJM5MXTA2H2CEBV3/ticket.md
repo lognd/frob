@@ -7,7 +7,8 @@ priority = "high"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-05T04:18:29Z"
-updated = "2026-10-05T04:21:26Z"
+updated = "2026-10-05T04:21:27Z"
+scope = [".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", ".github/actions/**", "crates/frob-release/tests/release_workflow.rs", "crates/frob-release/tests/dev_workflow.rs", "changelog.d/*H2CEBV3*"]
 
 [[acceptance]]
 text = "Given the wheel and smoke jobs of build-smoke.yml on a Linux runner, when they build gob-dev with cargo dev, then mold and clang are installed first by the same local composite action ci.yml uses, with no copy of the install step"
