@@ -214,6 +214,11 @@ jobs are skipped by `if: github.event_name == 'push'`, so no environment is
 requested and nothing is uploaded anywhere. The only exempt target is macOS
 x86_64, which is cross-built on an arm64 runner that cannot execute it.
 
+The wheel build and the wheel smoke are the same on every OS: `cargo dev wheel
+--out DIR [--target TRIPLE]` and `cargo dev wheel-smoke DIR VERSION` (Rust, in
+`crates/gob-dev`; uv builds the maturin environment). Run them locally to
+reproduce a wheel failure; there is no shell script to port per platform.
+
 ## Resume after a failure
 
 Find the failing point, then use the matching row. Re-running never needs a new

@@ -108,7 +108,7 @@ fn only_the_exempt_targets_skip_the_smoke_and_the_exemption_is_explicit() {
         .filter(|s| {
             s["run"]
                 .as_str()
-                .is_some_and(|r| r.contains("packaging/pypi/smoke.sh"))
+                .is_some_and(|r| r.contains("cargo dev wheel-smoke"))
         })
         .map(|s| s["if"].as_str().unwrap_or_default())
         .collect();
@@ -158,7 +158,7 @@ fn macos_x86_64_is_cross_built_on_macos_latest_and_nothing_else_is_cross() {
     }
 }
 
-/// Text of the hash-pinned maturin requirements file `build-wheel.sh` installs from.
+/// Text of the hash-pinned maturin requirements file `cargo dev wheel` installs from.
 fn maturin_requirements() -> String {
     fs::read_to_string(
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packaging/pypi/maturin-requirements.txt"),
@@ -192,22 +192,13 @@ fn maturin_unhashed(requirements: &str, build_wheel: &str, shared_code: &str) ->
     if hashes.is_empty() || !hashes.iter().all(|h| is_sha256(h)) {
         bad.push("maturin-requirements.txt lacks valid --hash=sha256: entries".to_string());
     }
-    let install: Vec<&str> = build_wheel
-        .lines()
-        .filter(|l| !l.trim_start().starts_with('#') && l.contains("pip install"))
-        .collect();
-    if install.is_empty() {
-        bad.push("build-wheel.sh no longer installs maturin".to_string());
+    // `cargo dev wheel` (crates/gob-dev/src/wheel.rs) builds the uv argv; it must install only
+    // from the hashed requirements file, with hash checking on.
+    if !build_wheel.contains("maturin-requirements.txt") {
+        bad.push("wheel.rs no longer installs maturin from maturin-requirements.txt".to_string());
     }
-    for l in install {
-        if !(l.contains("--require-hashes")
-            && l.contains("-r ")
-            && l.contains("maturin-requirements.txt"))
-        {
-            bad.push(format!(
-                "build-wheel.sh installs without --require-hashes: {l}"
-            ));
-        }
+    if !build_wheel.contains("\"--require-hashes\"") {
+        bad.push("wheel.rs installs maturin without --require-hashes".to_string());
     }
     // The workflow must never install maturin itself, nor pass a version around.
     for l in shared_code.lines() {
@@ -257,7 +248,7 @@ fn maturin_is_installed_only_from_a_hash_pinned_requirements_file() {
     let bad = maturin_unhashed(
         &maturin_requirements(),
         &fs::read_to_string(
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packaging/pypi/build-wheel.sh"),
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../crates/gob-dev/src/wheel.rs"),
         )
         .unwrap(),
         &code_only(&shared_text()),
@@ -286,10 +277,10 @@ fn rustup_init_is_a_versioned_download_verified_by_sha256_before_it_runs() {
 #[test]
 fn the_unhashed_install_checks_reject_a_stripped_pin() {
     let reqs = "maturin==1.0.0 \\\n    --hash=sha256:0000000000000000000000000000000000000000000000000000000000000000\n";
-    let good_sh = "uv pip install -q --require-hashes --no-deps -r maturin-requirements.txt\n";
+    let good_sh = "vec![\"--require-hashes\".into(), \"maturin-requirements.txt\"]\n";
     assert!(maturin_unhashed(reqs, good_sh, "").is_empty());
     assert!(!maturin_unhashed("maturin==1.0.0\n", good_sh, "").is_empty());
-    assert!(!maturin_unhashed(reqs, "uv pip install maturin\n", "").is_empty());
+    assert!(!maturin_unhashed(reqs, "vec![\"pip\", \"install\", \"maturin\"]\n", "").is_empty());
     assert!(!maturin_unhashed(reqs, good_sh, "run: pip install maturin==1\n").is_empty());
     let ok = "curl -o /tmp/rustup-init \\\n  \"https://static.rust-lang.org/rustup/archive/$RUSTUP_INIT_VERSION/$TARGET/rustup-init\"\necho \"$RUSTUP_INIT_SHA  /tmp/rustup-init\" | sha256sum -c -\n/tmp/rustup-init -y\n";
     assert!(rustup_unhashed(ok).is_empty());
@@ -410,8 +401,8 @@ fn smoke_steps<'a>(wf: &'a Value, job: &str, script: &str) -> Vec<&'a Value> {
 #[test]
 fn every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archive() {
     let wf = shared();
-    // Wheel jobs: smoke.sh delegates to the shared loop; archive jobs call archive-smoke.sh, which does too.
-    assert!(repo_file("packaging/pypi/smoke.sh").contains("smoke/fixture-loop.sh"));
+    // Wheel jobs: `cargo dev wheel-smoke` delegates to the shared loop; archive jobs call archive-smoke.sh, which does too.
+    assert!(repo_file("crates/gob-dev/src/wheel_smoke.rs").contains("smoke/fixture-loop.sh"));
     assert!(repo_file("packaging/smoke/archive-smoke.sh").contains("fixture-loop.sh"));
     let loop_script = repo_file("packaging/smoke/fixture-loop.sh");
     for verb in [
@@ -434,7 +425,7 @@ fn every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archiv
     );
     assert!(loop_script.is_ascii(), "fixture loop must be ASCII");
 
-    let wheel = smoke_steps(&wf, "wheel", "packaging/pypi/smoke.sh");
+    let wheel = smoke_steps(&wf, "wheel", "cargo dev wheel-smoke");
     assert_eq!(wheel.len(), 1);
     let archive = smoke_steps(&wf, "build", "packaging/smoke/archive-smoke.sh");
     assert_eq!(archive.len(), 1, "exactly one archive smoke step");
@@ -614,7 +605,7 @@ fn smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemp
         "cargo build",
         "maturin",
         "dist build",
-        "build-wheel.sh",
+        "cargo dev wheel ", // the trailing space allows `cargo dev wheel-smoke` (the smoke itself)
         "rustup",
     ] {
         assert!(!text.contains(banned), "smoke must not build: {banned}");
@@ -653,7 +644,7 @@ fn smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemp
         );
     }
     assert_eq!(
-        smoke_steps(&wf, "smoke", "packaging/pypi/smoke.sh").len(),
+        smoke_steps(&wf, "smoke", "cargo dev wheel-smoke").len(),
         1
     );
     assert_eq!(
@@ -814,7 +805,7 @@ fn pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_onl
         "cargo build",
         "maturin",
         "dist build",
-        "build-wheel.sh",
+        "cargo dev wheel",
         "rustup",
         "actions/checkout",
         "secrets.",
@@ -888,9 +879,9 @@ fn the_pypi_job_checks_each_products_wheel_count_before_uploading_both() {
     // The wheel job checks one wheel per product, and the smoke runs on the whole directory.
     let text = serde_yaml_ng::to_string(&shared["jobs"]["wheel"]["steps"]).unwrap();
     assert!(text.contains("for product in frob grimble crunk; do"));
-    assert!(text.contains("packaging/pypi/smoke.sh target/wheels"));
+    assert!(text.contains("cargo dev wheel-smoke target/wheels"));
     let fresh = serde_yaml_ng::to_string(&shared["jobs"]["smoke"]["steps"]).unwrap();
-    assert!(fresh.contains("packaging/pypi/smoke.sh wheels"));
+    assert!(fresh.contains("cargo dev wheel-smoke wheels"));
 }
 
 #[test]

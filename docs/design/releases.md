@@ -159,7 +159,7 @@ part of the job's design:
   waiting.
 - **Artifact smoke:** each built artifact is installed into a clean
   environment and runs real commands (`frob doctor`, `frob check` on a
-  fixture repository). As built, wheels (`packaging/pypi/smoke.sh`) and
+  fixture repository). As built, wheels (`cargo dev wheel-smoke`) and
   standalone archives (`packaging/smoke/archive-smoke.sh`) share
   `packaging/smoke/fixture-loop.sh`: init, doctor, check, a ticket with
   one criterion, work, edit, check, command-provider evidence, a changelog

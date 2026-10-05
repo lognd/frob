@@ -227,10 +227,11 @@ fn frob_depends_on_grimble_at_the_same_version_and_grimble_and_crunk_on_nothing(
         !std::path::Path::new(&root().join("packaging/pypi/pyproject.toml")).exists(),
         "no per-product pyproject is checked in; the version is the Cargo lockstep version"
     );
-    let build = read("packaging/pypi/build-wheel.sh");
+    // The wheel build reads products.toml itself (no per-product list in code) and renders each.
+    let build = read("crates/gob-dev/src/wheel.rs");
     assert!(
-        build.contains("render.py\" list"),
-        "build-wheel.sh builds every listed product"
+        build.contains("products.toml") && build.contains("\"render\""),
+        "cargo dev wheel builds every listed product"
     );
     assert!(
         !build.contains("data/scripts"),
@@ -241,25 +242,19 @@ fn frob_depends_on_grimble_at_the_same_version_and_grimble_and_crunk_on_nothing(
 /// Binds: the smoke installs from the local wheels only and covers the four scenarios.
 #[test]
 fn the_wheel_smoke_installs_from_local_wheels_only_in_four_scenarios() {
-    let smoke = read("packaging/pypi/smoke.sh");
-    assert!(smoke.contains("--no-index --find-links"));
+    let smoke = read("crates/gob-dev/src/wheel_smoke.rs");
+    // Every install spec is built from the local-index arguments, never a bare `uv pip install`.
+    assert!(smoke.contains("\"--no-index\""));
+    assert!(smoke.contains("\"--find-links\""));
     let installs: Vec<&str> = smoke
         .lines()
-        .filter(|l| !l.trim_start().starts_with('#'))
-        .filter(|l| l.starts_with("uv pip install") || l.starts_with("uv tool install"))
+        .filter(|l| !l.trim_start().starts_with("//"))
+        .filter(|l| l.contains("local_index_args(dir)"))
         .collect();
-    assert_eq!(installs.len(), 4, "{installs:?}");
-    for l in &installs {
-        assert!(
-            l.contains("${install_args[@]}"),
-            "install without --no-index: {l}"
-        );
-    }
+    assert_eq!(installs.len(), 2, "pip install and tool install: {installs:?}");
     for scenario in [
-        "# a. grimble alone",
-        "# b. frob alone",
-        "# c. uv tool install frob",
-        "# d. crunk alone",
+        "Scenario: install product `name` alone",
+        "Scenario: `uv tool install frob`",
     ] {
         assert!(smoke.contains(scenario), "smoke lacks `{scenario}`");
     }

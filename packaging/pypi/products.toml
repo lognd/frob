@@ -1,6 +1,6 @@
 # The PyPI product list: the one source of the wheel set (docs/design/products.md 6, D87).
 # One entry per product binary; render.py turns each entry into a maturin project and
-# build-wheel.sh builds every entry, so adding a product (crunk was the last) is
+# `cargo dev wheel` builds every entry, so adding a product (crunk was the last) is
 # one more [[product]] table here plus its row in the workflow's count steps (a test pins both).
 # Each wheel carries only its own binary; `depends` names sibling products pinned at the same
 # lockstep version (`grimble==<version>`), so the package manager composes the install.

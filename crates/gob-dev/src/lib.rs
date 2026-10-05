@@ -17,6 +17,8 @@ pub mod isolation;
 pub mod out;
 pub mod publish;
 pub mod render;
+pub mod wheel;
+pub mod wheel_smoke;
 
 use std::path::{Path, PathBuf};
 

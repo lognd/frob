@@ -29,12 +29,12 @@ workflow count loops (`for product in frob grimble crunk`, pinned by
 
 ## Local build (this host)
 
-    packaging/pypi/build-wheel.sh [--out DIR] [--product NAME]   # default DIR: target/wheels, all products
+    cargo dev wheel [--out DIR] [--target TRIPLE] [--product NAME]...   # default DIR: target/wheels, all products
 
 Needs `uv`, Python 3.11+ (uv finds one) and a Rust toolchain. On Linux it asks maturin for `manylinux_2_28`
 and fails if the host glibc is newer than that allows; either build in the
 manylinux container (below) or set `WHEEL_COMPAT=off` to accept the host tag
-(a local smoke wheel only, never published; `smoke.sh` then also skips the
+(a local smoke wheel only, never published; `cargo dev wheel-smoke` then also skips the
 manylinux tag check).
 
 ## manylinux_2_28 in the container (what the release job must do)
@@ -47,7 +47,7 @@ manylinux tag check).
        echo "<sha256>  /tmp/rustup-init" | sha256sum -c -;
        chmod +x /tmp/rustup-init; /tmp/rustup-init -y --profile minimal;
        export PATH=$HOME/.cargo/bin:/opt/python/cp312-cp312/bin:$PATH;
-       pip install uv; packaging/pypi/build-wheel.sh --out /work/target/m28/wheels'
+       pip install uv; cargo dev wheel --out /work/target/m28/wheels'
 
 `.cargo/config.toml` links with clang and mold, which the image lacks, hence the
 linker and `RUSTFLAGS` overrides (an env `RUSTFLAGS` replaces the config's).
@@ -64,13 +64,15 @@ run artifact (`wheel-<target>`), nothing is published there.
 - Linux x86_64 / aarch64: native runners (`ubuntu-latest`, `ubuntu-24.04-arm`), the
   digest-pinned `quay.io/pypa/manylinux_2_28_<arch>` image via `docker run` as above.
 - macOS arm64: `macos-latest`. macOS x86_64: `macos-latest` with
-  `build-wheel.sh --target x86_64-apple-darwin` (cargo and maturin both get the target).
+  `cargo dev wheel --target x86_64-apple-darwin` (cargo and maturin both get the target).
   The arm64 runner cannot execute it, so it is the single smoke exemption
   (`smoke: false`; pinned by `crates/frob-release/tests/release_workflow.rs`).
-- Windows x86_64: `windows-latest`, Git Bash; `build-wheel.sh` and `smoke.sh` use the
-  venv's `Scripts/` directory there.
+- Windows x86_64: `windows-latest`; `cargo dev wheel` and `cargo dev wheel-smoke` pick the
+  venv's `Scripts\python.exe` layout in Rust, so no shell, `realpath` or `uname` is involved
+  (a GNU-only `realpath -m` and a bare `Scripts/python` broke the shell script on macOS and
+  Windows, ticket 1T8TCTA).
 - maturin is pinned by version and sha256 in `maturin-requirements.txt`, which
-  `build-wheel.sh` installs with `uv pip install --require-hashes --no-deps`.
+  `cargo dev wheel` installs with `uv pip install --require-hashes --no-deps`.
 - rustup-init in the containers is `RUSTUP_INIT_VERSION` downloaded from
   `static.rust-lang.org/rustup/archive/<ver>/<triple>/rustup-init` and verified against
   the matrix's `rustup_sha` (the published `rustup-init.sha256` of that version and
@@ -78,7 +80,7 @@ run artifact (`wheel-<target>`), nothing is published there.
   next to the binary; maturin: PyPI JSON `urls[].digests.sha256`) and change them with the
   version in one commit; `release_workflow.rs` fails on a missing check.
 - Every other target's wheel set is smoked with
-  `smoke.sh target/wheels VERSION` on its build runner, and again on a fresh runner in `smoke`.
+  `cargo dev wheel-smoke target/wheels VERSION` on its build runner, and again on a fresh runner in `smoke`.
 - No sdist is built, by decision: the wheel bundles prebuilt binaries, an sdist would need
   the whole workspace, and source ships through crates.io and git (releases.md 6).
 
@@ -89,11 +91,11 @@ run artifact (`wheel-<target>`), nothing is published there.
 - No sdist (decided, releases.md 6): `maturin sdist` would need the whole workspace and
   would add an unsmoked source-build path; revisit only by changing that decision.
 - Publish only in the protected `pypi` environment (the `pypi` job, pypa/gh-action-pypi-publish via trusted publishing, one PyPI project per product, five wheels each checked before upload), after smoke (the `smoke` job
-  re-runs `smoke.sh` on a fresh runner against the downloaded wheels; publishing jobs need it).
+  re-runs `cargo dev wheel-smoke` on a fresh runner against the downloaded wheels; publishing jobs need it).
 
 ## Smoke
 
-`packaging/pypi/smoke.sh WHEEL_DIR [VERSION]` checks each wheel's metadata (name, platform
+`cargo dev wheel-smoke WHEEL_DIR [VERSION]` (crates/gob-dev/src/wheel_smoke.rs) checks each wheel's metadata (name, platform
 tag, only its own binary, the `grimble==` pin), then installs from the directory only
 (`--no-index --find-links`, never the index) in four scenarios: (a) grimble alone into a clean
 venv, which installs only grimble; (b) frob alone into a clean venv, which pulls grimble at
@@ -104,5 +106,5 @@ a throwaway git repository with a tiny crate and a markdown file goes through `f
 `doctor`, `check`, `ticket new` (one criterion), `work`, an edit, `check --ticket`, command
 provider evidence, a changelog fragment named with the ticket id, `land`, then asserts the
 ticket is closed done and `ticket doctor` is clean. It needs git and cargo, uses only the
-installed binaries, and is POSIX sh. Standalone archives run the same loop through
+installed binaries, and is POSIX sh (the one remaining script, shared with the archive smoke; `wheel-smoke` runs it through `sh`). Standalone archives run the same loop through
 `packaging/smoke/archive-smoke.sh ARCHIVE [VERSION]`.
