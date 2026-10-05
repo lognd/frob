@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-05T04:18:29Z"
-updated = "2026-10-05T04:18:41Z"
+updated = "2026-10-05T04:21:22Z"
 
 [[acceptance]]
 text = "Given the wheel and smoke jobs of build-smoke.yml on a Linux runner, when they build gob-dev with cargo dev, then mold and clang are installed first by the same local composite action ci.yml uses, with no copy of the install step"
@@ -15,7 +15,7 @@ bound = false
 
 [[acceptance]]
 text = "Given any workflow job that runs cargo build, run, test, nextest, clippy, doc, install or cargo dev on a possibly-Linux runner, when release_workflow tests run, then the test fails if the job has neither the linker action before that step nor the stock-linker override"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the changed workflows, when zizmor and actionlint run, then both are clean"
