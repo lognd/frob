@@ -2,11 +2,12 @@
 id = "01M44QG8QASC8BVYSJN3SM4VWS"
 title = "release section dates use the local zone while every other frob date is UTC"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "duplicate"
 priority = "low"
 reporter = "lognd"
 created = "2026-10-05T00:30:30Z"
-updated = "2026-10-05T00:30:30Z"
+updated = "2026-10-05T01:22:00Z"
 
 [[acceptance]]
 text = "Given a release cut at 00:06 UTC while the local zone is on the previous day, when the changelog section is dated, then the date follows the documented zone rule"
