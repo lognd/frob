@@ -1,0 +1,18 @@
++++
+id = "01M44YQS4CNZM54P067GJVPDC0"
+title = "C# and Unity support: adapter, project model, unity pack, evidence and hullbreach migration (D94)"
+type = "epic"
+category = "todo"
+priority = "high"
+reporter = "lognd"
+created = "2026-10-05T02:36:56Z"
+updated = "2026-10-05T02:36:56Z"
+idempotency_key = "d94-epic"
+scope = ["docs/design/dotnet-unity.md", "docs/design/README.md"]
++++
+
+Owner request 2026-10-05 (decision D94, docs/design/dotnet-unity.md): run frob v2 on the owner's project-hullbreach repositories. `game` is a Unity 6 project (6000.0.43f1): 129 C# files in 17 assembly definitions (8 runtime, 1 editor, 7 EditMode test and 1 PlayMode test assembly), 274 [Test] and 17 [UnityTest] tests, 79 [SerializeField] fields, MonoBehaviour messages (Awake 13, LateUpdate 6, Update, Start and FixedUpdate 5 each, OnDestroy 4, OnTriggerEnter2D, OnDisable, OnEnable, Reset, OnDrawGizmos) and one [MenuItem]. `platform` is Python with some TS/TSX and CSS. Both run frob v1 today. Python is the done epic ~HKNM4VV; TS/TSX and CSS ingest is ~17ZVW3R (crunk, 0.537.0).
+
+Tree, in the section 5 order of the design: (1) C# language, symbols, fixtures and fidelity row, and the .sln/.csproj and .asmdef/.asmref project model; (2) the dotnet evidence provider and C# test selection; (3) the opt-in unity vocabulary pack with its UNITY .meta/GUID rule family and frob init suggestion; (4) the unity evidence provider (needs a Unity editor, proven on the owner's Windows side through goway, one run at a time); (5) migration of both hullbreach repositories per docs/design/migration.md as the post-0.532.0 real-world trial. Nothing below the pack is Unity-specific, so plain .NET repositories get layers 1 and 2 alone.
+
+Related v1-imported tickets that this supersedes in v2 terms and does not duplicate: ~RCMBYFN (C# and Unity support epic, v1 cluster D2), ~M7XBF7P and ~SDFS36Z (v1 runner wiring), ~Y27W0D5 (language expansion umbrella). The hullbreach repositories are read-only inputs to every ticket here: fixtures are synthesized, never copied wholesale and never edited at the source.
