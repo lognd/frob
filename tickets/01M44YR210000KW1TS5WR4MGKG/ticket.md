@@ -8,7 +8,7 @@ points = 8
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:05Z"
-updated = "2026-10-05T02:40:46Z"
+updated = "2026-10-05T02:40:47Z"
 idempotency_key = "d94-miggame"
 scope = ["docs/migration/**", "notes/**"]
 
@@ -47,6 +47,10 @@ target = "01M44YYNMG7X03Z76JY8PFY636"
 [[links]]
 kind = "blocked-by"
 target = "01M44YYP1SH9VVNAY5A62XMCHN"
+
+[[links]]
+kind = "blocked-by"
+target = "01M44YYPF4YCDQQ5HJHN3Z20Z4"
 
 [[acceptance]]
 text = "Given a scratch clone of game, when frob check runs under v2 with the unity pack, then all 129 C# files are parsed, the 17 assemblies are packages, and findings are listed with no panic"
