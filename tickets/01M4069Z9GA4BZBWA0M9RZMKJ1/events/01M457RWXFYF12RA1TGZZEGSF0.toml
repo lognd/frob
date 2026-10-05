@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-05T05:14:50Z"
+digest = "d6f36d2a8cbf68f5e1b82dc66ea258182ed1fe94eadfdc26417f7886eb25c804"
+provider = "file"
+ref = "packaging/release-evidence/outside-repos-0.532.0.txt"
+size = 451
+status = "measured"
+at = "2026-10-05T05:14:50Z"
+actor = "lognd"
+rev = 1
