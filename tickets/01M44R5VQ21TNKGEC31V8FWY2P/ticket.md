@@ -2,12 +2,12 @@
 id = "01M44R5VQ21TNKGEC31V8FWY2P"
 title = "gob-time: Stamp, Day, Shown and one injected Clock; migrate every wall-clock read; clippy confinement"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
 reporter = "lognd"
 created = "2026-10-05T00:42:18Z"
-updated = "2026-10-05T00:42:18Z"
+updated = "2026-10-05T00:42:47Z"
 
 [[acceptance]]
 text = "Given the workspace, when clippy runs, then any wall-clock or local-zone read outside gob-time is an error"
