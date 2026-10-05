@@ -1,0 +1,32 @@
++++
+id = "01M44YQYKX1PTSGQE3TMVX4GEN"
+title = "unity pack: dynamic calls reported Unresolved"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M44YQS4CNZM54P067GJVPDC0"
+reporter = "lognd"
+created = "2026-10-05T02:37:02Z"
+updated = "2026-10-05T02:37:02Z"
+idempotency_key = "d94-dynamic"
+scope = ["packs/unity.toml", "crates/gob-symbols/src/csharp.rs", "crates/gob-ir/**", "crates/gob-symbols/tests/**", "docs/design/packs.md", "docs/design/dotnet-unity.md"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M44YQXS4BXE0X07FBYR0STJ5"
+
+[[acceptance]]
+text = 'Given Invoke("Reload", 1f) in a MonoBehaviour and a method named Reload, when the graph is built with the pack, then the edge is Unresolved and Reload is not marked reached by it'
+bound = false
+
+[[acceptance]]
+text = "Given SendMessage with a string method name, when the graph is built, then the call is Unresolved with the reason named"
+bound = false
+
+[[acceptance]]
+text = "Given a typed method call, when the graph is built, then it resolves as before"
+bound = false
++++
+
+Third vocabulary of the unity pack: SendMessage, SendMessageUpwards, BroadcastMessage, Invoke("name"), InvokeRepeating, StartCoroutine("name"), CancelInvoke("name") and string-keyed lookups (GameObject.Find, FindWithTag, Resources.Load) are dynamic calls, recorded as Unresolved call edges per the compute policy and never resolved by guesswork; UnityEvent wiring lives in scene and prefab YAML and is reported Unresolved with its GUID reference when the asset is read (YAML contents beyond GUID references are out of scope, design section 3). A literal method name never turns into an edge. Docs: docs/design/packs.md and docs/design/dotnet-unity.md section 3.
