@@ -2,7 +2,8 @@
 id = "01M4069Z9GA4BZBWA0M9RZMKJ1"
 title = "Exit: two outside repositories managed by frob for two cycles with no ledger data loss"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
