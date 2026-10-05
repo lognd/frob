@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-05T03:55:54Z"
+digest = "077de1af8f4ad1a7693e47dc8db00e2b3fc9efd168cec22645b9762fe2caadbb"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6c73bba9-ac14-4e91-b40b-c4e4b0d99574 with nextest profile: default
+    Starting 2 tests across 1 binary (15 tests skipped)
+        PASS [   0.010s] gob-symbols::csharp an_attribute_change_changes_only_the_attr_and_sig_digests
+        PASS [   0.013s] gob-symbols::csharp attributes_keep_names_arguments_and_targets
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 2 tests run: 2 passed, 15 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p gob-symbols --test csharp attributes_keep_names_arguments_and_targets an_attribute_change_changes_only_the_attr_and_sig_digests"
+size = 657
+status = "measured"
+tests = ["an_attribute_change_changes_only_the_attr_and_sig_digests", "attributes_keep_names_arguments_and_targets"]
+at = "2026-10-05T03:55:54Z"
+actor = "lognd"
+rev = 1
