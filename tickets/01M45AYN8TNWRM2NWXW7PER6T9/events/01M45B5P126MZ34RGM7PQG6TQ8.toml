@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-05T06:14:14Z"
+digest = "7d6053bf8f09f071e1f2f8070fd91ee16c1c5375cfe14ef861bf0e61e906704c"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 88b35144-9025-4f34-a421-28b5567da7c1 with nextest profile: default
+    Starting 1 test across 1 binary (17 tests skipped)
+        PASS [   0.005s] frob-release::changelog dry_run_touches_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 17 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-release --test changelog"
+size = 536
+status = "measured"
+tests = ["dry_run_touches_nothing"]
+at = "2026-10-05T06:14:14Z"
+actor = "lognd"
+rev = 1
