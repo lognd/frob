@@ -7,7 +7,8 @@ priority = "high"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-05T03:13:51Z"
-updated = "2026-10-05T03:14:05Z"
+updated = "2026-10-05T03:20:50Z"
+scope = [".github/workflows/build-smoke.yml", "crates/frob-release/tests/products.rs", "crates/frob-release/tests/release_workflow.rs", "crates/gob-dev/Cargo.toml", "Cargo.lock", "crates/gob-dev/src/lib.rs", "crates/gob-dev/src/main.rs", "crates/gob-dev/src/wheel.rs", "crates/gob-dev/src/wheel_smoke.rs", "docs/design/releases.md", "docs/guides/release.md", "packaging/pypi/**", "packaging/smoke/fixture-loop.sh", "changelog.d/*1T8TCTA*"]
 
 [[acceptance]]
 text = "Given the release workflow dry run, when the wheel job runs on all five targets, then every wheel builds and the smoke installs it, with x86_64-apple-darwin smoke exempt as documented"
