@@ -2,6 +2,28 @@ version = 2
 digest_scheme = 2
 
 [[symbol]]
+identity = ".github/workflows/build-smoke.yml::jobs.smoke.steps"
+symref = ".github/workflows/build-smoke.yml::jobs.smoke.steps"
+sig = "f63c0a3294fb97e385bac5723be2574fe7093bca0f2b54424881ff41bc708e24"
+body = "f1aab0beb4cefc0ca72ec5ea26eb13b8357699c15354c53ad5830f484b58c890"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+contract = "d54656bdc4cbdf9619192a2ebf0bbd2d7caa4480624d54891c42c03c2a60976f"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-10-05T04:23:50.41568745Z"
+
+[[symbol]]
+identity = ".github/workflows/build-smoke.yml::jobs.wheel.steps"
+symref = ".github/workflows/build-smoke.yml::jobs.wheel.steps"
+sig = "f63c0a3294fb97e385bac5723be2574fe7093bca0f2b54424881ff41bc708e24"
+body = "aa6ecbe0453150ab73b5b6b1fbd01c98ac20ba9c781f828b008f50633d552587"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+contract = "d54656bdc4cbdf9619192a2ebf0bbd2d7caa4480624d54891c42c03c2a60976f"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-10-05T04:23:50.41568745Z"
+
+[[symbol]]
 identity = ".github/workflows/ci.yml::jobs.dev-artifacts.uses"
 symref = ".github/workflows/ci.yml::jobs.dev-artifacts.uses"
 sig = "066731533155c2b9fa7cf9202e5d711cb899e470c3ab81d4bdfa5aa78fe37f28"
@@ -12,6 +34,17 @@ contract = "60f8349cedf366eef6f475e9a29a6d3d3197b5bdbace6b1578b1ae48225d66f8"
 acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-10-03T23:11:28.931959538Z"
 reason = "dev publish moved into ci.yml (~25QHMNX); same shared-workflow call as dev.yml had"
+
+[[symbol]]
+identity = ".github/workflows/ci.yml::jobs.rust.steps"
+symref = ".github/workflows/ci.yml::jobs.rust.steps"
+sig = "f63c0a3294fb97e385bac5723be2574fe7093bca0f2b54424881ff41bc708e24"
+body = "da07e1823aab1460a15bf60add7dc64fc0971a90c2214bb4114576de7d48dc35"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+contract = "d54656bdc4cbdf9619192a2ebf0bbd2d7caa4480624d54891c42c03c2a60976f"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-10-05T04:23:50.41568745Z"
 
 [[symbol]]
 identity = ".github/workflows/release.yml::jobs.artifacts.uses"
