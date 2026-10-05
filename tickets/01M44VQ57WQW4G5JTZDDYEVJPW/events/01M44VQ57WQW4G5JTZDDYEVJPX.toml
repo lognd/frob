@@ -1,0 +1,10 @@
+kind = "create"
+title = "check on a clone without the ledger ref reports REF001 zero subjects instead of a missing-ledger-ref finding"
+type = "bug"
+category = "todo"
+priority = "medium"
+acceptance = ["Given a repository whose configured ledger ref is absent, when frob check runs, then it reports one required finding naming the missing ref and a remedy, not zero-subject verdicts from ledger rules", "Given cargo dev ci run through goway, when the check step runs, then the ledger ref is available or the step reports why not"]
+body = 'First remote cargo dev ci run to reach the check step (goway --with-git on quasar, ticket ~V8FWY2P, 2026-10-05) failed with one required finding: "REF001 examined zero subjects". frob check passes locally in the same tree. Likely cause: goway --with-git sends a minimal .git (HEAD, branch, index; no other refs), so the ledger ref ([tickets] ref = refs/heads/experimental) is absent on the helper and every ledger-backed rule sees zero tickets. Decide and fix structurally: either frob check distinguishes "ledger ref absent" from "ledger empty" (an absent ref is its own required Unresolved with a remedy naming the ref, not a zero-subjects verdict from REF001 and the other ledger rules), or the ci step documents that check needs the ledger ref and cargo dev ci passes it to goway (a --with-git ref list), or both. Reproduce in a fixture repo whose .git has HEAD but not the ledger ref.'
+at = "2026-10-05T01:44:10Z"
+actor = "lognd"
+rev = 1
