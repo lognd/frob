@@ -2,7 +2,8 @@
 id = "01M44YQSZ3YEXRDW9RKER9HRA2"
 title = "gob-symbols: C# units, attributes, partial types and preprocessor conditions"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
