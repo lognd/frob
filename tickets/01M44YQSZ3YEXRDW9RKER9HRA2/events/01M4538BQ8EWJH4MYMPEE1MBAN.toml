@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-05T03:55:51Z"
+digest = "7bcfc1b3f5e49776a483f4136395ed9e55d87ddaf869b2ff3894a5a82347bb39"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c5ed01db-fdc3-4819-af1b-a7e41d7f64c2 with nextest profile: default
+    Starting 4 tests across 1 binary (13 tests skipped)
+        PASS [   0.009s] gob-symbols::csharp block_namespaces_nest_and_siblings_share_no_parent
+        PASS [   0.012s] gob-symbols::csharp fields_events_and_properties_carry_visibility_and_declarators
+        PASS [   0.013s] gob-symbols::csharp namespaces_types_and_members_are_units_with_kinds
+        PASS [   0.015s] gob-symbols::csharp a_partial_class_over_two_files_is_one_unit_with_two_spans
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 4 tests run: 4 passed, 13 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p gob-symbols --test csharp namespaces_types_and_members_are_units_with_kinds fields_events_and_properties_carry_visibility_and_declarators a_partial_class_over_two_files_is_one_unit_with_two_spans block_namespaces_nest_and_siblings_share_no_parent"
+size = 866
+status = "measured"
+tests = ["block_namespaces_nest_and_siblings_share_no_parent", "fields_events_and_properties_carry_visibility_and_declarators", "namespaces_types_and_members_are_units_with_kinds", "a_partial_class_over_two_files_is_one_unit_with_two_spans"]
+at = "2026-10-05T03:55:51Z"
+actor = "lognd"
+rev = 1

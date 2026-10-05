@@ -100,7 +100,7 @@ tag, only its own binary, the `grimble==` pin), then installs from the directory
 (`--no-index --find-links`, never the index) in four scenarios: (a) grimble alone into a clean
 venv, which installs only grimble; (b) frob alone into a clean venv, which pulls grimble at
 the same version, then runs both and the fixture loop below; (c) `uv tool install frob`, where
-grimble is not on `PATH` and `frob doctor` still reports it `beside-frob`, then `frob check`; (d) crunk alone into a clean venv, which installs only crunk.
+grimble is not on `PATH` and `frob doctor` still reports it `beside-frob` (on Windows through the tool environment under `UV_TOOL_DIR`, because uv copies `frob.exe` into the bin directory), then `frob check`; (d) crunk alone into a clean venv, which installs only crunk.
 The loop of (b) is `packaging/smoke/fixture-loop.sh`:
 a throwaway git repository with a tiny crate and a markdown file goes through `frob init`,
 `doctor`, `check`, `ticket new` (one criterion), `work`, an edit, `check --ticket`, command

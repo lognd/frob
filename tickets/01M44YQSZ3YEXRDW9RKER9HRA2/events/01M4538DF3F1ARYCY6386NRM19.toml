@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-05T03:55:55Z"
+digest = "ea2c42c4b802fde64af7bc531119d407c152920c724624859be023a469cca606"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9c1eddcb-ac8e-4d8d-bd89-db3f7f0a1b84 with nextest profile: default
+    Starting 2 tests across 1 binary (15 tests skipped)
+        PASS [   0.005s] gob-symbols::csharp elif_and_else_branches_negate_the_earlier_conditions
+        PASS [   0.012s] gob-symbols::csharp both_branches_of_an_if_yield_units_and_carry_their_condition
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 2 tests run: 2 passed, 15 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p gob-symbols --test csharp both_branches_of_an_if_yield_units_and_carry_their_condition elif_and_else_branches_negate_the_earlier_conditions"
+size = 669
+status = "measured"
+tests = ["elif_and_else_branches_negate_the_earlier_conditions", "both_branches_of_an_if_yield_units_and_carry_their_condition"]
+at = "2026-10-05T03:55:55Z"
+actor = "lognd"
+rev = 1

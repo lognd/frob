@@ -102,3 +102,83 @@ fn find_sibling_refuses_path_like_names_and_reports_absence() {
     assert!(find_sibling("no-such-sibling-d87").is_err());
     let _ = Origin::Path.label();
 }
+
+/// An environment lookup over fixed variables.
+fn vars(pairs: &[(&str, &str)]) -> impl Fn(&str) -> Option<std::ffi::OsString> + use<> {
+    let map: Vec<(String, String)> = pairs
+        .iter()
+        .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+        .collect();
+    move |name| {
+        map.iter()
+            .find(|(k, _)| k == name)
+            .map(|(_, v)| std::ffi::OsString::from(v))
+    }
+}
+
+// frob:ticket 01M452Q6THBSZGVHRAYHA1TTRM
+// frob:tests crates/gob-exec/src/discover.rs::tool_env_dirs
+#[test]
+fn a_windows_uv_tool_copy_in_the_bin_dir_finds_the_tool_environment_scripts() {
+    // uv copies Scripts\frob.exe into the bin dir; grimble stays in the environment.
+    let exe = PathBuf::from("C:/u/.local/bin/frob.exe");
+    let env = vars(&[("APPDATA", "C:/u/AppData/Roaming")]);
+    let venv = PathBuf::from("C:/u/AppData/Roaming")
+        .join("uv")
+        .join("tools")
+        .join("frob");
+    let scripts = venv.join("Scripts");
+    let files = [
+        venv.join("pyvenv.cfg"),
+        scripts.join("frob.exe"),
+        scripts.join("grimble.exe"),
+    ];
+    let probe = existing(&files.iter().collect::<Vec<_>>());
+    let dirs = gob_exec::tool_env_dirs(Platform::Windows, &exe, &env, &probe);
+    assert_eq!(dirs, vec![scripts.clone()]);
+    let beside = [exe.parent().unwrap().to_path_buf(), scripts.clone()];
+    let (near, far) = plan(
+        Platform::Windows,
+        OsStr::new("grimble"),
+        &[beside[0].clone(), dirs[0].clone()],
+        &[],
+        &probe,
+    );
+    assert_eq!(near, Some(scripts.join("grimble.exe")));
+    assert_eq!(far, None);
+}
+
+// frob:tests crates/gob-exec/src/discover.rs::tool_env_roots
+#[test]
+fn tool_roots_follow_the_installers_precedence_and_only_apply_on_windows() {
+    let env = vars(&[
+        ("UV_TOOL_DIR", "D:/tools"),
+        ("PIPX_HOME", "D:/pipx"),
+        ("USERPROFILE", "C:/u"),
+        ("APPDATA", ""),
+    ]);
+    let roots = gob_exec::tool_env_roots(Platform::Windows, &env);
+    assert_eq!(
+        roots,
+        vec![
+            PathBuf::from("D:/tools"),
+            PathBuf::from("D:/pipx").join("venvs"),
+            PathBuf::from("C:/u").join("pipx").join("venvs"),
+        ]
+    );
+    assert!(gob_exec::tool_env_roots(Platform::Unix, &env).is_empty());
+}
+
+// frob:tests crates/gob-exec/src/discover.rs::tool_env_dirs
+#[test]
+fn a_directory_that_is_not_a_venv_or_lacks_the_tool_is_never_searched() {
+    let exe = PathBuf::from("C:/u/bin/frob.exe");
+    let env = vars(&[("UV_TOOL_DIR", "D:/tools")]);
+    let venv = PathBuf::from("D:/tools").join("frob");
+    let no_cfg = [venv.join("Scripts").join("frob.exe")];
+    let probe = existing(&no_cfg.iter().collect::<Vec<_>>());
+    assert!(gob_exec::tool_env_dirs(Platform::Windows, &exe, &env, &probe).is_empty());
+    let no_exe = [venv.join("pyvenv.cfg")];
+    let probe = existing(&no_exe.iter().collect::<Vec<_>>());
+    assert!(gob_exec::tool_env_dirs(Platform::Windows, &exe, &env, &probe).is_empty());
+}

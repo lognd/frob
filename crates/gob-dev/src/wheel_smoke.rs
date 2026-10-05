@@ -9,6 +9,7 @@
 //! with `Path`-built argv (D86); the fixture loop stays `packaging/smoke/fixture-loop.sh`
 //! (shared with the archive smoke), run through `sh`.
 // frob:ticket 01M450VBPVEBZQZ5ANM1T8TCTA
+// frob:ticket 01M452Q6THBSZGVHRAYHA1TTRM
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -385,6 +386,7 @@ fn scenario_tool_install(
         .to_str()
         .map(str::to_owned)
         .ok_or_else(|| WheelError::Path(PathBuf::from(&path)))?;
+    let tool_dir_env = path_arg(&tool_dir)?;
     let git = |args: &[&str]| {
         run_ok(
             "git",
@@ -405,7 +407,12 @@ fn scenario_tool_install(
             &repo,
             STEP_TIMEOUT,
         ));
-        spec.env = vec![("PATH".to_owned(), path_env.clone())];
+        // The user's tool-installer environment: on Windows uv copies frob.exe into the bin dir,
+        // so frob finds grimble through the tool root (UV_TOOL_DIR here), never through PATH.
+        spec.env = vec![
+            ("PATH".to_owned(), path_env.clone()),
+            ("UV_TOOL_DIR".to_owned(), tool_dir_env.clone()),
+        ];
         run_ok(&format!("frob {}", args.join(" ")), &spec)
     };
     let doctor = frob(&["--json", "doctor"])?;
