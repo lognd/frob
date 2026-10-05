@@ -2,11 +2,11 @@
 id = "01M44P4SY2DK41TS91PAAZFNR5"
 title = "cycle state depends on wall-clock time near midnight UTC (planned vs active); tests flake"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-05T00:06:46Z"
-updated = "2026-10-05T00:06:46Z"
+updated = "2026-10-05T00:07:11Z"
 
 [[acceptance]]
 text = "Given a clock at 00:06 UTC and a zone still on the previous day, when a cycle is created with the default start, then its state is the documented one and matches at any other time of day"
