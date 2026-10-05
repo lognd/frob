@@ -9,6 +9,11 @@
 //! probe ([`plan`]), parameterised by [`Platform`], so the Windows rules (the `.exe`
 //! suffix, case-insensitive) are tested on any host (`paths.md` section 4). Only
 //! [`Origin`] and `Path`/`OsStr` APIs are used: no path is turned into text.
+//!
+//! On Windows the executable on `PATH` is a copy in the installer's bin directory, not a link
+//! into the tool environment, so [`tool_env_dirs`] adds the environment's `Scripts` directory
+//! (found from the installers' tool roots, never from `PATH`) to the beside-frob search.
+// frob:ticket 01M452Q6THBSZGVHRAYHA1TTRM
 
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
@@ -127,6 +132,58 @@ pub fn beside_dirs(exe: &Path) -> Vec<PathBuf> {
     dirs
 }
 
+/// Roots under which Python tool installers keep one virtual environment per tool, on `platform`.
+///
+/// Windows only: there `uv tool install` and `pipx install` put a copy of the executable in a
+/// bin directory that is on `PATH`, so the executable's own directory is not the tool
+/// environment and a sibling installed by a dependency is invisible from it (Unix symlinks the
+/// executable into the environment, which [`beside_dirs`] resolves). `env` reads one
+/// environment variable; the order is the installers' precedence: explicit `UV_TOOL_DIR`, then
+/// uv's default data directory, then pipx's.
+pub fn tool_env_roots(platform: Platform, env: &dyn Fn(&str) -> Option<OsString>) -> Vec<PathBuf> {
+    if platform != Platform::Windows {
+        return Vec::new();
+    }
+    let var = |name: &str| env(name).filter(|v| !v.is_empty()).map(PathBuf::from);
+    let mut roots = Vec::new();
+    roots.extend(var("UV_TOOL_DIR"));
+    roots.extend(var("XDG_DATA_HOME").map(|d| d.join("uv").join("tools")));
+    roots.extend(var("APPDATA").map(|d| d.join("uv").join("tools")));
+    roots.extend(var("PIPX_LOCAL_VENVS"));
+    roots.extend(var("PIPX_HOME").map(|d| d.join("venvs")));
+    roots.extend(var("USERPROFILE").map(|d| d.join("pipx").join("venvs")));
+    roots.extend(var("LOCALAPPDATA").map(|d| d.join("pipx").join("pipx").join("venvs")));
+    roots
+}
+
+/// The `Scripts` directories of the tool environments named after `exe`'s file stem.
+///
+/// A candidate `<root>/<stem>` counts only when it is a virtual environment (holds
+/// `pyvenv.cfg`) whose `Scripts` directory holds the tool's own executable, so a stray
+/// directory of the same name never becomes a search path. No `PATH` is consulted.
+pub fn tool_env_dirs(
+    platform: Platform,
+    exe: &Path,
+    env: &dyn Fn(&str) -> Option<OsString>,
+    is_file: &dyn Fn(&Path) -> bool,
+) -> Vec<PathBuf> {
+    let Some(stem) = exe.file_stem() else {
+        return Vec::new();
+    };
+    let own = executable_names(platform, stem);
+    let mut dirs = Vec::new();
+    for root in tool_env_roots(platform, env) {
+        let venv = root.join(stem);
+        let scripts = venv.join("Scripts");
+        let is_env = is_file(&venv.join("pyvenv.cfg"));
+        if is_env && own.iter().any(|n| is_file(&scripts.join(n))) && !dirs.contains(&scripts) {
+            tracing::debug!(env = %venv.display(), "tool environment of the running executable found");
+            dirs.push(scripts);
+        }
+    }
+    dirs
+}
+
 /// True when `a` and `b` are the same file once symlinks are resolved.
 fn same_file(a: &Path, b: &Path) -> bool {
     match (crate::path::canonical(a), crate::path::canonical(b)) {
@@ -145,7 +202,20 @@ pub fn find_sibling(name: &str) -> Result<Sibling, ExecError> {
     let exe = std::env::current_exe()
         .inspect_err(|e| tracing::debug!(error = %e, "current_exe unavailable"))
         .ok();
-    let beside = exe.as_deref().map(beside_dirs).unwrap_or_default();
+    let mut beside = exe.as_deref().map(beside_dirs).unwrap_or_default();
+    if let Some(exe) = exe.as_deref() {
+        let dirs = tool_env_dirs(
+            Platform::host(),
+            exe,
+            &|name| std::env::var_os(name),
+            &|p| p.is_file(),
+        );
+        beside.extend(
+            dirs.into_iter()
+                .filter(|d| !beside.contains(d))
+                .collect::<Vec<_>>(),
+        );
+    }
     let on_path: Vec<PathBuf> = std::env::var_os("PATH")
         .map(|p| std::env::split_paths(&p).collect())
         .unwrap_or_default();

@@ -877,6 +877,11 @@ fn the_pypi_job_checks_each_products_wheel_count_before_uploading_both() {
     let text = serde_yaml_ng::to_string(&shared["jobs"]["wheel"]["steps"]).unwrap();
     assert!(text.contains("for product in frob grimble crunk; do"));
     assert!(text.contains("cargo dev wheel-smoke target/wheels"));
+    // The container leaves a root-owned target/: the host-side tool build must go elsewhere.
+    assert!(
+        text.contains("CARGO_TARGET_DIR=\"$RUNNER_TEMP/gob-dev-tool\""),
+        "the host smoke must build gob-dev outside the root-owned target/"
+    );
     let fresh = serde_yaml_ng::to_string(&shared["jobs"]["smoke"]["steps"]).unwrap();
     assert!(fresh.contains("cargo dev wheel-smoke wheels"));
 }

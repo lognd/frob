@@ -20,7 +20,10 @@ mod semaphore;
 
 pub use cmdline::{Arg, Shell, command_line};
 pub use counter::{SpawnCount, assert_spawns};
-pub use discover::{Origin, Platform, Sibling, beside_dirs, executable_names, find_sibling, plan};
+pub use discover::{
+    Origin, Platform, Sibling, beside_dirs, executable_names, find_sibling, plan, tool_env_dirs,
+    tool_env_roots,
+};
 pub use error::ExecError;
 pub use path::{
     Style, canonical, has_dot_component, path_has_dot_component, path_strictly_inside,

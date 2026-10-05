@@ -345,7 +345,13 @@ jobs:
         shell: bash
         env:
           VERSION: ${{ needs.plan.outputs.version }}
-        run: cargo dev wheel-smoke target/wheels "$VERSION"
+          IMAGE: ${{ matrix.image }}
+        # The manylinux container runs as root, so it leaves target/ root-owned and the host
+        # cargo cannot create target/debug there. The tool build goes to a directory outside
+        # target/ (the wheels are only read from target/wheels).
+        run: |
+          if [ -n "$IMAGE" ]; then export CARGO_TARGET_DIR="$RUNNER_TEMP/gob-dev-tool"; fi
+          cargo dev wheel-smoke target/wheels "$VERSION"
       - name: Cross-built wheels are not executable here (explicit smoke exemption)
         if: ${{ !matrix.smoke }}
         shell: bash
