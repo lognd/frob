@@ -8,7 +8,7 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:57Z"
-updated = "2026-10-05T02:45:40Z"
+updated = "2026-10-05T02:45:41Z"
 idempotency_key = "d94-lang"
 scope = ["crates/gob-languages/**", "crates/gob-directives/src/comments.rs", "crates/gob-directives/src/scan.rs", "crates/frob-obligations/src/comments.rs", "docs/reference/directives.md", "docs/reference/fidelity.md", "Cargo.toml", "Cargo.lock"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a C# string literal (regular, verbatim, interpolated, raw) containing // or /*, when the comment scanners run, then no comment is reported inside the string"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a C# file with a syntax error, when it is parsed, then the partial tree is reported as a parse gap and never as an empty clean file"
