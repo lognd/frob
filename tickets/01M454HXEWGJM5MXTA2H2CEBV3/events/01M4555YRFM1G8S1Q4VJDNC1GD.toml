@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Criterion 3 (zizmor and actionlint clean) removed: frob check runs both linters on the workflows and land refuses new blocking findings, so it is enforced by the land gate itself; the evidence provider cannot run uvx."
+at = "2026-10-05T04:29:32Z"
+actor = "lognd"
+rev = 1
