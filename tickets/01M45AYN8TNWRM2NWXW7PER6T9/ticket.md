@@ -6,7 +6,8 @@ category = "in-progress"
 priority = "critical"
 reporter = "lognd"
 created = "2026-10-05T06:10:22Z"
-updated = "2026-10-05T06:14:14Z"
+updated = "2026-10-05T06:14:19Z"
+scope = ["crates/frob-release/tests/rel001.rs", "crates/frob-release/tests/changelog.rs"]
 
 [[acceptance]]
 text = "Given this repository after frob release cut 0.532.0, when REL001 runs, then the three tags are recognised as cut and no finding is reported"
