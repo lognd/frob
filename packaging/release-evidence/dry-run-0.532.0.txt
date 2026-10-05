@@ -1,0 +1,25 @@
+# Release dry run for 0.532.0 (exit criterion 1, ~Y3S3WBF)
+# run: https://github.com/lognd/frob/actions/runs/37264053209 (workflow_dispatch, publishes nothing)
+# commit: c1a332cf8 on experimental; conclusion: success
+# exempt from smoke: x86_64-apple-darwin is cross-built on the arm64 macOS runner, which cannot execute it (documented in releases.md); it is built and its smoke job is a notice
+# timeouts: plan 10 min, build and wheel 60 min, smoke 30 min; durations below
+# job | conclusion | started -> completed
+artifacts (plan, build, wheel, smoke) / build (aarch64-apple-darwin) | success | 2026-10-05T04:34:07Z -> 2026-10-05T04:43:37Z
+artifacts (plan, build, wheel, smoke) / build (aarch64-unknown-linux-gnu) | success | 2026-10-05T04:34:03Z -> 2026-10-05T04:40:04Z
+artifacts (plan, build, wheel, smoke) / build (x86_64-apple-darwin) | success | 2026-10-05T04:34:19Z -> 2026-10-05T04:52:46Z
+artifacts (plan, build, wheel, smoke) / build (x86_64-pc-windows-msvc) | success | 2026-10-05T04:34:04Z -> 2026-10-05T04:49:10Z
+artifacts (plan, build, wheel, smoke) / build (x86_64-unknown-linux-gnu) | success | 2026-10-05T04:34:00Z -> 2026-10-05T04:40:20Z
+artifacts (plan, build, wheel, smoke) / plan (version, and tag when given) | success | 2026-10-05T04:33:41Z -> 2026-10-05T04:33:59Z
+artifacts (plan, build, wheel, smoke) / smoke (aarch64-apple-darwin) | success | 2026-10-05T04:52:55Z -> 2026-10-05T04:55:49Z
+artifacts (plan, build, wheel, smoke) / smoke (aarch64-unknown-linux-gnu) | success | 2026-10-05T04:52:50Z -> 2026-10-05T04:54:40Z
+artifacts (plan, build, wheel, smoke) / smoke (x86_64-apple-darwin) | success | 2026-10-05T04:52:48Z -> 2026-10-05T04:52:53Z
+artifacts (plan, build, wheel, smoke) / smoke (x86_64-pc-windows-msvc) | success | 2026-10-05T04:52:48Z -> 2026-10-05T04:57:20Z
+artifacts (plan, build, wheel, smoke) / smoke (x86_64-unknown-linux-gnu) | success | 2026-10-05T04:52:48Z -> 2026-10-05T04:55:15Z
+artifacts (plan, build, wheel, smoke) / wheel (aarch64-apple-darwin) | success | 2026-10-05T04:34:06Z -> 2026-10-05T04:44:19Z
+artifacts (plan, build, wheel, smoke) / wheel (aarch64-unknown-linux-gnu) | success | 2026-10-05T04:34:03Z -> 2026-10-05T04:40:53Z
+artifacts (plan, build, wheel, smoke) / wheel (x86_64-apple-darwin) | success | 2026-10-05T04:34:06Z -> 2026-10-05T04:41:31Z
+artifacts (plan, build, wheel, smoke) / wheel (x86_64-pc-windows-msvc) | success | 2026-10-05T04:34:01Z -> 2026-10-05T04:45:24Z
+artifacts (plan, build, wheel, smoke) / wheel (x86_64-unknown-linux-gnu) | success | 2026-10-05T04:34:01Z -> 2026-10-05T04:43:14Z
+crates (crates.io publish in dependency order) | skipped | 2026-10-05T04:57:21Z -> 2026-10-05T04:57:21Z
+pypi (PyPI publish of the smoked wheels) | skipped | 2026-10-05T04:57:21Z -> 2026-10-05T04:57:21Z
+release (GitHub release with archives) | skipped | 2026-10-05T04:57:21Z -> 2026-10-05T04:57:21Z
