@@ -1,6 +1,6 @@
 [package]
 name = "gob-cli"
-version = "0.0.0"
+version.workspace = true
 description = "Shared clap root, Command trait, envelope plumbing and verb registry for the frob/grimble/crunk goblins."
 edition.workspace = true
 license.workspace = true
@@ -10,12 +10,12 @@ authors.workspace = true
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-gob-config = { version = "0.0.0", path = "../gob-config" }
-gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
-gob-log = { version = "0.0.0", path = "../gob-log" }
-gob-macros = { version = "0.0.0", path = "../gob-macros" }
-gob-rules = { version = "0.0.0", path = "../gob-rules" }
-gob-time = { version = "0.0.0", path = "../gob-time" }
+gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
+gob-log = { version = "0.532.0", path = "../gob-log" }
+gob-macros = { version = "0.532.0", path = "../gob-macros" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-time = { version = "0.532.0", path = "../gob-time" }
 inventory = "0.3"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }

@@ -1,6 +1,6 @@
 [package]
 name = "gob-time"
-version = "0.0.0"
+version.workspace = true
 description = "One clock and one zone for the frob/grimble/crunk goblins: Stamp, Day, Shown, Clock."
 edition.workspace = true
 license.workspace = true

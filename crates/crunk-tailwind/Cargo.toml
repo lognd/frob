@@ -1,6 +1,6 @@
 [package]
 name = "crunk-tailwind"
-version = "0.0.0"
+version.workspace = true
 description = "Tailwind default-theme key tables and the utility candidate parser for crunk."
 edition.workspace = true
 license.workspace = true

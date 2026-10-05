@@ -1,1 +1,0 @@
-frob check now reports every tracked file it cannot read (non-UTF-8 content, permission errors, files over size_cap) as a required READ001 Unresolved finding and counts them under fidelity.skipped, instead of silently dropping them.

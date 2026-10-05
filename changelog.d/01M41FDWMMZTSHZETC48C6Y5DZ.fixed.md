@@ -1,1 +1,0 @@
-Lease overlap no longer treats two wildcard globs with a shared literal prefix as overlapping; it compares them segment by segment, so crates/*/Cargo.toml and crates/frob-evidence/tests/** are disjoint.

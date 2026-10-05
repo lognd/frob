@@ -1,1 +1,0 @@
-frob: the garbage collector now refuses any path with a . or .. component in every path style before deleting, strips the Windows \\?\ prefix from every canonical path so git calls work, and its automatic pass only reports (deletes nothing) on Windows until windows-latest CI confirms the fix.

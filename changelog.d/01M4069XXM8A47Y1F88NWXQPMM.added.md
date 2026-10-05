@@ -1,1 +1,0 @@
-frob: Added an artifact smoke that proves an installed frob works in a real repository: `packaging/smoke/fixture-loop.sh` runs init, ticket, work, check, evidence, changelog fragment and land on a throwaway fixture repository, and every wheel and standalone-archive release job (except the cross-built macOS x86_64 exemption) runs it.

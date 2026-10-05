@@ -1,1 +1,0 @@
-`frob cycle close CYCLE --next-goal TEXT [--next-days N]` creates the next cycle the day after the effective end and carries unfinished members into it in one operation (E-CYCLE-NO-NEXT names the flag), and a closed cycle no longer blocks `cycle new` on the same dates: the new cycle's alias gets a numeric suffix (`START..END.2`).

@@ -1,1 +1,0 @@
-frob: ticket close --outcome done now refuses while the ticket branch holds commits not merged into the base (E-DONE-UNMERGED), unless --no-land --reason is given and audited, and ticket doctor reports such tickets as E-DOCTOR-UNMERGED.

@@ -1,6 +1,6 @@
 [package]
 name = "frob-ledger"
-version = "0.0.0"
+version.workspace = true
 description = "The frob ticket ledger: ULID tickets, append-only events, fold, SQLite index and merge driver."
 edition.workspace = true
 license.workspace = true
@@ -11,13 +11,13 @@ authors.workspace = true
 [dependencies]
 error_set = "0.9"
 blake3 = "1"
-gob-config = { version = "0.0.0", path = "../gob-config" }
-gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
-gob-git = { version = "0.0.0", path = "../gob-git" }
-gob-macros = { version = "0.0.0", path = "../gob-macros" }
-gob-rules = { version = "0.0.0", path = "../gob-rules" }
+gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
+gob-git = { version = "0.532.0", path = "../gob-git" }
+gob-macros = { version = "0.532.0", path = "../gob-macros" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
 inventory = "0.3"
-gob-time = { version = "0.0.0", path = "../gob-time" }
+gob-time = { version = "0.532.0", path = "../gob-time" }
 regex = "1"
 rusqlite = { version = "0.32", features = ["bundled"] }
 schemars = "1"

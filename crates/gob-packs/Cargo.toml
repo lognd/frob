@@ -1,6 +1,6 @@
 [package]
 name = "gob-packs"
-version = "0.0.0"
+version.workspace = true
 description = "Product-neutral pack.toml manifest model and validation shared by frob, grimble and crunk."
 edition.workspace = true
 license.workspace = true

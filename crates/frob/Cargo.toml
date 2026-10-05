@@ -1,6 +1,6 @@
 [package]
 name = "frob-cli"
-version = "0.0.0"
+version.workspace = true
 description = "The frob binary: doctor, init, config, schema, ticket, lease, evidence, test, ack, check and land verbs on the shared goblin CLI root."
 edition.workspace = true
 license.workspace = true
@@ -21,27 +21,27 @@ name = "frob"
 path = "src/main.rs"
 
 [dependencies]
-gob-cache = { version = "0.0.0", path = "../gob-cache" }
-gob-cli = { version = "0.0.0", path = "../gob-cli" }
-gob-config = { version = "0.0.0", path = "../gob-config" }
-gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
-gob-exec = { version = "0.0.0", path = "../gob-exec" }
-gob-git = { version = "0.0.0", path = "../gob-git" }
-gob-rules = { version = "0.0.0", path = "../gob-rules" }
-gob-time = { version = "0.0.0", path = "../gob-time" }
-gob-symbols = { version = "0.0.0", path = "../gob-symbols" }
-gob-walk = { version = "0.0.0", path = "../gob-walk" }
-frob-ack = { version = "0.0.0", path = "../frob-ack" }
-frob-check = { version = "0.0.0", path = "../frob-check" }
-gob-check = { version = "0.0.0", path = "../gob-check" }
-frob-evidence = { version = "0.0.0", path = "../frob-evidence" }
-frob-land = { version = "0.0.0", path = "../frob-land" }
-frob-lease = { version = "0.0.0", path = "../frob-lease" }
-frob-pm = { version = "0.0.0", path = "../frob-pm" }
-frob-release = { version = "0.0.0", path = "../frob-release" }
-frob-ledger = { version = "0.0.0", path = "../frob-ledger" }
-frob-tests = { version = "0.0.0", path = "../frob-tests" }
-frob-worktree = { version = "0.0.0", path = "../frob-worktree" }
+gob-cache = { version = "0.532.0", path = "../gob-cache" }
+gob-cli = { version = "0.532.0", path = "../gob-cli" }
+gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
+gob-exec = { version = "0.532.0", path = "../gob-exec" }
+gob-git = { version = "0.532.0", path = "../gob-git" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-time = { version = "0.532.0", path = "../gob-time" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
+frob-ack = { version = "0.532.0", path = "../frob-ack" }
+frob-check = { version = "0.532.0", path = "../frob-check" }
+gob-check = { version = "0.532.0", path = "../gob-check" }
+frob-evidence = { version = "0.532.0", path = "../frob-evidence" }
+frob-land = { version = "0.532.0", path = "../frob-land" }
+frob-lease = { version = "0.532.0", path = "../frob-lease" }
+frob-pm = { version = "0.532.0", path = "../frob-pm" }
+frob-release = { version = "0.532.0", path = "../frob-release" }
+frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
+frob-tests = { version = "0.532.0", path = "../frob-tests" }
+frob-worktree = { version = "0.532.0", path = "../frob-worktree" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

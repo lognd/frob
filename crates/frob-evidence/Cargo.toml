@@ -1,6 +1,6 @@
 [package]
 name = "frob-evidence"
-version = "0.0.0"
+version.workspace = true
 description = "Evidence providers, the dir: blob store, evidence events and the close guard for frob tickets."
 edition.workspace = true
 license.workspace = true
@@ -9,17 +9,17 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
-gob-time = { version = "0.0.0", path = "../gob-time" }
+gob-time = { version = "0.532.0", path = "../gob-time" }
 blake3 = "1"
-frob-ledger = { version = "0.0.0", path = "../frob-ledger" }
-frob-pm = { version = "0.0.0", path = "../frob-pm" }
-frob-release = { version = "0.0.0", path = "../frob-release" }
-gob-cli = { version = "0.0.0", path = "../gob-cli" }
-gob-config = { version = "0.0.0", path = "../gob-config" }
-gob-exec = { version = "0.0.0", path = "../gob-exec" }
-gob-fs = { version = "0.0.0", path = "../gob-fs" }
-gob-git = { version = "0.0.0", path = "../gob-git" }
-gob-log = { version = "0.0.0", path = "../gob-log" }
+frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
+frob-pm = { version = "0.532.0", path = "../frob-pm" }
+frob-release = { version = "0.532.0", path = "../frob-release" }
+gob-cli = { version = "0.532.0", path = "../gob-cli" }
+gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-exec = { version = "0.532.0", path = "../gob-exec" }
+gob-fs = { version = "0.532.0", path = "../gob-fs" }
+gob-git = { version = "0.532.0", path = "../gob-git" }
+gob-log = { version = "0.532.0", path = "../gob-log" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

@@ -1,6 +1,6 @@
 [package]
 name = "gob-config"
-version = "0.0.0"
+version.workspace = true
 description = "Layered config loading, materialized knobs, CFG001 and schema export for the frob/grimble/crunk goblins."
 edition.workspace = true
 license.workspace = true
@@ -10,8 +10,8 @@ authors.workspace = true
 
 [dependencies]
 blake3 = "1"
-gob-macros = { version = "0.0.0", path = "../gob-macros" }
-gob-rules = { version = "0.0.0", path = "../gob-rules" }
+gob-macros = { version = "0.532.0", path = "../gob-macros" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
 inventory = "0.3"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }

@@ -1,6 +1,6 @@
 [package]
 name = "gob-languages"
-version = "0.0.0"
+version.workspace = true
 description = "Feature-gated tree-sitter grammars, bounded parsing and cached queries for the goblins."
 edition.workspace = true
 license.workspace = true
@@ -17,7 +17,7 @@ python = ["dep:tree-sitter-python"]
 csharp = ["dep:tree-sitter-c-sharp"]
 
 [dependencies]
-gob-text = { version = "0.0.0", path = "../gob-text" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
 thiserror = "2"
 tracing = "0.1"
 tree-sitter = "=0.27.0"

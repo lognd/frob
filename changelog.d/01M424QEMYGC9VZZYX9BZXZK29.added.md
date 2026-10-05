@@ -1,1 +1,0 @@
-Garbage collection is now automatic: a throttled pass in frob work and frob land removes finished worktrees (never ones with unsaved work), stale build incremental state, over-budget build artifacts, old caches and unreferenced evidence blobs under the new [gc] config, and frob doctor reports usage and what a pass would reclaim (frob doctor --fix runs one now).

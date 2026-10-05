@@ -1,6 +1,6 @@
 [package]
 name = "crunk-spec"
-version = "0.0.0"
+version.workspace = true
 description = "The crunk.toml design spec for crunk: schema, validation with located errors, DesignSpec, token naming and presets."
 edition.workspace = true
 license.workspace = true
@@ -14,9 +14,9 @@ categories = ["config", "web-programming"]
 workspace = true
 
 [dependencies]
-crunk-values = { version = "0.0.0", path = "../crunk-values" }
-gob-config = { version = "0.0.0", path = "../gob-config" }
-gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
+crunk-values = { version = "0.532.0", path = "../crunk-values" }
+gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
 indexmap = { version = "2", features = ["serde"] }
 schemars = { version = "1", features = ["indexmap2"] }
 serde = { version = "1", features = ["derive"] }

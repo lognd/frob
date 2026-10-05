@@ -1,6 +1,6 @@
 [package]
 name = "gob-mdtest"
-version = "0.0.0"
+version.workspace = true
 description = "Markdown corpus test harness with firing and clean positive controls for the frob/grimble/crunk goblins."
 edition.workspace = true
 license.workspace = true

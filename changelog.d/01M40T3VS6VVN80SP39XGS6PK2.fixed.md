@@ -1,1 +1,0 @@
-frob: PROC001 is now a repository-local policy: it is inert unless `[check] process_spawners` lists crates, and it matches spawning APIs only (`Command`, `Child`, `Stdio`, exec/spawn), never `ExitCode`, `exit`, `abort` or `id`.

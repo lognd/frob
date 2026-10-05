@@ -1,6 +1,6 @@
 [package]
 name = "gob-symbols"
-version = "0.0.0"
+version.workspace = true
 description = "Symrefs, three-facet digests, imports and call graph for the frob goblins."
 edition.workspace = true
 license.workspace = true
@@ -12,11 +12,11 @@ authors.workspace = true
 workspace = true
 
 [dependencies]
-gob-cache = { version = "0.0.0", path = "../gob-cache" }
-gob-ir = { version = "0.0.0", path = "../gob-ir" }
-gob-languages = { version = "0.0.0", path = "../gob-languages" }
-gob-text = { version = "0.0.0", path = "../gob-text" }
-gob-walk = { version = "0.0.0", path = "../gob-walk" }
+gob-cache = { version = "0.532.0", path = "../gob-cache" }
+gob-ir = { version = "0.532.0", path = "../gob-ir" }
+gob-languages = { version = "0.532.0", path = "../gob-languages" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
 inventory = "0.3"
 blake3 = "1"
 petgraph = { version = "0.8", default-features = false }

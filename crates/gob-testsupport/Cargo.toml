@@ -1,6 +1,6 @@
 [package]
 name = "gob-testsupport"
-version = "0.0.0"
+version.workspace = true
 description = "Test-only helpers shared across the monorepo (never published, never distributed)."
 edition.workspace = true
 license.workspace = true

@@ -1,1 +1,0 @@
-frob land now refuses only findings the ticket introduces: findings already on the base tip are reported as pre-existing instead of blocking, and base findings the ticket fixes are reported as resolved.

@@ -1,1 +1,0 @@
-frob: Release tags and products are configuration (`[release] tag` and `products`; default one product tagged v{version}), and `release changelog` omits the product heading for one product and adopts a hand-written CHANGELOG.md.

@@ -1,6 +1,6 @@
 [package]
 name = "gob-check"
-version = "0.0.0"
+version.workspace = true
 description = "The product-neutral check pipeline (walk, per-file and repo rules, caches, exceptions, tool stages, fixes) that frob and grimble both drive."
 edition.workspace = true
 license.workspace = true
@@ -10,18 +10,18 @@ authors.workspace = true
 
 [dependencies]
 blake3 = "1"
-gob-cache = { version = "0.0.0", path = "../gob-cache" }
-gob-config = { version = "0.0.0", path = "../gob-config" }
-gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
-gob-exec = { version = "0.0.0", path = "../gob-exec" }
-gob-fs = { version = "0.0.0", path = "../gob-fs" }
-gob-languages = { version = "0.0.0", path = "../gob-languages" }
-gob-lock = { version = "0.0.0", path = "../gob-lock" }
-gob-rules = { version = "0.0.0", path = "../gob-rules" }
-gob-time = { version = "0.0.0", path = "../gob-time" }
-gob-symbols = { version = "0.0.0", path = "../gob-symbols" }
-gob-text = { version = "0.0.0", path = "../gob-text" }
-gob-walk = { version = "0.0.0", path = "../gob-walk" }
+gob-cache = { version = "0.532.0", path = "../gob-cache" }
+gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
+gob-exec = { version = "0.532.0", path = "../gob-exec" }
+gob-fs = { version = "0.532.0", path = "../gob-fs" }
+gob-languages = { version = "0.532.0", path = "../gob-languages" }
+gob-lock = { version = "0.532.0", path = "../gob-lock" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-time = { version = "0.532.0", path = "../gob-time" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
 rayon = "1"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }

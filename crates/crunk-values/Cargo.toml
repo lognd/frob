@@ -1,6 +1,6 @@
 [package]
 name = "crunk-values"
-version = "0.0.0"
+version.workspace = true
 description = "Pure CSS value math for crunk: color and length parsing, WCAG contrast and palette distance."
 edition.workspace = true
 license.workspace = true

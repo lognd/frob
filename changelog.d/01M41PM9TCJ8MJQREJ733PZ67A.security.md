@@ -1,1 +1,0 @@
-Ledger events no longer carry absolute local paths: lease reasons record the worktree relative to the repository parent, captured evidence text has the worktree, repository and home directory rewritten to placeholders before it is hashed and stored, and the new TICK004 rule warns about committed ledger files that still hold a home path.

@@ -1,1 +1,0 @@
-frob: `frob ticket doctor` now also checks milestones and cycles (E-PM-* codes, counts per kind, `--fix` re-folds drifted frontmatter), and `frob init` plus the `merge-driver` verb cover `milestone.md` and `cycle.md`, so a concurrent edit of one milestone on two branches merges without a conflict.

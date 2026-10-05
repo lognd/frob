@@ -1,6 +1,6 @@
 [package]
 name = "gob-cache"
-version = "0.0.0"
+version.workspace = true
 description = "Per-worktree SQLite artifact and findings cache for the frob goblins."
 edition.workspace = true
 license.workspace = true
@@ -12,8 +12,8 @@ authors.workspace = true
 workspace = true
 
 [dependencies]
-gob-time = { version = "0.0.0", path = "../gob-time" }
-gob-exec = { version = "0.0.0", path = "../gob-exec" }
+gob-time = { version = "0.532.0", path = "../gob-time" }
+gob-exec = { version = "0.532.0", path = "../gob-exec" }
 rusqlite = { version = "0.32", features = ["bundled"] }
 thiserror = "2"
 tracing = "0.1"

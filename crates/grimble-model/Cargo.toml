@@ -1,6 +1,6 @@
 [package]
 name = "grimble-model"
-version = "0.0.0"
+version.workspace = true
 description = "The .grmb language: lexer, parser, formatter, U adapter (F4) and the MDL well-formedness rules."
 edition.workspace = true
 license.workspace = true
@@ -12,13 +12,13 @@ authors.workspace = true
 workspace = true
 
 [dependencies]
-gob-directives = { version = "0.0.0", path = "../gob-directives" }
-gob-ir = { version = "0.0.0", path = "../gob-ir" }
-gob-languages = { version = "0.0.0", path = "../gob-languages" }
-gob-rules = { version = "0.0.0", path = "../gob-rules" }
-gob-symbols = { version = "0.0.0", path = "../gob-symbols" }
-gob-text = { version = "0.0.0", path = "../gob-text" }
-gob-walk = { version = "0.0.0", path = "../gob-walk" }
+gob-directives = { version = "0.532.0", path = "../gob-directives" }
+gob-ir = { version = "0.532.0", path = "../gob-ir" }
+gob-languages = { version = "0.532.0", path = "../gob-languages" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
 inventory = "0.3"
 thiserror = "2"
 tracing = "0.1"

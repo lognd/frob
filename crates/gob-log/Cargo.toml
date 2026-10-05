@@ -1,6 +1,6 @@
 [package]
 name = "gob-log"
-version = "0.0.0"
+version.workspace = true
 description = "Tracing setup, FROB_LOG filtering and secret redaction for the frob/grimble/crunk goblins."
 edition.workspace = true
 license.workspace = true

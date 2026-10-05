@@ -482,7 +482,7 @@ checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 
 [[package]]
 name = "crunk"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "assert_cmd",
  "crunk-check",
@@ -501,7 +501,7 @@ dependencies = [
 
 [[package]]
 name = "crunk-check"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "gob-check",
  "gob-config",
@@ -515,7 +515,7 @@ dependencies = [
 
 [[package]]
 name = "crunk-spec"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "crunk-values",
  "gob-config",
@@ -533,7 +533,7 @@ dependencies = [
 
 [[package]]
 name = "crunk-tailwind"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "thiserror",
  "tracing",
@@ -541,7 +541,7 @@ dependencies = [
 
 [[package]]
 name = "crunk-values"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "thiserror",
  "tracing",
@@ -868,7 +868,7 @@ dependencies = [
 
 [[package]]
 name = "frob-ack"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "gob-cache",
@@ -895,7 +895,7 @@ dependencies = [
 
 [[package]]
 name = "frob-check"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "criterion",
@@ -934,7 +934,7 @@ dependencies = [
 
 [[package]]
 name = "frob-cli"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "assert_cmd",
  "frob-ack",
@@ -970,7 +970,7 @@ dependencies = [
 
 [[package]]
 name = "frob-evidence"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "frob-ledger",
@@ -997,7 +997,7 @@ dependencies = [
 
 [[package]]
 name = "frob-land"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "frob-check",
@@ -1024,7 +1024,7 @@ dependencies = [
 
 [[package]]
 name = "frob-lease"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "frob-ledger",
  "frob-release",
@@ -1049,7 +1049,7 @@ dependencies = [
 
 [[package]]
 name = "frob-ledger"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "criterion",
@@ -1076,7 +1076,7 @@ dependencies = [
 
 [[package]]
 name = "frob-obligations"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "frob-ack",
  "frob-ledger",
@@ -1103,7 +1103,7 @@ dependencies = [
 
 [[package]]
 name = "frob-pm"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "frob-ledger",
  "gob-config",
@@ -1122,7 +1122,7 @@ dependencies = [
 
 [[package]]
 name = "frob-release"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "frob-pm",
@@ -1148,7 +1148,7 @@ dependencies = [
 
 [[package]]
 name = "frob-tests"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "frob-evidence",
  "frob-ledger",
@@ -1174,7 +1174,7 @@ dependencies = [
 
 [[package]]
 name = "frob-worktree"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "frob-lease",
  "frob-ledger",
@@ -2136,7 +2136,7 @@ dependencies = [
 
 [[package]]
 name = "gob-cache"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "criterion",
  "gob-exec",
@@ -2149,7 +2149,7 @@ dependencies = [
 
 [[package]]
 name = "gob-check"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "gob-cache",
@@ -2176,7 +2176,7 @@ dependencies = [
 
 [[package]]
 name = "gob-cli"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "clap",
  "gob-config",
@@ -2196,7 +2196,7 @@ dependencies = [
 
 [[package]]
 name = "gob-config"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "gob-macros",
@@ -2216,7 +2216,7 @@ dependencies = [
 
 [[package]]
 name = "gob-dev"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "clap",
  "crunk-spec",
@@ -2247,7 +2247,7 @@ dependencies = [
 
 [[package]]
 name = "gob-diagnostics"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "anstream 0.6.21",
  "anstyle",
@@ -2264,7 +2264,7 @@ dependencies = [
 
 [[package]]
 name = "gob-directives"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "gob-config",
  "gob-languages",
@@ -2286,7 +2286,7 @@ dependencies = [
 
 [[package]]
 name = "gob-exec"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "gob-log",
  "nix",
@@ -2300,7 +2300,7 @@ dependencies = [
 
 [[package]]
 name = "gob-fs"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "tempfile",
  "tracing",
@@ -2308,7 +2308,7 @@ dependencies = [
 
 [[package]]
 name = "gob-git"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "gix",
  "gob-exec",
@@ -2319,7 +2319,7 @@ dependencies = [
 
 [[package]]
 name = "gob-ir"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "criterion",
@@ -2334,7 +2334,7 @@ dependencies = [
 
 [[package]]
 name = "gob-languages"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "gob-text",
  "thiserror",
@@ -2349,7 +2349,7 @@ dependencies = [
 
 [[package]]
 name = "gob-lock"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "gob-fs",
  "gob-ir",
@@ -2362,7 +2362,7 @@ dependencies = [
 
 [[package]]
 name = "gob-log"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "regex",
  "thiserror",
@@ -2372,7 +2372,7 @@ dependencies = [
 
 [[package]]
 name = "gob-macros"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "darling",
  "frob-ledger",
@@ -2388,7 +2388,7 @@ dependencies = [
 
 [[package]]
 name = "gob-mdtest"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "gob-rules",
  "gob-text",
@@ -2399,7 +2399,7 @@ dependencies = [
 
 [[package]]
 name = "gob-packs"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "proptest",
  "serde",
@@ -2411,7 +2411,7 @@ dependencies = [
 
 [[package]]
 name = "gob-plan"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "gob-rules",
  "gob-text",
@@ -2423,7 +2423,7 @@ dependencies = [
 
 [[package]]
 name = "gob-rules"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "gob-macros",
@@ -2438,7 +2438,7 @@ dependencies = [
 
 [[package]]
 name = "gob-symbols"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "criterion",
@@ -2461,7 +2461,7 @@ dependencies = [
 
 [[package]]
 name = "gob-testsupport"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "gob-config",
  "gob-exec",
@@ -2471,14 +2471,14 @@ dependencies = [
 
 [[package]]
 name = "gob-text"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "proptest",
 ]
 
 [[package]]
 name = "gob-time"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "jiff",
  "schemars",
@@ -2489,7 +2489,7 @@ dependencies = [
 
 [[package]]
 name = "gob-trust"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "getrandom 0.3.4",
@@ -2503,7 +2503,7 @@ dependencies = [
 
 [[package]]
 name = "gob-walk"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "criterion",
@@ -2519,7 +2519,7 @@ dependencies = [
 
 [[package]]
 name = "grimble"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "assert_cmd",
  "gob-check",
@@ -2546,7 +2546,7 @@ dependencies = [
 
 [[package]]
 name = "grimble-bind"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "gob-directives",
  "gob-ir",
@@ -2566,7 +2566,7 @@ dependencies = [
 
 [[package]]
 name = "grimble-check"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "blake3",
  "gob-check",
@@ -2589,7 +2589,7 @@ dependencies = [
 
 [[package]]
 name = "grimble-model"
-version = "0.0.0"
+version = "0.532.0"
 dependencies = [
  "gob-directives",
  "gob-ir",

@@ -1,6 +1,6 @@
 [package]
 name = "frob-check"
-version = "0.0.0"
+version.workspace = true
 description = "frob check: the check pipeline (walk, graph, rules, exceptions, cache, fix, tool stages) and its verb."
 edition.workspace = true
 license.workspace = true
@@ -10,29 +10,29 @@ authors.workspace = true
 
 [dependencies]
 blake3 = "1"
-frob-ack = { version = "0.0.0", path = "../frob-ack" }
-frob-evidence = { version = "0.0.0", path = "../frob-evidence" }
-frob-lease = { version = "0.0.0", path = "../frob-lease" }
-frob-ledger = { version = "0.0.0", path = "../frob-ledger" }
-frob-obligations = { version = "0.0.0", path = "../frob-obligations" }
-frob-pm = { version = "0.0.0", path = "../frob-pm" }
-frob-release = { version = "0.0.0", path = "../frob-release" }
-frob-tests = { version = "0.0.0", path = "../frob-tests" }
-gob-check = { version = "0.0.0", path = "../gob-check" }
-gob-cache = { version = "0.0.0", path = "../gob-cache" }
-gob-cli = { version = "0.0.0", path = "../gob-cli" }
-gob-diagnostics = { version = "0.0.0", path = "../gob-diagnostics" }
-gob-directives = { version = "0.0.0", path = "../gob-directives" }
-gob-config = { version = "0.0.0", path = "../gob-config" }
-gob-exec = { version = "0.0.0", path = "../gob-exec" }
-gob-git = { version = "0.0.0", path = "../gob-git" }
-gob-languages = { version = "0.0.0", path = "../gob-languages" }
-gob-lock = { version = "0.0.0", path = "../gob-lock" }
-gob-rules = { version = "0.0.0", path = "../gob-rules" }
-gob-time = { version = "0.0.0", path = "../gob-time" }
-gob-symbols = { version = "0.0.0", path = "../gob-symbols" }
-gob-text = { version = "0.0.0", path = "../gob-text" }
-gob-walk = { version = "0.0.0", path = "../gob-walk" }
+frob-ack = { version = "0.532.0", path = "../frob-ack" }
+frob-evidence = { version = "0.532.0", path = "../frob-evidence" }
+frob-lease = { version = "0.532.0", path = "../frob-lease" }
+frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
+frob-obligations = { version = "0.532.0", path = "../frob-obligations" }
+frob-pm = { version = "0.532.0", path = "../frob-pm" }
+frob-release = { version = "0.532.0", path = "../frob-release" }
+frob-tests = { version = "0.532.0", path = "../frob-tests" }
+gob-check = { version = "0.532.0", path = "../gob-check" }
+gob-cache = { version = "0.532.0", path = "../gob-cache" }
+gob-cli = { version = "0.532.0", path = "../gob-cli" }
+gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
+gob-directives = { version = "0.532.0", path = "../gob-directives" }
+gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-exec = { version = "0.532.0", path = "../gob-exec" }
+gob-git = { version = "0.532.0", path = "../gob-git" }
+gob-languages = { version = "0.532.0", path = "../gob-languages" }
+gob-lock = { version = "0.532.0", path = "../gob-lock" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-time = { version = "0.532.0", path = "../gob-time" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
 rayon = "1"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }

@@ -1,1 +1,0 @@
-frob: ticket close and land accept --no-changelog --reason TEXT to close a change with no user-visible effect without a changelog fragment, recorded as an audited changelog-exempt event that release status lists.

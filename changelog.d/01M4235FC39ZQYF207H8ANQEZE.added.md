@@ -1,1 +1,0 @@
-Added frob release adopt VERSION, which records hand-made published tags as a release cut (an adopt event after the usual cut event) without touching git or the remote, so REL001 no longer forces deleting a published tag; REL001's remedy now names it first.

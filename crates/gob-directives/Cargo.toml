@@ -1,6 +1,6 @@
 [package]
 name = "gob-directives"
-version = "0.0.0"
+version.workspace = true
 description = "Directive DSL: Directive derive support, comment scanner, binding rules and the PARSE and DSL rules for the frob/grimble/crunk goblins."
 edition.workspace = true
 license.workspace = true
@@ -9,12 +9,12 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
-gob-config = { version = "0.0.0", path = "../gob-config" }
-gob-languages = { version = "0.0.0", path = "../gob-languages" }
-gob-macros = { version = "0.0.0", path = "../gob-macros" }
-gob-rules = { version = "0.0.0", path = "../gob-rules" }
-gob-symbols = { version = "0.0.0", path = "../gob-symbols" }
-gob-text = { version = "0.0.0", path = "../gob-text" }
+gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-languages = { version = "0.532.0", path = "../gob-languages" }
+gob-macros = { version = "0.532.0", path = "../gob-macros" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
 inventory = "0.3"
 postcard = { version = "1", default-features = false, features = ["use-std"] }
 schemars = "1"

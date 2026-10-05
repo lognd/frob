@@ -1,6 +1,6 @@
 [package]
 name = "gob-plan"
-version = "0.0.0"
+version.workspace = true
 description = "Plan format, GRL compiler and executor for the frob/grimble/crunk goblins (this milestone: the GRL lexer)."
 edition.workspace = true
 license.workspace = true
@@ -9,8 +9,8 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
-gob-rules = { version = "0.0.0", path = "../gob-rules" }
-gob-text = { version = "0.0.0", path = "../gob-text" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
 thiserror = "2"
 tracing = "0.1"
 

@@ -1,6 +1,6 @@
 [package]
 name = "frob-ack"
-version = "0.0.0"
+version.workspace = true
 description = "frob ack: record digests of bound symbols in frob.lock, why and affects queries, DRIFT and AFFECT rules."
 edition.workspace = true
 license.workspace = true
@@ -9,18 +9,18 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
-gob-time = { version = "0.0.0", path = "../gob-time" }
+gob-time = { version = "0.532.0", path = "../gob-time" }
 blake3 = "1"
-gob-cache = { version = "0.0.0", path = "../gob-cache" }
-gob-cli = { version = "0.0.0", path = "../gob-cli" }
-gob-directives = { version = "0.0.0", path = "../gob-directives" }
-gob-git = { version = "0.0.0", path = "../gob-git" }
-gob-languages = { version = "0.0.0", path = "../gob-languages" }
-gob-lock = { version = "0.0.0", path = "../gob-lock" }
-gob-rules = { version = "0.0.0", path = "../gob-rules" }
-gob-symbols = { version = "0.0.0", path = "../gob-symbols" }
-gob-text = { version = "0.0.0", path = "../gob-text" }
-gob-walk = { version = "0.0.0", path = "../gob-walk" }
+gob-cache = { version = "0.532.0", path = "../gob-cache" }
+gob-cli = { version = "0.532.0", path = "../gob-cli" }
+gob-directives = { version = "0.532.0", path = "../gob-directives" }
+gob-git = { version = "0.532.0", path = "../gob-git" }
+gob-languages = { version = "0.532.0", path = "../gob-languages" }
+gob-lock = { version = "0.532.0", path = "../gob-lock" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
 jiff = "0.2"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }

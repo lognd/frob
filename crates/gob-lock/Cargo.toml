@@ -1,6 +1,6 @@
 [package]
 name = "gob-lock"
-version = "0.0.0"
+version.workspace = true
 description = "Product-parametric ack lock file (frob.lock): sorted TOML entries, atomic save and diff."
 edition.workspace = true
 license.workspace = true
@@ -9,8 +9,8 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
-gob-fs = { version = "0.0.0", path = "../gob-fs" }
-gob-ir = { version = "0.0.0", path = "../gob-ir" }
+gob-fs = { version = "0.532.0", path = "../gob-fs" }
+gob-ir = { version = "0.532.0", path = "../gob-ir" }
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
 toml = "1"

@@ -1,6 +1,6 @@
 [package]
 name = "frob-pm"
-version = "0.0.0"
+version.workspace = true
 description = "frob project management objects: milestones and cycles as event-sourced ledger objects."
 edition.workspace = true
 license.workspace = true
@@ -9,10 +9,10 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
-frob-ledger = { version = "0.0.0", path = "../frob-ledger" }
-gob-config = { version = "0.0.0", path = "../gob-config" }
-gob-rules = { version = "0.0.0", path = "../gob-rules" }
-gob-time = { version = "0.0.0", path = "../gob-time" }
+frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
+gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-time = { version = "0.532.0", path = "../gob-time" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 strsim = "0.11"

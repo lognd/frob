@@ -1,6 +1,6 @@
 [package]
 name = "gob-git"
-version = "0.0.0"
+version.workspace = true
 description = "In-process git for the frob/grimble/crunk goblins: gix reads, ledger commits by compare-and-swap, bounded spawn fallbacks."
 edition.workspace = true
 license.workspace = true
@@ -10,7 +10,7 @@ authors.workspace = true
 
 [dependencies]
 gix = { version = "0.87", default-features = false, features = ["sha1", "max-performance-safe", "index", "status", "revision", "blob-diff", "worktree-mutation", "merge"] }
-gob-exec = { version = "0.0.0", path = "../gob-exec" }
+gob-exec = { version = "0.532.0", path = "../gob-exec" }
 thiserror = "2"
 tracing = "0.1"
 

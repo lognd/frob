@@ -1,1 +1,0 @@
-frob on Windows now finds grimble and crunk installed by uv tool install or pipx, which copy frob.exe into a bin directory instead of linking it, by looking in the tool environment under UV_TOOL_DIR, uv's default tool directory or pipx's venvs directory.

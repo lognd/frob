@@ -1,6 +1,6 @@
 [package]
 name = "gob-ir"
-version = "0.0.0"
+version.workspace = true
 description = "The universal structural model U: sorted ABT terms, scope graph with status, facet digests, queries and a Kleene rule evaluator."
 edition.workspace = true
 license.workspace = true
@@ -10,9 +10,9 @@ authors.workspace = true
 
 [dependencies]
 blake3 = "1"
-gob-rules = { version = "0.0.0", path = "../gob-rules" }
-gob-walk = { version = "0.0.0", path = "../gob-walk" }
-gob-text = { version = "0.0.0", path = "../gob-text" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
 inventory = "0.3"
 thiserror = "2"
 tracing = "0.1"

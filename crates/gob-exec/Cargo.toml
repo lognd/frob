@@ -1,6 +1,6 @@
 [package]
 name = "gob-exec"
-version = "0.0.0"
+version.workspace = true
 description = "Bounded process pool, spawn allowlist and PROC001 scan for the frob/grimble/crunk goblins."
 edition.workspace = true
 license.workspace = true
@@ -9,7 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
-gob-log = { version = "0.0.0", path = "../gob-log" }
+gob-log = { version = "0.532.0", path = "../gob-log" }
 thiserror = "2"
 tracing = "0.1"
 walkdir = "2"

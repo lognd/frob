@@ -1,6 +1,6 @@
 [package]
 name = "gob-macros"
-version = "0.0.0"
+version.workspace = true
 description = "Proc macros (derive Rule, ConfigTable, Command, Directive) for the frob/grimble/crunk goblins."
 edition.workspace = true
 license.workspace = true

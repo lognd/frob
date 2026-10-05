@@ -1,6 +1,6 @@
 [package]
 name = "grimble"
-version = "0.0.0"
+version.workspace = true
 description = "The grimble binary: check, init, doctor, fmt and exceptions list over the shared goblin CLI root."
 edition.workspace = true
 license.workspace = true
@@ -21,19 +21,19 @@ name = "grimble"
 path = "src/main.rs"
 
 [dependencies]
-gob-time = { version = "0.0.0", path = "../gob-time" }
-gob-check = { version = "0.0.0", path = "../gob-check" }
-gob-cli = { version = "0.0.0", path = "../gob-cli" }
-gob-config = { version = "0.0.0", path = "../gob-config" }
-gob-fs = { version = "0.0.0", path = "../gob-fs" }
-gob-git = { version = "0.0.0", path = "../gob-git" }
-gob-lock = { version = "0.0.0", path = "../gob-lock" }
-gob-rules = { version = "0.0.0", path = "../gob-rules" }
-gob-symbols = { version = "0.0.0", path = "../gob-symbols" }
-gob-walk = { version = "0.0.0", path = "../gob-walk" }
-grimble-bind = { version = "0.0.0", path = "../grimble-bind" }
-grimble-check = { version = "0.0.0", path = "../grimble-check" }
-grimble-model = { version = "0.0.0", path = "../grimble-model" }
+gob-time = { version = "0.532.0", path = "../gob-time" }
+gob-check = { version = "0.532.0", path = "../gob-check" }
+gob-cli = { version = "0.532.0", path = "../gob-cli" }
+gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-fs = { version = "0.532.0", path = "../gob-fs" }
+gob-git = { version = "0.532.0", path = "../gob-git" }
+gob-lock = { version = "0.532.0", path = "../gob-lock" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
+grimble-bind = { version = "0.532.0", path = "../grimble-bind" }
+grimble-check = { version = "0.532.0", path = "../grimble-check" }
+grimble-model = { version = "0.532.0", path = "../grimble-model" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
