@@ -80,6 +80,10 @@ mod tests {
                 include_str!("../../gob-languages/tests/corpus/strings.py"),
             ),
             (
+                Language::CSharp,
+                include_str!("../../gob-languages/tests/corpus/strings.cs"),
+            ),
+            (
                 Language::Markdown,
                 include_str!("../../gob-languages/tests/corpus/doc.md"),
             ),
@@ -94,5 +98,15 @@ mod tests {
                 assert_eq!(&text[l.offset..l.offset + l.text.len()], l.text);
             }
         }
+    }
+
+    /// A C# `///` doc line carries its marker text and offset, string contents never appear.
+    // frob:tests crates/frob-obligations/src/comments.rs::comment_lines
+    #[test]
+    fn csharp_doc_lines_and_strings() {
+        let src = "var s = \"// TODO no\";\n/// TODO yes\nvoid M() {}\n";
+        let got = comment_lines(Language::CSharp, src);
+        assert_eq!(texts(&got), ["/// TODO yes"]);
+        assert_eq!(&src[got[0].offset..got[0].offset + 3], "///");
     }
 }

@@ -17,16 +17,19 @@ pub enum Language {
     Yaml,
     /// Python source (`.py`, `.pyi`).
     Python,
+    /// C# source (`.cs`; `.csx` scripts are not C# files).
+    CSharp,
 }
 
 impl Language {
     /// Every variant, regardless of enabled features.
-    pub const ALL: [Language; 5] = [
+    pub const ALL: [Language; 6] = [
         Language::Rust,
         Language::Markdown,
         Language::Toml,
         Language::Yaml,
         Language::Python,
+        Language::CSharp,
     ];
 
     /// Detects the language from the file extension (case-insensitive).
@@ -38,6 +41,7 @@ impl Language {
             "toml" => Some(Language::Toml),
             "yml" | "yaml" => Some(Language::Yaml),
             "py" | "pyi" => Some(Language::Python),
+            "cs" => Some(Language::CSharp),
             _ => None,
         };
         tracing::trace!(path = %path.as_ref().display(), ?found, "language detect");
@@ -52,6 +56,7 @@ impl Language {
             Language::Toml => "toml",
             Language::Yaml => "yaml",
             Language::Python => "python",
+            Language::CSharp => "csharp",
         }
     }
 }
@@ -68,6 +73,9 @@ mod tests {
         assert_eq!(Language::detect("frob.toml"), Some(Language::Toml));
         assert_eq!(Language::detect("a.py"), Some(Language::Python));
         assert_eq!(Language::detect("a.PYI"), Some(Language::Python));
+        assert_eq!(Language::detect("Player.cs"), Some(Language::CSharp));
+        assert_eq!(Language::detect("Player.CS"), Some(Language::CSharp));
+        assert_eq!(Language::detect("script.csx"), None);
         assert_eq!(Language::detect("a.pyc"), None);
         assert_eq!(Language::detect("Makefile"), None);
     }

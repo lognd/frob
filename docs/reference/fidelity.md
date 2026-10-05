@@ -9,6 +9,7 @@ sections 4.1, 4.2 and 4.6).
 | Opaque F0 (no adapter), text, comments scanned (TOML) | NotApplicable | examined |
 | YAML F1 (`.yml`, `.yaml`: block-mapping keys as nested units `path::outer.inner`), comments scanned | NotApplicable | examined |
 | Python F2 (`.py`, `.pyi`: modules, classes, functions, methods, imports, calls, decorators, docstrings), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
+| C# (`.cs`; `.csx` is not C#): grammar and comment scanning only until the symbol adapter lands | NotApplicable | examined once the file walker classifies `.cs` |
 | Opaque F0, text, not scanned (for example `.json`) | NotApplicable | one Unresolved per rule naming the file count |
 | Opaque F0, binary (NUL byte or known extension) | NotApplicable | NotApplicable |
 | Parse failed | Unresolved | Unresolved |
@@ -134,3 +135,13 @@ finding): selection is undecided for them instead of ignoring them.
 `frob check --timing --text` lists, per language (`opaque` for adapter-less
 files): files, files examined, partial parses, files NotApplicable per rule
 family and Unresolved counts per rule, under `fidelity`.
+
+## C# comments
+
+`gob_languages::comment_spans` is the one owner of C# comment discovery: `//`, `///` XML doc
+lines and `/* */` (including `/** */`) blocks. Regular, verbatim (`@"..."`), interpolated
+(`$"..."`, holes included) and raw (`"""..."""`) string literals and character literals never
+yield comments, with or without a syntax tree (the text fallback lexes them too). Preprocessor
+lines (`#if`, `#region`) are not comments and do not disturb scanning; a trailing `//` on one is
+a comment. A file that parses with syntax errors still yields its partial tree (`has_errors`).
+Directives (`frob:...`) and TODO001 therefore read the same spans in C# as in Rust.

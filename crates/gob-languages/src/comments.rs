@@ -63,6 +63,201 @@ fn rust_plain(text: &str) -> Vec<Range<usize>> {
     out
 }
 
+// frob:ticket 01M44YQSHSC4N13E98FN2HND27
+/// Lexer state for the plain-text C# comment scan.
+struct CsLexer<'t> {
+    /// The source bytes (delimiters are ASCII, so byte scanning is UTF-8 safe).
+    b: &'t [u8],
+    /// Current byte offset.
+    i: usize,
+    /// Comments found so far.
+    out: Vec<Range<usize>>,
+}
+
+impl CsLexer<'_> {
+    /// Byte at `at`, or 0 past the end.
+    fn at(&self, at: usize) -> u8 {
+        self.b.get(at).copied().unwrap_or(0)
+    }
+
+    /// Length of the run of `c` starting at `from`.
+    fn run(&self, from: usize, c: u8) -> usize {
+        self.b[from.min(self.b.len())..]
+            .iter()
+            .take_while(|&&x| x == c)
+            .count()
+    }
+
+    /// Consume a `//` comment to the end of its line (newline excluded).
+    fn line_comment(&mut self) {
+        let start = self.i;
+        while self.i < self.b.len() && !matches!(self.b[self.i], b'\n' | b'\r') {
+            self.i += 1;
+        }
+        self.out.push(start..self.i);
+    }
+
+    /// Consume a `/* */` comment (unterminated runs to the end of the file).
+    fn block_comment(&mut self) {
+        let start = self.i;
+        self.i += 2;
+        while self.i < self.b.len() && !(self.b[self.i] == b'*' && self.at(self.i + 1) == b'/') {
+            self.i += 1;
+        }
+        self.i = (self.i + 2).min(self.b.len());
+        self.out.push(start..self.i);
+    }
+
+    /// Consume a character literal (`'x'`, `'\''`, `'"'`) on one line.
+    fn char_literal(&mut self) {
+        self.i += 1;
+        while self.i < self.b.len() {
+            match self.b[self.i] {
+                b'\\' => self.i += 2,
+                b'\'' => {
+                    self.i += 1;
+                    return;
+                }
+                b'\n' => return,
+                _ => self.i += 1,
+            }
+        }
+    }
+
+    /// If a string literal starts at `self.i` (`"`, `@"`, `$"`, `$@"`, `@$"`, `$$"""`),
+    /// return `(dollars, verbatim, offset of the first quote)`.
+    fn string_start(&self) -> Option<(usize, bool, usize)> {
+        let (mut p, mut dollars, mut verbatim) = (self.i, 0, false);
+        loop {
+            match self.at(p) {
+                b'$' => dollars += 1,
+                b'@' => verbatim = true,
+                b'"' => return Some((dollars, verbatim, p)),
+                _ => return None,
+            }
+            p += 1;
+        }
+    }
+
+    /// Consume the string literal described by [`Self::string_start`], holes included.
+    fn string(&mut self, dollars: usize, verbatim: bool, quote: usize) {
+        let quotes = self.run(quote, b'"');
+        if quotes >= 3 && !verbatim {
+            self.i = quote + quotes;
+            self.raw_string(dollars, quotes);
+            return;
+        }
+        self.i = quote + 1;
+        while self.i < self.b.len() {
+            match self.b[self.i] {
+                b'\\' if !verbatim => self.i += 2,
+                b'"' if verbatim && self.at(self.i + 1) == b'"' => self.i += 2,
+                b'"' => {
+                    self.i += 1;
+                    return;
+                }
+                b'\n' if !verbatim => return,
+                b'{' if dollars > 0 => {
+                    if self.at(self.i + 1) == b'{' {
+                        self.i += 2;
+                    } else {
+                        self.i += 1;
+                        self.code(true);
+                    }
+                }
+                _ => self.i += 1,
+            }
+        }
+    }
+
+    /// Consume a raw string body whose delimiter is `quotes` quotes; `dollars` opens holes.
+    fn raw_string(&mut self, dollars: usize, quotes: usize) {
+        while self.i < self.b.len() {
+            match self.b[self.i] {
+                b'"' => {
+                    let n = self.run(self.i, b'"');
+                    self.i += n;
+                    if n >= quotes {
+                        return;
+                    }
+                }
+                b'{' if dollars > 0 => {
+                    let n = self.run(self.i, b'{');
+                    self.i += n;
+                    if n >= dollars {
+                        self.code(true);
+                    }
+                }
+                _ => self.i += 1,
+            }
+        }
+    }
+
+    /// Lex code; with `hole` set, stop after the `}` that closes an interpolation hole.
+    fn code(&mut self, hole: bool) {
+        let mut depth = 0usize;
+        let mut bol = !hole;
+        while self.i < self.b.len() {
+            let c = self.b[self.i];
+            match c {
+                b'/' if self.at(self.i + 1) == b'/' => self.line_comment(),
+                b'/' if self.at(self.i + 1) == b'*' => self.block_comment(),
+                b'\'' => self.char_literal(),
+                b'"' | b'$' | b'@' => {
+                    if let Some((dollars, verbatim, quote)) = self.string_start() {
+                        self.string(dollars, verbatim, quote);
+                    } else {
+                        self.i += 1;
+                    }
+                }
+                b'#' if bol => self.preprocessor(),
+                b'{' => {
+                    depth += 1;
+                    self.i += 1;
+                }
+                b'}' => {
+                    self.i += 1;
+                    if hole && depth == 0 {
+                        return;
+                    }
+                    depth = depth.saturating_sub(1);
+                }
+                _ => self.i += 1,
+            }
+            if self.i > 0 && self.i <= self.b.len() {
+                let last = self.b[self.i - 1];
+                bol = last == b'\n' || (bol && matches!(last, b' ' | b'\t' | b'\r'));
+            }
+        }
+    }
+
+    /// Skip a preprocessor line (`#if`, `#region it's`): not a comment, quotes are plain text,
+    /// but a trailing `//` comment on it is still a comment.
+    fn preprocessor(&mut self) {
+        while self.i < self.b.len() && !matches!(self.b[self.i], b'\n' | b'\r') {
+            if self.b[self.i] == b'/' && self.at(self.i + 1) == b'/' {
+                self.line_comment();
+                return;
+            }
+            self.i += 1;
+        }
+    }
+}
+
+/// Plain-text C# fallback: string-aware scan for `//`, `///` and `/* */` comments.
+///
+/// Regular, verbatim (`@"..."`), interpolated (`$"..."`, holes included) and raw (`"""..."""`)
+/// strings and character literals never yield comments; preprocessor lines are skipped.
+fn csharp_plain(text: &str) -> Vec<Range<usize>> {
+    let mut lexer = CsLexer {
+        b: text.as_bytes(),
+        i: 0,
+        out: Vec::new(),
+    };
+    lexer.code(false);
+    lexer.out
+}
+
 // frob:ticket 01M43KP0RXKB1DJA8KGJTV288R
 /// Byte range of a leading `---` (YAML) or `+++` (TOML) front matter block, fences included.
 ///
@@ -143,7 +338,8 @@ pub fn comment_spans(
         (Language::Markdown, t) => markdown_spans(text, t),
         (Language::Toml, _) | (Language::Python, None) => hash_spans(text, false),
         (Language::Yaml, _) => hash_spans(text, true),
-        (Language::Python, Some(t)) => node_spans(t, &["comment"]),
+        (Language::Python | Language::CSharp, Some(t)) => node_spans(t, &["comment"]),
+        (Language::CSharp, None) => csharp_plain(text),
     };
     tracing::trace!(
         language = language.name(),
@@ -197,6 +393,17 @@ mod tests {
             &["# real one", "# real two", "# real three"],
         ),
         (
+            Language::CSharp,
+            include_str!("../tests/corpus/strings.cs"),
+            &[
+                "/// <summary>TODO real xml doc</summary>",
+                "// real one",
+                "// real two",
+                "// real three",
+                "/* real four */",
+            ],
+        ),
+        (
             Language::Markdown,
             include_str!("../tests/corpus/doc.md"),
             &["<!-- real one -->", "<!--\nreal two\n-->"],
@@ -238,6 +445,36 @@ mod tests {
             .map(|r| &src[r])
             .collect();
         assert_eq!(got, ["// a", "/* b\n c */"]);
+    }
+
+    #[test]
+    // frob:tests crates/gob-languages/src/comments.rs::csharp_plain
+    fn csharp_block_and_doc_forms_and_unterminated_strings() {
+        let src = "/** doc\n * x */\nclass A { string s = \"open // no\n; } // yes\n";
+        let want = ["/** doc\n * x */", "// yes"];
+        for tree in [true, false] {
+            let got: Vec<&str> = if tree {
+                parse_comment_spans(Language::CSharp, src)
+            } else {
+                comment_spans(Language::CSharp, src, None)
+            }
+            .into_iter()
+            .map(|r| &src[r])
+            .collect();
+            assert_eq!(got, want, "tree={tree}");
+        }
+    }
+
+    #[test]
+    // frob:tests crates/gob-languages/src/parse.rs::parse
+    fn csharp_syntax_error_is_a_partial_tree_with_errors() {
+        let src = "class A { void M( { // c\n";
+        let ParseResult::Parsed(t) = parse(Language::CSharp, src, &ParseLimits::default()) else {
+            panic!("expected a partial tree");
+        };
+        assert!(t.has_errors());
+        let got = comment_spans(Language::CSharp, src, Some(&t));
+        assert_eq!(got.len(), 1);
     }
 
     #[test]

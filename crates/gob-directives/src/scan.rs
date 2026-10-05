@@ -420,4 +420,17 @@ mod python_tests {
             );
         }
     }
+
+    // frob:tests crates/gob-directives/src/scan.rs::Scanner.scan_in
+    #[test]
+    fn csharp_directives_come_from_comments_not_strings() {
+        let text = "var s = \"// frob:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E9\";\n// frob:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E2\nclass A {}\n";
+        let syms = gob_symbols::FileSymbols {
+            path: "A.cs".to_owned(),
+            ..Default::default()
+        };
+        let r = Scanner::new(&ScanConfig::default()).scan(Language::CSharp, text, &syms);
+        assert!(r.findings.is_empty(), "{:?}", r.findings);
+        assert_eq!(r.directives.len(), 1);
+    }
 }

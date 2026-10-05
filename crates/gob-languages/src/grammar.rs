@@ -17,6 +17,8 @@ pub(crate) fn ts_language(language: Language) -> Option<tree_sitter::Language> {
         Language::Toml => Some(tree_sitter_toml_ng::LANGUAGE.into()),
         #[cfg(feature = "python")]
         Language::Python => Some(tree_sitter_python::LANGUAGE.into()),
+        #[cfg(feature = "csharp")]
+        Language::CSharp => Some(tree_sitter_c_sharp::LANGUAGE.into()),
         #[allow(unreachable_patterns)]
         _ => None,
     }
@@ -32,6 +34,7 @@ pub(crate) const fn pin(language: Language) -> Option<(&'static str, &'static st
         Language::Toml => Some(("tree-sitter-toml-ng", "0.7.0")),
         Language::Yaml => None,
         Language::Python => Some(("tree-sitter-python", "0.25.0")),
+        Language::CSharp => Some(("tree-sitter-c-sharp", "0.23.5")),
     }
 }
 

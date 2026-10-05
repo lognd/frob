@@ -192,6 +192,10 @@ mod tests {
                 include_str!("../../gob-languages/tests/corpus/strings.py"),
             ),
             (
+                Language::CSharp,
+                include_str!("../../gob-languages/tests/corpus/strings.cs"),
+            ),
+            (
                 Language::Markdown,
                 include_str!("../../gob-languages/tests/corpus/doc.md"),
             ),
