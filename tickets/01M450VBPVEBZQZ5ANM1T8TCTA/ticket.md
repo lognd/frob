@@ -2,12 +2,12 @@
 id = "01M450VBPVEBZQZ5ANM1T8TCTA"
 title = "Wheel build fails on macOS and Windows (GNU realpath, venv path in build-wheel.sh); port it to cargo dev wheel"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-05T03:13:51Z"
-updated = "2026-10-05T03:13:51Z"
+updated = "2026-10-05T03:14:05Z"
 
 [[acceptance]]
 text = "Given the release workflow dry run, when the wheel job runs on all five targets, then every wheel builds and the smoke installs it, with x86_64-apple-darwin smoke exempt as documented"
