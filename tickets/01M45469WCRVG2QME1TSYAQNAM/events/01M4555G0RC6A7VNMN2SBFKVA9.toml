@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "doc comment fix only: private intra-doc link replaced with code formatting"
+at = "2026-10-05T04:23:54Z"
+actor = "lognd"
+rev = 1
