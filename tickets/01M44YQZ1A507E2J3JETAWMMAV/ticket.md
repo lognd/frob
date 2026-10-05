@@ -1,0 +1,36 @@
++++
+id = "01M44YQZ1A507E2J3JETAWMMAV"
+title = "UNITY rule family: .meta pairing and GUID uniqueness"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M44YQS4CNZM54P067GJVPDC0"
+reporter = "lognd"
+created = "2026-10-05T02:37:02Z"
+updated = "2026-10-05T02:37:02Z"
+idempotency_key = "d94-meta"
+scope = ["crates/gob-rules/**", "crates/frob-obligations/src/unity.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/rules.rs", "crates/frob-obligations/tests/**", "docs/reference/rules/UNITY001.md", "docs/reference/rules/UNITY002.md", "docs/reference/rules/UNITY003.md", "docs/reference/rules/README.md", "packs/unity.toml"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M44YQXS4BXE0X07FBYR0STJ5"
+
+[[acceptance]]
+text = "Given a tracked Assets folder file with no .meta, when frob check runs with the pack enabled, then UNITY001 names the file"
+bound = false
+
+[[acceptance]]
+text = "Given a tracked .meta whose asset is not tracked, when frob check runs, then UNITY002 fires"
+bound = false
+
+[[acceptance]]
+text = "Given two .meta files with the same guid, when frob check runs, then UNITY003 fires as an Error naming both"
+bound = false
+
+[[acceptance]]
+text = "Given a tracked file whose name starts with a dot or ends in ~, when frob check runs, then no UNITY001 fires"
+bound = false
++++
+
+New rule family UNITY in the unity pack, implemented as compiled rules registered in crates/gob-rules (registry.rs, id.rs, meta.rs) and evaluated in crates/frob-obligations (new unity.rs): UNITY001 a tracked file or folder under Assets/ or embedded package under Packages/ without its .meta; UNITY002 a tracked .meta whose asset is not tracked (orphan); UNITY003 a duplicate GUID across .meta files, severity Error. Unity-ignored names are exempt (leading dot, trailing tilde, named cvs, .tmp extension) and so are Packages/manifest.json and packages-lock.json; only git-tracked files count (gob-git), so a stray local file does not fire. Findings follow docs/reference/rules format; one reference page per id in docs/reference/rules (UNITY001.md ...). Reference shape: 236 tracked .meta files under Assets in the game repository.
