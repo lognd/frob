@@ -8,7 +8,7 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:57Z"
-updated = "2026-10-05T03:55:54Z"
+updated = "2026-10-05T03:55:55Z"
 idempotency_key = "d94-sym"
 scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/adapter.rs", "crates/gob-symbols/src/model.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/src/symref.rs", "crates/gob-symbols/Cargo.toml", "crates/gob-symbols/tests/csharp.rs", "Cargo.lock", "crates/gob-symbols/src/view.rs", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/tests/corpus.rs", "crates/gob-symbols/tests/corpus/csharp/**", "crates/gob-symbols/tests/snapshots/corpus__csharp_*.snap", "docs/reference/fidelity.md"]
 
@@ -26,7 +26,7 @@ bound = true
 
 [[acceptance]]
 text = "Given code under #if UNITY_EDITOR and an #else branch, when the graph is built, then both branches yield units and each carries its condition"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a C# construct the adapter does not model, when frob check runs, then it is reported Unresolved, not clean"
