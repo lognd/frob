@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-05T03:46:32Z"
-updated = "2026-10-05T03:52:38Z"
+updated = "2026-10-05T03:55:24Z"
 scope = [".github/workflows/build-smoke.yml", "crates/frob-release/tests/release_workflow.rs", "crates/gob-exec/src/discover.rs", "crates/gob-exec/src/lib.rs", "crates/gob-exec/tests/discover.rs", "crates/gob-dev/src/wheel_smoke.rs", "docs/design/products.md", "packaging/pypi/BUILDING.md"]
 
 [[acceptance]]
