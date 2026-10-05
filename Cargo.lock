@@ -2382,7 +2382,7 @@ dependencies = [
  "gob-rules",
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.6",
  "trybuild",
 ]
 
