@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-05T00:59:14Z"
+digest = "64d633313f7c5f71e5cd15da01a20f2c9826342a35b65a816cee795855d08708"
+exit_code = 0
+inline = '''
+   Compiling gob-time v0.0.0 (<worktree>/crates/gob-time)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1dbf9638-a4ff-4fb9-9221-01563f2da748 with nextest profile: default
+    Starting 1 test across 2 binaries (7 tests skipped)
+        PASS [   0.011s] gob-time::time clippy_confines_wall_clock_and_local_zone_reads_to_gob_time
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-time clippy_confines"
+size = 621
+status = "measured"
+tests = ["clippy_confines_wall_clock_and_local_zone_reads_to_gob_time"]
+at = "2026-10-05T00:59:14Z"
+actor = "lognd"
+rev = 1

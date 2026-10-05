@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "duplicate"
+reason = "covered by ~V8FWY2P: release section dates use the UTC day of the command clock (gob-time), criterion 3 with test release_date_follows"
+at = "2026-10-05T01:22:00Z"
+actor = "lognd"
+rev = 1
