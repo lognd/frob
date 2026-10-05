@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-05T00:59:17Z"
+digest = "c9f9a8d69b86a3aad044b5768c51b4d75bd9d53d60cd9b17eb123acf817dcd9d"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c54b0baf-d02d-49c9-b08d-4a4736db1985 with nextest profile: default
+    Starting 1 test across 2 binaries (7 tests skipped)
+        PASS [   0.004s] gob-time::time release_date_follows_the_utc_rule_not_the_local_zone
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.004s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-time release_date_follows"
+size = 556
+status = "measured"
+tests = ["release_date_follows_the_utc_rule_not_the_local_zone"]
+at = "2026-10-05T00:59:17Z"
+actor = "lognd"
+rev = 1
