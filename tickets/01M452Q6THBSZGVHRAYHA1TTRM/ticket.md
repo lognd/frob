@@ -2,12 +2,12 @@
 id = "01M452Q6THBSZGVHRAYHA1TTRM"
 title = "Wheel dry run 2: Linux target-dir permission, Windows uv-tool sibling discovery"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-05T03:46:32Z"
-updated = "2026-10-05T03:46:32Z"
+updated = "2026-10-05T03:46:35Z"
 
 [[acceptance]]
 text = "Given the manylinux container wheel step, when cargo dev wheel runs on the Linux runners, then the gob-dev tool build and the wheel build use separate target directories and no Permission denied occurs"
