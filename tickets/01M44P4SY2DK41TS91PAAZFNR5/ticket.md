@@ -6,7 +6,8 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-05T00:06:46Z"
-updated = "2026-10-05T00:12:03Z"
+updated = "2026-10-05T00:15:06Z"
+scope = ["crates/frob/tests/cycle.rs", "crates/frob/src/cycle_cmd.rs", "crates/frob-pm/src/model.rs", "crates/frob-pm/src/store.rs", "crates/frob-pm/src/cycle/lifecycle.rs", "docs/design/pm-enforcement.md"]
 
 [[acceptance]]
 text = "Given a clock at 00:06 UTC and a zone still on the previous day, when a cycle is created with the default start, then its state is the documented one and matches at any other time of day"
