@@ -2,12 +2,13 @@
 id = "01M44YYNMG7X03Z76JY8PFY636"
 title = "frob migrate config: v1 frob.toml to v2 frob.toml and grimble.toml"
 type = "story"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 parent = "01M44YYN4E7SXWHQB3H7EHD37P"
 reporter = "lognd"
 created = "2026-10-05T02:40:42Z"
-updated = "2026-10-05T02:42:58Z"
+updated = "2026-10-05T02:43:00Z"
 
 [[acceptance]]
 text = "Given a v1 frob.toml with known, severity and unknown keys, when frob migrate config runs, then the v2 files hold the mapped keys and every unknown key is reported"
