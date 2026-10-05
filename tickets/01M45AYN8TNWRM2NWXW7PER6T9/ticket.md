@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "critical"
 reporter = "lognd"
 created = "2026-10-05T06:10:22Z"
-updated = "2026-10-05T06:14:32Z"
+updated = "2026-10-05T06:17:49Z"
 scope = ["crates/frob-release/tests/rel001.rs", "crates/frob-release/tests/changelog.rs"]
 
 [[acceptance]]
