@@ -1,0 +1,246 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-05T05:16:16Z"
+digest = "47fa9de857851fbc000f9705bdcfead1de95c348b4f91b8c2602efefabd1793a"
+exit_code = 0
+inline = '''
+   Compiling proc-macro2 v1.0.107
+   Compiling cfg-if v1.0.5
+   Compiling memchr v2.8.3
+   Compiling regex-syntax v0.8.11
+   Compiling once_cell v1.21.4
+   Compiling smallvec v1.16.2
+   Compiling quote v1.0.47
+   Compiling fastrand v2.5.0
+   Compiling libc v0.2.189
+   Compiling tinyvec v1.13.3
+   Compiling gix-trace v0.1.21
+   Compiling scopeguard v1.2.0
+   Compiling crossbeam-utils v0.8.23
+   Compiling lock_api v0.4.14
+   Compiling same-file v1.0.6
+   Compiling bitflags v2.13.2
+   Compiling crc32fast v1.5.2
+   Compiling zerocopy v0.8.59
+   Compiling itoa v1.0.18
+   Compiling unicode-normalization v0.1.25
+   Compiling walkdir v2.5.0
+   Compiling typenum v1.20.1
+   Compiling byteorder v1.5.0
+   Compiling crossbeam-channel v0.5.17
+   Compiling aho-corasick v1.1.5
+   Compiling syn v3.0.6
+   Compiling allocator-api2 v0.2.21
+   Compiling stable_deref_trait v1.2.1
+   Compiling foldhash v0.2.0
+   Compiling hash32 v0.3.1
+   Compiling equivalent v1.0.2
+   Compiling thiserror-impl v2.0.21
+   Compiling ahash v0.8.12
+   Compiling linux-raw-sys v0.12.1
+   Compiling jiff-core v0.1.1
+   Compiling syn v2.0.119
+   Compiling heapless v0.8.0
+   Compiling hashbrown v0.17.1
+   Compiling serde_core v1.0.229
+   Compiling generic-array v0.14.7
+   Compiling getrandom v0.4.3
+   Compiling parking_lot_core v0.9.12
+   Compiling cpufeatures v0.2.17
+   Compiling faster-hex v0.10.1
+   Compiling rustix v1.1.5
+   Compiling thiserror v2.0.21
+   Compiling memmap2 v0.9.11
+   Compiling fnv v1.0.7
+   Compiling parking_lot v0.12.5
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling nonempty v0.12.0
+   Compiling unicode-bom v2.0.3
+   Compiling serde_derive v1.0.229
+   Compiling jiff v0.2.37
+   Compiling tracing-core v0.1.36
+   Compiling serde_json v1.0.151
+   Compiling digest v0.10.7
+   Compiling regex-automata v0.4.18
+   Compiling zmij v1.0.23
+   Compiling prodash v31.0.1
+   Compiling tracing-attributes v0.1.31
+   Compiling pin-project-lite v0.2.17
+   Compiling sha1 v0.10.7
+   Compiling arrayvec v0.7.8
+   Compiling gix-sec v0.14.2
+   Compiling sha1-checked v0.10.0
+   Compiling filetime v0.2.29
+   Compiling strsim v0.11.1
+   Compiling simdutf8 v0.1.5
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive_internals v0.30.0
+   Compiling tracing v0.1.44
+   Compiling percent-encoding v2.3.2
+   Compiling encoding_rs v0.8.42
+   Compiling schemars_derive v1.2.2
+   Compiling darling_core v0.20.11
+   Compiling dyn-clone v1.0.20
+   Compiling crossbeam-epoch v0.9.21
+   Compiling tempfile v3.27.0
+   Compiling ref-cast v1.0.27
+   Compiling hashbrown v0.16.1
+   Compiling zlib-rs v0.6.8
+   Compiling serde v1.0.229
+   Compiling log v0.4.34
+   Compiling constant_time_eq v0.4.2
+   Compiling lazy_static v1.5.1
+   Compiling tracing-log v0.2.0
+   Compiling blake3 v1.8.7
+   Compiling crossbeam-deque v0.8.8
+   Compiling sharded-slab v0.1.7
+   Compiling clru v0.6.3
+   Compiling schemars v1.2.2
+   Compiling tracing-serde v0.2.0
+   Compiling getrandom v0.3.4
+   Compiling uluru v3.1.0
+   Compiling thread_local v1.1.10
+   Compiling darling_macro v0.20.11
+   Compiling inventory v0.3.24
+   Compiling hashbrown v0.14.5
+   Compiling winnow v1.0.4
+   Compiling nu-ansi-term v0.50.3
+   Compiling ppv-lite86 v0.2.21
+   Compiling nix v0.31.3
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling rand_core v0.9.5
+   Compiling darling v0.20.11
+   Compiling arc-swap v1.9.2
+   Compiling indexmap v2.14.2
+   Compiling gix-macros v0.1.6
+   Compiling io-close v0.3.7
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling gob-macros v0.0.0 (<worktree>/crates/gob-macros)
+   Compiling dashmap v6.2.1
+   Compiling utf8parse v0.2.2
+   Compiling bstr v1.13.1
+   Compiling matchers v0.2.0
+   Compiling regex v1.13.1
+   Compiling rand_chacha v0.9.0
+   Compiling anstyle-parse v0.2.7
+   Compiling serde_spanned v1.1.1
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-rules v0.0.0 (<worktree>/crates/gob-rules)
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling which v8.0.6
+   Compiling colorchoice v1.0.5
+   Compiling anstyle v1.0.14
+   Compiling anstyle-query v1.1.5
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling rand v0.9.5
+   Compiling gix-validate v0.11.4
+   Compiling gix-utils v0.3.6
+   Compiling gix-error v0.3.2
+   Compiling gix-packetline v0.22.2
+   Compiling gix-imara-diff v0.2.5
+   Compiling gix-zlib v0.1.0
+   Compiling anstream v0.6.21
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gix-path v0.12.6
+   Compiling libsqlite3-sys v0.30.1
+   Compiling hashlink v0.9.1
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling fallible-iterator v0.3.0
+   Compiling gob-diagnostics v0.0.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gix-quote v0.8.0
+   Compiling gix-date v0.16.0
+   Compiling gix-chunk v0.8.0
+   Compiling gix-bitmap v0.4.0
+   Compiling gix-features v0.49.1
+   Compiling gix-config-value v0.19.1
+   Compiling gix-url v0.38.0
+   Compiling gix-command v0.10.1
+   Compiling rusqlite v0.32.1
+   Compiling ulid v1.2.1
+   Compiling gob-time v0.0.0 (<worktree>/crates/gob-time)
+   Compiling gob-log v0.0.0 (<worktree>/crates/gob-log)
+   Compiling gix-actor v0.42.0
+   Compiling gob-fs v0.0.0 (<worktree>/crates/gob-fs)
+   Compiling ryu v1.0.23
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling gob-exec v0.0.0 (<worktree>/crates/gob-exec)
+   Compiling gix-transport v0.59.2
+   Compiling gob-config v0.0.0 (<worktree>/crates/gob-config)
+   Compiling similar v2.7.0
+   Compiling unsafe-libyaml v0.2.11
+   Compiling semver v1.0.28
+   Compiling error_set_impl v0.9.2
+   Compiling gob-mdtest v0.0.0 (<worktree>/crates/gob-mdtest)
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-ignore v0.22.1
+   Compiling gix-refspec v0.45.1
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling serde_yaml_ng v0.10.0
+   Compiling error_set v0.9.2
+   Compiling gix-shallow v0.13.0
+   Compiling gix-pathspec v0.20.0
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-traverse v0.61.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-index v0.55.0
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-odb v0.84.0
+   Compiling gix-worktree v0.56.0
+   Compiling gix-submodule v0.34.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-status v0.34.1
+   Compiling gix-merge v0.20.1
+   Compiling gix v0.87.1
+   Compiling gob-git v0.0.0 (<worktree>/crates/gob-git)
+   Compiling frob-ledger v0.0.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.0.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.0.0 (<worktree>/crates/frob-release)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.38s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1310e51b-c075-4c6e-ab54-5f3c59b90be0 with nextest profile: default
+    Starting 18 tests across 1 binary
+        PASS [   0.009s] frob-release::changelog fragments_survive_a_failed_write
+        PASS [   0.011s] frob-release::changelog a_second_notice_is_refused_naming_both_files
+        PASS [   0.012s] frob-release::changelog bad_version_and_non_ascii_are_refused
+        PASS [   0.016s] frob-release::changelog a_notice_leads_the_section_above_the_product_and_type_groups
+        PASS [   0.015s] frob-release::changelog dry_run_touches_nothing
+        PASS [   0.007s] frob-release::changelog invalid_names_are_refused_with_the_remedy
+        PASS [   0.009s] frob-release::changelog near_miss_product_prefix_is_refused_with_a_suggestion_but_plain_words_pass
+        PASS [   0.005s] frob-release::changelog the_v2_notice_fragment_is_a_lead_notice
+        PASS [   0.008s] frob-release::changelog same_type_entries_sort_by_ulid
+        PASS [   0.021s] frob-release::changelog empty_changelog_d_adds_nothing
+        PASS [   0.007s] frob-release::changelog ulid_without_a_ticket_is_refused_naming_the_file
+        PASS [   0.023s] frob-release::changelog check_detects_a_hand_edit_of_an_older_section
+        PASS [   0.023s] frob-release::changelog an_adopted_changelog_without_version_headings_gets_the_section_appended
+        PASS [   0.024s] frob-release::changelog existing_version_is_refused
+        PASS [   0.024s] frob-release::changelog a_single_product_has_no_product_heading_and_no_v1_link
+        PASS [   0.025s] frob-release::changelog groups_by_product_type_then_ulid_and_removes_fragments
+        PASS [   0.026s] frob-release::changelog a_hand_written_changelog_is_adopted_above_its_first_version_heading
+        PASS [   0.014s] frob-release::changelog second_release_goes_above_the_first
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.030s] 18 tests run: 18 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release --test changelog"
+size = 9090
+status = "measured"
+tests = ["fragments_survive_a_failed_write", "a_second_notice_is_refused_naming_both_files", "bad_version_and_non_ascii_are_refused", "a_notice_leads_the_section_above_the_product_and_type_groups", "dry_run_touches_nothing", "invalid_names_are_refused_with_the_remedy", "near_miss_product_prefix_is_refused_with_a_suggestion_but_plain_words_pass", "the_v2_notice_fragment_is_a_lead_notice", "same_type_entries_sort_by_ulid", "empty_changelog_d_adds_nothing", "ulid_without_a_ticket_is_refused_naming_the_file", "check_detects_a_hand_edit_of_an_older_section", "an_adopted_changelog_without_version_headings_gets_the_section_appended", "existing_version_is_refused", "a_single_product_has_no_product_heading_and_no_v1_link", "groups_by_product_type_then_ulid_and_removes_fragments", "a_hand_written_changelog_is_adopted_above_its_first_version_heading", "second_release_goes_above_the_first"]
+at = "2026-10-05T05:16:16Z"
+actor = "lognd"
+rev = 1
