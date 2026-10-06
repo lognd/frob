@@ -8,7 +8,7 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:59Z"
-updated = "2026-10-06T04:28:56Z"
+updated = "2026-10-06T05:58:00Z"
 idempotency_key = "d94-sln"
 scope = ["crates/gob-symbols/src/dotnet.rs", "crates/gob-symbols/src/paths.rs", "crates/gob-symbols/src/crates.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/tests/dotnet.rs", "docs/design/code-model.md", "docs/reference/config.md", "crates/gob-symbols/src/lib.rs"]
 
