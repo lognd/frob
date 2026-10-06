@@ -2,12 +2,12 @@
 id = "01M48FXA11DET9Y49RVMEZV7TS"
 title = "frob-check: COV001 reaches TypeScript tests (vitest/jest test_items) so TSX components count as covered"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:34:43Z"
-updated = "2026-10-06T11:34:43Z"
+updated = "2026-10-06T13:56:48Z"
 scope = ["crates/frob-check/**"]
 +++
 
