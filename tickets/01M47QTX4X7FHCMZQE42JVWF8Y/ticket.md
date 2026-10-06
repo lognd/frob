@@ -8,8 +8,8 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:02Z"
-updated = "2026-10-06T04:34:02Z"
-scope = ["crates/grimble-model/**", "crates/gob-plan/**"]
+updated = "2026-10-06T06:31:46Z"
+scope = ["crates/grimble-model/**"]
 
 [[acceptance]]
 text = "idempotence and round-trip tests over all fixtures"
