@@ -1,9 +1,12 @@
 //! The web-engine answer types: markup, style, `const_value` and `class_tokens` on hand-built terms.
 #![allow(clippy::many_single_char_names, reason = "terse fixtures")]
 
+// frob:ticket 01M43ARXVD5PXP6ZBVFC2F4ZMQ
+
 use gob_ir::const_value::{
-    Budget, CONST_KIND, ConstEval, ConstValue, Fragment, OP, OP_ADD, OP_AND, OP_ARRAY, OP_COND,
-    OP_OBJECT, OP_PROP, OP_TEMPLATE, Value, const_value,
+    Budget, CONST_KIND, CallKind, ConstEval, ConstValue, External, ExternalRefs, Fragment, OP,
+    OP_ADD, OP_AND, OP_ARRAY, OP_COND, OP_OBJECT, OP_OR, OP_PROP, OP_SPREAD, OP_TEMPLATE, Value,
+    const_value,
 };
 use gob_ir::markup::{self, ELEMENT, TAG, TEXT, TagKind};
 use gob_ir::style::{self, ValuePart};
@@ -344,4 +347,143 @@ fn style_rules_declarations_custom_properties_and_var_refs() {
         (ats[0].name.as_str(), ats[0].prelude.as_str()),
         ("media", "(min-width: 1px)")
     );
+}
+
+// ---- logical operators, spreads, cycles and the external hook (~C2F4ZMQ) ----
+
+#[test]
+fn const_value_logical_operators_follow_javascript_truthiness() {
+    let mut b = B::new("ts");
+    let (l, r) = (b.s("left"), b.s("right"));
+    let or_true = b.op(OP_OR, &[l, r]);
+    let (e, r2) = (b.s(""), b.s("right"));
+    let or_false = b.op(OP_OR, &[e, r2]);
+    let (t, v) = (b.lit("bool", "true"), b.s("v"));
+    let and_true = b.op(OP_AND, &[t, v]);
+    let (dynamic, v2) = (b.add(Operator::reference("flag"), &[]), b.s("v"));
+    let and_dyn = b.op(OP_AND, &[dynamic, v2]);
+    let root = b.add(
+        Operator::group(GroupOrder::Sequence),
+        &[or_true, or_false, and_true, and_dyn],
+    );
+    let m = b.finish(root);
+    assert_eq!(str_of(&m, or_true).known_str(), Some("left"));
+    assert_eq!(str_of(&m, or_false).known_str(), Some("right"));
+    assert_eq!(str_of(&m, and_true).known_str(), Some("v"));
+    assert_eq!(
+        str_of(&m, and_dyn),
+        ConstValue::OneOf(vec![Value::Bool(false), Value::Str("v".into())])
+    );
+}
+
+#[test]
+fn const_value_spreads_splice_known_arrays_and_objects() {
+    let mut b = B::new("ts");
+    let (x, y) = (b.s("x"), b.s("y"));
+    let inner = b.op(OP_ARRAY, &[x, y]);
+    let spread = b.op(OP_SPREAD, &[inner]);
+    let z = b.s("z");
+    let arr = b.op(OP_ARRAY, &[spread, z]);
+    let rest = b.add(Operator::reference("rest"), &[]);
+    let bad_spread = b.op(OP_SPREAD, &[rest]);
+    let bad = b.op(OP_ARRAY, &[bad_spread]);
+    let root = b.add(Operator::group(GroupOrder::Sequence), &[arr, bad]);
+    let m = b.finish(root);
+    assert_eq!(
+        str_of(&m, arr),
+        ConstValue::Known(Value::Array(vec![
+            Value::Str("x".into()),
+            Value::Str("y".into()),
+            Value::Str("z".into())
+        ]))
+    );
+    assert_eq!(str_of(&m, bad), ConstValue::Unknown);
+}
+
+#[test]
+fn const_value_templates_distribute_over_alternatives() {
+    let mut b = B::new("ts");
+    let pre = b.s("app-");
+    let c = b.add(Operator::reference("c"), &[]);
+    let (p, q) = (b.s("a"), b.s("b"));
+    let pick = b.op(OP_COND, &[c, p, q]);
+    let tpl = b.op(OP_TEMPLATE, &[pre, pick]);
+    let m = b.finish(tpl);
+    assert_eq!(
+        str_of(&m, tpl),
+        ConstValue::OneOf(vec![Value::Str("app-a".into()), Value::Str("app-b".into())])
+    );
+}
+
+#[test]
+fn const_value_reference_cycles_are_flagged_not_looped() {
+    let mut b = B::new("ts");
+    let rb = b.add(Operator::reference("B"), &[]);
+    let a = b.named(Operator::unit(CONST_KIND, ""), "A", &[rb]);
+    let ra = b.add(Operator::reference("A"), &[]);
+    let bb = b.named(Operator::unit(CONST_KIND, ""), "B", &[ra]);
+    let use_a = b.add(Operator::reference("A"), &[]);
+    let root = b.add(Operator::group(GroupOrder::Sequence), &[a, bb, use_a]);
+    let m = b.finish(root);
+    let mut ev = ConstEval::new(&m, Budget::default());
+    assert_eq!(ev.eval(use_a), ConstValue::Unknown);
+    assert!(ev.cyclic());
+    assert!(!ev.exhausted());
+}
+
+/// A hook that knows `cn` as a class-name joiner and resolves `EXT` to a fixed string.
+struct Hook;
+
+impl ExternalRefs for Hook {
+    fn resolve_ref(&self, model: &Model, node: NodeId, _steps: u32) -> Option<External> {
+        match model.term().operator(node) {
+            Operator::Universal(gob_ir::Universal::Ref { name }) if name == "EXT" => {
+                Some(External {
+                    value: ConstValue::Known(Value::Str("far".into())),
+                    used: 2,
+                    exhausted: false,
+                    cyclic: false,
+                })
+            }
+            _ => None,
+        }
+    }
+
+    fn call_kind(&self, model: &Model, callee: NodeId) -> Option<CallKind> {
+        match model.term().operator(callee) {
+            Operator::Universal(gob_ir::Universal::Ref { name }) if name == "cn" => {
+                Some(CallKind::ClassNames)
+            }
+            _ => None,
+        }
+    }
+}
+
+#[test]
+fn const_value_external_hook_resolves_refs_and_joins_class_names() {
+    let mut b = B::new("ts");
+    let ext = b.add(Operator::reference("EXT"), &[]);
+    let (a, flag) = (b.s("btn"), b.add(Operator::reference("on"), &[]));
+    let on = b.s("on");
+    let cond = b.op(OP_AND, &[flag, on]);
+    let obj_key = b.s("big");
+    let t = b.lit("bool", "true");
+    let prop = b.op(OP_PROP, &[obj_key, t]);
+    let obj = b.op(OP_OBJECT, &[prop]);
+    let joined = b.call("cn", &[a, cond, ext, obj]);
+    let other = b.call("other", &[a]);
+    let root = b.add(Operator::group(GroupOrder::Sequence), &[ext, joined, other]);
+    let m = b.finish(root);
+    let hook = Hook;
+    let mut ev = ConstEval::new(&m, Budget(100)).with_external(&hook);
+    assert_eq!(ev.eval(ext).known_str(), Some("far"));
+    assert_eq!(ev.remaining(), 100 - 1 - 2);
+    assert_eq!(
+        ev.eval(joined),
+        ConstValue::OneOf(vec![
+            Value::Str("btn far big".into()),
+            Value::Str("btn on far big".into())
+        ])
+    );
+    assert_eq!(ev.eval(other), ConstValue::Unknown);
 }

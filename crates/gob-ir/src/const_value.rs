@@ -17,16 +17,31 @@
 //! | `c ? a : b` | `apply(op)` head `lit(op, "?:")`, arguments `c`, `a`, `b` |
 //! | array literal | `apply(op)` head `lit(op, "array")`, arguments are the elements |
 //! | object literal | `apply(op)` head `lit(op, "object")`, arguments are `apply(op)` head `lit(op, "prop")` with the key `lit(str)` then the value |
+//! | `a && b`, `a \|\| b` | `apply(op)` head `lit(op, "&&")` / `lit(op, "\|\|")`, arguments `a`, `b` (JavaScript truthiness; an unknown `a` keeps both outcomes) |
+//! | `...x` in an array, object or call | `apply(op)` head `lit(op, "spread")`, one argument |
+//! | `f(a, b)` | `apply(call)` (or `apply(op)` head `lit(op, "call")`), the callee then the arguments; only a callee an [`ExternalRefs`] hook classifies is read (a class-name joiner such as `clsx`) |
 //!
-//! Anything else (calls, unresolved names, spreads) is `Unknown`.
+//! Anything else (unclassified calls, unresolved names) is `Unknown`.
+//!
+//! A `unit(kind = const)` may also carry the value inside a body `group` (after a `sig` facet group), which
+//! is how the TypeScript adapter lowers `const x = value`.
+//!
+//! # Beyond one term
+//!
+//! A reference the scope graph cannot resolve (an import) is offered to the [`ExternalRefs`] hook of the
+//! evaluator, which answers with the value it found in another artifact and the steps it used; so the budget
+//! covers the whole chain. A reference cycle yields `Unknown` and sets [`ConstEval::cyclic`].
+
+// frob:ticket 01M43ARXVD5PXP6ZBVFC2F4ZMQ
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use tracing::{debug, trace};
 
+use crate::attrs::reserved;
 use crate::operator::{Operator, Universal};
 use crate::query::Model;
-use crate::scope::Resolution;
+use crate::scope::{DeclId, Resolution};
 use crate::term::NodeId;
 
 /// Head kind of the operator forms in the module table.
@@ -45,6 +60,12 @@ pub const OP_OBJECT: &str = "object";
 pub const OP_PROP: &str = "prop";
 /// Operator lexeme of the logical and (`cond && value`).
 pub const OP_AND: &str = "&&";
+/// Operator lexeme of the logical or (`value || fallback`).
+pub const OP_OR: &str = "||";
+/// Operator lexeme of a spread element (`...x`).
+pub const OP_SPREAD: &str = "spread";
+/// Operator lexeme of a call (`f(a, b)`): the callee, then the arguments.
+pub const OP_CALL: &str = "call";
 /// Unit kind of a named constant.
 pub const CONST_KIND: &str = "const";
 
@@ -154,12 +175,56 @@ impl Default for Budget {
     }
 }
 
+/// What a call whose callee an [`ExternalRefs`] hook recognises does with its arguments.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum CallKind {
+    /// `clsx`, `classnames`, `cn`: the truthy arguments joined with single spaces (strings, arrays, and
+    /// objects keyed by class name with a condition as value).
+    ClassNames,
+}
+
+/// A value found outside the term being evaluated, with what finding it cost.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct External {
+    /// The value of the referenced constant.
+    pub value: ConstValue,
+    /// Steps the lookup used; subtracted from the evaluator's budget.
+    pub used: u32,
+    /// Whether the lookup ran out of budget.
+    pub exhausted: bool,
+    /// Whether the lookup met a reference cycle.
+    pub cyclic: bool,
+}
+
+/// The seam through which an evaluator reaches beyond its own term (imports, wrapper calls).
+pub trait ExternalRefs {
+    /// The constant a `ref` the scope graph could not resolve stands for, given `steps` left of the budget.
+    fn resolve_ref(&self, model: &Model, node: NodeId, steps: u32) -> Option<External>;
+
+    /// How a call whose callee is the `ref` node `callee` behaves, when it is a known one.
+    fn call_kind(&self, model: &Model, callee: NodeId) -> Option<CallKind>;
+}
+
 /// The bounded evaluator; one instance per query so the budget is shared by the whole expression.
-#[derive(Debug)]
 pub struct ConstEval<'m> {
     model: &'m Model,
     left: u32,
     exhausted: bool,
+    cyclic: bool,
+    ext: Option<&'m dyn ExternalRefs>,
+    visiting: Vec<DeclId>,
+    consulted: Vec<NodeId>,
+}
+
+impl std::fmt::Debug for ConstEval<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ConstEval")
+            .field("left", &self.left)
+            .field("exhausted", &self.exhausted)
+            .field("cyclic", &self.cyclic)
+            .finish_non_exhaustive()
+    }
 }
 
 /// The bounded value of the expression at `node` within the default [`Budget`].
@@ -187,12 +252,38 @@ impl<'m> ConstEval<'m> {
             model,
             left: budget.0,
             exhausted: false,
+            cyclic: false,
+            ext: None,
+            visiting: Vec::new(),
+            consulted: Vec::new(),
         }
+    }
+
+    /// The same evaluator reaching through `ext` for references and calls it cannot read itself.
+    #[must_use]
+    pub fn with_external(mut self, ext: &'m dyn ExternalRefs) -> Self {
+        self.ext = Some(ext);
+        self
     }
 
     /// Whether the budget ran out during any evaluation so far.
     pub fn exhausted(&self) -> bool {
         self.exhausted
+    }
+
+    /// Whether a reference cycle was met during any evaluation so far.
+    pub fn cyclic(&self) -> bool {
+        self.cyclic
+    }
+
+    /// Steps left of the budget.
+    pub fn remaining(&self) -> u32 {
+        self.left
+    }
+
+    /// The value nodes of the constants read through scope resolution, in the order they were consulted.
+    pub fn consulted(&self) -> &[NodeId] {
+        &self.consulted
     }
 
     /// Evaluate the expression at `node`.
@@ -220,15 +311,28 @@ impl<'m> ConstEval<'m> {
         let decls: Vec<_> = match self.model.resolve_node(node) {
             Resolution::Must(d) => vec![d],
             Resolution::May(ds) => ds.into_iter().collect(),
-            Resolution::Unknown => return ConstValue::Unknown,
+            Resolution::Unknown => return self.external_ref(node),
         };
         let mut all = BTreeSet::new();
         for d in decls {
+            if self.visiting.contains(&d) {
+                debug!(%node, "const_value reference cycle");
+                self.cyclic = true;
+                return ConstValue::Unknown;
+            }
             let decl = self.model.scopes().decl(d);
-            let Some(value) = decl.nodes.iter().find_map(|&u| self.const_init(u)) else {
+            let Some(value) = decl
+                .nodes
+                .iter()
+                .find_map(|&u| const_value_node(self.model, u))
+            else {
                 return ConstValue::Unknown;
             };
-            match self.eval(value).alternatives() {
+            self.consulted.push(value);
+            self.visiting.push(d);
+            let got = self.eval(value);
+            self.visiting.pop();
+            match got.alternatives() {
                 Some(alts) => all.extend(alts),
                 None => return ConstValue::Unknown,
             }
@@ -236,21 +340,28 @@ impl<'m> ConstEval<'m> {
         ConstValue::one_of(all)
     }
 
-    /// The value child of a `unit(kind = const)`.
-    fn const_init(&self, unit: NodeId) -> Option<NodeId> {
-        let term = self.model.term();
-        let n = term.node(unit);
-        match &n.op {
-            Operator::Universal(Universal::Unit { kind, .. }) if kind == CONST_KIND => n
-                .children
-                .iter()
-                .copied()
-                .find(|&c| !term.node(c).op.is_attachment()),
-            _ => None,
-        }
+    /// The value of a reference the scope graph left unresolved, through the hook.
+    fn external_ref(&mut self, node: NodeId) -> ConstValue {
+        let Some(ext) = self.ext else {
+            return ConstValue::Unknown;
+        };
+        let Some(found) = ext.resolve_ref(self.model, node, self.left) else {
+            return ConstValue::Unknown;
+        };
+        self.left = self.left.saturating_sub(found.used);
+        self.exhausted |= found.exhausted;
+        self.cyclic |= found.cyclic;
+        found.value
     }
 
     fn eval_apply(&mut self, node: NodeId) -> ConstValue {
+        // An adapter's own call form: the callee reference, then the arguments.
+        if let Operator::Universal(Universal::Apply { kind }) = &self.model.term().node(node).op
+            && kind == "call"
+        {
+            let kids = self.model.term().node(node).children.clone();
+            return self.call(&kids);
+        }
         let Some((op, args)) = op_form(self.model, node) else {
             return ConstValue::Unknown;
         };
@@ -258,6 +369,9 @@ impl<'m> ConstEval<'m> {
             OP_ADD => self.concat(&args, true),
             OP_TEMPLATE => self.concat(&args, false),
             OP_COND => self.cond(&args),
+            OP_AND => self.and(&args),
+            OP_OR => self.or(&args),
+            OP_CALL => self.call(&args),
             OP_ARRAY => self.array(&args),
             OP_OBJECT => self.object(&args),
             _ => ConstValue::Unknown,
@@ -268,6 +382,9 @@ impl<'m> ConstEval<'m> {
         let parts: Vec<ConstValue> = args.iter().map(|&a| self.eval(a)).collect();
         if let Some(sum) = int_sum(&parts).filter(|_| add) {
             return ConstValue::Known(Value::Int(sum));
+        }
+        if let Some(all) = text_product(&parts, add) {
+            return all;
         }
         let mut frags: Vec<Fragment> = Vec::new();
         for part in &parts {
@@ -306,9 +423,54 @@ impl<'m> ConstEval<'m> {
         }
     }
 
+    fn and(&mut self, args: &[NodeId]) -> ConstValue {
+        let [left, right] = *args else {
+            return ConstValue::Unknown;
+        };
+        let l = self.eval(left);
+        if let Some(v) = l.known() {
+            return if truthy(v) { self.eval(right) } else { l };
+        }
+        // An unknown condition keeps both outcomes: the right value or a falsy one.
+        match self.eval(right).alternatives() {
+            Some(mut alts) => {
+                alts.push(Value::Bool(false));
+                ConstValue::one_of(alts.into_iter().collect())
+            }
+            None => ConstValue::Unknown,
+        }
+    }
+
+    fn or(&mut self, args: &[NodeId]) -> ConstValue {
+        let [left, right] = *args else {
+            return ConstValue::Unknown;
+        };
+        let l = self.eval(left);
+        let Some(alts) = l.alternatives() else {
+            return ConstValue::Unknown;
+        };
+        let (truthy_alts, falsy): (Vec<Value>, Vec<Value>) = alts.into_iter().partition(truthy);
+        if falsy.is_empty() {
+            return ConstValue::one_of(truthy_alts.into_iter().collect());
+        }
+        let Some(mut rest) = self.eval(right).alternatives() else {
+            return ConstValue::Unknown;
+        };
+        rest.extend(truthy_alts);
+        ConstValue::one_of(rest.into_iter().collect())
+    }
+
+    /// The items of an array literal; a spread of a known array splices in its items.
     fn array(&mut self, args: &[NodeId]) -> ConstValue {
         let mut out = Vec::with_capacity(args.len());
         for &a in args {
+            if let Some(inner) = spread_arg(self.model, a) {
+                match self.eval(inner) {
+                    ConstValue::Known(Value::Array(items)) => out.extend(items),
+                    _ => return ConstValue::Unknown,
+                }
+                continue;
+            }
             match self.eval(a) {
                 ConstValue::Known(v) => out.push(v),
                 _ => return ConstValue::Unknown,
@@ -317,9 +479,17 @@ impl<'m> ConstEval<'m> {
         ConstValue::Known(Value::Array(out))
     }
 
+    /// The entries of an object literal; a spread of a known object merges its entries.
     fn object(&mut self, args: &[NodeId]) -> ConstValue {
         let mut out = BTreeMap::new();
         for &a in args {
+            if let Some(inner) = spread_arg(self.model, a) {
+                match self.eval(inner) {
+                    ConstValue::Known(Value::Object(entries)) => out.extend(entries),
+                    _ => return ConstValue::Unknown,
+                }
+                continue;
+            }
             let Some((op, kv)) = op_form(self.model, a) else {
                 return ConstValue::Unknown;
             };
@@ -338,6 +508,318 @@ impl<'m> ConstEval<'m> {
         }
         ConstValue::Known(Value::Object(out))
     }
+
+    /// A call: only a callee the hook classifies is read.
+    fn call(&mut self, args: &[NodeId]) -> ConstValue {
+        let Some((&callee, rest)) = args.split_first() else {
+            return ConstValue::Unknown;
+        };
+        let kind = self.ext.and_then(|ext| ext.call_kind(self.model, callee));
+        match kind {
+            Some(CallKind::ClassNames) => self.class_names(rest),
+            None => ConstValue::Unknown,
+        }
+    }
+
+    /// `clsx(..)`: every argument contributes class text or nothing; the result is the space-joined text.
+    fn class_names(&mut self, args: &[NodeId]) -> ConstValue {
+        let mut parts: Vec<ClassPart> = Vec::new();
+        for &a in args {
+            self.class_part(a, &mut parts);
+        }
+        join_classes(&parts)
+    }
+
+    /// Appends what the clsx-style argument `node` contributes.
+    fn class_part(&mut self, node: NodeId, out: &mut Vec<ClassPart>) {
+        if let Some(inner) = spread_arg(self.model, node) {
+            return self.class_part(inner, out);
+        }
+        if let Some((op, entries)) = op_form(self.model, node) {
+            match op.as_str() {
+                OP_ARRAY => {
+                    for e in entries {
+                        self.class_part(e, out);
+                    }
+                    return;
+                }
+                OP_OBJECT => {
+                    for e in entries {
+                        self.class_entry(e, out);
+                    }
+                    return;
+                }
+                OP_AND => {
+                    // `cond && "x"` contributes "x" or nothing; `cond && [..]` likewise.
+                    if let [cond, then] = entries.as_slice() {
+                        let c = self.eval(*cond);
+                        match c.known() {
+                            Some(v) if !truthy(v) => {}
+                            Some(_) => self.class_part(*then, out),
+                            None => {
+                                let mut inner = Vec::new();
+                                self.class_part(*then, &mut inner);
+                                out.push(ClassPart::Maybe(inner));
+                            }
+                        }
+                        return;
+                    }
+                }
+                _ => {}
+            }
+        }
+        let v = self.eval(node);
+        out.push(ClassPart::from_value(&v));
+    }
+
+    /// One `{ "class": condition }` entry of a clsx object argument.
+    fn class_entry(&mut self, entry: NodeId, out: &mut Vec<ClassPart>) {
+        if let Some(inner) = spread_arg(self.model, entry) {
+            return self.class_part(inner, out);
+        }
+        let Some((op, kv)) = op_form(self.model, entry) else {
+            return out.push(ClassPart::Dynamic);
+        };
+        let ([k, v], true) = (kv.as_slice(), op == OP_PROP) else {
+            return out.push(ClassPart::Dynamic);
+        };
+        let Some(key) = self.eval(*k).known_str().map(str::to_owned) else {
+            return out.push(ClassPart::Dynamic);
+        };
+        match self.eval(*v).known() {
+            Some(c) if !truthy(c) => {}
+            Some(_) => out.push(ClassPart::Text(key)),
+            None => out.push(ClassPart::Maybe(vec![ClassPart::Text(key)])),
+        }
+    }
+}
+
+/// One contribution to a joined class string.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum ClassPart {
+    /// Certain text (may hold several tokens).
+    Text(String),
+    /// Text that is there only in some outcomes.
+    Maybe(Vec<ClassPart>),
+    /// One of these texts (an empty one stands for "nothing").
+    OneOf(Vec<String>),
+    /// Unknown text.
+    Dynamic,
+    /// Partly known text.
+    Fragments(Vec<Fragment>),
+}
+
+impl ClassPart {
+    fn from_value(v: &ConstValue) -> Self {
+        match v {
+            ConstValue::Known(v) => Self::OneOf(class_texts(std::slice::from_ref(v))).simplify(),
+            ConstValue::OneOf(vs) => Self::OneOf(class_texts(vs)).simplify(),
+            ConstValue::Fragments(f) => Self::Fragments(f.clone()),
+            ConstValue::Unknown => Self::Dynamic,
+        }
+    }
+
+    /// A one-alternative `OneOf` is certain text.
+    fn simplify(self) -> Self {
+        match self {
+            Self::OneOf(mut v) if v.len() == 1 => Self::Text(v.remove(0)),
+            other => other,
+        }
+    }
+}
+
+/// The class text each value contributes (falsy values contribute the empty text; arrays join their items).
+fn class_texts(values: &[Value]) -> Vec<String> {
+    let mut out: BTreeSet<String> = BTreeSet::new();
+    for v in values {
+        out.insert(match v {
+            Value::Str(s) => s.trim().to_owned(),
+            Value::Int(i) if *i != 0 => i.to_string(),
+            Value::Array(items) => items
+                .iter()
+                .flat_map(|i| class_texts(std::slice::from_ref(i)))
+                .filter(|t| !t.is_empty())
+                .collect::<Vec<_>>()
+                .join(" "),
+            Value::Object(map) => map
+                .iter()
+                .filter(|(_, c)| truthy(c))
+                .map(|(k, _)| k.as_str())
+                .collect::<Vec<_>>()
+                .join(" "),
+            Value::Bool(_) | Value::Null | Value::Int(_) => String::new(),
+        });
+    }
+    out.into_iter().collect()
+}
+
+/// Joins the parts with single spaces: exact alternatives while they stay within [`MAX_ONE_OF`], else fragments.
+fn join_classes(parts: &[ClassPart]) -> ConstValue {
+    let mut alts: Vec<String> = vec![String::new()];
+    for part in parts {
+        let Some(options) = part_options(part) else {
+            return fragment_classes(parts);
+        };
+        let mut next: BTreeSet<String> = BTreeSet::new();
+        for a in &alts {
+            for o in &options {
+                next.insert(join_text(a, o));
+            }
+        }
+        if next.len() > MAX_ONE_OF {
+            return fragment_classes(parts);
+        }
+        alts = next.into_iter().collect();
+    }
+    ConstValue::one_of(alts.into_iter().map(Value::Str).collect())
+}
+
+/// Space-joins two class texts, dropping an empty side.
+fn join_text(a: &str, b: &str) -> String {
+    match (a.is_empty(), b.is_empty()) {
+        (true, _) => b.to_owned(),
+        (_, true) => a.to_owned(),
+        _ => format!("{a} {b}"),
+    }
+}
+
+/// The exact alternatives a part contributes, or `None` when it is not exactly known.
+fn part_options(part: &ClassPart) -> Option<Vec<String>> {
+    match part {
+        ClassPart::Text(t) => Some(vec![t.clone()]),
+        ClassPart::OneOf(v) => Some(v.clone()),
+        ClassPart::Maybe(inner) => {
+            let mut acc: Vec<String> = vec![String::new()];
+            for p in inner {
+                let opts = part_options(p)?;
+                acc = acc
+                    .iter()
+                    .flat_map(|a| opts.iter().map(move |o| join_text(a, o)))
+                    .collect::<BTreeSet<_>>()
+                    .into_iter()
+                    .collect();
+            }
+            if !acc.iter().any(String::is_empty) {
+                acc.push(String::new());
+            }
+            Some(acc)
+        }
+        ClassPart::Dynamic | ClassPart::Fragments(_) => None,
+    }
+}
+
+/// The joined classes as known text around unknown parts (no exact alternatives are claimed).
+fn fragment_classes(parts: &[ClassPart]) -> ConstValue {
+    let mut frags: Vec<Fragment> = Vec::new();
+    let push = |f: Fragment, frags: &mut Vec<Fragment>| match (frags.last_mut(), f) {
+        (Some(Fragment::Known(a)), Fragment::Known(b)) => a.push_str(&b),
+        (Some(Fragment::Unknown), Fragment::Unknown) => {}
+        (_, f) => frags.push(f),
+    };
+    for part in parts {
+        let pieces: Vec<Fragment> = match part {
+            ClassPart::Text(t) => vec![Fragment::Known(t.clone())],
+            ClassPart::Fragments(f) => f.clone(),
+            ClassPart::OneOf(_) | ClassPart::Maybe(_) | ClassPart::Dynamic => {
+                vec![Fragment::Unknown]
+            }
+        };
+        let empty = matches!(pieces.as_slice(), [Fragment::Known(t)] if t.is_empty());
+        if empty {
+            continue;
+        }
+        if !frags.is_empty() {
+            push(Fragment::Known(" ".to_owned()), &mut frags);
+        }
+        for p in pieces {
+            push(p, &mut frags);
+        }
+    }
+    match frags.as_slice() {
+        [] => ConstValue::Known(Value::Str(String::new())),
+        [Fragment::Known(s)] => ConstValue::Known(Value::Str(s.clone())),
+        [Fragment::Unknown] => ConstValue::Unknown,
+        _ => ConstValue::Fragments(frags),
+    }
+}
+
+/// The text of a scalar value inside a concatenation.
+fn scalar_text(v: &Value) -> Option<String> {
+    match v {
+        Value::Str(s) => Some(s.clone()),
+        Value::Int(i) => Some(i.to_string()),
+        Value::Bool(b) => Some(b.to_string()),
+        Value::Null | Value::Array(_) | Value::Object(_) => None,
+    }
+}
+
+/// The concatenation of parts that each have a few alternatives (a conditional in a template literal):
+/// every combination, or `None` when a part is not exactly known, an addition has no string operand
+/// (it is a sum), or the combinations pass [`MAX_ONE_OF`].
+fn text_product(parts: &[ConstValue], add: bool) -> Option<ConstValue> {
+    let mut options: Vec<Vec<Value>> = Vec::with_capacity(parts.len());
+    for p in parts {
+        options.push(p.alternatives()?);
+    }
+    if add && !options.iter().flatten().any(|v| matches!(v, Value::Str(_))) {
+        return None;
+    }
+    let mut acc: BTreeSet<String> = BTreeSet::from([String::new()]);
+    for alts in &options {
+        let texts: Vec<String> = alts.iter().map(scalar_text).collect::<Option<_>>()?;
+        acc = acc
+            .iter()
+            .flat_map(|a| texts.iter().map(move |t| format!("{a}{t}")))
+            .collect();
+        if acc.len() > MAX_ONE_OF {
+            return None;
+        }
+    }
+    Some(ConstValue::one_of(
+        acc.into_iter().map(Value::Str).collect(),
+    ))
+}
+
+/// JavaScript truthiness of a known value.
+fn truthy(v: &Value) -> bool {
+    match v {
+        Value::Bool(b) => *b,
+        Value::Int(i) => *i != 0,
+        Value::Str(s) => !s.is_empty(),
+        Value::Null => false,
+        Value::Array(_) | Value::Object(_) => true,
+    }
+}
+
+/// The argument of a spread form `apply(op spread)`.
+fn spread_arg(model: &Model, node: NodeId) -> Option<NodeId> {
+    match op_form(model, node)? {
+        (op, args) if op == OP_SPREAD => args.first().copied(),
+        _ => None,
+    }
+}
+
+/// The value expression of a `unit(kind = const)`: its first non-attachment child, or when that is a body
+/// `group` (after the `sig` facet group of an adapter that lowers declarations) the first child inside it.
+pub fn const_value_node(model: &Model, unit: NodeId) -> Option<NodeId> {
+    let term = model.term();
+    let n = term.node(unit);
+    if !matches!(&n.op, Operator::Universal(Universal::Unit { kind, .. }) if kind == CONST_KIND) {
+        return None;
+    }
+    let first = n.children.iter().copied().find(|&c| {
+        let child = term.node(c);
+        !child.op.is_attachment() && child.attrs.get_str(reserved::FACET) != Some("sig")
+    })?;
+    let inner = term.node(first);
+    if matches!(inner.op, Operator::Universal(Universal::Group { .. })) {
+        return inner
+            .children
+            .iter()
+            .copied()
+            .find(|&c| !term.node(c).op.is_attachment());
+    }
+    Some(first)
 }
 
 /// The operator lexeme and arguments of an `apply(op)` node, if it is one.

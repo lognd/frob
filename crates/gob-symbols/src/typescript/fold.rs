@@ -212,6 +212,8 @@ struct Fold<'a> {
     path: &'a str,
     /// Identifiers are references (expression context) rather than tokens.
     expr: bool,
+    /// The next call lowers its arguments to the `const_value` forms (set by the value-expression lowering).
+    const_args: bool,
     ord_nodes: Vec<Option<NodeId>>,
     /// Enclosing units, innermost last: (ordinal, kind).
     units: Vec<(usize, Ctx)>,
@@ -468,6 +470,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         cx: Cx::new(input.path, LANG, text),
         path: input.path,
         expr: true,
+        const_args: false,
         ord_nodes: vec![None],
         units: Vec::new(),
         bound: Vec::new(),
@@ -1054,14 +1057,22 @@ impl<'a> Fold<'a> {
         });
     }
 
-    fn args_into(&mut self, n: Node<'_>, kids: &mut Vec<NodeId>, depth: usize) -> R<()> {
+    fn args_into(
+        &mut self,
+        n: Node<'_>,
+        kids: &mut Vec<NodeId>,
+        depth: usize,
+        consts: bool,
+    ) -> R<()> {
         if let Some(ta) = n.child_by_field_name("type_arguments") {
             kids.push(self.tr(ta, depth + 1)?);
         }
         if let Some(args) = n.child_by_field_name("arguments") {
             if args.kind() == "arguments" {
                 for a in children(args) {
-                    if a.is_named() {
+                    if a.is_named() && !is_comment(a) && consts {
+                        kids.push(self.with_expr(true, |s| s.const_expr(a, depth + 1))?);
+                    } else if a.is_named() {
                         kids.push(self.tr(a, depth + 1)?);
                     }
                 }
@@ -1096,6 +1107,7 @@ impl<'a> Fold<'a> {
     }
 
     fn call(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        let consts = std::mem::take(&mut self.const_args);
         let Some(f) = n.child_by_field_name("function") else {
             return self.generic(n, depth);
         };
@@ -1114,7 +1126,7 @@ impl<'a> Fold<'a> {
         }
         let test = self.test_call(f, n, &target);
         let mut kids = self.call_head(f, &target, depth)?;
-        self.args_into(n, &mut kids, depth)?;
+        self.args_into(n, &mut kids, depth, consts)?;
         let kind = if target.method { "method" } else { "call" };
         let head = kids[0];
         self.record_call(n, Some(head));
@@ -1136,7 +1148,7 @@ impl<'a> Fold<'a> {
         };
         let target = self.call_target(f);
         let mut kids = self.call_head(f, &target, depth)?;
-        self.args_into(n, &mut kids, depth)?;
+        self.args_into(n, &mut kids, depth, false)?;
         let head = kids[0];
         self.record_call(n, Some(head));
         self.cx.op(Operator::apply("new"), n, &kids)
@@ -1232,7 +1244,7 @@ impl<'a> Fold<'a> {
         let kind = if dynamic { "import" } else { "require" };
         let head = self.cx.lit("keyword", kind, f)?;
         let mut kids = vec![head];
-        self.args_into(n, &mut kids, depth)?;
+        self.args_into(n, &mut kids, depth, false)?;
         self.cx.op(Operator::apply(kind), n, &kids)
     }
 
@@ -1949,7 +1961,8 @@ impl<'a> Fold<'a> {
                 self.units.push((ord, Ctx::Value));
                 let body = match value {
                     Some(v) => {
-                        let id = self.with_expr(true, |s| s.tr(v, depth + 1));
+                        // The value is in the `const_value` forms where it has one, so constants evaluate.
+                        let id = self.with_expr(true, |s| s.const_expr(v, depth + 1));
                         id.and_then(|id| {
                             self.cx.op(Operator::group(GroupOrder::Sequence), v, &[id])
                         })

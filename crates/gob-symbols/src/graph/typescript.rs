@@ -22,6 +22,7 @@
 
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
 // frob:ticket 01M47QKTN549397AFFSC3DEAQX
+// frob:ticket 01M43ARXVD5PXP6ZBVFC2F4ZMQ
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -328,6 +329,38 @@ fn link_module(
 }
 
 impl SymbolGraph {
+    /// The units the import binding `local` of TypeScript file `from` names, each with how sure the module graph is.
+    ///
+    /// Empty when `local` is not an import of `from` or nothing in the repository answers it (a package, a
+    /// missing file); several entries are a May answer (an ambiguous re-export).
+    pub fn ts_import_targets(&self, from: &str, local: &str) -> Vec<(Symref, Status)> {
+        let mut out = Vec::new();
+        for u in Self::ts_uses(&self.ts, &Symref::file(from), local) {
+            if let Some(f) = self.ts_binding(&self.ts, from, u, None, 0) {
+                out.extend(
+                    f.nodes
+                        .iter()
+                        .map(|&n| (self.graph[n].symref.clone(), f.status)),
+                );
+            }
+        }
+        tracing::trace!(
+            from,
+            local,
+            targets = out.len(),
+            "typescript import binding resolved"
+        );
+        out
+    }
+
+    /// The module specifier and imported member (`default`, `*` or a name) of the import binding `local` in `from`.
+    pub fn ts_import_source(&self, from: &str, local: &str) -> Option<(String, String)> {
+        let u = *Self::ts_uses(&self.ts, &Symref::file(from), local).first()?;
+        let r = decode_use(&u.target);
+        (r.mode != ImportMode::Unknown)
+            .then(|| (r.spec.to_owned(), r.member.unwrap_or_default().to_owned()))
+    }
+
     /// The units `name` exports from `path`: its own public declarations, an alias or re-export binding, then `export *`.
     fn ts_export(&self, ts: &TsIndex, path: &str, name: &str, depth: usize) -> Option<Found> {
         let &file_node = ts.file_nodes.get(path)?;

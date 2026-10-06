@@ -53,6 +53,16 @@ language.
 | `const_value` | bounded static value of an expression: `Known(v)`, `OneOf(set)`, `Fragments(known parts, Unknown rest)`, `Unknown` | evaluates `lit`, `ref` to a const binding, concatenation, template literals, conditional and object/array literals within a step budget; anything else is Unknown | TS/JS first (className strings, style objects, route paths), then Python, Rust, C# |
 | `project_model` | packages and their files, package dependencies, path aliases, entry files | packages are `unit(kind=package)`; aliases feed `imports` resolution | Cargo, pyproject, .sln/.csproj (~ECEBCQ1), package.json workspaces, tsconfig paths and baseUrl; later Unity .asmdef (~C8HB0GQ) |
 
+`const_value` reaches beyond one file through an `ExternalRefs` hook
+(~C2F4ZMQ): a name the scope graph cannot resolve is followed through
+the module graph when it answers Must with one `const` unit, in that
+file's own term, charging the same step budget; a reference cycle or an
+exhausted budget leaves `Unknown` and the evaluation says which
+(`Unresolved`), with the origin span of every constant consulted. A
+call is read only when its callee is a class-name joiner (`clsx`,
+`classnames`, or a repository function whose body calls one, such as a
+`cn` wrapper; a `twMerge` wrapper is read as the plain join, a superset).
+
 Class tokens are a derived query over `markup` and `const_value`, not a
 capability of their own: `class_tokens(attr)` returns the Known tokens
 of a `class`/`className` attribute (through `clsx`, `cn`,
