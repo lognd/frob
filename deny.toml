@@ -4,9 +4,7 @@ all-features = true
 [advisories]
 yanked = "deny"
 # Every ignore carries a reason (build-test-ci.md section 4).
-ignore = [
-  { id = "RUSTSEC-2026-0285", reason = "rustls 0.23.43 is pinned exactly by frob-gh (=0.23.43); the fix is 0.23.45; only the GitHub client uses it and the flaw cannot alter a handshake. Bump tracked in ~0DE95KF." },
-]
+ignore = []
 
 [licenses]
 confidence-threshold = 0.9
