@@ -2275,6 +2275,7 @@ version = "0.532.0"
 dependencies = [
  "blake3",
  "gob-cache",
+ "gob-caps",
  "gob-config",
  "gob-diagnostics",
  "gob-exec",

@@ -182,6 +182,11 @@ fn account<P: Product>(
                 SubjectStatus::NotApplicable(why) => {
                     entry.1 += 1;
                     tracing::debug!(path, rule = meta.id, %why, "not applicable");
+                    acc.fidelity.add_not_applicable_reason(
+                        &FidelityReport::label(&info),
+                        meta.id,
+                        &why,
+                    );
                     acc.blocked.entry(path.clone()).or_default().insert(meta.id);
                 }
                 SubjectStatus::Unresolved(why) => {
