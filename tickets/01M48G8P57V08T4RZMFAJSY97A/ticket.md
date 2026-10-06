@@ -2,11 +2,11 @@
 id = "01M48G8P57V08T4RZMFAJSY97A"
 title = "cargo dev ci shear fails on experimental: unused insta dev-dependency in gob-frameworks"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-06T11:40:56Z"
-updated = "2026-10-06T11:40:56Z"
+updated = "2026-10-06T11:41:11Z"
 scope = ["crates/gob-frameworks/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
