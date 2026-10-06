@@ -239,6 +239,12 @@ impl Workspace<'_> {
                 "{handle} has an empty scope; SCOPE001 will flag every changed file"
             ));
         }
+        warnings.extend(frob_lease::unmatched::scope_warnings(
+            self.ledger.repo(),
+            id,
+            &lease.scope,
+            &view.ticket.front.labels,
+        ));
         if !built.conflicts.is_empty() {
             warnings.push(format!(
                 "merging the base left {} conflicted path(s); resolve them in {}",
