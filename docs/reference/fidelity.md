@@ -154,9 +154,8 @@ Imports and the module graph:
   (~C3DEAQX); a local value called, an expression callee, and names no repository file defines.
 - Not modelled: `with` statements (reported as a partial parse); type-directed resolution (a method on a
   typed receiver is May by name); CJS exports other than `module.exports = a`, `module.exports = { a }`
-  and `exports.x = a` (function expressions assigned to `exports` are not units); JSX lowering to the
-  `markup` answer type, component use as call edges and inline `style` objects (~VGKB025); constant
-  evaluation of class-name strings (~C2F4ZMQ).
+  and `exports.x = a` (function expressions assigned to `exports` are not units); constant evaluation of
+  class-name strings (~C2F4ZMQ).
 
 JSX lowers to the `gob_ir::markup` forms: an element is `apply(element)` (a `lit(tag)` head for an intrinsic tag, a
 `ref` head for a component, which is also a call edge from the using unit), attributes are `markup.attribute` with a
