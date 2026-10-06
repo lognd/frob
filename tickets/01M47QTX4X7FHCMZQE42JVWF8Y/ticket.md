@@ -13,11 +13,11 @@ scope = ["crates/grimble-model/**"]
 
 [[acceptance]]
 text = "grimble fmt: format(format(x)) equals format(x) and parse(format(x)) preserves U over every .grmb fixture"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a .grmb proptest generator with a self-test where a broken printer fails with a shrunk minimal example"
-bound = false
+bound = true
 +++
 
 build-test-ci.md section 6, ruff_python_formatter stability checks. format(format(x)) equals format(x) and parse(print(t)) equals t over every .grmb and GRL fixture and a proptest generator.
