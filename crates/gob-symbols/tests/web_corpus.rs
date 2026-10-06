@@ -197,7 +197,7 @@ fn render_matrix() -> String {
     out
 }
 
-// frob:tests crates/gob-symbols/src/adapter.rs::Precision.cell
+// frob:tests crates/gob-caps/src/capability.rs::Precision.cell
 #[test]
 fn the_capability_matrix_cells_of_every_web_extension_match_the_snapshot() {
     expect_file(&corpus().join("matrix.txt"), &render_matrix());

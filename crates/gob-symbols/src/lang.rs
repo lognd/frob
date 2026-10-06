@@ -108,7 +108,7 @@ mod tests {
     }
 
     #[test]
-    // frob:tests crates/gob-symbols/src/adapter.rs::CapabilityDecl::for_lang
+    // frob:tests crates/gob-symbols/src/adapter.rs::CapabilityDecl.for_lang
     fn each_adapter_declares_exactly_its_matrix_row() {
         for a in adapters().into_iter().chain([opaque_adapter()]) {
             let lang = lang_of_tag(a.language()).expect("adapter tag maps");

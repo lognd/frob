@@ -165,3 +165,23 @@ impl Precision {
         !matches!(self, Self::None | Self::NotApplicable)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    // frob:tests crates/gob-caps/src/capability.rs::Precision.cell
+    fn cell_words_follow_the_ladder() {
+        assert_eq!(Precision::None.cell(), "Gap");
+        assert_eq!(Precision::NotApplicable.cell(), "NotApplicable");
+        assert_eq!(Precision::Manifest.cell(), "Implemented");
+        assert!(!Precision::None.is_provided());
+        assert!(Precision::Syntactic.is_provided());
+    }
+
+    #[test]
+    fn the_page_capabilities_are_the_first_nine() {
+        assert_eq!(Capability::PAGE[..], Capability::ALL[..9]);
+    }
+}
