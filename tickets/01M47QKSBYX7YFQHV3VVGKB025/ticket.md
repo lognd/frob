@@ -8,12 +8,16 @@ points = 8
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T04:30:09Z"
-updated = "2026-10-06T04:31:48Z"
+updated = "2026-10-06T04:31:49Z"
 scope = ["crates/gob-symbols/**"]
 
 [[links]]
 kind = "blocked-by"
 target = "01M43ARXMH7RJ63G8096KKJF80"
+
+[[links]]
+kind = "blocked-by"
+target = "01M47QKDM2J0EKW2TYH4N35GSV"
 
 [[acceptance]]
 text = "fixtures under crates/gob-symbols cover intrinsic, component, spread, conditional and mapped JSX with expected markup snapshots"
