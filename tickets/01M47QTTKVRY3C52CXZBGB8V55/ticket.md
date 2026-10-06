@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:33:59Z"
-updated = "2026-10-06T07:10:37Z"
+updated = "2026-10-06T07:45:27Z"
 scope = ["crates/gob-mdtest/**", "crates/gob-rules/**", "crates/frob-check/tests/**", "crates/grimble-check/tests/**", "crates/crunk-check/tests/**", "crates/frob-check/Cargo.toml", "crates/grimble-check/Cargo.toml", "crates/crunk-check/Cargo.toml"]
 
 [[acceptance]]
