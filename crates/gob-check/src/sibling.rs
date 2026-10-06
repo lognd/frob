@@ -20,7 +20,7 @@ use tracing::debug;
 
 use crate::CheckReport;
 use crate::sibling_doc::{
-    FindingRow, Invocation, PolarityMark, Range as RowRange, RuleRecord, SiblingDocument,
+    FindingRow, Invocation, MarkOfPolarity, Range as RowRange, RuleRecord, SiblingDocument,
     SuppressedFinding, Timing,
 };
 
@@ -78,15 +78,15 @@ pub fn fidelity_reason(f: &Finding) -> Option<String> {
 }
 
 /// Polarity of `rule` (`P+` when the registry does not know it).
-fn polarity_of(rule: &str) -> PolarityMark {
+fn polarity_of(rule: &str) -> MarkOfPolarity {
     Registry::global()
         .by_id(rule)
-        .map_or(PolarityMark::Plus, |m| match m.polarity {
-            RulePolarity::Pplus => PolarityMark::Plus,
-            RulePolarity::Pminus => PolarityMark::Minus,
-            RulePolarity::P0 => PolarityMark::P0,
-            RulePolarity::Pn => PolarityMark::Pn,
-            RulePolarity::Pc => PolarityMark::Pc,
+        .map_or(MarkOfPolarity::Plus, |m| match m.polarity {
+            RulePolarity::Pplus => MarkOfPolarity::Plus,
+            RulePolarity::Pminus => MarkOfPolarity::Minus,
+            RulePolarity::P0 => MarkOfPolarity::P0,
+            RulePolarity::Pn => MarkOfPolarity::Pn,
+            RulePolarity::Pc => MarkOfPolarity::Pc,
         })
 }
 

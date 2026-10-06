@@ -24,7 +24,7 @@ pub struct Range {
 
 /// Declared polarity of a rule (universal-model.md 4.2); serialized as the symbol.
 #[derive(Debug, Clone, Copy, Serialize, JsonSchema)]
-pub enum PolarityMark {
+pub enum MarkOfPolarity {
     /// Positive.
     #[serde(rename = "P+")]
     Plus,
@@ -89,7 +89,7 @@ pub struct RuleRecord {
     /// Rule id.
     pub rule: String,
     /// Declared polarity.
-    pub polarity: PolarityMark,
+    pub polarity: MarkOfPolarity,
     /// Subjects examined across the whole run.
     pub subjects_examined: u64,
     /// Live findings of this rule.
@@ -116,7 +116,7 @@ pub struct FindingRow {
     #[serde(flatten)]
     pub record: gob_diagnostics::FindingRecord,
     /// Declared polarity of the rule (universal-model.md 4.2).
-    pub polarity: PolarityMark,
+    pub polarity: MarkOfPolarity,
     /// Subjects the rule examined in the scope this finding rolls up; zero only with a vacuous Unresolved.
     pub subjects_examined: u64,
     /// Unresolved reason code (kebab-case such as `vacuous`, `fidelity`); null unless severity is unresolved.

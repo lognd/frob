@@ -723,7 +723,7 @@
           "type": "string"
         },
         "polarity": {
-          "$ref": "#/$defs/PolarityMark",
+          "$ref": "#/$defs/MarkOfPolarity",
           "description": "Declared polarity of the rule (universal-model.md 4.2)."
         },
         "range": {
@@ -948,32 +948,7 @@
         }
       ]
     },
-    "PackRef": {
-      "additionalProperties": false,
-      "description": "The `packs` array and its digest; both or neither are emitted.",
-      "properties": {
-        "digest": {
-          "description": "Pack digest of packs.md 2.5.",
-          "pattern": "^blake3:[0-9a-f]{64}$",
-          "type": "string"
-        },
-        "name": {
-          "description": "Pack id, `<namespace>/<name>`.",
-          "type": "string"
-        },
-        "version": {
-          "description": "Semantic version of the pack.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "name",
-        "version",
-        "digest"
-      ],
-      "type": "object"
-    },
-    "PolarityMark": {
+    "MarkOfPolarity": {
       "description": "Declared polarity of a rule (universal-model.md 4.2); serialized as the symbol.",
       "oneOf": [
         {
@@ -1002,6 +977,31 @@
           "type": "string"
         }
       ]
+    },
+    "PackRef": {
+      "additionalProperties": false,
+      "description": "The `packs` array and its digest; both or neither are emitted.",
+      "properties": {
+        "digest": {
+          "description": "Pack digest of packs.md 2.5.",
+          "pattern": "^blake3:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "name": {
+          "description": "Pack id, `<namespace>/<name>`.",
+          "type": "string"
+        },
+        "version": {
+          "description": "Semantic version of the pack.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "digest"
+      ],
+      "type": "object"
     },
     "Range": {
       "additionalProperties": false,
@@ -1182,7 +1182,7 @@
           "type": "integer"
         },
         "polarity": {
-          "$ref": "#/$defs/PolarityMark",
+          "$ref": "#/$defs/MarkOfPolarity",
           "description": "Declared polarity."
         },
         "rule": {
