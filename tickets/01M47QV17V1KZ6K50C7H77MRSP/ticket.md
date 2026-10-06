@@ -2,7 +2,8 @@
 id = "01M47QV17V1KZ6K50C7H77MRSP"
 title = "Snapshot hygiene step: unreferenced and pending snapshots fail cargo dev ci"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
