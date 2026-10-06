@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-06T05:08:04Z"
+digest = "465bc61c91acdcf58f23d6e62248a2c0ba8b40ba9b1a0c787346d805db87de43"
+exit_code = 125
+inline = """
+goway: warning: CROSS-OS: `cargo` is portable, but this run stays on linux hosts
+goway: note:   other-OS hosts that could take it: nova-windows
+goway: note:   allow every OS for this run:      goway run --any-os -- ...
+goway: note:   allow it for this project:        cross_os = true in goway.toml
+goway: note:   silence this hint:                cross_os = false in goway.toml
+2026-10-06T05:08:17.988597Z  WARN recorded memory peak above a helper's total memory; failing fast id="34f5a9e78cc30b56"
+goway: error: no usable host:
+  |   quasar: 7.6 GiB of memory in total, this repository's recorded peak is 7.0 GiB (7.7 GiB with margin)
+  |   xanders-laptop: lacks mem>=6G: has 3.8 GiB RAM
+  |   Dwarf: lacks cores>=8: has 2 cores; lacks mem>=6G: has 3.3 GiB RAM
+  |   nova-windows: windows host, outside the default linux pool (pin it with --host, or ask with --needs os=windows)
+  |   failing at once rather than waiting for memory no host has; the peak may be stale: `goway gc --repo 34f5a9e78cc30b56` forgets it, `--ignore-footprint` skips the check
+  |   next: `goway status` shows each host's state; `goway add NAME` adds another helper; `goway run --host local -- CMD` runs on this machine, and `[local] fallback = true` in the config does that automatically when no helper is reachable
+"""
+passed = false
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --needs mem>=6G --wait 20m -- cargo nextest run --profile ci --workspace"
+size = 1293
+status = "measured"
+at = "2026-10-06T05:08:04Z"
+actor = "lognd"
+rev = 1

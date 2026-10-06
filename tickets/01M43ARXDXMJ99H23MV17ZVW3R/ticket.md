@@ -2,13 +2,13 @@
 id = "01M43ARXDXMJ99H23MV17ZVW3R"
 title = "gob-languages: TS, TSX and CSS grammars with comment scanners"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-04T11:28:48Z"
-updated = "2026-10-06T04:31:15Z"
+updated = "2026-10-06T05:36:47Z"
 idempotency_key = "crunk-plan-lang"
 labels = ["area:crunk"]
 scope = ["crates/gob-languages/**", "crates/gob-directives/src/comments.rs", "crates/gob-directives/src/scan.rs", "Cargo.toml", "Cargo.lock"]
