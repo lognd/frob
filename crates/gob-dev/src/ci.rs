@@ -4,6 +4,8 @@
 //! `ci.yml` invokes `cargo dev ci --step <name>` for each check and holds no argv of its own;
 //! `tests/ci_parity.rs` fails when the workflow and this list disagree, so a check added to one
 //! cannot be missing from the other. Process spawning goes through `gob-exec` (PROC001).
+//! The `clippy-windows` step is part of the default list and offloadable, so the one documented
+//! whole-workspace command (`cargo dev ci`, through goway) catches Windows-only compile breaks.
 //! Design: `docs/design/build-test-ci.md`.
 // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
 // frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
@@ -13,6 +15,7 @@
 // frob:ticket 01M44M58PKEM2HMKZF2CANFHAW
 // frob:ticket 01M47QV17V1KZ6K50C7H77MRSP
 // frob:ticket 01M47QVDTG48F4426J019X37CZ
+// frob:ticket 01M47Y1QAY9FZYADME4RRKWM9R
 
 use std::path::Path;
 use std::time::Duration;
@@ -1350,6 +1353,18 @@ mod tests {
             MINGW_GCC.install_command(),
             "sudo apt-get install -y gcc-mingw-w64-x86-64"
         );
+    }
+
+    /// A Windows-only compile break must be caught by the default `cargo dev ci` run: the step
+    /// is in the list, offloadable to goway, Linux-only, and comes before the suite run.
+    #[test]
+    fn clippy_windows_is_in_the_default_run_before_nextest() {
+        let all = real();
+        let pos = |n: &str| all.iter().position(|s| s.name == n).unwrap();
+        let s = &all[pos("clippy-windows")];
+        assert!(s.offload && s.linux_only);
+        assert!(s.args.iter().any(|a| a == "--all-targets"));
+        assert!(pos("clippy-windows") < pos("nextest"));
     }
 
     /// Dotted-number comparison of `have` against an inclusive `[min, max]` range.
