@@ -7,7 +7,10 @@
       "properties": {
         "anchor": {
           "description": "Clause anchor or directive site that gave the row.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "entity": {
           "description": "Anchor of the entity.",
@@ -16,7 +19,10 @@
         },
         "identity": {
           "description": "Symref of the bound identity, or null for the hidden remainder of rank 4.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "rank": {
           "description": "Source rank (binding.md section 2).",
@@ -28,7 +34,10 @@
         "reason": {
           "description": "Residual reason code for rank 4 rows, null otherwise.",
           "pattern": "^[a-z][a-z0-9-]*$",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "role": {
           "$ref": "#/$defs/Role",
@@ -181,11 +190,17 @@
       "properties": {
         "anchor": {
           "description": "Clause anchor the edge was declared at.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "contract": {
           "description": "Anchor of the flow's contract, for `flow` edges.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "from": {
           "description": "Anchor of the source entity or file.",
@@ -251,7 +266,10 @@
         "body_digest": {
           "description": "Body facet digest, or null when unavailable.",
           "pattern": "^blake3:[0-9a-f]{64}$",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "digest_scheme": {
           "description": "Digest scheme version of the two digests.",
@@ -269,7 +287,10 @@
         "doc_digest": {
           "description": "Doc facet digest, or null when unavailable.",
           "pattern": "^blake3:[0-9a-f]{64}$",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "file": {
           "description": "Repository-relative path of the declaring .grmb file.",
@@ -447,7 +468,10 @@
         },
         "file": {
           "description": "Repository-relative file holding the exception, or null for a baseline pool key.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "id": {
           "description": "Stable id: lowercase hex of the hash of kind, rule and site.",
@@ -462,7 +486,10 @@
           "description": "1-based line of the exception, or null.",
           "format": "uint32",
           "minimum": 0,
-          "type": "integer"
+          "type": [
+            "integer",
+            "null"
+          ]
         },
         "on": {
           "description": "Anchor, symref or glob the exception applies to.",
@@ -473,29 +500,15 @@
           "type": "string"
         },
         "status": {
-          "description": "Outcome of the exits the product itself evaluated, or null when none was evaluated.",
-          "oneOf": [
+          "anyOf": [
             {
-              "const": "active",
-              "description": "In force.",
-              "type": "string"
+              "$ref": "#/$defs/ExceptionStatus"
             },
             {
-              "const": "stale",
-              "description": "Past its digest.",
-              "type": "string"
-            },
-            {
-              "const": "reattest",
-              "description": "Needs reattestation.",
-              "type": "string"
-            },
-            {
-              "const": "expired",
-              "description": "Date passed.",
-              "type": "string"
+              "type": "null"
             }
-          ]
+          ],
+          "description": "Outcome of the exits the product itself evaluated, or null when none was evaluated."
         },
         "suppresses": {
           "description": "Number of findings this exception suppressed in this run.",
@@ -505,12 +518,18 @@
         },
         "ticket": {
           "description": "The `ticket=` value, verbatim and opaque: the sibling never resolves it.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "until": {
           "description": "ISO date `YYYY-MM-DD` of the optional date exit, or null.",
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -528,6 +547,31 @@
         "suppresses"
       ],
       "type": "object"
+    },
+    "ExceptionStatus": {
+      "description": "Outcome of the exits the product itself evaluated (date, digest, staleness).",
+      "oneOf": [
+        {
+          "const": "active",
+          "description": "In force.",
+          "type": "string"
+        },
+        {
+          "const": "stale",
+          "description": "Past its digest.",
+          "type": "string"
+        },
+        {
+          "const": "reattest",
+          "description": "Needs reattestation.",
+          "type": "string"
+        },
+        {
+          "const": "expired",
+          "description": "Date passed.",
+          "type": "string"
+        }
+      ]
     },
     "ExitState": {
       "description": "Exit state: `unresolved_exit` whenever `ticket` is set (only frob evaluates ticket-bound exits).",
@@ -838,7 +882,10 @@
       "properties": {
         "base": {
           "description": "The `--base` ref the run diffed against, or null when no diff-scoped rule ran.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "root": {
           "const": ".",
@@ -850,7 +897,10 @@
           "items": {
             "type": "string"
           },
-          "type": "array"
+          "type": [
+            "array",
+            "null"
+          ]
         },
         "verb": {
           "description": "The verb that produced the document.",
