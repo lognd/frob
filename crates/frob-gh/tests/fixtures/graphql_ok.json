@@ -1,0 +1,6 @@
+[
+  {
+    "request": { "method": "POST", "url": "https://api.github.com/graphql" },
+    "response": { "status": 200, "headers": { "X-RateLimit-Remaining": "4990", "X-RateLimit-Resource": "graphql" }, "body": "{\"data\":{\"viewer\":{\"login\":\"bot\"}}}" }
+  }
+]
