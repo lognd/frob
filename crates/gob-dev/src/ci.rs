@@ -225,6 +225,30 @@ fn pytest_install() -> Step {
     }
 }
 
+/// Workspace packages whose binaries `frob check` runs as siblings (D87): frob itself plus the
+/// goblins it discovers next to its own executable.
+pub const SIBLING_PACKAGES: [&str; 3] = ["frob-cli", "grimble", "crunk"];
+
+/// The `check` step: build this workspace's own sibling binaries, then run `frob check` from the
+/// same target dir so sibling discovery (next to the frob executable, D87) finds them and never
+/// falls back to whatever is on `PATH`. One shell command so a goway host builds and runs on the
+/// same machine; the step is Linux-only, so `sh` is always there.
+/// frob:ticket 01M4527J4M910ZZBJZXMDZJQZQ
+fn sibling_check() -> Step {
+    let build: Vec<String> = SIBLING_PACKAGES.iter().map(|p| format!("-p {p}")).collect();
+    let script = format!(
+        "cargo build {} && exec cargo run -p frob-cli -- check",
+        build.join(" ")
+    );
+    Step {
+        program: Program::Tool {
+            name: "sh".to_owned(),
+        },
+        args: vec!["-c".to_owned(), script],
+        ..cargo("check", &[])
+    }
+}
+
 /// Every CI check in the order `ci.yml` runs it; zizmor and actionlint pins come from `frob.toml`.
 ///
 /// # Errors
@@ -318,10 +342,7 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
             "doctor",
             &["run", "-p", "frob-cli", "--", "doctor"],
         ))),
-        offloaded(linux(cargo(
-            "check",
-            &["run", "-p", "frob-cli", "--", "check"],
-        ))),
+        offloaded(linux(sibling_check())),
         linux(cargo(
             "test-dry-run",
             &[
@@ -1301,6 +1322,20 @@ mod tests {
         );
         let text = std::fs::read_to_string(&log).unwrap();
         assert!(text.lines().any(|l| l == "rustup"), "{text}");
+    }
+
+    // frob:ticket 01M4527J4M910ZZBJZXMDZJQZQ
+    #[test]
+    fn check_step_builds_the_workspace_siblings_before_running_frob() {
+        let step = step_named("check");
+        let script = step.args.last().expect("script");
+        for p in SIBLING_PACKAGES {
+            assert!(script.contains(&format!("-p {p}")), "{script}");
+        }
+        assert!(
+            script.find("cargo build") < script.find("cargo run"),
+            "{script}"
+        );
     }
 
     #[test]
