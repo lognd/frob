@@ -2406,6 +2406,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "gob-frameworks"
+version = "0.532.0"
+dependencies = [
+ "gob-ir",
+ "gob-symbols",
+ "gob-walk",
+ "insta",
+ "inventory",
+ "tempfile",
+ "tracing",
+]
+
+[[package]]
 name = "gob-fs"
 version = "0.532.0"
 dependencies = [

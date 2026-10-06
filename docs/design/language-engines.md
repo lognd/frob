@@ -103,6 +103,15 @@ below every product:
   boundaries as an attribute on the unit).
 - The capability matrix gains framework rows, generated into the same
   languages page.
+- Implemented in `crates/gob-frameworks` (~AVXTRHX): `detect` walks every
+  `package.json`, `analyze` folds the TypeScript sources over the module
+  graph and runs each detected framework. Route patterns use `:name`,
+  `:name+` and `:name*`; a path that `const_value` cannot resolve gives
+  a route with no pattern and status Unknown, a `OneOf` path or a
+  conditional or mapped `<Route>` gives May. react-router reads route
+  objects handed to `createBrowserRouter`-style calls (also through a
+  named constant or an import, with `basename`) and `<Route>` elements;
+  Next.js reads `app` and `pages` (also under `src/`).
 
 ## 5. Consequences
 
