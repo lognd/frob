@@ -1,0 +1,10 @@
+[
+  {
+    "request": { "method": "GET", "url": "https://api.github.com/repos/o/r" },
+    "response": { "status": 200, "headers": { "ETag": "\"v1\"" }, "body": "{\"name\":\"r\"}" }
+  },
+  {
+    "request": { "method": "GET", "url": "https://api.github.com/repos/o/r" },
+    "response": { "status": 304, "headers": { "X-RateLimit-Remaining": "4998" }, "body": "" }
+  }
+]

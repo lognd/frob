@@ -1,0 +1,27 @@
+[package]
+name = "frob-gh"
+version.workspace = true
+description = "GitHub over HTTPS for frob: REST and GraphQL, ETags, rate-limit headers, Retry-After backoff, recorded fixtures."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[dependencies]
+# HTTP stack (docs/design/git-io.md section 4: a thin reqwest client). tokio lives only in the
+# serve crates and here (architecture.md async IO row). Pinned exactly; rustls with the ring
+# provider installed by hand so no aws-lc C build lands on Windows or musl.
+reqwest = { version = "=0.13.4", default-features = false, features = ["rustls-no-provider", "http2"] }
+rustls = { version = "=0.23.43", default-features = false, features = ["ring", "std"] }
+tokio = { version = "=1.53.1", default-features = false, features = ["rt", "time"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tracing = "0.1"
+
+[dev-dependencies]
+tokio = { version = "=1.53.1", default-features = false, features = ["rt", "macros", "time"] }
+
+[lints]
+workspace = true
