@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-04T11:28:48Z"
-updated = "2026-10-06T04:31:33Z"
+updated = "2026-10-06T04:31:59Z"
 idempotency_key = "crunk-plan-tsconst"
 labels = ["area:crunk"]
 scope = ["crates/gob-symbols/src/typescript/consteval.rs", "crates/gob-symbols/tests/typescript_consteval.rs"]
@@ -16,6 +16,10 @@ scope = ["crates/gob-symbols/src/typescript/consteval.rs", "crates/gob-symbols/t
 [[links]]
 kind = "blocked-by"
 target = "01M43ARXMH7RJ63G8096KKJF80"
+
+[[links]]
+kind = "blocked-by"
+target = "01M47QKDM2J0EKW2TYH4N35GSV"
 
 [[acceptance]]
 text = "Given `const gap = 8; style={{ margin: gap }}` in another file via import, when evaluated, then the value 8 is resolved with its origin span"
