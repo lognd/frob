@@ -22,9 +22,10 @@ use crate::registry::adapter_for;
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
 // frob:ticket 01M47QKSBYX7YFQHV3VVGKB025
+// frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
 /// Bump when extraction output changes for the same input; part of the
 /// cache key.
-pub const EXTRACTOR_VERSION: u32 = 18;
+pub const EXTRACTOR_VERSION: u32 = 19;
 
 /// Files read per filter pipeline (building one loads the index and attributes).
 const READ_CHUNK: usize = 256;
