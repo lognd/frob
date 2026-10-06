@@ -1,0 +1,21 @@
+== web/tsx/app.tsx ==
+language typescript fidelity F2 status Complete digest 54d0c795927339c58de0313baebdfb10fb7fa1910c7e1ef9362db83c8525fcca
+-- symbols --
+web/tsx/app.tsx::App Function Public
+-- edges --
+Imports web/tsx/app.tsx -> web/tsx/button.tsx Must None Some("./button")
+Imports web/tsx/app.tsx -> web/tsx/button.tsx::Button Must None Some("Button")
+Calls web/tsx/app.tsx::App -> web/tsx/button.tsx::Button Must None None
+-- markup --
+element Button Component [label="Save"] children=0
+element div Intrinsic [id="app"] children=1
+-- style --
+== web/tsx/button.tsx ==
+language typescript fidelity F2 status Complete digest db0c8603e6cb06721bdcee33f421f7cc59cbfddc309fd09bbd85e7a5758c6a95
+-- symbols --
+web/tsx/button.tsx::Button Function Public
+-- edges --
+-- markup --
+element button Intrinsic [className="btn" style=Known(Object({"color": Str("red")}))] children=1
+-- style --
+declaration color: red

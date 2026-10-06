@@ -1,0 +1,23 @@
+== web/ts/mod.ts ==
+language typescript fidelity F2 status Complete digest 9392b3435a2398454273b6afe5a4aff8ff3e46eaec5c63bcb28265accc335dd1
+-- symbols --
+web/ts/mod.ts::User Interface Public
+web/ts/mod.ts::greet Function Public
+web/ts/mod.ts::Store Class Public
+web/ts/mod.ts::Store.get Method Public
+-- edges --
+Imports web/ts/mod.ts -> ? Unknown Some(Unbound) Some("node:fs")
+Imports web/ts/mod.ts -> web/ts/util.ts Must None Some("./util")
+Imports web/ts/mod.ts -> web/ts/util.ts::helper Must None Some("helper")
+Calls web/ts/mod.ts::greet -> web/ts/util.ts::helper Must None None
+Calls web/ts/mod.ts::Store.get -> ? Unknown Some(Unbound) Some("readFileSync")
+-- markup --
+-- style --
+== web/ts/util.ts ==
+language typescript fidelity F2 status Complete digest b87a5e1bfdaedf2d2adaf75a5821d24881d984f2296399f71a8c166f744e669a
+-- symbols --
+web/ts/util.ts::GREETING Const Public
+web/ts/util.ts::helper Function Public
+-- edges --
+-- markup --
+-- style --

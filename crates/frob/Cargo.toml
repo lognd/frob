@@ -54,6 +54,7 @@ assert_cmd = "2"
 insta = { version = "1", features = ["json", "redactions"] }
 tempfile = "3"
 grimble = { path = "../grimble" }
+crunk = { path = "../crunk" }
 
 [lints]
 workspace = true

@@ -1,0 +1,6 @@
+{
+  "name": "web-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": { "react": "^18.0.0" }
+}

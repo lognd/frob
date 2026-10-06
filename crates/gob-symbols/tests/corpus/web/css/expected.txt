@@ -1,0 +1,24 @@
+== web/css/site.css ==
+language css fidelity F2 status Complete digest ed14238a64f2474af5edb1d12e100777622bb06227640edd1f04f6b92d1a2cd2
+-- symbols --
+web/css/site.css:::root Module Private
+web/css/site.css:::root.--ink Module Private
+web/css/site.css:::root.--gap Module Private
+web/css/site.css::[.card] Module Private
+web/css/site.css::media Module Private
+web/css/site.css::media.[.card] Module Private
+-- edges --
+-- markup --
+-- style --
+rule :root
+rule .card
+rule .card
+at-rule @media (min-width: 600px)
+declaration color: var(--ink)
+declaration margin: var(--gap) auto
+declaration padding: var(--missing) 4px
+custom-property --ink: #222
+custom-property --gap: 8px
+var --ink May
+var --gap May
+var --missing May

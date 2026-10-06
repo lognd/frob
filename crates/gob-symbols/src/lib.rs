@@ -58,6 +58,7 @@ mod graph;
 mod markdown;
 mod model;
 // frob:ticket 01M47QKTN549397AFFSC3DEAQX
+mod languages_page;
 mod nodejs;
 mod opaque;
 mod paths;
@@ -91,6 +92,7 @@ pub use graph::{
     SymbolGraph,
 };
 pub use html::{HtmlAdapter, is_html_path};
+pub use languages_page::languages_page;
 pub use markdown::{MarkdownAdapter, slugify};
 pub use model::{
     AttributeFact, CallRef, CallSite, DeriveDecl, Digests, FacetDigest, FieldDecl, FileSymbols,
