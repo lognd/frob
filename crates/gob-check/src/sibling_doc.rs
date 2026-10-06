@@ -60,6 +60,7 @@ pub struct ComputeKnobs {
 /// Echo of the arguments the product honoured, so frob can verify its request was applied.
 #[derive(Debug, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+#[schemars(extend("required" = ["verb", "root", "ticket_scope", "base"]))]
 pub struct Invocation {
     /// The verb that produced the document.
     #[schemars(extend("enum" = ["check"]))]
@@ -68,10 +69,8 @@ pub struct Invocation {
     #[schemars(extend("const" = "."))]
     pub root: String,
     /// The `--ticket-scope` paths the run honoured, or null when the run was unscoped.
-    #[schemars(required)]
     pub ticket_scope: Option<Vec<String>>,
     /// The `--base` ref the run diffed against, or null when no diff-scoped rule ran.
-    #[schemars(required)]
     pub base: Option<String>,
 }
 
@@ -300,7 +299,7 @@ pub enum ExceptionStatus {
 /// One parsed exception, whether or not it currently suppresses a finding.
 #[derive(Debug, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-#[schemars(extend("allOf" = [
+#[schemars(extend("required" = ["id", "kind", "rule", "on", "file", "line", "because", "until", "ticket", "exit_state", "status", "suppresses"], "allOf" = [
     {
         "if": {"properties": {"ticket": {"type": "string"}}, "required": ["ticket"]},
         "then": {"properties": {"exit_state": {"const": "unresolved_exit"}}},
@@ -322,24 +321,19 @@ pub struct ExceptionRecord {
     /// Anchor, symref or glob the exception applies to.
     pub on: String,
     /// Repository-relative file holding the exception, or null for a baseline pool key.
-    #[schemars(required)]
     pub file: Option<String>,
     /// 1-based line of the exception, or null.
-    #[schemars(required)]
     pub line: Option<u32>,
     /// The reason text, verbatim.
     pub because: String,
     /// ISO date `YYYY-MM-DD` of the optional date exit, or null.
     #[schemars(regex(pattern = "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))]
-    #[schemars(required)]
     pub until: Option<String>,
     /// The `ticket=` value, verbatim and opaque: the sibling never resolves it.
-    #[schemars(required)]
     pub ticket: Option<String>,
     /// Exit state of the exception.
     pub exit_state: ExitState,
     /// Outcome of the exits the product itself evaluated, or null when none was evaluated.
-    #[schemars(required)]
     pub status: Option<ExceptionStatus>,
     /// Number of findings this exception suppressed in this run.
     pub suppresses: u32,
@@ -385,6 +379,7 @@ pub struct Directive {
 /// A model entity with its span, facet digests and attached frob directives.
 #[derive(Debug, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+#[schemars(extend("required" = ["anchor", "kind", "name", "module", "file", "line", "range", "body_digest", "doc_digest", "digest_scheme", "renamed_from", "directives"]))]
 pub struct Entity {
     /// `kind/full-name`, the `design:` link target.
     #[schemars(regex(pattern = "^[a-z]+/[A-Za-z0-9_.:/\\[\\]-]+$"))]
@@ -403,11 +398,9 @@ pub struct Entity {
     pub range: Range,
     /// Body facet digest, or null when unavailable.
     #[schemars(regex(pattern = "^blake3:[0-9a-f]{64}$"))]
-    #[schemars(required)]
     pub body_digest: Option<String>,
     /// Doc facet digest, or null when unavailable.
     #[schemars(regex(pattern = "^blake3:[0-9a-f]{64}$"))]
-    #[schemars(required)]
     pub doc_digest: Option<String>,
     /// Digest scheme version of the two digests.
     pub digest_scheme: u32,
@@ -452,6 +445,7 @@ pub enum BindingStatus {
 /// A row of the relation B, projected for display.
 #[derive(Debug, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+#[schemars(extend("required" = ["entity", "role", "identity", "rank", "status", "anchor", "reason"]))]
 pub struct Binding {
     /// Anchor of the entity.
     #[schemars(regex(pattern = "^[a-z]+/[A-Za-z0-9_.:/\\[\\]-]+$"))]
@@ -459,7 +453,6 @@ pub struct Binding {
     /// Role (binding.md 1.2).
     pub role: Role,
     /// Symref of the bound identity, or null for the hidden remainder of rank 4.
-    #[schemars(required)]
     pub identity: Option<String>,
     /// Source rank (binding.md section 2).
     #[schemars(range(min = 1, max = 4))]
@@ -467,11 +460,9 @@ pub struct Binding {
     /// Status of the row.
     pub status: BindingStatus,
     /// Clause anchor or directive site that gave the row.
-    #[schemars(required)]
     pub anchor: Option<String>,
     /// Residual reason code for rank 4 rows, null otherwise.
     #[schemars(regex(pattern = "^[a-z][a-z0-9-]*$"))]
-    #[schemars(required)]
     pub reason: Option<String>,
 }
 
@@ -494,6 +485,7 @@ pub enum EdgeKind {
 /// A model edge for the graph export.
 #[derive(Debug, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+#[schemars(extend("required" = ["kind", "from", "to", "anchor", "contract"]))]
 pub struct Edge {
     /// Edge kind.
     pub kind: EdgeKind,
@@ -502,10 +494,8 @@ pub struct Edge {
     /// Anchor of the target entity or file.
     pub to: String,
     /// Clause anchor the edge was declared at.
-    #[schemars(required)]
     pub anchor: Option<String>,
     /// Anchor of the flow's contract, for `flow` edges.
-    #[schemars(required)]
     pub contract: Option<String>,
 }
 
