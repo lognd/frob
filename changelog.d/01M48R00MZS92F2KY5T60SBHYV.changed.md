@@ -1,0 +1,1 @@
+gob-check: rule applicability is one resolver over each rule's declared applies and the capability matrix; a not-applicable reason is reported per language in the check JSON fidelity report (not_applicable_reasons) and in --text, no longer only logged.

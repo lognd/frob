@@ -7,6 +7,7 @@ use gob_cache::Cache;
 use gob_rules::{Finding, Fingerprint, Registry, Rule, RuleMeta, Severity};
 use gob_text::FileInterner;
 
+use crate::applicability::{FileFacts, resolve, temporary_applies};
 use crate::config::{CheckTable, PerfTable};
 use crate::core::walk_core;
 use crate::error::CheckError;
@@ -18,7 +19,7 @@ use crate::repo::run_repo_rules;
 use crate::report::{CheckReport, Counts, FixOutcome, Tally, Timing};
 use crate::required::{mark_annotations, zero_subjects};
 use crate::rules::{Perf001, Read001};
-use crate::status::{FidelityReport, Need, is_binary, need_of, opaque_finding, unreadable_finding};
+use crate::status::{FidelityReport, SubjectStatus, is_binary, opaque_finding, unreadable_finding};
 use crate::telemetry;
 use crate::tools::run_tools;
 
@@ -208,7 +209,12 @@ fn opaque_repo_findings<P: Product>(
         .flat_map(|g| g.metas.iter())
         .filter(|m| wanted(m))
     {
-        if need_of(meta.id).is_none_or(|n| n.need != Need::EveryTextArtifact) {
+        // Only a rule that reads comments is unresolved on opaque text (capability rules are not applicable).
+        let facts = FileFacts::opaque_text(&gob_symbols::ParseStatus::NotParsed);
+        if !matches!(
+            resolve(&temporary_applies(meta), &facts),
+            SubjectStatus::Unresolved(_)
+        ) {
             continue;
         }
         tracing::info!(

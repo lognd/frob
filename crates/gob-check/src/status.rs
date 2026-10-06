@@ -3,12 +3,13 @@
 //! The answer lattice (`universal-model.md` 4.1-4.2, 4.6) has `NotApplicable`
 //! as a query answer only, never a finding; a rule that cannot examine a
 //! subject it applies to yields `Unresolved`, never silence. The per-rule
-//! needs live in [`need_of`] because `RuleMeta` is declared in `gob-rules`.
+//! applicability is decided by [`crate::applicability::resolve`].
 
 use std::collections::BTreeMap;
 
+use crate::applicability::{FileFacts, resolve, temporary_applies};
 use gob_rules::{Finding, RequiredReason, RuleId, RuleMeta, Severity};
-use gob_symbols::{Fidelity, FileInfo, ParseStatus, SkipKind, SkippedFile};
+use gob_symbols::{FileInfo, ParseStatus, SkipKind, SkippedFile};
 use gob_text::{FileId, Span, TextRange};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -24,56 +25,6 @@ pub enum SubjectStatus {
     Unresolved(String),
 }
 
-/// What kind of subject a rule consumes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Need {
-    /// Needs a capability only an adapter provides (public items, imports, links).
-    Capability,
-    /// Applies to every text artifact (comment markers, directives); an opaque text file hides subjects.
-    EveryTextArtifact,
-}
-
-/// The declared needs of one rule.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct RuleNeed {
-    /// The subject kind.
-    pub need: Need,
-    /// Lowest fidelity at which the rule can examine a file (default F1).
-    pub min_fidelity: Fidelity,
-    /// True when the subjects are symbols, so a parse hole can hide some.
-    pub symbol_subjects: bool,
-}
-
-impl RuleNeed {
-    const fn capability(min_fidelity: Fidelity, symbol_subjects: bool) -> Self {
-        Self {
-            need: Need::Capability,
-            min_fidelity,
-            symbol_subjects,
-        }
-    }
-
-    const fn text(min_fidelity: Fidelity) -> Self {
-        Self {
-            need: Need::EveryTextArtifact,
-            min_fidelity,
-            symbol_subjects: false,
-        }
-    }
-}
-
-/// The needs of rule `id`; `None` for a rule outside the table, which is always examined.
-pub fn need_of(id: &str) -> Option<RuleNeed> {
-    Some(match id {
-        "TODO001" | "REF001" | "TEST001" | "INV001" | "DRIFT001" | "DRIFT002" | "DRIFT003"
-        | "DRIFT004" => RuleNeed::text(Fidelity::F1),
-        "DOC001" | "INV002" => RuleNeed::capability(Fidelity::F1, true),
-        "DOC002" => RuleNeed::capability(Fidelity::F1, false),
-        "COV001" | "AFFECT001" => RuleNeed::capability(Fidelity::F2, true),
-        _ => return None,
-    })
-}
-
 /// [`subject_status_for`] for an unscanned text file.
 pub fn subject_status(info: &FileInfo, meta: &RuleMeta) -> SubjectStatus {
     subject_status_for(info, meta, false, false)
@@ -82,44 +33,18 @@ pub fn subject_status(info: &FileInfo, meta: &RuleMeta) -> SubjectStatus {
 /// What `meta` may do with the file described by `info`.
 ///
 /// `binary` marks a non-text opaque file; `scanned` marks an opaque file whose
-/// comments and directives the scanner reads anyway (TOML).
-///
-/// Opaque F0: `NotApplicable` for capability rules and for binary files,
-/// `Unresolved` for every-text-artifact rules. A failed parse is Unresolved
-/// for every rule. A fidelity below the rule's minimum is Unresolved.
+/// comments and directives the scanner reads anyway (TOML). The answer is
+/// [`resolve`] applied to the rule's declared applicability.
 pub fn subject_status_for(
     info: &FileInfo,
     meta: &RuleMeta,
     binary: bool,
     scanned: bool,
 ) -> SubjectStatus {
-    let Some(need) = need_of(meta.id) else {
-        return SubjectStatus::Examine;
-    };
-    let status = if info.is_opaque() {
-        match need.need {
-            Need::Capability => {
-                SubjectStatus::NotApplicable("no adapter: the file has no parsed items".to_owned())
-            }
-            Need::EveryTextArtifact if scanned && !binary => SubjectStatus::Examine,
-            Need::EveryTextArtifact if binary => {
-                SubjectStatus::NotApplicable("binary artifact holds no text".to_owned())
-            }
-            Need::EveryTextArtifact => SubjectStatus::Unresolved(
-                "no adapter for this file (opaque F0): its comments and directives were not read"
-                    .to_owned(),
-            ),
-        }
-    } else if let ParseStatus::Failed { reason } = &info.parse_status {
-        SubjectStatus::Unresolved(format!("the file failed to parse ({reason})"))
-    } else if info.fidelity < need.min_fidelity {
-        SubjectStatus::Unresolved(format!(
-            "file fidelity {} is below the {} the rule needs",
-            info.fidelity, need.min_fidelity
-        ))
-    } else {
-        SubjectStatus::Examine
-    };
+    let status = resolve(
+        &temporary_applies(meta),
+        &FileFacts::of(info, binary, scanned),
+    );
     tracing::trace!(rule = meta.id, ?status, "subject status");
     status
 }
@@ -128,7 +53,7 @@ pub fn subject_status_for(
 pub fn hole_caveat(info: &FileInfo, meta: &RuleMeta) -> Option<String> {
     match (
         &info.parse_status,
-        need_of(meta.id).is_some_and(|n| n.symbol_subjects),
+        temporary_applies(meta).symbol_subjects(),
     ) {
         (ParseStatus::Partial { holes }, true) => Some(format!(
             "the file parsed partially ({holes} hole(s)); subjects inside or across a hole cannot be decided"
@@ -222,6 +147,8 @@ pub struct LanguageFidelity {
     pub partial_parse: usize,
     /// Files per rule family where every subject was `NotApplicable`.
     pub not_applicable: BTreeMap<String, usize>,
+    /// Rule id to the reason it was not applicable to this language's files (the first seen).
+    pub not_applicable_reasons: BTreeMap<String, String>,
     /// Unresolved findings per rule id raised for this language's files.
     pub unresolved: BTreeMap<String, usize>,
 }
@@ -306,6 +233,14 @@ impl FidelityReport {
         }
     }
 
+    /// Record why `rule` is not applicable to the files of language `label` (kept once per rule).
+    pub fn add_not_applicable_reason(&mut self, label: &str, rule: &str, reason: &str) {
+        let row = self.languages.entry(label.to_owned()).or_default();
+        row.not_applicable_reasons
+            .entry(rule.to_owned())
+            .or_insert_with(|| reason.to_owned());
+    }
+
     /// Count one unreadable file under its reason class.
     pub fn add_skipped(&mut self, kind: SkipKind) {
         self.skipped.files += 1;
@@ -333,13 +268,19 @@ impl FidelityReport {
                     .map(|(f, n)| format!("{f}={n}"))
                     .collect();
                 let un: usize = r.unresolved.values().sum();
+                let why: Vec<String> = r
+                    .not_applicable_reasons
+                    .iter()
+                    .map(|(rule, reason)| format!("{rule}: {reason}"))
+                    .collect();
                 format!(
-                    "fidelity {lang} ({}): {} files, {} examined, {} partial, not-applicable [{}], {un} unresolved",
+                    "fidelity {lang} ({}): {} files, {} examined, {} partial, not-applicable [{}] ({}), {un} unresolved",
                     r.fidelity,
                     r.files,
                     r.files_examined,
                     r.partial_parse,
-                    na.join(" ")
+                    na.join(" "),
+                    why.join("; ")
                 )
             })
             .collect()
@@ -350,6 +291,7 @@ impl FidelityReport {
 mod tests {
     use super::*;
     use gob_rules::{FixKind, Polarity, Scope, Tier};
+    use gob_symbols::Fidelity;
 
     fn meta(id: &str) -> &'static RuleMeta {
         let id: &'static str = Box::leak(id.to_owned().into_boxed_str());
@@ -435,6 +377,19 @@ mod tests {
             subject_status(&i, meta("COV001")),
             SubjectStatus::Unresolved(_)
         ));
+    }
+
+    // frob:tests crates/gob-check/src/status.rs::FidelityReport.add_not_applicable_reason
+    #[test]
+    fn not_applicable_reasons_are_kept_once_and_printed() {
+        let mut r = FidelityReport::default();
+        r.add_not_applicable_reason("opaque", "DOC001", "no adapter");
+        r.add_not_applicable_reason("opaque", "DOC001", "later reason");
+        assert_eq!(
+            r.languages["opaque"].not_applicable_reasons["DOC001"],
+            "no adapter"
+        );
+        assert!(r.lines()[0].contains("DOC001: no adapter"));
     }
 
     // frob:tests crates/gob-check/src/status.rs::is_binary
