@@ -209,7 +209,7 @@ fn norm_pattern(p: &str) -> String {
 }
 
 /// Matches one path segment against a pattern with `*` and `?`.
-fn seg_match(pat: &[char], text: &[char]) -> bool {
+pub(crate) fn seg_match(pat: &[char], text: &[char]) -> bool {
     match pat.split_first() {
         None => text.is_empty(),
         Some(('*', rest)) => (0..=text.len()).any(|i| seg_match(rest, &text[i..])),
@@ -219,7 +219,7 @@ fn seg_match(pat: &[char], text: &[char]) -> bool {
 }
 
 /// Matches `path` against an `MSBuild` glob (`*`, `?`, `**` spanning directories).
-fn glob_match(pattern: &str, path: &str) -> bool {
+pub(crate) fn glob_match(pattern: &str, path: &str) -> bool {
     fn go(pat: &[&str], path: &[&str]) -> bool {
         match pat.split_first() {
             None => path.is_empty(),

@@ -10,11 +10,13 @@
 // frob:ticket 01M3ZR5KCPY3E3NFCVFS404RDJ
 // frob:ticket 01M3ZVQA77ZEK9DXEN5Z0XMZEG
 // frob:ticket 01M44YQW33GJMXQ8PQBECEBCQ1
+// frob:ticket 01M47QKTN549397AFFSC3DEAQX
 
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 
 use crate::dotnet::{Assignment, DotnetProjects, MalformedProject};
+use crate::nodejs::{JsResolution, NodeProjects};
 
 /// Named direct dependencies: (extern crate name with dashes mapped to underscores, crate directory).
 type NamedDeps = Vec<(String, String)>;
@@ -31,6 +33,7 @@ pub struct CrateDeps {
     names: HashMap<String, Option<String>>,
     closure: HashMap<String, BTreeSet<String>>,
     dotnet: DotnetProjects,
+    node: NodeProjects,
 }
 
 /// Joins `base` and a relative `rel` (`..` and `.` folded) into a repo-relative `/` path.
@@ -114,6 +117,7 @@ impl CrateDeps {
             names: HashMap::new(),
             closure: HashMap::new(),
             dotnet: DotnetProjects::new(root),
+            node: NodeProjects::new(root),
         };
         if let Ok(text) = std::fs::read_to_string(root.join("Cargo.toml")) {
             let mut in_ws = false;
@@ -134,6 +138,9 @@ impl CrateDeps {
 
     /// The directory of the crate owning repo-relative file `path`, when a manifest sits above it.
     pub fn crate_of(&mut self, path: &str) -> Option<String> {
+        if is_js(path) {
+            return self.node.owner(path);
+        }
         if is_cs(path) {
             return match self.dotnet.assign(path) {
                 Assignment::Project(p) => Some(p),
@@ -162,6 +169,11 @@ impl CrateDeps {
     fn direct_deps(&mut self, krate: &str) -> NamedDeps {
         if let Some(d) = self.direct.get(krate) {
             return d.clone();
+        }
+        if is_package_json(krate) {
+            let deps = self.node.workspace_deps(krate);
+            self.direct.insert(krate.to_owned(), deps.clone());
+            return deps;
         }
         if is_csproj(krate) {
             let deps: NamedDeps = self
@@ -194,6 +206,11 @@ impl CrateDeps {
     pub fn package_name(&mut self, krate: &str) -> Option<String> {
         if let Some(n) = self.names.get(krate) {
             return n.clone();
+        }
+        if is_package_json(krate) {
+            let name = Some(self.node.package_name(krate));
+            self.names.insert(krate.to_owned(), name.clone());
+            return name;
         }
         if is_csproj(krate) {
             let name = Some(self.dotnet.assembly_name(krate));
@@ -238,6 +255,8 @@ impl CrateDeps {
     pub fn can_reach(&mut self, from: &str, to: &str) -> bool {
         if (is_csproj(from) && self.dotnet.is_unresolved(from))
             || (is_csproj(to) && self.dotnet.is_unresolved(to))
+            || (is_package_json(from) && self.node.is_unresolved(from))
+            || (is_package_json(to) && self.node.is_unresolved(to))
         {
             return true;
         }
@@ -247,7 +266,15 @@ impl CrateDeps {
     /// Like [`Self::can_reach`] for files, never ruling out a file with no manifest above it.
     pub fn file_can_reach(&mut self, from_file: &str, to_file: &str) -> bool {
         match (self.crate_of(from_file), self.crate_of(to_file)) {
-            (Some(a), Some(b)) if is_csproj(&a) == is_csproj(&b) => self.can_reach(&a, &b),
+            // A TypeScript file can also reach another package through a tsconfig alias, so only
+            // Cargo and .NET packages are ever ruled out.
+            (Some(a), Some(b))
+                if !is_package_json(&a)
+                    && !is_package_json(&b)
+                    && is_csproj(&a) == is_csproj(&b) =>
+            {
+                self.can_reach(&a, &b)
+            }
             _ => true,
         }
     }
@@ -258,15 +285,38 @@ fn is_cs(path: &str) -> bool {
     crate::dotnet::has_ext(path, "cs")
 }
 
+/// True for a TypeScript or JavaScript source path.
+fn is_js(path: &str) -> bool {
+    crate::typescript::is_typescript_path(path)
+}
+
+/// True when a package id is a `package.json` path (a Node package).
+fn is_package_json(id: &str) -> bool {
+    id == "package.json" || id.ends_with("/package.json")
+}
+
 /// True when a package id is a `.csproj` path (a .NET project package).
 fn is_csproj(id: &str) -> bool {
     id.ends_with(".csproj")
 }
 
 impl CrateDeps {
-    /// Malformed `.csproj` and `.sln` files among repo-relative `files` (each an Unresolved project).
+    /// Malformed `.csproj`, `.sln`, `package.json` and tsconfig files among repo-relative `files` (each an Unresolved project).
     pub fn malformed_projects(&mut self, files: &[&str]) -> Vec<MalformedProject> {
-        self.dotnet.malformed(files)
+        let mut out = self.dotnet.malformed(files);
+        out.extend(
+            self.node
+                .malformed(files)
+                .into_iter()
+                .map(|(path, reason)| MalformedProject { path, reason }),
+        );
+        out.sort_by(|a, b| a.path.cmp(&b.path));
+        out
+    }
+
+    /// What the non-relative specifier `spec` imported by TypeScript file `from` can name.
+    pub fn js_resolve(&mut self, from: &str, spec: &str) -> JsResolution {
+        self.node.resolve(from, spec)
     }
 
     /// The `.csproj` packages a `.sln` lists, repo-relative.

@@ -60,6 +60,36 @@ max_version = "1.7.99"
 # Custom self-hosted runner labels go here; this repository uses GitHub-hosted runners only.
 labels = []
 
+# Hygiene tools (build-test-ci.md section 4, D98): `cargo dev ci` runs these exact argv as the
+# deny, shear and typos steps, and `frob check` runs them as stages; the version range pins the
+# output format. A host without the tool gets a non-required Unresolved, never a pass.
+[[check.tool]]
+name = "cargo-deny"
+command = "cargo-deny"
+args = ["check"]
+version_args = ["--version"]
+min_version = "0.19.0"
+max_version = "0.19.99"
+optional = true
+
+[[check.tool]]
+name = "cargo-shear"
+command = "cargo-shear"
+args = []
+version_args = ["--version"]
+min_version = "1.14.0"
+max_version = "1.14.99"
+optional = true
+
+[[check.tool]]
+name = "typos"
+command = "typos"
+args = []
+version_args = ["--version"]
+min_version = "1.50.0"
+max_version = "1.50.99"
+optional = true
+
 [git]
 # Compare-and-swap retries when moving a ledger ref.
 cas_retries = 5

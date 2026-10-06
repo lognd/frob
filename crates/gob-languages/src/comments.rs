@@ -302,6 +302,21 @@ fn web_plain(text: &str, line: bool) -> Vec<Range<usize>> {
     out
 }
 
+/// Byte spans of the `<!-- ... -->` comments of an HTML text (no-tree fallback; an unclosed one runs to the end).
+fn html_plain(text: &str) -> Vec<Range<usize>> {
+    let mut out = Vec::new();
+    let mut at = 0;
+    while let Some(rel) = text[at..].find("<!--") {
+        let start = at + rel;
+        let end = text[start + 4..]
+            .find("-->")
+            .map_or(text.len(), |e| start + 4 + e + 3);
+        out.push(start..end);
+        at = end;
+    }
+    out
+}
+
 // frob:ticket 01M43KP0RXKB1DJA8KGJTV288R
 /// Byte range of a leading `---` (YAML) or `+++` (TOML) front matter block, fences included.
 ///
@@ -391,10 +406,12 @@ pub fn comment_spans(
             | Language::Tsx
             | Language::JavaScript
             | Language::Jsx
-            | Language::Css,
+            | Language::Css
+            | Language::Html,
             Some(t),
         ) => node_spans(t, &["comment"]),
         (Language::Css, None) => web_plain(text, false),
+        (Language::Html, None) => html_plain(text),
         (Language::TypeScript | Language::Tsx | Language::JavaScript | Language::Jsx, None) => {
             web_plain(text, true)
         }
@@ -583,6 +600,24 @@ mod tests {
         for got in both(Language::Css, src) {
             assert_eq!(got, ["/* crunk:waive COLOR001 reason=\"brand\" */"]);
         }
+    }
+
+    #[test]
+    // frob:tests crates/gob-languages/src/comments.rs::html_plain
+    fn html_comments_are_marker_delimited() {
+        let src = "<!-- head -->\n<p>x</p>\n<!-- tail";
+        let want = ["<!-- head -->", "<!-- tail"];
+        let plain: Vec<&str> = comment_spans(Language::Html, src, None)
+            .into_iter()
+            .map(|r| &src[r])
+            .collect();
+        assert_eq!(plain, want);
+        let closed = "<!-- a -->\n<p>x</p>\n<!-- b -->";
+        let got: Vec<&str> = parse_comment_spans(Language::Html, closed)
+            .into_iter()
+            .map(|r| &closed[r])
+            .collect();
+        assert_eq!(got, ["<!-- a -->", "<!-- b -->"]);
     }
 
     #[test]

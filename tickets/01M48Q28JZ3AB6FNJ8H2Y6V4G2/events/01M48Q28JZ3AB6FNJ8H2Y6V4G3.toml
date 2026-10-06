@@ -1,0 +1,12 @@
+kind = "create"
+title = "Verb admission test: every registered verb has a justified cli.md row"
+type = "task"
+category = "todo"
+priority = "medium"
+parent = "01M48Q27GE8C1P6JS1CXKTCQ3S"
+scope = ["crates/gob-cli/**", "crates/gob-dev/**", "docs/design/cli.md"]
+acceptance = ["a registered verb without a row fails naming it", "a row without a registered verb fails naming it", "the justification column exists for every row"]
+body = "D104 enforcement: a test walks the gob-cli verb registry of frob, grimble and crunk and fails when a verb (hidden aliases excluded) has no row in docs/design/cli.md section 4 naming its justification (effect, policy or object), or when a row names a verb that is not registered, so the implementation and the design cannot drift again (board was top-level in code while the design had removed board-as-separate)."
+at = "2026-10-06T13:39:49Z"
+actor = "lognd"
+rev = 1

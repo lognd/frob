@@ -2,11 +2,11 @@
 id = "01M47YJF46HM8MA5PVWNH92W1H"
 title = "GRL printer: print a GRL syntax tree back to canonical text"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-06T06:31:45Z"
-updated = "2026-10-06T06:31:45Z"
+updated = "2026-10-06T12:15:02Z"
 scope = ["crates/gob-plan/**"]
 +++
 

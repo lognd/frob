@@ -281,7 +281,10 @@ fn ci_definition_sets_require_python_tests_and_pins_pytest() {
     let lenient = ci::steps_with(&root(), false).unwrap();
     let nextest = lenient.iter().find(|s| s.name == "nextest").unwrap();
     assert!(
-        nextest.env.is_empty(),
+        !nextest
+            .env
+            .iter()
+            .any(|(k, _)| k == "FROB_REQUIRE_PYTHON_TESTS"),
         "a local run must keep the named skips"
     );
 }

@@ -4,6 +4,8 @@
 //! `ci.yml` invokes `cargo dev ci --step <name>` for each check and holds no argv of its own;
 //! `tests/ci_parity.rs` fails when the workflow and this list disagree, so a check added to one
 //! cannot be missing from the other. Process spawning goes through `gob-exec` (PROC001).
+//! The `clippy-windows` step is part of the default list and offloadable, so the one documented
+//! whole-workspace command (`cargo dev ci`, through goway) catches Windows-only compile breaks.
 //! Design: `docs/design/build-test-ci.md`.
 // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
 // frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
@@ -11,6 +13,9 @@
 // frob:ticket 01M42A37XTPF2H1WXQQZWEYXGZ
 // frob:ticket 01M43FB0TFBNDFH1AEC1CTNHZG
 // frob:ticket 01M44M58PKEM2HMKZF2CANFHAW
+// frob:ticket 01M47QV17V1KZ6K50C7H77MRSP
+// frob:ticket 01M47QVDTG48F4426J019X37CZ
+// frob:ticket 01M47Y1QAY9FZYADME4RRKWM9R
 
 use std::path::Path;
 use std::time::Duration;
@@ -181,8 +186,8 @@ fn offloaded(mut step: Step) -> Step {
     step
 }
 
-/// `version_args` of the `[[check.tool]]` named `tool` in `frob.toml`: the pinned uvx invocation.
-fn pinned_uvx(frob_toml: &toml::Table, tool: &str) -> Result<Vec<String>, CiError> {
+/// The string array `key` of the `[[check.tool]]` named `tool` in `frob.toml`.
+fn pinned_array(frob_toml: &toml::Table, tool: &str, key: &str) -> Result<Vec<String>, CiError> {
     let bad = |what: &str| CiError::Config(format!("tool {tool}: {what}"));
     let entry = frob_toml
         .get("check")
@@ -195,16 +200,21 @@ fn pinned_uvx(frob_toml: &toml::Table, tool: &str) -> Result<Vec<String>, CiErro
         })
         .ok_or_else(|| bad("no [[check.tool]] entry"))?;
     entry
-        .get("version_args")
+        .get(key)
         .and_then(toml::Value::as_array)
-        .ok_or_else(|| bad("no version_args"))?
+        .ok_or_else(|| bad(&format!("no {key}")))?
         .iter()
         .map(|v| {
             v.as_str()
                 .map(str::to_owned)
-                .ok_or_else(|| bad("non-string version_args"))
+                .ok_or_else(|| bad(&format!("non-string {key}")))
         })
         .collect()
+}
+
+/// `version_args` of the `[[check.tool]]` named `tool` in `frob.toml`: the pinned uvx invocation.
+fn pinned_uvx(frob_toml: &toml::Table, tool: &str) -> Result<Vec<String>, CiError> {
+    pinned_array(frob_toml, tool, "version_args")
 }
 
 /// The `pytest` step: `uv tool install --force` [`PYTEST_REQUIREMENT`] (idempotent, replaces a
@@ -247,6 +257,146 @@ fn sibling_check() -> Step {
         args: vec!["-c".to_owned(), script],
         ..cargo("check", &[])
     }
+}
+
+/// Pinned `cargo-insta` version the `snapshots` step needs; `ci.yml` installs exactly this.
+pub const CARGO_INSTA_VERSION: &str = "1.48.0";
+
+/// `cargo-insta` on `PATH`, installed by `ci.yml` at [`CARGO_INSTA_VERSION`].
+pub const CARGO_INSTA: Prerequisite = Prerequisite::SystemTool {
+    tool: "cargo-insta",
+    install: "cargo install --locked cargo-insta --version 1.48.0",
+};
+
+/// Shell fragment that fails (naming each file) when a `.snap.new` or `.pending-snap` file is
+/// left in the tree: an unreviewed snapshot change must never reach CI. `target/` is skipped.
+pub const PENDING_SNAPSHOT_GUARD: &str = "pending=$(find . -path ./target -prune -o \\( -name '*.snap.new' -o -name '*.pending-snap' \\) -print); \
+if [ -n \"$pending\" ]; then echo \"pending snapshots (review with cargo insta review):\"; echo \"$pending\"; exit 1; fi";
+
+/// The `snapshots` step (build-test-ci.md section 6): a cheap check that no `.snap.new` or
+/// `.pending-snap` file is left in the tree. The unreferenced-snapshot check runs inside the
+/// `nextest` step (one suite run, like ruff). One shell command; the step is Linux-only.
+/// frob:ticket 01M47QV17V1KZ6K50C7H77MRSP
+fn snapshots() -> Step {
+    Step {
+        program: Program::Tool {
+            name: "sh".to_owned(),
+        },
+        args: vec!["-c".to_owned(), PENDING_SNAPSHOT_GUARD.to_owned()],
+        linux_only: true,
+        ..cargo("snapshots", &[])
+    }
+}
+
+/// The `nextest` step: the single suite run, driven through cargo-insta.
+fn nextest_step(require_python: bool) -> Step {
+    // frob:ticket 01M47QV17V1KZ6K50C7H77MRSP
+    // The one suite run goes through cargo-insta, which drives nextest with the `ci` profile
+    // (junit included), fails on pending (`--check`) and unreferenced snapshots, and skips the
+    // doctest pass `cargo nextest run` never made.
+    let mut nextest = offloaded(cargo(
+        "nextest",
+        &[
+            "insta",
+            "test",
+            "--check",
+            "--unreferenced",
+            "reject",
+            "--workspace",
+            "--test-runner",
+            "nextest",
+            "--nextest-profile",
+            "ci",
+            "--disable-nextest-doctest",
+        ],
+    ));
+    nextest.needs = vec![CARGO_INSTA];
+    nextest.uv_tools_on_path = true;
+    nextest.env = vec![("INSTA_UPDATE".to_owned(), "no".to_owned())];
+    if require_python {
+        tracing::info!("nextest requires python and pytest (no skips)");
+        nextest
+            .env
+            .push((REQUIRE_PYTHON_TESTS_ENV.to_owned(), "1".to_owned()));
+    }
+    nextest
+}
+
+/// A Linux-only hygiene step running the binary `tool` with the `args` of its `[[check.tool]]`
+/// entry in `frob.toml` (the single pinned definition `frob check` also runs), needing `need` installed.
+/// frob:ticket 01M47QVDTG48F4426J019X37CZ
+fn hygiene(
+    name: &'static str,
+    need: Prerequisite,
+    frob_toml: &toml::Table,
+    tool: &str,
+) -> Result<Step, CiError> {
+    Ok(Step {
+        program: Program::Tool {
+            name: tool.to_owned(),
+        },
+        args: pinned_array(frob_toml, tool, "args")?,
+        needs: vec![need],
+        linux_only: true,
+        ..cargo(name, &[])
+    })
+}
+
+/// Pinned `cargo-deny` version; `frob.toml` carries the accepted range (checked by a test).
+pub const CARGO_DENY_VERSION: &str = "0.19.9";
+/// Pinned `cargo-shear` version; `frob.toml` carries the accepted range (checked by a test).
+pub const CARGO_SHEAR_VERSION: &str = "1.14.0";
+/// Pinned `typos-cli` version; `frob.toml` carries the accepted range (checked by a test).
+pub const TYPOS_VERSION: &str = "1.50.3";
+
+/// `cargo-deny` on `PATH`, installed by `ci.yml` at [`CARGO_DENY_VERSION`].
+pub const CARGO_DENY: Prerequisite = Prerequisite::SystemTool {
+    tool: "cargo-deny",
+    install: "cargo install --locked cargo-deny --version 0.19.9",
+};
+/// `cargo-shear` on `PATH`, installed by `ci.yml` at [`CARGO_SHEAR_VERSION`].
+pub const CARGO_SHEAR: Prerequisite = Prerequisite::SystemTool {
+    tool: "cargo-shear",
+    install: "cargo install --locked cargo-shear --version 1.14.0",
+};
+/// `typos` on `PATH`, installed by `ci.yml` at [`TYPOS_VERSION`].
+pub const TYPOS: Prerequisite = Prerequisite::SystemTool {
+    tool: "typos",
+    install: "cargo install --locked typos-cli --version 1.50.3",
+};
+
+/// The `msrv` step: install the toolchain named by `[workspace.package] rust-version` (minimal
+/// profile) and `cargo check` the whole workspace with it, so code never needs a newer compiler
+/// than the manifest promises. One shell command; the step is Linux-only.
+/// frob:ticket 01M47QVDTG48F4426J019X37CZ
+fn msrv(root: &Path) -> Result<Step, CiError> {
+    let text = std::fs::read_to_string(root.join("Cargo.toml")).map_err(|e| {
+        tracing::error!(error = %e, "Cargo.toml unreadable");
+        CiError::Config(e.to_string())
+    })?;
+    let manifest: toml::Table = text.parse().map_err(|e: toml::de::Error| {
+        tracing::error!(error = %e, "Cargo.toml unparsable");
+        CiError::Config(e.to_string())
+    })?;
+    let rv = manifest
+        .get("workspace")
+        .and_then(|w| w.get("package"))
+        .and_then(|p| p.get("rust-version"))
+        .and_then(toml::Value::as_str)
+        .ok_or_else(|| CiError::Config("Cargo.toml: no [workspace.package] rust-version".into()))?;
+    tracing::info!(rust_version = rv, "msrv step toolchain");
+    let script = format!(
+        "rustup toolchain install {rv} --profile minimal && \
+         exec cargo +{rv} check --workspace --all-targets --all-features"
+    );
+    Ok(Step {
+        program: Program::Tool {
+            name: "sh".to_owned(),
+        },
+        args: vec!["-c".to_owned(), script],
+        linux_only: true,
+        ..cargo("msrv", &[])
+    })
 }
 
 /// Every CI check in the order `ci.yml` runs it; zizmor and actionlint pins come from `frob.toml`.
@@ -312,12 +462,7 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
     let mut docs = cargo("docs", &["doc", "--no-deps", "--all-features"]);
     docs.env = vec![("RUSTDOCFLAGS".to_owned(), "-D warnings".to_owned())];
     docs.offload = true;
-    let mut nextest = offloaded(cargo("nextest", &["nextest", "run", "--profile", "ci"]));
-    nextest.uv_tools_on_path = true;
-    if require_python {
-        tracing::info!("nextest requires python and pytest (no skips)");
-        nextest.env = vec![(REQUIRE_PYTHON_TESTS_ENV.to_owned(), "1".to_owned())];
-    }
+    let nextest = nextest_step(require_python);
     Ok(vec![
         cargo("fmt", &["fmt", "--all", "--check"]),
         offloaded(cargo(
@@ -334,10 +479,15 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
         clippy_windows,
         docs,
         pytest_install(),
+        snapshots(),
         nextest,
         cargo("gen", &["dev", "gen", "all", "--check"]),
         uvx("zizmor", "zizmor")?,
         uvx("actionlint", "actionlint")?,
+        hygiene("deny", CARGO_DENY, &frob_toml, "cargo-deny")?,
+        hygiene("shear", CARGO_SHEAR, &frob_toml, "cargo-shear")?,
+        hygiene("typos", TYPOS, &frob_toml, "typos")?,
+        msrv(root)?,
         offloaded(linux(cargo(
             "doctor",
             &["run", "-p", "frob-cli", "--", "doctor"],
@@ -1089,7 +1239,12 @@ mod tests {
             vec![("RUSTDOCFLAGS".to_owned(), "-D warnings".to_owned())]
         );
         let nextest = all.iter().find(|s| s.name == "nextest").unwrap();
-        assert!(nextest.args.windows(2).any(|w| w == ["--profile", "ci"]));
+        assert!(
+            nextest
+                .args
+                .windows(2)
+                .any(|w| w == ["--nextest-profile", "ci"])
+        );
     }
 
     // frob:tests crates/gob-dev/src/ci.rs::host_is_linux
@@ -1142,6 +1297,52 @@ mod tests {
         assert!(text.contains("sudo apt-get install -y ghost-pkg"), "{text}");
     }
 
+    // frob:tests crates/gob-dev/src/ci.rs::PENDING_SNAPSHOT_GUARD
+    #[test]
+    fn stray_pending_snapshot_fails_the_guard_and_a_clean_tree_passes() {
+        let dir = tempfile::tempdir().unwrap();
+        let run = || {
+            let spec = Spec {
+                program: Program::Tool {
+                    name: "sh".to_owned(),
+                },
+                args: vec!["-c".to_owned(), PENDING_SNAPSHOT_GUARD.to_owned()],
+                cwd: Some(dir.path().to_path_buf()),
+                env: Vec::new(),
+                timeout: QUERY_TIMEOUT,
+                capture: true,
+            };
+            runner().run(&spec).unwrap()
+        };
+        std::fs::write(dir.path().join("a.snap"), "ok").unwrap();
+        assert_eq!(run().status, Outcome::Exited(0));
+        std::fs::write(dir.path().join("a.snap.new"), "pending").unwrap();
+        let out = run();
+        assert_eq!(out.status, Outcome::Exited(1));
+        assert!(out.stdout.contains("a.snap.new"), "{}", out.stdout);
+    }
+
+    // frob:tests crates/gob-dev/src/ci.rs::snapshots
+    #[test]
+    fn nextest_runs_the_suite_once_through_insta_rejecting_unreferenced_snapshots() {
+        let all = real();
+        let names: Vec<_> = all.iter().map(|s| s.name).collect();
+        let at = |n: &str| names.iter().position(|x| *x == n).unwrap();
+        assert!(at("snapshots") < at("nextest"));
+        let s = &all[at("snapshots")];
+        assert!(s.linux_only && s.args[1] == PENDING_SNAPSHOT_GUARD);
+        let n = &all[at("nextest")];
+        let joined = n.args.join(" ");
+        assert!(
+            joined.starts_with("insta test --check --unreferenced reject"),
+            "{joined}"
+        );
+        assert_eq!(n.needs, vec![CARGO_INSTA]);
+        assert!(CARGO_INSTA.install_command().contains(CARGO_INSTA_VERSION));
+        let want = ("INSTA_UPDATE".to_owned(), "no".to_owned());
+        assert!(n.env.contains(&want));
+    }
+
     #[test]
     fn clippy_windows_declares_target_and_mingw() {
         let all = real();
@@ -1152,6 +1353,66 @@ mod tests {
             MINGW_GCC.install_command(),
             "sudo apt-get install -y gcc-mingw-w64-x86-64"
         );
+    }
+
+    /// A Windows-only compile break must be caught by the default `cargo dev ci` run: the step
+    /// is in the list, offloadable to goway, Linux-only, and comes before the suite run.
+    #[test]
+    fn clippy_windows_is_in_the_default_run_before_nextest() {
+        let all = real();
+        let pos = |n: &str| all.iter().position(|s| s.name == n).unwrap();
+        let s = &all[pos("clippy-windows")];
+        assert!(s.offload && s.linux_only);
+        assert!(s.args.iter().any(|a| a == "--all-targets"));
+        assert!(pos("clippy-windows") < pos("nextest"));
+    }
+
+    /// Dotted-number comparison of `have` against an inclusive `[min, max]` range.
+    fn within(have: &str, min: &str, max: &str) -> bool {
+        let v = |s: &str| -> Vec<u64> { s.split('.').map(|p| p.parse().unwrap()).collect() };
+        v(min) <= v(have) && v(have) <= v(max)
+    }
+
+    // frob:tests crates/gob-dev/src/ci.rs::hygiene
+    #[test]
+    fn hygiene_steps_exist_pin_installs_inside_the_frob_toml_range_and_msrv_follows_manifest() {
+        let all = real();
+        let text = std::fs::read_to_string(repo_root().join("frob.toml")).unwrap();
+        let toml: toml::Table = text.parse().unwrap();
+        for (step, tool, need, version) in [
+            ("deny", "cargo-deny", CARGO_DENY, CARGO_DENY_VERSION),
+            ("shear", "cargo-shear", CARGO_SHEAR, CARGO_SHEAR_VERSION),
+            ("typos", "typos", TYPOS, TYPOS_VERSION),
+        ] {
+            let s = all.iter().find(|s| s.name == step).unwrap();
+            assert!(s.linux_only && s.needs == vec![need.clone()], "{step}");
+            assert_eq!(s.args, pinned_array(&toml, tool, "args").unwrap());
+            assert!(need.install_command().ends_with(version), "{step}");
+            let entry = toml["check"]["tool"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|t| t["name"].as_str() == Some(tool))
+                .unwrap();
+            let (min, max) = (
+                entry["min_version"].as_str().unwrap(),
+                entry["max_version"].as_str().unwrap(),
+            );
+            assert!(
+                within(version, min, max),
+                "{step}: {version} not in {min}..{max}"
+            );
+        }
+        let m = all.iter().find(|s| s.name == "msrv").unwrap();
+        assert!(
+            m.args[1].contains("cargo +1.98 check --workspace"),
+            "{:?}",
+            m.args
+        );
+    }
+
+    fn repo_root() -> std::path::PathBuf {
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
     }
 
     #[test]
@@ -1263,14 +1524,10 @@ mod tests {
     fn a_remote_command_failure_is_a_step_failure_naming_the_host() {
         let dir = tempfile::tempdir().unwrap();
         let (g, _) = fake_goway(dir.path(), 1);
-        let r = run(
-            dir.path(),
-            &[step_named("nextest")],
-            &g,
-            false,
-            true,
-            &mut |_| {},
-        );
+        // The fake goway fails every probe too; this test is about the command, not prerequisites.
+        let mut nextest = step_named("nextest");
+        nextest.needs.clear();
+        let r = run(dir.path(), &[nextest], &g, false, true, &mut |_| {});
         let StepStatus::Failed(why) = &r[0].status else {
             panic!("{:?}", r[0].status)
         };

@@ -71,6 +71,8 @@ pub enum GapReason {
     LocalValue,
     /// A markdown link whose file or anchor does not exist.
     BrokenLink,
+    /// The import names a package outside the repository (a `node_modules` dependency or a Node builtin).
+    External,
 }
 
 /// One edge with its resolution status; `to` is `None` for an `Unknown` edge.
@@ -189,6 +191,9 @@ pub struct SymbolGraph {
     poisoned: HashSet<NodeIndex>,
     /// Nodes made public by a `pub use` re-export (G10).
     reexported: HashSet<NodeIndex>,
+    // frob:ticket 01M43ARXVD5PXP6ZBVFC2F4ZMQ
+    /// The TypeScript module index kept after the build, to answer which unit an import binding names.
+    ts: TsIndex,
 }
 
 fn is_rust(path: &str) -> bool {
@@ -774,6 +779,7 @@ impl SymbolGraph {
         lap("calls");
         g.link_refs(&files, &idx);
         lap("refs");
+        g.ts = idx.ts;
         tracing::debug!(
             nodes = g.graph.node_count(),
             edges = g.graph.edge_count(),
@@ -875,7 +881,7 @@ impl SymbolGraph {
             enums: HashSet::new(),
             py: PyIndex::build(self, files),
             cs: CsIndex::build(self, files),
-            ts: TsIndex::build(self, files),
+            ts: TsIndex::build(self, files, deps.as_deref_mut()),
         };
         for f in files.iter().filter(|f| is_rust(&f.path)) {
             let (krate, module) = crate_and_module(&f.path);

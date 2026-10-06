@@ -6,7 +6,7 @@
 use gob_symbols::{
     EdgeKind, FileSymbols, GapReason, JsxKind, ParseStatus, Status, StatusEdge, SymbolGraph,
     SymbolKind, TestRole, Visibility, adapter_for_path, extract_file, fidelity_report, fold_file,
-    is_typescript_test_file, jsx_elements, test_items,
+    is_typescript_test_file, is_typescript_test_fn, jsx_elements, test_items,
 };
 use gob_walk::{Digest, FileEntry, LanguageHint};
 
@@ -945,4 +945,62 @@ fn css_tagged_templates_are_css_regions() {
         .collect();
     assert_eq!(regions.len(), 1);
     assert_eq!(t.node(regions[0]).children().len(), 2);
+}
+
+#[test]
+// frob:ticket 01M4828JB2S4JZY2QRB97A7SXX
+// frob:tests crates/gob-symbols/src/typescript/mod.rs::is_typescript_test_fn
+fn test_items_are_units_that_own_their_calls() {
+    let src = r"import { describe, it, expect } from 'vitest';
+import { fetchUser } from './client';
+describe('user api', () => {
+  it('fetches', () => { fetchUser(1); });
+  it('fetches', () => { expect(fetchUser(2)); });
+  it.each([1, 2])('dynamic %s', (n) => { fetchUser(n); });
+});
+helper();
+";
+    let f = fold("src/client.test.ts", src);
+    let tests: Vec<String> = f
+        .symbols
+        .iter()
+        .filter(|s| is_typescript_test_fn(s))
+        .map(|s| s.symref.to_string())
+        .collect();
+    assert_eq!(
+        tests,
+        [
+            "src/client.test.ts::suite$user_api",
+            "src/client.test.ts::suite$user_api.test$fetches",
+            "src/client.test.ts::suite$user_api.test$fetches[dup2]",
+        ]
+    );
+    let caller_of = |callee: &str| -> Vec<String> {
+        f.calls
+            .iter()
+            .filter(|c| c.callee == callee)
+            .map(|c| c.caller.to_string())
+            .collect()
+    };
+    assert_eq!(
+        caller_of("fetchUser"),
+        [
+            "src/client.test.ts::suite$user_api.test$fetches",
+            "src/client.test.ts::suite$user_api.test$fetches[dup2]",
+            // A dynamic title is no unit: its calls belong to the enclosing suite.
+            "src/client.test.ts::suite$user_api",
+        ]
+    );
+    assert_eq!(caller_of("helper"), ["src/client.test.ts"]);
+    // Plain functions are not tests.
+    let plain = fold(
+        "src/a.ts",
+        "export function test_x() {}\nexport function go() {}\n",
+    );
+    assert!(
+        !plain
+            .symbols
+            .iter()
+            .any(|s| s.symref.name() == Some("go") && is_typescript_test_fn(s))
+    );
 }

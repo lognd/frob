@@ -1,0 +1,8 @@
+:root {
+  --ink: #222;
+}
+
+.btn {
+  color: var(--ink);
+  padding: 4px 8px;
+}

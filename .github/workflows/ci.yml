@@ -86,6 +86,11 @@ jobs:
       - name: Install pinned pytest (Windows, isolated tool)
         if: runner.os == 'Windows'
         run: cargo dev-isolated ci --step pytest
+      - name: Install cargo-insta (nextest step runs through it)
+        run: cargo install --locked cargo-insta --version 1.48.0
+      - name: Snapshot hygiene (no pending snapshot files)
+        if: runner.os == 'Linux'
+        run: cargo dev ci --step snapshots
       - name: nextest
         if: runner.os == 'Linux'
         run: cargo dev ci --step nextest
@@ -114,6 +119,27 @@ jobs:
       - name: Fetch actionlint (version from frob.toml)
         if: runner.os == 'Linux'
         run: cargo dev ci --step actionlint
+      - name: Install cargo-deny (deny step)
+        if: runner.os == 'Linux'
+        run: cargo install --locked cargo-deny --version 0.19.9
+      - name: Install cargo-shear (shear step)
+        if: runner.os == 'Linux'
+        run: cargo install --locked cargo-shear --version 1.14.0
+      - name: Install typos (typos step)
+        if: runner.os == 'Linux'
+        run: cargo install --locked typos-cli --version 1.50.3
+      - name: cargo-deny (advisories, licenses, bans, sources)
+        if: runner.os == 'Linux'
+        run: cargo dev ci --step deny
+      - name: cargo-shear (unused dependencies)
+        if: runner.os == 'Linux'
+        run: cargo dev ci --step shear
+      - name: typos (spelling)
+        if: runner.os == 'Linux'
+        run: cargo dev ci --step typos
+      - name: MSRV (cargo check at rust-version)
+        if: runner.os == 'Linux'
+        run: cargo dev ci --step msrv
       - name: frob doctor (self-hosted, frob v2 built from this tree)
         if: runner.os == 'Linux'
         run: cargo dev ci --step doctor

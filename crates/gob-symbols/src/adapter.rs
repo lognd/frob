@@ -66,11 +66,13 @@ pub enum Capability {
     Expand,
     /// Evaluation order of a group.
     Order,
+    /// Packages, their dependencies, path aliases and entry files (language-engines.md section 2).
+    ProjectModel,
 }
 
 impl Capability {
     /// Every capability in table order.
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 9] = [
         Self::ResolveRef,
         Self::ApplyTargets,
         Self::Visibility,
@@ -79,6 +81,7 @@ impl Capability {
         Self::Imports,
         Self::Expand,
         Self::Order,
+        Self::ProjectModel,
     ];
 
     /// The spelling used in universal-model.md and `frob doctor --languages`.
@@ -92,6 +95,7 @@ impl Capability {
             Self::Imports => "imports",
             Self::Expand => "expand",
             Self::Order => "order",
+            Self::ProjectModel => "project_model",
         }
     }
 }
@@ -117,6 +121,8 @@ pub enum Precision {
     Syntactic,
     /// Declared by the source, not inferred.
     Declared,
+    /// Read from the build manifests (`Cargo.toml`, `.csproj`, `package.json`, `tsconfig.json`).
+    Manifest,
 }
 
 impl Precision {
@@ -132,6 +138,16 @@ impl Precision {
             Self::Keyword => "keyword",
             Self::Syntactic => "syntactic",
             Self::Declared => "declared",
+            Self::Manifest => "manifest",
+        }
+    }
+
+    /// The capability-matrix cell word: `Implemented`, `NotApplicable` or `Gap` (code-model.md section 3).
+    pub const fn cell(self) -> &'static str {
+        match self {
+            Self::None => "Gap",
+            Self::NotApplicable => "NotApplicable",
+            _ => "Implemented",
         }
     }
 }

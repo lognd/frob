@@ -1,6 +1,6 @@
 # Rule coverage gaps: one umbrella ticket per product lists its uncovered rules.
 # This file may only shrink; see "Rule coverage" in crates/gob-mdtest/FORMAT.md.
-# crunk registers no rules yet, so it has no entries.
+# crunk registers COLOR001 with an mdtest corpus, so it has no entries.
 
 [[gap]]
 product = "frob"

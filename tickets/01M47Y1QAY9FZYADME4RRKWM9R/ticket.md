@@ -2,11 +2,12 @@
 id = "01M47Y1QAY9FZYADME4RRKWM9R"
 title = "Run clippy-windows in land/evidence so unix-only helper misuse cannot land"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-06T06:22:33Z"
-updated = "2026-10-06T06:22:33Z"
+updated = "2026-10-06T11:41:26Z"
 scope = ["crates/gob-dev/src/ci.rs"]
 +++
 

@@ -232,12 +232,13 @@ pub(crate) mod tests {
 
     #[test]
     fn web_grammars_parse_clean_and_report_errors() {
-        let cases: [(Language, &str, &str); 5] = [
+        let cases: [(Language, &str, &str); 6] = [
             (Language::TypeScript, "let x: number = 1;\n", "let x: = ;"),
             (Language::Tsx, "const a = <b>{1}</b>;\n", "const a = <b>{;"),
             (Language::JavaScript, "let x = 1;\n", "let = ;"),
             (Language::Jsx, "const a = <b>{1}</b>;\n", "const a = <b>{;"),
             (Language::Css, "a { color: red; }\n", "a { color: ;; { "),
+            (Language::Html, "<p class=\"a\">hi</p>\n", "<div <<\"x>>\n"),
         ];
         for (l, good, bad) in cases {
             assert!(!parsed(l, good).has_errors(), "{l:?}");

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "COLOR001 was ported in crunk-check by ~FWSQYH1 over the shared gob style capability (D96). This ticket keeps COLOR002 and CONTRAST001; it should build on crates/crunk-check/src/rules/color001.rs (palette loading, crunk-values colour maths) rather than a separate crunk-rules path."
+at = "2026-10-06T13:09:36Z"
+actor = "lognd"
+rev = 1

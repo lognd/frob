@@ -1,0 +1,22 @@
+[package]
+name = "gob-frameworks"
+version.workspace = true
+description = "Framework registry, per-workspace detection, routes and entrypoints for the frob goblins."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+gob-ir = { version = "0.532.0", path = "../gob-ir" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
+inventory = "0.3"
+tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3"

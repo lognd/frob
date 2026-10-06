@@ -547,12 +547,17 @@ dependencies = [
 name = "crunk-check"
 version = "0.532.0"
 dependencies = [
+ "crunk-spec",
+ "crunk-values",
  "gob-check",
  "gob-config",
  "gob-diagnostics",
+ "gob-ir",
  "gob-mdtest",
  "gob-rules",
+ "gob-symbols",
  "gob-text",
+ "gob-walk",
  "serde_json",
  "tempfile",
  "tracing",
@@ -1003,6 +1008,7 @@ name = "frob-cli"
 version = "0.532.0"
 dependencies = [
  "assert_cmd",
+ "crunk",
  "frob-ack",
  "frob-check",
  "frob-evidence",
@@ -2406,6 +2412,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "gob-frameworks"
+version = "0.532.0"
+dependencies = [
+ "gob-ir",
+ "gob-symbols",
+ "gob-walk",
+ "inventory",
+ "tempfile",
+ "tracing",
+]
+
+[[package]]
 name = "gob-fs"
 version = "0.532.0"
 dependencies = [
@@ -2449,6 +2467,7 @@ dependencies = [
  "tree-sitter",
  "tree-sitter-c-sharp",
  "tree-sitter-css",
+ "tree-sitter-html",
  "tree-sitter-javascript",
  "tree-sitter-md",
  "tree-sitter-python",
@@ -2585,6 +2604,7 @@ dependencies = [
  "postcard",
  "rayon",
  "serde",
+ "serde_json",
  "tempfile",
  "thiserror",
  "tracing",
@@ -4764,6 +4784,16 @@ name = "tree-sitter-css"
 version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a5cbc5e18f29a2c6d6435891f42569525cf95435a3e01c2f1947abcde178686f"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
+name = "tree-sitter-html"
+version = "0.23.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "261b708e5d92061ede329babaaa427b819329a9d427a1d710abb0f67bbef63ee"
 dependencies = [
  "cc",
  "tree-sitter-language",
