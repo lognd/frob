@@ -2,13 +2,13 @@
 id = "01M47QKDM2J0EKW2TYH4N35GSV"
 title = "gob-ir: markup, style and const_value answer types, queries and GRL catalog words"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T04:29:56Z"
-updated = "2026-10-06T04:29:56Z"
+updated = "2026-10-06T04:34:54Z"
 scope = ["crates/gob-ir/**", "crates/gob-plan/**", "docs/design/universal-model.md", "docs/design/grl-spec.md"]
 
 [[acceptance]]
