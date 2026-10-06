@@ -2,12 +2,12 @@
 id = "01M4828JB2S4JZY2QRB97A7SXX"
 title = "gob-symbols: TS/JS test items as units so COV001 and frob test select them"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T07:36:12Z"
-updated = "2026-10-06T07:36:12Z"
+updated = "2026-10-06T12:02:06Z"
 scope = ["crates/gob-symbols/src/typescript/**", "crates/frob-obligations/src/cov.rs", "crates/frob-tests/src/**"]
 +++
 
