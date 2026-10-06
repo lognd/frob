@@ -29,11 +29,13 @@ pub enum Language {
     Jsx,
     /// CSS stylesheets (`.css`).
     Css,
+    /// HTML documents (`.html`, `.htm`).
+    Html,
 }
 
 impl Language {
     /// Every variant, regardless of enabled features.
-    pub const ALL: [Language; 11] = [
+    pub const ALL: [Language; 12] = [
         Language::Rust,
         Language::Markdown,
         Language::Toml,
@@ -45,6 +47,7 @@ impl Language {
         Language::JavaScript,
         Language::Jsx,
         Language::Css,
+        Language::Html,
     ];
 
     /// Detects the language from the file extension (case-insensitive).
@@ -62,6 +65,7 @@ impl Language {
             "js" | "mjs" | "cjs" => Some(Language::JavaScript),
             "jsx" => Some(Language::Jsx),
             "css" => Some(Language::Css),
+            "html" | "htm" => Some(Language::Html),
             _ => None,
         };
         tracing::trace!(path = %path.as_ref().display(), ?found, "language detect");
@@ -82,6 +86,7 @@ impl Language {
             Language::JavaScript => "javascript",
             Language::Jsx => "jsx",
             Language::Css => "css",
+            Language::Html => "html",
         }
     }
 }
@@ -107,6 +112,8 @@ mod tests {
         assert_eq!(Language::detect("a.mjs"), Some(Language::JavaScript));
         assert_eq!(Language::detect("a.jsx"), Some(Language::Jsx));
         assert_eq!(Language::detect("site.css"), Some(Language::Css));
+        assert_eq!(Language::detect("index.HTML"), Some(Language::Html));
+        assert_eq!(Language::detect("a.htm"), Some(Language::Html));
         assert_eq!(Language::detect("a.scss"), None);
         assert_eq!(Language::detect("a.pyc"), None);
         assert_eq!(Language::detect("Makefile"), None);

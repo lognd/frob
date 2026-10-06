@@ -18,16 +18,16 @@
 use gob_ir::const_value::{
     OP, OP_ADD, OP_AND, OP_ARRAY, OP_COND, OP_OBJECT, OP_OR, OP_PROP, OP_SPREAD, OP_TEMPLATE,
 };
-use gob_ir::{GroupOrder, NodeId, NodeSpec, Operator, markup, style};
+use gob_ir::{GroupOrder, NodeId, NodeSpec, Operator, markup};
 use tree_sitter::Node;
 
 use super::{Fold, R, Root, Site, call_text, children, is_comment, line_of};
-use crate::css::tokens::{Token, tokens};
+use crate::css::tokens::{Token, declaration_node, tokens};
 use crate::typescript::style::{css_property, numeric_raw};
-use crate::typescript::{ATTR_JSX_ATTRS, ATTR_JSX_KIND, ATTR_JSX_LINE, ATTR_JSX_TAG};
+use crate::typescript::{
+    ATTR_JSX_ATTRS, ATTR_JSX_KIND, ATTR_JSX_LINE, ATTR_JSX_TAG, ATTR_MARKUP_GROUP,
+};
 
-/// Node attribute: what a `group` of the markup lowering stands for (`fragment`, `conditional`, `mapped`).
-pub(crate) const ATTR_MARKUP_GROUP: &str = "markup.group";
 /// Component value class of a style entry whose value is not statically known.
 const UNKNOWN_VALUE: &str = "unknown";
 /// Callee names (the final member) of a mapped child.
@@ -438,18 +438,8 @@ impl Fold<'_> {
                 (false, vec![Token::Lit(UNKNOWN_VALUE, text)]),
             )
         };
-        let mut kids = Vec::new();
-        for t in comps.1 {
-            kids.push(match t {
-                Token::Lit(kind, text) => self.cx.lit(kind, &text, e)?,
-                Token::Var(name) => self.cx.op(Operator::reference(&name), e, &[])?,
-            });
-        }
-        let spec = NodeSpec::new(style::declaration_op(), self.cx.node_loc(e))
-            .named(property)
-            .attr(style::RAW, raw.as_str())
-            .attr(style::IMPORTANT, comps.0);
-        self.cx.add(spec, &kids)
+        let loc = self.cx.node_loc(e);
+        declaration_node(&mut self.cx, loc, property, &raw, comps.0, comps.1)
     }
 
     /// A `css` tagged template: a `region(css)` over the template text and substitutions.

@@ -29,6 +29,8 @@ pub(crate) fn ts_language(language: Language) -> Option<tree_sitter::Language> {
         Language::Jsx => Some(tree_sitter_javascript::LANGUAGE.into()),
         #[cfg(feature = "css")]
         Language::Css => Some(tree_sitter_css::LANGUAGE.into()),
+        #[cfg(feature = "html")]
+        Language::Html => Some(tree_sitter_html::LANGUAGE.into()),
         #[allow(unreachable_patterns)]
         _ => None,
     }
@@ -48,6 +50,7 @@ pub(crate) const fn pin(language: Language) -> Option<(&'static str, &'static st
         Language::TypeScript | Language::Tsx => Some(("tree-sitter-typescript", "0.23.2")),
         Language::JavaScript | Language::Jsx => Some(("tree-sitter-javascript", "0.25.0")),
         Language::Css => Some(("tree-sitter-css", "0.25.0")),
+        Language::Html => Some(("tree-sitter-html", "0.23.2")),
     }
 }
 

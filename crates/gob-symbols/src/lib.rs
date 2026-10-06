@@ -5,7 +5,7 @@
 //! # Overview
 //!
 //! - [`Adapter`]: the contract `parse`, `fold`, `capabilities`, `fidelity`.
-//!   [`RustAdapter`] (F3), [`PythonAdapter`] (F2), [`CSharpAdapter`] (F1), [`TypeScriptAdapter`] (F2), [`CssAdapter`] (F2), [`MarkdownAdapter`] (F4) and [`OpaqueAdapter`] (F0, for
+//!   [`RustAdapter`] (F3), [`PythonAdapter`] (F2), [`CSharpAdapter`] (F1), [`TypeScriptAdapter`] (F2), [`CssAdapter`] (F2), [`HtmlAdapter`] (F2), [`MarkdownAdapter`] (F4) and [`OpaqueAdapter`] (F0, for
 //!   every file with no adapter) each produce a [`gob_ir::Term`] and a
 //!   [`gob_ir::ScopeGraph`] ([`Folded`]); [`adapters`] lists them and the `inventory`-based registry
 //!   ([`AdapterEntry`]) lets crates that depend on this one add more.
@@ -48,6 +48,7 @@ mod adapter;
 mod crates;
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
 mod css;
+mod html;
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
 mod csharp;
 // frob:ticket 01M44YQW33GJMXQ8PQBECEBCQ1
@@ -89,6 +90,7 @@ pub use graph::{
     CallEdge, EdgeKind, FileInfo, GapReason, ReachSet, ResolveError, Status, StatusEdge,
     SymbolGraph,
 };
+pub use html::{HtmlAdapter, is_html_path};
 pub use markdown::{MarkdownAdapter, slugify};
 pub use model::{
     AttributeFact, CallRef, CallSite, DeriveDecl, Digests, FacetDigest, FieldDecl, FileSymbols,

@@ -339,7 +339,7 @@ impl Css<'_> {
 }
 
 /// The value text without a trailing `!important`, and whether it was there.
-fn split_important(value: &str) -> (&str, bool) {
+pub(crate) fn split_important(value: &str) -> (&str, bool) {
     let lower = value.to_ascii_lowercase();
     match lower.strip_suffix("important") {
         Some(rest) if rest.trim_end().ends_with('!') => {
