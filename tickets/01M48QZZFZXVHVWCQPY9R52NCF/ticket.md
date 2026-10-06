@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:03Z"
-updated = "2026-10-06T16:00:48Z"
+updated = "2026-10-06T16:15:19Z"
 scope = ["crates/gob-macros/**", "crates/gob-rules/**", ".config/nextest.toml"]
 
 [[acceptance]]
