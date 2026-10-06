@@ -2,12 +2,12 @@
 id = "01M48FXAG32KFM90XWVFS8AX88"
 title = "grimble-bind: SYS004 checks undeclared flows over import and JSX component call edges between owners"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:34:47Z"
-updated = "2026-10-06T11:34:47Z"
+updated = "2026-10-06T12:02:11Z"
 scope = ["crates/grimble-bind/**"]
 +++
 
