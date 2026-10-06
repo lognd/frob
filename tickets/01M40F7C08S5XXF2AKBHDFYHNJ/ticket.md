@@ -2,13 +2,14 @@
 id = "01M40F7C08S5XXF2AKBHDFYHNJ"
 title = "frob-release tests: one dispatching mdtest corpus binary for REL001 and REL002"
 type = "chore"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T08:48:52Z"
-updated = "2026-10-03T08:48:52Z"
+updated = "2026-10-06T13:56:16Z"
 idempotency_key = "m2-release-corpus-dispatch"
 labels = ["milestone:2", "good-first"]
 scope = ["crates/frob-release/tests/**"]
