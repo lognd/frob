@@ -2,7 +2,8 @@
 id = "01M47QKW1R6KY7K1H6N4M1BX5H"
 title = "Web conformance corpus: TS, TSX, CSS, HTML fixtures and capability-matrix rows end to end"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
