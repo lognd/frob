@@ -7,7 +7,7 @@ priority = "low"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:21Z"
-updated = "2026-10-06T13:14:13Z"
+updated = "2026-10-06T13:56:19Z"
 scope = ["crates/gob-dev/**", "crates/gob-symbols/src/languages_page.rs", "docs/reference/**"]
 
 [[acceptance]]

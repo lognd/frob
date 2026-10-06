@@ -60,10 +60,13 @@ the GUI and the CLI at once because the ledger is the only truth.
 
 ## 4. TUI
 
-A ratatui front end (`frob tui`) over the same in-process handlers for
-terminal users: board, backlog, ticket page, doable. Same API types;
-built after the web GUI, since the web GUI is what the owner asked for
-first and the TUI can reuse its view models.
+A separate binary, `frob-live` (crate frob-live, ratatui), shipped in the
+frob wheel beside `frob` and reached as `frob board --live` and `frob stats
+--live` (D104, D105): frob execs the sibling binary found next to itself, so
+the `frob` binary links no TUI and there is no `tui` verb. It redraws the
+same view types the text and JSON renderings use (frob-pm board, frob-metrics
+stats), refreshing on ledger, worktree and file changes, like clocx's
+`--live` mode.
 
 ## 5. What is deliberately not built
 

@@ -1,0 +1,12 @@
+kind = "create"
+title = "gob-mdtest: failure UX: md file:line, rerun hint, filter env, GitHub annotations, one test per file"
+type = "story"
+category = "todo"
+priority = "low"
+parent = "01M47QTS14TAZQ67NN2M9NHDJP"
+scope = ["crates/gob-mdtest/**", "crates/gob-dev/src/ci.rs"]
+acceptance = ["line mapping self-test", "nextest lists one test per corpus file", "the CI step emits annotations"]
+body = "Report failures at path.md:LINE of the marker, print a rerun command, add a filter env (section path substring), emit GitHub annotations when requested, and generate one test per markdown file so nextest isolates and retries per file (ty datatest-style). Source: notes/research/rule-testing.md (D103)."
+at = "2026-10-06T13:27:41Z"
+actor = "lognd"
+rev = 1

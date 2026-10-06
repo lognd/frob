@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D106: both executors produce RuleReport and run the same polarity-conformance corpus (~C3AMTNM)."
+at = "2026-10-06T13:41:13Z"
+actor = "lognd"
+rev = 1

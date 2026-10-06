@@ -1,8 +1,9 @@
 //! `crunk check`: crunk's driver over the shared [`gob_check`] pipeline and the `gob.sibling/1`
 //! document it prints (design: `sibling-contract.md`, `products.md` 1).
 //!
-//! The rule set is empty in this scaffold: the run walks the repository, applies the neutral
-//! pipeline groups and reports the (empty) result. Rule families register their own groups in
+//! The run walks the repository, applies the neutral pipeline groups and the rule groups of
+//! [`rules`] (COLOR001 so far: colour literals against the palette of `crunk.toml`, read from the
+//! shared `style` capability). Rule families register their own groups in
 //! [`Crunk::repo_groups`](gob_check::Product::repo_groups) as their tickets land.
 //!
 //! # Boundaries
@@ -13,6 +14,7 @@
 // frob:ticket 01M43ARVS24254G85TMFYH8FGQ
 
 mod product;
+pub mod rules;
 pub mod sibling;
 
 use std::path::{Path, PathBuf};

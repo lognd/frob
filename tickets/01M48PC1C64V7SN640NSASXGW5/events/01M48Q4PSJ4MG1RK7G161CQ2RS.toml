@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["a panicking rule is reported as a failed case, not an aborted run", "expect-panic passes on a matching panic and fails when there is none"]
+new = ["a panicking rule is reported as a failed case, not an aborted run", "expect-panic passes on a matching panic and fails when there is none", "each adapter has a garbage-input case asserting Unresolved or NotApplicable and no panic"]
+reason = "D106 (testing against U)"
+moved = [1, 2]
+at = "2026-10-06T13:41:09Z"
+actor = "lognd"
+rev = 1

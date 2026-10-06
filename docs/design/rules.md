@@ -450,7 +450,7 @@ sense with no tickets, docs policy or release process is grimble. Each
 rule crate compiles and tests alone (`cargo nextest -p grimble-arch`),
 with a shared fixture harness in `gob-rules/testing`
 that builds a snapshot from an in-memory repo. Markdown-driven cases
-(`tests/cases/*.md`: a fenced repo, then expected findings) are the
+(`tests/mdtest/**/*.md`: a fenced repo, then expected findings) are the
 primary test form, in the style of ty's mdtest; `insta` snapshots cover
 rendering.
 

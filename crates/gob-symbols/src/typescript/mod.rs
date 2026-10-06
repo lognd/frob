@@ -28,6 +28,11 @@
 //!   nodes (Known literals tokenised, computed values one `lit(unknown)`), and a `css` tagged template is a
 //!   `region(css)` island. Call arguments, spreads, `&&` and `||` lower to the same forms; constants across files, imports and class-name
 //!   joiners (`clsx`, `cn`) evaluate through [`ConstProject`] (`consteval.rs`, ~C2F4ZMQ).
+//! - Test items are units too: a recognised runner call is a `function` unit named `test$<title>` (a case)
+//!   or `suite$<title>` (a suite, titles slugged to symref-safe text, `[dupN]` on repeats) holding a
+//!   `test` attr and the `apply`; calls in its callback are its own, so a test is nameable
+//!   ([`is_typescript_test_fn`]). A dynamic title (`test.each(..)(..)`, `it(name, ..)`) is not recognised and
+//!   stays part of the enclosing unit.
 //! - Test items: a `describe`, `it`, `test`, `test.describe` (with modifiers such as `only` or `skip`) call
 //!   with a literal title and a function argument is marked on its `apply` node ([`test_items`]) when the
 //!   name comes from vitest, `@jest/globals`, `@playwright/test`, `bun:test` or `node:test`, or the file is a
@@ -255,6 +260,32 @@ pub fn jsx_elements(term: &Term) -> Vec<JsxElement> {
     }
     out.sort_by_key(|(start, _)| *start);
     out.into_iter().map(|(_, e)| e).collect()
+}
+
+/// Unit-name prefix of a test case (`test$adds`); the marker [`is_typescript_test_fn`] reads.
+pub(crate) const TEST_CASE_PREFIX: &str = "test$";
+/// Unit-name prefix of a test suite (`suite$math`).
+pub(crate) const TEST_SUITE_PREFIX: &str = "suite$";
+/// Longest title slug kept in a test unit name.
+const MAX_TEST_NAME: usize = 80;
+
+/// The symref-safe unit name of a test item: role prefix then the title with unsafe characters as `_`.
+pub(crate) fn test_unit_name(role: &str, title: &str) -> String {
+    let prefix = if role == "suite" {
+        TEST_SUITE_PREFIX
+    } else {
+        TEST_CASE_PREFIX
+    };
+    let slug: String = fold::unit_name(title).chars().take(MAX_TEST_NAME).collect();
+    format!("{prefix}{slug}")
+}
+
+/// True when `rec` is a runner test unit (`describe`, `it`, `test` call) of a TS or JS file.
+pub fn is_typescript_test_fn(rec: &crate::SymbolRecord) -> bool {
+    let name = rec.symref.name().unwrap_or_default();
+    rec.kind == crate::SymbolKind::Function
+        && is_typescript_path(rec.symref.path())
+        && (name.starts_with(TEST_CASE_PREFIX) || name.starts_with(TEST_SUITE_PREFIX))
 }
 
 /// Whether a test item groups others or is one test.

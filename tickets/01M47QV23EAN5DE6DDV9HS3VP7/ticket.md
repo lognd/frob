@@ -8,7 +8,7 @@ points = 8
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:07Z"
-updated = "2026-10-06T04:34:07Z"
+updated = "2026-10-06T13:41:11Z"
 scope = ["crates/gob-dev/**", "ecosystem.toml", ".github/workflows/**"]
 
 [[acceptance]]

@@ -7,23 +7,23 @@ priority = "medium"
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:34:47Z"
-updated = "2026-10-06T12:15:20Z"
-scope = ["crates/grimble-bind/**", "design/model.grmb", "docs/design/binding.md"]
+updated = "2026-10-06T13:56:15Z"
+scope = ["crates/grimble-bind/**", "design/model.grmb", "docs/design/binding.md", "crates/gob-mdtest/coverage-allowlist.toml"]
 
 [[acceptance]]
 text = "SYS013 (the id binding.md 11.3 assigns to undeclared flow) fires once per ordered owner pair when a Must TS import or call edge, JSX component uses included, crosses owners with no flow in that direction; the web conformance fixture fires ui to api."
-bound = false
-
-[[acceptance]]
-text = "A flow from the caller's owner to the callee's owner allows the edges; a reversed flow does not."
-bound = false
+bound = true
 
 [[acceptance]]
 text = "An Unknown or May edge, or a May owner, is Unresolved (unresolved-edge or may-only-owner), never clean; an external package is not an edge between owners; foreign ends are unchecked."
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The rule consumes the one SymbolGraph of the snapshot through the existing binding path (owners, flows, Cx), with no web-specific side path; it is not applicable with fewer than two code-owning nodes or no import or call edge."
+bound = true
+
+[[acceptance]]
+text = "A flow in either direction between the two owners allows the edge; with no flow between them it fires."
 bound = false
 +++
 
