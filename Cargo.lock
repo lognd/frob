@@ -2415,6 +2415,7 @@ dependencies = [
 name = "gob-plan"
 version = "0.532.0"
 dependencies = [
+ "gob-ir",
  "gob-rules",
  "gob-text",
  "insta",

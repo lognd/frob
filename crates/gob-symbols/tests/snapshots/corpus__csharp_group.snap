@@ -21,3 +21,4 @@ tests/corpus/csharp/ops/group.cs::Grid Class Public parent=
 tests/corpus/csharp/ops/group.cs::Grid.Total Method Public parent=tests/corpus/csharp/ops/group.cs::Grid
 tests/corpus/csharp/ops/group.cs::Grid.Total.Twice Function Private parent=tests/corpus/csharp/ops/group.cs::Grid.Total
 == edges ==
+Calls tests/corpus/csharp/ops/group.cs::Grid.Total -> tests/corpus/csharp/ops/group.cs::Grid.Total.Twice Must None None

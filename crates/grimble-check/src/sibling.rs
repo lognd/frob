@@ -5,26 +5,17 @@
 //! form and listed in the crate docs: entity digests are null, `anchor`/`entity` on a finding are null because
 //! `check_model` does not expose them, and `not_applicable_rules` lists only the SYS rules the model gives nothing to (CAP adds more).
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 
-use gob_diagnostics::{FindingRecord, MemorySources, severity_label};
-use gob_rules::{Finding, Registry, Severity};
-use gob_text::SourceText;
+use gob_check::sibling::{PacksField, SiblingInput, document};
+use gob_rules::{Finding, Severity};
 use serde_json::{Value, json};
 
 use crate::GrimbleRun;
 use crate::config::blake3_tagged;
 use crate::fidelity::fidelity_json;
 
-/// The contract name and major this build implements.
-pub const SCHEMA_VERSION: &str = "gob.sibling/1";
-
-/// Polarity symbol of `rule` (`P+` when the registry does not know it).
-fn polarity_of(rule: &str) -> &'static str {
-    Registry::global()
-        .by_id(rule)
-        .map_or("P+", |m| m.polarity.symbol())
-}
+pub use gob_check::sibling::SCHEMA_VERSION;
 
 /// Unresolved reason code of a finding: the required mark decides, else `fidelity`.
 fn reason_of(f: &Finding) -> Option<String> {
@@ -41,89 +32,6 @@ fn reason_of(f: &Finding) -> Option<String> {
             .unwrap_or("fidelity")
             .to_owned(),
     })
-}
-
-/// A resolver of `file:line:column` over the files the findings point into.
-fn sources_of(run: &GrimbleRun) -> MemorySources {
-    let mut sources = MemorySources::new();
-    let mut seen = std::collections::HashSet::new();
-    let all = run
-        .report
-        .findings
-        .iter()
-        .chain(run.report.suppressed.iter().map(|(f, _)| f));
-    for f in all {
-        let Some(span) = f.span else { continue };
-        if !seen.insert(span.file) {
-            continue;
-        }
-        let Some(path) = run.report.files.path(span.file) else {
-            continue;
-        };
-        // Lossy: an opaque (non-UTF-8) model file still needs a path and an approximate line.
-        let text =
-            std::fs::read(run.root.join(path)).map(|b| String::from_utf8_lossy(&b).into_owned());
-        if let Ok(text) = text
-            && let Ok(src) = SourceText::new(text)
-        {
-            sources.insert(span.file, path, src);
-        }
-    }
-    sources
-}
-
-fn finding_json(run: &GrimbleRun, sources: &MemorySources, f: &Finding) -> Value {
-    let record = FindingRecord::from_finding(f, sources, Registry::global());
-    let mut v = serde_json::to_value(&record)
-        .unwrap_or_else(|e| unreachable!("a finding record serializes: {e}"));
-    let rule = f.rule.as_str();
-    let object = v
-        .as_object_mut()
-        .unwrap_or_else(|| unreachable!("a finding record is an object"));
-    object.insert("polarity".to_owned(), json!(polarity_of(rule)));
-    object.insert(
-        "subjects_examined".to_owned(),
-        json!(run.report.subjects_examined.get(rule).copied().unwrap_or(0)),
-    );
-    object.insert("reason".to_owned(), json!(reason_of(f)));
-    object.insert("maybe".to_owned(), json!(Vec::<String>::new()));
-    object.insert("anchor".to_owned(), Value::Null);
-    object.insert("entity".to_owned(), Value::Null);
-    object.insert("remedy".to_owned(), Value::Null);
-    object.insert(
-        "range".to_owned(),
-        f.span.map_or(
-            Value::Null,
-            |s| json!({"start": u32::from(s.range.start()), "end": u32::from(s.range.end())}),
-        ),
-    );
-    debug_assert_eq!(severity_label(f.severity), record.severity);
-    v
-}
-
-fn rules_json(run: &GrimbleRun) -> Vec<Value> {
-    let count = |rule: &str, sev: Option<Severity>| {
-        run.report
-            .findings
-            .iter()
-            .filter(|f| f.rule.as_str() == rule && sev.is_none_or(|s| f.severity == s))
-            .count()
-    };
-    run.report
-        .subjects_examined
-        .iter()
-        .filter(|(rule, _)| !run.not_applicable.contains_key(rule.as_str()))
-        .map(|(rule, subjects)| {
-            json!({
-                "rule": rule,
-                "polarity": polarity_of(rule),
-                "subjects_examined": subjects,
-                "findings": count(rule, None),
-                "suppressed": run.report.suppressed.iter().filter(|(f, _)| f.rule.as_str() == rule).count(),
-                "unresolved": count(rule, Some(Severity::Unresolved)),
-            })
-        })
-        .collect()
 }
 
 /// The `exceptions` array: every parsed exception with how many findings it parked this run.
@@ -156,53 +64,29 @@ pub fn exceptions_json(run: &GrimbleRun) -> Vec<Value> {
 
 /// The sibling document of `run` (the `data` of the check envelope).
 pub fn sibling_document(run: &GrimbleRun) -> Value {
-    let sources = sources_of(run);
     let key = |f: &Finding| crate::product::park_key(f, &run.report.files);
-    let findings: Vec<Value> = run
-        .report
-        .findings
-        .iter()
-        .map(|f| finding_json(run, &sources, f))
-        .collect();
-    let suppressed: Vec<Value> = run
-        .report
-        .suppressed
-        .iter()
-        .map(|(f, _)| {
-            json!({
-                "finding": finding_json(run, &sources, f),
-                "exception": run.parks.get(&key(f)).cloned().unwrap_or_default(),
-            })
-        })
-        .collect();
-    let mut doc = json!({
-        "schema_version": SCHEMA_VERSION,
-        "product": crate::config::PRODUCT,
-        "product_version": env!("CARGO_PKG_VERSION"),
-        "compute_digest": gob_config::compute_digest(&run.compute),
-        "compute": run.compute.to_value(),
-        "invocation": {
-            "verb": "check",
-            "root": ".",
-            "ticket_scope": run.ticket_scope,
-            "base": run.base,
-        },
-        "fidelity": fidelity_json(&run.languages, &run.not_applicable.keys().cloned().collect::<Vec<_>>()),
-        "rules": rules_json(run),
-        "findings": findings,
-        "suppressed": suppressed,
-        "exceptions": exceptions_json(run),
-        "entities": run.view.entities_json(),
-        "bindings": run.bindings,
-        "timing": {"elapsed_ms": run.elapsed_ms},
-    });
-    if run.has_config {
+    let not_applicable: HashSet<String> = run.not_applicable.keys().cloned().collect();
+    let na_list: Vec<String> = run.not_applicable.keys().cloned().collect();
+    document(&SiblingInput {
+        product: crate::config::PRODUCT,
+        product_version: env!("CARGO_PKG_VERSION"),
+        root: &run.root,
+        report: &run.report,
+        compute: &run.compute,
+        ticket_scope: run.ticket_scope.as_deref(),
+        base: run.base.as_deref(),
+        elapsed_ms: run.elapsed_ms,
+        fidelity: fidelity_json(&run.languages, &na_list),
+        not_applicable: &not_applicable,
+        reason: &reason_of,
+        exception_of: &|f| run.parks.get(&key(f)).cloned().unwrap_or_default(),
+        exceptions: exceptions_json(run),
+        entities: run.view.entities_json(),
+        bindings: run.bindings.clone(),
         // No pack is loaded yet, so the used-pack list is empty; its digest is that of `[]`.
-        let object = doc
-            .as_object_mut()
-            .unwrap_or_else(|| unreachable!("the document is an object"));
-        object.insert("packs".to_owned(), json!(Vec::<Value>::new()));
-        object.insert("packs_digest".to_owned(), json!(blake3_tagged(b"[]")));
-    }
-    doc
+        packs: run.has_config.then(|| PacksField {
+            packs: Vec::new(),
+            digest: blake3_tagged(b"[]"),
+        }),
+    })
 }

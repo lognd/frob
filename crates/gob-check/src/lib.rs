@@ -60,6 +60,7 @@ mod repo;
 mod report;
 mod required;
 mod rules;
+pub mod sibling;
 mod status;
 mod store;
 mod telemetry;
