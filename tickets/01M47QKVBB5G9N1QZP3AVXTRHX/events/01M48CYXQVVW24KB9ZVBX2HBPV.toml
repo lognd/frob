@@ -1,0 +1,8 @@
+kind = "field"
+field = "scope"
+old = ["Cargo.lock", "crates/gob-frameworks/**"]
+new = ["Cargo.lock", "crates/gob-frameworks/**", "docs/design/language-engines.md", "changelog.d/01M47QKVBB5G9N1QZP3AVXTRHX.added.md"]
+reason = "design note and changelog fragment"
+at = "2026-10-06T10:43:09Z"
+actor = "lognd"
+rev = 1
