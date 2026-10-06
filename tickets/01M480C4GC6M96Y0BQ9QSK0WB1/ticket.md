@@ -7,7 +7,7 @@ priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T07:03:15Z"
-updated = "2026-10-06T07:03:15Z"
+updated = "2026-10-06T13:41:12Z"
 scope = ["crates/*/tests/mdtest/**"]
 
 [[acceptance]]
