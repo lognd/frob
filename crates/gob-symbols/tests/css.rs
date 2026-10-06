@@ -195,3 +195,24 @@ fn at_rules_carry_name_and_prelude_and_keyframes_are_rules() {
     assert_eq!(rules, ["from", "50%"]);
     assert_eq!(style::declarations(&model).len(), 3);
 }
+
+#[test]
+// frob:tests crates/gob-symbols/src/css/mod.rs::fold_tree
+fn the_cached_payload_round_trips() {
+    let src = "a { color: red; }\n@media print { .b, .c > i { --x: 1; } }\n";
+    let fs = extract_file(&entry("a.css", src), src);
+    let bytes = postcard::to_allocvec(&fs).expect("encode");
+    let back: gob_symbols::FileSymbols = postcard::from_bytes(&bytes).expect("decode");
+    assert_eq!(back.path, fs.path);
+    assert_eq!(back.symbols.len(), fs.symbols.len());
+    let names: Vec<String> = back.symbols.iter().map(|s| s.symref.to_string()).collect();
+    assert_eq!(
+        names,
+        [
+            "a.css::a",
+            "a.css::media",
+            "a.css::media.[.b,_.c_>_i]",
+            "a.css::media.[.b,_.c_>_i].--x"
+        ]
+    );
+}

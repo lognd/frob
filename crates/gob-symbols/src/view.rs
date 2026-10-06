@@ -47,6 +47,7 @@ pub(crate) const HOLE_UNMODELLED: &str = "unmodelled";
 
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
+// frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
 /// How legacy symrefs are spelled for a term.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Naming {
@@ -62,6 +63,8 @@ pub(crate) enum Naming {
     CSharp,
     /// `path::Class.method`, nested functions as `outer.inner`, namespaces one unit per component.
     TypeScript,
+    /// `path::.card[dup2]`: selectors, at-rule names and custom properties, escaped by [`style_segment`].
+    Style,
     /// Only the file node exists.
     Opaque,
 }
@@ -164,6 +167,19 @@ fn seg_text(seg: &Segment) -> String {
     seg.to_string()
 }
 
+/// A selector or at-rule name as one symref segment: whitespace becomes `_` and a name with `.` is bracketed.
+fn style_segment(text: &str) -> String {
+    let flat: String = text
+        .chars()
+        .map(|c| if c.is_whitespace() { '_' } else { c })
+        .collect();
+    if flat.contains('.') && !flat.starts_with('[') {
+        format!("[{flat}]")
+    } else {
+        flat
+    }
+}
+
 fn seg_name(seg: &Segment) -> String {
     match seg {
         Segment::Name { name, .. } => name.clone(),
@@ -224,7 +240,11 @@ fn collect_pending(term: &Term, naming: Naming) -> Vec<Pending> {
             .and_then(|p| base.get(&p).cloned())
             .unwrap_or_default();
         let mut full = parent_base.clone();
-        full.push(seg_text(seg));
+        full.push(if naming == Naming::Style {
+            style_segment(&seg_text(seg))
+        } else {
+            seg_text(seg)
+        });
         let mut b = parent_base;
         if kind == "impl" {
             b.push(seg_name(seg));
@@ -336,7 +356,12 @@ pub(crate) fn build(term: &Term, path: &str, naming: Naming) -> View {
     match naming {
         Naming::Rust => patch_impl_visibility(&mut view.symbols),
         Naming::Markdown => subtree_digests(&mut view),
-        Naming::Model | Naming::Python | Naming::CSharp | Naming::TypeScript | Naming::Opaque => {}
+        Naming::Model
+        | Naming::Python
+        | Naming::CSharp
+        | Naming::TypeScript
+        | Naming::Style
+        | Naming::Opaque => {}
     }
     view
 }

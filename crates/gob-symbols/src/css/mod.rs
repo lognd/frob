@@ -9,6 +9,7 @@
 //!   a keyframe block is a `unit(style-rule)` named by its selector (`from`, `50%`). Children are the nested
 //!   rules, at-rules and declarations, so the selector and at-rule chain of a declaration is its ancestor
 //!   chain ([`gob_ir::style::declarations`] reports the nearest owner).
+//! - Symrefs nest like the units (`site.css::media.[.card,_.tile]`, see `view::style_segment`).
 //! - A declaration `property: value` is the `style.declaration` operator named by the property with the raw
 //!   value text in `raw`, `important` set, and the component values (see [`tokens`]) as children; a
 //!   `--x: value` definition is `unit(custom-property)` named `--x` with the same `raw` and children. Every
@@ -126,7 +127,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     let root_id = cx.add(file_root_spec(&cx, input.size as usize), &kids)?;
     let term = cx.b.finish(root_id)?;
     let scopes = cascade_scopes(&term);
-    let v = view::build(&term, input.path, Naming::Model);
+    let v = view::build(&term, input.path, Naming::Style);
     let mut file = base_file(input, "css");
     file.fidelity = Fidelity::F2;
     file.parse_status = view::parse_status_of(&term);

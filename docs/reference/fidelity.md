@@ -178,7 +178,8 @@ The adapter (F2, `.css`, tree-sitter css grammar) lowers a stylesheet to the `go
 `@font-face`, `@import`, ...) is `unit(at-rule)` named without the `@` with its prelude text, a keyframe block is a
 style rule named by its selector, a declaration is the `style.declaration` operator (property, raw value text,
 `important`, component values as children, the declaration's byte span), and `--x: value` is
-`unit(custom-property)`. A declaration's selector and at-rule chain is its ancestor chain. A `var(--x)` is a
+`unit(custom-property)`. A declaration's selector and at-rule chain is its ancestor chain. Symrefs nest the same way
+(`site.css::media.[.card,_.tile].--gap`: whitespace becomes `_`, a name with a dot is bracketed, repeats get `[dupN]`). A `var(--x)` is a
 `ref`; the scope graph holds every custom property of the file at May in one cascade scope, so a use with
 several definitions resolves to a May set and a use with none has no definition edge (D100).
 
