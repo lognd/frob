@@ -1,0 +1,13 @@
+kind = "create"
+title = "cargo-deny, cargo-shear, typos and MSRV steps in cargo dev ci"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M47QTS14TAZQ67NN2M9NHDJP"
+scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "deny.toml", "typos.toml", "frob.toml", "Cargo.toml", "crates/*/Cargo.toml"]
+acceptance = ["the four steps run in cargo dev ci and in ci.yml through it", "each passes on experimental", "every allow entry carries a reason"]
+body = "build-test-ci.md sections 4 and 6. Four steps, each tool version pinned in frob.toml like zizmor: deny (advisories, licenses, bans with a deny.toml), shear (unused dependencies), typos (with a typos.toml for domain words), msrv (cargo check at the workspace rust-version). Fix what they find or allow it with a reason."
+at = "2026-10-06T04:34:19Z"
+actor = "lognd"
+rev = 1
