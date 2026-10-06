@@ -54,6 +54,8 @@ mod fold;
 mod graph;
 mod markdown;
 mod model;
+// frob:ticket 01M47QKTN549397AFFSC3DEAQX
+mod nodejs;
 mod opaque;
 mod paths;
 mod pipeline;
@@ -89,6 +91,9 @@ pub use model::{
     AttributeFact, CallRef, CallSite, DeriveDecl, Digests, FacetDigest, FieldDecl, FileSymbols,
     ImportEdge, LocalBinding, MapKind, MethodSig, Receiver, RefKind, RefSite, RetType, SelfKind,
     SymbolKind, SymbolRecord, UnitExtras, UnitFacts, UnitSpan, UseBinding, Visibility, collapse_ws,
+};
+pub use nodejs::{
+    JsResolution, NodeError, NodeProjects, Package, PathAlias, TsConfig, parse_package,
 };
 pub use opaque::OpaqueAdapter;
 pub use pipeline::{

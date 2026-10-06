@@ -116,6 +116,7 @@ impl Adapter for TypeScriptAdapter {
             .with(Capability::Visibility, Precision::Keyword)
             .with(Capability::Imports, Precision::LexicalImports)
             .with(Capability::TestItems, Precision::Syntactic)
+            .with(Capability::ProjectModel, Precision::Manifest)
     }
 
     fn parse(&self, text: &str, _limits: &ParseLimits) -> ConcreteTree {

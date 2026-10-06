@@ -4,8 +4,11 @@
 //! exactly one repository file (or a symbol that file declares or re-exports), May when the import runs only
 //! sometimes (a literal dynamic `import("m")`, a `require` under a condition or inside a function) or several
 //! files or symbols answer, and Unknown when nothing can be claimed: a computed specifier, a relative
-//! specifier that names no file, and every bare specifier (a package, a tsconfig `paths` alias, a workspace
-//! package, a `#` import) until the project model answers them (~C3DEAQX). An Unknown import is kept as a
+//! specifier that names no file, and every bare specifier the project model cannot place. With the project
+//! model (`CrateDeps::js_resolve`, ~C3DEAQX) a bare specifier resolves in this order: a `#` import of the
+//! owning package, a tsconfig `paths` alias, tsconfig `baseUrl`, a workspace package (its `exports`, `types`,
+//! `module` or `main`), then a declared, installed or builtin dependency, which is Unknown with
+//! [`GapReason::External`] (no repository target, so nothing is claimed). An Unknown import is kept as a
 //! status edge with no target, never dropped.
 //!
 //! Relative specifiers resolve in the order TypeScript tries them: the `.js` family mapped to its source
@@ -18,6 +21,7 @@
 //! name no repository file defines are Unknown, never clean.
 
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
+// frob:ticket 01M47QKTN549397AFFSC3DEAQX
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -26,10 +30,12 @@ use petgraph::graph::NodeIndex;
 use petgraph::visit::EdgeRef;
 
 use super::{EdgeKind, GapReason, Outcome, StatusEdge, SymbolGraph, base_segment};
+use crate::crates::CrateDeps;
 use crate::model::{
     CallSite, FileSymbols, ImportEdge, LocalBinding, Receiver, RefSite, SymbolKind, UseBinding,
     Visibility,
 };
+use crate::nodejs::JsResolution;
 use crate::symref::Symref;
 use crate::typescript::imports::{ImportMode, decode_edge, decode_use};
 use gob_ir::Status;
@@ -52,8 +58,10 @@ enum Module {
     Local(String),
     /// A relative specifier that names no file.
     Missing,
-    /// Not relative: a package, an alias or a `#` import (the project-model seam, ~C3DEAQX).
+    /// Not relative and not placed by the project model: an undeclared package or an unmatched alias.
     Bare,
+    /// A dependency outside the repository: declared, installed under `node_modules`, or a Node builtin.
+    External,
 }
 
 /// Lookup tables over the repository's TypeScript and JavaScript files.
@@ -71,6 +79,8 @@ pub(super) struct TsIndex {
     uses: HashMap<String, Vec<UseBinding>>,
     /// TypeScript file path to its import edges, in source order.
     imports: Vec<(String, Vec<ImportEdge>)>,
+    /// (importing file, bare specifier) to what the project model says it names.
+    bare: HashMap<(String, String), JsResolution>,
 }
 
 /// The directory of `from` joined with the relative `spec`, normalised; `None` above the root.
@@ -95,8 +105,12 @@ fn is_relative(spec: &str) -> bool {
 }
 
 impl TsIndex {
-    /// Indexes the TypeScript files in `files` against the node table of `g`.
-    pub(super) fn build(g: &SymbolGraph, files: &[FileSymbols]) -> Self {
+    /// Indexes the TypeScript files in `files` against the node table of `g`, placing bare specifiers with `deps`.
+    pub(super) fn build(
+        g: &SymbolGraph,
+        files: &[FileSymbols],
+        mut deps: Option<&mut CrateDeps>,
+    ) -> Self {
         let mut ix = Self::default();
         for f in files {
             ix.files.insert(f.path.clone());
@@ -110,6 +124,9 @@ impl TsIndex {
             };
             ix.uses.insert(f.path.clone(), f.uses.clone());
             ix.imports.push((f.path.clone(), f.imports.clone()));
+            if let Some(d) = deps.as_deref_mut() {
+                ix.place_bare(d, f);
+            }
             for s in &f.symbols {
                 let Some(&node) = g.index.get(&s.symref) else {
                     continue;
@@ -131,8 +148,39 @@ impl TsIndex {
                 }
             }
         }
-        tracing::debug!(files = ix.imports.len(), "typescript index built");
+        tracing::debug!(
+            files = ix.imports.len(),
+            bare = ix.bare.len(),
+            "typescript index built"
+        );
         ix
+    }
+
+    /// Asks the project model about every literal bare specifier `f` imports or re-exports.
+    fn place_bare(&mut self, deps: &mut CrateDeps, f: &FileSymbols) {
+        let specs = f
+            .imports
+            .iter()
+            .map(|e| decode_edge(&e.target))
+            .chain(f.uses.iter().map(|u| decode_use(&u.target)))
+            .filter(|r| r.mode != ImportMode::Unknown)
+            .map(|r| r.spec)
+            .filter(|s| !s.is_empty() && !is_relative(s));
+        for spec in specs {
+            let key = (f.path.clone(), spec.to_owned());
+            if self.bare.contains_key(&key) {
+                continue;
+            }
+            let r = deps.js_resolve(&f.path, spec);
+            tracing::debug!(
+                from = %f.path,
+                spec,
+                candidates = r.candidates.len(),
+                external = r.external,
+                "bare specifier placed"
+            );
+            self.bare.insert(key, r);
+        }
     }
 
     fn kids_of(&self, parent: NodeIndex, name: &str) -> &[NodeIndex] {
@@ -147,11 +195,27 @@ impl TsIndex {
             return Module::Local(from.to_owned());
         }
         if !is_relative(spec) {
-            return Module::Bare;
+            let Some(r) = self.bare.get(&(from.to_owned(), spec.to_owned())) else {
+                return Module::Bare;
+            };
+            if let Some(hit) = r.candidates.iter().find_map(|c| self.probe(c)) {
+                return Module::Local(hit);
+            }
+            return if r.external {
+                Module::External
+            } else {
+                Module::Bare
+            };
         }
         let Some(base) = join_relative(from, spec) else {
             return Module::Missing;
         };
+        self.probe(&base).map_or(Module::Missing, Module::Local)
+    }
+
+    /// The walked file `base` names, trying TypeScript's orders: source mapped from `.js`, the path, an extension, `index`.
+    fn probe(&self, base: &str) -> Option<String> {
+        let base = base.to_owned();
         let mut candidates: Vec<String> = Vec::new();
         if let Some((stem, ext)) = base.rsplit_once('.') {
             let mapped: &[&str] = match ext {
@@ -171,10 +235,7 @@ impl TsIndex {
             format!("{base}/index")
         };
         candidates.extend(EXTENSIONS.iter().map(|e| format!("{dir}.{e}")));
-        candidates
-            .into_iter()
-            .find(|c| self.files.contains(c))
-            .map_or(Module::Missing, Module::Local)
+        candidates.into_iter().find(|c| self.files.contains(c))
     }
 }
 
@@ -213,6 +274,56 @@ fn import_edge(
         qualifier: None,
         line: None,
         text: None,
+    }
+}
+
+/// Records the module edge of the import of `spec` by `path` at `status`: a link and Must/May edge to a file, or an Unknown edge.
+fn link_module(
+    ts: &TsIndex,
+    path: &str,
+    from: NodeIndex,
+    spec: &str,
+    status: Status,
+    links: &mut BTreeMap<(NodeIndex, NodeIndex), Status>,
+    edges: &mut Vec<StatusEdge>,
+) {
+    match ts.resolve(path, spec) {
+        Module::Local(p) => {
+            let Some(&to) = ts.file_nodes.get(&p) else {
+                return;
+            };
+            if to != from {
+                let w = links.entry((from, to)).or_insert(status);
+                *w = (*w).max(status);
+            }
+            edges.push(import_edge(
+                path,
+                Some(Symref::file(&p)),
+                status,
+                spec,
+                None,
+            ));
+        }
+        Module::External => {
+            tracing::debug!(from = %path, spec, "typescript import external");
+            edges.push(import_edge(
+                path,
+                None,
+                Status::Unknown,
+                spec,
+                Some(GapReason::External),
+            ));
+        }
+        Module::Missing | Module::Bare => {
+            tracing::debug!(from = %path, spec, "typescript import unresolved");
+            edges.push(import_edge(
+                path,
+                None,
+                Status::Unknown,
+                spec,
+                Some(GapReason::Unbound),
+            ));
+        }
     }
 }
 
@@ -560,34 +671,7 @@ impl SymbolGraph {
                         continue;
                     }
                 };
-                match ts.resolve(path, r.spec) {
-                    Module::Local(p) => {
-                        let Some(&to) = ts.file_nodes.get(&p) else {
-                            continue;
-                        };
-                        if to != from {
-                            let w = links.entry((from, to)).or_insert(status);
-                            *w = (*w).max(status);
-                        }
-                        edges.push(import_edge(
-                            path,
-                            Some(Symref::file(&p)),
-                            status,
-                            r.spec,
-                            None,
-                        ));
-                    }
-                    Module::Missing | Module::Bare => {
-                        tracing::debug!(from = %path, spec = r.spec, "typescript import unresolved");
-                        edges.push(import_edge(
-                            path,
-                            None,
-                            Status::Unknown,
-                            r.spec,
-                            Some(GapReason::Unbound),
-                        ));
-                    }
-                }
+                link_module(ts, path, from, r.spec, status, &mut links, &mut edges);
             }
             for u in ts.uses.get(path).into_iter().flatten() {
                 let r = decode_use(&u.target);
