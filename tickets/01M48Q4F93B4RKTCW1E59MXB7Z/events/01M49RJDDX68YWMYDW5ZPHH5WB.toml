@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "After ~60SBHYV: delete the opaque_precision override in crates/gob-check/src/applicability.rs and let the gob-caps OpaqueText and Toml rows (already at the D106 target values) decide; adapter-backed files start consulting the matrix in the #[rule] migration tickets, not here."
+at = "2026-10-06T23:25:21Z"
+actor = "lognd"
+rev = 1
