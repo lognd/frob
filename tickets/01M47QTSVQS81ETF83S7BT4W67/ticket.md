@@ -2,7 +2,8 @@
 id = "01M47QTSVQS81ETF83S7BT4W67"
 title = "gob-mdtest: snapshot-diagnostics header writes an insta snapshot of the rendered diagnostics"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
