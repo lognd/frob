@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T04:30:09Z"
-updated = "2026-10-06T10:55:52Z"
+updated = "2026-10-06T11:01:55Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**"]
 
 [[links]]
