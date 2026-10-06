@@ -8,8 +8,8 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:33:59Z"
-updated = "2026-10-06T06:58:13Z"
-scope = ["crates/gob-mdtest/**", "crates/gob-rules/**", "crates/frob-check/tests/**", "crates/grimble-check/tests/**", "crates/crunk-check/tests/**"]
+updated = "2026-10-06T06:59:07Z"
+scope = ["crates/gob-mdtest/**", "crates/gob-rules/**", "crates/frob-check/tests/**", "crates/grimble-check/tests/**", "crates/crunk-check/tests/**", "crates/frob-check/Cargo.toml", "crates/grimble-check/Cargo.toml", "crates/crunk-check/Cargo.toml"]
 
 [[acceptance]]
 text = "the test runs for frob, grimble and crunk registries"
