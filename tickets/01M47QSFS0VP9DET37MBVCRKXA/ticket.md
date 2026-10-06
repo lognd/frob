@@ -2,13 +2,13 @@
 id = "01M47QSFS0VP9DET37MBVCRKXA"
 title = "gob-check::sibling: one gob.sibling/1 emitter and parser for every product"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
 reporter = "lognd"
 created = "2026-10-06T04:33:15Z"
-updated = "2026-10-06T04:33:15Z"
+updated = "2026-10-06T05:38:37Z"
 scope = ["crates/gob-check/**", "crates/crunk-check/**", "crates/grimble-check/**", "crates/frob-check/**", "docs/design/sibling-contract.md"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = false
 
 [[acceptance]]
 text = "existing sibling tests and snapshots pass unchanged (byte-identical documents)"
-bound = false
+bound = true
 +++
 
 products.md section 7 and sibling-contract.md. Move document building (sources, finding records, rules, exceptions, polarity and reason) out of crunk-check/src/sibling.rs, grimble-check/src/sibling.rs and frob-check/src/sibling/doc.rs into gob-check::sibling, emitting from a product-neutral check run; frob-check's merge parses through the same module's typed reader. The JSON schema is generated from those types. Supersedes ~YDDKPEY.

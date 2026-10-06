@@ -492,3 +492,251 @@ fn deep_nesting_collapses_and_loses_no_unit_silently() {
         "units-free depth collapses cleanly"
     );
 }
+
+// frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
+
+use gob_symbols::{GapReason, Status, StatusEdge};
+
+fn graph_of(srcs: &[(&str, &str)]) -> SymbolGraph {
+    SymbolGraph::from_files(srcs.iter().map(|(p, t)| extract(p, t)).collect())
+}
+
+/// The call edges leaving the unit `from` (a dotted unit path inside `path`).
+fn calls_from<'a>(g: &'a SymbolGraph, path: &str, from: &str) -> Vec<&'a StatusEdge> {
+    let from = sym(&format!("{path}::{from}"));
+    g.edges_with_status()
+        .iter()
+        .filter(|e| e.kind == EdgeKind::Calls && e.from == from)
+        .collect()
+}
+
+const LIB: &str = "Lib.cs";
+const LIB_SRC: &str = "namespace Lib.Util
+{
+    public static class Maths
+    {
+        public static int Twice(int x) { return x * 2; }
+        public static int Helper() { return 1; }
+    }
+    public class Box
+    {
+        public Box(int v) { }
+        public int Get() { return 1; }
+    }
+    public class Plain { public int Run() { return 0; } }
+}
+";
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/csharp.rs::SymbolGraph.resolve_csharp
+fn calls_resolve_across_namespaces_through_using_and_using_static() {
+    let app = "using Lib.Util;
+using static Lib.Util.Maths;
+namespace App
+{
+    public class Prog
+    {
+        public int Run()
+        {
+            Box c = new Box(2);
+            var d = new Plain();
+            return Maths.Twice(3) + Helper() + c.Get() + d.Run();
+        }
+    }
+}
+";
+    let g = graph_of(&[(LIB, LIB_SRC), ("App.cs", app)]);
+    let edges = calls_from(&g, "App.cs", "App.Prog.Run");
+    let to: Vec<String> = edges
+        .iter()
+        .map(|e| {
+            assert_eq!(e.status, Status::Must, "{e:?}");
+            e.to.as_ref().expect("resolved").to_string()
+        })
+        .collect();
+    for want in [
+        "Lib.cs::Lib.Util.Box.Box",
+        "Lib.cs::Lib.Util.Maths.Twice",
+        "Lib.cs::Lib.Util.Maths.Helper",
+        "Lib.cs::Lib.Util.Box.Get",
+        "Lib.cs::Lib.Util.Plain",
+        "Lib.cs::Lib.Util.Plain.Run",
+    ] {
+        assert!(to.iter().any(|t| t == want), "missing {want} in {to:?}");
+    }
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/csharp.rs::SymbolGraph.resolve_csharp
+fn this_base_and_constructor_chains_resolve() {
+    let src = "namespace N
+{
+    public class Base { public Base(int a) { } public void Hello() { } }
+    public class Kid : Base
+    {
+        public Kid() : this(1) { }
+        public Kid(int a) : base(a) { }
+        public void Go() { this.Own(); base.Hello(); Hello(); }
+        void Own() { }
+    }
+}
+";
+    let g = graph_of(&[("A.cs", src)]);
+    let target = |from: &str| -> Vec<String> {
+        calls_from(&g, "A.cs", from)
+            .iter()
+            .map(|e| {
+                e.to.as_ref()
+                    .map_or_else(|| format!("?{:?}", e.reason), ToString::to_string)
+            })
+            .collect()
+    };
+    assert_eq!(
+        target("N.Kid.Go"),
+        vec![
+            "A.cs::N.Kid.Own",
+            "A.cs::N.Base.Hello",
+            "A.cs::N.Base.Hello"
+        ]
+    );
+    assert_eq!(target("N.Kid.Kid"), vec!["A.cs::N.Kid.Kid[dup2]"]);
+    assert_eq!(target("N.Kid.Kid[dup2]"), vec!["A.cs::N.Base.Base"]);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/csharp.rs::SymbolGraph.resolve_csharp
+fn unknown_receivers_are_unresolved_and_never_clean() {
+    let src = "namespace N
+{
+    public class Svc { public void Frob() { } }
+    public class User
+    {
+        Svc field;
+        public void Run(int p)
+        {
+            var x = Make();
+            x.Frob();
+            Make().Frob();
+            field.Frob();
+        }
+        Svc Make() { return null; }
+    }
+}
+";
+    let g = graph_of(&[("A.cs", src)]);
+    let edges = calls_from(&g, "A.cs", "N.User.Run");
+    let unknown: Vec<&&StatusEdge> = edges
+        .iter()
+        .filter(|e| e.status == Status::Unknown)
+        .collect();
+    assert_eq!(unknown.len(), 2, "{edges:?}");
+    assert!(unknown.iter().all(|e| e.reason == Some(GapReason::Dynamic)));
+    assert!(unknown.iter().all(|e| matches!(
+        e.qualifier,
+        Some(gob_symbols::CallQualifier::Receiver { .. })
+    )));
+    // The typed field and the same-class `Make` resolve; nothing else is claimed.
+    assert!(edges.iter().any(|e| e.to == Some(sym("A.cs::N.Svc.Frob"))));
+    assert!(
+        g.reach(&sym("A.cs::N.User.Run"), EdgeKind::Calls)
+            .contains(&sym("A.cs::N.User.Make"))
+    );
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/csharp.rs::fold_tree
+fn global_and_alias_usings_are_listed_with_kind_and_target() {
+    let src = "global using System.Linq;
+global using static System.Math;
+using System;
+using static System.Console;
+using Json = System.Text.Json.JsonSerializer;
+namespace N { using System.IO; class C { } }
+";
+    let f = extract("A.cs", src);
+    let targets: Vec<&str> = f.imports.iter().map(|i| i.target.as_str()).collect();
+    assert_eq!(
+        targets,
+        vec![
+            "global System.Linq",
+            "global static System.Math",
+            "System",
+            "static System.Console",
+            "Json = System.Text.Json.JsonSerializer",
+            "System.IO",
+        ]
+    );
+    let uses: Vec<(&str, &str, bool, bool)> = f
+        .uses
+        .iter()
+        .map(|u| {
+            (
+                u.local.as_str(),
+                u.target.as_str(),
+                u.public,
+                u.container.is_some(),
+            )
+        })
+        .collect();
+    assert_eq!(uses[1], ("*static", "System.Math", true, false));
+    assert_eq!(
+        uses[4],
+        ("Json", "System.Text.Json.JsonSerializer", false, false)
+    );
+    assert_eq!(uses[5], ("*", "System.IO", false, true));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/csharp.rs::SymbolGraph.resolve_csharp
+fn framework_calls_are_external_and_clean_but_unknown_names_are_not() {
+    let src = "using System;
+namespace N
+{
+    public class C
+    {
+        public void Run(string s)
+        {
+            Console.WriteLine(s.Trim());
+            Unknown.Thing();
+        }
+    }
+}
+";
+    let g = graph_of(&[("A.cs", src)]);
+    let edges = calls_from(&g, "A.cs", "N.C.Run");
+    assert_eq!(edges.len(), 1, "{edges:?}");
+    assert_eq!(edges[0].status, Status::Unknown);
+    assert_eq!(edges[0].reason, Some(GapReason::Unbound));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/csharp.rs::SymbolGraph.cs_extensions
+fn extension_methods_resolve_only_for_a_known_receiver_type() {
+    let ext = "namespace Ext
+{
+    public static class Shouts { public static string Shout(this string s) { return s; } }
+}
+";
+    let app = "using Ext;
+namespace App
+{
+    public class P
+    {
+        public void Run(string s, int n)
+        {
+            s.Shout();
+            Other().Shout();
+        }
+        string Other() { return \"\"; }
+    }
+}
+";
+    let g = graph_of(&[("Ext.cs", ext), ("App.cs", app)]);
+    let edges = calls_from(&g, "App.cs", "App.P.Run");
+    assert!(
+        edges
+            .iter()
+            .any(|e| e.to == Some(sym("Ext.cs::Ext.Shouts.Shout")) && e.status == Status::Must)
+    );
+    assert!(edges.iter().any(|e| e.status == Status::Unknown));
+}
