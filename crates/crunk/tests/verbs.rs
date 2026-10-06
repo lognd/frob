@@ -72,7 +72,7 @@ fn write(dir: &Path, rel: &str, text: &str) {
     std::fs::write(path, text).unwrap();
 }
 
-// frob:tests crates/crunk/src/check.rs::Check
+// frob:tests crates/gob-product/src/check.rs::Check
 #[test]
 fn check_without_crunk_toml_refuses_with_the_shared_no_config_code() {
     let dir = repo();
@@ -89,7 +89,7 @@ fn check_without_crunk_toml_refuses_with_the_shared_no_config_code() {
     );
 }
 
-// frob:tests crates/crunk/src/check.rs::Check
+// frob:tests crates/gob-product/src/check.rs::Check
 #[test]
 fn check_json_with_an_empty_config_is_a_valid_sibling_document() {
     let dir = repo();
@@ -104,7 +104,7 @@ fn check_json_with_an_empty_config_is_a_valid_sibling_document() {
     assert_eq!(doc["findings"].as_array().unwrap().len(), 0);
 }
 
-// frob:tests crates/crunk/src/doctor.rs::Doctor
+// frob:tests crates/gob-product/src/doctor.rs::Doctor
 #[test]
 fn doctor_runs_without_a_config_and_reports_it_absent() {
     let dir = repo();

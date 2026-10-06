@@ -72,7 +72,7 @@ fn write(dir: &Path, rel: &str, text: &str) {
     std::fs::write(path, text).unwrap();
 }
 
-// frob:tests crates/grimble/src/check.rs::Check
+// frob:tests crates/gob-product/src/check.rs::Check
 #[test]
 fn check_json_without_a_model_is_a_valid_empty_sibling_document() {
     let dir = repo();
@@ -102,7 +102,7 @@ fn check_json_without_a_model_is_a_valid_empty_sibling_document() {
     assert_eq!(env["findings"].as_array().unwrap().len(), 0);
 }
 
-// frob:tests crates/grimble/src/check.rs::Check
+// frob:tests crates/gob-product/src/check.rs::Check
 #[test]
 fn a_model_error_exits_one_and_the_finding_is_in_the_document() {
     let dir = repo();
@@ -143,7 +143,7 @@ fn a_model_error_exits_one_and_the_finding_is_in_the_document() {
     assert_eq!(code, 0, "--fail-on none never fails on findings");
 }
 
-// frob:tests crates/grimble/src/check.rs::Check
+// frob:tests crates/gob-product/src/check.rs::Check
 #[test]
 fn an_accept_clause_parks_its_finding_and_is_listed() {
     let dir = repo();
@@ -226,7 +226,7 @@ fn fmt_check_fails_on_an_unformatted_file_and_fmt_fixes_it() {
     assert_eq!(env["already"], true);
 }
 
-// frob:tests crates/grimble/src/doctor.rs::Doctor
+// frob:tests crates/gob-product/src/doctor.rs::Doctor
 #[test]
 fn doctor_reports_fidelity_model_and_config_status() {
     let dir = repo();
@@ -255,7 +255,7 @@ fn doctor_reports_fidelity_model_and_config_status() {
     );
 }
 
-// frob:tests crates/grimble/src/check.rs::Check
+// frob:tests crates/gob-product/src/check.rs::Check
 #[test]
 fn a_bad_grimble_toml_is_a_refusal() {
     let dir = repo();

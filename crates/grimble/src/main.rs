@@ -1,11 +1,7 @@
-//! The `grimble` binary: build the CLI, verify the rule registry, exit.
+//! The `grimble` binary: the generic product entry, then exit.
 
 fn main() {
-    let cli = grimble::cli();
-    let code = match gob_rules::Registry::global().verify_unique() {
-        Ok(()) => cli.run(std::env::args_os().skip(1)),
-        Err(e) => cli.fail_startup(e),
-    };
+    let code = gob_product::main::<grimble::GrimbleProduct>();
     // The process-exit call of this binary, as in `frob`.
     std::process::exit(code);
 }

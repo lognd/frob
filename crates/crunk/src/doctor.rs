@@ -1,19 +1,8 @@
-//! `doctor`: the environment crunk runs in and the state of `crunk.toml`.
+//! `doctor` rows: the environment crunk runs in and the state of `crunk.toml`.
 
-use gob_cli::{CliError, Command, Context, Outcome, Payload};
+use gob_cli::Payload;
 use schemars::JsonSchema;
 use serde::Serialize;
-
-use crate::workspace::locate_root;
-
-/// Report the crunk version, the repository root and the state of crunk.toml.
-#[derive(Debug, Clone, Copy, Default, gob_cli::Command)]
-#[command(
-    verb = "doctor",
-    product = "crunk",
-    exits(ok, refused, usage, internal)
-)]
-pub struct Doctor;
 
 /// State of `crunk.toml`.
 #[derive(Debug, Serialize, JsonSchema)]
@@ -57,21 +46,13 @@ fn config_row(root: &std::path::Path) -> ConfigRow {
     }
 }
 
-impl Command for Doctor {
-    type Data = DoctorData;
-
-    fn from_matches(_matches: &gob_cli::clap::ArgMatches) -> Result<Self, CliError> {
-        Ok(Self)
-    }
-
-    fn run(&self, ctx: &Context) -> Outcome<DoctorData> {
-        let root = locate_root(&ctx.cwd);
-        let config = config_row(&root);
-        tracing::info!(status = %config.status, "doctor finished");
-        Ok(Payload::new(DoctorData {
-            version: env!("CARGO_PKG_VERSION").to_owned(),
-            root: root.display().to_string(),
-            config,
-        }))
-    }
+/// The crunk doctor report for the repository at `root`.
+pub fn report(root: &std::path::Path) -> Payload<DoctorData> {
+    let config = config_row(root);
+    tracing::info!(status = %config.status, "doctor finished");
+    Payload::new(DoctorData {
+        version: env!("CARGO_PKG_VERSION").to_owned(),
+        root: root.display().to_string(),
+        config,
+    })
 }

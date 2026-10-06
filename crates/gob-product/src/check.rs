@@ -1,25 +1,41 @@
-//! The `check` verb: flags in, [`grimble_check::run`] out, the sibling document as data.
+//! The generic `check` verb: flags in, [`Product::check`] out, the sibling document as data.
+
+use std::marker::PhantomData;
 
 use gob_check::FailOn;
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
-use gob_cli::{CliError, Command, Context, ExitCode, Outcome, Payload};
-use grimble_check::{CheckOptions, GrimbleRun, sibling_document};
+use gob_cli::{CliError, Command, CommandMeta, Context, Described, ExitCode, Outcome, Payload};
 use serde_json::{Value, json};
 
 use crate::workspace::{check_error, locate_root};
+use crate::{CheckOptions, Product, ProductRun};
 
 /// Run the rules over the repository and print the `gob.sibling/1` document; exit 1 when the gate fails.
-#[derive(Debug, Clone, gob_cli::Command)]
-#[command(
-    verb = "check",
-    product = "grimble",
-    exits(ok, negative, usage, refused, internal)
-)]
-pub struct Check {
+#[derive(Debug, Clone)]
+pub struct Check<P: Product> {
     only: Vec<String>,
     fail_on: Option<FailOn>,
     base: Option<String>,
     ticket_scope: Option<Vec<String>>,
+    product: PhantomData<fn() -> P>,
+}
+
+impl<P: Product> Described for Check<P> {
+    const META: CommandMeta = CommandMeta {
+        verb: "check",
+        product: P::NAME,
+        idempotent: false,
+        dry_run: false,
+        exits: &[
+            ExitCode::Ok,
+            ExitCode::Negative,
+            ExitCode::Usage,
+            ExitCode::Refused,
+            ExitCode::Internal,
+        ],
+        summary: "Run the rules over the repository and print the `gob.sibling/1` document; exit 1 when the gate fails.",
+        module: module_path!(),
+    };
 }
 
 /// One line per finding: `file:line:col: severity RULE message`.
@@ -46,7 +62,7 @@ fn lines_of(doc: &Value) -> Vec<String> {
 }
 
 /// The data of a text-mode run: counts and finding lines instead of the whole document.
-fn summary(run: &GrimbleRun, doc: &Value) -> Value {
+fn summary(run: &ProductRun, doc: &Value) -> Value {
     let c = gob_check::Counts::of(&run.report.findings);
     json!({
         "counts": {"error": c.error, "warn": c.warn, "advisory": c.advisory, "unresolved": c.unresolved},
@@ -55,7 +71,7 @@ fn summary(run: &GrimbleRun, doc: &Value) -> Value {
     })
 }
 
-impl Command for Check {
+impl<P: Product> Command for Check<P> {
     type Data = Value;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
@@ -101,19 +117,20 @@ impl Command for Check {
                 .and_then(|s| FailOn::parse(s)),
             base: m.get_one::<String>("base").cloned(),
             ticket_scope: many("ticket_scope"),
+            product: PhantomData,
         })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<Value> {
-        let root = locate_root(&ctx.cwd);
+        let root = locate_root(P::NAME, &ctx.cwd);
         let opts = CheckOptions {
             only: self.only.clone(),
             fail_on: self.fail_on,
             base: self.base.clone(),
             ticket_scope: self.ticket_scope.clone(),
         };
-        let run = grimble_check::run(&root, &opts).map_err(check_error)?;
-        let doc = sibling_document(&run);
+        let run = P::check(&root, &opts).map_err(|e| check_error(P::NAME, e))?;
+        let doc = run.document.clone();
         let data = if ctx.json {
             doc.clone()
         } else {

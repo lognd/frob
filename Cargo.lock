@@ -489,7 +489,7 @@ dependencies = [
  "gob-check",
  "gob-cli",
  "gob-config",
- "gob-rules",
+ "gob-product",
  "jsonschema",
  "schemars",
  "serde",
@@ -2423,6 +2423,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "gob-product"
+version = "0.532.0"
+dependencies = [
+ "crunk-check",
+ "gob-check",
+ "gob-cli",
+ "gob-config",
+ "gob-rules",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tracing",
+]
+
+[[package]]
 name = "gob-rules"
 version = "0.532.0"
 dependencies = [
@@ -2529,6 +2545,7 @@ dependencies = [
  "gob-fs",
  "gob-git",
  "gob-lock",
+ "gob-product",
  "gob-rules",
  "gob-symbols",
  "gob-time",
