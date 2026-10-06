@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:34Z"
-updated = "2026-10-06T13:09:36Z"
+updated = "2026-10-06T13:09:40Z"
 idempotency_key = "crunk-plan-rcol"
 labels = ["area:crunk"]
 scope = ["crates/crunk-rules/src/color/**", "crates/crunk-rules/src/contrast/**", "crates/crunk-rules/tests/color*.rs", "crates/crunk-rules/tests/contrast*.rs"]
@@ -20,6 +20,10 @@ target = "01M43ARVJKKN4EXCQF1NRTJ3KW"
 [[links]]
 kind = "blocked-by"
 target = "01M43ATASM383KB9130JY79XVV"
+
+[[links]]
+kind = "relates"
+target = "01M48FXB2PXX2FBXFKCFWSQYH1"
 
 [[acceptance]]
 text = "Given a literal within color_tolerance of a palette color, when checked, then COLOR001 fires with the palette token as suggestion"
