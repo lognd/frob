@@ -8,8 +8,9 @@ points = 8
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T04:30:11Z"
-updated = "2026-10-06T10:28:06Z"
-scope = ["crates/gob-frameworks/**", "Cargo.lock"]
+updated = "2026-10-06T10:28:09Z"
+labels = ["creates:crates/gob-frameworks/**"]
+scope = ["Cargo.lock", "crates/gob-frameworks/**"]
 
 [[links]]
 kind = "blocked-by"
