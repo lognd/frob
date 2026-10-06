@@ -2,13 +2,13 @@
 id = "01M48Q281GRJ9TTAK2VA6JJ764"
 title = "Trim the read verbs per D104, with one-minor hidden aliases"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M48Q27GE8C1P6JS1CXKTCQ3S"
 reporter = "lognd"
 created = "2026-10-06T13:39:48Z"
-updated = "2026-10-06T13:39:48Z"
-scope = ["crates/frob/**", "crates/frob-ledger/**", "crates/frob-lease/**", "crates/frob-worktree/**", "docs/**"]
+updated = "2026-10-06T22:40:48Z"
+scope = ["crates/frob/**", "crates/frob-ledger/**", "crates/frob-lease/**", "crates/frob-worktree/**", "docs/**", "crates/gob-cli/**", "crates/gob-dev/**", "CONTRIBUTING.md", "README.md"]
 
 [[acceptance]]
 text = "each folded verb's behaviour and JSON is reachable through its new form (tests moved, not deleted)"
