@@ -25,7 +25,11 @@ use crate::qualifier::{Admit, CallQualifier};
 use crate::stdtypes;
 use crate::symref::{Symref, Target, split_qual};
 
+// frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
+mod csharp;
 mod python;
+
+use csharp::CsIndex;
 
 use python::{PyIndex, is_python};
 
@@ -239,6 +243,9 @@ struct Index {
     aliases: HashSet<(String, String)>,
     /// Lookup tables of the Python files (their calls resolve by name and import, not by crate).
     py: PyIndex,
+    // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
+    /// Lookup tables of the C# files (their calls resolve by namespace, `using` and type, not by crate).
+    cs: CsIndex,
 }
 
 /// Lock shards of the receiver-type memo (parallel call resolution would otherwise queue on one lock).
@@ -751,6 +758,8 @@ impl SymbolGraph {
         lap("index_of");
         g.link_imports(&idx);
         g.link_python_imports(&idx.py, &files);
+        // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
+        g.link_csharp_imports(&idx.cs, &files);
         g.link_reexports(&files, &idx);
         lap("imports");
         g.link_calls(&files, &idx);
@@ -857,6 +866,7 @@ impl SymbolGraph {
             file_types: HashMap::new(),
             enums: HashSet::new(),
             py: PyIndex::build(self, files),
+            cs: CsIndex::build(self, files),
         };
         for f in files.iter().filter(|f| is_rust(&f.path)) {
             let (krate, module) = crate_and_module(&f.path);
@@ -2024,6 +2034,13 @@ impl SymbolGraph {
                     if is_python(call.caller.path()) {
                         let outcome = self.resolve_python(&idx.py, call);
                         self.record_call(&mut sink, call, outcome, None, false);
+                        continue;
+                    }
+                    // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
+                    if csharp::is_csharp(call.caller.path()) {
+                        let outcome = self.resolve_csharp(&idx.cs, call);
+                        let qualifier = self.csharp_qualifier(&idx.cs, call);
+                        self.record_call(&mut sink, call, outcome, qualifier, false);
                         continue;
                     }
                     let outcome = self.resolve_site(

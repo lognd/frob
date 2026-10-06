@@ -42,7 +42,10 @@ use crate::adapter::{
     Precision,
 };
 use crate::fold::{Cx, base_file, children, failed_file, file_root_spec, text_of};
-use crate::model::{AttributeFact, UnitFacts, UnitSpan, collapse_ws};
+use crate::model::{
+    AttributeFact, CallSite, FieldDecl, ImportEdge, LocalBinding, Receiver, RetType, UnitFacts,
+    UnitSpan, UseBinding, collapse_ws,
+};
 use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
 use crate::view::{
@@ -151,6 +154,14 @@ struct Fold<'a> {
     /// Preprocessor conditions in force, outermost first.
     conds: Vec<String>,
     facts: HashMap<NodeId, UnitFacts>,
+    /// The namespace segments enclosing the declaration being folded.
+    ns: Vec<String>,
+    /// Calls found in each member, in source order.
+    raw_calls: Vec<(NodeId, RawCall)>,
+    /// Every `using` directive with the namespace it sits in.
+    raw_uses: Vec<RawUse>,
+    /// The declared type text of each field or property unit.
+    raw_fields: Vec<(NodeId, String)>,
 }
 
 fn is_comment(n: Node<'_>) -> bool {
@@ -249,12 +260,23 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         containers: vec![Container::Namespace],
         conds: Vec::new(),
         facts: HashMap::new(),
+        ns: Vec::new(),
+        raw_calls: Vec::new(),
+        raw_uses: Vec::new(),
+        raw_fields: Vec::new(),
     };
     let nodes = children(root);
     let kids = f.members(&nodes, root.end_byte(), 1)?;
     let spec = file_root_spec(&f.cx, input.size as usize);
     let root_id = f.cx.add(spec, &kids)?;
-    let Fold { cx, facts, .. } = f;
+    let Fold {
+        cx,
+        facts,
+        raw_calls,
+        raw_uses,
+        raw_fields,
+        ..
+    } = f;
     let term = cx.b.finish(root_id)?;
     let scopes = ScopeGraph::from_term(&term);
     let v = view::build(&term, input.path, Naming::CSharp);
@@ -285,9 +307,12 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         }
         file.extras[i].facts = unit_facts;
     }
+    file_sites(&mut file, &v.by_node, raw_calls, raw_uses, raw_fields);
     tracing::debug!(
         path = input.path,
         symbols = file.symbols.len(),
+        calls = file.calls.len(),
+        imports = file.imports.len(),
         status = ?file.parse_status,
         "csharp file folded"
     );
@@ -441,8 +466,11 @@ impl<'a> Fold<'a> {
             }
             match n.kind() {
                 "file_scoped_namespace_declaration" => {
-                    let inner =
-                        self.nested(Container::Namespace, &nodes[i + 1..], end, depth + 1)?;
+                    let saved = self.ns.len();
+                    self.ns.extend(self.ns_parts(n));
+                    let inner = self.nested(Container::Namespace, &nodes[i + 1..], end, depth + 1);
+                    self.ns.truncate(saved);
+                    let inner = inner?;
                     out.push(self.namespace_chain(n, (n.start_byte(), end), inner)?);
                     return Ok(out);
                 }
@@ -468,7 +496,11 @@ impl<'a> Fold<'a> {
                 }
                 "enum_member_declaration" => out.push(self.variant_unit(n)?),
                 "preproc_if" => out.extend(self.conditional(n, end, depth)?),
-                "using_directive" | "extern_alias_directive" | "global_attribute" => {
+                "using_directive" => {
+                    self.using(n);
+                    out.push(self.tr(n, depth + 1)?);
+                }
+                "extern_alias_directive" | "global_attribute" => {
                     out.push(self.tr(n, depth + 1)?);
                 }
                 k if is_plain_directive(k) => out.push(self.tr(n, depth + 1)?),
@@ -705,12 +737,16 @@ impl<'a> Fold<'a> {
         let Some(body) = n.child_by_field_name("body") else {
             return self.hole(n);
         };
+        let saved = self.ns.len();
+        self.ns.extend(self.ns_parts(n));
         let inner = self.nested(
             Container::Namespace,
             &children(body),
             body.end_byte(),
             depth + 1,
-        )?;
+        );
+        self.ns.truncate(saved);
+        let inner = inner?;
         self.namespace_chain(n, (n.start_byte(), n.end_byte()), inner)
     }
 
@@ -847,7 +883,7 @@ impl<'a> Fold<'a> {
             visibility_of(&parts.modifiers, self.default_vis(), implements.is_some())
         };
         let body = self.body_nodes(&parts.body, depth)?;
-        self.declared(
+        let id = self.declared(
             n,
             &parts,
             Decl {
@@ -860,7 +896,9 @@ impl<'a> Fold<'a> {
                 bases: Vec::new(),
             },
             body,
-        )
+        )?;
+        self.note_member_sites(id, n, kind);
+        Ok(id)
     }
 
     /// One field, constant or event unit per declarator of `n`, each spanning the whole declaration.
@@ -906,7 +944,7 @@ impl<'a> Fold<'a> {
                 .collect();
             let body = self.body_nodes(&rest, MAX_DEPTH / 2)?;
             let name = self.t(name_node).to_owned();
-            out.push(self.declared(
+            let id = self.declared(
                 n,
                 &parts,
                 Decl {
@@ -919,7 +957,14 @@ impl<'a> Fold<'a> {
                     bases: Vec::new(),
                 },
                 body,
-            )?);
+            )?;
+            if let Some(ty) = vd.child_by_field_name("type") {
+                self.raw_fields.push((id, self.t(ty).to_owned()));
+            }
+            let mut calls = Vec::new();
+            collect_calls(self.cx.text, d, &mut calls);
+            self.raw_calls.extend(calls.into_iter().map(|c| (id, c)));
+            out.push(id);
         }
         Ok(out)
     }
@@ -966,4 +1011,488 @@ struct Decl<'t> {
     vis: &'static str,
     implements: Option<String>,
     bases: Vec<String>,
+}
+
+// frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
+
+/// The local name a plain `using Ns;` binds: it brings every type of `Ns` into scope.
+pub const USE_NAMESPACE: &str = "*";
+/// The local name a `using static T;` binds: it brings every static member of `T` into scope.
+pub const USE_STATIC: &str = "*static";
+/// The call qualifier of an object creation (`new T(..)`), a call of `T`'s constructor.
+pub const Q_NEW: &str = "new";
+/// The call qualifier of `base.M(..)`.
+pub const Q_BASE: &str = "base";
+/// The call qualifier of a `: base(..)` constructor initializer.
+pub const Q_BASE_INIT: &str = "base-init";
+/// The call qualifier of a `: this(..)` constructor initializer.
+pub const Q_THIS_INIT: &str = "this-init";
+/// The modifier prefix marking an extension method; the rest is the first parameter's type.
+pub const EXTENSION_PREFIX: &str = "extension=";
+
+/// One call or object creation found in a member body.
+#[derive(Debug, Clone)]
+struct RawCall {
+    callee: String,
+    qualifier: Option<String>,
+    method: bool,
+    local: LocalBinding,
+    receiver: Option<Receiver>,
+    args: Option<usize>,
+    qual_path: Vec<String>,
+    line: u32,
+    text: String,
+}
+
+/// One `using` directive and the namespace segments it sits in.
+#[derive(Debug, Clone)]
+struct RawUse {
+    local: String,
+    target: String,
+    rendered: String,
+    global: bool,
+    ns: Vec<String>,
+}
+
+impl Fold<'_> {
+    /// The namespace segments `n` declares (`namespace A.B` is `[A, B]`).
+    fn ns_parts(&self, n: Node<'_>) -> Vec<String> {
+        let Some(name) = n.child_by_field_name("name") else {
+            return Vec::new();
+        };
+        let full = squash(self.t(name));
+        full.strip_prefix("global::")
+            .unwrap_or(&full)
+            .split('.')
+            .map(str::to_owned)
+            .collect()
+    }
+
+    /// Records the directive `n` (`using`, `using static`, alias, `global using`).
+    fn using(&mut self, n: Node<'_>) {
+        let alias = n.child_by_field_name("name");
+        let kids = children(n);
+        let has = |k: &str| kids.iter().any(|c| !c.is_named() && c.kind() == k);
+        let (is_static, global) = (has("static"), has("global"));
+        let Some(target) = kids
+            .iter()
+            .rev()
+            .find(|c| c.is_named() && !is_comment(**c) && alias.is_none_or(|a| a.id() != c.id()))
+        else {
+            tracing::debug!(path = self.path, "using directive without a target");
+            return;
+        };
+        let written = squash(self.t(*target));
+        let target = strip_generics(written.strip_prefix("global::").unwrap_or(&written));
+        let (local, rendered) = match (alias, is_static) {
+            (Some(a), _) => {
+                let a = self.t(a).to_owned();
+                let r = format!("{a} = {target}");
+                (a, r)
+            }
+            (None, true) => (USE_STATIC.to_owned(), format!("static {target}")),
+            (None, false) => (USE_NAMESPACE.to_owned(), target.clone()),
+        };
+        tracing::trace!(path = self.path, %local, %target, global, "csharp using");
+        self.raw_uses.push(RawUse {
+            local,
+            target,
+            rendered,
+            global,
+            ns: self.ns.clone(),
+        });
+    }
+
+    /// Notes the calls, declared type and extension-ness of the member unit `id` built from `n`.
+    fn note_member_sites(&mut self, id: NodeId, n: Node<'_>, kind: &str) {
+        let mut calls = Vec::new();
+        collect_calls(self.cx.text, n, &mut calls);
+        self.raw_calls.extend(calls.into_iter().map(|c| (id, c)));
+        if kind == "property"
+            && let Some(ty) = n.child_by_field_name("type")
+        {
+            self.raw_fields.push((id, self.t(ty).to_owned()));
+        }
+        if kind == "method"
+            && let Some(first) = n
+                .child_by_field_name("parameters")
+                .and_then(|p| children(p).into_iter().find(|c| c.kind() == "parameter"))
+            && children(first)
+                .iter()
+                .any(|c| matches!(c.kind(), "this" | "modifier") && self.t(*c) == "this")
+            && let Some(ty) = first
+                .child_by_field_name("type")
+                .and_then(|t| type_head(self.cx.text, t))
+            && let Some(f) = self.facts.get_mut(&id)
+        {
+            f.modifiers.push(format!("{EXTENSION_PREFIX}{ty}"));
+        }
+    }
+}
+
+/// `text` without any `<..>` generic argument list.
+fn strip_generics(text: &str) -> String {
+    let mut depth = 0usize;
+    let mut out = String::new();
+    for c in text.chars() {
+        match c {
+            '<' => depth += 1,
+            '>' => depth = depth.saturating_sub(1),
+            c if depth == 0 => out.push(c),
+            _ => {}
+        }
+    }
+    out
+}
+
+/// The simple type name of the type node `n` (`List<int>` is `List`, `A.B?` is `B`), `None` for arrays and tuples.
+fn type_head(text: &str, n: Node<'_>) -> Option<String> {
+    match n.kind() {
+        "identifier" | "predefined_type" => Some(text_of(text, n).to_owned()),
+        "generic_name" => children(n)
+            .into_iter()
+            .find(|c| c.kind() == "identifier")
+            .map(|c| text_of(text, c).to_owned()),
+        "qualified_name" => n
+            .child_by_field_name("name")
+            .and_then(|c| type_head(text, c)),
+        "nullable_type" | "alias_qualified_name" => children(n)
+            .into_iter()
+            .rev()
+            .find(Node::is_named)
+            .and_then(|c| type_head(text, c)),
+        _ => None,
+    }
+}
+
+/// The dotted name segments of a name expression (`A.B.C`, `string`), `None` for anything else.
+fn name_chain(text: &str, n: Node<'_>) -> Option<Vec<String>> {
+    match n.kind() {
+        "identifier" | "predefined_type" | "generic_name" => type_head(text, n).map(|h| vec![h]),
+        "qualified_name" => {
+            let mut q = name_chain(text, n.child_by_field_name("qualifier")?)?;
+            q.extend(name_chain(text, n.child_by_field_name("name")?)?);
+            Some(q)
+        }
+        "member_access_expression" => {
+            let mut q = name_chain(text, n.child_by_field_name("expression")?)?;
+            q.extend(name_chain(text, n.child_by_field_name("name")?)?);
+            Some(q)
+        }
+        "alias_qualified_name" => name_chain(text, n.child_by_field_name("name")?),
+        _ => None,
+    }
+}
+
+/// The names declared in the member `n` with their explicit type head (`None` for `var` and untyped names).
+fn collect_locals(text: &str, n: Node<'_>) -> HashMap<String, Option<String>> {
+    let mut out: HashMap<String, Option<String>> = HashMap::new();
+    let mut put = |name: &str, ty: Option<String>| {
+        out.entry(name.to_owned())
+            .and_modify(|t| {
+                if *t != ty {
+                    *t = None;
+                }
+            })
+            .or_insert(ty);
+    };
+    let mut stack = vec![n];
+    while let Some(x) = stack.pop() {
+        match x.kind() {
+            "parameter" | "catch_declaration" | "foreach_statement" | "declaration_pattern" => {
+                let name = x.child_by_field_name("name").or_else(|| {
+                    x.child_by_field_name("left")
+                        .filter(|l| l.kind() == "identifier")
+                });
+                if let Some(name) = name {
+                    let ty = x
+                        .child_by_field_name("type")
+                        .and_then(|t| type_head(text, t))
+                        .filter(|t| t != "var");
+                    put(text_of(text, name), ty);
+                }
+            }
+            "variable_declaration" => {
+                let ty = x
+                    .child_by_field_name("type")
+                    .and_then(|t| type_head(text, t))
+                    .filter(|t| t != "var");
+                for d in children(x)
+                    .into_iter()
+                    .filter(|c| c.kind() == "variable_declarator")
+                {
+                    let Some(name) = d
+                        .child_by_field_name("name")
+                        .or_else(|| children(d).into_iter().find(|c| c.kind() == "identifier"))
+                    else {
+                        continue;
+                    };
+                    let inferred = ty.clone().or_else(|| {
+                        children(d)
+                            .into_iter()
+                            .find(|c| c.kind() == "object_creation_expression")
+                            .and_then(|o| o.child_by_field_name("type"))
+                            .and_then(|t| type_head(text, t))
+                    });
+                    put(text_of(text, name), inferred);
+                }
+            }
+            "single_variable_designation" | "implicit_parameter" => {
+                put(text_of(text, x), None);
+            }
+            _ => {}
+        }
+        stack.extend(children(x));
+    }
+    out
+}
+
+/// The receiver of a call on `expr`: `this`, a typed local, `new T()`, a string literal, else unknown.
+fn receiver_of(
+    text: &str,
+    expr: Node<'_>,
+    locals: &HashMap<String, Option<String>>,
+) -> (Option<String>, Option<Receiver>, Vec<String>) {
+    match expr.kind() {
+        "this_expression" | "this" => (None, Some(Receiver::SelfValue), Vec::new()),
+        "base_expression" | "base" => (Some(Q_BASE.to_owned()), None, Vec::new()),
+        "string_literal" | "interpolated_string_expression" | "verbatim_string_literal" => {
+            (None, Some(Receiver::Typed("string".to_owned())), Vec::new())
+        }
+        "object_creation_expression" => {
+            let ty = expr
+                .child_by_field_name("type")
+                .and_then(|t| type_head(text, t));
+            (
+                None,
+                Some(ty.map_or(Receiver::Expr, Receiver::Typed)),
+                Vec::new(),
+            )
+        }
+        _ => match name_chain(text, expr) {
+            Some(chain) if chain.len() == 1 && locals.contains_key(&chain[0]) => {
+                let r = locals[&chain[0]]
+                    .clone()
+                    .map_or(Receiver::Expr, Receiver::Typed);
+                (None, Some(r), Vec::new())
+            }
+            Some(chain) if locals.contains_key(&chain[0]) => {
+                (None, Some(Receiver::Expr), Vec::new())
+            }
+            Some(chain) => (None, None, chain),
+            None => (None, Some(Receiver::Expr), Vec::new()),
+        },
+    }
+}
+
+/// The number of arguments in `args`, an `argument_list`.
+fn arg_count(args: Option<Node<'_>>) -> Option<usize> {
+    args.map(|a| {
+        children(a)
+            .iter()
+            .filter(|c| c.kind() == "argument")
+            .count()
+    })
+}
+
+/// The call expression text, whitespace collapsed and capped.
+fn site_text(text: &str, n: Node<'_>) -> String {
+    let mut t = collapse_ws(text_of(text, n));
+    if t.len() > 96 {
+        let mut cut = 96;
+        while !t.is_char_boundary(cut) {
+            cut -= 1;
+        }
+        t.truncate(cut);
+    }
+    t
+}
+
+/// Every invocation, object creation and constructor initializer under member `n`, local functions excluded.
+fn collect_calls(text: &str, n: Node<'_>, out: &mut Vec<RawCall>) {
+    let locals = collect_locals(text, n);
+    let mut stack: Vec<Node<'_>> = children(n);
+    stack.reverse();
+    while let Some(x) = stack.pop() {
+        if matches!(x.kind(), "attribute_list" | "local_function_statement") {
+            continue;
+        }
+        let line = u32::try_from(x.start_position().row + 1).unwrap_or(u32::MAX);
+        let blank = |callee: String| RawCall {
+            callee,
+            qualifier: None,
+            method: false,
+            local: LocalBinding::None,
+            receiver: None,
+            args: None,
+            qual_path: Vec::new(),
+            line,
+            text: site_text(text, x),
+        };
+        match x.kind() {
+            "invocation_expression" => {
+                if let Some(f) = x.child_by_field_name("function") {
+                    let args = arg_count(x.child_by_field_name("arguments"));
+                    if let Some(c) = invocation(text, x, f, args, &locals, blank(String::new())) {
+                        out.push(c);
+                    }
+                }
+            }
+            "object_creation_expression" => {
+                let chain = x
+                    .child_by_field_name("type")
+                    .and_then(|t| name_chain(text, t))
+                    .unwrap_or_default();
+                let mut c = blank(chain.last().cloned().unwrap_or_default());
+                c.qualifier = Some(Q_NEW.to_owned());
+                c.args = arg_count(x.child_by_field_name("arguments"));
+                c.qual_path = chain[..chain.len().saturating_sub(1)].to_vec();
+                out.push(c);
+            }
+            "implicit_object_creation_expression" => {
+                let mut c = blank(String::new());
+                c.qualifier = Some(Q_NEW.to_owned());
+                out.push(c);
+            }
+            "constructor_initializer" => {
+                let base = children(x).iter().any(|c| c.kind() == "base");
+                let mut c = blank(if base { "base" } else { "this" }.to_owned());
+                c.qualifier = Some(if base { Q_BASE_INIT } else { Q_THIS_INIT }.to_owned());
+                c.args = arg_count(
+                    children(x)
+                        .into_iter()
+                        .find(|c| c.kind() == "argument_list"),
+                );
+                out.push(c);
+            }
+            _ => {}
+        }
+        let mut kids = children(x);
+        kids.reverse();
+        stack.extend(kids);
+    }
+}
+
+/// The call of invocation `x` whose callee expression is `f`, folded onto `site`.
+fn invocation(
+    text: &str,
+    inv: Node<'_>,
+    func: Node<'_>,
+    args: Option<usize>,
+    locals: &HashMap<String, Option<String>>,
+    mut site: RawCall,
+) -> Option<RawCall> {
+    site.args = args;
+    match func.kind() {
+        "identifier" | "generic_name" => {
+            let name = type_head(text, func)?;
+            if name == "nameof" {
+                return None;
+            }
+            if locals.contains_key(&name) {
+                site.local = LocalBinding::Value;
+            }
+            site.callee = name;
+        }
+        "member_access_expression" | "member_binding_expression" => {
+            site.callee = func
+                .child_by_field_name("name")
+                .and_then(|c| type_head(text, c))?;
+            let recv_expr = if func.kind() == "member_access_expression" {
+                func.child_by_field_name("expression")
+            } else {
+                inv.parent()
+                    .filter(|p| p.kind() == "conditional_access_expression")
+                    .and_then(|p| p.child_by_field_name("condition"))
+            };
+            if let Some(expr) = recv_expr {
+                let (qualifier, receiver, path) = receiver_of(text, expr, locals);
+                site.qualifier = qualifier;
+                site.method = path.is_empty();
+                site.receiver = receiver;
+                site.qual_path = path;
+            } else {
+                site.method = true;
+                site.receiver = Some(Receiver::Expr);
+            }
+            if site.qualifier.as_deref() == Some(Q_BASE) {
+                site.method = true;
+            }
+        }
+        _ => {
+            site.method = true;
+            site.receiver = Some(Receiver::Expr);
+        }
+    }
+    Some(site)
+}
+
+/// Fills `file` with the calls, imports, use bindings and field declarations the fold gathered.
+fn file_sites(
+    file: &mut crate::model::FileSymbols,
+    by_node: &HashMap<NodeId, Symref>,
+    calls: Vec<(NodeId, RawCall)>,
+    uses: Vec<RawUse>,
+    fields: Vec<(NodeId, String)>,
+) {
+    for (node, c) in calls {
+        let Some(caller) = by_node.get(&node) else {
+            continue;
+        };
+        file.calls.push(CallSite {
+            caller: caller.clone(),
+            callee: c.callee,
+            qualifier: c.qualifier,
+            method: c.method,
+            local: c.local,
+            in_macro: false,
+            receiver: c.receiver,
+            opaque_qualifier: false,
+            macro_exact: None,
+            args: c.args,
+            qual_path: c.qual_path,
+            bound: Vec::new(),
+            line: c.line,
+            text: c.text,
+        });
+    }
+    for u in uses {
+        file.imports.push(ImportEdge {
+            from_file: file.path.clone(),
+            target: if u.global {
+                format!("global {}", u.rendered)
+            } else {
+                u.rendered
+            },
+        });
+        file.uses.push(UseBinding {
+            from_file: file.path.clone(),
+            local: u.local,
+            target: u.target,
+            public: u.global,
+            container: (!u.ns.is_empty()).then(|| Symref::symbol(&file.path, u.ns)),
+        });
+    }
+    for (node, ty) in fields {
+        let Some(sym) = by_node.get(&node) else {
+            continue;
+        };
+        let owner = sym.segments()[..sym.segments().len() - 1].join(".");
+        let head = strip_generics(&squash(&ty))
+            .trim_end_matches('?')
+            .to_owned();
+        let head = head.rsplit('.').next().unwrap_or_default().to_owned();
+        if let Some(field) = sym.name() {
+            file.fields.push(FieldDecl {
+                owner,
+                field: field.to_owned(),
+                ty: RetType {
+                    head,
+                    arg: None,
+                    arg2: None,
+                    tuple: None,
+                },
+            });
+        }
+    }
 }
