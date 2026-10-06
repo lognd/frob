@@ -2,7 +2,8 @@
 id = "01M43D7BB2BSB7XWCCZ13MJ53F"
 title = "gob-macros::ui trybuild test takes 45-120 s and times out the 120 s hang guard on loaded hosts"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
