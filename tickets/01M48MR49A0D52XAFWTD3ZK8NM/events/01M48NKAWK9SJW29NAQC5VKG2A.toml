@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["a Rule without polarity or must_measure fails to compile with a span (trybuild ui case)", "a malformed version or since fails to compile (trybuild)", "a rule doc without the three sections fails to compile, and every existing rule is migrated", "each rule's Example block runs as an mdtest"]
+new = ["a Rule without polarity or must_measure fails to compile with a span (trybuild ui case), and every existing rule declares both", "version and since must be semver or the release placeholder; anything else fails to compile (trybuild)", "a registry-driven test fails naming each rule whose doc lacks What it does / Why it matters / Example, or whose Example does not run as an mdtest", "RuleMeta carries the declaring file and line and the rule page links to it (snapshot)"]
+reason = "aligned with the ruff/ty/biome source review"
+moved = [0, 0, 0, 0]
+at = "2026-10-06T13:14:11Z"
+actor = "lognd"
+rev = 1

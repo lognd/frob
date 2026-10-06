@@ -7,23 +7,23 @@ priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:20Z"
-updated = "2026-10-06T13:14:10Z"
+updated = "2026-10-06T13:14:11Z"
 scope = ["crates/gob-macros/**", "crates/gob-rules/**", "crates/*/src/**"]
 
 [[acceptance]]
-text = "a Rule without polarity or must_measure fails to compile with a span (trybuild ui case)"
+text = "a Rule without polarity or must_measure fails to compile with a span (trybuild ui case), and every existing rule declares both"
 bound = false
 
 [[acceptance]]
-text = "a malformed version or since fails to compile (trybuild)"
+text = "version and since must be semver or the release placeholder; anything else fails to compile (trybuild)"
 bound = false
 
 [[acceptance]]
-text = "a rule doc without the three sections fails to compile, and every existing rule is migrated"
+text = "a registry-driven test fails naming each rule whose doc lacks What it does / Why it matters / Example, or whose Example does not run as an mdtest"
 bound = false
 
 [[acceptance]]
-text = "each rule's Example block runs as an mdtest"
+text = "RuleMeta carries the declaring file and line and the rule page links to it (snapshot)"
 bound = false
 +++
 
