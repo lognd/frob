@@ -8,7 +8,7 @@ points = 8
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T04:30:09Z"
-updated = "2026-10-06T08:22:04Z"
+updated = "2026-10-06T08:23:54Z"
 scope = ["crates/gob-symbols/**", "docs/reference/fidelity.md"]
 
 [[links]]
