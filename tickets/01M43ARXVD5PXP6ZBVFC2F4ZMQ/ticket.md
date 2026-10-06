@@ -2,13 +2,13 @@
 id = "01M43ARXVD5PXP6ZBVFC2F4ZMQ"
 title = "gob-symbols: bounded constant evaluation of TS literals"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-04T11:28:48Z"
-updated = "2026-10-06T04:31:59Z"
+updated = "2026-10-06T09:34:41Z"
 idempotency_key = "crunk-plan-tsconst"
 labels = ["area:crunk"]
 scope = ["crates/gob-symbols/src/typescript/consteval.rs", "crates/gob-symbols/tests/typescript_consteval.rs"]
