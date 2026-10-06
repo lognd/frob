@@ -751,3 +751,198 @@ fn the_python_module_graph_and_the_typescript_one_agree_on_shared_shapes() {
         Some(Status::Must)
     );
 }
+
+// ---- markup and style lowering (~VGKB025) ----
+
+use gob_ir::const_value::{ConstValue, Value};
+use gob_ir::{Model, markup, style};
+use std::fmt::Write as _;
+
+fn model_of(path: &str, src: &str) -> (Model, gob_symbols::Folded) {
+    let folded = fold_file(&entry(path, src), src).expect("fold");
+    let model = Model::new(folded.term.clone(), folded.scopes.clone());
+    (model, folded)
+}
+
+fn show_value(v: &ConstValue) -> String {
+    match v {
+        ConstValue::Known(Value::Str(s)) => format!("{s:?}"),
+        ConstValue::Known(Value::Bool(b)) => b.to_string(),
+        ConstValue::Known(Value::Int(i)) => i.to_string(),
+        ConstValue::Known(other) => format!("{other:?}"),
+        ConstValue::OneOf(vs) => format!("one-of {vs:?}"),
+        ConstValue::Fragments(f) => format!("fragments {f:?}"),
+        ConstValue::Unknown => "?".to_owned(),
+    }
+}
+
+/// One line per element: tag, kind, attributes with their `const_value`, then children.
+fn render_markup(model: &Model) -> String {
+    let mut out = String::new();
+    for e in markup::elements(model) {
+        let attrs: Vec<String> = e
+            .attributes
+            .iter()
+            .map(|a| match &a.name {
+                Some(n) => format!("{n}={}", show_value(&markup::attribute_value(model, a))),
+                None => "...spread(May)".to_owned(),
+            })
+            .collect();
+        let kids: Vec<String> = e
+            .children
+            .iter()
+            .map(|c| match c {
+                markup::Child::Text(t) => format!("text:{t:?}"),
+                markup::Child::Element(_) => "element".to_owned(),
+                markup::Child::Expr(_) => "expr".to_owned(),
+            })
+            .collect();
+        let _ = writeln!(
+            out,
+            "{} {:?} [{}] ({})",
+            e.tag.as_deref().unwrap_or("?"),
+            e.kind,
+            attrs.join(" "),
+            kids.join(" ")
+        );
+    }
+    out
+}
+
+const MARKUP_SRC: &str = r#"import { Card } from './card';
+import * as ui from './ui';
+const base = "btn";
+export function App({ items, show, props }) {
+  return (
+    <>
+      <div id="main" className={"a " + "b"} data-n={3} hidden />
+      <Card title="t" {...props} />
+      <ui.Panel>
+        hello
+        {show && <b>yes</b>}
+        {show ? <i>a</i> : <u>b</u>}
+        <ul>{items.map((i) => <li key={i}>{i}</li>)}</ul>
+      </ui.Panel>
+    </>
+  );
+}
+"#;
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/fold/jsx.rs::jsx
+fn jsx_lowers_to_markup_terms_with_expected_snapshot() {
+    let (model, _) = model_of("src/app.tsx", MARKUP_SRC);
+    insta::assert_snapshot!(render_markup(&model), @r#"
+    div Intrinsic [id="main" className="a b" data-n=3 hidden=true] ()
+    Card Component [title="t" ...spread(May)] ()
+    b Intrinsic [] (text:"yes")
+    i Intrinsic [] (text:"a")
+    u Intrinsic [] (text:"b")
+    li Intrinsic [key=?] (expr)
+    ul Intrinsic [] (expr)
+    ui.Panel Component [] (text:"hello" expr expr element)
+    "#);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/fold/jsx.rs::jsx_expression
+fn conditional_and_mapped_children_are_groups() {
+    let (_, folded) = model_of("src/app.tsx", MARKUP_SRC);
+    let t = &folded.term;
+    let mut roles: Vec<String> = t
+        .ids()
+        .filter_map(|id| {
+            t.node(id)
+                .attrs()
+                .get_str("markup.group")
+                .map(str::to_owned)
+        })
+        .collect();
+    roles.sort();
+    assert_eq!(roles, ["conditional", "conditional", "fragment", "mapped"]);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/fold/jsx.rs::component_site
+fn a_component_use_is_a_call_edge_to_the_component_unit() {
+    let g = graph(&[
+        (
+            "src/app.tsx",
+            "import { Card } from './card';\nimport * as ui from './ui';\nexport function App() { return <div><Card /><ui.Panel /><Local /></div>; }\nfunction Local() { return <p />; }",
+        ),
+        ("src/card.tsx", "export function Card() { return <b />; }"),
+        ("src/ui.tsx", "export function Panel() { return <i />; }"),
+    ]);
+    assert_eq!(
+        call_status(&g, "src/app.tsx::App", "src/card.tsx::Card"),
+        Some(Status::Must)
+    );
+    assert_eq!(
+        call_status(&g, "src/app.tsx::App", "src/ui.tsx::Panel"),
+        Some(Status::Must)
+    );
+    assert_eq!(
+        call_status(&g, "src/app.tsx::App", "src/app.tsx::Local"),
+        Some(Status::Must)
+    );
+    // An intrinsic tag is not a call.
+    assert!(unknown_calls(&g, "src/app.tsx::App").is_empty());
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/fold/jsx.rs::style_declaration
+fn inline_style_objects_lower_to_declarations() {
+    let src = "export function A({ w }) { return <div style={{ backgroundColor: 'red', margin: 8, opacity: 0.5, border: '1px solid var(--line)', width: w, [k]: 1 }} />; }";
+    let (model, _) = model_of("a.tsx", src);
+    let decls = style::declarations(&model);
+    let got: Vec<(String, String, usize)> = decls
+        .iter()
+        .map(|d| (d.property.clone(), d.raw.clone(), d.values.len()))
+        .collect();
+    assert_eq!(
+        got,
+        [
+            ("background-color".to_owned(), "red".to_owned(), 1),
+            ("margin".to_owned(), "8px".to_owned(), 1),
+            ("opacity".to_owned(), "0.5".to_owned(), 1),
+            ("border".to_owned(), "1px solid var(--line)".to_owned(), 3),
+            ("width".to_owned(), String::new(), 1),
+        ]
+    );
+    let unknown = |d: &style::Declaration| matches!(&d.values[..], [style::ValuePart::Lit { kind, .. }] if kind == "unknown");
+    assert!(!decls[..4].iter().any(unknown));
+    assert!(unknown(&decls[4]));
+    let vars = style::var_refs(&model);
+    assert_eq!(vars.len(), 1);
+    assert_eq!(vars[0].name, "--line");
+    // The attribute value is the object in const_value form: computed entries make it Unknown.
+    let el = &markup::elements(&model)[0];
+    let attr = el.attribute("style").expect("style");
+    assert_eq!(markup::attribute_value(&model, attr), ConstValue::Unknown);
+    let (model2, _) = model_of(
+        "b.tsx",
+        "const x = <p style={{ color: 'red', zIndex: 2 }} />;",
+    );
+    let el = &markup::elements(&model2)[0];
+    let ConstValue::Known(Value::Object(o)) =
+        markup::attribute_value(&model2, el.attribute("style").expect("style"))
+    else {
+        panic!("style object should be Known");
+    };
+    assert_eq!(o["color"], Value::Str("red".into()));
+    assert_eq!(o["zIndex"], Value::Int(2));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/fold/jsx.rs::css_template
+fn css_tagged_templates_are_css_regions() {
+    let src = "import { css } from '@emotion/react';\nconst k = 'x';\nexport const s = css`color: red; ${k}`;\nexport const t = tag`color: blue`;";
+    let (_, folded) = model_of("a.tsx", src);
+    let t = &folded.term;
+    let regions: Vec<_> = t
+        .ids()
+        .filter(|&id| matches!(t.operator(id), gob_ir::Operator::Universal(gob_ir::Universal::Region { kind }) if kind == "css"))
+        .collect();
+    assert_eq!(regions.len(), 1);
+    assert_eq!(t.node(regions[0]).children().len(), 2);
+}

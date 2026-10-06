@@ -1,9 +1,10 @@
 //! The TypeScript and JavaScript folder: a tree-sitter tree to a U term plus the facts of one file.
 //!
 //! See the module docs of [`super`] for the mapping. This file holds the translation (`rho`); the
-//! scoping helpers are in `binders`, the import wire form in `imports`.
+//! scoping helpers are in `binders`, the import wire form in `imports`, JSX and inline style lowering in `jsx`.
 
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
+// frob:ticket 01M47QKSBYX7YFQHV3VVGKB025
 
 use std::collections::{HashMap, HashSet};
 
@@ -13,7 +14,6 @@ use tree_sitter::Node;
 
 use super::binders::{is_module_binding, param_names, scope_binders};
 use super::imports::{ImportMode, encode_edge, encode_use};
-use super::{ATTR_JSX_ATTRS, ATTR_JSX_KIND, ATTR_JSX_LINE, ATTR_JSX_TAG};
 use super::{ATTR_TEST_FRAMEWORK, ATTR_TEST_LINE, ATTR_TEST_ROLE, ATTR_TEST_TITLE};
 use crate::adapter::{FileInput, FoldError, Folded};
 use crate::fold::{
@@ -25,6 +25,8 @@ use crate::model::{
 };
 use crate::symref::Symref;
 use crate::view::{self, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, HOLE_UNMODELLED, Naming};
+
+mod jsx;
 
 /// Deepest term nesting before a subtree collapses into one opaque node.
 const MAX_DEPTH: usize = 160;
@@ -833,7 +835,6 @@ impl<'a> Fold<'a> {
             k if FN_EXPR.contains(&k) || k == "method_definition" => self.anon_fn(n, depth),
             "class" if self.default_export => self.class_unit(n, depth),
             "jsx_element" | "jsx_self_closing_element" | "jsx_fragment" => self.jsx(n, depth),
-            "jsx_expression" => self.jsx_expression(n, depth),
             "jsx_text" => self.cx.lit("text", self.t(n), n),
             "with_statement" => {
                 let mut kids = self.gen_children(n, depth)?;
@@ -893,7 +894,7 @@ impl<'a> Fold<'a> {
         let mut cur = f;
         loop {
             match cur.kind() {
-                "member_expression" => {
+                "member_expression" | "nested_identifier" => {
                     let Some(p) = cur.child_by_field_name("property") else {
                         return (Root::Other, names);
                     };
@@ -933,6 +934,12 @@ impl<'a> Fold<'a> {
     }
 
     fn call_target(&self, f: Node<'_>) -> CallTarget {
+        let (root, names) = self.chain(f);
+        self.target_of(root, &names)
+    }
+
+    /// The call target of a member chain already split into its `root` and `names`.
+    fn target_of(&self, root: Root, names: &[String]) -> CallTarget {
         let dynamic = || CallTarget {
             name: String::new(),
             qualifier: None,
@@ -941,7 +948,6 @@ impl<'a> Fold<'a> {
             receiver: None,
             path: Vec::new(),
         };
-        let (root, names) = self.chain(f);
         let method_on = |name: String, receiver: Receiver| CallTarget {
             name,
             qualifier: None,
@@ -950,7 +956,7 @@ impl<'a> Fold<'a> {
             receiver: Some(receiver),
             path: Vec::new(),
         };
-        match (root, names.as_slice()) {
+        match (root, names) {
             (Root::Ident(name), []) => CallTarget {
                 name,
                 qualifier: None,
@@ -1097,6 +1103,15 @@ impl<'a> Fold<'a> {
             return self.module_call(n, f, depth);
         }
         let target = self.call_target(f);
+        if f.kind() == "identifier"
+            && self.t(f) == "css"
+            && let Some(tpl) = n
+                .child_by_field_name("arguments")
+                .filter(|a| a.kind() == "template_string")
+        {
+            self.record_call(n, None);
+            return self.css_template(tpl, depth);
+        }
         let test = self.test_call(f, n, &target);
         let mut kids = self.call_head(f, &target, depth)?;
         self.args_into(n, &mut kids, depth)?;
@@ -1982,137 +1997,5 @@ impl<'a> Fold<'a> {
         let refs: Vec<&str> = names.iter().map(String::as_str).collect();
         let spec = NodeSpec::new(Operator::anon("function"), self.cx.node_loc(n)).binders(&refs);
         self.cx.add(spec, &[sig, body?])
-    }
-
-    // ---- JSX ----
-
-    /// The tag, kind (`intrinsic`, `component`, `member`, `fragment`) and head node of a JSX name.
-    fn jsx_head(
-        &mut self,
-        name: Option<Node<'_>>,
-        fallback: Node<'_>,
-    ) -> R<(String, &'static str, NodeId)> {
-        let Some(nm) = name else {
-            let id = self.cx.lit("tag", "", fallback)?;
-            return Ok((String::new(), "fragment", id));
-        };
-        let tag: String = self.t(nm).split_whitespace().collect();
-        let component = match nm.kind() {
-            "identifier" => tag
-                .chars()
-                .next()
-                .is_some_and(|c| c.is_uppercase() || c == '_' || c == '$'),
-            "member_expression" | "nested_identifier" => true,
-            _ => false,
-        };
-        if component {
-            let kind = if nm.kind() == "identifier" {
-                "component"
-            } else {
-                "member"
-            };
-            let id = self.cx.op(Operator::reference(&tag), nm, &[])?;
-            Ok((tag, kind, id))
-        } else {
-            let id = self.cx.lit("tag", &tag, nm)?;
-            Ok((tag, "intrinsic", id))
-        }
-    }
-
-    fn jsx_attribute(&mut self, a: Node<'_>, depth: usize) -> R<(String, NodeId)> {
-        if a.kind() != "jsx_attribute" {
-            // `{...props}`: a spread contributes any attribute.
-            let id = self.tr(a, depth + 1)?;
-            let id = self
-                .cx
-                .op(Operator::adapter(LANG, "jsx_spread", Sort::Exp), a, &[id])?;
-            return Ok(("...".to_owned(), id));
-        }
-        let kids_src = children(a);
-        let name = kids_src.first().copied();
-        let name_text = name.map(|x| self.t(x).to_owned()).unwrap_or_default();
-        let mut kids = Vec::new();
-        if let Some(nm) = name {
-            kids.push(self.cx.lit("attr-name", self.t(nm), nm)?);
-        }
-        for v in kids_src.into_iter().skip(1).filter(Node::is_named) {
-            kids.push(self.tr(v, depth + 1)?);
-        }
-        let spec = NodeSpec::new(
-            Operator::adapter(LANG, "jsx_attribute", Sort::Exp),
-            self.cx.node_loc(a),
-        )
-        .attr("jsx.name", name_text.as_str());
-        Ok((name_text, self.cx.add(spec, &kids)?))
-    }
-
-    fn jsx(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
-        let (open, rest): (Option<Node<'_>>, Vec<Node<'_>>) = match n.kind() {
-            "jsx_element" => (
-                n.child_by_field_name("open_tag"),
-                children(n)
-                    .into_iter()
-                    .filter(|c| {
-                        c.is_named()
-                            && c.kind() != "jsx_opening_element"
-                            && c.kind() != "jsx_closing_element"
-                    })
-                    .collect(),
-            ),
-            "jsx_self_closing_element" => (Some(n), Vec::new()),
-            _ => (
-                None,
-                children(n).into_iter().filter(Node::is_named).collect(),
-            ),
-        };
-        let name = open.and_then(|o| o.child_by_field_name("name"));
-        let (tag, kind, head) = self.jsx_head(name, n)?;
-        let mut kids = vec![head];
-        let mut attr_names = Vec::new();
-        if let Some(o) = open {
-            let attrs: Vec<Node<'_>> = children(o)
-                .into_iter()
-                .filter(|c| c.is_named() && Some(c.id()) != name.map(|x| x.id()))
-                .filter(|c| !matches!(c.kind(), "type_arguments") && !is_comment(*c))
-                .collect();
-            for a in attrs {
-                let (nm, id) = self.jsx_attribute(a, depth)?;
-                attr_names.push(nm);
-                kids.push(id);
-            }
-        }
-        for c in rest {
-            kids.push(self.tr(c, depth + 1)?);
-        }
-        let op = if n.kind() == "jsx_fragment" {
-            "jsx_fragment"
-        } else {
-            n.kind()
-        };
-        let spec = NodeSpec::new(Operator::adapter(LANG, op, Sort::Exp), self.cx.node_loc(n))
-            .attr(ATTR_JSX_TAG, tag.as_str())
-            .attr(ATTR_JSX_KIND, kind)
-            .attr(ATTR_JSX_ATTRS, attr_names.join(",").as_str())
-            .attr(ATTR_JSX_LINE, i64::from(line_of(n)));
-        self.cx.add(spec, &kids)
-    }
-
-    /// `{expr}`: a lone identifier is a function or value passed along (a handler, a render prop).
-    fn jsx_expression(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
-        let named: Vec<Node<'_>> = children(n)
-            .into_iter()
-            .filter(|c| c.is_named() && !is_comment(*c))
-            .collect();
-        if let [only] = named.as_slice()
-            && only.kind() == "identifier"
-        {
-            self.value_site(*only);
-        }
-        let kids = self.with_expr(true, |s| s.gen_children(n, depth))?;
-        self.cx.op(
-            Operator::adapter(LANG, "jsx_expression", Sort::Exp),
-            n,
-            &kids,
-        )
     }
 }
