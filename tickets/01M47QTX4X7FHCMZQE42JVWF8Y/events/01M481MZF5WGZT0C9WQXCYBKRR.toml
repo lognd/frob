@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "GRL printer idempotence moved to ~NH92W1H, which must reuse crates/grimble-model/tests/stability.rs as the model for its harness."
+at = "2026-10-06T07:25:34Z"
+actor = "lognd"
+rev = 1

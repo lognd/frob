@@ -433,4 +433,37 @@ mod python_tests {
         assert!(r.findings.is_empty(), "{:?}", r.findings);
         assert_eq!(r.directives.len(), 1);
     }
+
+    /// A downstream product's waiver, registered the way crunk registers its own.
+    #[derive(Debug, gob_macros::Directive)]
+    #[directive(namespace = "crunk", verb = "waive")]
+    #[allow(dead_code)]
+    struct CrunkWaive {
+        /// The waived rule.
+        #[arg(positional)]
+        rule: String,
+        /// Why the waiver exists.
+        #[arg(key = "reason")]
+        reason: String,
+    }
+
+    // frob:tests crates/gob-directives/src/scan.rs::Scanner.scan_in
+    #[test]
+    fn css_waiver_is_found_in_the_crunk_namespace_with_its_span() {
+        let text = "/* crunk:waive COLOR001 reason=\"brand\" */\na { color: #f00 }\n";
+        let syms = gob_symbols::FileSymbols {
+            path: "site.css".to_owned(),
+            ..Default::default()
+        };
+        let cfg = ScanConfig {
+            namespaces: vec!["crunk".to_owned()],
+            product: "crunk".to_owned(),
+        };
+        let r = Scanner::new(&cfg).scan(Language::Css, text, &syms);
+        assert!(r.findings.is_empty(), "{:?}", r.findings);
+        assert_eq!(r.directives.len(), 1);
+        let d = &r.directives[0];
+        assert_eq!((d.namespace.as_str(), d.verb.as_str()), ("crunk", "waive"));
+        assert_eq!(d.span.range.start(), gob_text::TextSize::new(3));
+    }
 }
