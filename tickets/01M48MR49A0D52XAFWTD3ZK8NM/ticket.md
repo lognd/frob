@@ -7,8 +7,12 @@ priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:20Z"
-updated = "2026-10-06T13:14:11Z"
+updated = "2026-10-06T13:27:44Z"
 scope = ["crates/gob-macros/**", "crates/gob-rules/**", "crates/*/src/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M48PBZ7A1DSJJW9ZDKCJ0F5T"
 
 [[acceptance]]
 text = "a Rule without polarity or must_measure fails to compile with a span (trybuild ui case), and every existing rule declares both"
