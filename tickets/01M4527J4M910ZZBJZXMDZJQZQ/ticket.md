@@ -6,7 +6,8 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-05T03:37:59Z"
-updated = "2026-10-06T04:09:05Z"
+updated = "2026-10-06T04:38:30Z"
+scope = ["crates/gob-dev/src/ci.rs", "changelog.d/01M4527J4M910ZZBJZXMDZJQZQ.*"]
 
 [[acceptance]]
 text = "Given a machine with no grimble or crunk installed, when cargo dev ci --step check runs, then it builds and uses the workspace siblings and reports no SIB001"

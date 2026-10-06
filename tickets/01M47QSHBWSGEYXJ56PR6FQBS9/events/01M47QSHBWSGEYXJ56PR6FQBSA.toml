@@ -1,0 +1,17 @@
+kind = "create"
+title = "frob check and doctor through the Product trait"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
+scope = ["crates/frob-cli/**", "crates/frob-check/**"]
+acceptance = ["frob check and frob doctor run through gob-product", "frob CLI snapshot and verb tests pass unchanged"]
+body = "products.md section 7. frob-cli's check and doctor verbs instantiate gob-product's generic verbs with a frob Product impl; frob's other verbs stay frob's. Behaviour and output unchanged."
+at = "2026-10-06T04:33:17Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M47QSGHYD2EQ4552V1B4EEQZ"

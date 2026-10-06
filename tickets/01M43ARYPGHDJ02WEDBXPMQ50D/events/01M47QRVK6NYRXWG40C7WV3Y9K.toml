@@ -1,0 +1,7 @@
+kind = "link"
+op = "add"
+link = "superseded-by"
+target = "01M47QKVBB5G9N1QZP3AVXTRHX"
+at = "2026-10-06T04:32:55Z"
+actor = "lognd"
+rev = 1
