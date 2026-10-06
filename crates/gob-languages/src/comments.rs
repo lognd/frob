@@ -588,7 +588,7 @@ mod tests {
     #[test]
     // frob:tests crates/gob-languages/src/parse.rs::parse
     fn tsx_syntax_error_is_a_partial_tree_with_spans_and_comments_stay_queryable() {
-        let src = "// head\nconst a = <div>{</div>;\n/* tail */\nexport const b = 1;\n";
+        let src = "// head\nconst a = <div>{1}</div> +;\n/* tail */\nexport const b = 1;\n";
         let ParseResult::Parsed(t) = parse(Language::Tsx, src, &ParseLimits::default()) else {
             panic!("expected a partial tree");
         };
