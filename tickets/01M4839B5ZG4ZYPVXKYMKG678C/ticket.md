@@ -7,7 +7,7 @@ priority = "low"
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
 reporter = "lognd"
 created = "2026-10-06T07:54:09Z"
-updated = "2026-10-06T07:54:09Z"
+updated = "2026-10-06T10:21:34Z"
 scope = ["crates/crunk-check/Cargo.toml", "Cargo.lock"]
 +++
 
