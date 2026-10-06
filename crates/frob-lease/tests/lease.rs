@@ -826,3 +826,147 @@ fn a_corrupt_lease_file_is_skipped_reported_and_kept() {
         .acquire(bad, &holder("c"), &scope(&["lib/**"]))
         .expect("acquirable after quarantine");
 }
+
+/// A clock a single test moves by hand, so parallel tests never share time.
+#[derive(Debug, Clone)]
+struct HandClock(Arc<AtomicI64>);
+
+impl HandClock {
+    fn new() -> Self {
+        Self(Arc::new(AtomicI64::new(1_800_000_000)))
+    }
+
+    fn advance(&self, secs: i64) {
+        self.0.fetch_add(secs, Ordering::SeqCst);
+    }
+}
+
+impl gob_time::Clock for HandClock {
+    fn now(&self) -> Stamp {
+        Stamp::from_unix(self.0.load(Ordering::SeqCst))
+    }
+}
+
+fn hand_store(dir: &Path, clock: &HandClock) -> LeaseStore {
+    store_in(
+        dir,
+        LeaseConfig {
+            ttl_secs: 100,
+            ..LeaseConfig::default()
+        },
+    )
+    .with_clock(Arc::new(clock.clone()))
+}
+
+// frob:ticket 01M48TNCW1RS4TW9RYDG2Y8E0R
+// frob:tests crates/frob-lease/src/store.rs::renew_for_worktree
+#[test]
+fn activity_from_the_worktree_extends_the_expiry() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let clock = HandClock::new();
+    let store = hand_store(dir.path(), &clock);
+    let t = TicketId::mint();
+    let alice = holder("alice");
+    store
+        .acquire(t, &alice, &scope(&["src/**"]))
+        .expect("acquire");
+    clock.advance(90);
+    let renewed = store.renew_for_worktree(&alice.worktree).expect("renew");
+    assert_eq!(renewed.len(), 1);
+    clock.advance(90);
+    assert!(
+        store.live_lease(t).expect("lease").is_some(),
+        "still live 180 s after the take because activity at 90 s renewed it"
+    );
+    let other = store
+        .renew_for_worktree(Path::new("/wt/nobody"))
+        .expect("other worktree");
+    assert!(other.is_empty(), "another worktree renews nothing");
+    clock.advance(200);
+    assert!(
+        store
+            .renew_for_worktree(&alice.worktree)
+            .expect("expired")
+            .is_empty(),
+        "an expired lease is not revived by activity"
+    );
+}
+
+// frob:tests crates/frob-lease/src/store.rs::reclaim
+#[test]
+fn an_expired_lease_is_reclaimed_unless_an_overlap_was_taken_since() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let clock = HandClock::new();
+    let store = hand_store(dir.path(), &clock);
+    let t = TicketId::mint();
+    let alice = holder("alice");
+    let sc = scope(&["src/**"]);
+    store.acquire(t, &alice, &sc).expect("acquire");
+    clock.advance(500);
+    let lease = store.reclaim(t, &alice, &sc).expect("reclaimed");
+    assert!(lease.is_live(Stamp::from_unix(1_800_000_500)));
+
+    clock.advance(500);
+    let b = TicketId::mint();
+    store
+        .acquire(b, &holder("bob"), &scope(&["src/lib/**"]))
+        .expect("bob takes an overlapping scope after the expiry");
+    let err = store
+        .reclaim(t, &alice, &sc)
+        .expect_err("overlap taken since");
+    assert!(
+        matches!(err, LeaseError::Held { ticket, .. } if ticket == b),
+        "{err}"
+    );
+}
+
+// frob:tests crates/frob-lease/src/store.rs::renew_for_worktree
+#[test]
+fn a_stolen_lease_is_not_renewed_by_the_old_holders_activity() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let clock = HandClock::new();
+    let store = hand_store(dir.path(), &clock);
+    let t = TicketId::mint();
+    let (alice, bob) = (holder("alice"), holder("bob"));
+    store
+        .acquire(t, &alice, &scope(&["src/**"]))
+        .expect("acquire");
+    store.steal(t, &bob, "alice stalled").expect("steal");
+    clock.advance(60);
+    assert!(
+        store
+            .renew_for_worktree(&alice.worktree)
+            .expect("alice activity")
+            .is_empty()
+    );
+    let lease = store.live_lease(t).expect("lease").expect("live");
+    assert_eq!(lease.holder, bob);
+    assert_eq!(lease.renewed_at, Stamp::from_unix(1_800_000_000));
+    assert!(matches!(
+        store.reclaim(t, &alice, &scope(&["src/**"])),
+        Err(LeaseError::Held { .. })
+    ));
+}
+
+// frob:tests crates/frob-lease/src/lib.rs::heartbeat
+#[test]
+fn heartbeat_from_inside_the_worktree_renews_its_lease() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    gob_git::Repo::init(dir.path()).expect("init");
+    let clock = HandClock::new();
+    let (store, root) =
+        frob_lease::open_store_from_file(dir.path(), Arc::new(clock.clone())).expect("store");
+    let t = TicketId::mint();
+    let me = Holder {
+        actor: "alice".to_owned(),
+        worktree: root,
+    };
+    store.acquire(t, &me, &scope(&["src/**"])).expect("acquire");
+    clock.advance(7000);
+    frob_lease::heartbeat(dir.path(), Arc::new(clock.clone()));
+    clock.advance(7000);
+    assert!(
+        store.live_lease(t).expect("lease").is_some(),
+        "14000 s after the take, live only because the heartbeat at 7000 s renewed it"
+    );
+}

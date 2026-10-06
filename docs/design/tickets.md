@@ -328,7 +328,12 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   (`changelog.d/**`, `changelog.d/*`) is refused at `lease widen` with
   `E-LEASE-FRAGMENT-GLOB`; such a glob already recorded in a ticket's
   scope is kept but ignored by overlap and SCOPE001. The heartbeat is renewed by any frob verb run from that
-  worktree and, when it exists, by the daemon, so a 40-minute build
+  worktree that proves activity (`ticket evidence add` today; the rest are
+  tracked) and, when it exists, by the daemon; only a live lease whose holder's
+  worktree is the caller's is renewed, so a stolen lease is never extended by
+  the old holder. `land` renews a lease that expired when no other holder has
+  taken the ticket or an overlapping scope since, and refuses
+  `E-LAND-NOT-LEASED` otherwise, so a 40-minute build
   with no frob call stays inside the TTL; a stale lease can be taken
   with `--steal` and a reason. Leases release automatically on every
   terminal transition and on `requeue`.

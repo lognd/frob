@@ -111,7 +111,7 @@ fn prepare(
     let clock = here.ledger.clock().clone();
     let id = view.ticket.front.id;
     let handle = view.summary.handle.clone();
-    let lease = held_lease(leases, &here.ledger, view, id, &handle)?;
+    let lease = held_lease(leases, &here.ledger, view, id, &handle, cwd_root)?;
     let wt_path = lease.holder.worktree.clone();
     let primary = primary_root(&repo)?;
     check_worktree(&repo, cwd_root, &wt_path, &handle)?;
@@ -431,6 +431,7 @@ fn held_lease(
     view: &TicketView,
     id: TicketId,
     handle: &str,
+    cwd_root: &Path,
 ) -> Result<Lease, LandError> {
     let not_leased =
         |why: String| needs_action("E-LAND-NOT-LEASED", why, format!("frob work {handle}"));
@@ -440,10 +441,15 @@ fn held_lease(
             view.summary.category
         )));
     }
-    let Some(lease) = leases.live_lease(id)? else {
-        return Err(not_leased(format!("{handle} has no live lease")));
-    };
     let actor = ledger.actor()?;
+    let lease = match leases.live_lease(id)? {
+        Some(l) => l,
+        None => reclaim_expired(leases, view, id, &actor, cwd_root).map_err(|e| {
+            not_leased(format!(
+                "{handle} has no live lease and it cannot be renewed: {e}"
+            ))
+        })?,
+    };
     if lease.holder.actor != actor {
         return Err(not_leased(format!(
             "{handle} is leased by {}, not {actor}",
@@ -451,6 +457,30 @@ fn held_lease(
         )));
     }
     Ok(lease)
+}
+
+/// Renew a lease that expired during a long run, provided nothing else took the ticket or its scope since.
+///
+/// The old holder (this actor's recorded worktree, else the current one) re-takes
+/// the scope under the lease lock; an overlapping or foreign live lease refuses.
+fn reclaim_expired(
+    leases: &LeaseStore,
+    view: &TicketView,
+    id: TicketId,
+    actor: &str,
+    cwd_root: &Path,
+) -> Result<Lease, frob_lease::LeaseError> {
+    let recorded = leases.recorded_lease(id)?;
+    let holder = match recorded {
+        Some(l) if l.holder.actor == actor => l.holder,
+        Some(l) => return Err(frob_lease::LeaseError::NotHeld { ticket: l.ticket }),
+        None => frob_lease::Holder {
+            actor: actor.to_owned(),
+            worktree: cwd_root.to_path_buf(),
+        },
+    };
+    tracing::info!(ticket = %id, %holder, "land: lease expired, trying to renew");
+    leases.reclaim(id, &holder, &view.ticket.front.scope)
 }
 
 /// Refuse landing a worktree other than the holder's: from another linked worktree, or a vanished one.

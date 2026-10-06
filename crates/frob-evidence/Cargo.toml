@@ -11,6 +11,7 @@ authors.workspace = true
 [dependencies]
 gob-time = { version = "0.532.0", path = "../gob-time" }
 blake3 = "1"
+frob-lease = { version = "0.532.0", path = "../frob-lease" }
 frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 frob-pm = { version = "0.532.0", path = "../frob-pm" }
 frob-release = { version = "0.532.0", path = "../frob-release" }

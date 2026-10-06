@@ -1046,6 +1046,7 @@ name = "frob-evidence"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "frob-lease",
  "frob-ledger",
  "frob-pm",
  "frob-release",
@@ -1118,6 +1119,7 @@ dependencies = [
  "gob-cli",
  "gob-config",
  "gob-diagnostics",
+ "gob-exec",
  "gob-fs",
  "gob-git",
  "gob-rules",

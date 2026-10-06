@@ -1386,3 +1386,61 @@ fn a_check_in_a_fresh_worktree_hits_the_cache_the_primary_warmed() {
         "an unchanged tree adds no rows: every lookup in the new worktree hit"
     );
 }
+
+/// A clock three hours past now: every two-hour lease taken at real time has expired by it.
+#[derive(Debug)]
+struct LaterClock;
+
+impl gob_time::Clock for LaterClock {
+    fn now(&self) -> frob_ledger::model::Stamp {
+        frob_ledger::model::Stamp::from_unix(gob_time::SystemClock.now().unix() + 3 * 3600)
+    }
+}
+
+// frob:ticket 01M48TNCW1RS4TW9RYDG2Y8E0R
+// frob:tests crates/frob-land/src/land.rs::reclaim_expired
+#[test]
+fn an_expired_lease_is_renewed_and_lands_when_nothing_overlapped_since() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+    let later: Arc<dyn gob_time::Clock> = Arc::new(LaterClock);
+    let out = land(&fx.root, &Fixture::opts(&s), &later).expect("land after expiry");
+    assert!(out.closed, "expired lease renewed, then landed");
+}
+
+// frob:tests crates/frob-land/src/land.rs::reclaim_expired
+#[test]
+fn an_expired_lease_is_not_renewed_when_another_holder_took_an_overlap() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+    let later: Arc<dyn gob_time::Clock> = Arc::new(LaterClock);
+    let thief = fx
+        .leases()
+        .with_clock(later.clone())
+        .acquire(
+            TicketId::mint(),
+            &frob_lease::Holder {
+                actor: "bob".to_owned(),
+                worktree: fx.root.join("bob-wt"),
+            },
+            &["src/**".to_owned()],
+        )
+        .expect("bob takes the scope after the expiry");
+    let err = land(&fx.root, &Fixture::opts(&s), &later).expect_err("overlap taken");
+    assert_eq!(refusal(&err).code, "E-LAND-NOT-LEASED");
+    assert!(
+        fx.ledger().show(s.id).expect("show").summary.category != Category::Done,
+        "nothing landed"
+    );
+    drop(thief);
+}
