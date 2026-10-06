@@ -1,0 +1,5 @@
+error: the rule file must be named `cov001.rs` (found `todo001.rs`): the file stem is the lowercase id
+  --> tests/ui_rule/fail/id_stem_mismatch/todo001.rs:16:12
+   |
+16 | pub struct Todo001;
+   |            ^^^^^^^

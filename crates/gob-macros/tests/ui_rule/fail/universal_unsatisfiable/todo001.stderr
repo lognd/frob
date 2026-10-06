@@ -1,0 +1,5 @@
+error[E0080]: evaluation panicked: TODO001: universal rule is unsatisfiable: no language provides all of [Comments, Effects] at fidelity F1 or better; matrix: crates/gob-rules/src/rule_spike/caps.rs (stub for gob-caps)
+  --> tests/ui_rule/fail/universal_unsatisfiable/todo001.rs:11:34
+   |
+11 |     applies = universal(needs = [Comments, Effects], min_fidelity = F1),
+   |                                  ^^^^^^^^ evaluation of `_` failed here

@@ -12,6 +12,8 @@
 mod command;
 mod config_table;
 mod directive;
+mod rule_attr;
+mod rule_doc;
 mod ticket_schema;
 
 use darling::{FromDeriveInput, FromMeta};
@@ -122,6 +124,31 @@ pub fn derive_ticket_schema(input: TokenStream) -> TokenStream {
     match ticket_schema::expand(&input) {
         Ok(ts) => ts.into(),
         Err(e) => e.write_errors().into(),
+    }
+}
+
+/// SPIKE (~9R52NCF): the `#[rule(..)]` attribute of D107, expanded against `gob_rules::rule_spike`.
+///
+/// Every field is required; the colocated `<id>.md` is validated and `include_str!`d. Re-exported
+/// as `gob_rules::rule_spike::rule`; the production derive is untouched.
+#[proc_macro_attribute]
+pub fn rule_spike(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let item = parse_macro_input!(item as syn::ItemStruct);
+    match rule_attr::expand(attr.into(), &item) {
+        Ok(ts) => ts.into(),
+        Err(e) => {
+            let mut out = e.to_compile_error();
+            // Keep the item and a poisoned `Rule` impl so one mistake is one error, not a cascade.
+            let name = &item.ident;
+            out.extend(quote!(
+                #item
+                impl ::gob_rules::rule_spike::Rule for #name {
+                    const DEF: &'static ::gob_rules::rule_spike::RuleDef =
+                        &::gob_rules::rule_spike::RuleDef::POISONED;
+                }
+            ));
+            out.into()
+        }
     }
 }
 

@@ -1,0 +1,5 @@
+error: rule page `todo001.md`: missing a fire example: a code fence marked `expect=fire`
+  --> tests/ui_rule/fail/missing_fire_example/todo001.rs:16:12
+   |
+16 | pub struct Todo001;
+   |            ^^^^^^^
