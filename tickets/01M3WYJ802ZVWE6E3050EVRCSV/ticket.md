@@ -2,7 +2,8 @@
 id = "01M3WYJ802ZVWE6E3050EVRCSV"
 title = "M1: frob v2 self-hosts (checks and lands this repository)"
 type = "epic"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 reporter = "human"
