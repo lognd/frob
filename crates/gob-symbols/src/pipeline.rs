@@ -13,6 +13,7 @@ use rayon::prelude::*;
 
 use crate::adapter::{Adapter, Fidelity, FileInput, Folded, ParseStatus};
 use crate::crates::CrateDeps;
+use crate::dotnet::MalformedProject;
 use crate::fold::{base_file, opaque_file};
 use crate::graph::SymbolGraph;
 use crate::model::FileSymbols;
@@ -85,6 +86,9 @@ pub struct BuildStats {
     pub unreadable: Vec<SkippedFile>,
     /// Files no adapter claims, folded as one opaque unit each (G19).
     pub opaque: usize,
+    // frob:ticket 01M44YQW33GJMXQ8PQBECEBCQ1
+    /// Malformed `.csproj` and `.sln` files: their projects are Unresolved, never skipped.
+    pub malformed_projects: Vec<MalformedProject>,
 }
 
 fn input_of<'a>(entry: &'a FileEntry, digest: &'a str, text_len: usize) -> FileInput<'a> {
@@ -241,12 +245,13 @@ pub fn build_graph_with_stats(
         .into_inner()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     unreadable.sort_by(|a, b| a.path.cmp(&b.path));
-    let stats = BuildStats {
+    let mut stats = BuildStats {
         extracted: extracted.load(Ordering::Relaxed),
         cached: cached.load(Ordering::Relaxed),
         skipped: unreadable.len(),
         unreadable,
         opaque: opaque.load(Ordering::Relaxed),
+        malformed_projects: Vec::new(),
     };
     let per_file_ms = started.elapsed().as_millis();
     tracing::info!(
@@ -257,7 +262,11 @@ pub fn build_graph_with_stats(
         per_file_ms,
         "symbol extraction done"
     );
-    let graph = SymbolGraph::from_files_with_deps(per_file, &mut CrateDeps::new(root));
+    // frob:ticket 01M44YQW33GJMXQ8PQBECEBCQ1
+    let mut deps = CrateDeps::new(root);
+    let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
+    stats.malformed_projects = deps.malformed_projects(&paths);
+    let graph = SymbolGraph::from_files_with_deps(per_file, &mut deps);
     tracing::info!(
         assemble_ms = started.elapsed().as_millis() - per_file_ms,
         "symbol graph assembled"
