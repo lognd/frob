@@ -59,7 +59,10 @@ pub fn check_branch_name(name: &str) -> Result<(), BranchError> {
         Some("give the bare branch name, not a ref path")
     } else if name.starts_with(['-', '/', '.']) || name.ends_with(['/', '.']) {
         Some("it starts or ends with `-`, `/` or `.`")
-    } else if name.ends_with(".lock") || name.contains("..") || name.contains("//") {
+    } else if name.rsplit_once('.').is_some_and(|(_, ext)| ext == "lock")
+        || name.contains("..")
+        || name.contains("//")
+    {
         Some("it contains `..`, `//` or ends in `.lock`")
     } else if !name
         .chars()
