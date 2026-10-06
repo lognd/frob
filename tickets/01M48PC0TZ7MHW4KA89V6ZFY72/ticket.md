@@ -7,7 +7,7 @@ priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:40Z"
-updated = "2026-10-06T13:27:40Z"
+updated = "2026-10-06T13:41:06Z"
 scope = ["crates/gob-mdtest/**", "crates/gob-dev/src/ci.rs"]
 
 [[links]]
@@ -24,6 +24,14 @@ bound = false
 
 [[acceptance]]
 text = "cargo dev ci fails if the update env is set"
+bound = false
+
+[[acceptance]]
+text = "the update mode never changes a case's outcome class without a second explicit switch"
+bound = false
+
+[[acceptance]]
+text = "an Unresolved snapshot shows the reason in words and its remedy"
 bound = false
 +++
 

@@ -7,7 +7,7 @@ priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:40Z"
-updated = "2026-10-06T13:27:40Z"
+updated = "2026-10-06T13:41:05Z"
 scope = ["crates/gob-mdtest/**", "crates/frob-obligations/tests/**"]
 
 [[links]]
@@ -24,6 +24,10 @@ bound = false
 
 [[acceptance]]
 text = "a section that is both test and group is a parse error"
+bound = false
+
+[[acceptance]]
+text = "a case may mix languages (one block per file with its own fidelity), the assertion applies to the union, and a [mdtest] languages list selects matrix cells"
 bound = false
 +++
 

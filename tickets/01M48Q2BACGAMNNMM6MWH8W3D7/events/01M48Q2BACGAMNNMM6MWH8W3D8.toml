@@ -1,0 +1,16 @@
+kind = "create"
+title = "frob forecast <milestone|epic|ticket|release>: Monte Carlo over the fitted costs and throughput"
+type = "story"
+category = "todo"
+priority = "medium"
+parent = "01M48Q294B33TB7C0GSATZRGJB"
+scope = ["crates/frob-metrics/**", "crates/frob/**", "crates/frob-release/**"]
+acceptance = ["a seeded fixture gives stable P50/P85/P95", "release status and ticket show print the forecast line from the same function", "Unresolved below min_history"]
+body = "The one forecast (D104): 10k trials over the frob-metrics distributions (bootstrap while samples are few), P50/P85/P95 dates and the dominant risk (dependency chain, capacity, unsized work); release status and ticket show print one line from it; Unresolved with the sample count below min_history."
+at = "2026-10-06T13:39:52Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M48Q2AQXY69YKK3D2DC05ZWR"
