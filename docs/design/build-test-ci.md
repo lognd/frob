@@ -137,7 +137,10 @@ real-shaped inputs keep the fixture plus insta snapshot layer
 (every rule has a fire and a clean case or a fixture, every fixable rule
 has a fix snapshot, every rule has runnable docs) and the ecosystem check
 (section 6) sit on top. The fire-and-clean controls and the shrink-only
-coverage allowlist are frob additions that neither ruff nor ty has.
+coverage allowlist are frob additions that neither ruff nor ty has. D106
+(testing.md) extends the vocabulary to unresolved and notapplicable with
+subject accounting, because U is not two-valued: a clean case certifies
+at least one examined subject, and strictness counts Unresolved findings.
 
 Runner: `cargo nextest run` everywhere (per-test process isolation,
 retries off, junit output); `cargo test --doc` separately.

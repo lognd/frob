@@ -105,6 +105,11 @@ pub fn select_tests(root: &Path, graph: &SymbolGraph, touched: &TouchedSet) -> V
         if !is_test_fn(rec, sources.get(rec.symref.path())) {
             continue;
         }
+        if gob_symbols::is_typescript_path(rec.symref.path()) {
+            // frob:ticket 01M4828JB2S4JZY2QRB97A7SXX
+            tracing::debug!(symref = %rec.symref, "TypeScript test selected by name; no runner target yet");
+            continue;
+        }
         let target = if gob_symbols::is_python_path(rec.symref.path()) {
             Some(python_target(rec))
         } else {

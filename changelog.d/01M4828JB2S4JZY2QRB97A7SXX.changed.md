@@ -1,0 +1,1 @@
+gob-symbols: TypeScript and JavaScript describe/it/test calls are units (suite$title, test$title) so calls in a test body belong to the test, and frob test and COV001 can name them (EXTRACTOR_VERSION 22).

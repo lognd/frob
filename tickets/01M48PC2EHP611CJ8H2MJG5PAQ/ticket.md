@@ -7,7 +7,7 @@ priority = "low"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:42Z"
-updated = "2026-10-06T13:27:42Z"
+updated = "2026-10-06T13:41:08Z"
 scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**"]
 
 [[links]]
@@ -20,6 +20,10 @@ bound = false
 
 [[acceptance]]
 text = "all corpora pass or are fixed"
+bound = false
+
+[[acceptance]]
+text = "an expect value outside fire, clean, unresolved, notapplicable is a parse error listing the allowed set"
 bound = false
 +++
 

@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:38Z"
-updated = "2026-10-06T13:27:38Z"
+updated = "2026-10-06T13:41:04Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
@@ -20,6 +20,14 @@ bound = false
 
 [[acceptance]]
 text = "FORMAT.md documents every form"
+bound = false
+
+[[acceptance]]
+text = "marker words advisory and unresolved[REASON] (with required) exist and take column and message"
+bound = false
+
+[[acceptance]]
+text = "a self-test fails on expected unresolved but got error, and on a differing reason"
 bound = false
 +++
 

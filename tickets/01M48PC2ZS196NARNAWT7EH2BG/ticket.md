@@ -7,7 +7,7 @@ priority = "low"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:42Z"
-updated = "2026-10-06T13:27:42Z"
+updated = "2026-10-06T13:41:10Z"
 scope = ["crates/gob-rules/**", "crates/gob-diagnostics/**"]
 
 [[acceptance]]
@@ -16,6 +16,10 @@ bound = false
 
 [[acceptance]]
 text = "an offending message fails naming the rule"
+bound = false
+
+[[acceptance]]
+text = "Unresolved messages follow their own convention and each Unresolved snapshot has a reason and a remedy line"
 bound = false
 +++
 

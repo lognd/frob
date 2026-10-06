@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D106: GRL example blocks are a front end to the gob-mdtest outcome vocabulary (one grammar: fire, clean, unresolved, notapplicable, known-gap, fixed), not a separate runner."
+at = "2026-10-06T13:41:13Z"
+actor = "lognd"
+rev = 1

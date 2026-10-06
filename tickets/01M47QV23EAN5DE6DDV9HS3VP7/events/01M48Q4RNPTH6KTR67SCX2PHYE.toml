@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D106: the ecosystem report also lists files and subjects examined per rule and language; a drop in subjects examined is a regression even when the finding count falls; include one F0-heavy repository (for example Go or Ruby with YAML and shell)."
+at = "2026-10-06T13:41:11Z"
+actor = "lognd"
+rev = 1

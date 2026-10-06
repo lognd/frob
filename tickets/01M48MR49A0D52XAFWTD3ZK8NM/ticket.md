@@ -2,17 +2,22 @@
 id = "01M48MR49A0D52XAFWTD3ZK8NM"
 title = "Rule declarations: require polarity and must_measure, validate version/since, structured rule docs (ruff ViolationMetadata, ty declare_lint)"
 type = "story"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:20Z"
-updated = "2026-10-06T13:27:44Z"
+updated = "2026-10-06T13:56:13Z"
 scope = ["crates/gob-macros/**", "crates/gob-rules/**", "crates/*/src/**"]
 
 [[links]]
 kind = "blocked-by"
 target = "01M48PBZ7A1DSJJW9ZDKCJ0F5T"
+
+[[links]]
+kind = "superseded-by"
+target = "01M48R016FCW4AR269QN88H9SY"
 
 [[acceptance]]
 text = "a Rule without polarity or must_measure fails to compile with a span (trybuild ui case), and every existing rule declares both"
@@ -28,6 +33,10 @@ bound = false
 
 [[acceptance]]
 text = "RuleMeta carries the declaring file and line and the rule page links to it (snapshot)"
+bound = false
+
+[[acceptance]]
+text = "the rule docs carry a When it cannot decide section whose example is an unresolved case, and a Universal rule's docs show its language row"
 bound = false
 +++
 
