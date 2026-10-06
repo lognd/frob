@@ -7,7 +7,7 @@ priority = "high"
 points = 8
 reporter = "human"
 created = "2026-10-01T00:00:00Z"
-updated = "2026-10-01T00:00:00Z"
+updated = "2026-10-06T07:54:44Z"
 aliases = ["T-0001"]
 scope = ["docs/**", "notes/**"]
 +++
