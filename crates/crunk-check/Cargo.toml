@@ -9,10 +9,15 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
+crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
+crunk-values = { version = "0.532.0", path = "../crunk-values" }
 gob-check = { version = "0.532.0", path = "../gob-check" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
+gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
 serde_json = "1"
 tracing = "0.1"
