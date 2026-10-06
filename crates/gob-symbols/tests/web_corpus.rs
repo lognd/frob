@@ -216,3 +216,57 @@ fn the_generated_languages_page_lists_every_web_extension_and_matches_the_docs_f
     let file = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/reference/languages.md");
     expect_file(&file, &page);
 }
+
+/// Fixtures that contain markup and style, with the path that selects each adapter.
+const MARKUP_STYLE_FIXTURES: [(&str, &str, &str); 6] = [
+    (
+        "a.tsx",
+        "export const A = () => <div style={{ color: 'red' }}>hi</div>;\n",
+        "typescript",
+    ),
+    (
+        "a.jsx",
+        "export const A = () => <p style={{ margin: 0 }}>hi</p>;\n",
+        "typescript",
+    ),
+    (
+        "a.html",
+        "<style>p { color: red; }</style><p style=\"margin: 0\">hi</p>\n",
+        "html",
+    ),
+    ("a.css", "p { color: red; }\n", "css"),
+    (
+        "a.md",
+        "# T\n\n<div style=\"color: red\">hi</div>\n\n<p>x</p>\n",
+        "markdown",
+    ),
+    (
+        "a.py",
+        "def f():\n    return '<div style=\"color: red\"></div>'\n",
+        "python",
+    ),
+];
+
+// frob:tests crates/gob-symbols/src/lang.rs::lang_of_tag
+#[test]
+fn markup_and_style_terms_appear_iff_the_matrix_cell_is_provided() {
+    use gob_caps::{Capability, precision};
+    for (path, text, language) in MARKUP_STYLE_FIXTURES {
+        let f = fold_file(&entry(path, text), text).expect("fold");
+        let model = Model::new(f.term.clone(), f.scopes.clone());
+        let lang = gob_symbols::lang_of_tag(language).expect("language maps");
+        let has_markup = !markup::elements(&model).is_empty();
+        let has_style =
+            !style::declarations(&model).is_empty() || !style::style_rules(&model).is_empty();
+        assert_eq!(
+            has_markup,
+            precision(lang, Capability::Markup).is_provided(),
+            "{path}: markup terms vs the matrix cell"
+        );
+        assert_eq!(
+            has_style,
+            precision(lang, Capability::Style).is_provided(),
+            "{path}: style terms vs the matrix cell"
+        );
+    }
+}
