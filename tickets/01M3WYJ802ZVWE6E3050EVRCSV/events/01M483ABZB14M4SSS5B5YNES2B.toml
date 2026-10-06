@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "M1 self-hosting shipped 2026-10-04: all 31 children done (each carried its own fragment); frob v2 tickets and checks this repository"
+at = "2026-10-06T07:54:42Z"
+actor = "lognd"
+rev = 1

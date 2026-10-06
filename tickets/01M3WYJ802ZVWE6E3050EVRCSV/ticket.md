@@ -2,12 +2,13 @@
 id = "01M3WYJ802ZVWE6E3050EVRCSV"
 title = "M1: frob v2 self-hosts (checks and lands this repository)"
 type = "epic"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 reporter = "human"
 created = "2026-10-02T00:00:00Z"
-updated = "2026-10-02T00:00:00Z"
+updated = "2026-10-06T07:54:42Z"
 aliases = ["T-0002"]
 labels = ["milestone:2.0.0"]
 scope = ["crates/**", "Cargo.toml", ".cargo/**", ".github/**"]

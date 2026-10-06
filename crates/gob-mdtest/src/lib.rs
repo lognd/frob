@@ -25,6 +25,7 @@
 //! gob_mdtest::mdtest!(dir = "tests/mdtest", runner = my_runner);
 //! ```
 
+pub mod coverage;
 mod parse;
 mod run;
 

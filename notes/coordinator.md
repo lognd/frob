@@ -161,6 +161,18 @@ experimental. Record such lands in the status log.
 
 ## Status log (newest first)
 
+- 2026-10-06 (later): 15 landed: ~DYEVJPW ~MDZJQZQ ~13MJ53F ~JEN2C8Q
+  ~ECEBCQ1 ~4N35GSV ~BVCRKXA ~7BT4W67 ~PVJ9SQM ~17ZVW3R ~G436171 ~2JVWF8Y
+  ~YNC30Q8 ~1B4EEQZ ~BGB8V55; D99, D100 recorded; M1 and design epics
+  closed. Land procedure that worked: one serial chain script per batch
+  (evidence then `land --wait 900`), no ledger writes while a land runs
+  (each write forces a ~7 min re-check), push experimental after (lands do
+  not push). Evidence ref: `goway run --with-git --needs cores:8 --wait 20m
+  -- cargo nextest run --profile ci --workspace` (goway on PATH is the dev
+  build; goway ~41CG5RF fits jobs to helper memory). Brief pitfalls fixed:
+  `--accepts` takes criterion indexes, every ticket needs a changelog
+  fragment (REL003).
+
 - 2026-10-06: 0.532.0 crates.io publish finished after the owner widened
   the registry token (first run: 403 on gob-fs; job re-run, 41 published,
   2 already present, one 429 retried). Wave dispatched: ~JEN2C8Q (C#
