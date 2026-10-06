@@ -2,11 +2,12 @@
 
 use std::path::Path;
 
-use gob_check::CheckError;
-use gob_cli::{Cli, Outcome, Payload, run_for_test};
+use gob_cli::clap::ArgMatches;
+use gob_cli::{Cli, Context, Outcome, Payload, run_for_test};
 use gob_product::{CheckOptions, Product, ProductRun};
 use schemars::JsonSchema;
 use serde::Serialize;
+use serde_json::Value;
 
 /// A product that borrows crunk's pipeline and adds one extra doctor row.
 struct Demo;
@@ -24,25 +25,34 @@ impl Product for Demo {
     const VERSION: &'static str = "0.0.0";
     const DOCTOR_SUMMARY: &'static str = "Report the demo state.";
     const REQUIRES_CONFIG: bool = true;
+    type CheckData = Value;
     type Doctor = DemoDoctor;
 
-    fn check(root: &Path, opts: &CheckOptions) -> Result<ProductRun, CheckError> {
+    fn check(
+        ctx: &Context,
+        root: &Path,
+        opts: &CheckOptions,
+        _matches: &ArgMatches,
+    ) -> Outcome<Value> {
         let run = crunk_check::run(
             root,
             &crunk_check::CheckOptions {
                 only: opts.only.clone(),
                 ..crunk_check::CheckOptions::default()
             },
-        )?;
-        let document = crunk_check::sibling_document(&run);
-        Ok(ProductRun {
-            report: run.report,
-            document,
-            warnings: run.warnings,
-        })
+        )
+        .map(|run| {
+            let document = crunk_check::sibling_document(&run);
+            ProductRun {
+                report: run.report,
+                document,
+                warnings: run.warnings,
+            }
+        });
+        gob_product::sibling_check(Self::NAME, ctx, run)
     }
 
-    fn doctor(_root: &Path) -> Outcome<DemoDoctor> {
+    fn doctor(_ctx: &Context, _root: &Path, _matches: &ArgMatches) -> Outcome<DemoDoctor> {
         Ok(Payload::new(DemoDoctor { demo: true }))
     }
 

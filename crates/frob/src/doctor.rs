@@ -6,7 +6,7 @@ use std::time::Duration;
 use frob_worktree::gc::{self, Mode, pass::Report};
 use gob_cache::{Cache, CacheConfig};
 use gob_check::{OtherCopy, SiblingRow};
-use gob_cli::{CliError, Command, Context, Outcome, Payload};
+use gob_cli::{CliError, Context, Outcome, Payload};
 use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec, find_sibling};
 use gob_symbols::{Fidelity, adapter_for, fidelity_report};
 use gob_walk::{WalkConfig, walk};
@@ -21,14 +21,13 @@ use crate::workspace::{Located, registered_tables, table_refs};
 /// How long a `--version` probe may run.
 const PROBE_TIMEOUT: Duration = Duration::from_secs(10);
 
-/// Report toolchain, git, cache, config and ledger health; never fails on findings.
-#[derive(Debug, Clone, Copy, Default, gob_cli::Command)]
-#[command(
-    verb = "doctor",
-    product = "frob",
-    idempotent = true,
-    exits(ok, refused)
-)]
+/// One-line summary of `frob doctor` (the generic verb's metadata).
+pub const SUMMARY: &str =
+    "Report toolchain, git, cache, config and ledger health; never fails on findings.";
+
+// frob:ticket 01M47QSHBWSGEYXJ56PR6FQBS9
+/// The flags and survey behind `frob doctor`, run through the generic `gob-product` verb.
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Doctor {
     /// Also report each language adapter's fidelity and capability precisions.
     languages: bool,
@@ -316,10 +315,9 @@ fn sibling_row(runner: &Runner, product: &str, cwd: &std::path::Path) -> Sibling
     }
 }
 
-impl Command for Doctor {
-    type Data = DoctorData;
-
-    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+impl Doctor {
+    /// Add the `--languages` and `--fix` flags to the generic `doctor` verb.
+    pub fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
         cmd.arg(
             gob_cli::clap::Arg::new("languages")
                 .long("languages")
@@ -334,14 +332,24 @@ impl Command for Doctor {
         )
     }
 
-    fn from_matches(matches: &gob_cli::clap::ArgMatches) -> Result<Self, CliError> {
+    /// Read the flags back from the parsed matches.
+    ///
+    /// # Errors
+    ///
+    /// Never today; the signature matches the verb contract.
+    pub fn from_matches(matches: &gob_cli::clap::ArgMatches) -> Result<Self, CliError> {
         Ok(Self {
             languages: matches.get_flag("languages"),
             fix: matches.get_flag("fix"),
         })
     }
 
-    fn run(&self, ctx: &Context) -> Outcome<DoctorData> {
+    /// Survey the environment and return the report.
+    ///
+    /// # Errors
+    ///
+    /// A refusal when the merge-driver check cannot read the repository config.
+    pub fn run(&self, ctx: &Context) -> Outcome<DoctorData> {
         let runner = Runner::new(Limits { jobs: 2 });
         let toolchain = Toolchain {
             rustc: probe(

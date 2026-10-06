@@ -2,12 +2,12 @@
 
 use std::marker::PhantomData;
 
-use gob_check::FailOn;
+use gob_check::{CheckError, FailOn};
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, CommandMeta, Context, Described, ExitCode, Outcome, Payload};
 use serde_json::{Value, json};
 
-use crate::workspace::{check_error, locate_root};
+use crate::workspace::check_error;
 use crate::{CheckOptions, Product, ProductRun};
 
 /// Run the rules over the repository and print the `gob.sibling/1` document; exit 1 when the gate fails.
@@ -17,6 +17,7 @@ pub struct Check<P: Product> {
     fail_on: Option<FailOn>,
     base: Option<String>,
     ticket_scope: Option<Vec<String>>,
+    matches: ArgMatches,
     product: PhantomData<fn() -> P>,
 }
 
@@ -33,7 +34,7 @@ impl<P: Product> Described for Check<P> {
             ExitCode::Refused,
             ExitCode::Internal,
         ],
-        summary: "Run the rules over the repository and print the `gob.sibling/1` document; exit 1 when the gate fails.",
+        summary: P::CHECK_SUMMARY,
         module: module_path!(),
     };
 }
@@ -71,89 +72,120 @@ fn summary(run: &ProductRun, doc: &Value) -> Value {
     })
 }
 
+/// The check flags every product shares: `--only`, `--fail-on`, `--base`, `--ticket-scope`.
+///
+/// The default of [`Product::configure_check`]; a product with its own flag set replaces it.
+#[must_use]
+pub fn shared_flags(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+    cmd.arg(
+        Arg::new("only")
+            .long("only")
+            .value_name("FAMILY")
+            .value_delimiter(',')
+            .action(ArgAction::Append)
+            .help("Keep only these rule families or ids (comma separated)"),
+    )
+    .arg(
+        Arg::new("fail_on")
+            .long("fail-on")
+            .value_name("SEVERITY")
+            .value_parser(["error", "warn", "advisory", "none"])
+            .help("Exit 1 at or above this severity (default: [check] fail_on)"),
+    )
+    .arg(
+        Arg::new("base")
+            .long("base")
+            .value_name("REF")
+            .help("Ref diff-scoped rules diff against (echoed; no rule diffs yet)"),
+    )
+    .arg(
+        Arg::new("ticket_scope")
+            .long("ticket-scope")
+            .value_name("PATH")
+            .value_delimiter(',')
+            .action(ArgAction::Append)
+            .help(
+                "Repo-relative paths per-file rules are narrowed to (echoed; no per-file rule yet)",
+            ),
+    )
+}
+
 impl<P: Product> Command for Check<P> {
-    type Data = Value;
+    type Data = P::CheckData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("only")
-                .long("only")
-                .value_name("FAMILY")
-                .value_delimiter(',')
-                .action(ArgAction::Append)
-                .help("Keep only these rule families or ids (comma separated)"),
-        )
-        .arg(
-            Arg::new("fail_on")
-                .long("fail-on")
-                .value_name("SEVERITY")
-                .value_parser(["error", "warn", "advisory", "none"])
-                .help("Exit 1 at or above this severity (default: [check] fail_on)"),
-        )
-        .arg(
-            Arg::new("base")
-                .long("base")
-                .value_name("REF")
-                .help("Ref diff-scoped rules diff against (echoed; no rule diffs yet)"),
-        )
-        .arg(
-            Arg::new("ticket_scope")
-                .long("ticket-scope")
-                .value_name("PATH")
-                .value_delimiter(',')
-                .action(ArgAction::Append)
-                .help("Repo-relative paths per-file rules are narrowed to (echoed; no per-file rule yet)"),
-        )
+        P::configure_check(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
         let many = |id: &str| -> Option<Vec<String>> {
-            m.get_many::<String>(id).map(|v| v.cloned().collect())
+            m.try_get_many::<String>(id)
+                .ok()
+                .flatten()
+                .map(|v| v.cloned().collect())
         };
+        let one =
+            |id: &str| -> Option<String> { m.try_get_one::<String>(id).ok().flatten().cloned() };
         Ok(Self {
             only: many("only").unwrap_or_default(),
-            fail_on: m
-                .get_one::<String>("fail_on")
-                .and_then(|s| FailOn::parse(s)),
-            base: m.get_one::<String>("base").cloned(),
+            fail_on: one("fail_on").and_then(|s| FailOn::parse(&s)),
+            base: one("base"),
             ticket_scope: many("ticket_scope"),
+            matches: m.clone(),
             product: PhantomData,
         })
     }
 
-    fn run(&self, ctx: &Context) -> Outcome<Value> {
-        let root = locate_root(P::NAME, &ctx.cwd);
+    fn run(&self, ctx: &Context) -> Outcome<P::CheckData> {
+        let root = P::locate_root(&ctx.cwd);
         let opts = CheckOptions {
             only: self.only.clone(),
             fail_on: self.fail_on,
             base: self.base.clone(),
             ticket_scope: self.ticket_scope.clone(),
         };
-        let run = P::check(&root, &opts).map_err(|e| check_error(P::NAME, e))?;
-        let doc = run.document.clone();
-        let data = if ctx.json {
-            doc.clone()
-        } else {
-            summary(&run, &doc)
-        };
-        if run.report.exit_code() == ExitCode::Negative {
-            let c = gob_check::Counts::of(&run.report.findings);
-            return Err(CliError::Gate {
-                message: format!(
-                    "{} error(s), {} warning(s), {} advisory, {} unresolved ({} required):\n{}",
-                    c.error,
-                    c.warn,
-                    c.advisory,
-                    c.unresolved,
-                    run.report.required_unresolved(),
-                    lines_of(&doc).join("\n")
-                ),
-                data,
-                warnings: run.warnings,
-            });
-        }
-        let mut payload = Payload::new(data);
-        payload.warnings = run.warnings;
-        Ok(payload)
+        tracing::debug!(product = P::NAME, root = %root.display(), "check started");
+        P::check(ctx, &root, &opts, &self.matches)
     }
+}
+
+/// The sibling-document `check` of a product whose pipeline yields a [`ProductRun`].
+///
+/// Maps a pipeline failure to the exit table, returns the whole document in JSON mode and a
+/// counts-plus-lines summary in text mode, and fails the gate (exit 1) when the report says so.
+///
+/// # Errors
+///
+/// The mapped [`CheckError`], or [`CliError::Gate`] when the report fails the gate.
+pub fn sibling_check(
+    product: &str,
+    ctx: &Context,
+    run: Result<ProductRun, CheckError>,
+) -> Outcome<Value> {
+    let run = run.map_err(|e| check_error(product, e))?;
+    let doc = run.document.clone();
+    let data = if ctx.json {
+        doc.clone()
+    } else {
+        summary(&run, &doc)
+    };
+    if run.report.exit_code() == ExitCode::Negative {
+        let c = gob_check::Counts::of(&run.report.findings);
+        return Err(CliError::Gate {
+            message: format!(
+                "{} error(s), {} warning(s), {} advisory, {} unresolved ({} required):\n{}",
+                c.error,
+                c.warn,
+                c.advisory,
+                c.unresolved,
+                run.report.required_unresolved(),
+                lines_of(&doc).join("\n")
+            ),
+            data,
+            warnings: run.warnings,
+        });
+    }
+    let mut payload = Payload::new(data);
+    payload.warnings = run.warnings;
+    Ok(payload)
 }

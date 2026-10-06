@@ -13,9 +13,10 @@ pub mod doctor;
 
 use std::path::Path;
 
-use gob_check::CheckError;
-use gob_cli::{Cli, Outcome};
+use gob_cli::clap::ArgMatches;
+use gob_cli::{Cli, Context, Outcome};
 use gob_product::{CheckOptions, Product, ProductRun};
+use serde_json::Value;
 
 /// Product name, also the config file stem (`crunk.toml`).
 pub const PRODUCT: &str = crunk_check::PRODUCT;
@@ -33,13 +34,19 @@ impl Product for CrunkProduct {
         "Report the crunk version, the repository root and the state of crunk.toml.";
     const REQUIRES_CONFIG: bool = true;
 
+    type CheckData = Value;
     type Doctor = doctor::DoctorData;
 
     fn has_config(root: &Path) -> bool {
         crunk_check::has_config(root)
     }
 
-    fn check(root: &Path, opts: &CheckOptions) -> Result<ProductRun, CheckError> {
+    fn check(
+        ctx: &Context,
+        root: &Path,
+        opts: &CheckOptions,
+        _matches: &ArgMatches,
+    ) -> Outcome<Value> {
         let run = crunk_check::run(
             root,
             &crunk_check::CheckOptions {
@@ -48,16 +55,19 @@ impl Product for CrunkProduct {
                 base: opts.base.clone(),
                 ticket_scope: opts.ticket_scope.clone(),
             },
-        )?;
-        let document = crunk_check::sibling_document(&run);
-        Ok(ProductRun {
-            report: run.report,
-            document,
-            warnings: run.warnings,
-        })
+        )
+        .map(|run| {
+            let document = crunk_check::sibling_document(&run);
+            ProductRun {
+                report: run.report,
+                document,
+                warnings: run.warnings,
+            }
+        });
+        gob_product::sibling_check(Self::NAME, ctx, run)
     }
 
-    fn doctor(root: &Path) -> Outcome<doctor::DoctorData> {
+    fn doctor(_ctx: &Context, root: &Path, _matches: &ArgMatches) -> Outcome<doctor::DoctorData> {
         Ok(doctor::report(root))
     }
 
