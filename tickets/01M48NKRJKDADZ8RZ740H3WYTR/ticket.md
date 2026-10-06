@@ -2,12 +2,13 @@
 id = "01M48NKRJKDADZ8RZ740H3WYTR"
 title = "cargo dev new-rule scaffold, compiled and run in CI (ruff add_rule.py, clippy new_lint)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:14:25Z"
-updated = "2026-10-06T13:14:25Z"
+updated = "2026-10-06T13:56:13Z"
 scope = ["crates/gob-dev/**", ".github/workflows/ci.yml"]
 
 [[links]]
