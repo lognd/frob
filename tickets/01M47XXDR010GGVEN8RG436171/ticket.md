@@ -6,16 +6,16 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-06T06:20:09Z"
-updated = "2026-10-06T06:20:26Z"
+updated = "2026-10-06T06:22:37Z"
 scope = ["crates/gob-dev/src/ci.rs", "changelog.d/**"]
 
 [[acceptance]]
 text = "cargo dev ci --step clippy-windows passes on experimental"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the test still runs on unix"
-bound = false
+bound = true
 +++
 
 Landed with ~MDZJQZQ: crates/gob-dev/src/ci.rs test check_step_builds_the_workspace_siblings_before_running_frob calls step_named, which is cfg(unix), but the test itself is not, so the Windows target fails to compile the test module (cargo dev ci step clippy-windows; seen by ~PVJ9SQM 2026-10-06). The check step is Linux-only, so gate the test the same way as its neighbours. Also make the clippy-windows step part of what the land check or evidence runs so this class cannot land again, or file that as a follow-up.
