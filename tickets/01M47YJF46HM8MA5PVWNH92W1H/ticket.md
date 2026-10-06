@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-06T06:31:45Z"
-updated = "2026-10-06T12:15:02Z"
+updated = "2026-10-06T14:35:30Z"
 scope = ["crates/gob-plan/**"]
 +++
 
