@@ -131,7 +131,10 @@ pub struct Corpus {
 
 /// True when `path` lies in a `tests/mdtest` directory.
 fn in_mdtest_dir(path: &Path) -> bool {
-    let parts: Vec<_> = path.components().map(|c| c.as_os_str()).collect();
+    let parts: Vec<_> = path
+        .components()
+        .map(std::path::Component::as_os_str)
+        .collect();
     parts
         .windows(2)
         .any(|w| w[0] == "tests" && w[1] == "mdtest")
@@ -143,7 +146,10 @@ fn fixture_key(path: &Path) -> Option<(String, String)> {
     if ext == "snap" {
         return None;
     }
-    let parts: Vec<_> = path.components().map(|c| c.as_os_str()).collect();
+    let parts: Vec<_> = path
+        .components()
+        .map(std::path::Component::as_os_str)
+        .collect();
     let n = parts.len();
     if n < 5 || parts[n - 5] != "resources" || parts[n - 4] != "test" || parts[n - 3] != "fixtures"
     {
