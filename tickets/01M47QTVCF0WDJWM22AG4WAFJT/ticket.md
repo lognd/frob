@@ -8,12 +8,16 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:00Z"
-updated = "2026-10-06T04:34:00Z"
+updated = "2026-10-06T13:27:44Z"
 scope = ["crates/gob-fix/**", "crates/gob-mdtest/**"]
 
 [[links]]
 kind = "blocked-by"
 target = "01M43ARX0JB4A8E1YW329MKDDF"
+
+[[links]]
+kind = "blocked-by"
+target = "01M48PBYN43QPHGAF7Y14C4ZGJ"
 
 [[acceptance]]
 text = "each fixable rule has a fix diff snapshot"

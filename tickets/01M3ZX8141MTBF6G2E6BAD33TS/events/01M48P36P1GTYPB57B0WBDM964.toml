@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/branch.rs", "crates/frob/src/ticket/branch_cmd.rs"]
+new = ["crates/frob-ledger/src/branch.rs", "crates/frob/src/ticket/branch_cmd.rs", "crates/frob-ledger/src/lib.rs", "crates/frob/src/config.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/ticket_branch.rs", "changelog.d/*BAD33TS*", "docs/reference/config.md", "docs/schemas/config.json"]
+at = "2026-10-06T13:22:50Z"
+actor = "lognd"
+rev = 1
