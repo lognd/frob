@@ -2,7 +2,8 @@
 id = "01M43ARXDXMJ99H23MV17ZVW3R"
 title = "gob-languages: TS, TSX and CSS grammars with comment scanners"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
