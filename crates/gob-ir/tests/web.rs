@@ -463,6 +463,7 @@ impl ExternalRefs for Hook {
 fn const_value_external_hook_resolves_refs_and_joins_class_names() {
     let mut b = B::new("ts");
     let ext = b.add(Operator::reference("EXT"), &[]);
+    let ext_arg = b.add(Operator::reference("EXT"), &[]);
     let (a, flag) = (b.s("btn"), b.add(Operator::reference("on"), &[]));
     let on = b.s("on");
     let cond = b.op(OP_AND, &[flag, on]);
@@ -470,7 +471,7 @@ fn const_value_external_hook_resolves_refs_and_joins_class_names() {
     let t = b.lit("bool", "true");
     let prop = b.op(OP_PROP, &[obj_key, t]);
     let obj = b.op(OP_OBJECT, &[prop]);
-    let joined = b.call("cn", &[a, cond, ext, obj]);
+    let joined = b.call("cn", &[a, cond, ext_arg, obj]);
     let a2 = b.s("btn");
     let other = b.call("other", &[a2]);
     let root = b.add(Operator::group(GroupOrder::Sequence), &[ext, joined, other]);
