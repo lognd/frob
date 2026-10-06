@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-v2-wt/C2F4ZMQ; scope: crates/gob-symbols/src/typescript/consteval.rs, crates/gob-symbols/tests/typescript_consteval.rs; ttl 7200s"
+at = "2026-10-06T09:34:41Z"
+actor = "lognd"
+rev = 1

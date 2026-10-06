@@ -78,7 +78,9 @@ impl Adapter for CSharpAdapter {
     }
 
     fn capabilities(&self) -> CapabilityDecl {
-        CapabilityDecl::default().with(Capability::Visibility, Precision::Keyword)
+        CapabilityDecl::default()
+            .with(Capability::Visibility, Precision::Keyword)
+            .with(Capability::ProjectModel, Precision::Manifest)
     }
 
     fn parse(&self, text: &str, limits: &ParseLimits) -> ConcreteTree {

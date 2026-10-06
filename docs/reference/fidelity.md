@@ -11,6 +11,7 @@ sections 4.1, 4.2 and 4.6).
 | Python F2 (`.py`, `.pyi`: modules, classes, functions, methods, imports, calls, decorators, docstrings), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
 | C# F1 (`.cs`; `.csx` is not C#: namespaces, types, members, attributes, preprocessor conditions; imports and calls land next), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
 | TypeScript and JavaScript F2 (`.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs`: functions, classes, methods, interfaces, types, enums, namespaces, constants, ESM and CJS imports, exports, calls, JSX elements and attributes as terms, test runner calls), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
+| CSS F2 (`.css`: style rules, at-rules, declarations and custom properties as `gob_ir::style` terms, `var()` uses linked to definitions at May; SCSS and Less not yet), comments scanned | NotApplicable | examined |
 | Opaque F0, text, not scanned (for example `.json`) | NotApplicable | one Unresolved per rule naming the file count |
 | Opaque F0, binary (NUL byte or known extension) | NotApplicable | NotApplicable |
 | Parse failed | Unresolved | Unresolved |
@@ -169,6 +170,23 @@ A test item is a `describe`, `suite`, `it`, `test` or `test.describe` call (modi
 `@jest/globals`, `@playwright/test`, `bun:test` or `node:test`, or the file is a test file (`*.test.*`,
 `*.spec.*`, under `__tests__`, `tests`, `e2e`); `gob_symbols::test_items` lists them (framework `globals` when
 not imported). Test items are not units yet, so COV001 does not select them.
+
+## CSS
+
+The adapter (F2, `.css`, tree-sitter css grammar) lowers a stylesheet to the `gob_ir::style` forms: a rule set is
+`unit(style-rule)` named by its selector text, an at-rule (`@media`, `@supports`, `@layer`, `@keyframes`,
+`@font-face`, `@import`, ...) is `unit(at-rule)` named without the `@` with its prelude text, a keyframe block is a
+style rule named by its selector, a declaration is the `style.declaration` operator (property, raw value text,
+`important`, component values as children, the declaration's byte span), and `--x: value` is
+`unit(custom-property)`. A declaration's selector and at-rule chain is its ancestor chain. Symrefs nest the same way
+(`site.css::media.[.card,_.tile].--gap`: whitespace becomes `_`, a name with a dot is bracketed, repeats get `[dupN]`). A `var(--x)` is a
+`ref`; the scope graph holds every custom property of the file at May in one cascade scope, so a use with
+several definitions resolves to a May set and a use with none has no definition edge (D100).
+
+A syntax error is a `hole(parse-error)`: the file is a partial parse and other files are unaffected.
+`crunk:waive` comments are bound by the directive scanner. Component values are tokenised by
+`css/tokens.rs`, shared with the TypeScript inline-style lowering. Not modelled: SCSS and Less (variables and
+mixins are `phase` per D96), `@import` resolution, selector structure.
 
 ## C# symbols
 

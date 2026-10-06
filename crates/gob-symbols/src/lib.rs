@@ -5,7 +5,7 @@
 //! # Overview
 //!
 //! - [`Adapter`]: the contract `parse`, `fold`, `capabilities`, `fidelity`.
-//!   [`RustAdapter`] (F3), [`PythonAdapter`] (F2), [`CSharpAdapter`] (F1), [`TypeScriptAdapter`] (F2), [`MarkdownAdapter`] (F4) and [`OpaqueAdapter`] (F0, for
+//!   [`RustAdapter`] (F3), [`PythonAdapter`] (F2), [`CSharpAdapter`] (F1), [`TypeScriptAdapter`] (F2), [`CssAdapter`] (F2), [`MarkdownAdapter`] (F4) and [`OpaqueAdapter`] (F0, for
 //!   every file with no adapter) each produce a [`gob_ir::Term`] and a
 //!   [`gob_ir::ScopeGraph`] ([`Folded`]); [`adapters`] lists them and the `inventory`-based registry
 //!   ([`AdapterEntry`]) lets crates that depend on this one add more.
@@ -46,6 +46,8 @@
 
 mod adapter;
 mod crates;
+// frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
+mod css;
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
 mod csharp;
 // frob:ticket 01M44YQW33GJMXQ8PQBECEBCQ1
@@ -54,6 +56,8 @@ mod fold;
 mod graph;
 mod markdown;
 mod model;
+// frob:ticket 01M47QKTN549397AFFSC3DEAQX
+mod nodejs;
 mod opaque;
 mod paths;
 mod pipeline;
@@ -74,6 +78,7 @@ pub use adapter::{
 };
 pub use crates::CrateDeps;
 pub use csharp::{CSharpAdapter, is_csharp_path};
+pub use css::{CssAdapter, is_css_path};
 pub use dotnet::{
     Assignment, DotnetError, DotnetProjects, MalformedProject, Project, SolutionEntry,
     parse_project, parse_solution,
@@ -89,6 +94,9 @@ pub use model::{
     AttributeFact, CallRef, CallSite, DeriveDecl, Digests, FacetDigest, FieldDecl, FileSymbols,
     ImportEdge, LocalBinding, MapKind, MethodSig, Receiver, RefKind, RefSite, RetType, SelfKind,
     SymbolKind, SymbolRecord, UnitExtras, UnitFacts, UnitSpan, UseBinding, Visibility, collapse_ws,
+};
+pub use nodejs::{
+    JsResolution, NodeError, NodeProjects, Package, PathAlias, TsConfig, parse_package,
 };
 pub use opaque::OpaqueAdapter;
 pub use pipeline::{

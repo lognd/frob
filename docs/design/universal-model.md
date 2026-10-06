@@ -346,6 +346,8 @@ language feature each name it in the research note):
 | `expand(phase)` | term / Unknown | none; bounded steps |
 | `order(group)` | Exact / Unknown | declared discipline; notebooks are user-driven history |
 | `const_value`, `type_of`, `dispatch_targets`, `external_ref`, `entrypoints`, `binds` | per table | as declared |
+| `project_model` | packages, file ownership, package edges, aliases: Exact / Unknown; an import outside every package is Unknown with reason External or Unbound | manifest (Cargo, pyproject, .sln/.csproj, package.json workspaces with tsconfig paths and extends); language-engines.md 2 |
+| `markup`, `style` | element and declaration views over U (section 5.1): attributes and `var()` references at May, spreads May, computed values Unknown | adapter lowering (TSX/JSX first); language-engines.md 2 |
 
 Soundness contract: Must and Exact are only returned when the adapter
 can prove uniqueness or completeness; May sets must contain the true

@@ -2,13 +2,14 @@
 id = "01M47QKTN549397AFFSC3DEAQX"
 title = "project_model: package.json workspaces and tsconfig paths resolve TS imports"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T04:30:10Z"
-updated = "2026-10-06T08:48:12Z"
+updated = "2026-10-06T08:53:57Z"
 scope = ["crates/gob-symbols/**"]
 
 [[links]]

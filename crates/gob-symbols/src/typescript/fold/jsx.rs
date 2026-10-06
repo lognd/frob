@@ -20,7 +20,8 @@ use gob_ir::{GroupOrder, NodeId, NodeSpec, Operator, markup, style};
 use tree_sitter::Node;
 
 use super::{Fold, R, Root, Site, call_text, children, is_comment, line_of};
-use crate::typescript::style::{Token, css_property, numeric_raw, tokens};
+use crate::css::tokens::{Token, tokens};
+use crate::typescript::style::{css_property, numeric_raw};
 use crate::typescript::{ATTR_JSX_ATTRS, ATTR_JSX_KIND, ATTR_JSX_LINE, ATTR_JSX_TAG};
 
 /// Node attribute: what a `group` of the markup lowering stands for (`fragment`, `conditional`, `mapped`).

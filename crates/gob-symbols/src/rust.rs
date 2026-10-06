@@ -91,6 +91,7 @@ impl Adapter for RustAdapter {
             .with(Capability::Imports, Precision::Syntactic)
             .with(Capability::TestItems, Precision::Syntactic)
             .with(Capability::Order, Precision::Declared)
+            .with(Capability::ProjectModel, Precision::Manifest)
     }
 
     fn parse(&self, text: &str, limits: &ParseLimits) -> ConcreteTree {
