@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:33:59Z"
-updated = "2026-10-06T05:36:54Z"
+updated = "2026-10-06T05:41:21Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = false
 
 [[acceptance]]
 text = "FORMAT.md documents the header"
-bound = false
+bound = true
 +++
 
 build-test-ci.md section 6, ty's mdtest snapshot-diagnostics. A suite header comment snapshot-diagnostics makes the harness render every finding of each block with the full text renderer (source excerpt, labels, help) and assert it with insta, one snapshot per block, beside the corpus. Document it in crates/gob-mdtest/FORMAT.md.

@@ -508,6 +508,43 @@ CFG, GEN, PERF, TOOL (side inputs outside U). grimble SYS, CAP, BIND, ARCH,
 GPOL, NEAT and the crunk families, and the CI and DK families, are
 mapped in the research notes and in neatness.md and cicd.md.
 
+### 5.1 Web-engine queries (D96)
+
+Four capability queries extend the table for markup, style and constant
+facts (language-engines.md section 2). They are answer types and queries
+in `gob-ir` (`markup`, `style`, `const_value`); adapters lower into the
+forms below and every product reads them through GRL.
+
+| Id | Query | Answer form | Kind |
+|---|---|---|---|
+| Q48 | `markup`: elements (tag, kind intrinsic / component / unknown), attributes, children, text | Exact per element; an attribute spread is an attribute at status May | capability |
+| Q49 | `style`: rules (selector), declarations (property, raw value, component values), at-rules, custom properties, `var()` references | Exact; a `var()` reference is May (the cascade decides) | capability |
+| Q50 | `const_value(expr)` | Known, OneOf, Fragments (known parts and Unknown rest) or Unknown, within a step budget (default 256) | capability |
+| Q51 | `class_tokens(attr)`, derived from Q48 and Q50 | Known tokens (Must, or May through `clsx`, `cn`, `classnames`, `classNames` matched by name) plus a dynamic flag | derived |
+
+Lowering into U, using the thirteen universal operators plus two
+`Sigma_L` families (`markup`, `style`):
+
+- element: `apply(element)`, child 0 the head: `lit(tag, name)` for an
+  intrinsic tag, `ref(name)` for a component (so a use is a reference
+  edge), anything else is an unknown tag; remaining children are
+  attributes, `lit(text)`, child elements and expressions;
+- attribute: `markup.attribute` named after the attribute, optional child 0
+  the value (absent means `true`); spread: `markup.spread` over the
+  expression, status May;
+- style rule: `unit(style-rule)` named by its selector; at-rule:
+  `unit(at-rule)` with attribute `prelude`; custom property:
+  `unit(custom-property)` named `--x`; declaration: `style.declaration`
+  named by its property with attributes `raw` and `important`; component
+  values are `lit(kind)` children, `var(--x)` a `ref(--x)`;
+- const forms: `lit(str|int|bool|null)`, `ref` to a `unit(const)`, and
+  `apply(op)` with head `lit(op, lexeme)` for `+`, `?:`, `&&`, `template`,
+  `array`, `object` (entries `prop`).
+
+The declaration and attribute use `Sigma_L` operators rather than `bind`
+because `bind` scopes over child 0 (2.3) and these are named arguments
+and properties, not binders.
+
 ## 6. Paradigm coverage
 
 For each family: units, binders and scope, apply edges and their status,
