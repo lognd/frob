@@ -2,7 +2,8 @@
 id = "01M47QKT10CG0RSF784EEYTQ0J"
 title = "gob-languages and gob-symbols: HTML grammar and markup adapter"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
