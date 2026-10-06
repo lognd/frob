@@ -469,6 +469,71 @@ impl LeaseStore {
         Ok(lease)
     }
 
+    /// Heartbeat from observed activity: renew every live lease held from `worktree`.
+    ///
+    /// Only a live lease whose current holder's worktree is `worktree` is
+    /// touched, so a lease stolen by another holder is never extended by the
+    /// old holder's activity, and an expired lease is never revived here (that
+    /// is [`LeaseStore::reclaim`], which re-checks overlap). Returns the
+    /// renewed leases, empty when nothing was held from `worktree`.
+    ///
+    /// # Errors
+    ///
+    /// Lock, I/O and format failures.
+    pub fn renew_for_worktree(&self, worktree: &Path) -> Result<Vec<Lease>, LeaseError> {
+        let lock = self.lock()?;
+        let now = self.now();
+        let want = same_path(worktree);
+        let mut renewed = Vec::new();
+        for mut lease in self.read_all()? {
+            if !lease.is_live(now) || same_path(&lease.holder.worktree) != want {
+                continue;
+            }
+            lease.renewed_at = now;
+            lease.ttl_secs = self.cfg.ttl_secs;
+            self.write(&lock, &lease)?;
+            tracing::info!(ticket = %lease.ticket, holder = %lease.holder, "lease renewed by activity");
+            renewed.push(lease);
+        }
+        Ok(renewed)
+    }
+
+    /// The lease file of `ticket` whether or not it has expired (read-only).
+    ///
+    /// # Errors
+    ///
+    /// I/O and format failures.
+    pub fn recorded_lease(&self, ticket: TicketId) -> Result<Option<Lease>, LeaseError> {
+        self.find(ticket)
+    }
+
+    /// Renew `holder`'s lease on `ticket`, re-taking it when it expired unclaimed.
+    ///
+    /// A live lease of the same holder is renewed. When the lease expired or
+    /// was pruned, it is re-acquired over `scope`, which succeeds only while no
+    /// other holder holds the ticket or a live lease overlapping `scope`:
+    /// a takeover is never renewed across.
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::Held`] when another holder took the ticket or an
+    /// overlapping scope since, plus everything [`LeaseStore::acquire`] can.
+    pub fn reclaim(
+        &self,
+        ticket: TicketId,
+        holder: &Holder,
+        scope: &[String],
+    ) -> Result<Lease, LeaseError> {
+        if let Some(l) = self.live_lease(ticket)?
+            && &l.holder == holder
+        {
+            return self.renew(ticket, holder);
+        }
+        let got = self.acquire(ticket, holder, scope)?;
+        tracing::info!(%ticket, %holder, "expired lease reclaimed: no overlapping lease was taken since");
+        Ok(got.lease)
+    }
+
     /// Replace the scope of `holder`'s live lease on `ticket` with `new_scope`.
     ///
     /// Used when the ticket's scope changes while it is leased. Under the lock,
@@ -706,4 +771,9 @@ fn read_lease(path: &Path) -> Result<Lease, LeaseError> {
         path: path.to_path_buf(),
         message: e.to_string(),
     })
+}
+
+/// A path normalised for comparing worktrees: canonical when it exists, else as given.
+fn same_path(p: &Path) -> PathBuf {
+    gob_exec::canonical(p).unwrap_or_else(|_| p.to_path_buf())
 }

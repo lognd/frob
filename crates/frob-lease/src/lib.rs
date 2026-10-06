@@ -74,6 +74,25 @@ pub fn open_store_from_file(
     open_store(cwd, cfg, clock)
 }
 
+/// Best-effort heartbeat: renew the live lease held from the worktree containing `cwd`.
+///
+/// Called by verbs that prove agent activity (evidence add, check, test) so a
+/// long run stays inside the TTL without an explicit command; failures are
+/// logged, never surfaced, and a clone without leases is a no-op.
+pub fn heartbeat(cwd: &Path, clock: std::sync::Arc<dyn gob_time::Clock>) {
+    let (store, root) = match open_store_from_file(cwd, clock) {
+        Ok(opened) => opened,
+        Err(e) => {
+            tracing::debug!(error = %e, "heartbeat skipped: no lease store");
+            return;
+        }
+    };
+    match store.renew_for_worktree(&root) {
+        Ok(renewed) => tracing::debug!(count = renewed.len(), root = %root.display(), "heartbeat"),
+        Err(e) => tracing::warn!(error = %e, "heartbeat failed"),
+    }
+}
+
 /// Register `lease list` and `ticket contention` on a product root.
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<verbs::LeaseList>()

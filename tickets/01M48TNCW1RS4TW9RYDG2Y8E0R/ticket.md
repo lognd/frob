@@ -2,11 +2,12 @@
 id = "01M48TNCW1RS4TW9RYDG2Y8E0R"
 title = "Leases expire during long agent runs: renew on observed activity from the lease's worktree"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-06T14:42:42Z"
-updated = "2026-10-06T16:25:54Z"
+updated = "2026-10-06T16:31:25Z"
 scope = ["crates/frob-lease/**", "crates/frob-land/**", "crates/frob-evidence/**", "docs/design/tickets.md"]
 
 [[acceptance]]

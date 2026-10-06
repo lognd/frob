@@ -47,6 +47,7 @@ struct EvidenceAdd {
 impl EvidenceAdd {
     fn run(&self, ctx: &Context) -> Result<Payload<AddData>, CliError> {
         let ws = Workspace::open(&ctx.cwd, ctx.clock.clone()).map_err(EvidenceError::into_cli)?;
+        frob_lease::heartbeat(&ctx.cwd, ctx.clock.clone());
         let id = resolve(&ws, &self.ticket)?;
         let view = ws.ledger.show(id).map_err(cli)?;
         let criteria = view.ticket.front.acceptance.len();
