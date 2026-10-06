@@ -2,7 +2,8 @@
 id = "01M47QKSBYX7YFQHV3VVGKB025"
 title = "gob-symbols: lower JSX/TSX to markup and inline style objects to style"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
