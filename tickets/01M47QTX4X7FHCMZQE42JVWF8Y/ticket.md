@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:02Z"
-updated = "2026-10-06T07:25:29Z"
+updated = "2026-10-06T07:25:34Z"
 scope = ["crates/grimble-model/**"]
 
 [[acceptance]]
