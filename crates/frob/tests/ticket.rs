@@ -676,3 +676,58 @@ fn doable_lists_expedite_first_then_fixed_date_by_due() {
         [hot.as_str(), soon.as_str(), late.as_str(), std_one.as_str()]
     );
 }
+
+/// The warnings of an envelope as one string.
+fn warnings_of(v: &Value) -> String {
+    v["warnings"].to_string()
+}
+
+// frob:ticket 01M1T07NWAFVRT2V4RAPVJ9SQM
+#[test]
+fn zero_match_scope_warns_on_new_and_update_but_new_scope_declares_it() {
+    let repo = Repo::new(false);
+    let made = repo.ok(&["ticket", "new", "--title", "t", "--scope", "frob.toml"]);
+    assert!(
+        !warnings_of(&made).contains("matches no tracked file"),
+        "{made}"
+    );
+    let bad = repo.ok(&[
+        "ticket",
+        "new",
+        "--title",
+        "u",
+        "--scope",
+        "src/nothing_here.rs",
+    ]);
+    let w = warnings_of(&bad);
+    assert!(
+        w.contains("`src/nothing_here.rs` matches no tracked file"),
+        "{w}"
+    );
+    let id = bad["data"]["id"].as_str().expect("id").to_owned();
+    let upd = repo.ok(&["ticket", "update", &id, "--add-scope", "src/other.rs"]);
+    assert!(
+        warnings_of(&upd).contains("`src/other.rs` matches no tracked file"),
+        "{upd}"
+    );
+    let declared = repo.ok(&["ticket", "update", &id, "--add-new-scope", "src/fresh.rs"]);
+    assert!(!warnings_of(&declared).contains("fresh.rs"), "{declared}");
+    let shown = repo.ok(&["ticket", "show", &id]);
+    assert!(
+        shown["data"]["fields"]["labels"]
+            .to_string()
+            .contains("creates:src/fresh.rs")
+    );
+    let new_decl = repo.ok(&[
+        "ticket",
+        "new",
+        "--title",
+        "v",
+        "--new-scope",
+        "crates/new/**",
+    ]);
+    assert!(
+        !warnings_of(&new_decl).contains("matches no tracked file"),
+        "{new_decl}"
+    );
+}

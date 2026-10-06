@@ -21,6 +21,7 @@ pub mod model;
 pub mod overlap;
 pub mod rule;
 pub mod store;
+pub mod unmatched;
 pub mod verbs;
 
 use std::path::{Path, PathBuf};
