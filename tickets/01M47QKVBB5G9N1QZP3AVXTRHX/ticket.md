@@ -2,7 +2,7 @@
 id = "01M47QKVBB5G9N1QZP3AVXTRHX"
 title = "gob-frameworks: framework registry, per-workspace detection, react-router and Next.js routes"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
