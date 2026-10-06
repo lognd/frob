@@ -309,3 +309,27 @@ to the file's crate instead of recording Passed over an incomplete set
 (code-model.md section 6). `frob test` runs the
 selection through nextest and records evidence on the lease-holding
 ticket; TEST001 is owned by frob-tests.
+
+## 6. Tests and CI modelled on ruff and ty (D98)
+
+Owner request 2026-10-06: build the tests, snapshots and CI/CD like
+Astral's ruff and ty. Most of section 2 already follows them (mdtest is
+ty's format, insta snapshots, rule docs as tests). The rest:
+
+| Practice (Astral source) | Ours |
+|---|---|
+| Rule tests as markdown with inline assertions; `<!-- snapshot-diagnostics -->` snapshots the rendered diagnostics of a section (ty mdtest) | `gob-mdtest` already has markers and positive controls; it gains the `snapshot-diagnostics` header, which writes an insta snapshot of the full text rendering (source excerpt, labels, help) for that file |
+| One fixture file per rule plus a snapshot of its diagnostics, and a registry test that no rule lacks one (ruff `resources/test/fixtures/<linter>/<CODE>.py`) | `crates/<product>-rules/resources/test/fixtures/<FAMILY>/<RULE>.<ext>` for larger real-shaped inputs; a registry-driven test fails naming every registered rule with neither an mdtest fire/clean pair nor a fixture |
+| Fix snapshots and fix convergence: apply fixes to a fixpoint, snapshot the diff, fail if a fix introduces a parse error or does not converge (ruff test harness) | the gob-fix harness (~29MKDDF) snapshots each fixable rule's diff and runs the fixpoint (at most 10 rounds), reparse and no-new-error checks for every fixture |
+| Inline parser tests: `test_ok`/`test_err` comments in parser source extracted to `resources/inline/{ok,err}` with AST and error snapshots (ruff_python_parser, from rust-analyzer) | GRL, .grmb, directives and the crunk.toml spec parser use `// test_ok NAME` / `// test_err NAME` blocks; `cargo dev gen` extracts them, GEN001 keeps them current, insta snapshots the tree and errors |
+| Formatter idempotence and stability (ruff_python_formatter) | `grimble fmt` and the GRL printer: format(format(x)) = format(x) and parse(print(t)) = t over every fixture and a proptest generator |
+| Snapshot hygiene: no stale or unreviewed snapshots (`cargo insta test --unreferenced reject`) | the nextest step runs with `INSTA_UPDATE=no`; a `snapshots` step in `cargo dev ci` fails on unreferenced or pending `.snap.new` files |
+| Ecosystem check: run the base and PR binaries over pinned real projects and comment the finding diff (ruff ecosystem, ty mypy_primer) | `cargo dev ecosystem`: a pinned corpus (`ecosystem.toml`, repository and SHA per entry: Rust, Python, TS/React, C#/Unity, this repo) checked by both binaries; report = per-rule added/removed/changed findings, crashes, Unresolved deltas and timing; non-blocking PR comment; runs on goway helpers |
+| Fuzzing in CI (ruff `fuzz/`, built on every PR) | `fuzz/` with cargo-fuzz targets for every parser (GRL, .grmb, directives, crunk.toml, ledger events) and the fold; PRs build the targets and run each 60 s; a nightly job runs longer and files a ticket per crash |
+| Deterministic benchmarks on PRs (ruff on CodSpeed) | instruction-count benchmarks (iai-callgrind or its maintained successor, Valgrind based, no external service; the ticket pins the crate) for cold and warm check, the plan executor and the parsers, compared against the base and commented; criterion stays for the scheduled wall-clock bench |
+| Change detection: skip jobs a diff cannot affect (ruff `determine_changes`) | a first `changes` job maps paths to job sets (Rust, docs only, crunk node and playwright ~2H41VF1, workflows); a docs-only PR runs fmt, gen check and frob check only |
+| Hygiene jobs: cargo-shear, cargo-deny, typos, MSRV | `deny` (cargo-deny advisories, licenses, bans), `shear` (unused deps), `typos`, `msrv` (build at `rust-version`) steps in `cargo dev ci`, each a tool pinned in frob.toml like zizmor |
+| Release through one workflow with wheels and binaries (cargo-dist plus maturin) | unchanged: the hand-written release.yml (D83) already does both |
+
+Every row is a `cargo dev ci` step or a nextest test, so local runs, goway
+runs and GitHub Actions run the same thing (section 4).
