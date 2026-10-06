@@ -8,12 +8,16 @@ points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T04:30:11Z"
-updated = "2026-10-06T04:32:12Z"
+updated = "2026-10-06T04:32:13Z"
 scope = ["crates/gob-symbols/**", "crates/gob-languages/**", "crates/frob/tests/**", "crates/grimble/tests/**", "crates/crunk/tests/**", "docs/**"]
 
 [[links]]
 kind = "blocked-by"
 target = "01M47QKSBYX7YFQHV3VVGKB025"
+
+[[links]]
+kind = "blocked-by"
+target = "01M47QKT10CG0RSF784EEYTQ0J"
 
 [[acceptance]]
 text = "each web language has a conformance fixture directory checked by the capability-matrix test"
