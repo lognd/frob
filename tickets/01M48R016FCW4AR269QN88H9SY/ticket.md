@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:04Z"
-updated = "2026-10-06T22:41:15Z"
+updated = "2026-10-06T23:19:43Z"
 labels = ["creates:changelog.d/01M48R016FCW4AR269QN88H9SY.*.md"]
 scope = ["crates/gob-macros/**", "crates/gob-rules/**", "Cargo.toml", "changelog.d/01M48R016FCW4AR269QN88H9SY.*.md"]
 
@@ -21,14 +21,14 @@ target = "01M48R002DA5FKCXDP8HQ6B02X"
 
 [[acceptance]]
 text = "one trybuild case per compile-time row of the failure table (metadata, evaluation, applies, unknown language or capability, unsatisfiable need, missing .md or section or example, stem, since)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "RuleDef records file and line"
-bound = false
+bound = true
 
 [[acceptance]]
-text = "the old derive still compiles with a deprecation warning"
+text = "the old derive still compiles unchanged and its docs point to #[rule]"
 bound = false
 +++
 
