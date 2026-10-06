@@ -15,7 +15,9 @@
 
 // frob:ticket 01M47QKSBYX7YFQHV3VVGKB025
 
-use gob_ir::const_value::{OP, OP_ADD, OP_AND, OP_ARRAY, OP_COND, OP_OBJECT, OP_PROP, OP_TEMPLATE};
+use gob_ir::const_value::{
+    OP, OP_ADD, OP_AND, OP_ARRAY, OP_COND, OP_OBJECT, OP_OR, OP_PROP, OP_SPREAD, OP_TEMPLATE,
+};
 use gob_ir::{GroupOrder, NodeId, NodeSpec, Operator, markup, style};
 use tree_sitter::Node;
 
@@ -210,7 +212,7 @@ impl Fold<'_> {
         self.cx.op(Operator::apply(OP), n, &kids)
     }
 
-    fn const_expr(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+    pub(super) fn const_expr(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
         if depth > super::MAX_DEPTH {
             return self.collapse(&[n]);
         }
@@ -237,24 +239,7 @@ impl Fold<'_> {
                 self.cx.lit("bool", &text, n)
             }
             "null" => self.cx.lit("null", "null", n),
-            "template_string" => {
-                let mut args = Vec::new();
-                for c in children(n) {
-                    match c.kind() {
-                        "string_fragment" => args.push(self.cx.lit("str", self.t(c), c)?),
-                        "escape_sequence" => {
-                            args.push(self.cx.lit("str", &unescape(self.t(c)), c)?);
-                        }
-                        "template_substitution" => {
-                            if let Some(e) = named(c).first() {
-                                args.push(self.const_expr(*e, d)?);
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-                self.op_node(n, OP_TEMPLATE, &args)
-            }
+            "template_string" => self.const_template(n, d),
             "binary_expression" => {
                 let lexeme = n
                     .child_by_field_name("operator")
@@ -267,9 +252,13 @@ impl Fold<'_> {
                     return self.tr(n, d);
                 };
                 match lexeme.as_str() {
-                    "+" | "&&" => {
+                    "+" | "&&" | "||" => {
                         let args = [self.const_expr(lhs, d)?, self.const_expr(rhs, d)?];
-                        let op = if lexeme == "+" { OP_ADD } else { OP_AND };
+                        let op = match lexeme.as_str() {
+                            "+" => OP_ADD,
+                            "&&" => OP_AND,
+                            _ => OP_OR,
+                        };
                         self.op_node(n, op, &args)
                     }
                     _ => self.tr(n, d),
@@ -289,6 +278,20 @@ impl Fold<'_> {
                 }
                 self.op_node(n, OP_COND, &args)
             }
+            "spread_element" => match named(n).first() {
+                Some(inner) => {
+                    let arg = self.const_expr(*inner, d)?;
+                    self.op_node(n, OP_SPREAD, &[arg])
+                }
+                None => self.tr(n, d),
+            },
+            // The arguments of a call are lowered to the `const_value` forms (the callee stays a reference).
+            "call_expression" => {
+                self.const_args = true;
+                let lowered = self.tr(n, d);
+                self.const_args = false;
+                lowered
+            }
             "array" => {
                 let mut args = Vec::new();
                 for e in named(n) {
@@ -305,6 +308,26 @@ impl Fold<'_> {
             }
             _ => self.tr(n, d),
         }
+    }
+
+    /// A template literal as `apply(op template)`: its static quasis and substitutions in order.
+    fn const_template(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        let mut args = Vec::new();
+        for c in children(n) {
+            match c.kind() {
+                "string_fragment" => args.push(self.cx.lit("str", self.t(c), c)?),
+                "escape_sequence" => {
+                    args.push(self.cx.lit("str", &unescape(self.t(c)), c)?);
+                }
+                "template_substitution" => {
+                    if let Some(e) = named(c).first() {
+                        args.push(self.const_expr(*e, depth)?);
+                    }
+                }
+                _ => {}
+            }
+        }
+        self.op_node(n, OP_TEMPLATE, &args)
     }
 
     /// One entry of an object literal: `apply(op prop)` over the key and value, or an expression term.
@@ -330,6 +353,9 @@ impl Fold<'_> {
             };
             let val = self.const_expr(v, depth + 1)?;
             return self.op_node(e, OP_PROP, &[key, val]);
+        }
+        if e.kind() == "spread_element" {
+            return self.const_expr(e, depth + 1);
         }
         if e.kind() == "shorthand_property_identifier" {
             let name = self.t(e).to_owned();

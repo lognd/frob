@@ -191,6 +191,9 @@ pub struct SymbolGraph {
     poisoned: HashSet<NodeIndex>,
     /// Nodes made public by a `pub use` re-export (G10).
     reexported: HashSet<NodeIndex>,
+    // frob:ticket 01M43ARXVD5PXP6ZBVFC2F4ZMQ
+    /// The TypeScript module index kept after the build, to answer which unit an import binding names.
+    ts: TsIndex,
 }
 
 fn is_rust(path: &str) -> bool {
@@ -776,6 +779,7 @@ impl SymbolGraph {
         lap("calls");
         g.link_refs(&files, &idx);
         lap("refs");
+        g.ts = idx.ts;
         tracing::debug!(
             nodes = g.graph.node_count(),
             edges = g.graph.edge_count(),

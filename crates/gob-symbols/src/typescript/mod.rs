@@ -26,7 +26,8 @@
 //!   (status May), a fragment, conditional or mapped child a `group`. The tag, kind, attribute names and line
 //!   stay on the node ([`jsx_elements`]). A `style={{..}}` object adds a `region(css)` of `style.declaration`
 //!   nodes (Known literals tokenised, computed values one `lit(unknown)`), and a `css` tagged template is a
-//!   `region(css)` island. Constant evaluation beyond what `const_value` reads is ~C2F4ZMQ.
+//!   `region(css)` island. Call arguments, spreads, `&&` and `||` lower to the same forms; constants across files, imports and class-name
+//!   joiners (`clsx`, `cn`) evaluate through [`ConstProject`] (`consteval.rs`, ~C2F4ZMQ).
 //! - Test items: a `describe`, `it`, `test`, `test.describe` (with modifiers such as `only` or `skip`) call
 //!   with a literal title and a function argument is marked on its `apply` node ([`test_items`]) when the
 //!   name comes from vitest, `@jest/globals`, `@playwright/test`, `bun:test` or `node:test`, or the file is a
@@ -48,12 +49,15 @@
 
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
 // frob:ticket 01M47QKSBYX7YFQHV3VVGKB025
+// frob:ticket 01M43ARXVD5PXP6ZBVFC2F4ZMQ
 
 mod binders;
+mod consteval;
 mod fold;
 pub(crate) mod imports;
 mod style;
 
+pub use consteval::{ConstProject, Evaluated, Origin, Unresolved};
 use gob_ir::{Operator, Term, Universal};
 use gob_languages::{Language, ParseLimits, grammar_identity};
 
