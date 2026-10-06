@@ -8,7 +8,7 @@
 //! - `tree-sitter-rust` 0.24.2, `tree-sitter-md` 0.5.3 and
 //!   `tree-sitter-toml-ng` 0.7.0, `tree-sitter-python` 0.25.0, `tree-sitter-c-sharp` 0.23.5,
 //!   `tree-sitter-typescript` 0.23.2 (TS and TSX), `tree-sitter-javascript` 0.25.0 (JS and JSX)
-//!   and `tree-sitter-css` 0.25.0 all depend only on `tree-sitter-language`
+//!   and `tree-sitter-css` 0.25.0 and `tree-sitter-html` 0.23.2 all depend only on `tree-sitter-language`
 //!   0.1 (a stable `LanguageFn` shim), not on a specific core version, so
 //!   they load under the newest core. Their dev-dependencies name older cores
 //!   (0.25, 0.26, 0.24) which is irrelevant to consumers.

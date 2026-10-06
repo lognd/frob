@@ -39,12 +39,12 @@ reason = "dev publish moved into ci.yml (~25QHMNX); same shared-workflow call as
 identity = ".github/workflows/ci.yml::jobs.rust.steps"
 symref = ".github/workflows/ci.yml::jobs.rust.steps"
 sig = "f63c0a3294fb97e385bac5723be2574fe7093bca0f2b54424881ff41bc708e24"
-body = "da07e1823aab1460a15bf60add7dc64fc0971a90c2214bb4114576de7d48dc35"
+body = "19a97c10d99d1c2d4d04298054091daccf5e1146d74b6603a673f1e8024a28d2"
 doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
 attr = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
 contract = "d54656bdc4cbdf9619192a2ebf0bbd2d7caa4480624d54891c42c03c2a60976f"
 acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-10-05T04:23:50.41568745Z"
+acked_at = "2026-10-06T10:41:29.672273748Z"
 
 [[symbol]]
 identity = ".github/workflows/release.yml::jobs.artifacts.uses"

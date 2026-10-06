@@ -15,6 +15,7 @@ use gob_walk::LanguageHint;
 use crate::adapter::{Adapter, Capability, Fidelity, Precision};
 use crate::csharp::CSharpAdapter;
 use crate::css::{CssAdapter, EXTENSIONS as CSS_EXTENSIONS};
+use crate::html::{EXTENSIONS as HTML_EXTENSIONS, HtmlAdapter};
 use crate::markdown::MarkdownAdapter;
 use crate::opaque::OpaqueAdapter;
 use crate::python::PythonAdapter;
@@ -32,10 +33,12 @@ static CSHARP: CSharpAdapter = CSharpAdapter;
 static TYPESCRIPT: TypeScriptAdapter = TypeScriptAdapter;
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
 static CSS: CssAdapter = CssAdapter;
+// frob:ticket 01M47QKT10CG0RSF784EEYTQ0J
+static HTML: HtmlAdapter = HtmlAdapter;
 static OPAQUE: OpaqueAdapter = OpaqueAdapter;
 
 /// Extensions (no dot, lowercase) claimed by the built-in adapters, by language.
-const BUILTIN_EXTENSIONS: [(&str, &[&str]); 7] = [
+const BUILTIN_EXTENSIONS: [(&str, &[&str]); 8] = [
     ("rust", &["rs"]),
     ("markdown", &["md", "markdown"]),
     ("yaml", &["yml", "yaml"]),
@@ -43,6 +46,7 @@ const BUILTIN_EXTENSIONS: [(&str, &[&str]); 7] = [
     ("csharp", &["cs"]),
     ("typescript", TYPESCRIPT_EXTENSIONS),
     ("css", CSS_EXTENSIONS),
+    ("html", HTML_EXTENSIONS),
 ];
 
 /// A registrable adapter: submit one with `inventory::submit!` to make it visible here.
@@ -152,8 +156,16 @@ pub fn registry_conflicts() -> Vec<DuplicateExtension> {
 
 /// Every real adapter (F1 and above): the built-ins, then registered ones by language name.
 pub fn adapters() -> Vec<&'static dyn Adapter> {
-    let mut out: Vec<&'static dyn Adapter> =
-        vec![&RUST, &MARKDOWN, &YAML, &PYTHON, &CSHARP, &TYPESCRIPT, &CSS];
+    let mut out: Vec<&'static dyn Adapter> = vec![
+        &RUST,
+        &MARKDOWN,
+        &YAML,
+        &PYTHON,
+        &CSHARP,
+        &TYPESCRIPT,
+        &CSS,
+        &HTML,
+    ];
     out.extend(registry().registered.iter().map(|r| r.adapter));
     out
 }
@@ -177,6 +189,7 @@ pub fn adapter_for(hint: &LanguageHint) -> Option<&'static dyn Adapter> {
             Some(&TYPESCRIPT)
         }
         LanguageHint::Other(ext) if CSS_EXTENSIONS.contains(&ext.as_str()) => Some(&CSS),
+        LanguageHint::Other(ext) if HTML_EXTENSIONS.contains(&ext.as_str()) => Some(&HTML),
         LanguageHint::Other(ext) => {
             let reg = registry();
             reg.by_ext

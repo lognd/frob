@@ -7,6 +7,10 @@
 // frob:ticket 01M47QKSBYX7YFQHV3VVGKB025
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
 
+use gob_ir::{Location, NodeId, NodeSpec, Operator, TermError, style};
+
+use crate::fold::Cx;
+
 /// One component value of a style declaration.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum Token {
@@ -109,6 +113,30 @@ fn vars_in(text: &str) -> Vec<Token> {
         rest = &after[end..];
     }
     out
+}
+
+/// A `style.declaration` named `property` at `loc`: raw text, `important`, and `comps` as child values.
+pub(crate) fn declaration_node(
+    cx: &mut Cx<'_>,
+    loc: Location,
+    property: &str,
+    raw: &str,
+    important: bool,
+    comps: Vec<Token>,
+) -> Result<NodeId, TermError> {
+    let mut kids = Vec::with_capacity(comps.len());
+    for t in comps {
+        let op = match t {
+            Token::Lit(kind, text) => Operator::lit(kind, &text),
+            Token::Var(name) => Operator::reference(&name),
+        };
+        kids.push(cx.add(NodeSpec::new(op, loc.clone()), &[])?);
+    }
+    let spec = NodeSpec::new(style::declaration_op(), loc)
+        .named(property)
+        .attr(style::RAW, raw)
+        .attr(style::IMPORTANT, important);
+    cx.add(spec, &kids)
 }
 
 #[cfg(test)]

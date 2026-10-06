@@ -9,7 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [features]
-default = ["rust", "markdown", "toml", "python", "csharp", "typescript", "tsx", "javascript", "jsx", "css"]
+default = ["rust", "markdown", "toml", "python", "csharp", "typescript", "tsx", "javascript", "jsx", "css", "html"]
 rust = ["dep:tree-sitter-rust"]
 markdown = ["dep:tree-sitter-md"]
 toml = ["dep:tree-sitter-toml-ng"]
@@ -21,6 +21,7 @@ javascript = ["dep:tree-sitter-javascript"]
 # JSX is the JavaScript grammar (it parses JSX natively) under its own language name.
 jsx = ["dep:tree-sitter-javascript"]
 css = ["dep:tree-sitter-css"]
+html = ["dep:tree-sitter-html"]
 
 [dependencies]
 gob-text = { version = "0.532.0", path = "../gob-text" }
@@ -37,6 +38,7 @@ tree-sitter-c-sharp = { version = "=0.23.5", optional = true }
 tree-sitter-typescript = { version = "=0.23.2", optional = true }
 tree-sitter-javascript = { version = "=0.25.0", optional = true }
 tree-sitter-css = { version = "=0.25.0", optional = true }
+tree-sitter-html = { version = "=0.23.2", optional = true }
 
 [lints]
 workspace = true

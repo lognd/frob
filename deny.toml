@@ -3,14 +3,25 @@ all-features = true
 
 [advisories]
 yanked = "deny"
+# Every ignore carries a reason (build-test-ci.md section 4).
+ignore = [
+  { id = "RUSTSEC-2026-0285", reason = "rustls 0.23.43 is pinned exactly by frob-gh (=0.23.43); the fix is 0.23.45; only the GitHub client uses it and the flaw cannot alter a handshake. Bump tracked in ~0DE95KF." },
+]
 
 [licenses]
 confidence-threshold = 0.9
-allow = ["MIT", "Apache-2.0", "Apache-2.0 WITH LLVM-exception", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "Zlib"]
+allow = ["MIT", "Apache-2.0", "Apache-2.0 WITH LLVM-exception", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "Zlib", "CDLA-Permissive-2.0"]
+# CDLA-Permissive-2.0 covers the webpki root certificate data (webpki-root-certs, used by reqwest).
+# uluru is MPL-2.0 (file-level copyleft), used unmodified as a transitive dependency of gix-pack.
+exceptions = [
+  { allow = ["MPL-2.0"], name = "uluru" },
+]
 
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
+# Workspace path dependencies carry no version requirement (dev-dependencies are not published).
+allow-wildcard-paths = true
 
 [sources]
 unknown-registry = "deny"

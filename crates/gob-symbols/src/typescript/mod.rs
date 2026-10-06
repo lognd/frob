@@ -78,6 +78,9 @@ pub(crate) const ATTR_JSX_KIND: &str = "jsx.kind";
 pub(crate) const ATTR_JSX_ATTRS: &str = "jsx.attrs";
 /// Node attribute: the one-based line of a JSX element.
 pub(crate) const ATTR_JSX_LINE: &str = "jsx.line";
+/// Node attribute: what a `group` or `region` of the markup lowering stands for (`fragment`, `conditional`,
+/// `mapped`, `inline-style`, `css-in-js`); shared with the HTML adapter.
+pub(crate) const ATTR_MARKUP_GROUP: &str = "markup.group";
 /// Node attribute: `suite` or `case` on the `apply` of a test-runner call.
 pub(crate) const ATTR_TEST_ROLE: &str = "test.role";
 /// Node attribute: the literal title of a test-runner call.
