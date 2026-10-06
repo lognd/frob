@@ -2,13 +2,13 @@
 id = "01M47QSJ5G149ZMWTC911A603G"
 title = "cargo dev gen iterates registered product artifacts instead of calling products by name"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
 reporter = "lognd"
 created = "2026-10-06T04:33:18Z"
-updated = "2026-10-06T04:33:18Z"
+updated = "2026-10-06T07:45:41Z"
 scope = ["crates/gob-dev/**", "crates/crunk-spec/**", "crates/frob-cli/**", "crates/grimble/**", "crates/gob-config/**"]
 
 [[acceptance]]
