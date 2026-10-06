@@ -8,10 +8,10 @@ priority = "high"
 parent = "01M1T07NYJGETZ4A744PSANMYZ"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-06T05:36:54Z"
+updated = "2026-10-06T05:45:59Z"
 aliases = ["T-3978"]
 labels = ["v1-cluster:C2", "triage:accepted"]
-scope = ["src/frob/tickets/_scope.py"]
+scope = ["crates/frob-lease/src/unmatched.rs", "crates/frob-lease/src/lib.rs", "crates/frob-lease/Cargo.toml", "crates/frob/src/lease_cmd.rs", "crates/frob/src/ticket/write.rs", "crates/frob/tests/ticket.rs", "crates/frob-worktree/src/work.rs", "crates/gob-git/src/status.rs", "docs/design/tickets.md", "Cargo.lock"]
 +++
 
 A SCOPE GLOB THAT MATCHES ZERO TRACKED FILES IS ACCEPTED SILENTLY. Because scope
