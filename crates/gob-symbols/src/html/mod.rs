@@ -32,8 +32,7 @@ use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse}
 use tree_sitter::Node;
 
 use crate::adapter::{
-    Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
-    Precision,
+    Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
 use crate::css::split_important;
 use crate::css::tokens::{declaration_node, tokens};
@@ -94,17 +93,11 @@ impl Adapter for HtmlAdapter {
     }
 
     fn fidelity(&self) -> Fidelity {
-        Fidelity::F2
+        gob_caps::lang_fidelity(Lang::Html)
     }
 
     fn capabilities(&self) -> CapabilityDecl {
-        CapabilityDecl::default()
-            .with(Capability::ResolveRef, Precision::NotApplicable)
-            .with(Capability::ApplyTargets, Precision::NotApplicable)
-            .with(Capability::Visibility, Precision::NotApplicable)
-            .with(Capability::Effects, Precision::NotApplicable)
-            .with(Capability::TestItems, Precision::NotApplicable)
-            .with(Capability::Expand, Precision::NotApplicable)
+        CapabilityDecl::for_lang(Lang::Html)
     }
 
     fn parse(&self, text: &str, limits: &ParseLimits) -> ConcreteTree {

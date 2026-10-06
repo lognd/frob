@@ -34,8 +34,7 @@ use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse}
 use tree_sitter::Node;
 
 use crate::adapter::{
-    Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
-    Precision,
+    Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
 use crate::fold::{
     Cx, base_file, call_text, children, failed_file, file_root_spec, line_of, local_binding,
@@ -80,18 +79,11 @@ impl Adapter for RustAdapter {
     }
 
     fn fidelity(&self) -> Fidelity {
-        Fidelity::F3
+        gob_caps::lang_fidelity(Lang::Rust)
     }
 
     fn capabilities(&self) -> CapabilityDecl {
-        CapabilityDecl::default()
-            .with(Capability::ResolveRef, Precision::LexicalImports)
-            .with(Capability::ApplyTargets, Precision::ByNameInCrate)
-            .with(Capability::Visibility, Precision::Keyword)
-            .with(Capability::Imports, Precision::Syntactic)
-            .with(Capability::TestItems, Precision::Syntactic)
-            .with(Capability::Order, Precision::Declared)
-            .with(Capability::ProjectModel, Precision::Manifest)
+        CapabilityDecl::for_lang(Lang::Rust)
     }
 
     fn parse(&self, text: &str, limits: &ParseLimits) -> ConcreteTree {

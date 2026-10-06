@@ -26,8 +26,7 @@ use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse}
 use tree_sitter::Node;
 
 use crate::adapter::{
-    Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
-    Precision,
+    Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
 use crate::fold::{Cx, base_file, failed_file, file_root_spec};
 use crate::model::{RefKind, RefSite, collapse_ws};
@@ -95,19 +94,11 @@ impl Adapter for MarkdownAdapter {
     }
 
     fn fidelity(&self) -> Fidelity {
-        Fidelity::F4
+        gob_caps::lang_fidelity(Lang::Markdown)
     }
 
     fn capabilities(&self) -> CapabilityDecl {
-        CapabilityDecl::default()
-            .with(Capability::ResolveRef, Precision::LinkTargets)
-            .with(Capability::ApplyTargets, Precision::LinkTargets)
-            .with(Capability::Imports, Precision::Syntactic)
-            .with(Capability::Order, Precision::Declared)
-            .with(Capability::Visibility, Precision::NotApplicable)
-            .with(Capability::Effects, Precision::NotApplicable)
-            .with(Capability::TestItems, Precision::NotApplicable)
-            .with(Capability::Expand, Precision::NotApplicable)
+        CapabilityDecl::for_lang(Lang::Markdown)
     }
 
     fn parse(&self, text: &str, limits: &ParseLimits) -> ConcreteTree {

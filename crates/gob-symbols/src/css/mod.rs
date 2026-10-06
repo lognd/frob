@@ -34,8 +34,7 @@ use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse}
 use tree_sitter::Node;
 
 use crate::adapter::{
-    Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
-    Precision,
+    Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
 use crate::fold::{Cx, base_file, children, failed_file, file_root_spec, text_of};
 use crate::model::collapse_ws;
@@ -65,16 +64,11 @@ impl Adapter for CssAdapter {
     }
 
     fn fidelity(&self) -> Fidelity {
-        Fidelity::F2
+        gob_caps::lang_fidelity(Lang::Css)
     }
 
     fn capabilities(&self) -> CapabilityDecl {
-        CapabilityDecl::default()
-            .with(Capability::ResolveRef, Precision::ByNameInCrate)
-            .with(Capability::Visibility, Precision::NotApplicable)
-            .with(Capability::Effects, Precision::NotApplicable)
-            .with(Capability::TestItems, Precision::NotApplicable)
-            .with(Capability::Expand, Precision::NotApplicable)
+        CapabilityDecl::for_lang(Lang::Css)
     }
 
     fn parse(&self, text: &str, limits: &ParseLimits) -> ConcreteTree {

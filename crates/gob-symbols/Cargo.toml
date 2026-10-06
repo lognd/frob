@@ -13,6 +13,7 @@ workspace = true
 
 [dependencies]
 gob-cache = { version = "0.532.0", path = "../gob-cache" }
+gob-caps = { version = "0.532.0", path = "../gob-caps", features = ["serde"] }
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }
 gob-text = { version = "0.532.0", path = "../gob-text" }

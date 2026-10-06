@@ -1,0 +1,1 @@
+gob-caps, gob-symbols, grimble-model, gob-rules: new gob-caps leaf crate holds Lang (with opaque-text and binary rows), Fidelity, Capability (plus Comments, Style, Markup), Precision and the const capability MATRIX; every adapter reads its row, one function maps Language, LanguageHint and adapter tags to Lang, and the rule spike points at gob-caps.

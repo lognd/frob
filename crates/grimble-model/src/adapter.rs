@@ -14,8 +14,8 @@ use std::sync::Arc;
 use gob_ir::{Location, NodeSpec, Operator, ScopeGraph, TermBuilder};
 use gob_languages::ParseLimits;
 use gob_symbols::{
-    Adapter, AdapterEntry, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput,
-    FileSymbols, FoldError, Folded, ParseStatus, Precision, model_symbols,
+    Adapter, AdapterEntry, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FileSymbols,
+    FoldError, Folded, Lang, ParseStatus, model_symbols,
 };
 use gob_text::FileInterner;
 
@@ -129,19 +129,11 @@ impl Adapter for GrmbAdapter {
     }
 
     fn fidelity(&self) -> Fidelity {
-        Fidelity::F4
+        gob_caps::lang_fidelity(Lang::Grmb)
     }
 
     fn capabilities(&self) -> CapabilityDecl {
-        CapabilityDecl::default()
-            .with(Capability::ResolveRef, Precision::Lexical)
-            .with(Capability::ApplyTargets, Precision::Declared)
-            .with(Capability::Imports, Precision::Syntactic)
-            .with(Capability::Order, Precision::Declared)
-            .with(Capability::Visibility, Precision::NotApplicable)
-            .with(Capability::Effects, Precision::NotApplicable)
-            .with(Capability::TestItems, Precision::NotApplicable)
-            .with(Capability::Expand, Precision::NotApplicable)
+        CapabilityDecl::for_lang(Lang::Grmb)
     }
 
     fn parse(&self, text: &str, limits: &ParseLimits) -> ConcreteTree {

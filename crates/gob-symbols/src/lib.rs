@@ -58,6 +58,7 @@ mod graph;
 mod markdown;
 mod model;
 // frob:ticket 01M47QKTN549397AFFSC3DEAQX
+mod lang;
 mod languages_page;
 mod nodejs;
 mod opaque;
@@ -85,6 +86,7 @@ pub use dotnet::{
     Assignment, DotnetError, DotnetProjects, MalformedProject, Project, SolutionEntry,
     parse_project, parse_solution,
 };
+pub use gob_caps::Lang;
 /// The facet digest scheme these digests are computed under (recorded in every lock file).
 pub use gob_ir::DIGEST_SCHEME;
 pub use graph::{
@@ -92,6 +94,7 @@ pub use graph::{
     SymbolGraph,
 };
 pub use html::{HtmlAdapter, is_html_path};
+pub use lang::{lang_of_hint, lang_of_language, lang_of_tag};
 pub use languages_page::languages_page;
 pub use markdown::{MarkdownAdapter, slugify};
 pub use model::{

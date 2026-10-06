@@ -20,7 +20,8 @@ use gob_ir::{GroupOrder, NodeId, NodeSpec, Operator, ScopeGraph, TermError, rese
 use gob_languages::{Language, ParseLimits, UnresolvedReason, grammar_identity};
 
 use crate::adapter::{
-    Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, ParseStatus,
+    Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
+    ParseStatus,
 };
 use crate::fold::{Cx, base_file, file_root_spec};
 use crate::pipeline::EXTRACTOR_VERSION;
@@ -43,11 +44,11 @@ impl Adapter for YamlAdapter {
     }
 
     fn fidelity(&self) -> Fidelity {
-        Fidelity::F1
+        gob_caps::lang_fidelity(Lang::Yaml)
     }
 
     fn capabilities(&self) -> CapabilityDecl {
-        CapabilityDecl::default()
+        CapabilityDecl::for_lang(Lang::Yaml)
     }
 
     fn parse(&self, text: &str, _limits: &ParseLimits) -> ConcreteTree {

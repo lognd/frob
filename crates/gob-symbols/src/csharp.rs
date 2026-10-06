@@ -38,8 +38,7 @@ use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse}
 use tree_sitter::Node;
 
 use crate::adapter::{
-    Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
-    Precision,
+    Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
 use crate::fold::{Cx, base_file, children, failed_file, file_root_spec, text_of};
 use crate::model::{
@@ -74,13 +73,11 @@ impl Adapter for CSharpAdapter {
     }
 
     fn fidelity(&self) -> Fidelity {
-        Fidelity::F1
+        gob_caps::lang_fidelity(Lang::CSharp)
     }
 
     fn capabilities(&self) -> CapabilityDecl {
-        CapabilityDecl::default()
-            .with(Capability::Visibility, Precision::Keyword)
-            .with(Capability::ProjectModel, Precision::Manifest)
+        CapabilityDecl::for_lang(Lang::CSharp)
     }
 
     fn parse(&self, text: &str, limits: &ParseLimits) -> ConcreteTree {

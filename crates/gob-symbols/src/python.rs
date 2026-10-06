@@ -37,8 +37,7 @@ use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse}
 use tree_sitter::Node;
 
 use crate::adapter::{
-    Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
-    Precision,
+    Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
 use crate::fold::{
     Cx, base_file, call_text, children, failed_file, file_root_spec, leaves, line_of,
@@ -74,16 +73,11 @@ impl Adapter for PythonAdapter {
     }
 
     fn fidelity(&self) -> Fidelity {
-        Fidelity::F2
+        gob_caps::lang_fidelity(Lang::Python)
     }
 
     fn capabilities(&self) -> CapabilityDecl {
-        CapabilityDecl::default()
-            .with(Capability::ResolveRef, Precision::Lexical)
-            .with(Capability::ApplyTargets, Precision::ByNameInCrate)
-            .with(Capability::Visibility, Precision::Syntactic)
-            .with(Capability::Imports, Precision::Syntactic)
-            .with(Capability::TestItems, Precision::Syntactic)
+        CapabilityDecl::for_lang(Lang::Python)
     }
 
     fn parse(&self, text: &str, limits: &ParseLimits) -> ConcreteTree {

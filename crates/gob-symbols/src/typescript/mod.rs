@@ -67,13 +67,12 @@ use gob_ir::{Operator, Term, Universal};
 use gob_languages::{Language, ParseLimits, grammar_identity};
 
 use crate::adapter::{
-    Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
-    Precision,
+    Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
 use crate::pipeline::EXTRACTOR_VERSION;
 
 /// The fidelity this adapter claims.
-pub(crate) const FIDELITY: Fidelity = Fidelity::F2;
+pub(crate) const FIDELITY: Fidelity = gob_caps::lang_fidelity(Lang::TypeScript);
 
 /// Node attribute: the tag of a JSX element as written (empty for a fragment).
 pub(crate) const ATTR_JSX_TAG: &str = "jsx.tag";
@@ -118,17 +117,11 @@ impl Adapter for TypeScriptAdapter {
     }
 
     fn fidelity(&self) -> Fidelity {
-        FIDELITY
+        gob_caps::lang_fidelity(Lang::TypeScript)
     }
 
     fn capabilities(&self) -> CapabilityDecl {
-        CapabilityDecl::default()
-            .with(Capability::ResolveRef, Precision::Lexical)
-            .with(Capability::ApplyTargets, Precision::ByNameInCrate)
-            .with(Capability::Visibility, Precision::Keyword)
-            .with(Capability::Imports, Precision::LexicalImports)
-            .with(Capability::TestItems, Precision::Syntactic)
-            .with(Capability::ProjectModel, Precision::Manifest)
+        CapabilityDecl::for_lang(Lang::TypeScript)
     }
 
     fn parse(&self, text: &str, _limits: &ParseLimits) -> ConcreteTree {
