@@ -2,12 +2,12 @@
 id = "01M48R002DA5FKCXDP8HQ6B02X"
 title = "gob-caps leaf crate: Lang, Fidelity, Capability, Precision and the const capability matrix"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:03Z"
-updated = "2026-10-06T13:56:03Z"
+updated = "2026-10-06T16:42:20Z"
 scope = ["crates/gob-caps/**", "crates/gob-symbols/**", "crates/gob-languages/**", "crates/grimble-model/**", "Cargo.lock"]
 
 [[links]]
