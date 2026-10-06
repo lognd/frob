@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
 reporter = "lognd"
 created = "2026-10-06T04:33:15Z"
-updated = "2026-10-06T06:33:04Z"
+updated = "2026-10-06T06:36:56Z"
 scope = ["crates/gob-check/**", "crates/crunk-check/**", "crates/grimble-check/**", "crates/frob-check/**", "docs/design/sibling-contract.md"]
 
 [[acceptance]]
