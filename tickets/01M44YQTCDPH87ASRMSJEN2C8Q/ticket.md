@@ -2,7 +2,8 @@
 id = "01M44YQTCDPH87ASRMSJEN2C8Q"
 title = "gob-symbols: C# usings, imports and calls"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
