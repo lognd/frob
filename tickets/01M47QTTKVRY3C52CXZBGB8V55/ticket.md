@@ -2,13 +2,13 @@
 id = "01M47QTTKVRY3C52CXZBGB8V55"
 title = "Rule coverage test: every registered rule has an mdtest fire/clean pair or a fixture"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:33:59Z"
-updated = "2026-10-06T04:33:59Z"
+updated = "2026-10-06T06:58:13Z"
 scope = ["crates/gob-mdtest/**", "crates/gob-rules/**", "crates/frob-check/tests/**", "crates/grimble-check/tests/**", "crates/crunk-check/tests/**"]
 
 [[acceptance]]
