@@ -2,13 +2,13 @@
 id = "01M43ARXMH7RJ63G8096KKJF80"
 title = "gob-symbols: TS/TSX adapter with symbols, bindings and module graph"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-04T11:28:48Z"
-updated = "2026-10-06T04:31:32Z"
+updated = "2026-10-06T07:13:15Z"
 idempotency_key = "crunk-plan-tssym"
 labels = ["area:crunk"]
 scope = ["crates/gob-symbols/src/typescript/**", "crates/gob-symbols/tests/typescript*.rs", "docs/reference/fidelity.md"]
