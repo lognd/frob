@@ -2,14 +2,14 @@
 id = "01M47QSGHYD2EQ4552V1B4EEQZ"
 title = "gob-product: Product trait with generic check, doctor and workspace verbs; crunk and grimble on it"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
 reporter = "lognd"
 created = "2026-10-06T04:33:16Z"
-updated = "2026-10-06T04:33:16Z"
-scope = ["crates/gob-product/**", "crates/crunk/**", "crates/grimble/**", "Cargo.toml", "Cargo.lock"]
+updated = "2026-10-06T06:56:20Z"
+scope = ["crates/gob-product/**", "crates/crunk/**", "crates/grimble/**", "Cargo.lock"]
 
 [[links]]
 kind = "blocked-by"
