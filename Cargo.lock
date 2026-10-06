@@ -2412,7 +2412,6 @@ dependencies = [
  "gob-ir",
  "gob-symbols",
  "gob-walk",
- "insta",
  "inventory",
  "tempfile",
  "tracing",
