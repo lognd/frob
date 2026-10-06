@@ -8,7 +8,7 @@ points = 8
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T04:30:11Z"
-updated = "2026-10-06T11:00:49Z"
+updated = "2026-10-06T11:09:41Z"
 labels = ["creates:crates/gob-frameworks/**"]
 scope = ["Cargo.lock", "crates/gob-frameworks/**", "docs/design/language-engines.md", "changelog.d/01M47QKVBB5G9N1QZP3AVXTRHX.added.md"]
 
