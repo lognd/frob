@@ -7,7 +7,7 @@ priority = "medium"
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:34:47Z"
-updated = "2026-10-06T14:23:51Z"
+updated = "2026-10-06T14:59:36Z"
 scope = ["crates/grimble-bind/**", "design/model.grmb", "docs/design/binding.md", "crates/gob-mdtest/coverage-allowlist.toml"]
 
 [[acceptance]]
