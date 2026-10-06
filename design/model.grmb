@@ -37,3 +37,33 @@ flow crunk_uses_gob : crunk -> gob {
   producer "crates/crunk-check/src/lib.rs";
   consumer "crates/gob-check/src/pipeline.rs";
 }
+
+/// The frob goblin builds on the substrate (ack planning, ledger, check pipeline).
+flow frob_uses_gob : frob -> gob {
+  producer "crates/frob-ack/src/ack.rs";
+  consumer "crates/gob-lock/src/plan.rs";
+}
+
+/// The grimble goblin builds on the substrate (walk, symbols, lock).
+flow grimble_uses_gob : grimble -> gob {
+  producer "crates/grimble-bind/src/ack.rs";
+  consumer "crates/gob-lock/src/file.rs";
+}
+
+/// The frob binary hosts the sibling products and its tests drive them end to end.
+flow frob_uses_grimble : frob -> grimble {
+  producer "crates/frob/tests/remedies.rs";
+  consumer "crates/grimble/src/lib.rs";
+}
+
+/// The frob binary hosts the sibling products and its tests drive them end to end.
+flow frob_uses_crunk : frob -> crunk {
+  producer "crates/frob/tests/web_conformance.rs";
+  consumer "crates/crunk/src/lib.rs";
+}
+
+/// A layering inversion kept visible until ~M8WETW7 removes it: gob-dev imports frob-ledger.
+flow gob_uses_frob : gob -> frob {
+  producer "crates/gob-dev/src/import_v1.rs";
+  consumer "crates/frob-ledger/src/event.rs";
+}
