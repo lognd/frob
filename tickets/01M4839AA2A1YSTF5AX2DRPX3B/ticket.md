@@ -7,16 +7,16 @@ priority = "medium"
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
 reporter = "lognd"
 created = "2026-10-06T07:54:09Z"
-updated = "2026-10-06T14:46:08Z"
+updated = "2026-10-06T16:15:48Z"
 scope = ["crates/gob-check/**", "docs/schemas/sibling.json", "crates/gob-config/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "docs/schemas/sibling.json is generated and GEN001-checked"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "sibling documents are byte-identical before and after (existing snapshots unchanged)"
-bound = false
+bound = true
 +++
 
 Deferred by ~BVCRKXA: the gob.sibling/1 emitter still builds serde_json::Value and the schema stays hand-written. Move the emitter to typed structs with a schemars derive and generate the schema through cargo dev gen so GEN001 keeps it current (products.md section 7). Documents must stay byte-identical.
