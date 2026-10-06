@@ -2,12 +2,13 @@
 id = "01M48MR49A0D52XAFWTD3ZK8NM"
 title = "Rule declarations: require polarity and must_measure, validate version/since, structured rule docs (ruff ViolationMetadata, ty declare_lint)"
 type = "story"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:20Z"
-updated = "2026-10-06T13:41:08Z"
+updated = "2026-10-06T13:56:12Z"
 scope = ["crates/gob-macros/**", "crates/gob-rules/**", "crates/*/src/**"]
 
 [[links]]
