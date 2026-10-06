@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["COV001 reaches src/api/client.ts::fetchUser from the test unit in client.test.ts (no COV001 finding on it) while the uncovered label, App and Button in the same run still fire"]
+moved = []
+at = "2026-10-06T13:57:04Z"
+actor = "lognd"
+rev = 1
