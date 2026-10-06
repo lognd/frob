@@ -866,7 +866,7 @@ fn clause() -> BoxedStrategy<Clause> {
 
 /// A `where` clause straight after an unfiltered `find`/`some`/`no` clause would read back as its
 /// filter; one after a clause that merely ends in an open binding is guarded by the printer.
-fn separate_wheres(clauses: Vec<Clause>) -> Vec<Clause> {
+fn separate_where_clauses(clauses: Vec<Clause>) -> Vec<Clause> {
     let mut out: Vec<Clause> = Vec::new();
     for c in clauses {
         let unfiltered = out.last().is_some_and(|p| match &p.node {
@@ -1039,7 +1039,7 @@ fn rule() -> BoxedStrategy<Rule> {
             id,
             slug: strlit(slug),
             headers,
-            clauses: separate_wheres(clauses),
+            clauses: separate_where_clauses(clauses),
             examples,
             explain: Some(Explain { text, span: sp() }),
             span: sp(),
