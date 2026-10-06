@@ -154,13 +154,15 @@ Imports and the module graph:
   (~C3DEAQX); a local value called, an expression callee, and names no repository file defines.
 - Not modelled: `with` statements (reported as a partial parse); type-directed resolution (a method on a
   typed receiver is May by name); CJS exports other than `module.exports = a`, `module.exports = { a }`
-  and `exports.x = a` (function expressions assigned to `exports` are not units); JSX lowering to the
-  `markup` answer type, component use as call edges and inline `style` objects (~VGKB025); constant
-  evaluation of class-name strings (~C2F4ZMQ).
+  and `exports.x = a` (function expressions assigned to `exports` are not units); constant evaluation of
+  class-name strings (~C2F4ZMQ).
 
-JSX elements and attributes are adapter terms (`typescript.jsx_element`, `jsx_self_closing_element`,
-`jsx_attribute`, `jsx_spread`; an intrinsic tag is a `lit(tag)` head, a component tag a `ref` head);
-`gob_symbols::jsx_elements` lists them with tag, kind, attribute names and line.
+JSX lowers to the `gob_ir::markup` forms: an element is `apply(element)` (a `lit(tag)` head for an intrinsic tag, a
+`ref` head for a component, which is also a call edge from the using unit), attributes are `markup.attribute` with a
+`const_value`-form value, spreads `markup.spread` (May), fragments, conditional and mapped children `group`s.
+`style={{..}}` objects add a `region(css)` of `style.declaration` nodes (Known literals tokenised, computed values one
+`lit(unknown)`), and `css` tagged templates are `region(css)` islands. `gob_symbols::jsx_elements` lists elements with
+tag, kind, attribute names and line.
 
 A test item is a `describe`, `suite`, `it`, `test` or `test.describe` call (modifiers such as `only`, `skip`,
 `fixme`) with a literal title and a function argument, when the name is imported from vitest,

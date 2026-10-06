@@ -20,11 +20,13 @@
 //!   recorded as use bindings so a call through an import is never taken for a local value. A call is
 //!   `apply(call)` (`method` for `obj.m()`, `new` for `new C()`), identifiers in expression position
 //!   are `ref`s, an arrow or function expression is `anon(function)` over its parameters.
-//! - JSX elements and attributes are adapter terms (`typescript.jsx_element`,
-//!   `typescript.jsx_self_closing_element`, `typescript.jsx_attribute`, `typescript.jsx_spread`): an intrinsic
-//!   tag is a `lit(tag)` head, a component tag a `ref` head, with the tag, kind, attribute names and line on
-//!   the node ([`jsx_elements`]). Lowering to the `markup` answer type, component use as call edges and inline
-//!   `style` objects are ~VGKB025; class-name constants are ~C2F4ZMQ.
+//! - JSX lowers to the `gob_ir::markup` forms (see `fold/jsx.rs`): an element is `apply(element)` with a
+//!   `lit(tag)` head (intrinsic) or a `ref` head (component, also a call edge of the unit using it), attributes
+//!   are `markup.attribute` (value in the `const_value` forms, absent means `true`), spreads `markup.spread`
+//!   (status May), a fragment, conditional or mapped child a `group`. The tag, kind, attribute names and line
+//!   stay on the node ([`jsx_elements`]). A `style={{..}}` object adds a `region(css)` of `style.declaration`
+//!   nodes (Known literals tokenised, computed values one `lit(unknown)`), and a `css` tagged template is a
+//!   `region(css)` island. Constant evaluation beyond what `const_value` reads is ~C2F4ZMQ.
 //! - Test items: a `describe`, `it`, `test`, `test.describe` (with modifiers such as `only` or `skip`) call
 //!   with a literal title and a function argument is marked on its `apply` node ([`test_items`]) when the
 //!   name comes from vitest, `@jest/globals`, `@playwright/test`, `bun:test` or `node:test`, or the file is a
@@ -45,10 +47,12 @@
 //! `fold` parses it (with the default [`ParseLimits`], which is what the pipeline passes).
 
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
+// frob:ticket 01M47QKSBYX7YFQHV3VVGKB025
 
 mod binders;
 mod fold;
 pub(crate) mod imports;
+mod style;
 
 use gob_ir::{Operator, Term, Universal};
 use gob_languages::{Language, ParseLimits, grammar_identity};
@@ -215,21 +219,13 @@ fn int_attr(term: &Term, id: gob_ir::NodeId, key: &str) -> u32 {
 pub fn jsx_elements(term: &Term) -> Vec<JsxElement> {
     let mut out: Vec<(u32, JsxElement)> = Vec::new();
     for id in term.ids() {
-        let Operator::Adapter(a) = term.operator(id) else {
+        let Some(kind) = attr_of(term, id, ATTR_JSX_KIND) else {
             continue;
         };
-        if a.lang != "typescript"
-            || !matches!(
-                a.name.as_str(),
-                "jsx_element" | "jsx_self_closing_element" | "jsx_fragment"
-            )
-        {
-            continue;
-        }
-        let kind = match attr_of(term, id, ATTR_JSX_KIND) {
-            Some("component") => JsxKind::Component,
-            Some("member") => JsxKind::Member,
-            Some("fragment") => JsxKind::Fragment,
+        let kind = match kind {
+            "component" => JsxKind::Component,
+            "member" => JsxKind::Member,
+            "fragment" => JsxKind::Fragment,
             _ => JsxKind::Intrinsic,
         };
         out.push((
