@@ -43,7 +43,7 @@ fn broken(src: &str) -> String {
     format!("{}// again\n", real(src))
 }
 
-// frob:tests grimble_model::fmt::format_file
+// frob:tests crates/grimble-model/src/fmt.rs::format_file
 #[test]
 fn the_real_formatter_is_stable_over_generated_sizes() {
     let mut runner = TestRunner::new(Config::with_cases(64));
@@ -55,7 +55,7 @@ fn the_real_formatter_is_stable_over_generated_sizes() {
     assert!(result.is_ok(), "{result:?}");
 }
 
-// frob:tests grimble_model::fmt::format_file
+// frob:tests crates/grimble-model/src/fmt.rs::format_file
 #[test]
 fn a_broken_printer_fails_with_a_shrunk_minimal_example() {
     let mut runner = TestRunner::new(Config::with_cases(64));
