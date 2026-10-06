@@ -4,4 +4,4 @@
 with_refs = ["refs/heads/experimental", "refs/remotes/origin/experimental"]
 
 [toolchain]
-tools = ["uv"]
+tools = ["uv", "cargo-insta"]

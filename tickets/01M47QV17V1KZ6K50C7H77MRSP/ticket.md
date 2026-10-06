@@ -2,13 +2,14 @@
 id = "01M47QV17V1KZ6K50C7H77MRSP"
 title = "Snapshot hygiene step: unreferenced and pending snapshots fail cargo dev ci"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:06Z"
-updated = "2026-10-06T08:58:37Z"
+updated = "2026-10-06T09:39:54Z"
 scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "goway.toml"]
 
 [[acceptance]]

@@ -11,6 +11,7 @@
 // frob:ticket 01M42A37XTPF2H1WXQQZWEYXGZ
 // frob:ticket 01M43FB0TFBNDFH1AEC1CTNHZG
 // frob:ticket 01M44M58PKEM2HMKZF2CANFHAW
+// frob:ticket 01M47QV17V1KZ6K50C7H77MRSP
 
 use std::path::Path;
 use std::time::Duration;
@@ -249,6 +250,69 @@ fn sibling_check() -> Step {
     }
 }
 
+/// Pinned `cargo-insta` version the `snapshots` step needs; `ci.yml` installs exactly this.
+pub const CARGO_INSTA_VERSION: &str = "1.48.0";
+
+/// `cargo-insta` on `PATH`, installed by `ci.yml` at [`CARGO_INSTA_VERSION`].
+pub const CARGO_INSTA: Prerequisite = Prerequisite::SystemTool {
+    tool: "cargo-insta",
+    install: "cargo install --locked cargo-insta --version 1.48.0",
+};
+
+/// Shell fragment that fails (naming each file) when a `.snap.new` or `.pending-snap` file is
+/// left in the tree: an unreviewed snapshot change must never reach CI. `target/` is skipped.
+pub const PENDING_SNAPSHOT_GUARD: &str = "pending=$(find . -path ./target -prune -o \\( -name '*.snap.new' -o -name '*.pending-snap' \\) -print); \
+if [ -n \"$pending\" ]; then echo \"pending snapshots (review with cargo insta review):\"; echo \"$pending\"; exit 1; fi";
+
+/// The `snapshots` step (build-test-ci.md section 6): a cheap check that no `.snap.new` or
+/// `.pending-snap` file is left in the tree. The unreferenced-snapshot check runs inside the
+/// `nextest` step (one suite run, like ruff). One shell command; the step is Linux-only.
+/// frob:ticket 01M47QV17V1KZ6K50C7H77MRSP
+fn snapshots() -> Step {
+    Step {
+        program: Program::Tool {
+            name: "sh".to_owned(),
+        },
+        args: vec!["-c".to_owned(), PENDING_SNAPSHOT_GUARD.to_owned()],
+        linux_only: true,
+        ..cargo("snapshots", &[])
+    }
+}
+
+/// The `nextest` step: the single suite run, driven through cargo-insta.
+fn nextest_step(require_python: bool) -> Step {
+    // frob:ticket 01M47QV17V1KZ6K50C7H77MRSP
+    // The one suite run goes through cargo-insta, which drives nextest with the `ci` profile
+    // (junit included), fails on pending (`--check`) and unreferenced snapshots, and skips the
+    // doctest pass `cargo nextest run` never made.
+    let mut nextest = offloaded(cargo(
+        "nextest",
+        &[
+            "insta",
+            "test",
+            "--check",
+            "--unreferenced",
+            "reject",
+            "--workspace",
+            "--test-runner",
+            "nextest",
+            "--nextest-profile",
+            "ci",
+            "--disable-nextest-doctest",
+        ],
+    ));
+    nextest.needs = vec![CARGO_INSTA];
+    nextest.uv_tools_on_path = true;
+    nextest.env = vec![("INSTA_UPDATE".to_owned(), "no".to_owned())];
+    if require_python {
+        tracing::info!("nextest requires python and pytest (no skips)");
+        nextest
+            .env
+            .push((REQUIRE_PYTHON_TESTS_ENV.to_owned(), "1".to_owned()));
+    }
+    nextest
+}
+
 /// Every CI check in the order `ci.yml` runs it; zizmor and actionlint pins come from `frob.toml`.
 ///
 /// # Errors
@@ -312,12 +376,7 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
     let mut docs = cargo("docs", &["doc", "--no-deps", "--all-features"]);
     docs.env = vec![("RUSTDOCFLAGS".to_owned(), "-D warnings".to_owned())];
     docs.offload = true;
-    let mut nextest = offloaded(cargo("nextest", &["nextest", "run", "--profile", "ci"]));
-    nextest.uv_tools_on_path = true;
-    if require_python {
-        tracing::info!("nextest requires python and pytest (no skips)");
-        nextest.env = vec![(REQUIRE_PYTHON_TESTS_ENV.to_owned(), "1".to_owned())];
-    }
+    let nextest = nextest_step(require_python);
     Ok(vec![
         cargo("fmt", &["fmt", "--all", "--check"]),
         offloaded(cargo(
@@ -334,6 +393,7 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
         clippy_windows,
         docs,
         pytest_install(),
+        snapshots(),
         nextest,
         cargo("gen", &["dev", "gen", "all", "--check"]),
         uvx("zizmor", "zizmor")?,
@@ -1089,7 +1149,12 @@ mod tests {
             vec![("RUSTDOCFLAGS".to_owned(), "-D warnings".to_owned())]
         );
         let nextest = all.iter().find(|s| s.name == "nextest").unwrap();
-        assert!(nextest.args.windows(2).any(|w| w == ["--profile", "ci"]));
+        assert!(
+            nextest
+                .args
+                .windows(2)
+                .any(|w| w == ["--nextest-profile", "ci"])
+        );
     }
 
     // frob:tests crates/gob-dev/src/ci.rs::host_is_linux
@@ -1140,6 +1205,52 @@ mod tests {
         let text = e.to_string();
         assert!(text.contains("no-such-tool-0g8qf7v"), "{text}");
         assert!(text.contains("sudo apt-get install -y ghost-pkg"), "{text}");
+    }
+
+    // frob:tests crates/gob-dev/src/ci.rs::PENDING_SNAPSHOT_GUARD
+    #[test]
+    fn stray_pending_snapshot_fails_the_guard_and_a_clean_tree_passes() {
+        let dir = tempfile::tempdir().unwrap();
+        let run = || {
+            let spec = Spec {
+                program: Program::Tool {
+                    name: "sh".to_owned(),
+                },
+                args: vec!["-c".to_owned(), PENDING_SNAPSHOT_GUARD.to_owned()],
+                cwd: Some(dir.path().to_path_buf()),
+                env: Vec::new(),
+                timeout: QUERY_TIMEOUT,
+                capture: true,
+            };
+            runner().run(&spec).unwrap()
+        };
+        std::fs::write(dir.path().join("a.snap"), "ok").unwrap();
+        assert_eq!(run().status, Outcome::Exited(0));
+        std::fs::write(dir.path().join("a.snap.new"), "pending").unwrap();
+        let out = run();
+        assert_eq!(out.status, Outcome::Exited(1));
+        assert!(out.stdout.contains("a.snap.new"), "{}", out.stdout);
+    }
+
+    // frob:tests crates/gob-dev/src/ci.rs::snapshots
+    #[test]
+    fn nextest_runs_the_suite_once_through_insta_rejecting_unreferenced_snapshots() {
+        let all = real();
+        let names: Vec<_> = all.iter().map(|s| s.name).collect();
+        let at = |n: &str| names.iter().position(|x| *x == n).unwrap();
+        assert!(at("snapshots") < at("nextest"));
+        let s = &all[at("snapshots")];
+        assert!(s.linux_only && s.args[1] == PENDING_SNAPSHOT_GUARD);
+        let n = &all[at("nextest")];
+        let joined = n.args.join(" ");
+        assert!(
+            joined.starts_with("insta test --check --unreferenced reject"),
+            "{joined}"
+        );
+        assert_eq!(n.needs, vec![CARGO_INSTA]);
+        assert!(CARGO_INSTA.install_command().contains(CARGO_INSTA_VERSION));
+        let want = ("INSTA_UPDATE".to_owned(), "no".to_owned());
+        assert!(n.env.contains(&want));
     }
 
     #[test]
@@ -1263,14 +1374,10 @@ mod tests {
     fn a_remote_command_failure_is_a_step_failure_naming_the_host() {
         let dir = tempfile::tempdir().unwrap();
         let (g, _) = fake_goway(dir.path(), 1);
-        let r = run(
-            dir.path(),
-            &[step_named("nextest")],
-            &g,
-            false,
-            true,
-            &mut |_| {},
-        );
+        // The fake goway fails every probe too; this test is about the command, not prerequisites.
+        let mut nextest = step_named("nextest");
+        nextest.needs.clear();
+        let r = run(dir.path(), &[nextest], &g, false, true, &mut |_| {});
         let StepStatus::Failed(why) = &r[0].status else {
             panic!("{:?}", r[0].status)
         };

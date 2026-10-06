@@ -86,6 +86,11 @@ jobs:
       - name: Install pinned pytest (Windows, isolated tool)
         if: runner.os == 'Windows'
         run: cargo dev-isolated ci --step pytest
+      - name: Install cargo-insta (nextest step runs through it)
+        run: cargo install --locked cargo-insta --version 1.48.0
+      - name: Snapshot hygiene (no pending snapshot files)
+        if: runner.os == 'Linux'
+        run: cargo dev ci --step snapshots
       - name: nextest
         if: runner.os == 'Linux'
         run: cargo dev ci --step nextest

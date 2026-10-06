@@ -2,16 +2,16 @@
 id = "01M43ARXVD5PXP6ZBVFC2F4ZMQ"
 title = "gob-symbols: bounded constant evaluation of TS literals"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-04T11:28:48Z"
-updated = "2026-10-06T04:31:59Z"
+updated = "2026-10-06T09:39:27Z"
 idempotency_key = "crunk-plan-tsconst"
-labels = ["area:crunk"]
-scope = ["crates/gob-symbols/src/typescript/consteval.rs", "crates/gob-symbols/tests/typescript_consteval.rs"]
+labels = ["area:crunk", "creates:crates/gob-symbols/src/typescript/consteval.rs", "creates:crates/gob-symbols/tests/typescript_consteval.rs"]
+scope = ["crates/gob-symbols/src/typescript/consteval.rs", "crates/gob-symbols/tests/typescript_consteval.rs", "crates/gob-ir/src/const_value.rs", "crates/gob-ir/tests/web.rs", "crates/gob-symbols/src/typescript/fold/jsx.rs", "crates/gob-symbols/src/typescript/mod.rs", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/graph/typescript.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/pipeline.rs", "changelog.d/*C2F4ZMQ*"]
 
 [[links]]
 kind = "blocked-by"
