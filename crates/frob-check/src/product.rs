@@ -138,6 +138,11 @@ fn ledger_of<'a>(
 // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
 fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
     const ALL: &[&str] = &["TICK001", "TICK003", "TICK004", "TICK005"];
+    // frob:ticket 01M44VQ57WQW4G5JTZDDYEVJPW
+    if let Some(why) = &inputs.ledger_missing {
+        // One finding for the whole absent ledger, carried by the ledger doctor's first rule.
+        return settle([Err(failed(&ALL[..1], why))]);
+    }
     let state = match ledger_of(inputs, ALL) {
         Ok(Some(state)) => state,
         Ok(None) => return Vec::new(),
@@ -543,6 +548,11 @@ impl Product for Frob {
                 tracing::info!(rule = meta.id, %why, "not applicable");
             }
             why.is_none()
+        } else if snap.inputs.ledger_missing.is_some() && LEDGER_RULES.contains(&meta.id) {
+            // frob:ticket 01M44VQ57WQW4G5JTZDDYEVJPW
+            // The absent ledger is reported once by the ledger group, not as zero-subject verdicts.
+            tracing::info!(rule = meta.id, "not applicable: ledger ref is absent");
+            false
         } else if meta.id == "REF001" || meta.id == "TODO002" {
             let ok = ledger_rule_applicable(
                 meta.id,
