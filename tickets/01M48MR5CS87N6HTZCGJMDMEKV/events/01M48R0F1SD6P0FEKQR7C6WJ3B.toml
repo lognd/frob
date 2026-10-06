@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D107 (docs/design/rule-authoring.md): rules are two colocated files with the #[rule] attribute, registered by generated per-crate indexes and product_rules!; adjust this ticket to that shape (see notes/research/rule-authoring.md section 4 for the mapping)."
+at = "2026-10-06T13:56:19Z"
+actor = "lognd"
+rev = 1
