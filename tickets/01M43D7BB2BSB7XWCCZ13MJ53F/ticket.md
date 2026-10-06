@@ -2,12 +2,12 @@
 id = "01M43D7BB2BSB7XWCCZ13MJ53F"
 title = "gob-macros::ui trybuild test takes 45-120 s and times out the 120 s hang guard on loaded hosts"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T12:11:38Z"
-updated = "2026-10-04T12:11:38Z"
+updated = "2026-10-06T04:43:37Z"
 scope = ["crates/gob-macros/tests/**", "crates/gob-macros/Cargo.toml", ".config/nextest.toml"]
 
 [[acceptance]]
