@@ -46,6 +46,7 @@ pub(crate) const HOLE_MISSING: &str = "missing";
 pub(crate) const HOLE_UNMODELLED: &str = "unmodelled";
 
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
+// frob:ticket 01M43ARXMH7RJ63G8096KKJF80
 /// How legacy symrefs are spelled for a term.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Naming {
@@ -59,6 +60,8 @@ pub(crate) enum Naming {
     Python,
     /// `path::Ns.Type.member`: namespaces nest one unit per dotted component.
     CSharp,
+    /// `path::Class.method`, nested functions as `outer.inner`, namespaces one unit per component.
+    TypeScript,
     /// Only the file node exists.
     Opaque,
 }
@@ -124,9 +127,9 @@ fn kind_of(naming: Naming, kind: &str) -> SymbolKind {
         (Naming::Model, "boundary") => SymbolKind::Boundary,
         (_, "function") => SymbolKind::Function,
         (_, "method") => SymbolKind::Method,
-        (Naming::Python | Naming::CSharp, "class") => SymbolKind::Class,
-        (Naming::CSharp, "namespace") => SymbolKind::Namespace,
-        (Naming::CSharp, "interface") => SymbolKind::Interface,
+        (Naming::Python | Naming::CSharp | Naming::TypeScript, "class") => SymbolKind::Class,
+        (Naming::CSharp | Naming::TypeScript, "namespace") => SymbolKind::Namespace,
+        (Naming::CSharp | Naming::TypeScript, "interface") => SymbolKind::Interface,
         (Naming::CSharp, "record") => SymbolKind::Record,
         (Naming::CSharp, "delegate") => SymbolKind::Delegate,
         (Naming::CSharp, "property") => SymbolKind::Property,
@@ -333,7 +336,7 @@ pub(crate) fn build(term: &Term, path: &str, naming: Naming) -> View {
     match naming {
         Naming::Rust => patch_impl_visibility(&mut view.symbols),
         Naming::Markdown => subtree_digests(&mut view),
-        Naming::Model | Naming::Python | Naming::CSharp | Naming::Opaque => {}
+        Naming::Model | Naming::Python | Naming::CSharp | Naming::TypeScript | Naming::Opaque => {}
     }
     view
 }

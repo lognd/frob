@@ -5,7 +5,7 @@
 //! # Overview
 //!
 //! - [`Adapter`]: the contract `parse`, `fold`, `capabilities`, `fidelity`.
-//!   [`RustAdapter`] (F3), [`PythonAdapter`] (F2), [`CSharpAdapter`] (F1), [`MarkdownAdapter`] (F4) and [`OpaqueAdapter`] (F0, for
+//!   [`RustAdapter`] (F3), [`PythonAdapter`] (F2), [`CSharpAdapter`] (F1), [`TypeScriptAdapter`] (F2), [`MarkdownAdapter`] (F4) and [`OpaqueAdapter`] (F0, for
 //!   every file with no adapter) each produce a [`gob_ir::Term`] and a
 //!   [`gob_ir::ScopeGraph`] ([`Folded`]); [`adapters`] lists them and the `inventory`-based registry
 //!   ([`AdapterEntry`]) lets crates that depend on this one add more.
@@ -63,6 +63,8 @@ mod registry;
 mod rust;
 mod stdtypes;
 mod symref;
+// frob:ticket 01M43ARXMH7RJ63G8096KKJF80
+mod typescript;
 mod view;
 mod yaml;
 
@@ -103,4 +105,8 @@ pub use registry::{
 };
 pub use rust::RustAdapter;
 pub use symref::{Symref, SymrefError, Target};
+pub use typescript::{
+    JsxElement, JsxKind, TestItem, TestRole, TypeScriptAdapter, is_typescript_path,
+    is_typescript_test_file, jsx_elements, test_items,
+};
 pub use view::model_symbols;

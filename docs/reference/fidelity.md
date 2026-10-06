@@ -10,6 +10,7 @@ sections 4.1, 4.2 and 4.6).
 | YAML F1 (`.yml`, `.yaml`: block-mapping keys as nested units `path::outer.inner`), comments scanned | NotApplicable | examined |
 | Python F2 (`.py`, `.pyi`: modules, classes, functions, methods, imports, calls, decorators, docstrings), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
 | C# F1 (`.cs`; `.csx` is not C#: namespaces, types, members, attributes, preprocessor conditions; imports and calls land next), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
+| TypeScript and JavaScript F2 (`.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs`: functions, classes, methods, interfaces, types, enums, namespaces, constants, ESM and CJS imports, exports, calls, JSX elements and attributes as terms, test runner calls), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
 | Opaque F0, text, not scanned (for example `.json`) | NotApplicable | one Unresolved per rule naming the file count |
 | Opaque F0, binary (NUL byte or known extension) | NotApplicable | NotApplicable |
 | Parse failed | Unresolved | Unresolved |
@@ -123,6 +124,49 @@ the doc facet and calls with qualifiers. Binders follow Python scoping
 A test is a module-level `test*` function or a `test*` method of a class in a
 `test*.py`, `*_test.py` or `*_tests.py` module (pytest and unittest naming).
 `frob test` still lists changed Python files as unresolved until pytest selection lands.
+
+## TypeScript and JavaScript
+
+The adapter (F2, one adapter for the TypeScript, TSX, JavaScript and JSX grammars, chosen by extension)
+reads units as `path::Class.method` (nested functions `outer.inner`, a namespace `A.B` as one unit per
+component): functions (declarations, and module-level `const f = () => ..`), classes, methods (constructors,
+accessors, `handle = () => ..` fields), interfaces, type aliases, enums, namespaces, and `const` or `static`
+for other module-level declarators. An anonymous `export default` function or class is the unit `default`.
+A declaration is public when exported (`export`, `export { a as b }`, `export default a`,
+`module.exports = ..`, `exports.x = a`); a class member is private for `private` and `#name`, crate-level
+for `protected`. A `/** */` comment before a declaration is its doc facet; decorators are attributes.
+Binders are function-level (every `let`, `const`, `var`, catch name and parameter of the function body):
+a block-scoped name that shadows an outer one hides it for the whole function, so such a call is Unknown,
+never a wrong target.
+
+Imports and the module graph:
+
+- Must: a static `import`, `export .. from`, `import x = require()`, and a `require` at the top level of the
+  file; a relative specifier that names one file, tried in TypeScript's order (the `.js` family mapped to its
+  source extension, the path, the path plus `.ts .tsx .d.ts .js .jsx .mts .cts .mjs .cjs`, then `index` in
+  the directory); a named import followed through `export *`, `export { a as b }` and `export * as ns`.
+- May: a literal `import("m")`, a `require` under a condition or inside a function, a name exported by
+  several files, a method call on a value of unknown type (`obj.m()` names every repository method `m`),
+  an inherited method.
+- Unknown (kept as an edge with no target, never dropped): a computed specifier (`import(name)`,
+  `require(name)`, a template literal with substitutions), a relative specifier that names no file, and every bare specifier (a package, a
+  tsconfig `paths` alias, a workspace package, a `#` import) until the project model answers them
+  (~C3DEAQX); a local value called, an expression callee, and names no repository file defines.
+- Not modelled: `with` statements (reported as a partial parse); type-directed resolution (a method on a
+  typed receiver is May by name); CJS exports other than `module.exports = a`, `module.exports = { a }`
+  and `exports.x = a` (function expressions assigned to `exports` are not units); JSX lowering to the
+  `markup` answer type, component use as call edges and inline `style` objects (~VGKB025); constant
+  evaluation of class-name strings (~C2F4ZMQ).
+
+JSX elements and attributes are adapter terms (`typescript.jsx_element`, `jsx_self_closing_element`,
+`jsx_attribute`, `jsx_spread`; an intrinsic tag is a `lit(tag)` head, a component tag a `ref` head);
+`gob_symbols::jsx_elements` lists them with tag, kind, attribute names and line.
+
+A test item is a `describe`, `suite`, `it`, `test` or `test.describe` call (modifiers such as `only`, `skip`,
+`fixme`) with a literal title and a function argument, when the name is imported from vitest,
+`@jest/globals`, `@playwright/test`, `bun:test` or `node:test`, or the file is a test file (`*.test.*`,
+`*.spec.*`, under `__tests__`, `tests`, `e2e`); `gob_symbols::test_items` lists them (framework `globals` when
+not imported). Test items are not units yet, so COV001 does not select them.
 
 ## C# symbols
 
