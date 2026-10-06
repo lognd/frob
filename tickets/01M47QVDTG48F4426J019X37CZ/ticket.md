@@ -2,7 +2,8 @@
 id = "01M47QVDTG48F4426J019X37CZ"
 title = "cargo-deny, cargo-shear, typos and MSRV steps in cargo dev ci"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
