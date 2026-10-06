@@ -8,7 +8,7 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:58Z"
-updated = "2026-10-06T04:36:11Z"
+updated = "2026-10-06T04:37:41Z"
 idempotency_key = "d94-calls"
 scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/qualifier.rs", "crates/gob-symbols/src/stdtypes.rs", "crates/gob-symbols/src/graph/**", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/view.rs", "crates/gob-symbols/tests/csharp.rs", "crates/gob-symbols/tests/snapshots/corpus__csharp_group.snap", "crates/gob-symbols/src/graph/csharp.rs"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a call on a receiver whose type is not known, when the graph is built, then the edge is Unresolved and COV001 does not count it as reached"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given global using and alias using directives, when imports are listed, then each is present with its kind and target"
