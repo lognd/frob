@@ -515,7 +515,7 @@ fn a_dot_without_a_field_name_is_a_syntax_error() {
     assert!(!p.is_ok());
 }
 
-/// The fenced ```grl blocks of grl-spec.md, each as a whole rule (fragments get a rule shell).
+/// The fenced grl blocks of grl-spec.md, each as a whole rule (fragments get a rule shell).
 fn spec_grl_blocks() -> Vec<String> {
     let path = format!(
         "{}/../../docs/design/grl-spec.md",
