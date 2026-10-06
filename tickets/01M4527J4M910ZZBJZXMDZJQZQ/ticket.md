@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-05T03:37:59Z"
-updated = "2026-10-06T04:38:30Z"
+updated = "2026-10-06T05:01:53Z"
 scope = ["crates/gob-dev/src/ci.rs", "changelog.d/01M4527J4M910ZZBJZXMDZJQZQ.*"]
 
 [[acceptance]]
