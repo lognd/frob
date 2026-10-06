@@ -10,8 +10,10 @@ authors.workspace = true
 publish = false
 
 [dependencies]
+gob-diagnostics = { path = "../gob-diagnostics" }
 gob-rules = { path = "../gob-rules" }
 gob-text = { path = "../gob-text" }
+insta = "1"
 thiserror = "2"
 tracing = "0.1"
 walkdir = "2"

@@ -1,0 +1,10 @@
+---
+source: crates/gob-mdtest/src/run.rs
+---
+case.rs
+  2:1: error[MDT001]: forbidden word
+    |
+  2 | let b = forbidden; // error: MDT001
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+1 errors, 0 warnings, 0 advisory, 0 unresolved (0 required)

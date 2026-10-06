@@ -2,13 +2,14 @@
 id = "01M47QTSVQS81ETF83S7BT4W67"
 title = "gob-mdtest: snapshot-diagnostics header writes an insta snapshot of the rendered diagnostics"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:33:59Z"
-updated = "2026-10-06T06:43:33Z"
+updated = "2026-10-06T06:51:39Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
