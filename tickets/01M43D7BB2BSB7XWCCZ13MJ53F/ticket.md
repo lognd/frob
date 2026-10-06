@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T12:11:38Z"
-updated = "2026-10-06T05:05:20Z"
+updated = "2026-10-06T05:38:12Z"
 scope = ["crates/gob-macros/tests/**", "crates/gob-macros/Cargo.toml", ".config/nextest.toml"]
 
 [[acceptance]]
