@@ -8,7 +8,7 @@ use gob_rules::rule_spike::{FileCx, FileRule, ObligationHost, Out, rule};
     must_measure = false,
     scope = File,
     fix = Manual,
-    applies = languages(Pyhton; needs = [Comments], min_fidelity = F1),
+    applies = languages(Pyth0n; needs = [Comments], min_fidelity = F1),
     host = ObligationHost,
     version = 1,
     since = "0.0.0",

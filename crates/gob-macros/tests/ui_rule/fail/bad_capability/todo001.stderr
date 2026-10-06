@@ -1,4 +1,4 @@
-error[E0599]: no variant, associated function, or constant named `Commments` found for enum `Capability` in the current scope
+error[E0599]: no variant, associated function, or constant named `Comm3ents` found for enum `Capability` in the current scope
   --> tests/ui_rule/fail/bad_capability/todo001.rs:11:34
    |
  3 | / #[rule(
@@ -7,13 +7,13 @@ error[E0599]: no variant, associated function, or constant named `Commments` fou
  6 | |     severity = Error,
 ...  |
 10 | |     fix = Manual,
-11 | |     applies = universal(needs = [Commments], min_fidelity = F1),
+11 | |     applies = universal(needs = [Comm3ents], min_fidelity = F1),
    | |                                 -^^^^^^^^^ variant, associated function, or constant not found in `Capability`
    | |_________________________________|
    |
    |
 help: there is a variant with a similar name
    |
-11 -     applies = universal(needs = [Commments], min_fidelity = F1),
+11 -     applies = universal(needs = [Comm3ents], min_fidelity = F1),
 11 +     applies = universal(needs = [Comments], min_fidelity = F1),
    |
