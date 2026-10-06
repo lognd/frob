@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:49Z"
-updated = "2026-10-06T04:32:26Z"
+updated = "2026-10-06T04:32:38Z"
 idempotency_key = "crunk-plan-jsx"
 labels = ["area:crunk"]
 scope = ["crates/crunk-ingest/src/jsx/**", "crates/crunk-ingest/tests/jsx*.rs"]
@@ -20,6 +20,10 @@ target = "01M43ARXMH7RJ63G8096KKJF80"
 [[links]]
 kind = "blocked-by"
 target = "01M43ARXVD5PXP6ZBVFC2F4ZMQ"
+
+[[links]]
+kind = "blocked-by"
+target = "01M43ARY26XF7A4MSRAZ8V73JM"
 
 [[links]]
 kind = "blocked-by"
