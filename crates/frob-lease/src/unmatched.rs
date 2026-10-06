@@ -250,7 +250,7 @@ mod tests {
 
     #[test]
     fn own_fragment_is_exempt() {
-        let scope = s(&["changelog.d/01M1T07NWAFVRT2V4RAPVJ9SQM.fix.md"]);
+        let scope = s(&["changelog.d/01M1T07NWAFVRT2V4RAPVJ9SQM.fixed.md"]);
         assert!(unmatched(&scope, &[], tid(), &files()).unwrap().is_empty());
     }
 }
