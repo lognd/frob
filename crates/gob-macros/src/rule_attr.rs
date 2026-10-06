@@ -252,7 +252,7 @@ fn check_page(item: &ItemStruct, id: &str, slug: &str, errs: &mut Errors) -> Opt
         Err(e) => {
             errs.at(
                 span,
-                format!("rule {id} has no readable page `{}.md` next to its source ({e}); every rule needs one", stem),
+                format!("rule {id} has no readable page `{stem}.md` next to its source ({e}); every rule needs one"),
             );
             return None;
         }
@@ -323,9 +323,10 @@ fn matrix_asserts(id: &str, a: &Applies) -> TokenStream {
 
 fn fidelity(t: &Tail) -> TokenStream {
     let ty = rt("caps::Fidelity");
-    match &t.min_fidelity {
-        Some(f) => quote_spanned!(f.span()=> #ty::#f),
-        None => quote!(#ty::F1),
+    if let Some(f) = &t.min_fidelity {
+        quote_spanned!(f.span()=> #ty::#f)
+    } else {
+        quote!(#ty::F1)
     }
 }
 
@@ -346,12 +347,11 @@ fn applies_tokens(a: &Applies) -> TokenStream {
 }
 
 /// Expand `#[rule(..)] struct X;` into `Rule` plus the compile-time checks.
+// One linear validation pass over every field; splitting it would scatter the required-field list.
+#[allow(clippy::too_many_lines)]
 pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream, syn::Error> {
     let mut errs = Errors::default();
-    let args: Args = match syn::parse2(attr) {
-        Ok(a) => a,
-        Err(e) => return Err(e),
-    };
+    let args: Args = syn::parse2(attr)?;
     for (i, (k, _)) in args.0.iter().enumerate() {
         if !REQUIRED.contains(&k.to_string().as_str()) {
             errs.at(
@@ -387,21 +387,21 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
     let id = string_of(&args, "id", &mut errs);
     let slug = string_of(&args, "slug", &mut errs);
     let since = string_of(&args, "since", &mut errs);
-    if let Some(id) = &id {
-        if valid_id(&id.value()).is_none() {
-            errs.at(id.span(), format!("invalid rule id `{}`; expected FAMILY (2-6 uppercase letters) + 3 digits, e.g. COV006", id.value()));
-        }
+    if let Some(id) = &id
+        && valid_id(&id.value()).is_none()
+    {
+        errs.at(id.span(), format!("invalid rule id `{}`; expected FAMILY (2-6 uppercase letters) + 3 digits, e.g. COV006", id.value()));
     }
-    if let Some(s) = &slug {
-        if !valid_slug(&s.value()) {
-            errs.at(
-                s.span(),
-                format!(
-                    "invalid slug `{}`; expected lowercase kebab-case",
-                    s.value()
-                ),
-            );
-        }
+    if let Some(s) = &slug
+        && !valid_slug(&s.value())
+    {
+        errs.at(
+            s.span(),
+            format!(
+                "invalid slug `{}`; expected lowercase kebab-case",
+                s.value()
+            ),
+        );
     }
     if let Some(s) = &since {
         let pkg = std::env::var("CARGO_PKG_VERSION").unwrap_or_default();
