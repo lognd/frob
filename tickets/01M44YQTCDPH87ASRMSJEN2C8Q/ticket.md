@@ -2,13 +2,14 @@
 id = "01M44YQTCDPH87ASRMSJEN2C8Q"
 title = "gob-symbols: C# usings, imports and calls"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:58Z"
-updated = "2026-10-06T05:08:04Z"
+updated = "2026-10-06T05:47:00Z"
 idempotency_key = "d94-calls"
 scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/qualifier.rs", "crates/gob-symbols/src/stdtypes.rs", "crates/gob-symbols/src/graph/**", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/view.rs", "crates/gob-symbols/tests/csharp.rs", "crates/gob-symbols/tests/snapshots/corpus__csharp_group.snap", "crates/gob-symbols/src/graph/csharp.rs"]
 
