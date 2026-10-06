@@ -7,12 +7,16 @@ priority = "high"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:39Z"
-updated = "2026-10-06T13:41:03Z"
+updated = "2026-10-06T13:41:04Z"
 scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**"]
 
 [[links]]
 kind = "blocked-by"
 target = "01M48Q4BZHFXT3GMYDKYR7MCXF"
+
+[[links]]
+kind = "blocked-by"
+target = "01M48Q4CHCFKJ9SSTVT471060B"
 
 [[acceptance]]
 text = "a self-test where a second rule fires unexpectedly fails"
