@@ -372,7 +372,7 @@ fn const_value_logical_operators_follow_javascript_truthiness() {
     assert_eq!(str_of(&m, and_true).known_str(), Some("v"));
     assert_eq!(
         str_of(&m, and_dyn),
-        ConstValue::OneOf(vec![Value::Bool(false), Value::Str("v".into())])
+        ConstValue::OneOf(vec![Value::Str("v".into()), Value::Bool(false)])
     );
 }
 
@@ -471,7 +471,8 @@ fn const_value_external_hook_resolves_refs_and_joins_class_names() {
     let prop = b.op(OP_PROP, &[obj_key, t]);
     let obj = b.op(OP_OBJECT, &[prop]);
     let joined = b.call("cn", &[a, cond, ext, obj]);
-    let other = b.call("other", &[a]);
+    let a2 = b.s("btn");
+    let other = b.call("other", &[a2]);
     let root = b.add(Operator::group(GroupOrder::Sequence), &[ext, joined, other]);
     let m = b.finish(root);
     let hook = Hook;
