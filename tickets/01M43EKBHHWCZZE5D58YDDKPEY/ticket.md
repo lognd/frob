@@ -2,11 +2,12 @@
 id = "01M43EKBHHWCZZE5D58YDDKPEY"
 title = "Share finding-record, source-resolver and text helpers between crunk-check and grimble-check"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 reporter = "lognd"
 created = "2026-10-04T12:35:40Z"
-updated = "2026-10-04T12:35:40Z"
+updated = "2026-10-06T04:33:22Z"
 scope = ["crates/crunk-check/**", "crates/grimble-check/**", "crates/crunk/**", "crates/grimble/**"]
 +++
 
