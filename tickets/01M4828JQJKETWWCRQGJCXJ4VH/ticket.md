@@ -1,0 +1,14 @@
++++
+id = "01M4828JQJKETWWCRQGJCXJ4VH"
+title = "gob-symbols: CJS function-expression exports and block-scoped binders for TS/JS"
+type = "task"
+category = "todo"
+priority = "medium"
+parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
+reporter = "lognd"
+created = "2026-10-06T07:36:16Z"
+updated = "2026-10-06T07:36:16Z"
+scope = ["crates/gob-symbols/src/typescript/**", "crates/gob-symbols/src/graph/typescript.rs"]
++++
+
+Found while working ~6KKJF80. Two honest gaps of the TS adapter, both reported Unknown today: (1) exports.f = function(){} and module.exports = { f() {} } create no unit (only identifier aliases do); (2) binders are function-level, so a block-scoped let that shadows an outer name hides it for the whole function. Add units for CJS function-expression exports and block-level scopes in the scope graph, with corpus tests.
