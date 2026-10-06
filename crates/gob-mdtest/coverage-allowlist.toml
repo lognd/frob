@@ -296,3 +296,8 @@ ticket = "~QSK0WB1"
 product = "grimble"
 rule = "SYS011"
 ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "SYS013"
+ticket = "~QSK0WB1"

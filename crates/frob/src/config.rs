@@ -37,6 +37,9 @@ pub struct TicketsTable {
     /// Ref holding the ledger; the ledger merge driver and `doctor` resolve it.
     #[config(default = "refs/heads/main".to_owned(), enforcement)]
     pub r#ref: String,
+    /// Name of the orphan branch `frob ticket branch init` creates for the ledger (`mirror.md` section 1).
+    #[config(default = "frob-tickets".to_owned(), enforcement)]
+    pub branch: String,
     /// Directory of ticket files, relative to the repository root.
     #[config(default = "tickets".to_owned())]
     pub dir: String,

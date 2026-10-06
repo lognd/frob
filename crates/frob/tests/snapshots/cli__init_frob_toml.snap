@@ -83,5 +83,7 @@ preview = []
 [tickets]
 # Ref holding the ledger; the ledger merge driver and `doctor` resolve it.
 ref = "refs/heads/main"
+# Name of the orphan branch `frob ticket branch init` creates for the ledger (`mirror.md` section 1).
+branch = "frob-tickets"
 # `trunk` commits to `ref`; `branch` commits to the checked-out branch.
 ref_mode = "trunk"

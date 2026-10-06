@@ -39,7 +39,7 @@ pub struct Cov001;
 impl RepoRule for Cov001 { /* evaluation on the same type */ }
 ```
 
-- Every field is required; only `min_fidelity` defaults (F1). The family is
+- Every field is required; only `min_fidelity` defaults (F1). A `host = TRAIT` field names the product host trait the evaluation is generic over, so the macro can probe `FileRule<dyn TRAIT>` and report a missing evaluation at the declaration (spike ~9R52NCF; host traits must be object-safe). The family is
   derived from the id; the product is positional (section 4).
 - `applies` is `universal(needs, min_fidelity)`, `languages(L, ..; needs,
   min_fidelity)` or `project` (ledger, release, model, config). It maps 1:1

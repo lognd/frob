@@ -1,0 +1,1 @@
+frob: `[tickets] branch` knob (default `frob-tickets`) and `frob ticket branch init`, which creates the orphan ticket branch with a README placeholder through compare-and-swap without touching the code checkout; a repeat run reports `already`.

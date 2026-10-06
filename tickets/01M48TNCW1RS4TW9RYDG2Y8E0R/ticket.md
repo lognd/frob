@@ -1,0 +1,25 @@
++++
+id = "01M48TNCW1RS4TW9RYDG2Y8E0R"
+title = "Leases expire during long agent runs: renew on observed activity from the lease's worktree"
+type = "bug"
+category = "in-progress"
+priority = "high"
+reporter = "lognd"
+created = "2026-10-06T14:42:42Z"
+updated = "2026-10-06T15:57:10Z"
+scope = ["crates/frob-lease/**", "crates/frob-land/**", "crates/frob-evidence/**"]
+
+[[acceptance]]
+text = "an evidence add or check --ticket in the lease's worktree extends its expiry (test with an injected clock)"
+bound = true
+
+[[acceptance]]
+text = "land of a ticket whose lease expired with no overlapping lease taken since renews and lands, and refuses when another holder leased an overlapping scope"
+bound = true
+
+[[acceptance]]
+text = "a stolen lease is never renewed by the old holder's activity"
+bound = true
++++
+
+Measured 2026-10-06: two tickets (~NH92W1H after a 2.4 h agent run, ~2DRPX3B) lost their 7200 s leases while their agents were actively committing, recording evidence and running frob check --ticket in the worktree; land then refused E-LAND-NOT-LEASED and the recovery was requeue plus start from the worktree. Renew a live lease (same holder, same worktree) whenever a frob verb that proves activity runs there (evidence add, check --ticket, test, ticket update from the worktree, a commit observed on the ticket branch), and make land renew-then-land when the lease expired but no other holder has taken an overlapping lease since; never renew across a steal. This is an inferred heartbeat, not a command an agent must remember (D105 principle).
