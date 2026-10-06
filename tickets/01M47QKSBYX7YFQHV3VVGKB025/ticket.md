@@ -2,13 +2,13 @@
 id = "01M47QKSBYX7YFQHV3VVGKB025"
 title = "gob-symbols: lower JSX/TSX to markup and inline style objects to style"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T04:30:09Z"
-updated = "2026-10-06T04:31:49Z"
+updated = "2026-10-06T08:02:45Z"
 scope = ["crates/gob-symbols/**"]
 
 [[links]]

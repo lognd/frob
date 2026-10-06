@@ -55,3 +55,21 @@ exactly against the markers: extra or missing findings fail the case.
 Every rule id named by a block must have, in the same file, at least one
 `expect=fire` block and one `expect=clean` block. Otherwise the file fails
 with `MissingControl` naming the rule and the missing kind.
+
+## Rule coverage
+
+`gob_mdtest::coverage` (`docs/design/build-test-ci.md` 6, D98) checks every
+registered rule of a product, from the `inventory` registry:
+
+- covered by an mdtest suite under any `crates/*/tests/mdtest/` holding at
+  least one `expect=fire` and one `expect=clean` block for the rule, or
+- covered by a fixture `crates/*/resources/test/fixtures/<FAMILY>/<RULE>.<ext>`
+  with its diagnostics snapshot `<RULE>.snap` beside it.
+
+`frob-check`, `grimble-check` and `crunk-check` each carry a
+`tests/rule_coverage.rs` calling `assert_product_coverage`; the failure
+names every uncovered rule. Known gaps are listed in
+`crates/gob-mdtest/coverage-allowlist.toml`, one `[[gap]]` per rule with
+`product`, `rule` and a `ticket` handle (one umbrella ticket per product).
+The list may only shrink: an entry whose rule is now covered, no longer
+registered, or without a `~XXXXXXX` handle fails the test.

@@ -20,9 +20,10 @@ use crate::model::FileSymbols;
 use crate::registry::adapter_for;
 
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
+// frob:ticket 01M43ARXMH7RJ63G8096KKJF80
 /// Bump when extraction output changes for the same input; part of the
 /// cache key.
-pub const EXTRACTOR_VERSION: u32 = 16;
+pub const EXTRACTOR_VERSION: u32 = 17;
 
 /// Files read per filter pipeline (building one loads the index and attributes).
 const READ_CHUNK: usize = 256;

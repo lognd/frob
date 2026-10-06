@@ -28,10 +28,13 @@ use crate::symref::{Symref, Target, split_qual};
 // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
 mod csharp;
 mod python;
+// frob:ticket 01M43ARXMH7RJ63G8096KKJF80
+mod typescript;
 
 use csharp::CsIndex;
 
 use python::{PyIndex, is_python};
+use typescript::{TsIndex, is_ts};
 
 /// Kind of a graph edge.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -246,6 +249,9 @@ struct Index {
     // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
     /// Lookup tables of the C# files (their calls resolve by namespace, `using` and type, not by crate).
     cs: CsIndex,
+    // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
+    /// Lookup tables of the TypeScript and JavaScript files (resolved by relative module path, import and export).
+    ts: TsIndex,
 }
 
 /// Lock shards of the receiver-type memo (parallel call resolution would otherwise queue on one lock).
@@ -760,6 +766,8 @@ impl SymbolGraph {
         g.link_python_imports(&idx.py, &files);
         // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
         g.link_csharp_imports(&idx.cs, &files);
+        // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
+        g.link_typescript_imports(&idx.ts);
         g.link_reexports(&files, &idx);
         lap("imports");
         g.link_calls(&files, &idx);
@@ -867,6 +875,7 @@ impl SymbolGraph {
             enums: HashSet::new(),
             py: PyIndex::build(self, files),
             cs: CsIndex::build(self, files),
+            ts: TsIndex::build(self, files),
         };
         for f in files.iter().filter(|f| is_rust(&f.path)) {
             let (krate, module) = crate_and_module(&f.path);
@@ -2036,6 +2045,12 @@ impl SymbolGraph {
                         self.record_call(&mut sink, call, outcome, None, false);
                         continue;
                     }
+                    // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
+                    if is_ts(call.caller.path()) {
+                        let outcome = self.resolve_typescript(&idx.ts, call);
+                        self.record_call(&mut sink, call, outcome, None, false);
+                        continue;
+                    }
                     // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
                     if csharp::is_csharp(call.caller.path()) {
                         let outcome = self.resolve_csharp(&idx.cs, call);
@@ -2301,6 +2316,17 @@ impl SymbolGraph {
         if is_python(r.from.path()) {
             let (Some(nodes), Some(&from)) = (
                 self.resolve_python_value(&idx.py, r),
+                self.index.get(&r.from),
+            ) else {
+                return;
+            };
+            self.record_value_edges(r, from, nodes);
+            return;
+        }
+        // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
+        if is_ts(r.from.path()) {
+            let (Some(nodes), Some(&from)) = (
+                self.resolve_typescript_value(&idx.ts, r),
                 self.index.get(&r.from),
             ) else {
                 return;

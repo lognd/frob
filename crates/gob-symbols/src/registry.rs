@@ -18,6 +18,7 @@ use crate::markdown::MarkdownAdapter;
 use crate::opaque::OpaqueAdapter;
 use crate::python::PythonAdapter;
 use crate::rust::RustAdapter;
+use crate::typescript::{EXTENSIONS as TYPESCRIPT_EXTENSIONS, TypeScriptAdapter};
 use crate::yaml::YamlAdapter;
 
 static RUST: RustAdapter = RustAdapter;
@@ -26,15 +27,18 @@ static YAML: YamlAdapter = YamlAdapter;
 static PYTHON: PythonAdapter = PythonAdapter;
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
 static CSHARP: CSharpAdapter = CSharpAdapter;
+// frob:ticket 01M43ARXMH7RJ63G8096KKJF80
+static TYPESCRIPT: TypeScriptAdapter = TypeScriptAdapter;
 static OPAQUE: OpaqueAdapter = OpaqueAdapter;
 
 /// Extensions (no dot, lowercase) claimed by the built-in adapters, by language.
-const BUILTIN_EXTENSIONS: [(&str, &[&str]); 5] = [
+const BUILTIN_EXTENSIONS: [(&str, &[&str]); 6] = [
     ("rust", &["rs"]),
     ("markdown", &["md", "markdown"]),
     ("yaml", &["yml", "yaml"]),
     ("python", &["py", "pyi"]),
     ("csharp", &["cs"]),
+    ("typescript", TYPESCRIPT_EXTENSIONS),
 ];
 
 /// A registrable adapter: submit one with `inventory::submit!` to make it visible here.
@@ -144,7 +148,8 @@ pub fn registry_conflicts() -> Vec<DuplicateExtension> {
 
 /// Every real adapter (F1 and above): the built-ins, then registered ones by language name.
 pub fn adapters() -> Vec<&'static dyn Adapter> {
-    let mut out: Vec<&'static dyn Adapter> = vec![&RUST, &MARKDOWN, &YAML, &PYTHON, &CSHARP];
+    let mut out: Vec<&'static dyn Adapter> =
+        vec![&RUST, &MARKDOWN, &YAML, &PYTHON, &CSHARP, &TYPESCRIPT];
     out.extend(registry().registered.iter().map(|r| r.adapter));
     out
 }
@@ -164,6 +169,9 @@ pub fn adapter_for(hint: &LanguageHint) -> Option<&'static dyn Adapter> {
         LanguageHint::Other(ext) if matches!(ext.as_str(), "yml" | "yaml") => Some(&YAML),
         LanguageHint::Other(ext) if matches!(ext.as_str(), "py" | "pyi") => Some(&PYTHON),
         LanguageHint::Other(ext) if ext.as_str() == "cs" => Some(&CSHARP),
+        LanguageHint::Other(ext) if TYPESCRIPT_EXTENSIONS.contains(&ext.as_str()) => {
+            Some(&TYPESCRIPT)
+        }
         LanguageHint::Other(ext) => {
             let reg = registry();
             reg.by_ext
