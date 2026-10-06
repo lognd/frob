@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T12:11:38Z"
-updated = "2026-10-06T04:43:37Z"
+updated = "2026-10-06T04:47:16Z"
 scope = ["crates/gob-macros/tests/**", "crates/gob-macros/Cargo.toml", ".config/nextest.toml"]
 
 [[acceptance]]
 text = "Given a loaded host (load average above the core count), when cargo dev ci runs, then gob-macros::ui finishes within the hang guard"
-bound = false
+bound = true
 +++
 
 Several agents' cargo dev ci runs on 2026-10-04 timed out gob-macros::ui (a trybuild compile-fail test) at the 120 s nextest hang guard on loaded helpers; alone it takes 45-60 s. trybuild compiles every case in a fresh cargo project. Options: share the target dir with the workspace (CARGO_TARGET_DIR), split cases so they compile in one trybuild run, or give it a reviewed per-test override in .config/nextest.toml with a measured reason. Pick the structural one if it works.
