@@ -119,6 +119,17 @@ impl Repo {
         Ok(out)
     }
 
+    /// Every file (blob) path tracked by the tree of `rev`, sorted; the denominator for "does this scope glob match anything".
+    ///
+    /// # Errors
+    /// [`GitError::Rev`] when `rev` does not resolve; [`GitError::Odb`] on read failure.
+    pub fn tracked_files_at(&self, rev: &str) -> Result<Vec<String>, GitError> {
+        let tree = self.tree_of(&self.rev_parse(rev)?)?;
+        let files: Vec<String> = Self::flatten_tree(&tree)?.into_keys().collect();
+        debug!(rev, count = files.len(), "tracked files listed");
+        Ok(files)
+    }
+
     /// Paths that differ going from `from` to `to`, sorted by path.
     ///
     /// Supported: tree-like `from` (`Head`, `Ref`, `Oid`) against any `to`.

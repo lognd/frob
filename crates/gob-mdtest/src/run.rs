@@ -4,8 +4,9 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
+use gob_diagnostics::{ColorChoice, MemorySources, Report as DiagReport, TextOptions, render_text};
 use gob_rules::{Finding, RuleId, Severity};
-use gob_text::LineIndex;
+use gob_text::{LineIndex, SourceText};
 use walkdir::WalkDir;
 
 use crate::parse::{Block, Expect, Marker, parse_suite};
@@ -238,6 +239,73 @@ fn controls(blocks: &[Block]) -> Vec<MissingControl> {
     out
 }
 
+/// Render `findings` of `block` with the full text renderer (source excerpt, labels, help).
+fn render_diagnostics(block: &Block, findings: &[Finding]) -> String {
+    let mut sources = MemorySources::new();
+    for f in findings {
+        let Some(span) = f.span else { continue };
+        match SourceText::new(block.text.as_str()) {
+            Ok(text) => sources.insert(span.file, block.file_name.as_str(), text),
+            Err(e) => tracing::warn!(case = %block.name, error = %e, "block too large to render"),
+        }
+    }
+    render_text(
+        &DiagReport {
+            findings,
+            sources: &sources,
+        },
+        &TextOptions {
+            color: ColorChoice::Never,
+            snippets: true,
+        },
+    )
+}
+
+/// Snapshot name for `block` of the suite at `path`: `<stem>__<heading path and ordinal>`.
+///
+/// The fence line is dropped so moving a block does not orphan its snapshot.
+fn snapshot_name(path: &Path, block: &Block) -> String {
+    let stem = path
+        .file_stem()
+        .map_or_else(String::new, |s| s.to_string_lossy().into_owned());
+    let base = block
+        .name
+        .rsplit_once(" (line ")
+        .map_or(block.name.as_str(), |(b, _)| b);
+    let raw = format!("{stem}__{base}");
+    let mut out = String::new();
+    for c in raw.chars() {
+        if c.is_ascii_alphanumeric() || c == '-' {
+            out.push(c.to_ascii_lowercase());
+        } else if !out.ends_with('_') {
+            out.push('_');
+        }
+    }
+    out.trim_end_matches('_').to_owned()
+}
+
+/// Assert the rendered diagnostics of `block` against its insta snapshot beside the corpus.
+///
+/// Snapshots live in `snapshots/` next to the markdown file; `INSTA_UPDATE=always`
+/// writes or refreshes them, and a mismatch fails with insta's diff on stderr.
+fn check_snapshot(path: &Path, block: &Block, findings: &[Finding]) -> Result<(), String> {
+    let rendered = render_diagnostics(block, findings);
+    let name = snapshot_name(path, block);
+    let dir = path.parent().unwrap_or(Path::new(".")).join("snapshots");
+    let mut settings = insta::Settings::clone_current();
+    settings.set_snapshot_path(dir);
+    settings.set_prepend_module_to_snapshot(false);
+    settings.set_omit_expression(true);
+    let attempt = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        settings.bind(|| insta::assert_snapshot!(name.as_str(), rendered));
+    }));
+    attempt.map_err(|_| {
+        format!(
+            "    snapshot `{name}` does not match the rendered diagnostics (insta diff above)\n"
+        )
+    })
+}
+
 /// Run every block of one markdown file through `runner`.
 pub fn run_file<F: Fn(&Case) -> Vec<Finding>>(path: &Path, runner: &Runner<F>) -> FileReport {
     let mut report = FileReport {
@@ -269,7 +337,10 @@ pub fn run_file<F: Fn(&Case) -> Vec<Finding>>(path: &Path, runner: &Runner<F>) -
             config: b.config.clone(),
         };
         let findings = (runner.0)(&case);
-        let outcome = check(b, &findings);
+        let mut outcome = check(b, &findings);
+        if outcome.is_ok() && b.snapshot {
+            outcome = check_snapshot(path, b, &findings);
+        }
         tracing::debug!(case = %b.name, ok = outcome.is_ok(), "mdtest case");
         report.cases.push(CaseReport {
             name: b.name.clone(),

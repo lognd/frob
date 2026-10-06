@@ -2,22 +2,23 @@
 id = "01M47QSFS0VP9DET37MBVCRKXA"
 title = "gob-check::sibling: one gob.sibling/1 emitter and parser for every product"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
 reporter = "lognd"
 created = "2026-10-06T04:33:15Z"
-updated = "2026-10-06T05:38:37Z"
+updated = "2026-10-06T06:36:56Z"
 scope = ["crates/gob-check/**", "crates/crunk-check/**", "crates/grimble-check/**", "crates/frob-check/**", "docs/design/sibling-contract.md"]
 
 [[acceptance]]
 text = "crunk-check, grimble-check and frob-check build the sibling document only through gob-check::sibling"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "frob-check parses sibling output through the same module's reader"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "existing sibling tests and snapshots pass unchanged (byte-identical documents)"

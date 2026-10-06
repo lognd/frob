@@ -13,6 +13,22 @@ An HTML comment outside any fence sets a default for the blocks after it:
 
     <!-- mdtest: rule=MDT001 -->
 
+### Snapshot diagnostics
+
+    <!-- mdtest: snapshot-diagnostics -->
+
+(also accepted alone as `<!-- snapshot-diagnostics -->`, and combined,
+e.g. `<!-- mdtest: rule=MDT001 snapshot-diagnostics -->`). Every block after
+the header, once its markers pass, also renders all findings the runner
+returned with the full text renderer of `gob-diagnostics` (no color; source
+excerpt, labels, help) and asserts the text with insta. One snapshot per
+block, in `snapshots/` beside the markdown file, named
+`<file-stem>__<heading-path>_<ordinal>.snap` (the fence line is not part of
+the name). Clean blocks snapshot the empty rendering. A changed rendering
+fails the case and insta prints the diff on stderr. Write or refresh
+snapshots with `INSTA_UPDATE=always` (or `cargo insta review`); CI runs with
+`INSTA_UPDATE=no`, so a missing snapshot fails.
+
 ## Info string
 
     ```rust rule=MDT001 expect=fire file=src/lib.rs config="a = 1"

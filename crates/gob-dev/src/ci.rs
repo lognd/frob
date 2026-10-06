@@ -1325,6 +1325,7 @@ mod tests {
     }
 
     // frob:ticket 01M4527J4M910ZZBJZXMDZJQZQ
+    #[cfg(unix)]
     #[test]
     fn check_step_builds_the_workspace_siblings_before_running_frob() {
         let step = step_named("check");

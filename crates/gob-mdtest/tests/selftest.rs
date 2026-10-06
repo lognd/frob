@@ -66,3 +66,33 @@ fn fail_dir_reports_every_file() {
     assert!(!rep.passed());
     assert!(rep.render().contains("FAIL"));
 }
+
+gob_mdtest::mdtest!(
+    name = mdtest_snapshots,
+    dir = "tests/mdtest_snap",
+    runner = toy
+);
+
+#[test]
+fn changed_rendering_fails_with_snapshot_mismatch() {
+    let dir = std::env::temp_dir().join(format!("gob-mdtest-snap-{}", std::process::id()));
+    let snaps = dir.join("snapshots");
+    std::fs::create_dir_all(&snaps).unwrap();
+    let src = gob_mdtest::manifest_dir(env!("CARGO_MANIFEST_DIR")).join("tests/mdtest_snap");
+    std::fs::copy(src.join("snap.md"), dir.join("snap.md")).unwrap();
+    for e in std::fs::read_dir(src.join("snapshots")).unwrap() {
+        let e = e.unwrap();
+        let body = std::fs::read_to_string(e.path())
+            .unwrap()
+            .replace("forbidden word", "changed word");
+        std::fs::write(snaps.join(e.file_name()), body).unwrap();
+    }
+    let r = run_file(&dir.join("snap.md"), &Runner::new(toy));
+    assert!(!r.passed());
+    assert!(
+        r.render_failures().contains("does not match"),
+        "{}",
+        r.render_failures()
+    );
+    let _ = std::fs::remove_dir_all(&dir);
+}

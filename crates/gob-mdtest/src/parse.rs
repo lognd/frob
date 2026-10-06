@@ -54,6 +54,8 @@ pub struct Block {
     pub config: Option<String>,
     /// Inline marker expectations.
     pub markers: Vec<Marker>,
+    /// True when the `snapshot-diagnostics` suite header was in force.
+    pub snapshot: bool,
 }
 
 /// Why a suite could not be parsed into cases.
@@ -145,12 +147,20 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
     let mut h1 = String::new();
     let mut h2 = String::new();
     let mut default_rule: Option<RuleId> = None;
+    let mut snapshot = false;
     let mut lines = md.lines().enumerate();
     while let Some((i, line)) = lines.next() {
         let t = line.trim_start();
         let fence = ["```", "~~~"].into_iter().find(|f| t.starts_with(f));
         let Some(fence) = fence else {
-            parse_outside(line, &mut h1, &mut h2, &mut default_rule, i + 1)?;
+            parse_outside(
+                line,
+                &mut h1,
+                &mut h2,
+                &mut default_rule,
+                &mut snapshot,
+                i + 1,
+            )?;
             continue;
         };
         let ticks = t.chars().take_while(|c| fence.starts_with(*c)).count();
@@ -223,6 +233,7 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
             expect,
             config: opts.get("config").map(|c| (*c).to_owned()),
             markers: marks,
+            snapshot,
         });
     }
     Ok(blocks)
@@ -234,6 +245,7 @@ fn parse_outside(
     h1: &mut String,
     h2: &mut String,
     default_rule: &mut Option<RuleId>,
+    snapshot: &mut bool,
     n: usize,
 ) -> Result<(), ParseError> {
     if let Some(h) = line.strip_prefix("## ") {
@@ -241,12 +253,19 @@ fn parse_outside(
     } else if let Some(h) = line.strip_prefix("# ") {
         h.trim().clone_into(h1);
         h2.clear();
+    } else if line.trim() == "<!-- snapshot-diagnostics -->" {
+        tracing::debug!(line = n, "snapshot-diagnostics header");
+        *snapshot = true;
     } else if let Some(rest) = line
         .trim()
         .strip_prefix("<!-- mdtest:")
         .and_then(|r| r.strip_suffix("-->"))
     {
         for tok in rest.split_whitespace() {
+            if tok == "snapshot-diagnostics" {
+                tracing::debug!(line = n, "snapshot-diagnostics header");
+                *snapshot = true;
+            }
             if let Some(r) = tok.strip_prefix("rule=") {
                 *default_rule =
                     Some(
