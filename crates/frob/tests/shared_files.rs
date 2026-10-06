@@ -100,7 +100,7 @@ fn work_grants_two_leases_that_share_a_shared_file() {
     ok(dir.path(), &["work", &b]);
     let leases = ok(dir.path(), &["lease", "list"]);
     assert_eq!(leases["data"]["leases"].as_array().map(Vec::len), Some(2));
-    let contention = ok(dir.path(), &["ticket", "contention"]);
+    let contention = ok(dir.path(), &["lease", "list", "--contention"]);
     let files = contention["data"]["files"].as_array().expect("files");
     assert!(
         files.iter().all(|f| !f.to_string().contains("Cargo.lock")),

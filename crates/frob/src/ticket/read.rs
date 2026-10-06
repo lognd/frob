@@ -1,16 +1,18 @@
-//! Read-only ticket verbs: show, list, doable, brief.
+//! Read-only ticket verbs: show (`--format md` is the brief), list (`--category triage` is the inbox), doable; `brief` stays as a hidden alias.
 
 use frob_ledger::TicketId;
 use frob_ledger::event::{Event, EventBody};
 use frob_ledger::guards::{LeaseCheck, NoLeases};
 use frob_ledger::index::{ListFilter, Summary};
-use frob_ledger::model::{Category, TicketType};
+use frob_ledger::model::{Category, Stamp, TicketType};
 use frob_ledger::ops::TicketView;
+use frob_ledger::triage::InboxEntry;
 use gob_cli::clap::{ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use super::triage_cmd::parse_when;
 use super::{choice_flag, cli_err, get, get_parsed, open, resolve, text_flag, ticket_arg};
 use crate::config::FrobConfig;
 
@@ -154,7 +156,7 @@ pub struct ShowData {
     pub changelog_exempt: Option<frob_ledger::event::ChangelogExemption>,
 }
 
-/// Show one ticket from the index; `--events` adds its timeline.
+/// Show one ticket from the index; `--events` adds its timeline, `--format md` prints it as markdown.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket show",
@@ -197,13 +199,58 @@ impl Command for Show {
             .then(|| all.iter().map(EventView::from).collect());
         let fields = frob_ledger::schema::field_map(&view.ticket);
         let evidence = evidence_views(&ledger, id)?;
-        Ok(Payload::new(ShowData {
+        let rendered = if ctx.markdown() {
+            let md = brief_markdown(&ledger, id)?;
+            tracing::debug!(ticket = %id, bytes = md.len(), "ticket show: markdown view");
+            Some(md.lines().map(str::to_owned).collect::<Vec<_>>())
+        } else {
+            None
+        };
+        let payload = Payload::new(ShowData {
             view,
             fields,
             events,
             evidence,
             changelog_exempt,
-        }))
+        });
+        Ok(match rendered {
+            Some(rows) => payload.with_rendered(rows),
+            None => payload,
+        })
+    }
+}
+
+/// The markdown brief of ticket `id`: the ledger brief plus an Evidence section.
+fn brief_markdown(ledger: &frob_ledger::Ledger, id: TicketId) -> Result<String, CliError> {
+    let mut markdown = ledger.brief(id).map_err(cli_err)?;
+    let evidence = evidence_views(ledger, id)?;
+    if !evidence.is_empty() {
+        markdown.push_str("\n## Evidence\n\n");
+        for e in &evidence {
+            markdown.push_str(&e.line());
+            markdown.push('\n');
+        }
+    }
+    Ok(markdown)
+}
+
+/// One listed ticket: its index row, plus when it returns if it is a snoozed triage ticket.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct ListRow {
+    /// The ticket's index row.
+    #[serde(flatten)]
+    pub summary: Summary,
+    /// Set for a snoozed ticket listed with `--category triage --all`: when it returns.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub snoozed_until: Option<Stamp>,
+}
+
+impl From<InboxEntry> for ListRow {
+    fn from(e: InboxEntry) -> Self {
+        Self {
+            summary: e.summary,
+            snoozed_until: e.snoozed_until,
+        }
     }
 }
 
@@ -212,20 +259,30 @@ impl Command for Show {
 pub struct ListData {
     /// Number of tickets listed.
     pub count: usize,
+    /// The inbox instant of a `--category triage` listing.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub at: Option<Stamp>,
     /// The tickets, oldest first.
-    pub tickets: Vec<Summary>,
+    pub tickets: Vec<ListRow>,
 }
 
 impl ListData {
     fn of(tickets: Vec<Summary>) -> Self {
         Self {
             count: tickets.len(),
-            tickets,
+            at: None,
+            tickets: tickets
+                .into_iter()
+                .map(|summary| ListRow {
+                    summary,
+                    snoozed_until: None,
+                })
+                .collect(),
         }
     }
 }
 
-/// List tickets from the index, filtered by category, type, parent, label or blocked.
+/// List tickets from the index, filtered by category, type, parent, label or blocked; `--category triage` is the inbox.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket list",
@@ -239,6 +296,8 @@ pub struct List {
     parent: Option<String>,
     label: Option<String>,
     blocked: bool,
+    at: Option<String>,
+    all: bool,
 }
 
 impl Command for List {
@@ -259,6 +318,18 @@ impl Command for List {
                 .action(ArgAction::SetTrue)
                 .help("Only tickets blocked by an open blocker"),
         )
+        .arg(text_flag(
+            "at",
+            "With --category triage: list the inbox as of this date or RFC 3339 time (default now)",
+        ))
+        .arg(
+            gob_cli::clap::Arg::new("all")
+                .long("all")
+                .action(ArgAction::SetTrue)
+                .help(
+                    "With --category triage: include snoozed tickets, with the time each returns",
+                ),
+        )
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
@@ -268,11 +339,21 @@ impl Command for List {
             parent: get(m, "parent"),
             label: get(m, "label"),
             blocked: m.get_flag("blocked"),
+            at: get(m, "at"),
+            all: m.get_flag("all"),
         })
     }
 
     fn run(&self, ctx: &Context) -> CliOutcome<ListData> {
+        if self.category != Some(Category::Triage) && (self.at.is_some() || self.all) {
+            return Err(CliError::Usage(
+                "--at and --all apply only with --category triage".to_owned(),
+            ));
+        }
         let ledger = open(ctx)?;
+        if self.category == Some(Category::Triage) {
+            return self.run_inbox(&ledger, ctx);
+        }
         let parent: Option<TicketId> = self
             .parent
             .as_deref()
@@ -288,6 +369,37 @@ impl Command for List {
         let tickets = ledger.list(&filter).map_err(cli_err)?;
         tracing::debug!(count = tickets.len(), "ticket list");
         Ok(Payload::new(ListData::of(tickets)))
+    }
+}
+
+impl List {
+    /// The triage inbox (snoozed tickets hidden until their date unless `--all`), as the old `ticket triage list` printed it.
+    fn run_inbox(&self, ledger: &frob_ledger::Ledger, ctx: &Context) -> CliOutcome<ListData> {
+        let at = self
+            .at
+            .as_deref()
+            .map(|a| parse_when("at", a))
+            .transpose()?
+            .unwrap_or_else(|| ctx.clock.now());
+        let parent: Option<TicketId> = self
+            .parent
+            .as_deref()
+            .map(|p| resolve(ledger, p))
+            .transpose()?;
+        let filter = ListFilter {
+            label: self.label.clone(),
+            ty: self.ty,
+            parent,
+            blocked: self.blocked.then_some(true),
+            ..ListFilter::default()
+        };
+        let entries = ledger.inbox(&filter, at, self.all).map_err(cli_err)?;
+        tracing::debug!(count = entries.len(), %at, "ticket list: triage inbox");
+        Ok(Payload::new(ListData {
+            count: entries.len(),
+            at: Some(at),
+            tickets: entries.into_iter().map(ListRow::from).collect(),
+        }))
     }
 }
 
@@ -379,7 +491,7 @@ pub struct BriefData {
     pub markdown: String,
 }
 
-/// Print a ticket as markdown: title, body, acceptance, scope, links, last events.
+/// Deprecated alias of `ticket show --format md`, removed in the next minor release.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket brief",
@@ -408,15 +520,7 @@ impl Command for Brief {
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;
         let view = ledger.show(id).map_err(cli_err)?;
-        let mut markdown = ledger.brief(id).map_err(cli_err)?;
-        let evidence = evidence_views(&ledger, id)?;
-        if !evidence.is_empty() {
-            markdown.push_str("\n## Evidence\n\n");
-            for e in &evidence {
-                markdown.push_str(&e.line());
-                markdown.push('\n');
-            }
-        }
+        let markdown = brief_markdown(&ledger, id)?;
         Ok(Payload::new(BriefData {
             id,
             handle: view.summary.handle,

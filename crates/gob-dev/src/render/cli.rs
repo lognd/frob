@@ -43,7 +43,7 @@ pub fn render_product(product: &str, verbs: &[&CommandMeta]) -> String {
 /// One page per product for the global inventory.
 pub fn generate() -> Vec<GenFile> {
     let mut by_product: BTreeMap<&str, Vec<&CommandMeta>> = BTreeMap::new();
-    for m in all_commands() {
+    for m in all_commands().filter(|m| m.deprecated_form().is_none()) {
         by_product.entry(m.product).or_default().push(m);
     }
     by_product

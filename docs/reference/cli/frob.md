@@ -22,7 +22,7 @@
 | `graph why` | yes | no | 0 ok, 2 usage, 4 internal | Explain the bindings and acks that make a finding fire for a symbol. |
 | `init` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Write frob.toml knobs, ignore .frob/, and install the ledger merge driver; safe to repeat. |
 | `land` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Land a leased ticket branch onto the base branch, close the ticket and clean up. |
-| `lease list` | yes | no | 0 ok, 3 refused, 4 internal | List the live scope leases of this clone. |
+| `lease list` | yes | no | 0 ok, 3 refused, 4 internal | List the live scope leases of this clone; `--contention` adds the files claimed by more than one. |
 | `lease widen` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-read the ticket scope (optionally adding globs to it) and rescope the caller's lease to match. |
 | `merge-driver` | yes | no | 0 ok, 1 negative, 2 usage, 4 internal | Union both sides' event files of a conflicted ticket.md and re-fold it (git invokes this). |
 | `milestone add` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Add an epic to a milestone; a repeat returns `already`, a non-epic is refused. |
@@ -40,13 +40,10 @@
 | `release notes` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print one version's CHANGELOG section body for `gh release create --notes-file` (`--text` prints it raw). |
 | `release status` | yes | no | 0 ok, 3 refused, 4 internal | Report release readiness: criteria, open tickets, PM034, fragments, what is unresolved; never fails. |
 | `requeue` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Release a ticket's lease and move it back to todo. |
-| `start` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Lease a ticket for this checkout (no new worktree) and move it to in-progress. |
 | `test` | no | yes | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run only the tests that reach the files changed against a base, and record the evidence. |
 | `ticket branch init` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create the orphan `[tickets] branch` with a README placeholder through gob-git compare-and-swap, leaving the code checkout alone. |
-| `ticket brief` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print a ticket as markdown: title, body, acceptance, scope, links, last events. |
 | `ticket close` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a ticket with an outcome once every close guard passes; repeating is a no-op. |
 | `ticket comment` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Add a comment (note, decision, question or answer) to a ticket. |
-| `ticket contention` | yes | no | 0 ok, 3 refused, 4 internal | Print the files claimed by more than one live lease, ranked by holder count. |
 | `ticket doable` | yes | no | 0 ok, 2 usage, 4 internal | List tickets that can be started: todo, no open blocker, scope not leased. |
 | `ticket doctor` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-fold every ticket, milestone and cycle and report frontmatter drift, dangling links and event-order problems. |
 | `ticket drop` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Drop a ticket: close it as wont-fix with a required reason. |
@@ -55,15 +52,14 @@
 | `ticket evidence list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the evidence records of a ticket with their effective status: `ticket evidence list <ticket>`. |
 | `ticket fragment` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Write `changelog.d/<ULID>.<type>.md` from the ticket title (or `--sentence`, required for bug, security and incident; `--text` is the global output format); never commits. |
 | `ticket link` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Add a typed link between two tickets; repeating it is a no-op. |
-| `ticket list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List tickets from the index, filtered by category, type, parent, label or blocked. |
+| `ticket list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List tickets from the index, filtered by category, type, parent, label or blocked; `--category triage` is the inbox. |
 | `ticket new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a ticket; with `--idempotency-key` a repeat returns the first ticket. |
 | `ticket reopen` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Reopen a done ticket into todo with a required reason. |
-| `ticket show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one ticket from the index; `--events` adds its timeline. |
+| `ticket show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one ticket from the index; `--events` adds its timeline, `--format md` prints it as markdown. |
 | `ticket triage accept` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Accept tickets from the inbox: triage becomes todo, all in one ledger commit. |
 | `ticket triage decline` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Decline tickets from the inbox: close them as wont-fix with a required reason. |
 | `ticket triage duplicate` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a ticket from the inbox as a duplicate of another, linking the two. |
-| `ticket triage list` | yes | no | 0 ok, 2 usage, 4 internal | List the triage inbox; snoozed tickets stay hidden until their date. |
 | `ticket triage snooze` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Snooze tickets: hide them from the inbox until a date. |
 | `ticket unlink` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove a typed link between two tickets; removing a missing link is a no-op. |
 | `ticket update` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Patch fields of a ticket: `--set key=value`, dedicated flags, label, scope and acceptance edits. |
-| `work` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Lease a ticket, create its worktree and branch, and move it to in-progress. |
+| `work` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Lease a ticket, create its worktree and branch, and move it to in-progress; `--here` leases it for this checkout instead. |

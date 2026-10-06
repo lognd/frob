@@ -338,8 +338,7 @@ fn an_attestation_on_a_ticket_criterion_binds_and_show_and_brief_label_it() {
         label.starts_with("[attested by test@example.com:"),
         "{label}"
     );
-    let brief = repo.ok(&["ticket", "brief", &id]);
-    let md = brief["data"]["markdown"].as_str().expect("markdown");
+    let md = common::ticket_markdown(repo.dir.path(), &id);
     assert!(md.contains("## Evidence"), "{md}");
     assert!(
         md.contains("criterion 1: [attested by test@example.com: \"I ran the three"),

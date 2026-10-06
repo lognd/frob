@@ -423,8 +423,24 @@ fn verbs_list_leases_and_contention() {
         Some(1),
         "{out}"
     );
+    let (code, out, err) =
+        gob_cli::run_for_test(&cli, &["lease", "list", "--contention"], dir.path());
+    assert_eq!(code, 0, "{err}");
+    let v: serde_json::Value = serde_json::from_str(&out).expect("json");
+    assert_eq!(
+        v["data"]["files"].as_array().map(Vec::len),
+        Some(0),
+        "{out}"
+    );
+    assert_eq!(
+        v["data"]["leases"].as_array().map(Vec::len),
+        Some(1),
+        "{out}"
+    );
+    // The hidden alias prints the same files and one deprecation line.
     let (code, out, err) = gob_cli::run_for_test(&cli, &["ticket", "contention"], dir.path());
     assert_eq!(code, 0, "{err}");
+    assert!(err.contains("`ticket contention` is deprecated"), "{err}");
     let v: serde_json::Value = serde_json::from_str(&out).expect("json");
     assert_eq!(
         v["data"]["files"].as_array().map(Vec::len),

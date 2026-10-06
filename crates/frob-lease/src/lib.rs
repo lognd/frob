@@ -12,7 +12,7 @@
 //! Entry points: [`LeaseStore`] (acquire, renew, rescope, release, steal, list,
 //! contention), [`LeaseGuard`] (the [`LeaseCheck`](frob_ledger::guards::LeaseCheck)
 //! for `ticket doable`), [`scope001`], and [`register`] for the `lease list` and
-//! `ticket contention` verbs.
+//! `lease list --contention` verbs.
 
 pub mod config;
 pub mod error;
@@ -93,7 +93,7 @@ pub fn heartbeat(cwd: &Path, clock: std::sync::Arc<dyn gob_time::Clock>) {
     }
 }
 
-/// Register `lease list` and `ticket contention` on a product root.
+/// Register `lease list` and the hidden `ticket contention` alias on a product root.
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<verbs::LeaseList>()
         .register::<verbs::Contention>()

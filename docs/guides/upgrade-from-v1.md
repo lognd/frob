@@ -57,10 +57,10 @@ and `frob ticket --help`.
 | v1 | v2 | Notes |
 |---|---|---|
 | `frob ticket new --kind K --title T` | `frob ticket new --type T --title T` | v1 kinds feature and ux are type `task` in v2; v2 adds epic, story, chore, custom |
-| `frob ticket list`, `show`, `doable`, `brief`, `contention` | `frob ticket list`, `show`, `doable`, `brief`, `contention` | same names; `list` filters are `--category`, `--type`, `--parent`, `--label`, `--blocked` |
+| `frob ticket list`, `show`, `doable`, `brief`, `contention` | `frob ticket list`, `show`, `doable`; `frob ticket show --format md`; `frob lease list --contention` | `brief` is `show --format md` and `contention` is `lease list --contention`; `list` filters are `--category`, `--type`, `--parent`, `--label`, `--blocked` |
 | `frob ticket board` | `frob board` | columns by category with WIP limits |
 | `frob ticket work ID` | `frob work TICKET` | leases the ticket, creates its worktree and branch; `--steal --reason` takes a held lease |
-| `frob ticket start ID` | `frob start TICKET` | leases for this checkout, no new worktree |
+| `frob ticket start ID` | `frob work --here TICKET` | leases for this checkout, no new worktree |
 | `frob ticket requeue ID` | `frob requeue --reason TEXT TICKET` | the reason is required |
 | `frob ticket land` | `frob land [TICKET]` | `--dry-run`, `--push`, `--keep-worktree` |
 | `frob ticket close ID` | `frob ticket close --outcome O TICKET` | outcome is one of fixed, wont-fix, duplicate, invalid, done; `--no-evidence` and `--no-changelog` exist, with `--reason` |

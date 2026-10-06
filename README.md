@@ -59,7 +59,7 @@ anything undeclared, then either close the gap or waive it with a reason.
 frob graph build                                  # build the obligation graph cache
 frob ticket new --title "Add multiply function" \
     --kind feature --scope "src/demo/calc.py"     # T-0001
-frob ticket start T-0001                          # pre-work sweep, -> in-progress
+frob work --here T-0001                           # lease it for this checkout, -> in-progress
 
 # write code, bind it: `# frob:ticket T-0001` above the new symbol,
 # `# frob:tests <symref>` above the test that covers it

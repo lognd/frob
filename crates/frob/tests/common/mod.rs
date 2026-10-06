@@ -71,3 +71,20 @@ pub fn frob_command() -> assert_cmd::Command {
     cmd.env("PATH", hermetic_path()).env_remove("FROB_LOG");
     cmd
 }
+
+/// The markdown view of ticket `id` (`ticket show --format md`), run in `dir`.
+// frob:tests crates/frob/src/ticket/read.rs::Show
+pub fn ticket_markdown(dir: &std::path::Path, id: &str) -> String {
+    let out = frob_command()
+        .current_dir(dir)
+        .env_remove("FROB_LOG")
+        .args(["ticket", "show", id, "--format", "md"])
+        .output()
+        .expect("run frob");
+    assert!(
+        out.status.success(),
+        "ticket show --format md: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8(out.stdout).expect("utf-8 markdown")
+}

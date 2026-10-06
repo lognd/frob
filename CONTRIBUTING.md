@@ -27,7 +27,7 @@ as a `~handle`, and any lookup also accepts a v1 alias such as `T-0003`.
 Only the full ULID is ever written into a file or a directive.
 
 1. Find work: `frob ticket doable` lists todo tickets with no open blocker
-   and a scope nobody has leased. `frob ticket brief <handle>` prints the
+   and a scope nobody has leased. `frob ticket show <handle> --format md` prints the
    description, acceptance criteria, scope and links.
 2. Claim it: `frob work <handle>` leases the ticket, creates a worktree and
    branch, and moves the ticket to in-progress. Work only inside that
