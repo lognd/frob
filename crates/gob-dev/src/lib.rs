@@ -49,7 +49,12 @@ pub fn link_inventories() {
     let verbs = frob_cli::cli();
     tracing::debug!(product = frob_cli::PRODUCT, "frob cli linked");
     drop(verbs);
+    tracing::debug!(
+        tables = crunk_spec::OWN_TABLES.len(),
+        "crunk spec linked (anchor only; its artifacts come from the registry)"
+    );
     let counts = (
+        gob_config::all_artifacts().count(),
         gob_rules::Registry::global().len(),
         gob_config::all_tables().count(),
         gob_directives::all_directives().count(),
@@ -57,7 +62,7 @@ pub fn link_inventories() {
     );
     tracing::debug!(
         ?counts,
-        "inventories linked (rules, tables, directives, commands)"
+        "inventories linked (artifacts, rules, tables, directives, commands)"
     );
 }
 
@@ -74,14 +79,18 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Vec<GenFile> {
     }
     if all || kind == Kind::Config {
         files.extend(render::config::generate());
-        files.extend(render::crunk::generate_config());
+        files.extend(render::artifacts::generate(
+            gob_config::ArtifactFamily::Config,
+        ));
     }
     if all || kind == Kind::Cli {
         files.extend(render::cli::generate());
     }
     if all || kind == Kind::Schemas {
         files.extend(render::schemas::generate());
-        files.extend(render::crunk::generate_schemas());
+        files.extend(render::artifacts::generate(
+            gob_config::ArtifactFamily::Schemas,
+        ));
     }
     files.sort_by(|a, b| a.path.cmp(&b.path));
     tracing::info!(?kind, files = files.len(), "generated");

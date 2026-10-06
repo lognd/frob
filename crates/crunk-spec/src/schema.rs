@@ -212,3 +212,19 @@ fn type_text(root: &Value, node: &Value) -> String {
         None => "any".to_owned(),
     }
 }
+
+gob_config::inventory::submit! {
+    gob_config::ArtifactEntry {
+        path: "docs/crunk/config.md",
+        family: gob_config::ArtifactFamily::Config,
+        render: || gob_config::ArtifactBody::Markdown(reference()),
+    }
+}
+
+gob_config::inventory::submit! {
+    gob_config::ArtifactEntry {
+        path: "docs/schemas/crunk.json",
+        family: gob_config::ArtifactFamily::Schemas,
+        render: || gob_config::ArtifactBody::Json(schema()),
+    }
+}

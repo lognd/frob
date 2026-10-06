@@ -1,3 +1,6 @@
-# goway reads this to provision helpers (goway doctor --fix).
+# goway reads this to provision helpers (goway doctor --fix) and to build the helper .git.
+# The ticket ledger is read from this ref, so ledger rules resolve on a helper (cargo dev ci check).
+with_refs = ["refs/heads/experimental"]
+
 [toolchain]
 tools = ["uv"]

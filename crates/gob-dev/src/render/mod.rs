@@ -1,8 +1,8 @@
 //! Renderers: one module per generated kind, all pure functions of inventories.
 
+pub mod artifacts;
 pub mod cli;
 pub mod config;
-pub mod crunk;
 pub mod directives;
 pub mod rules;
 pub mod schemas;
