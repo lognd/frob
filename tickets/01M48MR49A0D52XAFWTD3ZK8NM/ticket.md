@@ -7,7 +7,7 @@ priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:20Z"
-updated = "2026-10-06T12:59:20Z"
+updated = "2026-10-06T13:14:10Z"
 scope = ["crates/gob-macros/**", "crates/gob-rules/**", "crates/*/src/**"]
 
 [[acceptance]]
