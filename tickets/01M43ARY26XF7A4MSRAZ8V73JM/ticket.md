@@ -2,16 +2,16 @@
 id = "01M43ARY26XF7A4MSRAZ8V73JM"
 title = "gob-symbols: CSS adapter with declarations, at-rules, custom properties and waivers"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-04T11:28:48Z"
-updated = "2026-10-06T04:32:04Z"
+updated = "2026-10-06T09:02:08Z"
 idempotency_key = "crunk-plan-css"
-labels = ["area:crunk"]
-scope = ["crates/gob-symbols/src/css/**", "crates/gob-symbols/tests/css*.rs", "docs/reference/fidelity.md"]
+labels = ["area:crunk", "creates:crates/gob-symbols/src/css/**", "creates:crates/gob-symbols/tests/css*.rs", "creates:changelog.d/*Z8V73JM*"]
+scope = ["crates/gob-symbols/src/css/**", "crates/gob-symbols/tests/css*.rs", "docs/reference/fidelity.md", "crates/gob-symbols/src/typescript/style.rs", "crates/gob-symbols/src/typescript/fold/jsx.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/pipeline.rs", "changelog.d/*Z8V73JM*"]
 
 [[links]]
 kind = "blocked-by"
