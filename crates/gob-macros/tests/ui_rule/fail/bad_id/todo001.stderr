@@ -1,0 +1,5 @@
+error: invalid rule id `todo1`; expected FAMILY (2-6 uppercase letters) + 3 digits, e.g. COV006
+ --> tests/ui_rule/fail/bad_id/todo001.rs:6:10
+  |
+6 |     id = "todo1",
+  |          ^^^^^^^

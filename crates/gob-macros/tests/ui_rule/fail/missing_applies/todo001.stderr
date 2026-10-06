@@ -1,0 +1,13 @@
+error: #[rule] is missing the required field `applies` (every field is required)
+  --> tests/ui_rule/fail/missing_applies/todo001.rs:5:1
+   |
+ 5 | / #[rule(
+ 6 | |     id = "TODO001",
+ 7 | |     slug = "bare-work-marker",
+ 8 | |     severity = Error,
+...  |
+15 | |     since = "0.0.0",
+16 | | )]
+   | |__^
+   |
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)

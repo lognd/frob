@@ -1,0 +1,5 @@
+error: invalid slug `Bare_Work`; expected lowercase kebab-case
+ --> tests/ui_rule/fail/bad_slug/todo001.rs:7:12
+  |
+7 |     slug = "Bare_Work",
+  |            ^^^^^^^^^^^

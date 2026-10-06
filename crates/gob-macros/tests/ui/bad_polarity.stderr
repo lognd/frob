@@ -5,3 +5,11 @@ error: invalid polarity `Sideways`; expected one of: Pplus, Pminus, P0, Pn, Pc
   |          ^^^^
   |
   = note: this error originates in the derive macro `Rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: use of deprecated macro `Rule`: use the `#[gob_rules::rule(..)]` attribute (D107); this derive is deleted after the migration
+ --> tests/ui/bad_polarity.rs:4:10
+  |
+4 | #[derive(Rule)]
+  |          ^^^^
+  |
+  = note: `#[warn(deprecated)]` on by default

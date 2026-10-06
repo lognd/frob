@@ -1,5 +1,5 @@
 error: invalid severity `Fatal`; expected one of: Error, Warn, Advisory
- --> tests/ui_rule/fail/bad_severity/todo001.rs:6:16
+ --> tests/ui_rule/fail/bad_severity/todo001.rs:8:16
   |
-6 |     severity = Fatal,
+8 |     severity = Fatal,
   |                ^^^^^

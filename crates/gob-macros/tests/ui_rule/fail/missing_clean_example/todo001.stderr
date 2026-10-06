@@ -1,0 +1,5 @@
+error: rule page `todo001.md`: missing a clean example: a code fence marked `expect=clean`
+  --> tests/ui_rule/fail/missing_clean_example/todo001.rs:18:12
+   |
+18 | pub struct Todo001;
+   |            ^^^^^^^

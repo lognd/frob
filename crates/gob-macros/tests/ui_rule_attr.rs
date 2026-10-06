@@ -1,4 +1,4 @@
-//! Compile tests for the spike `#[rule]` attribute (~9R52NCF): one pass case and one fail case
+//! Compile tests for the `#[rule]` attribute (~N88H9SY, spiked in ~9R52NCF): one pass case and one fail case
 //! per mistake. Each case dir holds `todo001.rs` plus its own `todo001.md` (the page is read
 //! relative to the declaring file).
 

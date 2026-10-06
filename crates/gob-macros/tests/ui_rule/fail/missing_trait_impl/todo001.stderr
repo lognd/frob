@@ -1,29 +1,24 @@
 error[E0277]: `Todo001` is declared `scope = File` but does not implement `FileRule<dyn ObligationHost>`
-  --> tests/ui_rule/fail/missing_trait_impl/todo001.rs:17:12
+  --> tests/ui_rule/fail/missing_trait_impl/todo001.rs:19:12
    |
-17 | pub struct Todo001;
+19 | pub struct Todo001;
    |            ^^^^^^^ unsatisfied trait bound
    |
 help: the trait `FileRule<dyn ObligationHost>` is not implemented for `Todo001`
-  --> tests/ui_rule/fail/missing_trait_impl/todo001.rs:17:1
+  --> tests/ui_rule/fail/missing_trait_impl/todo001.rs:19:1
    |
-17 | pub struct Todo001;
+19 | pub struct Todo001;
    | ^^^^^^^^^^^^^^^^^^
    = note: write `impl<P: ?Sized + YourHost> FileRule<P> for Todo001`, where `host = YourHost` in `#[rule(..)]`
-help: the trait `FileRule<P>` is implemented for `gob_rules::rule_spike::Todo001`
-  --> $WORKSPACE/crates/gob-rules/src/rule_spike/todo001.rs
-   |
-   | impl<P: ?Sized + ObligationHost> FileRule<P> for Todo001 {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 note: required by a bound in `need`
-  --> tests/ui_rule/fail/missing_trait_impl/todo001.rs:4:1
+  --> tests/ui_rule/fail/missing_trait_impl/todo001.rs:6:1
    |
- 4 | / #[rule(
- 5 | |     id = "TODO001",
- 6 | |     slug = "bare-work-marker",
- 7 | |     severity = Error,
+ 6 | / #[rule(
+ 7 | |     id = "TODO001",
+ 8 | |     slug = "bare-work-marker",
+ 9 | |     severity = Error,
 ...  |
-15 | |     since = "0.0.0",
-16 | | )]
+17 | |     since = "0.0.0",
+18 | | )]
    | |__^ required by this bound in `need`
    = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)

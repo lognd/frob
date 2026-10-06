@@ -20,6 +20,7 @@ version = "0.532.0"
 [workspace.lints.rust]
 missing_docs = "deny"
 unsafe_code = "forbid"
+deprecated = "allow"  # D107: #[derive(Rule)] is deprecated, ~45 uses migrate per crate; the cleanup ticket ~H5W28EA removes this line
 
 [workspace.lints.rustdoc]
 broken_intra_doc_links = "deny"

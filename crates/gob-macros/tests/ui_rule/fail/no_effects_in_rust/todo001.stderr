@@ -1,5 +1,5 @@
-error[E0080]: evaluation panicked: TODO001: language Rust has no `Effects` capability (declared not-applicable or a gap), so this rule could never fire there; matrix: crates/gob-rules/src/rule_spike/caps.rs
-  --> tests/ui_rule/fail/no_effects_in_rust/todo001.rs:11:40
+error[E0080]: evaluation panicked: TODO001: language Rust has no `Effects` capability (declared not-applicable or a gap), so this rule could never fire there; matrix: crates/gob-caps/src/matrix.rs
+  --> tests/ui_rule/fail/no_effects_in_rust/todo001.rs:13:40
    |
-11 |     applies = languages(Rust; needs = [Effects], min_fidelity = F1),
+13 |     applies = languages(Rust; needs = [Effects], min_fidelity = F1),
    |                                        ^^^^^^^ evaluation of `_` failed here

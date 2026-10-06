@@ -1,0 +1,5 @@
+error: unknown rule field `flavour`; fields are: id, slug, severity, polarity, must_measure, scope, fix, applies, host, version, since
+  --> tests/ui_rule/fail/unknown_field/todo001.rs:16:5
+   |
+16 |     flavour = Mild,
+   |     ^^^^^^^

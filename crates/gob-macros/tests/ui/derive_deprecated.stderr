@@ -1,0 +1,11 @@
+error: use of deprecated macro `Rule`: use the `#[gob_rules::rule(..)]` attribute (D107); this derive is deleted after the migration
+ --> tests/ui/derive_deprecated.rs:6:10
+  |
+6 | #[derive(Rule)]
+  |          ^^^^
+  |
+note: the lint level is defined here
+ --> tests/ui/derive_deprecated.rs:1:9
+  |
+1 | #![deny(deprecated)]
+  |         ^^^^^^^^^^

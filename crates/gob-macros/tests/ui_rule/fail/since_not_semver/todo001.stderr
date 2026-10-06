@@ -1,0 +1,5 @@
+error: `since` must be a semver `x.y.z`, got `next`
+  --> tests/ui_rule/fail/since_not_semver/todo001.rs:16:13
+   |
+16 |     since = "next",
+   |             ^^^^^^

@@ -1,5 +1,5 @@
 error: rule TODO001 has no readable page `todo001.md` next to its source (No such file or directory (os error 2)); every rule needs one
-  --> tests/ui_rule/fail/missing_md/todo001.rs:16:12
+  --> tests/ui_rule/fail/missing_md/todo001.rs:18:12
    |
-16 | pub struct Todo001;
+18 | pub struct Todo001;
    |            ^^^^^^^
