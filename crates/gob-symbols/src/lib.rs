@@ -48,6 +48,8 @@ mod adapter;
 mod crates;
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
 mod csharp;
+// frob:ticket 01M44YQW33GJMXQ8PQBECEBCQ1
+mod dotnet;
 mod fold;
 mod graph;
 mod markdown;
@@ -70,6 +72,10 @@ pub use adapter::{
 };
 pub use crates::CrateDeps;
 pub use csharp::{CSharpAdapter, is_csharp_path};
+pub use dotnet::{
+    Assignment, DotnetError, DotnetProjects, MalformedProject, Project, SolutionEntry,
+    parse_project, parse_solution,
+};
 /// The facet digest scheme these digests are computed under (recorded in every lock file).
 pub use gob_ir::DIGEST_SCHEME;
 pub use graph::{

@@ -8,26 +8,26 @@ priority = "high"
 parent = "01M1T07NYJGETZ4A744PSANMYZ"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-06T06:07:42Z"
+updated = "2026-10-06T06:08:37Z"
 aliases = ["T-3978"]
 labels = ["v1-cluster:C2", "triage:accepted"]
 scope = ["crates/frob-lease/src/unmatched.rs", "crates/frob-lease/src/lib.rs", "crates/frob-lease/Cargo.toml", "crates/frob/src/lease_cmd.rs", "crates/frob/src/ticket/write.rs", "crates/frob/tests/ticket.rs", "crates/frob-worktree/src/work.rs", "crates/gob-git/src/status.rs", "docs/design/tickets.md", "Cargo.lock"]
 
 [[acceptance]]
 text = "A warning naming the glob fires on a zero-match glob in a populated repo"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A glob declared with a creates: label (new-file carve-out) stays quiet"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Empty repos and matching globs do not warn; a zero-match glob with no near candidate warns plainly"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "All fixtures committed"
-bound = false
+bound = true
 +++
 
 A SCOPE GLOB THAT MATCHES ZERO TRACKED FILES IS ACCEPTED SILENTLY. Because scope

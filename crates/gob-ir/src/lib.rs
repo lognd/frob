@@ -18,6 +18,8 @@
 //! - 4.1, [`Answer`], [`Truth`]: the answer lattice and Kleene logic.
 //! - 4.2 and 4.3, [`eval`]: stratified relations, polarity and subject accounting.
 //! - 5, [`Term`] query methods and [`Model`]: the syntactic queries.
+//! - 4.4 and 5.1, [`const_value`], [`markup`], [`style`]: the web-engine answer types
+//!   and queries (language-engines.md D96).
 //! - 7.1, [`Facet`], [`FacetDigest`]: digest scheme 2.
 //!
 //! # Conventions of this crate
@@ -57,15 +59,18 @@ pub(crate) fn idx32(n: usize) -> u32 {
 
 mod answer;
 mod attrs;
+pub mod const_value;
 mod digest;
 pub mod eval;
 mod location;
+pub mod markup;
 mod operator;
 mod print;
 mod query;
 pub mod registry;
 mod scope;
 mod select;
+pub mod style;
 mod symref;
 mod term;
 

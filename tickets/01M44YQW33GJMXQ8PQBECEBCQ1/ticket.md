@@ -2,13 +2,14 @@
 id = "01M44YQW33GJMXQ8PQBECEBCQ1"
 title = "Project model: .sln and .csproj assemblies mapped to packages"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:59Z"
-updated = "2026-10-06T05:58:00Z"
+updated = "2026-10-06T06:03:37Z"
 idempotency_key = "d94-sln"
 scope = ["crates/gob-symbols/src/dotnet.rs", "crates/gob-symbols/src/paths.rs", "crates/gob-symbols/src/crates.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/tests/dotnet.rs", "docs/design/code-model.md", "docs/reference/config.md", "crates/gob-symbols/src/lib.rs"]
 

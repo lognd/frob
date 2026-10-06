@@ -18,6 +18,11 @@ evaluation boundary of D28); notes/review/grimble-review.md H3;
 docs/schemas/envelope.json and the landed `gob-diagnostics` types
 (`FindingRecord`, `RequiredReason`, `Envelope`).
 
+Implementation owner (products.md section 7, D97): `gob-check::sibling`
+holds the one emitter (`document`, over a product-neutral `SiblingInput`)
+and the one typed reader (`Doc`, `Envelope`); crunk, grimble and frob's
+merge all go through it.
+
 ## 1. Purpose
 
 D28 makes the sibling's `--json` the only channel between frob and a
