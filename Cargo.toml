@@ -47,3 +47,26 @@ lto = "thin"
 # at 1 were measured and rejected (slower clean compile, no suite gain).
 [profile.dev.package.gob-ir]
 opt-level = 2
+
+# cargo-shear (build-test-ci.md section 4, D98). Every entry is a known finding whose removal is
+# tracked in ~MKG678C (the dependency removals; the full hit list is on that ticket), which deletes
+# both the dependencies and these entries. Names are workspace-wide, so this is deliberately
+# temporary.
+[workspace.metadata.cargo-shear]
+ignored = [
+  "gob-check",       # removal tracked in ~MKG678C (crunk)
+  "gob-diagnostics", # removal tracked in ~MKG678C (crunk-check, grimble-check)
+  "gob-rules",       # removal tracked in ~MKG678C (frob, frob-land, grimble)
+  "gob-time",        # removal tracked in ~MKG678C (grimble; frob-worktree misplaced)
+  "gob-walk",        # removal tracked in ~MKG678C (grimble)
+  "frob-ledger",     # removal tracked in ~MKG678C (frob-tests misplaced)
+  "serde_json",      # removal tracked in ~MKG678C (gob-rules; frob-lease misplaced)
+  "tempfile",        # removal tracked in ~MKG678C (crunk-check, gob-cli)
+  "thiserror",       # removal tracked in ~MKG678C (gob-cache)
+  "toml",            # removal tracked in ~MKG678C (frob-land, grimble-check)
+]
+# Fixture sources read by tests at run time (trybuild ui, corpora), never compiled as modules.
+ignored-paths = [
+  "crates/gob-macros/tests/ui/*.rs",
+  "crates/*/tests/corpus/**/*.rs",
+]

@@ -12,6 +12,7 @@
 // frob:ticket 01M43FB0TFBNDFH1AEC1CTNHZG
 // frob:ticket 01M44M58PKEM2HMKZF2CANFHAW
 // frob:ticket 01M47QV17V1KZ6K50C7H77MRSP
+// frob:ticket 01M47QVDTG48F4426J019X37CZ
 
 use std::path::Path;
 use std::time::Duration;
@@ -182,8 +183,8 @@ fn offloaded(mut step: Step) -> Step {
     step
 }
 
-/// `version_args` of the `[[check.tool]]` named `tool` in `frob.toml`: the pinned uvx invocation.
-fn pinned_uvx(frob_toml: &toml::Table, tool: &str) -> Result<Vec<String>, CiError> {
+/// The string array `key` of the `[[check.tool]]` named `tool` in `frob.toml`.
+fn pinned_array(frob_toml: &toml::Table, tool: &str, key: &str) -> Result<Vec<String>, CiError> {
     let bad = |what: &str| CiError::Config(format!("tool {tool}: {what}"));
     let entry = frob_toml
         .get("check")
@@ -196,16 +197,21 @@ fn pinned_uvx(frob_toml: &toml::Table, tool: &str) -> Result<Vec<String>, CiErro
         })
         .ok_or_else(|| bad("no [[check.tool]] entry"))?;
     entry
-        .get("version_args")
+        .get(key)
         .and_then(toml::Value::as_array)
-        .ok_or_else(|| bad("no version_args"))?
+        .ok_or_else(|| bad(&format!("no {key}")))?
         .iter()
         .map(|v| {
             v.as_str()
                 .map(str::to_owned)
-                .ok_or_else(|| bad("non-string version_args"))
+                .ok_or_else(|| bad(&format!("non-string {key}")))
         })
         .collect()
+}
+
+/// `version_args` of the `[[check.tool]]` named `tool` in `frob.toml`: the pinned uvx invocation.
+fn pinned_uvx(frob_toml: &toml::Table, tool: &str) -> Result<Vec<String>, CiError> {
+    pinned_array(frob_toml, tool, "version_args")
 }
 
 /// The `pytest` step: `uv tool install --force` [`PYTEST_REQUIREMENT`] (idempotent, replaces a
@@ -313,6 +319,88 @@ fn nextest_step(require_python: bool) -> Step {
     nextest
 }
 
+fn tool_program(name: &str) -> Program {
+    Program::Tool {
+        name: name.to_owned(),
+    }
+}
+
+/// A Linux-only hygiene step whose argv is the `args` of the `[[check.tool]]` named `tool` in
+/// `frob.toml` (the single pinned definition `frob check` also runs), needing `need` installed.
+/// frob:ticket 01M47QVDTG48F4426J019X37CZ
+fn hygiene(
+    name: &'static str,
+    need: Prerequisite,
+    program: Program,
+    frob_toml: &toml::Table,
+    tool: &str,
+) -> Result<Step, CiError> {
+    Ok(Step {
+        program,
+        args: pinned_array(frob_toml, tool, "args")?,
+        needs: vec![need],
+        linux_only: true,
+        ..cargo(name, &[])
+    })
+}
+
+/// Pinned `cargo-deny` version; `frob.toml` carries the accepted range (checked by a test).
+pub const CARGO_DENY_VERSION: &str = "0.19.9";
+/// Pinned `cargo-shear` version; `frob.toml` carries the accepted range (checked by a test).
+pub const CARGO_SHEAR_VERSION: &str = "1.14.0";
+/// Pinned `typos-cli` version; `frob.toml` carries the accepted range (checked by a test).
+pub const TYPOS_VERSION: &str = "1.50.3";
+
+/// `cargo-deny` on `PATH`, installed by `ci.yml` at [`CARGO_DENY_VERSION`].
+pub const CARGO_DENY: Prerequisite = Prerequisite::SystemTool {
+    tool: "cargo-deny",
+    install: "cargo install --locked cargo-deny --version 0.19.9",
+};
+/// `cargo-shear` on `PATH`, installed by `ci.yml` at [`CARGO_SHEAR_VERSION`].
+pub const CARGO_SHEAR: Prerequisite = Prerequisite::SystemTool {
+    tool: "cargo-shear",
+    install: "cargo install --locked cargo-shear --version 1.14.0",
+};
+/// `typos` on `PATH`, installed by `ci.yml` at [`TYPOS_VERSION`].
+pub const TYPOS: Prerequisite = Prerequisite::SystemTool {
+    tool: "typos",
+    install: "cargo install --locked typos-cli --version 1.50.3",
+};
+
+/// The `msrv` step: install the toolchain named by `[workspace.package] rust-version` (minimal
+/// profile) and `cargo check` the whole workspace with it, so code never needs a newer compiler
+/// than the manifest promises. One shell command; the step is Linux-only.
+/// frob:ticket 01M47QVDTG48F4426J019X37CZ
+fn msrv(root: &Path) -> Result<Step, CiError> {
+    let text = std::fs::read_to_string(root.join("Cargo.toml")).map_err(|e| {
+        tracing::error!(error = %e, "Cargo.toml unreadable");
+        CiError::Config(e.to_string())
+    })?;
+    let manifest: toml::Table = text.parse().map_err(|e: toml::de::Error| {
+        tracing::error!(error = %e, "Cargo.toml unparsable");
+        CiError::Config(e.to_string())
+    })?;
+    let rv = manifest
+        .get("workspace")
+        .and_then(|w| w.get("package"))
+        .and_then(|p| p.get("rust-version"))
+        .and_then(toml::Value::as_str)
+        .ok_or_else(|| CiError::Config("Cargo.toml: no [workspace.package] rust-version".into()))?;
+    tracing::info!(rust_version = rv, "msrv step toolchain");
+    let script = format!(
+        "rustup toolchain install {rv} --profile minimal && \
+         exec cargo +{rv} check --workspace --all-targets --all-features"
+    );
+    Ok(Step {
+        program: Program::Tool {
+            name: "sh".to_owned(),
+        },
+        args: vec!["-c".to_owned(), script],
+        linux_only: true,
+        ..cargo("msrv", &[])
+    })
+}
+
 /// Every CI check in the order `ci.yml` runs it; zizmor and actionlint pins come from `frob.toml`.
 ///
 /// # Errors
@@ -398,6 +486,16 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
         cargo("gen", &["dev", "gen", "all", "--check"]),
         uvx("zizmor", "zizmor")?,
         uvx("actionlint", "actionlint")?,
+        hygiene("deny", CARGO_DENY, Program::Cargo, &frob_toml, "cargo-deny")?,
+        hygiene(
+            "shear",
+            CARGO_SHEAR,
+            Program::Cargo,
+            &frob_toml,
+            "cargo-shear",
+        )?,
+        hygiene("typos", TYPOS, tool_program("typos"), &frob_toml, "typos")?,
+        msrv(root)?,
         offloaded(linux(cargo(
             "doctor",
             &["run", "-p", "frob-cli", "--", "doctor"],
@@ -1263,6 +1361,54 @@ mod tests {
             MINGW_GCC.install_command(),
             "sudo apt-get install -y gcc-mingw-w64-x86-64"
         );
+    }
+
+    /// Dotted-number comparison of `have` against an inclusive `[min, max]` range.
+    fn within(have: &str, min: &str, max: &str) -> bool {
+        let v = |s: &str| -> Vec<u64> { s.split('.').map(|p| p.parse().unwrap()).collect() };
+        v(min) <= v(have) && v(have) <= v(max)
+    }
+
+    // frob:tests crates/gob-dev/src/ci.rs::hygiene
+    #[test]
+    fn hygiene_steps_exist_pin_installs_inside_the_frob_toml_range_and_msrv_follows_manifest() {
+        let all = real();
+        let text = std::fs::read_to_string(repo_root().join("frob.toml")).unwrap();
+        let toml: toml::Table = text.parse().unwrap();
+        for (step, tool, need, version) in [
+            ("deny", "cargo-deny", CARGO_DENY, CARGO_DENY_VERSION),
+            ("shear", "cargo-shear", CARGO_SHEAR, CARGO_SHEAR_VERSION),
+            ("typos", "typos", TYPOS, TYPOS_VERSION),
+        ] {
+            let s = all.iter().find(|s| s.name == step).unwrap();
+            assert!(s.linux_only && s.needs == vec![need.clone()], "{step}");
+            assert_eq!(s.args, pinned_array(&toml, tool, "args").unwrap());
+            assert!(need.install_command().ends_with(version), "{step}");
+            let entry = toml["check"]["tool"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|t| t["name"].as_str() == Some(tool))
+                .unwrap();
+            let (min, max) = (
+                entry["min_version"].as_str().unwrap(),
+                entry["max_version"].as_str().unwrap(),
+            );
+            assert!(
+                within(version, min, max),
+                "{step}: {version} not in {min}..{max}"
+            );
+        }
+        let m = all.iter().find(|s| s.name == "msrv").unwrap();
+        assert!(
+            m.args[1].contains("cargo +1.98 check --workspace"),
+            "{:?}",
+            m.args
+        );
+    }
+
+    fn repo_root() -> std::path::PathBuf {
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
     }
 
     #[test]
