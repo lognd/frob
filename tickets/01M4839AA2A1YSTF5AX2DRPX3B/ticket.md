@@ -2,7 +2,7 @@
 id = "01M4839AA2A1YSTF5AX2DRPX3B"
 title = "Generate docs/schemas/sibling.json from the gob-check::sibling types"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
 reporter = "lognd"
