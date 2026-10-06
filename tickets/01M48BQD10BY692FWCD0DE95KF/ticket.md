@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-06T10:21:39Z"
-updated = "2026-10-06T22:21:50Z"
+updated = "2026-10-06T22:31:26Z"
 scope = ["crates/frob-gh/Cargo.toml", "deny.toml"]
 
 [[acceptance]]
