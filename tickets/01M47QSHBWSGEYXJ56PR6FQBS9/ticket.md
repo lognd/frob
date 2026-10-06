@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
 reporter = "lognd"
 created = "2026-10-06T04:33:17Z"
-updated = "2026-10-06T08:30:03Z"
+updated = "2026-10-06T08:35:22Z"
 scope = ["crates/frob-cli/**", "crates/frob-check/**", "crates/frob/**", "crates/gob-product/**", "crates/crunk/**", "crates/grimble/**"]
 
 [[links]]
