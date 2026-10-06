@@ -137,3 +137,13 @@ sys_rule!(
     "A vmodel ref or runnable resolves to nothing.",
     "Fires when a `ref` or `runnable` of a vmodel matches no unit although its target file is in the walk; a runnable that selects no test unit fires too. Several matches are SYS003 ambiguous-singleton. Unresolved when the target hides units or the match is May only."
 );
+sys_rule!(
+    Sys013,
+    "SYS013",
+    "sys-undeclared-flow",
+    Error,
+    Pplus,
+    false,
+    "An import or call edge between two owners with no flow between them.",
+    "Fires once per ordered pair of nodes when a Must import or call edge (TS, TSX, JSX component use, Python, C#, Rust) runs from code owned at Must by one node to code owned at Must by another and the model declares no flow between the two nodes in either direction. Edges into unowned (foreign) code or outside the repository are not checked. Unresolved when an edge is May or has no known target, or an end is owned only at May."
+);

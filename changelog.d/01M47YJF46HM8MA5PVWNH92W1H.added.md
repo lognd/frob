@@ -1,0 +1,1 @@
+The GRL printer: `grl::print` writes a syntax tree back as canonical text (bare field form, one clause per line), with a stability harness proving print is a fixed point and round-trips over every fixture and a generated tree family.
