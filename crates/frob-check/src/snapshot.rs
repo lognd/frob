@@ -81,6 +81,9 @@ pub struct FrobInputs {
     pub(crate) ledger: Option<LedgerState>,
     /// Why the ledger exists but could not be read; ledger rules then report required Unresolved, never silence.
     pub(crate) ledger_error: Option<String>,
+    /// Why a configured ledger ref is absent from a repository that has commits (a clone or a minimal `.git`); reported once, never as zero-subject ledger rules.
+    // frob:ticket 01M44VQ57WQW4G5JTZDDYEVJPW
+    pub(crate) ledger_missing: Option<String>,
     /// `[invariants]`.
     pub(crate) invariants: InvariantsConfig,
     /// True when `frob.toml` carries a `[tickets]` table, so a ledger is expected.
@@ -106,19 +109,22 @@ impl FrobInputs {
 
 /// Open the repository's ledger.
 ///
-/// `(None, None)` without a git work tree, ledger ref or tickets and milestones;
-/// `(None, Some(why))` when the ledger exists but cannot be read, so its rules fail loudly.
+/// `Absent` without a git work tree, ledger ref or tickets and milestones;
+/// `Unreadable` when the ledger exists but cannot be read, so its rules fail loudly;
+/// `Missing` when `[tickets]` is configured, the repository has commits and the ledger ref does not resolve.
 // frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
+// frob:ticket 01M44VQ57WQW4G5JTZDDYEVJPW
 fn open_ledger(
     root: &Path,
     cfg: LedgerConfig,
     clock: Arc<dyn gob_time::Clock>,
-) -> (Option<LedgerState>, Option<String>) {
+    configured: bool,
+) -> LedgerOpen {
     let repo = match gob_git::Repo::discover(root) {
         Ok(r) if r.work_dir().is_some() => r,
         Ok(_) | Err(_) => {
             tracing::info!(root = %root.display(), "no git work tree: ledger rules are skipped");
-            return (None, None);
+            return LedgerOpen::Absent;
         }
     };
     let ledger = Ledger::open(repo, cfg, clock);
@@ -128,15 +134,27 @@ fn open_ledger(
     let tip = match tip {
         Ok(oid) => oid.to_string(),
         Err(err) => {
+            // A repository without commits is a fresh `git init`: nothing to resolve yet.
+            let has_commits = ledger.repo().head().is_ok_and(|h| h.oid.is_some());
+            if configured && has_commits {
+                let name = ledger
+                    .ledger_ref()
+                    .unwrap_or_else(|_| ledger.config().ref_name.clone());
+                let why = format!(
+                    "ledger ref `{name}` is absent from this repository ({err}); fetch it (`git fetch <remote> {name}:{name}`) or, under goway, send it with the checkout, then rerun frob check"
+                );
+                tracing::warn!(%why, "configured ledger ref is absent: reporting one required Unresolved");
+                return LedgerOpen::Missing(why);
+            }
             tracing::info!(%err, "ledger ref does not resolve: ledger rules are skipped");
-            return (None, None);
+            return LedgerOpen::Absent;
         }
     };
     let tickets = match ledger.ticket_ids_at(&tip) {
         Ok(ids) => ids.len(),
         Err(err) => {
             tracing::warn!(%err, "ledger unreadable: ledger rules report required Unresolved");
-            return (None, Some(err.to_string()));
+            return LedgerOpen::Unreadable(err.to_string());
         }
     };
     // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
@@ -145,7 +163,7 @@ fn open_ledger(
         Ok(m) => m.len(),
         Err(err) => {
             tracing::warn!(%err, "milestones unreadable: ledger rules report required Unresolved");
-            return (None, Some(format!("milestones unreadable: {err}")));
+            return LedgerOpen::Unreadable(format!("milestones unreadable: {err}"));
         }
     };
     let state = LedgerState {
@@ -156,10 +174,35 @@ fn open_ledger(
     };
     if state.is_populated() {
         tracing::info!(tickets, milestones, tip = %state.tip, "ledger present");
-        (Some(state), None)
+        LedgerOpen::Present(Box::new(state))
     } else {
         tracing::info!(tip = %state.tip, "ledger holds no tickets or milestones: ledger rules are skipped");
-        (None, None)
+        LedgerOpen::Absent
+    }
+}
+
+/// What [`open_ledger`] found.
+// frob:ticket 01M44VQ57WQW4G5JTZDDYEVJPW
+enum LedgerOpen {
+    /// No ledger to judge; ledger rules are skipped.
+    Absent,
+    /// A ledger holding tickets or milestones.
+    Present(Box<LedgerState>),
+    /// The ledger exists but could not be read.
+    Unreadable(String),
+    /// The configured ledger ref is absent from a repository with commits.
+    Missing(String),
+}
+
+impl LedgerOpen {
+    /// The ledger, why it is unreadable, and why its configured ref is missing; at most one is set.
+    fn split(self) -> (Option<LedgerState>, Option<String>, Option<String>) {
+        match self {
+            Self::Absent => (None, None, None),
+            Self::Present(state) => (Some(*state), None, None),
+            Self::Unreadable(why) => (None, Some(why), None),
+            Self::Missing(why) => (None, None, Some(why)),
+        }
     }
 }
 
@@ -347,7 +390,9 @@ pub(crate) fn collect(
         .clock
         .clone()
         .unwrap_or_else(|| Arc::new(gob_time::SystemClock::pin()));
-    let (ledger, ledger_error) = open_ledger(root, ledger_cfg, clock);
+    let configured = tickets_configured(root);
+    let (ledger, ledger_error, ledger_missing) =
+        open_ledger(root, ledger_cfg, clock, configured).split();
     cx.timing.push("ledger", started.elapsed(), true);
     let invariants = InvariantsConfig::load(root)?;
 
@@ -391,8 +436,9 @@ pub(crate) fn collect(
             directives,
             ledger,
             ledger_error,
+            ledger_missing,
             invariants,
-            tickets_configured: tickets_configured(root),
+            tickets_configured: configured,
             changelog_exempt: opts.changelog_exempt,
         },
         findings: scan_findings,

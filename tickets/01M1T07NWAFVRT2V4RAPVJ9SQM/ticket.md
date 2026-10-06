@@ -3,15 +3,31 @@ id = "01M1T07NWAFVRT2V4RAPVJ9SQM"
 title = "A scope glob matching zero tracked files is accepted silently, granting a lease over nothing (5 instances in one session)"
 type = "task"
 flavour = "ux"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M1T07NYJGETZ4A744PSANMYZ"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T22:22:21Z"
+updated = "2026-10-06T06:08:37Z"
 aliases = ["T-3978"]
 labels = ["v1-cluster:C2", "triage:accepted"]
-scope = ["src/frob/tickets/_scope.py"]
+scope = ["crates/frob-lease/src/unmatched.rs", "crates/frob-lease/src/lib.rs", "crates/frob-lease/Cargo.toml", "crates/frob/src/lease_cmd.rs", "crates/frob/src/ticket/write.rs", "crates/frob/tests/ticket.rs", "crates/frob-worktree/src/work.rs", "crates/gob-git/src/status.rs", "docs/design/tickets.md", "Cargo.lock"]
+
+[[acceptance]]
+text = "A warning naming the glob fires on a zero-match glob in a populated repo"
+bound = true
+
+[[acceptance]]
+text = "A glob declared with a creates: label (new-file carve-out) stays quiet"
+bound = true
+
+[[acceptance]]
+text = "Empty repos and matching globs do not warn; a zero-match glob with no near candidate warns plainly"
+bound = true
+
+[[acceptance]]
+text = "All fixtures committed"
+bound = true
 +++
 
 A SCOPE GLOB THAT MATCHES ZERO TRACKED FILES IS ACCEPTED SILENTLY. Because scope

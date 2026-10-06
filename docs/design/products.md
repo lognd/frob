@@ -134,3 +134,33 @@ omitting it, and treats a sibling whose `--json` has another
 `schema_version` the same way (exit 1 under the default
 `[check] fail_on_unresolved = "required"`, cli.md section 2;
 boundaries.md section 6).
+
+## 7. One product front end (D97)
+
+Measured 2026-10-06: `crunk/src/check.rs` and `grimble/src/check.rs` share
+106 of 142 lines, the two `doctor.rs` and `workspace.rs` files overlap,
+and three crates (`crunk-check`, `grimble-check`, `frob-check`) each build
+the `gob.sibling/1` document (sibling-contract.md) with their own
+`sources_of`, `finding_json`, rules and exceptions code, while
+`frob-check` parses it a fourth way. Every new product or pack would copy
+them again.
+
+Decision: the product-neutral parts move down once.
+
+- `gob-check::sibling` owns the `gob.sibling/1` document: one emitter
+  from a `CheckRun` (findings, rules, exceptions, sources) and one parser
+  (`frob-check` merges through it). The schema is generated from its
+  types, so the contract has one owner and one schema test.
+- A new crate `gob-product` (above `gob-check` and `gob-cli`) holds the
+  `Product` trait: name, config root, how to run a check over a
+  workspace, extra doctor rows, extra verbs. It provides the generic
+  `check`, `doctor` and workspace discovery verbs; `crunk` and `grimble`
+  binaries become a `Product` impl plus `gob_product::main::<P>()`.
+  frob adopts the same trait for `check` and `doctor`; its other verbs
+  stay frob's.
+- Generated artifacts (schemas, reference pages) are registered by each
+  product through an `inventory` entry that `cargo dev gen` iterates, in
+  place of product-specific calls in `gob-dev`. `gob-dev` still links the
+  products (inventory needs the code linked), but it no longer names
+  their functions, so adding a product is a registration, not a gob-dev
+  edit.

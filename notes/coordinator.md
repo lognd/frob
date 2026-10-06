@@ -161,6 +161,22 @@ experimental. Record such lands in the status log.
 
 ## Status log (newest first)
 
+- 2026-10-06: 0.532.0 crates.io publish finished after the owner widened
+  the registry token (first run: 403 on gob-fs; job re-run, 41 published,
+  2 already present, one 429 retried). Wave dispatched: ~JEN2C8Q (C#
+  usings and calls), ~ECEBCQ1 (.sln/.csproj), ~MDZJQZQ (ci sibling
+  binaries), ~DYEVJPW (missing ledger ref); shared brief in the session
+  scratchpad. Owner asked for a repo map, abstractions, sensible language
+  engines and ruff/ty-style tests and CI: design D96 (language-engines.md:
+  facts about what is written live in gob; markup, style, const_value,
+  project_model capabilities; gob-frameworks), D97 (products.md 7:
+  gob-check::sibling, gob-product), D98 (build-test-ci.md 6). Epics
+  ~N4R2XN5 (web engine; the four crunk-epic engine tickets re-parented,
+  ~XPMQ50D dropped as superseded), ~VX11TG4 (product front end; ~YDDKPEY
+  superseded), ~M9NHDJP (ruff/ty tests and CI). Pitfall: `ticket update
+  --set parent=$EMPTY` clears the parent (~V5F85PC); the show JSON keeps
+  the id under data.summary.id.
+
 - 2026-10-03: ~CFM8QB0 changed the fold (acceptance bound only from
   measured passing evidence, through the moved maps), so every ticket
   with evidence drifted under the new binary and the new binary's land

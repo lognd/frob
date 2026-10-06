@@ -376,6 +376,83 @@ fn str_step(name: &str) -> Option<RetType> {
     })
 }
 
+// frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
+
+/// True when `name` is a C# keyword type (`string`, `int`, `object`, ...): always the BCL, never a repository type.
+pub(crate) fn is_dotnet_keyword_type(name: &str) -> bool {
+    matches!(
+        name,
+        "string"
+            | "object"
+            | "bool"
+            | "byte"
+            | "sbyte"
+            | "char"
+            | "short"
+            | "ushort"
+            | "int"
+            | "uint"
+            | "long"
+            | "ulong"
+            | "float"
+            | "double"
+            | "decimal"
+            | "nint"
+            | "nuint"
+            | "dynamic"
+    )
+}
+
+/// True when `name` is a .NET core library type that is unambiguous across engines (a repository type of that name must veto it).
+pub(crate) fn is_dotnet_core_type(name: &str) -> bool {
+    matches!(
+        name,
+        "Console"
+            | "Math"
+            | "String"
+            | "Convert"
+            | "Enumerable"
+            | "List"
+            | "Dictionary"
+            | "HashSet"
+            | "Queue"
+            | "Stack"
+            | "SortedDictionary"
+            | "KeyValuePair"
+            | "Tuple"
+            | "Task"
+            | "File"
+            | "Path"
+            | "Directory"
+            | "Environment"
+            | "Guid"
+            | "DateTime"
+            | "TimeSpan"
+            | "StringBuilder"
+            | "Array"
+            | "Buffer"
+            | "Activator"
+            | "Interlocked"
+            | "Monitor"
+            | "Exception"
+            | "ArgumentException"
+            | "ArgumentNullException"
+            | "ArgumentOutOfRangeException"
+            | "InvalidOperationException"
+            | "NotImplementedException"
+            | "NotSupportedException"
+            | "KeyNotFoundException"
+            | "IOException"
+            | "StringComparer"
+            | "Regex"
+    )
+}
+
+/// True when `root` begins a .NET framework namespace (`System.Linq`, `Microsoft.Extensions`).
+pub(crate) fn is_dotnet_namespace_root(root: &str) -> bool {
+    matches!(root, "System" | "Microsoft")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
