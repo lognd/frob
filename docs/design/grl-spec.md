@@ -236,6 +236,7 @@ type       = "int" | "float" | "string" | "bool" | "glob" | "regex"
 clause     = find | where | quant | def | report | note | fix | unresolved ;
 find       = "find" NAME ":" source { rel } [ "where" cond ] ;
 source     = shape | side ;
+field_eq   = [ "." ] NAME "=" literal ;         (* `.tag = "img"` and `tag = "img"` parse alike; the printer emits the bare form *)
 shape      = KIND [ "(" field_eq { "," field_eq } ")" ]
            | SNIPPET [ "as" ( KIND | "roles" ) ]
            | "(" shape { "|" shape } ")" ;
@@ -349,6 +350,12 @@ Side relations are typed from their JSON schemas (config, diff, lease,
 model); a misspelt column is GRL001 like any other name (survey 8.5
 item 2). A rule that reads a side relation must declare it in `needs`,
 which also decides when the rule must re-run (rules.md 3).
+
+In a kind pattern the field name may be written with or without its
+leading dot: `element(.tag = "img")` and `element(tag = "img")` are the
+same pattern. The bare form is canonical and is what the printer emits
+(decision recorded under ~1PBDXSF); the dotted form is accepted because
+the dot is how the same field is read in a condition (`e.tag`, section 6).
 
 ## 7. Semantics
 
