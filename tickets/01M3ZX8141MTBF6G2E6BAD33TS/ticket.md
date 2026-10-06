@@ -2,7 +2,8 @@
 id = "01M3ZX8141MTBF6G2E6BAD33TS"
 title = "Ticket branch: [tickets] branch knob and orphan-branch bootstrap"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
