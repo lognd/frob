@@ -2,14 +2,14 @@
 id = "01M47QKW1R6KY7K1H6N4M1BX5H"
 title = "Web conformance corpus: TS, TSX, CSS, HTML fixtures and capability-matrix rows end to end"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T04:30:11Z"
-updated = "2026-10-06T04:32:19Z"
-scope = ["crates/gob-symbols/**", "crates/gob-languages/**", "crates/frob/tests/**", "crates/grimble/tests/**", "crates/crunk/tests/**", "docs/**"]
+updated = "2026-10-06T11:25:10Z"
+scope = ["crates/gob-symbols/**", "crates/gob-languages/**", "crates/frob/tests/**", "crates/grimble/tests/**", "crates/crunk/tests/**", "docs/reference/**", "crates/frob/Cargo.toml", "Cargo.lock"]
 
 [[links]]
 kind = "blocked-by"
