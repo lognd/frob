@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:49Z"
-updated = "2026-10-04T11:28:49Z"
+updated = "2026-10-06T04:32:26Z"
 idempotency_key = "crunk-plan-jsx"
 labels = ["area:crunk"]
 scope = ["crates/crunk-ingest/src/jsx/**", "crates/crunk-ingest/tests/jsx*.rs"]
@@ -24,6 +24,10 @@ target = "01M43ARXVD5PXP6ZBVFC2F4ZMQ"
 [[links]]
 kind = "blocked-by"
 target = "01M43ARY91XZ35DN9SCHRHS033"
+
+[[links]]
+kind = "blocked-by"
+target = "01M47QKSBYX7YFQHV3VVGKB025"
 
 [[acceptance]]
 text = """Given `<div style={{ margin: '13px' }} className="p-[7px] " + x>`, when ingested, then the style declaration and the static class fragment are produced and the dynamic part is flagged"""
