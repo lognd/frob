@@ -1,0 +1,8 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob/src/ticket/migrate_cmd.rs"]
+new = ["crates/frob/src/ticket/migrate_cmd.rs", "frob.toml", "crates/frob-worktree/src/config.rs", ".gitattributes", "goway.toml", ".github/workflows/ci.yml"]
+reason = "from ~BAD33TS notes"
+at = "2026-10-06T15:10:08Z"
+actor = "lognd"
+rev = 1

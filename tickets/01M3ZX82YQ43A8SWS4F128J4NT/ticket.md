@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-06T15:10:07Z"
+updated = "2026-10-06T15:10:08Z"
 idempotency_key = "m2-tb-migrate"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob/src/ticket/migrate_cmd.rs"]
+scope = ["crates/frob/src/ticket/migrate_cmd.rs", "frob.toml", "crates/frob-worktree/src/config.rs", ".gitattributes", "goway.toml", ".github/workflows/ci.yml"]
 
 [[links]]
 kind = "blocked-by"
