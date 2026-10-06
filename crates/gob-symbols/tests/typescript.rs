@@ -67,7 +67,7 @@ fn unknown_calls(g: &SymbolGraph, from: &str) -> Vec<(String, Option<GapReason>)
         .collect()
 }
 
-const SAMPLE: &str = r#"/** The widget. */
+const SAMPLE: &str = r"/** The widget. */
 export class Widget extends Base {
   private secret = 1;
   #hidden = 2;
@@ -88,7 +88,7 @@ export const VALUE = 42;
 let counter = 0;
 namespace Outer.Inner { export function deep() {} }
 export default function () {}
-"#;
+";
 
 #[test]
 // frob:tests crates/gob-symbols/src/typescript/fold.rs::fold_tree
@@ -163,7 +163,7 @@ fn a_jsdoc_comment_is_the_doc_facet_not_the_body() {
 // frob:tests crates/gob-symbols/src/typescript/fold.rs::Fold.module_call
 // frob:tests crates/gob-symbols/src/typescript/fold.rs::Fold.bind_require
 fn every_import_form_is_an_edge_and_a_binding() {
-    let src = r#"import Def, { a as b, c } from './m';
+    let src = r"import Def, { a as b, c } from './m';
 import * as ns from '../n';
 import type { T } from './types';
 import './side';
@@ -177,7 +177,7 @@ const { p, k: l } = require('./destructured');
 const pick = require('./pick').one;
 const dyn = (n: string) => import(`./plugins/${n}`);
 const comp = (n: string) => require(n);
-"#;
+";
     let f = fold("src/main.ts", src);
     assert!(f.parse_status.is_complete());
     let edges: Vec<&str> = f.imports.iter().map(|e| e.target.as_str()).collect();
@@ -380,7 +380,7 @@ fn calls_resolve_by_scope_import_and_receiver() {
     let g = graph(&[
         (
             "src/k.ts",
-            r#"import { run } from './run';
+            r"import { run } from './run';
 import * as util from './util';
 import { Thing } from './thing';
 export class Box {
@@ -390,7 +390,7 @@ export class Box {
 }
 export function local() { const f = () => 1; f(); helper(); }
 function helper() {}
-"#,
+",
         ),
         ("src/run.ts", "export function run() {}"),
         ("src/util.ts", "export function go() {}"),
@@ -535,13 +535,13 @@ export const Footer = () => <footer>done</footer>;
 #[test]
 // frob:tests crates/gob-symbols/src/typescript/mod.rs::test_items
 fn test_runner_calls_are_test_items() {
-    let vitest = r#"import { describe, it, expect } from 'vitest';
+    let vitest = r"import { describe, it, expect } from 'vitest';
 describe('math', () => {
   it('adds', () => { expect(1 + 1).toBe(2); });
   it.skip('later', () => {});
   it('no body');
 });
-"#;
+";
     let f = extract_term("src/math.test.ts", vitest);
     let items = test_items(&f.term);
     assert_eq!(items.len(), 3, "{items:?}");
