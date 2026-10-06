@@ -1,0 +1,298 @@
+# Rule coverage gaps: one umbrella ticket per product lists its uncovered rules.
+# This file may only shrink; see "Rule coverage" in crates/gob-mdtest/FORMAT.md.
+# crunk registers no rules yet, so it has no entries.
+
+[[gap]]
+product = "frob"
+rule = "AFFECT001"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "CFG001"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "CI001"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "CI003"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "CI006"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "CI007"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "CI010"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "CI014"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "COV003"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "DRIFT001"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "DRIFT002"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "DRIFT003"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "DRIFT004"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "EXC005"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "PERF001"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "PROC001"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "READ001"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "SCOPE001"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "SIB001"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "TEST001"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "TICK001"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "TICK002"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "TICK003"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "TICK004"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "TICK005"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "TOOL001"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
+rule = "TOOL002"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "grimble"
+rule = "MDL000"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL001"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL002"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL003"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL004"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL005"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL006"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL007"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL008"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL009"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL010"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL011"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL012"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL013"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL014"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL015"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL016"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL017"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL019"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL020"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "MDL021"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "SYS001"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "SYS002"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "SYS003"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "SYS004"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "SYS005"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "SYS006"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "SYS007"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "SYS008"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "SYS009"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "SYS010"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "SYS011"
+ticket = "~QSK0WB1"

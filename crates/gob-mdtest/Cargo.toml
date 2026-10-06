@@ -14,9 +14,14 @@ gob-diagnostics = { path = "../gob-diagnostics" }
 gob-rules = { path = "../gob-rules" }
 gob-text = { path = "../gob-text" }
 insta = "1"
+serde = { version = "1", features = ["derive"] }
 thiserror = "2"
+toml = "1"
 tracing = "0.1"
 walkdir = "2"
+
+[dev-dependencies]
+tempfile = "3"
 
 [lints]
 workspace = true

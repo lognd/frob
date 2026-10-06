@@ -18,6 +18,7 @@ serde_json = "1"
 tracing = "0.1"
 
 [dev-dependencies]
+gob-mdtest = { path = "../gob-mdtest" }
 tempfile = "3"
 
 [lints]
