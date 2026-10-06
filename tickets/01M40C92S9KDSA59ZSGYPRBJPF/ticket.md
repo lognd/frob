@@ -14,6 +14,10 @@ idempotency_key = "m2-applicable-reason"
 labels = ["milestone:2"]
 scope = ["crates/gob-check/**", "crates/frob-check/**", "crates/grimble-check/**", "crates/frob-pm/src/rules/**"]
 
+[[links]]
+kind = "superseded-by"
+target = "01M48R00MZS92F2KY5T60SBHYV"
+
 [[acceptance]]
 text = "Given a rule that is NotApplicable with a reason, when frob check --json runs, then the reason appears once in the not-applicable list and the count, and no finding is produced"
 bound = false
