@@ -7,7 +7,7 @@ priority = "low"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:21Z"
-updated = "2026-10-06T12:59:21Z"
+updated = "2026-10-06T13:14:13Z"
 scope = ["crates/gob-dev/**", "crates/gob-symbols/src/languages_page.rs", "docs/reference/**"]
 
 [[acceptance]]
@@ -20,6 +20,14 @@ bound = false
 
 [[acceptance]]
 text = "a generated-files manifest lists every generated path and GEN001 fails on an unlisted generated file"
+bound = false
+
+[[acceptance]]
+text = "cargo test -p gob-dev has one freshness test per generated kind (a stale rule page fails cargo test naming the path), and a test fails when a new kind has no freshness test"
+bound = false
+
+[[acceptance]]
+text = ".gitattributes marks every generated path linguist-generated -diff from the generated-files manifest, and GEN001 fails when that block is stale"
 bound = false
 +++
 
