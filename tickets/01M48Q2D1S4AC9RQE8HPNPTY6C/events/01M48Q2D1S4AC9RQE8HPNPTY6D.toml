@@ -1,0 +1,16 @@
+kind = "create"
+title = "frob-live: the live dashboard binary, shipped in the frob wheel, reached by board --live and stats --live"
+type = "story"
+category = "todo"
+priority = "medium"
+parent = "01M48Q294B33TB7C0GSATZRGJB"
+scope = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock"]
+acceptance = ["board --live and stats --live start frob-live and q quits", "frob's dependency tree has no ratatui or notify", "the wheel and archives contain frob-live and the smoke test runs it with --help"]
+body = "New crate crates/frob-live (ratatui, notify): redraws the frob-pm Board and frob-metrics stats values, refreshing on ledger, worktree and file changes (debounced) and on a timer for time windows, like clocx --live. frob execs the sibling binary found next to itself (sibling discovery, D87) for --live; frob links no TUI. The wheel and release archives ship frob-live beside frob, grimble and crunk."
+at = "2026-10-06T13:39:53Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M48Q2AQXY69YKK3D2DC05ZWR"
