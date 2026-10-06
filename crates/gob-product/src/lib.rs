@@ -13,7 +13,7 @@ mod doctor;
 mod product;
 pub mod workspace;
 
-pub use check::Check;
+pub use check::{Check, sibling_check};
 pub use doctor::Doctor;
 pub use gob_cli;
 pub use product::{CheckOptions, Product, ProductRun};

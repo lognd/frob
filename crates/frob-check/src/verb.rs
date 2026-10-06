@@ -1,7 +1,10 @@
 //! The `check` verb: flags in, [`crate::run`] out, exit code from `fail_on`.
 
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
-use gob_cli::{Cli, CliError, Command, Context, ExitCode, Outcome, Payload, Refusal, RefusalClass};
+use gob_cli::{
+    Cli, CliError, Command, CommandMeta, Context, Described, ExitCode, Outcome, Payload, Refusal,
+    RefusalClass,
+};
 use gob_diagnostics::{FindingRecord, MemorySources};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -112,13 +115,13 @@ impl CheckData {
     }
 }
 
-/// Run the rules over the repository and report findings; exit 1 at or above `fail_on`.
-#[derive(Debug, Clone, gob_cli::Command)]
-#[command(
-    verb = "check",
-    product = "frob",
-    exits(ok, negative, usage, refused, internal)
-)]
+/// One-line summary of `frob check` (the generic verb's metadata).
+pub const CHECK_SUMMARY: &str =
+    "Run the rules over the repository and report findings; exit 1 at or above `fail_on`.";
+
+// frob:ticket 01M47QSHBWSGEYXJ56PR6FQBS9
+/// The flags and run behind `frob check`; the binary runs it through the generic `gob-product` verb.
+#[derive(Debug, Clone)]
 pub struct Check {
     ticket: Option<String>,
     only: Vec<String>,
@@ -219,6 +222,24 @@ fn cli_error(err: CheckError) -> CliError {
         ),
         CheckError::Walk(_) | CheckError::FixIo(_) => CliError::internal(err),
     }
+}
+
+impl Described for Check {
+    const META: CommandMeta = CommandMeta {
+        verb: "check",
+        product: "frob",
+        idempotent: false,
+        dry_run: false,
+        exits: &[
+            ExitCode::Ok,
+            ExitCode::Negative,
+            ExitCode::Usage,
+            ExitCode::Refused,
+            ExitCode::Internal,
+        ],
+        summary: CHECK_SUMMARY,
+        module: module_path!(),
+    };
 }
 
 impl Command for Check {

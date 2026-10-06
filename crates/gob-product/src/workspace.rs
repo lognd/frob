@@ -35,7 +35,7 @@ pub fn require_config<P: Product>(verb: &str, ctx: &Context) -> Result<(), CliEr
         tracing::debug!(verb, "verb needs no config file");
         return Ok(());
     }
-    let root = locate_root(P::NAME, &ctx.cwd);
+    let root = P::locate_root(&ctx.cwd);
     if P::has_config(&root) {
         return Ok(());
     }
