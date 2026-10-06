@@ -7,8 +7,8 @@ priority = "high"
 parent = "01M48Q27GE8C1P6JS1CXKTCQ3S"
 reporter = "lognd"
 created = "2026-10-06T13:39:48Z"
-updated = "2026-10-06T22:38:03Z"
-scope = ["crates/frob/**", "crates/frob-ledger/**", "crates/frob-lease/**", "crates/frob-worktree/**", "docs/**"]
+updated = "2026-10-06T22:39:09Z"
+scope = ["crates/frob/**", "crates/frob-ledger/**", "crates/frob-lease/**", "crates/frob-worktree/**", "docs/**", "crates/gob-cli/**", "crates/gob-dev/**"]
 
 [[acceptance]]
 text = "each folded verb's behaviour and JSON is reachable through its new form (tests moved, not deleted)"
