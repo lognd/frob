@@ -1,6 +1,6 @@
 //! The GRL printer: a syntax tree back to canonical text (grl-spec.md section 11, `rule fmt`).
 //!
-//! [`print`] is the one canonical layout: two-space indentation, headers, then clauses (one per
+//! [`print()`] is the one canonical layout: two-space indentation, headers, then clauses (one per
 //! line), then examples, then `explain`, with a blank line between the groups and between rules.
 //! It is a fixed point of the parser: for every tree the parser can produce,
 //! `parse(print(t)) = t` up to source ranges, and `print(parse(print(t))) = print(t)`
@@ -54,7 +54,7 @@ pub fn print(file: &File) -> String {
 }
 
 // frob:ticket 01M47YJF46HM8MA5PVWNH92W1H
-/// Print one rule in canonical form (the same text [`print`] writes for it).
+/// Print one rule in canonical form (the same text [`print()`] writes for it).
 pub fn print_rule(rule: &Rule) -> String {
     let mut out = String::new();
     rule_text(&mut out, rule);
