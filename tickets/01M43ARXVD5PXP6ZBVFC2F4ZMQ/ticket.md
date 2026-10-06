@@ -2,7 +2,8 @@
 id = "01M43ARXVD5PXP6ZBVFC2F4ZMQ"
 title = "gob-symbols: bounded constant evaluation of TS literals"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
