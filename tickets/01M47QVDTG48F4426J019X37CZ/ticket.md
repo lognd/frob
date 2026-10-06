@@ -2,13 +2,14 @@
 id = "01M47QVDTG48F4426J019X37CZ"
 title = "cargo-deny, cargo-shear, typos and MSRV steps in cargo dev ci"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:19Z"
-updated = "2026-10-06T10:25:43Z"
+updated = "2026-10-06T10:55:36Z"
 scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "deny.toml", "typos.toml", "frob.toml", "Cargo.toml"]
 
 [[acceptance]]

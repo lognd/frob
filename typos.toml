@@ -1,0 +1,49 @@
+# typos configuration (build-test-ci.md section 4, D98). Every exclusion and word carries a reason.
+[files]
+extend-exclude = [
+  # The ticket ledger is generated event data (ULIDs, hashes, test lists), not prose we edit.
+  "tickets/",
+  # Working notes and imported v1 history are kept verbatim (deliberate shorthand such as Pn, ANF,
+  # FO); no history rewrite.
+  "notes/",
+  "CHANGELOG.md",
+  "CHANGELOG-v1.md",
+  # Lockfiles hold hashes and crate names we do not control.
+  "Cargo.lock",
+  "frob.lock",
+  # Corpora and fixtures contain deliberately broken or foreign text.
+  "crates/*/tests/corpus/**",
+  "crates/*/tests/mdtest/**",
+  "crates/*/tests/mdtest_fail/**",
+  "crates/*/tests/fixtures/**",
+  "tests/crunk-parity/fixtures/**",
+]
+
+# Deliberate tokens; each group says why it is not a typo.
+[default.extend-words]
+# Rule-id and language-name fragments, short identifiers and test inputs.
+pn = "pn"          # PN-prefixed rule ids and pn_* test names
+ba = "ba"          # short identifier in prop tests and design tables
+fo = "fo"          # short identifier in the grimble fold code
+caf = "caf"        # short identifier and cafe-style fixture word in tests
+ket = "ket"        # fragment of an identifier/hash literal in tests and docs
+wya = "wya"        # fragment of a hash literal in release code
+ot = "ot"          # fragment in the TypeScript fold test data
+rela = "rela"      # fragment of the relative-path status parser in gob-git
+abl = "abl"        # fragment in the mirror model notes
+lits = "lits"      # abbreviation of literals in the TypeScript fold code
+nd = "nd"          # short identifier in the board renderer
+ratatui = "ratatui" # the ratatui crate
+# Spellings that tests feed to the code on purpose (did-you-mean, unknown-key suggestions).
+retrys = "retrys"
+provder = "provder"
+chekc = "chekc"
+projet = "projet"
+flor = "flor"
+elemnt = "elemnt"
+mashine = "mashine"
+wher = "wher"
+repositorys = "repositorys"
+# Accepted spelling: used in diagnostics text and asserted by tests.
+unparseable = "unparseable"
+weas = "weas" # fragment of a grammar token in grmb-spec
