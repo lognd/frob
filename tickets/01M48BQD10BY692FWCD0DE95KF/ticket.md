@@ -3,10 +3,10 @@ id = "01M48BQD10BY692FWCD0DE95KF"
 title = "Bump rustls past RUSTSEC-2026-0285 (frob-gh pins =0.23.43)"
 type = "task"
 category = "todo"
-priority = "medium"
+priority = "high"
 reporter = "lognd"
 created = "2026-10-06T10:21:39Z"
-updated = "2026-10-06T10:21:39Z"
+updated = "2026-10-06T10:55:33Z"
 scope = ["crates/frob-gh/Cargo.toml", "deny.toml"]
 
 [[acceptance]]

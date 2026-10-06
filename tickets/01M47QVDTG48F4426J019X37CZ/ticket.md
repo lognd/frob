@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:19Z"
-updated = "2026-10-06T10:25:43Z"
+updated = "2026-10-06T10:43:20Z"
 scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "deny.toml", "typos.toml", "frob.toml", "Cargo.toml"]
 
 [[acceptance]]
