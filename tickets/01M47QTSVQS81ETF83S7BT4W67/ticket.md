@@ -8,16 +8,16 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:33:59Z"
-updated = "2026-10-06T05:41:21Z"
+updated = "2026-10-06T06:43:33Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
 text = "a corpus with the header produces and checks per-block snapshots"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a changed rendering fails with an insta diff"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "FORMAT.md documents the header"
