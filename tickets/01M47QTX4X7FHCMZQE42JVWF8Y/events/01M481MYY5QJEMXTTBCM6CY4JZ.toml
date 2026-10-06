@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["idempotence and round-trip tests over all fixtures", "a proptest generator for each language with a shrinking failure example in a self-test"]
+new = ["grimble fmt: format(format(x)) equals format(x) and parse(format(x)) preserves U over every .grmb fixture", "a .grmb proptest generator with a self-test where a broken printer fails with a shrunk minimal example"]
+reason = "GRL printer half split to ~NH92W1H (no GRL printer exists yet)"
+moved = [0, 0]
+at = "2026-10-06T07:25:29Z"
+actor = "lognd"
+rev = 1
