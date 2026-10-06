@@ -9,6 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
+gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
 thiserror = "2"
