@@ -9,9 +9,12 @@
 
 // frob:ticket 01M3ZR5KCPY3E3NFCVFS404RDJ
 // frob:ticket 01M3ZVQA77ZEK9DXEN5Z0XMZEG
+// frob:ticket 01M44YQW33GJMXQ8PQBECEBCQ1
 
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
+
+use crate::dotnet::{Assignment, DotnetProjects, MalformedProject};
 
 /// Named direct dependencies: (extern crate name with dashes mapped to underscores, crate directory).
 type NamedDeps = Vec<(String, String)>;
@@ -27,10 +30,11 @@ pub struct CrateDeps {
     direct: HashMap<String, NamedDeps>,
     names: HashMap<String, Option<String>>,
     closure: HashMap<String, BTreeSet<String>>,
+    dotnet: DotnetProjects,
 }
 
 /// Joins `base` and a relative `rel` (`..` and `.` folded) into a repo-relative `/` path.
-fn join_rel(base: &str, rel: &str) -> String {
+pub(crate) fn join_rel(base: &str, rel: &str) -> String {
     let mut parts: Vec<&str> = base.split('/').filter(|p| !p.is_empty()).collect();
     for seg in rel.split('/') {
         match seg {
@@ -109,6 +113,7 @@ impl CrateDeps {
             direct: HashMap::new(),
             names: HashMap::new(),
             closure: HashMap::new(),
+            dotnet: DotnetProjects::new(root),
         };
         if let Ok(text) = std::fs::read_to_string(root.join("Cargo.toml")) {
             let mut in_ws = false;
@@ -129,6 +134,12 @@ impl CrateDeps {
 
     /// The directory of the crate owning repo-relative file `path`, when a manifest sits above it.
     pub fn crate_of(&mut self, path: &str) -> Option<String> {
+        if is_cs(path) {
+            return match self.dotnet.assign(path) {
+                Assignment::Project(p) => Some(p),
+                Assignment::Ignored | Assignment::None => None,
+            };
+        }
         let dir = path.rsplit_once('/').map_or("", |(d, _)| d).to_owned();
         if let Some(hit) = self.owner.get(&dir) {
             return hit.clone();
@@ -152,6 +163,16 @@ impl CrateDeps {
         if let Some(d) = self.direct.get(krate) {
             return d.clone();
         }
+        if is_csproj(krate) {
+            let deps: NamedDeps = self
+                .dotnet
+                .references(krate)
+                .into_iter()
+                .map(|r| (self.dotnet.assembly_name(&r), r))
+                .collect();
+            self.direct.insert(krate.to_owned(), deps.clone());
+            return deps;
+        }
         let text =
             std::fs::read_to_string(self.root.join(krate).join("Cargo.toml")).unwrap_or_default();
         let mut deps = Vec::new();
@@ -173,6 +194,11 @@ impl CrateDeps {
     pub fn package_name(&mut self, krate: &str) -> Option<String> {
         if let Some(n) = self.names.get(krate) {
             return n.clone();
+        }
+        if is_csproj(krate) {
+            let name = Some(self.dotnet.assembly_name(krate));
+            self.names.insert(krate.to_owned(), name.clone());
+            return name;
         }
         let text =
             std::fs::read_to_string(self.root.join(krate).join("Cargo.toml")).unwrap_or_default();
@@ -210,14 +236,52 @@ impl CrateDeps {
 
     /// True when code in crate `from` can call code in crate `to` (itself or a transitive dependency).
     pub fn can_reach(&mut self, from: &str, to: &str) -> bool {
+        if (is_csproj(from) && self.dotnet.is_unresolved(from))
+            || (is_csproj(to) && self.dotnet.is_unresolved(to))
+        {
+            return true;
+        }
         from == to || self.transitive_deps(from).iter().any(|d| d == to)
     }
 
     /// Like [`Self::can_reach`] for files, never ruling out a file with no manifest above it.
     pub fn file_can_reach(&mut self, from_file: &str, to_file: &str) -> bool {
         match (self.crate_of(from_file), self.crate_of(to_file)) {
-            (Some(a), Some(b)) => self.can_reach(&a, &b),
+            (Some(a), Some(b)) if is_csproj(&a) == is_csproj(&b) => self.can_reach(&a, &b),
             _ => true,
+        }
+    }
+}
+
+/// True for a C# source path.
+fn is_cs(path: &str) -> bool {
+    crate::dotnet::has_ext(path, "cs")
+}
+
+/// True when a package id is a `.csproj` path (a .NET project package).
+fn is_csproj(id: &str) -> bool {
+    id.ends_with(".csproj")
+}
+
+impl CrateDeps {
+    /// Malformed `.csproj` and `.sln` files among repo-relative `files` (each an Unresolved project).
+    pub fn malformed_projects(&mut self, files: &[&str]) -> Vec<MalformedProject> {
+        self.dotnet.malformed(files)
+    }
+
+    /// The `.csproj` packages a `.sln` lists, repo-relative.
+    pub fn solution_packages(&self, sln: &str) -> Vec<String> {
+        self.dotnet.solution_projects(sln).unwrap_or_default()
+    }
+
+    /// Namespaces the SDK imports project-wide for the project owning C# file `path` (empty when none).
+    pub fn implicit_usings_of(&mut self, path: &str) -> Vec<String> {
+        match self.dotnet.assign(path) {
+            Assignment::Project(p) => match self.dotnet.load(&p) {
+                Ok(proj) => proj.implicit_usings(),
+                Err(_) => Vec::new(),
+            },
+            Assignment::Ignored | Assignment::None => Vec::new(),
         }
     }
 }

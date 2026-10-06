@@ -183,6 +183,37 @@ are salvaged AND reported (PARSE002 keeps firing; Kotlin's silent-zero
 case cannot recur because an adapter returning zero symbols from a tree
 with ERROR nodes is a conformance failure).
 
+### Packages and project files
+
+A package is the unit that owns files and bounds reach: a Cargo crate (the
+directory of the nearest `Cargo.toml`) or a .NET project (the repo-relative
+path of the nearest enclosing `.csproj`). `gob-symbols` models .NET projects
+in `dotnet.rs` and exposes them through the same `CrateDeps` queries
+(`crate_of`, `transitive_deps`, `can_reach`, `extern_crates`), so ownership,
+reach and test selection work unchanged.
+
+- A `.sln` lists projects (solution folders are recorded and dropped); a
+  `.csproj`, SDK-style or legacy, yields `AssemblyName`, `RootNamespace`,
+  `TargetFramework(s)`, `LangVersion`, `ImplicitUsings`, `PackageReference`
+  names and `ProjectReference` targets.
+- A `.cs` file belongs to the nearest enclosing project directory. SDK-style
+  projects compile `**/*.cs` by default (dot directories excluded) and then
+  apply `Compile` include, exclude and remove items; legacy projects compile
+  only what they list. `bin/` and `obj/` directly under the project are build
+  output: such files belong to no project.
+- A `ProjectReference` is a package dependency edge; a `.cs` file can only
+  reach files in its own project and in projects it references transitively.
+  Reach between a .NET file and a Cargo file is never ruled out.
+- `ImplicitUsings` plus `<Using>` items yield the project-wide namespaces
+  (`CrateDeps::implicit_usings_of`), per SDK (base, Web, Worker), for import
+  resolution.
+- A malformed `.csproj` or `.sln` is never dropped: `BuildStats` lists it in
+  `malformed_projects` with the reason, its project stays Unresolved, and
+  reach into or out of it is never ruled out.
+- MSBuild conditions are not evaluated, `$(Property)` references in item
+  paths are not expanded, and files linked from outside the project
+  directory are not assigned.
+
 ## 4. The directive DSL
 
 Grammar unchanged: `frob:<verb> <target> [key="value" ...]` in any
