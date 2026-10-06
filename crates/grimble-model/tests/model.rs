@@ -112,6 +112,21 @@ fn mounting_prefixes_anchors_and_the_term_binds_the_prefix() {
 }
 
 #[test]
+// frob:tests crates/grimble-model/src/adapter.rs::GrmbAdapter
+fn the_adapter_declares_exactly_its_matrix_row() {
+    let a = GrmbAdapter;
+    let row = gob_caps::row(gob_caps::Lang::Grmb);
+    assert_eq!(
+        gob_symbols::lang_of_tag(a.language()),
+        Some(gob_caps::Lang::Grmb)
+    );
+    assert_eq!(a.fidelity(), row.fidelity);
+    for c in gob_caps::Capability::ALL {
+        assert_eq!(a.capabilities().precision(c), row.cell(c), "{}", c.name());
+    }
+}
+
+#[test]
 // frob:tests crates/grimble-model/src/adapter.rs::grammar_identity
 fn the_adapter_is_f4_and_folds_through_the_gob_symbols_contract() {
     let a = GrmbAdapter;

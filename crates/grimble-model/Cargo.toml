@@ -12,6 +12,7 @@ authors.workspace = true
 workspace = true
 
 [dependencies]
+gob-caps = { version = "0.532.0", path = "../gob-caps" }
 gob-directives = { version = "0.532.0", path = "../gob-directives" }
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }

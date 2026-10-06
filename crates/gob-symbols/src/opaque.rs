@@ -5,7 +5,7 @@
 use gob_languages::ParseLimits;
 
 use crate::adapter::{
-    Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
+    Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
 use crate::fold::opaque_file;
 use crate::pipeline::EXTRACTOR_VERSION;
@@ -24,11 +24,11 @@ impl Adapter for OpaqueAdapter {
     }
 
     fn fidelity(&self) -> Fidelity {
-        Fidelity::F0
+        gob_caps::lang_fidelity(Lang::OpaqueText)
     }
 
     fn capabilities(&self) -> CapabilityDecl {
-        CapabilityDecl::default()
+        CapabilityDecl::for_lang(Lang::OpaqueText)
     }
 
     fn parse(&self, _text: &str, _limits: &ParseLimits) -> ConcreteTree {

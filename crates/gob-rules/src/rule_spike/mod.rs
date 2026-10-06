@@ -1,7 +1,7 @@
 //! SPIKE (~9R52NCF, epic ~AYNV7BN): the compile-time story of D107 on one TODO001-shaped rule.
 //!
-//! Additive and self-contained: a stub capability matrix ([`caps`], standing in for the not yet
-//! existing `gob-caps`), [`RuleDef`], the [`FileRule`] host-trait form, and one example rule
+//! Additive and self-contained: the capability matrix ([`caps`], a re-export of
+//! `gob-caps`), [`RuleDef`], the [`FileRule`] host-trait form, and one example rule
 //! (`todo001`) declared with the `#[rule]` attribute. Nothing here is used by production code;
 //! the old `#[derive(Rule)]` is untouched. Do not build on this module: the migration tickets
 //! replace it.

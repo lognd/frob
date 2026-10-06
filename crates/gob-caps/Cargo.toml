@@ -1,0 +1,19 @@
+[package]
+name = "gob-caps"
+version.workspace = true
+description = "The closed language list, fidelity ladder and const capability matrix every adapter and rule reads."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[features]
+# Serde derives for Fidelity, used by the symbol cache payloads.
+serde = ["dep:serde"]
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"], optional = true }

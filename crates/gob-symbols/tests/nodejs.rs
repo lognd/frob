@@ -289,7 +289,7 @@ fn solution_style_tsconfig_references_and_paths_replace_inherited_ones() {
     );
 }
 
-// frob:tests crates/gob-symbols/src/adapter.rs::Capability.name
+// frob:tests crates/gob-caps/src/capability.rs::Capability.name
 #[test]
 fn doctor_reports_the_project_model_rows() {
     let report = fidelity_report();

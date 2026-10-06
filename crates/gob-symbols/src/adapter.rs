@@ -8,7 +8,6 @@
 
 // frob:ticket 01M3Z713F6VY15YSMS15033RN1
 
-use std::fmt;
 use std::sync::Arc;
 
 use gob_ir::{ScopeGraph, Term, TermError};
@@ -17,140 +16,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::model::FileSymbols;
 
-/// Fidelity of an adapter (universal-model.md 3.3), checked by its corpus.
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default, Serialize, Deserialize,
-)]
-pub enum Fidelity {
-    /// Opaque only: locations and whole-artifact digests.
-    #[default]
-    F0,
-    /// Units, roles and containment.
-    F1,
-    /// F1 plus binders, references and a lexical scope graph with Must edges.
-    F2,
-    /// F2 plus `apply` edges resolved to the adapter's declared status.
-    F3,
-    /// F3 plus attributes, comments bound to targets, regions and phases.
-    F4,
-}
-
-impl fmt::Display for Fidelity {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            Self::F0 => "F0",
-            Self::F1 => "F1",
-            Self::F2 => "F2",
-            Self::F3 => "F3",
-            Self::F4 => "F4",
-        })
-    }
-}
-
-/// A capability an adapter may declare (universal-model.md 4.4).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum Capability {
-    /// Resolving a reference to its declarations.
-    ResolveRef,
-    /// The targets of an application (call graph).
-    ApplyTargets,
-    /// Whether a unit is visible outside its container.
-    Visibility,
-    /// Effects of a region.
-    Effects,
-    /// Which units are tests.
-    TestItems,
-    /// The imports of an artifact.
-    Imports,
-    /// Expansion of a phase (macro).
-    Expand,
-    /// Evaluation order of a group.
-    Order,
-    /// Packages, their dependencies, path aliases and entry files (language-engines.md section 2).
-    ProjectModel,
-}
-
-impl Capability {
-    /// Every capability in table order.
-    pub const ALL: [Self; 9] = [
-        Self::ResolveRef,
-        Self::ApplyTargets,
-        Self::Visibility,
-        Self::Effects,
-        Self::TestItems,
-        Self::Imports,
-        Self::Expand,
-        Self::Order,
-        Self::ProjectModel,
-    ];
-
-    /// The spelling used in universal-model.md and `frob doctor --languages`.
-    pub const fn name(self) -> &'static str {
-        match self {
-            Self::ResolveRef => "resolve_ref",
-            Self::ApplyTargets => "apply_targets",
-            Self::Visibility => "visibility",
-            Self::Effects => "effects",
-            Self::TestItems => "test_items",
-            Self::Imports => "imports",
-            Self::Expand => "expand",
-            Self::Order => "order",
-            Self::ProjectModel => "project_model",
-        }
-    }
-}
-
-/// How precisely a capability is answered (one rung of its ladder).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum Precision {
-    /// Not provided: the answer is Unknown.
-    None,
-    /// The language has no such concept: the answer is `NotApplicable`.
-    NotApplicable,
-    /// Lexical scoping only.
-    Lexical,
-    /// Lexical scoping plus `use` imports resolved inside the crate.
-    LexicalImports,
-    /// Resolution by name inside the crate; ambiguous names give May sets.
-    ByNameInCrate,
-    /// Resolution of link targets against the project's anchors.
-    LinkTargets,
-    /// Read from a keyword or modifier.
-    Keyword,
-    /// Read from the syntax alone.
-    Syntactic,
-    /// Declared by the source, not inferred.
-    Declared,
-    /// Read from the build manifests (`Cargo.toml`, `.csproj`, `package.json`, `tsconfig.json`).
-    Manifest,
-}
-
-impl Precision {
-    /// The label printed by `frob doctor --languages`.
-    pub const fn label(self) -> &'static str {
-        match self {
-            Self::None => "none",
-            Self::NotApplicable => "not-applicable",
-            Self::Lexical => "lexical",
-            Self::LexicalImports => "lexical+imports",
-            Self::ByNameInCrate => "by-name-in-crate (May)",
-            Self::LinkTargets => "link-targets",
-            Self::Keyword => "keyword",
-            Self::Syntactic => "syntactic",
-            Self::Declared => "declared",
-            Self::Manifest => "manifest",
-        }
-    }
-
-    /// The capability-matrix cell word: `Implemented`, `NotApplicable` or `Gap` (code-model.md section 3).
-    pub const fn cell(self) -> &'static str {
-        match self {
-            Self::None => "Gap",
-            Self::NotApplicable => "NotApplicable",
-            _ => "Implemented",
-        }
-    }
-}
+pub use gob_caps::{Capability, Fidelity, Lang, Precision};
 
 /// The capability declaration `cap_L`: a precision per capability.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -159,6 +25,14 @@ pub struct CapabilityDecl {
 }
 
 impl CapabilityDecl {
+    /// The declaration of `lang`: a read of its row in [`gob_caps::MATRIX`], the one source.
+    pub fn for_lang(lang: Lang) -> Self {
+        let row = gob_caps::row(lang);
+        Self {
+            entries: Capability::ALL.iter().map(|&c| (c, row.cell(c))).collect(),
+        }
+    }
+
     /// Declares `cap` at `precision`, replacing an earlier declaration.
     #[must_use]
     pub fn with(mut self, cap: Capability, precision: Precision) -> Self {
@@ -175,9 +49,9 @@ impl CapabilityDecl {
             .map_or(Precision::None, |(_, p)| *p)
     }
 
-    /// Every capability with its precision, in table order.
+    /// Every languages-page capability with its precision, in table order.
     pub fn rows(&self) -> Vec<(Capability, Precision)> {
-        Capability::ALL
+        Capability::PAGE
             .iter()
             .map(|&c| (c, self.precision(c)))
             .collect()
