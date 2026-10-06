@@ -6,8 +6,8 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-06T14:42:42Z"
-updated = "2026-10-06T15:57:10Z"
-scope = ["crates/frob-lease/**", "crates/frob-land/**", "crates/frob-evidence/**"]
+updated = "2026-10-06T16:16:47Z"
+scope = ["crates/frob-lease/**", "crates/frob-land/**", "crates/frob-evidence/**", "docs/design/tickets.md"]
 
 [[acceptance]]
 text = "an evidence add or check --ticket in the lease's worktree extends its expiry (test with an injected clock)"
