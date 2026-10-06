@@ -2,7 +2,8 @@
 id = "01M44YQW33GJMXQ8PQBECEBCQ1"
 title = "Project model: .sln and .csproj assemblies mapped to packages"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
