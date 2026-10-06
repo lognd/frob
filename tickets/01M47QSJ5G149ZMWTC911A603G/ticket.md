@@ -2,7 +2,8 @@
 id = "01M47QSJ5G149ZMWTC911A603G"
 title = "cargo dev gen iterates registered product artifacts instead of calling products by name"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
