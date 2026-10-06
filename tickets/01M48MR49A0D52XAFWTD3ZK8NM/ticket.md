@@ -7,7 +7,7 @@ priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:20Z"
-updated = "2026-10-06T13:27:44Z"
+updated = "2026-10-06T13:41:08Z"
 scope = ["crates/gob-macros/**", "crates/gob-rules/**", "crates/*/src/**"]
 
 [[links]]
@@ -28,6 +28,10 @@ bound = false
 
 [[acceptance]]
 text = "RuleMeta carries the declaring file and line and the rule page links to it (snapshot)"
+bound = false
+
+[[acceptance]]
+text = "the rule docs carry a When it cannot decide section whose example is an unresolved case, and a Universal rule's docs show its language row"
 bound = false
 +++
 
