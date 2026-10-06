@@ -161,6 +161,16 @@ experimental. Record such lands in the status log.
 
 ## Status log (newest first)
 
+- 2026-10-06 (evening): 36 landed today (web engine through gob-frameworks,
+  C#, product front end, ruff/ty test infrastructure, CI hygiene, GRL
+  printer, ticket-branch bootstrap, crunk COLOR001, grimble SYS013). Design
+  D96-D107. Owner paused goway at the end; agents use local scoped builds.
+  Unlanded: ~9R52NCF spike (works; needs remote evidence), ~2DRPX3B,
+  ~A6JJ764 (CLI trim). Resume point and next dispatch order: memory file
+  frob-v2-session-2026-10-06. Land recovery recipes: E-LAND-NOT-LEASED ->
+  requeue from primary + start from worktree; E-DONE-NO-CRITERIA -> add
+  criteria + re-record evidence; match errors case-insensitively.
+
 - 2026-10-06 (later): 15 landed: ~DYEVJPW ~MDZJQZQ ~13MJ53F ~JEN2C8Q
   ~ECEBCQ1 ~4N35GSV ~BVCRKXA ~7BT4W67 ~PVJ9SQM ~17ZVW3R ~G436171 ~2JVWF8Y
   ~YNC30Q8 ~1B4EEQZ ~BGB8V55; D99, D100 recorded; M1 and design epics

@@ -42,6 +42,7 @@
 | `requeue` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Release a ticket's lease and move it back to todo. |
 | `start` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Lease a ticket for this checkout (no new worktree) and move it to in-progress. |
 | `test` | no | yes | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run only the tests that reach the files changed against a base, and record the evidence. |
+| `ticket branch init` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create the orphan `[tickets] branch` with a README placeholder through gob-git compare-and-swap, leaving the code checkout alone. |
 | `ticket brief` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print a ticket as markdown: title, body, acceptance, scope, links, last events. |
 | `ticket close` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a ticket with an outcome once every close guard passes; repeating is a no-op. |
 | `ticket comment` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Add a comment (note, decision, question or answer) to a ticket. |

@@ -266,6 +266,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 |---|---|---|---|---|
 | `[tickets] ref` (M1) | frob.toml | yes | `"refs/heads/main"` | frob (config), frob-ledger |
 | `[tickets] ref_mode` (M1) | frob.toml | yes | `"trunk"` (or `"branch"`) | frob (config), frob-ledger |
+| `[tickets] branch` (~BAD33TS) | frob.toml | yes | `"frob-tickets"` | frob (config, `ticket branch init`), frob-ledger |
 | `[tickets] dir` (M1) | frob.toml | no | `"tickets"` | frob (config), frob-ledger |
 | `[tickets] handle_min_len` (M1) | frob.toml | no | 7 | frob (config), frob-ledger |
 | `[tickets] actor` (M1) | frob.toml | no | empty (git `user.name`) | frob (config), frob-ledger |

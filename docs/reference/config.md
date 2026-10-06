@@ -200,6 +200,7 @@ Materialized: yes.
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
 | `actor` | `String` | `""` | no | Actor recorded on events; empty means git `user.name`. |
+| `branch` | `String` | `"frob-tickets"` | yes | Name of the orphan branch `frob ticket branch init` creates for the ledger (`mirror.md` section 1). |
 | `dir` | `String` | `"tickets"` | no | Directory of ticket files, relative to the repository root. |
 | `handle_min_len` | `u32` | `7` | no | Shortest ticket handle shown (`~` plus this many id characters). |
 | `ref` | `String` | `"refs/heads/main"` | yes | Ref holding the ledger; the ledger merge driver and `doctor` resolve it. |

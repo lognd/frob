@@ -7,8 +7,8 @@ priority = "high"
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:03Z"
-updated = "2026-10-06T13:56:45Z"
-scope = ["crates/gob-macros/**", "crates/gob-rules/**"]
+updated = "2026-10-06T15:59:23Z"
+scope = ["crates/gob-macros/**", "crates/gob-rules/**", ".config/nextest.toml"]
 
 [[acceptance]]
 text = "deleting the .md, a required section, the fire example or the trait impl, or mistyping a language or capability, each fails to compile with a spanned message"
