@@ -2,7 +2,8 @@
 id = "01M47QKDM2J0EKW2TYH4N35GSV"
 title = "gob-ir: markup, style and const_value answer types, queries and GRL catalog words"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
