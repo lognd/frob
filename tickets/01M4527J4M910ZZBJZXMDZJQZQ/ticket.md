@@ -2,11 +2,12 @@
 id = "01M4527J4M910ZZBJZXMDZJQZQ"
 title = "cargo dev ci check step needs the workspace's own sibling binaries built, not whatever is on PATH"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-05T03:37:59Z"
-updated = "2026-10-06T05:09:55Z"
+updated = "2026-10-06T05:30:40Z"
 scope = ["crates/gob-dev/src/ci.rs", "changelog.d/01M4527J4M910ZZBJZXMDZJQZQ.*"]
 
 [[acceptance]]
