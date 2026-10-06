@@ -8,8 +8,12 @@ points = 3
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T04:30:09Z"
-updated = "2026-10-06T04:30:09Z"
+updated = "2026-10-06T04:32:11Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M47QKDM2J0EKW2TYH4N35GSV"
 
 [[acceptance]]
 text = "HTML fixtures produce markup and style snapshots"
