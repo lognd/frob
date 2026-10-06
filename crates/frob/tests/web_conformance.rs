@@ -38,7 +38,7 @@ fn repo(siblings: Option<&str>) -> tempfile::TempDir {
     copy_tree(&fixture(), dir.path());
     write(dir.path(), "frob.toml", "");
     if let Some(model) = siblings {
-        write(dir.path(), "crunk.toml", "");
+        write(dir.path(), "crunk.toml", CRUNK_SPEC);
         write(
             dir.path(),
             "grimble.toml",
@@ -48,6 +48,9 @@ fn repo(siblings: Option<&str>) -> tempfile::TempDir {
     }
     dir
 }
+
+/// crunk's default preset: a three-colour palette and the scales, enough to judge the fixture's literals.
+const CRUNK_SPEC: &str = include_str!("../../crunk-spec/src/presets/default.toml");
 
 /// Two component nodes: `ui` owns the TSX components, `api` the TypeScript client; the CSS and HTML stay unowned.
 const NODES: &str = "grimble = \"2\";\nmodule web;\n\nnode ui : trusted {\n  kind component;\n  owns \"src/components/**\";\n}\nnode api : trusted {\n  kind component;\n  owns \"src/api/**\";\n}\n";
@@ -148,17 +151,30 @@ fn grimble_check_binds_the_tsx_components_and_reports_the_web_languages_it_read(
     );
 }
 
-// frob:tests crates/gob-product/src/check.rs::Check
+// frob:ticket 01M48FXB2PXX2FBXFKCFWSQYH1
+// frob:tests crates/crunk-check/src/rules/color001.rs::group
 #[test]
-fn crunk_check_runs_over_the_fixture_with_no_web_rule_yet() {
+fn crunk_check_judges_the_css_and_tsx_colour_literals_with_color001() {
     let dir = repo(Some(NODES));
     let doc = product(&crunk::cli(), dir.path());
     assert_eq!(doc["product"], "crunk");
     assert_eq!(doc["schema_version"], "gob.sibling/1");
-    assert_eq!(doc["findings"].as_array().expect("findings").len(), 0);
-    assert_eq!(
-        doc["rules"].as_array().expect("rules").len(),
-        0,
-        "crunk has no web rule yet; the first one replaces this assertion"
+    let rules = doc["rules"].as_array().expect("rules");
+    let row = rules
+        .iter()
+        .find(|r| r["rule"] == "COLOR001")
+        .unwrap_or_else(|| panic!("COLOR001 missing from {rules:?}"));
+    assert!(
+        row["subjects_examined"].as_u64().expect("subjects") >= 3,
+        "{row}"
     );
+    let findings = doc["findings"].as_array().expect("findings");
+    let files: Vec<&str> = findings
+        .iter()
+        .filter(|f| f["rule"] == "COLOR001")
+        .filter_map(|f| f["file"].as_str())
+        .collect();
+    // `#222` of the stylesheet's custom property and `red` of the TSX style prop are off the palette.
+    assert!(files.contains(&"src/styles/app.css"), "{findings:?}");
+    assert!(files.contains(&"src/components/Button.tsx"), "{findings:?}");
 }
