@@ -2,11 +2,12 @@
 id = "01M48GGXN8DDJFG7ZDDV2XVD4H"
 title = "gob-frameworks: remove unused insta dev-dependency (cargo shear fails ci)"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-06T11:45:25Z"
-updated = "2026-10-06T11:45:25Z"
+updated = "2026-10-06T11:54:50Z"
 scope = ["crates/gob-frameworks/Cargo.toml", "Cargo.lock"]
 +++
 
