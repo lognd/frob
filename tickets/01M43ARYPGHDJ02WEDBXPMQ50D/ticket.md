@@ -2,13 +2,14 @@
 id = "01M43ARYPGHDJ02WEDBXPMQ50D"
 title = "crunk-adapters: FrameworkAdapter trait, react_ts and react_router discovery"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:49Z"
-updated = "2026-10-04T11:28:49Z"
+updated = "2026-10-06T04:32:55Z"
 idempotency_key = "crunk-plan-adap"
 labels = ["area:crunk"]
 scope = ["crates/crunk-adapters/**", "Cargo.lock"]
@@ -20,6 +21,10 @@ target = "01M43ARX764095Q4VWABWXXV5H"
 [[links]]
 kind = "blocked-by"
 target = "01M43ARXMH7RJ63G8096KKJF80"
+
+[[links]]
+kind = "superseded-by"
+target = "01M47QKVBB5G9N1QZP3AVXTRHX"
 
 [[acceptance]]
 text = "Given a Vite React Router project, when discovery runs, then routes equal the Python list"
