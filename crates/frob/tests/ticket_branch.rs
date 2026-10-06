@@ -34,7 +34,8 @@ fn git(cwd: &Path, args: &[&str]) -> String {
 fn repo_with_commit() -> tempfile::TempDir {
     let dir = common::git_repo();
     std::fs::write(dir.path().join("code.txt"), "code\n").expect("write");
-    git(dir.path(), &["add", "code.txt"]);
+    std::fs::write(dir.path().join("frob.toml"), "[tickets]\n").expect("config");
+    git(dir.path(), &["add", "code.txt", "frob.toml"]);
     git(dir.path(), &["commit", "-m", "code"]);
     dir
 }
