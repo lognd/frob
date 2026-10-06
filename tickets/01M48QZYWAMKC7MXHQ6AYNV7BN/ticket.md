@@ -6,7 +6,7 @@ category = "todo"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-06T13:56:02Z"
-updated = "2026-10-06T13:56:02Z"
+updated = "2026-10-06T14:50:24Z"
 
 [[acceptance]]
 text = "every child closed or dropped with a reason"
