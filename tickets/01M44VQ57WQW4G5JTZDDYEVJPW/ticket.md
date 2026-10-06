@@ -2,16 +2,17 @@
 id = "01M44VQ57WQW4G5JTZDDYEVJPW"
 title = "check on a clone without the ledger ref reports REF001 zero subjects instead of a missing-ledger-ref finding"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-05T01:44:10Z"
-updated = "2026-10-06T04:44:19Z"
+updated = "2026-10-06T05:23:23Z"
 scope = ["crates/frob-check/**"]
 
 [[acceptance]]
 text = "Given a repository whose configured ledger ref is absent, when frob check runs, then it reports one required finding naming the missing ref and a remedy, not zero-subject verdicts from ledger rules"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given cargo dev ci run through goway, when the check step runs, then the ledger ref is available or the step reports why not"

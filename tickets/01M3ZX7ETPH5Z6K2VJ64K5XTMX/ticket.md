@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-03T03:35:00Z"
+updated = "2026-10-06T05:18:52Z"
 idempotency_key = "m2-exec-core"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/exec/core/**"]
@@ -27,6 +27,10 @@ bound = false
 
 [[acceptance]]
 text = "Given `a inside b` and `a directly inside b` over nested statements, when executed, then the first looks through any depth and the second one level, and a property test confirms the Kleene truth tables for not/and/or/any"
+bound = false
+
+[[acceptance]]
+text = "crates/gob-plan/src/exec.rs (the temporary web-kind executor) is deleted and crates/gob-plan/tests/web_rule.rs passes on the general executor"
 bound = false
 +++
 
