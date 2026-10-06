@@ -2,7 +2,8 @@
 id = "01M43ARY26XF7A4MSRAZ8V73JM"
 title = "gob-symbols: CSS adapter with declarations, at-rules, custom properties and waivers"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
