@@ -8,8 +8,8 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:19Z"
-updated = "2026-10-06T04:34:19Z"
-scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "deny.toml", "typos.toml", "frob.toml", "Cargo.toml", "crates/*/Cargo.toml"]
+updated = "2026-10-06T10:05:02Z"
+scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "deny.toml", "typos.toml", "frob.toml", "Cargo.toml"]
 
 [[acceptance]]
 text = "the four steps run in cargo dev ci and in ci.yml through it"
