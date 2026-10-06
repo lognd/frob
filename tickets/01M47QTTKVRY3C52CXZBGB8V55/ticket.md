@@ -2,7 +2,8 @@
 id = "01M47QTTKVRY3C52CXZBGB8V55"
 title = "Rule coverage test: every registered rule has an mdtest fire/clean pair or a fixture"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
