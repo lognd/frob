@@ -19,17 +19,32 @@ pub enum Language {
     Python,
     /// C# source (`.cs`; `.csx` scripts are not C# files).
     CSharp,
+    /// TypeScript source (`.ts`, `.mts`, `.cts`).
+    TypeScript,
+    /// TypeScript with JSX (`.tsx`).
+    Tsx,
+    /// JavaScript source (`.js`, `.mjs`, `.cjs`).
+    JavaScript,
+    /// JavaScript with JSX (`.jsx`).
+    Jsx,
+    /// CSS stylesheets (`.css`).
+    Css,
 }
 
 impl Language {
     /// Every variant, regardless of enabled features.
-    pub const ALL: [Language; 6] = [
+    pub const ALL: [Language; 11] = [
         Language::Rust,
         Language::Markdown,
         Language::Toml,
         Language::Yaml,
         Language::Python,
         Language::CSharp,
+        Language::TypeScript,
+        Language::Tsx,
+        Language::JavaScript,
+        Language::Jsx,
+        Language::Css,
     ];
 
     /// Detects the language from the file extension (case-insensitive).
@@ -42,6 +57,11 @@ impl Language {
             "yml" | "yaml" => Some(Language::Yaml),
             "py" | "pyi" => Some(Language::Python),
             "cs" => Some(Language::CSharp),
+            "ts" | "mts" | "cts" => Some(Language::TypeScript),
+            "tsx" => Some(Language::Tsx),
+            "js" | "mjs" | "cjs" => Some(Language::JavaScript),
+            "jsx" => Some(Language::Jsx),
+            "css" => Some(Language::Css),
             _ => None,
         };
         tracing::trace!(path = %path.as_ref().display(), ?found, "language detect");
@@ -57,6 +77,11 @@ impl Language {
             Language::Yaml => "yaml",
             Language::Python => "python",
             Language::CSharp => "csharp",
+            Language::TypeScript => "typescript",
+            Language::Tsx => "tsx",
+            Language::JavaScript => "javascript",
+            Language::Jsx => "jsx",
+            Language::Css => "css",
         }
     }
 }
@@ -76,6 +101,13 @@ mod tests {
         assert_eq!(Language::detect("Player.cs"), Some(Language::CSharp));
         assert_eq!(Language::detect("Player.CS"), Some(Language::CSharp));
         assert_eq!(Language::detect("script.csx"), None);
+        assert_eq!(Language::detect("a.ts"), Some(Language::TypeScript));
+        assert_eq!(Language::detect("a.d.mts"), Some(Language::TypeScript));
+        assert_eq!(Language::detect("App.TSX"), Some(Language::Tsx));
+        assert_eq!(Language::detect("a.mjs"), Some(Language::JavaScript));
+        assert_eq!(Language::detect("a.jsx"), Some(Language::Jsx));
+        assert_eq!(Language::detect("site.css"), Some(Language::Css));
+        assert_eq!(Language::detect("a.scss"), None);
         assert_eq!(Language::detect("a.pyc"), None);
         assert_eq!(Language::detect("Makefile"), None);
     }
@@ -86,5 +118,9 @@ mod tests {
         assert_eq!(Language::Markdown.name(), "markdown");
         assert_eq!(Language::Toml.name(), "toml");
         assert_eq!(Language::Python.name(), "python");
+        let mut names: Vec<_> = Language::ALL.iter().map(|l| l.name()).collect();
+        names.sort_unstable();
+        names.dedup();
+        assert_eq!(names.len(), Language::ALL.len());
     }
 }

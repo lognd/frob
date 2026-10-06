@@ -258,6 +258,50 @@ fn csharp_plain(text: &str) -> Vec<Range<usize>> {
     lexer.out
 }
 
+// frob:ticket 01M43ARXDXMJ99H23MV17ZVW3R
+/// Plain-text scan for the web languages: `/* */` always, `//` when `line` is set.
+///
+/// `'`, `"` and (when `line`, i.e. JS/TS) backtick strings are skipped, backslash escapes
+/// honoured; a quote string ends at its line end. Template-literal holes and regex literals
+/// are not modelled: the tree path is exact, this is the fallback for unparsable input.
+fn web_plain(text: &str, line: bool) -> Vec<Range<usize>> {
+    let b = text.as_bytes();
+    let (mut out, mut i) = (Vec::new(), 0);
+    while i < b.len() {
+        match b[i] {
+            b'/' if line && b.get(i + 1) == Some(&b'/') => {
+                let start = i;
+                while i < b.len() && !matches!(b[i], b'\n' | b'\r') {
+                    i += 1;
+                }
+                out.push(start..i);
+            }
+            b'/' if b.get(i + 1) == Some(&b'*') => {
+                let start = i;
+                i += 2;
+                while i < b.len() && !(b[i] == b'*' && b.get(i + 1) == Some(&b'/')) {
+                    i += 1;
+                }
+                i = (i + 2).min(b.len());
+                out.push(start..i);
+            }
+            q @ (b'"' | b'\'' | b'`') if q != b'`' || line => {
+                i += 1;
+                while i < b.len() && b[i] != q {
+                    match b[i] {
+                        b'\\' => i += 2,
+                        b'\n' if q != b'`' => break,
+                        _ => i += 1,
+                    }
+                }
+                i += 1;
+            }
+            _ => i += 1,
+        }
+    }
+    out
+}
+
 // frob:ticket 01M43KP0RXKB1DJA8KGJTV288R
 /// Byte range of a leading `---` (YAML) or `+++` (TOML) front matter block, fences included.
 ///
@@ -323,6 +367,7 @@ fn hash_spans(text: &str, yaml: bool) -> Vec<Range<usize>> {
 
 // frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
 // frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
+// frob:ticket 01M43ARXDXMJ99H23MV17ZVW3R
 /// Byte spans of every comment of `text`, markers included, in document order.
 ///
 /// `tree` is the syntax tree of `text` when one was produced; without it each language falls
@@ -338,8 +383,21 @@ pub fn comment_spans(
         (Language::Markdown, t) => markdown_spans(text, t),
         (Language::Toml, _) | (Language::Python, None) => hash_spans(text, false),
         (Language::Yaml, _) => hash_spans(text, true),
-        (Language::Python | Language::CSharp, Some(t)) => node_spans(t, &["comment"]),
         (Language::CSharp, None) => csharp_plain(text),
+        (
+            Language::Python
+            | Language::CSharp
+            | Language::TypeScript
+            | Language::Tsx
+            | Language::JavaScript
+            | Language::Jsx
+            | Language::Css,
+            Some(t),
+        ) => node_spans(t, &["comment"]),
+        (Language::Css, None) => web_plain(text, false),
+        (Language::TypeScript | Language::Tsx | Language::JavaScript | Language::Jsx, None) => {
+            web_plain(text, true)
+        }
     };
     tracing::trace!(
         language = language.name(),
@@ -490,5 +548,62 @@ mod tests {
         assert_eq!(parse_comment_spans(Language::Markdown, unclosed).len(), 1);
         let not_first = "text\n---\n<!-- kept -->\n---\n";
         assert_eq!(parse_comment_spans(Language::Markdown, not_first).len(), 1);
+    }
+
+    /// Spans of `src` through the tree path and the text fallback.
+    fn both(language: Language, src: &str) -> [Vec<&str>; 2] {
+        [
+            parse_comment_spans(language, src),
+            comment_spans(language, src, None),
+        ]
+        .map(|v| v.into_iter().map(|r| &src[r]).collect())
+    }
+
+    #[test]
+    // frob:tests crates/gob-languages/src/comments.rs::comment_spans
+    fn typescript_family_comments_skip_strings_and_templates() {
+        let src = "// one\nconst a = \"// no\"; /* two */\nconst b = `/* no */`; // three\n";
+        let want = ["// one", "/* two */", "// three"];
+        for l in [
+            Language::TypeScript,
+            Language::Tsx,
+            Language::JavaScript,
+            Language::Jsx,
+        ] {
+            for got in both(l, src) {
+                assert_eq!(got, want, "{l:?}");
+            }
+        }
+    }
+
+    #[test]
+    // frob:tests crates/gob-languages/src/comments.rs::web_plain
+    fn css_comments_are_block_only() {
+        let src = "/* crunk:waive COLOR001 reason=\"brand\" */\na { content: \"/* no */\"; color: red } // not a comment\n";
+        for got in both(Language::Css, src) {
+            assert_eq!(got, ["/* crunk:waive COLOR001 reason=\"brand\" */"]);
+        }
+    }
+
+    #[test]
+    // frob:tests crates/gob-languages/src/parse.rs::parse
+    fn tsx_syntax_error_is_a_partial_tree_with_spans_and_comments_stay_queryable() {
+        let src = "// head\nconst a = <div>{1}</div> +;\n/* tail */\nexport const b = 1;\n";
+        let ParseResult::Parsed(t) = parse(Language::Tsx, src, &ParseLimits::default()) else {
+            panic!("expected a partial tree");
+        };
+        assert!(t.has_errors());
+        let mut bad = Vec::new();
+        walk(t.root(), &mut |n| {
+            if n.is_error() || n.is_missing() {
+                bad.push(t.node_range(&n));
+            }
+        });
+        assert!(!bad.is_empty());
+        let got: Vec<&str> = comment_spans(Language::Tsx, src, Some(&t))
+            .into_iter()
+            .map(|r| &src[r])
+            .collect();
+        assert_eq!(got, ["// head", "/* tail */"]);
     }
 }

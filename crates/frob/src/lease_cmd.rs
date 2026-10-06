@@ -89,6 +89,15 @@ pub(crate) fn update_with_lease(
             "lease not refreshed: ticket {id} is leased by {holder}; the holder must run `frob lease widen {id}`"
         ));
     }
+    if !patch.add_scope.is_empty() {
+        let front = &applied.ticket.front;
+        warnings.extend(frob_lease::unmatched::scope_warnings(
+            ledger.repo(),
+            id,
+            &patch.add_scope,
+            &front.labels,
+        ));
+    }
     Ok((applied, warnings))
 }
 
@@ -114,6 +123,7 @@ pub struct WidenData {
 pub struct LeaseWiden {
     ticket: String,
     globs: Vec<String>,
+    new_globs: Vec<String>,
 }
 
 impl Command for LeaseWiden {
@@ -124,12 +134,17 @@ impl Command for LeaseWiden {
             "glob",
             "Scope glob to add to the ticket first (repeatable)",
         ))
+        .arg(many_flag(
+            "new-glob",
+            "Like --glob, for files the ticket will create: adds a `creates:` label that silences the zero-match warning (repeatable)",
+        ))
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
         Ok(Self {
             ticket: get(m, "ticket").unwrap_or_default(),
             globs: get_many(m, "glob"),
+            new_globs: get_many(m, "new-glob"),
         })
     }
 
@@ -152,7 +167,12 @@ impl Command for LeaseWiden {
             .into());
         }
         let patch = Patch {
-            add_scope: self.globs.clone(),
+            add_scope: [self.globs.clone(), self.new_globs.clone()].concat(),
+            add_labels: self
+                .new_globs
+                .iter()
+                .map(|g| frob_lease::unmatched::creates_label(g))
+                .collect(),
             ..Patch::default()
         };
         let before = lease.scope.clone();

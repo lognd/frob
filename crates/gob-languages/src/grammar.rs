@@ -19,6 +19,16 @@ pub(crate) fn ts_language(language: Language) -> Option<tree_sitter::Language> {
         Language::Python => Some(tree_sitter_python::LANGUAGE.into()),
         #[cfg(feature = "csharp")]
         Language::CSharp => Some(tree_sitter_c_sharp::LANGUAGE.into()),
+        #[cfg(feature = "typescript")]
+        Language::TypeScript => Some(tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into()),
+        #[cfg(feature = "tsx")]
+        Language::Tsx => Some(tree_sitter_typescript::LANGUAGE_TSX.into()),
+        #[cfg(feature = "javascript")]
+        Language::JavaScript => Some(tree_sitter_javascript::LANGUAGE.into()),
+        #[cfg(feature = "jsx")]
+        Language::Jsx => Some(tree_sitter_javascript::LANGUAGE.into()),
+        #[cfg(feature = "css")]
+        Language::Css => Some(tree_sitter_css::LANGUAGE.into()),
         #[allow(unreachable_patterns)]
         _ => None,
     }
@@ -35,6 +45,9 @@ pub(crate) const fn pin(language: Language) -> Option<(&'static str, &'static st
         Language::Yaml => None,
         Language::Python => Some(("tree-sitter-python", "0.25.0")),
         Language::CSharp => Some(("tree-sitter-c-sharp", "0.23.5")),
+        Language::TypeScript | Language::Tsx => Some(("tree-sitter-typescript", "0.23.2")),
+        Language::JavaScript | Language::Jsx => Some(("tree-sitter-javascript", "0.25.0")),
+        Language::Css => Some(("tree-sitter-css", "0.25.0")),
     }
 }
 
@@ -80,6 +93,18 @@ mod tests {
         assert!(id.contains("tree-sitter-rust@0.24.2"), "{id}");
         assert!(id.contains(":abi"), "{id}");
         assert!(id.ends_with(&format!(":ts{CORE_VERSION}")), "{id}");
+    }
+
+    #[cfg(all(feature = "typescript", feature = "tsx"))]
+    #[test]
+    fn typescript_and_tsx_share_a_crate_but_not_an_identity() {
+        let (ts, tsx) = (
+            grammar_identity(Language::TypeScript),
+            grammar_identity(Language::Tsx),
+        );
+        assert!(ts.contains("tree-sitter-typescript@0.23.2"), "{ts}");
+        assert!(tsx.contains("tree-sitter-typescript@0.23.2"), "{tsx}");
+        assert_ne!(ts, tsx);
     }
 
     /// The hard-coded pins must match the exact requirements in Cargo.toml,

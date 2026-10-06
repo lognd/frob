@@ -2,11 +2,12 @@
 id = "01M47XXDR010GGVEN8RG436171"
 title = "clippy-windows fails on experimental: ci.rs check-step test calls the unix-only step_named helper"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-06T06:20:09Z"
-updated = "2026-10-06T06:22:37Z"
+updated = "2026-10-06T07:12:58Z"
 scope = ["crates/gob-dev/src/ci.rs", "changelog.d/**"]
 
 [[acceptance]]

@@ -1,0 +1,6 @@
+[
+  {
+    "request": { "method": "GET", "url": "https://api.github.com/x" },
+    "response": { "status": 403, "headers": {}, "body": "{\"message\":\"forbidden\"}" }
+  }
+]
