@@ -8,8 +8,12 @@ points = 8
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T04:30:11Z"
-updated = "2026-10-06T04:30:11Z"
+updated = "2026-10-06T04:32:07Z"
 scope = ["crates/gob-frameworks/**", "Cargo.toml", "Cargo.lock"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M47QKTN549397AFFSC3DEAQX"
 
 [[acceptance]]
 text = "a Next.js fixture and a react-router fixture produce the expected routes snapshot"
