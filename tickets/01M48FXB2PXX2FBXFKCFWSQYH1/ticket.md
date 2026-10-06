@@ -7,7 +7,7 @@ priority = "medium"
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:34:48Z"
-updated = "2026-10-06T13:00:49Z"
+updated = "2026-10-06T13:31:38Z"
 scope = ["crates/crunk-check/**", "crates/frob/tests/web_conformance.rs", "changelog.d/01M48FXB2PXX2FBXFKCFWSQYH1.added.md", "crates/gob-mdtest/coverage-allowlist.toml", "Cargo.lock"]
 
 [[acceptance]]
