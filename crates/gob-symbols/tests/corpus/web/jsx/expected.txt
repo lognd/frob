@@ -1,0 +1,20 @@
+== web/jsx/app.jsx ==
+language typescript fidelity F2 status Complete digest 13f63fff5cd6d77de04e6af658118aed52b37cc1211297850c744cf256d4f09b
+-- symbols --
+web/jsx/app.jsx::App Function Public
+-- edges --
+Imports web/jsx/app.jsx -> web/jsx/button.jsx Must None Some("./button.jsx")
+Imports web/jsx/app.jsx -> web/jsx/button.jsx::Button Must None Some("Button")
+Calls web/jsx/app.jsx::App -> web/jsx/button.jsx::Button Must None None
+-- markup --
+element Button Component [label="Save"] children=0
+element main Intrinsic [] children=1
+-- style --
+== web/jsx/button.jsx ==
+language typescript fidelity F2 status Complete digest 3cebb1b35c51c4d0ddcb62c67ba4f2445baaa6dfdf4bc093429fc8518d72a9bc
+-- symbols --
+web/jsx/button.jsx::Button Function Public
+-- edges --
+-- markup --
+element button Intrinsic [className="btn"] children=1
+-- style --

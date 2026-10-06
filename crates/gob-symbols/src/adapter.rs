@@ -141,6 +141,15 @@ impl Precision {
             Self::Manifest => "manifest",
         }
     }
+
+    /// The capability-matrix cell word: `Implemented`, `NotApplicable` or `Gap` (code-model.md section 3).
+    pub const fn cell(self) -> &'static str {
+        match self {
+            Self::None => "Gap",
+            Self::NotApplicable => "NotApplicable",
+            _ => "Implemented",
+        }
+    }
 }
 
 /// The capability declaration `cap_L`: a precision per capability.

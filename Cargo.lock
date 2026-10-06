@@ -1003,6 +1003,7 @@ name = "frob-cli"
 version = "0.532.0"
 dependencies = [
  "assert_cmd",
+ "crunk",
  "frob-ack",
  "frob-check",
  "frob-evidence",
@@ -2412,7 +2413,6 @@ dependencies = [
  "gob-ir",
  "gob-symbols",
  "gob-walk",
- "insta",
  "inventory",
  "tempfile",
  "tracing",
