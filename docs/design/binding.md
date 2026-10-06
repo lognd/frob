@@ -693,6 +693,7 @@ Severity column: proposed defaults; Warn rules become Error under
 | SYS010 | SYS-CLAIM-WITHOUT-EVIDENCE | P- | Warn | a claim above L1 | no |
 | SYS011 | SYS-VMODEL-LINK-BROKEN | P- | Error | a vmodel `ref` or `runnable` | no |
 | SYS012 | SYS-EXCUSE-GRANT | P+ | Error | a template excuse and an atom | no |
+| SYS013 | SYS-UNDECLARED-FLOW | P+ | Error | an import or call edge of the symbol graph | no |
 
 ### 6.1 SYS001 unowned (P-)
 
@@ -968,6 +969,26 @@ grants of the model.
   which catches the same contradiction against OBSERVED use.
 - Not this rule: a use observed in excused code is CAP004 (grimble-model.md
   section 4), not SYS012.
+- Required mark: none.
+
+### 6.12a SYS013 undeclared flow (P+)
+
+- Subject: one Imports or Calls edge of the snapshot's symbol graph (gob-symbols:
+  TS and TSX imports, calls and JSX component uses, Python, C# and Rust calls),
+  read through the same owners and flows as every other rule; there is no
+  language-specific path.
+- Predicate: both ends are owned at Must by different nodes A and B, the edge
+  is Must, and no flow `A -> B` exists (B6: a flow A -> B allows edges from A's
+  code to B's, direction exact).
+- Fires: once per ordered owner pair, listing the edges (Error).
+- Certified clean: the edge is inside one owner, or a flow declares it.
+- Not checked: an end no node owns (FOREIGN) and an import of a package outside
+  the repository.
+- Unresolved (`unresolved-edge`): the edge is May, or Unknown with no target
+  (dynamic callee, unbound name); (`may-only-owner`): an end is owned only at
+  May or its file hides what owns it. One finding per reason and owner, with
+  the count; an Unknown edge is never clean.
+- Not applicable: fewer than two nodes that own code, or no edge in the snapshot.
 - Required mark: none.
 
 ### 6.13 Summary of conditions
