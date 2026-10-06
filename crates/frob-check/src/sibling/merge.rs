@@ -7,7 +7,7 @@ use gob_check::{External, LanguageFidelity};
 use gob_rules::{Exception, ExceptionKind, Finding, Fingerprint, Registry, RuleId, Severity};
 use gob_text::{FileInterner, Span, TextRange, TextSize};
 
-use super::doc::{Doc, DocException, DocFinding, Sev};
+use super::doc::{Doc, DocException, DocFinding, Sev, bound};
 use super::spawn::{Failure, Reason};
 
 fn malformed(why: impl Into<String>) -> Failure {
@@ -168,7 +168,7 @@ pub(super) fn merge(
     let exceptions = doc
         .exceptions
         .iter()
-        .filter_map(|e| e.bound(product, &doc.suppressed))
+        .filter_map(|e| bound(e, product, &doc.suppressed))
         .collect();
     out.findings.extend(staged.findings);
     out.suppressed.extend(staged.suppressed);

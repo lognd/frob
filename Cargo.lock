@@ -1041,6 +1041,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
+ "strsim",
  "tempfile",
  "thiserror",
  "toml",
@@ -2393,8 +2394,10 @@ dependencies = [
 name = "gob-mdtest"
 version = "0.532.0"
 dependencies = [
+ "gob-diagnostics",
  "gob-rules",
  "gob-text",
+ "insta",
  "thiserror",
  "tracing",
  "walkdir",
@@ -2416,6 +2419,7 @@ dependencies = [
 name = "gob-plan"
 version = "0.532.0"
 dependencies = [
+ "gob-ir",
  "gob-rules",
  "gob-text",
  "insta",
