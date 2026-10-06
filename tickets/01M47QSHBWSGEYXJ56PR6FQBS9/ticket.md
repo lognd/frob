@@ -2,7 +2,8 @@
 id = "01M47QSHBWSGEYXJ56PR6FQBS9"
 title = "frob check and doctor through the Product trait"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
