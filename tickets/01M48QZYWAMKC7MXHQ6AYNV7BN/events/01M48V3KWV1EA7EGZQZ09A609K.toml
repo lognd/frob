@@ -1,0 +1,21 @@
+kind = "comment"
+subtype = "decision"
+body = """
+Spike ~9R52NCF decision (branch ticket/9R52NCF): the host-trait form WORKS; the Supplies<Cx> fallback is not needed. One refinement and six findings.
+
+DECISION: `FileRule<P: ?Sized>` with the rule writing `impl<P: ?Sized + ObligationHost> FileRule<P> for Todo001`. `Out<R>` stamps `R::DEF.id`; `FileCx<'_, P>` carries the host; a product-side `run_file::<R, P>` instantiation is the "product hosts this rule" bound. Verified on a TODO001-shaped rule (fires, clean, and evaluates through `&dyn ObligationHost` too).
+
+REFINEMENT (proposed amendment to D107 2.2/2.4): add a REQUIRED attribute field `host = ObligationHost`. Why: the macro cannot ask "does SOME `impl<P> FileRule<P>` exist" (inference is ambiguous for any generic P, E0283, whether or not an impl exists), so a missing impl could only be reported at the product's bind site, not at the declaration. With `host = H` the macro probes `FileRule<dyn H>` and the error lands on the struct/`host` span: "`Todo001` is declared `scope = File` but does not implement `FileRule<dyn ObligationHost>`" (via #[diagnostic::on_unimplemented]). Cost: host traits must be object-safe and the rule's impl must admit `P: ?Sized`. The same probe handles scope = Repo (RepoRule) and must_measure (Measured).
+
+DID NOT WORK / FOUND:
+1. Probing generic impl existence without naming a host: impossible (above).
+2. Matrix checks in the macro: gob-macros cannot depend on gob-rules/gob-caps (gob-rules depends on gob-macros), so the checks are const asserts in the expansion with literal messages built at macro time. They work and are spanned on the offending ident, but surface as E0080 "evaluation panicked: ..." with the label "evaluation of `_` failed here". Acceptable, not pretty.
+3. Error cascades: after a macro error the rule struct had no `Rule` impl, so the author's `impl FileRule` produced a second E0277 per failing case. Fixed by emitting the item plus a poisoned `impl Rule` (RuleDef::POISONED) on every error path; the real migration should keep this.
+4. File location: `Span::local_file()` (stable in 1.98) gives the declaring file, so the page is the sibling `<stem>.md` and `include_str!("<stem>.md")` with the call-site span resolves relative to the same file. No CARGO_MANIFEST_DIR convention, no absolute paths in output, and the stem == lowercase id check is free. Touching the .md rebuilds gob-rules (cargo reports Dirty: the file todo001.md has changed; verified remotely).
+5. Languages are written as enum variant names (`languages(Rust, Python; ..)`), not lowercase; typos get rustc's "no variant named `Pyhton`" plus a did-you-mean help. Lowercase would need a macro-side mapping table duplicating gob-caps.
+6. trybuild needs one directory per case (`tests/ui_rule/fail/<case>/todo001.rs` plus its own `todo001.md`) because the page is a sibling of a file whose stem must be the id. The stderr files embed rustc wording; helpers run rustc 1.98 and 1.99, so expect occasional churn on toolchain bumps (same as the existing ui tests). `since` is compared against the compiling crate's CARGO_PKG_VERSION read at expansion (not env!, which would be gob-macros' own version); trybuild's project is 0.0.0.
+
+Spike code is additive: gob_macros::rule_spike (src/rule_attr.rs, src/rule_doc.rs), gob_rules::rule_spike (stub caps matrix, RuleDef, traits, Todo001 + todo001.md), tests ui_rule_attr and rule_spike. The old derive is untouched. Follow-ups ~N88H9SY (the attribute) and ~HQ6B02X (gob-caps) replace the stubs and rename rule_spike to rule."""
+at = "2026-10-06T14:50:24Z"
+actor = "lognd"
+rev = 1
