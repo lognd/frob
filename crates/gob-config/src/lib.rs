@@ -26,6 +26,7 @@
 
 extern crate self as gob_config;
 
+mod artifact;
 mod check;
 mod compute;
 mod describe;
@@ -35,6 +36,7 @@ mod local;
 mod materialize;
 mod schema;
 
+pub use artifact::{ArtifactBody, ArtifactEntry, ArtifactFamily, all_artifacts};
 pub use check::{Cfg001, check};
 pub use compute::{ComputeTable, blake3_tagged, compute_digest};
 pub use describe::{
