@@ -1,0 +1,19 @@
+error[E0599]: no variant, associated function, or constant named `Pyth0n` found for enum `gob_rules::rule_spike::caps::Lang` in the current scope
+  --> tests/ui_rule/fail/bad_language/todo001.rs:11:25
+   |
+ 3 | / #[rule(
+ 4 | |     id = "TODO001",
+ 5 | |     slug = "bare-work-marker",
+ 6 | |     severity = Error,
+...  |
+10 | |     fix = Manual,
+11 | |     applies = languages(Pyth0n; needs = [Comments], min_fidelity = F1),
+   | |                        -^^^^^^ variant, associated function, or constant not found in `gob_rules::rule_spike::caps::Lang`
+   | |________________________|
+   |
+   |
+help: there is a variant with a similar name
+   |
+11 -     applies = languages(Pyth0n; needs = [Comments], min_fidelity = F1),
+11 +     applies = languages(Python; needs = [Comments], min_fidelity = F1),
+   |

@@ -1,0 +1,5 @@
+error[E0080]: evaluation panicked: TODO001: language Css has no `TestItems` capability (declared not-applicable or a gap), so this rule could never fire there; matrix: crates/gob-rules/src/rule_spike/caps.rs
+  --> tests/ui_rule/fail/capability_not_in_matrix/todo001.rs:11:39
+   |
+11 |     applies = languages(Css; needs = [TestItems], min_fidelity = F1),
+   |                                       ^^^^^^^^^ evaluation of `_` failed here

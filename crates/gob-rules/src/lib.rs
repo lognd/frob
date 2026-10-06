@@ -10,6 +10,9 @@
 //! assert!(Severity::Error > Severity::Warn);
 //! ```
 
+// Lets the `#[rule]` expansion name `::gob_rules` from inside this crate (spike, ~9R52NCF).
+extern crate self as gob_rules;
+
 mod exception;
 mod finding;
 mod id;
@@ -17,6 +20,7 @@ mod meta;
 mod reason;
 mod registry;
 mod required;
+pub mod rule_spike;
 
 pub use exception::{
     BoundException, Exception, ExceptionCtx, ExceptionKind, Resolved, apply_exceptions,

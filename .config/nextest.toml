@@ -20,11 +20,11 @@ path = "junit.xml"
 # Reviewed overrides: tests that legitimately exceed the 120 s hang guard. Add an entry only
 # with a reason, as `[[profile.ci.overrides]]` with a `filter` and its own `slow-timeout`.
 #
-# gob-macros ui (trybuild compile-fail): trybuild hardcodes its own project dir at
+# gob-macros ui and ui_rule_attr (trybuild compile-fail; the latter has 14 cases, ~9R52NCF): trybuild hardcodes its own project dir at
 # target/tests/trybuild, so it cannot share the workspace's warm target dir and must compile
 # frob-ledger, gob-cli, gob-config, gob-directives and gob-rules once per cold target dir.
 # Measured 2026-10-06 at load average ~25: 85 s cold, 1 s warm; earlier runs hit 120 s+ at load
 # ~39. The 300 s allowance (10 periods) keeps the hang guard meaningful for a cold build.
 [[profile.ci.overrides]]
-filter = "package(gob-macros) & binary(ui)"
+filter = "package(gob-macros) & (binary(ui) | binary(ui_rule_attr))"
 slow-timeout = { period = "30s", terminate-after = 10 }
