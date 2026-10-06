@@ -344,7 +344,7 @@ fn parse_xml(text: &str) -> Result<Vec<Element>, DotnetError> {
             if !self_closing {
                 stack.push(out.len() - 1);
             }
-            i += used + 1;
+            i += used + 2;
         }
     }
     if let Some(&open) = stack.last() {
