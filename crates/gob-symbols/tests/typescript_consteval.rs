@@ -136,7 +136,7 @@ fn an_over_budget_chain_is_unresolved_with_the_reason() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject::evaluate
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
 fn same_file_constants_and_literals_evaluate() {
     let got = eval_expr("const base = 'btn';", "base + ' ' + `${base}-lg`", &[]);
     assert_eq!(got.value.known_str(), Some("btn btn-lg"));
@@ -146,7 +146,7 @@ fn same_file_constants_and_literals_evaluate() {
 // ---- the v1 vectors ----
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject::evaluate
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
 fn v1_literals_concatenation_ternary_and_or() {
     assert_eq!(
         eval_expr("", "\"hello\"", &[]).value.known_str(),
@@ -190,7 +190,7 @@ fn v1_literals_concatenation_ternary_and_or() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject::evaluate
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
 fn v1_unfoldable_values_are_never_guessed() {
     let call = eval_expr("", "someFunc()", &[]);
     assert_eq!(call.value, ConstValue::Unknown);
@@ -206,7 +206,7 @@ fn v1_unfoldable_values_are_never_guessed() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject::evaluate
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
 fn v1_arrays_objects_and_spreads() {
     assert_eq!(
         eval_expr("", "[\"a\", \"b\", \"c\"]", &[]).value,
@@ -239,7 +239,7 @@ fn v1_arrays_objects_and_spreads() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject::evaluate
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
 fn v1_cross_module_constants_and_templates() {
     let labels = ("labels.ts", "export const LABEL = \"shared-label\";\n");
     let got = eval_expr("import { LABEL } from './labels';", "LABEL", &[labels]);
@@ -255,7 +255,7 @@ fn v1_cross_module_constants_and_templates() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject::evaluate
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
 fn route_path_constants_evaluate_across_files() {
     let routes = (
         "routes.ts",
@@ -274,7 +274,7 @@ fn route_path_constants_evaluate_across_files() {
 const CLSX: &str = "import { clsx } from 'clsx';\n";
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject::evaluate
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
 fn clsx_joins_strings_conditions_objects_and_arrays() {
     let got = eval_expr(
         CLSX,
@@ -288,7 +288,7 @@ fn clsx_joins_strings_conditions_objects_and_arrays() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject::evaluate
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
 fn a_renamed_clsx_import_and_a_default_import_are_joiners() {
     let renamed = eval_expr("import { clsx as cx } from 'clsx';", "cx('a', 'b')", &[]);
     assert_eq!(renamed.value.known_str(), Some("a b"));
@@ -301,7 +301,7 @@ fn a_renamed_clsx_import_and_a_default_import_are_joiners() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject::evaluate
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
 fn a_dynamic_argument_leaves_fragments() {
     let got = eval_expr(CLSX, "clsx('btn', size)", &[]);
     assert_eq!(
@@ -311,7 +311,7 @@ fn a_dynamic_argument_leaves_fragments() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject::evaluate
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
 fn a_local_wrapper_that_forwards_to_clsx_is_a_joiner() {
     let got = eval_expr(
         &format!("{CLSX}const cn = (...a) => clsx(...a);"),
@@ -322,7 +322,7 @@ fn a_local_wrapper_that_forwards_to_clsx_is_a_joiner() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject::evaluate
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
 fn an_imported_wrapper_that_forwards_to_clsx_is_a_joiner() {
     let util = (
         "util.ts",
@@ -337,7 +337,7 @@ fn an_imported_wrapper_that_forwards_to_clsx_is_a_joiner() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject::evaluate
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
 fn a_wrapper_that_does_not_forward_is_not_a_joiner() {
     let got = eval_expr(
         "const cn = (...a) => a.filter(Boolean).join(' ');",
