@@ -132,7 +132,7 @@ impl Adapter for TypeScriptAdapter {
     }
 }
 
-/// True when `path` is a TypeScript or JavaScript source file (any case of the extensions in [`EXTENSIONS`]).
+/// True when `path` is a TypeScript or JavaScript source file (`ts`, `tsx`, `mts`, `cts`, `js`, `jsx`, `mjs`, `cjs`, any case).
 pub fn is_typescript_path(path: &str) -> bool {
     std::path::Path::new(path)
         .extension()
