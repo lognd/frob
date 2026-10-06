@@ -80,8 +80,13 @@ fn frob_check_reads_typescript_through_cov001_and_leaves_css_and_html_to_the_tex
     let env = json_of(&text);
     assert_eq!(env["ok"], true, "{text}");
     // COV001 examines the public TS and TSX functions (F2): the call graph and import graph feed it.
+    // `fetchUser` is called from `test("..")` in client.test.ts, a test unit (~97A7SXX), so it is reached.
+    // frob:ticket 01M4828JB2S4JZY2QRB97A7SXX
+    assert!(
+        !text.contains("COV001 public function `src/api/client.ts::fetchUser`"),
+        "fetchUser is called from a test unit and must be reached: {text}"
+    );
     for symref in [
-        "src/api/client.ts::fetchUser",
         "src/api/client.ts::label",
         "src/components/App.tsx::App",
         "src/components/Button.tsx::Button",

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D107: rescoped to rules and implemented by ~PBJ6GPZ (generated per-crate index plus product_rules! with const uniqueness instead of inventory plus a check); redirect and removed-id acceptance stays here; inventory for tables, commands, directives and artifacts is a follow-up."
+at = "2026-10-06T13:56:17Z"
+actor = "lognd"
+rev = 1

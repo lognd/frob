@@ -7,8 +7,12 @@ priority = "high"
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:01Z"
-updated = "2026-10-06T13:41:01Z"
+updated = "2026-10-06T13:56:18Z"
 scope = ["crates/gob-check/**", "crates/frob-check/**", "docs/reference/fidelity.md"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M48R00MZS92F2KY5T60SBHYV"
 
 [[acceptance]]
 text = "an adapter-less text file gives one rolled-up Unresolved per capability rule and language"

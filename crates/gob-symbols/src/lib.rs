@@ -119,6 +119,7 @@ pub use rust::RustAdapter;
 pub use symref::{Symref, SymrefError, Target};
 pub use typescript::{
     ConstProject, Evaluated, JsxElement, JsxKind, Origin, TestItem, TestRole, TypeScriptAdapter,
-    Unresolved, is_typescript_path, is_typescript_test_file, jsx_elements, test_items,
+    Unresolved, is_typescript_path, is_typescript_test_file, is_typescript_test_fn, jsx_elements,
+    test_items,
 };
 pub use view::model_symbols;

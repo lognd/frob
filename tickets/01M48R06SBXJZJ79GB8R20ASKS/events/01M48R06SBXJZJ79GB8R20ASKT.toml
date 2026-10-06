@@ -1,0 +1,20 @@
+kind = "create"
+title = "cargo dev new-rule --universal|--lang: two files, no registration step, compiled in CI"
+type = "story"
+category = "todo"
+priority = "medium"
+parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
+scope = ["crates/gob-dev/**", ".github/workflows/ci.yml"]
+acceptance = ["the scaffold builds and passes unedited for --universal and --lang", "a cargo dev ci step proves it in a temporary copy"]
+body = "M11: writes src/rules/<id>.rs and .md in the owning crate, regenerates the index, runs the rule's test; CI scaffolds into a temporary copy. Supersedes ~0H3WYTR. Design: docs/design/rule-authoring.md (D107); detail and the failure table: notes/research/rule-authoring.md section 4."
+at = "2026-10-06T13:56:10Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M48R01QSDTBKNPREQPBJ6GPZ"
+
+[[links]]
+kind = "blocked-by"
+target = "01M48R05NH09VNCDWSPJHD5710"
