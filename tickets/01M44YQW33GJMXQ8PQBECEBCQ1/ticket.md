@@ -8,7 +8,7 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:59Z"
-updated = "2026-10-06T04:12:20Z"
+updated = "2026-10-06T04:28:31Z"
 idempotency_key = "d94-sln"
 scope = ["crates/gob-symbols/src/dotnet.rs", "crates/gob-symbols/src/paths.rs", "crates/gob-symbols/src/crates.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/tests/dotnet.rs", "docs/design/code-model.md", "docs/reference/config.md", "crates/gob-symbols/src/lib.rs"]
 
@@ -18,7 +18,7 @@ target = "01M44YQSZ3YEXRDW9RKER9HRA2"
 
 [[acceptance]]
 text = "Given a solution with two .csproj files where one has a ProjectReference to the other, when the package graph is built, then each project is a package and the reference is a dependency edge"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an SDK-style .csproj with default globs and an obj directory, when files are assigned, then source files go to the project and obj/bin files are ignored"
