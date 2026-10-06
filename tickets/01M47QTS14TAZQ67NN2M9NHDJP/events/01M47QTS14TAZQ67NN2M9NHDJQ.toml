@@ -1,0 +1,10 @@
+kind = "create"
+title = "Tests and CI modelled on ruff and ty (D98)"
+type = "epic"
+category = "todo"
+priority = "high"
+acceptance = ["Every child closed or dropped with a reason", "cargo dev ci --list shows the snapshots, deny, shear, typos, msrv and fuzz-build steps"]
+body = "Implements docs/design/build-test-ci.md section 6 (D98, owner request 2026-10-06). Every practice is a cargo dev ci step or a nextest test so local, goway and GitHub runs are the same."
+at = "2026-10-06T04:33:58Z"
+actor = "lognd"
+rev = 1

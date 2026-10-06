@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/qualifier.rs", "crates/gob-symbols/src/stdtypes.rs", "crates/gob-symbols/src/graph/**", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/view.rs", "crates/gob-symbols/tests/csharp.rs"]
+new = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/qualifier.rs", "crates/gob-symbols/src/stdtypes.rs", "crates/gob-symbols/src/graph/**", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/view.rs", "crates/gob-symbols/tests/csharp.rs", "crates/gob-symbols/tests/snapshots/corpus__csharp_group.snap", "crates/gob-symbols/src/graph/csharp.rs"]
+at = "2026-10-06T04:18:43Z"
+actor = "lognd"
+rev = 1
