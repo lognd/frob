@@ -191,6 +191,20 @@ Every verb, every time:
 
 ## 4. Verb surface
 
+### 4.0 Verb admission (D104)
+
+A verb exists only for its own effect (it writes something), its own
+policy (semantics of its own, such as the board's WIP limits shared with
+PM013 or doable's lease-aware dispatch order) or its own object (a noun:
+cycle, release, lease). A different presentation of an existing query is a
+flag (`--tree`, `--brief`, `--format md`, `--live`), never a verb; an
+analysis of an object lives under that object's noun; each metric family
+and each forecast is computed in exactly one place and only displayed
+elsewhere. The v1 usage data (section 1: six ticket verbs and nine
+top-level verbs never used) is the reason. A test fails when a registered
+verb has no row below naming its justification (effect, policy or object).
+Removed verbs keep a hidden alias for one minor release, then go.
+
 One table is the source of truth: every verb, the product that ships
 it, the crate that owns the handler, whether a repeat of the same
 request is safe, the exit codes it can return (table in section 2), and
@@ -207,9 +221,8 @@ described in their own files, and are Milestone 2 or later (D36).
 | `config show --effective` | frob | gob-config | yes, read-only | 0 2 4 | 1 |
 | `config sync` | frob | gob-config | yes | 0 2 4 | 2 |
 | `schema` | frob | gob-cli | yes, read-only | 0 2 4 | 1 |
-| `stats` | frob | frob-pm | yes, read-only | 0 2 4 | 2 |
+| `stats [--section velocity\|capacity\|cost\|activity\|flow] [--live]` (one metrics verb, frob-metrics; absorbs `cycle velocity`) | frob | frob-pm | yes, read-only | 0 2 4 | 2 |
 | `clean` | frob | gob-cache | yes | 0 2 4 | 2 |
-| `status` | frob | frob-check | yes, read-only | 0 2 4 | 2 |
 | `migrate tickets\|directives\|config\|exceptions` | frob | frob-ledger | yes, skips what is imported | 0 2 3 4 | 2 |
 | `exceptions list` | frob | frob-obligations | yes, read-only | 0 2 4 | 1 |
 | `exceptions audit\|convert\|prune\|budget` | frob | frob-obligations | yes | 0 2 3 4 | 2 |
@@ -217,22 +230,22 @@ described in their own files, and are Milestone 2 or later (D36).
 | `rule test` (also `grimble rule test`) | frob, grimble | gob-rules | yes, read-only | 0 1 2 4 | 2 |
 | `batch` | frob | frob-ledger | yes, all or nothing | 0 2 3 4 | 2 |
 | `ticket new` | frob | frob-ledger | only with `--idempotency-key` or an identical request | 0 2 3 4 | 1 |
-| `ticket show\|list\|brief\|log [--since]` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
-| `ticket doable\|contention` | frob | frob-lease | yes, read-only | 0 2 4 | 1 |
-| `ticket wave` | frob | frob-lease | yes, read-only | 0 2 4 | 2 |
-| `ticket query\|board` | frob | frob-ledger | yes, read-only | 0 2 4 | 2 |
+| `ticket show [--events] [--format md]`, `ticket list [--tree] [--category C]` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
+| `ticket doable` (policy: lease-aware dispatch order) | frob | frob-lease | yes, read-only | 0 2 4 | 1 |
 | `ticket update\|link\|unlink\|comment\|body\|accept` | frob | frob-ledger | yes, same request | 0 2 3 4 | 1 |
 | `ticket attach\|component` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
 | `ticket triage accept\|decline\|snooze\|duplicate` | frob | frob-ledger | yes; a repeat of the same decision is `already`, one ledger commit per call (tickets.md section 11.1) | 0 2 3 4 | 1 |
-| `ticket triage list` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
+| `ticket triage` list view is `ticket list --category triage` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
 | `ticket evidence`, `ticket done-report` | frob | frob-evidence | yes | 0 2 3 4 | 1 |
 | `ticket evidence fetch` (the action `fetch` is a positional of `ticket evidence`) | frob | frob-evidence | yes | 0 2 3 4 | 2 |
-| `ticket start\|requeue` | frob | frob-lease | `start` only for the same holder; others get 3 | 0 2 3 4 | 1 |
+| `work [--here]`, `requeue` (top-level: lease and worktree lifecycle) | frob | frob-lease | `start` only for the same holder; others get 3 | 0 2 3 4 | 1 |
 | `ticket close\|drop\|reopen` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
 | `ticket review` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
 | `ticket reconcile\|doctor` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
 | `merge-driver` (hidden, git invokes it) | frob | frob-ledger | yes, pure union and re-fold | git contract: 0 merged, 1 conflict | 1 |
-| `cycle new\|assign\|plan\|close\|velocity`, `forecast` | frob | frob-pm | yes | 0 2 3 4 | 2 |
+| `cycle new\|assign\|plan\|close`; `forecast <milestone\|epic\|ticket\|release>` (the one forecast) | frob | frob-pm | yes | 0 2 3 4 | 2 |
+| `board [--brief] [--live]` | frob | frob-pm | yes, read-only | 0 2 4 | 1 |
+| `lease list [--contention]` | frob | frob-lease | yes, read-only | 0 2 4 | 1 |
 | `work <ticket>` | frob | frob-worktree | only for the same holder; others get 3 | 0 2 3 4 | 1 |
 | `worktree sweep\|remove` | frob | frob-worktree | yes | 0 2 3 4 | 2 |
 | `land <ticket> [--wait <secs>] [--dry-run]` | frob | frob-land | yes, a landed ticket returns `already` | 0 2 3 4 | 1 |
@@ -242,9 +255,9 @@ described in their own files, and are Milestone 2 or later (D36).
 | `test [--base]` | frob | frob-tests | yes | 0 1 2 4 | 1 |
 | `coverage` | frob | frob-tests | yes | 0 2 4 | 2 |
 | `graph why\|affects` | frob | frob-ack | yes, read-only | 0 2 4 | 1 |
-| `graph query`, `explore outline\|map\|xref\|docs` | frob | frob-explore | yes, read-only | 0 2 4 | 2 |
-| `release new\|stamp\|sync\|publish\|status\|forecast\|changelog` | frob | frob-release | yes | 0 2 3 4 | 2 |
-| `serve [--mcp\|--http]`, `tui` | frob | frob-serve | not applicable | 0 2 4 | 2 |
+| `graph query\|outline\|map\|xref` (one graph noun; `explore` folds into it) | frob | frob-explore | yes, read-only | 0 2 4 | 2 |
+| `release new\|stamp\|sync\|publish\|status\|changelog` (status prints the `forecast` line) | frob | frob-release | yes | 0 2 3 4 | 2 |
+| `serve [--mcp\|--http]` (no `tui` verb: `board --live` and `stats --live` exec the sibling `frob-live` binary, D105) | frob | frob-serve | not applicable | 0 2 4 | 2 |
 | `hook <event>` | frob | frob-hook | yes | 0 3 4 | 2 |
 | `fleet status\|route` | frob | frob-fleet | yes, read-only | 0 2 4 | 2 |
 | `git -- ...` | frob | gob-exec | explicit passthrough | 0 2 4 | 2 |

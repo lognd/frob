@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Corrected by the source review (notes/research/codegen-macros.md, G4-G5): ruff's map_codes only asserts one code per rule; its redirects are a separate runtime table (rule_redirects.rs) with a test that no live code is shadowed. Use ty's register_alias plus a Removed status as the template (removed ids stay reserved), and clippy's source scan (a lint declared but not registered fails) for the never-linked case."
+at = "2026-10-06T13:14:12Z"
+actor = "lognd"
+rev = 1

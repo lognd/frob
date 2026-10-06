@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["the test scans registry messages and snapshots", "an offending message fails naming the rule"]
+new = ["the test scans registry messages and snapshots", "an offending message fails naming the rule", "Unresolved messages follow their own convention and each Unresolved snapshot has a reason and a remedy line"]
+reason = "D106 (testing against U)"
+moved = [1, 2]
+at = "2026-10-06T13:41:10Z"
+actor = "lognd"
+rev = 1

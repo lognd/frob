@@ -97,7 +97,7 @@ grimble-model.md 9.7, cicd.md section 6 and migration.md point here.
 | Kind | Tool | Where |
 |---|---|---|
 | unit | plain `#[test]`, rstest for parametrization | each crate |
-| markdown corpora | `gob-mdtest`: a fenced in-memory repo, then expected findings or expected symbols/edges; the `mdtest!` macro generates one nextest case per corpus directory (reporting every file in it); a fenced block without `expect=` is documentation, not a test | `crates/*/tests/md/*.md` |
+| markdown corpora | `gob-mdtest`: a fenced in-memory repo, then expected findings or expected symbols/edges; the `mdtest!` macro generates one nextest case per corpus directory (reporting every file in it); a fenced block without `expect=` is documentation, not a test | `crates/*/tests/mdtest/**/*.md` |
 | snapshots | insta for rendered output, `--json` payloads, generated docs | each crate |
 | proc macros | trybuild compile-pass and compile-fail cases | `gob-macros/tests` |
 | CLI end to end | assert_cmd + assert_fs against a fixture repo; snapbox transcripts for `--help` | `crates/{frob,grimble,crunk}/tests` |
@@ -106,18 +106,41 @@ grimble-model.md 9.7, cicd.md section 6 and migration.md point here.
 | rule docs executable | every rule's doc example runs as an mdtest (ty lint_docs pattern) | generated |
 | self-hosting | `frob check` on this repo in CI, zero errors (milestone 1: frob only; sibling merging is Milestone 2 or later (D36)) | workflow |
 
-Markdown corpus format:
+Markdown corpus format (the authority is `crates/gob-mdtest/FORMAT.md`):
 
-```
+````
+<!-- mdtest: rule=COV001 -->
 # COV001 fires for an undocumented public function
 
-## repo
-`src/a.py`:
-    def f(): ...
-
-## expect
-COV001 src/a.py::f
+```rust expect=fire file=src/lib.rs
+pub fn f() {} // error: COV001
 ```
+
+```rust expect=clean file=src/lib.rs
+/// Documented.
+pub fn f() {}
+```
+````
+
+Rule testing model (D103, from the source review in
+notes/research/rule-testing.md): ruff now tests rules with the same shared
+mdtest crate as ty, so the primary rule test here is one mdtest file per
+rule with strict inline markers (rule, severity, line, optional column and
+message), sections that can hold several files and a toml config block,
+and inline `snapshot` blocks for the rendered diagnostic including the fix
+diff. The runner applies ruff's fix invariants to every case with a
+fixable finding (fixpoint within 10 rounds, reparse, no new parse error,
+no fixable finding left). Each rule's documentation is itself an mdtest
+file (ty lint_docs), so a bare `error:` there means that rule. Large
+real-shaped inputs keep the fixture plus insta snapshot layer
+(`resources/test/fixtures/<FAMILY>/<RULE>.<ext>`). Coverage meta-tests
+(every rule has a fire and a clean case or a fixture, every fixable rule
+has a fix snapshot, every rule has runnable docs) and the ecosystem check
+(section 6) sit on top. The fire-and-clean controls and the shrink-only
+coverage allowlist are frob additions that neither ruff nor ty has. D106
+(testing.md) extends the vocabulary to unresolved and notapplicable with
+subject accounting, because U is not two-valued: a clean case certifies
+at least one examined subject, and strictness counts Unresolved findings.
 
 Runner: `cargo nextest run` everywhere (per-test process isolation,
 retries off, junit output); `cargo test --doc` separately.
@@ -324,7 +347,7 @@ ty's format, insta snapshots, rule docs as tests). The rest:
 | Inline parser tests: `test_ok`/`test_err` comments in parser source extracted to `resources/inline/{ok,err}` with AST and error snapshots (ruff_python_parser, from rust-analyzer) | GRL, .grmb, directives and the crunk.toml spec parser use `// test_ok NAME` / `// test_err NAME` blocks; `cargo dev gen` extracts them, GEN001 keeps them current, insta snapshots the tree and errors |
 | Formatter idempotence and stability (ruff_python_formatter) | `grimble fmt` and the GRL printer: format(format(x)) = format(x) and parse(print(t)) = t over every fixture and a proptest generator |
 | Snapshot hygiene: no stale or unreviewed snapshots (`cargo insta test --unreferenced reject`) | the nextest step runs with `INSTA_UPDATE=no`; a `snapshots` step in `cargo dev ci` fails on unreferenced or pending `.snap.new` files |
-| Ecosystem check: run the base and PR binaries over pinned real projects and comment the finding diff (ruff ecosystem, ty mypy_primer) | `cargo dev ecosystem`: a pinned corpus (`ecosystem.toml`, repository and SHA per entry: Rust, Python, TS/React, C#/Unity, this repo) checked by both binaries; report = per-rule added/removed/changed findings, crashes, Unresolved deltas and timing; non-blocking PR comment; runs on goway helpers |
+| Ecosystem check: run the base and PR binaries over pinned real projects and comment the finding diff (ruff ecosystem, ty ecosystem-analyzer) | `cargo dev ecosystem`: a pinned corpus (`ecosystem.toml`, repository and SHA per entry: Rust, Python, TS/React, C#/Unity, this repo) checked by both binaries; report = per-rule added/removed/changed findings, crashes, Unresolved deltas and timing; non-blocking PR comment; runs on goway helpers |
 | Fuzzing in CI (ruff `fuzz/`, built on every PR) | `fuzz/` with cargo-fuzz targets for every parser (GRL, .grmb, directives, crunk.toml, ledger events) and the fold; PRs build the targets and run each 60 s; a nightly job runs longer and files a ticket per crash |
 | Deterministic benchmarks on PRs (ruff on CodSpeed) | instruction-count benchmarks (iai-callgrind or its maintained successor, Valgrind based, no external service; the ticket pins the crate) for cold and warm check, the plan executor and the parsers, compared against the base and commented; criterion stays for the scheduled wall-clock bench |
 | Change detection: skip jobs a diff cannot affect (ruff `determine_changes`) | a first `changes` job maps paths to job sets (Rust, docs only, crunk node and playwright ~2H41VF1, workflows); a docs-only PR runs fmt, gen check and frob check only |

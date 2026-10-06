@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["line mapping self-test", "nextest lists one test per corpus file", "the CI step emits annotations"]
+new = ["line mapping self-test", "nextest lists one test per corpus file", "the CI step emits annotations", "a failure prints expected and actual class, subjects examined and total, and the reason"]
+reason = "D106 (testing against U)"
+moved = [1, 2, 3]
+at = "2026-10-06T13:41:10Z"
+actor = "lognd"
+rev = 1

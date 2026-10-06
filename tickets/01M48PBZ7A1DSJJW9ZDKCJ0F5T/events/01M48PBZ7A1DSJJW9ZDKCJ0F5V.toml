@@ -1,0 +1,12 @@
+kind = "create"
+title = "gob-mdtest: column and message assertions, own-line and stacked markers, bare marker with a default rule"
+type = "story"
+category = "todo"
+priority = "high"
+parent = "01M47QTS14TAZQ67NN2M9NHDJP"
+scope = ["crates/gob-mdtest/**"]
+acceptance = ["parser unit tests cover each marker form", "a failing self-test corpus exists for each mismatch kind (rule, column, message)", "FORMAT.md documents every form"]
+body = 'Extend markers to `error: [COL] RULE "substring"` (1-based column, message contains), allow a marker on its own line applying to the next non-marker line and stacked markers, and add a default rule so a bare `error:` in a rule-docs corpus means that rule (ty assertion syntax). Prerequisite for executable rule docs (~D3ZK8NM). Source: notes/research/rule-testing.md (D103).'
+at = "2026-10-06T13:27:38Z"
+actor = "lognd"
+rev = 1
