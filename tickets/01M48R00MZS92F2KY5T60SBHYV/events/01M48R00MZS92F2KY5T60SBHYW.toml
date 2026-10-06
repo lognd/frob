@@ -1,0 +1,16 @@
+kind = "create"
+title = "One applicability resolver from applies and the capability matrix (behaviour-preserving)"
+type = "story"
+category = "todo"
+priority = "high"
+parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
+scope = ["crates/gob-check/**", "crates/frob-obligations/**"]
+acceptance = ["the existing status.rs unit table passes unchanged against resolve", "verdict reasons appear in check JSON and text", "need_of is deleted"]
+body = "M2: resolve(applies, file facts) -> Examine | NotApplicable | Unresolved replaces need_of, Need, RuleNeed and the internals of subject_status_for; the opaque-text row keeps today's answers (the D106 flip is ~59MXB7Z, after this). Verdict reasons reach the check JSON. Supersedes ~YPRBJPF. Design: docs/design/rule-authoring.md (D107); detail and the failure table: notes/research/rule-authoring.md section 4."
+at = "2026-10-06T13:56:04Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M48R002DA5FKCXDP8HQ6B02X"
