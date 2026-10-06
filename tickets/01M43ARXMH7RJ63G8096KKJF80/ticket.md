@@ -2,7 +2,8 @@
 id = "01M43ARXMH7RJ63G8096KKJF80"
 title = "gob-symbols: TS/TSX adapter with symbols, bindings and module graph"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
