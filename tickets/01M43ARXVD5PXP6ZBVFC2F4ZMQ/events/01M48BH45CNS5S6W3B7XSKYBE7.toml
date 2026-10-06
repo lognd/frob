@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-symbols/src/typescript/consteval.rs", "crates/gob-symbols/tests/typescript_consteval.rs", "crates/gob-ir/src/const_value.rs", "crates/gob-ir/tests/web.rs", "crates/gob-symbols/src/typescript/fold/jsx.rs", "crates/gob-symbols/src/typescript/mod.rs", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/graph/typescript.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/pipeline.rs", "changelog.d/*C2F4ZMQ*"]
+new = ["crates/gob-symbols/src/typescript/consteval.rs", "crates/gob-symbols/tests/typescript_consteval.rs", "crates/gob-ir/src/const_value.rs", "crates/gob-ir/tests/web.rs", "crates/gob-symbols/src/typescript/fold/jsx.rs", "crates/gob-symbols/src/typescript/mod.rs", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/graph/typescript.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/pipeline.rs", "changelog.d/*C2F4ZMQ*", "crates/gob-symbols/src/typescript/fold.rs", "docs/design/language-engines.md"]
+at = "2026-10-06T10:18:12Z"
+actor = "lognd"
+rev = 1
