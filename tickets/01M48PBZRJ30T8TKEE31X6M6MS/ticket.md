@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:39Z"
-updated = "2026-10-06T13:27:39Z"
+updated = "2026-10-06T13:41:02Z"
 scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**"]
 
 [[acceptance]]
@@ -16,6 +16,14 @@ bound = false
 
 [[acceptance]]
 text = "all existing corpora pass after migration"
+bound = false
+
+[[acceptance]]
+text = "an Unresolved or Advisory finding of a selected rule that no marker matches fails the case, and a rolled-up spanless Unresolved is matched by a header assertion"
+bound = false
+
+[[acceptance]]
+text = "the unmatched-finding report prints class, severity and reason"
 bound = false
 +++
 
