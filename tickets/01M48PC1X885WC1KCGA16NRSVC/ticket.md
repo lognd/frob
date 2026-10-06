@@ -7,7 +7,7 @@ priority = "low"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:41Z"
-updated = "2026-10-06T13:27:41Z"
+updated = "2026-10-06T13:41:10Z"
 scope = ["crates/gob-mdtest/**", "crates/gob-dev/src/ci.rs"]
 
 [[acceptance]]
@@ -20,6 +20,10 @@ bound = false
 
 [[acceptance]]
 text = "the CI step emits annotations"
+bound = false
+
+[[acceptance]]
+text = "a failure prints expected and actual class, subjects examined and total, and the reason"
 bound = false
 +++
 
