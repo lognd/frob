@@ -2,7 +2,8 @@
 id = "01M3ZX8182AHQF2XB4WYNC30Q8"
 title = "frob-gh: GitHub HTTPS client with ETags, backoff and recorded fixtures"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
