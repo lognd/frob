@@ -31,3 +31,9 @@ node crunk : trusted {
   owns "crates/crunk-*/**";
   owns "crates/crunk/**";
 }
+
+/// crunk calls the substrate: the check pipeline, the sibling document and the corpus coverage helper (SYS013 edge permission, binding.md B6).
+flow crunk_uses_gob : crunk -> gob {
+  producer "crates/crunk-check/src/lib.rs";
+  consumer "crates/gob-check/src/pipeline.rs";
+}
