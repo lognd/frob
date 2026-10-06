@@ -2,7 +2,8 @@
 id = "01M47QTX4X7FHCMZQE42JVWF8Y"
 title = "Formatter and printer idempotence: grimble fmt and the GRL printer"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
