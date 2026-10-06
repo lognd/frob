@@ -8,12 +8,16 @@ priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:14:25Z"
-updated = "2026-10-06T13:56:13Z"
+updated = "2026-10-06T13:56:14Z"
 scope = ["crates/gob-dev/**", ".github/workflows/ci.yml"]
 
 [[links]]
 kind = "blocked-by"
 target = "01M48MR49A0D52XAFWTD3ZK8NM"
+
+[[links]]
+kind = "superseded-by"
+target = "01M48R06SBXJZJ79GB8R20ASKS"
 
 [[acceptance]]
 text = "cargo dev new-rule output builds and its mdtest passes without edits"
