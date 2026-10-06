@@ -10,7 +10,7 @@
 //! | 4 | nothing: the hidden remainder, as rows with status `unknown` | [`relation`] |
 //!
 //! [`owner`] merges the ranks into the owner function of binding.md 2.6 and [`rules`] evaluates
-//! `SYS001`-`SYS005` and `SYS009`-`SYS011` ([`rule_defs`]). [`bind`] runs the whole pipeline.
+//! `SYS001`-`SYS005`, `SYS009`-`SYS011` and `SYS013` ([`rule_defs`]). [`bind`] runs the whole pipeline.
 //!
 //! # Known limits, each a decision-log proposal
 //!
@@ -33,6 +33,7 @@ pub mod ack;
 pub mod code;
 pub mod directives;
 pub mod drift;
+pub mod edges;
 pub mod frob_owned;
 pub mod live;
 pub mod model;
@@ -50,14 +51,14 @@ use grimble_model::ModelFiles;
 use serde_json::Value;
 
 pub use rule_defs::{
-    Sys001, Sys002, Sys003, Sys004, Sys005, Sys006, Sys007, Sys008, Sys009, Sys010, Sys011,
+    Sys001, Sys002, Sys003, Sys004, Sys005, Sys006, Sys007, Sys008, Sys009, Sys010, Sys011, Sys013,
 };
 pub use types::{BindFinding, REASON_PREFIX, Reason, Role, Row, Source, Status, reason_of_message};
 
 /// The rule ids this crate evaluates.
-pub const RULES: [&str; 11] = [
+pub const RULES: [&str; 12] = [
     "SYS001", "SYS002", "SYS003", "SYS004", "SYS005", "SYS006", "SYS007", "SYS008", "SYS009",
-    "SYS010", "SYS011",
+    "SYS010", "SYS011", "SYS013",
 ];
 
 /// The product name: the lock is `grimble.lock`.
@@ -111,6 +112,7 @@ pub struct Binding {
 fn declare_not_applicable(
     model: &model::Model,
     rel: &relation::Relation,
+    graph: &gob_symbols::SymbolGraph,
     lock: &Result<gob_lock::LockFile, gob_lock::LockError>,
 ) -> BTreeMap<&'static str, &'static str> {
     let verdicts = [
@@ -125,6 +127,7 @@ fn declare_not_applicable(
         ("SYS009", rules::sys009_inapplicable(model)),
         ("SYS010", rules::sys010_inapplicable(model)),
         ("SYS011", rules::sys011_inapplicable(model)),
+        ("SYS013", edges::sys013_inapplicable(model, graph)),
     ];
     let mut out = BTreeMap::new();
     for (rule, why) in verdicts {
@@ -180,7 +183,12 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
     let lock = gob_lock::LockFile::load(&lock_path);
     if model.entities.is_empty() {
         tracing::info!("no model entities; binding skipped");
-        let not_applicable = declare_not_applicable(&model, &relation::Relation::default(), &lock);
+        let not_applicable = declare_not_applicable(
+            &model,
+            &relation::Relation::default(),
+            &gob_symbols::SymbolGraph::default(),
+            &lock,
+        );
         return Binding {
             not_applicable,
             ..Binding::default()
@@ -210,6 +218,11 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
             r.overridden = n.as_str() != r.entity;
         }
     }
+    let graph = if edges::needs_graph(&model) {
+        edges::build_graph(input.root, &code)
+    } else {
+        gob_symbols::SymbolGraph::default()
+    };
     let cx = rules::Cx {
         model: &model,
         code: &code,
@@ -217,9 +230,10 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         owners: &owners,
         modeled: &modeled,
         strict: input.strict,
+        graph: &graph,
         ledger_dir: input.ledger_dir,
     };
-    let not_applicable = declare_not_applicable(&model, &rel, &lock);
+    let not_applicable = declare_not_applicable(&model, &rel, &graph, &lock);
     let mut out = rules::evaluate(&cx);
     let live = live::Live::build(&code);
     let flow_contracts = model.flow_contracts();
