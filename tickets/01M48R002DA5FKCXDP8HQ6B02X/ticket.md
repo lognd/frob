@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:03Z"
-updated = "2026-10-06T16:51:22Z"
+updated = "2026-10-06T16:55:54Z"
 labels = ["creates:crates/gob-caps/**"]
 scope = ["crates/gob-caps/**", "crates/gob-symbols/**", "crates/gob-languages/**", "crates/grimble-model/**", "Cargo.lock", "crates/gob-rules/**"]
 
