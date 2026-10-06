@@ -6,7 +6,8 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-05T01:44:10Z"
-updated = "2026-10-06T04:29:13Z"
+updated = "2026-10-06T04:44:19Z"
+scope = ["crates/frob-check/**"]
 
 [[acceptance]]
 text = "Given a repository whose configured ledger ref is absent, when frob check runs, then it reports one required finding naming the missing ref and a remedy, not zero-subject verdicts from ledger rules"
