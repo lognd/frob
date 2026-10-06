@@ -470,3 +470,106 @@ fn object_span_covers_its_text() {
     };
     assert_eq!(slice(&src, object.span()), "tset");
 }
+
+/// Names and literal text of the fields of the first `find` source, for dotted/bare comparison.
+fn first_find_fields(src: &str) -> Vec<(String, String)> {
+    let p = clean(src);
+    let rule = &p.file.rules[0];
+    let ClauseKind::Find(b) = &rule.clauses[0].node else {
+        panic!("first clause is not a find");
+    };
+    let crate::grl::ast::Source::Shape(shape) = &b.source else {
+        panic!("find source is not a shape");
+    };
+    let ShapeKind::Kind { fields, .. } = &shape.node else {
+        panic!("shape is not a kind pattern");
+    };
+    fields
+        .iter()
+        .map(|f| (f.name.text.clone(), format!("{:?}", f.value.node)))
+        .collect()
+}
+
+// frob:ticket 01M47TD0MQF9A951S8P1PBDXSF
+// frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
+#[test]
+fn dotted_and_bare_field_forms_parse_to_the_same_fields() {
+    let wrap = |c: &str| {
+        format!(
+            "rule T001 \"t\" {{\n lang *\n severity warn\n {c}\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}}"
+        )
+    };
+    let bare = first_find_fields(&wrap("find e: element(tag = \"img\", kind = \"x\")"));
+    let dotted = first_find_fields(&wrap("find e: element(.tag = \"img\", .kind = \"x\")"));
+    let mixed = first_find_fields(&wrap("find e: element(.tag = \"img\", kind = \"x\")"));
+    assert_eq!(bare.len(), 2);
+    assert_eq!(bare, dotted);
+    assert_eq!(bare, mixed);
+}
+
+// frob:ticket 01M47TD0MQF9A951S8P1PBDXSF
+// frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
+#[test]
+fn a_dot_without_a_field_name_is_a_syntax_error() {
+    let p = parsed("rule T001 \"t\" { find e: element(. = \"img\") }");
+    assert!(!p.is_ok());
+}
+
+/// The fenced grl blocks of grl-spec.md, each as a whole rule (fragments get a rule shell).
+fn spec_grl_blocks() -> Vec<String> {
+    let path = format!(
+        "{}/../../docs/design/grl-spec.md",
+        env!("CARGO_MANIFEST_DIR")
+    );
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{path}: {e}"));
+    let mut blocks = Vec::new();
+    let mut cur: Option<String> = None;
+    for line in text.lines() {
+        match (&mut cur, line.trim_end()) {
+            (None, "```grl") => cur = Some(String::new()),
+            (Some(b), "```") => {
+                blocks.push(std::mem::take(b));
+                cur = None;
+            }
+            (Some(b), l) => {
+                b.push_str(l);
+                b.push('\n');
+            }
+            (None, _) => {}
+        }
+    }
+    blocks
+}
+
+// frob:ticket 01M47TD0MQF9A951S8P1PBDXSF
+// frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
+#[test]
+fn every_grl_example_in_grl_spec_parses() {
+    let blocks = spec_grl_blocks();
+    assert!(blocks.len() >= 10, "found only {} grl blocks", blocks.len());
+    let mut parsed_blocks = 0;
+    for b in &blocks {
+        // A block with a bare `...` line elides text on purpose; it is an excerpt, not source.
+        if b.lines().any(|l| l.trim() == "...") {
+            continue;
+        }
+        parsed_blocks += 1;
+        let src = if b.trim_start().starts_with("rule ") {
+            b.clone()
+        } else {
+            format!(
+                "rule T001 \"t\" {{\n lang *\n severity warn\n {b}\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}}"
+            )
+        };
+        let p = parsed(&src);
+        assert!(
+            p.is_ok(),
+            "spec block does not parse:\n{b}\n{:#?}",
+            p.errors
+        );
+    }
+    assert!(
+        parsed_blocks >= 10,
+        "only {parsed_blocks} blocks were parsed"
+    );
+}

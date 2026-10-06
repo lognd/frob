@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Each recognised describe/it/test call is a function unit (suite$title or test$title, [dupN] on repeats) and calls in its callback are attributed to it", "is_typescript_test_fn names TS test units and frob-tests is_test_fn and COV001 use it; dynamic titles stay Unknown (no unit)", "EXTRACTOR_VERSION is bumped for the changed per-file output"]
+moved = []
+at = "2026-10-06T12:04:05Z"
+actor = "lognd"
+rev = 1
