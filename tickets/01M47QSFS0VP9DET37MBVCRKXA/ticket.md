@@ -2,7 +2,8 @@
 id = "01M47QSFS0VP9DET37MBVCRKXA"
 title = "gob-check::sibling: one gob.sibling/1 emitter and parser for every product"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
