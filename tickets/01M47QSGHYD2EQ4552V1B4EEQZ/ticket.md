@@ -2,7 +2,8 @@
 id = "01M47QSGHYD2EQ4552V1B4EEQZ"
 title = "gob-product: Product trait with generic check, doctor and workspace verbs; crunk and grimble on it"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
