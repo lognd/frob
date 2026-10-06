@@ -8,7 +8,7 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:59Z"
-updated = "2026-10-06T04:28:48Z"
+updated = "2026-10-06T04:28:56Z"
 idempotency_key = "d94-sln"
 scope = ["crates/gob-symbols/src/dotnet.rs", "crates/gob-symbols/src/paths.rs", "crates/gob-symbols/src/crates.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/tests/dotnet.rs", "docs/design/code-model.md", "docs/reference/config.md", "crates/gob-symbols/src/lib.rs"]
 
@@ -26,7 +26,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a malformed .csproj, when frob check runs, then a finding names the file and the project is Unresolved, not skipped"
-bound = false
+bound = true
 +++
 
 Project discovery in crates/gob-symbols (new dotnet.rs beside crates.rs and paths.rs): parse .sln (project entries, solution folders) and SDK-style and legacy .csproj (Compile globs and default includes, ProjectReference, PackageReference names, RootNamespace, AssemblyName, ImplicitUsings, TargetFramework(s), LangVersion). Each project maps to the existing package/unit notion so ownership, reach and test selection work unchanged; a file belongs to the nearest enclosing project; bin/ and obj/ are ignored. Cross-project references become package dependency edges. Implicit usings from ImplicitUsings feed the import resolution left Unresolved by the calls story. Malformed project files are reported, never dropped. Docs: docs/design/code-model.md package notion section and docs/reference/config.md if a config key is added.
