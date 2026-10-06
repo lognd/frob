@@ -2,13 +2,14 @@
 id = "01M40C92S9KDSA59ZSGYPRBJPF"
 title = "gob-check: rule applicability carries a reason that is reported and counted, not only logged"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T07:57:23Z"
-updated = "2026-10-03T07:57:23Z"
+updated = "2026-10-06T13:56:15Z"
 idempotency_key = "m2-applicable-reason"
 labels = ["milestone:2"]
 scope = ["crates/gob-check/**", "crates/frob-check/**", "crates/grimble-check/**", "crates/frob-pm/src/rules/**"]
