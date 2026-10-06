@@ -2,11 +2,11 @@
 id = "01M47TD0MQF9A951S8P1PBDXSF"
 title = 'GRL parser accepts the dotted field form in kind patterns, element(.tag = "img"), as grl-spec.md writes it'
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-06T05:18:53Z"
-updated = "2026-10-06T05:18:53Z"
+updated = "2026-10-06T11:25:43Z"
 scope = ["crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
