@@ -6,6 +6,7 @@
 //! link, unlink, comment, close, drop, reopen), [`mod@read`] (show, list, doable,
 //! brief), [`triage_cmd`] (the inbox verbs), [`doctor_cmd`] and the hidden [`merge_cmd`].
 
+pub mod branch_cmd;
 pub mod doctor_cmd;
 pub mod fragment_cmd;
 pub mod merge_cmd;
@@ -193,6 +194,7 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<triage_cmd::Duplicate>()
         .register::<triage_cmd::InboxList>()
         .register::<fragment_cmd::Fragment>()
+        .register::<branch_cmd::BranchInit>()
         .register::<doctor_cmd::TicketDoctor>()
         .register::<merge_cmd::MergeDriver>()
 }

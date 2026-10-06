@@ -540,6 +540,11 @@
           "description": "Actor recorded on events; empty means git `user.name`.",
           "type": "string"
         },
+        "branch": {
+          "default": "frob-tickets",
+          "description": "Name of the orphan branch `frob ticket branch init` creates for the ledger (`mirror.md` section 1).",
+          "type": "string"
+        },
         "dir": {
           "default": "tickets",
           "description": "Directory of ticket files, relative to the repository root.",

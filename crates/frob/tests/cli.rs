@@ -333,6 +333,7 @@ fn config_sync_adds_missing_knobs_once() {
             "release.products",
             "release.preview",
             "tickets.ref",
+            "tickets.branch",
             "tickets.ref_mode"
         ])
     );
@@ -378,6 +379,7 @@ fn every_verb_is_in_the_command_inventory() {
         "ticket doable",
         "ticket brief",
         "ticket doctor",
+        "ticket branch init",
         "merge-driver",
         "lease list",
         "lease widen",
