@@ -2,7 +2,8 @@
 id = "01M3TC5H01PZTZY94NVP4P4A33"
 title = "Write the frob v2 design doc (Rust rewrite, design-first)"
 type = "epic"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 reporter = "human"
