@@ -357,6 +357,20 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   The repository count runs inside the lease-store lock together with the
   lease write (`acquire_admitting`), counting live leases, so two concurrent
   `work` calls cannot both take the last slot.
+- Zero-match scope warning (~PVJ9SQM). A scope entry that matches no file
+  tracked at `HEAD` grants a lease over nothing and, matching nothing,
+  reports no overlap, which reads as "cleanly disjoint". `ticket new`,
+  `ticket update --add-scope`, `lease widen` and `work`/`start` therefore
+  warn, naming the glob and, when one exists, the near tracked path (same
+  file name elsewhere, or a single closest name one typo away in the same
+  directory; with no near candidate the warning is plain, never a guess).
+  It is a warning, not a refusal: the denominator is the tracked tree, so a
+  repository with no tracked files (an empty fixture, a fresh `git init`) is
+  never judged. A ticket whose job is to create files declares them with the
+  label `creates:<glob>` (flags `--new-scope` on `ticket new`,
+  `--add-new-scope` on `ticket update`, `--new-glob` on `lease widen`); the
+  label is ledger data, so `work` stays quiet on later calls, and the entry is
+  an ordinary scope glob everywhere else (lease, overlap, SCOPE001).
 - Worktree garbage collection (~BZXZK29). A worktree outlives its ticket
   unless something removes it, and each one carries its own `target/`
   (15 to 20 GB), so `frob work` and `frob land` run a throttled pass that

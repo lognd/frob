@@ -2,13 +2,14 @@
 id = "01M3ZX8182AHQF2XB4WYNC30Q8"
 title = "frob-gh: GitHub HTTPS client with ETags, backoff and recorded fixtures"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:40Z"
-updated = "2026-10-06T06:50:20Z"
+updated = "2026-10-06T07:33:18Z"
 idempotency_key = "m2-mirror-gh-client"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-gh/**", "Cargo.lock"]

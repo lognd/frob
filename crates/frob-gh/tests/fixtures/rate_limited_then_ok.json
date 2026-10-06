@@ -1,0 +1,18 @@
+[
+  {
+    "request": { "method": "GET", "url": "https://api.github.com/repos/o/r/issues/1" },
+    "response": {
+      "status": 429,
+      "headers": { "Retry-After": "7", "X-RateLimit-Remaining": "0", "X-RateLimit-Limit": "5000", "X-RateLimit-Used": "5000", "X-RateLimit-Reset": "1700000000" },
+      "body": "{\"message\":\"rate limited\"}"
+    }
+  },
+  {
+    "request": { "method": "GET", "url": "https://api.github.com/repos/o/r/issues/1" },
+    "response": {
+      "status": 200,
+      "headers": { "ETag": "\"abc\"", "X-RateLimit-Remaining": "4999", "X-RateLimit-Limit": "5000", "X-RateLimit-Used": "1", "X-RateLimit-Reset": "1700000000", "X-RateLimit-Resource": "core" },
+      "body": "{\"number\":1,\"title\":\"hello\"}"
+    }
+  }
+]

@@ -38,6 +38,7 @@ struct NewRequest {
     parent: Option<String>,
     blocked_by: Vec<String>,
     scope: Vec<String>,
+    new_scope: Vec<String>,
     labels: Vec<String>,
     acceptance: Vec<String>,
     aliases: Vec<String>,
@@ -82,6 +83,10 @@ impl Command for New {
                 "A ticket that blocks this one (repeatable)",
             ))
             .arg(many_flag("scope", "Write-scope glob (repeatable)"))
+            .arg(many_flag(
+                "new-scope",
+                "Write-scope glob for files this ticket will create: scope plus a `creates:` label that silences the zero-match warning (repeatable)",
+            ))
             .arg(many_flag("label", "Label (repeatable)"))
             .arg(many_flag("acceptance", "Acceptance criterion (repeatable)"))
             .arg(many_flag(
@@ -118,6 +123,7 @@ impl Command for New {
                 parent: get(m, "parent"),
                 blocked_by: get_many(m, "blocked-by"),
                 scope: get_many(m, "scope"),
+                new_scope: get_many(m, "new-scope"),
                 labels: get_many(m, "label"),
                 acceptance: get_many(m, "acceptance"),
                 aliases: get_many(m, "alias"),
@@ -152,6 +158,10 @@ impl Command for New {
             .collect::<Result<_, _>>()?;
         req.scope.clone_from(&r.scope);
         req.labels.clone_from(&r.labels);
+        for g in &r.new_scope {
+            req.scope.push(g.clone());
+            req.labels.push(frob_lease::unmatched::creates_label(g));
+        }
         req.acceptance.clone_from(&r.acceptance);
         req.aliases.clone_from(&r.aliases);
         req.body.clone_from(&r.body);
@@ -163,7 +173,12 @@ impl Command for New {
         req.assignee.clone_from(&r.assignee);
         let applied = ledger.new_ticket(req).map_err(cli_err)?;
         tracing::info!(ticket = %applied.ticket.front.id, already = applied.already, "ticket new");
-        Ok(payload(&applied))
+        let f = &applied.ticket.front;
+        let misses =
+            frob_lease::unmatched::scope_warnings(ledger.repo(), f.id, &f.scope, &f.labels);
+        Ok(misses
+            .into_iter()
+            .fold(payload(&applied), gob_cli::Payload::with_warning))
     }
 }
 
@@ -181,6 +196,7 @@ pub struct Update {
     add_labels: Vec<String>,
     remove_labels: Vec<String>,
     add_scope: Vec<String>,
+    add_new_scope: Vec<String>,
     remove_scope: Vec<String>,
     clears: Vec<String>,
     add_acceptance: Vec<String>,
@@ -286,6 +302,10 @@ impl Command for Update {
             .arg(many_flag("remove-label", "Label to remove (repeatable)"))
             .arg(many_flag("add-scope", "Scope glob to add (repeatable)"))
             .arg(many_flag(
+                "add-new-scope",
+                "Scope glob to add for files this ticket will create: scope plus a `creates:` label that silences the zero-match warning (repeatable)",
+            ))
+            .arg(many_flag(
                 "remove-scope",
                 "Scope glob to remove (repeatable)",
             ))
@@ -338,6 +358,7 @@ impl Command for Update {
             add_labels: get_many(m, "add-label"),
             remove_labels: get_many(m, "remove-label"),
             add_scope: get_many(m, "add-scope"),
+            add_new_scope: get_many(m, "add-new-scope"),
             remove_scope: get_many(m, "remove-scope"),
             clears: get_many(m, "clear"),
             add_acceptance: get_many(m, "add-acceptance"),
@@ -353,10 +374,19 @@ impl Command for Update {
     fn run(&self, ctx: &Context) -> CliOutcome<UpdateData> {
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;
+        let creates = frob_lease::unmatched::creates_label;
         let mut patch = Patch {
-            add_labels: self.add_labels.clone(),
-            remove_labels: self.remove_labels.clone(),
-            add_scope: self.add_scope.clone(),
+            add_labels: [
+                self.add_labels.clone(),
+                self.add_new_scope.iter().map(|g| creates(g)).collect(),
+            ]
+            .concat(),
+            remove_labels: [
+                self.remove_labels.clone(),
+                self.remove_scope.iter().map(|g| creates(g)).collect(),
+            ]
+            .concat(),
+            add_scope: [self.add_scope.clone(), self.add_new_scope.clone()].concat(),
             remove_scope: self.remove_scope.clone(),
             clears: self.clears.clone(),
             add_acceptance: self.add_acceptance.clone(),

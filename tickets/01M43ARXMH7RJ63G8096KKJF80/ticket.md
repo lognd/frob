@@ -2,16 +2,16 @@
 id = "01M43ARXMH7RJ63G8096KKJF80"
 title = "gob-symbols: TS/TSX adapter with symbols, bindings and module graph"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-04T11:28:48Z"
-updated = "2026-10-06T04:31:32Z"
+updated = "2026-10-06T07:44:21Z"
 idempotency_key = "crunk-plan-tssym"
 labels = ["area:crunk"]
-scope = ["crates/gob-symbols/src/typescript/**", "crates/gob-symbols/tests/typescript*.rs", "docs/reference/fidelity.md"]
+scope = ["crates/gob-symbols/src/typescript/**", "crates/gob-symbols/tests/typescript*.rs", "docs/reference/fidelity.md", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/src/view.rs", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/graph/typescript.rs", "frob.toml"]
 
 [[links]]
 kind = "blocked-by"

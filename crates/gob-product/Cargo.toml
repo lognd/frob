@@ -1,0 +1,26 @@
+[package]
+name = "gob-product"
+version.workspace = true
+description = "The Product trait and the generic check, doctor and workspace verbs every goblin binary instantiates."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[dependencies]
+gob-check = { version = "0.532.0", path = "../gob-check" }
+gob-cli = { version = "0.532.0", path = "../gob-cli" }
+gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+crunk-check = { version = "0.532.0", path = "../crunk-check" }
+tempfile = "3"
+
+[lints]
+workspace = true

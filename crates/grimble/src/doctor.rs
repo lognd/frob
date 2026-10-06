@@ -2,23 +2,14 @@
 
 use std::collections::BTreeMap;
 
-use gob_cli::{CliError, Command, Context, Outcome, Payload};
+use gob_cli::{Outcome, Payload};
 use grimble_check::config::{ComputeTable, PacksTable};
 use grimble_check::fidelity::capabilities_of;
 use grimble_check::model_view::file_row;
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use crate::workspace::{check_error, locate_root};
-
-/// Report adapter fidelity per language, how each model file parses and the state of grimble.toml.
-#[derive(Debug, Clone, Copy, Default, gob_cli::Command)]
-#[command(
-    verb = "doctor",
-    product = "grimble",
-    exits(ok, refused, usage, internal)
-)]
-pub struct Doctor;
+use crate::workspace::check_error;
 
 /// One language adapter.
 #[derive(Debug, Serialize, JsonSchema)]
@@ -102,53 +93,49 @@ fn config_row(root: &std::path::Path) -> ConfigRow {
     }
 }
 
-impl Command for Doctor {
-    type Data = DoctorData;
-
-    fn from_matches(_matches: &gob_cli::clap::ArgMatches) -> Result<Self, CliError> {
-        Ok(Self)
-    }
-
-    fn run(&self, ctx: &Context) -> Outcome<DoctorData> {
-        let root = locate_root(&ctx.cwd);
-        let survey = grimble_check::survey(&root).map_err(check_error)?;
-        let mut model = Vec::new();
-        for path in &survey.models {
-            let bytes = std::fs::read(root.join(path)).unwrap_or_default();
-            let row = file_row(path, &bytes);
-            model.push(ModelRow {
-                path: row.path,
-                status: row.status.to_owned(),
-                reason: row.reason,
-                holes: row.holes,
-            });
-        }
-        let languages = gob_symbols::fidelity_report()
-            .into_iter()
-            .map(|a| LanguageRow {
-                language: a.language.to_owned(),
-                adapter: a.identity,
-                fidelity: a.fidelity.to_string(),
-                files: survey.languages.get(a.language).copied().unwrap_or(0),
-                capabilities: capabilities_of(a.language)
-                    .into_iter()
-                    .map(|(k, v)| (k, v.to_owned()))
-                    .collect(),
-            })
-            .collect();
-        let config = config_row(&root);
-        let mut payload = Payload::new(DoctorData {
-            root: root.display().to_string(),
-            config,
-            model,
-            languages,
+/// The grimble doctor report for the repository at `root`.
+///
+/// # Errors
+///
+/// A config or walk failure of the survey, mapped onto the exit table.
+pub fn report(root: &std::path::Path) -> Outcome<DoctorData> {
+    let survey = grimble_check::survey(root).map_err(check_error)?;
+    let mut model = Vec::new();
+    for path in &survey.models {
+        let bytes = std::fs::read(root.join(path)).unwrap_or_default();
+        let row = file_row(path, &bytes);
+        model.push(ModelRow {
+            path: row.path,
+            status: row.status.to_owned(),
+            reason: row.reason,
+            holes: row.holes,
         });
-        if payload.data.config.packs_unloaded {
-            payload
-                .warnings
-                .push(grimble_check::config::PACKS_NOT_LOADED.to_owned());
-        }
-        tracing::info!("doctor finished");
-        Ok(payload)
     }
+    let languages = gob_symbols::fidelity_report()
+        .into_iter()
+        .map(|a| LanguageRow {
+            language: a.language.to_owned(),
+            adapter: a.identity,
+            fidelity: a.fidelity.to_string(),
+            files: survey.languages.get(a.language).copied().unwrap_or(0),
+            capabilities: capabilities_of(a.language)
+                .into_iter()
+                .map(|(k, v)| (k, v.to_owned()))
+                .collect(),
+        })
+        .collect();
+    let config = config_row(root);
+    let mut payload = Payload::new(DoctorData {
+        root: root.display().to_string(),
+        config,
+        model,
+        languages,
+    });
+    if payload.data.config.packs_unloaded {
+        payload
+            .warnings
+            .push(grimble_check::config::PACKS_NOT_LOADED.to_owned());
+    }
+    tracing::info!("doctor finished");
+    Ok(payload)
 }
