@@ -24,7 +24,7 @@ pub struct Range {
 
 /// Declared polarity of a rule (universal-model.md 4.2); serialized as the symbol.
 #[derive(Debug, Clone, Copy, Serialize, JsonSchema)]
-pub enum Polarity {
+pub enum PolarityMark {
     /// Positive.
     #[serde(rename = "P+")]
     Plus,
@@ -68,8 +68,10 @@ pub struct Invocation {
     #[schemars(extend("const" = "."))]
     pub root: String,
     /// The `--ticket-scope` paths the run honoured, or null when the run was unscoped.
+    #[schemars(required)]
     pub ticket_scope: Option<Vec<String>>,
     /// The `--base` ref the run diffed against, or null when no diff-scoped rule ran.
+    #[schemars(required)]
     pub base: Option<String>,
 }
 
@@ -88,7 +90,7 @@ pub struct RuleRecord {
     /// Rule id.
     pub rule: String,
     /// Declared polarity.
-    pub polarity: Polarity,
+    pub polarity: PolarityMark,
     /// Subjects examined across the whole run.
     pub subjects_examined: u64,
     /// Live findings of this rule.
@@ -103,6 +105,7 @@ pub struct RuleRecord {
 #[derive(Debug, Serialize, JsonSchema)]
 #[schemars(extend(
     "unevaluatedProperties" = false,
+    "required" = ["rule", "slug", "severity", "file", "line", "column", "message", "fingerprint", "fix", "required", "polarity", "subjects_examined", "reason", "maybe", "anchor", "entity", "remedy", "range"],
     "if" = {"properties": {"severity": {"const": "unresolved"}}, "required": ["severity"]},
     "then" = {"properties": {"reason": {"type": "string"}}},
     "else" = {"properties": {
@@ -114,7 +117,7 @@ pub struct FindingRow {
     #[serde(flatten)]
     pub record: gob_diagnostics::FindingRecord,
     /// Declared polarity of the rule (universal-model.md 4.2).
-    pub polarity: Polarity,
+    pub polarity: PolarityMark,
     /// Subjects the rule examined in the scope this finding rolls up; zero only with a vacuous Unresolved.
     pub subjects_examined: u64,
     /// Unresolved reason code (kebab-case such as `vacuous`, `fidelity`); null unless severity is unresolved.
@@ -319,19 +322,24 @@ pub struct ExceptionRecord {
     /// Anchor, symref or glob the exception applies to.
     pub on: String,
     /// Repository-relative file holding the exception, or null for a baseline pool key.
+    #[schemars(required)]
     pub file: Option<String>,
     /// 1-based line of the exception, or null.
+    #[schemars(required)]
     pub line: Option<u32>,
     /// The reason text, verbatim.
     pub because: String,
     /// ISO date `YYYY-MM-DD` of the optional date exit, or null.
     #[schemars(regex(pattern = "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))]
+    #[schemars(required)]
     pub until: Option<String>,
     /// The `ticket=` value, verbatim and opaque: the sibling never resolves it.
+    #[schemars(required)]
     pub ticket: Option<String>,
     /// Exit state of the exception.
     pub exit_state: ExitState,
     /// Outcome of the exits the product itself evaluated, or null when none was evaluated.
+    #[schemars(required)]
     pub status: Option<ExceptionStatus>,
     /// Number of findings this exception suppressed in this run.
     pub suppresses: u32,
@@ -395,9 +403,11 @@ pub struct Entity {
     pub range: Range,
     /// Body facet digest, or null when unavailable.
     #[schemars(regex(pattern = "^blake3:[0-9a-f]{64}$"))]
+    #[schemars(required)]
     pub body_digest: Option<String>,
     /// Doc facet digest, or null when unavailable.
     #[schemars(regex(pattern = "^blake3:[0-9a-f]{64}$"))]
+    #[schemars(required)]
     pub doc_digest: Option<String>,
     /// Digest scheme version of the two digests.
     pub digest_scheme: u32,
@@ -449,6 +459,7 @@ pub struct Binding {
     /// Role (binding.md 1.2).
     pub role: Role,
     /// Symref of the bound identity, or null for the hidden remainder of rank 4.
+    #[schemars(required)]
     pub identity: Option<String>,
     /// Source rank (binding.md section 2).
     #[schemars(range(min = 1, max = 4))]
@@ -456,9 +467,11 @@ pub struct Binding {
     /// Status of the row.
     pub status: BindingStatus,
     /// Clause anchor or directive site that gave the row.
+    #[schemars(required)]
     pub anchor: Option<String>,
     /// Residual reason code for rank 4 rows, null otherwise.
     #[schemars(regex(pattern = "^[a-z][a-z0-9-]*$"))]
+    #[schemars(required)]
     pub reason: Option<String>,
 }
 
@@ -489,8 +502,10 @@ pub struct Edge {
     /// Anchor of the target entity or file.
     pub to: String,
     /// Clause anchor the edge was declared at.
+    #[schemars(required)]
     pub anchor: Option<String>,
     /// Anchor of the flow's contract, for `flow` edges.
+    #[schemars(required)]
     pub contract: Option<String>,
 }
 
