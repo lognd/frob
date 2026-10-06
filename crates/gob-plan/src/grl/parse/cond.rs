@@ -145,12 +145,15 @@ impl Parser<'_> {
         Ok(Some(Spanned { node, span }))
     }
 
+    /// One `name = literal` pair of a kind pattern; the leading-dot form `.name = literal` is
+    /// accepted too (grl-spec.md section 6) and means the same, the bare form being canonical.
     fn field_eq(&mut self) -> PResult<FieldEq> {
+        let dot = self.eat(&TokenKind::Dot);
         let name = self.ident("a field name")?;
         self.expect(&TokenKind::Eq, "`=` after the field name")?;
         let value = self.literal()?;
         Ok(FieldEq {
-            span: cover(name.span, value.span),
+            span: cover(dot.unwrap_or(name.span), value.span),
             name,
             value,
         })
