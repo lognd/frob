@@ -7,8 +7,8 @@ priority = "medium"
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:34:47Z"
-updated = "2026-10-06T13:46:02Z"
-scope = ["crates/grimble-bind/**", "design/model.grmb", "docs/design/binding.md"]
+updated = "2026-10-06T13:51:05Z"
+scope = ["crates/grimble-bind/**", "design/model.grmb", "docs/design/binding.md", "crates/gob-mdtest/coverage-allowlist.toml"]
 
 [[acceptance]]
 text = "SYS013 (the id binding.md 11.3 assigns to undeclared flow) fires once per ordered owner pair when a Must TS import or call edge, JSX component uses included, crosses owners with no flow in that direction; the web conformance fixture fires ui to api."
