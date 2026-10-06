@@ -2,11 +2,11 @@
 id = "01M44VQ57WQW4G5JTZDDYEVJPW"
 title = "check on a clone without the ledger ref reports REF001 zero subjects instead of a missing-ledger-ref finding"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-05T01:44:10Z"
-updated = "2026-10-05T01:44:10Z"
+updated = "2026-10-06T04:09:07Z"
 
 [[acceptance]]
 text = "Given a repository whose configured ledger ref is absent, when frob check runs, then it reports one required finding naming the missing ref and a remedy, not zero-subject verdicts from ledger rules"
