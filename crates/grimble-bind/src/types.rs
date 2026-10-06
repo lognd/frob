@@ -152,6 +152,8 @@ pub enum Reason {
     Vacuous,
     /// `grimble.lock` exists but cannot be read or parsed.
     LockUnreadable,
+    /// An import or call edge is May or has no known target, so no owner pair can be claimed.
+    UnresolvedEdge,
 }
 
 impl Reason {
@@ -164,6 +166,7 @@ impl Reason {
             Self::InferenceUnavailable => "inference-unavailable",
             Self::Vacuous => "vacuous",
             Self::LockUnreadable => "lock-unreadable",
+            Self::UnresolvedEdge => "unresolved-edge",
         }
     }
 }

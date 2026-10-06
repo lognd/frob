@@ -13,7 +13,7 @@ use std::fmt::Write as _;
 
 use gob_ir::select;
 use gob_rules::Severity;
-use gob_symbols::{Fidelity, SymbolKind, Visibility};
+use gob_symbols::{Fidelity, SymbolGraph, SymbolKind, Visibility};
 use gob_walk::{Owner, Selector, select_files};
 use grimble_model::ast::EntityKind;
 
@@ -37,6 +37,8 @@ pub struct Cx<'a> {
     pub modeled: &'a [Selector],
     /// `[grimble] strict`: Warn rules become Error.
     pub strict: bool,
+    /// The symbol graph of the snapshot: the import and call edges SYS013 walks.
+    pub graph: &'a SymbolGraph,
     /// The ledger directory; with `changelog.d/`, `frob.lock` and `.frob/` it is frob-owned.
     pub ledger_dir: &'a str,
 }
@@ -950,7 +952,7 @@ fn sys011(cx: &Cx<'_>, out: &mut Output) {
 pub fn evaluate(cx: &Cx<'_>) -> Output {
     let mut out = Output::default();
     for rule in [
-        "SYS001", "SYS002", "SYS003", "SYS004", "SYS009", "SYS010", "SYS011",
+        "SYS001", "SYS002", "SYS003", "SYS004", "SYS009", "SYS010", "SYS011", "SYS013",
     ] {
         out.subjects.entry(rule).or_default();
     }
@@ -962,6 +964,7 @@ pub fn evaluate(cx: &Cx<'_>) -> Output {
     sys005(cx, &mut out);
     sys010(cx, &mut out);
     sys011(cx, &mut out);
+    crate::edges::sys013(cx, &mut out);
     tracing::info!(findings = out.findings.len(), "binding rules evaluated");
     out
 }

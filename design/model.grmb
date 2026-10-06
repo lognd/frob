@@ -31,3 +31,38 @@ node crunk : trusted {
   owns "crates/crunk-*/**";
   owns "crates/crunk/**";
 }
+
+/// Substrate data (check results, locks, walks) flows to crunk, which calls it (SYS013 allows an edge in either direction of a flow).
+flow gob_to_crunk : gob -> crunk {
+  label Internal;
+  producer "crates/gob-check/src/pipeline.rs";
+  consumer "crates/crunk-check/src/lib.rs";
+}
+
+/// Substrate data flows to grimble, which calls it.
+flow gob_to_grimble : gob -> grimble {
+  label Internal;
+  producer "crates/gob-lock/src/file.rs";
+  consumer "crates/grimble-bind/src/ack.rs";
+}
+
+/// Substrate data flows to frob, which calls it; the reverse edges from gob-dev into frob-ledger are the layering inversion of ~M8WETW7, covered by this flow until it is removed.
+flow gob_to_frob : gob -> frob {
+  label Internal;
+  producer "crates/gob-lock/src/plan.rs";
+  consumer "crates/frob-ack/src/ack.rs";
+}
+
+/// Grimble's sibling document flows into frob check, which hosts and drives it.
+flow grimble_to_frob : grimble -> frob {
+  label Internal;
+  producer "crates/grimble/src/lib.rs";
+  consumer "crates/frob/tests/remedies.rs";
+}
+
+/// Crunk's sibling document flows into frob check, which hosts and drives it.
+flow crunk_to_frob : crunk -> frob {
+  label Internal;
+  producer "crates/crunk/src/lib.rs";
+  consumer "crates/frob/tests/web_conformance.rs";
+}

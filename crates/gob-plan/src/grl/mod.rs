@@ -27,6 +27,7 @@ pub mod ast;
 mod error;
 mod lexer;
 mod parse;
+mod print;
 mod snippet;
 mod strings;
 mod token;
@@ -36,6 +37,7 @@ pub use lexer::{lex, lex_range};
 pub use parse::{
     ParseError, ParseErrorKind, ParseWarning, ParseWarningKind, Parsed, parse, parse_tokens,
 };
+pub use print::{print, print_rule};
 pub use token::{
     Block, Comment, Lexed, MetaKind, MetaVar, Regex, Snippet, SnippetLang, StrPart, Token,
     TokenKind,

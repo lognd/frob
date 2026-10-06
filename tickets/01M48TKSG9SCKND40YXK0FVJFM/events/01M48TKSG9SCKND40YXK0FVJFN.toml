@@ -1,0 +1,12 @@
+kind = "create"
+title = "GRL grammar ambiguities found by the printer's generator: leading where after an open binding, reaches..via list inside any {}"
+type = "bug"
+category = "todo"
+priority = "medium"
+parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
+scope = ["crates/gob-plan/**", "docs/design/grl-spec.md"]
+acceptance = ["a where clause after an unfiltered find parses as a clause, and a filter needs explicit syntax, in both the spec and the parser", "reaches..via inside any {} parses each item separately", "the printer's parenthesis workarounds are removed and the generator covers both shapes"]
+body = "Found by ~NH92W1H's proptest generator: (1) a where at the start of a line is consumed as the filter of a still-open some/no binding, so a where clause directly after an unfiltered find/some/no cannot be expressed; (2) reaches X via a, b without within, followed by a comma inside any { }, swallows the next item as another verb. The printer parenthesises around both; fix the grammar (grl-spec.md section 5) so each source has one parse, document the rule, and remove the printer's workarounds."
+at = "2026-10-06T14:41:49Z"
+actor = "lognd"
+rev = 1
