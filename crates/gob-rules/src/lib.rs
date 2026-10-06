@@ -2,7 +2,7 @@
 //!
 //! Declare a rule with `#[gob_rules::rule(..)]` (D107: every field required, `applies` checked
 //! against the capability matrix, a colocated `.md` page); [`RuleDef`] is its static description.
-//! The older `#[derive(gob_rules::Rule)]` is deprecated; it registers itself via `inventory` and
+//! The older `#[derive(gob_rules::Rule)]` is superseded by it; it registers itself via `inventory` and
 //! appears in [`Registry::global`].
 //!
 //! ```

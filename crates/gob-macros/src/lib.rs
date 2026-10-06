@@ -290,11 +290,7 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
 /// declare both explicitly on every new rule (`rules.md` section 2).
 /// The explanation comes from the item's `///` doc comment.
 ///
-/// Deprecated by D107: new rules use `#[gob_rules::rule(..)]`; this derive is deleted by the
-/// rule-authoring cleanup ticket.
-#[deprecated(
-    note = "use the `#[gob_rules::rule(..)]` attribute (D107); this derive is deleted after the migration"
-)]
+/// Superseded by `#[gob_rules::rule(..)]` (D107); removed by ~H5W28EA after the migration tickets.
 #[proc_macro_derive(Rule, attributes(rule))]
 pub fn derive_rule(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
