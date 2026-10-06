@@ -7,7 +7,7 @@ priority = "medium"
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
 reporter = "lognd"
 created = "2026-10-06T07:54:09Z"
-updated = "2026-10-06T16:15:48Z"
+updated = "2026-10-06T16:17:35Z"
 scope = ["crates/gob-check/**", "docs/schemas/sibling.json", "crates/gob-config/**", "changelog.d/**"]
 
 [[acceptance]]
