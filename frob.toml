@@ -65,18 +65,18 @@ labels = []
 # output format. A host without the tool gets a non-required Unresolved, never a pass.
 [[check.tool]]
 name = "cargo-deny"
-command = "cargo"
-args = ["deny", "check"]
-version_args = ["deny", "--version"]
+command = "cargo-deny"
+args = ["check"]
+version_args = ["--version"]
 min_version = "0.19.0"
 max_version = "0.19.99"
 optional = true
 
 [[check.tool]]
 name = "cargo-shear"
-command = "cargo"
-args = ["shear"]
-version_args = ["shear", "--version"]
+command = "cargo-shear"
+args = []
+version_args = ["--version"]
 min_version = "1.14.0"
 max_version = "1.14.99"
 optional = true

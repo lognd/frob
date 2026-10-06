@@ -319,24 +319,19 @@ fn nextest_step(require_python: bool) -> Step {
     nextest
 }
 
-fn tool_program(name: &str) -> Program {
-    Program::Tool {
-        name: name.to_owned(),
-    }
-}
-
-/// A Linux-only hygiene step whose argv is the `args` of the `[[check.tool]]` named `tool` in
-/// `frob.toml` (the single pinned definition `frob check` also runs), needing `need` installed.
+/// A Linux-only hygiene step running the binary `tool` with the `args` of its `[[check.tool]]`
+/// entry in `frob.toml` (the single pinned definition `frob check` also runs), needing `need` installed.
 /// frob:ticket 01M47QVDTG48F4426J019X37CZ
 fn hygiene(
     name: &'static str,
     need: Prerequisite,
-    program: Program,
     frob_toml: &toml::Table,
     tool: &str,
 ) -> Result<Step, CiError> {
     Ok(Step {
-        program,
+        program: Program::Tool {
+            name: tool.to_owned(),
+        },
         args: pinned_array(frob_toml, tool, "args")?,
         needs: vec![need],
         linux_only: true,
@@ -486,15 +481,9 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
         cargo("gen", &["dev", "gen", "all", "--check"]),
         uvx("zizmor", "zizmor")?,
         uvx("actionlint", "actionlint")?,
-        hygiene("deny", CARGO_DENY, Program::Cargo, &frob_toml, "cargo-deny")?,
-        hygiene(
-            "shear",
-            CARGO_SHEAR,
-            Program::Cargo,
-            &frob_toml,
-            "cargo-shear",
-        )?,
-        hygiene("typos", TYPOS, tool_program("typos"), &frob_toml, "typos")?,
+        hygiene("deny", CARGO_DENY, &frob_toml, "cargo-deny")?,
+        hygiene("shear", CARGO_SHEAR, &frob_toml, "cargo-shear")?,
+        hygiene("typos", TYPOS, &frob_toml, "typos")?,
         msrv(root)?,
         offloaded(linux(cargo(
             "doctor",
