@@ -11,6 +11,7 @@
 // frob:ticket 01M42A37XTPF2H1WXQQZWEYXGZ
 // frob:ticket 01M43FB0TFBNDFH1AEC1CTNHZG
 // frob:ticket 01M44M58PKEM2HMKZF2CANFHAW
+// frob:ticket 01M47QV17V1KZ6K50C7H77MRSP
 
 use std::path::Path;
 use std::time::Duration;
@@ -249,6 +250,41 @@ fn sibling_check() -> Step {
     }
 }
 
+/// Pinned `cargo-insta` version the `snapshots` step needs; `ci.yml` installs exactly this.
+pub const CARGO_INSTA_VERSION: &str = "1.48.0";
+
+/// `cargo-insta` on `PATH`, installed by `ci.yml` at [`CARGO_INSTA_VERSION`].
+pub const CARGO_INSTA: Prerequisite = Prerequisite::SystemTool {
+    tool: "cargo-insta",
+    install: "cargo install --locked cargo-insta --version 1.48.0",
+};
+
+/// Shell fragment that fails (naming each file) when a `.snap.new` or `.pending-snap` file is
+/// left in the tree: an unreviewed snapshot change must never reach CI. `target/` is skipped.
+pub const PENDING_SNAPSHOT_GUARD: &str = "pending=$(find . -path ./target -prune -o \\( -name '*.snap.new' -o -name '*.pending-snap' \\) -print); \
+if [ -n \"$pending\" ]; then echo \"pending snapshots (review with cargo insta review):\"; echo \"$pending\"; exit 1; fi";
+
+/// The `snapshots` step (build-test-ci.md section 6): fail on pending snapshot files, then run
+/// `cargo insta test --check --unreferenced reject` so a snapshot no test references, or one a
+/// test would change, fails. One shell command; the step is Linux-only, so `sh` is always there.
+/// frob:ticket 01M47QV17V1KZ6K50C7H77MRSP
+fn snapshots() -> Step {
+    let script = format!(
+        "{PENDING_SNAPSHOT_GUARD}; exec cargo insta test --check --unreferenced reject \
+         --workspace --all-features --test-runner nextest"
+    );
+    Step {
+        program: Program::Tool {
+            name: "sh".to_owned(),
+        },
+        args: vec!["-c".to_owned(), script],
+        env: vec![("INSTA_UPDATE".to_owned(), "no".to_owned())],
+        needs: vec![CARGO_INSTA],
+        linux_only: true,
+        ..cargo("snapshots", &[])
+    }
+}
+
 /// Every CI check in the order `ci.yml` runs it; zizmor and actionlint pins come from `frob.toml`.
 ///
 /// # Errors
@@ -314,9 +350,13 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
     docs.offload = true;
     let mut nextest = offloaded(cargo("nextest", &["nextest", "run", "--profile", "ci"]));
     nextest.uv_tools_on_path = true;
+    // frob:ticket 01M47QV17V1KZ6K50C7H77MRSP
+    nextest.env = vec![("INSTA_UPDATE".to_owned(), "no".to_owned())];
     if require_python {
         tracing::info!("nextest requires python and pytest (no skips)");
-        nextest.env = vec![(REQUIRE_PYTHON_TESTS_ENV.to_owned(), "1".to_owned())];
+        nextest
+            .env
+            .push((REQUIRE_PYTHON_TESTS_ENV.to_owned(), "1".to_owned()));
     }
     Ok(vec![
         cargo("fmt", &["fmt", "--all", "--check"]),
@@ -335,6 +375,7 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
         docs,
         pytest_install(),
         nextest,
+        snapshots(),
         cargo("gen", &["dev", "gen", "all", "--check"]),
         uvx("zizmor", "zizmor")?,
         uvx("actionlint", "actionlint")?,
@@ -1140,6 +1181,46 @@ mod tests {
         let text = e.to_string();
         assert!(text.contains("no-such-tool-0g8qf7v"), "{text}");
         assert!(text.contains("sudo apt-get install -y ghost-pkg"), "{text}");
+    }
+
+    // frob:tests crates/gob-dev/src/ci.rs::PENDING_SNAPSHOT_GUARD
+    #[test]
+    fn stray_pending_snapshot_fails_the_guard_and_a_clean_tree_passes() {
+        let dir = tempfile::tempdir().unwrap();
+        let run = || {
+            let spec = Spec {
+                program: Program::Tool {
+                    name: "sh".to_owned(),
+                },
+                args: vec!["-c".to_owned(), PENDING_SNAPSHOT_GUARD.to_owned()],
+                cwd: Some(dir.path().to_path_buf()),
+                env: Vec::new(),
+                timeout: QUERY_TIMEOUT,
+                capture: true,
+            };
+            runner().run(&spec).unwrap()
+        };
+        std::fs::write(dir.path().join("a.snap"), "ok").unwrap();
+        assert_eq!(run().status, Outcome::Exited(0));
+        std::fs::write(dir.path().join("a.snap.new"), "pending").unwrap();
+        let out = run();
+        assert_eq!(out.status, Outcome::Exited(1));
+        assert!(out.stdout.contains("a.snap.new"), "{}", out.stdout);
+    }
+
+    // frob:tests crates/gob-dev/src/ci.rs::snapshots
+    #[test]
+    fn snapshots_step_rejects_unreferenced_runs_after_nextest_and_nextest_forbids_update() {
+        let all = real();
+        let names: Vec<_> = all.iter().map(|s| s.name).collect();
+        let at = |n: &str| names.iter().position(|x| *x == n).unwrap();
+        assert!(at("snapshots") > at("nextest"));
+        let s = &all[at("snapshots")];
+        assert!(s.linux_only && s.needs == vec![CARGO_INSTA]);
+        assert!(s.args[1].contains("--unreferenced reject"), "{:?}", s.args);
+        assert!(CARGO_INSTA.install_command().contains(CARGO_INSTA_VERSION));
+        let want = ("INSTA_UPDATE".to_owned(), "no".to_owned());
+        assert!(all[at("nextest")].env.contains(&want));
     }
 
     #[test]

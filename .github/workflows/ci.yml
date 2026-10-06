@@ -92,6 +92,12 @@ jobs:
       - name: nextest (Windows, isolated tool)
         if: runner.os == 'Windows'
         run: cargo dev-isolated ci --step nextest
+      - name: Install cargo-insta (snapshots step)
+        if: runner.os == 'Linux'
+        run: cargo install --locked cargo-insta --version 1.48.0
+      - name: Snapshot hygiene (no pending or unreferenced snapshots)
+        if: runner.os == 'Linux'
+        run: cargo dev ci --step snapshots
       - name: Generated files are current (GEN001)
         if: runner.os == 'Linux'
         run: cargo dev ci --step gen
