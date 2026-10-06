@@ -1,9 +1,10 @@
-//! SYS013: an import or call edge between two owners with no flow in that direction.
+//! SYS013: an import or call edge between two owners with no flow between them.
 //!
 //! The edges come from the one symbol graph of the snapshot (`gob-symbols`: TS and TSX imports,
 //! calls and JSX component uses, Python, C# and Rust calls), the owners from the owner function
-//! of binding.md 2.6, and the permission from the model's flows (binding.md B6: a flow `A -> B`
-//! allows edges from A's code to B's, direction exact). Per binding.md 6, a P+ rule fires only
+//! of binding.md 2.6, and the permission from the model's flows (a flow is directed data movement
+//! and code edges run with or against it, so a flow in either direction between two owners allows
+//! the edge). Per binding.md 6, a P+ rule fires only
 //! from `lo`: both ends owned at Must and the edge itself Must. An edge whose target is Unknown
 //! or May, or whose end owner is May or Unknown, is Unresolved and never reads clean.
 
@@ -111,9 +112,10 @@ fn spell(edge: &StatusEdge) -> String {
 fn declared(model: &Model, from: &str, to: &str) -> bool {
     model.entities.values().any(|e| {
         e.kind == EntityKind::Flow
-            && e.ends
-                .as_ref()
-                .is_some_and(|(a, b)| a.as_deref() == Some(from) && b.as_deref() == Some(to))
+            && e.ends.as_ref().is_some_and(|(a, b)| {
+                let (a, b) = (a.as_deref(), b.as_deref());
+                (a == Some(from) && b == Some(to)) || (a == Some(to) && b == Some(from))
+            })
     })
 }
 
@@ -199,7 +201,7 @@ pub fn sys013(cx: &Cx<'_>, out: &mut Output) {
         out.fire(
             RULE,
             Severity::Error,
-            format!("{n} edge(s) from `{a}` to `{b}` with no flow `{a} -> {b}`: {shown}"),
+            format!("{n} edge(s) from `{a}` to `{b}` with no flow between them: {shown}"),
             &format!("edge/{a}->{b}"),
             site.as_deref().map(|f| (f, (0, 0))),
         );

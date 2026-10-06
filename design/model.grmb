@@ -32,44 +32,37 @@ node crunk : trusted {
   owns "crates/crunk/**";
 }
 
-/// crunk calls the substrate: the check pipeline, the sibling document and the corpus coverage helper (SYS013 edge permission, binding.md B6).
-flow crunk_uses_gob : crunk -> gob {
+/// Substrate data (check results, locks, walks) flows to crunk, which calls it (SYS013 allows an edge in either direction of a flow).
+flow gob_to_crunk : gob -> crunk {
   label Internal;
-  producer "crates/crunk-check/src/lib.rs";
-  consumer "crates/gob-check/src/pipeline.rs";
+  producer "crates/gob-check/src/pipeline.rs";
+  consumer "crates/crunk-check/src/lib.rs";
 }
 
-/// The frob goblin builds on the substrate (ack planning, ledger, check pipeline).
-flow frob_uses_gob : frob -> gob {
+/// Substrate data flows to grimble, which calls it.
+flow gob_to_grimble : gob -> grimble {
   label Internal;
-  producer "crates/frob-ack/src/ack.rs";
-  consumer "crates/gob-lock/src/plan.rs";
+  producer "crates/gob-lock/src/file.rs";
+  consumer "crates/grimble-bind/src/ack.rs";
 }
 
-/// The grimble goblin builds on the substrate (walk, symbols, lock).
-flow grimble_uses_gob : grimble -> gob {
+/// Substrate data flows to frob, which calls it; the reverse edges from gob-dev into frob-ledger are the layering inversion of ~M8WETW7, covered by this flow until it is removed.
+flow gob_to_frob : gob -> frob {
   label Internal;
-  producer "crates/grimble-bind/src/ack.rs";
-  consumer "crates/gob-lock/src/file.rs";
+  producer "crates/gob-lock/src/plan.rs";
+  consumer "crates/frob-ack/src/ack.rs";
 }
 
-/// The frob binary hosts the sibling products and its tests drive them end to end.
-flow frob_uses_grimble : frob -> grimble {
+/// Grimble's sibling document flows into frob check, which hosts and drives it.
+flow grimble_to_frob : grimble -> frob {
   label Internal;
-  producer "crates/frob/tests/remedies.rs";
-  consumer "crates/grimble/src/lib.rs";
+  producer "crates/grimble/src/lib.rs";
+  consumer "crates/frob/tests/remedies.rs";
 }
 
-/// The frob binary hosts the sibling products and its tests drive them end to end.
-flow frob_uses_crunk : frob -> crunk {
+/// Crunk's sibling document flows into frob check, which hosts and drives it.
+flow crunk_to_frob : crunk -> frob {
   label Internal;
-  producer "crates/frob/tests/web_conformance.rs";
-  consumer "crates/crunk/src/lib.rs";
-}
-
-/// A layering inversion kept visible until ~M8WETW7 removes it: gob-dev imports frob-ledger.
-flow gob_uses_frob : gob -> frob {
-  label Internal;
-  producer "crates/gob-dev/src/import_v1.rs";
-  consumer "crates/frob-ledger/src/event.rs";
+  producer "crates/crunk/src/lib.rs";
+  consumer "crates/frob/tests/web_conformance.rs";
 }

@@ -1,6 +1,6 @@
 //! SYS013 walks the import and call edges of the snapshot between owners (binding.md B6, 6):
-//! the shared web fixture (ui imports and calls api) fires without a flow, is quiet with the
-//! flow in that direction, still fires with the flow reversed, and an Unknown edge is Unresolved.
+//! the shared web fixture (ui imports and calls api) fires without a flow, is quiet with a
+//! flow in either direction, and an Unknown edge is Unresolved.
 
 // frob:ticket 01M48FXAG32KFM90XWVFS8AX88
 
@@ -81,27 +81,16 @@ fn a_cross_owner_import_and_call_with_no_flow_fires() {
 
 // frob:tests crates/grimble-bind/src/edges.rs::sys013
 #[test]
-fn a_flow_in_that_direction_allows_the_edges() {
-    let model = format!("{NODES}flow uses : ui -> api {{ }}\n");
-    let b = bind_web(&model, &[]);
-    assert!(b.subjects.get("SYS013").copied().unwrap_or(0) >= 1);
-    assert!(
-        sys013(&b).iter().all(|f| f.message.starts_with('[')),
-        "no firing finding: {:?}",
-        sys013(&b)
-    );
-}
-
-// frob:tests crates/grimble-bind/src/edges.rs::sys013
-#[test]
-fn a_flow_in_the_other_direction_does_not_allow_them() {
-    let model = format!("{NODES}flow back : api -> ui {{ }}\n");
-    let b = bind_web(&model, &[]);
-    assert!(
-        sys013(&b).iter().any(
-            |f| f.anchor == "edge/node/ui->node/api" && reason_of_message(&f.message).is_none()
-        )
-    );
+fn a_flow_in_either_direction_between_the_owners_allows_the_edges() {
+    for flow in ["flow uses : ui -> api { }", "flow back : api -> ui { }"] {
+        let b = bind_web(&format!("{NODES}{flow}\n"), &[]);
+        assert!(b.subjects.get("SYS013").copied().unwrap_or(0) >= 1);
+        assert!(
+            sys013(&b).iter().all(|f| f.message.starts_with('[')),
+            "{flow}: no firing finding: {:?}",
+            sys013(&b)
+        );
+    }
 }
 
 // frob:tests crates/grimble-bind/src/edges.rs::sys013

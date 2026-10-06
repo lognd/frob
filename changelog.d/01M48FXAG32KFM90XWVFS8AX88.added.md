@@ -1,1 +1,1 @@
-grimble: SYS013 reports import and call edges between two owners with no flow in that direction, over the one symbol graph (TS and TSX imports, calls and JSX component uses included); Unknown and May edges stay Unresolved.
+grimble: SYS013 reports import and call edges between two owners with no flow between them (either direction), over the one symbol graph (TS and TSX imports, calls and JSX component uses included); Unknown and May edges stay Unresolved.

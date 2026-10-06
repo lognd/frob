@@ -144,6 +144,6 @@ sys_rule!(
     Error,
     Pplus,
     false,
-    "An import or call edge between two owners with no flow in that direction.",
-    "Fires once per ordered pair of nodes when a Must import or call edge (TS, TSX, JSX component use, Python, C#, Rust) runs from code owned at Must by one node to code owned at Must by another and the model declares no flow from the first to the second. Edges into unowned (foreign) code or outside the repository are not checked. Unresolved when an edge is May or has no known target, or an end is owned only at May."
+    "An import or call edge between two owners with no flow between them.",
+    "Fires once per ordered pair of nodes when a Must import or call edge (TS, TSX, JSX component use, Python, C#, Rust) runs from code owned at Must by one node to code owned at Must by another and the model declares no flow between the two nodes in either direction. Edges into unowned (foreign) code or outside the repository are not checked. Unresolved when an edge is May or has no known target, or an end is owned only at May."
 );
