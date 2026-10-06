@@ -83,6 +83,12 @@ pub(crate) fn update_with_lease(
         }
     };
     let mut warnings = Vec::new();
+    if let LeaseSide::Foreign(holder) = state {
+        tracing::warn!(ticket = %id, %holder, "scope changed but the lease belongs to someone else");
+        warnings.push(format!(
+            "lease not refreshed: ticket {id} is leased by {holder}; the holder must run `frob lease widen {id}`"
+        ));
+    }
     if !patch.add_scope.is_empty() {
         let front = &applied.ticket.front;
         warnings.extend(frob_lease::unmatched::scope_warnings(
@@ -90,12 +96,6 @@ pub(crate) fn update_with_lease(
             id,
             &patch.add_scope,
             &front.labels,
-        ));
-    }
-    if let LeaseSide::Foreign(holder) = state {
-        tracing::warn!(ticket = %id, %holder, "scope changed but the lease belongs to someone else");
-        warnings.push(format!(
-            "lease not refreshed: ticket {id} is leased by {holder}; the holder must run `frob lease widen {id}`"
         ));
     }
     Ok((applied, warnings))
