@@ -61,6 +61,7 @@ mod report;
 mod required;
 mod rules;
 pub mod sibling;
+pub mod sibling_doc;
 mod status;
 mod store;
 mod telemetry;

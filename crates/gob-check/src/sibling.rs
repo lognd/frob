@@ -12,13 +12,17 @@ use std::path::Path;
 
 use gob_config::ComputeTable;
 use gob_diagnostics::{FindingRecord, MemorySources};
-use gob_rules::{Finding, Registry, RequiredReason, Severity};
+use gob_rules::{Finding, Polarity as RulePolarity, Registry, RequiredReason, Severity};
 use gob_text::SourceText;
 use serde::Deserialize;
-use serde_json::{Value, json};
+use serde_json::Value;
 use tracing::debug;
 
 use crate::CheckReport;
+use crate::sibling_doc::{
+    FindingRow, Invocation, Polarity, Range as RowRange, RuleRecord, SiblingDocument,
+    SuppressedFinding, Timing,
+};
 
 /// The contract name and major this build implements.
 pub const SCHEMA_VERSION: &str = "gob.sibling/1";
@@ -73,11 +77,17 @@ pub fn fidelity_reason(f: &Finding) -> Option<String> {
     (f.severity == Severity::Unresolved).then(|| "fidelity".to_owned())
 }
 
-/// Polarity symbol of `rule` (`P+` when the registry does not know it).
-fn polarity_of(rule: &str) -> &'static str {
+/// Polarity of `rule` (`P+` when the registry does not know it).
+fn polarity_of(rule: &str) -> Polarity {
     Registry::global()
         .by_id(rule)
-        .map_or("P+", |m| m.polarity.symbol())
+        .map_or(Polarity::Plus, |m| match m.polarity {
+            RulePolarity::Pplus => Polarity::Plus,
+            RulePolarity::Pminus => Polarity::Minus,
+            RulePolarity::P0 => Polarity::P0,
+            RulePolarity::Pn => Polarity::Pn,
+            RulePolarity::Pc => Polarity::Pc,
+        })
 }
 
 /// A resolver of `file:line:column` over the files the findings point into.
@@ -108,64 +118,53 @@ fn sources_of(root: &Path, report: &CheckReport) -> MemorySources {
 }
 
 /// One finding as a sibling row: the landed record plus the sibling's extras.
-fn finding_json(input: &SiblingInput<'_>, sources: &MemorySources, f: &Finding) -> Value {
-    let record = FindingRecord::from_finding(f, sources, Registry::global());
-    let mut v = serde_json::to_value(&record)
-        .unwrap_or_else(|e| unreachable!("a finding record serializes: {e}"));
+fn finding_row(input: &SiblingInput<'_>, sources: &MemorySources, f: &Finding) -> FindingRow {
     let rule = f.rule.as_str();
-    let object = v
-        .as_object_mut()
-        .unwrap_or_else(|| unreachable!("a finding record is an object"));
-    object.insert("polarity".to_owned(), json!(polarity_of(rule)));
-    object.insert(
-        "subjects_examined".to_owned(),
-        json!(
-            input
-                .report
-                .subjects_examined
-                .get(rule)
-                .copied()
-                .unwrap_or(0)
-        ),
-    );
-    object.insert("reason".to_owned(), json!((input.reason)(f)));
-    object.insert("maybe".to_owned(), json!(Vec::<String>::new()));
-    object.insert("anchor".to_owned(), Value::Null);
-    object.insert("entity".to_owned(), Value::Null);
-    object.insert("remedy".to_owned(), Value::Null);
-    object.insert(
-        "range".to_owned(),
-        f.span.map_or(
-            Value::Null,
-            |s| json!({"start": u32::from(s.range.start()), "end": u32::from(s.range.end())}),
-        ),
-    );
-    v
+    FindingRow {
+        record: FindingRecord::from_finding(f, sources, Registry::global()),
+        polarity: polarity_of(rule),
+        subjects_examined: input
+            .report
+            .subjects_examined
+            .get(rule)
+            .map_or(0, |n| *n as u64),
+        reason: (input.reason)(f),
+        maybe: Vec::new(),
+        anchor: None,
+        entity: None,
+        remedy: None,
+        range: f.span.map(|s| RowRange {
+            start: u32::from(s.range.start()),
+            end: u32::from(s.range.end()),
+        }),
+    }
 }
 
 /// The `rules` array: per rule that ran, polarity and counts.
-fn rules_json(input: &SiblingInput<'_>) -> Vec<Value> {
+fn rules_json(input: &SiblingInput<'_>) -> Vec<RuleRecord> {
     let report = input.report;
     let count = |rule: &str, sev: Option<Severity>| {
         report
             .findings
             .iter()
             .filter(|f| f.rule.as_str() == rule && sev.is_none_or(|s| f.severity == s))
-            .count()
+            .count() as u64
     };
     report
         .subjects_examined
         .iter()
         .filter(|(rule, _)| !input.not_applicable.contains(rule.as_str()))
-        .map(|(rule, subjects)| {
-            json!({
-                "rule": rule,
-                "polarity": polarity_of(rule),
-                "subjects_examined": subjects,
-                "findings": count(rule, None),
-                "suppressed": report.suppressed.iter().filter(|(f, _)| f.rule.as_str() == rule).count(),
-                "unresolved": count(rule, Some(Severity::Unresolved)),
-            })
+        .map(|(rule, subjects)| RuleRecord {
+            rule: rule.clone(),
+            polarity: polarity_of(rule),
+            subjects_examined: *subjects as u64,
+            findings: count(rule, None),
+            suppressed: report
+                .suppressed
+                .iter()
+                .filter(|(f, _)| f.rule.as_str() == rule)
+                .count() as u64,
+            unresolved: count(rule, Some(Severity::Unresolved)),
         })
         .collect()
 }
@@ -173,57 +172,53 @@ fn rules_json(input: &SiblingInput<'_>) -> Vec<Value> {
 /// The sibling document of `input` (the `data` of the check envelope).
 pub fn document(input: &SiblingInput<'_>) -> Value {
     let sources = sources_of(input.root, input.report);
-    let findings: Vec<Value> = input
+    let findings: Vec<FindingRow> = input
         .report
         .findings
         .iter()
-        .map(|f| finding_json(input, &sources, f))
+        .map(|f| finding_row(input, &sources, f))
         .collect();
-    let suppressed: Vec<Value> = input
+    let suppressed: Vec<SuppressedFinding> = input
         .report
         .suppressed
         .iter()
-        .map(|(f, _)| {
-            json!({
-                "finding": finding_json(input, &sources, f),
-                "exception": (input.exception_of)(f),
-            })
+        .map(|(f, _)| SuppressedFinding {
+            finding: finding_row(input, &sources, f),
+            exception: (input.exception_of)(f),
         })
         .collect();
-    let mut doc = json!({
-        "schema_version": SCHEMA_VERSION,
-        "product": input.product,
-        "product_version": input.product_version,
-        "compute_digest": gob_config::compute_digest(input.compute),
-        "compute": input.compute.to_value(),
-        "invocation": {
-            "verb": "check",
-            "root": ".",
-            "ticket_scope": input.ticket_scope,
-            "base": input.base,
+    let doc = SiblingDocument {
+        schema_version: SCHEMA_VERSION.to_owned(),
+        product: input.product.to_owned(),
+        product_version: input.product_version.to_owned(),
+        compute_digest: gob_config::compute_digest(input.compute),
+        compute: input.compute.to_value(),
+        invocation: Invocation {
+            verb: "check".to_owned(),
+            root: ".".to_owned(),
+            ticket_scope: input.ticket_scope.map(<[String]>::to_vec),
+            base: input.base.map(str::to_owned),
         },
-        "fidelity": input.fidelity,
-        "rules": rules_json(input),
-        "findings": findings,
-        "suppressed": suppressed,
-        "exceptions": input.exceptions,
-        "entities": input.entities,
-        "bindings": input.bindings,
-        "timing": {"elapsed_ms": input.elapsed_ms},
-    });
-    if let Some(p) = &input.packs {
-        let object = doc
-            .as_object_mut()
-            .unwrap_or_else(|| unreachable!("the document is an object"));
-        object.insert("packs".to_owned(), json!(p.packs));
-        object.insert("packs_digest".to_owned(), json!(p.digest));
-    }
+        fidelity: input.fidelity.clone(),
+        rules: rules_json(input),
+        findings,
+        suppressed,
+        exceptions: input.exceptions.clone(),
+        entities: input.entities.clone(),
+        bindings: input.bindings.clone(),
+        timing: Timing {
+            elapsed_ms: input.elapsed_ms,
+        },
+        packs: input.packs.as_ref().map(|p| p.packs.clone()),
+        packs_digest: input.packs.as_ref().map(|p| p.digest.clone()),
+    };
     debug!(
         product = input.product,
         findings = input.report.findings.len(),
         "sibling document built"
     );
-    doc
+    serde_json::to_value(&doc)
+        .unwrap_or_else(|e| unreachable!("a sibling document serializes: {e}"))
 }
 
 /// The envelope of `check --json` (`cli.md` section 2); `data` is the sibling document.
