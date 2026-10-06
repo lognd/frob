@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-04T11:28:48Z"
-updated = "2026-10-06T04:31:35Z"
+updated = "2026-10-06T04:32:04Z"
 idempotency_key = "crunk-plan-css"
 labels = ["area:crunk"]
 scope = ["crates/gob-symbols/src/css/**", "crates/gob-symbols/tests/css*.rs", "docs/reference/fidelity.md"]
@@ -20,6 +20,10 @@ target = "01M43ARXDXMJ99H23MV17ZVW3R"
 [[links]]
 kind = "blocked-by"
 target = "01M43ARXMH7RJ63G8096KKJF80"
+
+[[links]]
+kind = "blocked-by"
+target = "01M47QKDM2J0EKW2TYH4N35GSV"
 
 [[acceptance]]
 text = "Given a stylesheet with nested media queries, when indexed, then each declaration reports property, value text, selector and at-rule chain with spans"
