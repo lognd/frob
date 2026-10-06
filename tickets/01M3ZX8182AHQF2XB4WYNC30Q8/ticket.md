@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:40Z"
-updated = "2026-10-06T06:30:53Z"
+updated = "2026-10-06T06:33:47Z"
 idempotency_key = "m2-mirror-gh-client"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-gh/**"]
+scope = ["crates/frob-gh/**", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given a 429 with Retry-After, when a request is made, then the client waits at least that long and retries within the cap"
