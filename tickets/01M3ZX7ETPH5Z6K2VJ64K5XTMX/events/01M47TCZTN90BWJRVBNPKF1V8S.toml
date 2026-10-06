@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a plan `find f: function where f is public` and a gob-ir fixture, when executed, then bindings are the public functions in (path, offset) order", "Given `a inside b` and `a directly inside b` over nested statements, when executed, then the first looks through any depth and the second one level, and a property test confirms the Kleene truth tables for not/and/or/any"]
+new = ["Given a plan `find f: function where f is public` and a gob-ir fixture, when executed, then bindings are the public functions in (path, offset) order", "Given `a inside b` and `a directly inside b` over nested statements, when executed, then the first looks through any depth and the second one level, and a property test confirms the Kleene truth tables for not/and/or/any", "crates/gob-plan/src/exec.rs (the temporary web-kind executor) is deleted and crates/gob-plan/tests/web_rule.rs passes on the general executor"]
+reason = "D96 follow-up from ~4N35GSV"
+moved = [1, 2]
+at = "2026-10-06T05:18:52Z"
+actor = "lognd"
+rev = 1
