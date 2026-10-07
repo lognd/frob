@@ -499,7 +499,7 @@ fn index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise() 
 
 #[test]
 fn branch_mode_commits_to_the_current_branch() {
-    let (dir, ledger) = fixture(RefMode::Trunk);
+    let (dir, ledger) = fixture(RefMode::Branch);
     let repo = ledger.repo();
     // A topic branch checked out; trunk must not move.
     let main_tip = repo.rev_parse(MAIN).expect("main");
