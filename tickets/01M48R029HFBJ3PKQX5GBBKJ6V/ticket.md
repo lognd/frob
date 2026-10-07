@@ -2,12 +2,12 @@
 id = "01M48R029HFBJ3PKQX5GBBKJ6V"
 title = "Pipeline runs RuleDefs: no hand group wiring, inapplicable reasons reported"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:06Z"
-updated = "2026-10-07T15:39:57Z"
+updated = "2026-10-07T15:39:58Z"
 scope = ["crates/gob-check/**", "crates/gob-rules/**", "docs/design/rule-authoring.md"]
 
 [[links]]
