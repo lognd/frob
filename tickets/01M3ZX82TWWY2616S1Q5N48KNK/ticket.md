@@ -2,16 +2,16 @@
 id = "01M3ZX82TWWY2616S1Q5N48KNK"
 title = "Index, fold and merge driver read the new layout through ULIDs, never paths"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-03T03:34:41Z"
+updated = "2026-10-07T03:05:32Z"
 idempotency_key = "m2-tb-layout-read"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-ledger/src/index.rs", "crates/frob-ledger/src/fold.rs", "crates/frob-ledger/src/merge.rs"]
+scope = ["crates/frob-ledger/src/index.rs", "crates/frob-ledger/src/fold.rs", "crates/frob-ledger/src/merge.rs", "crates/frob-ledger/src/layout.rs", "crates/frob-ledger/src/ledger.rs", "crates/frob-ledger/src/doctor.rs", "crates/frob-ledger/tests/**"]
 
 [[links]]
 kind = "blocked-by"

@@ -256,3 +256,13 @@ fn three_word_verbs_are_real_subcommands() {
     assert_eq!(exit, 0);
     assert!(out.contains("a "), "{out}");
 }
+
+// frob:ticket 01M49VYK2H6WXWYNRVX0WQ67AJ
+#[test]
+fn format_md_is_a_usage_error_on_a_verb_without_a_markdown_view() {
+    let (exit, out, err) = run(&["--format", "md", "echo"]);
+    assert_eq!(exit, 2, "{out} {err}");
+    let text = format!("{out}{err}");
+    assert!(text.contains("`echo` has no markdown view"), "{text}");
+    assert!(text.contains("supported by:"), "{text}");
+}

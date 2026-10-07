@@ -1,0 +1,7 @@
+error: invalid deprecated form `--only-flag`; expected a registered verb followed by flags, e.g. `ticket show --format md`
+ --> tests/ui/command_deprecated_bad_form.rs:4:10
+  |
+4 | #[derive(Command)]
+  |          ^^^^^^^
+  |
+  = note: this error originates in the derive macro `Command` (in Nightly builds, run with -Z macro-backtrace for more info)
