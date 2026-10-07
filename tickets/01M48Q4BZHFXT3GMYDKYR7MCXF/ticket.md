@@ -2,12 +2,12 @@
 id = "01M48Q4BZHFXT3GMYDKYR7MCXF"
 title = "gob-rules: typed Unresolved reason on Finding and a RuleReport with subject accounting"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:40:58Z"
-updated = "2026-10-06T13:40:58Z"
+updated = "2026-10-07T15:52:02Z"
 scope = ["crates/gob-rules/**", "crates/gob-ir/**", "crates/gob-check/**", "crates/grimble-bind/**", "crates/gob-diagnostics/**"]
 
 [[acceptance]]
