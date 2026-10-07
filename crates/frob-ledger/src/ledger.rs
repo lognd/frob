@@ -14,6 +14,7 @@ use crate::event::Event;
 use crate::fold::fold;
 use crate::id::{EventId, TicketId, compute_handles, display_handle};
 use crate::index::Index;
+use crate::layout::{self, Layout};
 use crate::model::Ticket;
 use crate::redact::{RedactError, RuleSet};
 
@@ -95,6 +96,19 @@ pub struct Ledger {
     redact: std::sync::OnceLock<std::result::Result<RuleSet, RedactError>>,
     /// The command's clock: every event and date this ledger stamps comes from it.
     clock: std::sync::Arc<dyn gob_time::Clock>,
+    /// Where tickets and events live in the ledger tree.
+    layout: Layout,
+    /// Ticket-branch scan of the last commit read, so id lookups cost one tree walk per commit.
+    branch_scan: std::sync::Mutex<Option<(String, std::sync::Arc<BranchScan>)>>,
+}
+
+/// What one walk of a ticket-branch commit found: where each ticket file is, by frontmatter ULID.
+#[derive(Debug, Default)]
+pub(crate) struct BranchScan {
+    /// Ticket file path by the ULID its frontmatter names (never by path).
+    pub files: std::collections::BTreeMap<TicketId, String>,
+    /// Tickets that have an `.events/<ULID>/` directory.
+    pub with_events: std::collections::BTreeSet<TicketId>,
 }
 
 /// The index synced to one ledger tip, with the facts a writer needs.
@@ -165,6 +179,28 @@ impl Ledger {
             index_path,
             redact: std::sync::OnceLock::new(),
             clock,
+            layout: Layout::Dir,
+            branch_scan: std::sync::Mutex::new(None),
+        }
+    }
+
+    /// Read and write the ledger in `layout` (the ticket-branch layout needs a ref holding that branch).
+    #[must_use]
+    pub fn with_layout(self, layout: Layout) -> Self {
+        tracing::debug!(?layout, "ledger layout selected");
+        Self { layout, ..self }
+    }
+
+    /// The layout this ledger reads and writes.
+    pub fn layout(&self) -> Layout {
+        self.layout
+    }
+
+    /// Prefix that turns a path relative to the ledger tree into a repository path.
+    fn tree_prefix(&self) -> String {
+        match self.layout {
+            Layout::Dir => format!("{}/", self.cfg.dir),
+            Layout::Branch => String::new(),
         }
     }
 
@@ -286,7 +322,11 @@ impl Ledger {
     /// The tree of the tickets directory at `tip`, if it exists.
     pub(crate) fn tickets_tree(&self, tip: Option<Oid>) -> Result<Option<Oid>> {
         let Some(tip) = tip else { return Ok(None) };
-        match self.repo.rev_parse(&format!("{tip}:{}", self.cfg.dir)) {
+        let spec = match self.layout {
+            Layout::Dir => format!("{tip}:{}", self.cfg.dir),
+            Layout::Branch => format!("{tip}^{{tree}}"),
+        };
+        match self.repo.rev_parse(&spec) {
             Ok(oid) => Ok(Some(oid)),
             Err(e) if is_rev_error(&e) => Ok(None),
             Err(e) => Err(e.into()),
@@ -334,10 +374,144 @@ impl Ledger {
     ///
     /// Git read failures or a malformed document.
     pub fn read_ticket_at(&self, tip: &str, id: TicketId) -> Result<Option<Ticket>> {
-        let path = format!("{}/{id}/ticket.md", self.cfg.dir);
+        let Some(path) = self.ticket_file_at(tip, id, None)? else {
+            return Ok(None);
+        };
         self.text(tip, &path)?
             .map(|t| doc::parse(&path, &t))
             .transpose()
+    }
+
+    /// Repository path of the file of ticket `id` at `tip`, if it exists there.
+    ///
+    /// The legacy layout derives it from the id. The ticket-branch layout never trusts a path
+    /// as identity: it tries `hint` (the computed path) and falls back to the ULID in each
+    /// candidate file's frontmatter.
+    fn ticket_file_at(
+        &self,
+        tip: &str,
+        id: TicketId,
+        hint: Option<&str>,
+    ) -> Result<Option<String>> {
+        if self.layout == Layout::Dir {
+            return Ok(Some(format!("{}/{id}/ticket.md", self.cfg.dir)));
+        }
+        if let Some(h) = hint
+            && self
+                .text(tip, h)?
+                .is_some_and(|t| layout::peek_ticket_id(&t) == Some(id))
+        {
+            return Ok(Some(h.to_owned()));
+        }
+        let path = self.branch_scan_at(tip)?.files.get(&id).cloned();
+        if let Some(p) = &path {
+            tracing::debug!(ticket = %id, path = %p, "ticket file located by frontmatter id");
+        }
+        Ok(path)
+    }
+
+    /// Walk the ticket-branch commit `tip` once: every ticket file by its frontmatter ULID and every
+    /// `.events/<ULID>/` directory (cached for the last full-hash commit, which cannot change).
+    pub(crate) fn branch_scan_at(&self, tip: &str) -> Result<std::sync::Arc<BranchScan>> {
+        let cacheable = tip.len() == 40 && tip.bytes().all(|b| b.is_ascii_hexdigit());
+        if cacheable
+            && let Ok(guard) = self.branch_scan.lock()
+            && let Some((at, scan)) = guard.as_ref()
+            && at == tip
+        {
+            return Ok(scan.clone());
+        }
+        let mut scan = BranchScan::default();
+        for path in self.list_files(tip)? {
+            if let Some(rest) = path.strip_prefix(&format!("{}/", layout::EVENTS_DIR)) {
+                if let Some(id) = rest.split('/').next().and_then(|s| s.parse().ok()) {
+                    scan.with_events.insert(id);
+                }
+                continue;
+            }
+            if !layout::is_branch_ticket_candidate(&path) {
+                continue;
+            }
+            let Some(text) = self.text(tip, &path)? else {
+                continue;
+            };
+            let Some(id) = doc::parse(&path, &text)
+                .ok()
+                .map(|t| t.front.id)
+                .or_else(|| layout::peek_ticket_id(&text))
+            else {
+                tracing::debug!(%path, "markdown file without a ticket id ignored");
+                continue;
+            };
+            if let Some(other) = scan.files.insert(id, path.clone()) {
+                tracing::warn!(ticket = %id, first = %other, second = %path, "two files claim one ticket id");
+            }
+        }
+        let scan = std::sync::Arc::new(scan);
+        if cacheable && let Ok(mut guard) = self.branch_scan.lock() {
+            *guard = Some((tip.to_owned(), scan.clone()));
+        }
+        Ok(scan)
+    }
+
+    /// Path of the file and of the events directory a write for `ticket` touches.
+    ///
+    /// A new ticket on the ticket branch goes to its computed path (`-<handle>` appended when
+    /// another ticket already holds it); an existing one is rewritten where it is, because
+    /// files move only in reindex commits (`navigation.md` 2.2).
+    fn write_paths(
+        &self,
+        index: &Index,
+        tip: Option<Oid>,
+        ticket: &Ticket,
+        creating: bool,
+    ) -> Result<(String, String)> {
+        let id = ticket.front.id;
+        if self.layout == Layout::Dir {
+            let dir = &self.cfg.dir;
+            return Ok((
+                format!("{dir}/{id}/ticket.md"),
+                format!("{dir}/{id}/events"),
+            ));
+        }
+        let events_dir = layout::branch_events_dir(id);
+        let tip_hex = tip.map(|t| t.to_string());
+        let short = id.random_part()[..7].to_owned();
+        let top = Self::top_epic_slug(index, ticket.front.parent)?;
+        let slug = layout::title_slug(&ticket.front.title, &short);
+        let mut path = layout::branch_ticket_path(ticket.front.ty, &slug, top.as_deref());
+        if let Some(hex) = &tip_hex {
+            if !creating && let Some(at) = self.ticket_file_at(hex, id, Some(&path))? {
+                return Ok((at, events_dir));
+            }
+            if self.text(hex, &path)?.is_some() {
+                tracing::warn!(ticket = %id, %path, "slug taken in this directory; appending the handle");
+                path = layout::branch_ticket_path(
+                    ticket.front.ty,
+                    &format!("{slug}-{short}"),
+                    top.as_deref(),
+                );
+            }
+        }
+        Ok((path, events_dir))
+    }
+
+    /// Directory slug of the outermost epic among the ancestors starting at `parent`.
+    fn top_epic_slug(index: &Index, parent: Option<TicketId>) -> Result<Option<String>> {
+        let mut top: Option<Ticket> = None;
+        let mut cur = parent;
+        for _ in 0..64 {
+            let Some(id) = cur else { break };
+            let Some(t) = index.get(id)? else { break };
+            cur = t.front.parent;
+            if t.front.ty == crate::model::TicketType::Epic {
+                top = Some(t);
+            }
+        }
+        Ok(top.map(|t| {
+            let short = t.front.id.random_part()[..7].to_owned();
+            layout::title_slug(&t.front.title, &short)
+        }))
     }
 
     /// Read every event of ticket `id` at commit `tip`, in fold order.
@@ -346,7 +520,10 @@ impl Ledger {
     ///
     /// Git read failures or a malformed event file.
     pub fn read_events_at(&self, tip: &str, id: TicketId) -> Result<Vec<Event>> {
-        let dir = format!("{}/{id}/events", self.cfg.dir);
+        let dir = match self.layout {
+            Layout::Dir => format!("{}/{id}/events", self.cfg.dir),
+            Layout::Branch => layout::branch_events_dir(id),
+        };
         let mut events = Vec::new();
         for name in self.list_files(&format!("{tip}:{dir}"))? {
             let Some(stem) = name.strip_suffix(".toml") else {
@@ -366,12 +543,17 @@ impl Ledger {
         Ok(events)
     }
 
-    /// Ids of every ticket directory at commit `tip`.
+    /// Ids of every ticket at commit `tip`: ticket directories in the legacy layout, ticket files
+    /// named by their frontmatter ULID (wherever they sit) on the ticket branch.
     ///
     /// # Errors
     ///
     /// Git read failures.
     pub fn ticket_ids_at(&self, tip: &str) -> Result<Vec<TicketId>> {
+        if self.layout == Layout::Branch {
+            // BTreeMap keys are already sorted ULIDs.
+            return Ok(self.branch_scan_at(tip)?.files.keys().copied().collect());
+        }
         let mut ids: Vec<TicketId> = self
             .list_files(&format!("{tip}:{}", self.cfg.dir))?
             .iter()
@@ -382,12 +564,23 @@ impl Ledger {
         Ok(ids)
     }
 
-    /// Whether `tickets/<id>/ticket.md` exists on `rev` (a ref or commit).
+    /// Whether the file of ticket `id` exists on `rev` (a ref or commit), found by id in either layout.
     ///
     /// # Errors
     ///
     /// Git failures other than an unresolvable `rev` (which reads as absent).
     pub fn ticket_exists_at(&self, rev: &str, id: &str) -> Result<bool> {
+        if self.layout == Layout::Branch {
+            let Ok(id) = id.parse::<TicketId>() else {
+                return Ok(false);
+            };
+            let tip = match self.repo.rev_parse(rev) {
+                Ok(oid) => oid.to_string(),
+                Err(e) if is_rev_error(&e) => return Ok(false),
+                Err(e) => return Err(e.into()),
+            };
+            return Ok(self.ticket_file_at(&tip, id, None)?.is_some());
+        }
         let path = format!("{}/{id}/ticket.md", self.cfg.dir);
         match self.repo.read_blob_at(rev, &path) {
             Ok(b) => Ok(b.is_some()),
@@ -422,10 +615,13 @@ impl Ledger {
     fn read_all_tickets(&self, tree: &str) -> Result<Vec<Ticket>> {
         let mut out = Vec::new();
         for path in self.list_files(tree)? {
-            let Some(id) = path.strip_suffix("/ticket.md") else {
-                continue;
+            let wanted = match self.layout {
+                Layout::Dir => path
+                    .strip_suffix("/ticket.md")
+                    .is_some_and(|id| id.parse::<TicketId>().is_ok()),
+                Layout::Branch => layout::is_branch_ticket_candidate(&path),
             };
-            if id.parse::<TicketId>().is_err() {
+            if !wanted {
                 continue;
             }
             let Some(text) = self.text(tree, &path)? else {
@@ -477,15 +673,15 @@ impl Ledger {
         all.extend(new.iter().cloned());
         let folded = fold(id, &all)?;
         let ticket = folded.ticket;
-        let dir = &self.cfg.dir;
+        let (file, events_dir) = self.write_paths(&index, tip, &ticket, creating)?;
         let mut changes = vec![(
-            RelPath::new(format!("{dir}/{id}/ticket.md"))?,
+            RelPath::new(&file)?,
             Some(doc::render(&ticket)?.into_bytes()),
         )];
         for ev in new {
             tracing::debug!(ticket = %id, event = %ev.id, kind = %ev.kind, "event written");
             changes.push((
-                RelPath::new(format!("{dir}/{id}/events/{}", ev.file_name()))?,
+                RelPath::new(format!("{events_dir}/{}", ev.file_name()))?,
                 Some(ev.to_toml()?.into_bytes()),
             ));
         }
@@ -501,7 +697,16 @@ impl Ledger {
         tracing::info!(verb, ticket = %id, commit = %out.oid, events = new.len(), retries = out.retries, "ledger commit");
         // frob:ticket 01M42MGNZZ1BY6YCG49BDHEZAT
         let warnings = unsynced_warnings(&out.unsynced);
-        self.after_commit(&mut index, tree, &key, &ref_name, out.oid, id, new, &ticket)?;
+        self.after_commit(
+            &mut index,
+            tree,
+            &key,
+            &ref_name,
+            out.oid,
+            new,
+            &ticket,
+            (&file, &events_dir),
+        )?;
         Ok(Applied {
             ticket,
             handle,
@@ -524,16 +729,19 @@ impl Ledger {
         old_key: &str,
         ref_name: &str,
         commit: Oid,
-        id: TicketId,
         ours: &[Event],
         ticket: &Ticket,
+        (file, events_dir): (&str, &str),
     ) -> Result<()> {
+        let id = ticket.front.id;
+        let prefix = self.tree_prefix();
+        let rel = |p: &str| p.strip_prefix(&prefix).unwrap_or(p).to_owned();
         let new_tree = self.tickets_tree(Some(commit))?;
         let new_key = self.key_of(new_tree);
-        let mut expected: Vec<String> = vec![format!("{id}/ticket.md")];
+        let mut expected: Vec<String> = vec![rel(file)];
         expected.extend(
             ours.iter()
-                .map(|e| format!("{id}/events/{}", e.file_name())),
+                .map(|e| rel(&format!("{events_dir}/{}", e.file_name()))),
         );
         expected.sort();
         let empty: Oid = EMPTY_TREE
@@ -560,7 +768,7 @@ impl Ledger {
         }
         let foreign_event = changed
             .iter()
-            .any(|p| p.starts_with(&format!("{id}/events/")) && !expected.contains(p));
+            .any(|p| p.starts_with(&format!("{}/", rel(events_dir))) && !expected.contains(p));
         tracing::debug!(ticket = %id, foreign_event, changed = changed.len(), "ledger moved concurrently");
         if foreign_event {
             tracing::warn!(ticket = %id, "concurrent writer added events to this ticket; reconciling frontmatter");
@@ -602,7 +810,12 @@ impl Ledger {
             if stored.as_ref() == Some(&folded.ticket) {
                 return Ok(None);
             }
-            let path = RelPath::new(format!("{}/{id}/ticket.md", self.cfg.dir))?;
+            let Some(file) = self.ticket_file_at(&hex, id, None)? else {
+                return Err(LedgerError::NotFound {
+                    input: id.to_string(),
+                });
+            };
+            let path = RelPath::new(file)?;
             let message = format!(
                 "tickets(reconcile): ~{} re-fold frontmatter",
                 &id.random_part()[..7]

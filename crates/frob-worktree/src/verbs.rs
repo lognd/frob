@@ -224,6 +224,7 @@ impl Command for Work {
 #[command(
     verb = "start",
     product = "frob",
+    deprecated = "work --here",
     idempotent = true,
     exits(ok, refused, usage, internal)
 )]

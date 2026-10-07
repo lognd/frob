@@ -31,5 +31,7 @@ pub use error::{CliError, Outcome, Payload};
 pub use gob_diagnostics::{ExitCode, Refusal, RefusalClass};
 pub use gob_macros::Command;
 pub use inventory;
-pub use meta::{CommandEntry, CommandMeta, DEPRECATED_PREFIX, Described, all_commands};
+pub use meta::{
+    CommandEntry, CommandMeta, Described, all_commands, dangling_deprecations, markdown_verbs,
+};
 pub use schema_cmd::{SchemaCmd, SchemaData};

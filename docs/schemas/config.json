@@ -172,9 +172,11 @@
           "default": [
             "cargo",
             "git",
-            "pytest"
+            "pytest",
+            "vitest",
+            "jest"
           ],
-          "description": "Programs the `command` provider may run (the first word of the command must be listed); the `pytest` provider needs `pytest` listed too.",
+          "description": "Programs the `command` provider may run (the first word of the command must be listed); the `pytest`, `vitest` and `jest` providers need their own name listed too.",
           "items": {
             "type": "string"
           },

@@ -1,0 +1,28 @@
+---
+source: crates/frob/tests/board.rs
+expression: joined
+---
+NOW in-progress 5/5
+~4XZVM01 @agent-with-a-long-name 10m
+  In flight number 1 with a rather long title that must be cut
+  wt 4XZVM01 | last commit 1h ago
+~4XZVM02 @agent-with-a-long-name 20m
+  In flight number 2 with a rather long title that must be cut
+  wt 4XZVM02 | last lease 1h ago
+~4XZVM03 @agent-with-a-long-name 30m
+  In flight number 3 with a rather long title that must be cut
+  wt 4XZVM03 | last evidence 1h ago
+~4XZVM04 @agent-with-a-long-name 40m
+  In flight number 4 with a rather long title that must be cut
+  wt 4XZVM04 | last land 1h ago
+~4XZVM05 @agent-with-a-long-name 50m
+  In flight number 5 with a rather long title that must be cut
+  last no signal
+
+NEXT
+ 1. ~4XZVM06 3p Queued first
+ 2. ~4XZVM07 3p Queued second
+
+BLOCKED
+~4XZVM08 Waits on a blocker
+  by ~4XZVM01

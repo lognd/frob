@@ -21,19 +21,30 @@ use crate::model::{
 };
 use crate::schema::{FieldKind, field, get_field, set_acceptance, set_field};
 
-/// Sort key of `doable`: expedite first, then fixed-date by due date (undated last), then the rest in index order.
-fn doable_rank(s: &Summary) -> (u8, i64) {
-    let lane = match s.class {
-        Class::Expedite => 0,
+/// The dispatch order of `doable` and board NEXT: class lane (expedite, then fixed-date by due), then priority high to low, then oldest first.
+///
+/// There is no stored `rank` field yet; when one lands it slots in between priority and age (tickets.md section 3).
+// frob:ticket 01M4A12XB7EDWJ1FX8BN9XHZS1
+#[must_use]
+pub fn doable_cmp(a: &Summary, b: &Summary) -> std::cmp::Ordering {
+    let lane = |s: &Summary| match s.class {
+        Class::Expedite => 0_u8,
         Class::FixedDate => 1,
         Class::Standard | Class::Intangible => 2,
     };
-    let due = if s.class == Class::FixedDate {
-        s.due.map_or(i64::MAX, Stamp::unix)
-    } else {
-        0
+    let due = |s: &Summary| {
+        if s.class == Class::FixedDate {
+            s.due.map_or(i64::MAX, Stamp::unix)
+        } else {
+            0
+        }
     };
-    (lane, due)
+    lane(a)
+        .cmp(&lane(b))
+        .then_with(|| due(a).cmp(&due(b)))
+        .then_with(|| b.priority.cmp(&a.priority))
+        .then_with(|| a.created.unix().cmp(&b.created.unix()))
+        .then_with(|| a.id.cmp(&b.id))
 }
 
 /// A request to create a ticket.
@@ -210,7 +221,7 @@ impl Ledger {
                 tracing::debug!(ticket = %c.id, "excluded from doable by lease check");
             }
         }
-        out.sort_by_key(doable_rank);
+        out.sort_by(doable_cmp);
         Ok(out)
     }
 

@@ -249,6 +249,14 @@ declares its evidence policy (bug needs a repro that fails at parent,
 docs accepts command evidence), its land commit type, and whether it can
 be worked directly (epics cannot, and `doable` excludes them).
 
+**Doable order.** `ticket doable`, the board NEXT list and `cycle plan`'s
+candidate order are one function, `frob_ledger::ops::doable_cmp`, so they
+cannot diverge. Sort keys, in order: class lane (`expedite` first, then
+`fixed-date` by `due`, undated last, then `standard` and `intangible`
+together); priority (`critical`, `high`, `medium`, `low`); `rank` when set
+(reserved: tickets carry no stored rank yet, so the key is skipped); age
+(oldest `created` first); then the id as the final tie-break.
+
 One canonical table, declared once with inverses and topology
 constraints; every other file uses these spellings.
 
@@ -425,7 +433,7 @@ Milestone 2 or later (D36).
 | statuses, categories, transitions, conditions, validators, post-functions | categories fixed (`triage`, `todo`, `in-progress`, `done`, plus derived `blocked`); display names free; guards are predicates on `close` and `land`, not a transition graph; policy change is a commit | "transition not found", admin-only workflow edits, saved JQL breaking on rename (3) |
 | resolution | mandatory `outcome` written atomically with the terminal status: done, fixed, wont-fix, duplicate, invalid | Done-without-resolution, "Unresolved" counted as resolved (9) |
 | priority | `low`, `medium`, `high`, `critical` enum | - |
-| class of service | `class` enum: `expedite`, `fixed-date`, `standard`, `intangible`; `ticket new --class`, `ticket update --class`; `doable` lists expedite first, then fixed-date by `due`, then the rest | - |
+| class of service | `class` enum: `expedite`, `fixed-date`, `standard`, `intangible`; `ticket new --class`, `ticket update --class`; `doable` lists expedite first, then fixed-date by `due`, then the rest by priority and age (section 3) | - |
 | components | registry in config, each with path globs and optional owner; double as the product selector in the monorepo | free-text drift |
 | versions / fix version | milestone = release object (never a ticket type) with state, date, notes, derived from git tags where present | release cut outside tickets |
 | labels | declared in config; unknown label is a write error | typo-prone free text (19) |

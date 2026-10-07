@@ -148,6 +148,7 @@ impl From<Contended> for ContendedFile {
 #[command(
     verb = "ticket contention",
     product = "frob",
+    deprecated = "lease list --contention",
     idempotent = true,
     exits(ok, refused, internal)
 )]

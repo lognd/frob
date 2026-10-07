@@ -161,6 +161,7 @@ pub struct ShowData {
 #[command(
     verb = "ticket show",
     product = "frob",
+    markdown,
     idempotent = true,
     exits(ok, refused, usage, internal)
 )]
@@ -496,6 +497,7 @@ pub struct BriefData {
 #[command(
     verb = "ticket brief",
     product = "frob",
+    deprecated = "ticket show --format md",
     idempotent = true,
     exits(ok, refused, usage, internal)
 )]

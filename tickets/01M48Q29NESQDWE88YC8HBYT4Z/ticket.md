@@ -2,13 +2,14 @@
 id = "01M48Q29NESQDWE88YC8HBYT4Z"
 title = "frob board --brief: what is being done now, next and blocked"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:50Z"
-updated = "2026-10-07T01:25:22Z"
-scope = ["crates/frob-pm/src/board.rs", "crates/frob/src/board_cmd.rs", "crates/frob/tests/**"]
+updated = "2026-10-07T01:46:26Z"
+scope = ["crates/frob-pm/src/board.rs", "crates/frob/src/board_cmd.rs", "crates/frob/tests/**", "docs/design/releases.md"]
 
 [[acceptance]]
 text = "text and JSON come from one Board value (test)"

@@ -22,6 +22,16 @@ pub enum EvidenceError {
         /// The filter arguments as given in `--ref`.
         filter: String,
     },
+    /// `node` or a JavaScript test runner is not installed, so the TypeScript tests cannot run; never a skip.
+    #[error(
+        "E-EVIDENCE-RUNNER-MISSING: `{missing}` is not installed or does not run, so the {runner} tests were not run and nothing was recorded"
+    )]
+    RunnerMissing {
+        /// The absent program: `node`, `vitest` or `jest`.
+        missing: String,
+        /// The runner that needed it: `vitest` or `jest`.
+        runner: String,
+    },
     /// An attestation was attempted without a person at a terminal.
     #[error("E-ATTEST-NOT-HUMAN: an attestation is a person's statement; refused because {}", .reasons.join("; "))]
     NotHuman {
@@ -71,7 +81,7 @@ pub enum EvidenceError {
     },
     /// A provider name is not one of `nextest`, `command`, `file`.
     #[error(
-        "E-EVIDENCE-PROVIDER: `{0}` is not a provider; expected nextest, command, file or attestation"
+        "E-EVIDENCE-PROVIDER: `{0}` is not a provider; expected nextest, pytest, vitest, jest, command, file or attestation"
     )]
     BadProvider(String),
     /// An acceptance index is zero or beyond the ticket's criteria.
@@ -159,6 +169,14 @@ impl EvidenceError {
                         "find the commit id with: git log --oneline"
                     } else {
                         "find the ticket handle with: frob ticket list"
+                    }),
+            ),
+            Self::RunnerMissing { missing, runner } => Some(
+                Refusal::new("E-EVIDENCE-RUNNER-MISSING", GuardNeedsAction, self.to_string())
+                    .with_remedy(if missing == "node" {
+                        "install Node.js (https://nodejs.org) so `node --version` runs, then rerun".to_owned()
+                    } else {
+                        format!("install {runner} in the package (npm install --save-dev {runner}) or on PATH so `{runner} --version` runs, then rerun")
                     }),
             ),
             Self::BadReference(_) | Self::BadProvider(_) | Self::BadAccepts(_) => {

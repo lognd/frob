@@ -1,0 +1,1 @@
+`frob board --brief` prints a compact view: in-progress tickets with holder, worktree, age and last observed signal (lease heartbeat, commit on the ticket branch, evidence, land or category move, all inferred, none declared), the next doable tickets and the blocked ones with their blockers; `--json --brief` carries the same value in `data.brief`.

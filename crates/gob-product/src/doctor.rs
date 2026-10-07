@@ -23,6 +23,8 @@ impl<P: Product> Described for Doctor<P> {
         exits: P::DOCTOR_EXITS,
         summary: P::DOCTOR_SUMMARY,
         module: module_path!(),
+        deprecated: None,
+        markdown: false,
     };
 }
 

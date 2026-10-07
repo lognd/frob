@@ -304,6 +304,7 @@ pub struct InboxData {
 #[command(
     verb = "ticket triage list",
     product = "frob",
+    deprecated = "ticket list --category triage",
     idempotent = true,
     exits(ok, usage, internal)
 )]

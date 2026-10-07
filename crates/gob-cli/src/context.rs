@@ -15,7 +15,7 @@ pub enum FormatChoice {
     Json,
     /// Human text, a view over the same envelope.
     Text,
-    /// Markdown for verbs that have a markdown view (`ticket show`); text for every other verb.
+    /// Markdown for verbs that have a markdown view (`ticket show`); every other verb refuses it with a usage error.
     Md,
 }
 

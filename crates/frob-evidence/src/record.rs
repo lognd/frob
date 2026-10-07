@@ -17,6 +17,10 @@ pub enum Provider {
     Nextest,
     /// `pytest` with junit XML: pass/fail and the executed test node ids.
     Pytest,
+    /// `vitest run` with its JSON reporter: pass/fail and the executed test names (units of the TypeScript test file).
+    Vitest,
+    /// `jest --json`: pass/fail and the executed test names (units of the TypeScript test file).
+    Jest,
     /// An allowlisted tool: exit code and transcript digest.
     Command,
     /// A person's signed statement; never a tool measurement (see [`crate::attestation`]).
@@ -31,6 +35,8 @@ impl Provider {
         match self {
             Self::Nextest => "nextest",
             Self::Pytest => "pytest",
+            Self::Vitest => "vitest",
+            Self::Jest => "jest",
             Self::Command => "command",
             Self::File => "file",
             Self::Attestation => "attestation",
@@ -38,8 +44,15 @@ impl Provider {
     }
 
     /// The accepted spellings, for flag validation.
-    pub const NAMES: &'static [&'static str] =
-        &["nextest", "pytest", "command", "file", "attestation"];
+    pub const NAMES: &'static [&'static str] = &[
+        "nextest",
+        "pytest",
+        "vitest",
+        "jest",
+        "command",
+        "file",
+        "attestation",
+    ];
 }
 
 impl FromStr for Provider {
@@ -49,6 +62,8 @@ impl FromStr for Provider {
         match s {
             "nextest" => Ok(Self::Nextest),
             "pytest" => Ok(Self::Pytest),
+            "vitest" => Ok(Self::Vitest),
+            "jest" => Ok(Self::Jest),
             "command" => Ok(Self::Command),
             "file" => Ok(Self::File),
             "attestation" => Ok(Self::Attestation),
