@@ -924,3 +924,100 @@ fn the_gate_and_pm013_count_the_same_holders() {
     let over = at(1).subjects;
     assert_eq!(over, 2, "standard plus expedite holders, stale excluded");
 }
+
+/// A clock three hours past now: every two-hour lease taken at real time has expired by it.
+#[derive(Debug)]
+struct LaterClock;
+
+impl gob_time::Clock for LaterClock {
+    fn now(&self) -> frob_ledger::model::Stamp {
+        frob_ledger::model::Stamp::from_unix(gob_time::SystemClock.now().unix() + 3 * 3600)
+    }
+}
+
+/// Work `scope` as the default actor, then let its lease expire and be pruned; returns the worktree path and id.
+fn expired_run(fx: &Fixture, scope: &[&str]) -> (TicketId, PathBuf) {
+    let ledger = fx.ledger(None);
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let id = Fixture::ticket(&ledger, "Do it", TicketType::Task, scope);
+    let started = ws
+        .work(&id.to_string(), &WorkOptions::default())
+        .expect("work");
+    let later: std::sync::Arc<dyn gob_time::Clock> = std::sync::Arc::new(LaterClock);
+    fx.leases().with_clock(later).list().expect("prune");
+    assert!(leases.recorded_lease(id).expect("read").is_none());
+    (id, started.path)
+}
+
+/// `work` for `id` run from inside `wt`, as an agent resuming there would.
+fn work_from(wt: &Path, id: TicketId) -> Result<frob_worktree::Started, WorktreeError> {
+    let repo = Repo::discover(wt).expect("repo");
+    let ledger = Ledger::open(
+        Repo::discover(wt).expect("repo"),
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
+    let leases = LeaseStore::open(
+        &repo,
+        LeaseConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    )
+    .expect("leases");
+    let cfg = WorktreeConfig::load(wt).expect("config");
+    Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    }
+    .work(&id.to_string(), &WorkOptions::default())
+}
+
+// frob:ticket 01M4BH0C9D5X79MFHTAYBHKQGE
+// frob:tests crates/frob-worktree/src/work.rs::resumed_worktree
+#[test]
+fn work_from_its_own_worktree_releases_an_expired_in_progress_ticket() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let (id, wt) = expired_run(&fx, &["crates/x/**"]);
+    let again = work_from(&wt, id).expect("re-lease in place");
+    assert_eq!(again.lease.holder.worktree, wt);
+    assert!(!again.created_worktree);
+    assert_eq!(category(&fx.ledger(None), id), Category::InProgress);
+    assert!(fx.leases().live_lease(id).expect("live").is_some());
+}
+
+// frob:tests crates/frob-worktree/src/work.rs::resumed_worktree
+#[test]
+fn work_from_its_own_worktree_refuses_when_an_overlapping_lease_was_taken_since() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let (id, wt) = expired_run(&fx, &["crates/x/**"]);
+    let other = Fixture::ticket(
+        &fx.ledger(None),
+        "Other",
+        TicketType::Task,
+        &["crates/x/a.rs"],
+    );
+    fx.leases()
+        .acquire(
+            other,
+            &frob_lease::Holder {
+                actor: "bob".to_owned(),
+                worktree: fx.root.join("bob-wt"),
+            },
+            &["crates/x/a.rs".to_owned()],
+        )
+        .expect("bob takes an overlap");
+    let err = work_from(&wt, id).expect_err("stolen scope");
+    assert_eq!(refusal_code(&err), "E-LEASE-HELD");
+}

@@ -1,0 +1,1 @@
+Expired-lease recovery no longer needs a manual steal or requeue: `frob land` run from the primary root renews the lease for the ticket's own worktree, and `frob work` run from that worktree re-leases an in-progress ticket in place, both only while no overlapping lease was taken since.

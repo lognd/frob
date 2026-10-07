@@ -342,7 +342,11 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   the old holder. `land` renews a lease that expired when no other holder has
   taken the ticket or an overlapping scope since, and refuses
   `E-LAND-NOT-LEASED` otherwise, so a 40-minute build
-  with no frob call stays inside the TTL; a stale lease can be taken
+  with no frob call stays inside the TTL. The renewed lease is for the
+  ticket's own worktree (the one on its `ticket/<handle>` branch, also when
+  `land` runs from the primary root), never for the caller's. `frob work`
+  run from that worktree on an in-progress ticket with no live lease
+  re-leases it in place on the same terms, with no requeue; a stale lease can be taken
   with `--steal` and a reason. Leases release automatically on every
   terminal transition and on `requeue`.
 - Overlap is glob intersection OR resolved-set intersection (in code, a
