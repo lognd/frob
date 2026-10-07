@@ -2,12 +2,12 @@
 id = "01M49VYK2H6WXWYNRVX0WQ67AJ"
 title = "CLI: deprecated aliases as a compile-checked #[command(deprecated = ...)] attribute; --format md refused on verbs without a markdown view"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 parent = "01M48Q27GE8C1P6JS1CXKTCQ3S"
 reporter = "lognd"
 created = "2026-10-07T00:24:26Z"
-updated = "2026-10-07T00:24:26Z"
+updated = "2026-10-07T02:22:57Z"
 scope = ["crates/gob-cli/**", "crates/gob-macros/**", "crates/frob/**"]
 
 [[acceptance]]
