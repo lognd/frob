@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-07T03:05:32Z"
+updated = "2026-10-07T15:25:56Z"
 idempotency_key = "m2-tb-layout-read"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-ledger/src/index.rs", "crates/frob-ledger/src/fold.rs", "crates/frob-ledger/src/merge.rs", "crates/frob-ledger/src/layout.rs", "crates/frob-ledger/src/ledger.rs", "crates/frob-ledger/src/doctor.rs", "crates/frob-ledger/tests/**"]
@@ -19,11 +19,11 @@ target = "01M3ZX82Q2N145P3DWVVY4E868"
 
 [[acceptance]]
 text = "Given a ticket file moved to another directory by a reindex, when `ticket show <id>` runs, then it resolves the same ticket and the frontmatter equals the fold of events"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given two branches that each add events to one ticket, when merged, then the driver unions events and refolds"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 1; navigation.md section 1.
