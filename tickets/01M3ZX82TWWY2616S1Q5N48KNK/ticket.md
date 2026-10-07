@@ -2,7 +2,8 @@
 id = "01M3ZX82TWWY2616S1Q5N48KNK"
 title = "Index, fold and merge driver read the new layout through ULIDs, never paths"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
