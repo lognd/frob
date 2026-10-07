@@ -65,6 +65,7 @@ pub mod fold;
 pub mod guards;
 pub mod id;
 pub mod index;
+pub mod layout;
 pub mod ledger;
 pub mod links;
 pub mod merge;
@@ -80,4 +81,5 @@ pub mod triage;
 
 pub use error::{Candidate, LedgerError, Result};
 pub use id::{EventId, TicketId};
+pub use layout::Layout;
 pub use ledger::{Applied, Ledger, LedgerConfig, RefMode};

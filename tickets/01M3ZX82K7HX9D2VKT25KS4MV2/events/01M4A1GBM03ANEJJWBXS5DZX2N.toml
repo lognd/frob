@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "~VY4E868 landed a minimal path and slug function in crates/frob-ledger/src/layout.rs (title_slug drops non-ASCII; a slug collision appends 7 ULID chars to the new ticket only) so the layout could ship before this ticket. This ticket replaces that placeholder with the full path function (top-epic directory, EPIC.md, _unfiled, symmetric collisions) and ~NRTFCH7's transliterating slug; the blocked-by link was turned into relates for that reason."
+at = "2026-10-07T02:01:31Z"
+actor = "lognd"
+rev = 1
