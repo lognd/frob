@@ -286,7 +286,11 @@ fn run_groups_selected_tests_by_member_and_maps_results_back_to_units() {
     let report = run(&runner, &sel, &opts).expect("run");
     assert!(report.passed(), "{report:?}");
     assert_eq!(report.executed(), [VITEST_ID, JEST_ID]);
-    let providers: Vec<_> = report.runs.iter().map(|r| r.provider()).collect();
+    let providers: Vec<_> = report
+        .runs
+        .iter()
+        .map(frob_tests::FrameworkRun::provider)
+        .collect();
     assert_eq!(providers, [Provider::Vitest, Provider::Jest]);
     assert_eq!(report.runs[0].reference(), "src/api/client.test.ts");
     assert_eq!(report.runs[1].reference(), "legacy/src/sum.test.ts");
