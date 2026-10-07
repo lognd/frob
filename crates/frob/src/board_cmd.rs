@@ -24,6 +24,7 @@ use std::time::Duration;
 use frob_ledger::TicketId;
 use frob_ledger::guards::NoLeases;
 use frob_ledger::index::ListFilter;
+use frob_ledger::index::Summary;
 use frob_ledger::model::{Category, LinkKind, Stamp};
 use frob_pm::board::{self, Board, Brief, BriefInput, Input, RenderOptions, Signal, SignalKind};
 use frob_pm::rules::wip::{self, WipLimits};
@@ -54,6 +55,48 @@ pub struct BoardData {
 
 /// Longest a `git log` for one ticket branch may run.
 const GIT_TIMEOUT: Duration = Duration::from_secs(10);
+
+/// Whether the board reads events for `s`: any open ticket, or a done one inside the done window.
+fn recent_done(s: &Summary, now: Stamp) -> bool {
+    s.category != Category::Done || now.unix() - s.updated.unix() <= board::DONE_DAYS * 86_400
+}
+
+/// The `--brief` signals of each in-progress ticket, by handle.
+type Signals = BTreeMap<String, Vec<Signal>>;
+
+/// Card entry times and `--brief` signals, from one bulk read of the events of the tickets that need them.
+// frob:ticket 01M4BH8WMBDTAT4R0ST9VT321D
+fn read_events(
+    ledger: &frob_ledger::Ledger,
+    tickets: &[Summary],
+    brief: bool,
+    now: Stamp,
+) -> Result<(BTreeMap<TicketId, Stamp>, Signals), CliError> {
+    let in_progress = |s: &Summary| brief && s.category == Category::InProgress;
+    let wanted: BTreeSet<TicketId> = tickets
+        .iter()
+        .filter(|s| in_progress(s) || recent_done(s, now))
+        .map(|s| s.id)
+        .collect();
+    let all_events = ledger.events_many(&wanted).map_err(cli_err)?;
+    let mut entered = BTreeMap::new();
+    let mut signals = Signals::new();
+    for s in tickets {
+        let Some(events) = all_events.get(&s.id) else {
+            continue;
+        };
+        if in_progress(s) {
+            signals.insert(
+                s.handle.clone(),
+                board::observe(events).into_iter().collect(),
+            );
+        }
+        if recent_done(s, now) {
+            entered.insert(s.id, board::entered(events, s));
+        }
+    }
+    Ok((entered, signals))
+}
 
 /// Commit time of the newest commit on `branch` that the checked-out base lacks, or `None`.
 fn last_commit(runner: &Runner, root: &Path, branch: &str) -> Option<Stamp> {
@@ -287,23 +330,7 @@ impl Command for BoardVerb {
             .map(|s| s.id)
             .collect();
 
-        let mut entered = BTreeMap::new();
-        let mut signals: BTreeMap<String, Vec<Signal>> = BTreeMap::new();
-        for s in &tickets {
-            if self.brief && s.category == Category::InProgress {
-                let events = ledger.events(s.id).map_err(cli_err)?;
-                signals.insert(
-                    s.handle.clone(),
-                    board::observe(&events).into_iter().collect(),
-                );
-            }
-            let recent_done = s.category != Category::Done
-                || now.unix() - s.updated.unix() <= board::DONE_DAYS * 86_400;
-            if recent_done {
-                let events = ledger.events(s.id).map_err(cli_err)?;
-                entered.insert(s.id, board::entered(&events, s));
-            }
-        }
+        let (entered, signals) = read_events(&ledger, &tickets, self.brief, now)?;
         let blocked_ids: Vec<(TicketId, String)> = tickets
             .iter()
             .filter(|s| s.blocked && s.category == Category::Todo)

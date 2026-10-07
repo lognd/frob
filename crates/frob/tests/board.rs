@@ -642,3 +642,51 @@ fn brief_flag_prints_ascii_sections_and_json_carries_the_brief() {
     assert_eq!(v["data"]["brief"]["working"][0]["last"]["kind"], "moved");
     assert_eq!(v["data"]["brief"]["next"][0]["title"], "queued");
 }
+
+/// Stderr lines of `frob -vv board` containing `needle`.
+fn log_count(dir: &Path, args: &[&str], needle: &str) -> usize {
+    let out = frob(dir, args);
+    assert_eq!(out.status.code(), Some(0), "{args:?}");
+    String::from_utf8_lossy(&out.stderr)
+        .lines()
+        .filter(|l| l.contains(needle))
+        .count()
+}
+
+// frob:ticket 01M4BH8WMBDTAT4R0ST9VT321D
+#[test]
+fn board_syncs_and_walks_events_once_however_many_tickets() {
+    // frob:tests crates/frob/src/board_cmd.rs::BoardVerb
+    let dir = repo();
+    let p = dir.path();
+    let added = 6;
+    for n in 0..added {
+        for cat in ["todo", "triage"] {
+            ok(
+                p,
+                &[
+                    "--json",
+                    "ticket",
+                    "new",
+                    "--title",
+                    &format!("{cat} {n}"),
+                    "--type",
+                    "task",
+                    "--category",
+                    cat,
+                ],
+            );
+        }
+    }
+    // Warm the index so the count below sees only the board's own reads.
+    ok(p, &["--json", "board"]);
+    let args = ["-vv", "--json", "board", "--brief"];
+    let walks = log_count(p, &args, "events walked once");
+    assert_eq!(walks, 1, "one bulk events walk per invocation");
+    let opens = log_count(p, &args, "index opened");
+    let tickets = 3 + 2 * added;
+    assert!(
+        opens < tickets / 2,
+        "{opens} index opens for {tickets} tickets: sync must not run per ticket"
+    );
+}

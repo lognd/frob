@@ -1,6 +1,6 @@
 //! Ledger operations: the mutations and queries behind the ticket verbs.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use gob_git::Oid;
 use schemars::JsonSchema;
@@ -279,6 +279,23 @@ impl Ledger {
         match s.tip {
             Some(tip) => self.read_events_at(&tip.to_string(), id),
             None => Ok(Vec::new()),
+        }
+    }
+
+    /// The events of every ticket in `ids` at the ledger tip, from one sync and one tree walk.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::NotFound`] when any ticket is absent, or store failures.
+    // frob:ticket 01M4BH8WMBDTAT4R0ST9VT321D
+    pub fn events_many(&self, ids: &BTreeSet<TicketId>) -> Result<BTreeMap<TicketId, Vec<Event>>> {
+        let s = self.synced()?;
+        for id in ids {
+            Self::require_exists(&s, *id)?;
+        }
+        match s.tip {
+            Some(tip) => self.read_events_many_at(&tip.to_string(), ids),
+            None => Ok(ids.iter().map(|id| (*id, Vec::new())).collect()),
         }
     }
 
