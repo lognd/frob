@@ -456,3 +456,189 @@ fn text_mode_prints_ascii_rows_at_the_requested_width() {
         assert!(text.contains(needle), "{needle} in\n{text}");
     }
 }
+
+/// Five in-progress tickets, a doable queue and one blocked ticket, with signals of every kind.
+fn brief_fixture() -> (board::Board, board::BriefInput) {
+    use frob_pm::board::{BriefInput, Signal, SignalKind};
+    let mut tickets: Vec<Summary> = (1..=5)
+        .map(|n| {
+            summary(
+                n,
+                &format!("In flight number {n} with a rather long title that must be cut"),
+                "in-progress",
+                "standard",
+                false,
+                at(9, 0),
+            )
+        })
+        .collect();
+    tickets.push(summary(
+        6,
+        "Queued first",
+        "todo",
+        "standard",
+        false,
+        at(2, 0),
+    ));
+    tickets.push(summary(
+        7,
+        "Queued second",
+        "todo",
+        "expedite",
+        false,
+        at(2, 0),
+    ));
+    tickets.push(summary(
+        8,
+        "Waits on a blocker",
+        "todo",
+        "standard",
+        true,
+        at(2, 0),
+    ));
+    let live: BTreeSet<TicketId> = tickets[..5].iter().map(|t| t.id).collect();
+    let limits = WipLimits {
+        in_progress: 5,
+        expedite_max: 0,
+    };
+    let wip = wip::count(tickets[..5].to_vec(), Some(&live), limits.expedite_max);
+    let entered: BTreeMap<TicketId, Stamp> = tickets[..5]
+        .iter()
+        .enumerate()
+        .map(|(i, t)| (t.id, at(0, 600 * (i as i64 + 1))))
+        .collect();
+    let holders: BTreeMap<TicketId, String> = tickets[..5]
+        .iter()
+        .map(|t| (t.id, "agent-with-a-long-name".to_owned()))
+        .collect();
+    let doable_order = vec![tickets[5].id, tickets[6].id];
+    let input = Input {
+        tickets: tickets.clone(),
+        wip,
+        limits,
+        entered,
+        holders,
+        doable_order,
+        now: now(),
+        show: board::DEFAULT_SHOWN,
+    };
+    let kinds = [
+        SignalKind::Commit,
+        SignalKind::Lease,
+        SignalKind::Evidence,
+        SignalKind::Land,
+        SignalKind::Moved,
+    ];
+    let mut extra = BriefInput {
+        now: Some(now()),
+        ..BriefInput::default()
+    };
+    for (t, kind) in tickets[..4].iter().zip(kinds) {
+        extra.worktrees.insert(
+            t.handle.clone(),
+            format!("/home/dev/repo-wt/{}", &t.handle[1..]),
+        );
+        extra.signals.insert(
+            t.handle.clone(),
+            Signal {
+                kind,
+                at: at(0, 90 * 60),
+            },
+        );
+    }
+    extra
+        .blockers
+        .insert(tickets[7].handle.clone(), vec!["~4XZVM01".to_owned()]);
+    (board::build(&input), extra)
+}
+
+#[test]
+fn brief_text_and_json_come_from_one_value_and_fit_80_columns() {
+    // frob:tests crates/frob-pm/src/board.rs::brief
+    // frob:tests crates/frob-pm/src/board.rs::render_brief
+    let (b, extra) = brief_fixture();
+    let brief = board::brief(&b, &extra);
+    let text = board::render_brief(&brief, 80);
+    assert!(
+        text.iter().all(|l| l.is_ascii() && l.len() <= 80),
+        "{text:?}"
+    );
+    let json = serde_json::to_value(&brief).expect("json");
+    let handles: Vec<&str> = json["working"]
+        .as_array()
+        .expect("working")
+        .iter()
+        .map(|w| w["handle"].as_str().expect("handle"))
+        .collect();
+    assert_eq!(handles.len(), 5);
+    let joined = text.join("\n");
+    for h in &handles {
+        assert!(joined.contains(h), "{h} in text");
+    }
+    assert_eq!(json["next"][0]["handle"], "~4XZVM06");
+    assert_eq!(json["blocked"][0]["blockers"][0], "~4XZVM01");
+    assert!(joined.contains("by ~4XZVM01"));
+    assert_snapshot!("brief_text_80_five_in_progress", joined);
+}
+
+#[test]
+fn brief_last_signal_is_inferred_with_its_age() {
+    // frob:tests crates/frob-pm/src/board.rs::brief
+    let (b, extra) = brief_fixture();
+    let brief = board::brief(&b, &extra);
+    let w = &brief.working[0];
+    let last = w.last.as_ref().expect("signal");
+    assert_eq!((last.since_secs, last.since.as_str()), (5_400, "1h"));
+    assert_eq!(serde_json::to_value(last).expect("json")["kind"], "commit");
+    assert!(brief.working[4].last.is_none(), "no record, no signal");
+    let text = board::render_brief(&brief, 80).join("\n");
+    assert!(text.contains("last commit 1h ago"));
+    assert!(text.contains("last no signal"));
+}
+
+#[test]
+fn observe_reads_only_recorded_events_and_latest_wins() {
+    // frob:tests crates/frob-pm/src/board.rs::observe
+    // frob:tests crates/frob-pm/src/board.rs::latest
+    use frob_pm::board::{Signal, SignalKind};
+    assert!(board::observe(&[]).is_none());
+    let events = [
+        transition("in-progress", at(2, 0)),
+        transition("in-progress", at(1, 0)),
+    ];
+    let s = board::observe(&events).expect("signal");
+    assert_eq!((s.kind, s.at), (SignalKind::Moved, at(1, 0)));
+    let commit = Signal {
+        kind: SignalKind::Commit,
+        at: at(0, 60),
+    };
+    assert_eq!(board::latest([s, commit]), Some(commit));
+}
+
+#[test]
+fn brief_flag_prints_ascii_sections_and_json_carries_the_brief() {
+    // frob:tests crates/frob/src/board_cmd.rs::BoardVerb
+    let dir = repo();
+    let out = frob(dir.path(), &["--text", "board", "--brief", "--width", "80"]);
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8(out.stdout).expect("utf8");
+    assert!(
+        text.is_ascii() && text.lines().all(|l| l.len() <= 80),
+        "{text}"
+    );
+    for needle in [
+        "NOW ",
+        "NEXT",
+        "BLOCKED",
+        "STALE",
+        "last moved",
+        "abandoned",
+    ] {
+        assert!(text.contains(needle), "{needle} in\n{text}");
+    }
+    let v = ok(dir.path(), &["--json", "board", "--brief"]);
+    assert!(v["data"].get("board").is_none());
+    assert_eq!(v["data"]["brief"]["working"][0]["title"], "abandoned");
+    assert_eq!(v["data"]["brief"]["working"][0]["last"]["kind"], "moved");
+    assert_eq!(v["data"]["brief"]["next"][0]["title"], "queued");
+}
