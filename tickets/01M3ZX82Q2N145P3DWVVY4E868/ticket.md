@@ -2,7 +2,8 @@
 id = "01M3ZX82Q2N145P3DWVVY4E868"
 title = "Ticket branch layout: events under .events/<ULID>/ and ticket files at computed paths"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
