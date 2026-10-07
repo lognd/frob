@@ -2,11 +2,11 @@
 id = "01M4A12XB7EDWJ1FX8BN9XHZS1"
 title = "ticket doable (and board NEXT) order ignores priority: low-priority August imports lead today's high-priority work"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-07T01:54:10Z"
-updated = "2026-10-07T01:54:10Z"
+updated = "2026-10-07T02:24:11Z"
 scope = ["crates/frob-lease/**", "crates/frob-pm/**", "crates/frob-ledger/**"]
 
 [[acceptance]]
