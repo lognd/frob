@@ -7,7 +7,7 @@ priority = "medium"
 parent = "01M48Q27GE8C1P6JS1CXKTCQ3S"
 reporter = "lognd"
 created = "2026-10-07T00:24:26Z"
-updated = "2026-10-07T03:54:10Z"
+updated = "2026-10-07T03:58:57Z"
 scope = ["crates/gob-cli/**", "crates/gob-macros/**", "crates/frob/**", "crates/frob-check/src/verb.rs", "crates/frob-lease/src/verbs.rs", "crates/frob-worktree/src/verbs.rs", "crates/gob-product/src/*.rs"]
 
 [[acceptance]]
