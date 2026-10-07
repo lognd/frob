@@ -84,7 +84,12 @@ pub(crate) fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
     }
     if let Some(form) = &args.deprecated {
         let first = form.split(' ').next().unwrap_or_default();
-        if !valid_verb(first) || form.contains('`') || form.contains("  ") || form.ends_with(' ') {
+        if !valid_verb(first)
+            || first.starts_with('-')
+            || form.contains('`')
+            || form.contains("  ")
+            || form.ends_with(' ')
+        {
             errors.push(darling::Error::custom(format!(
                 "invalid deprecated form `{form}`; expected a registered verb followed by flags, e.g. `ticket show --format md`"
             )));

@@ -184,6 +184,7 @@ fn aliases_are_hidden_from_help() {
 // frob:ticket 01M49VYK2H6WXWYNRVX0WQ67AJ
 #[test]
 fn every_deprecated_alias_names_a_registered_verb() {
+    let _cli = frob_cli::cli(); // links every verb into the inventory
     let dangling: Vec<String> = gob_cli::dangling_deprecations()
         .iter()
         .map(|m| format!("`{}` -> `{}`", m.verb, m.deprecated.unwrap_or_default()))
