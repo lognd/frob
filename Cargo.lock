@@ -2295,6 +2295,7 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+ "trybuild",
 ]
 
 [[package]]
@@ -2342,7 +2343,9 @@ name = "gob-dev"
 version = "0.532.0"
 dependencies = [
  "clap",
+ "crunk-check",
  "crunk-spec",
+ "frob-check",
  "frob-cli",
  "frob-evidence",
  "frob-ledger",
@@ -2356,6 +2359,7 @@ dependencies = [
  "gob-mdtest",
  "gob-rules",
  "gob-time",
+ "grimble-check",
  "jiff",
  "serde",
  "serde_json",
@@ -2594,6 +2598,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror",
  "tracing",
 ]
