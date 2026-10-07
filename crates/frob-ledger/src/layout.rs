@@ -85,7 +85,12 @@ pub fn branch_events_dir(id: TicketId) -> String {
 /// directories that is not the generated front page.
 #[must_use]
 pub fn is_branch_ticket_candidate(path: &str) -> bool {
-    path.ends_with(".md") && path != "README.md" && !path.starts_with('.') && path.contains('/')
+    std::path::Path::new(path)
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("md"))
+        && path != "README.md"
+        && !path.starts_with('.')
+        && path.contains('/')
 }
 
 #[cfg(test)]

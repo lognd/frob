@@ -427,7 +427,7 @@ impl Ledger {
         let events_dir = layout::branch_events_dir(id);
         let tip_hex = tip.map(|t| t.to_string());
         let short = id.random_part()[..7].to_owned();
-        let top = self.top_epic_slug(index, ticket.front.parent)?;
+        let top = Self::top_epic_slug(index, ticket.front.parent)?;
         let slug = layout::title_slug(&ticket.front.title, &short);
         let mut path = layout::branch_ticket_path(ticket.front.ty, &slug, top.as_deref());
         if let Some(hex) = &tip_hex {
@@ -447,7 +447,7 @@ impl Ledger {
     }
 
     /// Directory slug of the outermost epic among the ancestors starting at `parent`.
-    fn top_epic_slug(&self, index: &Index, parent: Option<TicketId>) -> Result<Option<String>> {
+    fn top_epic_slug(index: &Index, parent: Option<TicketId>) -> Result<Option<String>> {
         let mut top: Option<Ticket> = None;
         let mut cur = parent;
         for _ in 0..64 {
