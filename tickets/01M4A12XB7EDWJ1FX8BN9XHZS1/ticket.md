@@ -6,8 +6,8 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-07T01:54:10Z"
-updated = "2026-10-07T02:24:11Z"
-scope = ["crates/frob-lease/**", "crates/frob-pm/**", "crates/frob-ledger/**"]
+updated = "2026-10-07T02:25:26Z"
+scope = ["crates/frob-lease/**", "crates/frob-pm/**", "crates/frob-ledger/**", "docs/design/tickets.md", "changelog.d/01M4A12XB7EDWJ1FX8BN9XHZS1.*"]
 
 [[acceptance]]
 text = "a fixture with low-priority old and high-priority new todo tickets lists the high-priority ones first in ticket doable and board NEXT"
