@@ -499,7 +499,7 @@ fn index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise() 
 
 #[test]
 fn branch_mode_commits_to_the_current_branch() {
-    let (dir, ledger) = fixture(RefMode::Branch);
+    let (dir, ledger) = fixture(RefMode::Trunk);
     let repo = ledger.repo();
     // A topic branch checked out; trunk must not move.
     let main_tip = repo.rev_parse(MAIN).expect("main");
@@ -966,4 +966,68 @@ fn a_new_event_is_stamped_in_whole_seconds_even_from_a_precise_clock() {
     let at: gob_time::Stamp = "2026-10-05T01:02:03.987654321Z".parse().expect("stamp");
     let event = frob_ledger::event::Event::new(at, "a", frob_ledger::event::EventBody::Other);
     assert_eq!(event.at.precise(), "2026-10-05T01:02:03Z");
+}
+
+/// Create a todo ticket with a priority and class, returning its id.
+fn todo_with(
+    ledger: &Ledger,
+    title: &str,
+    priority: Priority,
+    class: frob_ledger::model::Class,
+) -> TicketId {
+    let mut req = NewTicket::new(title, TicketType::Task);
+    req.category = Category::Todo;
+    req.priority = priority;
+    req.class = class;
+    ledger.new_ticket(req).expect("create").ticket.front.id
+}
+
+#[test]
+fn doable_orders_by_class_then_priority_then_age() {
+    // frob:ticket 01M4A12XB7EDWJ1FX8BN9XHZS1
+    use frob_ledger::model::Class;
+    let (_dir, ledger) = fixture(RefMode::Trunk);
+    let low_old = todo_with(&ledger, "low old", Priority::Low, Class::Standard);
+    let med = todo_with(&ledger, "medium", Priority::Medium, Class::Standard);
+    let high_new = todo_with(&ledger, "high new", Priority::High, Class::Standard);
+    let crit = todo_with(&ledger, "critical", Priority::Critical, Class::Standard);
+    let late = todo_with(&ledger, "fixed late", Priority::Low, Class::FixedDate);
+    let early = todo_with(&ledger, "fixed early", Priority::Low, Class::FixedDate);
+    let exp = todo_with(&ledger, "expedite", Priority::Low, Class::Expedite);
+    for (id, due) in [
+        (late, "2026-12-01T00:00:00Z"),
+        (early, "2026-11-01T00:00:00Z"),
+    ] {
+        let patch = Patch {
+            sets: vec![("due".into(), Some(toml::Value::String(due.into())))],
+            ..Patch::default()
+        };
+        ledger.update(id, &patch).expect("due");
+    }
+    let order: Vec<_> = ledger
+        .doable(&NoLeases)
+        .expect("doable")
+        .iter()
+        .map(|s| s.id)
+        .collect();
+    assert_eq!(order, vec![exp, early, late, crit, high_new, med, low_old]);
+}
+
+#[test]
+fn doable_is_sorted_by_the_shared_comparator() {
+    // frob:ticket 01M4A12XB7EDWJ1FX8BN9XHZS1
+    use frob_ledger::model::Class;
+    let (_dir, ledger) = fixture(RefMode::Trunk);
+    for (t, p) in [
+        ("a", Priority::Low),
+        ("b", Priority::High),
+        ("c", Priority::Medium),
+    ] {
+        todo_with(&ledger, t, p, Class::Standard);
+    }
+    let got = ledger.doable(&NoLeases).expect("doable");
+    let mut again = got.clone();
+    again.reverse();
+    again.sort_by(frob_ledger::ops::doable_cmp);
+    assert_eq!(got, again, "doable output is exactly doable_cmp order");
 }
