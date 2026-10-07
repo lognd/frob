@@ -1,15 +1,12 @@
 //! Required marks for Unresolved findings (cli.md section 2, the one gate mechanism).
 //!
 //! A finding carries its own [`gob_rules::RequiredReason`]; this module adds the
-//! two pipeline-level sources (an `annotation-required:` message and a
+//! two pipeline-level sources (a typed `annotation-required` reason and a
 //! `must_measure` rule that examined nothing); the gate reads `Finding.required`.
 
 use std::collections::BTreeMap;
 
 use gob_rules::{Finding, RequiredReason, RuleId, RuleMeta, Severity, UnresolvedReason};
-
-/// Message prefix gob-ir uses for an opaque that needs an annotation.
-pub(crate) const ANNOTATION_PREFIX: &str = "annotation-required:";
 
 /// The required Unresolved finding for the `must_measure` rule `id` that examined zero subjects.
 pub(crate) fn zero_subject_finding(id: &str) -> Option<Finding> {
@@ -79,23 +76,10 @@ fn annotation_reason(f: &Finding) -> Option<RequiredReason> {
             public_surface: *reason == UnresolvedReason::AnnotationSignature,
         });
     }
-    legacy_annotation_reason(f)
+    None
 }
 
-/// The `AnnotationRequired` mark of an `annotation-required:` message.
-///
-/// Bridge for producers outside this crate that tag by message and set no typed reason (the
-/// `frob-check` test fixture); remove with them.
-fn legacy_annotation_reason(f: &Finding) -> Option<RequiredReason> {
-    let rest = f.message.strip_prefix(ANNOTATION_PREFIX)?.trim_start();
-    let code = rest.split_whitespace().next().unwrap_or_default();
-    Some(RequiredReason::AnnotationRequired {
-        code: code.to_owned(),
-        public_surface: true,
-    })
-}
-
-/// Give annotation-prefixed Unresolved findings their required reason.
+/// Give typed annotation Unresolved findings their required reason.
 pub(crate) fn mark_annotations(findings: &mut [Finding]) {
     for f in findings
         .iter_mut()
@@ -123,16 +107,11 @@ mod tests {
 
     // frob:tests crates/gob-check/src/required.rs::mark_annotations
     #[test]
-    fn annotation_prefix_maps_to_a_required_reason() {
+    fn an_annotation_prefix_in_the_message_alone_marks_nothing() {
         let mut fs = [unresolved("annotation-required: opaque-fn at pub fn x")];
         mark_annotations(&mut fs);
-        assert_eq!(
-            fs[0].required,
-            Some(RequiredReason::AnnotationRequired {
-                code: "opaque-fn".into(),
-                public_surface: true
-            })
-        );
+        assert!(fs[0].required.is_none());
+        assert!(fs[0].reason.is_none());
     }
 
     // frob:tests crates/gob-check/src/required.rs::mark_annotations

@@ -119,6 +119,7 @@ fn a_summary_survives_its_encoding() {
         file: Some("src/a.rs".to_owned()),
         range: Some((1, 4)),
         message: "m".to_owned(),
+        reason: Some(grimble_bind::Reason::MayOnlyOwner),
         anchor: "a".to_owned(),
     });
     s.subjects.insert("SYS003", 7);

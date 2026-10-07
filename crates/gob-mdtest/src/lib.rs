@@ -31,7 +31,8 @@ mod run;
 
 pub use parse::{Block, Expect, Marker, ParseError, parse_suite};
 pub use run::{
-    Case, CaseReport, FileReport, Missing, MissingControl, Report, Runner, run_dir, run_file,
+    Case, CaseOutput, CaseReport, FileReport, Missing, MissingControl, Report, Runner, run_dir,
+    run_file,
 };
 
 /// Crate manifest directory: the run-time `CARGO_MANIFEST_DIR` cargo sets, else `compile_time`.

@@ -482,13 +482,13 @@ impl FileCheck<Frob> for Opaque {
 
     fn check(&self, _ctx: &CheckCtx<'_>, _file: FileId, path: &str, text: &str) -> Vec<Finding> {
         let id = Fixt001.meta().rule_id().expect("valid id");
-        vec![Finding::new(
-            id,
-            gob_rules::Severity::Unresolved,
-            None,
-            text.trim(),
-            path,
-        )]
+        let f = Finding::new(id, gob_rules::Severity::Unresolved, None, text.trim(), path);
+        // The reason is typed by the producer, never read back from the message.
+        vec![if text.starts_with("annotation-required") {
+            f.with_reason(gob_rules::UnresolvedReason::AnnotationSignature)
+        } else {
+            f
+        }]
     }
 }
 
@@ -599,7 +599,7 @@ fn an_annotation_required_unresolved_finding_is_marked_required() {
     assert_eq!(
         report.findings[0].required.as_ref(),
         Some(&RequiredReason::AnnotationRequired {
-            code: "opaque-fn".to_owned(),
+            code: "signature".to_owned(),
             public_surface: true
         })
     );

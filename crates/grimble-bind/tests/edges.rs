@@ -6,7 +6,7 @@
 
 use std::path::Path;
 
-use grimble_bind::{BindInput, Binding, reason_of_message};
+use grimble_bind::{BindInput, Binding, Reason};
 use grimble_model::ModelFiles;
 
 const FIXTURE: &str = "../gob-symbols/tests/corpus/web/repo";
@@ -61,10 +61,7 @@ fn a_cross_owner_import_and_call_with_no_flow_fires() {
     assert!(!b.not_applicable.contains_key("SYS013"));
     assert!(b.subjects.get("SYS013").copied().unwrap_or(0) >= 1);
     let f = sys013(&b);
-    let fired: Vec<_> = f
-        .iter()
-        .filter(|f| reason_of_message(&f.message).is_none())
-        .collect();
+    let fired: Vec<_> = f.iter().filter(|f| f.reason.is_none()).collect();
     assert_eq!(fired.len(), 1, "{f:?}");
     assert_eq!(fired[0].anchor, "edge/node/ui->node/api");
     assert!(
@@ -86,7 +83,7 @@ fn a_flow_in_either_direction_between_the_owners_allows_the_edges() {
         let b = bind_web(&format!("{NODES}{flow}\n"), &[]);
         assert!(b.subjects.get("SYS013").copied().unwrap_or(0) >= 1);
         assert!(
-            sys013(&b).iter().all(|f| f.message.starts_with('[')),
+            sys013(&b).iter().all(|f| f.reason.is_some()),
             "{flow}: no firing finding: {:?}",
             sys013(&b)
         );
@@ -101,7 +98,7 @@ fn an_unknown_edge_is_unresolved_never_clean() {
     let b = bind_web(&model, &[("src/components/App.tsx", app)]);
     let soft: Vec<_> = sys013(&b)
         .into_iter()
-        .filter(|f| reason_of_message(&f.message) == Some("unresolved-edge"))
+        .filter(|f| f.reason == Some(Reason::UnresolvedEdge))
         .filter(|f| f.anchor.starts_with("edge/node/ui"))
         .collect();
     assert_eq!(soft.len(), 1, "{:?}", sys013(&b));

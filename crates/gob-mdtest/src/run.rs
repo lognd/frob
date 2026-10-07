@@ -5,7 +5,7 @@ use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
 use gob_diagnostics::{ColorChoice, MemorySources, Report as DiagReport, TextOptions, render_text};
-use gob_rules::{Finding, RuleId, Severity};
+use gob_rules::{Finding, RuleId, RuleReport, Severity};
 use gob_text::{LineIndex, SourceText};
 use walkdir::WalkDir;
 
@@ -118,11 +118,36 @@ impl Report {
     }
 }
 
-/// Wraps the caller's closure that turns a [`Case`] into findings.
+/// What a runner closure may return for one case: bare findings or a full [`RuleReport`].
+pub trait CaseOutput {
+    /// The findings the case's expectations are checked against.
+    fn into_findings(self) -> Vec<Finding>;
+}
+
+impl CaseOutput for Vec<Finding> {
+    fn into_findings(self) -> Vec<Finding> {
+        self
+    }
+}
+
+impl CaseOutput for RuleReport {
+    fn into_findings(self) -> Vec<Finding> {
+        tracing::debug!(
+            rule = %self.rule,
+            total = self.subjects_total,
+            examined = self.subjects_examined,
+            not_applicable = ?self.not_applicable,
+            "mdtest case returned a rule report"
+        );
+        self.findings
+    }
+}
+
+/// Wraps the caller's closure that turns a [`Case`] into findings or a [`RuleReport`].
 #[derive(Debug, Clone)]
 pub struct Runner<F>(F);
 
-impl<F: Fn(&Case) -> Vec<Finding>> Runner<F> {
+impl<R: CaseOutput, F: Fn(&Case) -> R> Runner<F> {
     /// Wrap `f`, which evaluates one case.
     pub fn new(f: F) -> Self {
         Self(f)
@@ -307,7 +332,7 @@ fn check_snapshot(path: &Path, block: &Block, findings: &[Finding]) -> Result<()
 }
 
 /// Run every block of one markdown file through `runner`.
-pub fn run_file<F: Fn(&Case) -> Vec<Finding>>(path: &Path, runner: &Runner<F>) -> FileReport {
+pub fn run_file<R: CaseOutput, F: Fn(&Case) -> R>(path: &Path, runner: &Runner<F>) -> FileReport {
     let mut report = FileReport {
         path: path.to_path_buf(),
         parse_error: None,
@@ -336,7 +361,7 @@ pub fn run_file<F: Fn(&Case) -> Vec<Finding>>(path: &Path, runner: &Runner<F>) -
             rule: b.rule.clone(),
             config: b.config.clone(),
         };
-        let findings = (runner.0)(&case);
+        let findings = (runner.0)(&case).into_findings();
         let mut outcome = check(b, &findings);
         if outcome.is_ok() && b.snapshot {
             outcome = check_snapshot(path, b, &findings);
@@ -352,7 +377,7 @@ pub fn run_file<F: Fn(&Case) -> Vec<Finding>>(path: &Path, runner: &Runner<F>) -
 }
 
 /// Run every `**/*.md` under `dir` (sorted) through `runner`.
-pub fn run_dir<F: Fn(&Case) -> Vec<Finding>>(dir: &Path, runner: &Runner<F>) -> Report {
+pub fn run_dir<R: CaseOutput, F: Fn(&Case) -> R>(dir: &Path, runner: &Runner<F>) -> Report {
     let mut paths: Vec<PathBuf> = WalkDir::new(dir)
         .into_iter()
         .filter_map(Result::ok)

@@ -10,7 +10,7 @@ use std::path::Path;
 use gob_lock::{LockFile, PlanError};
 use gob_rules::Severity;
 use grimble_bind::ack::{AckError, AckRequest, plan_ack};
-use grimble_bind::{BindInput, Binding, reason_of_message};
+use grimble_bind::{BindInput, Binding, Reason};
 use grimble_model::ModelFiles;
 
 const MODEL: &str = r#"grimble = "2";
@@ -142,7 +142,7 @@ fn drift(b: &Binding) -> Vec<String> {
             Severity::Unresolved => format!(
                 "{} unresolved:{}",
                 f.rule,
-                reason_of_message(&f.message).unwrap_or("?")
+                f.reason.map_or("?", Reason::code)
             ),
             s => format!("{} {}", f.rule, format!("{s:?}").to_lowercase()),
         })

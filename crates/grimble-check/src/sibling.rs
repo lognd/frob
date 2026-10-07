@@ -17,7 +17,7 @@ use crate::fidelity::fidelity_json;
 
 pub use gob_check::sibling::SCHEMA_VERSION;
 
-/// Unresolved reason code of a finding: the required mark decides, else `fidelity`.
+/// Unresolved reason code of a finding: the required mark decides, else its typed reason, else `fidelity`.
 fn reason_of(f: &Finding) -> Option<String> {
     use gob_rules::RequiredReason::{
         AnnotationRequired, EvaluationFailed, SiblingMissing, ToolFailed, ZeroSubjects,
@@ -28,8 +28,11 @@ fn reason_of(f: &Finding) -> Option<String> {
         Some(SiblingMissing { .. }) => "incompatible".to_owned(),
         Some(ToolFailed { .. }) => "tool-failed".to_owned(),
         Some(EvaluationFailed { .. }) => "evaluation-failed".to_owned(),
-        None => grimble_bind::reason_of_message(&f.message)
-            .unwrap_or("fidelity")
+        None => f
+            .reason
+            .as_ref()
+            .and_then(grimble_bind::Reason::from_typed)
+            .map_or("fidelity", grimble_bind::Reason::code)
             .to_owned(),
     })
 }

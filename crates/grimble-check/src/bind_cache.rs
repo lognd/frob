@@ -16,13 +16,13 @@ use std::path::Path;
 use gob_check::ArtifactKey;
 use gob_rules::Severity;
 use gob_walk::FileEntry;
-use grimble_bind::{BindFinding, Binding};
+use grimble_bind::{BindFinding, Binding, Reason};
 use serde_json::{Value, json};
 
 use crate::config::{GrimbleTable, PRODUCT};
 
 /// Schema version of the stored payload; bump when the encoding below changes.
-const SCHEMA: u32 = 2;
+const SCHEMA: u32 = 3;
 
 /// What `grimble check` keeps of a [`Binding`]: document rows, SYS findings and subject counts.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -64,6 +64,7 @@ impl BindSummary {
                     "file": f.file,
                     "range": f.range,
                     "message": f.message,
+                    "reason": f.reason.map(Reason::code),
                     "anchor": f.anchor,
                 })
             })
@@ -100,6 +101,10 @@ impl BindSummary {
                 file: f["file"].as_str().map(str::to_owned),
                 range,
                 message: f["message"].as_str()?.to_owned(),
+                reason: match f["reason"].as_str() {
+                    Some(code) => Some(Reason::from_code(code)?),
+                    None => None,
+                },
                 anchor: f["anchor"].as_str()?.to_owned(),
             });
         }

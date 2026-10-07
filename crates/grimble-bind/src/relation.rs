@@ -329,6 +329,7 @@ fn ref_clause(code: &Code, entity: &Entity, clause: &Clause, text: &str, rel: &m
                     clause.anchor,
                     names.join(", ")
                 ),
+                reason: None,
                 anchor: clause.anchor.clone(),
             });
             for h in hits {
@@ -459,6 +460,7 @@ fn operand_finding(kind: &str, message: &str, file: &str, range: (usize, usize))
         file: Some(file.to_owned()),
         range: Some(range),
         message: format!("{kind}: {message}"),
+        reason: None,
         anchor: site(file, range),
     }
 }

@@ -187,6 +187,20 @@ impl Reason {
         .find(|r| r.code() == code)
     }
 
+    /// The binding reason a typed reason came from; the inverse of [`Reason::typed`] over what binding emits.
+    pub fn from_typed(reason: &UnresolvedReason) -> Option<Self> {
+        Some(match reason {
+            UnresolvedReason::Opaque(code) if code == "unseen-remainder" => Self::UnseenRemainder,
+            UnresolvedReason::EdgeMay => Self::MayOnlyOwner,
+            UnresolvedReason::Fidelity => Self::Fidelity,
+            UnresolvedReason::Partial => Self::InferenceUnavailable,
+            UnresolvedReason::Vacuous => Self::Vacuous,
+            UnresolvedReason::ParseFailed => Self::LockUnreadable,
+            UnresolvedReason::EdgeUnknown => Self::UnresolvedEdge,
+            _ => return None,
+        })
+    }
+
     /// The typed reason [`gob_rules::Finding::reason`] carries for this binding reason.
     pub fn typed(self) -> UnresolvedReason {
         match self {
@@ -201,20 +215,6 @@ impl Reason {
     }
 }
 
-/// The message prefix that carries a reason code on an Unresolved finding.
-///
-/// Kept only because `grimble-check`'s bind cache stores a `BindFinding` as its message and rebuilds
-/// it with no reason field; [`BindFinding::into_finding`] lifts it into the typed `Finding::reason`.
-pub const REASON_PREFIX: &str = "[sys-unresolved/";
-
-/// The reason code an Unresolved message carries, if it was written by [`Reason`] tagging.
-///
-/// Used by [`BindFinding::into_finding`] and `grimble-check` only; consumers read `Finding::reason`.
-pub fn reason_of_message(message: &str) -> Option<&str> {
-    let rest = message.strip_prefix(REASON_PREFIX)?;
-    rest.split_once(']').map(|(code, _)| code)
-}
-
 /// A finding before its span is interned: the rule, a path and a byte range.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct BindFinding {
@@ -226,14 +226,16 @@ pub struct BindFinding {
     pub file: Option<String>,
     /// Byte range in that file.
     pub range: Option<(usize, usize)>,
-    /// The message; Unresolved messages start with the reason tag.
+    /// The message.
     pub message: String,
+    /// Why an Unresolved finding could not decide; `None` for a resolved finding.
+    pub reason: Option<Reason>,
     /// The anchor the fingerprint is computed from (an entity, clause or path).
     pub anchor: String,
 }
 
 impl BindFinding {
-    /// An Unresolved finding whose message carries `reason`.
+    /// An Unresolved finding with its `reason`.
     pub fn unresolved(
         rule: &'static str,
         reason: Reason,
@@ -246,7 +248,8 @@ impl BindFinding {
             severity: Severity::Unresolved,
             file: site.map(|(f, _)| f.to_owned()),
             range: site.map(|(_, r)| r),
-            message: format!("{REASON_PREFIX}{}] {message}", reason.code()),
+            message: message.to_owned(),
+            reason: Some(reason),
             anchor: anchor.to_owned(),
         }
     }
@@ -270,12 +273,9 @@ impl BindFinding {
             }
             _ => None,
         };
-        let reason = reason_of_message(&self.message)
-            .and_then(Reason::from_code)
-            .map(Reason::typed);
         let finding = Finding::new(id, self.severity, span, self.message, &self.anchor);
-        Some(match reason {
-            Some(r) => finding.with_reason(r),
+        Some(match self.reason {
+            Some(r) => finding.with_reason(r.typed()),
             None => finding,
         })
     }
@@ -306,9 +306,34 @@ mod tests {
     }
 
     #[test]
+    fn a_message_that_looks_like_the_old_prefix_yields_no_reason() {
+        let mut b = BindFinding::unresolved("SYS006", Reason::Vacuous, "m", "a", None);
+        b.reason = None;
+        b.message = "[sys-unresolved/vacuous] m".to_owned();
+        let f = b.into_finding(&mut FileInterner::default()).expect("id");
+        assert_eq!(f.reason, None);
+    }
+
+    #[test]
+    fn the_typed_mapping_inverts_for_every_binding_reason() {
+        for r in [
+            Reason::UnseenRemainder,
+            Reason::MayOnlyOwner,
+            Reason::Fidelity,
+            Reason::InferenceUnavailable,
+            Reason::Vacuous,
+            Reason::LockUnreadable,
+            Reason::UnresolvedEdge,
+        ] {
+            assert_eq!(Reason::from_typed(&r.typed()), Some(r));
+        }
+    }
+
+    #[test]
     fn a_resolved_bind_finding_has_no_reason() {
         let mut b = BindFinding::unresolved("SYS006", Reason::Vacuous, "m", "a", None);
         b.severity = Severity::Error;
+        b.reason = None;
         b.message = "plain".to_owned();
         let f = b.into_finding(&mut FileInterner::default()).expect("id");
         assert_eq!(f.reason, None);

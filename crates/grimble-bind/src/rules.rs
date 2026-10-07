@@ -72,6 +72,7 @@ impl Output {
             file: site.map(|(f, _)| f.to_owned()),
             range: site.map(|(_, r)| r),
             message,
+            reason: None,
             anchor: anchor.to_owned(),
         });
     }

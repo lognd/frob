@@ -96,3 +96,23 @@ fn changed_rendering_fails_with_snapshot_mismatch() {
     );
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// The same toy, returning the full per-rule report instead of bare findings.
+fn toy_report(case: &Case) -> gob_rules::RuleReport {
+    let findings = toy(case);
+    let n = case.text.lines().count();
+    gob_rules::RuleReport::new(case.rule.clone(), n, n, None, findings)
+}
+
+// frob:tests crates/gob-mdtest/src/run.rs::Runner
+#[test]
+fn a_runner_may_return_a_rule_report() {
+    let bare = run_dir(&fail_path(""), &Runner::new(toy));
+    let full = run_dir(&fail_path(""), &Runner::new(toy_report));
+    assert_eq!(bare.render(), full.render());
+    let ok = run_dir(
+        &gob_mdtest::manifest_dir(env!("CARGO_MANIFEST_DIR")).join("tests/mdtest"),
+        &Runner::new(toy_report),
+    );
+    assert!(ok.passed(), "{}", ok.render());
+}

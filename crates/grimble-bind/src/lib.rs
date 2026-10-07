@@ -53,7 +53,7 @@ use serde_json::Value;
 pub use rule_defs::{
     Sys001, Sys002, Sys003, Sys004, Sys005, Sys006, Sys007, Sys008, Sys009, Sys010, Sys011, Sys013,
 };
-pub use types::{BindFinding, REASON_PREFIX, Reason, Role, Row, Source, Status, reason_of_message};
+pub use types::{BindFinding, Reason, Role, Row, Source, Status};
 
 /// The rule ids this crate evaluates.
 pub const RULES: [&str; 12] = [
