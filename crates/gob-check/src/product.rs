@@ -18,6 +18,7 @@ use crate::core::Core;
 use crate::error::CheckError;
 use crate::filecheck::FileCheck;
 use crate::report::{Stats, Timing};
+use crate::rule_set::RuleSet;
 use crate::status::LanguageFidelity;
 
 /// A resolved scope: a label for the report and the files per-file rules are limited to.
@@ -183,6 +184,15 @@ pub trait Product: Sized + Sync {
 
     /// The per-file checks of this run.
     fn file_checks(&self) -> Vec<Arc<dyn FileCheck<Self>>>;
+
+    /// The declared rules (`RuleDef`s) this product runs, from its `product_rules!` list.
+    ///
+    /// The pipeline runs exactly this set beside the legacy checks and groups below: file rules
+    /// per file through the resolver, repo rules cached, `must_measure` through `Measured`. Empty
+    /// until the product's rule crates are migrated.
+    fn rule_set(&self) -> RuleSet<Self> {
+        RuleSet::new()
+    }
 
     /// The repo-scope rule groups of this run (the pipeline appends the neutral ones).
     fn repo_groups(&self) -> Vec<RepoGroup<Self>>;

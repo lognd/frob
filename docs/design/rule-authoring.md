@@ -90,6 +90,17 @@ retired ids and another for slugs; the panic text names both declarations. Produ
 still depended on fails `cargo check`. Until the migration tickets move rules over, each product
 list is empty and the legacy inventory path is untouched.
 
+How the pipeline runs it (~GBBKJ6V). A product returns `Product::rule_set()`, a `RuleSet` built with `RuleSet::bind(rules(), host)`
+from its `product_rules!` list (`host` maps the product and its snapshot to the host the rules were bound against) and
+`RuleSet::stage(def)` for rules a pipeline stage already emits. `gob_check::run` then treats each `RuleDef` like a legacy
+rule: file rules go through the one resolver per file (the same accounting pass as the legacy file checks, so fidelity rows stay
+one per file), results are cached per file digest (file rules) or inputs digest (repo rules), `Out`/`Emitted` become
+`Finding`s (`fire` located, `note` spanless, `unresolved` Unresolved), and a `must_measure` repo rule counts through
+`Measured::subjects` while a file rule counts the files it examined; zero subjects is the required Unresolved. A rule's own
+`inapplicable()` is asked once per pass, skips the rule (no finding, no zero-subject finding) and lands in the `fidelity.inapplicable`
+map of the JSON report and as one `inapplicable RULE: reason` line of the text report. The legacy `file_checks`,
+`repo_groups`, `applicable` and `includes` keep working beside it; the migration tickets delete them rule by rule.
+
 ## 5. Where each mistake is caught
 
 Compile time: missing or malformed metadata; no evaluation; `must_measure`

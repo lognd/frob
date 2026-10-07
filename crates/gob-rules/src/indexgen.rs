@@ -24,6 +24,8 @@ pub struct RuleSrc {
     pub ty: String,
     /// `scope = ..` of the attribute.
     pub scope: SrcScope,
+    /// `must_measure = true` in the attribute (a repo rule then binds through `Measured`).
+    pub must_measure: bool,
 }
 
 /// `scope` as written in the attribute.
@@ -197,6 +199,7 @@ fn parse_rule_file(path: &Path, stem: &str, text: &str) -> Result<Option<RuleSrc
         id: id.to_owned(),
         ty: name.to_owned(),
         scope,
+        must_measure: word_arg(body, "must_measure") == Some("true"),
     }))
 }
 
@@ -250,17 +253,19 @@ pub fn render(rules: &[RuleSrc], has_retired: bool) -> String {
         "/// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.\n#[allow(clippy::vec_init_then_push, reason = \"generated: one push per rule\")]\npub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>\nwhere"
     );
     for r in rules {
-        let tr = match r.scope {
-            SrcScope::File => "FileRule",
-            SrcScope::Repo => "RepoRule",
+        let tr = match (r.scope, r.must_measure) {
+            (SrcScope::File, _) => "FileRule",
+            (SrcScope::Repo, false) => "RepoRule",
+            (SrcScope::Repo, true) => "Measured",
         };
         let _ = writeln!(s, "    {}::{}: gob_rules::{tr}<P>,", r.stem, r.ty);
     }
     let _ = writeln!(s, "{{\n    let mut rules = Vec::new();");
     for r in rules {
-        let ctor = match r.scope {
-            SrcScope::File => "file",
-            SrcScope::Repo => "repo",
+        let ctor = match (r.scope, r.must_measure) {
+            (SrcScope::File, _) => "file",
+            (SrcScope::Repo, false) => "repo",
+            (SrcScope::Repo, true) => "measured",
         };
         let _ = writeln!(
             s,
@@ -394,12 +399,14 @@ mod tests {
                 id: "COV001".into(),
                 ty: "Cov001".into(),
                 scope: SrcScope::File,
+                must_measure: false,
             },
             RuleSrc {
                 stem: "cov002".into(),
                 id: "COV002".into(),
                 ty: "Cov002".into(),
                 scope: SrcScope::Repo,
+                must_measure: false,
             },
         ];
         let text = render(&rules, false);
@@ -412,6 +419,18 @@ mod tests {
         assert!(text.contains("renamed: &[],"));
         assert!(text.is_ascii());
         assert!(render(&rules, true).contains("renamed: retired::RENAMED,"));
+    }
+
+    #[test]
+    fn a_must_measure_repo_rule_binds_through_measured() {
+        let mut file = rule_file("COV003", "Cov003", "Repo");
+        file = file.replace("scope = Repo,", "scope = Repo,\n    must_measure = true,");
+        let dir = crate_with(&[("cov003.rs", file)]);
+        let rules = scan(dir.path()).expect("scan");
+        assert!(rules[0].must_measure);
+        let text = render(&rules, false);
+        assert!(text.contains("cov003::Cov003: gob_rules::Measured<P>,"));
+        assert!(text.contains("rules.push(gob_rules::BoundRule::measured(cov003::Cov003));"));
     }
 
     #[test]

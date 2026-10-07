@@ -10,55 +10,44 @@
 //! delete one row per rule as they move it onto the attribute.
 
 use gob_caps::{Capability, Fidelity, Lang, Precision};
-use gob_rules::RuleMeta;
+use gob_rules::{RuleDef, RuleMeta};
 use gob_symbols::{FileInfo, ParseStatus};
 
 use crate::status::SubjectStatus;
 
-/// What a rule declares about the files it can examine.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Applies {
-    /// Not about files in a language (ledger, release, model, config): always examined here.
-    Project,
-    /// Every language, derived per matrix cell.
-    Universal {
-        /// Capabilities the rule reads.
-        needs: &'static [Capability],
-        /// Lowest fidelity at which the rule can examine a file.
-        min_fidelity: Fidelity,
-    },
-    /// Only the named languages.
-    Languages {
-        /// The languages the rule is for.
-        langs: &'static [Lang],
-        /// Capabilities the rule reads.
-        needs: &'static [Capability],
-        /// Lowest fidelity at which the rule can examine a file.
-        min_fidelity: Fidelity,
-    },
+/// What a rule declares about the files it can examine (the declaration's own type).
+pub use gob_rules::Applies;
+
+/// One rule as the resolver and the fidelity accounting see it: id, family and declared `applies`.
+///
+/// Legacy rules get theirs from [`temporary_applies`]; a `RuleDef` carries its own.
+#[derive(Debug, Clone, Copy)]
+pub struct RuleRef {
+    /// Rule id.
+    pub id: &'static str,
+    /// Family prefix.
+    pub family: &'static str,
+    /// What the rule declares about the files it can examine.
+    pub applies: Applies,
 }
 
-impl Applies {
-    /// The capabilities the rule reads (empty for [`Applies::Project`]).
-    pub const fn needs(&self) -> &'static [Capability] {
-        match self {
-            Self::Project => &[],
-            Self::Universal { needs, .. } | Self::Languages { needs, .. } => needs,
+impl RuleRef {
+    /// A legacy rule, through the temporary `applies` table.
+    pub fn of_meta(meta: &RuleMeta) -> Self {
+        Self {
+            id: meta.id,
+            family: meta.family,
+            applies: temporary_applies(meta),
         }
     }
 
-    /// True when a need is a symbol capability, so a parse hole can hide some subjects.
-    pub fn symbol_subjects(&self) -> bool {
-        self.needs().iter().any(|c| {
-            matches!(
-                c,
-                Capability::ResolveRef
-                    | Capability::ApplyTargets
-                    | Capability::Visibility
-                    | Capability::TestItems
-                    | Capability::Imports
-            )
-        })
+    /// A declared rule, through its own `applies`.
+    pub fn of_def(def: &RuleDef) -> Self {
+        Self {
+            id: def.id,
+            family: def.family,
+            applies: def.applies,
+        }
     }
 }
 

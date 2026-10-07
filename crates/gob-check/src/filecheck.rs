@@ -16,11 +16,12 @@ use gob_rules::{Finding, RuleMeta};
 use gob_text::FileId;
 use rayon::prelude::*;
 
+use crate::applicability::{FileFacts, RuleRef, resolve};
 use crate::core::{Core, FileIndex};
 use crate::product::{Product, Snapshot};
 use crate::status::{
-    FidelityReport, SubjectStatus, hole_caveat, is_binary, opaque_finding, subject_status_for,
-    unresolved_finding,
+    FidelityReport, SubjectStatus, hole_caveat_of, is_binary, opaque_finding_for,
+    unresolved_finding_for,
 };
 use crate::store;
 
@@ -100,7 +101,7 @@ pub trait FileCheck<P: Product>: Send + Sync {
 ///
 /// Findings name their file (spans, messages quoting symrefs), so two files
 /// with identical content must not share an entry.
-fn key_side_input(path: &str, side: &str) -> String {
+pub(crate) fn key_side_input(path: &str, side: &str) -> String {
     let mut h = blake3::Hasher::new();
     h.update(path.as_bytes());
     h.update(b"\0");
@@ -120,6 +121,8 @@ pub(crate) struct FileStage {
     pub misses: usize,
     /// Per-language fidelity accounting of every checked file.
     pub fidelity: FidelityReport,
+    /// `(path, rule)` pairs no rule may examine (`NotApplicable` or Unresolved), for declared rules too.
+    pub blocked: HashMap<String, HashSet<&'static str>>,
 }
 
 /// What the status pass decided for the checked files.
@@ -145,10 +148,12 @@ pub(crate) fn opaque_binary(root: &Path, path: &str, info: &gob_symbols::FileInf
 }
 
 /// Decide, for every checked file and file rule, examine / not applicable / unresolved.
+///
+/// `rules` holds the legacy file checks' rules and the declared (`RuleDef`) file rules alike.
 fn account<P: Product>(
     product: &P,
     snap: &Snapshot<P>,
-    metas: &[&'static RuleMeta],
+    rules: &[RuleRef],
     paths: &[String],
 ) -> Accounting {
     let mut acc = Accounting {
@@ -156,7 +161,7 @@ fn account<P: Product>(
         findings: Vec::new(),
         fidelity: FidelityReport::default(),
     };
-    let mut opaque: BTreeMap<&str, (&'static RuleMeta, Vec<&str>)> = BTreeMap::new();
+    let mut opaque: BTreeMap<&str, (&'static str, Vec<&str>)> = BTreeMap::new();
     for path in paths {
         let Some(info) = product.file_info(&snap.shared, path) else {
             continue;
@@ -167,41 +172,43 @@ fn account<P: Product>(
         let mut examined = false;
         let mut unresolved: Vec<&str> = Vec::new();
         let mut family_total: BTreeMap<&str, (usize, usize)> = BTreeMap::new();
-        for meta in metas {
-            let entry = family_total.entry(meta.family).or_default();
+        for rule in rules {
+            let entry = family_total.entry(rule.family).or_default();
             entry.0 += 1;
-            match subject_status_for(&info, meta, binary, scanned) {
+            let status = resolve(&rule.applies, &FileFacts::of(&info, binary, scanned));
+            tracing::trace!(rule = rule.id, ?status, "subject status");
+            match status {
                 SubjectStatus::Examine => {
                     examined = true;
-                    if let Some(why) = hole_caveat(&info, meta) {
-                        unresolved.push(meta.id);
+                    if let Some(why) = hole_caveat_of(&info, &rule.applies) {
+                        unresolved.push(rule.id);
                         acc.findings
-                            .push(unresolved_finding(meta, file, path, &why));
+                            .push(unresolved_finding_for(rule.id, file, path, &why));
                     }
                 }
                 SubjectStatus::NotApplicable(why) => {
                     entry.1 += 1;
-                    tracing::debug!(path, rule = meta.id, %why, "not applicable");
+                    tracing::debug!(path, rule = rule.id, %why, "not applicable");
                     acc.fidelity.add_not_applicable_reason(
                         &FidelityReport::label(&info),
-                        meta.id,
+                        rule.id,
                         &why,
                     );
-                    acc.blocked.entry(path.clone()).or_default().insert(meta.id);
+                    acc.blocked.entry(path.clone()).or_default().insert(rule.id);
                 }
                 SubjectStatus::Unresolved(why) => {
-                    tracing::info!(path, rule = meta.id, %why, "unresolved subject");
-                    unresolved.push(meta.id);
-                    acc.blocked.entry(path.clone()).or_default().insert(meta.id);
+                    tracing::info!(path, rule = rule.id, %why, "unresolved subject");
+                    unresolved.push(rule.id);
+                    acc.blocked.entry(path.clone()).or_default().insert(rule.id);
                     if info.is_opaque() {
                         opaque
-                            .entry(meta.id)
-                            .or_insert((meta, Vec::new()))
+                            .entry(rule.id)
+                            .or_insert((rule.id, Vec::new()))
                             .1
                             .push(path);
                     } else {
                         acc.findings
-                            .push(unresolved_finding(meta, file, path, &why));
+                            .push(unresolved_finding_for(rule.id, file, path, &why));
                     }
                 }
             }
@@ -213,8 +220,8 @@ fn account<P: Product>(
             .collect();
         acc.fidelity.record(&info, examined, &na, &unresolved);
     }
-    for (meta, files) in opaque.into_values() {
-        acc.findings.push(opaque_finding(meta, &files));
+    for (id, files) in opaque.into_values() {
+        acc.findings.push(opaque_finding_for(id, &files));
     }
     acc
 }
@@ -234,7 +241,7 @@ fn rule_of(f: &Finding) -> String {
     f.rule.to_string()
 }
 
-/// Run `checks` over `paths` with the findings cache.
+/// Run `checks` over `paths` with the findings cache; `declared` are the `RuleDef` file rules, accounted only.
 #[allow(
     clippy::too_many_lines,
     reason = "lookup, compute and accounting read best as one staged function"
@@ -244,6 +251,7 @@ pub(crate) fn run_file_checks<P: Product>(
     snap: &Snapshot<P>,
     cache: &Cache,
     checks: &[Arc<dyn FileCheck<P>>],
+    declared: &[RuleRef],
     paths: &[String],
 ) -> FileStage {
     let shared = SharedCtx::<P> {
@@ -253,8 +261,12 @@ pub(crate) fn run_file_checks<P: Product>(
     };
     let metas: Vec<Vec<&'static RuleMeta>> = checks.iter().map(|c| c.rules()).collect();
     let (root, index) = (&snap.core.root, &snap.core.index);
-    let all_metas = unique_metas(&metas);
-    let acc = account(product, snap, &all_metas, paths);
+    let mut rules: Vec<RuleRef> = unique_metas(&metas)
+        .into_iter()
+        .map(RuleRef::of_meta)
+        .collect();
+    rules.extend_from_slice(declared);
+    let acc = account(product, snap, &rules, paths);
     let blocked = &acc.blocked;
     let lookups: Vec<Lookup> = paths
         .par_iter()
@@ -316,6 +328,7 @@ pub(crate) fn run_file_checks<P: Product>(
         hits: 0,
         misses: 0,
         fidelity: FidelityReport::default(),
+        blocked: acc.blocked.clone(),
     };
     for lookup in lookups {
         for rule in &lookup.examined {

@@ -37,7 +37,9 @@ pub use finding::{Finding, Fingerprint, Fix, TextEdit};
 pub use gob_caps as caps;
 pub use gob_macros::{Rule, rule};
 pub use id::{ParseRuleIdError, RuleId};
-pub use index::{Body, BoundRule, FileFn, RepoFn, RuleIndex, assert_unique};
+pub use index::{
+    Body, BoundRule, FileFn, InapplicableFn, RepoFn, RuleIndex, SubjectsFn, assert_unique,
+};
 pub use inventory;
 pub use meta::{FixKind, Polarity, RuleEntry, RuleMeta, Scope, Severity, Tier};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};

@@ -51,6 +51,7 @@
 pub mod applicability;
 mod config;
 mod core;
+mod defs;
 mod error;
 mod filecheck;
 mod fix;
@@ -61,6 +62,7 @@ mod product_rules;
 mod repo;
 mod report;
 mod required;
+mod rule_set;
 mod rules;
 pub mod sibling;
 pub mod sibling_doc;
@@ -84,6 +86,7 @@ pub use product::{
     ScopedFindings, Snapshot,
 };
 pub use report::{AppliedFix, CheckReport, Counts, FixOutcome, StageTime, Stats, Timing};
+pub use rule_set::RuleSet;
 pub use rules::{
     Ci001, Ci003, Ci006, Ci007, Ci010, Ci014, Perf001, Proc001, Read001, Tool001, Tool002,
 };

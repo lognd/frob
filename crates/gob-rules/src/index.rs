@@ -5,7 +5,9 @@
 //! crate, the product and the all-products level, so a duplicate id, slug, renamed id or retired
 //! id is a compile error that names both declarations.
 
-use crate::decl::{Emitted, FileRule, RepoRule, RuleDef, run_file, run_repo};
+use std::sync::Arc;
+
+use crate::decl::{Emitted, FileRule, Measured, RepoRule, RuleDef, run_file, run_repo};
 
 /// One crate's rules: the generated list plus its renamed and retired ids.
 #[derive(Debug)]
@@ -249,30 +251,61 @@ pub enum Body<P: ?Sized> {
     Repo(Box<RepoFn<P>>),
 }
 
+/// A bound rule's product-fact applicability: the reason it cannot apply, if any.
+pub type InapplicableFn<P> = dyn Fn(&P) -> Option<String> + Send + Sync;
+
+/// A bound `must_measure` rule's subject counter.
+pub type SubjectsFn<P> = dyn Fn(&P) -> usize + Send + Sync;
+
 /// A rule bound to a product host: its declaration plus a runnable body.
 pub struct BoundRule<P: ?Sized> {
     /// The rule's static description.
     pub def: &'static RuleDef,
     /// What to run.
     pub body: Body<P>,
+    /// The rule's own product-fact applicability ([`FileRule::inapplicable`]).
+    pub inapplicable: Box<InapplicableFn<P>>,
+    /// Subject accounting of a `must_measure` repo rule ([`Measured::subjects`]).
+    pub subjects: Option<Box<SubjectsFn<P>>>,
 }
 
 impl<P: ?Sized + 'static> BoundRule<P> {
     /// Bind a `scope = File` rule; compiles only when the host implements what the rule needs.
     pub fn file<R: FileRule<P> + Send + Sync + 'static>(rule: R) -> Self {
         tracing::trace!(rule = R::DEF.id, "bound file rule");
+        let rule = Arc::new(rule);
+        let na = Arc::clone(&rule);
         Self {
             def: R::DEF,
-            body: Body::File(Box::new(move |host, text| run_file(&rule, host, text))),
+            body: Body::File(Box::new(move |host, text| run_file(&*rule, host, text))),
+            inapplicable: Box::new(move |host| na.inapplicable(host)),
+            subjects: None,
         }
     }
 
     /// Bind a `scope = Repo` rule; compiles only when the host implements what the rule needs.
     pub fn repo<R: RepoRule<P> + Send + Sync + 'static>(rule: R) -> Self {
         tracing::trace!(rule = R::DEF.id, "bound repo rule");
+        let rule = Arc::new(rule);
+        let na = Arc::clone(&rule);
         Self {
             def: R::DEF,
-            body: Body::Repo(Box::new(move |host| run_repo(&rule, host))),
+            body: Body::Repo(Box::new(move |host| run_repo(&*rule, host))),
+            inapplicable: Box::new(move |host| na.inapplicable(host)),
+            subjects: None,
+        }
+    }
+
+    /// Bind a `must_measure` repo rule with its subject counter, so an empty pass is not a clean one.
+    pub fn measured<R: Measured<P> + Send + Sync + 'static>(rule: R) -> Self {
+        tracing::trace!(rule = R::DEF.id, "bound measured repo rule");
+        let rule = Arc::new(rule);
+        let (na, count) = (Arc::clone(&rule), Arc::clone(&rule));
+        Self {
+            def: R::DEF,
+            body: Body::Repo(Box::new(move |host| run_repo(&*rule, host))),
+            inapplicable: Box::new(move |host| na.inapplicable(host)),
+            subjects: Some(Box::new(move |host| count.subjects(host))),
         }
     }
 }

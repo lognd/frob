@@ -4,12 +4,13 @@ use std::path::Path;
 use std::time::Instant;
 
 use gob_cache::Cache;
-use gob_rules::{Finding, Fingerprint, Registry, Rule, RuleMeta, Severity};
+use gob_rules::{Finding, Fingerprint, Registry, Rule, RuleDef, RuleMeta, Severity};
 use gob_text::FileInterner;
 
-use crate::applicability::{FileFacts, resolve, temporary_applies};
+use crate::applicability::{FileFacts, RuleRef, resolve};
 use crate::config::{CheckTable, PerfTable};
 use crate::core::walk_core;
+use crate::defs::{self, Live};
 use crate::error::CheckError;
 use crate::filecheck::{opaque_binary, run_file_checks};
 use crate::fix;
@@ -19,7 +20,9 @@ use crate::repo::run_repo_rules;
 use crate::report::{CheckReport, Counts, FixOutcome, Tally, Timing};
 use crate::required::{mark_annotations, zero_subjects};
 use crate::rules::{Perf001, Read001};
-use crate::status::{FidelityReport, SubjectStatus, is_binary, opaque_finding, unreadable_finding};
+use crate::status::{
+    FidelityReport, SubjectStatus, is_binary, opaque_finding_for, unreadable_finding,
+};
 use crate::telemetry;
 use crate::tools::run_tools;
 
@@ -43,13 +46,15 @@ fn matches_only(only: &[String], family: &str, id: &str) -> bool {
 /// Normalize `--only` entries and reject names the product's rules do not use.
 fn validate_only<P: Product>(product: &P, only: &[String]) -> Result<Vec<String>, CheckError> {
     let registry = Registry::global();
+    let set = product.rule_set();
     only.iter()
         .map(|raw| {
             let name = raw.trim().to_ascii_uppercase();
             let known = registry
                 .iter()
                 .filter(|m| product.includes(m))
-                .any(|m| m.family == name || m.id == name);
+                .any(|m| m.family == name || m.id == name)
+                || set.defs().any(|d| d.family == name || d.id == name);
             if known {
                 Ok(name)
             } else {
@@ -184,6 +189,7 @@ fn opaque_repo_findings<P: Product>(
     product: &P,
     snap: &Snapshot<P>,
     wanted: &dyn Fn(&RuleMeta) -> bool,
+    declared: &[RuleRef],
     fidelity: &mut FidelityReport,
 ) -> Vec<Finding> {
     let mut opaque: Vec<&str> = Vec::new();
@@ -204,26 +210,26 @@ fn opaque_repo_findings<P: Product>(
     let mut out = Vec::new();
     let mut groups = product.repo_groups();
     groups.extend(crate::repo::builtin_groups::<P>(Vec::new()));
-    for meta in groups
+    let rules: Vec<RuleRef> = groups
         .iter()
         .flat_map(|g| g.metas.iter())
         .filter(|m| wanted(m))
-    {
+        .map(|m| RuleRef::of_meta(m))
+        .chain(declared.iter().copied())
+        .collect();
+    for rule in rules {
         // Only a rule that reads comments is unresolved on opaque text (capability rules are not applicable).
         let facts = FileFacts::opaque_text(&gob_symbols::ParseStatus::NotParsed);
-        if !matches!(
-            resolve(&temporary_applies(meta), &facts),
-            SubjectStatus::Unresolved(_)
-        ) {
+        if !matches!(resolve(&rule.applies, &facts), SubjectStatus::Unresolved(_)) {
             continue;
         }
         tracing::info!(
-            rule = meta.id,
+            rule = rule.id,
             files = opaque.len(),
             "repo rule unresolved on opaque text"
         );
-        fidelity.add_unresolved("opaque", meta.id, 1);
-        out.push(opaque_finding(meta, &opaque));
+        fidelity.add_unresolved("opaque", rule.id, 1);
+        out.push(opaque_finding_for(rule.id, &opaque));
     }
     out
 }
@@ -315,6 +321,9 @@ fn pass<P: Product>(
     product.start_external(&snap, table, scope_files);
 
     let wanted = |m: &RuleMeta| matches_only(only, m.family, m.id);
+    let wanted_def = |d: &RuleDef| matches_only(only, d.family, d.id);
+    let set = product.rule_set();
+    let live = Live::select(product, &snap, &set, &wanted_def);
     let wanted_rule = |f: &Finding| matches_only(only, f.rule.family(), f.rule.as_str());
     let mut raw: Vec<Finding> = Vec::new();
 
@@ -326,11 +335,12 @@ fn pass<P: Product>(
         None => snap.core.entries.iter().map(|e| e.path.clone()).collect(),
     };
     tally.stats.files_checked = paths.len();
-    let stage = run_file_checks(product, &snap, &cache, &checks, &paths);
+    let stage = run_file_checks(product, &snap, &cache, &checks, &live.file_refs(), &paths);
     tally.stats.file_hits = stage.hits;
     tally.stats.file_misses = stage.misses;
     raw.extend(stage.findings);
     tally.fidelity = stage.fidelity;
+    live.report_inapplicable(&mut tally);
     for (rule, n) in stage.subjects {
         tally.subjects.insert(rule.to_owned(), n);
     }
@@ -341,6 +351,16 @@ fn pass<P: Product>(
             tally.subjects.entry(meta.id.to_owned()).or_insert(0);
         }
     }
+    raw.extend(defs::run_file_rules(
+        product,
+        &snap,
+        &cache,
+        &live,
+        &paths,
+        &stage.blocked,
+        scope_files.is_some(),
+        &mut tally,
+    ));
     let in_scope = |f: &Finding| match (scope_files, f.span) {
         (Some(s), Some(span)) => snap
             .core
@@ -357,10 +377,15 @@ fn pass<P: Product>(
         product, &snap, &cache, &mut files, &wanted, &mut tally, table,
     ));
 
+    raw.extend(defs::run_repo_rules(
+        product, &snap, &cache, &live, &mut files, &mut tally,
+    ));
+
     raw.extend(opaque_repo_findings(
         product,
         &snap,
         &wanted,
+        &live.repo_refs(),
         &mut tally.fidelity,
     ));
     raw.extend(unreadable_findings(
@@ -391,6 +416,13 @@ fn pass<P: Product>(
         .into_iter()
         .filter(|f| wanted_rule(f)),
     );
+
+    raw.extend(defs::zero_subjects(
+        &set,
+        &wanted_def,
+        &live.inapplicable,
+        &tally.subjects,
+    ));
 
     // Tool findings join the raw set so exceptions apply to them like native ones.
     raw.extend(tool_stages(

@@ -11,6 +11,29 @@ use gob_rules::{Finding, RequiredReason, RuleId, RuleMeta, Severity};
 /// Message prefix gob-ir uses for an opaque that needs an annotation.
 pub(crate) const ANNOTATION_PREFIX: &str = "annotation-required:";
 
+/// The required Unresolved finding for the `must_measure` rule `id` that examined zero subjects.
+pub(crate) fn zero_subject_finding(id: &str) -> Option<Finding> {
+    let Ok(rule) = id.parse::<RuleId>() else {
+        tracing::warn!(rule = id, "must_measure names an invalid rule id");
+        return None;
+    };
+    tracing::warn!(rule = id, "must_measure rule examined zero subjects");
+    Some(
+        Finding::new(
+            rule,
+            Severity::Unresolved,
+            None,
+            format!(
+                "{id} examined zero subjects; it is flagged must_measure, so silence is not a pass"
+            ),
+            "zero-subjects",
+        )
+        .with_required(RequiredReason::ZeroSubjects {
+            rule: id.to_owned(),
+        }),
+    )
+}
+
 /// One Unresolved, required finding per applicable `must_measure` rule that examined zero subjects.
 ///
 /// `subjects` holds the count of every rule that was evaluated this run; a rule
@@ -23,29 +46,8 @@ pub(crate) fn zero_subjects(
 ) -> Vec<Finding> {
     let mut out = Vec::new();
     for meta in must_measure {
-        let Ok(id) = meta.id.parse::<RuleId>() else {
-            tracing::warn!(rule = meta.id, "must_measure names an invalid rule id");
-            continue;
-        };
         match subjects.get(meta.id) {
-            Some(0) if applicable(meta) => {
-                tracing::warn!(rule = meta.id, "must_measure rule examined zero subjects");
-                out.push(
-                    Finding::new(
-                        id,
-                        Severity::Unresolved,
-                        None,
-                        format!(
-                            "{} examined zero subjects; it is flagged must_measure, so silence is not a pass",
-                            meta.id
-                        ),
-                        "zero-subjects",
-                    )
-                    .with_required(RequiredReason::ZeroSubjects {
-                        rule: meta.id.to_owned(),
-                    }),
-                );
-            }
+            Some(0) if applicable(meta) => out.extend(zero_subject_finding(meta.id)),
             Some(0) => {
                 tracing::debug!(
                     rule = meta.id,

@@ -7,7 +7,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::applicability::{FileFacts, resolve, temporary_applies};
+use crate::applicability::{Applies, FileFacts, resolve, temporary_applies};
 use gob_rules::{Finding, RequiredReason, RuleId, RuleMeta, Severity};
 use gob_symbols::{FileInfo, ParseStatus, SkipKind, SkippedFile};
 use gob_text::{FileId, Span, TextRange};
@@ -51,10 +51,12 @@ pub fn subject_status_for(
 
 /// For an examined file with parse holes: why subjects inside or across a hole stay Unresolved.
 pub fn hole_caveat(info: &FileInfo, meta: &RuleMeta) -> Option<String> {
-    match (
-        &info.parse_status,
-        temporary_applies(meta).symbol_subjects(),
-    ) {
+    hole_caveat_of(info, &temporary_applies(meta))
+}
+
+/// [`hole_caveat`] for a rule that declares `applies`.
+pub(crate) fn hole_caveat_of(info: &FileInfo, applies: &Applies) -> Option<String> {
+    match (&info.parse_status, applies.symbol_subjects()) {
         (ParseStatus::Partial { holes }, true) => Some(format!(
             "the file parsed partially ({holes} hole(s)); subjects inside or across a hole cannot be decided"
         )),
@@ -69,14 +71,24 @@ pub fn unresolved_finding(
     path: &str,
     reason: &str,
 ) -> Finding {
-    let id: RuleId = meta
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
+    unresolved_finding_for(meta.id, file, path, reason)
+}
+
+/// [`unresolved_finding`] for the rule `id` (a legacy meta or a `RuleDef`).
+pub(crate) fn unresolved_finding_for(
+    id: &str,
+    file: Option<FileId>,
+    path: &str,
+    reason: &str,
+) -> Finding {
+    let rule: RuleId = id
+        .parse()
+        .unwrap_or_else(|e| unreachable!("rule ids are validated at declaration: {e}"));
     Finding::new(
-        id,
+        rule,
         Severity::Unresolved,
         file.map(|f| Span::new(f, TextRange::default())),
-        format!("{}: {reason}: {path}", meta.id),
+        format!("{id}: {reason}: {path}"),
         &format!("fidelity:{path}"),
     )
 }
@@ -106,9 +118,14 @@ pub fn unreadable_finding(meta: &RuleMeta, file: Option<FileId>, skipped: &Skipp
 
 /// One Unresolved finding of `meta` for all opaque text files `files` (spanless, one per rule).
 pub fn opaque_finding(meta: &RuleMeta, files: &[&str]) -> Finding {
+    opaque_finding_for(meta.id, files)
+}
+
+/// [`opaque_finding`] for the rule `id`.
+pub(crate) fn opaque_finding_for(id: &str, files: &[&str]) -> Finding {
     let first = files.first().copied().unwrap_or_default();
-    unresolved_finding(
-        meta,
+    unresolved_finding_for(
+        id,
         None,
         "repository",
         &format!(
@@ -197,6 +214,9 @@ pub struct FidelityReport {
     pub languages: BTreeMap<String, LanguageFidelity>,
     /// Files that were walked but never read; they are in no language row and each has a `READ001` finding.
     pub skipped: SkippedReport,
+    /// Rule id to why the rule does not apply to this product at all (`inapplicable()`), once per rule.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub inapplicable: BTreeMap<String, String>,
 }
 
 impl FidelityReport {
@@ -241,6 +261,13 @@ impl FidelityReport {
             .or_insert_with(|| reason.to_owned());
     }
 
+    /// Record why `rule` does not apply to the product at all (kept once per rule).
+    pub fn add_inapplicable(&mut self, rule: &str, reason: &str) {
+        self.inapplicable
+            .entry(rule.to_owned())
+            .or_insert_with(|| reason.to_owned());
+    }
+
     /// Count one unreadable file under its reason class.
     pub fn add_skipped(&mut self, kind: SkipKind) {
         self.skipped.files += 1;
@@ -259,6 +286,10 @@ impl FidelityReport {
 
     /// One text line per language, for `--timing --text`.
     pub fn lines(&self) -> Vec<String> {
+        let inapplicable = self
+            .inapplicable
+            .iter()
+            .map(|(rule, why)| format!("inapplicable {rule}: {why}"));
         self.languages
             .iter()
             .map(|(lang, r)| {
@@ -283,6 +314,7 @@ impl FidelityReport {
                     why.join("; ")
                 )
             })
+            .chain(inapplicable)
             .collect()
     }
 }
@@ -390,6 +422,16 @@ mod tests {
             "no adapter"
         );
         assert!(r.lines()[0].contains("DOC001: no adapter"));
+    }
+
+    // frob:tests crates/gob-check/src/status.rs::FidelityReport.add_inapplicable
+    #[test]
+    fn inapplicable_reasons_are_kept_once_and_printed() {
+        let mut r = FidelityReport::default();
+        r.add_inapplicable("REF001", "no ledger configured");
+        r.add_inapplicable("REF001", "later reason");
+        assert_eq!(r.inapplicable["REF001"], "no ledger configured");
+        assert_eq!(r.lines(), ["inapplicable REF001: no ledger configured"]);
     }
 
     // frob:tests crates/gob-check/src/status.rs::is_binary

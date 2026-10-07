@@ -35,11 +35,38 @@ pub(crate) fn inputs_digest<P: Product>(product: &P, snap: &Snapshot<P>) -> Stri
     h.finalize().to_hex().to_string()
 }
 
+/// A repo rule's cache identity: its id and version (a version bump misses).
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct RuleKey {
+    /// Rule id.
+    pub id: &'static str,
+    /// Rule version.
+    pub version: u32,
+}
+
+impl From<&'static RuleMeta> for RuleKey {
+    fn from(meta: &'static RuleMeta) -> Self {
+        Self {
+            id: meta.id,
+            version: meta.version,
+        }
+    }
+}
+
+impl From<&'static gob_rules::RuleDef> for RuleKey {
+    fn from(def: &'static gob_rules::RuleDef) -> Self {
+        Self {
+            id: def.id,
+            version: def.version,
+        }
+    }
+}
+
 /// The row key: the inputs digest with the rule version folded in.
-fn key(inputs: &str, meta: &RuleMeta) -> String {
+fn key(inputs: &str, rule: RuleKey) -> String {
     let mut h = blake3::Hasher::new();
     h.update(inputs.as_bytes());
-    h.update(&meta.version.to_le_bytes());
+    h.update(&rule.version.to_le_bytes());
     h.finalize().to_hex().to_string()
 }
 
@@ -48,16 +75,16 @@ pub(crate) fn cached(
     cache: &Cache,
     digest: &str,
     name: &str,
-    metas: &[&'static RuleMeta],
+    rules: &[RuleKey],
     files: &mut FileInterner,
     stats: &mut Stats,
     compute: impl FnOnce(&mut FileInterner) -> Vec<Finding>,
 ) -> Vec<Finding> {
     let mut hit = Vec::new();
     let mut complete = true;
-    for meta in metas {
+    for rule in rules {
         let found = cache
-            .get_repo_rule(&key(digest, meta), meta.id)
+            .get_repo_rule(&key(digest, *rule), rule.id)
             .and_then(|b| store::decode(&b, |p| Some(files.intern(p))));
         if let Some(f) = found {
             hit.extend(f);
@@ -92,9 +119,9 @@ pub(crate) fn cached(
         tracing::warn!(group = name, "evaluation failed; group result not cached");
         by_rule.clear();
     }
-    for meta in metas.iter().filter(|_| !failed) {
-        let mine = by_rule.remove(meta.id).unwrap_or_default();
-        cache.put_repo_rule(&key(digest, meta), meta.id, &store::encode(&mine, files));
+    for rule in rules.iter().filter(|_| !failed) {
+        let mine = by_rule.remove(rule.id).unwrap_or_default();
+        cache.put_repo_rule(&key(digest, *rule), rule.id, &store::encode(&mine, files));
     }
     for (rule, strays) in by_rule {
         tracing::warn!(
@@ -189,7 +216,11 @@ pub(crate) fn run_repo_rules<P: Product>(
             cache,
             &digest,
             group.name,
-            &group.metas,
+            &group
+                .metas
+                .iter()
+                .map(|m| RuleKey::from(*m))
+                .collect::<Vec<_>>(),
             files,
             &mut tally.stats,
             |f| (group.run)(snap, f),
@@ -209,7 +240,7 @@ mod tests {
 
     /// Runs `cached` for `PROC001` on a fresh interner; returns whether `compute` ran.
     fn ran(cache: &Cache) -> bool {
-        let metas = [Proc001.meta()];
+        let metas = [RuleKey::from(Proc001.meta())];
         let mut computed = false;
         let mut stats = Stats::default();
         let mut files = FileInterner::default();
@@ -234,7 +265,7 @@ mod tests {
     fn a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh() {
         let dir = tempfile::tempdir().unwrap();
         let cache = Cache::open(dir.path());
-        let metas = [Proc001.meta()];
+        let metas = [RuleKey::from(Proc001.meta())];
         let id: RuleId = "PROC001".parse().unwrap();
         let run = |fail: bool| {
             let mut computed = false;
