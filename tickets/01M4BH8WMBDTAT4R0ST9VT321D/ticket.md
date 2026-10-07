@@ -6,10 +6,10 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-07T15:56:18Z"
-updated = "2026-10-07T16:29:31Z"
+updated = "2026-10-07T16:43:41Z"
 idempotency_key = "board-per-ticket-events"
 labels = ["milestone:2", "area:pm"]
-scope = ["crates/frob/src/board_cmd.rs", "crates/frob-ledger/src/**", "crates/frob/tests/board.rs"]
+scope = ["crates/frob/src/board_cmd.rs", "crates/frob-ledger/src/**", "crates/frob/tests/board.rs", "crates/frob-ledger/tests/ledger.rs"]
 
 [[acceptance]]
 text = "Given this repository's ledger (about 1400 tickets), when frob board runs, then Ledger::synced and the events-tree walk each run once per invocation, not once per ticket (asserted by a call counter or log count in a test)"
