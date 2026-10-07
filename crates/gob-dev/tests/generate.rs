@@ -35,20 +35,35 @@ fn tree(root: &Path) -> Vec<(String, String)> {
 fn output_is_deterministic_and_check_passes() {
     let a = tempfile::tempdir().expect("tmp");
     let b = tempfile::tempdir().expect("tmp");
-    apply(a.path(), &generate(Kind::All, &crates_dir()), Mode::Write).expect("write a");
-    apply(b.path(), &generate(Kind::All, &crates_dir()), Mode::Write).expect("write b");
+    apply(
+        a.path(),
+        &generate(Kind::All, &crates_dir()).expect("generate"),
+        Mode::Write,
+    )
+    .expect("write a");
+    apply(
+        b.path(),
+        &generate(Kind::All, &crates_dir()).expect("generate"),
+        Mode::Write,
+    )
+    .expect("write b");
     let (ta, tb) = (tree(a.path()), tree(b.path()));
     assert!(!ta.is_empty());
     assert_eq!(ta, tb, "two runs must be byte-identical");
     assert!(ta.iter().all(|(_, text)| text.is_ascii()));
-    let checked = apply(a.path(), &generate(Kind::All, &crates_dir()), Mode::Check).expect("check");
+    let checked = apply(
+        a.path(),
+        &generate(Kind::All, &crates_dir()).expect("generate"),
+        Mode::Check,
+    )
+    .expect("check");
     assert_eq!(checked.differing, 0);
 }
 
 #[test]
 fn check_reports_stale_and_missing_files_without_writing() {
     let dir = tempfile::tempdir().expect("tmp");
-    let files = generate(Kind::All, &crates_dir());
+    let files = generate(Kind::All, &crates_dir()).expect("generate");
     apply(dir.path(), &files, Mode::Write).expect("write");
     let stale = dir.path().join("docs/reference/directives.md");
     std::fs::write(&stale, "stale\n").expect("stale");
@@ -62,7 +77,7 @@ fn check_reports_stale_and_missing_files_without_writing() {
 
 #[test]
 fn every_rule_has_a_page_and_every_page_a_rule() {
-    let files = generate(Kind::Rules, &crates_dir());
+    let files = generate(Kind::Rules, &crates_dir()).expect("generate");
     let pages: BTreeSet<String> = files
         .iter()
         .filter_map(|f| f.path.strip_prefix("docs/reference/rules/"))
@@ -133,7 +148,7 @@ fn one_required_reason_and_one_polarity() {
 // frob:ticket 01M43ARX764095Q4VWABWXXV5H
 #[test]
 fn crunk_config_reference_and_schema_are_generated_apart_from_frobs() {
-    let files = generate(Kind::All, &crates_dir());
+    let files = generate(Kind::All, &crates_dir()).expect("generate");
     let get = |path: &str| {
         files
             .iter()

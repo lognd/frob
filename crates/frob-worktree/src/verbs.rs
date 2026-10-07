@@ -1,4 +1,4 @@
-//! The CLI verbs: `work`, `start` and `requeue`.
+//! The CLI verbs: `work [--here]` and `requeue`; `start` stays as a hidden alias of `work --here`.
 
 use std::path::PathBuf;
 
@@ -157,7 +157,7 @@ fn steal_reason(m: &ArgMatches) -> Result<Option<String>, CliError> {
     }
 }
 
-/// Lease a ticket, create its worktree and branch, and move it to in-progress.
+/// Lease a ticket, create its worktree and branch, and move it to in-progress; `--here` leases it for this checkout instead.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "work",
@@ -168,6 +168,7 @@ fn steal_reason(m: &ArgMatches) -> Result<Option<String>, CliError> {
 pub struct Work {
     ticket: String,
     opts: WorkOptions,
+    here: bool,
 }
 
 impl Command for Work {
@@ -182,6 +183,13 @@ impl Command for Work {
                     .value_parser(gob_cli::clap::value_parser!(PathBuf))
                     .help("Create the worktree here instead of under [worktree] dir"),
             )
+            .arg(
+                Arg::new("here")
+                    .long("here")
+                    .action(ArgAction::SetTrue)
+                    .conflicts_with("worktree")
+                    .help("Lease the ticket for this checkout: no new worktree or branch"),
+            )
             .arg(steal_arg())
             .arg(reason_arg("Why the lease is stale (with --steal)"))
     }
@@ -193,11 +201,16 @@ impl Command for Work {
                 worktree: m.get_one::<PathBuf>("worktree").cloned(),
                 steal: steal_reason(m)?,
             },
+            here: m.get_flag("here"),
         })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<StartData> {
         let opened = Opened::new(ctx)?;
+        if self.here {
+            tracing::debug!(ticket = %self.ticket, "work --here: leasing for this checkout");
+            return start_here(&opened, ctx, &self.ticket, self.opts.steal.as_deref());
+        }
         let notices = opened.collect_garbage();
         let started = opened.workspace().work(&self.ticket, &self.opts)?;
         Ok(notices
@@ -206,7 +219,7 @@ impl Command for Work {
     }
 }
 
-/// Lease a ticket for this checkout (no new worktree) and move it to in-progress.
+/// Deprecated alias of `work --here`, removed in the next minor release.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "start",
@@ -237,16 +250,24 @@ impl Command for Start {
 
     fn run(&self, ctx: &Context) -> Outcome<StartData> {
         let opened = Opened::new(ctx)?;
-        let cwd = opened
-            .ledger
-            .repo()
-            .work_dir()
-            .map_or_else(|| ctx.cwd.clone(), std::path::Path::to_path_buf);
-        let started = opened
-            .workspace()
-            .start(&self.ticket, &cwd, self.steal.as_deref())?;
-        Ok(start_payload(started))
+        start_here(&opened, ctx, &self.ticket, self.steal.as_deref())
     }
+}
+
+/// Lease `ticket` for the current checkout and move it to in-progress (`work --here`).
+fn start_here(
+    opened: &Opened,
+    ctx: &Context,
+    ticket: &str,
+    steal: Option<&str>,
+) -> Outcome<StartData> {
+    let cwd = opened
+        .ledger
+        .repo()
+        .work_dir()
+        .map_or_else(|| ctx.cwd.clone(), std::path::Path::to_path_buf);
+    let started = opened.workspace().start(ticket, &cwd, steal)?;
+    Ok(start_payload(started))
 }
 
 /// Output of `requeue`.

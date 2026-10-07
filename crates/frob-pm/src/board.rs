@@ -30,6 +30,7 @@
 //! ([`entered`]) against the injected `now`.
 
 // frob:ticket 01M4069W45P08YPC4YH4XZVMNC
+// frob:ticket 01M48Q29NESQDWE88YC8HBYT4Z
 
 use std::collections::BTreeMap;
 
@@ -520,6 +521,279 @@ pub fn render(board: &Board, opts: &RenderOptions) -> Vec<String> {
     }
     while out.last().is_some_and(String::is_empty) {
         out.pop();
+    }
+    out
+}
+
+/// What the last observed sign of life on an in-progress ticket was.
+///
+/// Every kind is inferred from records the ledger, the lease store and git
+/// already hold; none is a state an agent sets (D105).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
+pub enum SignalKind {
+    /// The lease was taken or renewed.
+    Lease,
+    /// A commit on the ticket branch not on the base.
+    Commit,
+    /// An evidence record (a test or command run) was written.
+    Evidence,
+    /// The ticket branch landed.
+    Land,
+    /// The ticket changed category.
+    Moved,
+}
+
+impl SignalKind {
+    /// The word shown in the brief.
+    pub const fn word(self) -> &'static str {
+        match self {
+            Self::Lease => "lease",
+            Self::Commit => "commit",
+            Self::Evidence => "evidence",
+            Self::Land => "land",
+            Self::Moved => "moved",
+        }
+    }
+}
+
+/// One observed signal: what and when.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Signal {
+    /// What was observed.
+    pub kind: SignalKind,
+    /// When.
+    pub at: Stamp,
+}
+
+/// The newest ledger signal in `events`: evidence, land or a category move.
+pub fn observe(events: &[Event]) -> Option<Signal> {
+    events
+        .iter()
+        .filter_map(|e| {
+            let kind = match &e.body {
+                EventBody::Evidence(_) => SignalKind::Evidence,
+                EventBody::Land(_) => SignalKind::Land,
+                EventBody::Transition(_) => SignalKind::Moved,
+                _ => return None,
+            };
+            Some(Signal { kind, at: e.at })
+        })
+        .max_by_key(|s| s.at)
+}
+
+/// The newest of `signals` (the later one wins a tie in input order).
+pub fn latest(signals: impl IntoIterator<Item = Signal>) -> Option<Signal> {
+    signals.into_iter().max_by_key(|s| s.at)
+}
+
+/// A [`Signal`] as the brief reports it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct SignalView {
+    /// What was observed.
+    pub kind: SignalKind,
+    /// Seconds since it was observed.
+    pub since_secs: i64,
+    /// The time since as shown (`<1m`, `5m`, `7h`, `3d`).
+    pub since: String,
+}
+
+/// An in-progress ticket in the brief.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct Working {
+    /// Handle with its `~`.
+    pub handle: String,
+    /// Title.
+    pub title: String,
+    /// Actor holding the lease, when there is one.
+    pub holder: Option<String>,
+    /// Absolute worktree path of the holder.
+    pub worktree: Option<String>,
+    /// Seconds since the ticket entered in-progress.
+    pub age_secs: i64,
+    /// The age as shown.
+    pub age: String,
+    /// The lease has expired.
+    pub stale: bool,
+    /// The newest observed signal; absent when none is on record.
+    pub last: Option<SignalView>,
+}
+
+/// A doable ticket in the brief, in dispatch order.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct Next {
+    /// Handle with its `~`.
+    pub handle: String,
+    /// Title.
+    pub title: String,
+    /// Story points, when sized.
+    pub points: Option<u8>,
+    /// Class of service.
+    pub class: String,
+}
+
+/// A blocked ticket in the brief with its open blockers.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct Waiting {
+    /// Handle with its `~`.
+    pub handle: String,
+    /// Title.
+    pub title: String,
+    /// Handles of the open blockers.
+    pub blockers: Vec<String>,
+}
+
+/// What the brief needs beyond the [`Board`], keyed by handle.
+#[derive(Debug, Clone, Default)]
+pub struct BriefInput {
+    /// Worktree path of each live or stale holder.
+    pub worktrees: BTreeMap<String, String>,
+    /// The newest observed signal per in-progress ticket.
+    pub signals: BTreeMap<String, Signal>,
+    /// Open blocker handles per blocked ticket.
+    pub blockers: BTreeMap<String, Vec<String>>,
+    /// The injected clock.
+    pub now: Option<Stamp>,
+}
+
+/// The compact view: what is being done now, what is next and what is blocked.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct Brief {
+    /// In-progress tickets (the lane's first), with holder, age and last signal.
+    pub working: Vec<Working>,
+    /// In-progress count against its limit, as the board header shows it.
+    pub in_progress: String,
+    /// Doable tickets in dispatch order.
+    pub next: Vec<Next>,
+    /// Todo tickets left off `next` by the card cap.
+    pub next_hidden: usize,
+    /// Blocked tickets with their blockers.
+    pub blocked: Vec<Waiting>,
+}
+
+/// Derive the brief from `board`: the same cards, so counts and order match the full board.
+pub fn brief(board: &Board, extra: &BriefInput) -> Brief {
+    let now = extra.now.unwrap_or_else(|| Stamp::from_unix(0));
+    let lane = |keep: Category| {
+        board
+            .expedite
+            .iter()
+            .flat_map(|l| l.cards.iter())
+            .filter(move |c| c.category == keep.to_string())
+    };
+    let col = |kind: ColumnKind| board.columns.iter().find(|c| c.kind == Some(kind));
+    let in_col = col(ColumnKind::InProgress);
+    let working = lane(Category::InProgress)
+        .chain(in_col.iter().flat_map(|c| c.cards.iter()))
+        .map(|c| Working {
+            handle: c.handle.clone(),
+            title: c.title.clone(),
+            holder: c.holder.clone(),
+            worktree: extra.worktrees.get(&c.handle).cloned(),
+            age_secs: c.age_secs,
+            age: c.age.clone(),
+            stale: c.stale,
+            last: extra.signals.get(&c.handle).map(|s| {
+                let since_secs = (now.unix() - s.at.unix()).max(0);
+                SignalView {
+                    kind: s.kind,
+                    since_secs,
+                    since: format_age(since_secs),
+                }
+            }),
+        })
+        .collect();
+    let todo = col(ColumnKind::Todo);
+    let next = lane(Category::Todo)
+        .chain(todo.iter().flat_map(|c| c.cards.iter()))
+        .map(|c| Next {
+            handle: c.handle.clone(),
+            title: c.title.clone(),
+            points: c.points,
+            class: c.class.clone(),
+        })
+        .collect();
+    let blocked = col(ColumnKind::Blocked)
+        .iter()
+        .flat_map(|c| c.cards.iter())
+        .map(|c| Waiting {
+            handle: c.handle.clone(),
+            title: c.title.clone(),
+            blockers: extra.blockers.get(&c.handle).cloned().unwrap_or_default(),
+        })
+        .collect();
+    tracing::debug!("brief derived");
+    Brief {
+        working,
+        in_progress: in_col.map_or_else(String::new, |c| header(c, usize::MAX)),
+        next,
+        next_hidden: todo.map_or(0, |c| c.hidden),
+        blocked,
+    }
+}
+
+/// Render `brief` as ASCII lines no wider than `width` (at least 40).
+pub fn render_brief(brief: &Brief, width: usize) -> Vec<String> {
+    let width = width.max(40);
+    let mut out = Vec::new();
+    let section = |out: &mut Vec<String>, title: &str| {
+        if !out.is_empty() {
+            out.push(String::new());
+        }
+        out.push(fit(title, width));
+    };
+    section(&mut out, &format!("NOW {}", brief.in_progress));
+    if brief.working.is_empty() {
+        out.push("  (nothing in progress)".to_owned());
+    }
+    for w in &brief.working {
+        let holder = w
+            .holder
+            .as_deref()
+            .map_or_else(|| "unheld".to_owned(), |h| format!("@{}", ascii(h)));
+        let stale = if w.stale { " STALE" } else { "" };
+        out.push(fit(
+            &format!("{} {holder} {}{stale}", w.handle, w.age),
+            width,
+        ));
+        out.push(fit(&format!("  {}", ascii(&w.title)), width));
+        let tree = w
+            .worktree
+            .as_deref()
+            .and_then(|p| p.rsplit('/').next())
+            .map_or_else(String::new, |t| format!("wt {} | ", ascii(t)));
+        let last = w.last.as_ref().map_or_else(
+            || "no signal".to_owned(),
+            |s| format!("{} {} ago", s.kind.word(), s.since),
+        );
+        out.push(fit(&format!("  {tree}last {last}"), width));
+    }
+    section(&mut out, "NEXT");
+    if brief.next.is_empty() {
+        out.push("  (nothing doable)".to_owned());
+    }
+    for (i, n) in brief.next.iter().enumerate() {
+        let pts = n.points.map_or_else(|| "-".to_owned(), |p| format!("{p}p"));
+        out.push(fit(
+            &format!("{:>2}. {} {pts} {}", i + 1, n.handle, ascii(&n.title)),
+            width,
+        ));
+    }
+    if brief.next_hidden > 0 {
+        out.push(format!("    +{} more", brief.next_hidden));
+    }
+    section(&mut out, "BLOCKED");
+    if brief.blocked.is_empty() {
+        out.push("  (none)".to_owned());
+    }
+    for b in &brief.blocked {
+        out.push(fit(&format!("{} {}", b.handle, ascii(&b.title)), width));
+        let by = if b.blockers.is_empty() {
+            "unknown".to_owned()
+        } else {
+            b.blockers.join(" ")
+        };
+        out.push(fit(&format!("  by {by}"), width));
     }
     out
 }

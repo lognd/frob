@@ -292,8 +292,7 @@ fn no_changelog_with_a_reason_closes_without_a_fragment_and_records_the_event() 
     let x = &shown["data"]["changelog_exempt"];
     assert_eq!(x["reason"], "design document only");
     assert!(x["actor"].as_str().is_some_and(|a| !a.is_empty()), "{x}");
-    let brief = ok(dir.path(), &["ticket", "brief", &id]);
-    let md = brief["data"]["markdown"].as_str().expect("markdown");
+    let md = common::ticket_markdown(dir.path(), &id);
     assert!(
         md.contains("## Changelog") && md.contains("design document only"),
         "{md}"

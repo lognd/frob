@@ -170,7 +170,7 @@ fn doable_hides_tickets_overlapping_a_live_lease_and_shows_them_otherwise() {
     let other = new_ticket(dir.path(), "overlapping", "chore", "src/lib.rs");
     let before = ok(dir.path(), &["ticket", "doable"]);
     assert_eq!(before["data"]["count"], 2, "no lease: both shown");
-    ok(dir.path(), &["start", &held]);
+    ok(dir.path(), &["work", "--here", &held]);
     let after = ok(dir.path(), &["ticket", "doable"]);
     let ids: Vec<_> = after["data"]["tickets"]
         .as_array()

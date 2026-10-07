@@ -114,7 +114,7 @@ fn not_in_triage(s: &Summary, req: &TriageRequest) -> LedgerError {
             s.outcome.map_or(String::new(), |o| format!(" ({o})")),
             req.action
         ),
-        remedy: Some("frob ticket triage list".to_owned()),
+        remedy: Some("frob ticket list --category triage".to_owned()),
     }
 }
 

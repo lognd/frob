@@ -303,8 +303,7 @@ fn update_set_comment_brief_and_parent() {
     assert_eq!(children["data"]["count"], 1);
     let by_label = repo.ok(&["ticket", "list", "--label", "c"]);
     assert_eq!(by_label["data"]["count"], 1);
-    let brief = repo.ok(&["ticket", "brief", &id]);
-    let md = brief["data"]["markdown"].as_str().expect("markdown");
+    let md = common::ticket_markdown(repo.path(), &id);
     assert!(
         md.contains("Details here.") && md.contains("it works") && md.contains("crates/x/**"),
         "{md}"

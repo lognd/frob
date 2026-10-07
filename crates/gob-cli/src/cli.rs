@@ -132,7 +132,7 @@ impl Cli {
                 .value_parser(clap::value_parser!(FormatChoice))
                 .default_value("auto")
                 .global(true)
-                .help("Output format: json, text, or auto (json when stdout is not a terminal)"),
+                .help("Output format: json, text, md (markdown where a verb has one, else text), or auto (json when stdout is not a terminal)"),
             Arg::new("json")
                 .long("json")
                 .action(ArgAction::SetTrue)
@@ -237,7 +237,7 @@ impl Cli {
             tracing::debug!(error = %err, "guard refused the verb");
             return render::failure(Some(&dotted), &err, ctx.json);
         }
-        match (verb.run)(leaf, &ctx) {
+        let mut exec = match (verb.run)(leaf, &ctx) {
             Ok(erased) => {
                 tracing::debug!(
                     findings = erased.findings.len(),
@@ -250,7 +250,12 @@ impl Cli {
                 tracing::debug!(error = %err, "verb failed");
                 render::failure(Some(&dotted), &err, ctx.json)
             }
+        };
+        if let Some(note) = verb.meta.deprecation_note(self.product) {
+            tracing::debug!(verb = %path, "deprecated alias used");
+            exec.stderr.insert_str(0, &format!("{note}\n"));
         }
+        exec
     }
 
     /// Resolve global flags into a [`Context`] and install logging.
@@ -273,7 +278,7 @@ impl Cli {
         };
         let json = match format {
             FormatChoice::Json => true,
-            FormatChoice::Text => false,
+            FormatChoice::Text | FormatChoice::Md => false,
             FormatChoice::Auto => !is_tty(&std::io::stdout()),
         };
         let color = match leaf
@@ -312,6 +317,11 @@ impl Cli {
             cwd,
             color,
             json,
+            format: match (format, json) {
+                (FormatChoice::Md, _) => FormatChoice::Md,
+                (_, true) => FormatChoice::Json,
+                (_, false) => FormatChoice::Text,
+            },
             verbosity,
             quiet: leaf.get_flag("quiet"),
             dry_run,
@@ -487,7 +497,9 @@ fn wants_schema(argv: &[OsString]) -> bool {
 
 /// A leaf subcommand with the verb's flags and (if it opts in) `--dry-run`.
 fn leaf_command(name: &'static str, v: &Registered, relaxed: bool) -> clap::Command {
-    let mut cmd = clap::Command::new(name).about(v.meta.summary);
+    let mut cmd = clap::Command::new(name)
+        .about(v.meta.summary)
+        .hide(v.meta.deprecated_form().is_some());
     if v.meta.dry_run {
         cmd = cmd.arg(
             Arg::new("dry_run")

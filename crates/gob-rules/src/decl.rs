@@ -180,3 +180,12 @@ pub fn run_file<R: FileRule<P>, P: ?Sized>(rule: &R, host: &P, text: &str) -> Ve
     tracing::debug!(rule = R::DEF.id, found = found.len(), "file rule ran");
     found
 }
+
+/// The product-side bind for a repo rule: instantiating this is the "does this product host that
+/// rule" check.
+pub fn run_repo<R: RepoRule<P>, P: ?Sized>(rule: &R, host: &P) -> Vec<Emitted> {
+    let mut found = Vec::new();
+    rule.check(host, &mut Out::new(&mut found));
+    tracing::debug!(rule = R::DEF.id, found = found.len(), "repo rule ran");
+    found
+}

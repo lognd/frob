@@ -1,7 +1,7 @@
-//! The read-only lease verbs: `lease list` and `ticket contention`.
+//! The read-only lease verbs: `lease list [--contention]`; `ticket contention` stays as a hidden alias.
 
 use frob_ledger::TicketId;
-use gob_cli::clap::ArgMatches;
+use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -53,9 +53,12 @@ pub struct LeaseListData {
     pub leases: Vec<Lease>,
     /// Lease files that could not be read; skipped, not deleted.
     pub corrupt: Vec<CorruptLease>,
+    /// With `--contention`: files declared by two or more live leases, most contended first.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub files: Option<Vec<ContendedFile>>,
 }
 
-/// List the live scope leases of this clone.
+/// List the live scope leases of this clone; `--contention` adds the files claimed by more than one.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "lease list",
@@ -63,20 +66,44 @@ pub struct LeaseListData {
     idempotent = true,
     exits(ok, refused, internal)
 )]
-pub struct LeaseList;
+pub struct LeaseList {
+    contention: bool,
+}
 
 impl Command for LeaseList {
     type Data = LeaseListData;
 
-    fn from_matches(_: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self)
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        cmd.arg(
+            Arg::new("contention")
+                .long("contention")
+                .action(ArgAction::SetTrue)
+                .help(
+                    "Also report files claimed by more than one live lease, ranked by holder count",
+                ),
+        )
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            contention: m.get_flag("contention"),
+        })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<LeaseListData> {
         let (store, _) = open_store(&ctx.cwd, ctx.clock.clone())?;
         let leases = store.list()?;
         let corrupt = store.corrupt_leases()?;
-        let mut payload = Payload::new(LeaseListData { leases, corrupt });
+        let files = if self.contention {
+            Some(contended_files(&store)?)
+        } else {
+            None
+        };
+        let mut payload = Payload::new(LeaseListData {
+            leases,
+            corrupt,
+            files,
+        });
         for c in payload.data.corrupt.clone() {
             payload = payload.with_warning(format!(
                 "corrupt lease file {} skipped ({}); move it aside (rename it to <name>.toml.corrupt)",
@@ -88,7 +115,7 @@ impl Command for LeaseList {
     }
 }
 
-/// Output of `ticket contention`.
+/// Output of the deprecated `ticket contention`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct ContentionData {
     /// Files declared by two or more live leases, most contended first.
@@ -116,7 +143,7 @@ impl From<Contended> for ContendedFile {
     }
 }
 
-/// Print the files claimed by more than one live lease, ranked by holder count.
+/// Deprecated alias of `lease list --contention`, removed in the next minor release.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket contention",
@@ -135,7 +162,12 @@ impl Command for Contention {
 
     fn run(&self, ctx: &Context) -> Outcome<ContentionData> {
         let (store, _) = open_store(&ctx.cwd, ctx.clock.clone())?;
-        let files = store.contention()?.into_iter().map(Into::into).collect();
+        let files = contended_files(&store)?;
         Ok(Payload::new(ContentionData { files }))
     }
+}
+
+/// The files declared by two or more live leases, most contended first.
+fn contended_files(store: &crate::LeaseStore) -> Result<Vec<ContendedFile>, LeaseError> {
+    Ok(store.contention()?.into_iter().map(Into::into).collect())
 }

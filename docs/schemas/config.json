@@ -313,6 +313,43 @@
       },
       "type": "object"
     },
+    "grimble": {
+      "additionalProperties": false,
+      "description": "The `[grimble]` table: model roots and binding policy (grmb-spec 3, binding.md 6).",
+      "properties": {
+        "modeled": {
+          "default": [],
+          "description": "Selectors whose public units must have an owner (SYS005); empty turns the rule off.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "models": {
+          "default": [
+            "design/model.grmb"
+          ],
+          "description": "Root `.grmb` files, one independent model each; only files reachable from them through\n`include` are loaded (MDL019 names the rest, MDL021 fires when none is declared).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "rename_min_tokens": {
+          "default": 12,
+          "description": "A Body with fewer tokens than this cannot be paired as a rename (binding.md 5.4 item 3).",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "strict": {
+          "default": false,
+          "description": "Warn rules SYS001 and SYS005 become Errors.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "invariants": {
       "additionalProperties": false,
       "description": "Architecture invariants enforced over the import graph (INV002).",
@@ -364,6 +401,45 @@
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "packs": {
+      "additionalProperties": false,
+      "description": "Which data packs the repository enables (packs.md 3.6). Packs are not loaded yet.",
+      "properties": {
+        "enabled": {
+          "default": [],
+          "description": "Enabled pack ids in load order.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "external": {
+          "default": [],
+          "description": "External packs (`[[packs.external]]`).",
+          "items": {
+            "$ref": "#/$defs/ExternalPack"
+          },
+          "type": "array"
+        },
+        "lock": {
+          "default": "grimble.packs.lock",
+          "description": "Path of the pack lock, relative to the repository root.",
+          "type": "string"
+        },
+        "severity": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "default": {},
+          "description": "Repository severity overrides by atom then rule (`[packs.severity]`).",
+          "type": "object"
         }
       },
       "type": "object"

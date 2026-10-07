@@ -15,6 +15,8 @@ pub enum FormatChoice {
     Json,
     /// Human text, a view over the same envelope.
     Text,
+    /// Markdown for verbs that have a markdown view (`ticket show`); text for every other verb.
+    Md,
 }
 
 /// `--color`: when to emit ANSI escapes in text output.
@@ -39,10 +41,19 @@ pub struct Context {
     pub json: bool,
     /// Count of `-v` flags.
     pub verbosity: u8,
+    /// The resolved format: `Json`, `Text` or `Md`, never `Auto`.
+    pub format: FormatChoice,
     /// `--quiet`: suppress text output on success.
     pub quiet: bool,
     /// `--dry-run` was passed (only verbs that opt in accept it).
     pub dry_run: bool,
     /// The command's one clock snapshot (docs/design/time.md section 2): every date and stamp a verb writes comes from it.
     pub clock: Arc<dyn gob_time::Clock>,
+}
+
+impl Context {
+    /// True when `--format md` was passed: verbs with a markdown view print it (the result is not JSON).
+    pub fn markdown(&self) -> bool {
+        self.format == FormatChoice::Md
+    }
 }

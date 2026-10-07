@@ -779,8 +779,11 @@ fn cli_work_past_the_repository_limit_exits_3_with_the_wip_code() {
             .is_some_and(|m| m.contains("First")),
         "{out}"
     );
-    let (code, out, _) = gob_cli::run_for_test(&cli, &["start", &b.to_string()], &fx.root);
-    assert_eq!(code, 3, "start obeys the limit: {out}");
+    let (code, out, _) = gob_cli::run_for_test(&cli, &["work", "--here", &b.to_string()], &fx.root);
+    assert_eq!(code, 3, "work --here obeys the limit: {out}");
+    let (code, out, err) = gob_cli::run_for_test(&cli, &["start", &b.to_string()], &fx.root);
+    assert_eq!(code, 3, "the start alias obeys the limit: {out}");
+    assert!(err.contains("`start` is deprecated"), "{err}");
 }
 
 fn classed_ticket(ledger: &Ledger, title: &str, class: Class, scope: &str) -> TicketId {

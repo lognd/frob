@@ -35,7 +35,7 @@ Every verb, every time:
 {"verb": "ticket.start", "already": false, "ok": false, "data": null,
  "findings": [], "warnings": [],
  "error": {"code": "E-LEASE-HELD", "message": "...",
-           "remedy": "frob ticket start ~6C0D1E2 --wait 60",
+           "remedy": "frob work --here ~6C0D1E2 --wait 60",
            "retryable": true},
  "schema_version": 1}
 ```
@@ -126,7 +126,7 @@ Every verb, every time:
 ## 3. Verb semantics
 
 - Idempotent mutations: repeating a request that already holds returns
-  `ok: true, already: true` and exit 0. `work` and `start` are
+  `ok: true, already: true` and exit 0. `work` and `work --here` are
   idempotent only for the same holder (actor plus worktree path): the
   holder gets the existing lease and worktree back; any other caller
   gets exit 3 `E-LEASE-HELD` naming the holder. `new` creates a distinct
@@ -139,7 +139,7 @@ Every verb, every time:
   `~handle` without the `~`, which git refs forbid) on branch
   `ticket/<handle>`, records that path in the lease, and on a repeat by
   the holder reuses the worktree found through the lease (or, if the
-  lease is gone, through the branch name). `frob ticket start` takes the
+  lease is gone, through the branch name). `frob work --here` (hidden alias `start`) takes the
   lease for the current checkout and records that checkout's root as the
   holder path.
 - Acceptance: `ticket update <id> --add-acceptance TEXT` (repeatable,
@@ -154,7 +154,7 @@ Every verb, every time:
   of verb calls from stdin, accepts only ledger-only verbs (`ticket
   new|update|link|unlink|comment|body|accept`), and is all or nothing:
   one lock, one commit, and any failing line aborts and writes nothing.
-  Verbs with side effects outside the ledger (`work`, `start`, `land`,
+  Verbs with side effects outside the ledger (`work`, `land`,
   `check --fix`) are refused inside a batch.
 - Preview: `--dry-run` on the mutating verbs that opt in returns the planned
   changes in the same envelope in milliseconds and a `plan` token. A
@@ -238,7 +238,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `ticket triage` list view is `ticket list --category triage` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
 | `ticket evidence`, `ticket done-report` | frob | frob-evidence | yes | 0 2 3 4 | 1 |
 | `ticket evidence fetch` (the action `fetch` is a positional of `ticket evidence`) | frob | frob-evidence | yes | 0 2 3 4 | 2 |
-| `work [--here]`, `requeue` (top-level: lease and worktree lifecycle) | frob | frob-lease | `start` only for the same holder; others get 3 | 0 2 3 4 | 1 |
+| `work [--here]`, `requeue` (top-level: lease and worktree lifecycle) | frob | frob-lease | `work --here` only for the same holder; others get 3 | 0 2 3 4 | 1 |
 | `ticket close\|drop\|reopen` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
 | `ticket review` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
 | `ticket reconcile\|doctor` | frob | frob-ledger | yes | 0 2 3 4 | 1 |

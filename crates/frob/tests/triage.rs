@@ -155,7 +155,10 @@ fn accept_refuses_a_ticket_not_in_triage_with_a_remedy_and_writes_nothing() {
     assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stdout));
     let text = String::from_utf8_lossy(&out.stdout);
     assert!(text.contains("E-TRIAGE-NOT-IN-TRIAGE"), "{text}");
-    assert!(text.contains("frob ticket triage list"), "{text}");
+    assert!(
+        text.contains("frob ticket list --category triage"),
+        "{text}"
+    );
     assert_eq!(repo.ledger_commits(), before, "nothing written");
     assert_eq!(repo.category(&in_triage), "triage");
 }
@@ -183,16 +186,33 @@ fn a_snoozed_ticket_is_hidden_until_its_date_and_shown_after() {
             .map(|t| t["id"].as_str().expect("id").to_owned())
             .collect()
     };
-    assert_eq!(ids(&["ticket", "triage", "list"]), vec![kept.clone()]);
     assert_eq!(
-        ids(&["ticket", "triage", "list", "--at", "2998-12-31"]),
+        ids(&["ticket", "list", "--category", "triage"]),
         vec![kept.clone()]
     );
     assert_eq!(
-        ids(&["ticket", "triage", "list", "--at", "2999-01-01"]),
+        ids(&[
+            "ticket",
+            "list",
+            "--category",
+            "triage",
+            "--at",
+            "2998-12-31"
+        ]),
+        vec![kept.clone()]
+    );
+    assert_eq!(
+        ids(&[
+            "ticket",
+            "list",
+            "--category",
+            "triage",
+            "--at",
+            "2999-01-01"
+        ]),
         vec![id.clone(), kept.clone()]
     );
-    let all = repo.ok(&["ticket", "triage", "list", "--all"]);
+    let all = repo.ok(&["ticket", "list", "--category", "triage", "--all"]);
     assert_eq!(all["data"]["count"], 2);
     assert!(all["data"]["tickets"][0]["snoozed_until"].is_string());
     // A snooze does not leave triage, and repeating it is a no-op.

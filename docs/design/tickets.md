@@ -295,7 +295,7 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   invisible to other clones and machines; cross-clone safety is the
   ledger CAS plus the SCOPE rule at land). The holder is the actor plus
   the worktree path; an agent harness sets `FROB_AGENT` so parallel
-  agents are distinct holders. `work` and `start` are idempotent only
+  agents are distinct holders. `work` and `work --here` are idempotent only
   for the same holder; any other caller gets exit 3 `E-LEASE-HELD`
   naming the holder.
 - Acquisition is atomic: read all leases, compute overlap, write the
@@ -598,7 +598,7 @@ exemption by file type, and the person or agent states why. The reason is
 recorded as a `changelog-exempt` event with the actor, written before the close so a crash cannot leave a closed ticket without its record (a refused close leaves the event on the open ticket; a retry with the same reason reuses it), satisfies
 `changelog_fragment` and REL003 for that ticket (`check --ticket` included, and
 `land` passes the exemption to its own check), and is shown by `ticket show`,
-`ticket brief`, the close and land reports and `release status`, which lists the
+`ticket show --format md`, the close and land reports and `release status`, which lists the
 exempted tickets of the milestone. A done close also needs the work on the base (`branch_merged`, ~CKZS2R3, code `E-DONE-UNMERGED`): `ticket close --outcome done` and `fixed` are refused while `ticket/<handle>` holds commits not reachable from the base branch, naming the first of them and the remedy, `frob land` or, audited, `--no-land --reason TEXT` (a `land-exempt` event, written before the close). `land` merges before it closes and so never trips the guard; a ticket whose branch was deleted after landing has nothing unmerged and closes cleanly; `wont-fix`, `duplicate` and `invalid` are exempt like the other done guards. `ticket doctor` reports every done or fixed ticket whose branch still holds unmerged commits and has no `land-exempt` event as `E-DOCTOR-UNMERGED`. The "no change to the scope paths on the base since the ticket started" doctor check is not built yet.
 
 `objective_target_met` passes for a ticket that is not a
@@ -665,10 +665,10 @@ REL003 (documentation.md section 6).
 ## 11. Verbs (see cli.md for the full surface)
 
 ```
-frob ticket new|show|list|query|board|doable|wave|contention|brief|log
+frob ticket new|show|list|doable          # `show --format md` is the brief, `list --category triage` the inbox, `lease list --contention` the hot files (D104)
 frob ticket update|link|unlink|comment|accept|evidence|attach|body
 frob ticket evidence [add|fetch] | done-report   # two-word path, action positional (cli.md section 2)
-frob ticket triage accept|decline|snooze|duplicate|list   # five verbs (section 11.1)
+frob ticket triage accept|decline|snooze|duplicate   # four verbs (section 11.1); the listing is `ticket list --category triage`
 frob ticket start|requeue|review|close|drop|reopen
 frob ticket component ... | reconcile | doctor
 frob work <id> | frob land <id> | frob cycle ... | frob forecast ...
@@ -687,7 +687,7 @@ The inbox is the set of tickets in category `triage` that are not snoozed
 | `ticket triage decline` | `transition` to done with outcome `wont-fix`, then `triage` (decline) | tickets or a query; `--reason` required |
 | `ticket triage snooze` | `triage` (snooze) with `until` only; the ticket stays in `triage` | tickets or a query; `--until` required (a date `2026-11-01`, midnight UTC, or an RFC 3339 time, strictly in the future); `--reason` optional |
 | `ticket triage duplicate` | `link` (`duplicates`, skipped when the edge exists), `transition` to done with outcome `duplicate`, then `triage` (duplicate) | one ticket and `--of <ticket>`; `--reason` defaults to `duplicate of <target>` |
-| `ticket triage list` | nothing | optional `--label`, `--type`, `--at <date or time>` (the inbox as of that instant), `--all` (also snoozed tickets, with `snoozed_until`) |
+| `ticket list --category triage` (hidden alias `ticket triage list`, one minor) | nothing | optional `--label`, `--type`, `--at <date or time>` (the inbox as of that instant), `--all` (also snoozed tickets, with `snoozed_until`) |
 
 Selection: the verbs that take tickets accept several positionals, or a
 query over the inbox (`--label`, `--type`; a query never selects a snoozed
@@ -703,7 +703,7 @@ decision (same action and, for a snooze, the same `until`) is `already` and
 writes nothing; a call whose tickets are all `already`, or a query that
 selects nothing, exits 0 with `already` set. A ticket that is neither in
 `triage` nor already given this decision is refused with
-`E-TRIAGE-NOT-IN-TRIAGE` (exit 3) and the remedy `frob ticket triage list`;
+`E-TRIAGE-NOT-IN-TRIAGE` (exit 3) and the remedy `frob ticket list --category triage`;
 one refusal aborts the whole call before anything is written, so a batch
 is all or nothing. Decline and duplicate do not run the close guards (like
 `ticket drop`, they close without done), and a newer snooze replaces an

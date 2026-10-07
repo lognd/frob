@@ -1,4 +1,4 @@
-//! The triage inbox verbs: `ticket triage accept|decline|snooze|duplicate|list`.
+//! The triage inbox verbs: `ticket triage accept|decline|snooze|duplicate` (the inbox listing is `ticket list --category triage`; `triage list` stays a hidden alias).
 //!
 //! Thin layer over [`Ledger::triage`] and [`Ledger::inbox`]: tickets come from
 //! positional arguments or from a query (`--label`, `--type`) evaluated against the
@@ -299,7 +299,7 @@ pub struct InboxData {
     pub tickets: Vec<InboxEntry>,
 }
 
-/// List the triage inbox; snoozed tickets stay hidden until their date.
+/// Deprecated alias of `ticket list --category triage`, removed in the next minor release.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket triage list",

@@ -19,6 +19,8 @@ mod decl;
 mod exception;
 mod finding;
 mod id;
+mod index;
+pub mod indexgen;
 mod meta;
 mod reason;
 mod registry;
@@ -26,6 +28,7 @@ mod required;
 
 pub use decl::{
     Applies, Emitted, FileCx, FileRule, Measured, Out, RepoRule, RuleDecl, RuleDef, run_file,
+    run_repo,
 };
 pub use exception::{
     BoundException, Exception, ExceptionCtx, ExceptionKind, Resolved, apply_exceptions,
@@ -34,6 +37,7 @@ pub use finding::{Finding, Fingerprint, Fix, TextEdit};
 pub use gob_caps as caps;
 pub use gob_macros::{Rule, rule};
 pub use id::{ParseRuleIdError, RuleId};
+pub use index::{Body, BoundRule, FileFn, RepoFn, RuleIndex, assert_unique};
 pub use inventory;
 pub use meta::{FixKind, Polarity, RuleEntry, RuleMeta, Scope, Severity, Tier};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
