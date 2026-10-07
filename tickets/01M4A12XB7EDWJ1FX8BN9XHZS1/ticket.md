@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-07T01:54:10Z"
-updated = "2026-10-07T02:51:17Z"
+updated = "2026-10-07T02:58:02Z"
 scope = ["crates/frob-lease/**", "crates/frob-pm/**", "crates/frob-ledger/**", "docs/design/tickets.md", "changelog.d/01M4A12XB7EDWJ1FX8BN9XHZS1.*"]
 
 [[acceptance]]
