@@ -2,11 +2,11 @@
 id = "01M4BH8WMBDTAT4R0ST9VT321D"
 title = "board reads every ticket's events one at a time: 25 s on 1400 tickets"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-07T15:56:18Z"
-updated = "2026-10-07T15:56:18Z"
+updated = "2026-10-07T16:10:38Z"
 idempotency_key = "board-per-ticket-events"
 labels = ["milestone:2", "area:pm"]
 scope = ["crates/frob/src/board_cmd.rs", "crates/frob-ledger/src/**", "crates/frob/tests/board.rs"]
