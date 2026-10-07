@@ -1,7 +1,6 @@
 //! Selection, dry-run and a real nextest run against a tiny two-crate cargo workspace.
 
 use std::path::Path;
-use std::time::Duration;
 
 use frob_evidence::events;
 use frob_evidence::guard::EvidenceGuard;
@@ -9,33 +8,10 @@ use frob_ledger::model::{Outcome, TicketType};
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig};
 use frob_tests::{TestTarget, build_repo_graph, select_tests, touched_set};
-use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec};
 use gob_git::Repo;
 
-fn git(dir: &Path, args: &[&str]) -> String {
-    let spec = Spec {
-        program: Program::Git,
-        args: args.iter().map(|a| (*a).to_owned()).collect(),
-        cwd: Some(dir.to_path_buf()),
-        env: Vec::new(),
-        timeout: Duration::from_secs(30),
-        capture: true,
-    };
-    let out = Runner::new(Limits { jobs: 1 }).run(&spec).expect("git");
-    assert_eq!(
-        out.status,
-        ExecOutcome::Exited(0),
-        "git {args:?}: {}",
-        out.stderr
-    );
-    out.stdout.trim().to_owned()
-}
-
-fn write(root: &Path, rel: &str, text: &str) {
-    let path = root.join(rel);
-    std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
-    std::fs::write(path, text).expect("write");
-}
+mod common;
+use common::{git, write};
 
 const ALPHA: &str = r"pub fn double(x: i32) -> i32 {
     x * 2

@@ -1,15 +1,18 @@
-//! Running the selected tests: `cargo nextest run -p <pkg> -E '<filter>'` and `pytest <node id>...` through gob-exec.
+//! Running the selected tests: `cargo nextest run -p <pkg> -E '<filter>'`, `pytest <node id>...` and `vitest run` or `jest` per member through gob-exec.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use frob_evidence::provider::{Capture, run_nextest, run_pytest};
+use frob_evidence::provider::{
+    Capture, JsRun, NODE_PROGRAM, run_js_tests, run_nextest, run_pytest,
+};
 use frob_evidence::record::Provider;
 use gob_exec::Runner;
 use gob_walk::{WalkConfig, walk};
 
 use crate::error::Result;
+use crate::node::{JsMembers, is_runner_test_file};
 use crate::select::{Framework, TestTarget};
 
 /// How to run: where, how long, and whether to run everything.
@@ -25,6 +28,28 @@ pub struct RunOptions {
     pub allowed_tools: Vec<String>,
     /// Run the whole workspace instead of the selection.
     pub all: bool,
+    /// The program vitest and jest need (`node`); a missing one refuses the run.
+    pub node: String,
+}
+
+impl RunOptions {
+    /// Options for the work tree at `root` with the default node program ([`NODE_PROGRAM`]).
+    pub fn new(
+        root: PathBuf,
+        timeout: Duration,
+        profile: String,
+        allowed_tools: Vec<String>,
+        all: bool,
+    ) -> Self {
+        Self {
+            root,
+            timeout,
+            profile,
+            allowed_tools,
+            all,
+            node: NODE_PROGRAM.to_owned(),
+        }
+    }
 }
 
 // frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
@@ -33,18 +58,40 @@ pub struct RunOptions {
 pub struct FrameworkRun {
     /// The runner.
     pub framework: Framework,
-    /// The arguments that were used (after `cargo nextest run`, or after `pytest`).
+    /// The arguments that were used (after `cargo nextest run`, `pytest`, or `vitest` and `jest`: test files relative to the member).
     pub args: Vec<String>,
+    /// The member directory vitest or jest ran in (empty at the root and for the other runners).
+    pub member: String,
     /// Verdict, executed test names and the redacted transcript.
     pub capture: Capture,
 }
 
 impl FrameworkRun {
+    // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+    /// The evidence reference of this run: its arguments, with vitest and jest files made repo-relative (the member alone when it ran whole).
+    pub fn reference(&self) -> String {
+        if !matches!(self.framework, Framework::Vitest | Framework::Jest) || self.member.is_empty()
+        {
+            return join_args(&self.args);
+        }
+        if self.args.is_empty() {
+            return self.member.clone();
+        }
+        let files: Vec<String> = self
+            .args
+            .iter()
+            .map(|a| format!("{}/{a}", self.member))
+            .collect();
+        join_args(&files)
+    }
     /// The evidence provider that records this run.
     pub const fn provider(&self) -> Provider {
         match self.framework {
             Framework::Nextest => Provider::Nextest,
             Framework::Pytest => Provider::Pytest,
+            // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+            Framework::Vitest => Provider::Vitest,
+            Framework::Jest => Provider::Jest,
         }
     }
 }
@@ -163,7 +210,69 @@ fn has_python_tests(root: &Path) -> bool {
     }
 }
 
-/// Run `selected` (or the whole workspace with `opts.all`) with cargo nextest and pytest.
+// frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+/// One vitest or jest invocation: the runner, the member it runs in and the test files (empty runs the whole member).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct JsGroup {
+    /// Which runner.
+    pub framework: Framework,
+    /// Member directory relative to the work tree (empty at the root).
+    pub member: String,
+    /// Test files relative to the member, sorted and unique.
+    pub files: Vec<String>,
+}
+
+// frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+/// The vitest and jest invocations for `selected`: one per runner and member, running the files of the selected tests.
+///
+/// With `opts.all` every member holding a runner-found test file (`*.test.*`, `*.spec.*`) is run whole instead.
+/// A selected test runs through its file, so its siblings run too; the evidence names every test that executed.
+pub fn js_groups(selected: &[TestTarget], opts: &RunOptions) -> Vec<JsGroup> {
+    let mut groups: BTreeMap<(Framework, String), BTreeSet<String>> = BTreeMap::new();
+    if opts.all {
+        let mut members = JsMembers::new(&opts.root);
+        let walked = match walk(&opts.root, &WalkConfig::default()) {
+            Ok(w) => w.files,
+            Err(e) => {
+                tracing::warn!(error = %e, "could not walk for JavaScript tests; vitest and jest skipped under --all");
+                Vec::new()
+            }
+        };
+        for f in walked.iter().filter(|f| is_runner_test_file(&f.path)) {
+            let text = std::fs::read_to_string(opts.root.join(&f.path)).ok();
+            if let Some(m) = members.resolve(&f.path, text.as_deref()) {
+                groups.entry((m.framework, m.dir)).or_default();
+            }
+        }
+    } else {
+        for t in selected
+            .iter()
+            .filter(|t| matches!(t.framework, Framework::Vitest | Framework::Jest))
+        {
+            let file = t.test_path.split("::").next().unwrap_or_default();
+            let rel = if t.package.is_empty() {
+                file
+            } else {
+                file.strip_prefix(&format!("{}/", t.package))
+                    .unwrap_or(file)
+            };
+            groups
+                .entry((t.framework, t.package.clone()))
+                .or_default()
+                .insert(rel.to_owned());
+        }
+    }
+    groups
+        .into_iter()
+        .map(|((framework, member), files)| JsGroup {
+            framework,
+            member,
+            files: files.into_iter().collect(),
+        })
+        .collect()
+}
+
+/// Run `selected` (or the whole workspace with `opts.all`) with cargo nextest, pytest, vitest and jest.
 ///
 /// A runner runs only when it has selected tests (or, with `opts.all`, when the work
 /// tree has tests for it); nextest runs first.
@@ -183,6 +292,7 @@ pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Resul
         let capture = run_nextest(runner, &opts.root, &nextest, &opts.profile, opts.timeout)?;
         report.runs.push(FrameworkRun {
             framework: Framework::Nextest,
+            member: String::new(),
             args: nextest,
             capture,
         });
@@ -199,7 +309,33 @@ pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Resul
         )?;
         report.runs.push(FrameworkRun {
             framework: Framework::Pytest,
+            member: String::new(),
             args: pytest,
+            capture,
+        });
+    }
+    for group in js_groups(selected, opts) {
+        tracing::info!(framework = ?group.framework, member = group.member, files = group.files.len(), "running JavaScript tests");
+        let provider = match group.framework {
+            Framework::Jest => Provider::Jest,
+            _ => Provider::Vitest,
+        };
+        let capture = run_js_tests(
+            runner,
+            &JsRun {
+                provider,
+                allowed: &opts.allowed_tools,
+                node: &opts.node,
+                root: &opts.root,
+                member: &group.member,
+                args: &group.files,
+                timeout: opts.timeout,
+            },
+        )?;
+        report.runs.push(FrameworkRun {
+            framework: group.framework,
+            member: group.member,
+            args: group.files,
             capture,
         });
     }
@@ -259,6 +395,7 @@ mod tests {
         let one = |framework, passed, code, test: &str| FrameworkRun {
             framework,
             args: Vec::new(),
+            member: String::new(),
             capture: Capture {
                 exit_code: Some(code),
                 passed,

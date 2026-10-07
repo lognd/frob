@@ -169,7 +169,19 @@ A test item is a `describe`, `suite`, `it`, `test` or `test.describe` call (modi
 `fixme`) with a literal title and a function argument, when the name is imported from vitest,
 `@jest/globals`, `@playwright/test`, `bun:test` or `node:test`, or the file is a test file (`*.test.*`,
 `*.spec.*`, under `__tests__`, `tests`, `e2e`); `gob_symbols::test_items` lists them (framework `globals` when
-not imported). Test items are not units yet, so COV001 does not select them.
+not imported).
+
+`frob test` runs TypeScript tests (~RNQ92ZK). A runner call is a unit (`test$<title>`, `suite$<title>`), and a
+selected one maps to the test file's member (the nearest `package.json`) and runner: vitest when the package lists
+`vitest`, has a `vitest.config.*` or the file imports `vitest`; jest likewise (`jest`, `@jest/globals`, `ts-jest`,
+`jest.config.*`). It runs `vitest run` or `jest --ci` in the member directory on the files of the selected tests
+(their siblings run too; `--all` runs each member whole) and reads the runner's JSON report. Evidence names every
+executed test as its unit (`src/a.test.ts::suite$math::test$adds`, `[dupN]` for a repeated title in a suite;
+two `describe` blocks of one title are not told apart; a dynamic title is recorded under its slug and maps to no unit). `node` or
+the runner missing is a refusal (`E-EVIDENCE-RUNNER-MISSING`), never a skip, and the runner must be listed in
+`[evidence] allowed_tools` (vitest and jest are by default). A member with neither runner evident (playwright,
+`node:test`) selects nothing and is logged. Tests that run real node tooling skip with a named message when
+`node` is absent unless `FROB_REQUIRE_NODE_TESTS` is set.
 
 ## CSS
 

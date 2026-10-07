@@ -1,4 +1,4 @@
-//! Evidence providers: `nextest`, `pytest`, `command` and `file`.
+//! Evidence providers: `nextest`, `pytest`, `vitest`, `jest`, `command` and `file`.
 //!
 //! Each provider turns one measurement into a [`Capture`] (or a hashed file),
 //! and [`build_record`] turns that into an [`EvidenceRecord`]: the transcript is
@@ -6,6 +6,7 @@
 //! the blob store. Processes only ever run through `gob-exec` with a bounded
 //! timeout.
 
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
@@ -488,6 +489,226 @@ pub fn pytest_matched_no_tests(cap: &Capture) -> bool {
     cap.tests.is_empty() && cap.exit_code == Some(5)
 }
 
+// frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+/// The program a JavaScript test runner needs on `PATH` before any runner starts.
+pub const NODE_PROGRAM: &str = "node";
+
+// frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+/// The portable repo-relative name of `file` from a runner report, made relative to `cwd` and prefixed with `member`.
+fn js_rel_path(file: &str, cwd: &Path, member: &str) -> String {
+    let rel = Path::new(file)
+        .strip_prefix(cwd)
+        .map_or_else(|_| file.to_owned(), |r| r.to_string_lossy().into_owned());
+    let rel = portable_file(&rel);
+    if member.is_empty() {
+        rel
+    } else {
+        format!("{member}/{rel}")
+    }
+}
+
+// frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+/// The tests in a vitest or jest JSON report (`testResults[].assertionResults[]`, the same shape for both runners).
+///
+/// A test is named `<file>::suite$<slug>::test$<slug>`: the file made relative to `cwd` and prefixed with
+/// `member`, then the unit names the symbol graph gives that test (`gob_symbols::test_unit_name`), so evidence
+/// names map back to test units. A repeated title in one suite chain gets `[dupN]` like the unit does; two
+/// `describe` blocks of the same title are not told apart. `passed` and `failed` count as executed, `pending`,
+/// `skipped`, `todo` and `disabled` do not; a file that failed to load (no assertions, failed status) is
+/// recorded as a failed test named by its path.
+pub fn parse_js_json(json: &str, cwd: &Path, member: &str) -> Parsed {
+    let mut parsed = Parsed::default();
+    let Ok(doc) = serde_json::from_str::<serde_json::Value>(json) else {
+        tracing::warn!("test runner JSON report is unreadable; no tests recorded");
+        return parsed;
+    };
+    let files = doc["testResults"].as_array().map_or(&[][..], Vec::as_slice);
+    for file in files {
+        let rel = js_rel_path(file["name"].as_str().unwrap_or_default(), cwd, member);
+        let cases = file["assertionResults"]
+            .as_array()
+            .map_or(&[][..], Vec::as_slice);
+        if cases.is_empty() && file["status"].as_str() == Some("failed") {
+            parsed.note(&rel, true);
+            continue;
+        }
+        let mut seen: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+        for case in cases {
+            let status = case["status"].as_str().unwrap_or_default();
+            if !matches!(status, "passed" | "failed") {
+                continue;
+            }
+            let mut id = rel.clone();
+            for suite in case["ancestorTitles"].as_array().into_iter().flatten() {
+                id.push_str("::");
+                id.push_str(&gob_symbols::test_unit_name(
+                    "suite",
+                    suite.as_str().unwrap_or_default(),
+                ));
+            }
+            id.push_str("::");
+            id.push_str(&gob_symbols::test_unit_name(
+                "case",
+                case["title"].as_str().unwrap_or_default(),
+            ));
+            let count = seen.entry(id.clone()).or_default();
+            *count += 1;
+            if *count > 1 {
+                let _ = write!(id, "[dup{count}]");
+            }
+            parsed.note(&id, status == "failed");
+        }
+    }
+    parsed
+}
+
+// frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+/// The runner binary `name`: `node_modules/.bin/<name>` in `cwd` or an ancestor up to `root`, else `name` on `PATH`.
+fn find_js_runner(root: &Path, cwd: &Path, name: &str) -> Option<PathBuf> {
+    for dir in cwd.ancestors() {
+        let bin = dir.join("node_modules").join(".bin");
+        let candidates = [bin.join(name), bin.join(format!("{name}.cmd"))];
+        if let Some(hit) = candidates.into_iter().find(|c| c.is_file()) {
+            return Some(hit);
+        }
+        if dir == root {
+            break;
+        }
+    }
+    which::which(name).ok()
+}
+
+// frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+/// What one vitest or jest run needs.
+#[derive(Debug, Clone, Copy)]
+pub struct JsRun<'a> {
+    /// [`Provider::Vitest`] or [`Provider::Jest`].
+    pub provider: Provider,
+    /// `[evidence] allowed_tools`; the runner must be listed.
+    pub allowed: &'a [String],
+    /// The program the runner needs on `PATH` ([`NODE_PROGRAM`]).
+    pub node: &'a str,
+    /// The work tree root.
+    pub root: &'a Path,
+    /// The workspace member directory relative to `root` (empty at the root); the runner runs there.
+    pub member: &'a str,
+    /// Runner arguments after the fixed ones (test files relative to the member); empty runs everything.
+    pub args: &'a [String],
+    /// Wall-clock limit for the runner process.
+    pub timeout: Duration,
+}
+
+// frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+/// Run vitest or jest (`provider`) on `args` in `root/member` and capture the verdict and executed tests from its JSON report.
+///
+/// The runner must be in `allowed` (`[evidence] allowed_tools`). `node` names the program the runner needs
+/// ([`NODE_PROGRAM`]); an absent `node` or an absent runner (neither in `node_modules/.bin` nor on `PATH`) is a
+/// refusal, never a skip. An empty `args` runs every test of the member. Vitest runs as `vitest run`, jest with `--ci`.
+///
+/// # Errors
+///
+/// [`EvidenceError::ToolNotAllowed`] when the runner is not allowlisted, [`EvidenceError::RunnerMissing`] when
+/// `node` or the runner is absent, [`EvidenceError::BadReference`] when `provider` is not vitest or jest,
+/// [`EvidenceError::Exec`] when the runner cannot start.
+pub fn run_js_tests(runner: &Runner, job: &JsRun<'_>) -> Result<Capture> {
+    let JsRun {
+        provider,
+        allowed,
+        node,
+        root,
+        member,
+        args,
+        timeout,
+    } = *job;
+    let tool = match provider {
+        Provider::Vitest | Provider::Jest => provider.as_str(),
+        other => {
+            return Err(EvidenceError::BadReference(format!(
+                "`{}` is not a JavaScript test runner",
+                other.as_str()
+            )));
+        }
+    };
+    if !allowed.iter().any(|a| a == tool) {
+        tracing::warn!(
+            tool,
+            "JavaScript test evidence refused: tool not allowlisted"
+        );
+        return Err(EvidenceError::ToolNotAllowed {
+            tool: tool.to_owned(),
+        });
+    }
+    let missing = |what: &str| {
+        tracing::warn!(
+            missing = what,
+            runner = tool,
+            "JavaScript test run refused: tool missing"
+        );
+        EvidenceError::RunnerMissing {
+            missing: what.to_owned(),
+            runner: tool.to_owned(),
+        }
+    };
+    if which::which(node).is_err() {
+        return Err(missing(node));
+    }
+    let cwd = root.join(member);
+    let Some(path) = find_js_runner(root, &cwd, tool) else {
+        return Err(missing(tool));
+    };
+    let report = std::env::temp_dir().join(format!(
+        "frob-{tool}-{}-{}.json",
+        std::process::id(),
+        JUNIT_SEQ.fetch_add(1, Ordering::Relaxed)
+    ));
+    let mut full: Vec<String> = if provider == Provider::Vitest {
+        vec![
+            "run".to_owned(),
+            "--reporter=default".to_owned(),
+            "--reporter=json".to_owned(),
+            format!("--outputFile.json={}", report.display()),
+        ]
+    } else {
+        vec![
+            "--ci".to_owned(),
+            "--json".to_owned(),
+            format!("--outputFile={}", report.display()),
+        ]
+    };
+    full.extend(args.iter().cloned());
+    let out = runner.run(&spec(Program::Hook { path }, full, &cwd, timeout));
+    let json = std::fs::read_to_string(&report).unwrap_or_default();
+    if report.exists()
+        && let Err(e) = std::fs::remove_file(&report)
+    {
+        tracing::warn!(path = %report.display(), error = %e, "could not remove the JSON report");
+    }
+    let out = out?;
+    let seen = parse_js_json(&json, &cwd, member);
+    let mut transcript = out.stdout;
+    transcript.push_str(&out.stderr);
+    let (exit_code, measured) = exit_of(out.status);
+    let passed = exit_code == Some(0) && seen.failed.is_empty();
+    tracing::info!(tool, ?exit_code, passed, tests = seen.tests.len(), failed = ?seen.failed, "JavaScript tests captured");
+    Ok(Capture {
+        exit_code,
+        passed,
+        measured,
+        tests: seen.tests,
+        failed_tests: seen.failed,
+        transcript,
+    })
+}
+
+// frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+/// True when a vitest or jest run found no test (nothing executed and the runner said so), which is no measurement rather than a failure.
+pub fn js_matched_no_tests(cap: &Capture) -> bool {
+    cap.tests.is_empty()
+        && cap.failed_tests.is_empty()
+        && (cap.transcript.contains("No test files found")
+            || cap.transcript.contains("No tests found"))
+}
+
 /// Run an allowlisted tool (`argv[0]` must be in `allowed`) and capture exit code and transcript.
 ///
 /// # Errors
@@ -653,11 +874,15 @@ pub fn capture(
         reference,
         "capturing evidence"
     );
-    match provider {
-        Provider::File => hash_file(&ws.root, reference, accepts, ws.ledger.clock().now()),
-        Provider::Attestation => Err(EvidenceError::BadReference(
-            "an attestation is made with --statement through attestation::attest, never captured from a reference".to_owned(),
-        )),
+    let cap = match provider {
+        Provider::File => {
+            return hash_file(&ws.root, reference, accepts, ws.ledger.clock().now());
+        }
+        Provider::Attestation => {
+            return Err(EvidenceError::BadReference(
+                "an attestation is made with --statement through attestation::attest, never captured from a reference".to_owned(),
+            ));
+        }
         Provider::Nextest => {
             let args = split_args(reference)?;
             let cap = run_nextest(
@@ -667,24 +892,12 @@ pub fn capture(
                 &ws.evidence.nextest_profile,
                 ws.timeout(),
             )?;
-            if matched_no_tests(&cap) {
-                tracing::warn!(
-                    filter = reference,
-                    "nextest filter matched no tests; refusing to record"
-                );
-                return Err(EvidenceError::NoTestsMatched {
-                    filter: reference.to_owned(),
-                });
-            }
-            build_record(
-                &ws.store,
-                &ws.scrub(),
-                provider,
+            refuse_empty(
+                matched_no_tests(&cap),
+                "nextest filter matched no tests",
                 reference,
-                &cap,
-                accepts,
-                ws.ledger.clock().now(),
-            )
+            )?;
+            cap
         }
         Provider::Pytest => {
             let args = split_args(reference)?;
@@ -695,45 +908,66 @@ pub fn capture(
                 &args,
                 ws.timeout(),
             )?;
-            if pytest_matched_no_tests(&cap) {
-                tracing::warn!(
-                    filter = reference,
-                    "pytest collected no tests; refusing to record"
-                );
-                return Err(EvidenceError::NoTestsMatched {
-                    filter: reference.to_owned(),
-                });
-            }
-            build_record(
-                &ws.store,
-                &ws.scrub(),
-                provider,
+            refuse_empty(
+                pytest_matched_no_tests(&cap),
+                "pytest collected no tests",
                 reference,
-                &cap,
-                accepts,
-                ws.ledger.clock().now(),
-            )
+            )?;
+            cap
+        }
+        // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+        Provider::Vitest | Provider::Jest => {
+            let args = split_args(reference)?;
+            let cap = run_js_tests(
+                &ws.runner(),
+                &JsRun {
+                    provider,
+                    allowed: &ws.evidence.allowed_tools,
+                    node: NODE_PROGRAM,
+                    root: &ws.root,
+                    member: "",
+                    args: &args,
+                    timeout: ws.timeout(),
+                },
+            )?;
+            refuse_empty(
+                js_matched_no_tests(&cap),
+                "JavaScript runner found no tests",
+                reference,
+            )?;
+            cap
         }
         Provider::Command => {
             let argv = split_args(reference)?;
-            let cap = run_command(
+            run_command(
                 &ws.runner(),
                 &ws.evidence.allowed_tools,
                 &ws.root,
                 &argv,
                 ws.timeout(),
-            )?;
-            build_record(
-                &ws.store,
-                &ws.scrub(),
-                provider,
-                reference,
-                &cap,
-                accepts,
-                ws.ledger.clock().now(),
-            )
+            )?
         }
+    };
+    build_record(
+        &ws.store,
+        &ws.scrub(),
+        provider,
+        reference,
+        &cap,
+        accepts,
+        ws.ledger.clock().now(),
+    )
+}
+
+/// Refuse to record a run that matched no test (`empty`): there is nothing to measure.
+fn refuse_empty(empty: bool, what: &str, reference: &str) -> Result<()> {
+    if empty {
+        tracing::warn!(filter = reference, "{what}; refusing to record");
+        return Err(EvidenceError::NoTestsMatched {
+            filter: reference.to_owned(),
+        });
     }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -904,5 +1138,131 @@ mod tests {
         };
         assert!(pytest_matched_no_tests(&cap(5)));
         assert!(!pytest_matched_no_tests(&cap(1)));
+    }
+    // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+    #[test]
+    fn a_js_report_names_tests_as_the_units_they_came_from() {
+        // frob:tests crates/frob-evidence/src/provider.rs::parse_js_json
+        let json = r#"{"testResults":[
+          {"name":"/w/apps/a/src/x.test.ts","status":"failed","assertionResults":[
+            {"ancestorTitles":["user api"],"title":"fetches","status":"passed"},
+            {"ancestorTitles":["user api"],"title":"fetches","status":"failed"},
+            {"ancestorTitles":[],"title":"is skipped","status":"skipped"},
+            {"ancestorTitles":[],"title":"todo","status":"todo"}]},
+          {"name":"/w/apps/a/src/broken.test.ts","status":"failed","assertionResults":[]}]}"#;
+        let got = parse_js_json(json, Path::new("/w/apps/a"), "apps/a");
+        assert_eq!(
+            got.tests,
+            [
+                "apps/a/src/x.test.ts::suite$user_api::test$fetches",
+                "apps/a/src/x.test.ts::suite$user_api::test$fetches[dup2]",
+                "apps/a/src/broken.test.ts"
+            ]
+        );
+        assert_eq!(
+            got.failed,
+            [
+                "apps/a/src/x.test.ts::suite$user_api::test$fetches[dup2]",
+                "apps/a/src/broken.test.ts"
+            ]
+        );
+        assert!(
+            parse_js_json("not json", Path::new("/w"), "")
+                .tests
+                .is_empty()
+        );
+    }
+
+    // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+    #[test]
+    fn js_runs_are_refused_with_a_named_reason_never_skipped() {
+        // frob:tests crates/frob-evidence/src/provider.rs::run_js_tests
+        let runner = Runner::new(gob_exec::Limits { jobs: 1 });
+        let dir = tempfile::tempdir().unwrap();
+        let allowed = ["vitest".to_owned()];
+        let run = |provider, allowed: &[String], node: &str, root: &Path| {
+            run_js_tests(
+                &runner,
+                &JsRun {
+                    provider,
+                    allowed,
+                    node,
+                    root,
+                    member: "",
+                    args: &[],
+                    timeout: Duration::from_secs(5),
+                },
+            )
+        };
+        let err = run(Provider::Vitest, &[], NODE_PROGRAM, dir.path()).unwrap_err();
+        assert!(matches!(err, EvidenceError::ToolNotAllowed { .. }), "{err}");
+        let err = run(
+            Provider::Vitest,
+            &allowed,
+            "frob-no-such-node-xyz",
+            dir.path(),
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&err, EvidenceError::RunnerMissing { missing, runner } if missing == "frob-no-such-node-xyz" && runner == "vitest"),
+            "{err}"
+        );
+        assert!(
+            err.to_string().contains("E-EVIDENCE-RUNNER-MISSING"),
+            "{err}"
+        );
+        // The runner lookup finds a bin in an ancestor's node_modules and names a missing one as None.
+        assert_eq!(
+            find_js_runner(dir.path(), dir.path(), "frob-no-such-runner-xyz"),
+            None
+        );
+        let bin = dir.path().join("node_modules/.bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        std::fs::write(bin.join("vitest"), "").unwrap();
+        let deep = dir.path().join("apps/a");
+        assert_eq!(
+            find_js_runner(dir.path(), &deep, "vitest"),
+            Some(bin.join("vitest"))
+        );
+        let err = run(Provider::Command, &allowed, "sh", dir.path()).unwrap_err();
+        assert!(matches!(err, EvidenceError::BadReference(_)), "{err}");
+    }
+
+    // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+    #[cfg(unix)]
+    #[test]
+    fn a_js_runner_in_the_members_node_modules_is_run_and_its_report_parsed() {
+        // frob:tests crates/frob-evidence/src/provider.rs::run_js_tests
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let bin = dir.path().join("apps/a/node_modules/.bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        let script = bin.join("jest");
+        std::fs::write(
+            &script,
+            "#!/bin/sh\nfor a in \"$@\"; do case \"$a\" in --outputFile=*) out=\"${a#--outputFile=}\";; esac; done\nprintf '{\"testResults\":[{\"name\":\"x.test.ts\",\"status\":\"passed\",\"assertionResults\":[{\"ancestorTitles\":[],\"title\":\"adds\",\"status\":\"passed\"}]}]}' > \"$out\"\necho \"ran $*\"\n",
+        )
+        .unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let runner = Runner::new(gob_exec::Limits { jobs: 1 });
+        let allowed = ["jest".to_owned()];
+        let cap = run_js_tests(
+            &runner,
+            &JsRun {
+                provider: Provider::Jest,
+                allowed: &allowed,
+                node: "sh",
+                root: dir.path(),
+                member: "apps/a",
+                args: &["x.test.ts".to_owned()],
+                timeout: Duration::from_secs(30),
+            },
+        )
+        .unwrap();
+        assert!(cap.passed, "{cap:?}");
+        assert_eq!(cap.tests, ["apps/a/x.test.ts::test$adds"]);
+        assert!(cap.transcript.contains("--ci --json"), "{}", cap.transcript);
+        assert!(cap.transcript.contains("x.test.ts"), "{}", cap.transcript);
+        assert!(!js_matched_no_tests(&cap));
     }
 }

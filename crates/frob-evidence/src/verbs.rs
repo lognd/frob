@@ -238,14 +238,14 @@ pub fn capture_args(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
             .required(true)
             .value_name("PROVIDER")
             .value_parser(PossibleValuesParser::new(Provider::NAMES))
-            .help("Measurer: nextest, pytest, command, file or attestation (a person's statement; needs a terminal and a listed attester)"),
+            .help("Measurer: nextest, pytest, vitest, jest, command, file or attestation (a person's statement; needs a terminal and a listed attester)"),
     )
     .arg(
         Arg::new("ref")
             .long("ref")
             .value_name("REF")
             .allow_hyphen_values(true)
-            .help("Nextest filter args, pytest arguments (node ids) or the command line (POSIX shell quoting, no shell run), or the file path (not for attestation)"),
+            .help("Nextest filter args, pytest arguments (node ids), vitest or jest arguments (test files) or the command line (POSIX shell quoting, no shell run), or the file path (not for attestation)"),
     )
     .arg(
         Arg::new("statement")

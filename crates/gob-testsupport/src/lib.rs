@@ -136,6 +136,36 @@ pub fn python_test_prerequisites(test: &str) -> bool {
     true
 }
 
+// frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+/// Environment variable that turns a missing Node.js prerequisite from a named skip into a failure.
+pub const REQUIRE_NODE_TESTS: &str = "FROB_REQUIRE_NODE_TESTS";
+
+// frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+/// Probe the prerequisites of a test that runs real JavaScript tools: each of `tools` (`node`, `vitest`, `jest`) must run `--version` from `PATH`.
+///
+/// Returns true when all run. When one is absent the test must return early: this prints
+/// `skipped: <tool> not on PATH (<test>)` naming it, and never passes silently, because
+/// setting [`REQUIRE_NODE_TESTS`] makes the absence a panic.
+///
+/// # Panics
+/// When a tool is absent and [`REQUIRE_NODE_TESTS`] is set.
+#[must_use]
+pub fn node_test_prerequisites(test: &str, tools: &[&str]) -> bool {
+    for tool in tools {
+        if tool_runs(tool, &[], None) {
+            continue;
+        }
+        let reason = format!("{tool} not on PATH ({test})");
+        assert!(
+            std::env::var_os(REQUIRE_NODE_TESTS).is_none(),
+            "{REQUIRE_NODE_TESTS} is set but {reason}"
+        );
+        eprintln!("skipped: {reason}");
+        return false;
+    }
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
