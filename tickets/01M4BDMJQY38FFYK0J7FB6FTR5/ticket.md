@@ -2,11 +2,11 @@
 id = "01M4BDMJQY38FFYK0J7FB6FTR5"
 title = "gob-check ui_product trybuild stderr depends on whether rust-src is installed"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-07T14:52:47Z"
-updated = "2026-10-07T14:52:47Z"
+updated = "2026-10-07T15:10:24Z"
 idempotency_key = "gob-check-ui-product-rust-src"
 labels = ["milestone:2"]
 scope = ["rust-toolchain.toml", "crates/gob-check/tests/ui_product/**"]
