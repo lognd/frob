@@ -111,7 +111,7 @@ fn prepare(
     let clock = here.ledger.clock().clone();
     let id = view.ticket.front.id;
     let handle = view.summary.handle.clone();
-    let lease = held_lease(leases, &here.ledger, view, id, &handle, cwd_root)?;
+    let lease = held_lease(&repo, leases, &here.ledger, view, id, &handle, cwd_root)?;
     let wt_path = lease.holder.worktree.clone();
     let primary = primary_root(&repo)?;
     check_worktree(&repo, cwd_root, &wt_path, &handle)?;
@@ -426,6 +426,7 @@ fn resolve(
 
 /// The live lease of an in-progress ticket held by this actor.
 fn held_lease(
+    repo: &Repo,
     leases: &LeaseStore,
     ledger: &Ledger,
     view: &TicketView,
@@ -444,7 +445,7 @@ fn held_lease(
     let actor = ledger.actor()?;
     let lease = match leases.live_lease(id)? {
         Some(l) => l,
-        None => reclaim_expired(leases, view, id, &actor, cwd_root).map_err(|e| {
+        None => reclaim_expired(repo, leases, view, id, &actor, cwd_root).map_err(|e| {
             not_leased(format!(
                 "{handle} has no live lease and it cannot be renewed: {e}"
             ))
@@ -459,11 +460,30 @@ fn held_lease(
     Ok(lease)
 }
 
+/// The linked worktree checked out on the ticket's own branch (`ticket/<handle>`), if one exists.
+///
+/// An expired lease file is pruned by any later lease verb, so the holder's
+/// worktree is recovered from the branch rather than from the cwd (which is
+/// the primary when landing from the root).
+fn ticket_worktree(repo: &Repo, view: &TicketView) -> Option<PathBuf> {
+    let branch = format!("ticket/{}", view.summary.handle.trim_start_matches('~'));
+    let found = repo
+        .list_worktrees()
+        .ok()?
+        .into_iter()
+        .skip(1)
+        .find(|w| w.branch.as_deref() == Some(branch.as_str()))
+        .map(|w| w.path);
+    tracing::debug!(%branch, found = ?found, "land: ticket branch worktree lookup");
+    found
+}
+
 /// Renew a lease that expired during a long run, provided nothing else took the ticket or its scope since.
 ///
 /// The old holder (this actor's recorded worktree, else the current one) re-takes
 /// the scope under the lease lock; an overlapping or foreign live lease refuses.
 fn reclaim_expired(
+    repo: &Repo,
     leases: &LeaseStore,
     view: &TicketView,
     id: TicketId,
@@ -476,7 +496,7 @@ fn reclaim_expired(
         Some(l) => return Err(frob_lease::LeaseError::NotHeld { ticket: l.ticket }),
         None => frob_lease::Holder {
             actor: actor.to_owned(),
-            worktree: cwd_root.to_path_buf(),
+            worktree: ticket_worktree(repo, view).unwrap_or_else(|| cwd_root.to_path_buf()),
         },
     };
     tracing::info!(ticket = %id, %holder, "land: lease expired, trying to renew");

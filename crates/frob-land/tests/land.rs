@@ -1444,3 +1444,25 @@ fn an_expired_lease_is_not_renewed_when_another_holder_took_an_overlap() {
     );
     drop(thief);
 }
+
+// frob:ticket 01M4BH0C9D5X79MFHTAYBHKQGE
+// frob:tests crates/frob-land/src/land.rs::ticket_worktree
+#[test]
+fn a_pruned_expired_lease_is_renewed_for_the_ticket_worktree_when_landing_from_the_primary() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+    let later: Arc<dyn gob_time::Clock> = Arc::new(LaterClock);
+    // Another lease verb prunes the expired file, as happens while the agent is down.
+    fx.leases().with_clock(later.clone()).list().expect("prune");
+    assert!(
+        fx.leases().recorded_lease(s.id).expect("read").is_none(),
+        "the expired lease record is gone"
+    );
+    let out = land(&fx.root, &Fixture::opts(&s), &later).expect("land from the primary");
+    assert!(out.closed, "renewed for the ticket worktree, then landed");
+}

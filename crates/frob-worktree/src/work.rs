@@ -174,17 +174,16 @@ impl Workspace<'_> {
         let scope = view.ticket.front.scope.clone();
         let actor = self.ledger.actor()?;
         let existing = self.leases.live_lease(id)?;
-        let (path, branch) = self.locate(plan, &handle, existing.as_ref(), &actor);
+        let resumed =
+            self.resumed_worktree(plan, view.summary.category, &handle, existing.is_some());
+        let (path, branch) =
+            self.locate(plan, &handle, existing.as_ref(), &actor, resumed.as_deref());
         let holder = Holder {
             actor,
             worktree: path.clone(),
         };
-        vet(
-            view.summary.ty,
-            view.summary.category,
-            &handle,
-            existing.is_some(),
-        )?;
+        let leased = existing.is_some() || resumed.is_some();
+        vet(view.summary.ty, view.summary.category, &handle, leased)?;
         // An in-progress ticket with a live lease already holds its slot (re-entry, steal).
         let needs_slot = !(view.summary.category == Category::InProgress && existing.is_some());
         let taking = crate::wip::Taking {
@@ -267,6 +266,30 @@ impl Workspace<'_> {
             stolen_from,
             warnings,
         })
+    }
+
+    /// The current checkout when it is this ticket's own linked worktree and the ticket is in progress with no live lease.
+    ///
+    /// That is a resumed run whose lease expired: `work` re-leases it here (the
+    /// inferred heartbeat of D105). Acquiring still refuses when another holder
+    /// leased an overlapping scope since, so a steal is never renewed across.
+    fn resumed_worktree(
+        &self,
+        plan: &Plan,
+        category: Category,
+        handle: &str,
+        leased: bool,
+    ) -> Option<PathBuf> {
+        if leased || category != Category::InProgress || !matches!(plan, Plan::Work { .. }) {
+            return None;
+        }
+        let repo = self.ledger.repo();
+        let here = repo.work_dir()?;
+        let branch = format!("ticket/{}", handle.trim_start_matches('~'));
+        let own =
+            repo.is_linked_worktree() && repo.current_branch().ok()?.as_deref() == Some(&branch);
+        tracing::debug!(handle, here = %here.display(), own, "work: resumed worktree check");
+        own.then(|| clean(here))
     }
 
     /// Acquire the lease (or steal it): the lease, whether it is new, and the previous holder when stolen.
@@ -370,6 +393,7 @@ impl Workspace<'_> {
         handle: &str,
         existing: Option<&Lease>,
         actor: &str,
+        resumed: Option<&Path>,
     ) -> (PathBuf, Option<String>) {
         match plan {
             Plan::Start { cwd } => (cwd.clone(), None),
@@ -378,6 +402,7 @@ impl Workspace<'_> {
                 let path = match override_path {
                     Some(p) if p.is_absolute() => clean(p),
                     Some(p) => clean(&self.cwd().join(p)),
+                    None if let Some(here) = resumed => clean(here),
                     None => {
                         let computed = self.default_path(name);
                         existing
