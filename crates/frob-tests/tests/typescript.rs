@@ -2,10 +2,15 @@
 
 use std::path::Path;
 
+#[cfg(unix)]
 use frob_evidence::events;
+#[cfg(unix)]
 use frob_evidence::record::Provider;
+#[cfg(unix)]
 use frob_ledger::model::TicketType;
+#[cfg(unix)]
 use frob_ledger::ops::NewTicket;
+#[cfg(unix)]
 use frob_ledger::{Ledger, LedgerConfig};
 use frob_tests::{
     Framework, RunOptions, TestTarget, TestsError, build_repo_graph, run, select_tests, touched_set,
