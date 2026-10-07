@@ -30,6 +30,10 @@ struct CommandArgs {
     #[darling(default)]
     dry_run: bool,
     exits: PathList,
+    #[darling(default)]
+    deprecated: Option<String>,
+    #[darling(default)]
+    markdown: bool,
 }
 
 /// True for lowercase words separated by single spaces (`config show`).
@@ -78,6 +82,23 @@ pub(crate) fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
             "`exits(...)` must name at least one exit code",
         ));
     }
+    if let Some(form) = &args.deprecated {
+        let first = form.split(' ').next().unwrap_or_default();
+        if !valid_verb(first) || form.contains('`') || form.contains("  ") || form.ends_with(' ') {
+            errors.push(darling::Error::custom(format!(
+                "invalid deprecated form `{form}`; expected a registered verb followed by flags, e.g. `ticket show --format md`"
+            )));
+        } else if form == &args.verb || form.starts_with(&format!("{} ", args.verb)) {
+            errors.push(darling::Error::custom(
+                "a deprecated alias cannot name itself as its replacement",
+            ));
+        }
+        if args.markdown {
+            errors.push(darling::Error::custom(
+                "a deprecated alias cannot declare `markdown`; the replacement owns the markdown view",
+            ));
+        }
+    }
     let summary = doc_lines(&args.attrs)
         .into_iter()
         .find(|l| !l.trim().is_empty())
@@ -95,8 +116,14 @@ pub(crate) fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
         product,
         idempotent,
         dry_run,
+        markdown,
+        deprecated,
         ..
     } = args;
+    let deprecated = deprecated.map_or_else(
+        || quote!(::core::option::Option::None),
+        |form| quote!(::core::option::Option::Some(#form)),
+    );
     Ok(quote! {
         impl ::gob_cli::Described for #ident {
             const META: ::gob_cli::CommandMeta = ::gob_cli::CommandMeta {
@@ -107,6 +134,8 @@ pub(crate) fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
                 exits: &[#(::gob_cli::ExitCode::#exits),*],
                 summary: #summary,
                 module: ::core::module_path!(),
+                deprecated: #deprecated,
+                markdown: #markdown,
             };
         }
 

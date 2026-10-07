@@ -36,6 +36,8 @@ impl<P: Product> Described for Check<P> {
         ],
         summary: P::CHECK_SUMMARY,
         module: module_path!(),
+        deprecated: None,
+        markdown: false,
     };
 }
 

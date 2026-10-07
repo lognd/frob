@@ -19,19 +19,19 @@ pub struct CommandMeta {
     pub summary: &'static str,
     /// Module path of the declaring type.
     pub module: &'static str,
+    /// The replacement form when this verb is a deprecated alias (`#[command(deprecated = "...")]`).
+    ///
+    /// It stays registered (output unchanged) but is hidden from help and the generated
+    /// reference, and prints one deprecation line on stderr (cli.md section 4.0, D104).
+    pub deprecated: Option<&'static str>,
+    /// True when the verb has a markdown view (`#[command(markdown)]`); `--format md` is refused elsewhere.
+    pub markdown: bool,
 }
-
-/// A verb whose summary starts with this is a deprecated alias of the form named in the first backticks.
-///
-/// It stays registered (output unchanged) but is hidden from help and the generated
-/// reference, and prints one deprecation line on stderr (cli.md section 4.0, D104).
-pub const DEPRECATED_PREFIX: &str = "Deprecated alias of `";
 
 impl CommandMeta {
     /// The replacement form (`ticket show --format md`) when this verb is a deprecated alias.
     pub fn deprecated_form(&self) -> Option<&'static str> {
-        let rest = self.summary.strip_prefix(DEPRECATED_PREFIX)?;
-        rest.split_once('`').map(|(form, _)| form)
+        self.deprecated
     }
 
     /// The one-line stderr note for a deprecated alias of `product`, or `None` for a live verb.
@@ -43,6 +43,35 @@ impl CommandMeta {
             )
         })
     }
+
+    /// True when the replacement form of this deprecated alias starts with a live registered verb of the same product.
+    fn deprecation_resolves(&self) -> bool {
+        let Some(form) = self.deprecated else {
+            return true;
+        };
+        all_commands().any(|m| {
+            m.product == self.product
+                && m.deprecated.is_none()
+                && form
+                    .strip_prefix(m.verb)
+                    .is_some_and(|rest| rest.is_empty() || rest.starts_with(' '))
+        })
+    }
+}
+
+/// Deprecated aliases whose replacement form names no live registered verb (a registry test asserts this is empty).
+pub fn dangling_deprecations() -> Vec<&'static CommandMeta> {
+    all_commands()
+        .filter(|m| !m.deprecation_resolves())
+        .collect()
+}
+
+/// Verbs with a markdown view (`--format md`), sorted, live verbs only.
+pub fn markdown_verbs(product: &str) -> Vec<&'static str> {
+    all_commands()
+        .filter(|m| m.product == product && m.markdown && m.deprecated.is_none())
+        .map(|m| m.verb)
+        .collect()
 }
 
 /// Implemented by `#[derive(Command)]`: the verb's static metadata.
@@ -77,21 +106,23 @@ pub fn all_commands() -> impl Iterator<Item = &'static CommandMeta> {
 mod tests {
     use super::*;
 
-    const fn meta(summary: &'static str) -> CommandMeta {
+    const fn meta(deprecated: Option<&'static str>) -> CommandMeta {
         CommandMeta {
             verb: "ticket brief",
             product: "frob",
             idempotent: true,
             dry_run: false,
             exits: &[ExitCode::Ok],
-            summary,
+            summary: "s",
             module: "m",
+            deprecated,
+            markdown: false,
         }
     }
 
     #[test]
     fn a_deprecated_alias_names_its_replacement() {
-        let m = meta("Deprecated alias of `ticket show --format md`, removed next minor.");
+        let m = meta(Some("ticket show --format md"));
         assert_eq!(m.deprecated_form(), Some("ticket show --format md"));
         let note = m.deprecation_note("frob").expect("note");
         assert!(note.contains("`ticket brief` is deprecated"), "{note}");
@@ -103,6 +134,6 @@ mod tests {
 
     #[test]
     fn a_live_verb_has_no_note() {
-        assert_eq!(meta("Show a ticket.").deprecation_note("frob"), None);
+        assert_eq!(meta(None).deprecation_note("frob"), None);
     }
 }

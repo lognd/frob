@@ -180,3 +180,41 @@ fn aliases_are_hidden_from_help() {
         "{triage}"
     );
 }
+
+// frob:ticket 01M49VYK2H6WXWYNRVX0WQ67AJ
+#[test]
+fn every_deprecated_alias_names_a_registered_verb() {
+    let dangling: Vec<String> = gob_cli::dangling_deprecations()
+        .iter()
+        .map(|m| format!("`{}` -> `{}`", m.verb, m.deprecated.unwrap_or_default()))
+        .collect();
+    assert!(
+        dangling.is_empty(),
+        "deprecated aliases with no registered target: {dangling:?}"
+    );
+    let aliases = gob_cli::all_commands()
+        .filter(|m| m.deprecated.is_some())
+        .count();
+    assert_eq!(
+        aliases, 4,
+        "the four D104 aliases are registered through the attribute"
+    );
+}
+
+// frob:ticket 01M49VYK2H6WXWYNRVX0WQ67AJ
+#[test]
+fn format_md_on_a_verb_without_a_markdown_view_names_the_supporting_verbs() {
+    let (dir, _id) = fixture();
+    let out = common::frob_command()
+        .current_dir(dir.path())
+        .args(["--format", "md", "ticket", "list"])
+        .output()
+        .expect("run frob");
+    assert_eq!(out.status.code(), Some(2));
+    let text = format!("{}{}", String::from_utf8_lossy(&out.stdout), stderr(&out));
+    assert!(
+        text.contains("`ticket list` has no markdown view"),
+        "{text}"
+    );
+    assert!(text.contains("ticket show"), "{text}");
+}
