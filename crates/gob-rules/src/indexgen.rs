@@ -407,7 +407,7 @@ mod tests {
         assert!(text.contains("pub mod cov001;"));
         assert!(text.contains("<cov002::Cov002 as gob_rules::RuleDecl>::DEF,"));
         assert!(text.contains("cov001::Cov001: gob_rules::FileRule<P>,"));
-        assert!(text.contains("gob_rules::BoundRule::repo(cov002::Cov002),"));
+        assert!(text.contains("rules.push(gob_rules::BoundRule::repo(cov002::Cov002));"));
         assert!(text.contains("fn rules_index_is_fresh()"));
         assert!(text.contains("renamed: &[],"));
         assert!(text.is_ascii());
