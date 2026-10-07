@@ -2,12 +2,12 @@
 id = "01M4957V84TB1V6TRPR2E4H9EG"
 title = "Load-sensitive tests break whole-workspace evidence on a busy host: frob-pm corpus, gob-ir deep stack, gob-macros trybuild"
 type = "bug"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T17:47:32Z"
-updated = "2026-10-06T23:50:35Z"
+updated = "2026-10-07T01:54:43Z"
 scope = [".config/nextest.toml", "crates/frob-pm/tests/**", "crates/gob-ir/tests/**", "crates/gob-macros/tests/**"]
 
 [[acceptance]]
