@@ -16,12 +16,17 @@
 //! graph) and run through `pytest <node id>...` via gob-exec; a pytest run needs
 //! `pytest` in `[evidence] allowed_tools`.
 //!
+//! TypeScript tests are selected as units (`test$<title>`, `suite$<title>`) and run by file through
+//! `vitest run` or `jest` in the member's directory ([`node`]); a missing `node` or runner is a
+//! refusal, never a skip, and their names in evidence are the units' node ids.
+//!
 //! What counts as a test is a heuristic documented in [`catalog`]; `TEST001`
 //! ([`test001`]) flags `frob:tests` directives that name nothing.
 
 pub mod catalog;
 pub mod error;
 pub mod lease;
+pub mod node;
 pub mod reach;
 pub mod rule;
 pub mod run;
@@ -32,7 +37,9 @@ pub mod verb;
 pub use error::{Result, TestsError};
 pub use lease::lease_ticket;
 pub use rule::{Test001, test001, test001_with_sources};
-pub use run::{FrameworkRun, RunOptions, RunReport, nextest_args, pytest_args, run};
+pub use run::{
+    FrameworkRun, JsGroup, RunOptions, RunReport, js_groups, nextest_args, pytest_args, run,
+};
 pub use select::{Framework, TestTarget, select_tests};
 pub use touched::{TouchedSet, build_repo_graph, touched_set};
 

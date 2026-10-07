@@ -8,6 +8,7 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::catalog::{Packages, is_test_file, is_test_fn, test_name};
+use crate::node::{JsMember, JsMembers};
 use crate::reach::{Sources, name_callers};
 use crate::touched::TouchedSet;
 
@@ -20,6 +21,10 @@ pub enum Framework {
     Nextest,
     /// `pytest`: Python tests.
     Pytest,
+    /// `vitest run`: TypeScript tests of a member that uses vitest.
+    Vitest,
+    /// `jest`: TypeScript tests of a member that uses jest.
+    Jest,
 }
 
 /// One selected test: the runner, the owning package and the name the runner knows it by.
@@ -27,20 +32,23 @@ pub enum Framework {
 pub struct TestTarget {
     /// Which runner executes it.
     pub framework: Framework,
-    /// Cargo package name (`-p`); empty for pytest.
+    /// Cargo package name (`-p`); the member directory (empty at the root) for vitest and jest; empty for pytest.
     pub package: String,
-    /// The test's name inside its binary (`tests::doubles`, `integration_quad`), or its pytest node id (`tests/test_a.py::TestC::test_m`).
+    /// The test's name inside its binary (`tests::doubles`, `integration_quad`), its pytest node id (`tests/test_a.py::TestC::test_m`), or its vitest or jest node id (`src/a.test.ts::suite$s::test$t`).
     pub test_path: String,
     /// The test function's symref.
     pub symref: String,
 }
 
 impl TestTarget {
-    /// One plan line: `package test_path` for nextest, `pytest node_id` for pytest.
+    /// One plan line: `package test_path` for nextest, `pytest node_id` for pytest, `vitest node_id` or `jest node_id` for TypeScript.
     pub fn plan_line(&self) -> String {
         match self.framework {
             Framework::Nextest => format!("{} {}", self.package, self.test_path),
             Framework::Pytest => format!("pytest {}", self.test_path),
+            // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+            Framework::Vitest => format!("vitest {}", self.test_path),
+            Framework::Jest => format!("jest {}", self.test_path),
         }
     }
 }
@@ -93,6 +101,7 @@ pub fn select_tests(root: &Path, graph: &SymbolGraph, touched: &TouchedSet) -> V
         }
     }
     let mut packages = Packages::new(root);
+    let mut members = JsMembers::new(root);
     let mut out: BTreeSet<TestTarget> = BTreeSet::new();
     for symref in &reach {
         let Some(rec) = graph.get(symref) else {
@@ -106,8 +115,11 @@ pub fn select_tests(root: &Path, graph: &SymbolGraph, touched: &TouchedSet) -> V
             continue;
         }
         if gob_symbols::is_typescript_path(rec.symref.path()) {
-            // frob:ticket 01M4828JB2S4JZY2QRB97A7SXX
-            tracing::debug!(symref = %rec.symref, "TypeScript test selected by name; no runner target yet");
+            // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+            let text = sources.get(rec.symref.path());
+            if let Some(member) = members.resolve(rec.symref.path(), text) {
+                out.insert(js_target(rec, &member));
+            }
             continue;
         }
         let target = if gob_symbols::is_python_path(rec.symref.path()) {
@@ -127,6 +139,27 @@ pub fn select_tests(root: &Path, graph: &SymbolGraph, touched: &TouchedSet) -> V
         "tests selected"
     );
     out.into_iter().collect()
+}
+
+// frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+/// The vitest or jest target of a TypeScript test unit: the file path then its unit names (`suite$s` then `test$t`), as `::` segments.
+fn js_target(rec: &SymbolRecord, member: &JsMember) -> TestTarget {
+    TestTarget {
+        framework: member.framework,
+        package: member.dir.clone(),
+        test_path: node_id(rec),
+        symref: rec.symref.to_string(),
+    }
+}
+
+/// The node id of a TypeScript test unit: `src/a.test.ts::suite$s::test$t`.
+pub(crate) fn node_id(rec: &SymbolRecord) -> String {
+    let mut node = rec.symref.path().to_owned();
+    for seg in rec.symref.segments() {
+        node.push_str("::");
+        node.push_str(seg);
+    }
+    node
 }
 
 // frob:ticket 01M43A5MA7GRAACT7E0M525Y1M

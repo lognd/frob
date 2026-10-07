@@ -239,6 +239,8 @@ impl Described for Check {
         ],
         summary: CHECK_SUMMARY,
         module: module_path!(),
+        deprecated: None,
+        markdown: false,
     };
 }
 

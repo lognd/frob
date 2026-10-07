@@ -1,0 +1,7 @@
+error: a deprecated alias cannot name itself as its replacement
+ --> tests/ui/command_deprecated_self.rs:4:10
+  |
+4 | #[derive(Command)]
+  |          ^^^^^^^
+  |
+  = note: this error originates in the derive macro `Command` (in Nightly builds, run with -Z macro-backtrace for more info)

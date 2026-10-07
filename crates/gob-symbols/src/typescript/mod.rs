@@ -262,8 +262,9 @@ pub(crate) const TEST_SUITE_PREFIX: &str = "suite$";
 /// Longest title slug kept in a test unit name.
 const MAX_TEST_NAME: usize = 80;
 
-/// The symref-safe unit name of a test item: role prefix then the title with unsafe characters as `_`.
-pub(crate) fn test_unit_name(role: &str, title: &str) -> String {
+// frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
+/// The symref-safe unit name of a test item (`suite` role, else a case): prefix then the title with unsafe characters as `_`; public so runners name executed tests as their units.
+pub fn test_unit_name(role: &str, title: &str) -> String {
     let prefix = if role == "suite" {
         TEST_SUITE_PREFIX
     } else {

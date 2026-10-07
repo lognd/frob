@@ -9,7 +9,7 @@ use serde::Serialize;
 
 use crate::error::TestsError;
 use crate::lease::lease_ticket;
-use crate::run::{RunOptions, RunReport, join_args, run};
+use crate::run::{RunOptions, RunReport, run};
 use crate::select::{TestTarget, select_tests};
 use crate::touched::{TouchedSet, build_repo_graph, touched_set};
 
@@ -108,7 +108,7 @@ fn record_runs(
                         &ws.store,
                         &ws.scrub(),
                         one.provider(),
-                        &join_args(&one.args),
+                        &one.reference(),
                         &one.capture,
                         &[],
                         ws.ledger.clock().now(),
@@ -206,13 +206,13 @@ impl Command for TestVerb {
             warnings.push("no tests reach the touched set; nothing was run".to_owned());
             return Ok(with_warnings(data, warnings));
         }
-        let opts = RunOptions {
-            root: ws.root.clone(),
-            timeout: ws.timeout(),
-            profile: ws.evidence.nextest_profile.clone(),
-            allowed_tools: ws.evidence.allowed_tools.clone(),
-            all: self.all,
-        };
+        let opts = RunOptions::new(
+            ws.root.clone(),
+            ws.timeout(),
+            ws.evidence.nextest_profile.clone(),
+            ws.evidence.allowed_tools.clone(),
+            self.all,
+        );
         let report = run(&ws.runner(), &data.selected, &opts).map_err(TestsError::into_cli)?;
         data.ran = true;
         data.passed = Some(report.passed());

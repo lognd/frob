@@ -132,7 +132,7 @@ impl Cli {
                 .value_parser(clap::value_parser!(FormatChoice))
                 .default_value("auto")
                 .global(true)
-                .help("Output format: json, text, md (markdown where a verb has one, else text), or auto (json when stdout is not a terminal)"),
+                .help("Output format: json, text, md (markdown; refused on verbs without a markdown view), or auto (json when stdout is not a terminal)"),
             Arg::new("json")
                 .long("json")
                 .action(ArgAction::SetTrue)
@@ -228,6 +228,19 @@ impl Cli {
         if leaf.get_flag("schema") {
             let text = serde_json::to_string_pretty(&(verb.schema)()).unwrap_or_default();
             return Execution::out(format!("{text}\n"));
+        }
+        if ctx.markdown() && !verb.meta.markdown {
+            let supported = crate::meta::markdown_verbs(self.product);
+            tracing::debug!(verb = %path, "--format md refused: no markdown view");
+            let err = CliError::Usage(format!(
+                "`{path}` has no markdown view; --format md is supported by: {}",
+                if supported.is_empty() {
+                    "no verb".to_owned()
+                } else {
+                    supported.join(", ")
+                }
+            ));
+            return render::failure(Some(&dotted), &err, false);
         }
         let span = tracing::info_span!("cli.verb", verb = %dotted);
         let _enter = span.enter();

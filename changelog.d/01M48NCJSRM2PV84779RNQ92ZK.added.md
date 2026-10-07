@@ -1,0 +1,1 @@
+frob test runs the TypeScript tests it selects through vitest or jest per package, records per-test evidence named as the test units, and refuses with E-EVIDENCE-RUNNER-MISSING when node or the runner is not installed.
