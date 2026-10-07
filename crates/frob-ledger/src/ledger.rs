@@ -4,6 +4,7 @@
 //! through [`gob_git::Repo::commit_paths`] on that ref, so staged changes of a
 //! user can never enter a ledger commit (decision D23).
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
 use gob_git::{CommitOptions, Oid, RelPath, Repo, TreeRef};
@@ -541,6 +542,78 @@ impl Ledger {
         }
         crate::event::sort_events(&mut events);
         Ok(events)
+    }
+
+    /// Read the events of every ticket in `ids` at commit `tip` with one walk of the tree.
+    ///
+    /// Tickets without event files map to an empty list; events are in fold order.
+    ///
+    /// # Errors
+    ///
+    /// Git read failures or a malformed event file.
+    // frob:ticket 01M4BH8WMBDTAT4R0ST9VT321D
+    pub fn read_events_many_at(
+        &self,
+        tip: &str,
+        ids: &BTreeSet<TicketId>,
+    ) -> Result<BTreeMap<TicketId, Vec<Event>>> {
+        let spec = match self.layout {
+            Layout::Dir => format!("{tip}:{}", self.cfg.dir),
+            Layout::Branch => format!("{tip}^{{tree}}"),
+        };
+        let mut out: BTreeMap<TicketId, Vec<Event>> =
+            ids.iter().map(|id| (*id, Vec::new())).collect();
+        // Read blobs relative to the listed tree, which skips re-resolving the commit per file.
+        let root = match self.repo.rev_parse(&spec) {
+            Ok(oid) => oid.to_string(),
+            Err(e) if is_rev_error(&e) => return Ok(out),
+            Err(e) => return Err(e.into()),
+        };
+        let mut files = 0_usize;
+        for path in self.list_files(&spec)? {
+            let Some((id, name)) = self.event_path_parts(&path) else {
+                continue;
+            };
+            let Some(events) = out.get_mut(&id) else {
+                continue;
+            };
+            let Some(stem) = name.strip_suffix(".toml") else {
+                continue;
+            };
+            let Ok(eid) = stem.parse::<EventId>() else {
+                tracing::warn!(ticket = %id, file = %name, "ignoring non-ULID file in events/");
+                continue;
+            };
+            let text = self
+                .text(&root, &path)?
+                .ok_or_else(|| LedgerError::malformed(&path, "listed but unreadable"))?;
+            events.push(Event::parse(eid, &text)?);
+            files += 1;
+        }
+        for events in out.values_mut() {
+            crate::event::sort_events(events);
+        }
+        tracing::debug!(tickets = ids.len(), files, "events walked once");
+        Ok(out)
+    }
+
+    /// Split a path listed under the ticket root into (ticket, event file name), if it is an event file.
+    fn event_path_parts<'a>(&self, path: &'a str) -> Option<(TicketId, &'a str)> {
+        let mut parts = path.split('/');
+        match self.layout {
+            Layout::Dir => {
+                let id = parts.next()?.parse().ok()?;
+                (parts.next()? == "events").then_some(())?;
+                let name = parts.next()?;
+                parts.next().is_none().then_some((id, name))
+            }
+            Layout::Branch => {
+                (parts.next()? == layout::EVENTS_DIR).then_some(())?;
+                let id = parts.next()?.parse().ok()?;
+                let name = parts.next()?;
+                parts.next().is_none().then_some((id, name))
+            }
+        }
     }
 
     /// Ids of every ticket at commit `tip`: ticket directories in the legacy layout, ticket files

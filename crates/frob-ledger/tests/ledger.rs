@@ -1087,3 +1087,42 @@ fn doable_is_sorted_by_the_shared_comparator() {
     again.sort_by(frob_ledger::ops::doable_cmp);
     assert_eq!(got, again, "doable output is exactly doable_cmp order");
 }
+
+// frob:ticket 01M4BH8WMBDTAT4R0ST9VT321D
+fn events_many_equals_events_per_ticket(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    let mut ids = std::collections::BTreeSet::new();
+    for (n, to) in [Category::Todo, Category::InProgress, Category::Todo]
+        .into_iter()
+        .enumerate()
+    {
+        let id = ledger
+            .new_ticket(NewTicket::new(format!("T{n}"), TicketType::Task))
+            .expect("new")
+            .ticket
+            .front
+            .id;
+        for i in 0..=n {
+            ledger
+                .comment(id, CommentSubtype::Note, &format!("note {i}"))
+                .expect("comment");
+        }
+        if to == Category::InProgress {
+            ledger.transition(id, to, None, None).expect("start");
+        }
+        ids.insert(id);
+    }
+    let many = ledger.events_many(&ids).expect("events_many");
+    assert_eq!(many.len(), 3);
+    for id in &ids {
+        assert_eq!(many[id], ledger.events(*id).expect("events"), "ticket {id}");
+        assert!(many[id].len() >= 2);
+    }
+    let missing: TicketId = "01M4BH8WMBDTAT4R0ST9VT3ZZZ".parse().expect("ulid");
+    let bad = std::collections::BTreeSet::from([missing]);
+    assert!(matches!(
+        ledger.events_many(&bad),
+        Err(LedgerError::NotFound { .. })
+    ));
+}
+both_layouts!(events_many_equals_events_per_ticket);
