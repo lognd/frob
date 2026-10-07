@@ -7,8 +7,8 @@ priority = "high"
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:40:58Z"
-updated = "2026-10-07T16:13:07Z"
-scope = ["crates/gob-rules/**", "crates/gob-ir/**", "crates/gob-check/**", "crates/grimble-bind/**", "crates/gob-diagnostics/**", "crates/grimble-check/**", "crates/frob-check/tests/check.rs", "crates/gob-mdtest/**"]
+updated = "2026-10-07T16:20:13Z"
+scope = ["crates/gob-rules/**", "crates/gob-ir/**", "crates/gob-check/**", "crates/grimble-bind/**", "crates/gob-diagnostics/**", "crates/grimble-check/**", "crates/frob-check/tests/check.rs", "crates/gob-mdtest/**", "docs/schemas/**"]
 
 [[acceptance]]
 text = "no production code parses a reason out of a message"
