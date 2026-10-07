@@ -7,7 +7,7 @@ priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T17:47:32Z"
-updated = "2026-10-07T02:09:21Z"
+updated = "2026-10-07T02:17:40Z"
 scope = [".config/nextest.toml", "crates/frob-pm/tests/**", "crates/gob-ir/tests/**", "crates/gob-macros/tests/**"]
 
 [[acceptance]]
