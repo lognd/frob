@@ -78,6 +78,17 @@
           "description": "Human-readable message.",
           "type": "string"
         },
+        "reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnresolvedReason"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Typed reason an Unresolved finding could not decide (a code such as `vacuous`); absent otherwise."
+        },
         "required": {
           "anyOf": [
             {
@@ -217,6 +228,10 @@
           "type": "object"
         }
       ]
+    },
+    "UnresolvedReason": {
+      "description": "Why a rule could not decide: the `universal-model.md` 4.6 table plus the structural causes.\n\nThe wire and display form is [`UnresolvedReason::code`]; [`UnresolvedReason::from_code`] is the one\nplace a code string becomes a variant (used where a producer holds a code, such as an `opaque`\nnode's reason), never a message.\n\n```\nuse gob_rules::UnresolvedReason;\nlet r = UnresolvedReason::from_code(\"annotation-required:signature\");\nassert_eq!(r, UnresolvedReason::AnnotationSignature);\nassert_eq!(r.code(), \"annotation-required:signature\");\nassert_eq!(UnresolvedReason::from_code(\"custom\"), UnresolvedReason::Opaque(\"custom\".into()));\n```",
+      "type": "string"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
