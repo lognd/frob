@@ -1,0 +1,5 @@
+error: `version` must be at least 1
+  --> tests/ui_rule/fail/version_zero/todo001.rs:15:15
+   |
+15 |     version = 0,
+   |               ^

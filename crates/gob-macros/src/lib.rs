@@ -127,12 +127,12 @@ pub fn derive_ticket_schema(input: TokenStream) -> TokenStream {
     }
 }
 
-/// SPIKE (~9R52NCF): the `#[rule(..)]` attribute of D107, expanded against `gob_rules::rule_spike`.
+/// The `#[rule(..)]` attribute of D107 (rule-authoring.md section 2), expanded against `gob_rules`.
 ///
 /// Every field is required; the colocated `<id>.md` is validated and `include_str!`d. Re-exported
-/// as `gob_rules::rule_spike::rule`; the production derive is untouched.
+/// as `gob_rules::rule`; the old `#[derive(Rule)]` is deprecated in its favour.
 #[proc_macro_attribute]
-pub fn rule_spike(attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn rule(attr: TokenStream, item: TokenStream) -> TokenStream {
     let item = parse_macro_input!(item as syn::ItemStruct);
     match rule_attr::expand(attr.into(), &item) {
         Ok(ts) => ts.into(),
@@ -142,9 +142,9 @@ pub fn rule_spike(attr: TokenStream, item: TokenStream) -> TokenStream {
             let name = &item.ident;
             out.extend(quote!(
                 #item
-                impl ::gob_rules::rule_spike::Rule for #name {
-                    const DEF: &'static ::gob_rules::rule_spike::RuleDef =
-                        &::gob_rules::rule_spike::RuleDef::POISONED;
+                impl ::gob_rules::RuleDecl for #name {
+                    const DEF: &'static ::gob_rules::RuleDef =
+                        &::gob_rules::RuleDef::POISONED;
                 }
             ));
             out.into()
@@ -289,6 +289,8 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
 /// does not declare them is read as a presence rule that may examine nothing;
 /// declare both explicitly on every new rule (`rules.md` section 2).
 /// The explanation comes from the item's `///` doc comment.
+///
+/// Superseded by `#[gob_rules::rule(..)]` (D107); removed by ~H5W28EA after the migration tickets.
 #[proc_macro_derive(Rule, attributes(rule))]
 pub fn derive_rule(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);

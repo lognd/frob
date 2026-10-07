@@ -1,5 +1,5 @@
 error: `since = "99.0.0"` is in the future (this crate is 0.0.0)
-  --> tests/ui_rule/fail/since_in_future/todo001.rs:14:13
+  --> tests/ui_rule/fail/since_in_future/todo001.rs:16:13
    |
-14 |     since = "99.0.0",
+16 |     since = "99.0.0",
    |             ^^^^^^^^

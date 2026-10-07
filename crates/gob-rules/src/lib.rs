@@ -1,7 +1,9 @@
 //! Rule metadata, findings, the global rule registry and exception data types.
 //!
-//! Declare a rule with `#[derive(gob_rules::Rule)]`; it registers itself via
-//! `inventory` and appears in [`Registry::global`].
+//! Declare a rule with `#[gob_rules::rule(..)]` (D107: every field required, `applies` checked
+//! against the capability matrix, a colocated `.md` page); [`RuleDef`] is its static description.
+//! The older `#[derive(gob_rules::Rule)]` is superseded by it; it registers itself via `inventory` and
+//! appears in [`Registry::global`].
 //!
 //! ```
 //! use gob_rules::{RuleId, Severity};
@@ -10,9 +12,10 @@
 //! assert!(Severity::Error > Severity::Warn);
 //! ```
 
-// Lets the `#[rule]` expansion name `::gob_rules` from inside this crate (spike, ~9R52NCF).
+// Lets the `#[rule]` expansion name `::gob_rules` from inside this crate (~N88H9SY).
 extern crate self as gob_rules;
 
+mod decl;
 mod exception;
 mod finding;
 mod id;
@@ -20,13 +23,16 @@ mod meta;
 mod reason;
 mod registry;
 mod required;
-pub mod rule_spike;
 
+pub use decl::{
+    Applies, Emitted, FileCx, FileRule, Measured, Out, RepoRule, RuleDecl, RuleDef, run_file,
+};
 pub use exception::{
     BoundException, Exception, ExceptionCtx, ExceptionKind, Resolved, apply_exceptions,
 };
 pub use finding::{Finding, Fingerprint, Fix, TextEdit};
-pub use gob_macros::Rule;
+pub use gob_caps as caps;
+pub use gob_macros::{Rule, rule};
 pub use id::{ParseRuleIdError, RuleId};
 pub use inventory;
 pub use meta::{FixKind, Polarity, RuleEntry, RuleMeta, Scope, Severity, Tier};

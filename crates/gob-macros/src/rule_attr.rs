@@ -1,8 +1,9 @@
-//! SPIKE (~9R52NCF): the `#[rule(..)]` attribute of rule-authoring.md (D107), on one rule.
+//! The `#[rule(..)]` attribute of rule-authoring.md (D107, ~N88H9SY; spiked in ~9R52NCF).
 //!
 //! Every field is required. The colocated `<stem>.md` is read at expansion and `include_str!`d.
-//! The expansion targets `::gob_rules::rule_spike`, whose capability matrix is a stub until
-//! `gob-caps` exists. Nothing here touches the old `#[derive(Rule)]`.
+//! The expansion targets `::gob_rules` (`RuleDef`, `RuleDecl`, the evaluation traits) and its
+//! re-export of `gob-caps`, whose matrix the compile-time asserts read. The old
+//! `#[derive(Rule)]` is separate and deprecated.
 
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
@@ -29,7 +30,8 @@ const REQUIRED: &[&str] = &[
     "version",
     "since",
 ];
-const RT: &str = "::gob_rules::rule_spike";
+const RT: &str = "::gob_rules";
+const MATRIX_PATH: &str = "crates/gob-caps/src/matrix.rs";
 
 /// How a rule says which files it applies to (`applies = ..`).
 enum Applies {
@@ -289,7 +291,7 @@ fn matrix_asserts(id: &str, a: &Applies) -> TokenStream {
             let list = caps_list(&t.needs);
             let names: Vec<String> = t.needs.iter().map(ToString::to_string).collect();
             let msg = format!(
-                "{id}: universal rule is unsatisfiable: no language provides all of [{}] at fidelity {} or better; matrix: crates/gob-rules/src/rule_spike/caps.rs (stub for gob-caps)",
+                "{id}: universal rule is unsatisfiable: no language provides all of [{}] at fidelity {} or better; matrix: {MATRIX_PATH}",
                 names.join(", "),
                 t.min_fidelity
                     .as_ref()
@@ -303,7 +305,7 @@ fn matrix_asserts(id: &str, a: &Applies) -> TokenStream {
             let mut out = TokenStream::new();
             for l in langs {
                 let msg = format!(
-                    "{id}: language {l} is below the fidelity {} this rule needs; matrix: crates/gob-rules/src/rule_spike/caps.rs",
+                    "{id}: language {l} is below the fidelity {} this rule needs; matrix: {MATRIX_PATH}",
                     t.min_fidelity
                         .as_ref()
                         .map_or("F1".to_owned(), ToString::to_string)
@@ -311,7 +313,7 @@ fn matrix_asserts(id: &str, a: &Applies) -> TokenStream {
                 out.extend(quote_spanned!(l.span()=> const _: () = assert!(#caps::lang_fidelity(#lang_ty::#l) as u8 >= #fid as u8, #msg);));
                 for c in &t.needs {
                     let msg = format!(
-                        "{id}: language {l} has no `{c}` capability (declared not-applicable or a gap), so this rule could never fire there; matrix: crates/gob-rules/src/rule_spike/caps.rs"
+                        "{id}: language {l} has no `{c}` capability (declared not-applicable or a gap), so this rule could never fire there; matrix: {MATRIX_PATH}"
                     );
                     out.extend(quote_spanned!(c.span()=> const _: () = assert!(#caps::provides(#lang_ty::#l, #cap_ty::#c), #msg);));
                 }
@@ -469,8 +471,11 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
         Some(Value::Applies(a)) => Some(a),
         _ => None,
     };
+    // A malformed id or slug already has its own error; do not pile a page error on top.
     let page = match (&id, &slug) {
-        (Some(i), Some(s)) => check_page(item, &i.value(), &s.value(), &mut errs),
+        (Some(i), Some(s)) if valid_id(&i.value()).is_some() && valid_slug(&s.value()) => {
+            check_page(item, &i.value(), &s.value(), &mut errs)
+        }
         _ => None,
     };
 
@@ -489,13 +494,14 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
     };
 
     let name = &item.ident;
-    let rule_ty = rt("Rule");
+    let family = crate::valid_id(&id.value()).unwrap_or_default().to_owned();
+    let rule_ty = rt("RuleDecl");
     let def_ty = rt("RuleDef");
     let (sev, pol, sc, fx) = (
         enum_tokens("Severity", &severity),
         enum_tokens("Polarity", &polarity),
         enum_tokens("Scope", &scope),
-        enum_tokens("Fix", &fix),
+        enum_tokens("FixKind", &fix),
     );
     let applies_ts = applies_tokens(applies);
     let asserts = matrix_asserts(&id.value(), applies);
@@ -528,6 +534,7 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
             const DEF: &'static #def_ty = &#def_ty {
                 id: #id,
                 slug: #slug,
+                family: #family,
                 severity: #sev,
                 polarity: #pol,
                 must_measure: #must_measure,
@@ -537,6 +544,8 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
                 version: #version,
                 since: #since,
                 doc: include_str!(#page),
+                file: ::core::file!(),
+                line: ::core::line!(),
             };
         }
         #asserts

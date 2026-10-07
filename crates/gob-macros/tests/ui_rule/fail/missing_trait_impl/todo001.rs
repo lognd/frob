@@ -1,5 +1,7 @@
 #[allow(unused_imports)]
-use gob_rules::rule_spike::{FileCx, FileRule, ObligationHost, Out, rule};
+use gob_rules::{FileCx, FileRule, Out, rule};
+
+pub trait ObligationHost {}
 
 #[rule(
     id = "TODO001",

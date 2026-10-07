@@ -1,0 +1,5 @@
+error: rule page `todo001.md`: missing the header comment `<!-- mdtest: rule=TODO001 -->`
+  --> tests/ui_rule/fail/missing_mdtest_header/todo001.rs:18:12
+   |
+18 | pub struct Todo001;
+   |            ^^^^^^^

@@ -1,0 +1,5 @@
+error[E0080]: evaluation panicked: TODO001: language OpaqueText is below the fidelity F1 this rule needs; matrix: crates/gob-caps/src/matrix.rs
+  --> tests/ui_rule/fail/language_below_fidelity/todo001.rs:13:25
+   |
+13 |     applies = languages(OpaqueText; needs = [Comments], min_fidelity = F1),
+   |                         ^^^^^^^^^^ evaluation of `_` failed here

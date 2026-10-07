@@ -1,4 +1,4 @@
-//! SPIKE (~9R52NCF): structural validation of a rule's colocated `.md` page at macro expansion.
+//! Structural validation of a rule's colocated `.md` page at macro expansion (~N88H9SY; spiked in ~9R52NCF).
 //!
 //! Pure text in, human messages out, so the attribute can turn each one into a spanned
 //! compile error. Running the examples is test time; this only checks the page has the
