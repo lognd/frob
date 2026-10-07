@@ -7,8 +7,8 @@ priority = "medium"
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T13:10:30Z"
-updated = "2026-10-07T02:28:08Z"
-scope = ["crates/frob-tests/**", "crates/frob-evidence/**", "crates/gob-symbols/src/typescript/mod.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-testsupport/src/lib.rs", "docs/reference/config.md", "docs/schemas/config.json", "docs/design/code-model.md"]
+updated = "2026-10-07T02:32:50Z"
+scope = ["crates/frob-tests/**", "crates/frob-evidence/**", "crates/gob-symbols/src/typescript/mod.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-testsupport/src/lib.rs", "docs/reference/config.md", "docs/schemas/config.json", "docs/design/code-model.md", "docs/reference/fidelity.md"]
 
 [[acceptance]]
 text = "frob test runs the vitest file of the web conformance fixture and records per-test evidence"
