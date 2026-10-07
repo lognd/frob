@@ -75,7 +75,9 @@ fn card_path(ledger: &Ledger, id: TicketId) -> String {
         .into_iter()
         .map(|c| c.path)
         .find(|p| {
-            p.ends_with(".md")
+            Path::new(p)
+                .extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("md"))
                 && repo
                     .read_blob_at(MAIN, p)
                     .ok()
@@ -1015,12 +1017,12 @@ fn event_files_from_before_the_clock_migration_round_trip_byte_identically() {
 }
 
 // frob:tests crates/frob-ledger/src/event.rs::Event.new
-fn a_new_event_is_stamped_in_whole_seconds_even_from_a_precise_clock(layout: Layout) {
+#[test]
+fn a_new_event_is_stamped_in_whole_seconds_even_from_a_precise_clock() {
     let at: gob_time::Stamp = "2026-10-05T01:02:03.987654321Z".parse().expect("stamp");
     let event = frob_ledger::event::Event::new(at, "a", frob_ledger::event::EventBody::Other);
     assert_eq!(event.at.precise(), "2026-10-05T01:02:03Z");
 }
-both_layouts!(a_new_event_is_stamped_in_whole_seconds_even_from_a_precise_clock);
 
 /// Create a todo ticket with a priority and class, returning its id.
 fn todo_with(
