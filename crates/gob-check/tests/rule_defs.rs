@@ -1,7 +1,7 @@
 //! A toy product that runs declared rules (`RuleDef`s) with no group or file-check wiring (~GBBKJ6V).
 //!
 //! `product_rules/{alpha,beta,gamma}` are generated rule crates in miniature: ALP001 is a file
-//! rule, BET001 a repo rule, GAM001 a `must_measure` repo rule with a product-fact `inapplicable()`.
+//! rule, BET001 a repo rule, GMM001 a `must_measure` repo rule with a product-fact `inapplicable()`.
 //! The product lists them once and the pipeline runs exactly that list.
 
 use std::sync::Arc;
@@ -174,7 +174,7 @@ fn a_toy_product_runs_its_listed_file_and_repo_rules_with_no_group_wiring() {
     let first = run(&toy(true, 3, false), dir.path(), &quiet()).expect("first run");
     assert_eq!(ids(&first.findings), ["ALP001", "BET001"]);
     assert_eq!(first.subjects_examined.get("ALP001"), Some(&2));
-    assert_eq!(first.subjects_examined.get("GAM001"), Some(&3));
+    assert_eq!(first.subjects_examined.get("GMM001"), Some(&3));
     assert!(first.stats.file_misses > 0);
     let second = run(&toy(true, 3, false), dir.path(), &quiet()).expect("second run");
     assert_eq!(second.stats.file_misses, 0, "file results are cached");
@@ -204,15 +204,15 @@ fn an_inapplicable_rule_is_skipped_and_its_reason_reported_once_in_json_and_text
     assert_eq!(
         ids(&report.findings),
         ["ALP001"],
-        "inapplicable GAM001 is no finding, not even its zero-subject Unresolved"
+        "inapplicable GMM001 is no finding, not even its zero-subject Unresolved"
     );
-    assert!(!report.subjects_examined.contains_key("GAM001"));
+    assert!(!report.subjects_examined.contains_key("GMM001"));
     let why = "the product has no item store configured";
-    assert_eq!(report.fidelity.inapplicable["GAM001"], why);
+    assert_eq!(report.fidelity.inapplicable["GMM001"], why);
     let json = serde_json::to_value(&report.fidelity).expect("json");
-    assert_eq!(json["inapplicable"]["GAM001"], why);
+    assert_eq!(json["inapplicable"]["GMM001"], why);
     let text = report.fidelity.lines();
-    let mentions = text.iter().filter(|l| l.contains("GAM001")).count();
+    let mentions = text.iter().filter(|l| l.contains("GMM001")).count();
     assert_eq!(mentions, 1, "{text:?}");
     assert!(text.iter().any(|l| l.contains(why)));
 }
@@ -228,11 +228,11 @@ fn zero_subjects_for_a_must_measure_rule_is_the_required_unresolved() {
         .filter(|f| f.severity == Severity::Unresolved)
         .collect();
     assert_eq!(zero.len(), 1, "{:?}", report.findings);
-    assert_eq!(zero[0].rule.as_str(), "GAM001");
+    assert_eq!(zero[0].rule.as_str(), "GMM001");
     assert_eq!(
         zero[0].required,
         Some(RequiredReason::ZeroSubjects {
-            rule: "GAM001".into()
+            rule: "GMM001".into()
         })
     );
     assert_eq!(report.exit_code(), ExitCode::Negative);
@@ -250,7 +250,7 @@ fn only_selects_declared_rules_by_id_and_family_and_skips_the_rest() {
     assert_eq!(
         ids(&report.findings),
         ["ALP001"],
-        "BET001 and GAM001 dropped"
+        "BET001 and GMM001 dropped"
     );
     let report = run(&toy(true, 0, false), dir.path(), &only("BET")).expect("run");
     assert_eq!(ids(&report.findings), ["BET001"]);

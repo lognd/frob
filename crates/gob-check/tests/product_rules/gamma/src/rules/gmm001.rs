@@ -5,7 +5,7 @@ use gob_rules::{Measured, Out, RepoRule, rule};
 use crate::Host;
 
 #[rule(
-    id = "GAM001",
+    id = "GMM001",
     slug = "gamma-one",
     severity = Warn,
     polarity = Pminus,
@@ -18,9 +18,9 @@ use crate::Host;
     since = "0.1.0",
 )]
 /// Fires once when the host holds no item, and counts the items it measured.
-pub struct Gam001;
+pub struct Gmm001;
 
-impl<P: ?Sized + Host> RepoRule<P> for Gam001 {
+impl<P: ?Sized + Host> RepoRule<P> for Gmm001 {
     fn check(&self, host: &P, out: &mut Out<'_, Self>) {
         if host.items() == 0 {
             out.note("no items");
@@ -33,7 +33,7 @@ impl<P: ?Sized + Host> RepoRule<P> for Gam001 {
     }
 }
 
-impl<P: ?Sized + Host> Measured<P> for Gam001 {
+impl<P: ?Sized + Host> Measured<P> for Gmm001 {
     fn subjects(&self, host: &P) -> usize {
         host.items()
     }
