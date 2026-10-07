@@ -13,7 +13,13 @@
 
 // frob:ticket 01M43ARVS24254G85TMFYH8FGQ
 
+// A rule crate that is a dependency but not in `product_rules!` is an unused dependency (D107).
+#![cfg_attr(not(test), deny(unused_crate_dependencies))]
+
+use gob_diagnostics as _; // unused today; removal tracked in ~MKG678C
+
 mod product;
+pub mod product_rules;
 pub mod rules;
 pub mod sibling;
 

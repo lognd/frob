@@ -74,6 +74,22 @@ the pipeline runs exactly that list, so a listed rule is run by
 construction. Built-in Rust rules, GRL std rules and pack rules become one
 runtime `RuleDef` (D76 parity). `build.rs` stays banned (security.md 2.8).
 
+How it is built (~PBJ6GPZ). `gob_rules::indexgen` scans `src/rules/*.rs` for `#[rule(..)]`
+files (the legacy derive is skipped) and renders `mod.rs`: one `pub mod` per file, `METAS`, an
+`INDEX` (`RuleIndex`: crate name, the defs, `RENAMED` and `RETIRED` ids from an optional
+hand-written `src/rules/retired.rs`), a const `assert_unique("crate", ..)`, `bind::<P>()` (a
+`where Rule: FileRule<P>` bound per rule, so a host that lacks a rule's host trait fails to
+compile) and the `rules_index_is_fresh` test. The text is laid out the way rustfmt leaves it, so
+`cargo fmt --check` and GEN001 agree. `cargo dev gen rules-index` writes it for every crate (or
+fixture) with a `src/rules` directory and `[package.metadata.gob] families` is enforced when
+present. `gob_check::product_rules!` (`product`, `host`, `crates`) expands to `RULE_INDEXES`, the
+product-level const check and `rules()`; `gob-dev` lists every product's `RULE_INDEXES` in
+`products.rs` with the all-products check. Uniqueness is one namespace for ids, renamed ids and
+retired ids and another for slugs; the panic text names both declarations. Product crates deny
+`unused_crate_dependencies` (outside `cfg(test)`), so a rule crate dropped from the list while
+still depended on fails `cargo check`. Until the migration tickets move rules over, each product
+list is empty and the legacy inventory path is untouched.
+
 ## 5. Where each mistake is caught
 
 Compile time: missing or malformed metadata; no evaluation; `must_measure`
