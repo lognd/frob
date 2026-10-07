@@ -16,7 +16,8 @@ note: inside `assert_unique`
 note: inside `__rules::index::Msg::fail`
   --> $RUST/core/src/panic.rs
    |
-   = note: the failure occurred here
+   |         $crate::panicking::panic_display(&$arg);
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the failure occurred here
    |
   ::: $WORKSPACE/crates/gob-rules/src/index.rs
    |
