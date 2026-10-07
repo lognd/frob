@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-07T00:50:22Z"
+updated = "2026-10-07T00:51:30Z"
 idempotency_key = "m2-tb-layout-write"
-labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-ledger/src/layout.rs", "crates/frob-ledger/src/ops.rs"]
+labels = ["milestone:2", "area:mirror", "creates:crates/frob-ledger/src/layout.rs", "creates:crates/frob-ledger/tests/layout.rs", "creates:changelog.d/01M3ZX82Q2N145P3DWVVY4E868.added.md"]
+scope = ["crates/frob-ledger/src/layout.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-ledger/src/ledger.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/tests/layout.rs", "changelog.d/01M3ZX82Q2N145P3DWVVY4E868.added.md"]
 
 [[links]]
 kind = "blocked-by"
