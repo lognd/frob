@@ -25,6 +25,12 @@
 | [CI010](CI010.md) | checkout-no-persist | advisory | manual | P+ | false | `actions/checkout` leaves credentials in the workspace. |
 | [CI014](CI014.md) | gha-syntax-and-schema | warn | manual | P+ | false | actionlint rejects the workflow syntax, schema, expression or runner label. |
 
+## COLOR
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [COLOR001](COLOR001.md) | color-off-palette | error | manual | P+ | false | A colour literal that is not a palette colour (and not a translucent variant of an opaque one). |
+
 ## COV
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -70,6 +76,32 @@
 |---|---|---|---|---|---|---|
 | [INV001](INV001.md) | invariant-without-anchor | warn | manual | P- | false | An invariants document has no `frob:invariant` directive in code. |
 | [INV002](INV002.md) | forbidden-import | error | manual | P+ | false | A file imports something the `[invariants]` table forbids. |
+
+## MDL
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [MDL000](MDL000.md) | mdl-syntax | error | manual | P+ | false | Lexical or syntax error, bad encoding, or a forbidden construct. |
+| [MDL001](MDL001.md) | mdl-duplicate-entity | error | manual | P+ | false | Two declarations of one full name. |
+| [MDL002](MDL002.md) | mdl-unresolved-include | error | manual | P+ | false | An include names a missing file, matches nothing, escapes the repository or is not readable. |
+| [MDL003](MDL003.md) | mdl-include-cycle | error | manual | P+ | false | The include graph has a cycle. |
+| [MDL004](MDL004.md) | mdl-unknown-pack | error | manual | P+ | false | A pack is not enabled, not under `packs/`, or its version or digest differs from the pin. |
+| [MDL005](MDL005.md) | mdl-selector-no-file | warn | manual | P+ | false | A selector's path matches no file in the walk. |
+| [MDL006](MDL006.md) | mdl-unresolved-ref | error | manual | P+ | false | A reference resolves to no entity, or to an entity of the wrong kind. |
+| [MDL007](MDL007.md) | mdl-version | error | manual | P+ | false | Missing version header, unsupported major, or files of one model with different majors. |
+| [MDL008](MDL008.md) | mdl-field | error | manual | P+ | false | A required field is missing, a scalar clause appears twice, or an `extend` sets a scalar. |
+| [MDL009](MDL009.md) | mdl-type | error | manual | P+ | false | An ill-typed value. |
+| [MDL010](MDL010.md) | mdl-selector-empty-by-construction | warn | manual | P+ | false | A selector that cannot match anything whatever the repository holds. |
+| [MDL011](MDL011.md) | mdl-module | error | manual | P+ | false | A `part of` name differs from the root `module`, two roots share a module name, or an included file declares `module`. |
+| [MDL012](MDL012.md) | mdl-deprecated-name | warn | manual | P+ | false | A reference uses a `renamed_from` name. |
+| [MDL013](MDL013.md) | mdl-exception | error | manual | P+ | false | A malformed exception clause. |
+| [MDL014](MDL014.md) | mdl-vmodel | error | manual | P+ | false | A V-model construction error. |
+| [MDL015](MDL015.md) | mdl-shadow | advisory | manual | P+ | false | A reference resolved to a nearer entity that shadows an outer one of the same name. |
+| [MDL016](MDL016.md) | mdl-unknown-atom | error | manual | P+ | false | A capability atom is in no registry and no enabled pack. |
+| [MDL017](MDL017.md) | mdl-duplicate-clause | advisory | manual | P+ | false | A list clause repeated with identical content. |
+| [MDL019](MDL019.md) | mdl-orphan-file | warn | manual | P+ | false | A .grmb file in the walk is reachable from no model root. |
+| [MDL020](MDL020.md) | mdl-include-outside | error | manual | P+ | false | An include names a file above the including file's directory without the `outside` marker. |
+| [MDL021](MDL021.md) | mdl-no-root | error | manual | P+ | false | No model root is declared, or a declared root is not a .grmb file of the walk. |
 
 ## PARSE
 
@@ -130,6 +162,23 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [SIB001](SIB001.md) | sibling-unavailable | unresolved | manual | P- | false | A sibling product's `check --json` could not be used: unavailable, incompatible, failed, late or malformed. |
+
+## SYS
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [SYS001](SYS001.md) | sys-unowned | warn | manual | P- | false | An artifact in the walk that no node owns. |
+| [SYS002](SYS002.md) | sys-ambiguous-owner | error | manual | P+ | false | Two nodes own one identity at the same specificity. |
+| [SYS003](SYS003.md) | sys-binding-conflict | error | manual | P+ | false | Bindings contradict each other or an operand does not resolve. |
+| [SYS004](SYS004.md) | sys-entity-without-code | warn | manual | P- | false | A binding clause matches no code. |
+| [SYS005](SYS005.md) | sys-unmodeled | warn | manual | P+ | true | A public unit in a modeled selector that no node owns. |
+| [SYS006](SYS006.md) | sys-contract-skew | error | manual | P0 | true | The two ends of an acked flow disagree on the Contract facet. |
+| [SYS007](SYS007.md) | sys-changed-since-ack | error | manual | P0 | true | An acked identity changed since its ack. |
+| [SYS008](SYS008.md) | sys-renamed | advisory | manual | P0 | false | An acked identity vanished and its Body appears under a new name. |
+| [SYS009](SYS009.md) | sys-flow-end-unbound | warn | manual | P- | false | One end of a flow binds no code while the other does. |
+| [SYS010](SYS010.md) | sys-claim-without-evidence | warn | manual | P- | false | A claim above proof level L1 has no test evidence. |
+| [SYS011](SYS011.md) | sys-vmodel-link-broken | error | manual | P- | false | A vmodel ref or runnable resolves to nothing. |
+| [SYS013](SYS013.md) | sys-undeclared-flow | error | manual | P+ | false | An import or call edge between two owners with no flow between them. |
 
 ## TEST
 

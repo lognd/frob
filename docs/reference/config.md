@@ -106,6 +106,19 @@ Materialized: yes.
 |---|---|---|---|---|
 | `cas_retries` | `u32` | `5` | yes | Compare-and-swap retries when moving a ledger ref. |
 
+## `[grimble]`
+
+The `[grimble]` table: model roots and binding policy (grmb-spec 3, binding.md 6).
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `modeled` | `Vec<String>` | `[]` | no | Selectors whose public units must have an owner (SYS005); empty turns the rule off. |
+| `models` | `Vec<String>` | `["design/model.grmb"]` | yes | Root `.grmb` files, one independent model each; only files reachable from them through `include` are loaded (MDL019 names the rest, MDL021 fires when none is declared). |
+| `rename_min_tokens` | `u64` | `12` | no | A Body with fewer tokens than this cannot be paired as a rename (binding.md 5.4 item 3). |
+| `strict` | `bool` | `false` | no | Warn rules SYS001 and SYS005 become Errors. |
+
 ## `[invariants]`
 
 Architecture invariants enforced over the import graph (INV002).
@@ -127,6 +140,20 @@ Materialized: yes.
 | `lock_timeout_ms` | `u64` | `5000` | no | Milliseconds to wait for the lease lock before refusing with a timeout. |
 | `shared_files` | `Vec<String>` | `["**/Cargo.lock", "**/uv.lock", "**/poetry.lock", "**/package-lock.json", "**/pnpm-lock.yaml", "**/yarn.lock", "**/go.sum", "**/Gemfile.lock", "**/composer.lock", "**/flake.lock"]` | no | Append-shared files exempt from overlap checks; unset means the well-known lockfiles (`Cargo.lock`, `uv.lock`, ...), an explicit list (even `[]`) replaces them. |
 | `ttl_secs` | `u64` | `7200` | no | Seconds a lease stays live after its last renewal (default two hours). |
+
+## `[packs]`
+
+Which data packs the repository enables (packs.md 3.6). Packs are not loaded yet.
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `enabled` | `Vec<String>` | `[]` | yes | Enabled pack ids in load order. |
+| `external` | `Vec<ExternalPack>` | `[]` | no | External packs (`[[packs.external]]`). |
+| `lock` | `String` | `"grimble.packs.lock"` | yes | Path of the pack lock, relative to the repository root. |
+| `severity` | `std::collections::BTreeMap<String, std::collections::BTreeMap<
+String, String>>` | `{}` | no | Repository severity overrides by atom then rule (`[packs.severity]`). |
 
 ## `[perf]`
 
