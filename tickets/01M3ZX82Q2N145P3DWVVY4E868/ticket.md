@@ -2,13 +2,13 @@
 id = "01M3ZX82Q2N145P3DWVVY4E868"
 title = "Ticket branch layout: events under .events/<ULID>/ and ticket files at computed paths"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-03T03:34:41Z"
+updated = "2026-10-07T00:50:22Z"
 idempotency_key = "m2-tb-layout-write"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-ledger/src/layout.rs", "crates/frob-ledger/src/ops.rs"]
