@@ -2,12 +2,12 @@
 id = "01M48NCJSRM2PV84779RNQ92ZK"
 title = "frob test: vitest and jest runner and evidence provider for TypeScript tests"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T13:10:30Z"
-updated = "2026-10-06T13:10:30Z"
+updated = "2026-10-07T02:23:06Z"
 scope = ["crates/frob-tests/**", "crates/frob-evidence/**"]
 
 [[acceptance]]
