@@ -15,6 +15,7 @@ pub mod files;
 pub mod import_v1;
 pub mod isolation;
 pub mod out;
+pub mod products;
 pub mod publish;
 pub mod render;
 pub mod wheel;
@@ -29,6 +30,8 @@ pub use files::{Applied, FilesError, GenFile, Mode, apply};
 pub enum Kind {
     /// Rule pages and the rule index.
     Rules,
+    /// Per-crate `src/rules/mod.rs` indexes of `#[rule]` rules (D107).
+    RulesIndex,
     /// The directive reference.
     Directives,
     /// The config reference.
@@ -43,8 +46,10 @@ pub enum Kind {
 
 /// Force the linker to keep every crate that submits inventory entries.
 ///
-/// Registrations live in crates the generator otherwise never calls into;
-/// touching one public item of each keeps their object files in the binary.
+/// Registrations of config tables, directives, commands and artifacts live in crates the generator
+/// otherwise never calls into; touching one public item of each keeps their object files in the
+/// binary. Rules are not anchored here: the legacy rule inventory is reached through the same
+/// product crates, and `#[rule]` rules arrive through the explicit [`products`] list.
 pub fn link_inventories() {
     let verbs = frob_cli::cli();
     tracing::debug!(product = frob_cli::PRODUCT, "frob cli linked");
@@ -55,24 +60,37 @@ pub fn link_inventories() {
     );
     let counts = (
         gob_config::all_artifacts().count(),
-        gob_rules::Registry::global().len(),
         gob_config::all_tables().count(),
         gob_directives::all_directives().count(),
         gob_cli::all_commands().count(),
     );
     tracing::debug!(
         ?counts,
-        "inventories linked (artifacts, rules, tables, directives, commands)"
+        "inventories linked (artifacts, tables, directives, commands)"
     );
 }
 
+/// Why a generation run failed.
+#[derive(Debug, thiserror::Error)]
+pub enum GenError {
+    /// The per-crate rule indexes could not be generated.
+    #[error(transparent)]
+    RulesIndex(#[from] render::rules_index::RulesIndexError),
+}
+
 /// Build the files for `kind`, sorted by path; `crates_dir` locates mdtest corpora.
-pub fn generate(kind: Kind, crates_dir: &Path) -> Vec<GenFile> {
+///
+/// # Errors
+/// [`GenError`] when a generator rejects its inputs (a malformed rule file, a foreign family).
+pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError> {
     link_inventories();
     let mut files = Vec::new();
     let all = kind == Kind::All;
     if all || kind == Kind::Rules {
         files.extend(render::rules::generate(crates_dir));
+    }
+    if all || kind == Kind::RulesIndex {
+        files.extend(render::rules_index::generate(crates_dir)?);
     }
     if all || kind == Kind::Directives {
         files.extend(render::directives::generate());
@@ -94,7 +112,7 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Vec<GenFile> {
     }
     files.sort_by(|a, b| a.path.cmp(&b.path));
     tracing::info!(?kind, files = files.len(), "generated");
-    files
+    Ok(files)
 }
 
 /// No enclosing directory holds a `Cargo.toml` with a `[workspace]` table.
@@ -164,7 +182,7 @@ mod tests {
         let start = std::env::current_dir().unwrap();
         let root = find_workspace_root(&start).unwrap();
         assert!(root.join("crates/gob-dev/Cargo.toml").is_file());
-        let files = generate(Kind::Schemas, &root.join("crates"));
+        let files = generate(Kind::Schemas, &root.join("crates")).unwrap();
         let applied = apply(&root, &files, Mode::Check).unwrap();
         assert_eq!(
             applied.differing, 0,

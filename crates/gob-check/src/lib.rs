@@ -57,6 +57,7 @@ mod fix;
 mod options;
 mod pipeline;
 mod product;
+mod product_rules;
 mod repo;
 mod report;
 mod required;
@@ -74,6 +75,8 @@ pub use core::{Core, FileIndex};
 pub use error::CheckError;
 pub use filecheck::{CheckCtx, FileCheck, SharedCtx};
 pub use gob_cache::ArtifactKey;
+#[doc(hidden)]
+pub use gob_rules as __rules;
 pub use options::RunOptions;
 pub use pipeline::run;
 pub use product::{

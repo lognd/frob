@@ -30,9 +30,13 @@
 //! A repository with no ledger configured and no test-capable language is not
 //! failed for silence; a configured ledger that cannot be read is.
 
+// A rule crate that is a dependency but not in `product_rules!` is an unused dependency (D107).
+#![cfg_attr(not(test), deny(unused_crate_dependencies))]
+
 mod filecheck;
 mod options;
 mod product;
+pub mod product_rules;
 mod scope;
 mod sibling;
 mod snapshot;

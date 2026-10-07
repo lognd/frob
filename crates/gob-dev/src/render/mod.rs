@@ -5,6 +5,7 @@ pub mod cli;
 pub mod config;
 pub mod directives;
 pub mod rules;
+pub mod rules_index;
 pub mod schemas;
 
 /// Header comment of every generated markdown file.
