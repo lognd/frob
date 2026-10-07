@@ -2,11 +2,11 @@
 id = "01M4BH0C9D5X79MFHTAYBHKQGE"
 title = "Expired-lease recovery: land from the primary leases the primary; work refuses a resumed worktree"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-07T15:51:39Z"
-updated = "2026-10-07T15:51:39Z"
+updated = "2026-10-07T15:52:00Z"
 idempotency_key = "lease-expired-recovery-gaps"
 labels = ["milestone:2"]
 scope = ["crates/frob-lease/**", "crates/frob-land/**", "crates/frob-worktree/**", "docs/design/tickets.md"]
