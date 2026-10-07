@@ -238,7 +238,7 @@ fn zero_subjects_for_a_must_measure_rule_is_the_required_unresolved() {
     assert_eq!(report.exit_code(), ExitCode::Negative);
 }
 
-// frob:tests crates/gob-check/src/report.rs::CheckReport
+// frob:tests crates/gob-check/src/report.rs::CheckReport.rule_reports
 #[test]
 fn the_zero_subject_unresolved_is_typed_vacuous_and_the_counters_convert_to_a_rule_report() {
     let dir = tree();

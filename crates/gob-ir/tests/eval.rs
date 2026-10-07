@@ -717,7 +717,7 @@ fn kleene_connectives() {
     assert_eq!(Truth::from(true), Yes);
 }
 
-// frob:tests crates/gob-ir/src/eval/program.rs::RuleOutcome
+// frob:tests crates/gob-ir/src/eval/program.rs::RuleOutcome.into_report
 #[test]
 fn an_outcome_converts_into_a_rule_report_with_its_accounting() {
     let (m, _ok, _bad, forbidden) = basic();

@@ -55,7 +55,7 @@ fn an_unlisted_code_is_opaque_and_keeps_its_code() {
     );
 }
 
-// frob:tests crates/gob-rules/src/finding.rs::Finding
+// frob:tests crates/gob-rules/src/finding.rs::Finding.with_reason
 #[test]
 fn a_finding_carries_its_reason_without_reading_the_message() {
     let f = Finding::new(

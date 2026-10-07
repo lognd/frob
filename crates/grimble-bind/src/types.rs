@@ -285,7 +285,7 @@ impl BindFinding {
 mod tests {
     use super::*;
 
-    // frob:tests crates/grimble-bind/src/types.rs::BindFinding
+    // frob:tests crates/grimble-bind/src/types.rs::BindFinding.into_finding
     #[test]
     fn an_unresolved_bind_finding_lifts_its_reason_into_the_typed_field() {
         for (reason, typed) in [
