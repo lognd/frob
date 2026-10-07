@@ -25,6 +25,7 @@ mod meta;
 mod reason;
 mod registry;
 mod required;
+mod unresolved;
 
 pub use decl::{
     Applies, Emitted, FileCx, FileRule, Measured, Out, RepoRule, RuleDecl, RuleDef, run_file,
@@ -45,6 +46,7 @@ pub use meta::{FixKind, Polarity, RuleEntry, RuleMeta, Scope, Severity, Tier};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
 pub use registry::{Registry, RegistryError};
 pub use required::RequiredReason;
+pub use unresolved::{RuleReport, UnresolvedReason};
 
 /// A declared rule; implemented by `#[derive(Rule)]`. Object safe.
 pub trait Rule {

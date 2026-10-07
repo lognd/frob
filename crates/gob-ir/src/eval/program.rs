@@ -8,7 +8,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-use gob_rules::{Finding, RuleId, Severity};
+use gob_rules::{Finding, RequiredReason, RuleId, RuleReport, Severity, UnresolvedReason};
 use gob_text::FileId;
 use tracing::{debug, info, warn};
 
@@ -82,8 +82,8 @@ pub enum Verdict {
     },
     /// Could not be decided.
     Unresolved {
-        /// Reason code (`opaque:...`, `hole`, `edge:may`, `unknown`, `vacuous`).
-        reason: String,
+        /// Why the subject could not be decided.
+        reason: UnresolvedReason,
         /// The maybe-set: possible offenders or poisoned frontier.
         maybe: Vec<NodeId>,
     },
@@ -102,17 +102,6 @@ pub struct SubjectResult {
     pub verdicts: Vec<Verdict>,
 }
 
-/// A finding with the marks gob-rules' `Finding` does not carry.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RuleFinding {
-    /// The finding for the check pipeline.
-    pub finding: Finding,
-    /// A required Unresolved: fails the gate under `fail_on_unresolved = "required"` (D62).
-    pub required: bool,
-    /// Reason code of an Unresolved finding.
-    pub reason: Option<String>,
-}
-
 /// The outcome of evaluating one rule over one model.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuleOutcome {
@@ -129,7 +118,7 @@ pub struct RuleOutcome {
     /// Per-subject results.
     pub results: Vec<SubjectResult>,
     /// Findings, violations then rolled-up Unresolved.
-    pub findings: Vec<RuleFinding>,
+    pub findings: Vec<Finding>,
 }
 
 impl RuleOutcome {
@@ -139,19 +128,33 @@ impl RuleOutcome {
         if self
             .findings
             .iter()
-            .any(|f| f.finding.severity > Severity::Unresolved)
+            .any(|f| f.severity > Severity::Unresolved)
         {
             Truth::No
         } else if self
             .findings
             .iter()
-            .any(|f| f.finding.severity == Severity::Unresolved)
+            .any(|f| f.severity == Severity::Unresolved)
             || self.not_applicable
         {
             Truth::Unknown
         } else {
             Truth::Yes
         }
+    }
+
+    /// The outcome as the test-path report: the same accounting and findings, per-subject detail dropped.
+    pub fn into_report(self) -> RuleReport {
+        let not_applicable = self
+            .not_applicable
+            .then(|| "every subject in scope is not applicable".to_owned());
+        RuleReport::new(
+            self.rule,
+            self.subjects_total,
+            self.subjects_examined,
+            not_applicable,
+            self.findings,
+        )
     }
 }
 
@@ -341,7 +344,7 @@ impl RuleProgram {
                 subject: s,
                 examined: false,
                 verdicts: vec![Verdict::Unresolved {
-                    reason: "unknown".to_owned(),
+                    reason: UnresolvedReason::EdgeUnknown,
                     maybe: Vec::new(),
                 }],
             });
@@ -351,7 +354,7 @@ impl RuleProgram {
                 subject: model.term().root(),
                 examined: false,
                 verdicts: vec![Verdict::Unresolved {
-                    reason: "unknown".to_owned(),
+                    reason: UnresolvedReason::EdgeUnknown,
                     maybe: Vec::new(),
                 }],
             });
@@ -366,7 +369,7 @@ impl RuleProgram {
         s: NodeId,
     ) -> Result<SubjectResult, EvalError> {
         let node = ctx.term().node(s);
-        let unexamined = |reason: String| SubjectResult {
+        let unexamined = |reason: UnresolvedReason| SubjectResult {
             subject: s,
             examined: false,
             verdicts: vec![Verdict::Unresolved {
@@ -376,10 +379,10 @@ impl RuleProgram {
         };
         match &node.op {
             Operator::Universal(Universal::Opaque { reason, .. }) => {
-                return Ok(unexamined(reason.clone()));
+                return Ok(unexamined(UnresolvedReason::from_code(reason)));
             }
             Operator::Universal(Universal::Hole { .. }) => {
-                return Ok(unexamined("hole".to_owned()));
+                return Ok(unexamined(UnresolvedReason::Hole));
             }
             _ => {}
         }
@@ -388,7 +391,9 @@ impl RuleProgram {
         let poison = ctx.poison();
         let reason = poison
             .first()
-            .map_or_else(|| "unknown".to_owned(), |p: &Poison| p.reason.code());
+            .map_or(UnresolvedReason::EdgeUnknown, |p: &Poison| {
+                p.reason.reason()
+            });
         let obs = if poison.is_empty() { obs } else { taint(obs) };
         self.interpret(s, &obs, &reason)
     }
@@ -397,10 +402,10 @@ impl RuleProgram {
         &self,
         s: NodeId,
         obs: &Observation,
-        reason: &str,
+        reason: &UnresolvedReason,
     ) -> Result<SubjectResult, EvalError> {
         let unresolved = |maybe: Vec<NodeId>| Verdict::Unresolved {
-            reason: reason.to_owned(),
+            reason: reason.clone(),
             maybe,
         };
         let mismatch = |o: &Observation| EvalError::Mismatch {
@@ -512,7 +517,7 @@ impl RuleProgram {
         let mut findings = Vec::new();
         if !not_applicable {
             let anchor_of = |n: NodeId| enclosing_symref(model, n);
-            let mut rolled: BTreeMap<(FileId, String), Vec<NodeId>> = BTreeMap::new();
+            let mut rolled: BTreeMap<(FileId, UnresolvedReason), Vec<NodeId>> = BTreeMap::new();
             for r in &results {
                 for v in &r.verdicts {
                     match v {
@@ -520,17 +525,13 @@ impl RuleProgram {
                             for &site in sites {
                                 let n = term.node(site);
                                 let msg = format!("{} [{}]", self.message, anchor_of(site));
-                                findings.push(RuleFinding {
-                                    finding: Finding::new(
-                                        self.rule.clone(),
-                                        self.severity,
-                                        n.location.span(),
-                                        msg,
-                                        &anchor_of(site),
-                                    ),
-                                    required: false,
-                                    reason: None,
-                                });
+                                findings.push(Finding::new(
+                                    self.rule.clone(),
+                                    self.severity,
+                                    n.location.span(),
+                                    msg,
+                                    &anchor_of(site),
+                                ));
                             }
                         }
                         Verdict::Unresolved { reason, .. } => {
@@ -550,7 +551,7 @@ impl RuleProgram {
                 findings.push(self.unresolved_finding(
                     model,
                     cfg,
-                    "vacuous",
+                    &UnresolvedReason::Vacuous,
                     &[term.root()],
                     measure_failed,
                 ));
@@ -579,10 +580,10 @@ impl RuleProgram {
         &self,
         model: &Model,
         cfg: &EvalConfig,
-        reason: &str,
+        reason: &UnresolvedReason,
         sites: &[NodeId],
         measure_failed: bool,
-    ) -> RuleFinding {
+    ) -> Finding {
         let term = model.term();
         let first = sites[0];
         let names: Vec<String> = sites
@@ -597,17 +598,43 @@ impl RuleProgram {
             names.join(", ")
         );
         let anchor = format!("{}#{reason}", term.locator());
-        RuleFinding {
-            finding: Finding::new(
-                self.rule.clone(),
-                Severity::Unresolved,
-                term.node(first).location.span(),
-                message,
-                &anchor,
-            ),
-            required: measure_failed || cfg.required_reasons.contains(reason),
-            reason: Some(reason.to_owned()),
+        let finding = Finding::new(
+            self.rule.clone(),
+            Severity::Unresolved,
+            term.node(first).location.span(),
+            message,
+            &anchor,
+        )
+        .with_reason(reason.clone());
+        match self.required_mark(cfg, reason, measure_failed) {
+            Some(mark) => finding.with_required(mark),
+            None => finding,
         }
+    }
+
+    /// Why this Unresolved fails the gate: a `must_measure` rule that measured nothing, or a
+    /// reason `[compute]` lists as required (an absent declaration).
+    fn required_mark(
+        &self,
+        cfg: &EvalConfig,
+        reason: &UnresolvedReason,
+        measure_failed: bool,
+    ) -> Option<RequiredReason> {
+        if measure_failed {
+            return Some(RequiredReason::ZeroSubjects {
+                rule: self.rule.to_string(),
+            });
+        }
+        cfg.required_reasons
+            .contains(reason.code())
+            .then(|| RequiredReason::AnnotationRequired {
+                code: reason
+                    .code()
+                    .strip_prefix("annotation-required:")
+                    .unwrap_or(reason.code())
+                    .to_owned(),
+                public_surface: *reason == UnresolvedReason::AnnotationSignature,
+            })
     }
 }
 

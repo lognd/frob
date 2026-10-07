@@ -13,7 +13,7 @@ mod relation;
 
 pub use ctx::{Ctx, Poison, PoisonReason};
 pub use program::{
-    EvalConfig, EvalError, Observation, Polarity, RuleFinding, RuleOutcome, RuleProgram,
-    SubjectResult, ThresholdKind, Verdict,
+    EvalConfig, EvalError, Observation, Polarity, RuleOutcome, RuleProgram, SubjectResult,
+    ThresholdKind, Verdict,
 };
 pub use relation::Relation;

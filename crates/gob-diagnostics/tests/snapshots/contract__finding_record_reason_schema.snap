@@ -1,0 +1,15 @@
+---
+source: crates/gob-diagnostics/tests/contract.rs
+expression: "serde_json::to_string_pretty(&props[\"reason\"]).unwrap()"
+---
+{
+  "anyOf": [
+    {
+      "$ref": "#/$defs/UnresolvedReason"
+    },
+    {
+      "type": "null"
+    }
+  ],
+  "description": "Typed reason an Unresolved finding could not decide (a code such as `vacuous`); absent otherwise."
+}

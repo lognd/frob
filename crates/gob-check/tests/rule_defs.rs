@@ -238,6 +238,27 @@ fn zero_subjects_for_a_must_measure_rule_is_the_required_unresolved() {
     assert_eq!(report.exit_code(), ExitCode::Negative);
 }
 
+// frob:tests crates/gob-check/src/report.rs::CheckReport::rule_reports
+#[test]
+fn the_zero_subject_unresolved_is_typed_vacuous_and_the_counters_convert_to_a_rule_report() {
+    let dir = tree();
+    let report = run(&toy(false, 0, false), dir.path(), &quiet()).expect("run");
+    let f = report
+        .findings
+        .iter()
+        .find(|f| f.rule.as_str() == "GMM001")
+        .expect("GMM001 finding");
+    assert_eq!(f.reason, Some(gob_rules::UnresolvedReason::Vacuous));
+    let rr = report
+        .rule_reports()
+        .into_iter()
+        .find(|r| r.rule.as_str() == "GMM001")
+        .expect("GMM001 report");
+    assert_eq!(rr.subjects_examined, 0);
+    assert_eq!(rr.unresolved().count(), 1);
+    assert!(!rr.is_certified_clean());
+}
+
 // frob:tests crates/gob-check/src/defs.rs::zero_subjects
 #[test]
 fn only_selects_declared_rules_by_id_and_family_and_skips_the_rest() {

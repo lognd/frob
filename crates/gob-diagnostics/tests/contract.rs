@@ -120,6 +120,33 @@ fn json_success_snapshot() {
     insta::assert_snapshot!(out);
 }
 
+// frob:tests crates/gob-diagnostics/src/record.rs::FindingRecord
+#[test]
+fn json_unresolved_reason_snapshot() {
+    let f = Finding::new(
+        "TOOL001".parse().unwrap(),
+        Severity::Unresolved,
+        None,
+        "no adapter",
+        "repo",
+    )
+    .with_reason(gob_rules::UnresolvedReason::Fidelity);
+    let sources = MemorySources::new();
+    let rec = FindingRecord::from_finding(&f, &sources, Registry::global());
+    insta::assert_snapshot!(serde_json::to_string(&rec).unwrap());
+}
+
+// frob:tests crates/gob-diagnostics/src/record.rs::FindingRecord
+#[test]
+fn finding_record_schema_shows_reason() {
+    let schema = schemars::schema_for!(FindingRecord);
+    let props = serde_json::to_value(&schema).unwrap()["properties"].clone();
+    insta::assert_snapshot!(
+        "finding_record_reason_schema",
+        serde_json::to_string_pretty(&props["reason"]).unwrap()
+    );
+}
+
 #[test]
 fn json_refusal_snapshot() {
     let r = Refusal::new(

@@ -120,8 +120,12 @@ fn sources_of(root: &Path, report: &CheckReport) -> MemorySources {
 /// One finding as a sibling row: the landed record plus the sibling's extras.
 fn finding_row(input: &SiblingInput<'_>, sources: &MemorySources, f: &Finding) -> FindingRow {
     let rule = f.rule.as_str();
+    // The row's own `reason` (the product's code, `sibling.json`) replaces the record's typed one;
+    // both flattened would repeat the key.
+    let mut record = FindingRecord::from_finding(f, sources, Registry::global());
+    record.reason = None;
     FindingRow {
-        record: FindingRecord::from_finding(f, sources, Registry::global()),
+        record,
         polarity: polarity_of(rule),
         subjects_examined: input
             .report

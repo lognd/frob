@@ -212,6 +212,31 @@ impl CheckReport {
         )
     }
 
+    /// One [`gob_rules::RuleReport`] per evaluated rule: its subject counter and its findings.
+    ///
+    /// The pipeline counts examined subjects only, so `subjects_total` equals `subjects_examined`
+    /// here; a rule that examined none reports zero of both (never certified clean).
+    pub fn rule_reports(&self) -> Vec<gob_rules::RuleReport> {
+        self.subjects_examined
+            .iter()
+            .filter_map(|(id, &examined)| {
+                let Ok(rule) = id.parse::<gob_rules::RuleId>() else {
+                    tracing::warn!(rule = id, "subject counter names an invalid rule id");
+                    return None;
+                };
+                let findings = self
+                    .findings
+                    .iter()
+                    .filter(|f| f.rule == rule)
+                    .cloned()
+                    .collect();
+                Some(gob_rules::RuleReport::new(
+                    rule, examined, examined, None, findings,
+                ))
+            })
+            .collect()
+    }
+
     /// Unresolved findings that carry a required reason.
     pub fn required_unresolved(&self) -> usize {
         self.findings

@@ -1,0 +1,1 @@
+gob-rules: Finding gains a typed Unresolved reason (UnresolvedReason, serialized as its code) and RuleReport carries per-rule subject accounting; gob-ir outcomes and gob-check counters convert into it and the JSON finding record shows reason.

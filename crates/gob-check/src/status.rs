@@ -8,7 +8,7 @@
 use std::collections::BTreeMap;
 
 use crate::applicability::{Applies, FileFacts, resolve, temporary_applies};
-use gob_rules::{Finding, RequiredReason, RuleId, RuleMeta, Severity};
+use gob_rules::{Finding, RequiredReason, RuleId, RuleMeta, Severity, UnresolvedReason};
 use gob_symbols::{FileInfo, ParseStatus, SkipKind, SkippedFile};
 use gob_text::{FileId, Span, TextRange};
 use schemars::JsonSchema;
@@ -64,22 +64,23 @@ pub(crate) fn hole_caveat_of(info: &FileInfo, applies: &Applies) -> Option<Strin
     }
 }
 
-/// One Unresolved finding of `meta` anchored at the start of `file` (or spanless).
+/// One Unresolved finding of `meta` anchored at the start of `file` (or spanless), typed `fidelity`.
 pub fn unresolved_finding(
     meta: &RuleMeta,
     file: Option<FileId>,
     path: &str,
     reason: &str,
 ) -> Finding {
-    unresolved_finding_for(meta.id, file, path, reason)
+    unresolved_finding_for(meta.id, file, path, reason, UnresolvedReason::Fidelity)
 }
 
-/// [`unresolved_finding`] for the rule `id` (a legacy meta or a `RuleDef`).
+/// [`unresolved_finding`] for the rule `id` (a legacy meta or a `RuleDef`), with its typed `kind`.
 pub(crate) fn unresolved_finding_for(
     id: &str,
     file: Option<FileId>,
     path: &str,
     reason: &str,
+    kind: UnresolvedReason,
 ) -> Finding {
     let rule: RuleId = id
         .parse()
@@ -91,6 +92,7 @@ pub(crate) fn unresolved_finding_for(
         format!("{id}: {reason}: {path}"),
         &format!("fidelity:{path}"),
     )
+    .with_reason(kind)
 }
 
 // frob:ticket 01M42M1KK02KFZG39CXKAD47SZ
@@ -111,6 +113,7 @@ pub fn unreadable_finding(meta: &RuleMeta, file: Option<FileId>, skipped: &Skipp
             skipped.detail
         ),
     )
+    .with_reason(UnresolvedReason::ParseFailed)
     .with_required(RequiredReason::ZeroSubjects {
         rule: meta.id.to_owned(),
     })
@@ -132,6 +135,7 @@ pub(crate) fn opaque_finding_for(id: &str, files: &[&str]) -> Finding {
             "{} opaque text file(s) (no adapter, first `{first}`) were not read for comments or directives",
             files.len()
         ),
+        UnresolvedReason::Fidelity,
     )
 }
 

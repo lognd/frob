@@ -6,7 +6,7 @@
 
 use std::collections::BTreeMap;
 
-use gob_rules::{Finding, RequiredReason, RuleId, RuleMeta, Severity};
+use gob_rules::{Finding, RequiredReason, RuleId, RuleMeta, Severity, UnresolvedReason};
 
 /// Message prefix gob-ir uses for an opaque that needs an annotation.
 pub(crate) const ANNOTATION_PREFIX: &str = "annotation-required:";
@@ -28,6 +28,7 @@ pub(crate) fn zero_subject_finding(id: &str) -> Option<Finding> {
             ),
             "zero-subjects",
         )
+        .with_reason(UnresolvedReason::Vacuous)
         .with_required(RequiredReason::ZeroSubjects {
             rule: id.to_owned(),
         }),
@@ -66,8 +67,26 @@ pub(crate) fn zero_subjects(
     out
 }
 
-/// The `AnnotationRequired` reason of an `annotation-required:` message, until gob-ir sets it itself.
+/// The `AnnotationRequired` mark of a finding whose typed reason is an `annotation-required` one.
 fn annotation_reason(f: &Finding) -> Option<RequiredReason> {
+    if let Some(reason) = f.reason.as_ref().filter(|r| r.is_annotation()) {
+        return Some(RequiredReason::AnnotationRequired {
+            code: reason
+                .code()
+                .strip_prefix("annotation-required:")
+                .unwrap_or(reason.code())
+                .to_owned(),
+            public_surface: *reason == UnresolvedReason::AnnotationSignature,
+        });
+    }
+    legacy_annotation_reason(f)
+}
+
+/// The `AnnotationRequired` mark of an `annotation-required:` message.
+///
+/// Bridge for producers outside this crate that tag by message and set no typed reason (the
+/// `frob-check` test fixture); remove with them.
+fn legacy_annotation_reason(f: &Finding) -> Option<RequiredReason> {
     let rest = f.message.strip_prefix(ANNOTATION_PREFIX)?.trim_start();
     let code = rest.split_whitespace().next().unwrap_or_default();
     Some(RequiredReason::AnnotationRequired {
@@ -114,6 +133,28 @@ mod tests {
                 public_surface: true
             })
         );
+    }
+
+    // frob:tests crates/gob-check/src/required.rs::mark_annotations
+    #[test]
+    fn a_typed_annotation_reason_maps_to_a_required_mark_without_reading_the_message() {
+        let f = unresolved("opaque signature at pub fn x")
+            .with_reason(UnresolvedReason::AnnotationEffects);
+        let mut fs = [f];
+        mark_annotations(&mut fs);
+        assert_eq!(
+            fs[0].required,
+            Some(RequiredReason::AnnotationRequired {
+                code: "effects".into(),
+                public_surface: false
+            })
+        );
+    }
+
+    #[test]
+    fn a_zero_subject_finding_is_typed_vacuous() {
+        let f = zero_subject_finding("REF001").expect("valid id");
+        assert_eq!(f.reason, Some(UnresolvedReason::Vacuous));
     }
 
     #[test]

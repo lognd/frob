@@ -1,0 +1,5 @@
+---
+source: crates/gob-diagnostics/tests/contract.rs
+expression: "serde_json::to_string(&rec).unwrap()"
+---
+{"rule":"TOOL001","slug":null,"severity":"unresolved","file":null,"line":null,"column":null,"message":"no adapter","fingerprint":"5593dddec8c4e0e4ddb79b2fe022c41a6c793078e078436634dab4191ac96b59","fix":null,"required":null,"reason":"fidelity"}

@@ -7,6 +7,7 @@ use gob_text::{FileId, Span, TextRange};
 use crate::id::RuleId;
 use crate::meta::{FixKind, Severity};
 use crate::required::RequiredReason;
+use crate::unresolved::UnresolvedReason;
 
 /// Stable identity of a finding: blake3 over rule, anchor and normalized message.
 ///
@@ -106,6 +107,8 @@ pub struct Finding {
     pub fix: Option<Fix>,
     /// Why this Unresolved finding fails the gate (`cli.md` section 2); `None` when not required.
     pub required: Option<RequiredReason>,
+    /// Why this Unresolved finding could not decide (`testing.md`, D106); `None` for a resolved finding.
+    pub reason: Option<UnresolvedReason>,
 }
 
 impl Finding {
@@ -127,6 +130,7 @@ impl Finding {
             fingerprint,
             fix: None,
             required: None,
+            reason: None,
         }
     }
 
@@ -134,6 +138,13 @@ impl Finding {
     #[must_use]
     pub fn with_required(mut self, reason: RequiredReason) -> Self {
         self.required = Some(reason);
+        self
+    }
+
+    /// Record the typed reason this Unresolved finding could not decide.
+    #[must_use]
+    pub fn with_reason(mut self, reason: UnresolvedReason) -> Self {
+        self.reason = Some(reason);
         self
     }
 

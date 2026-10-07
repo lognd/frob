@@ -9,6 +9,7 @@ use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
+use gob_rules::UnresolvedReason;
 use tracing::trace;
 
 use super::relation::Relation;
@@ -30,6 +31,16 @@ pub enum PoisonReason {
 }
 
 impl PoisonReason {
+    /// The typed reason of a finding poisoned by this atom.
+    pub fn reason(&self) -> UnresolvedReason {
+        match self {
+            Self::Opaque(r) => UnresolvedReason::from_code(r),
+            Self::Hole => UnresolvedReason::Hole,
+            Self::Edge(Status::May) => UnresolvedReason::EdgeMay,
+            Self::Edge(_) => UnresolvedReason::EdgeUnknown,
+        }
+    }
+
     /// A stable reason code for findings.
     pub fn code(&self) -> String {
         match self {

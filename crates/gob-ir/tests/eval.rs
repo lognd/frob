@@ -13,7 +13,7 @@ use gob_ir::{
     Answer, AttrValue, EvalConfig, EvalError, Model, NodeId, Observation, Operator, Polarity,
     Relation, RuleOutcome, RuleProgram, ThresholdKind, Truth, Universal, Verdict, reserved,
 };
-use gob_rules::{RuleId, Severity};
+use gob_rules::{RequiredReason, RuleId, Severity, UnresolvedReason};
 use support::B;
 
 fn rule(id: &str) -> RuleId {
@@ -105,14 +105,14 @@ fn p_plus_fires_on_lo_and_certifies_clean_elsewhere() {
     let errors: Vec<_> = out
         .findings
         .iter()
-        .filter(|f| f.finding.severity == Severity::Error)
+        .filter(|f| f.severity == Severity::Error)
         .collect();
     assert_eq!(errors.len(), 1);
-    assert!(errors[0].finding.message.contains("m.rs::bad"));
+    assert!(errors[0].message.contains("m.rs::bad"));
     assert!(
         out.findings
             .iter()
-            .all(|f| f.finding.severity != Severity::Unresolved)
+            .all(|f| f.severity != Severity::Unresolved)
     );
     assert_eq!(out.truth(), Truth::No);
     let bad_result = out.results.iter().find(|r| r.subject == bad).unwrap();
@@ -151,7 +151,7 @@ fn p_plus_over_an_opaque_cone_is_unresolved_never_error_or_clean() {
     assert!(
         out.findings
             .iter()
-            .all(|f| f.finding.severity == Severity::Unresolved),
+            .all(|f| f.severity == Severity::Unresolved),
         "{:?}",
         out.findings
     );
@@ -176,12 +176,12 @@ fn an_exact_answer_computed_through_poison_is_downgraded_to_unknown() {
     let r = out.results.iter().find(|r| r.subject == user).unwrap();
     assert!(!r.examined);
     assert!(
-        matches!(&r.verdicts[0], Verdict::Unresolved { reason, .. } if reason.starts_with("dynamic:unresolvable") || reason.starts_with("edge"))
+        matches!(&r.verdicts[0], Verdict::Unresolved { reason, .. } if matches!(reason, UnresolvedReason::DynamicUnresolvable | UnresolvedReason::EdgeMay | UnresolvedReason::EdgeUnknown))
     );
     assert!(
         out.findings
             .iter()
-            .all(|f| f.finding.severity == Severity::Unresolved)
+            .all(|f| f.severity == Severity::Unresolved)
     );
 }
 
@@ -198,9 +198,9 @@ fn opaque_subject_reports_one_rolled_up_unresolved_with_the_reason_code() {
     assert_eq!(out.subjects_examined, 0);
     assert_eq!(out.findings.len(), 1, "rolled up per rule and artifact");
     let f = &out.findings[0];
-    assert_eq!(f.finding.severity, Severity::Unresolved);
-    assert_eq!(f.reason.as_deref(), Some("dynamic:unresolvable"));
-    assert!(!f.required);
+    assert_eq!(f.severity, Severity::Unresolved);
+    assert_eq!(f.reason, Some(UnresolvedReason::DynamicUnresolvable));
+    assert!(f.required.is_none());
 }
 
 #[test]
@@ -217,12 +217,22 @@ fn annotation_required_opaque_is_required_when_configured() {
         .subjects(move |_| Answer::Exact(vec![o]))
         .check(|_, _| Observation::Set(Answer::Exact(BTreeSet::new())));
     let loose = run(&m, &p);
-    assert!(!loose.findings[0].required);
+    assert!(loose.findings[0].required.is_none());
     let mut cfg = EvalConfig::default();
     cfg.required_reasons
         .insert("annotation-required:signature".into());
     let strict = p.evaluate(&m, &cfg).unwrap();
-    assert!(strict.findings[0].required);
+    assert_eq!(
+        strict.findings[0].reason,
+        Some(UnresolvedReason::AnnotationSignature)
+    );
+    assert_eq!(
+        strict.findings[0].required,
+        Some(RequiredReason::AnnotationRequired {
+            code: "signature".into(),
+            public_surface: true
+        })
+    );
 }
 
 #[test]
@@ -235,9 +245,9 @@ fn zero_subjects_is_vacuous_unresolved_never_clean() {
     let out = run(&m, &p);
     assert_eq!(out.subjects_examined, 0);
     assert_eq!(out.findings.len(), 1);
-    assert_eq!(out.findings[0].finding.severity, Severity::Unresolved);
-    assert_eq!(out.findings[0].reason.as_deref(), Some("vacuous"));
-    assert!(!out.findings[0].required);
+    assert_eq!(out.findings[0].severity, Severity::Unresolved);
+    assert_eq!(out.findings[0].reason, Some(UnresolvedReason::Vacuous));
+    assert!(out.findings[0].required.is_none());
     assert_eq!(out.truth(), Truth::Unknown);
 }
 
@@ -251,7 +261,12 @@ fn must_measure_makes_a_vacuous_rule_required() {
         .subjects(|_| Answer::Exact(Vec::new()))
         .check(|_, _| unreachable!());
     let out = run(&m, &p);
-    assert!(out.findings[0].required);
+    assert_eq!(
+        out.findings[0].required,
+        Some(RequiredReason::ZeroSubjects {
+            rule: "NEAT001".into()
+        })
+    );
 }
 
 #[test]
@@ -285,7 +300,7 @@ fn unknown_subject_set_is_unresolved() {
         .check(|_, _| unreachable!());
     let out = run(&m, &p);
     assert_eq!(out.findings.len(), 1);
-    assert_eq!(out.findings[0].finding.severity, Severity::Unresolved);
+    assert_eq!(out.findings[0].severity, Severity::Unresolved);
 }
 
 #[test]
@@ -307,8 +322,8 @@ fn p_minus_fires_when_no_good_thing_and_is_clean_when_one_exists() {
     let flagged: Vec<String> = out
         .findings
         .iter()
-        .filter(|f| f.finding.severity == Severity::Warn)
-        .map(|f| f.finding.message.clone())
+        .filter(|f| f.severity == Severity::Warn)
+        .map(|f| f.message.clone())
         .collect();
     assert_eq!(
         flagged.len(),
@@ -615,7 +630,7 @@ fn pc_must_cycle_fires_and_acyclic_is_clean() {
     let errors = out
         .findings
         .iter()
-        .filter(|f| f.finding.severity == Severity::Error)
+        .filter(|f| f.severity == Severity::Error)
         .count();
     assert_eq!(errors, 2);
     let acyclic = calls_model(false, false);
@@ -640,13 +655,13 @@ fn pc_may_cycle_is_unresolved_but_a_must_cycle_elsewhere_still_fires() {
     let errors = out
         .findings
         .iter()
-        .filter(|f| f.finding.severity == Severity::Error)
+        .filter(|f| f.severity == Severity::Error)
         .count();
     assert_eq!(errors, 2, "only the certain cycle fires");
     assert!(
         out.findings
             .iter()
-            .any(|f| f.finding.severity == Severity::Unresolved)
+            .any(|f| f.severity == Severity::Unresolved)
     );
 }
 
@@ -700,4 +715,33 @@ fn kleene_connectives() {
     assert_eq!(Truth::any([No, Unknown]), Unknown);
     assert_eq!(Truth::any(std::iter::empty()), No);
     assert_eq!(Truth::from(true), Yes);
+}
+
+// frob:tests crates/gob-ir/src/eval/program.rs::RuleOutcome::into_report
+#[test]
+fn an_outcome_converts_into_a_rule_report_with_its_accounting() {
+    let (m, _ok, _bad, forbidden) = basic();
+    let out = run(&m, &no_forbidden_calls(forbidden));
+    let (total, examined, n) = (
+        out.subjects_total,
+        out.subjects_examined,
+        out.findings.len(),
+    );
+    let report = out.into_report();
+    assert_eq!(report.subjects_total, total);
+    assert_eq!(report.subjects_examined, examined);
+    assert_eq!(report.findings.len(), n);
+    assert!(report.not_applicable.is_none());
+    assert!(!report.is_certified_clean());
+}
+
+#[test]
+fn a_hole_and_a_may_edge_carry_their_typed_reasons_on_the_finding() {
+    let (m, g, _user) = opaque_in_cone();
+    let out = run(&m, &no_forbidden_calls(g));
+    assert!(
+        out.findings.iter().all(|f| f.reason.is_some()),
+        "every Unresolved carries a typed reason: {:?}",
+        out.findings
+    );
 }

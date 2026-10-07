@@ -12,7 +12,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use gob_cache::{Cache, FindingsKey};
-use gob_rules::{Finding, RuleMeta};
+use gob_rules::{Finding, RuleMeta, UnresolvedReason};
 use gob_text::FileId;
 use rayon::prelude::*;
 
@@ -182,8 +182,13 @@ fn account<P: Product>(
                     examined = true;
                     if let Some(why) = hole_caveat_of(&info, &rule.applies) {
                         unresolved.push(rule.id);
-                        acc.findings
-                            .push(unresolved_finding_for(rule.id, file, path, &why));
+                        acc.findings.push(unresolved_finding_for(
+                            rule.id,
+                            file,
+                            path,
+                            &why,
+                            UnresolvedReason::Partial,
+                        ));
                     }
                 }
                 SubjectStatus::NotApplicable(why) => {
@@ -207,8 +212,13 @@ fn account<P: Product>(
                             .1
                             .push(path);
                     } else {
-                        acc.findings
-                            .push(unresolved_finding_for(rule.id, file, path, &why));
+                        acc.findings.push(unresolved_finding_for(
+                            rule.id,
+                            file,
+                            path,
+                            &why,
+                            UnresolvedReason::Fidelity,
+                        ));
                     }
                 }
             }

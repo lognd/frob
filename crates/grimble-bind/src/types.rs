@@ -3,7 +3,7 @@
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
 
-use gob_rules::{Finding, RuleId, Severity};
+use gob_rules::{Finding, RuleId, Severity, UnresolvedReason};
 use gob_text::{FileInterner, Span, TextRange, TextSize};
 use serde_json::{Value, json};
 
@@ -171,10 +171,45 @@ impl Reason {
     }
 }
 
+impl Reason {
+    /// The reason a code names, or `None` for a code no variant owns.
+    pub fn from_code(code: &str) -> Option<Self> {
+        [
+            Self::UnseenRemainder,
+            Self::MayOnlyOwner,
+            Self::Fidelity,
+            Self::InferenceUnavailable,
+            Self::Vacuous,
+            Self::LockUnreadable,
+            Self::UnresolvedEdge,
+        ]
+        .into_iter()
+        .find(|r| r.code() == code)
+    }
+
+    /// The typed reason [`gob_rules::Finding::reason`] carries for this binding reason.
+    pub fn typed(self) -> UnresolvedReason {
+        match self {
+            Self::UnseenRemainder => UnresolvedReason::Opaque(self.code().to_owned()),
+            Self::MayOnlyOwner => UnresolvedReason::EdgeMay,
+            Self::Fidelity => UnresolvedReason::Fidelity,
+            Self::InferenceUnavailable => UnresolvedReason::Partial,
+            Self::Vacuous => UnresolvedReason::Vacuous,
+            Self::LockUnreadable => UnresolvedReason::ParseFailed,
+            Self::UnresolvedEdge => UnresolvedReason::EdgeUnknown,
+        }
+    }
+}
+
 /// The message prefix that carries a reason code on an Unresolved finding.
+///
+/// Kept only because `grimble-check`'s bind cache stores a `BindFinding` as its message and rebuilds
+/// it with no reason field; [`BindFinding::into_finding`] lifts it into the typed `Finding::reason`.
 pub const REASON_PREFIX: &str = "[sys-unresolved/";
 
 /// The reason code an Unresolved message carries, if it was written by [`Reason`] tagging.
+///
+/// Used by [`BindFinding::into_finding`] and `grimble-check` only; consumers read `Finding::reason`.
 pub fn reason_of_message(message: &str) -> Option<&str> {
     let rest = message.strip_prefix(REASON_PREFIX)?;
     rest.split_once(']').map(|(code, _)| code)
@@ -235,12 +270,47 @@ impl BindFinding {
             }
             _ => None,
         };
-        Some(Finding::new(
-            id,
-            self.severity,
-            span,
-            self.message,
-            &self.anchor,
-        ))
+        let reason = reason_of_message(&self.message)
+            .and_then(Reason::from_code)
+            .map(Reason::typed);
+        let finding = Finding::new(id, self.severity, span, self.message, &self.anchor);
+        Some(match reason {
+            Some(r) => finding.with_reason(r),
+            None => finding,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/grimble-bind/src/types.rs::BindFinding::into_finding
+    #[test]
+    fn an_unresolved_bind_finding_lifts_its_reason_into_the_typed_field() {
+        for (reason, typed) in [
+            (Reason::MayOnlyOwner, UnresolvedReason::EdgeMay),
+            (Reason::Vacuous, UnresolvedReason::Vacuous),
+            (Reason::UnresolvedEdge, UnresolvedReason::EdgeUnknown),
+            (Reason::LockUnreadable, UnresolvedReason::ParseFailed),
+            (
+                Reason::UnseenRemainder,
+                UnresolvedReason::Opaque("unseen-remainder".into()),
+            ),
+        ] {
+            let f = BindFinding::unresolved("SYS006", reason, "m", "a", None)
+                .into_finding(&mut FileInterner::default())
+                .expect("valid rule id");
+            assert_eq!(f.reason, Some(typed));
+        }
+    }
+
+    #[test]
+    fn a_resolved_bind_finding_has_no_reason() {
+        let mut b = BindFinding::unresolved("SYS006", Reason::Vacuous, "m", "a", None);
+        b.severity = Severity::Error;
+        b.message = "plain".to_owned();
+        let f = b.into_finding(&mut FileInterner::default()).expect("id");
+        assert_eq!(f.reason, None);
     }
 }

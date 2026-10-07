@@ -1,6 +1,6 @@
 //! Serializable projection of a `gob_rules::Finding`.
 
-use gob_rules::{Finding, Registry, RequiredReason};
+use gob_rules::{Finding, Registry, RequiredReason, UnresolvedReason};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -30,6 +30,9 @@ pub struct FindingRecord {
     pub fix: Option<String>,
     /// Why this Unresolved finding fails the gate under `required`, if it does.
     pub required: Option<RequiredReason>,
+    /// Typed reason an Unresolved finding could not decide (a code such as `vacuous`); absent otherwise.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<UnresolvedReason>,
 }
 
 impl FindingRecord {
@@ -65,6 +68,7 @@ impl FindingRecord {
             fingerprint: finding.fingerprint.to_hex(),
             fix: finding.fix.as_ref().map(|f| f.title.clone()),
             required: finding.required.clone(),
+            reason: finding.reason.clone(),
         }
     }
 }

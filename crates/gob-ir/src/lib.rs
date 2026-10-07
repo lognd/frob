@@ -78,8 +78,8 @@ pub use answer::{Answer, Truth};
 pub use attrs::{AttrValue, Attributes, reserved};
 pub use digest::{DIGEST_SCHEME, Digest, Facet, FacetDigest};
 pub use eval::{
-    Ctx, EvalConfig, EvalError, Observation, Poison, PoisonReason, Polarity, Relation, RuleFinding,
-    RuleOutcome, RuleProgram, SubjectResult, ThresholdKind, Verdict,
+    Ctx, EvalConfig, EvalError, Observation, Poison, PoisonReason, Polarity, Relation, RuleOutcome,
+    RuleProgram, SubjectResult, ThresholdKind, Verdict,
 };
 pub use location::Location;
 pub use operator::{AdapterOp, GroupOrder, Operator, Sort, Universal};
