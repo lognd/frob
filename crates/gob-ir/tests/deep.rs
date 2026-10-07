@@ -19,7 +19,7 @@ use support::B;
 /// (~2E4H9EG).
 // frob:ticket 01M4957V84TB1V6TRPR2E4H9EG
 const DEPTH: u32 = 100_000;
-/// Period of the `apply` nodes: 100_000 / 39_989 gives two, so `f` is still free.
+/// Period of the `apply` nodes: a hundred thousand levels hold two of them, so `f` is still free.
 const APPLY_EVERY: u32 = 39_989;
 /// Period of the unit nodes.
 const UNIT_EVERY: u32 = 5000;
