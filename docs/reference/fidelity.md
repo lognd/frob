@@ -175,7 +175,7 @@ not imported).
 selected one maps to the test file's member (the nearest `package.json`) and runner: vitest when the package lists
 `vitest`, has a `vitest.config.*` or the file imports `vitest`; jest likewise (`jest`, `@jest/globals`, `ts-jest`,
 `jest.config.*`). It runs `vitest run` or `jest --ci` in the member directory on the files of the selected tests
-(their siblings run too; `--all` runs each member whole) and reads the runner's JSON report. Evidence names every
+(their siblings run too; `--all` runs each member whole that declares its runner by dependency or config, not only by an import) and reads the runner's JSON report. Evidence names every
 executed test as its unit (`src/a.test.ts::suite$math::test$adds`, `[dupN]` for a repeated title in a suite;
 two `describe` blocks of one title are not told apart; a dynamic title is recorded under its slug and maps to no unit). `node` or
 the runner missing is a refusal (`E-EVIDENCE-RUNNER-MISSING`), never a skip, and the runner must be listed in

@@ -225,7 +225,7 @@ pub struct JsGroup {
 // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
 /// The vitest and jest invocations for `selected`: one per runner and member, running the files of the selected tests.
 ///
-/// With `opts.all` every member holding a runner-found test file (`*.test.*`, `*.spec.*`) is run whole instead.
+/// With `opts.all` every member that declares its runner (dependency or config file, not just an import) and holds a runner-found test file (`*.test.*`, `*.spec.*`) is run whole instead.
 /// A selected test runs through its file, so its siblings run too; the evidence names every test that executed.
 pub fn js_groups(selected: &[TestTarget], opts: &RunOptions) -> Vec<JsGroup> {
     let mut groups: BTreeMap<(Framework, String), BTreeSet<String>> = BTreeMap::new();
@@ -239,8 +239,8 @@ pub fn js_groups(selected: &[TestTarget], opts: &RunOptions) -> Vec<JsGroup> {
             }
         };
         for f in walked.iter().filter(|f| is_runner_test_file(&f.path)) {
-            let text = std::fs::read_to_string(opts.root.join(&f.path)).ok();
-            if let Some(m) = members.resolve(&f.path, text.as_deref()) {
+            // No file text: under --all only a member that declares its runner runs (a fixture that merely imports vitest does not).
+            if let Some(m) = members.resolve(&f.path, None) {
                 groups.entry((m.framework, m.dir)).or_default();
             }
         }

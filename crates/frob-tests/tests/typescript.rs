@@ -298,9 +298,15 @@ fn run_groups_selected_tests_by_member_and_maps_results_back_to_units() {
     );
     assert!(report.runs[1].capture.transcript.contains("--ci --json"));
 
-    // --all runs every member that holds a runner-found test file, whole.
+    // --all runs every member that declares its runner and holds a test file, whole; the root member only
+    // imports vitest, so it is left out.
     opts.all = true;
     let whole = frob_tests::js_groups(&[], &opts);
-    assert_eq!(whole.len(), 2, "{whole:?}");
-    assert!(whole.iter().all(|g| g.files.is_empty()));
+    assert_eq!(
+        whole
+            .iter()
+            .map(|g| (g.framework, g.member.as_str(), g.files.len()))
+            .collect::<Vec<_>>(),
+        [(Framework::Jest, "legacy", 0)]
+    );
 }
