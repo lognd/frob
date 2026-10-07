@@ -7,8 +7,8 @@ priority = "high"
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:06Z"
-updated = "2026-10-07T01:39:53Z"
-scope = ["crates/gob-check/**"]
+updated = "2026-10-07T01:42:28Z"
+scope = ["crates/gob-check/**", "crates/gob-rules/**", "docs/design/rule-authoring.md"]
 
 [[links]]
 kind = "blocked-by"
