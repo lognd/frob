@@ -7,8 +7,8 @@ priority = "high"
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:50Z"
-updated = "2026-10-07T01:25:22Z"
-scope = ["crates/frob-pm/src/board.rs", "crates/frob/src/board_cmd.rs", "crates/frob/tests/**"]
+updated = "2026-10-07T01:44:19Z"
+scope = ["crates/frob-pm/src/board.rs", "crates/frob/src/board_cmd.rs", "crates/frob/tests/**", "docs/design/releases.md"]
 
 [[acceptance]]
 text = "text and JSON come from one Board value (test)"
