@@ -1,4 +1,4 @@
-//! Totality in practice (Theorem 1): a term one million levels deep is printed, digested, its
+//! Totality in practice (Theorem 1): a term one hundred thousand levels deep is printed, digested, its
 //! symrefs computed and queried on a default-sized (2 MiB) thread stack, deterministically.
 //!
 //! The term is built iteratively, because the test itself must not recurse either.
@@ -13,9 +13,18 @@ use std::thread;
 use gob_ir::{Digest, Facet, FacetDigest, Model, NodeId, Operator, PrintOpts, Resolution};
 use support::B;
 
-const DEPTH: u32 = 1_000_000;
+/// Deep enough that any recursion overflows the 2 MiB stack (a frame of even 21 bytes per level
+/// would; real frames are tens to hundreds of bytes), yet a tenth of the original one million so
+/// the test runs in about a second instead of ~10 s cold and past the 120 s guard under load
+/// (~2E4H9EG).
+// frob:ticket 01M4957V84TB1V6TRPR2E4H9EG
+const DEPTH: u32 = 100_000;
+/// Period of the `apply` nodes: 100_000 / 39_989 gives two, so `f` is still free.
+const APPLY_EVERY: u32 = 39_989;
+/// Period of the unit nodes.
+const UNIT_EVERY: u32 = 5000;
 /// Depth of the determinism comparison: the property is per-algorithm, not per-depth, so two
-/// builds at a twentieth of [`DEPTH`] prove it for the cost of one million-level run (the
+/// builds at a twentieth of [`DEPTH`] prove it for the cost of one full-depth run (the
 /// totality run itself builds the full depth once).
 const DETERMINISM_DEPTH: u32 = DEPTH / 20;
 /// The default thread stack of `std::thread`, deliberately not raised.
@@ -44,11 +53,11 @@ fn build(depth: u32) -> (Model, NodeId) {
     let zz = b.reference("zz");
     let mut cur = b.node(Operator::group(gob_ir::GroupOrder::Sequence), &[x0, zz]);
     for k in 1..=depth {
-        cur = if k % 5000 == 0 {
+        cur = if k % UNIT_EVERY == 0 {
             b.unit("function", &format!("u{k}"), &[], &[cur])
         } else if k % 1001 == 0 {
             b.node(Operator::anon("closure"), &[cur])
-        } else if k % 399_989 == 0 {
+        } else if k % APPLY_EVERY == 0 {
             let head = b.reference("f");
             b.node(Operator::apply("call"), &[head, cur])
         } else {
@@ -107,7 +116,7 @@ fn report_on_default_stack(depth: u32) -> Report {
 }
 
 #[test]
-fn a_million_levels_deep_on_a_default_stack_is_total() {
+fn a_hundred_thousand_levels_deep_on_a_default_stack_is_total() {
     let start = std::time::Instant::now();
     let first = report_on_default_stack(DEPTH);
     eprintln!("one deep run took {:?}", start.elapsed());
@@ -119,9 +128,9 @@ fn a_million_levels_deep_on_a_default_stack_is_total() {
         BTreeSet::from(["f".to_owned(), "zz".to_owned()])
     );
     let anons = (1..=DEPTH)
-        .filter(|k| k % 5000 != 0 && k % 1001 == 0)
+        .filter(|k| k % UNIT_EVERY != 0 && k % 1001 == 0)
         .count();
-    assert_eq!(first.units, 1 + 200 + anons);
+    assert_eq!(first.units, 1 + (DEPTH / UNIT_EVERY) as usize + anons);
     assert_eq!(first.ancestors, DEPTH as usize + 2);
     assert!(first.deepest_symref.starts_with("deep.rs::"));
 }

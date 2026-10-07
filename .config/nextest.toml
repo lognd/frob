@@ -24,7 +24,30 @@ path = "junit.xml"
 # target/tests/trybuild, so it cannot share the workspace's warm target dir and must compile
 # frob-ledger, gob-cli, gob-config, gob-directives and gob-rules once per cold target dir.
 # Measured 2026-10-06 at load average ~25: 85 s cold, 1 s warm; earlier runs hit 120 s+ at load
-# ~39. The 300 s allowance (10 periods) keeps the hang guard meaningful for a cold build.
+# ~39. ~2E4H9EG, goway quasar (12 cores) with 24 busy spinners (load ~35): ui 38 s and
+# ui_rule_attr 57 s run one after the other (test group below); unloaded cold 21 s and 55 s while
+# racing each other. The 300 s allowance (10 periods) keeps the hang guard meaningful for a cold build.
 [[profile.ci.overrides]]
 filter = "package(gob-macros) & (binary(ui) | binary(ui_rule_attr))"
 slow-timeout = { period = "30s", terminate-after = 10 }
+
+# ~2E4H9EG: the two trybuild binaries share one project dir, target/tests/trybuild/gob-macros,
+# and each run rewrites its Cargo.toml and workspace; run concurrently (nextest runs binaries in
+# parallel) they raced: one binary's manifest and cargo lock were replaced under the other, which
+# showed as a FAIL (not a timeout) of `ui` under load. One test group with a single slot runs
+# them one after the other, and the second reuses the first's warm dependency build.
+[test-groups]
+trybuild = { max-threads = 1 }
+
+[[profile.default.overrides]]
+filter = "package(gob-macros) & (binary(ui) | binary(ui_rule_attr))"
+test-group = "trybuild"
+
+[[profile.ci.overrides]]
+filter = "package(gob-macros) & (binary(ui) | binary(ui_rule_attr))"
+test-group = "trybuild"
+
+# ~2E4H9EG measurements (goway quasar, 12 cores, debug; cold unloaded -> 24 spinners, load ~35):
+# frob-pm corpus was one 8.6 s case, now five per-file tests, slowest 16 s loaded; gob-ir deep
+# was 9.6 s -> 18.5 s loaded at depth 1_000_000, now 3.4 s loaded at depth 100_000. Both are far
+# under the 120 s guard, so neither needs an override.

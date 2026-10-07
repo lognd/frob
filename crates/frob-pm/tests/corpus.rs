@@ -165,4 +165,45 @@ fn runner(case: &Case) -> Vec<Finding> {
     evaluate(&ledger).expect("evaluate").findings
 }
 
-gob_mdtest::mdtest!(dir = "tests/mdtest", runner = runner);
+/// One `#[test]` per corpus file so nextest runs the five files in parallel (~2E4H9EG: the single
+/// `mdtest_corpus` case ran them serially, 8.6 s cold and past the 120 s guard under load).
+macro_rules! corpus_file {
+    ($name:ident, $file:literal) => {
+        // frob:ticket 01M4957V84TB1V6TRPR2E4H9EG
+        #[test]
+        fn $name() {
+            let dir = gob_mdtest::manifest_dir(env!("CARGO_MANIFEST_DIR")).join("tests/mdtest");
+            let report = gob_mdtest::run_file(&dir.join($file), &gob_mdtest::Runner::new(runner));
+            assert!(
+                report.passed(),
+                "mdtest corpus failed:\n{}",
+                report.render_failures()
+            );
+            assert!(!report.cases.is_empty(), "no cases in {}", $file);
+        }
+    };
+}
+
+corpus_file!(pm001, "pm001.md");
+corpus_file!(pm002, "pm002.md");
+corpus_file!(pm013, "pm013.md");
+corpus_file!(pm033, "pm033.md");
+corpus_file!(pm034, "pm034.md");
+
+/// Guards the per-file split: a new markdown file must get its own `corpus_file!` line above.
+// frob:ticket 01M4957V84TB1V6TRPR2E4H9EG
+#[test]
+fn every_corpus_file_has_a_test() {
+    let dir = gob_mdtest::manifest_dir(env!("CARGO_MANIFEST_DIR")).join("tests/mdtest");
+    let mut files: Vec<String> = std::fs::read_dir(&dir)
+        .expect("read corpus dir")
+        .filter_map(Result::ok)
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .collect();
+    files.sort();
+    assert_eq!(
+        files,
+        ["pm001.md", "pm002.md", "pm013.md", "pm033.md", "pm034.md"],
+        "corpus files and corpus_file! lines must match"
+    );
+}
