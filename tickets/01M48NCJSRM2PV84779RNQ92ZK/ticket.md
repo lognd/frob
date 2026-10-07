@@ -7,7 +7,7 @@ priority = "medium"
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T13:10:30Z"
-updated = "2026-10-07T04:04:17Z"
+updated = "2026-10-07T04:14:22Z"
 scope = ["crates/frob-tests/**", "crates/frob-evidence/**", "crates/gob-symbols/src/typescript/mod.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-testsupport/src/lib.rs", "docs/reference/config.md", "docs/schemas/config.json", "docs/design/code-model.md", "docs/reference/fidelity.md"]
 
 [[acceptance]]
