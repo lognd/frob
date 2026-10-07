@@ -31,11 +31,18 @@
 
 // frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
 
+// A rule crate that is a dependency but not in `product_rules!` is an unused dependency (D107).
+#![cfg_attr(not(test), deny(unused_crate_dependencies))]
+
+use gob_diagnostics as _; // unused today; removal tracked in ~MKG678C
+use toml as _; // unused today; removal tracked in ~MKG678C
+
 pub mod bind_cache;
 pub mod config;
 pub mod fidelity;
 pub mod model_view;
 mod product;
+pub mod product_rules;
 pub mod sibling;
 
 use std::collections::BTreeMap;

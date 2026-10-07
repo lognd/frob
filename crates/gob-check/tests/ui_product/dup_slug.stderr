@@ -1,0 +1,24 @@
+error[E0080]: evaluation panicked: duplicate `same-slug` within product Demo: rule slug in crate `first-rules` (src/rules/x.rs:7) and rule slug in crate `second-rules` (src/rules/x.rs:7)
+  --> tests/ui_product/dup_slug.rs:36:1
+   |
+36 | / gob_check::product_rules! {
+37 | |     product = Demo;
+38 | |     host = ();
+39 | |     crates = [first, second];
+40 | | }
+   | |_^ evaluation of `_` failed inside this call
+   |
+note: inside `assert_unique`
+  --> $WORKSPACE/crates/gob-rules/src/index.rs
+   |
+   | ...                   describe(msg, &b).fail();
+   |                       ^^^^^^^^^^^^^^^^^^^^^^^^
+note: inside `__rules::index::Msg::fail`
+  --> $RUST/core/src/panic.rs
+   |
+   = note: the failure occurred here
+   |
+  ::: $WORKSPACE/crates/gob-rules/src/index.rs
+   |
+   |             Ok(text) => panic!("{}", text),
+   |                         ------------------ in this macro invocation

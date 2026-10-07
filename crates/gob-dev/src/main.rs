@@ -246,7 +246,13 @@ fn generate_files(kind: Kind, check: bool, root: Option<PathBuf>) -> Result<(), 
     };
     let root = root.unwrap_or_else(|| workspace.clone());
     let mode = if check { Mode::Check } else { Mode::Write };
-    let files = generate(kind, &workspace.join("crates"));
+    let files = match generate(kind, &workspace.join("crates")) {
+        Ok(files) => files,
+        Err(e) => {
+            tracing::error!(error = %e, "generation failed");
+            return Err(Failed(format!("error: {e}")));
+        }
+    };
     match apply(&root, &files, mode) {
         Ok(applied) if mode == Mode::Check && applied.differing > 0 => {
             emit(&format!(
