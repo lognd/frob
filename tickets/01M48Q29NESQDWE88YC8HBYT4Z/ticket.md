@@ -2,12 +2,12 @@
 id = "01M48Q29NESQDWE88YC8HBYT4Z"
 title = "frob board --brief: what is being done now, next and blocked"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:50Z"
-updated = "2026-10-06T13:39:50Z"
+updated = "2026-10-07T00:50:27Z"
 scope = ["crates/frob-pm/src/board.rs", "crates/frob/src/board_cmd.rs", "crates/frob/tests/**"]
 
 [[acceptance]]
