@@ -6,13 +6,13 @@ use frob_ledger::guards::{NoLeases, default_close_guards};
 use frob_ledger::index::{Index, ListFilter};
 use frob_ledger::model::{Category, CommentSubtype, LinkKind, Outcome, Priority, TicketType};
 use frob_ledger::ops::{NewTicket, Patch};
-use frob_ledger::{Ledger, LedgerConfig, LedgerError, RefMode, TicketId, fold, rules};
+use frob_ledger::{Layout, Ledger, LedgerConfig, LedgerError, RefMode, TicketId, fold, rules};
 use gob_git::{CommitOptions, RelPath, Repo, TreeRef};
 
 const MAIN: &str = "refs/heads/main";
 
 /// A repository on `main` with a root commit, an identity, and an open ledger.
-fn fixture(mode: RefMode) -> (tempfile::TempDir, Ledger) {
+fn fixture(layout: Layout, mode: RefMode) -> (tempfile::TempDir, Ledger) {
     let dir = tempfile::tempdir().expect("tempdir");
     let repo = Repo::init(dir.path()).expect("init");
     std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").expect("head");
@@ -40,11 +40,52 @@ fn fixture(mode: RefMode) -> (tempfile::TempDir, Ledger) {
     };
     (
         dir,
-        Ledger::open(repo, cfg, std::sync::Arc::new(gob_time::SystemClock)),
+        Ledger::open(repo, cfg, std::sync::Arc::new(gob_time::SystemClock)).with_layout(layout),
     )
 }
 
-fn commits_since_root(repo: &Repo) -> Vec<String> {
+/// Run one `fn name(layout: Layout)` body as two tests, once per ledger layout.
+macro_rules! both_layouts {
+    ($name:ident) => {
+        mod $name {
+            #[test]
+            fn dir() {
+                super::$name(super::Layout::Dir);
+            }
+
+            #[test]
+            fn branch() {
+                super::$name(super::Layout::Branch);
+            }
+        }
+    };
+}
+
+/// Repository path of the document of ticket `id` at the tip of `MAIN`, in either layout.
+fn card_path(ledger: &Ledger, id: TicketId) -> String {
+    if ledger.layout() == Layout::Dir {
+        return format!("tickets/{id}/ticket.md");
+    }
+    let repo = ledger.repo();
+    let empty = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+        .parse()
+        .expect("oid");
+    repo.diff_names(&TreeRef::Oid(empty), &TreeRef::Ref(MAIN.to_owned()))
+        .expect("diff")
+        .into_iter()
+        .map(|c| c.path)
+        .find(|p| {
+            p.ends_with(".md")
+                && repo
+                    .read_blob_at(MAIN, p)
+                    .ok()
+                    .flatten()
+                    .is_some_and(|b| String::from_utf8_lossy(&b).contains(&id.to_string()))
+        })
+        .expect("card on the ledger tip")
+}
+
+fn commits_since_root(repo: &Repo, layout: Layout) -> Vec<String> {
     let mut out = Vec::new();
     let mut cur = repo.rev_parse(MAIN).expect("tip");
     while let Ok(parent) = repo.rev_parse(&format!("{cur}^")) {
@@ -52,7 +93,10 @@ fn commits_since_root(repo: &Repo) -> Vec<String> {
             .diff_names(&TreeRef::Oid(parent), &TreeRef::Oid(cur))
             .expect("diff");
         assert!(
-            changed.iter().all(|c| c.path.starts_with("tickets/")),
+            changed.iter().all(|c| match layout {
+                Layout::Dir => c.path.starts_with("tickets/"),
+                Layout::Branch => c.path != "README.md",
+            }),
             "commit {cur} touches non-ticket paths: {changed:?}"
         );
         out.push(cur.to_string());
@@ -65,9 +109,8 @@ fn read(dir: &Path, rel: &str) -> String {
     std::fs::read_to_string(dir.join(rel)).expect("file")
 }
 
-#[test]
-fn lifecycle_new_update_link_comment_close() {
-    let (dir, ledger) = fixture(RefMode::Trunk);
+fn lifecycle_new_update_link_comment_close(layout: Layout) {
+    let (dir, ledger) = fixture(layout, RefMode::Trunk);
     let mut req = NewTicket::new("Parse the config", TicketType::Task);
     req.points = Some("3".parse().expect("points"));
     req.acceptance = vec!["parses".into(), "reports errors".into()];
@@ -145,7 +188,7 @@ fn lifecycle_new_update_link_comment_close() {
 
     // exactly: new a, new b, update, link, comment, close.
     let repo = ledger.repo();
-    let commits = commits_since_root(repo);
+    let commits = commits_since_root(repo, layout);
     assert_eq!(commits.len(), 6, "{commits:?}");
 
     // events per mutation, and frontmatter == fold.
@@ -162,14 +205,12 @@ fn lifecycle_new_update_link_comment_close() {
         assert_eq!(fold::fold(id, &events).expect("fold").ticket, stored);
     }
     // The checked-out worktree carries the same files.
+    let card = card_path(&ledger, id_a);
     let blob = repo
-        .read_blob_at(MAIN, &format!("tickets/{id_a}/ticket.md"))
+        .read_blob_at(MAIN, &card)
         .expect("blob")
         .expect("present");
-    assert_eq!(
-        read(dir.path(), &format!("tickets/{id_a}/ticket.md")).as_bytes(),
-        blob
-    );
+    assert_eq!(read(dir.path(), &card).as_bytes(), blob);
 
     // Once a is done, b stays doable and a no longer is blocked.
     let view = ledger.show(id_a).expect("show");
@@ -184,10 +225,10 @@ fn lifecycle_new_update_link_comment_close() {
     let brief = ledger.brief(id_a).expect("brief");
     assert!(brief.contains("Parse the config") && brief.contains("## Acceptance"));
 }
+both_layouts!(lifecycle_new_update_link_comment_close);
 
-#[test]
-fn new_is_idempotent_on_the_key() {
-    let (_dir, ledger) = fixture(RefMode::Trunk);
+fn new_is_idempotent_on_the_key(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     let mut req = NewTicket::new("Once", TicketType::Chore);
     req.idempotency_key = Some("key-1".into());
     let first = ledger.new_ticket(req.clone()).expect("first");
@@ -195,12 +236,12 @@ fn new_is_idempotent_on_the_key() {
     assert!(!first.already && second.already);
     assert_eq!(first.ticket.front.id, second.ticket.front.id);
     assert_eq!(ledger.list(&ListFilter::default()).expect("list").len(), 1);
-    assert_eq!(commits_since_root(ledger.repo()).len(), 1);
+    assert_eq!(commits_since_root(ledger.repo(), layout).len(), 1);
 }
+both_layouts!(new_is_idempotent_on_the_key);
 
-#[test]
-fn update_validates_and_repeats_are_already() {
-    let (_dir, ledger) = fixture(RefMode::Trunk);
+fn update_validates_and_repeats_are_already(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     let t = ledger
         .new_ticket(NewTicket::new("T", TicketType::Task))
         .expect("new");
@@ -230,10 +271,10 @@ fn update_validates_and_repeats_are_already() {
     };
     assert!(ledger.update(id, &noop).expect("noop").already);
 }
+both_layouts!(update_validates_and_repeats_are_already);
 
-#[test]
-fn link_topology_is_enforced() {
-    let (_dir, ledger) = fixture(RefMode::Trunk);
+fn link_topology_is_enforced(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     let mk = |t: &str| {
         ledger
             .new_ticket(NewTicket::new(t, TicketType::Task))
@@ -275,10 +316,10 @@ fn link_topology_is_enforced() {
         "no cycle once a-b is gone"
     );
 }
+both_layouts!(link_topology_is_enforced);
 
-#[test]
-fn doctor_flags_and_fixes_a_stale_frontmatter() {
-    let (_dir, ledger) = fixture(RefMode::Trunk);
+fn doctor_flags_and_fixes_a_stale_frontmatter(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     let id = ledger
         .new_ticket(NewTicket::new("Original", TicketType::Task))
         .expect("new")
@@ -297,7 +338,7 @@ fn doctor_flags_and_fixes_a_stale_frontmatter() {
         .commit_paths(
             MAIN,
             &[(
-                RelPath::new(format!("tickets/{id}/ticket.md")).expect("path"),
+                RelPath::new(card_path(&ledger, id)).expect("path"),
                 Some(
                     frob_ledger::doc::render(&stored)
                         .expect("render")
@@ -319,10 +360,10 @@ fn doctor_flags_and_fixes_a_stale_frontmatter() {
         "Original"
     );
 }
+both_layouts!(doctor_flags_and_fixes_a_stale_frontmatter);
 
-#[test]
-fn tick002_and_tick003() {
-    let (_dir, ledger) = fixture(RefMode::Trunk);
+fn tick002_and_tick003(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     let id = ledger
         .new_ticket(NewTicket::new("Real", TicketType::Task))
         .expect("new")
@@ -345,10 +386,10 @@ fn tick002_and_tick003() {
     assert_eq!(dangling.len(), 1);
     assert_eq!(dangling[0].rule.as_str(), "TICK003");
 }
+both_layouts!(tick002_and_tick003);
 
-#[test]
-fn alias_ambiguity_lists_both_candidates() {
-    let (_dir, ledger) = fixture(RefMode::Trunk);
+fn alias_ambiguity_lists_both_candidates(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     for title in ["first", "second"] {
         let mut req = NewTicket::new(title, TicketType::Task);
         req.aliases = vec!["T-0042".into()];
@@ -374,6 +415,7 @@ fn alias_ambiguity_lists_both_candidates() {
         Err(LedgerError::NotFound { .. })
     ));
 }
+both_layouts!(alias_ambiguity_lists_both_candidates);
 
 #[test]
 fn handles_resolve_and_ambiguous_suffixes_refuse() {
@@ -447,9 +489,8 @@ fn synthetic(title: &str) -> frob_ledger::model::Ticket {
     }
 }
 
-#[test]
-fn index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise() {
-    let (dir, ledger) = fixture(RefMode::Trunk);
+fn index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise(layout: Layout) {
+    let (dir, ledger) = fixture(layout, RefMode::Trunk);
     let id = ledger
         .new_ticket(NewTicket::new("Indexed", TicketType::Task))
         .expect("new")
@@ -473,7 +514,8 @@ fn index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise() 
         other,
         LedgerConfig::default(),
         std::sync::Arc::new(gob_time::SystemClock),
-    );
+    )
+    .with_layout(layout);
     let second = other_ledger
         .new_ticket(NewTicket::new("Second", TicketType::Task))
         .expect("new")
@@ -496,10 +538,11 @@ fn index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise() 
         Some("stale-key")
     );
 }
+both_layouts!(index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise);
 
 #[test]
 fn branch_mode_commits_to_the_current_branch() {
-    let (dir, ledger) = fixture(RefMode::Branch);
+    let (dir, ledger) = fixture(Layout::Dir, RefMode::Branch);
     let repo = ledger.repo();
     // A topic branch checked out; trunk must not move.
     let main_tip = repo.rev_parse(MAIN).expect("main");
@@ -527,7 +570,7 @@ fn branch_mode_commits_to_the_current_branch() {
 
 #[test]
 fn trunk_mode_commits_to_trunk_even_on_another_branch() {
-    let (dir, ledger) = fixture(RefMode::Trunk);
+    let (dir, ledger) = fixture(Layout::Dir, RefMode::Trunk);
     let repo = ledger.repo();
     let main_tip = repo.rev_parse(MAIN).expect("main");
     std::fs::write(
@@ -624,9 +667,10 @@ fn merge_driver_unions_events_and_refolds() {
     assert!(merge::resolve(dir.path(), &path, &out, vec![]).is_err());
 }
 
-#[test]
-fn concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent() {
-    let (dir, ledger) = fixture(RefMode::Trunk);
+fn concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent(
+    layout: Layout,
+) {
+    let (dir, ledger) = fixture(layout, RefMode::Trunk);
     let id = ledger
         .new_ticket(NewTicket::new("Contended", TicketType::Task))
         .expect("new")
@@ -656,7 +700,8 @@ fn concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_con
                     Repo::discover(&path).expect("discover"),
                     cfg,
                     std::sync::Arc::new(gob_time::SystemClock),
-                );
+                )
+                .with_layout(layout);
                 barrier.wait();
                 for n in 0..5 {
                     ledger
@@ -673,12 +718,14 @@ fn concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_con
         Repo::discover(dir.path()).expect("discover"),
         cfg,
         std::sync::Arc::new(gob_time::SystemClock),
-    );
+    )
+    .with_layout(layout);
     let report = ledger.doctor(false).expect("doctor");
     assert_eq!(report.events, 11, "create plus ten comments");
     assert!(report.findings.is_empty(), "{report:?}");
     assert_eq!(ledger.events(id).expect("events").len(), 11);
 }
+both_layouts!(concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent);
 
 fn evidence(accepts: &[usize]) -> frob_ledger::event::EventBody {
     record(accepts, "cargo test", "measured", Some(true))
@@ -715,9 +762,8 @@ fn bound(ledger: &Ledger, id: TicketId) -> Vec<bool> {
 }
 
 // frob:ticket 01M3WYJ81430D3D5QSNCFM8QB0
-#[test]
-fn evidence_binds_acceptance_through_the_remap() {
-    let (_dir, ledger) = fixture(RefMode::Trunk);
+fn evidence_binds_acceptance_through_the_remap(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     let mut req = NewTicket::new("Bind", TicketType::Task);
     req.acceptance = vec!["one".into(), "two".into(), "three".into()];
     let id = ledger.new_ticket(req).expect("new").ticket.front.id;
@@ -753,12 +799,12 @@ fn evidence_binds_acceptance_through_the_remap() {
     let report = ledger.doctor(false).expect("doctor");
     assert!(report.is_clean(), "{report:?}");
 }
+both_layouts!(evidence_binds_acceptance_through_the_remap);
 
 // frob:ticket 01M3WYJ81430D3D5QSNCFM8QB0
-#[test]
-fn append_writes_land_and_bypass_and_refuses_create() {
+fn append_writes_land_and_bypass_and_refuses_create(layout: Layout) {
     use frob_ledger::event::{EventBody, EvidenceBypassData, LandData};
-    let (_dir, ledger) = fixture(RefMode::Trunk);
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     let id = ledger
         .new_ticket(NewTicket::new("L", TicketType::Task))
         .expect("new")
@@ -801,6 +847,7 @@ fn append_writes_land_and_bypass_and_refuses_create() {
     ));
     assert!(ledger.doctor(false).expect("doctor").is_clean());
 }
+both_layouts!(append_writes_land_and_bypass_and_refuses_create);
 
 // frob:ticket 01M3WYJ81430D3D5QSNCFM8QB0
 #[test]
@@ -839,9 +886,8 @@ fn events_written_by_the_old_helpers_fold_and_round_trip() {
 }
 
 // frob:ticket 01M3WYJ81430D3D5QSNCFM8QB0
-#[test]
-fn only_measured_passing_evidence_binds_and_the_latest_per_reference_decides() {
-    let (_dir, ledger) = fixture(RefMode::Trunk);
+fn only_measured_passing_evidence_binds_and_the_latest_per_reference_decides(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     let mut req = NewTicket::new("Verdicts", TicketType::Task);
     req.acceptance = vec!["one".into()];
     let id = ledger.new_ticket(req).expect("new").ticket.front.id;
@@ -875,6 +921,7 @@ fn only_measured_passing_evidence_binds_and_the_latest_per_reference_decides() {
     );
     assert!(ledger.doctor(false).expect("doctor").is_clean());
 }
+both_layouts!(only_measured_passing_evidence_binds_and_the_latest_per_reference_decides);
 
 // frob:tests crates/frob-ledger/src/ledger.rs::LedgerConfig.is_ledger_path
 #[test]
@@ -892,9 +939,8 @@ fn is_ledger_path_matches_only_paths_under_the_ledger_directory() {
     assert!(!slash.is_ledger_path("ledx/x"));
 }
 
-#[test]
-fn fence_text_survives_an_index_rebuild_and_doctor_repairs_a_corrupt_card() {
-    let (dir, ledger) = fixture(RefMode::Trunk);
+fn fence_text_survives_an_index_rebuild_and_doctor_repairs_a_corrupt_card(layout: Layout) {
+    let (dir, ledger) = fixture(layout, RefMode::Trunk);
     let mut nt = NewTicket::new("t\n+++\nu", TicketType::Task);
     nt.persona = Some("+++".into());
     nt.outcome_text = Some("o\n+++\np".into());
@@ -907,13 +953,20 @@ fn fence_text_survives_an_index_rebuild_and_doctor_repairs_a_corrupt_card() {
     assert_eq!(shown.front.persona.as_deref(), Some("+++"));
     assert_eq!(shown.front.acceptance[0].text, "a\n+++\nb");
     // Corrupt the card as an older binary would have: the fence closes early.
+    // A ticket-branch card keeps its `id` line, which is how the file is still found.
+    let card = card_path(&ledger, id);
+    let corrupt = if layout == Layout::Dir {
+        "+++\ntitle = \"\"\"\na\n+++\nb\"\"\"\n+++\n".to_owned()
+    } else {
+        format!("+++\nid = \"{id}\"\ntitle = \"\"\"\na\n+++\nb\"\"\"\n+++\n")
+    };
     ledger
         .repo()
         .commit_paths(
             MAIN,
             &[(
-                RelPath::new(format!("tickets/{id}/ticket.md")).expect("path"),
-                Some(b"+++\ntitle = \"\"\"\na\n+++\nb\"\"\"\n+++\n".to_vec()),
+                RelPath::new(card).expect("path"),
+                Some(corrupt.into_bytes()),
             )],
             "corrupt",
             &CommitOptions::default(),
@@ -927,6 +980,7 @@ fn fence_text_survives_an_index_rebuild_and_doctor_repairs_a_corrupt_card() {
     assert!(ledger.doctor(false).expect("again").is_clean());
     assert_eq!(ledger.show(id).expect("show").ticket, shown);
 }
+both_layouts!(fence_text_survives_an_index_rebuild_and_doctor_repairs_a_corrupt_card);
 
 // frob:ticket 01M42MGNZZ1BY6YCG49BDHEZAT
 #[test]
@@ -961,12 +1015,12 @@ fn event_files_from_before_the_clock_migration_round_trip_byte_identically() {
 }
 
 // frob:tests crates/frob-ledger/src/event.rs::Event.new
-#[test]
-fn a_new_event_is_stamped_in_whole_seconds_even_from_a_precise_clock() {
+fn a_new_event_is_stamped_in_whole_seconds_even_from_a_precise_clock(layout: Layout) {
     let at: gob_time::Stamp = "2026-10-05T01:02:03.987654321Z".parse().expect("stamp");
     let event = frob_ledger::event::Event::new(at, "a", frob_ledger::event::EventBody::Other);
     assert_eq!(event.at.precise(), "2026-10-05T01:02:03Z");
 }
+both_layouts!(a_new_event_is_stamped_in_whole_seconds_even_from_a_precise_clock);
 
 /// Create a todo ticket with a priority and class, returning its id.
 fn todo_with(
@@ -986,7 +1040,7 @@ fn todo_with(
 fn doable_orders_by_class_then_priority_then_age() {
     // frob:ticket 01M4A12XB7EDWJ1FX8BN9XHZS1
     use frob_ledger::model::Class;
-    let (_dir, ledger) = fixture(RefMode::Trunk);
+    let (_dir, ledger) = fixture(Layout::Dir, RefMode::Trunk);
     let low_old = todo_with(&ledger, "low old", Priority::Low, Class::Standard);
     let med = todo_with(&ledger, "medium", Priority::Medium, Class::Standard);
     let high_new = todo_with(&ledger, "high new", Priority::High, Class::Standard);
@@ -1017,7 +1071,7 @@ fn doable_orders_by_class_then_priority_then_age() {
 fn doable_is_sorted_by_the_shared_comparator() {
     // frob:ticket 01M4A12XB7EDWJ1FX8BN9XHZS1
     use frob_ledger::model::Class;
-    let (_dir, ledger) = fixture(RefMode::Trunk);
+    let (_dir, ledger) = fixture(Layout::Dir, RefMode::Trunk);
     for (t, p) in [
         ("a", Priority::Low),
         ("b", Priority::High),

@@ -93,6 +93,45 @@ pub fn is_branch_ticket_candidate(path: &str) -> bool {
         && path.contains('/')
 }
 
+/// The ticket id named by the `id = "<ULID>"` line of a ticket file's frontmatter, even when the
+/// rest of the file no longer parses (conflict markers, a hand edit).
+///
+/// Identity lives in the frontmatter ULID, never in the path (`navigation.md` 2.1); this is the
+/// lenient reader the merge driver and the doctor use when [`crate::doc::parse`] fails.
+#[must_use]
+pub fn peek_ticket_id(text: &str) -> Option<TicketId> {
+    let rest = text
+        .strip_prefix("+++\n")
+        .or_else(|| text.strip_prefix("+++\r\n"))?;
+    for line in rest.lines() {
+        if line.trim_end() == "+++" {
+            break;
+        }
+        if let Some(value) = line.trim_end().strip_prefix("id = \"")
+            && let Some(id) = value.strip_suffix('"').and_then(|v| v.parse().ok())
+        {
+            return Some(id);
+        }
+    }
+    None
+}
+
+/// The `.gitattributes` lines that route ledger documents of `layout` to the frob merge driver.
+///
+/// `dir` is the legacy ledger directory (`[tickets] dir`); the ticket branch holds tickets at
+/// `<dir-slug>/<slug>.md`, one directory deep, and never in dot directories or at the root.
+#[must_use]
+pub fn attribute_patterns(layout: Layout, dir: &str, driver_attr: &str) -> Vec<String> {
+    match layout {
+        Layout::Dir => vec![
+            format!("{dir}/**/ticket.md {driver_attr}"),
+            format!("{dir}/_milestones/*/milestone.md {driver_attr}"),
+            format!("{dir}/_cycles/*/cycle.md {driver_attr}"),
+        ],
+        Layout::Branch => vec![format!("*/*.md {driver_attr}")],
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -125,5 +164,23 @@ mod tests {
         assert!(is_branch_ticket_candidate("epic/a.md"));
         assert!(!is_branch_ticket_candidate(".events/x/y.toml"));
         assert!(!is_branch_ticket_candidate("README.md"));
+    }
+
+    // frob:ticket 01M3ZX82TWWY2616S1Q5N48KNK
+    #[test]
+    fn the_id_is_peeked_from_a_conflicted_file() {
+        let id = TicketId::mint();
+        let text = format!("+++\ntitle = \"x\"\nid = \"{id}\"\n<<<<<<< ours\n+++\nid = \"zzz\"\n");
+        assert_eq!(peek_ticket_id(&text), Some(id));
+        assert_eq!(peek_ticket_id("no fence\nid = \"x\"\n"), None);
+    }
+
+    // frob:ticket 01M3ZX82TWWY2616S1Q5N48KNK
+    #[test]
+    fn attribute_patterns_follow_the_layout() {
+        let dir = attribute_patterns(Layout::Dir, "tickets", "merge=frob-ledger");
+        assert_eq!(dir[0], "tickets/**/ticket.md merge=frob-ledger");
+        let branch = attribute_patterns(Layout::Branch, "tickets", "merge=frob-ledger");
+        assert_eq!(branch, vec!["*/*.md merge=frob-ledger".to_owned()]);
     }
 }

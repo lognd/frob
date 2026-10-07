@@ -98,6 +98,17 @@ pub struct Ledger {
     clock: std::sync::Arc<dyn gob_time::Clock>,
     /// Where tickets and events live in the ledger tree.
     layout: Layout,
+    /// Ticket-branch scan of the last commit read, so id lookups cost one tree walk per commit.
+    branch_scan: std::sync::Mutex<Option<(String, std::sync::Arc<BranchScan>)>>,
+}
+
+/// What one walk of a ticket-branch commit found: where each ticket file is, by frontmatter ULID.
+#[derive(Debug, Default)]
+pub(crate) struct BranchScan {
+    /// Ticket file path by the ULID its frontmatter names (never by path).
+    pub files: std::collections::BTreeMap<TicketId, String>,
+    /// Tickets that have an `.events/<ULID>/` directory.
+    pub with_events: std::collections::BTreeSet<TicketId>,
 }
 
 /// The index synced to one ledger tip, with the facts a writer needs.
@@ -169,6 +180,7 @@ impl Ledger {
             redact: std::sync::OnceLock::new(),
             clock,
             layout: Layout::Dir,
+            branch_scan: std::sync::Mutex::new(None),
         }
     }
 
@@ -384,24 +396,62 @@ impl Ledger {
         if self.layout == Layout::Dir {
             return Ok(Some(format!("{}/{id}/ticket.md", self.cfg.dir)));
         }
-        let holds = |path: &str| -> Result<bool> {
-            Ok(self
-                .text(tip, path)?
-                .and_then(|t| doc::parse(path, &t).ok())
-                .is_some_and(|t| t.front.id == id))
-        };
         if let Some(h) = hint
-            && holds(h)?
+            && self
+                .text(tip, h)?
+                .is_some_and(|t| layout::peek_ticket_id(&t) == Some(id))
         {
             return Ok(Some(h.to_owned()));
         }
+        let path = self.branch_scan_at(tip)?.files.get(&id).cloned();
+        if let Some(p) = &path {
+            tracing::debug!(ticket = %id, path = %p, "ticket file located by frontmatter id");
+        }
+        Ok(path)
+    }
+
+    /// Walk the ticket-branch commit `tip` once: every ticket file by its frontmatter ULID and every
+    /// `.events/<ULID>/` directory (cached for the last full-hash commit, which cannot change).
+    pub(crate) fn branch_scan_at(&self, tip: &str) -> Result<std::sync::Arc<BranchScan>> {
+        let cacheable = tip.len() == 40 && tip.bytes().all(|b| b.is_ascii_hexdigit());
+        if cacheable
+            && let Ok(guard) = self.branch_scan.lock()
+            && let Some((at, scan)) = guard.as_ref()
+            && at == tip
+        {
+            return Ok(scan.clone());
+        }
+        let mut scan = BranchScan::default();
         for path in self.list_files(tip)? {
-            if layout::is_branch_ticket_candidate(&path) && holds(&path)? {
-                tracing::debug!(ticket = %id, %path, "ticket file located by frontmatter id");
-                return Ok(Some(path));
+            if let Some(rest) = path.strip_prefix(&format!("{}/", layout::EVENTS_DIR)) {
+                if let Some(id) = rest.split('/').next().and_then(|s| s.parse().ok()) {
+                    scan.with_events.insert(id);
+                }
+                continue;
+            }
+            if !layout::is_branch_ticket_candidate(&path) {
+                continue;
+            }
+            let Some(text) = self.text(tip, &path)? else {
+                continue;
+            };
+            let Some(id) = doc::parse(&path, &text)
+                .ok()
+                .map(|t| t.front.id)
+                .or_else(|| layout::peek_ticket_id(&text))
+            else {
+                tracing::debug!(%path, "markdown file without a ticket id ignored");
+                continue;
+            };
+            if let Some(other) = scan.files.insert(id, path.clone()) {
+                tracing::warn!(ticket = %id, first = %other, second = %path, "two files claim one ticket id");
             }
         }
-        Ok(None)
+        let scan = std::sync::Arc::new(scan);
+        if cacheable && let Ok(mut guard) = self.branch_scan.lock() {
+            *guard = Some((tip.to_owned(), scan.clone()));
+        }
+        Ok(scan)
     }
 
     /// Path of the file and of the events directory a write for `ticket` touches.
@@ -493,12 +543,17 @@ impl Ledger {
         Ok(events)
     }
 
-    /// Ids of every ticket directory at commit `tip`.
+    /// Ids of every ticket at commit `tip`: ticket directories in the legacy layout, ticket files
+    /// named by their frontmatter ULID (wherever they sit) on the ticket branch.
     ///
     /// # Errors
     ///
     /// Git read failures.
     pub fn ticket_ids_at(&self, tip: &str) -> Result<Vec<TicketId>> {
+        if self.layout == Layout::Branch {
+            // BTreeMap keys are already sorted ULIDs.
+            return Ok(self.branch_scan_at(tip)?.files.keys().copied().collect());
+        }
         let mut ids: Vec<TicketId> = self
             .list_files(&format!("{tip}:{}", self.cfg.dir))?
             .iter()
@@ -509,12 +564,23 @@ impl Ledger {
         Ok(ids)
     }
 
-    /// Whether `tickets/<id>/ticket.md` exists on `rev` (a ref or commit).
+    /// Whether the file of ticket `id` exists on `rev` (a ref or commit), found by id in either layout.
     ///
     /// # Errors
     ///
     /// Git failures other than an unresolvable `rev` (which reads as absent).
     pub fn ticket_exists_at(&self, rev: &str, id: &str) -> Result<bool> {
+        if self.layout == Layout::Branch {
+            let Ok(id) = id.parse::<TicketId>() else {
+                return Ok(false);
+            };
+            let tip = match self.repo.rev_parse(rev) {
+                Ok(oid) => oid.to_string(),
+                Err(e) if is_rev_error(&e) => return Ok(false),
+                Err(e) => return Err(e.into()),
+            };
+            return Ok(self.ticket_file_at(&tip, id, None)?.is_some());
+        }
         let path = format!("{}/{id}/ticket.md", self.cfg.dir);
         match self.repo.read_blob_at(rev, &path) {
             Ok(b) => Ok(b.is_some()),

@@ -72,6 +72,17 @@ impl Ledger {
         let ids = self.ticket_ids_at(&hex)?;
         let known: std::collections::BTreeSet<TicketId> = ids.iter().copied().collect();
         let mut to_fix = Vec::new();
+        if self.layout() == crate::layout::Layout::Branch {
+            for id in &self.branch_scan_at(&hex)?.with_events {
+                if !known.contains(id) {
+                    report.issues.push(Issue {
+                        code: "E-DOCTOR-ORPHAN-EVENTS".to_owned(),
+                        ticket: *id,
+                        message: format!("`.events/{id}/` has no ticket file naming that id"),
+                    });
+                }
+            }
+        }
         for id in &ids {
             report.tickets += 1;
             if self.check_ticket(&hex, *id, &known, &mut report) {

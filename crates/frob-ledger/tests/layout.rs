@@ -3,7 +3,7 @@
 use frob_ledger::branch::init_branch;
 use frob_ledger::model::TicketType;
 use frob_ledger::ops::{NewTicket, Patch};
-use frob_ledger::{Layout, Ledger, LedgerConfig};
+use frob_ledger::{Layout, Ledger, LedgerConfig, TicketId};
 use gob_git::{Repo, TreeRef};
 
 const BRANCH: &str = "frob-tickets";
@@ -130,4 +130,151 @@ fn two_tickets_with_one_slug_do_not_overwrite_each_other() {
     let md: Vec<_> = all.iter().filter(|p| p.starts_with("_unfiled/")).collect();
     assert_eq!(md.len(), 2, "{all:?}");
     assert_ne!(a.ticket.front.id, b.ticket.front.id);
+}
+
+/// Move the file of `id` to `to` in one ledger commit, as a reindex does.
+fn move_card(ledger: &Ledger, from: &str, to: &str) {
+    let repo = ledger.repo();
+    let text = repo
+        .read_blob_at(BRANCH, from)
+        .expect("read")
+        .expect("present");
+    repo.commit_paths(
+        BRANCH,
+        &[
+            (gob_git::RelPath::new(from).expect("from"), None),
+            (gob_git::RelPath::new(to).expect("to"), Some(text)),
+        ],
+        "tickets(reindex): move",
+        &gob_git::CommitOptions::default(),
+    )
+    .expect("move");
+}
+
+// frob:ticket 01M3ZX82TWWY2616S1Q5N48KNK
+#[test]
+fn a_moved_ticket_file_resolves_through_its_ulid_and_still_equals_the_fold() {
+    let (_dir, ledger) = fixture();
+    let made = ledger
+        .new_ticket(NewTicket::new("Wander", TicketType::Task))
+        .expect("new");
+    let id = made.ticket.front.id;
+    let other = ledger
+        .new_ticket(NewTicket::new("Stay", TicketType::Task))
+        .expect("other")
+        .ticket
+        .front
+        .id;
+    move_card(
+        &ledger,
+        "_unfiled/wander.md",
+        "elsewhere/renamed-by-reindex.md",
+    );
+    let before = ledger.show(id).expect("show");
+    assert_eq!(before.ticket.front.title, "Wander");
+    let tip = ledger.repo().rev_parse(BRANCH).expect("tip").to_string();
+    let events = ledger.read_events_at(&tip, id).expect("events");
+    assert_eq!(
+        frob_ledger::fold::fold(id, &events).expect("fold").ticket,
+        before.ticket
+    );
+    let ids = ledger.ticket_ids_at(&tip).expect("ids");
+    assert!(ids.contains(&id) && ids.contains(&other), "{ids:?}");
+    assert!(
+        ledger
+            .ticket_exists_at(BRANCH, &id.to_string())
+            .expect("exists")
+    );
+    assert!(
+        !ledger
+            .ticket_exists_at(BRANCH, &TicketId::mint().to_string())
+            .expect("exists")
+    );
+    assert!(ledger.doctor(false).expect("doctor").is_clean());
+
+    // A later write rewrites the file where it now is instead of recreating the old path.
+    ledger
+        .comment(id, frob_ledger::model::CommentSubtype::Note, "hi")
+        .expect("comment");
+    let all = files(&ledger);
+    assert!(
+        all.contains(&"elsewhere/renamed-by-reindex.md".to_owned()),
+        "{all:?}"
+    );
+    assert!(!all.contains(&"_unfiled/wander.md".to_owned()), "{all:?}");
+    assert!(ledger.doctor(false).expect("doctor").is_clean());
+}
+
+// frob:ticket 01M3ZX82TWWY2616S1Q5N48KNK
+#[test]
+fn the_doctor_flags_events_whose_ticket_file_is_gone() {
+    let (_dir, ledger) = fixture();
+    let id = ledger
+        .new_ticket(NewTicket::new("Doomed", TicketType::Task))
+        .expect("new")
+        .ticket
+        .front
+        .id;
+    let repo = ledger.repo();
+    repo.commit_paths(
+        BRANCH,
+        &[(
+            gob_git::RelPath::new("_unfiled/doomed.md").expect("p"),
+            None,
+        )],
+        "drop the card",
+        &gob_git::CommitOptions::default(),
+    )
+    .expect("drop");
+    let report = ledger.doctor(false).expect("doctor");
+    assert_eq!(report.issues.len(), 1, "{report:?}");
+    assert_eq!(report.issues[0].code, "E-DOCTOR-ORPHAN-EVENTS");
+    assert_eq!(report.issues[0].ticket, id);
+}
+
+// frob:ticket 01M3ZX82TWWY2616S1Q5N48KNK
+#[test]
+fn the_merge_driver_finds_a_branch_ticket_by_its_frontmatter_id_and_unions_events() {
+    use frob_ledger::event::{CommentData, Event, EventBody};
+    let (_dir, ledger) = fixture();
+    let made = ledger
+        .new_ticket(NewTicket::new("Shared", TicketType::Task))
+        .expect("new");
+    let real = made.ticket.front.id;
+    let tip = ledger.repo().rev_parse(BRANCH).expect("tip").to_string();
+    let disk = tempfile::tempdir().expect("disk");
+    let events_dir = disk.path().join(format!(".events/{real}"));
+    std::fs::create_dir_all(&events_dir).expect("mkdir");
+    for e in ledger.read_events_at(&tip, real).expect("events") {
+        std::fs::write(events_dir.join(e.file_name()), e.to_toml().expect("toml")).expect("w");
+    }
+    let theirs = Event::new(
+        gob_time::Clock::now(&gob_time::SystemClock),
+        "b",
+        EventBody::Comment(CommentData {
+            subtype: frob_ledger::model::CommentSubtype::Note,
+            body: "from the other side".into(),
+        }),
+    );
+    let out = disk.path().join("ours.md");
+    std::fs::write(
+        &out,
+        format!("+++\nid = \"{real}\"\n<<<<<<< ours\ntitle = \"a\"\n=======\ntitle = \"b\"\n>>>>>>> theirs\n+++\n"),
+    )
+    .expect("seed");
+    let report = frob_ledger::merge::resolve(disk.path(), "_unfiled/shared.md", &out, vec![theirs])
+        .expect("resolve");
+    assert_eq!(
+        (report.ticket, report.events, report.from_extra),
+        (real, 2, 1)
+    );
+    let text = std::fs::read_to_string(&out).expect("read");
+    assert!(!text.contains("<<<<<<<"), "{text}");
+    let doc = frob_ledger::doc::parse("m", &text).expect("parse");
+    assert_eq!(doc.front.id, real);
+    // A path in a ULID directory still names its ticket without reading any document.
+    let (layout, got) =
+        frob_ledger::merge::locate(&format!("tickets/{real}/ticket.md"), &[]).expect("locate");
+    assert_eq!((layout, got), (Layout::Dir, real));
+    assert!(frob_ledger::merge::locate("a/b.md", &["no id here"]).is_err());
 }
