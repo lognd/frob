@@ -45,7 +45,7 @@ fn files(ledger: &Ledger) -> Vec<String> {
     out
 }
 
-// frob:tests 01M3ZX82Q2N145P3DWVVY4E868
+// frob:ticket 01M3ZX82Q2N145P3DWVVY4E868
 #[test]
 fn a_ticket_under_an_epic_lands_in_the_epic_directory_with_events_under_dot_events() {
     let (_dir, ledger) = fixture();
@@ -75,7 +75,7 @@ fn a_ticket_under_an_epic_lands_in_the_epic_directory_with_events_under_dot_even
     assert!(all.iter().all(|p| !p.starts_with("tickets/")), "{all:?}");
 }
 
-// frob:tests 01M3ZX82Q2N145P3DWVVY4E868
+// frob:ticket 01M3ZX82Q2N145P3DWVVY4E868
 #[test]
 fn a_ticket_without_an_epic_lands_in_unfiled() {
     let (_dir, ledger) = fixture();
@@ -85,7 +85,7 @@ fn a_ticket_without_an_epic_lands_in_unfiled() {
     assert!(files(&ledger).contains(&"_unfiled/loose-end.md".to_owned()));
 }
 
-// frob:tests 01M3ZX82Q2N145P3DWVVY4E868
+// frob:ticket 01M3ZX82Q2N145P3DWVVY4E868
 #[test]
 fn sub_epics_are_flattened_and_a_title_change_does_not_move_the_file() {
     let (_dir, ledger) = fixture();
@@ -116,7 +116,7 @@ fn sub_epics_are_flattened_and_a_title_change_does_not_move_the_file() {
     assert_eq!(events.len(), 2);
 }
 
-// frob:tests 01M3ZX82Q2N145P3DWVVY4E868
+// frob:ticket 01M3ZX82Q2N145P3DWVVY4E868
 #[test]
 fn two_tickets_with_one_slug_do_not_overwrite_each_other() {
     let (_dir, ledger) = fixture();
