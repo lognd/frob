@@ -100,69 +100,114 @@ pub fn resolve_width(flag: Option<usize>, columns: Option<&str>, tty: bool) -> u
     .unwrap_or(FALLBACK_WIDTH)
 }
 
-impl BoardVerb {
-    /// Gather the brief's extras: worktrees, last signals (ledger, lease heartbeat, branch commits) and open blockers.
-    #[allow(clippy::too_many_arguments)]
-    fn brief_input(
-        &self,
-        root: &Path,
-        ledger: &frob_ledger::Ledger,
-        tickets: &[frob_ledger::index::Summary],
-        leases: &[frob_lease::Lease],
-        mut signals: BTreeMap<String, Vec<Signal>>,
-        blocked: &[(TicketId, String)],
-        now: Stamp,
-    ) -> Result<BriefInput, CliError> {
-        let runner = Runner::new(Limits { jobs: 1 });
-        let mut worktrees = BTreeMap::new();
-        for l in leases {
-            let Some(t) = tickets.iter().find(|t| t.id == l.ticket) else {
-                continue;
-            };
-            let Some(list) = signals.get_mut(&t.handle) else {
-                continue;
-            };
-            worktrees.insert(t.handle.clone(), l.holder.worktree.display().to_string());
-            list.push(Signal {
-                kind: SignalKind::Lease,
-                at: l.renewed_at,
-            });
-            if let Some(dir) = l.holder.worktree.file_name() {
-                let branch = format!("ticket/{}", dir.to_string_lossy());
-                if let Some(at) = last_commit(&runner, root, &branch) {
-                    list.push(Signal {
-                        kind: SignalKind::Commit,
-                        at,
-                    });
-                }
+/// What [`brief_input`] reads: the repository, ledger, leases and the ledger signals already observed.
+struct BriefSources<'a> {
+    root: &'a Path,
+    ledger: &'a frob_ledger::Ledger,
+    tickets: &'a [frob_ledger::index::Summary],
+    leases: &'a [frob_lease::Lease],
+    signals: BTreeMap<String, Vec<Signal>>,
+    blocked: &'a [(TicketId, String)],
+    now: Stamp,
+}
+
+/// Gather the brief's extras: worktrees, last signals (ledger, lease heartbeat, branch commits) and open blockers.
+fn brief_input(src: BriefSources<'_>) -> Result<BriefInput, CliError> {
+    let BriefSources {
+        root,
+        ledger,
+        tickets,
+        leases,
+        mut signals,
+        blocked,
+        now,
+    } = src;
+    let runner = Runner::new(Limits { jobs: 1 });
+    let mut worktrees = BTreeMap::new();
+    for l in leases {
+        let Some(t) = tickets.iter().find(|t| t.id == l.ticket) else {
+            continue;
+        };
+        let Some(list) = signals.get_mut(&t.handle) else {
+            continue;
+        };
+        worktrees.insert(t.handle.clone(), l.holder.worktree.display().to_string());
+        list.push(Signal {
+            kind: SignalKind::Lease,
+            at: l.renewed_at,
+        });
+        if let Some(dir) = l.holder.worktree.file_name() {
+            let branch = format!("ticket/{}", dir.to_string_lossy());
+            if let Some(at) = last_commit(&runner, root, &branch) {
+                list.push(Signal {
+                    kind: SignalKind::Commit,
+                    at,
+                });
             }
         }
-        let mut blockers = BTreeMap::new();
-        for (id, handle) in blocked {
-            let view = ledger.show(*id).map_err(cli_err)?;
-            let open: Vec<String> = view
-                .outgoing
-                .iter()
-                .chain(&view.incoming)
-                .filter(|l| l.kind == LinkKind::BlockedBy && l.category != Some(Category::Done))
-                .filter_map(|l| l.handle.clone())
-                .collect();
-            blockers.insert(handle.clone(), open);
+    }
+    let mut blockers = BTreeMap::new();
+    for (id, handle) in blocked {
+        let view = ledger.show(*id).map_err(cli_err)?;
+        let open: Vec<String> = view
+            .outgoing
+            .iter()
+            .chain(&view.incoming)
+            .filter(|l| l.kind == LinkKind::BlockedBy && l.category != Some(Category::Done))
+            .filter_map(|l| l.handle.clone())
+            .collect();
+        blockers.insert(handle.clone(), open);
+    }
+    tracing::debug!(
+        worktrees = worktrees.len(),
+        blocked = blockers.len(),
+        "brief inputs gathered"
+    );
+    Ok(BriefInput {
+        worktrees,
+        signals: signals
+            .into_iter()
+            .filter_map(|(h, v)| board::latest(v).map(|s| (h, s)))
+            .collect(),
+        blockers,
+        now: Some(now),
+    })
+}
+
+/// Pick the payload data and text rows for the chosen view (`--brief`, `--json`, text).
+fn present(
+    board: Board,
+    brief: Option<Brief>,
+    ctx: &Context,
+    width: usize,
+) -> (BoardData, Option<Vec<String>>) {
+    let none = BoardData {
+        board: None,
+        brief: None,
+    };
+    match (brief, ctx.json) {
+        (Some(brief), true) => (
+            BoardData {
+                brief: Some(brief),
+                ..none
+            },
+            None,
+        ),
+        (Some(brief), false) => (none, Some(board::render_brief(&brief, width))),
+        (None, true) => (
+            BoardData {
+                board: Some(board),
+                ..none
+            },
+            None,
+        ),
+        (None, false) => {
+            let opts = RenderOptions {
+                width,
+                color: ctx.color == ColorChoice::Always,
+            };
+            (none, Some(board::render(&board, &opts)))
         }
-        tracing::debug!(
-            worktrees = worktrees.len(),
-            blocked = blockers.len(),
-            "brief inputs gathered"
-        );
-        Ok(BriefInput {
-            worktrees,
-            signals: signals
-                .into_iter()
-                .filter_map(|(h, v)| board::latest(v).map(|s| (h, s)))
-                .collect(),
-            blockers,
-            now: Some(now),
-        })
     }
 }
 
@@ -283,56 +328,21 @@ impl Command for BoardVerb {
 
         let tty = std::io::stdout().is_terminal();
         let width = resolve_width(self.width, std::env::var("COLUMNS").ok().as_deref(), tty);
-        let (data, rows) = if self.brief {
-            let extra = self.brief_input(
-                &root,
-                &ledger,
-                &tickets,
-                &leases,
+        let brief = if self.brief {
+            let extra = brief_input(BriefSources {
+                root: &root,
+                ledger: &ledger,
+                tickets: &tickets,
+                leases: &leases,
                 signals,
-                &blocked_ids,
+                blocked: &blocked_ids,
                 now,
-            )?;
-            let brief = board::brief(&board, &extra);
-            if ctx.json {
-                (
-                    BoardData {
-                        board: None,
-                        brief: Some(brief),
-                    },
-                    None,
-                )
-            } else {
-                let rows = board::render_brief(&brief, width);
-                (
-                    BoardData {
-                        board: None,
-                        brief: None,
-                    },
-                    Some(rows),
-                )
-            }
-        } else if ctx.json {
-            (
-                BoardData {
-                    board: Some(board),
-                    brief: None,
-                },
-                None,
-            )
+            })?;
+            Some(board::brief(&board, &extra))
         } else {
-            let opts = RenderOptions {
-                width,
-                color: ctx.color == ColorChoice::Always,
-            };
-            (
-                BoardData {
-                    board: None,
-                    brief: None,
-                },
-                Some(board::render(&board, &opts)),
-            )
+            None
         };
+        let (data, rows) = present(board, brief, ctx, width);
         let mut payload = Payload::new(data);
         if let Some(rows) = rows {
             payload = payload.with_rendered(rows);

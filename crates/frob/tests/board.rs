@@ -505,7 +505,7 @@ fn brief_fixture() -> (board::Board, board::BriefInput) {
     let entered: BTreeMap<TicketId, Stamp> = tickets[..5]
         .iter()
         .enumerate()
-        .map(|(i, t)| (t.id, at(0, 600 * (i as i64 + 1))))
+        .map(|(i, t)| (t.id, at(0, 600 * i64::try_from(i + 1).expect("small"))))
         .collect();
     let holders: BTreeMap<TicketId, String> = tickets[..5]
         .iter()
