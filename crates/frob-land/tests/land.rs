@@ -1575,3 +1575,46 @@ fn a_base_commit_changing_code_misses_the_cached_base_set() {
         "a code change on the base must recompute"
     );
 }
+
+/// The message of the base set's PM033 finding at the current main tip, through the cache.
+fn pm033_message(fx: &Fixture) -> Option<String> {
+    let oid = fx.main_tip();
+    let set = frob_land::base_findings(&fx.repo(), &fx.root, &oid, &LedgerConfig::default())
+        .expect("base findings");
+    set.into_iter()
+        .find(|n| n.rule == "PM033")
+        .map(|n| n.message)
+}
+
+// frob:ticket 01M4CTDXHZ5B85NXCN1KJ95784
+// frob:tests crates/frob-land/src/ratchet.rs::base_findings
+#[test]
+fn a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    // A bare ticket makes the ledger exist without making anything ready.
+    fx.ledger()
+        .new_ticket(NewTicket::new("Bare", TicketType::Task))
+        .expect("first ticket");
+    let before = pm033_message(&fx).expect("a low ready queue trips PM033");
+    // A ledger-only commit: a ready ticket changes the PM033 count, never the code tree.
+    let mut req = NewTicket::new("Ready work", TicketType::Task);
+    req.scope = vec!["src/**".to_owned()];
+    req.acceptance = vec!["it works".to_owned()];
+    fx.ledger().new_ticket(req).expect("ticket write");
+    let cached_dir = shared_state(&fx).join("land-base");
+    let files_before = std::fs::read_dir(&cached_dir).expect("cache dir").count();
+    let after = pm033_message(&fx);
+    assert_eq!(
+        std::fs::read_dir(&cached_dir).expect("cache dir").count(),
+        files_before,
+        "same code tree: the second call reused the cache entry"
+    );
+    assert_ne!(
+        after.as_deref(),
+        Some(before.as_str()),
+        "PM033 must reflect the new ledger content, not the cached one"
+    );
+}

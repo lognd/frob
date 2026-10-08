@@ -5,7 +5,7 @@
 //! fingerprints are cached per code tree (the base tree without the ledger directory), engine version and
 //! config digest in `<git common dir>/frob/land-base/<tree>-<key>.json`, shared by every worktree, so a second land on
 //! the same code (from any ticket, a ledger-only base commit, or a `--wait` retry that did not move it) costs
-//! one cheap ledger-only run; a base with changed code, a new engine or a changed config has a new key and so is recomputed (~F4YA3S9).
+//! one tool-free exact-commit pass; a base with changed code, a new engine or a changed config has a new key and so is recomputed (~F4YA3S9).
 //! Findings are compared as multisets: a second occurrence of a fingerprint the base has once is new.
 //! The throwaway worktree's check opens the repository-shared cache (gob-cache), so every file
 //! unchanged since an earlier check is a cache hit (~TSK0M4Y).
@@ -123,12 +123,16 @@ pub fn code_tree_key(
 
 /// The unscoped findings at the base commit `oid`, from the cache or a fresh run.
 ///
-/// Code-family findings (located outside the ledger directory, or without a
-/// location) are cached under [`code_tree_key`], so ledger-only base commits hit.
-/// Findings located inside the ledger directory depend on the exact commit and are
-/// never cached: they come from the fresh run, or on a cache hit from a cheap
-/// run at `oid` without the tool stages (the shared file cache makes it fast).
-pub(crate) fn base_findings(
+/// The cache (under [`code_tree_key`]) holds only what the ledger cannot change: findings
+/// located outside the ledger directory, and the findings only the tool stages produce (tools
+/// do not read the ledger). Everything else, ledger-located and location-less (the PM, TICK
+/// and REL repository-level findings), is recomputed for the exact `oid` by a pass without the
+/// tool stages; the shared file cache makes that pass cheap. On a miss the full run adds the
+/// tool-only findings, found as what the full run has beyond the exact pass.
+///
+/// # Errors
+/// Fails when the base cannot be listed, checked out or checked.
+pub fn base_findings(
     wt: &Repo,
     wt_path: &Path,
     oid: &str,
@@ -141,30 +145,42 @@ pub(crate) fn base_findings(
         .join(gob_cache::SHARED_DIR)
         .join(LAND_BASE_DIR)
         .join(format!("{tree}-{key}.json"));
-    let in_ledger = |n: &FindingNote| n.path.as_deref().is_some_and(|p| ledger.is_ledger_path(p));
+    let stable = |n: &FindingNote| n.path.as_deref().is_some_and(|p| !ledger.is_ledger_path(p));
+    let exact = run_at_base(wt, wt_path, oid, ledger, true)?;
+    let mut exact_rest: Vec<FindingNote> = exact.into_iter().filter(|n| !stable(n)).collect();
     if let Some(set) = read_cache(&cache, &tree, &key) {
         tracing::info!(
             oid,
             tree,
-            findings = set.findings.len(),
+            cached = set.findings.len(),
+            exact = exact_rest.len(),
             "land base set from cache"
         );
         let mut findings = set.findings;
-        let fresh = run_at_base(wt, wt_path, oid, ledger, true)?;
-        findings.extend(fresh.into_iter().filter(|n| in_ledger(n)));
+        findings.append(&mut exact_rest);
         return Ok(findings);
     }
     let all = run_at_base(wt, wt_path, oid, ledger, false)?;
-    let code: Vec<FindingNote> = all.iter().filter(|n| !in_ledger(n)).cloned().collect();
+    let mut cached: Vec<FindingNote> = all.iter().filter(|n| stable(n)).cloned().collect();
+    // Tool-only findings: what the full run has beyond the exact pass, as a multiset.
+    let mut budget = counts(&exact_rest);
+    for n in all.into_iter().filter(|n| !stable(n)) {
+        match budget.get_mut(n.fingerprint.as_str()) {
+            Some(left) if *left > 0 => *left -= 1,
+            _ => cached.push(n),
+        }
+    }
+    let mut findings = cached.clone();
+    findings.append(&mut exact_rest);
     write_cache(
         &cache,
         &BaseSet {
             oid: tree,
             key,
-            findings: code,
+            findings: cached,
         },
     );
-    Ok(all)
+    Ok(findings)
 }
 
 /// Read a cached set, ignoring a missing, unreadable or mismatched file.
