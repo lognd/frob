@@ -9,12 +9,12 @@ points = 1
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T12:52:24Z"
-updated = "2026-10-08T12:52:26Z"
+updated = "2026-10-08T13:04:12Z"
 scope = ["crates/crunk-ingest/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given cargo dev ci --step docs, when run, then it passes"
-bound = false
+bound = true
 +++
 
 The docs step (RUSTDOCFLAGS -D warnings) fails: public docs of the jsx module link to private modules style, classes and ingest (rustdoc::private_intra_doc_links). Replace with plain code spans.
