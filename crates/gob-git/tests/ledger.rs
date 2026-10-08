@@ -650,3 +650,34 @@ fn losing_sync_order_leaves_checkout_equal_to_head() {
     );
     assert!(repo.status(&StatusOptions::default()).unwrap().is_empty());
 }
+
+// frob:ticket 01M4BMRWMJXKXGJ72MTVXFAY3P
+// frob:tests crates/gob-git/src/read.rs::Repo.blobs_at
+// frob:tests crates/gob-git/src/read.rs::Repo.read_blob
+#[test]
+fn blobs_listed_in_one_walk_are_read_by_oid() {
+    let (_dir, repo) = fixture();
+    repo.commit_paths(
+        MAIN,
+        &[
+            change("tickets/a/ticket.md", "A\n"),
+            change("tickets/a/events/e1.toml", "E1\n"),
+            change("tickets/b/ticket.md", "B\n"),
+        ],
+        "tree",
+        &opts(),
+    )
+    .unwrap();
+    let tip = repo.rev_parse(MAIN).unwrap();
+    let all = repo.blobs_at(&format!("{tip}:tickets")).unwrap();
+    let paths: Vec<&str> = all.iter().map(|(p, _)| p.as_str()).collect();
+    assert_eq!(paths, ["a/events/e1.toml", "a/ticket.md", "b/ticket.md"]);
+    for (path, oid) in &all {
+        let by_path = repo
+            .read_blob_at(MAIN, &format!("tickets/{path}"))
+            .unwrap()
+            .unwrap();
+        assert_eq!(repo.read_blob(oid).unwrap(), by_path, "{path}");
+    }
+    assert!(repo.blobs_at(&format!("{tip}:nope")).is_err());
+}

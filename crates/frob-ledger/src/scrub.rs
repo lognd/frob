@@ -96,11 +96,9 @@ impl Ledger {
         let mut changes: Vec<(RelPath, Option<Vec<u8>>)> = Vec::new();
         let mut touched: BTreeMap<TicketId, Touched> = BTreeMap::new();
         let mut others: Vec<String> = Vec::new();
-        for rel in self.list_files(&format!("{hex}:{dir}"))? {
+        for (rel, oid) in self.list_blobs(&format!("{hex}:{dir}"))? {
             let path = format!("{dir}/{rel}");
-            let Some(bytes) = self.repo().read_blob_at(&hex, &path)? else {
-                continue;
-            };
+            let bytes = self.repo().read_blob(&oid)?;
             let fired = rules.hits(&bytes);
             if fired.is_empty() {
                 continue;
