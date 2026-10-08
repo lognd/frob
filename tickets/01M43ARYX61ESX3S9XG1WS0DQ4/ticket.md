@@ -2,13 +2,13 @@
 id = "01M43ARYX61ESX3S9XG1WS0DQ4"
 title = "crunk-tailwind: node runtime bridge through gob-exec and the first-run notice"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:49Z"
-updated = "2026-10-04T11:28:49Z"
+updated = "2026-10-08T12:50:54Z"
 idempotency_key = "crunk-plan-twrt"
 labels = ["area:crunk"]
 scope = ["crates/crunk-tailwind/src/runtime/**", "crates/crunk-tailwind/node/**", "crates/crunk-tailwind/tests/runtime*.rs"]
