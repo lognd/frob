@@ -2,7 +2,8 @@
 id = "01M3ZX7E2DPA2CXBAQ8ZKM5W7Y"
 title = "GRL structural checks: GRL009, GRL010, GRL011, GRL012, GRL014"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
