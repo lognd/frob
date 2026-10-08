@@ -599,7 +599,7 @@ fn primary_with_local_edit_still_receives_the_unblocked_new_paths() {
     );
 }
 
-// frob:tests gob_git::Repo::sync_checkout
+// frob:tests crates/gob-git/src/ledger.rs::Repo.commit_paths_traced
 #[test]
 fn losing_sync_order_leaves_checkout_equal_to_head() {
     use std::sync::mpsc::channel;
