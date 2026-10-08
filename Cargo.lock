@@ -621,7 +621,6 @@ dependencies = [
  "gob-exec",
  "gob-fs",
  "gob-ir",
- "gob-languages",
  "gob-symbols",
  "gob-walk",
  "serde",

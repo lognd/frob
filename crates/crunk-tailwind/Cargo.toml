@@ -21,7 +21,6 @@ runtime = [
     "dep:gob-exec",
     "dep:gob-fs",
     "dep:gob-ir",
-    "dep:gob-languages",
     "dep:gob-symbols",
     "dep:gob-walk",
     "dep:serde",
@@ -34,7 +33,6 @@ gob-cache = { version = "0.532.0", path = "../gob-cache", optional = true }
 gob-exec = { version = "0.532.0", path = "../gob-exec", optional = true }
 gob-fs = { version = "0.532.0", path = "../gob-fs", optional = true }
 gob-ir = { version = "0.532.0", path = "../gob-ir", optional = true }
-gob-languages = { version = "0.532.0", path = "../gob-languages", optional = true }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols", optional = true }
 gob-walk = { version = "0.532.0", path = "../gob-walk", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
