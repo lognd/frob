@@ -2,13 +2,13 @@
 id = "01M4D6NE2VCV26EG54JD672RXD"
 title = "frob-ledger: sync the ticket index incrementally by tree diff, keyed by tree id; pm writes update the key"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:24Z"
-updated = "2026-10-08T07:29:24Z"
+updated = "2026-10-08T07:31:39Z"
 scope = ["changelog.d/**", "crates/frob-ledger/**", "crates/frob-pm/**"]
 
 [[acceptance]]

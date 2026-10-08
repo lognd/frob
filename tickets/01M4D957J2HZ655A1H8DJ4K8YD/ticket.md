@@ -1,0 +1,23 @@
++++
+id = "01M4D957J2HZ655A1H8DJ4K8YD"
+title = "TESTQ001-TESTQ003: test without assertion, sleep or wall clock or unseeded rng in a test, control flow in a test body"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+reporter = "lognd"
+created = "2026-10-08T08:12:58Z"
+updated = "2026-10-08T08:12:58Z"
+scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**"]
+
+[[acceptance]]
+text = "Given a test item with no assertion-vocabulary call and no helper that may assert, when checked, then TESTQ001 fires; given a helper whose body is Unknown, then Unresolved"
+bound = false
+
+[[acceptance]]
+text = "Given time.sleep or thread::sleep in a test body, when checked, then TESTQ002 fires"
+bound = false
++++
+
+notes/research/lint-catalogue-2026-10-08.md row K20 (4.2 N11): notes/research/mining-report-2026-10-08.md C28 0.9 percent with 28 percent blocking, F-TEST 4.5 percent of fix commits, AI-PR ratio 1.5; notes/research/creators-systems-2026-10-08.md ADV060, ADV082, ADV096 and Google flakiness data (notes/research/creators-systems-2026-10-08.md 5.1 rank 9); notes/research/creators-web-2026-10-08.md WADV010. TESTQ003 off by default (DAMP vs DRY).

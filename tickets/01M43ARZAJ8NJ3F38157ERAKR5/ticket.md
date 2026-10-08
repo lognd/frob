@@ -2,16 +2,16 @@
 id = "01M43ARZAJ8NJ3F38157ERAKR5"
 title = "crunk-tokens: the token model and naming"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:50Z"
-updated = "2026-10-04T11:28:50Z"
+updated = "2026-10-08T07:37:38Z"
 idempotency_key = "crunk-plan-tokm"
-labels = ["area:crunk"]
-scope = ["crates/crunk-tokens/src/model.rs", "crates/crunk-tokens/src/naming.rs", "crates/crunk-tokens/Cargo.toml", "Cargo.lock"]
+labels = ["area:crunk", "creates:crates/crunk-tokens/src/lib.rs", "creates:crates/crunk-tokens/tests/**", "creates:crates/crunk-tokens/README.md"]
+scope = ["crates/crunk-tokens/src/model.rs", "crates/crunk-tokens/src/naming.rs", "crates/crunk-tokens/Cargo.toml", "Cargo.lock", "crates/crunk-tokens/src/lib.rs", "crates/crunk-tokens/tests/**", "crates/crunk-tokens/README.md"]
 
 [[links]]
 kind = "blocked-by"
