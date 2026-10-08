@@ -1,0 +1,13 @@
+kind = "create"
+title = "CRAFT001-012 presence rules paired with SLOP rules (type scale, palette roles, radius policy, motion policy, voice file)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4CXT3N608HMB1A77VTT4YXX"
+scope = ["changelog.d/**", "crates/crunk-check/**"]
+acceptance = ["Given a project that deletes motion to pass MOTION rules, when checked, then the paired CRAFT rule reports the missing motion policy"]
+body = "deslop research section on soul principles."
+at = "2026-10-08T04:54:43Z"
+actor = "lognd"
+rev = 1
