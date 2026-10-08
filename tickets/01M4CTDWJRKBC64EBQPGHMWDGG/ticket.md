@@ -2,13 +2,13 @@
 id = "01M4CTDWJRKBC64EBQPGHMWDGG"
 title = "land: refuse onto a base whose latest CI run is red, through frob-gh (audit H1)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:33Z"
-updated = "2026-10-08T03:55:33Z"
+updated = "2026-10-08T06:35:27Z"
 scope = ["changelog.d/**", "crates/frob-land/**", "crates/frob-gh/**"]
 
 [[acceptance]]
