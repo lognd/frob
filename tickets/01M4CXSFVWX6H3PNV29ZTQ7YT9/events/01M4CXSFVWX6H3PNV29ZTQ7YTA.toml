@@ -1,0 +1,13 @@
+kind = "create"
+title = "Design-cycle artifacts pack: research, IA, flows, QA heuristics, handoff ready gate, metrics and experiments (UX and PROC families)"
+type = "task"
+category = "todo"
+priority = "low"
+points = 8
+parent = "01M4CXSAG0YPF18FX3KAPVX45C"
+scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-spec/**"]
+acceptance = ["Given a sitemap route without a screen or a flow dead end, when checked, then UX findings fire"]
+body = "docs/design/crunk.md section 8."
+at = "2026-10-08T04:54:19Z"
+actor = "lognd"
+rev = 1

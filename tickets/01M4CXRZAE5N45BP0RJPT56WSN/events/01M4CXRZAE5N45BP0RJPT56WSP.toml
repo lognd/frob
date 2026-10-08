@@ -1,0 +1,13 @@
+kind = "create"
+title = "A11Y T3: axe-core and keyboard focus replay through Playwright"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
+scope = ["changelog.d/**", "crates/crunk-gallery/**", "crates/crunk-check/**"]
+acceptance = ["Given a screen with an axe violation, when checked at T3, then the finding carries the axe rule id and node"]
+body = "docs/design/crunk.md sections 4 and 6."
+at = "2026-10-08T04:54:02Z"
+actor = "lognd"
+rev = 1

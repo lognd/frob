@@ -2,13 +2,13 @@
 id = "01M44YQWGP5553K61QKC8HB0GQ"
 title = "Project model: Unity .asmdef and .asmref assemblies"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:00Z"
-updated = "2026-10-05T02:37:00Z"
+updated = "2026-10-08T05:23:44Z"
 idempotency_key = "d94-asmdef"
 scope = ["crates/gob-symbols/src/dotnet.rs", "crates/gob-symbols/src/unity_project.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/tests/unity_project.rs", "docs/design/code-model.md", "docs/design/dotnet-unity.md"]
 

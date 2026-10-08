@@ -1,0 +1,13 @@
+kind = "create"
+title = "COH002 decision with effects (functional core, imperative shell), judged against grimble:shell and grimble:core roles"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
+scope = ["changelog.d/**", "crates/grimble-check/**"]
+acceptance = ["Given a unit that branches on computed data and performs effects in the branches, when COH002 runs, then it fires unless the unit is a verified shell"]
+body = "docs/design/cohesion.md 1."
+at = "2026-10-08T04:54:28Z"
+actor = "lognd"
+rev = 1
