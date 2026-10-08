@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "committed with evidence (215f0f305); lease released so ~57FX1J2 can start, re-run frob work before landing"
+at = "2026-10-08T04:37:58Z"
+actor = "lognd"
+rev = 1
