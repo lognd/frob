@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Criterion 'a push changing a workflow file moves the dev tag and succeeds' moved out of acceptance: observable only after the land. This ticket's own land changes ci.yml, so its CI run exercises the fallback; the coordinator checks it and reopens on failure."
+at = "2026-10-08T08:14:48Z"
+actor = "lognd"
+rev = 1
