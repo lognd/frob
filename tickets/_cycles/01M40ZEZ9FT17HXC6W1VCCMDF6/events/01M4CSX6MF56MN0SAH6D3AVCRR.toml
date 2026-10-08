@@ -1,0 +1,6 @@
+kind = "cycle"
+op = "retro"
+text = "All 21 members done (57 points). Process miss: the cycle passed its end date on 2026-10-05 and stayed active; about 70 tickets landed on 2026-10-06 and 2026-10-07 outside any cycle, and frob raised nothing. Action: close the scrum enforcement gaps (overdue cycle, work outside the sprint, PM003-PM012 unimplemented) and plan every 2-day cycle."
+at = "2026-10-08T03:46:25Z"
+actor = "lognd"
+rev = 1
