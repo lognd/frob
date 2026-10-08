@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-08T07:32:15Z"
+updated = "2026-10-08T07:48:00Z"
 idempotency_key = "m2-grl-check-names"
-labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/check/names.rs", "crates/gob-plan/src/check/mod.rs"]
+labels = ["milestone:2", "area:grl", "creates:crates/gob-plan/src/check/render.rs", "creates:crates/gob-plan/src/check/vocab.rs", "creates:crates/gob-plan/tests/check_names.rs", "creates:crates/gob-plan/tests/grl_errors/cases/GRL017.*", "creates:crates/gob-plan/tests/grl_errors/cases/GRL018.*", "creates:changelog.d/01M3ZX7DYR7PR1PBCZ7E8Q56WW.added.md"]
+scope = ["crates/gob-plan/src/check/names.rs", "crates/gob-plan/src/check/mod.rs", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/grl_errors/main.rs", "crates/gob-plan/src/check/render.rs", "crates/gob-plan/src/check/vocab.rs", "crates/gob-plan/tests/check_names.rs", "crates/gob-plan/tests/grl_errors/cases/GRL017.*", "crates/gob-plan/tests/grl_errors/cases/GRL018.*", "changelog.d/01M3ZX7DYR7PR1PBCZ7E8Q56WW.added.md"]
 
 [[links]]
 kind = "blocked-by"
