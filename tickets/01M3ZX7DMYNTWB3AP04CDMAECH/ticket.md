@@ -2,7 +2,8 @@
 id = "01M3ZX7DMYNTWB3AP04CDMAECH"
 title = "Relation catalog: kinds, fields, verbs, side relations and language ids"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
