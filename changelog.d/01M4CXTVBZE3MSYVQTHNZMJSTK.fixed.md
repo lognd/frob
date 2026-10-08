@@ -1,0 +1,1 @@
+gob-ir: an Unknown or unclassified call/resolution edge now puts its source on the relation's Unknown frontier (absent pairs read Unknown, closures propagate it) and stratum poison follows derived relations, so rules can no longer certify no-cycle or no-caller through an unresolved edge.

@@ -1305,6 +1305,23 @@ fn a_release_finding_the_ticket_introduces_refuses() {
     assert_eq!(fx.main_tip(), before, "base did not move");
 }
 
+/// Plant a base set no real check would produce for the current main tip, where any land reads it.
+fn plant_base_set(fx: &Fixture) -> PathBuf {
+    let oid = fx.main_tip();
+    let cfg = LedgerConfig::default();
+    let key = frob_land::cache_key(&cfg);
+    let tree = frob_land::code_tree_key(&fx.repo(), &fx.root, &oid, &cfg).expect("tree key");
+    let planted = shared_state(fx)
+        .join("land-base")
+        .join(format!("{tree}-{key}.json"));
+    std::fs::create_dir_all(planted.parent().expect("parent")).expect("mkdir");
+    let fake = serde_json::json!({"oid": tree, "key": key, "findings": [{
+        "fingerprint": "feedface", "rule": "PLANTED", "path": null, "message": "from the cached set"
+    }]});
+    std::fs::write(&planted, fake.to_string()).expect("plant");
+    planted
+}
+
 /// The repository-shared state directory under the git common dir.
 fn shared_state(fx: &Fixture) -> PathBuf {
     fx.repo().common_dir().join("frob")
@@ -1321,16 +1338,7 @@ fn a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_ch
     Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
     Fixture::evidence(&s, "src/a.rs");
     // A set no real base check would produce, planted where any ticket's land reads it.
-    let oid = fx.main_tip();
-    let key = frob_land::cache_key(&LedgerConfig::default());
-    let planted = shared_state(&fx)
-        .join("land-base")
-        .join(format!("{oid}-{key}.json"));
-    std::fs::create_dir_all(planted.parent().expect("parent")).expect("mkdir");
-    let fake = serde_json::json!({"oid": oid, "key": key, "findings": [{
-        "fingerprint": "feedface", "rule": "PLANTED", "path": null, "message": "from the cached set"
-    }]});
-    std::fs::write(&planted, fake.to_string()).expect("plant");
+    plant_base_set(&fx);
 
     let out = land(
         &fx.root,
@@ -1522,4 +1530,91 @@ fn the_base_is_resolved_by_full_ref_so_a_same_named_tag_cannot_shadow_it() {
         .read_blob_at("refs/heads/main", "src/t.rs")
         .expect("read");
     assert_eq!(blob.as_deref(), Some(b"fn t() {}\n".as_slice()));
+}
+
+/// Land a fresh ticket on the current main and report whether the planted base set was used.
+fn lands_with_planted_set(fx: &Fixture, title: &str, rel: &str) -> bool {
+    let s = fx.start(title, &["src/**"]);
+    Fixture::commit_in(&s.wt, rel, "fn x() {}\n");
+    Fixture::evidence(&s, rel);
+    let out = land_now(fx, &s).expect("land");
+    out.resolved.iter().any(|n| n.rule == "PLANTED")
+}
+
+// frob:ticket 01M4CTDXHZ5B85NXCN1KJ95784
+// frob:tests crates/frob-land/src/ratchet.rs::base_findings
+#[test]
+fn base_commits_differing_only_under_tickets_share_the_cached_base_set() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    plant_base_set(&fx);
+    // A ledger write: a new base commit, the same code tree.
+    fx.ledger()
+        .new_ticket(NewTicket::new("Unrelated ledger write", TicketType::Task))
+        .expect("ticket write");
+    assert!(
+        lands_with_planted_set(&fx, "Add a", "src/a.rs"),
+        "a ledger-only base commit must hit the cache"
+    );
+}
+
+// frob:ticket 01M4CTDXHZ5B85NXCN1KJ95784
+// frob:tests crates/frob-land/src/ratchet.rs::base_findings
+#[test]
+fn a_base_commit_changing_code_misses_the_cached_base_set() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    plant_base_set(&fx);
+    commit_on_main(&fx, "src/new.rs", "fn n() {}\n");
+    assert!(
+        !lands_with_planted_set(&fx, "Add b", "src/b.rs"),
+        "a code change on the base must recompute"
+    );
+}
+
+/// The message of the base set's PM033 finding at the current main tip, through the cache.
+fn pm033_message(fx: &Fixture) -> Option<String> {
+    let oid = fx.main_tip();
+    let set = frob_land::base_findings(&fx.repo(), &fx.root, &oid, &LedgerConfig::default())
+        .expect("base findings");
+    set.into_iter()
+        .find(|n| n.rule == "PM033")
+        .map(|n| n.message)
+}
+
+// frob:ticket 01M4CTDXHZ5B85NXCN1KJ95784
+// frob:tests crates/frob-land/src/ratchet.rs::base_findings
+#[test]
+fn a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    // A bare ticket makes the ledger exist without making anything ready.
+    fx.ledger()
+        .new_ticket(NewTicket::new("Bare", TicketType::Task))
+        .expect("first ticket");
+    let before = pm033_message(&fx).expect("a low ready queue trips PM033");
+    // A ledger-only commit: a ready ticket changes the PM033 count, never the code tree.
+    let mut req = NewTicket::new("Ready work", TicketType::Task);
+    req.scope = vec!["src/**".to_owned()];
+    req.acceptance = vec!["it works".to_owned()];
+    fx.ledger().new_ticket(req).expect("ticket write");
+    let cached_dir = shared_state(&fx).join("land-base");
+    let files_before = std::fs::read_dir(&cached_dir).expect("cache dir").count();
+    let after = pm033_message(&fx);
+    assert_eq!(
+        std::fs::read_dir(&cached_dir).expect("cache dir").count(),
+        files_before,
+        "same code tree: the second call reused the cache entry"
+    );
+    assert_ne!(
+        after.as_deref(),
+        Some(before.as_str()),
+        "PM033 must reflect the new ledger content, not the cached one"
+    );
 }

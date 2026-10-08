@@ -67,6 +67,7 @@ pub struct Ctx<'m> {
     model: &'m Model,
     poison: RefCell<Vec<Poison>>,
     derived: RefCell<BTreeMap<String, Rc<Relation>>>,
+    derived_poison: RefCell<BTreeMap<String, Vec<Poison>>>,
 }
 
 impl<'m> Ctx<'m> {
@@ -76,6 +77,7 @@ impl<'m> Ctx<'m> {
             model,
             poison: RefCell::default(),
             derived: RefCell::default(),
+            derived_poison: RefCell::default(),
         }
     }
 
@@ -231,7 +233,7 @@ impl<'m> Ctx<'m> {
 
     /// The resolution relation: `(ref node, declaring node)`; `Must` is `Yes`, `May` is `Unknown`.
     ///
-    /// References that resolve to `Unknown` contribute no pair and poison the cone.
+    /// References that resolve to `Unknown` poison the cone and join the relation's Unknown frontier.
     pub fn rel_resolves(&self) -> Relation {
         let mut r = Relation::new();
         let scopes = self.model.scopes();
@@ -253,7 +255,10 @@ impl<'m> Ctx<'m> {
                         }
                     }
                 }
-                Resolution::Unknown => self.record(id, PoisonReason::Edge(Status::Unknown)),
+                Resolution::Unknown => {
+                    self.record(id, PoisonReason::Edge(Status::Unknown));
+                    r.mark_unknown_out(id);
+                }
             }
         }
         r
@@ -288,9 +293,13 @@ impl<'m> Ctx<'m> {
             };
             let head = t.children(id)[0];
             if self.touch(head) {
+                r.mark_unknown_out(caller);
                 continue;
             }
             let Some(rf) = scopes.ref_at(head) else {
+                // A callee that is not a name (member access, call result, lambda): unclassified.
+                self.record(head, PoisonReason::Edge(Status::Unknown));
+                r.mark_unknown_out(caller);
                 continue;
             };
             match scopes.resolve(rf) {
@@ -307,20 +316,30 @@ impl<'m> Ctx<'m> {
                         }
                     }
                 }
-                Resolution::Unknown => self.record(head, PoisonReason::Edge(Status::Unknown)),
+                Resolution::Unknown => {
+                    self.record(head, PoisonReason::Edge(Status::Unknown));
+                    r.mark_unknown_out(caller);
+                }
             }
         }
         r
     }
 
-    /// A relation derived by an earlier stratum.
+    /// A relation derived by an earlier stratum; reading it re-records the poison its derivation hit.
     pub fn derived(&self, name: &str) -> Option<Rc<Relation>> {
-        self.derived.borrow().get(name).cloned()
+        let rel = self.derived.borrow().get(name).cloned()?;
+        if let Some(p) = self.derived_poison.borrow().get(name) {
+            self.poison.borrow_mut().extend(p.iter().cloned());
+        }
+        Some(rel)
     }
 
-    pub(crate) fn set_derived(&self, name: &str, rel: Relation) {
+    pub(crate) fn set_derived(&self, name: &str, rel: Relation, poison: Vec<Poison>) {
         self.derived
             .borrow_mut()
             .insert(name.to_owned(), Rc::new(rel));
+        self.derived_poison
+            .borrow_mut()
+            .insert(name.to_owned(), poison);
     }
 }
