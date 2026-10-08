@@ -4,9 +4,10 @@ title = "COV001: count C# files as test-capable subjects"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-08T06:34:29Z"
-updated = "2026-10-08T06:34:29Z"
+updated = "2026-10-08T10:35:43Z"
 scope = ["crates/frob-obligations/src/cov.rs"]
 +++
 

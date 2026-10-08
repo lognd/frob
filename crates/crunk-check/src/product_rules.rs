@@ -1,11 +1,16 @@
 //! The rule crates crunk runs (D107, rule-authoring.md section 4): one line per crate.
 //!
-//! No rule crate has moved to `#[rule]` yet, so the list is empty; the migration tickets add
-//! their crates here (and to `Cargo.toml`; `unused_crate_dependencies` catches one without the
-//! other). `gob-dev` lists every product's `RULE_INDEXES` so ids stay unique across products.
+//! `crunk-rules` holds WAIVE001 so far; COLOR001 still runs as a legacy repo group until its
+//! migration (~6AN9XJY). A new crunk rule crate is one more name in `crates` here and a dependency
+//! in `Cargo.toml` (`unused_crate_dependencies` catches one without the other). `gob-dev` lists
+//! every product's `RULE_INDEXES` so ids stay unique across products.
+
+// frob:ticket 01M43ATASM383KB9130JY79XVV
+
+use crunk_rules::CrunkHost;
 
 gob_check::product_rules! {
     product = Crunk;
-    host = ();
-    crates = [];
+    host = dyn CrunkHost;
+    crates = [crunk_rules];
 }

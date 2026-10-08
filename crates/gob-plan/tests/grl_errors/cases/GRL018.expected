@@ -1,0 +1,14 @@
+error[GRL018]: `test` is never answered by `lang css`
+ --> rules/GRL018.grl:4:11
+  |
+2 |   lang css
+  |   -------- the languages are set here
+...
+4 |   find t: test
+  |           ^^^^ no language of this rule answers this word
+  |
+  = note: a word no language of the rule answers can never match, so the rule would be NotApplicable everywhere
+  = help: `test` is answered in code languages (not data, prose or style files); add one of them to `lang`, or remove this clause
+  = explain: grimble explain GRL018
+
+error: aborting due to 1 previous error

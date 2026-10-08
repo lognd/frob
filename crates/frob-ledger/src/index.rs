@@ -266,6 +266,61 @@ impl Index {
         Ok(true)
     }
 
+    /// Delete `removed`, upsert `upserts` and record `new_key`, if the index still reflects `expect_key`.
+    ///
+    /// Returns `false` (and changes nothing) when the stored key differs, or when an upserted id
+    /// is already indexed and not being removed (two files claiming one id), so the caller
+    /// rebuilds in full instead.
+    ///
+    /// # Errors
+    ///
+    /// A SQLite error.
+    pub fn patch(
+        &mut self,
+        expect_key: &str,
+        new_key: &str,
+        removed: &[TicketId],
+        upserts: &[Ticket],
+        min_len: usize,
+    ) -> Result<bool> {
+        let tx = self
+            .conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let have: Option<String> = tx
+            .query_row("SELECT v FROM meta WHERE k = 'key'", [], |r| r.get(0))
+            .optional()?;
+        if have.as_deref() != Some(expect_key) {
+            tracing::debug!(have = ?have, expect_key, "index stale; patch skipped");
+            return Ok(false);
+        }
+        for id in removed {
+            delete_rows(&tx, &id.to_string())?;
+        }
+        let mut seen = std::collections::BTreeSet::new();
+        for t in upserts {
+            let id = t.front.id.to_string();
+            let present: bool = tx.query_row(
+                "SELECT EXISTS (SELECT 1 FROM tickets WHERE id = ?1)",
+                [&id],
+                |r| r.get(0),
+            )?;
+            if present || !seen.insert(id) {
+                tracing::debug!(ticket = %t.front.id, "ticket id claimed twice; patch refused");
+                return Ok(false);
+            }
+            insert(&tx, t)?;
+        }
+        finish(&tx, new_key, min_len)?;
+        tx.commit()?;
+        tracing::debug!(
+            removed = removed.len(),
+            upserted = upserts.len(),
+            new_key,
+            "index patched"
+        );
+        Ok(true)
+    }
+
     /// The full ticket document of `id`.
     ///
     /// # Errors
@@ -474,6 +529,19 @@ impl Index {
             .query_row("SELECT count(*) FROM tickets", [], |r| r.get(0))?;
         Ok(usize::try_from(n).unwrap_or(0))
     }
+}
+
+/// Remove every row of ticket `id` from the index tables.
+fn delete_rows(tx: &rusqlite::Transaction<'_>, id: &str) -> Result<()> {
+    for (table, col) in [
+        ("tickets", "id"),
+        ("links", "src"),
+        ("labels", "id"),
+        ("aliases", "id"),
+    ] {
+        tx.execute(&format!("DELETE FROM {table} WHERE {col} = ?1"), [id])?;
+    }
+    Ok(())
 }
 
 fn insert(tx: &rusqlite::Transaction<'_>, t: &Ticket) -> Result<()> {

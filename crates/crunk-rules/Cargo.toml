@@ -1,0 +1,21 @@
+[package]
+name = "crunk-rules"
+version.workspace = true
+description = "crunk's rule registry: family metadata, release severities, [lint] severity resolution, crunk:waive waivers and WAIVE001."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[dependencies]
+crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+tracing = "0.1"
+
+[dev-dependencies]
+gob-mdtest = { path = "../gob-mdtest" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
+
+[lints]
+workspace = true

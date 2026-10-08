@@ -3,8 +3,10 @@
 //!
 //! The run walks the repository, applies the neutral pipeline groups and the rule groups of
 //! [`rules`] (COLOR001 so far: colour literals against the palette of `crunk.toml`, read from the
-//! shared `style` capability). Rule families register their own groups in
-//! [`Crunk::repo_groups`](gob_check::Product::repo_groups) as their tickets land.
+//! shared `style` capability) and the `#[rule]` declarations of the crates listed in
+//! [`product_rules`] (`crunk-rules`: WAIVE001). `crunk:waive` comments with a reason suppress their
+//! rule at the declaration they cover, and `[lint]` severities apply to every finding of a
+//! catalog rule. New rules are two files in a rule crate; the legacy groups go as their tickets migrate.
 //!
 //! # Boundaries
 //!
