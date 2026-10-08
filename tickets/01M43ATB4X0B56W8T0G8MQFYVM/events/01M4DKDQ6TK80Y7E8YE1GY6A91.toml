@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["area:crunk", "creates:crates/crunk-rules/src/rules/color00*", "creates:crates/crunk-rules/src/rules/contrast00*"]
+new = ["area:crunk", "creates:crates/crunk-rules/src/rules/color00*", "creates:crates/crunk-rules/src/rules/contrast00*", "creates:crates/gob-rules/tests/located.rs"]
+at = "2026-10-08T11:12:20Z"
+actor = "lognd"
+rev = 1
