@@ -2,13 +2,13 @@
 id = "01M43ATB4X0B56W8T0G8MQFYVM"
 title = "Rules COLOR001-002 and CONTRAST001 (Rust, tier-0)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:34Z"
-updated = "2026-10-06T13:56:22Z"
+updated = "2026-10-08T11:00:47Z"
 idempotency_key = "crunk-plan-rcol"
 labels = ["area:crunk"]
 scope = ["crates/crunk-rules/src/color/**", "crates/crunk-rules/src/contrast/**", "crates/crunk-rules/tests/color*.rs", "crates/crunk-rules/tests/contrast*.rs"]
