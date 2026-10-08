@@ -1,0 +1,1 @@
+frob: the ticket index now syncs incrementally from the tree diff since the tree id it last reflected, so pm writes, merges and external commits no longer trigger a full rebuild on the next read; only an unreadable key, a changed handle length or a duplicate ticket id still rebuilds in full.
