@@ -7,6 +7,18 @@ pub mod color001;
 pub mod color002;
 /// Rule `CONTRAST001`.
 pub mod contrast001;
+/// Rule `RADIUS001`.
+pub mod radius001;
+/// Rule `SIZE001`.
+pub mod size001;
+/// Rule `SPACE001`.
+pub mod space001;
+/// Rule `TYPE001`.
+pub mod type001;
+/// Rule `TYPE002`.
+pub mod type002;
+/// Rule `TYPE003`.
+pub mod type003;
 /// Rule `WAIVE001`.
 pub mod waive001;
 
@@ -16,6 +28,12 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <color001::Color001 as gob_rules::RuleDecl>::DEF,
     <color002::Color002 as gob_rules::RuleDecl>::DEF,
     <contrast001::Contrast001 as gob_rules::RuleDecl>::DEF,
+    <radius001::Radius001 as gob_rules::RuleDecl>::DEF,
+    <size001::Size001 as gob_rules::RuleDecl>::DEF,
+    <space001::Space001 as gob_rules::RuleDecl>::DEF,
+    <type001::Type001 as gob_rules::RuleDecl>::DEF,
+    <type002::Type002 as gob_rules::RuleDecl>::DEF,
+    <type003::Type003 as gob_rules::RuleDecl>::DEF,
     <waive001::Waive001 as gob_rules::RuleDecl>::DEF,
 ];
 
@@ -36,12 +54,24 @@ where
     color001::Color001: gob_rules::Measured<P>,
     color002::Color002: gob_rules::Measured<P>,
     contrast001::Contrast001: gob_rules::RepoRule<P>,
+    radius001::Radius001: gob_rules::Measured<P>,
+    size001::Size001: gob_rules::Measured<P>,
+    space001::Space001: gob_rules::Measured<P>,
+    type001::Type001: gob_rules::Measured<P>,
+    type002::Type002: gob_rules::Measured<P>,
+    type003::Type003: gob_rules::Measured<P>,
     waive001::Waive001: gob_rules::FileRule<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::measured(color001::Color001));
     rules.push(gob_rules::BoundRule::measured(color002::Color002));
     rules.push(gob_rules::BoundRule::repo(contrast001::Contrast001));
+    rules.push(gob_rules::BoundRule::measured(radius001::Radius001));
+    rules.push(gob_rules::BoundRule::measured(size001::Size001));
+    rules.push(gob_rules::BoundRule::measured(space001::Space001));
+    rules.push(gob_rules::BoundRule::measured(type001::Type001));
+    rules.push(gob_rules::BoundRule::measured(type002::Type002));
+    rules.push(gob_rules::BoundRule::measured(type003::Type003));
     rules.push(gob_rules::BoundRule::file(waive001::Waive001));
     rules
 }

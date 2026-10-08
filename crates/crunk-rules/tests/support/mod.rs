@@ -41,15 +41,26 @@ fn write(root: &Path, rel: &str, text: &str) {
     std::fs::write(path, text).expect("write");
 }
 
+/// The default preset's `crunk.toml`, for tests that tweak a table.
+pub const DEFAULT_SPEC: &str = include_str!("../../../crunk-spec/src/presets/default.toml");
+
+/// Build a project holding `file` with `text` under the default preset.
+pub fn project_with_spec(spec_text: &str, file: &str, text: &str) -> Project {
+    build(spec_text.to_owned(), file, text, None)
+}
+
 /// Build a project holding `file` with `text`; `crunk.toml` as `file` replaces the preset.
 pub fn project(file: &str, text: &str, config: Option<&str>) -> Project {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let preset = crunk_spec::presets::preset("default").expect("default preset");
-    let mut spec_text = if file == "crunk.toml" {
+    let spec_text = if file == "crunk.toml" {
         text.to_owned()
     } else {
-        preset.to_owned()
+        DEFAULT_SPEC.to_owned()
     };
+    build(spec_text, file, text, config)
+}
+
+fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) -> Project {
+    let dir = tempfile::tempdir().expect("tempdir");
     if [".tsx", ".jsx", ".ts"].iter().any(|e| file.ends_with(e)) {
         spec_text.push_str("\n[jsx]\nglobs = [\"src/**/*\"]\n");
     }

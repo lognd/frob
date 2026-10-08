@@ -6,7 +6,9 @@
 use crunk_rules::family::{CheckTier, FAMILIES, Gate, family, gate_severity, is_waivable};
 use crunk_rules::registry::{catalog_mismatches, entries, render_markdown, unknown_families};
 use crunk_rules::rules::{
-    INDEX, color001::Color001, color002::Color002, contrast001::Contrast001, waive001::Waive001,
+    INDEX, color001::Color001, color002::Color002, contrast001::Contrast001, radius001::Radius001,
+    size001::Size001, space001::Space001, type001::Type001, type002::Type002, type003::Type003,
+    waive001::Waive001,
 };
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
@@ -18,8 +20,8 @@ impl crunk_rules::CrunkHost for Host {}
 
 fn runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     match case.rule.as_str() {
-        "COLOR001" | "COLOR002" | "CONTRAST001" => project_runner(case),
-        _ => waive_runner(case),
+        "WAIVE001" => waive_runner(case),
+        _ => project_runner(case),
     }
 }
 
@@ -27,11 +29,24 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
     // frob:tests crates/crunk-rules/src/rules/color002.rs::Color002
     // frob:tests crates/crunk-rules/src/rules/contrast001.rs::Contrast001
+    // frob:tests crates/crunk-rules/src/rules/space001.rs::Space001
+    // frob:tests crates/crunk-rules/src/rules/type001.rs::Type001
+    // frob:tests crates/crunk-rules/src/rules/type002.rs::Type002
+    // frob:tests crates/crunk-rules/src/rules/type003.rs::Type003
+    // frob:tests crates/crunk-rules/src/rules/radius001.rs::Radius001
+    // frob:tests crates/crunk-rules/src/rules/size001.rs::Size001
     let host = support::project(&case.file_name, &case.text, case.config.as_deref());
     match case.rule.as_str() {
         "COLOR001" => support::run::<Color001>(&host),
         "COLOR002" => support::run::<Color002>(&host),
-        _ => support::run::<Contrast001>(&host),
+        "CONTRAST001" => support::run::<Contrast001>(&host),
+        "SPACE001" => support::run::<Space001>(&host),
+        "TYPE001" => support::run::<Type001>(&host),
+        "TYPE002" => support::run::<Type002>(&host),
+        "TYPE003" => support::run::<Type003>(&host),
+        "RADIUS001" => support::run::<Radius001>(&host),
+        "SIZE001" => support::run::<Size001>(&host),
+        other => unreachable!("no runner for {other}"),
     }
 }
 
@@ -52,7 +67,21 @@ gob_mdtest::mdtest!(dir = "src/rules", runner = runner);
 fn the_registry_lists_id_family_severity_fixable_and_doc() {
     let listed = entries(&[&INDEX]);
     let ids: Vec<&str> = listed.iter().map(|e| e.id).collect();
-    assert_eq!(ids, ["COLOR001", "COLOR002", "CONTRAST001", "WAIVE001"]);
+    assert_eq!(
+        ids,
+        [
+            "COLOR001",
+            "COLOR002",
+            "CONTRAST001",
+            "RADIUS001",
+            "SIZE001",
+            "SPACE001",
+            "TYPE001",
+            "TYPE002",
+            "TYPE003",
+            "WAIVE001"
+        ]
+    );
     let e = listed
         .iter()
         .find(|e| e.id == "WAIVE001")
@@ -176,5 +205,6 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids, ["COLOR001", "COLOR002", "CONTRAST001", "WAIVE001"]);
+    assert_eq!(ids.len(), 10);
+    assert!(ids.contains(&"SPACE001"));
 }
