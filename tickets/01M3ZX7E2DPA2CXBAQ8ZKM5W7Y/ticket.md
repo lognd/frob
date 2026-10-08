@@ -2,13 +2,13 @@
 id = "01M3ZX7E2DPA2CXBAQ8ZKM5W7Y"
 title = "GRL structural checks: GRL009, GRL010, GRL011, GRL012, GRL014"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-03T03:34:20Z"
+updated = "2026-10-08T12:07:52Z"
 idempotency_key = "m2-grl-check-structure"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/check/structure.rs"]
