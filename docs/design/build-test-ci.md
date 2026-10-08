@@ -316,7 +316,8 @@ CI never sets the variable.
   seed host; the factor is the headroom), uploads `report.json` as the
   `profile-report` artifact and downloads the newest successful
   `experimental` run's artifact with the `gh` CLI as the comparison base.
-  It does not gate the dev channel.
+  Like every test job it is awaited by the dev-channel jobs (a test in
+  frob-release pins that), so a budget breach holds the dev publish.
 
 Measured 2026-10-08 on the aarch64 development host (12 cores, load
 average 8 to 12 from other builds, so absolute numbers are pessimistic),

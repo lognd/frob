@@ -154,7 +154,8 @@ jobs:
   # Command profile (~RWD03DW, docs/design/build-test-ci.md section 4): `cargo dev profile` times
   # every leaf command of frob, grimble and crunk against the budgets in crates/gob-dev/profile.toml,
   # in a throwaway clone. It runs parallel with the rust job on ubuntu only. The report is uploaded;
-  # the deltas against the newest successful experimental report are printed, never blocking.
+  # the deltas against the newest successful experimental report are printed, never blocking. A
+  # budget breach fails the job, and the dev jobs wait for every test job, so it holds the dev channel.
   profile:
     name: profile (command budgets)
     runs-on: ubuntu-latest
@@ -216,7 +217,7 @@ jobs:
   # skips it as well. To add a dev branch, add its ref to the list in both `if` lines.
   dev-artifacts:
     name: dev artifacts (build and smoke)
-    needs: rust
+    needs: [rust, profile]
     if: ${{ github.event_name == 'push' && github.repository == 'lognd/frob' && contains(fromJSON('["refs/heads/experimental"]'), github.ref) }}
     # frob:accept TOOL002 because="actionlint accepts only ./ for a local reusable workflow; zizmor suggests $/, which actionlint rejects"
     uses: ./.github/workflows/build-smoke.yml
@@ -235,7 +236,7 @@ jobs:
   # recorded list, never a match by sha) and leaves the previous assets in place.
   dev-publish:
     name: publish (replace the dev prerelease assets)
-    needs: [rust, dev-artifacts]
+    needs: [rust, profile, dev-artifacts]
     if: ${{ github.event_name == 'push' && github.repository == 'lognd/frob' && contains(fromJSON('["refs/heads/experimental"]'), github.ref) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
