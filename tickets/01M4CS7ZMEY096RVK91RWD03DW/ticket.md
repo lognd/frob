@@ -7,7 +7,7 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-08T03:34:51Z"
-updated = "2026-10-08T04:17:01Z"
+updated = "2026-10-08T04:23:06Z"
 scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "Cargo.toml", "Cargo.lock", "docs/design/build-test-ci.md", "changelog.d/**", "frob.lock"]
 
 [[acceptance]]
