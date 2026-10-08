@@ -2,13 +2,13 @@
 id = "01M4CTTQFF84AWJZKH89X572Y1"
 title = "README for v2 and a getting-started guide (init to land) plus a command reference generated from the CLI"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:34Z"
-updated = "2026-10-08T04:05:02Z"
+updated = "2026-10-08T04:05:03Z"
 scope = ["changelog.d/**", "README.md", "docs/guides/**"]
 
 [[acceptance]]
