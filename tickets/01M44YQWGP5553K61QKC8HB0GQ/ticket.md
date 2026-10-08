@@ -8,9 +8,9 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:00Z"
-updated = "2026-10-08T05:23:44Z"
+updated = "2026-10-08T05:50:38Z"
 idempotency_key = "d94-asmdef"
-scope = ["crates/gob-symbols/src/dotnet.rs", "crates/gob-symbols/src/unity_project.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/tests/unity_project.rs", "docs/design/code-model.md", "docs/design/dotnet-unity.md"]
+scope = ["crates/gob-symbols/src/dotnet.rs", "crates/gob-symbols/src/unity_project.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/tests/unity_project.rs", "docs/design/code-model.md", "docs/design/dotnet-unity.md", "crates/gob-symbols/src/crates.rs", "crates/gob-symbols/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
