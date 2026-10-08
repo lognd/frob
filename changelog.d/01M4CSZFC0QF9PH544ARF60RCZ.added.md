@@ -1,0 +1,1 @@
+PM036: an active cycle past its end date now fires (Error under `[pm] strict`), and `frob work`/`start` refuse standard tickets with `E-PM-CYCLE-OVERDUE` until it is closed with `frob cycle close --retro`; expedite tickets still start.

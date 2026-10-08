@@ -23,7 +23,7 @@ pub use lock::LandLock;
 pub use plan::{LandOptions, LandOutcome, RetryPolicy};
 pub use ratchet::FindingNote;
 #[doc(hidden)]
-pub use ratchet::cache_key;
+pub use ratchet::{base_findings, cache_key, code_tree_key};
 
 /// Register `land` on a product root.
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {

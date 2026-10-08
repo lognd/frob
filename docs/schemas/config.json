@@ -547,9 +547,14 @@
           },
           "type": "array"
         },
+        "sprint_gate": {
+          "default": true,
+          "description": "Sprint gate: while a cycle is active, `work` and `start` refuse a ticket that is not a member of it (`E-PM-NOT-IN-CYCLE`) unless it is expedite or started with `--unplanned --reason`, which assigns it to the cycle as a recorded over-commit; with no active cycle the gate is silent, so it defaults on.",
+          "type": "boolean"
+        },
         "strict": {
           "default": false,
-          "description": "Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.",
+          "description": "Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.",
           "type": "boolean"
         },
         "wip": {
