@@ -1,0 +1,13 @@
+kind = "create"
+title = "Colour-blind safe and dark modes: every COLOR and CONTRAST rule runs once per declared mode"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M4CXQTERP5YASZGVEAH6KG4H"
+scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-spec/**"]
+acceptance = ["Given a contrast failure only in the cb-safe mode, when crunk check runs, then the finding names the mode"]
+body = "docs/design/crunk.md section 7."
+at = "2026-10-08T04:53:33Z"
+actor = "lognd"
+rev = 1

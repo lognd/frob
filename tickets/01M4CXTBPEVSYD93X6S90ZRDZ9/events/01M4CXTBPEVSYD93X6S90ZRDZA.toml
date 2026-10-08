@@ -1,0 +1,13 @@
+kind = "create"
+title = "Slop report: per-signal evidence vector with tiers not run, never a single opaque score"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4CXT3N608HMB1A77VTT4YXX"
+scope = ["changelog.d/**", "crates/crunk/**"]
+acceptance = ["Given crunk check --report slop, when run, then the output lists every signal with evidence and tier, and no aggregate without its parts"]
+body = "deslop research proposal 4."
+at = "2026-10-08T04:54:48Z"
+actor = "lognd"
+rev = 1

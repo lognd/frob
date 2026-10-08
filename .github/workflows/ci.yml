@@ -150,6 +150,65 @@ jobs:
         if: runner.os == 'Linux'
         run: cargo dev ci --step test-dry-run
 
+  # frob:ticket 01M4CS7ZMEY096RVK91RWD03DW
+  # Command profile (~RWD03DW, docs/design/build-test-ci.md section 4): `cargo dev profile` times
+  # every leaf command of frob, grimble and crunk against the budgets in crates/gob-dev/profile.toml,
+  # in a throwaway clone. It runs parallel with the rust job on ubuntu only. The report is uploaded;
+  # the deltas against the newest successful experimental report are printed, never blocking. A
+  # budget breach fails the job, and the dev jobs wait for every test job, so it holds the dev channel.
+  profile:
+    name: profile (command budgets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          # The throwaway clone copies every branch; frob reads the ledger ref from it.
+          fetch-depth: 0
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      # frob:accept TOOL002 because="a local composite action must be addressed with ./; actionlint rejects the $/ form zizmor suggests"
+      - uses: ./.github/actions/install-linker
+      - name: Make the ledger ref resolvable
+        shell: bash
+        run: |
+          if ! git rev-parse --verify -q refs/heads/experimental >/dev/null; then
+            git fetch --no-tags origin '+refs/heads/experimental:refs/remotes/origin/experimental'
+            git update-ref refs/heads/experimental refs/remotes/origin/experimental
+          fi
+      - name: Fetch the newest successful experimental report (optional baseline)
+        shell: bash
+        run: |
+          mkdir -p target/profile/base
+          run_id=$(gh run list --repo "$REPO" --workflow ci.yml --branch experimental --status success --limit 1 --json databaseId --jq '.[0].databaseId' || true)
+          if [ -n "$run_id" ]; then
+            gh run download "$run_id" --repo "$REPO" --name profile-report --dir target/profile/base || echo "run $run_id has no profile-report artifact"
+          else
+            echo "no successful experimental run to compare against"
+          fi
+      # GitHub runners are slower than the machines the budgets were seeded on: the factor is the headroom.
+      - name: Profile every command
+        run: cargo dev profile --budget-factor 2 --compare target/profile/base/report.json
+      - name: Upload the report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: profile-report
+          path: target/profile/report.json
+          if-no-files-found: warn
+
   # Dev channel: build and smoke are the shared reusable workflow (also called by release.yml):
   # the matrix, the pinned dist and the smoke steps have one source there. No wheels are built
   # here (`wheels: false`), and no secrets are passed. The called jobs run only `contents: read`,
@@ -158,7 +217,7 @@ jobs:
   # skips it as well. To add a dev branch, add its ref to the list in both `if` lines.
   dev-artifacts:
     name: dev artifacts (build and smoke)
-    needs: rust
+    needs: [rust, profile]
     if: ${{ github.event_name == 'push' && github.repository == 'lognd/frob' && contains(fromJSON('["refs/heads/experimental"]'), github.ref) }}
     # frob:accept TOOL002 because="actionlint accepts only ./ for a local reusable workflow; zizmor suggests $/, which actionlint rejects"
     uses: ./.github/workflows/build-smoke.yml
@@ -177,7 +236,7 @@ jobs:
   # recorded list, never a match by sha) and leaves the previous assets in place.
   dev-publish:
     name: publish (replace the dev prerelease assets)
-    needs: [rust, dev-artifacts]
+    needs: [rust, profile, dev-artifacts]
     if: ${{ github.event_name == 'push' && github.repository == 'lognd/frob' && contains(fromJSON('["refs/heads/experimental"]'), github.ref) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15

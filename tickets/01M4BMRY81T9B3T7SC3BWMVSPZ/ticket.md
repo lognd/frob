@@ -2,12 +2,13 @@
 id = "01M4BMRY81T9B3T7SC3BWMVSPZ"
 title = "land exits 4 E-GIT-REV cannot resolve experimental after a successful close"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-07T16:57:30Z"
-updated = "2026-10-08T04:15:57Z"
+updated = "2026-10-08T04:33:34Z"
 idempotency_key = "land-post-close-git-rev"
 labels = ["milestone:2"]
 scope = ["crates/frob-land/**"]

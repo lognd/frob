@@ -1,0 +1,13 @@
+kind = "create"
+title = "GX focus graph from scenes and flows: reachability, traps, default selection, wrap"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
+scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-layout/**"]
+acceptance = ["Given a menu scene with an unreachable button, when checked, then the GX focus rule fires naming it"]
+body = "docs/design/crunk.md section 7."
+at = "2026-10-08T04:53:49Z"
+actor = "lognd"
+rev = 1

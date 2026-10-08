@@ -1,0 +1,13 @@
+kind = "create"
+title = "Incompleteness metric: oracle answers in corpora and the false-Unknown rate per language in CI"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
+scope = ["changelog.d/**", "crates/gob-testsupport/**", "crates/gob-check/**", "docs/design/testing.md"]
+acceptance = ["Given the corpus, when CI runs, then the false-Unknown rate per language and capability is reported and a rise fails like a regression; a false Must fails always"]
+body = "docs/design/cohesion.md 2.3; testing.md corpora gain an oracle column."
+at = "2026-10-08T04:54:35Z"
+actor = "lognd"
+rev = 1
