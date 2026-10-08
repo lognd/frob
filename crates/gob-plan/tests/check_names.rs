@@ -31,6 +31,41 @@ fn codes(header: &str, body: &str) -> Vec<Code> {
         .collect()
 }
 
+// frob:tests crates/gob-plan/src/check/mod.rs::compile_report
+// frob:tests crates/gob-plan/src/check/mod.rs::check_file
+// frob:tests crates/gob-plan/src/check/mod.rs::Diagnostic.new
+// frob:tests crates/gob-plan/src/check/mod.rs::Diagnostic.with_help
+// frob:tests crates/gob-plan/src/check/mod.rs::Diagnostic.with_note
+// frob:tests crates/gob-plan/src/check/mod.rs::Diagnostic.with_secondary
+// frob:tests crates/gob-plan/src/check/mod.rs::Code.as_str
+// frob:tests crates/gob-plan/src/check/mod.rs::Code.severity
+// frob:tests crates/gob-plan/src/check/render.rs::render
+#[test]
+fn compile_report_prints_a_golden_shape_for_a_unknown_kind() {
+    let src = rule(
+        "lang rust",
+        &format!("  find f: {}\n  report f \"m\"", typo("function")),
+    );
+    let out = gob_plan::check::compile_report("rules/x.grl", &src);
+    assert!(out.starts_with("error[GRL001]: unknown kind `"), "{out}");
+    assert!(out.contains("= help: did you mean `function`?"), "{out}");
+    assert!(
+        out.ends_with("error: aborting due to 1 previous error\n"),
+        "{out}"
+    );
+    let d = &diags(&src)[0];
+    assert_eq!(d.code.map(Code::as_str), Some("GRL001"));
+    assert_eq!(Code::Grl013.severity(), gob_plan::check::Severity::Warning);
+}
+
+// frob:tests crates/gob-plan/src/check/mod.rs::Diagnostic.syntax
+#[test]
+fn a_syntax_error_renders_without_a_code() {
+    let out = gob_plan::check::compile_report("rules/x.grl", "rule NOPE999 \"t\" {");
+    assert!(out.starts_with("error: "), "{out}");
+    assert!(!out.contains("grimble explain"), "{out}");
+}
+
 // frob:ticket 01M3ZX7DYR7PR1PBCZ7E8Q56WW
 #[test]
 fn the_fixture_rules_of_the_spec_check_clean() {
