@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-08T14:32:16Z"
+updated = "2026-10-08T14:52:39Z"
 idempotency_key = "m2-exec-core"
-labels = ["milestone:2", "area:grl", "creates:crates/gob-plan/src/exec/mod.rs", "creates:crates/gob-plan/tests/exec_core.rs"]
-scope = ["crates/gob-plan/src/exec/core/**", "crates/gob-plan/src/exec.rs", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/web_rule.rs", "crates/gob-plan/Cargo.toml", "crates/gob-plan/README.md", "crates/gob-plan/src/exec/mod.rs", "crates/gob-plan/tests/exec_core.rs"]
+labels = ["milestone:2", "area:grl", "creates:crates/gob-plan/src/exec/mod.rs", "creates:crates/gob-plan/tests/exec_core.rs", "creates:crates/gob-plan/tests/support/**"]
+scope = ["crates/gob-plan/src/exec/core/**", "crates/gob-plan/src/exec.rs", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/web_rule.rs", "crates/gob-plan/Cargo.toml", "crates/gob-plan/README.md", "crates/gob-plan/src/exec/mod.rs", "crates/gob-plan/tests/exec_core.rs", "crates/gob-plan/tests/support/**"]
 
 [[links]]
 kind = "blocked-by"
