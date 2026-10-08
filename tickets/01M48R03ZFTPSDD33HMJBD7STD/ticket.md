@@ -4,10 +4,11 @@ title = "Migrate gob-check neutral rules, gob-directives and tool-bound rules; P
 type = "story"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:07Z"
-updated = "2026-10-06T13:56:07Z"
+updated = "2026-10-08T03:51:50Z"
 scope = ["crates/gob-check/**", "crates/gob-directives/**", "crates/gob-exec/**"]
 
 [[links]]
