@@ -35,8 +35,8 @@ fn variant(spec: &DesignSpec, namespaced: bool, alpha: bool) -> DesignSpec {
 }
 
 // frob:tests crates/crunk-tokens/src/model.rs::TokenSet
-// frob:tests crates/crunk-tokens/src/model.rs::TokenSet::css_entries
-// frob:tests crates/crunk-tokens/src/model.rs::TokenSet::theme_mapping
+// frob:tests crates/crunk-tokens/src/model.rs::TokenSet.css_entries
+// frob:tests crates/crunk-tokens/src/model.rs::TokenSet.theme_mapping
 #[test]
 fn every_fixture_equals_the_python_token_list_and_theme_mapping() {
     let files = spec_fixtures();
@@ -95,7 +95,7 @@ fn every_fixture_equals_the_python_token_list_and_theme_mapping() {
     }
 }
 
-// frob:tests crates/crunk-tokens/src/model.rs::TokenSet::from_spec
+// frob:tests crates/crunk-tokens/src/model.rs::TokenSet.from_spec
 #[test]
 fn alpha_channels_gives_every_color_an_rgb_companion() {
     let spec = variant(&load(crunk_spec::presets::DEFAULT), false, true);
@@ -113,7 +113,7 @@ fn alpha_channels_gives_every_color_an_rgb_companion() {
     assert_eq!(off.of_kind(TokenKind::ColorChannels).count(), 0);
 }
 
-// frob:tests crates/crunk-tokens/src/model.rs::TokenSet::from_spec
+// frob:tests crates/crunk-tokens/src/model.rs::TokenSet.from_spec
 #[test]
 fn colliding_palette_names_are_a_typed_error_naming_both() {
     let text = format!(
@@ -138,7 +138,7 @@ fn colliding_palette_names_are_a_typed_error_naming_both() {
     assert!(err.to_string().contains("[palette] deep.sky"));
 }
 
-// frob:tests crates/crunk-tokens/src/model.rs::TokenSet::from_spec
+// frob:tests crates/crunk-tokens/src/model.rs::TokenSet.from_spec
 #[test]
 fn a_stack_named_base_collides_with_the_base_family() {
     let mut spec = load(crunk_spec::presets::DEFAULT);
@@ -155,7 +155,7 @@ fn a_stack_named_base_collides_with_the_base_family() {
     assert_eq!(second, "[typography.stacks] base");
 }
 
-// frob:tests crates/crunk-tokens/src/model.rs::TokenSet::default_theme_collisions
+// frob:tests crates/crunk-tokens/src/model.rs::TokenSet.default_theme_collisions
 #[test]
 fn bare_keys_collide_with_tailwind_defaults_only_when_not_namespaced() {
     let spec = load(crunk_spec::presets::DEFAULT);
@@ -170,7 +170,7 @@ fn bare_keys_collide_with_tailwind_defaults_only_when_not_namespaced() {
     );
 }
 
-// frob:tests crates/crunk-tokens/src/model.rs::TokenValue::css
+// frob:tests crates/crunk-tokens/src/model.rs::TokenValue.css
 #[test]
 fn value_types_render_css() {
     let px = |value| TokenValue::Dimension {
@@ -224,4 +224,29 @@ fn naming_helpers() {
     assert_eq!(naming::var_ref("--space-8"), "var(--space-8)");
     assert_eq!(naming::scale_key("8", "--space-8", true), "space-8");
     assert_eq!(naming::scale_key("8", "--space-8", false), "8");
+}
+
+// frob:tests crates/crunk-tokens/src/model.rs::ThemeSection.name
+#[test]
+fn theme_sections_carry_tailwind_names() {
+    let names: Vec<&str> = crunk_tokens::THEME_SECTIONS
+        .iter()
+        .map(|s| s.name())
+        .collect();
+    assert_eq!(
+        names,
+        [
+            "colors",
+            "spacing",
+            "fontSize",
+            "borderRadius",
+            "zIndex",
+            "width",
+            "height",
+            "minWidth",
+            "minHeight",
+            "maxWidth",
+            "maxHeight"
+        ]
+    );
 }
