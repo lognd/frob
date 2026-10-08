@@ -2,7 +2,8 @@
 id = "01M4D6NR5KWAT0R601B1QDWWPS"
 title = "CI dev-publish 'Move the dev tag' fails 403 since 2026-10-06: GITHUB_TOKEN cannot move a ref onto commits that change workflow files"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 class = "expedite"
 points = 2
