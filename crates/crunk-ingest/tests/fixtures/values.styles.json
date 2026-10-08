@@ -1,0 +1,693 @@
+{
+  "sheets": [
+    {
+      "path": "styles/base/values.css",
+      "bucket": "base",
+      "component": null,
+      "declarations": [
+        {
+          "prop": "--color-ink",
+          "value": "#e6e8ef",
+          "line": 3,
+          "span": [
+            42,
+            49
+          ],
+          "waivers": [],
+          "colors": [
+            {
+              "hex": "#e6e8ef",
+              "span": [
+                42,
+                49
+              ]
+            }
+          ],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "--brand-blue",
+          "value": "rgb(59 160 255 / 0.5)",
+          "line": 4,
+          "span": [
+            67,
+            88
+          ],
+          "waivers": [],
+          "colors": [
+            {
+              "hex": "#3ba0ff80",
+              "span": [
+                67,
+                88
+              ]
+            }
+          ],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "--triplet",
+          "value": "230 232 239",
+          "line": 5,
+          "span": [
+            103,
+            114
+          ],
+          "waivers": [],
+          "colors": [
+            {
+              "hex": "#e6e8ef",
+              "span": [
+                103,
+                114
+              ]
+            }
+          ],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "--not-triplet",
+          "value": "230 232",
+          "line": 6,
+          "span": [
+            133,
+            140
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "--too-big",
+          "value": "256 0 0",
+          "line": 7,
+          "span": [
+            155,
+            162
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "0",
+              "px": 0.0,
+              "kind": "zero",
+              "span": [
+                159,
+                160
+              ]
+            },
+            {
+              "raw": "0",
+              "px": 0.0,
+              "kind": "zero",
+              "span": [
+                161,
+                162
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "--len",
+          "value": "12px",
+          "line": 8,
+          "span": [
+            173,
+            177
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "12px",
+              "px": 12.0,
+              "kind": "px",
+              "span": [
+                173,
+                177
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "--spaced",
+          "value": "1px   2px",
+          "line": 9,
+          "span": [
+            194,
+            203
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "1px",
+              "px": 1.0,
+              "kind": "px",
+              "span": [
+                194,
+                197
+              ]
+            },
+            {
+              "raw": "2px",
+              "px": 2.0,
+              "kind": "px",
+              "span": [
+                200,
+                203
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "color",
+          "value": "red",
+          "line": 12,
+          "span": [
+            222,
+            225
+          ],
+          "waivers": [],
+          "colors": [
+            {
+              "hex": "#ff0000",
+              "span": [
+                222,
+                225
+              ]
+            }
+          ],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "background",
+          "value": "transparent",
+          "line": 13,
+          "span": [
+            241,
+            252
+          ],
+          "waivers": [],
+          "colors": [
+            {
+              "hex": "#00000000",
+              "span": [
+                241,
+                252
+              ]
+            }
+          ],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "border",
+          "value": "1px solid var(--color-ink, #ccc)",
+          "line": 14,
+          "span": [
+            264,
+            296
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "1px",
+              "px": 1.0,
+              "kind": "px",
+              "span": [
+                264,
+                267
+              ]
+            }
+          ],
+          "var_refs": [
+            {
+              "name": "--color-ink",
+              "span": [
+                274,
+                296
+              ]
+            }
+          ]
+        },
+        {
+          "prop": "margin",
+          "value": "0 auto 4px -2px",
+          "line": 15,
+          "span": [
+            308,
+            323
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "0",
+              "px": 0.0,
+              "kind": "zero",
+              "span": [
+                308,
+                309
+              ]
+            },
+            {
+              "raw": "4px",
+              "px": 4.0,
+              "kind": "px",
+              "span": [
+                315,
+                318
+              ]
+            },
+            {
+              "raw": "-2px",
+              "px": -2.0,
+              "kind": "px",
+              "span": [
+                319,
+                323
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "padding",
+          "value": "calc(var(--len) * 2) 1.5rem",
+          "line": 16,
+          "span": [
+            336,
+            363
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "1.5rem",
+              "px": 24.0,
+              "kind": "rem",
+              "span": [
+                357,
+                363
+              ]
+            }
+          ],
+          "var_refs": [
+            {
+              "name": "--len",
+              "span": [
+                341,
+                351
+              ]
+            }
+          ]
+        },
+        {
+          "prop": "font",
+          "value": "14px/1.5 \"Inter\", sans-serif",
+          "line": 17,
+          "span": [
+            373,
+            401
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "14px",
+              "px": 14.0,
+              "kind": "px",
+              "span": [
+                373,
+                377
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "width",
+          "value": "50%",
+          "line": 18,
+          "span": [
+            412,
+            415
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "50%",
+              "px": null,
+              "kind": "percent",
+              "span": [
+                412,
+                415
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "height",
+          "value": "100vh",
+          "line": 19,
+          "span": [
+            427,
+            432
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "100vh",
+              "px": null,
+              "kind": "other",
+              "span": [
+                427,
+                432
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "box-shadow",
+          "value": "0 0 0 1px rgba(0, 0, 0, .25), inset 0 1px #FFF",
+          "line": 20,
+          "span": [
+            448,
+            494
+          ],
+          "waivers": [],
+          "colors": [
+            {
+              "hex": "#00000040",
+              "span": [
+                458,
+                476
+              ]
+            },
+            {
+              "hex": "#ffffff",
+              "span": [
+                490,
+                494
+              ]
+            }
+          ],
+          "lengths": [
+            {
+              "raw": "0",
+              "px": 0.0,
+              "kind": "zero",
+              "span": [
+                448,
+                449
+              ]
+            },
+            {
+              "raw": "0",
+              "px": 0.0,
+              "kind": "zero",
+              "span": [
+                450,
+                451
+              ]
+            },
+            {
+              "raw": "0",
+              "px": 0.0,
+              "kind": "zero",
+              "span": [
+                452,
+                453
+              ]
+            },
+            {
+              "raw": "1px",
+              "px": 1.0,
+              "kind": "px",
+              "span": [
+                454,
+                457
+              ]
+            },
+            {
+              "raw": "0",
+              "px": 0.0,
+              "kind": "zero",
+              "span": [
+                484,
+                485
+              ]
+            },
+            {
+              "raw": "1px",
+              "px": 1.0,
+              "kind": "px",
+              "span": [
+                486,
+                489
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "background",
+          "value": "color-mix(in srgb, var(--color-ink) 50%, var(--Brand-Blue))",
+          "line": 21,
+          "span": [
+            510,
+            569
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [],
+          "var_refs": [
+            {
+              "name": "--color-ink",
+              "span": [
+                529,
+                545
+              ]
+            },
+            {
+              "name": "--Brand-Blue",
+              "span": [
+                551,
+                568
+              ]
+            }
+          ]
+        },
+        {
+          "prop": "color",
+          "value": "HSL(210 50% 40%)",
+          "line": 22,
+          "span": [
+            580,
+            596
+          ],
+          "waivers": [],
+          "colors": [
+            {
+              "hex": "#336699",
+              "span": [
+                580,
+                596
+              ]
+            }
+          ],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "outline",
+          "value": "2px solid /* c */ #abc",
+          "line": 23,
+          "span": [
+            620,
+            642
+          ],
+          "waivers": [],
+          "colors": [
+            {
+              "hex": "#aabbcc",
+              "span": [
+                638,
+                642
+              ]
+            }
+          ],
+          "lengths": [
+            {
+              "raw": "2px",
+              "px": 2.0,
+              "kind": "px",
+              "span": [
+                620,
+                623
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "transition",
+          "value": "opacity .2s ease-in-out,\n    transform 1e2ms",
+          "line": 24,
+          "span": [
+            669,
+            713
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "content",
+          "value": "\"a;b\"",
+          "line": 26,
+          "span": [
+            726,
+            731
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "margin",
+          "value": "-0.5em",
+          "line": 27,
+          "span": [
+            743,
+            749
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "-0.5em",
+              "px": null,
+              "kind": "other",
+              "span": [
+                743,
+                749
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "z-index",
+          "value": "10",
+          "line": 28,
+          "span": [
+            762,
+            764
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "line-height",
+          "value": "1",
+          "line": 29,
+          "span": [
+            781,
+            782
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "background-image",
+          "value": "url(data:image/png;base64,AAAA)",
+          "line": 30,
+          "span": [
+            804,
+            835
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "grid-template-columns",
+          "value": "repeat(2, 1fr)",
+          "line": 31,
+          "span": [
+            862,
+            876
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [],
+          "var_refs": []
+        }
+      ],
+      "class_selectors": [
+        {
+          "name": "a",
+          "line": 11
+        }
+      ],
+      "custom_props": [
+        {
+          "name": "--color-ink",
+          "line": 3
+        },
+        {
+          "name": "--brand-blue",
+          "line": 4
+        },
+        {
+          "name": "--triplet",
+          "line": 5
+        },
+        {
+          "name": "--not-triplet",
+          "line": 6
+        },
+        {
+          "name": "--too-big",
+          "line": 7
+        },
+        {
+          "name": "--len",
+          "line": 8
+        },
+        {
+          "name": "--spaced",
+          "line": 9
+        }
+      ],
+      "orphan_waivers": [],
+      "media_queries": []
+    }
+  ],
+  "strays": [],
+  "diagnostics": [],
+  "ungoverned": []
+}

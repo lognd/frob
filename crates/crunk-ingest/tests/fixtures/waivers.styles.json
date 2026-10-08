@@ -1,0 +1,199 @@
+{
+  "sheets": [
+    {
+      "path": "styles/base/waivers.css",
+      "bucket": "base",
+      "component": null,
+      "declarations": [
+        {
+          "prop": "color",
+          "value": "#123456",
+          "line": 2,
+          "span": [
+            54,
+            61
+          ],
+          "waivers": [
+            {
+              "rule": "COLOR001",
+              "reason": "brand",
+              "line": 1
+            }
+          ],
+          "colors": [
+            {
+              "hex": "#123456",
+              "span": [
+                54,
+                61
+              ]
+            }
+          ],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "color",
+          "value": "#654321",
+          "line": 3,
+          "span": [
+            77,
+            84
+          ],
+          "waivers": [
+            {
+              "rule": "COLOR001",
+              "reason": null,
+              "line": 3
+            }
+          ],
+          "colors": [
+            {
+              "hex": "#654321",
+              "span": [
+                77,
+                84
+              ]
+            }
+          ],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "margin",
+          "value": "3px",
+          "line": 6,
+          "span": [
+            182,
+            185
+          ],
+          "waivers": [
+            {
+              "rule": "SPACE001",
+              "reason": "legacy layout",
+              "line": 5
+            }
+          ],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "3px",
+              "px": 3.0,
+              "kind": "px",
+              "span": [
+                182,
+                185
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "padding",
+          "value": "5px",
+          "line": 7,
+          "span": [
+            198,
+            201
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "5px",
+              "px": 5.0,
+              "kind": "px",
+              "span": [
+                198,
+                201
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "margin",
+          "value": "7px",
+          "line": 9,
+          "span": [
+            218,
+            221
+          ],
+          "waivers": [
+            {
+              "rule": "SPACE001",
+              "reason": "same line",
+              "line": 9
+            }
+          ],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "7px",
+              "px": 7.0,
+              "kind": "px",
+              "span": [
+                218,
+                221
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "padding",
+          "value": "9px",
+          "line": 9,
+          "span": [
+            278,
+            281
+          ],
+          "waivers": [],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "9px",
+              "px": 9.0,
+              "kind": "px",
+              "span": [
+                278,
+                281
+              ]
+            }
+          ],
+          "var_refs": []
+        }
+      ],
+      "class_selectors": [
+        {
+          "name": "a",
+          "line": 2
+        },
+        {
+          "name": "b",
+          "line": 3
+        },
+        {
+          "name": "c",
+          "line": 4
+        },
+        {
+          "name": "d",
+          "line": 9
+        }
+      ],
+      "custom_props": [],
+      "orphan_waivers": [
+        {
+          "rule": "TW001",
+          "reason": "orphan at the end",
+          "line": 10
+        }
+      ],
+      "media_queries": []
+    }
+  ],
+  "strays": [],
+  "diagnostics": [],
+  "ungoverned": []
+}
