@@ -26,14 +26,14 @@ fn rel(root: &Path, p: &Path) -> String {
 }
 
 fn chars(source: &str, span: (usize, usize)) -> Value {
-    let c = |b: usize| source[..b].chars().count();
+    let c = |b: usize| source[..b].replace("\r\n", "\n").chars().count();
     json!([c(span.0), c(span.1)])
 }
 
 fn decl(source: &str, d: &Declaration) -> Value {
     json!({
         "prop": d.prop,
-        "value": d.value,
+        "value": d.value.replace("\r\n", "\n"),
         "line": d.line,
         "span": chars(source, d.span),
         "colors": d.colors.iter().map(|c| json!({"hex": c.color.to_hex(), "span": chars(source, c.span)})).collect::<Vec<_>>(),
