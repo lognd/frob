@@ -18,6 +18,11 @@ name = "fake-sibling"
 path = "src/bin/fake_sibling.rs"
 test = false
 
+[[bin]]
+name = "fake-dotnet"
+path = "src/bin/fake_dotnet.rs"
+test = false
+
 [dependencies]
 gob-config = { path = "../gob-config" }
 gob-exec = { path = "../gob-exec" }

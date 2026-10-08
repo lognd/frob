@@ -35,7 +35,7 @@ pub mod store;
 pub mod verbs;
 pub mod workspace;
 
-pub use config::EvidenceTable;
+pub use config::{DotnetTable, EvidenceTable};
 pub use done::DoneGuard;
 pub use error::{EvidenceError, Result};
 pub use guard::EvidenceGuard;

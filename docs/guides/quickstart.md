@@ -117,8 +117,8 @@ frob ticket show ~Q5FEE2P --format md
 
 `--accepts 1` binds the measurement to criterion 1. The `md` view lists
 the criteria as `[bound]` or `[unbound]`. Other providers are `nextest`,
-`pytest`, `vitest`, `jest`, `file` and `attestation`. `command` runs a tool
-named in `[evidence] allowed_tools` (by default `cargo`, `git`, `pytest`, `vitest` and `jest`; `python3` is not).
+`pytest`, `vitest`, `jest`, `dotnet`, `file` and `attestation`. `command` runs a tool
+named in `[evidence] allowed_tools` (by default `cargo`, `git`, `pytest`, `vitest`, `jest` and `dotnet`; `python3` is not).
 
 ## 7. Add the changelog fragment and check
 
