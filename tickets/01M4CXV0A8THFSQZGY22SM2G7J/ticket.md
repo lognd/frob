@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T04:55:09Z"
-updated = "2026-10-08T14:59:09Z"
-scope = ["changelog.d/**", "docs/design/grl-spec.md"]
+updated = "2026-10-08T15:01:10Z"
+scope = ["changelog.d/**", "docs/design/grl-spec.md", "docs/design/README.md"]
 
 [[acceptance]]
 text = "Given the semantics, when the ten example rules are evaluated by hand, then each verdict follows compositionally and COV001 never fires on a truncated reach"
