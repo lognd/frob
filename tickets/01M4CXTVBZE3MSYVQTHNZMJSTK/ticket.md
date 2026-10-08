@@ -2,14 +2,14 @@
 id = "01M4CXTVBZE3MSYVQTHNZMJSTK"
 title = "gob-ir: an Unknown or unclassified edge widens hi to the frontier instead of being dropped (formal review H1)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 class = "expedite"
 points = 3
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T04:55:04Z"
-updated = "2026-10-08T04:55:04Z"
+updated = "2026-10-08T04:56:44Z"
 scope = ["changelog.d/**", "crates/gob-ir/**"]
 
 [[acceptance]]

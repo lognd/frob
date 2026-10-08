@@ -8,8 +8,8 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:47:59Z"
-updated = "2026-10-08T04:46:03Z"
-scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-worktree/**", "crates/frob-check/**", "docs/reference/**", "docs/schemas/**", "frob.toml"]
+updated = "2026-10-08T05:05:33Z"
+scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-worktree/**", "crates/frob-check/**", "docs/reference/**", "docs/schemas/**", "frob.toml", "docs/design/architecture.md", "crates/gob-time/**"]
 
 [[acceptance]]
 text = "Given an active cycle and a standard ticket outside it, when frob work runs, then it is refused with E-PM-NOT-IN-CYCLE and the hint names cycle assign and --unplanned"
