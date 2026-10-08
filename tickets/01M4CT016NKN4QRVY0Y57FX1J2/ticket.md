@@ -2,13 +2,13 @@
 id = "01M4CT016NKN4QRVY0Y57FX1J2"
 title = "Sprint gate: frob work refuses a ticket outside the active cycle unless expedite or --unplanned --reason"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:47:59Z"
-updated = "2026-10-08T03:47:59Z"
+updated = "2026-10-08T04:37:59Z"
 scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**"]
 
 [[acceptance]]
