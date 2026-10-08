@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-obligations/src/cov.rs"]
+new = ["crates/frob-obligations/src/cov.rs", "crates/frob-obligations/tests/csharp.rs"]
+at = "2026-10-08T14:30:40Z"
+actor = "lognd"
+rev = 1
