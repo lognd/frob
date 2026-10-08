@@ -107,6 +107,197 @@ pub fn is_csharp_path(path: &str) -> bool {
         .is_some_and(|e| e.eq_ignore_ascii_case("cs"))
 }
 
+// frob:ticket 01M44YQV7C3FYXB3QH20R4E5N8
+/// The C# test framework an attribute belongs to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum CsharpTestFramework {
+    /// `NUnit` (`[Test]`, `[TestCase]`, `[TestCaseSource]`, `[Theory]`) and Unity's `[UnityTest]`.
+    NUnit,
+    /// `xUnit` (`[Fact]`, `[Theory]`).
+    XUnit,
+    /// `MSTest` (`[TestMethod]`, `[DataTestMethod]`).
+    MsTest,
+}
+
+/// A C# method recognised as a test, with the id both `dotnet test` and the Unity runner filter by.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CsharpTest {
+    /// The fully qualified method name (`Namespace.Type.Method`); parameterized cases keep it.
+    pub id: String,
+    /// The framework whose attribute marks the method.
+    pub framework: CsharpTestFramework,
+    /// True for a `[UnityTest]` coroutine, which needs the PlayMode-capable Unity runner.
+    pub play_mode_capable: bool,
+}
+
+/// Attribute names (last segment, without `Attribute`) that mark a C# test method.
+const TEST_ATTRIBUTES: [&str; 8] = [
+    "Test",
+    "TestCase",
+    "TestCaseSource",
+    "UnityTest",
+    "Theory",
+    "Fact",
+    "TestMethod",
+    "DataTestMethod",
+];
+
+/// Attribute names that are fixtures (set-up and tear-down), never tests.
+const FIXTURE_ATTRIBUTES: [&str; 6] = [
+    "SetUp",
+    "TearDown",
+    "UnitySetUp",
+    "UnityTearDown",
+    "OneTimeSetUp",
+    "OneTimeTearDown",
+];
+
+/// Index just past the C# whitespace, comments and preprocessor lines starting at `i`.
+fn skip_trivia(b: &[u8], mut i: usize) -> usize {
+    loop {
+        match b.get(i) {
+            Some(c) if c.is_ascii_whitespace() => i += 1,
+            Some(b'/') if b.get(i + 1) == Some(&b'/') => {
+                while b.get(i).is_some_and(|c| *c != b'\n') {
+                    i += 1;
+                }
+            }
+            Some(b'/') if b.get(i + 1) == Some(&b'*') => {
+                i += 2;
+                while i < b.len() && !(b[i] == b'*' && b.get(i + 1) == Some(&b'/')) {
+                    i += 1;
+                }
+                i = (i + 2).min(b.len());
+            }
+            Some(b'#') => {
+                while b.get(i).is_some_and(|c| *c != b'\n') {
+                    i += 1;
+                }
+            }
+            _ => return i,
+        }
+    }
+}
+
+/// The attribute names in the attribute lists that start at byte `start` of `text` (each list is `[A, B(1), target: C]`).
+///
+/// `Attribute` suffixes and namespace qualifiers are dropped (`[NUnit.Framework.TestAttribute]` is `Test`).
+fn leading_attribute_names(text: &str, start: usize) -> Vec<String> {
+    let b = text.as_bytes();
+    let mut out = Vec::new();
+    let mut i = skip_trivia(b, start);
+    while b.get(i) == Some(&b'[') {
+        let mut depth = 0usize;
+        let mut item_start = i + 1;
+        let mut j = i;
+        let mut items: Vec<&str> = Vec::new();
+        while j < b.len() {
+            match b[j] {
+                b'"' => {
+                    j += 1;
+                    while j < b.len() && b[j] != b'"' {
+                        j += usize::from(b[j] == b'\\') + 1;
+                    }
+                }
+                b'[' | b'(' | b'{' => depth += 1,
+                b']' | b')' | b'}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        items.push(&text[item_start..j]);
+                        break;
+                    }
+                }
+                b',' if depth == 1 => {
+                    items.push(&text[item_start..j]);
+                    item_start = j + 1;
+                }
+                _ => {}
+            }
+            j += 1;
+        }
+        for item in items {
+            let mut item = item.trim();
+            if let Some((target, rest)) = item.split_once(':')
+                && !rest.starts_with(':')
+                && target.trim().chars().all(char::is_alphanumeric)
+            {
+                item = rest.trim();
+            }
+            let head = item.split('(').next().unwrap_or_default().trim();
+            let last = head.rsplit('.').next().unwrap_or_default();
+            let last = last.strip_suffix("Attribute").unwrap_or(last);
+            if !last.is_empty() {
+                out.push(last.to_owned());
+            }
+        }
+        i = skip_trivia(b, (j + 1).min(b.len()));
+    }
+    out
+}
+
+/// The test `rec` is, read from the attributes at the start of its span in `text`; `None` for a fixture method or a non-test.
+///
+/// Only methods qualify. `[SetUp]`, `[TearDown]` and `[UnitySetUp]` methods are never tests. A
+/// `[Theory]` is `NUnit` when the file mentions `NUnit`, else `xUnit`.
+pub fn csharp_test(rec: &crate::model::SymbolRecord, text: &str) -> Option<CsharpTest> {
+    if rec.kind != crate::model::SymbolKind::Method || !is_csharp_path(rec.symref.path()) {
+        return None;
+    }
+    let start = usize::try_from(u32::from(rec.span.start())).ok()?;
+    let names = leading_attribute_names(text, start);
+    if names
+        .iter()
+        .any(|n| FIXTURE_ATTRIBUTES.contains(&n.as_str()))
+    {
+        return None;
+    }
+    let hit = names
+        .iter()
+        .find(|n| TEST_ATTRIBUTES.contains(&n.as_str()))?;
+    let framework = match hit.as_str() {
+        "Fact" => CsharpTestFramework::XUnit,
+        "TestMethod" | "DataTestMethod" => CsharpTestFramework::MsTest,
+        "Theory" if !text.contains("NUnit") => CsharpTestFramework::XUnit,
+        _ => CsharpTestFramework::NUnit,
+    };
+    Some(CsharpTest {
+        id: rec.symref.segments().join("."),
+        framework,
+        play_mode_capable: names.iter().any(|n| n == "UnityTest"),
+    })
+}
+
+/// True when `rec` is a C# test method; see [`csharp_test`].
+pub fn is_csharp_test_fn(rec: &crate::model::SymbolRecord, text: &str) -> bool {
+    csharp_test(rec, text).is_some()
+}
+
+/// True when `text` carries a C# test attribute, so a file is a test file by content and not by path alone.
+pub fn is_csharp_test_text(text: &str) -> bool {
+    text.match_indices('[').any(|(at, _)| {
+        leading_attribute_names(text, at)
+            .iter()
+            .any(|n| TEST_ATTRIBUTES.contains(&n.as_str()))
+    })
+}
+
+/// True when `path` looks like a C# test file by location: under a `Tests`, `Test`, `EditMode` or `PlayMode` directory, or named `*Test(s).cs`.
+///
+/// Only a hint for callers with no file text; the attribute scan ([`is_csharp_test_text`]) is the authority.
+pub fn is_csharp_test_file(path: &str) -> bool {
+    if !is_csharp_path(path) {
+        return false;
+    }
+    let mut parts: Vec<&str> = path.split('/').collect();
+    let base = parts.pop().unwrap_or_default();
+    let stem = base.strip_suffix(".cs").unwrap_or(base);
+    stem.ends_with("Tests")
+        || stem.ends_with("Test")
+        || parts
+            .iter()
+            .any(|d| matches!(*d, "Tests" | "Test" | "EditMode" | "PlayMode"))
+}
+
 /// What encloses a declaration, for its default accessibility.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Container {
