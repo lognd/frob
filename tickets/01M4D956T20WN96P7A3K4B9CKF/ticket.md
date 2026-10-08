@@ -1,0 +1,23 @@
++++
+id = "01M4D956T20WN96P7A3K4B9CKF"
+title = "ERR001-ERR003: empty error handler, discarded fallible result, catch-all that neither rethrows nor logs"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+reporter = "lognd"
+created = "2026-10-08T08:12:57Z"
+updated = "2026-10-08T08:12:57Z"
+scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**"]
+
+[[acceptance]]
+text = "Given Rust, Python, TS and C# fixtures with an empty catch, let _ = on a Result, except: pass and an empty catch of Exception, when grimble check runs, then each fires once"
+bound = false
+
+[[acceptance]]
+text = "Given a handler that logs or rethrows, when checked, then clean; given a callee whose fallibility is Unknown, then ERR002 is Unresolved, never Warn"
+bound = false
++++
+
+notes/research/lint-catalogue-2026-10-08.md row K01 (4.2 N10): notes/research/mining-report-2026-10-08.md C30 2.5 percent of human review comments, 29 percent blocking, F-ERROR-HANDLING in fix commits, AI-PR ratio 1.6 (notes/research/mining-report-2026-10-08.md 4.2); notes/research/creators-systems-2026-10-08.md ADV015, ADV049 and the only data-backed family in that corpus (Yuan et al. OSDI 2014 via Luu: 92 percent of catastrophic failures from mishandled non-fatal errors). v2 rule for the shape in ~0FPQXHD.

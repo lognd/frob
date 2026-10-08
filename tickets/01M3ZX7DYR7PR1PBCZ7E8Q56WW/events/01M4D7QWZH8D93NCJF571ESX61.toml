@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["milestone:2", "area:grl"]
+new = ["milestone:2", "area:grl", "creates:crates/gob-plan/src/check/render.rs", "creates:crates/gob-plan/src/check/vocab.rs", "creates:crates/gob-plan/tests/check_names.rs", "creates:crates/gob-plan/tests/grl_errors/cases/GRL017.*", "creates:crates/gob-plan/tests/grl_errors/cases/GRL018.*", "creates:changelog.d/01M3ZX7DYR7PR1PBCZ7E8Q56WW.added.md"]
+at = "2026-10-08T07:48:00Z"
+actor = "lognd"
+rev = 1

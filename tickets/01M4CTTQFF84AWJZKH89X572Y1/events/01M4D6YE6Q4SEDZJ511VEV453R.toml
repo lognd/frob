@@ -1,0 +1,37 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-08T07:33:49Z"
+digest = "ee524652e4e0448464ccfe8f6782f58ec421fb6ed5ded24e733b4f8328e23d00"
+exit_code = 0
+inline = '''
+goway: warning: CROSS-OS: `cargo` is portable, but this run stays on linux hosts
+goway: note:   other-OS hosts that could take it: nova-windows
+goway: note:   allow every OS for this run:      goway run --any-os -- ...
+goway: note:   allow it for this project:        cross_os = true in goway.toml
+goway: note:   silence this hint:                cross_os = false in goway.toml
+2026-10-08T07:34:03.285418Z  WARN running alone host=quasar warning=7.0 GiB of memory free on an idle helper, this repository needs about 7.3 GiB; running alone there instead of waiting for memory that will not free
+goway: note: 7.0 GiB of memory free on an idle helper, this repository needs about 7.3 GiB; running alone there instead of waiting for memory that will not free
+goway: note: picked quasar (load 4.31 on 12 cores, 0 goway jobs)
+goway: note: tool versions differ across your hosts: clang 21.1.8 here (major: 10 vs 21 vs 18) (cached by goway doctor 3h ago; builds may behave differently here)
+goway: note: synced 12514 files (4 sent, 12692191 bytes, 2 deleted)
+goway: note: quasar has 7.0 GiB free: running with 1 of 12 jobs (CARGO_BUILD_JOBS=1, NEXTEST_TEST_THREADS=1, MOLD_JOBS=1, GOWAY_LINK_THREADS=1, estimated peak 6.7 GiB); even this may not fit, it is the lowest there is
+goway: info: running on quasar (x86_64, Quasar) at 100.78.39.78 [cores>=8 (12 cores)]: cargo nextest run -p frob-cli --test doc_commands
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1fd88c6e-ab05-40db-a950-48c171a05d3f with nextest profile: default
+    Starting 3 tests across 1 binary
+        PASS [   0.004s] (1/3) frob-cli::doc_commands every_readme_and_guide_link_resolves
+        PASS [   1.829s] (2/3) frob-cli::doc_commands quickstart_runs_from_init_to_land
+        PASS [   0.371s] (3/3) frob-cli::doc_commands readme_commands_succeed_in_a_fresh_repository
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.205s] 3 tests run: 3 passed, 0 skipped
+goway: done: exit 0 on quasar in 17.7s
+'''
+passed = true
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --wait 20m -- cargo nextest run -p frob-cli --test doc_commands"
+size = 2169
+status = "measured"
+at = "2026-10-08T07:33:49Z"
+actor = "lognd"
+rev = 1
