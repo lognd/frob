@@ -9,12 +9,8 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T07:29:34Z"
-updated = "2026-10-08T08:13:10Z"
+updated = "2026-10-08T08:14:38Z"
 scope = ["changelog.d/**", ".github/workflows/**", "crates/frob-release/**"]
-
-[[acceptance]]
-text = "Given a push to experimental that changes a workflow file, when CI runs, then the dev publish job moves the dev tag and succeeds"
-bound = false
 
 [[acceptance]]
 text = "Given the dev workflow test in frob-release, when run, then it reflects the new mechanism"
