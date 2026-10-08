@@ -2,7 +2,8 @@
 id = "01M44YQWGP5553K61QKC8HB0GQ"
 title = "Project model: Unity .asmdef and .asmref assemblies"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
