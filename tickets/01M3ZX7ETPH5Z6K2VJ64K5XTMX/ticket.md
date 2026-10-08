@@ -2,13 +2,13 @@
 id = "01M3ZX7ETPH5Z6K2VJ64K5XTMX"
 title = "Plan executor core: find, where, containment, position, three-valued connectives"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-06T05:18:52Z"
+updated = "2026-10-08T14:30:01Z"
 idempotency_key = "m2-exec-core"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/exec/core/**"]
