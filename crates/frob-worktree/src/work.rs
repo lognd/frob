@@ -186,6 +186,9 @@ impl Workspace<'_> {
         vet(view.summary.ty, view.summary.category, &handle, leased)?;
         // An in-progress ticket with a live lease already holds its slot (re-entry, steal).
         let needs_slot = !(view.summary.category == Category::InProgress && existing.is_some());
+        if needs_slot {
+            crate::cycle_gate::check_overdue(self.ledger, view.summary.class, &handle)?;
+        }
         let taking = crate::wip::Taking {
             id,
             handle: &handle,

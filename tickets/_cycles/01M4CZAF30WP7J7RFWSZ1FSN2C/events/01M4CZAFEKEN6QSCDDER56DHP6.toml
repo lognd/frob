@@ -1,0 +1,8 @@
+kind = "create"
+object = "cycle"
+goal = "Hullbreach adoption: C#/Unity test detection and project model, crunk parity for the platform, websec prerequisites (std pack, pack loader), GRL executor core, soundness fixes"
+start = "2026-10-10"
+end = "2026-10-11"
+at = "2026-10-08T05:21:04Z"
+actor = "lognd"
+rev = 1

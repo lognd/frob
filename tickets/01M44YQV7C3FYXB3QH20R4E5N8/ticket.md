@@ -2,13 +2,13 @@
 id = "01M44YQV7C3FYXB3QH20R4E5N8"
 title = "C# test detection: NUnit, xUnit, MSTest, UnityTest"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:58Z"
-updated = "2026-10-05T02:36:58Z"
+updated = "2026-10-08T06:12:48Z"
 idempotency_key = "d94-tests"
 scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/lib.rs", "crates/frob-tests/src/catalog.rs", "crates/frob-tests/tests/**", "crates/gob-symbols/tests/csharp.rs"]
 
