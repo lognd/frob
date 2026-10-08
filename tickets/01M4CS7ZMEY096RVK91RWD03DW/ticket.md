@@ -7,8 +7,8 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-08T03:34:51Z"
-updated = "2026-10-08T03:35:32Z"
-scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "Cargo.toml", "Cargo.lock", "docs/design/build-test-ci.md", "changelog.d/**"]
+updated = "2026-10-08T04:23:06Z"
+scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "Cargo.toml", "Cargo.lock", "docs/design/build-test-ci.md", "changelog.d/**", "frob.lock"]
 
 [[acceptance]]
 text = "Given the three binaries, when cargo dev profile runs, then report.json has one entry per leaf command (wall median, cold where set, max RSS, exit) and a test fails naming any leaf command with no scenario and no skip reason"

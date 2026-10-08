@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the missing_md trybuild case, when the suite runs on Linux and Windows, then both match one snapshot (no OS error text in any gob-macros diagnostic)", "Given CI on experimental after the land, when the Windows nextest step runs, then it passes"]
+new = ["Given the missing_md trybuild case, when the suite runs on Linux and Windows, then both match one snapshot (no OS error text in any gob-macros diagnostic)"]
+moved = [1, 0]
+at = "2026-10-08T04:05:51Z"
+actor = "lognd"
+rev = 1
