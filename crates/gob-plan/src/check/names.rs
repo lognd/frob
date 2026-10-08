@@ -335,9 +335,12 @@ impl Checker {
         self.scoped(|s| {
             s.source(&b.source);
             if let Some(v) = s.declare(b, keyword)
-                && witness && s.neg.is_none() && !s.in_def {
-                    s.witnesses.push(v);
-                }
+                && witness
+                && s.neg.is_none()
+                && !s.in_def
+            {
+                s.witnesses.push(v);
+            }
             for r in &b.rels {
                 s.rel(r, None);
             }
@@ -537,16 +540,17 @@ impl Checker {
             Object::Shape(s) => self.shape(s),
             Object::Term(t) => {
                 if let TermKind::Path(p) = &t.node
-                    && let [only] = p.segments.as_slice() {
-                        if let Some(v) = self.lookup(&only.text) {
-                            self.used[v.id] = true;
-                        } else if vocab::kind(&only.text).is_some() {
-                            self.kind_use(only);
-                        } else {
-                            self.unbound(only, NamePos::KindOrVar);
-                        }
-                        return;
+                    && let [only] = p.segments.as_slice()
+                {
+                    if let Some(v) = self.lookup(&only.text) {
+                        self.used[v.id] = true;
+                    } else if vocab::kind(&only.text).is_some() {
+                        self.kind_use(only);
+                    } else {
+                        self.unbound(only, NamePos::KindOrVar);
                     }
+                    return;
+                }
                 self.term(t);
             }
         }
@@ -942,20 +946,21 @@ impl Checker {
                 .with_help("compare single values with `==`; use `in` with a list, a range `1..3`, a vocabulary or a side relation"),
             );
         } else if let Some(e) = elem
-            && !l.compatible(&e) {
-                self.out.push(Diagnostic::new(
-                    Code::Grl005,
-                    format!(
-                        "mismatched types: {} is looked up in a list of {}s",
-                        l.phrase(),
-                        e.phrase()
-                            .trim_start_matches("a ")
-                            .trim_start_matches("an ")
-                    ),
-                    lhs.span,
-                    format!("expected {} here, found {}", e.phrase(), l.phrase()),
-                ));
-            }
+            && !l.compatible(&e)
+        {
+            self.out.push(Diagnostic::new(
+                Code::Grl005,
+                format!(
+                    "mismatched types: {} is looked up in a list of {}s",
+                    l.phrase(),
+                    e.phrase()
+                        .trim_start_matches("a ")
+                        .trim_start_matches("an ")
+                ),
+                lhs.span,
+                format!("expected {} here, found {}", e.phrase(), l.phrase()),
+            ));
+        }
     }
 
     // ---- messages and variable references -------------------------------------------------

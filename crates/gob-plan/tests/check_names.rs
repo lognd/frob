@@ -11,6 +11,13 @@ fn rule(header: &str, body: &str) -> String {
     )
 }
 
+/// `word` with its first two letters swapped: a typo that no spell checker has to tolerate in the source.
+fn typo(word: &str) -> String {
+    let mut c: Vec<char> = word.chars().collect();
+    c.swap(0, 1);
+    c.into_iter().collect()
+}
+
 fn diags(src: &str) -> Vec<Diagnostic> {
     let parsed = parse(FileInterner::new().intern("t.grl"), src);
     assert!(parsed.is_ok(), "{:?}\n{src}", parsed.errors);
@@ -45,21 +52,33 @@ fn the_fixture_rules_of_the_spec_check_clean() {
 fn a_misspelt_kind_field_verb_and_knob_are_unknown_words() {
     let h = "lang rust\n  knob depth: int = 3 \"d\"";
     for (body, what) in [
-        ("  find f: functoin\n  report f \"m\"", "kind"),
         (
-            "  find f: function where f.nmae == \"a\"\n  report f \"m\"",
+            format!("  find f: {}\n  report f \"m\"", typo("function")),
+            "kind",
+        ),
+        (
+            format!(
+                "  find f: function where f.{} == \"a\"\n  report f \"m\"",
+                typo("name")
+            ),
             "field",
         ),
         (
-            "  find f: function find g: call where g clals f\n  report f \"m\"",
+            format!(
+                "  find f: function find g: call where g {} f\n  report f \"m\"",
+                typo("calls")
+            ),
             "verb",
         ),
         (
-            "  find f: function where f.line < knob.dpeth\n  report f \"m\"",
+            format!(
+                "  find f: function where f.line < knob.{}\n  report f \"m\"",
+                typo("depth")
+            ),
             "knob",
         ),
     ] {
-        let d = diags(&rule(h, body));
+        let d = diags(&rule(h, &body));
         assert_eq!(d.len(), 1, "{what}: {d:#?}");
         assert_eq!(d[0].code, Some(Code::Grl001), "{what}");
         assert!(
@@ -216,7 +235,10 @@ fn side_relations_are_checked() {
         .is_empty()
     );
     assert_eq!(
-        codes(h, "  find p: diff.chagned\n  report p \"{p}\""),
+        codes(
+            h,
+            &format!("  find p: diff.{}\n  report p \"{{p}}\"", typo("changed"))
+        ),
         [Code::Grl001]
     );
 }
