@@ -2,13 +2,13 @@
 id = "01M4BMRWMJXKXGJ72MTVXFAY3P"
 title = "gob-git: bulk blob read by oid so ledger walks stop resolving each path through the tickets tree"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-07T16:57:28Z"
-updated = "2026-10-08T07:29:22Z"
+updated = "2026-10-08T09:56:55Z"
 idempotency_key = "gob-git-bulk-blob-read"
 labels = ["milestone:2", "area:pm"]
 scope = ["crates/gob-git/**", "crates/frob-ledger/src/**"]
