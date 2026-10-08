@@ -2,7 +2,8 @@
 id = "01M4BMRWMJXKXGJ72MTVXFAY3P"
 title = "gob-git: bulk blob read by oid so ledger walks stop resolving each path through the tickets tree"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
