@@ -2,7 +2,8 @@
 id = "01M43ARYX61ESX3S9XG1WS0DQ4"
 title = "crunk-tailwind: node runtime bridge through gob-exec and the first-run notice"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
