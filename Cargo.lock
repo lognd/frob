@@ -564,6 +564,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "crunk-ingest"
+version = "0.532.0"
+dependencies = [
+ "crunk-spec",
+ "crunk-values",
+ "gob-cache",
+ "gob-directives",
+ "gob-exec",
+ "gob-ir",
+ "gob-languages",
+ "gob-symbols",
+ "gob-walk",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "crunk-spec"
 version = "0.532.0"
 dependencies = [
@@ -585,6 +605,20 @@ dependencies = [
 name = "crunk-tailwind"
 version = "0.532.0"
 dependencies = [
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "crunk-tokens"
+version = "0.532.0"
+dependencies = [
+ "crunk-spec",
+ "crunk-tailwind",
+ "crunk-values",
+ "indexmap",
+ "serde",
+ "serde_json",
  "thiserror",
  "tracing",
 ]

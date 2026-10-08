@@ -1,0 +1,17 @@
++++
+id = "01M4D8X558Q07HCMEBP224NQP4"
+title = "Bind before own: tool-stage parsers and id maps for the evidence-ranked external linters"
+type = "epic"
+category = "todo"
+priority = "high"
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+reporter = "lognd"
+created = "2026-10-08T08:07:15Z"
+updated = "2026-10-08T08:07:15Z"
+
+[[acceptance]]
+text = "Given this repository and a TS and a Unity fixture, when frob check runs with the bound stages, then clippy, ruff, ESLint, Roslyn and typos findings appear under frob ids with source_rule and unreadable tool output is a required TOOL001"
+bound = false
++++
+
+notes/research/lint-catalogue-2026-10-08.md sections 3.1-3.2: the top-ranked catalogue rows are decided by maintained tools (rustc and clippy, ruff, ESLint family, Roslyn and Microsoft.Unity.Analyzers, typos, formatters, semver checkers). Outcome: their findings arrive with frob ids, severities and exceptions before anything is re-implemented. Today crates/gob-check/src/tool_parse.rs parses only zizmor and actionlint.

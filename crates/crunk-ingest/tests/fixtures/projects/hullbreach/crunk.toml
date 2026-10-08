@@ -1,0 +1,77 @@
+# The one source of truth for the web frontend's design system. Everything
+# under web/src/styles/tokens.css is GENERATED from this file (`crunk
+# tokens`); `crunk check` fails the build on any color, size, or shadow in
+# CSS or a className string that is not declared here.
+
+[project]
+css_root = "web/src/styles"
+# tokens_file resolves against css_root; every other *_file key
+# ([tailwind] tokens_file, [tokens] json_file) resolves against the
+# project root (r8, A-030) -- this split is compat law, not taste.
+tokens_file = "tokens.css"
+root_font_size = 16
+
+# Dark, in-cockpit palette. "ink" is text, "paper" is the background,
+# following crunk's role convention even though this UI is dark-first.
+# stress-* mirror the in-game green-to-red hull-stress gradient.
+[palette]
+ink = "#e6e8ef"
+paper = "#0b0d12"
+panel = "#161a24"
+muted = "#8b93a7"
+accent = "#3ba0ff"
+stress-ok = "#3fd17c"
+stress-warn = "#f0b429"
+stress-fail = "#ff4d4f"
+
+[palette.roles]
+body = ["ink", "paper"]
+panel = ["ink", "panel"]
+muted = ["muted", "paper"]
+accent = ["accent", "paper"]
+danger = ["stress-fail", "paper"]
+
+[scales]
+spacing = [0, 4, 8, 12, 16, 24, 32, 48, 64]
+font_sizes = [12, 14, 16, 20, 24, 32, 48, 64]
+radii = [0, 4, 8, 16]
+
+[typography]
+families = ["Inter", "system-ui", "sans-serif"]
+weights = [400, 500, 600, 700]
+
+[layers]
+base = 0
+dropdown = 100
+overlay = 200
+toast = 300
+
+[org]
+buckets = ["base", "components", "layouts", "utilities"]
+class_case = "kebab"
+component_prefix = true
+tokens_only_custom_props = true
+# The Tailwind entry stylesheet lives beside main.tsx, not in a bucket.
+ignore = ["web/src/index.css"]
+
+# React sources: every string-literal className fragment is linted against
+# the palette and scales above (TW004/TW005), so `bg-zinc-950` or `gap-2`
+# is a red build, not a review comment.
+[jsx]
+globs = ["web/src/**/*.tsx"]
+
+# Tailwind v4 has no JS config of its own; crunk still writes the theme
+# mapping (GENERATED, never hand-edited) and web/tailwind.config.ts hands it
+# to Tailwind through `@config`. namespace_keys keeps the declared scales
+# out of Tailwind's default key space, so utilities read as
+# `gap-space-8`, `text-font-size-20`, `rounded-radius-8`, `bg-paper` --
+# there is no `gap-8` that silently means 2rem.
+[tailwind]
+config = "web/tailwind.config.ts"
+tokens_file = "web/tailwind.theme.json"
+namespace_keys = true
+
+[lint]
+SPACE001 = "warn"
+fix_tolerance = 0.15
+color_tolerance = 8.0

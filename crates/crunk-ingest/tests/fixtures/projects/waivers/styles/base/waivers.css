@@ -1,0 +1,10 @@
+/* crunk:waive COLOR001 reason="brand" */
+.a { color: #123456; }
+.b { color: #654321; } /* crunk:waive COLOR001 */
+.c {
+  /* crunk:waive SPACE001 reason="legacy layout" */
+  margin: 3px;
+  padding: 5px;
+}
+.d { margin: 7px; /* crunk:waive SPACE001 reason="same line" */ padding: 9px; }
+/* crunk:waive TW001 reason="orphan at the end" */

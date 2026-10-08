@@ -1,0 +1,31 @@
+.top, .other > .child:not(.skip) { margin: 0 auto; }
+a.link[href=".x"]::after, #id.cls { color: #fff; }
+@media (min-width: 600px) and (max-width: 900px) {
+  .a, .b > i { color: red; }
+  @supports (display: grid) {
+    .c { display: grid; }
+  }
+}
+@media screen and (min-width: 40em), print { .m { margin: 0; } }
+@media (max-width: 767.98px) {
+  .narrow { padding: 4px; }
+}
+@media
+  (min-width: 1024px) {
+  .wide { padding: 16px; }
+}
+@layer base, components;
+@layer base {
+  .layered { color: blue; }
+}
+@font-face {
+  font-family: "X";
+  src: url(x.woff2);
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@import url("other.css");
+@charset "utf-8";
+.\31 0 { color: red; }

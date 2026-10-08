@@ -1,0 +1,21 @@
+[project]
+css_root = "styles"
+tokens_file = "tokens.css"
+root_font_size = 16
+
+[palette]
+ink = "#e6e8ef"
+paper = "#0b0d12"
+
+[scales]
+spacing = [0, 4, 8, 16]
+font_sizes = [12, 16]
+
+[typography]
+families = ["Inter", "sans-serif"]
+weights = [400, 700]
+
+[org]
+buckets = ["base", "components", "layouts", "utilities"]
+entry = ["main.css", "pages/*.css"]
+ignore = ["legacy/**", "vendor.css"]

@@ -1,0 +1,23 @@
++++
+id = "01M4D95B4W3XEMKKFG4B2ZBRER"
+title = "Rule precision ledger: per-rule accept, waive, dismiss and fix counts and a not-useful rate; Warn by default needs measured precision"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+reporter = "lognd"
+created = "2026-10-08T08:13:02Z"
+updated = "2026-10-08T08:13:02Z"
+scope = ["changelog.d/**", "crates/gob-rules/**", "crates/gob-check/**"]
+
+[[acceptance]]
+text = "Given exceptions and fixes recorded for a rule over a window, when frob check --json runs, then the rule reports its counts and not-useful rate"
+bound = false
+
+[[acceptance]]
+text = "Given a rule above the configured not-useful ceiling, when frob doctor runs, then it recommends demotion with the numbers"
+bound = false
++++
+
+notes/research/lint-catalogue-2026-10-08.md 1.1 P and 4.2 N16; notes/research/creators-systems-2026-10-08.md 5.2 (Tricorder: tuning cut the not-useful rate from 80 to about 15 percent; deploy only low-false-positive checks); ~GR4ZPYH measured about 5 percent true positives for v1 web rules; notes/research/deslop-research-2026-10-08.md 4.8 verdict eval loop.
