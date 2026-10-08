@@ -1,0 +1,13 @@
+kind = "create"
+title = "gob: USS, UXML and TSS as a CSS dialect and a markup language (style and markup capabilities)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M4CXSAG0YPF18FX3KAPVX45C"
+scope = ["changelog.d/**", "crates/gob-symbols/**", "crates/gob-languages/**"]
+acceptance = ["Given USS with custom properties and -unity- properties, when parsed, then declarations, var() references and selectors are facts with spans"]
+body = "docs/design/crunk.md section 7; language-engines.md D96."
+at = "2026-10-08T04:54:15Z"
+actor = "lognd"
+rev = 1

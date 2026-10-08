@@ -1,0 +1,13 @@
+kind = "create"
+title = "COH004 mixed vocabularies (Advisory heuristic)"
+type = "task"
+category = "todo"
+priority = "low"
+points = 2
+parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
+scope = ["changelog.d/**", "crates/grimble-check/**"]
+acceptance = ["Given a unit whose identifiers form two disjoint vocabularies, when COH004 runs, then an Advisory finding lists both clusters"]
+body = "docs/design/cohesion.md 1."
+at = "2026-10-08T04:54:30Z"
+actor = "lognd"
+rev = 1

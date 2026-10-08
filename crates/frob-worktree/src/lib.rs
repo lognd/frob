@@ -12,6 +12,7 @@
 //! [`register`] adds the three verbs to a product root.
 
 pub mod config;
+pub mod cycle_gate;
 pub mod error;
 pub mod gc;
 pub mod verbs;

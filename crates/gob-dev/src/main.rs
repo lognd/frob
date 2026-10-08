@@ -7,7 +7,8 @@ use clap::{Parser, Subcommand};
 use gob_dev::import_v1::{self, ImportOptions};
 use gob_dev::out::emit;
 use gob_dev::{
-    Kind, Mode, apply, ci, generate, isolation, publish, wheel, wheel_smoke, workspace_root,
+    Kind, Mode, apply, ci, generate, isolation, profile, publish, wheel, wheel_smoke,
+    workspace_root,
 };
 
 /// Command-line interface of the developer task runner.
@@ -65,6 +66,27 @@ enum Task {
         /// Print the step names and exit.
         #[arg(long)]
         list: bool,
+    },
+    /// Time every leaf command of frob, grimble and crunk against its budget in profile.toml.
+    Profile {
+        /// Warm runs timed per command (after one warm-up).
+        #[arg(long, default_value_t = 5)]
+        runs: u32,
+        /// Multiply every budget (slow CI runners use more than 1).
+        #[arg(long, default_value_t = 1.0)]
+        budget_factor: f64,
+        /// Compare against an earlier report.json and print per-command deltas (never fails).
+        #[arg(long, value_name = "BASE.json")]
+        compare: Option<PathBuf>,
+        /// Profile only commands matching this glob (repeatable), for example 'frob ticket *'.
+        #[arg(long)]
+        only: Vec<String>,
+        /// Use already built binaries from this directory instead of building the profiling profile.
+        #[arg(long, value_name = "DIR")]
+        bin_dir: Option<PathBuf>,
+        /// Where to write the report (default: target/profile/report.json).
+        #[arg(long)]
+        out: Option<PathBuf>,
     },
     /// Publish the workspace crates to crates.io in dependency order; resumable.
     Publish {
@@ -202,6 +224,25 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
             report_md.as_deref(),
         )
         .map(|()| ok),
+        Task::Profile {
+            runs,
+            budget_factor,
+            compare,
+            only,
+            bin_dir,
+            out,
+        } => profile_commands(
+            &profile::Options {
+                root: workspace_root().map_err(|e| Failed(format!("error: {e}")))?,
+                runs,
+                budget_factor,
+                only,
+                bin_dir,
+            },
+            compare.as_deref(),
+            out,
+        )
+        .map(|()| ok),
         Task::Publish {
             dry_run,
             reserve,
@@ -303,6 +344,63 @@ fn ci_checks(names: &[String], keep_going: bool, list: bool) -> Result<(), Faile
         Ok(())
     } else {
         Err(Failed("ci failed".to_owned()))
+    }
+}
+
+// frob:ticket 01M4CS7ZMEY096RVK91RWD03DW
+/// Profile every leaf command, write the report and summary, and fail on a budget or exit breach.
+fn profile_commands(
+    opts: &profile::Options,
+    compare: Option<&std::path::Path>,
+    out: Option<PathBuf>,
+) -> Result<(), Failed> {
+    let fail = |e: &dyn std::fmt::Display| {
+        tracing::error!(error = %e, "profile failed");
+        Failed(format!("error: {e}"))
+    };
+    let path = out.unwrap_or_else(|| opts.root.join(profile::REPORT_PATH));
+    let report = profile::run(opts, &mut |line| emit(line)).map_err(|e| fail(&e))?;
+    profile::write_report(&path, &report).map_err(|e| fail(&e))?;
+    let mut markdown = profile::render::table(&report);
+    if let Some(base) = compare {
+        match profile::read_report(base) {
+            Ok(base) => {
+                markdown.push('\n');
+                markdown.push_str(&profile::render::compare(&base, &report));
+            }
+            // A missing or unreadable base never blocks: there may be no earlier artifact yet.
+            Err(e) => tracing::warn!(error = %e, "no base report to compare against"),
+        }
+    }
+    emit(&markdown);
+    if let Some(summary) = std::env::var_os("GITHUB_STEP_SUMMARY") {
+        append_summary(std::path::Path::new(&summary), &markdown);
+    }
+    let breaches = profile::model::violations(&report);
+    for line in &breaches {
+        emit(&format!("PROFILE: {line}"));
+    }
+    if breaches.is_empty() {
+        emit(&format!("report written to {}", path.display()));
+        Ok(())
+    } else {
+        Err(Failed(format!(
+            "profile failed: {} breach(es)",
+            breaches.len()
+        )))
+    }
+}
+
+/// Append `markdown` to the GitHub step summary file; a write failure is logged, not fatal.
+fn append_summary(path: &std::path::Path, markdown: &str) {
+    use std::io::Write as _;
+    let written = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .and_then(|mut f| writeln!(f, "{markdown}"));
+    if let Err(e) = written {
+        tracing::warn!(path = %path.display(), error = %e, "step summary not written");
     }
 }
 
@@ -474,6 +572,40 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    // frob:tests crates/gob-dev/src/main.rs::profile_commands
+    #[test]
+    fn profile_parses_its_knobs() {
+        let cli = Cli::try_parse_from([
+            "gob-dev",
+            "profile",
+            "--runs",
+            "3",
+            "--budget-factor",
+            "2.5",
+            "--only",
+            "frob ticket *",
+            "--compare",
+            "base.json",
+        ])
+        .expect("parses");
+        let Task::Profile {
+            runs,
+            budget_factor,
+            only,
+            compare,
+            ..
+        } = cli.command
+        else {
+            panic!("not a profile task");
+        };
+        assert_eq!(
+            (runs, only.as_slice()),
+            (3, ["frob ticket *".to_owned()].as_slice())
+        );
+        assert!((budget_factor - 2.5).abs() < f64::EPSILON);
+        assert_eq!(compare, Some(PathBuf::from("base.json")));
     }
 
     #[test]

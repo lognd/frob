@@ -1,0 +1,17 @@
++++
+id = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
+title = "Function cohesion, type precision, directive admission and purity (D118-D121)"
+type = "epic"
+category = "todo"
+priority = "high"
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+reporter = "lognd"
+created = "2026-10-08T04:54:25Z"
+updated = "2026-10-08T04:54:25Z"
+
+[[acceptance]]
+text = "Given the COH rules and type precision, when grimble checks hullbreach platform, then COH findings carry Must/May witnesses and every Unknown names its reason class"
+bound = false
++++
+
+docs/design/cohesion.md. Owner questions 2026-10-08: one job per function across languages; typed versus untyped Python; directive bloat; purity detection.

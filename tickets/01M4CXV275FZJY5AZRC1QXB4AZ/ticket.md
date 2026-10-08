@@ -1,0 +1,19 @@
++++
+id = "01M4CXV275FZJY5AZRC1QXB4AZ"
+title = "GRL: 'A and no t: T where B and C' parses C inside the no; bind quantifier bodies explicitly (extends ~K0FVJFM)"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M4CXTT0JWKFTX1HBB703QA80"
+reporter = "lognd"
+created = "2026-10-08T04:55:11Z"
+updated = "2026-10-08T04:55:11Z"
+scope = ["changelog.d/**", "crates/gob-plan/**", "docs/design/grl-spec.md"]
+
+[[acceptance]]
+text = "Given the ambiguous forms, when parsed, then the grammar has one documented binding and the printer generator finds no ambiguity"
+bound = false
++++
+
+notes/review/formal-review-2026-10-08.md section 3 and item 6.

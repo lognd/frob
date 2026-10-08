@@ -1,0 +1,13 @@
+kind = "create"
+title = "universal-model.md: restate Theorem 2 over lo/hi relation pairs with well-founded two-pass fixpoints; Theorem 3(a) about L; Belnap conflict as a reason"
+type = "docs"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M4CXTT0JWKFTX1HBB703QA80"
+scope = ["changelog.d/**", "docs/design/universal-model.md"]
+acceptance = ["Given the restated section, when reviewed, then the adapter hypothesis R_lo <= R_true <= R_hi is explicit and the soundness proof covers fixpoints by induction on strata"]
+body = "notes/review/formal-review-2026-10-08.md section 4 items 2 and 11. Replace 'FO+LFP, equivalently stratified Datalog' (false, Kolaitis 1991) with stratified Datalog with aggregation, positive recursion only in catalog closures."
+at = "2026-10-08T04:55:06Z"
+actor = "lognd"
+rev = 1
