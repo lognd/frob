@@ -1,5 +1,6 @@
 //! The `PM` rule family: project-management rules over tickets and milestones.
 
+pub mod cycle;
 pub mod membership;
 pub mod milestone;
 pub mod replenish;
@@ -14,6 +15,7 @@ pub const STRICT_SEVERITY: &[(&str, Severity)] = &[
     ("PM002", Severity::Error),
     ("PM013", Severity::Error),
     ("PM034", Severity::Error),
+    ("PM036", Severity::Error),
 ];
 
 // frob:ticket 01M41B2PD4NAV8VACA13750GWB

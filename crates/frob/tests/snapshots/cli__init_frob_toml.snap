@@ -41,7 +41,7 @@ attesters = ["test@example.com"]
 cas_retries = 5
 
 [pm]
-# Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.
+# Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.
 strict = false
 # Pull policy; `rank` takes the highest-ranked doable ticket, the only policy so far and the scrumban default.
 pull = "rank"

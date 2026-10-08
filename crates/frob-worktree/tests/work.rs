@@ -1021,3 +1021,57 @@ fn work_from_its_own_worktree_refuses_when_an_overlapping_lease_was_taken_since(
     let err = work_from(&wt, id).expect_err("stolen scope");
     assert_eq!(refusal_code(&err), "E-LEASE-HELD");
 }
+
+/// Create a cycle whose first and last day are `start` and `end` days from today (UTC).
+fn cycle_at(ledger: &Ledger, start: i64, end: i64) {
+    let store = frob_pm::PmStore::new(ledger);
+    let today = store.today();
+    store
+        .create(frob_pm::NewObject::Cycle {
+            start: today.plus_days(start).expect("start"),
+            end: today.plus_days(end).expect("end"),
+            goal: "goal".to_owned(),
+            capacity_points: None,
+        })
+        .expect("cycle");
+}
+
+// frob:ticket 01M4CSZFC0QF9PH544ARF60RCZ
+// frob:tests crates/frob-worktree/src/cycle_gate.rs::check_overdue
+// frob:tests crates/frob-worktree/src/cycle_gate.rs::overdue_refusal
+#[test]
+fn an_overdue_active_cycle_refuses_standard_work_but_not_expedite() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let ledger = fx.ledger(None);
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    cycle_at(&ledger, -8, -2);
+    let plain = Fixture::ticket(&ledger, "Plain", TicketType::Task, &["a/**"]);
+    let err = ws
+        .work(&plain.to_string(), &WorkOptions::default())
+        .expect_err("overdue refuses");
+    assert_eq!(refusal_code(&err), "E-PM-CYCLE-OVERDUE");
+    let msg = refusal_message(&err);
+    assert!(msg.contains("2 day(s) overdue"), "{msg}");
+    assert_eq!(category(&ledger, plain), Category::Todo);
+    let err = ws
+        .start(&plain.to_string(), &fx.root, None)
+        .expect_err("start refuses too");
+    assert_eq!(refusal_code(&err), "E-PM-CYCLE-OVERDUE");
+
+    let mut hot = NewTicket::new("Hot", TicketType::Task);
+    hot.scope = vec!["b/**".to_owned()];
+    hot.class = Class::Expedite;
+    let hot = ledger.new_ticket(hot).expect("new").ticket.front.id;
+    ws.work(&hot.to_string(), &WorkOptions::default())
+        .expect("expedite starts");
+    assert_eq!(category(&ledger, hot), Category::InProgress);
+}
