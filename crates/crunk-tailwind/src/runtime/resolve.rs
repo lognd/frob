@@ -55,3 +55,35 @@ pub fn version_of_major(major: u64) -> Option<TailwindVersion> {
         _ => None,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/crunk-tailwind/src/runtime/resolve.rs::major_of
+    // frob:tests crates/crunk-tailwind/src/runtime/resolve.rs::version_of_major
+    #[test]
+    fn majors_map_to_supported_versions_only() {
+        assert_eq!(major_of("4.3.3"), Some(4));
+        assert_eq!(major_of("next"), None);
+        assert_eq!(version_of_major(3), Some(TailwindVersion::V3));
+        assert_eq!(version_of_major(4), Some(TailwindVersion::V4));
+        assert_eq!(version_of_major(2), None);
+    }
+
+    // frob:tests crates/crunk-tailwind/src/runtime/resolve.rs::find_tailwindcss_dir
+    // frob:tests crates/crunk-tailwind/src/runtime/resolve.rs::read_version
+    #[test]
+    fn the_nearest_hoisted_install_is_found_walking_up() {
+        let root = tempfile::tempdir().unwrap();
+        let nested = root.path().join("packages/web");
+        std::fs::create_dir_all(&nested).unwrap();
+        let tw = root.path().join("node_modules/tailwindcss");
+        std::fs::create_dir_all(&tw).unwrap();
+        std::fs::write(tw.join("package.json"), "{\"version\":\"4.1.0\"}").unwrap();
+        let found = find_tailwindcss_dir(&nested).expect("hoisted install is found");
+        assert_eq!(read_version(&found).unwrap(), "4.1.0");
+        std::fs::write(tw.join("package.json"), "not json").unwrap();
+        assert!(read_version(&tw).unwrap_err().contains("not JSON"));
+    }
+}

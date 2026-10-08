@@ -118,6 +118,14 @@ pub fn first_run(
 mod tests {
     use super::*;
 
+    // frob:tests crates/crunk-tailwind/src/runtime/notice.rs::state_base
+    #[test]
+    fn the_default_state_base_is_under_crunk_when_any_home_is_known() {
+        if let Some(base) = state_base() {
+            assert_eq!(base.file_name().and_then(|n| n.to_str()), Some("crunk"));
+        }
+    }
+
     // frob:tests crates/crunk-tailwind/src/runtime/notice.rs::state_base_from
     #[test]
     fn state_base_prefers_xdg_then_home_then_local_app_data() {
