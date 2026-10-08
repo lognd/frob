@@ -2,7 +2,8 @@
 id = "01M43ARZAJ8NJ3F38157ERAKR5"
 title = "crunk-tokens: the token model and naming"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
