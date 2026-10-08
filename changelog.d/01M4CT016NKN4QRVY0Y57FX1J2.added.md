@@ -1,0 +1,1 @@
+frob work and start now enforce the sprint backlog: with a cycle active and `[pm] sprint_gate` on (the default), a ticket outside the cycle is refused with `E-PM-NOT-IN-CYCLE` unless it is expedite or started with `--unplanned --reason TEXT`, which assigns it to the cycle as a recorded over-commit.

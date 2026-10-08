@@ -8,7 +8,7 @@ use std::process::Output;
 
 use serde_json::Value;
 
-const PM_KEYS: [&str; 12] = [
+const PM_KEYS: [&str; 13] = [
     "pm.strict",
     "pm.pull",
     "pm.ready_min",
@@ -17,6 +17,7 @@ const PM_KEYS: [&str; 12] = [
     "pm.cycle_days",
     "pm.min_history",
     "pm.capacity_k",
+    "pm.sprint_gate",
     "pm.wip.in_progress_per_identity",
     "pm.wip.in_progress",
     "pm.classes.expedite_max",

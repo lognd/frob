@@ -210,6 +210,18 @@ reach and test selection work unchanged.
 - A malformed `.csproj` or `.sln` is never dropped: `BuildStats` lists it in
   `malformed_projects` with the reason, its project stays Unresolved, and
   reach into or out of it is never ruled out.
+- Unity projects (`ProjectSettings/ProjectVersion.txt`, or any `.asmdef`
+  above a file) use `unity_project.rs` instead: each `.asmdef` is a package
+  (id: its repo-relative path), `references` by name or `GUID:<guid>` (resolved
+  through the target's `.asmdef.meta`) are package edges, an `.asmref` adds its
+  folder to the assembly it names, and files with no asmdef above them under
+  `Assets/` or `Packages/` belong to the virtual packages
+  `unity:Assembly-CSharp`, `-Editor`, `-firstpass` and `-Editor-firstpass`.
+  `Library`, `Temp`, `obj`, hidden and `~` folders are ignored and so are
+  vendored asmdefs outside `Assets/` and `Packages/`. A malformed asmdef, an
+  unknown GUID or a dangling `.asmref` is reported in `malformed_projects`
+  and leaves the package Unresolved; a name matching no repository assembly
+  (engine or registry package) is external, listed on the assembly, not an edge.
 - MSBuild conditions are not evaluated, `$(Property)` references in item
   paths are not expanded, and files linked from outside the project
   directory are not assigned.

@@ -40,6 +40,7 @@ pub fn is_test_file(path: &str) -> bool {
         || path.contains("/tests/")
         || gob_symbols::is_python_test_file(path)
         || gob_symbols::is_typescript_test_file(path)
+        || gob_symbols::is_csharp_test_file(path)
 }
 
 /// True when `rec` is a test function; see the module docs for the heuristic.
@@ -47,6 +48,16 @@ pub fn is_test_fn(rec: &SymbolRecord, text: Option<&str>) -> bool {
     // frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
     if gob_symbols::is_python_path(rec.symref.path()) {
         return gob_symbols::is_python_test_fn(rec);
+    }
+    if gob_symbols::is_csharp_path(rec.symref.path()) {
+        // frob:ticket 01M44YQV7C3FYXB3QH20R4E5N8
+        return match text {
+            Some(text) => gob_symbols::is_csharp_test_fn(rec, text),
+            None => {
+                rec.kind == SymbolKind::Method
+                    && gob_symbols::is_csharp_test_file(rec.symref.path())
+            }
+        };
     }
     if gob_symbols::is_typescript_path(rec.symref.path()) {
         // frob:ticket 01M4828JB2S4JZY2QRB97A7SXX
@@ -75,6 +86,12 @@ pub fn is_test_fn(rec: &SymbolRecord, text: Option<&str>) -> bool {
         }
     }
     false
+}
+
+// frob:ticket 01M44YQV7C3FYXB3QH20R4E5N8
+/// The C# test `rec` is (id `Namespace.Type.Method`, framework, `PlayMode` capability), read from the file `text`.
+pub fn csharp_test(rec: &SymbolRecord, text: &str) -> Option<gob_symbols::CsharpTest> {
+    gob_symbols::csharp_test(rec, text)
 }
 
 /// The module path of a source file inside its package (`src/a/b.rs` is `a::b`; crate roots are empty).

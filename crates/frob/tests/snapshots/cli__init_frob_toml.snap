@@ -57,6 +57,8 @@ cycle_days = 7
 min_history = 3
 # Safety factor k in `capacity = rolling_mean - k * stddev` for cycle commitment; 0.5 trades a little throughput for commitments that are usually met.
 capacity_k = 0.5
+# Sprint gate: while a cycle is active, `work` and `start` refuse a ticket that is not a member of it (`E-PM-NOT-IN-CYCLE`) unless it is expedite or started with `--unplanned --reason`, which assigns it to the cycle as a recorded over-commit; with no active cycle the gate is silent, so it defaults on.
+sprint_gate = true
 
 [pm.classes]
 # Expedite tickets that may exceed the repository WIP limit at once; 1 lets one critical fix through without opening the floodgates.
