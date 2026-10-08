@@ -4,7 +4,6 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 /// The repository root (two levels above this crate).
 fn repo_root() -> PathBuf {
@@ -30,31 +29,20 @@ fn sh_blocks(markdown: &str) -> String {
     out
 }
 
-/// `YYYY-MM-DD` for `days` since the Unix epoch (proleptic Gregorian civil calendar).
-fn civil(days: i64) -> String {
-    let z = days + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z.rem_euclid(146_097);
-    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let day = doy - (153 * mp + 2) / 5 + 1;
-    let month = if mp < 10 { mp + 3 } else { mp - 9 };
-    let year = yoe + era * 400 + i64::from(month <= 2);
-    format!("{year:04}-{month:02}-{day:02}")
+/// The UTC day `days` from now as `YYYY-MM-DD`, the zone `frob cycle` derives states from.
+fn rel(days: i64) -> String {
+    gob_time::Clock::today(&gob_time::SystemClock)
+        .plus_days(days)
+        .expect("in range")
+        .to_string()
 }
 
 /// Rewrite a guide script for execution: current dates for the cycle, the ticket handle captured from `ticket new`.
 fn prepare(script: &str) -> String {
-    let secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock")
-        .as_secs();
-    let today = i64::try_from(secs / 86_400).expect("days");
     let joined = script
         .replace("\\\n", "")
-        .replace("2026-10-08", &civil(today))
-        .replace("2026-10-15", &civil(today + 7));
+        .replace("2026-10-08", &rel(0))
+        .replace("2026-10-15", &rel(7));
     let capture = r#" --json | sed -n 's/.*"handle":"\(~[0-9A-Z]*\)".*/\1/p' | head -1)"#;
     let lines: Vec<String> = joined
         .lines()
@@ -150,8 +138,8 @@ fn readme_commands_succeed_in_a_fresh_repository() {
 /// The quickstart runs end to end, init to land, in a fresh temp repository.
 #[test]
 fn quickstart_runs_from_init_to_land() {
-    let text = std::fs::read_to_string(repo_root().join("docs/guides/quickstart.md"))
-        .expect("quickstart");
+    let text =
+        std::fs::read_to_string(repo_root().join("docs/guides/quickstart.md")).expect("quickstart");
     let script = prepare(&sh_blocks(&text));
     assert!(script.contains("frob land"), "quickstart reaches land");
     let (_tmp, config, work) = sandbox();
