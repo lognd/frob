@@ -547,6 +547,7 @@ dependencies = [
 name = "crunk-check"
 version = "0.532.0"
 dependencies = [
+ "crunk-rules",
  "crunk-spec",
  "crunk-values",
  "gob-check",
@@ -560,6 +561,17 @@ dependencies = [
  "gob-walk",
  "serde_json",
  "tempfile",
+ "tracing",
+]
+
+[[package]]
+name = "crunk-rules"
+version = "0.532.0"
+dependencies = [
+ "crunk-spec",
+ "gob-mdtest",
+ "gob-rules",
+ "gob-text",
  "tracing",
 ]
 
