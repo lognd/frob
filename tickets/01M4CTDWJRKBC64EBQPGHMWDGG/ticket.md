@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:33Z"
-updated = "2026-10-08T06:35:27Z"
-scope = ["changelog.d/**", "crates/frob-land/**", "crates/frob-gh/**"]
+updated = "2026-10-08T06:51:28Z"
+scope = ["changelog.d/**", "crates/frob-land/**", "crates/frob-gh/**", "docs/design/tickets.md", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "Given a base whose latest CI run failed, when frob land runs, then it refuses with E-LAND-BASE-RED naming the run url"
