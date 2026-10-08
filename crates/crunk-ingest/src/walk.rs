@@ -46,6 +46,12 @@ pub struct IngestStats {
     pub cached: usize,
     /// Named files skipped because they sit outside `css_root`.
     pub outside_css_root: usize,
+    /// JSX and TS sources read from `[jsx] globs`.
+    pub jsx_files: usize,
+    /// JSX and TS sources whose facts were computed this run.
+    pub jsx_parsed: usize,
+    /// JSX and TS sources whose facts came from the cache.
+    pub jsx_cached: usize,
 }
 
 /// The result of an ingest: the styles and what it cost.
@@ -242,7 +248,20 @@ impl<'a> Ingest<'a> {
             custom_props: parsed.custom_props,
             orphan_waivers: parsed.orphan_waivers,
             media_queries: parsed.media_queries,
+            utilities: Vec::new(),
+            dynamic_classes: Vec::new(),
         });
+    }
+
+    /// Add the JSX and TS sources of `[jsx] globs` (or the named ones) after the CSS sheets.
+    fn jsx(&mut self, only: Option<&[PathBuf]>) -> Result<(), IngestError> {
+        let jsx = crate::jsx::ingest(self.spec, self.cache, only)?;
+        self.stats.jsx_files = jsx.files;
+        self.stats.jsx_parsed = jsx.parsed;
+        self.stats.jsx_cached = jsx.cached;
+        self.styles.sheets.extend(jsx.sheets);
+        self.styles.diagnostics.extend(jsx.diagnostics);
+        Ok(())
     }
 
     fn finish(self) -> Ingested {
@@ -348,6 +367,7 @@ pub fn ingest_tree(spec: &DesignSpec, cache: &Cache) -> Result<Ingested, IngestE
     for path in files {
         ingest.file(&path);
     }
+    ingest.jsx(None)?;
     Ok(ingest.finish())
 }
 
@@ -383,5 +403,6 @@ pub fn ingest_paths(
     for path in named {
         ingest.file(&path);
     }
+    ingest.jsx(Some(paths))?;
     Ok(ingest.finish())
 }
