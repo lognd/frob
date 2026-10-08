@@ -2,7 +2,8 @@
 id = "01M4CTDWJRKBC64EBQPGHMWDGG"
 title = "land: refuse onto a base whose latest CI run is red, through frob-gh (audit H1)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
