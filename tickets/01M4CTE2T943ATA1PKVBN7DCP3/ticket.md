@@ -1,0 +1,23 @@
++++
+id = "01M4CTE2T943ATA1PKVBN7DCP3"
+title = "CI hygiene: concurrency cancel, paths filters, job timeouts, drop checks run twice, fold the Windows isolated-tool duplicates (audit M18)"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
+reporter = "lognd"
+created = "2026-10-08T03:55:40Z"
+updated = "2026-10-08T03:55:40Z"
+scope = ["changelog.d/**", ".github/workflows/**", "crates/gob-dev/src/ci.rs"]
+
+[[acceptance]]
+text = "Given a second push to the same ref, when CI starts, then the earlier run is cancelled"
+bound = false
+
+[[acceptance]]
+text = "Given every CI job, when inspected, then each has timeout-minutes and no check runs twice per OS"
+bound = false
++++
+
+notes/review/audit-2026-10-07.md M18. Keep zizmor and actionlint clean. Coordinate with ~RWD03DW, which adds the profile job to ci.yml: land after it or rebase onto it.
