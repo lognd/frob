@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:34Z"
-updated = "2026-10-08T11:39:55Z"
+updated = "2026-10-08T12:03:14Z"
 idempotency_key = "crunk-plan-rcol"
 labels = ["area:crunk", "creates:crates/crunk-rules/src/rules/color00*", "creates:crates/crunk-rules/src/rules/contrast00*", "creates:crates/gob-rules/tests/located.rs"]
 scope = ["crates/crunk-rules/src/color/**", "crates/crunk-rules/src/contrast/**", "crates/crunk-rules/tests/color*.rs", "crates/crunk-rules/tests/contrast*.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/host.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/Cargo.toml", "crates/crunk-rules/tests/rules.rs", "crates/crunk-check/**", "crates/gob-rules/src/decl.rs", "crates/gob-check/src/defs.rs", "docs/crunk/**", "Cargo.lock", "crates/crunk-rules/src/rules/color00*", "crates/crunk-rules/src/rules/contrast00*", "crates/gob-rules/src/id.rs", "crates/gob-macros/src/lib.rs", "crates/gob-macros/src/rule_attr.rs", "crates/gob-macros/tests/ui_rule/fail/bad_id/**", "crates/crunk-spec/**", "crates/gob-rules/tests/located.rs", "crates/frob/tests/web_conformance.rs", "docs/reference/rules/**", "docs/reference/directives.md", "docs/schemas/directives.json", "crates/crunk-rules/src/mode.rs", "crates/crunk-rules/src/sheets.rs", "crates/crunk-rules/tests/support/**"]
@@ -27,15 +27,15 @@ target = "01M48FXB2PXX2FBXFKCFWSQYH1"
 
 [[acceptance]]
 text = "Given a literal within color_tolerance of a palette color, when checked, then COLOR001 fires with the palette token as suggestion"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given var(--missing) and an unindexed generated sheet, when checked, then COLOR002 is Unresolved, not clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a role pair with ratio 4.4 and floor 4.5, when checked, then CONTRAST001 fires with the measured ratio"
-bound = false
+bound = true
 +++
 
 Port rules/_color.py and _contrast.py. COLOR001 off-palette literal (alpha-aware, nearest-palette suggestion with color_tolerance), COLOR002 undefined var(--x) (needs the complete custom-property definition set; unresolved when a definition source is not indexed, polarity P-), CONTRAST001 role pair below the WCAG floor (4.5 default or per-role floor). Rust because the rules need color distance and WCAG ratio operators, which GRL (grl-spec.md section 4: twenty constructs, + - * only) does not have. Fix payloads are attached here and applied by the autofix ticket. Port tests/unit/test_rules_color.py, test_rules_contrast.py, e2e 02, 08, 10.

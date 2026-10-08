@@ -27,6 +27,7 @@ mod vocab;
 
 use gob_text::{FileInterner, Span};
 
+use crate::catalog::ConfigSchema;
 use crate::grl::{self, ParseError};
 
 pub use render::render;
@@ -180,7 +181,17 @@ impl Diagnostic {
 // frob:ticket 01M3ZX7DYR7PR1PBCZ7E8Q56WW
 /// Check every rule of a parsed file; diagnostics come in source order.
 pub fn check_file(file: &grl::ast::File) -> Vec<Diagnostic> {
-    let mut out: Vec<Diagnostic> = file.rules.iter().flat_map(names::check_rule).collect();
+    check_file_with(file, None)
+}
+
+// frob:ticket 01M3ZX7DMYNTWB3AP04CDMAECH
+/// Check every rule of a parsed file, typing `config.<table>` paths and rows from `config`.
+pub fn check_file_with(file: &grl::ast::File, config: Option<&ConfigSchema>) -> Vec<Diagnostic> {
+    let mut out: Vec<Diagnostic> = file
+        .rules
+        .iter()
+        .flat_map(|r| names::check_rule(r, config))
+        .collect();
     out.sort_by_key(|d| d.primary.span.range.start());
     tracing::debug!(
         rules = file.rules.len(),
