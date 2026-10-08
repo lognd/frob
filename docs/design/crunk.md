@@ -4,7 +4,9 @@ Status: accepted direction, owner request 2026-10-08: "crunk needs to
 mirror modern graphic design tools like Figma, but in a manner easy to
 use for an agent, and every design/user interface needs to be
 batch-checkable and lintable"; "not just Figma, the modern UX/UI/GX
-design cycle". Evidence: notes/research/crunk-design-2026-10-08.md
+design cycle". Evidence: notes/research/crunk-design-2026-10-08.md and its sourcing
+pass notes/research/crunk-sources-2026-10-08.md (391 fetched sources;
+11 corrections applied here)
 (Figma inventory of 78 capabilities, 30 comparable tools and specs, the
 Python crunk port matrix, the hullbreach consumer, the design cycle and
 game UX). The owner delegated the decisions; they are recorded here and
@@ -41,7 +43,16 @@ Consequences:
 - Agents edit by patch, never by pixel: structured edits return the
   diff and the findings for the touched nodes only.
 - Visual tools stay usable: Figma and Penpot are import/export targets
-  (variables, components as data), not the source of truth.
+  (variables, components as data), not the source of truth. Penpot
+  (MPL-2.0, native DTCG tokens, an MCP server) and Excalidraw (MIT) are
+  the preferred interop targets; tldraw needs a production licence key.
+- Where crunk differs from Figma (sourcing pass 2026-10-08): Figma now
+  has a built-in lint, Check designs (Organization and Enterprise, no
+  LLM), a contrast checker and a screen-reader mode, and its MCP server
+  (GA October 2025) can write to the canvas on a Full seat. crunk's
+  ground is what those do not cover: headless batch checks in CI,
+  user-authored rules, text diffs and merges, drift across targets
+  (CSS, Tailwind, USS, C#, Figma variables), and the human review lock.
 
 Non-goals (v1): vector path editing, boolean operations, a plugin
 ecosystem of its own, real-time multiplayer, prototype variable logic,
@@ -59,19 +70,28 @@ editors and agents validate before crunk runs.
 | Kind | File | Holds | Figma analogue |
 |---|---|---|---|
 | tokens | `design/tokens/*.toml` | primitives, semantic and component tiers; aliases; composites (typography, shadow, border, transition); modes (light/dark, density, brand, platform, colour-blind safe); scopes (which property kinds a token may bind) | variables, collections, modes, styles |
-| components | `design/components/<name>.component.toml` | anatomy (a scene subtree), props (bool, enum/variant, text, slot, instance swap), the variant matrix, states (default, hover, focus-visible, active, disabled, loading, error, empty), token bindings, an a11y contract (role, accessible-name source, keyboard map, minimum target), responsive rules, the code mapping (`code = { path, export }`), status | components, variants, component properties, Code Connect |
+| components | `design/components/<name>.component.toml` | anatomy (a scene subtree), props (bool, enum/variant, text, slot with accepted instances and min/max layers, instance swap), the variant matrix, states (default, hover, focus-visible, active, disabled, loading, error, empty), token bindings, an a11y contract (role, accessible-name source, keyboard map, minimum target), responsive rules, the code mapping as a list per framework (`[[code]]` with framework, path, export), status (`draft | ready | changed | completed`; crunk's content hash includes resolved token values, stricter than Figma's) | components, variants, component properties, Code Connect |
 | scenes | `design/scenes/*.scene.html` | layout in a restricted HTML and CSS dialect (section 3) | frames, auto layout, constraints |
 | screens | `design/screens/<id>.screen.toml` | today's `[[screen]]` model extended: entry route or scene root, states with overrides and mock or session ids, platforms, expected landmarks and headings, copy keys, status and content hash | pages, frames marked ready |
 | flows | `design/flows/*.flow.toml` | nodes are `screen:state`, edges are trigger (click, key, `gamepad:south`, timeout) plus action; transitions reference motion tokens | prototype connections, flows |
 | content | `design/content/*.toml` | copy keys with length budgets, tone rules, glossary, locales; scenes reference keys, never literals | text, (no real analogue) |
-| profiles | `design/profiles.toml` | platform profiles: web viewports and breakpoints, mobile targets (44/48 px), TV or console (safe area, minimum text at distance, focus rules), game HUD (reference resolution, scaler match) | device frames |
+| profiles | `design/profiles.toml` | platform profiles: web viewports and breakpoints, mobile targets (44 pt Apple, 48 dp Android, 24 CSS px WCAG), TV or console (safe area, minimum text at distance, focus rules), game HUD (reference resolution, scaler match) | device frames |
 | fonts | `design/fonts.toml` | font files by hash with licence ids; metric-compatible substitutes recorded when a face cannot be bundled | fonts |
 
 Tokens (D109): authored in a TOML dialect (comments, terse values such
 as `ink = "#e6e8ef"`, existing `crunk.toml` `[palette]`/`[scales]`
 tables keep working as a view), compiled to the W3C Design Tokens
-Community Group format (DTCG 2025.10 with the resolver module for
-modes) as the canonical interchange. `crunk import dtcg` and `crunk
+Community Group format as the canonical interchange: DTCG 2025.10, a
+Final Community Group Report of 28 October 2025, with the resolver
+module for modes and `$extends`; crunk pins the version it reads and
+writes. Token types include timing and easing (DTCG duration and
+cubicBezier; Figma's Timing and Easing variables). Scopes are enforced
+by crunk (a TOKEN rule), because Figma's scopes only filter its pickers
+and do not stop binding through its API; scopes, per-platform code
+syntax names and publishing visibility round-trip. `crunk export
+figma-variables` checks the plan's mode limit per collection (`[figma]
+plan`: 10 on Professional, 20 on Organization, unlimited through
+extended collections on Enterprise). `crunk import dtcg` and `crunk
 export dtcg` round-trip; `crunk export` also targets CSS custom
 properties, the Tailwind theme, USS custom properties, a C# token class
 (engine-free floats so a Unity assembly with no engine reference can
@@ -84,8 +104,11 @@ The scene format is a restricted HTML and CSS dialect: elements carry
 a stable `data-id`, component instances are tags (`<Button
 variant="primary">`), styles reference tokens only (`var(--space-4)`),
 and the allowed CSS is the subset the layout solver implements
-(block, flex, grid, absolute positioning, gap, padding, min and max
-sizes, aspect ratio). Reasons: agents are fluent in HTML and CSS; the
+(block, flex with wrap in both directions, grid with tracks, cells and
+spans, absolute positioning, gap, padding, min and max sizes, aspect
+ratio). Figma-only effects with no CSS or USS equivalent (glass, noise,
+texture, shaders, some blend modes) are flagged by a PORT rule family
+when they appear in imports. Reasons: agents are fluent in HTML and CSS; the
 browser renders it unchanged; it maps directly to Tailwind classes and
 to UXML/USS; gob already parses HTML and CSS (D96). The dialect is the
 restriction: an unsupported property is a finding (SCENE001), not a
@@ -94,9 +117,11 @@ silent approximation. UXML is an export target, not a source.
 Layout (D113): two engines with a parity test.
 
 - T1 solve: taffy (block, flexbox, grid) in-process, with text measured
-  by a shaping library over the bundled fonts (cosmic-text by default;
-  the first scene ticket spikes cosmic-text against parley and records
-  the measurement). Output is a layout-solve JSON: boxes, text runs and
+  by a shaping library over the bundled fonts (the spike compares
+  cosmic-text 0.19 with parley 0.11 and records the measurement; taffy
+  0.14 provides block, flex and grid with a measure callback). Blitz
+  (Stylo, Taffy, Parley, Vello; beta) is a second parity oracle between
+  taffy alone and Chromium. Output is a layout-solve JSON: boxes, text runs and
   overflow, tab and focus order, computed token bindings. It is fast,
   deterministic and needs no browser, so most layout lints run in batch
   in CI on every PR.
@@ -173,6 +198,10 @@ platform, a component variant, a flow, a copy deck, a token mode.
   signed by a key listed for a reviewer (gob-trust holds the keys).
   Agents may prepare the review queue and the renders, never the ack;
   the agent briefs and the PROC rules say so.
+- Provenance: every spec carries `provenance = "human" | "agent"`;
+  agent-authored subjects default to `review = "human"`, because
+  generation now outpaces evaluation (NN/g on the custodial era of UX
+  and on design systems needing an enforcer with veto).
 - Mass changes stay reviewable: a re-ack may cover many subjects at once
   (`crunk ack --all-changed-by TOKEN`), each still recorded with its own
   digest.
@@ -186,7 +215,7 @@ All verbs have `--json` with the shared envelope and stable exit codes.
 | author | `crunk new component|screen|flow|token NAME [--from ...]`, `crunk edit FILE --patch PATCH.json` (RFC 6902 operations addressed by stable id, validated against the schema, returns the diff and the findings of the touched nodes), `crunk rename ID NEW` (rewrites every reference), `crunk extract-token LITERAL` (promote a literal to a token and rewrite its uses) |
 | render | `crunk render` (screen, state, platform or component, variant; `--engine solve|browser`) writes PNG and layout-solve JSON; `crunk snapshot [--update]`; `crunk diff --visual|--layout|--tokens|--a11y A B` |
 | check | `crunk check [--family F] [--tier T] [--changed]`, `crunk fix [--dry-run]` on gob-fix with tiered applicability, `crunk explain RULE`, `crunk measure A B`, `crunk query` |
-| interop | `crunk export css|tailwind|uss|csharp|dtcg|figma-variables`, `crunk import dtcg|figma-variables|penpot|css`, `crunk serve` (MCP: read tools for design context, variables and search, and the patch tool; same generated-from-verb-metadata mechanism as frob serve, ~MQ1NM4Q) |
+| interop | `crunk export css|tailwind|uss|csharp|dtcg|figma-variables`, `crunk import dtcg|penpot|figma-variables|css` (Penpot first), `crunk serve` (MCP from verb metadata like frob serve, ~MQ1NM4Q; token-economy pattern after Figma's: a sparse outline first, then drill into nodes; search over the design system; the code map; an agent-guidelines file; the patch tool later) |
 | review | `crunk review` (the queue of subjects whose digest moved since their ack), `crunk ack SUBJECT... --verdict` (person only, section 4.1) |
 | process | `crunk status ID ready` (refuses unless the screen's lints are green at its tier; records the content hash so a later change marks it `changed`), `crunk gallery ...` (enumerate, render, triage, check; the Python gallery, ported) |
 
@@ -201,15 +230,15 @@ them (D76).
 | Family | Examples | Tiers |
 |---|---|---|
 | TOKEN, TOKENS | schema, alias cycles, unused, naming tiers, mode completeness, scope violation, near-duplicates, deprecated, generated output drift | T0 |
-| COLOR, CONTRAST | literal colour not a token, palette distance, WCAG and APCA contrast for declared pairs in every mode, colour-only meaning | T0, T2 |
+| COLOR, CONTRAST | literal colour not a token, palette distance, contrast for declared pairs in every mode (the gate is the WCAG 2.2 ratio; APCA is advisory and opt-in through `contrast_model`, since WCAG 3.0, a Working Draft of 10 September 2026, has not chosen its algorithm), colour-only meaning | T0, T2 |
 | TYPE, SPACE, RADIUS, SIZE, LAYER, ORG | scale steps, type ramp, z-index layers, organisation (the Python families, ported) | T0 |
-| LAYOUT, RESP | overflow, overlap, clipping, safe area, target size, breakpoint coverage | T1 |
+| LAYOUT, RESP | overflow, overlap, clipping, safe area, target size per profile and standard (WCAG 2.2 AA 24x24 CSS px, Apple 44x44 pt, Android 48x48 dp with 8 dp spacing), breakpoint coverage | T1 |
 | COMP, STATE | every variant combination renders, required states present, props bound to tokens, code mapping exists and matches the exported props | T0, T1 |
 | A11Y | names, roles, landmarks, heading order, focus order and visibility, keyboard map, target size, reduced-motion twin | T0, T1, T3 |
 | MOTION | durations and easings from tokens, reduced-motion alternative, flash threshold | T0, T2 |
 | CONTENT, I18N | literal copy in scenes, length budgets, pseudo-locale expansion fits, RTL mirroring | T0, T1 |
 | VIS, THEME, EXPORT | visual regression thresholds, theme completeness, export parity across targets (Tailwind against USS against C#) | T0, T2 |
-| GX | gamepad focus graph complete (every focusable reachable, no traps, default selection), glyph per device family, remap conflicts, HUD in safe area at every profile, minimum text at distance, colour-blind mode coverage, subtitle size, hold alternatives | T0, T1 |
+| GX | gamepad focus graph complete (every focusable reachable, no traps, default selection), glyph per device family, remap conflicts, HUD in safe area at every profile, minimum text body height measured on the glyph, not the CSS size (Xbox Accessibility Guidelines: console 26 px at 1080p, 52 at 4K; PC 18 px at 1080p; scalable to 200 percent), text contrast 4.5:1 (3:1 large or inactive, 7:1 high-contrast mode), flash limits, colour-blind mode coverage, subtitle size, hold alternatives | T0, T1 |
 | UX, PROC | design-cycle traceability (section 8), ready gate, flows without dead ends or missing error paths | T0 |
 | web pack (D88/D89) | A11Y, SEO, LAUNCH, WEBPERF over markup and assets (crunk-web, existing tickets) | T0 |
 
@@ -219,7 +248,10 @@ them (D76).
   and a markup language (the `style` and `markup` capabilities of D96),
   so every token and declaration rule applies to USS unchanged; USS-only
   properties (`-unity-font`, `-unity-text-align`) are known to the
-  dialect. `crunk export uss` writes the token sheet.
+  dialect. `crunk export uss` writes the token sheet and pre-resolves
+  what USS lacks: no `var()` inside functions (so no `rgba(var(--c),
+  a)`) and no arithmetic on variables, hence separate alpha tokens. TSS
+  (plain USS with `@import`) carries platform and language variants.
 - uGUI prefabs (machine-written YAML with GUIDs) are not a source. When
   a project generates its prefabs from code (hullbreach's
   `HudPrefabBuilder.cs`), crunk checks the generator's inputs through the
@@ -243,14 +275,15 @@ enabled per project:
 
 | Phase | Artifact | Mechanical checks |
 |---|---|---|
+| project phase | `phase = "discovery | alpha | beta | live"` in `crunk.toml` (GOV.UK service phases, each ending in an assessment) | selects a lint profile: alpha structure lints only, beta the full A11Y set and HUMAN001, live adds metrics and experiments |
 | research | `design/research/*.md` with front matter, `personas/*.toml`, `journeys/*.toml` | schema; every persona and journey cites evidence; every screen cites a persona or job; stale research flagged |
 | information architecture | `design/ia/sitemap.toml`, `content-model.toml` | every route has a screen and every screen a route (checked against gob-frameworks routes in code); depth; label uniqueness; reachability from home |
 | flows and wireframes | flow files, scenes at `fidelity = "wire"` | reachability, dead ends, error paths, every decision branch present; wire scenes use no brand tokens |
 | UI design | tokens, components, screens, content | sections 2 to 6 |
 | prototyping | flows with triggers, motion tokens | targets exist, timing within token bounds, reduced-motion twins; flows replay headlessly at T3 and assert the reached state |
-| usability and design QA | `design/qa/heuristics/*.toml` (Nielsen heuristics), `qa/walkthrough/*.toml` | evidence present, every major finding has an owner reference, heuristic coverage per screen; design-vs-build parity (VIS) |
+| usability and design QA | `design/qa/heuristics/*.toml` (the ten NN/g heuristics as an enum), `qa/walkthrough/*.toml` (the four cognitive-walkthrough questions per step; a step fails when any answer is no) | evidence present, every major finding has an owner reference, heuristic coverage per screen; design-vs-build parity (VIS) |
 | handoff | `crunk status ready`, `design/review/*.toml` anchored comments | ready refuses with open blocking comments, stale exports, missing code mapping or red lints; a change after ready marks the screen changed |
-| post-launch | `design/metrics/*.toml`, `experiments/*.toml` | every flow step has a defined analytics event; experiment variants exist as declared component variants; guardrail metrics declared; stale experiments flagged |
+| post-launch | `design/metrics/*.toml` (HEART goals, signals and metrics fields), `experiments/*.toml` | every flow step has a defined analytics event; experiment variants exist as declared component variants; guardrail metrics declared; stale experiments flagged |
 | game (GX) | `hud/*.toml`, `input.toml`, `ftue.toml`, `feedback.toml`, `gx-a11y.toml` keyed to Game Accessibility Guidelines items | HUD in safe area, input glyph and remap coverage, every mechanic has onboarding or an explicit none, feedback events with accessibility toggles, guideline coverage with evidence |
 
 Human judgement (taste, usability sessions, playtests) is recorded as
@@ -269,11 +302,14 @@ CI today; its game shares a palette with the web that has drifted).
    the parity harness. Exit: hullbreach platform CI switches from
    `uv run crunk` to the Rust crunk with a reasoned divergence list.
 2. DTCG and modes: the TOML dialect compiles to DTCG with the resolver;
-   modes (dark, colour-blind safe); USS and C# exporters; EXPORT parity.
+   modes (dark, colour-blind safe); timing and easing tokens; scope
+   enforcement; USS and C# exporters with the Figma plan-limit check;
+   EXPORT parity; `crunk serve` read tools (outline, search,
+   guidelines), so agents use the design system early.
    Exit: one token source drives hullbreach web and the Unity HUD, and
    the ThrustRed drift fires until resolved.
 3. Component and screen specs, content keys, `crunk new`, `edit
-   --patch`, `rename`, `extract-token`, `crunk serve`; COMP, STATE,
+   --patch`, `rename`, `extract-token`, the serve patch tool; COMP, STATE,
    CONTENT lints at T0.
 4. Scenes and the T1 solver (taffy plus the text spike), layout-solve
    JSON and baselines; LAYOUT, RESP, A11Y-T1, GX focus graph.
