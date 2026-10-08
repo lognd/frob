@@ -254,7 +254,7 @@ fn check_page(item: &ItemStruct, id: &str, slug: &str, errs: &mut Errors) -> Opt
         Err(e) => {
             errs.at(
                 span,
-                format!("rule {id} has no readable page `{stem}.md` next to its source ({e}); every rule needs one"),
+                format!("rule {id} has no readable page `{stem}.md` next to its source ({}); every rule needs one", io_reason(e.kind())),
             );
             return None;
         }
@@ -264,6 +264,17 @@ fn check_page(item: &ItemStruct, id: &str, slug: &str, errs: &mut Errors) -> Opt
         errs.at(span, format!("rule page `{stem}.md`: {p}"));
     }
     problems.is_empty().then(|| format!("{stem}.md"))
+}
+
+/// Maps an io error kind to a fixed phrase so diagnostics are identical on every OS.
+fn io_reason(kind: std::io::ErrorKind) -> &'static str {
+    use std::io::ErrorKind;
+    match kind {
+        ErrorKind::NotFound => "not found",
+        ErrorKind::PermissionDenied => "permission denied",
+        ErrorKind::InvalidData => "not valid UTF-8",
+        _ => "unreadable",
+    }
 }
 
 fn rt(path: &str) -> TokenStream {

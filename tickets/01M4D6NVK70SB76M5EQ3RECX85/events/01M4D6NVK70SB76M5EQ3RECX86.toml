@@ -1,0 +1,13 @@
+kind = "create"
+title = "Property test for rule polarity mapping (Pc, P+, P-) against K3 verdicts once the GRL executor exists"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M4CXTT0JWKFTX1HBB703QA80"
+scope = ["changelog.d/**", "crates/gob-plan/**", "crates/gob-ir/**"]
+acceptance = ["Given random rule programs and structures, when interpreted, then every finding and every certified clean holds in every sampled completion"]
+body = "Follow-up from ~JVT37ES: the gob-ir layer is covered; RuleProgram interpret and taint are not."
+at = "2026-10-08T07:29:37Z"
+actor = "lognd"
+rev = 1

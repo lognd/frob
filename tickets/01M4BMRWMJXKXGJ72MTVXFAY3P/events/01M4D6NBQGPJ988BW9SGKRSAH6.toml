@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Profile notes/research/profile-2026-10-07.md finding 1 confirms this ticket: Repo::read_blob_at (crates/gob-git/src/read.rs:213) re-resolves the revision and re-inflates the 1406-entry tickets tree per file: 78 percent of ticket doctor, over 90 percent of cycle velocity and board, all of doctor's 0.84 s, and check's 9.8 s cold repo:ledger stage. Fix shape in section 5 item 1: blob oids from one tree walk, gix object_cache_size, rev_parse once per snapshot."
+at = "2026-10-08T07:29:21Z"
+actor = "lognd"
+rev = 1

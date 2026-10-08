@@ -1,0 +1,13 @@
+kind = "create"
+title = "gob-ir: per-stratum poison records the affected nodes so checks taint only subjects that read them"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M4CXTT0JWKFTX1HBB703QA80"
+scope = ["changelog.d/**", "crates/gob-ir/**"]
+acceptance = ["Given a stratum with one poisoned node, when a check reads an unrelated subject, then that subject's verdict is definite"]
+body = "Follow-up from ~NZMJSTK."
+at = "2026-10-08T07:29:37Z"
+actor = "lognd"
+rev = 1

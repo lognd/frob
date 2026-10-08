@@ -2,10 +2,10 @@
 //!
 //! The base side is the same check run without a ticket scope on the base tip,
 //! in a throwaway detached worktree under the git common dir. Its finding
-//! fingerprints are cached per base commit, engine version and config digest in
-//! `<git common dir>/frob/land-base/<oid>-<key>.json`, shared by every worktree, so a second land on
-//! the same base (from any ticket, or a `--wait` retry that did not move it) costs nothing; a moved
-//! base, a new engine or a changed config has a new key and so is recomputed (~F4YA3S9).
+//! fingerprints are cached per code tree (the base tree without the ledger directory), engine version and
+//! config digest in `<git common dir>/frob/land-base/<tree>-<key>.json`, shared by every worktree, so a second land on
+//! the same code (from any ticket, a ledger-only base commit, or a `--wait` retry that did not move it) costs
+//! one tool-free exact-commit pass; a base with changed code, a new engine or a changed config has a new key and so is recomputed (~F4YA3S9).
 //! Findings are compared as multisets: a second occurrence of a fingerprint the base has once is new.
 //! The throwaway worktree's check opens the repository-shared cache (gob-cache), so every file
 //! unchanged since an earlier check is a cache hit (~TSK0M4Y).
@@ -42,7 +42,7 @@ pub struct FindingNote {
 /// The finding fingerprints of one commit, as cached.
 #[derive(Debug, Serialize, Deserialize)]
 struct BaseSet {
-    /// Full commit oid the set belongs to.
+    /// Digest of the base tree without the ledger directory the set belongs to.
     oid: String,
     /// Cache key (engine version and config digest) the set was computed under.
     key: String,
@@ -87,34 +87,97 @@ pub fn cache_key(ledger: &LedgerConfig) -> String {
     format!("{}-{}", env!("CARGO_PKG_VERSION"), &digest.as_str()[..16])
 }
 
+/// A digest of the base tree with the ledger directory removed (frob:ticket 01M4CTDXHZ5B85NXCN1KJ95784).
+///
+/// Every ticket write is a new base commit in trunk mode, so the commit oid
+/// never repeats; this digest does, as long as no code file, mode or path changed.
+///
+/// # Errors
+/// Fails when `git ls-tree` cannot list `oid`.
+pub fn code_tree_key(
+    wt: &Repo,
+    wt_path: &Path,
+    oid: &str,
+    ledger: &LedgerConfig,
+) -> Result<String, LandError> {
+    let listing = git(wt, wt_path, &["ls-tree", "-r", oid])?;
+    if !listing.ok() {
+        return Err(LandError::Config(format!(
+            "could not list base {oid}: {}",
+            listing.text
+        )));
+    }
+    let mut h = blake3::Hasher::new();
+    let mut kept = 0_usize;
+    for line in listing.text.lines() {
+        let path = line.split_once('\t').map_or("", |(_, p)| p);
+        if !ledger.is_ledger_path(path) {
+            h.update(line.as_bytes());
+            h.update(b"\n");
+            kept += 1;
+        }
+    }
+    tracing::debug!(oid, kept, "land base code tree digest");
+    Ok(h.finalize().to_hex().as_str()[..32].to_owned())
+}
+
 /// The unscoped findings at the base commit `oid`, from the cache or a fresh run.
-pub(crate) fn base_findings(
+///
+/// The cache (under [`code_tree_key`]) holds only what the ledger cannot change: findings
+/// located outside the ledger directory, and the findings only the tool stages produce (tools
+/// do not read the ledger). Everything else, ledger-located and location-less (the PM, TICK
+/// and REL repository-level findings), is recomputed for the exact `oid` by a pass without the
+/// tool stages; the shared file cache makes that pass cheap. On a miss the full run adds the
+/// tool-only findings, found as what the full run has beyond the exact pass.
+///
+/// # Errors
+/// Fails when the base cannot be listed, checked out or checked.
+pub fn base_findings(
     wt: &Repo,
     wt_path: &Path,
     oid: &str,
     ledger: &LedgerConfig,
 ) -> Result<Vec<FindingNote>, LandError> {
     let key = cache_key(ledger);
+    let tree = code_tree_key(wt, wt_path, oid, ledger)?;
     let cache = wt
         .common_dir()
         .join(gob_cache::SHARED_DIR)
         .join(LAND_BASE_DIR)
-        .join(format!("{oid}-{key}.json"));
-    if let Some(set) = read_cache(&cache, oid, &key) {
+        .join(format!("{tree}-{key}.json"));
+    let stable = |n: &FindingNote| n.path.as_deref().is_some_and(|p| !ledger.is_ledger_path(p));
+    let exact = run_at_base(wt, wt_path, oid, ledger, true)?;
+    let mut exact_rest: Vec<FindingNote> = exact.into_iter().filter(|n| !stable(n)).collect();
+    if let Some(set) = read_cache(&cache, &tree, &key) {
         tracing::info!(
             oid,
-            findings = set.findings.len(),
+            tree,
+            cached = set.findings.len(),
+            exact = exact_rest.len(),
             "land base set from cache"
         );
-        return Ok(set.findings);
+        let mut findings = set.findings;
+        findings.append(&mut exact_rest);
+        return Ok(findings);
     }
-    let findings = run_at_base(wt, wt_path, oid, ledger)?;
+    let all = run_at_base(wt, wt_path, oid, ledger, false)?;
+    let mut cached: Vec<FindingNote> = all.iter().filter(|n| stable(n)).cloned().collect();
+    // Tool-only findings: what the full run has beyond the exact pass, as a multiset.
+    let mut budget = counts(&exact_rest);
+    for n in all.into_iter().filter(|n| !stable(n)) {
+        match budget.get_mut(n.fingerprint.as_str()) {
+            Some(left) if *left > 0 => *left -= 1,
+            _ => cached.push(n),
+        }
+    }
+    let mut findings = cached.clone();
+    findings.append(&mut exact_rest);
     write_cache(
         &cache,
         &BaseSet {
-            oid: oid.to_owned(),
+            oid: tree,
             key,
-            findings: findings.clone(),
+            findings: cached,
         },
     );
     Ok(findings)
@@ -156,6 +219,7 @@ fn run_at_base(
     wt_path: &Path,
     oid: &str,
     ledger: &LedgerConfig,
+    skip_tools: bool,
 ) -> Result<Vec<FindingNote>, LandError> {
     let dir: PathBuf = wt.common_dir().join("frob").join(format!(
         "land-base-{}-{}",
@@ -185,6 +249,7 @@ fn run_at_base(
         &CheckOptions {
             ledger: Some(ledger.clone()),
             skip_telemetry: true,
+            skip_tools,
             ..CheckOptions::default()
         },
     );

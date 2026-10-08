@@ -1,0 +1,11 @@
+kind = "create"
+title = "crunk phase 5: render, gallery and T2/T3 checks (Playwright), solver-browser parity, visual regression"
+type = "epic"
+category = "todo"
+priority = "medium"
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+acceptance = ["Given a screen corpus, when rendered by both engines in CI, then parity, VIS and axe findings are reported and above-tier lints are reported as not run"]
+body = "docs/design/crunk.md sections 3, 4 and 9. Existing gallery tickets ~AKETJJH ~QB3GE3K ~4KW24RJ move under this epic."
+at = "2026-10-08T04:53:58Z"
+actor = "lognd"
+rev = 1

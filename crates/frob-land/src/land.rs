@@ -20,13 +20,16 @@ use std::time::{Duration, Instant};
 use frob_check::CheckOptions;
 use frob_evidence::{DoneGuard, EvidenceGuard, Workspace};
 use frob_lease::{Lease, LeaseStore};
+use frob_ledger::event::{CommentData, EventBody};
 use frob_ledger::guards::{CloseContext, CloseGuard, default_close_guards};
 use frob_ledger::model::Category;
+use frob_ledger::model::CommentSubtype;
 use frob_ledger::ops::TicketView;
 use frob_ledger::{Ledger, RefMode, TicketId};
 use gob_diagnostics::{Refusal, RefusalClass};
 use gob_git::{MergeOutcome, Oid, Repo, StatusOptions, TreeRef};
 
+use crate::base_ci;
 use crate::error::{LandError, needs_action};
 use crate::events::{LandEvent, append_land};
 use crate::git::git;
@@ -92,6 +95,7 @@ struct Ready {
     base: String,
     branch: String,
     base_merged: bool,
+    ci_override: Option<String>,
     site: Workspace,
     evidence: EvidenceGuard,
     done: DoneGuard,
@@ -119,22 +123,29 @@ fn prepare(
     let branch = ticket_branch(&wt, base, &wt_path, &handle)?;
     ensure_clean(&wt, &wt_path)?;
 
-    let base_oid = wt.rev_parse(base).map_err(|_| {
+    let base_oid = wt.rev_parse(&base_ref(base)).map_err(|_| {
         needs_action(
             "E-LAND-NO-BASE",
             format!("base branch `{base}` does not exist"),
             "set [tickets] ref to an existing branch in frob.toml",
         )
     })?;
+    let ci_gate = base_ci::gate(
+        &wt,
+        &wt_path,
+        base,
+        opts.ci_reader.as_deref(),
+        opts.override_base_ci.as_deref(),
+    )?;
     let mut base_merge = None;
-    let mut base_merged = wt.merge_base(base, &branch)? == Some(base_oid);
+    let mut base_merged = wt.merge_base(&base_ref(base), &branch)? == Some(base_oid);
     if !base_merged && !opts.dry_run {
         base_merge = Some(merge_base_in(&wt, &wt_path, base, &handle)?);
         base_merged = true;
     } else if base_merged {
         base_merge = Some("up-to-date".to_owned());
     }
-    let mut warnings = Vec::new();
+    let mut warnings = ci_gate.warnings;
     let mut ratchet = Ratchet::default();
     if base_merged {
         ratchet = verify_check(&wt, &wt_path, &here.ledger, &handle, base, opts)?;
@@ -185,6 +196,7 @@ fn prepare(
         base: base.to_owned(),
         branch,
         base_merged,
+        ci_override: ci_gate.override_note,
         site,
         evidence,
         done,
@@ -196,7 +208,7 @@ impl Ready {
     /// The dry-run result: the ordered plan and its digest, nothing changed.
     fn planned(mut self, opts: &LandOptions) -> Result<LandOutcome, LandError> {
         let head = self.wt.rev_parse(&self.branch)?.to_string();
-        let base_oid = self.wt.rev_parse(&self.base)?.to_string();
+        let base_oid = self.wt.rev_parse(&base_ref(&self.base))?.to_string();
         self.out.plan = steps(&PlanInputs {
             id: self.id,
             handle: &self.handle,
@@ -238,6 +250,7 @@ impl Ready {
         let site = &self.site;
         let (id, base, branch) = (self.id, &self.base, &self.branch);
         let (evidence, done) = (&self.evidence, &self.done);
+        let ci_override = self.ci_override.as_deref();
         let retrying = opts.wait_secs > 0;
         let budget = opts
             .retry
@@ -253,7 +266,7 @@ impl Ready {
                 ledger_step(
                     &site.ledger,
                     id,
-                    (evidence, done),
+                    (evidence, done, ci_override),
                     opts,
                     base,
                     branch,
@@ -277,16 +290,8 @@ impl Ready {
         if opts.push {
             self.out.pushed = push_base(&self.repo, &self.base, &mut self.out.warnings);
         }
-        if !on_branch {
-            ledger_step(
-                &self.site.ledger,
-                self.id,
-                (&self.evidence, &self.done),
-                opts,
-                &self.base,
-                &self.branch,
-                self.out.pushed,
-            )?;
+        if !on_branch && !self.close_after_advance(opts) {
+            return Ok(self.out);
         }
         self.out.closed = true;
         self.out.outcome = Some(opts.outcome);
@@ -313,6 +318,34 @@ impl Ready {
         );
         tracing::info!(ticket = %self.id, commit = %oid, pushed = self.out.pushed, "land complete");
         Ok(self.out)
+    }
+}
+
+impl Ready {
+    /// Record the land and close the ticket after the base advanced (trunk mode); false when that failed.
+    ///
+    /// Point of no return: the base has already moved, so a failure is a warning,
+    /// never an error. The ticket stays open with its lease and worktree so
+    /// `frob ticket close` can finish it.
+    fn close_after_advance(&mut self, opts: &LandOptions) -> bool {
+        let closed = ledger_step(
+            &self.site.ledger,
+            self.id,
+            (&self.evidence, &self.done, self.ci_override.as_deref()),
+            opts,
+            &self.base,
+            &self.branch,
+            self.out.pushed,
+        );
+        let Err(e) = closed else {
+            return true;
+        };
+        tracing::warn!(ticket = %self.id, error = %e, "ledger step failed after the base advanced");
+        self.out.warnings.push(format!(
+            "landed {} onto {} but recording the close failed: {e}; run `frob ticket close {}`",
+            self.branch, self.base, self.handle
+        ));
+        false
     }
 }
 
@@ -655,7 +688,7 @@ fn verify_check(
     };
     let scoped = run(Some(handle))?;
     let head = run(None)?;
-    let base_oid = wt.rev_parse(base)?.to_string();
+    let base_oid = wt.rev_parse(&base_ref(base))?.to_string();
     let base_set = ratchet::base_findings(wt, wt_path, &base_oid, ledger.config())?;
     let verdict = ratchet::verdict(&scoped, &head, &base_set);
     tracing::info!(
@@ -807,14 +840,14 @@ impl Publish<'_> {
             "base moved while landing; retrying"
         );
         std::thread::sleep(pause);
-        let had = self.wt.merge_base(self.base, self.branch)?;
+        let had = self.wt.merge_base(&base_ref(self.base), self.branch)?;
         let wt_path = self
             .wt
             .work_dir()
             .map(Path::to_path_buf)
             .ok_or_else(|| LandError::Config("not inside a git work tree".to_owned()))?;
         let how = merge_base_in(self.wt, &wt_path, self.base, self.handle)?;
-        let now = self.wt.rev_parse(self.base)?;
+        let now = self.wt.rev_parse(&base_ref(self.base))?;
         let code_changed = match had {
             Some(old) if old != now => self
                 .wt
@@ -842,8 +875,8 @@ impl Publish<'_> {
         ledger_on_branch: bool,
         before: impl FnOnce() -> Result<(), LandError>,
     ) -> Result<Oid, LandError> {
-        let base_oid = self.wt.rev_parse(self.base)?;
-        if self.wt.merge_base(self.base, self.branch)? != Some(base_oid) {
+        let base_oid = self.wt.rev_parse(&base_ref(self.base))?;
+        if self.wt.merge_base(&base_ref(self.base), self.branch)? != Some(base_oid) {
             return Err(self.stale(None));
         }
         if ledger_on_branch {
@@ -919,11 +952,16 @@ fn jitter(policy: &RetryPolicy, attempt: u32, salt: &str) -> Duration {
     Duration::from_nanos(draw % ceil_nanos)
 }
 
+/// The full ref name of the base branch: resolved by full name, never by a DWIM short name that a concurrent ref change can make ambiguous or stale.
+fn base_ref(base: &str) -> String {
+    format!("refs/heads/{base}")
+}
+
 /// Record the `land` event, close the ticket through the guards and audit an evidence bypass.
 fn ledger_step(
     ledger: &Ledger,
     id: TicketId,
-    guards: (&EvidenceGuard, &DoneGuard),
+    guards: (&EvidenceGuard, &DoneGuard, Option<&str>),
     opts: &LandOptions,
     base: &str,
     branch: &str,
@@ -932,9 +970,9 @@ fn ledger_step(
     let commit = ledger
         .repo()
         .rev_parse(&format!("refs/heads/{branch}"))
-        .or_else(|_| ledger.repo().rev_parse(base))?
+        .or_else(|_| ledger.repo().rev_parse(&base_ref(base)))?
         .to_string();
-    let base_ref = format!("refs/heads/{base}");
+    let base_ref = base_ref(base);
     append_land(
         ledger,
         id,
@@ -945,7 +983,17 @@ fn ledger_step(
             pushed,
         },
     )?;
-    let (evidence, done) = guards;
+    let (evidence, done, ci_override) = guards;
+    if let Some(note) = ci_override {
+        ledger.append(
+            id,
+            EventBody::Comment(CommentData {
+                subtype: CommentSubtype::Decision,
+                body: note.to_owned(),
+            }),
+        )?;
+        tracing::warn!(ticket = %id, note, "base CI override recorded");
+    }
     let exempt = done.record_exemption(ledger, id)?;
     tracing::info!(ticket = %id, exempt = exempt.is_some(), "land audited the changelog exemption before closing");
     let defaults = default_close_guards();
@@ -1030,7 +1078,7 @@ fn remove_worktree(
     let path = wt_path.to_string_lossy();
     let merged = repo
         .rev_parse(branch)
-        .is_ok_and(|b| repo.merge_base(base, branch).ok().flatten() == Some(b));
+        .is_ok_and(|b| repo.merge_base(&base_ref(base), branch).ok().flatten() == Some(b));
     let mut cleanup: Vec<(&str, Vec<&str>)> = vec![(
         "worktree remove",
         vec!["worktree", "remove", "--force", &path],

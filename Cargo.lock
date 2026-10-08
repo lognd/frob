@@ -1092,6 +1092,7 @@ dependencies = [
  "frob-evidence",
  "frob-lease",
  "frob-ledger",
+ "frob-release",
  "frob-worktree",
  "gob-cache",
  "gob-cli",
@@ -2344,6 +2345,7 @@ name = "gob-dev"
 version = "0.532.0"
 dependencies = [
  "clap",
+ "crunk",
  "crunk-check",
  "crunk-spec",
  "frob-check",
@@ -2360,6 +2362,7 @@ dependencies = [
  "gob-mdtest",
  "gob-rules",
  "gob-time",
+ "grimble",
  "grimble-check",
  "jiff",
  "serde",

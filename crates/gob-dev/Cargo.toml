@@ -47,5 +47,11 @@ toml = "1"
 tracing = "0.1"
 ulid = "1"
 
+[dev-dependencies]
+# Only tests/profile_coverage.rs reads the product command trees (Cli::verb_flags); linking the
+# product crates into the tool itself would add their verbs to the generated CLI reference.
+crunk = { path = "../crunk" }
+grimble = { path = "../grimble" }
+
 [lints]
 workspace = true

@@ -130,7 +130,7 @@ impl DoneRequirement {
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "pm", materialize)]
 pub struct PmTable {
-    /// Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.
+    /// Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.
     #[config(default = false, enforcement)]
     pub strict: bool,
     /// Pull policy; `rank` takes the highest-ranked doable ticket, the only policy so far and the scrumban default.
@@ -154,6 +154,9 @@ pub struct PmTable {
     /// Safety factor k in `capacity = rolling_mean - k * stddev` for cycle commitment; 0.5 trades a little throughput for commitments that are usually met.
     #[config(default = 0.5, enforcement)]
     pub capacity_k: f64,
+    /// Sprint gate: while a cycle is active, `work` and `start` refuse a ticket that is not a member of it (`E-PM-NOT-IN-CYCLE`) unless it is expedite or started with `--unplanned --reason`, which assigns it to the cycle as a recorded over-commit; with no active cycle the gate is silent, so it defaults on.
+    #[config(default = true, enforcement)]
+    pub sprint_gate: bool,
 }
 
 /// Work-in-progress limits (`[pm.wip]`); 0 turns a limit off.

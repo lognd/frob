@@ -11,6 +11,7 @@ use frob_ledger::rules::{Tick001, Tick003, Tick004, Tick005};
 use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
+use frob_pm::rules::cycle::Pm036;
 use frob_pm::rules::membership::Pm034;
 use frob_pm::rules::milestone::{Pm001, Pm002};
 use frob_pm::rules::replenish::Pm033;
@@ -215,6 +216,20 @@ fn pm_findings(inputs: &FrobInputs) -> Vec<Finding> {
     ])
 }
 
+/// `PM036` findings for the `repo:cycle` group; empty without a ledger or cycles.
+// frob:ticket 01M4CSZFC0QF9PH544ARF60RCZ
+fn cycle_findings(inputs: &FrobInputs) -> Vec<Finding> {
+    const ALL: &[&str] = &["PM036"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
+    };
+    settle([frob_pm::rules::cycle::evaluate(&state.ledger)
+        .map(|e| e.findings)
+        .map_err(|e| failed(ALL, e))])
+}
+
 /// Ticket ids holding a live lease, the liveness input of `PM013`; `None` (every in-progress ticket counts) when the lease store cannot be read.
 // frob:ticket 01M416Z11V5GR012FR47HWFTBP
 fn live_leases(
@@ -373,6 +388,10 @@ impl Product for Frob {
             // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
             RepoGroup::new("repo:wip", vec![Pm013.meta()], |s: &Snapshot<Self>, _| {
                 strict_pm(&s.inputs, wip_findings(&s.inputs))
+            }),
+            // frob:ticket 01M4CSZFC0QF9PH544ARF60RCZ
+            RepoGroup::new("repo:cycle", vec![Pm036.meta()], |s: &Snapshot<Self>, _| {
+                strict_pm(&s.inputs, cycle_findings(&s.inputs))
             }),
             // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
             RepoGroup::new("repo:replenish", vec![Pm033.meta()], {

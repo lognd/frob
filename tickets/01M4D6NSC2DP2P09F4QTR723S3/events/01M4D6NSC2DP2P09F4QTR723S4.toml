@@ -1,0 +1,13 @@
+kind = "create"
+title = "frob lease release: give up a finished-but-unlanded ticket's lease without requeue"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
+scope = ["changelog.d/**", "crates/frob-lease/**", "crates/frob/**"]
+acceptance = ["Given a committed ticket with evidence, when lease release runs, then the lease is freed and a later land re-takes it"]
+body = "Follow-up from ~RF60RCZ/~57FX1J2: overlapping scopes forced requeue and re-lease dances before landing."
+at = "2026-10-08T07:29:35Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,13 @@
+kind = "create"
+title = "EXPORT001/002 and TOKEN002-009: export drift and parity across targets, token schema, cycles, unused, naming, mode completeness, scopes, near-duplicates, deprecated"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4CXQTERP5YASZGVEAH6KG4H"
+scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-tokens/**"]
+acceptance = ["Given fire and clean mdtest cases for each rule, when the corpus runs, then each rule fires only on its fire case"]
+body = "docs/design/crunk.md section 6; catalogue in notes/research/crunk-design-2026-10-08.md E3."
+at = "2026-10-08T04:53:31Z"
+actor = "lognd"
+rev = 1

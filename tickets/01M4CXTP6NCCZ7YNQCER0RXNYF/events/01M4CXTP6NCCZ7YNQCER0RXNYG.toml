@@ -1,0 +1,13 @@
+kind = "create"
+title = "land ledger_step idempotent after a partial failure (append_land succeeded, close failed): no duplicate land event on retry"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
+scope = ["changelog.d/**", "crates/frob-land/**"]
+acceptance = ["Given a land whose close failed after append_land, when the close is retried, then exactly one land event exists"]
+body = "Follow-up from ~BWMVSPZ."
+at = "2026-10-08T04:54:58Z"
+actor = "lognd"
+rev = 1

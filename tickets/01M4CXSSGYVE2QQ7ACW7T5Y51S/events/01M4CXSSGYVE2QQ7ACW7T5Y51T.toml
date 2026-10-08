@@ -1,0 +1,13 @@
+kind = "create"
+title = "COH003 mixed abstraction levels from callee layer spread"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
+scope = ["changelog.d/**", "crates/grimble-check/**"]
+acceptance = ["Given a unit calling a domain function and raw string slicing beyond max_level_spread, when COH003 runs, then it fires naming both callees and their layers"]
+body = "docs/design/cohesion.md 1; layer from the grimble model or module depth."
+at = "2026-10-08T04:54:29Z"
+actor = "lognd"
+rev = 1

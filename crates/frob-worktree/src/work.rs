@@ -29,6 +29,10 @@ pub struct WorkOptions {
     pub worktree: Option<PathBuf>,
     /// Take over a lease held by someone else, with this reason.
     pub steal: Option<String>,
+    /// Start a ticket outside the active cycle anyway, assigning it as an over-commit with this reason.
+    pub unplanned: Option<String>,
+    /// Apply the sprint gate (`[pm] sprint_gate`): refuse a ticket outside the active cycle; off in a default `WorkOptions`.
+    pub sprint_gate: bool,
 }
 
 /// What `work` and `start` did.
@@ -71,6 +75,14 @@ pub struct Requeued {
     pub already: bool,
 }
 
+/// The per-call options of [`Workspace::begin`]: the two reasoned ways past a refusal (stealing a lease, starting unplanned work) and whether the sprint gate applies.
+#[derive(Debug, Clone, Copy)]
+struct Escapes<'a> {
+    steal: Option<&'a str>,
+    unplanned: Option<&'a str>,
+    sprint_gate: bool,
+}
+
 /// Where the holder works: a fresh worktree for `work`, the current checkout for `start`.
 enum Plan {
     Work { override_path: Option<PathBuf> },
@@ -102,7 +114,11 @@ impl Workspace<'_> {
             &Plan::Work {
                 override_path: opts.worktree.clone(),
             },
-            opts.steal.as_deref(),
+            Escapes {
+                steal: opts.steal.as_deref(),
+                unplanned: opts.unplanned.as_deref(),
+                sprint_gate: opts.sprint_gate,
+            },
         )
     }
 
@@ -117,7 +133,36 @@ impl Workspace<'_> {
         cwd: &Path,
         steal: Option<&str>,
     ) -> Result<Started, WorktreeError> {
-        self.begin(ticket, &Plan::Start { cwd: clean(cwd) }, steal)
+        self.start_with(
+            ticket,
+            cwd,
+            &WorkOptions {
+                steal: steal.map(str::to_owned),
+                ..WorkOptions::default()
+            },
+        )
+    }
+
+    /// [`Workspace::start`] with the `steal`, `unplanned` and `sprint_gate` options of `opts` (`worktree` is unused).
+    ///
+    /// # Errors
+    ///
+    /// As [`Workspace::start`], plus the cycle gates.
+    pub fn start_with(
+        &self,
+        ticket: &str,
+        cwd: &Path,
+        opts: &WorkOptions,
+    ) -> Result<Started, WorktreeError> {
+        self.begin(
+            ticket,
+            &Plan::Start { cwd: clean(cwd) },
+            Escapes {
+                steal: opts.steal.as_deref(),
+                unplanned: opts.unplanned.as_deref(),
+                sprint_gate: opts.sprint_gate,
+            },
+        )
     }
 
     /// Release the lease on `ticket` and move it back to `todo`.
@@ -166,7 +211,11 @@ impl Workspace<'_> {
         &self,
         ticket: &str,
         plan: &Plan,
-        steal: Option<&str>,
+        Escapes {
+            steal,
+            unplanned,
+            sprint_gate,
+        }: Escapes<'_>,
     ) -> Result<Started, WorktreeError> {
         let id = self.ledger.resolve(ticket)?;
         let view = self.ledger.show(id)?;
@@ -186,6 +235,9 @@ impl Workspace<'_> {
         vet(view.summary.ty, view.summary.category, &handle, leased)?;
         // An in-progress ticket with a live lease already holds its slot (re-entry, steal).
         let needs_slot = !(view.summary.category == Category::InProgress && existing.is_some());
+        if needs_slot {
+            self.cycle_gates((id, view.summary.class, &handle), sprint_gate, unplanned)?;
+        }
         let taking = crate::wip::Taking {
             id,
             handle: &handle,
@@ -266,6 +318,18 @@ impl Workspace<'_> {
             stolen_from,
             warnings,
         })
+    }
+
+    /// The cycle gates for a ticket taking a fresh slot: no overdue cycle, and inside the active one (or started `unplanned`).
+    fn cycle_gates(
+        &self,
+        taking: (TicketId, frob_ledger::model::Class, &str),
+        sprint_gate: bool,
+        unplanned: Option<&str>,
+    ) -> Result<(), WorktreeError> {
+        let (_, class, handle) = taking;
+        crate::cycle_gate::check_overdue(self.ledger, class, handle)?;
+        crate::cycle_gate::check_sprint(self.ledger, sprint_gate, taking, unplanned)
     }
 
     /// The current checkout when it is this ticket's own linked worktree and the ticket is in progress with no live lease.

@@ -16,6 +16,7 @@ pub mod import_v1;
 pub mod isolation;
 pub mod out;
 pub mod products;
+pub mod profile;
 pub mod publish;
 pub mod render;
 pub mod wheel;

@@ -153,6 +153,19 @@ Milestone 2 or later (D36).
   epics and unestimated tickets are refused. PM010 flags cycles
   over capacity; PM011 flags a cycle with no goal; PM012 flags stories
   in a cycle that are not `ready`.
+- Work comes from the sprint backlog. While a cycle is active and
+  `[pm] sprint_gate` is true (the default), `frob work` and `start`
+  refuse a ticket that is not a member of the active cycle with
+  `E-PM-NOT-IN-CYCLE`; the hint names `frob cycle assign TICKET` and
+  `--unplanned --reason TEXT`. Expedite tickets are exempt and with no
+  active cycle the gate is silent. `frob work TICKET --unplanned --reason
+  TEXT` assigns the ticket to the active cycle (leaving any other open or
+  planned cycle) as an over-commit: a `member` event plus a `cycle` event
+  (op `over-commit`) carrying the reason and no point totals, so unplanned
+  work shows on the cycle report and in the retro. Only a ticket taking a
+  fresh slot is judged; re-entering a ticket that already holds its
+  lease is not. The overdue gate (PM036, section 7) runs first: an
+  overdue cycle refuses before membership is looked at.
 - `frob cycle plan [CYCLE] [--apply] [--points N]` proposes a commitment:
   the tickets `ticket doable` lists (so dependencies are respected), in its
   rank order (expedite, fixed-date by due, then the rest) except that
@@ -273,6 +286,7 @@ as standard). PM013 fires when live standard holders exceed
 | PM033 | replenish: ready work below `[pm] ready_min` (releases.md 2) |
 | PM034 | milestone member outside the milestone's epics (releases.md 1) |
 | PM035 | intangible-share: chores and debt above `[pm.classes] intangible_share` of a cycle's points (releases.md 2) |
+| PM036 | overdue cycle: a cycle still active after its end date (`today > end`, UTC); while it stands `frob work`/`start` refuse standard tickets with `E-PM-CYCLE-OVERDUE` (teaching message: close it with `frob cycle close --retro TEXT`); an expedite ticket still starts |
 | PM015 | story done with zero evidenced criteria (should be unreachable; positive control) |
 | PM020-PM029 | quality objectives: attribute, driver resolves, metric measurable, baseline, checkable target, runnable proof, no hidden behavior change, not boilerplate, stable flavour, portfolio share |
 | PM030 | chore over `max_chore_points`, or with neither a parent epic nor an `enabler-for` link |

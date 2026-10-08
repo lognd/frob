@@ -72,6 +72,8 @@ mod stdtypes;
 mod symref;
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
 mod typescript;
+// frob:ticket 01M44YQWGP5553K61QKC8HB0GQ
+mod unity_project;
 mod view;
 mod yaml;
 
@@ -80,7 +82,10 @@ pub use adapter::{
     ParseStatus, Precision,
 };
 pub use crates::CrateDeps;
-pub use csharp::{CSharpAdapter, is_csharp_path};
+pub use csharp::{
+    CSharpAdapter, CsharpTest, CsharpTestFramework, csharp_test, is_csharp_path,
+    is_csharp_test_file, is_csharp_test_fn, is_csharp_test_text,
+};
 pub use css::{CssAdapter, is_css_path};
 pub use dotnet::{
     Assignment, DotnetError, DotnetProjects, MalformedProject, Project, SolutionEntry,
@@ -124,5 +129,8 @@ pub use typescript::{
     ConstProject, Evaluated, JsxElement, JsxKind, Origin, TestItem, TestRole, TypeScriptAdapter,
     Unresolved, is_typescript_path, is_typescript_test_file, is_typescript_test_fn, jsx_elements,
     test_items, test_unit_name,
+};
+pub use unity_project::{
+    Assembly as UnityAssembly, TestMode as UnityTestMode, UnityAssignment, UnityProjects,
 };
 pub use view::model_symbols;

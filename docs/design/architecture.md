@@ -325,6 +325,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[pm] max_objective_share` | frob.toml | yes | 0.4 | frob-pm |
 | `[pm] max_age_days` | frob.toml | yes | 60 | frob-pm |
 | `[pm] capacity_k`, `capacity_points`, `min_history` | frob.toml | yes | 0.5, unset, 3 | frob-pm |
+| `[pm] sprint_gate` | frob.toml | yes | true; with a cycle active, `work` and `start` refuse a ticket outside it with `E-PM-NOT-IN-CYCLE` (expedite exempt, `--unplanned --reason` assigns it as an over-commit) | frob-pm, frob-worktree |
 | `[pm] max_duplicate_objective_text` | frob.toml | yes | 3 | frob-pm |
 | `[pm] measurer_timeout_secs` | frob.toml | yes | 600 | frob-pm |
 | `[pm.wip] in_progress_per_identity` | frob.toml | yes | 1 (0 is off); the one per-holder limit, applied by the lease store | frob-pm, frob-lease |

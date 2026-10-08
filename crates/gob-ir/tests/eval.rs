@@ -745,3 +745,118 @@ fn a_hole_and_a_may_edge_carry_their_typed_reasons_on_the_finding() {
         out.findings
     );
 }
+
+/// `f` calls an unresolvable name; `g` calls `f`. Formal review H1, scenario Pc.
+fn unknown_edge_model() -> Model {
+    let mut b = B::new("c.rs", "rust");
+    let c1 = b.call("imported_alias", &[]);
+    let f = b.unit("function", "f", &[], &[c1]);
+    let c2 = b.call("f", &[]);
+    let g = b.unit("function", "g", &[], &[c2]);
+    let root = b.file_unit(&[f, g]);
+    Model::lexical(b.finish(root))
+}
+
+// frob:ticket 01M4CXTVBZE3MSYVQTHNZMJSTK
+#[test]
+fn unknown_call_edge_is_never_certified_acyclic() {
+    let m = unknown_edge_model();
+    let out = run(&m, &cycle_rule());
+    assert!(
+        out.findings.iter().all(|f| f.severity != Severity::Error),
+        "{:?}",
+        out.findings
+    );
+    for name in ["f", "g"] {
+        let v = named(&out, &m, name);
+        assert!(
+            matches!(v[0], Verdict::Unresolved { .. }),
+            "{name}: {v:?} must be Unresolved, never Clean"
+        );
+    }
+    assert_eq!(out.truth(), Truth::Unknown);
+}
+
+// frob:ticket 01M4CXTVBZE3MSYVQTHNZMJSTK
+#[test]
+fn member_head_call_through_a_stratum_is_unknown_not_absent() {
+    // `t` calls through a non-ref head (a member expression); a P- "someone reaches f" rule
+    // must not fire "no caller reaches f".
+    let mut b = B::new("c.rs", "rust");
+    let f = b.unit("function", "f", &[], &[]);
+    let obj = b.lit("obj");
+    let head = b.node(Operator::apply("member"), &[obj]);
+    let call = b.node(Operator::apply("call"), &[head]);
+    let t = b.unit("function", "t", &[], &[call]);
+    let root = b.file_unit(&[f, t]);
+    let m = Model::lexical(b.finish(root));
+    let p = RuleProgram::new(rule("REACH002"), Polarity::Pc)
+        .message("t reaches f")
+        .stratum("calls", |ctx| ctx.rel_calls())
+        .stratum("reach", |ctx| {
+            ctx.derived("calls").expect("earlier stratum").closure()
+        })
+        .subjects(fn_units)
+        .check(move |ctx, s| {
+            let reach = ctx.derived("reach").expect("derived");
+            let target = ctx
+                .term()
+                .units()
+                .into_iter()
+                .find(|u| u.symref.to_string() == "c.rs::f")
+                .unwrap()
+                .node;
+            Observation::reach(ctx.holds(&reach, s, target), Vec::new())
+        });
+    let out = run(&m, &p);
+    let v = named(&out, &m, "t");
+    assert!(matches!(v[0], Verdict::Unresolved { .. }), "{v:?}");
+}
+
+// frob:ticket 01M4CXTVBZE3MSYVQTHNZMJSTK
+#[test]
+fn stratum_poison_reaches_the_checks_that_read_the_relation() {
+    let m = unknown_edge_model();
+    let p = RuleProgram::new(rule("POISON001"), Polarity::Pplus)
+        .message("x")
+        .stratum("calls", |ctx| {
+            ctx.rel_resolves();
+            Relation::new()
+        })
+        .subjects(fn_units)
+        .check(|ctx, _| {
+            ctx.derived("calls");
+            Observation::Set(Answer::Exact(BTreeSet::new()))
+        });
+    let out = run(&m, &p);
+    assert!(
+        out.findings
+            .iter()
+            .all(|f| f.severity == Severity::Unresolved),
+        "{:?}",
+        out.findings
+    );
+    assert!(!out.findings.is_empty());
+}
+
+// frob:ticket 01M4CXTVBZE3MSYVQTHNZMJSTK
+#[test]
+fn relation_frontier_reads_unknown_and_propagates_through_closure_and_compose() {
+    let (m, ..) = basic();
+    let ids: Vec<NodeId> = m.term().ids().collect();
+    let (a, b, c) = (ids[0], ids[1], ids[2]);
+    let mut r = Relation::new();
+    r.insert(a, b, Truth::Yes);
+    r.mark_unknown_out(b);
+    assert_eq!(r.get(b, c), Truth::Unknown);
+    assert_eq!(r.get(a, c), Truth::No);
+    let cl = r.closure();
+    assert_eq!(cl.get(a, c), Truth::Unknown);
+    assert_eq!(cl.get(a, b), Truth::Yes);
+    assert_eq!(cl.get(c, a), Truth::No);
+    let mut s = Relation::new();
+    s.insert(c, a, Truth::Yes);
+    assert_eq!(s.compose(&r).get(c, c), Truth::No);
+    assert!(!s.compose(&r).is_unknown_out(c));
+    assert!(r.union(&s).is_unknown_out(b));
+}

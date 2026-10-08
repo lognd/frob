@@ -39,6 +39,11 @@ impl Day {
             .map(Self)
             .map_err(|e| format!("{self} plus {days} days is out of range: {e}"))
     }
+
+    /// Whole days from `earlier` to this day (negative when `earlier` is later).
+    pub fn days_since(self, earlier: Self) -> i64 {
+        i64::from((self.0 - earlier.0).get_days())
+    }
 }
 
 impl FromStr for Day {

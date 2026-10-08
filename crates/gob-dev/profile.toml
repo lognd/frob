@@ -1,0 +1,392 @@
+[scenario."frob schema"]
+args = ["schema"]
+fixture = "tmp"
+readonly = true
+budget_ms = 500
+
+[scenario."frob check"]
+args = ["check"]
+readonly = true
+cold = true
+timing = true
+runs = 3
+exit = [0, 1]
+budget_ms = 38300
+cold_budget_ms = 587000
+
+[scenario."frob doctor"]
+args = ["doctor"]
+readonly = true
+runs = 3
+exit = [0, 3]
+budget_ms = 6200
+
+[scenario."frob init"]
+args = ["init"]
+fixture = "tmp"
+budget_ms = 500
+
+[scenario."frob config show"]
+args = ["config", "show"]
+readonly = true
+exit = [0, 3]
+budget_ms = 500
+
+[scenario."frob config sync"]
+args = ["config", "sync"]
+exit = [0, 3]
+budget_ms = 500
+
+[scenario."frob lease list"]
+args = ["lease", "list"]
+readonly = true
+exit = [0, 3]
+budget_ms = 500
+
+[scenario."frob lease widen"]
+args = ["lease", "widen", "{ticket}"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob board"]
+args = ["board"]
+readonly = true
+runs = 3
+exit = [0, 3]
+budget_ms = 7900
+
+[scenario."frob ticket list"]
+args = ["ticket", "list"]
+readonly = true
+budget_ms = 500
+
+[scenario."frob ticket show"]
+args = ["ticket", "show", "{ticket}"]
+readonly = true
+budget_ms = 500
+
+[scenario."frob ticket doable"]
+args = ["ticket", "doable"]
+readonly = true
+exit = [0, 3]
+budget_ms = 500
+
+[scenario."frob ticket doctor"]
+args = ["ticket", "doctor"]
+readonly = true
+runs = 3
+exit = [0, 3]
+budget_ms = 26700
+
+[scenario."frob ticket evidence list"]
+args = ["ticket", "evidence", "list", "{ticket}"]
+readonly = true
+exit = [0, 3]
+budget_ms = 500
+
+[scenario."frob ticket evidence fetch"]
+args = ["ticket", "evidence", "fetch", "{ticket}", "1"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket evidence add"]
+args = ["ticket", "evidence", "add", "{ticket}", "--provider", "command", "--ref", "true"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket fragment"]
+args = ["ticket", "fragment", "{ticket}"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket new"]
+args = ["ticket", "new", "--title", "profile probe"]
+budget_ms = 500
+
+[scenario."frob ticket update"]
+args = ["ticket", "update", "{ticket}", "--set", "priority=low"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket comment"]
+args = ["ticket", "comment", "{ticket}", "--body", "profile probe"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket link"]
+args = ["ticket", "link", "{ticket}", "{ticket}", "--kind", "relates"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket unlink"]
+args = ["ticket", "unlink", "{ticket}", "{ticket}", "--kind", "relates"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket close"]
+args = ["ticket", "close", "{ticket}"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket drop"]
+args = ["ticket", "drop", "{ticket}", "--reason", "profile probe"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket reopen"]
+args = ["ticket", "reopen", "{ticket}", "--reason", "profile probe"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket branch init"]
+args = ["ticket", "branch", "init"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket triage accept"]
+args = ["ticket", "triage", "accept", "{ticket}"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket triage decline"]
+args = ["ticket", "triage", "decline", "{ticket}"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket triage duplicate"]
+args = ["ticket", "triage", "duplicate", "{ticket}", "--of", "{ticket}"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob ticket triage snooze"]
+args = ["ticket", "triage", "snooze", "{ticket}", "--until", "2027-01-01"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob graph affects"]
+args = ["graph", "affects", "crates/gob-dev/src/ci.rs::steps"]
+readonly = true
+runs = 3
+exit = [0, 2, 3]
+budget_ms = 6500
+
+[scenario."frob graph why"]
+args = ["graph", "why", "crates/gob-dev/src/ci.rs::steps"]
+readonly = true
+runs = 3
+exit = [0, 2, 3]
+budget_ms = 5900
+
+[scenario."frob cycle list"]
+args = ["cycle", "list"]
+readonly = true
+exit = [0, 3]
+budget_ms = 700
+
+[scenario."frob cycle show"]
+args = ["cycle", "show"]
+readonly = true
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob cycle plan"]
+args = ["cycle", "plan"]
+readonly = true
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob cycle velocity"]
+args = ["cycle", "velocity"]
+readonly = true
+runs = 3
+exit = [0, 2, 3]
+budget_ms = 10600
+
+[scenario."frob cycle new"]
+args = ["cycle", "new", "--start", "2026-10-08", "--goal", "profile probe"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob cycle assign"]
+args = ["cycle", "assign", "{ticket}"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob cycle unassign"]
+args = ["cycle", "unassign", "{ticket}", "profile"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob cycle close"]
+args = ["cycle", "close", "profile"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob milestone list"]
+args = ["milestone", "list"]
+readonly = true
+budget_ms = 500
+
+[scenario."frob milestone show"]
+args = ["milestone", "show", "0.532.0"]
+readonly = true
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob milestone new"]
+args = ["milestone", "new", "9.9.9", "--goal", "profile probe"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob milestone add"]
+args = ["milestone", "add", "{ticket}", "9.9.9"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob milestone criterion add"]
+args = ["milestone", "criterion", "add", "0.532.0", "profile probe"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob milestone criterion remove"]
+args = ["milestone", "criterion", "remove", "0.532.0", "99"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob milestone evidence add"]
+args = ["milestone", "evidence", "add", "0.532.0", "--provider", "command", "--ref", "true"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob milestone evidence list"]
+args = ["milestone", "evidence", "list", "0.532.0"]
+readonly = true
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob release status"]
+args = ["release", "status", "0.532.0"]
+readonly = true
+exit = [0, 2, 3]
+budget_ms = 4800
+
+[scenario."frob release notes"]
+args = ["release", "notes", "--version", "0.532.0"]
+readonly = true
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob release changelog"]
+args = ["release", "changelog", "--version", "0.532.0"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob release adopt"]
+args = ["release", "adopt", "0.532.0"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob release bump"]
+args = ["release", "bump", "9.9.9"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob release cut"]
+args = ["release", "cut", "9.9.9"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob work"]
+args = ["work", "{ticket}"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob requeue"]
+args = ["requeue", "{ticket}", "--reason", "profile probe"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."frob merge-driver"]
+skip = "git runs it with four file paths during a conflicted merge and it is hidden from help; the cost is dominated by the merge, not the verb"
+
+[scenario."frob test"]
+args = ["test", "--base", "experimental", "--dry-run"]
+readonly = true
+runs = 3
+exit = [0, 1, 3]
+budget_ms = 14800
+
+[scenario."frob ack"]
+args = ["ack", "--dry-run", "crates/gob-dev/src/ci.rs"]
+runs = 3
+exit = [0, 2, 3]
+budget_ms = 6500
+
+[scenario."frob land"]
+args = ["land", "{ticket}"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."grimble schema"]
+args = ["schema"]
+fixture = "tmp"
+readonly = true
+budget_ms = 500
+
+[scenario."grimble check"]
+args = ["check"]
+readonly = true
+cold = true
+exit = [0, 1]
+budget_ms = 2900
+cold_budget_ms = 4000
+
+[scenario."grimble doctor"]
+args = ["doctor"]
+readonly = true
+exit = [0, 3]
+budget_ms = 1300
+
+[scenario."grimble init"]
+args = ["init"]
+fixture = "tmp"
+budget_ms = 500
+
+[scenario."grimble fmt"]
+args = ["fmt", "--check"]
+readonly = true
+exit = [0, 1]
+budget_ms = 1600
+
+[scenario."grimble ack"]
+args = ["ack"]
+fixture = "tmp"
+exit = [0, 2, 3]
+budget_ms = 500
+
+[scenario."grimble exceptions list"]
+args = ["exceptions", "list"]
+readonly = true
+exit = [0, 3]
+budget_ms = 3100
+
+[scenario."crunk schema"]
+args = ["schema"]
+fixture = "tmp"
+readonly = true
+budget_ms = 500
+
+[scenario."crunk check"]
+args = ["check"]
+readonly = true
+cold = true
+exit = [0, 1, 3]
+budget_ms = 500
+cold_budget_ms = 1000
+
+[scenario."crunk doctor"]
+args = ["doctor"]
+readonly = true
+exit = [0, 3]
+budget_ms = 500
+

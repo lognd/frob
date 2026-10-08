@@ -669,6 +669,19 @@ that are new relative to the base tip by fingerprint (rules.md section 6).
 Findings already on the base are reported as `pre_existing`, fixed ones as
 `resolved`, and neither blocks. When `--wait` re-merges a moved base the base
 side is recomputed for the new tip.
+The land also gates on CI of the base (~GHMWDGG, audit H1). Before merging it reads
+the check runs of `refs/remotes/origin/<base>` (the commit GitHub has run CI for; the local
+tip when there is no remote-tracking ref) through the GitHub CLI, by way of `frob_release::ci`,
+behind an injectable `CiReader` so tests never touch the network. A failing check that counts
+refuses with `E-LAND-BASE-RED` (exit 3) naming each check and its run URL. Which checks count is
+the `[land]` table read from the committed base `frob.toml`: `ci_required` (name patterns,
+`*` wildcard, case-insensitive; empty means every check) minus `ci_ignore` (default
+`*publish*` and `*release*`, jobs that test no code, so a broken dev-tag step cannot freeze
+every land). A pending check only warns. An unreadable state (no `gh`, no network, no origin,
+no checks) is never green: by default it is reported as `Unresolved` in the warnings and the
+land proceeds; `block_on_unknown_ci = true` refuses with `E-LAND-BASE-CI-UNKNOWN`.
+`require_base_green = false` turns the gate off. `--override-base-ci --reason <text>` lands
+anyway and records the reason as a decision comment on the ticket. The dry run applies the gate.
 `[land] verify = "ci"` and the quarantine that goes with it are
 Milestone 2 or later (D36). Push is opt-in (`[land] push`). Version bump
 and changelog fragments stay land-owned; the fragment check is rule

@@ -1,0 +1,13 @@
+kind = "create"
+title = "Concurrent land stress test with branch -D and pack-refs churn"
+type = "task"
+category = "todo"
+priority = "low"
+points = 2
+parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
+scope = ["changelog.d/**", "crates/frob-land/**"]
+acceptance = ["Given two lands and concurrent ref churn, when run 20 times, then every land exits 0 or refuses cleanly"]
+body = "Follow-up from ~BWMVSPZ: the back-to-back test cannot reproduce multi-process ref churn."
+at = "2026-10-08T04:55:00Z"
+actor = "lognd"
+rev = 1

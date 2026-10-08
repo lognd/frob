@@ -1,0 +1,1 @@
+gob-ir: property tests (tests/soundness.rs) check that every definite Kleene answer over random lo/hi relations and call graphs with Must, May and Unknown edges equals the classical answer in every sampled completion, and that closed structures are never Unknown.
