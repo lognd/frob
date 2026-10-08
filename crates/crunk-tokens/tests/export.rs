@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 use crunk_spec::{DesignSpec, parse_spec};
 use crunk_tokens::export::{
-    Exporter as _, Status, Target, check, compare, render_managed, render_target, write_all,
+    Status, Target, check, compare, render_managed, render_target, write_all,
 };
 use serde_json::Value;
 
