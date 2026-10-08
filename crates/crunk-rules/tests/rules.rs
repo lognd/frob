@@ -5,14 +5,37 @@
 
 use crunk_rules::family::{CheckTier, FAMILIES, Gate, family, gate_severity, is_waivable};
 use crunk_rules::registry::{catalog_mismatches, entries, render_markdown, unknown_families};
-use crunk_rules::rules::{INDEX, waive001::Waive001};
+use crunk_rules::rules::{
+    INDEX, color001::Color001, color002::Color002, contrast001::Contrast001, waive001::Waive001,
+};
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
+
+mod support;
 
 struct Host;
 impl crunk_rules::CrunkHost for Host {}
 
 fn runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
+    match case.rule.as_str() {
+        "COLOR001" | "COLOR002" | "CONTRAST001" => project_runner(case),
+        _ => waive_runner(case),
+    }
+}
+
+fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
+    // frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
+    // frob:tests crates/crunk-rules/src/rules/color002.rs::Color002
+    // frob:tests crates/crunk-rules/src/rules/contrast001.rs::Contrast001
+    let host = support::project(&case.file_name, &case.text, case.config.as_deref());
+    match case.rule.as_str() {
+        "COLOR001" => support::run::<Color001>(&host),
+        "COLOR002" => support::run::<Color002>(&host),
+        _ => support::run::<Contrast001>(&host),
+    }
+}
+
+fn waive_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/waive001.rs::Waive001
     let mut files = FileInterner::new();
     let file = files.intern(&case.file_name);
@@ -28,8 +51,12 @@ gob_mdtest::mdtest!(dir = "src/rules", runner = runner);
 #[test]
 fn the_registry_lists_id_family_severity_fixable_and_doc() {
     let listed = entries(&[&INDEX]);
-    assert_eq!(listed.len(), 1);
-    let e = &listed[0];
+    let ids: Vec<&str> = listed.iter().map(|e| e.id).collect();
+    assert_eq!(ids, ["COLOR001", "COLOR002", "CONTRAST001", "WAIVE001"]);
+    let e = listed
+        .iter()
+        .find(|e| e.id == "WAIVE001")
+        .expect("WAIVE001");
     assert_eq!(
         (e.id, e.slug, e.family),
         ("WAIVE001", "waiver-without-reason", "WAIVE")
@@ -77,7 +104,7 @@ fn family_prefixes_are_unique_and_every_catalog_prefix_has_a_row() {
 fn the_release_gate_raises_human_and_leaves_others_alone() {
     let human = family("HUMAN").expect("HUMAN row");
     assert_eq!(human.release_severity, Some(Severity::Error));
-    let waive = INDEX.metas[0];
+    let waive = waive_def();
     assert_eq!(gate_severity(waive, Gate::Check), Severity::Error);
     assert_eq!(gate_severity(waive, Gate::Release), Severity::Error);
 }
@@ -97,9 +124,21 @@ fn only_declaration_level_families_are_waivable() {
 fn the_registry_page_names_every_rule_and_family() {
     let page = render_markdown(&[&INDEX]);
     assert!(
+        page.contains("| COLOR001 | color-off-palette | COLOR | error | error | no | T0, T2 |")
+    );
+    assert!(
         page.contains("| WAIVE001 | waiver-without-reason | WAIVE | error | error | no | T0 |")
     );
     assert!(page.contains("| HUMAN | T0 | no | error |"));
+}
+
+fn waive_def() -> &'static gob_rules::RuleDef {
+    INDEX
+        .metas
+        .iter()
+        .copied()
+        .find(|d| d.id == "WAIVE001")
+        .expect("WAIVE001 is declared")
 }
 
 fn spec_with(lint: &str) -> crunk_spec::DesignSpec {
@@ -117,7 +156,7 @@ fn spec_with(lint: &str) -> crunk_spec::DesignSpec {
 // frob:tests crates/crunk-rules/src/lint.rs::severity_of
 #[test]
 fn lint_levels_map_onto_pipeline_severities() {
-    let waive = INDEX.metas[0];
+    let waive = waive_def();
     assert_eq!(
         crunk_rules::lint::severity_of(&spec_with(""), waive),
         Some(Severity::Error)
@@ -137,5 +176,5 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids, ["WAIVE001"]);
+    assert_eq!(ids, ["COLOR001", "COLOR002", "CONTRAST001", "WAIVE001"]);
 }

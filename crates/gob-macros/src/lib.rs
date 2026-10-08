@@ -89,11 +89,11 @@ fn default_since() -> String {
     "2.0.0".to_owned()
 }
 
-/// True when `id` is 2..=6 uppercase letters followed by exactly 3 digits.
+/// True when `id` is 2..=8 uppercase letters followed by exactly 3 digits.
 fn valid_id(id: &str) -> Option<&str> {
     let split = id.len().checked_sub(3)?;
     let (fam, digits) = id.split_at_checked(split)?;
-    let ok = (2..=6).contains(&fam.len())
+    let ok = (2..=8).contains(&fam.len())
         && fam.bytes().all(|b| b.is_ascii_uppercase())
         && digits.bytes().all(|b| b.is_ascii_digit());
     ok.then_some(fam)
@@ -178,7 +178,7 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
     let fam = valid_id(&args.id);
     if fam.is_none() {
         errors.push(darling::Error::custom(format!(
-            "invalid rule id `{}`; expected FAMILY (2-6 uppercase letters) + 3 digits, e.g. COV006",
+            "invalid rule id `{}`; expected FAMILY (2-8 uppercase letters) + 3 digits, e.g. COV006",
             args.id
         )));
     }

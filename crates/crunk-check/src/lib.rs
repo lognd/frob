@@ -1,12 +1,12 @@
 //! `crunk check`: crunk's driver over the shared [`gob_check`] pipeline and the `gob.sibling/1`
 //! document it prints (design: `sibling-contract.md`, `products.md` 1).
 //!
-//! The run walks the repository, applies the neutral pipeline groups and the rule groups of
-//! [`rules`] (COLOR001 so far: colour literals against the palette of `crunk.toml`, read from the
-//! shared `style` capability) and the `#[rule]` declarations of the crates listed in
-//! [`product_rules`] (`crunk-rules`: WAIVE001). `crunk:waive` comments with a reason suppress their
-//! rule at the declaration they cover, and `[lint]` severities apply to every finding of a
-//! catalog rule. New rules are two files in a rule crate; the legacy groups go as their tickets migrate.
+//! The run walks the repository, ingests the styles under `crunk.toml` (`crunk-ingest`: CSS and
+//! JSX sheets), applies the neutral pipeline groups and the `#[rule]` declarations of the crates
+//! listed in [`product_rules`] (`crunk-rules`: WAIVE001, COLOR001-002, CONTRAST001).
+//! `crunk:waive` comments with a reason suppress their rule at the declaration they cover, and
+//! `[lint]` severities apply to every finding of a catalog rule. New rules are two files in a rule
+//! crate; no legacy rule group is left in this crate.
 //!
 //! # Boundaries
 //!
@@ -22,7 +22,6 @@ use gob_diagnostics as _; // unused today; removal tracked in ~MKG678C
 
 mod product;
 pub mod product_rules;
-pub mod rules;
 pub mod sibling;
 
 use std::path::{Path, PathBuf};
