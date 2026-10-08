@@ -2,13 +2,13 @@
 id = "01M40VH6HES1X3P57WZS0S9G93"
 title = "gob-exec: clear the child environment and pass an explicit allowlist"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T12:23:57Z"
-updated = "2026-10-03T12:23:57Z"
+updated = "2026-10-08T11:57:15Z"
 idempotency_key = "m2-gobexec-env-clear"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-exec/**"]
