@@ -1,0 +1,13 @@
+kind = "create"
+title = "gob-walk path-only mode; crunk-ingest parses files in parallel; CRLF policy for crunk fix"
+type = "task"
+category = "todo"
+priority = "low"
+points = 2
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+scope = ["changelog.d/**", "crates/gob-walk/**", "crates/crunk-ingest/**"]
+acceptance = ["Given the ungoverned scan, when run, then no file is hashed; given CRLF files, when crunk fix writes, then line endings are preserved"]
+body = "Follow-ups from ~HRHS033."
+at = "2026-10-08T12:07:33Z"
+actor = "lognd"
+rev = 1
