@@ -2,7 +2,8 @@
 id = "01M4CSZFC0QF9PH544ARF60RCZ"
 title = "PM036 overdue cycle: an active cycle past its end date fires, and frob work refuses to start new work until it is closed"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
