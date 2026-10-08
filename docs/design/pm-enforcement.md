@@ -153,6 +153,19 @@ Milestone 2 or later (D36).
   epics and unestimated tickets are refused. PM010 flags cycles
   over capacity; PM011 flags a cycle with no goal; PM012 flags stories
   in a cycle that are not `ready`.
+- Work comes from the sprint backlog. While a cycle is active and
+  `[pm] sprint_gate` is true (the default), `frob work` and `start`
+  refuse a ticket that is not a member of the active cycle with
+  `E-PM-NOT-IN-CYCLE`; the hint names `frob cycle assign TICKET` and
+  `--unplanned --reason TEXT`. Expedite tickets are exempt and with no
+  active cycle the gate is silent. `frob work TICKET --unplanned --reason
+  TEXT` assigns the ticket to the active cycle (leaving any other open or
+  planned cycle) as an over-commit: a `member` event plus a `cycle` event
+  (op `over-commit`) carrying the reason and no point totals, so unplanned
+  work shows on the cycle report and in the retro. Only a ticket taking a
+  fresh slot is judged; re-entering a ticket that already holds its
+  lease is not. The overdue gate (PM036, section 7) runs first: an
+  overdue cycle refuses before membership is looked at.
 - `frob cycle plan [CYCLE] [--apply] [--points N]` proposes a commitment:
   the tickets `ticket doable` lists (so dependencies are respected), in its
   rank order (expedite, fixed-date by due, then the rest) except that

@@ -20,6 +20,17 @@ missing piece: C#, the .NET project model, and Unity's engine contract.
 | Engine vocabulary | the Unity contract: which methods the engine calls, which fields the editor writes, which calls are dynamic | a `unity` vocabulary pack (packs.md, D76), opt-in, auto-suggested by `frob init` when `ProjectSettings/ProjectVersion.txt` exists |
 | Test runners | `dotnet test` (TRX) and Unity's test runner in batch mode (NUnit 3 XML) | frob-evidence providers `dotnet` and `unity`, frob test selection |
 
+Project model details (implemented in `unity_project.rs`): a package per
+`.asmdef` with `name`, `references` (name or `GUID:`), `includePlatforms`,
+`excludePlatforms`, `defineConstraints`, `precompiledReferences`,
+`overrideReferences`, `autoReferenced` and `allowUnsafeCode`; an assembly is
+editor-only when `includePlatforms` is `[Editor]`, and a test assembly when it
+has `UNITY_INCLUDE_TESTS` and a `UnityEngine.TestRunner` reference, with mode
+decided by a `PlayMode` or `EditMode` path segment, else editor-only means
+EditMode and anything else PlayMode. Implicit assemblies reference every
+auto-referenced asmdef (and the editor variants the runtime ones). Unresolved
+GUIDs, malformed definitions and dangling `.asmref`s are findings.
+
 Nothing here is Unity-specific below the vocabulary pack: plain .NET
 repositories get the language, project model and `dotnet` provider
 without it.

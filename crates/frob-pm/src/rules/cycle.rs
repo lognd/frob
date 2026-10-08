@@ -5,14 +5,20 @@
 //! cycle and nothing firing. The pure core [`overdue`] takes folded cycles and
 //! the UTC day; [`evaluate`] reads them from a ledger for `frob-check`, and the
 //! `work`/`start` gate calls [`overdue_of`] so both agree on what is overdue.
+//!
+//! The sprint gate shares the same reading: [`sprint_check`] decides whether a
+//! ticket may start while a cycle is active, and [`assign_unplanned`] records
+//! the `--unplanned --reason` escape as a member plus an over-commit event.
 
 // frob:ticket 01M4CSZFC0QF9PH544ARF60RCZ
+// frob:ticket 01M4CT016NKN4QRVY0Y57FX1J2
 
-use frob_ledger::Ledger;
+use frob_ledger::{Ledger, TicketId};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 
 use crate::cycle::lifecycle::state_on;
 use crate::error::Result;
+use crate::event::{CycleEventData, CycleOp, MemberData, Op, PmBody};
 use crate::model::{Cycle, Day, Object, ObjectKind, State};
 use crate::rules::membership::Evaluation;
 use crate::store::PmStore;
@@ -150,9 +156,137 @@ pub fn evaluate(ledger: &Ledger) -> Result<Evaluation> {
     Ok(out)
 }
 
+/// The sprint gate's reading of the active cycles for one ticket.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SprintCheck {
+    /// No cycle is active: nothing to be outside of.
+    NoActiveCycle,
+    /// The ticket is a member of an active cycle.
+    Planned,
+    /// The ticket is not in the active cycle `alias`; `elsewhere` names the other open or planned cycle that holds it, if any.
+    Unplanned {
+        /// Alias of the active cycle the ticket would join.
+        alias: String,
+        /// Alias of another open or planned cycle that holds the ticket.
+        elsewhere: Option<String>,
+    },
+}
+
+/// Judge `ticket` against the cycles active on `today`: the first active cycle by start is the sprint, and membership of any active cycle counts as planned.
+pub fn sprint_check(cycles: &[Cycle], today: Day, ticket: TicketId) -> SprintCheck {
+    let mut live = active(cycles, today);
+    live.sort_by_key(|c| c.start);
+    let Some(first) = live.first() else {
+        return SprintCheck::NoActiveCycle;
+    };
+    if live.iter().any(|c| c.tickets.contains(&ticket)) {
+        return SprintCheck::Planned;
+    }
+    let elsewhere = cycles
+        .iter()
+        .find(|c| c.state != State::Closed && c.tickets.contains(&ticket))
+        .map(Cycle::alias);
+    SprintCheck::Unplanned {
+        alias: first.alias(),
+        elsewhere,
+    }
+}
+
+/// The alias of the sprint cycle `ticket` would join under `--unplanned`: the first active cycle by start.
+pub fn sprint_cycle(cycles: &[Cycle], today: Day) -> Option<&Cycle> {
+    active(cycles, today).into_iter().min_by_key(|c| c.start)
+}
+
+/// Assign `ticket` to the active cycle `target` as unplanned work: leave any other open or planned cycle, join `target` and record an `over-commit` event carrying `reason`.
+///
+/// The event has no point totals: unplanned work is judged by the reason in the retro, not by capacity.
+///
+/// # Errors
+///
+/// Ledger and store failures.
+pub fn assign_unplanned(
+    ledger: &Ledger,
+    cycles: &[Cycle],
+    target: &Cycle,
+    ticket: TicketId,
+    reason: &str,
+) -> Result<()> {
+    let store = PmStore::new(ledger);
+    for old in cycles
+        .iter()
+        .filter(|c| c.id != target.id && c.state != State::Closed && c.tickets.contains(&ticket))
+    {
+        tracing::info!(from = %old.alias(), %ticket, "unplanned work leaves its other cycle");
+        store.set_member(ObjectKind::Cycle, old.id, ticket, Op::Remove)?;
+    }
+    store.append_many(
+        ObjectKind::Cycle,
+        target.id,
+        vec![
+            PmBody::Member(MemberData {
+                op: Op::Add,
+                ticket,
+            }),
+            PmBody::Cycle(Box::new(CycleEventData {
+                op: CycleOp::OverCommit,
+                ticket: Some(ticket),
+                to: None,
+                committed: None,
+                done: None,
+                text: Some(reason.to_owned()),
+                capacity: None,
+            })),
+        ],
+    )?;
+    tracing::info!(cycle = %target.alias(), %ticket, reason, "unplanned work joined the active cycle");
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn cycle_on(start: &str, end: &str, tickets: Vec<TicketId>) -> Cycle {
+        use crate::model::ObjectId;
+        Cycle {
+            id: ObjectId::mint(),
+            start: start.parse().unwrap(),
+            end: end.parse().unwrap(),
+            ended: None,
+            goal: "g".to_owned(),
+            capacity_points: None,
+            state: State::Planned,
+            tickets,
+            created: frob_ledger::model::Stamp::from_unix(1_800_000_000),
+            updated: frob_ledger::model::Stamp::from_unix(1_800_000_000),
+            ordinal: 1,
+        }
+    }
+
+    #[test]
+    fn sprint_check_distinguishes_planned_unplanned_and_no_cycle() {
+        // frob:tests crates/frob-pm/src/rules/cycle.rs::sprint_check
+        // frob:tests crates/frob-pm/src/rules/cycle.rs::sprint_cycle
+        let (member, stranger, parked) = (TicketId::mint(), TicketId::mint(), TicketId::mint());
+        let today: Day = "2026-10-08".parse().unwrap();
+        let current = cycle_on("2026-10-07", "2026-10-09", vec![member]);
+        let next = cycle_on("2026-10-10", "2026-10-16", vec![parked]);
+        let all = [current.clone(), next];
+        assert_eq!(sprint_check(&[], today, member), SprintCheck::NoActiveCycle);
+        assert_eq!(sprint_check(&all, today, member), SprintCheck::Planned);
+        assert_eq!(
+            sprint_check(&all, today, stranger),
+            SprintCheck::Unplanned {
+                alias: current.alias(),
+                elsewhere: None
+            }
+        );
+        let SprintCheck::Unplanned { elsewhere, .. } = sprint_check(&all, today, parked) else {
+            panic!("a ticket parked in a planned cycle is outside the sprint");
+        };
+        assert_eq!(elsewhere.as_deref(), Some("2026-10-10..2026-10-16"));
+        assert_eq!(sprint_cycle(&all, today).map(|c| c.id), Some(current.id));
+    }
 
     #[test]
     fn no_overdue_is_clean() {

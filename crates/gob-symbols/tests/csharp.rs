@@ -740,3 +740,134 @@ namespace App
     );
     assert!(edges.iter().any(|e| e.status == Status::Unknown));
 }
+
+// frob:ticket 01M44YQV7C3FYXB3QH20R4E5N8
+const FRAMEWORKS: &str = r#"using System.Collections;
+using NUnit.Framework;
+using UnityEngine.TestTools;
+using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace Acme.Tests
+{
+    public class NUnitCases
+    {
+        [SetUp] public void Init() { }
+        [TearDown]
+        public void Done() { }
+        [UnitySetUp]
+        public IEnumerator Boot() { yield return null; }
+
+        [Test, Category("fast")]
+        public void Plain() { }
+
+        [TestCase(1)]
+        [TestCase(2)]
+        public void Cases(int n) { }
+
+        [TestCaseSource(nameof(Data))]
+        public void Sourced(int n) { }
+
+        [NUnit.Framework.TestAttribute]
+        public void Qualified() { }
+
+        [UnityTest]
+        public IEnumerator Coroutine() { yield return null; }
+
+        [Test]
+        // a comment between the attribute and the declaration
+        public void Commented() { }
+
+        public void Helper() { }
+    }
+
+    public class XUnitCases
+    {
+        [Fact(DisplayName = "a [Fact]")]
+        public void Fact1() { }
+
+        [Theory]
+        [InlineData(1, "x")]
+        public void Theory1(int n, string s) { }
+    }
+
+    [TestClass]
+    public class MsTestCases
+    {
+        [TestMethod]
+        public void Method1() { }
+
+        [method: TestMethod]
+        public void Targeted() { }
+    }
+}
+"#;
+
+#[test]
+// frob:tests crates/gob-symbols/src/csharp.rs::csharp_test
+fn nunit_xunit_and_mstest_methods_are_tests_with_their_qualified_name() {
+    use gob_symbols::{CsharpTestFramework as F, csharp_test};
+    let fs = extract("Assets/Tests/Frameworks.cs", FRAMEWORKS);
+    let found: Vec<(String, F, bool)> = fs
+        .symbols
+        .iter()
+        .filter_map(|s| csharp_test(s, FRAMEWORKS))
+        .map(|t| (t.id, t.framework, t.play_mode_capable))
+        .collect();
+    let want = [
+        ("Acme.Tests.NUnitCases.Plain", F::NUnit, false),
+        ("Acme.Tests.NUnitCases.Cases", F::NUnit, false),
+        ("Acme.Tests.NUnitCases.Sourced", F::NUnit, false),
+        ("Acme.Tests.NUnitCases.Qualified", F::NUnit, false),
+        ("Acme.Tests.NUnitCases.Coroutine", F::NUnit, true),
+        ("Acme.Tests.NUnitCases.Commented", F::NUnit, false),
+        ("Acme.Tests.XUnitCases.Fact1", F::XUnit, false),
+        ("Acme.Tests.XUnitCases.Theory1", F::NUnit, false),
+        ("Acme.Tests.MsTestCases.Method1", F::MsTest, false),
+        ("Acme.Tests.MsTestCases.Targeted", F::MsTest, false),
+    ];
+    let want: Vec<(String, F, bool)> = want
+        .into_iter()
+        .map(|(i, f, p)| (i.to_owned(), f, p))
+        .collect();
+    assert_eq!(found, want);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/csharp.rs::csharp_test
+fn fixtures_and_helpers_are_not_tests_and_a_theory_without_nunit_is_xunit() {
+    use gob_symbols::{CsharpTestFramework as F, csharp_test, is_csharp_test_fn};
+    let fs = extract("Assets/Tests/Frameworks.cs", FRAMEWORKS);
+    for name in ["Init", "Done", "Boot", "Helper"] {
+        let rec = fs
+            .symbols
+            .iter()
+            .find(|s| s.symref.name() == Some(name))
+            .unwrap_or_else(|| panic!("no unit {name}"));
+        assert!(!is_csharp_test_fn(rec, FRAMEWORKS), "{name}");
+    }
+    let xunit = "using Xunit;\nclass C { [Theory] public void T() { } }\n";
+    let fs = extract("T.cs", xunit);
+    let t = fs
+        .symbols
+        .iter()
+        .find_map(|s| csharp_test(s, xunit))
+        .expect("theory");
+    assert_eq!((t.id.as_str(), t.framework), ("C.T", F::XUnit));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/csharp.rs::is_csharp_test_text
+fn a_test_file_is_recognised_by_its_attributes_not_by_path_alone() {
+    use gob_symbols::{is_csharp_test_file, is_csharp_test_text};
+    assert!(is_csharp_test_text(FRAMEWORKS));
+    assert!(is_csharp_test_text("class C { [Test] void M() { } }"));
+    assert!(!is_csharp_test_text(
+        "class C { [SerializeField] int x; [SetUp] void S() { } }"
+    ));
+    // Path alone is only a hint for callers with no text.
+    assert!(is_csharp_test_file("Assets/Tests/EditMode/Foo.cs"));
+    assert!(is_csharp_test_file("src/FooTests.cs"));
+    assert!(!is_csharp_test_file("Assets/Scripts/Foo.cs"));
+    assert!(!is_csharp_test_file("Assets/Tests/readme.md"));
+}
