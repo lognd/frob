@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:34Z"
-updated = "2026-10-08T09:19:54Z"
+updated = "2026-10-08T09:39:08Z"
 idempotency_key = "crunk-plan-rfw"
 labels = ["area:crunk", "creates:crates/crunk-rules/**", "creates:docs/crunk/rules/**"]
 scope = ["crates/crunk-rules/**", "docs/crunk/rules/**", "Cargo.lock", "crates/crunk-check/src/**", "crates/crunk-check/Cargo.toml", "crates/crunk-check/tests/**", "docs/crunk/README.md"]
@@ -27,15 +27,15 @@ target = "01M43ARY26XF7A4MSRAZ8V73JM"
 
 [[acceptance]]
 text = "Given a rule declared with the derive, when the registry is listed, then id, family, default severity, fixable flag and doc appear and `cargo dev gen --check` is clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given `crunk:waive COLOR001` with no reason, when checked, then WAIVE001 fires and COLOR001 is not suppressed"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given findings from several files, when reported, then order is (path, line, rule)"
-bound = false
+bound = true
 +++
 
 Rust tier-0 rule framework: `#[derive(Rule)]` registry (gob-rules, gob-macros) replaces the hand-written dict and assert against RULE_IDS (rules/engine.py, models.py); crunk families registered under the crunk namespace so frob never sees COLOR001 as an unknown gate id (the GATERULE001 complaint, monorepo.md 3); `[lint]` severities and tolerances as config; `crunk:waive RULE reason="..."` through gob-directives namespace crunk plus WAIVE001 (_waive.py); output sorted (path, line, rule) (INV-005); generated rule pages in docs/crunk/rules (GEN001). Why Rust: see the epic body; GRL has no CSS declaration kind or value-domain operators yet. Port tests/unit/test_rules_engine.py and INT-03 shape.
