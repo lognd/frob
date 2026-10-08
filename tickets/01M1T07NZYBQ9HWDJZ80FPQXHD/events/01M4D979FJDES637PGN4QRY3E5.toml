@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "The v2 rule for this shape is ERR001-ERR003 (notes/research/lint-catalogue-2026-10-08.md row K01, 4.2 N10)."
+at = "2026-10-08T08:13:45Z"
+actor = "lognd"
+rev = 1
