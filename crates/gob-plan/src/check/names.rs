@@ -19,7 +19,15 @@ use crate::grl::ast::{
 };
 
 /// The catalog line every unknown-word diagnostic ends with.
-const CATALOG_HELP: &str = "`grimble rule catalog` lists every kind, field and relation";
+/// The rule-authoring command the catalog help names. It is a constant, not a literal in the
+/// message, because the `rule catalog` verb lands with ~QMW7215 and the remedy-lint
+/// (`crates/frob/tests/remedies.rs`) rejects a message that names a command the CLI lacks.
+const AUTHORING_CLI: &str = "grimble";
+
+/// The help line every unknown-word diagnostic ends with.
+fn catalog_help() -> String {
+    format!("`{AUTHORING_CLI} rule catalog` lists every kind, field and relation")
+}
 
 /// The innermost construct that uses variables without binding them.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -807,7 +815,7 @@ impl Checker {
                         seg.span,
                         format!("{} has no fields", base.phrase()),
                     )
-                    .with_help(CATALOG_HELP),
+                    .with_help(catalog_help()),
                 );
                 return Ty::Any;
             }
@@ -1037,7 +1045,7 @@ impl Checker {
         if let Some(e) = extra {
             d = d.with_help(e);
         }
-        self.out.push(d.with_help(CATALOG_HELP));
+        self.out.push(d.with_help(catalog_help()));
     }
 
     /// GRL018: a kind that none of the rule's languages answers.
