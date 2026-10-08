@@ -56,6 +56,10 @@ fn day_is_the_utc_day_whatever_offset_the_stamp_was_written_in() {
     let day: Day = "2026-10-05".parse().expect("day");
     assert_eq!(day.plus_days(-1).expect("shift").to_string(), "2026-10-04");
     assert!("2026-13-40".parse::<Day>().is_err());
+    // frob:tests crates/gob-time/src/day.rs::days_since
+    let later: Day = "2026-10-09".parse().expect("day");
+    assert_eq!(later.days_since(day), 4);
+    assert_eq!(day.days_since(later), -4);
 }
 
 // frob:tests crates/gob-time/src/clock.rs::FixedClock

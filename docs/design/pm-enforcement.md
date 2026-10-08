@@ -273,6 +273,7 @@ as standard). PM013 fires when live standard holders exceed
 | PM033 | replenish: ready work below `[pm] ready_min` (releases.md 2) |
 | PM034 | milestone member outside the milestone's epics (releases.md 1) |
 | PM035 | intangible-share: chores and debt above `[pm.classes] intangible_share` of a cycle's points (releases.md 2) |
+| PM036 | overdue cycle: a cycle still active after its end date (`today > end`, UTC); while it stands `frob work`/`start` refuse standard tickets with `E-PM-CYCLE-OVERDUE` (teaching message: close it with `frob cycle close --retro TEXT`); an expedite ticket still starts |
 | PM015 | story done with zero evidenced criteria (should be unreachable; positive control) |
 | PM020-PM029 | quality objectives: attribute, driver resolves, metric measurable, baseline, checkable target, runnable proof, no hidden behavior change, not boilerplate, stable flavour, portfolio share |
 | PM030 | chore over `max_chore_points`, or with neither a parent epic nor an `enabler-for` link |

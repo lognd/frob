@@ -14,6 +14,9 @@ pub enum WorktreeError {
     /// The ledger refused or failed.
     #[error(transparent)]
     Ledger(#[from] LedgerError),
+    /// Reading cycles for the cycle gates failed.
+    #[error(transparent)]
+    Pm(#[from] frob_pm::PmError),
     /// The lease store failed (a held lease arrives as [`WorktreeError::Refused`]).
     #[error(transparent)]
     Lease(#[from] LeaseError),
@@ -56,6 +59,7 @@ impl From<WorktreeError> for CliError {
                 Some(r) => r.into(),
                 None => Self::internal(l),
             },
+            WorktreeError::Pm(p) => Self::internal(p),
             WorktreeError::Lease(l) => l.into(),
             WorktreeError::Git(g) => Self::internal(g),
             WorktreeError::Refused(r) => r.into(),
