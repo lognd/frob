@@ -2,7 +2,8 @@
 id = "01M40VH6HES1X3P57WZS0S9G93"
 title = "gob-exec: clear the child environment and pass an explicit allowlist"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
