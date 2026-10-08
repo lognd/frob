@@ -10,6 +10,7 @@ use std::time::{Duration, Instant};
 
 use tracing::{debug, info, warn};
 
+use crate::EnvPolicy;
 use crate::SpawnCount;
 use crate::counter::record;
 use crate::semaphore::Semaphore;
@@ -46,7 +47,7 @@ pub struct Spec {
     pub args: Vec<String>,
     /// Working directory; the current directory when `None`.
     pub cwd: Option<PathBuf>,
-    /// Environment additions layered over the inherited environment.
+    /// Environment additions layered over the child's environment (whatever the policy left).
     pub env: Vec<(String, String)>,
     /// Wall-clock limit after which the child (group) is killed.
     pub timeout: Duration,
@@ -129,6 +130,16 @@ impl Runner {
     /// [`ExecError::OutputCap`] when it floods past the output cap (it is killed),
     /// and [`ExecError::Wait`] when supervising it fails.
     pub fn run(&self, spec: &Spec) -> Result<Output, ExecError> {
+        self.run_with_env(spec, &EnvPolicy::Inherit)
+    }
+
+    /// Like [`Runner::run`], with the child environment built by `env`: the parent's whole
+    /// environment for [`EnvPolicy::Inherit`], or an empty one plus the allowlisted names for
+    /// [`EnvPolicy::Scrub`]. `Spec::env` additions are applied last under either policy.
+    ///
+    /// # Errors
+    /// The errors of [`Runner::run`].
+    pub fn run_with_env(&self, spec: &Spec, env: &EnvPolicy) -> Result<Output, ExecError> {
         let label = spec.program.label();
         let span = tracing::info_span!("exec.spawn", program = %label);
         let _enter = span.enter();
@@ -146,8 +157,11 @@ impl Runner {
         let _permit = self.sem.acquire();
 
         let mut cmd = Command::new(&exe);
-        cmd.args(&spec.args)
-            .envs(spec.env.iter().map(|(k, v)| (k, v)));
+        cmd.args(&spec.args);
+        if let Some(kept) = env.resolve(std::env::vars_os()) {
+            cmd.env_clear().envs(kept);
+        }
+        cmd.envs(spec.env.iter().map(|(k, v)| (k, v)));
         if let Some(cwd) = &spec.cwd {
             cmd.current_dir(cwd);
         }

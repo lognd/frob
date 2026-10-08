@@ -11,6 +11,7 @@
 mod cmdline;
 mod counter;
 mod discover;
+mod env;
 mod error;
 mod path;
 pub mod proc001;
@@ -24,6 +25,7 @@ pub use discover::{
     Origin, Platform, Sibling, beside_dirs, executable_names, find_sibling, plan, tool_env_dirs,
     tool_env_roots,
 };
+pub use env::{BASELINE, EnvPolicy, is_secret_shaped};
 pub use error::ExecError;
 pub use path::{
     Style, canonical, has_dot_component, path_has_dot_component, path_strictly_inside,
