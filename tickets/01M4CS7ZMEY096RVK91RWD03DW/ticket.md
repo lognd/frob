@@ -2,7 +2,8 @@
 id = "01M4CS7ZMEY096RVK91RWD03DW"
 title = "cargo dev profile: time every frob, grimble and crunk command, budget file, CI profile job"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 reporter = "lognd"
