@@ -8,7 +8,7 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:01Z"
-updated = "2026-10-08T11:48:06Z"
+updated = "2026-10-08T12:01:52Z"
 idempotency_key = "d94-select"
 scope = ["crates/frob-tests/**", "crates/gob-testsupport/src/lib.rs", "docs/reference/cli/**", "docs/design/build-test-ci.md"]
 
