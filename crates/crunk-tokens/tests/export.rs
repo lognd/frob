@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 use crunk_spec::{DesignSpec, parse_spec};
 use crunk_tokens::export::{
-    Status, Target, check, compare, render_managed, render_target, write_all,
+    ExportError, Status, Target, check, compare, render_managed, render_target, write_all,
 };
 use serde_json::Value;
 
@@ -259,4 +259,55 @@ fn every_target_round_trips_its_name_and_owns_its_exporter() {
         assert_eq!(target.exporter().target(), target);
     }
     assert_eq!(Target::parse("uss"), None);
+}
+
+// frob:tests crates/crunk-tokens/src/export/write.rs::write_all
+#[test]
+fn an_unwritable_parent_is_a_typed_write_error_naming_the_file() {
+    let (dir, spec) = project();
+    std::fs::write(
+        dir.path().join("styles"),
+        "a file where the css dir should be",
+    )
+    .unwrap();
+    let err = write_all(&spec).unwrap_err();
+    assert!(matches!(err, ExportError::Write { .. }), "{err}");
+    assert!(err.to_string().contains("tokens.css"), "{err}");
+}
+
+// frob:tests crates/crunk-tokens/src/export/drift.rs::check
+#[test]
+fn a_json_value_edit_drifts_both_json_files() {
+    let (dir, spec) = project();
+    write_all(&spec).unwrap();
+    for name in ["out/tokens.json", "out/tailwind.json"] {
+        let path = dir.path().join(name);
+        let edited = std::fs::read_to_string(&path)
+            .unwrap()
+            .replace("#111111", "#222222")
+            .replace("var(--color-ink)", "red");
+        std::fs::write(&path, edited).unwrap();
+    }
+    let drift = check(&spec).unwrap();
+    let states: Vec<(Target, Status)> = drift.files.iter().map(|f| (f.target, f.status)).collect();
+    assert_eq!(
+        states,
+        vec![
+            (Target::Css, Status::Clean),
+            (Target::Tailwind, Status::Drifted),
+            (Target::Json, Status::Drifted)
+        ]
+    );
+    assert!(
+        drift.files.iter().all(|f| !f.banner_only),
+        "json never has a banner"
+    );
+}
+
+// frob:tests crates/crunk-tokens/src/export/write.rs::write_all
+#[test]
+fn a_clean_project_has_no_orphan_warning() {
+    let (_dir, spec) = project();
+    let report = write_all(&spec).unwrap();
+    assert!(report.warnings.is_empty(), "{:?}", report.warnings);
 }
