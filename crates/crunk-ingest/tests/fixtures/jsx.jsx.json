@@ -1,0 +1,686 @@
+{
+  "sheets": [
+    {
+      "path": "frontend/src/components/Button.tsx",
+      "component": "Button",
+      "declarations": [
+        {
+          "prop": "background",
+          "value": "#282828",
+          "line": 7,
+          "span": [
+            145,
+            152
+          ],
+          "colors": [
+            {
+              "hex": "#282828",
+              "span": [
+                145,
+                152
+              ]
+            }
+          ],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "width",
+          "value": "44",
+          "line": 8,
+          "span": [
+            170,
+            172
+          ],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "44px",
+              "px": 44.0,
+              "kind": "px",
+              "span": [
+                170,
+                172
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "z-index",
+          "value": "5",
+          "line": 9,
+          "span": [
+            190,
+            191
+          ],
+          "colors": [],
+          "lengths": [],
+          "var_refs": []
+        }
+      ],
+      "utilities": [
+        {
+          "name": "bg-[#282828]",
+          "line": 13,
+          "variants": []
+        },
+        {
+          "name": "p-[13px]",
+          "line": 13,
+          "variants": []
+        },
+        {
+          "name": "bg-red-500",
+          "line": 13,
+          "variants": [
+            "hover"
+          ]
+        },
+        {
+          "name": "text-sm",
+          "line": 13,
+          "variants": [
+            "[&>x]"
+          ]
+        },
+        {
+          "name": "extra",
+          "line": 17,
+          "variants": []
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/components/Cases.tsx",
+      "component": "Cases",
+      "declarations": [
+        {
+          "prop": "background-color",
+          "value": "#282828",
+          "line": 7,
+          "span": [
+            242,
+            249
+          ],
+          "colors": [
+            {
+              "hex": "#282828",
+              "span": [
+                242,
+                249
+              ]
+            }
+          ],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "z-index",
+          "value": "5",
+          "line": 7,
+          "span": [
+            260,
+            261
+          ],
+          "colors": [],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "width",
+          "value": "44",
+          "line": 7,
+          "span": [
+            270,
+            272
+          ],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "44px",
+              "px": 44.0,
+              "kind": "px",
+              "span": [
+                270,
+                272
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "margin",
+          "value": "4px 13px",
+          "line": 8,
+          "span": [
+            306,
+            314
+          ],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "4px",
+              "px": 4.0,
+              "kind": "px",
+              "span": [
+                306,
+                309
+              ]
+            },
+            {
+              "raw": "13px",
+              "px": 13.0,
+              "kind": "px",
+              "span": [
+                310,
+                314
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "padding",
+          "value": "-4",
+          "line": 8,
+          "span": [
+            326,
+            328
+          ],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "-4px",
+              "px": -4.0,
+              "kind": "px",
+              "span": [
+                326,
+                328
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "opacity",
+          "value": "0.5",
+          "line": 8,
+          "span": [
+            339,
+            342
+          ],
+          "colors": [],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "background",
+          "value": "#fff",
+          "line": 12,
+          "span": [
+            492,
+            496
+          ],
+          "colors": [
+            {
+              "hex": "#ffffff",
+              "span": [
+                492,
+                496
+              ]
+            }
+          ],
+          "lengths": [],
+          "var_refs": []
+        },
+        {
+          "prop": "width",
+          "value": "10",
+          "line": 13,
+          "span": [
+            514,
+            516
+          ],
+          "colors": [],
+          "lengths": [
+            {
+              "raw": "10px",
+              "px": 10.0,
+              "kind": "px",
+              "span": [
+                514,
+                516
+              ]
+            }
+          ],
+          "var_refs": []
+        },
+        {
+          "prop": "border",
+          "value": "1px solid #ccc",
+          "line": 15,
+          "span": [
+            577,
+            591
+          ],
+          "colors": [
+            {
+              "hex": "#cccccc",
+              "span": [
+                587,
+                591
+              ]
+            }
+          ],
+          "lengths": [
+            {
+              "raw": "1px",
+              "px": 1.0,
+              "kind": "px",
+              "span": [
+                577,
+                580
+              ]
+            }
+          ],
+          "var_refs": []
+        }
+      ],
+      "utilities": [
+        {
+          "name": "bg-[#282828]",
+          "line": 18,
+          "variants": []
+        },
+        {
+          "name": "p-[13px]",
+          "line": 18,
+          "variants": []
+        },
+        {
+          "name": "bg-red-500",
+          "line": 18,
+          "variants": [
+            "hover"
+          ]
+        },
+        {
+          "name": "text-sm",
+          "line": 18,
+          "variants": [
+            "[&>x]"
+          ]
+        },
+        {
+          "name": "bg-red-500",
+          "line": 19,
+          "variants": []
+        },
+        {
+          "name": "p-4",
+          "line": 19,
+          "variants": []
+        },
+        {
+          "name": "bg-red-500",
+          "line": 20,
+          "variants": []
+        },
+        {
+          "name": "a",
+          "line": 21,
+          "variants": []
+        },
+        {
+          "name": "z-footer",
+          "line": 21,
+          "variants": []
+        },
+        {
+          "name": "p-4",
+          "line": 23,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 23,
+          "variants": []
+        },
+        {
+          "name": "bg-red-500",
+          "line": 24,
+          "variants": []
+        },
+        {
+          "name": "bg-blue-500",
+          "line": 24,
+          "variants": []
+        },
+        {
+          "name": "a",
+          "line": 25,
+          "variants": []
+        },
+        {
+          "name": "b",
+          "line": 25,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 26,
+          "variants": [
+            "hover",
+            "md"
+          ]
+        },
+        {
+          "name": "bg-red-500",
+          "line": 26,
+          "variants": []
+        },
+        {
+          "name": "base-class",
+          "line": 28,
+          "variants": []
+        },
+        {
+          "name": "text-blue-500",
+          "line": 29,
+          "variants": []
+        },
+        {
+          "name": "text-red-500",
+          "line": 29,
+          "variants": []
+        },
+        {
+          "name": "primary",
+          "line": 30,
+          "variants": []
+        },
+        {
+          "name": "p-4",
+          "line": 32,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 32,
+          "variants": []
+        },
+        {
+          "name": "gap-2",
+          "line": 32,
+          "variants": []
+        },
+        {
+          "name": "hidden",
+          "line": 32,
+          "variants": []
+        },
+        {
+          "name": "static-token",
+          "line": 33,
+          "variants": []
+        },
+        {
+          "name": "legacy-class",
+          "line": 34,
+          "variants": []
+        },
+        {
+          "name": "mt-[3px]",
+          "line": 34,
+          "variants": []
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/lib/constants.ts",
+      "component": "constants",
+      "declarations": [],
+      "utilities": [
+        {
+          "name": "rounded-4",
+          "line": 2,
+          "variants": []
+        },
+        {
+          "name": "bg-red-500",
+          "line": 2,
+          "variants": []
+        },
+        {
+          "name": "text-white",
+          "line": 2,
+          "variants": []
+        },
+        {
+          "name": "outline",
+          "line": 3,
+          "variants": []
+        },
+        {
+          "name": "outline-2",
+          "line": 3,
+          "variants": []
+        },
+        {
+          "name": "outline-offset-2",
+          "line": 3,
+          "variants": []
+        },
+        {
+          "name": "bg-[#123456]",
+          "line": 5,
+          "variants": []
+        },
+        {
+          "name": "hidden",
+          "line": 8,
+          "variants": [
+            "md"
+          ]
+        },
+        {
+          "name": "flex",
+          "line": 8,
+          "variants": [
+            "lg"
+          ]
+        },
+        {
+          "name": "items-center",
+          "line": 8,
+          "variants": []
+        },
+        {
+          "name": "text-accent",
+          "line": 9,
+          "variants": []
+        },
+        {
+          "name": "font-semibold",
+          "line": 9,
+          "variants": []
+        },
+        {
+          "name": "inline-flex",
+          "line": 10,
+          "variants": []
+        },
+        {
+          "name": "items-center",
+          "line": 10,
+          "variants": []
+        },
+        {
+          "name": "bg-blue-500",
+          "line": 13,
+          "variants": []
+        },
+        {
+          "name": "text-white",
+          "line": 13,
+          "variants": []
+        },
+        {
+          "name": "bg-red-500",
+          "line": 14,
+          "variants": []
+        },
+        {
+          "name": "text-white",
+          "line": 14,
+          "variants": []
+        },
+        {
+          "name": "p-4",
+          "line": 18,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 18,
+          "variants": []
+        },
+        {
+          "name": "gap-2",
+          "line": 18,
+          "variants": []
+        },
+        {
+          "name": "items-center",
+          "line": 18,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 6,
+          "variants": []
+        },
+        {
+          "name": "gap-2",
+          "line": 6,
+          "variants": []
+        },
+        {
+          "name": "outline",
+          "line": 6,
+          "variants": []
+        },
+        {
+          "name": "outline-2",
+          "line": 6,
+          "variants": []
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/lib/elements.ts",
+      "component": "elements",
+      "declarations": [],
+      "utilities": [
+        {
+          "name": "text-accent",
+          "line": 4,
+          "variants": []
+        },
+        {
+          "name": "font-semibold",
+          "line": 4,
+          "variants": []
+        },
+        {
+          "name": "p-4",
+          "line": 8,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 8,
+          "variants": []
+        },
+        {
+          "name": "sr-only",
+          "line": 9,
+          "variants": []
+        },
+        {
+          "name": "z-skiplink",
+          "line": 9,
+          "variants": [
+            "focus"
+          ]
+        },
+        {
+          "name": "text-accent",
+          "line": 4,
+          "variants": []
+        },
+        {
+          "name": "font-semibold",
+          "line": 4,
+          "variants": []
+        },
+        {
+          "name": "p-4",
+          "line": 8,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 8,
+          "variants": []
+        },
+        {
+          "name": "sr-only",
+          "line": 9,
+          "variants": []
+        },
+        {
+          "name": "z-skiplink",
+          "line": 9,
+          "variants": [
+            "focus"
+          ]
+        },
+        {
+          "name": "outline-accent-orange",
+          "line": 10,
+          "variants": [
+            "focus"
+          ]
+        },
+        {
+          "name": "base-token",
+          "line": 5,
+          "variants": []
+        },
+        {
+          "name": "extra-token",
+          "line": 11,
+          "variants": []
+        },
+        {
+          "name": "bg-red-500",
+          "line": 14,
+          "variants": []
+        },
+        {
+          "name": "text-accent",
+          "line": 1,
+          "variants": []
+        },
+        {
+          "name": "font-semibold",
+          "line": 1,
+          "variants": []
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

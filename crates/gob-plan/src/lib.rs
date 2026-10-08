@@ -4,6 +4,7 @@
 //! relation [`catalog`] and a small executor for the web-engine kinds ([`exec`]).
 
 pub mod catalog;
+pub mod check;
 pub mod exec;
 pub mod grl;
 pub mod plan;

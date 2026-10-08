@@ -2,16 +2,16 @@
 id = "01M3ZX7DMYNTWB3AP04CDMAECH"
 title = "Relation catalog: kinds, fields, verbs, side relations and language ids"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-03T03:35:00Z"
+updated = "2026-10-08T10:47:54Z"
 idempotency_key = "m2-grl-catalog"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/catalog/**"]
+scope = ["crates/gob-plan/src/catalog/**", "crates/gob-plan/src/check/**", "crates/gob-plan/src/catalog.rs", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/**", "crates/gob-plan/Cargo.toml"]
 
 [[links]]
 kind = "blocked-by"

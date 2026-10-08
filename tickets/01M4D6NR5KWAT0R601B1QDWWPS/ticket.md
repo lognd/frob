@@ -10,7 +10,7 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T07:29:34Z"
-updated = "2026-10-08T08:14:52Z"
+updated = "2026-10-08T10:15:10Z"
 scope = ["changelog.d/**", ".github/workflows/**", "crates/frob-release/**"]
 
 [[acceptance]]

@@ -88,6 +88,25 @@ pub struct CustomProp {
     pub line: u32,
 }
 
+/// One Tailwind utility class token pulled from a `className` string (JSX and TS sources).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LocatedUtility {
+    /// The utility without its variant prefixes (`bg-red-500` for `hover:bg-red-500`).
+    pub name: String,
+    /// 1-based line of the literal the token was written in.
+    pub line: u32,
+    /// The variant prefixes in order (`hover`, `[&>x]`), outermost first.
+    pub variants: Vec<String>,
+}
+
+/// A `className` site (or `createElement` class entry) with a part that is not statically known,
+/// so more classes may apply than the sheet lists.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DynamicClass {
+    /// 1-based line of the site.
+    pub line: u32,
+}
+
 /// A byte span `(start, end)` into the owning source.
 pub type Span = (usize, usize);
 
@@ -184,6 +203,17 @@ pub struct Stylesheet {
     pub orphan_waivers: Vec<Waiver>,
     /// Every `@media` prelude.
     pub media_queries: Vec<LocatedMediaQuery>,
+    /// Utility class tokens of a JSX or TS source, in source order (empty for CSS sheets).
+    pub utilities: Vec<LocatedUtility>,
+    /// `className` sites of a JSX or TS source that have a part not statically known.
+    pub dynamic_classes: Vec<DynamicClass>,
+}
+
+impl Stylesheet {
+    /// False for a JSX sheet: a fix must never rewrite TSX, so a style-prop site is not fixable.
+    pub fn is_fixable(&self) -> bool {
+        self.bucket != Some(Bucket::Jsx)
+    }
 }
 
 /// The full ingest result for a project: every stylesheet, stray, diagnostic.

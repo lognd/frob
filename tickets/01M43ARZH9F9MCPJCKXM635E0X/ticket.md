@@ -2,13 +2,13 @@
 id = "01M43ARZH9F9MCPJCKXM635E0X"
 title = "crunk-tokens: export targets css, json, tailwind and `crunk tokens`"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:50Z"
-updated = "2026-10-04T11:28:50Z"
+updated = "2026-10-08T10:58:51Z"
 idempotency_key = "crunk-plan-tokx"
 labels = ["area:crunk"]
 scope = ["crates/crunk-tokens/**", "crates/crunk/src/tokens.rs", "crates/crunk/tests/tokens*.rs"]
