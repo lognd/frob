@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-08T04:02:54Z"
+digest = "17bd3c96c3d514a1a4a564cc965da75068cbd0cd7fdfd55a2b01c559f802e736"
+exit_code = 0
+inline = '''
+goway: note: tool versions differ across your hosts: rustc 1.98.0 here (minor: 1.99 vs 1.98) (cached by goway doctor 21m ago; builds may behave differently here)
+goway: note: synced 12068 files (7 sent, 13960873 bytes, 2 deleted)
+goway: info: running on nova-windows (aarch64, NOVA) at this machine (Windows): cargo nextest run -p gob-macros
+goway: sh was not on PATH; appended C:\Program Files\Git\usr\bin (Git for Windows)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f3111d2f-08d7-4808-8c56-e48e9e484879 with nextest profile: default
+    Starting 5 tests across 3 binaries
+        PASS [   0.029s] (1/5) gob-macros rule_doc::tests::good_page_has_no_problems
+        PASS [   0.045s] (2/5) gob-macros rule_doc::tests::each_gap_is_reported
+        PASS [   0.053s] (3/5) gob-macros rule_doc::tests::headings_inside_fences_do_not_count
+        PASS [   4.511s] (4/5) gob-macros::ui ui
+        PASS [  24.953s] (5/5) gob-macros::ui_rule_attr ui_rule_attr
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  29.469s] 5 tests run: 5 passed, 0 skipped
+goway: warning: the lifeline connection to nova-windows broke while the job ran (ssh exit status: 0); the helper stops a job whose client it considers gone, which would explain an unexpected exit 143
+goway: done: exit 0 on nova-windows in 114.3s
+'''
+passed = true
+provider = "command"
+ref = "goway run --host nova-windows -- cargo nextest run -p gob-macros"
+size = 1496
+status = "measured"
+at = "2026-10-08T04:02:54Z"
+actor = "lognd"
+rev = 1

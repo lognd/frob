@@ -8,12 +8,12 @@ class = "expedite"
 points = 1
 reporter = "lognd"
 created = "2026-10-08T03:34:35Z"
-updated = "2026-10-08T03:35:20Z"
+updated = "2026-10-08T04:02:54Z"
 scope = ["crates/gob-macros/**"]
 
 [[acceptance]]
 text = "Given the missing_md trybuild case, when the suite runs on Linux and Windows, then both match one snapshot (no OS error text in any gob-macros diagnostic)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given CI on experimental after the land, when the Windows nextest step runs, then it passes"
