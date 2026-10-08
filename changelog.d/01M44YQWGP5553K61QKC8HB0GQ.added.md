@@ -1,0 +1,1 @@
+gob-symbols: Unity project model; each .asmdef is a package with name and GUID references (resolved through the .meta), .asmref folders join their assembly, other Assets C# belongs to Assembly-CSharp, and unresolved definitions are reported, never dropped.

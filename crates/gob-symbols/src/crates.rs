@@ -11,12 +11,14 @@
 // frob:ticket 01M3ZVQA77ZEK9DXEN5Z0XMZEG
 // frob:ticket 01M44YQW33GJMXQ8PQBECEBCQ1
 // frob:ticket 01M47QKTN549397AFFSC3DEAQX
+// frob:ticket 01M44YQWGP5553K61QKC8HB0GQ
 
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 
 use crate::dotnet::{Assignment, DotnetProjects, MalformedProject};
 use crate::nodejs::{JsResolution, NodeProjects};
+use crate::unity_project::{UnityAssignment, UnityProjects, is_unity_package};
 
 /// Named direct dependencies: (extern crate name with dashes mapped to underscores, crate directory).
 type NamedDeps = Vec<(String, String)>;
@@ -33,6 +35,7 @@ pub struct CrateDeps {
     names: HashMap<String, Option<String>>,
     closure: HashMap<String, BTreeSet<String>>,
     dotnet: DotnetProjects,
+    unity: UnityProjects,
     node: NodeProjects,
 }
 
@@ -117,6 +120,7 @@ impl CrateDeps {
             names: HashMap::new(),
             closure: HashMap::new(),
             dotnet: DotnetProjects::new(root),
+            unity: UnityProjects::new(root),
             node: NodeProjects::new(root),
         };
         if let Ok(text) = std::fs::read_to_string(root.join("Cargo.toml")) {
@@ -142,6 +146,11 @@ impl CrateDeps {
             return self.node.owner(path);
         }
         if is_cs(path) {
+            match self.unity.assign(path) {
+                UnityAssignment::Assembly(id) => return Some(id),
+                UnityAssignment::Ignored => return None,
+                UnityAssignment::None => {}
+            }
             return match self.dotnet.assign(path) {
                 Assignment::Project(p) => Some(p),
                 Assignment::Ignored | Assignment::None => None,
@@ -172,6 +181,16 @@ impl CrateDeps {
         }
         if is_package_json(krate) {
             let deps = self.node.workspace_deps(krate);
+            self.direct.insert(krate.to_owned(), deps.clone());
+            return deps;
+        }
+        if is_unity_package(krate) {
+            let deps: NamedDeps = self
+                .unity
+                .references(krate)
+                .into_iter()
+                .map(|r| (self.unity.assembly_name(&r), r))
+                .collect();
             self.direct.insert(krate.to_owned(), deps.clone());
             return deps;
         }
@@ -209,6 +228,11 @@ impl CrateDeps {
         }
         if is_package_json(krate) {
             let name = Some(self.node.package_name(krate));
+            self.names.insert(krate.to_owned(), name.clone());
+            return name;
+        }
+        if is_unity_package(krate) {
+            let name = Some(self.unity.assembly_name(krate));
             self.names.insert(krate.to_owned(), name.clone());
             return name;
         }
@@ -255,6 +279,8 @@ impl CrateDeps {
     pub fn can_reach(&mut self, from: &str, to: &str) -> bool {
         if (is_csproj(from) && self.dotnet.is_unresolved(from))
             || (is_csproj(to) && self.dotnet.is_unresolved(to))
+            || (is_unity_package(from) && self.unity.is_unresolved(from))
+            || (is_unity_package(to) && self.unity.is_unresolved(to))
             || (is_package_json(from) && self.node.is_unresolved(from))
             || (is_package_json(to) && self.node.is_unresolved(to))
         {
@@ -271,7 +297,8 @@ impl CrateDeps {
             (Some(a), Some(b))
                 if !is_package_json(&a)
                     && !is_package_json(&b)
-                    && is_csproj(&a) == is_csproj(&b) =>
+                    && (is_csproj(&a) || is_unity_package(&a))
+                        == (is_csproj(&b) || is_unity_package(&b)) =>
             {
                 self.can_reach(&a, &b)
             }
@@ -304,6 +331,12 @@ impl CrateDeps {
     /// Malformed `.csproj`, `.sln`, `package.json` and tsconfig files among repo-relative `files` (each an Unresolved project).
     pub fn malformed_projects(&mut self, files: &[&str]) -> Vec<MalformedProject> {
         let mut out = self.dotnet.malformed(files);
+        if files
+            .iter()
+            .any(|f| f.ends_with(".asmdef") || f.ends_with(".asmref"))
+        {
+            out.extend(self.unity.findings(files));
+        }
         out.extend(
             self.node
                 .malformed(files)
@@ -317,6 +350,11 @@ impl CrateDeps {
     /// What the non-relative specifier `spec` imported by TypeScript file `from` can name.
     pub fn js_resolve(&mut self, from: &str, spec: &str) -> JsResolution {
         self.node.resolve(from, spec)
+    }
+
+    /// The Unity assembly model (`.asmdef` and `.asmref`) of this work tree.
+    pub fn unity(&mut self) -> &mut UnityProjects {
+        &mut self.unity
     }
 
     /// The `.csproj` packages a `.sln` lists, repo-relative.
