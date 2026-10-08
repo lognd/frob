@@ -2,7 +2,8 @@
 id = "01M4CXTWDFFNQ045N7PJVT37ES"
 title = "Property tests that falsify Theorems 2 and 3 over random terms, scope graphs and completions of May and Unknown edges"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
