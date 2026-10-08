@@ -21,6 +21,8 @@ pub enum Provider {
     Vitest,
     /// `jest --json`: pass/fail and the executed test names (units of the TypeScript test file).
     Jest,
+    /// `dotnet test` with a TRX logger: pass/fail and the executed fully qualified test names.
+    Dotnet,
     /// An allowlisted tool: exit code and transcript digest.
     Command,
     /// A person's signed statement; never a tool measurement (see [`crate::attestation`]).
@@ -37,6 +39,7 @@ impl Provider {
             Self::Pytest => "pytest",
             Self::Vitest => "vitest",
             Self::Jest => "jest",
+            Self::Dotnet => "dotnet",
             Self::Command => "command",
             Self::File => "file",
             Self::Attestation => "attestation",
@@ -49,6 +52,7 @@ impl Provider {
         "pytest",
         "vitest",
         "jest",
+        "dotnet",
         "command",
         "file",
         "attestation",
@@ -64,6 +68,7 @@ impl FromStr for Provider {
             "pytest" => Ok(Self::Pytest),
             "vitest" => Ok(Self::Vitest),
             "jest" => Ok(Self::Jest),
+            "dotnet" => Ok(Self::Dotnet),
             "command" => Ok(Self::Command),
             "file" => Ok(Self::File),
             "attestation" => Ok(Self::Attestation),

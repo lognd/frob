@@ -186,11 +186,9 @@ impl Ledger {
         let dir = self.config().dir.clone();
         let mut out = Vec::new();
         let mut scanned = 0usize;
-        for rel in self.list_files(&format!("{hex}:{dir}"))? {
+        for (rel, oid) in self.list_blobs(&format!("{hex}:{dir}"))? {
             let path = format!("{dir}/{rel}");
-            let Some(bytes) = self.repo().read_blob_at(&hex, &path)? else {
-                continue;
-            };
+            let bytes = self.repo().read_blob(&oid)?;
             scanned += 1;
             out.extend(tick004(&path, &bytes));
         }
@@ -225,11 +223,10 @@ impl Ledger {
         let hex = tip.to_string();
         let dir = self.config().dir.clone();
         let mut out = Vec::new();
-        for rel in self.list_files(&format!("{hex}:{dir}"))? {
+        for (rel, oid) in self.list_blobs(&format!("{hex}:{dir}"))? {
             let path = format!("{dir}/{rel}");
-            if let Some(bytes) = self.repo().read_blob_at(&hex, &path)? {
-                out.extend(crate::redact::tick005(&path, &bytes, rules));
-            }
+            let bytes = self.repo().read_blob(&oid)?;
+            out.extend(crate::redact::tick005(&path, &bytes, rules));
         }
         tracing::info!(findings = out.len(), "ledger private-term scan finished");
         Ok(out)

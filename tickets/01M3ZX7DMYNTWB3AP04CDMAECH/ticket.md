@@ -2,13 +2,14 @@
 id = "01M3ZX7DMYNTWB3AP04CDMAECH"
 title = "Relation catalog: kinds, fields, verbs, side relations and language ids"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-08T10:47:54Z"
+updated = "2026-10-08T11:47:45Z"
 idempotency_key = "m2-grl-catalog"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/catalog/**", "crates/gob-plan/src/check/**", "crates/gob-plan/src/catalog.rs", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/**", "crates/gob-plan/Cargo.toml"]
@@ -23,11 +24,11 @@ target = "01M3ZEH464EFCFAZ4XDKE89D5Z"
 
 [[acceptance]]
 text = "Given the gob-ir registry, when the catalog is built, then every word of grl-spec section 6 has a kind, a type, its Q-id, the languages that answer it and an Unknown-capable flag"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the side relation config.invariants.forbid_imports, when typed, then its columns come from docs/schemas/config.json and a misspelt column is not a member"
-bound = false
+bound = true
 +++
 
 Implements grl-spec.md section 6; universal-model.md section 5.

@@ -41,6 +41,9 @@ impl std::fmt::Debug for Repo {
     }
 }
 
+/// Decoded-object cache size for every opened handle (trees and commits re-read by ledger walks).
+const OBJECT_CACHE_BYTES: usize = 64 * 1024 * 1024;
+
 pub(crate) fn rev_err(spec: &str, e: impl std::fmt::Display) -> GitError {
     GitError::Rev {
         spec: spec.to_owned(),
@@ -77,7 +80,9 @@ impl Repo {
         Ok(Self::from_gix(gix))
     }
 
-    fn from_gix(gix: gix::Repository) -> Self {
+    fn from_gix(mut gix: gix::Repository) -> Self {
+        // Ledger walks re-read the same trees and loose objects; cache decoded objects.
+        gix.object_cache_size_if_unset(OBJECT_CACHE_BYTES);
         Self {
             gix,
             runner: Arc::new(Runner::new(Limits::default())),
@@ -219,6 +224,31 @@ impl Repo {
         }
         let blob = self.gix.find_blob(entry.object_id()).map_err(odb_err)?;
         Ok(Some(blob.data.clone()))
+    }
+
+    /// Every blob below the tree `spec` names, as `(path relative to that tree, blob id)` sorted by path, from one tree walk.
+    ///
+    /// Read the contents with [`Self::read_blob`]; neither call re-resolves a revision or a path.
+    ///
+    /// # Errors
+    /// [`GitError::Rev`] when `spec` does not resolve; [`GitError::Odb`] on read failure.
+    pub fn blobs_at(&self, spec: &str) -> Result<Vec<(String, Oid)>, GitError> {
+        let tree = self.tree_of(&self.rev_parse(spec)?)?;
+        let blobs: Vec<(String, Oid)> = Self::flatten_tree(&tree)?
+            .into_iter()
+            .map(|(path, (oid, _))| (path, oid))
+            .collect();
+        debug!(spec, count = blobs.len(), "blobs listed by one tree walk");
+        Ok(blobs)
+    }
+
+    /// The contents of the blob `oid`, with no tree lookup.
+    ///
+    /// # Errors
+    /// [`GitError::Odb`] when the object is missing or not a blob.
+    pub fn read_blob(&self, oid: &Oid) -> Result<Vec<u8>, GitError> {
+        let blob = self.gix.find_blob(*oid).map_err(odb_err)?;
+        Ok(blob.data.clone())
     }
 
     /// Peel a commit, tag or tree id to its tree.

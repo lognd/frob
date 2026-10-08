@@ -2616,11 +2616,13 @@ dependencies = [
 name = "gob-plan"
 version = "0.532.0"
 dependencies = [
+ "gob-caps",
  "gob-ir",
  "gob-rules",
  "gob-text",
  "insta",
  "proptest",
+ "serde_json",
  "thiserror",
  "tracing",
 ]

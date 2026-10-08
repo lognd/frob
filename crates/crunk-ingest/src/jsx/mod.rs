@@ -7,11 +7,11 @@
 //! `ConstProject`. What is left here is what crunk adds: located, judgment-free facts in the
 //! shape the rules read, with spans that address the source.
 //!
-//! - [`style`]: `style={{...}}` entries to declarations (never auto-fixed: see
+//! - `style`: `style={{...}}` entries to declarations (never auto-fixed: see
 //!   [`Stylesheet::is_fixable`](crate::Stylesheet::is_fixable)).
-//! - [`classes`]: `className`/`class` attributes, `createElement`/`cloneElement` props and the
+//! - `classes`: `className`/`class` attributes, `createElement`/`cloneElement` props and the
 //!   class-string constants of plain `.ts` files.
-//! - [`ingest`]: the project walk over `[jsx] globs`, with one cached result per source tree.
+//! - `ingest`: the project walk over `[jsx] globs`, with one cached result per source tree.
 //!
 //! # Known divergences from the Python crunk
 //!

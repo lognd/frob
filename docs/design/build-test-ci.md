@@ -224,6 +224,19 @@ the parity test still holds. `--with-git` ships a minimal `.git` (no
 remotes, credentials or hooks), so `doctor`, `check` and the git-dependent
 tests run remotely too. Cheap or host-bound steps (fmt, gen, zizmor,
 actionlint, `test --dry-run`, which needs the `origin/` ref) stay local.
+The `dotnet` evidence provider (~9W0WEA9) runs `dotnet test --nologo --logger
+trx;LogFileName=frob.trx --results-directory <fresh dir>` with a `--filter` of
+`FullyQualifiedName=<id>|FullyQualifiedName~<id>\(` per C# test id (the second form
+folds parameterized cases into their method), parses the TRX per test (outcome,
+duration, error message, stdout) and names each test `Namespace.Type.Method` from the
+report's `TestMethod` definition. `dotnet` must be in `[evidence] allowed_tools`;
+`[evidence.dotnet] path` names the executable (empty finds `dotnet` on `PATH`), and an
+absent executable or a host without an SDK (`dotnet --version` not exiting 0) refuses
+with `E-EVIDENCE-RUNNER-MISSING` and a remedy, recording nothing. A run that exits 0
+yet executed no test refuses as `E-EVIDENCE-NO-TESTS`. Its tests need no .NET SDK: they
+run the `fake-dotnet` helper binary of `gob-testsupport` (a stand-in that copies a canned
+TRX to the results directory; a native executable, not a shell script, so it runs on
+Windows too).
 Tests that run pytest (frob-evidence and frob-tests) need `python3` and
 `pytest` on `PATH` and skip with a named reason when they are absent
 (`gob_testsupport::python_test_prerequisites`); setting

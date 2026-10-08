@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "superseded: the COLOR001 migration to the two-file shape landed in ~8MQFYVM"
+at = "2026-10-08T12:35:32Z"
+actor = "lognd"
+rev = 1
