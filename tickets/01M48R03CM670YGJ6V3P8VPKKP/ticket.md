@@ -4,10 +4,11 @@ title = "Migrate frob-ledger, frob-pm, frob-release, frob-lease and gob-config r
 type = "story"
 category = "todo"
 priority = "medium"
+points = 5
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:07Z"
-updated = "2026-10-06T13:56:07Z"
+updated = "2026-10-08T03:51:40Z"
 scope = ["crates/frob-ledger/**", "crates/frob-pm/**", "crates/frob-release/**", "crates/frob-lease/**", "crates/gob-config/**"]
 
 [[links]]
