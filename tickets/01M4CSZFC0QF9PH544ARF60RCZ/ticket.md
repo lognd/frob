@@ -2,13 +2,13 @@
 id = "01M4CSZFC0QF9PH544ARF60RCZ"
 title = "PM036 overdue cycle: an active cycle past its end date fires, and frob work refuses to start new work until it is closed"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:47:26Z"
-updated = "2026-10-08T03:47:26Z"
+updated = "2026-10-08T03:58:16Z"
 scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**"]
 
 [[acceptance]]
