@@ -1,0 +1,1 @@
+frob: land's base-check cache is keyed by the code tree without the ledger directory, so ledger-only base commits (every ticket write) no longer force a full re-check; ledger-located findings are recomputed cheaply per commit.

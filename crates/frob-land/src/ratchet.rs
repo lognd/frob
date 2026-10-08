@@ -2,10 +2,10 @@
 //!
 //! The base side is the same check run without a ticket scope on the base tip,
 //! in a throwaway detached worktree under the git common dir. Its finding
-//! fingerprints are cached per base commit, engine version and config digest in
-//! `<git common dir>/frob/land-base/<oid>-<key>.json`, shared by every worktree, so a second land on
-//! the same base (from any ticket, or a `--wait` retry that did not move it) costs nothing; a moved
-//! base, a new engine or a changed config has a new key and so is recomputed (~F4YA3S9).
+//! fingerprints are cached per code tree (the base tree without the ledger directory), engine version and
+//! config digest in `<git common dir>/frob/land-base/<tree>-<key>.json`, shared by every worktree, so a second land on
+//! the same code (from any ticket, a ledger-only base commit, or a `--wait` retry that did not move it) costs
+//! one cheap ledger-only run; a base with changed code, a new engine or a changed config has a new key and so is recomputed (~F4YA3S9).
 //! Findings are compared as multisets: a second occurrence of a fingerprint the base has once is new.
 //! The throwaway worktree's check opens the repository-shared cache (gob-cache), so every file
 //! unchanged since an earlier check is a cache hit (~TSK0M4Y).
@@ -42,7 +42,7 @@ pub struct FindingNote {
 /// The finding fingerprints of one commit, as cached.
 #[derive(Debug, Serialize, Deserialize)]
 struct BaseSet {
-    /// Full commit oid the set belongs to.
+    /// Digest of the base tree without the ledger directory the set belongs to.
     oid: String,
     /// Cache key (engine version and config digest) the set was computed under.
     key: String,
@@ -87,7 +87,47 @@ pub fn cache_key(ledger: &LedgerConfig) -> String {
     format!("{}-{}", env!("CARGO_PKG_VERSION"), &digest.as_str()[..16])
 }
 
+/// A digest of the base tree with the ledger directory removed (frob:ticket 01M4CTDXHZ5B85NXCN1KJ95784).
+///
+/// Every ticket write is a new base commit in trunk mode, so the commit oid
+/// never repeats; this digest does, as long as no code file, mode or path changed.
+///
+/// # Errors
+/// Fails when `git ls-tree` cannot list `oid`.
+pub fn code_tree_key(
+    wt: &Repo,
+    wt_path: &Path,
+    oid: &str,
+    ledger: &LedgerConfig,
+) -> Result<String, LandError> {
+    let listing = git(wt, wt_path, &["ls-tree", "-r", oid])?;
+    if !listing.ok() {
+        return Err(LandError::Config(format!(
+            "could not list base {oid}: {}",
+            listing.text
+        )));
+    }
+    let mut h = blake3::Hasher::new();
+    let mut kept = 0_usize;
+    for line in listing.text.lines() {
+        let path = line.split_once('\t').map_or("", |(_, p)| p);
+        if !ledger.is_ledger_path(path) {
+            h.update(line.as_bytes());
+            h.update(b"\n");
+            kept += 1;
+        }
+    }
+    tracing::debug!(oid, kept, "land base code tree digest");
+    Ok(h.finalize().to_hex().as_str()[..32].to_owned())
+}
+
 /// The unscoped findings at the base commit `oid`, from the cache or a fresh run.
+///
+/// Code-family findings (located outside the ledger directory, or without a
+/// location) are cached under [`code_tree_key`], so ledger-only base commits hit.
+/// Findings located inside the ledger directory depend on the exact commit and are
+/// never cached: they come from the fresh run, or on a cache hit from a cheap
+/// run at `oid` without the tool stages (the shared file cache makes it fast).
 pub(crate) fn base_findings(
     wt: &Repo,
     wt_path: &Path,
@@ -95,29 +135,36 @@ pub(crate) fn base_findings(
     ledger: &LedgerConfig,
 ) -> Result<Vec<FindingNote>, LandError> {
     let key = cache_key(ledger);
+    let tree = code_tree_key(wt, wt_path, oid, ledger)?;
     let cache = wt
         .common_dir()
         .join(gob_cache::SHARED_DIR)
         .join(LAND_BASE_DIR)
-        .join(format!("{oid}-{key}.json"));
-    if let Some(set) = read_cache(&cache, oid, &key) {
+        .join(format!("{tree}-{key}.json"));
+    let in_ledger = |n: &FindingNote| n.path.as_deref().is_some_and(|p| ledger.is_ledger_path(p));
+    if let Some(set) = read_cache(&cache, &tree, &key) {
         tracing::info!(
             oid,
+            tree,
             findings = set.findings.len(),
             "land base set from cache"
         );
-        return Ok(set.findings);
+        let mut findings = set.findings;
+        let fresh = run_at_base(wt, wt_path, oid, ledger, true)?;
+        findings.extend(fresh.into_iter().filter(|n| in_ledger(n)));
+        return Ok(findings);
     }
-    let findings = run_at_base(wt, wt_path, oid, ledger)?;
+    let all = run_at_base(wt, wt_path, oid, ledger, false)?;
+    let code: Vec<FindingNote> = all.iter().filter(|n| !in_ledger(n)).cloned().collect();
     write_cache(
         &cache,
         &BaseSet {
-            oid: oid.to_owned(),
+            oid: tree,
             key,
-            findings: findings.clone(),
+            findings: code,
         },
     );
-    Ok(findings)
+    Ok(all)
 }
 
 /// Read a cached set, ignoring a missing, unreadable or mismatched file.
@@ -156,6 +203,7 @@ fn run_at_base(
     wt_path: &Path,
     oid: &str,
     ledger: &LedgerConfig,
+    skip_tools: bool,
 ) -> Result<Vec<FindingNote>, LandError> {
     let dir: PathBuf = wt.common_dir().join("frob").join(format!(
         "land-base-{}-{}",
@@ -185,6 +233,7 @@ fn run_at_base(
         &CheckOptions {
             ledger: Some(ledger.clone()),
             skip_telemetry: true,
+            skip_tools,
             ..CheckOptions::default()
         },
     );
