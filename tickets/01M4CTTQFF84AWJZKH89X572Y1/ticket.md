@@ -8,9 +8,8 @@ points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:34Z"
-updated = "2026-10-08T04:04:45Z"
-labels = ["creates:crates/frob/tests/doc_commands.rs"]
-scope = ["changelog.d/**", "README.md", "docs/guides/**", "crates/frob/tests/doc_commands.rs"]
+updated = "2026-10-08T04:05:02Z"
+scope = ["changelog.d/**", "README.md", "docs/guides/**"]
 
 [[acceptance]]
 text = "Given the README, when every command it shows is run in a fresh repository, then each is a v2 verb that succeeds (doc test)"
