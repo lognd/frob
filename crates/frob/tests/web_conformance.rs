@@ -38,7 +38,7 @@ fn repo(siblings: Option<&str>) -> tempfile::TempDir {
     copy_tree(&fixture(), dir.path());
     write(dir.path(), "frob.toml", "");
     if let Some(model) = siblings {
-        write(dir.path(), "crunk.toml", CRUNK_SPEC);
+        write(dir.path(), "crunk.toml", &crunk_spec_text());
         write(
             dir.path(),
             "grimble.toml",
@@ -51,6 +51,14 @@ fn repo(siblings: Option<&str>) -> tempfile::TempDir {
 
 /// crunk's default preset: a three-colour palette and the scales, enough to judge the fixture's literals.
 const CRUNK_SPEC: &str = include_str!("../../crunk-spec/src/presets/default.toml");
+
+/// The preset pointed at the fixture: its stylesheets live under `src/styles`, its TSX under `src`.
+fn crunk_spec_text() -> String {
+    format!(
+        "{}\n[jsx]\nglobs = [\"src/**/*.tsx\"]\n",
+        CRUNK_SPEC.replace("css_root = \"styles\"", "css_root = \"src/styles\"")
+    )
+}
 
 /// Two component nodes: `ui` owns the TSX components, `api` the TypeScript client; the CSS and HTML stay unowned.
 const NODES: &str = "grimble = \"2\";\nmodule web;\n\nnode ui : trusted {\n  kind component;\n  owns \"src/components/**\";\n}\nnode api : trusted {\n  kind component;\n  owns \"src/api/**\";\n}\n";
@@ -157,7 +165,7 @@ fn grimble_check_binds_the_tsx_components_and_reports_the_web_languages_it_read(
 }
 
 // frob:ticket 01M48FXB2PXX2FBXFKCFWSQYH1
-// frob:tests crates/crunk-check/src/rules/color001.rs::group
+// frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
 #[test]
 fn crunk_check_judges_the_css_and_tsx_colour_literals_with_color001() {
     let dir = repo(Some(NODES));

@@ -1,0 +1,1 @@
+crunk: COLOR001 migrates to the two-file rule shape in crunk-rules, joined by COLOR002 (undefined token reference, Unresolved when a definition source is not indexed) and CONTRAST001 (role pair below its WCAG floor); rule ids may now carry up to eight family letters, and repo rules can emit findings located in a file.

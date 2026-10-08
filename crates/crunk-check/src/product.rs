@@ -1,7 +1,9 @@
-//! crunk as a [`gob_check::Product`]: the design spec as input and the rule groups of [`crate::rules`].
+//! crunk as a [`gob_check::Product`]: the design spec and the ingested styles as inputs, the rules
+//! of the `product_rules!` list as the rule set.
 
 use std::sync::Arc;
 
+use crunk_ingest::{INGEST_VERSION, ProjectStyles};
 use gob_check::{
     CheckError, CollectCx, Collected, FileCheck, NoScope, Product, RepoGroup, RuleSet, Snapshot,
 };
@@ -11,21 +13,34 @@ use gob_text::FileInterner;
 use crunk_rules::CrunkHost;
 use crunk_spec::DesignSpec;
 
-use crate::rules::color001::{self, STYLE_TAGS};
 use crate::{PRODUCT, product_rules};
+
+/// Language tags whose files can carry `crunk:waive` comments (CSS, TS/TSX style props, HTML).
+const STYLE_TAGS: [&str; 6] = ["css", "tsx", "jsx", "ts", "js", "html"];
 
 /// Thread-safe facts the pipeline reads for applicability and cache keys (none yet).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct CrunkShared;
 
-/// Everything crunk's rules read besides the walk: the validated design spec, when `crunk.toml` has one.
+/// Everything crunk's rules read besides the walk: the validated design spec, when `crunk.toml`
+/// has one, and the styles ingested under it.
 #[derive(Debug, Default)]
 pub struct CrunkInputs {
     /// `None` when `crunk.toml` is absent or invalid; the spec rules are then not applicable.
     pub spec: Option<DesignSpec>,
+    /// `None` when there is no spec or the ingest could not start (a `css_root` that is a file).
+    pub styles: Option<ProjectStyles>,
 }
 
-impl CrunkHost for CrunkInputs {}
+impl CrunkHost for CrunkInputs {
+    fn spec(&self) -> Option<&DesignSpec> {
+        self.spec.as_ref()
+    }
+
+    fn styles(&self) -> Option<&ProjectStyles> {
+        self.styles.as_ref()
+    }
+}
 
 /// The host the declared rules judge: crunk's inputs.
 fn host<'a>(_: &'a Crunk, snap: &'a Snapshot<Crunk>) -> &'a (dyn CrunkHost + 'static) {
@@ -74,9 +89,26 @@ impl Product for Crunk {
                 None
             }
         };
+        let styles = spec.as_ref().and_then(|spec| {
+            match crunk_ingest::ingest_tree(spec, cx.cache) {
+                Ok(ingested) => {
+                    tracing::info!(
+                        sheets = ingested.styles.sheets.len(),
+                        parsed = ingested.stats.parsed,
+                        cached = ingested.stats.cached,
+                        "crunk collect: styles ingested"
+                    );
+                    Some(ingested.styles)
+                }
+                Err(err) => {
+                    tracing::warn!(%err, "crunk collect: ingest failed; style rules do not apply");
+                    None
+                }
+            }
+        });
         Ok(Collected {
             shared: CrunkShared,
-            inputs: CrunkInputs { spec },
+            inputs: CrunkInputs { spec, styles },
             findings: Vec::new(),
         })
     }
@@ -90,11 +122,11 @@ impl Product for Crunk {
     }
 
     fn repo_groups(&self) -> Vec<RepoGroup<Self>> {
-        vec![color001::group()]
+        Vec::new()
     }
 
     fn repo_digest(&self, snap: &Snapshot<Self>) -> Vec<u8> {
-        let mut digest = b"crunk/rules/1".to_vec();
+        let mut digest = format!("crunk/rules/2/ingest/{INGEST_VERSION}").into_bytes();
         if let Some(spec) = &snap.inputs.spec {
             digest.extend(serde_json::to_vec(spec).unwrap_or_default());
         }

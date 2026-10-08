@@ -47,7 +47,7 @@ fn a_waiver_without_a_reason_fires_waive001_and_does_not_suppress() {
     let r = run_over(
         spec(),
         &[(
-            "a.css",
+            "styles/a.css",
             ".a { color: #ff0000; /* crunk:waive COLOR001 */ }\n",
         )],
     );
@@ -69,7 +69,7 @@ fn a_waiver_without_a_reason_fires_waive001_and_does_not_suppress() {
 #[test]
 fn a_waiver_with_a_reason_suppresses_its_rule_only() {
     let css = ".a {\n  color: #ff0000; /* crunk:waive COLOR001 reason=\"brand red\" */\n  background: #00ff00;\n}\n";
-    let r = run_over(spec(), &[("a.css", css)]);
+    let r = run_over(spec(), &[("styles/a.css", css)]);
     let live = ids(&r);
     assert_eq!(live, ["COLOR001"], "the second colour stays: {live:?}");
     assert_eq!(r.report.suppressed.len(), 1);
@@ -82,7 +82,7 @@ fn a_waiver_with_a_reason_suppresses_its_rule_only() {
 #[test]
 fn a_leading_waiver_suppresses_the_next_declaration() {
     let css = ".a {\n  /* crunk:waive COLOR001 reason=\"brand red\" */\n  color: #ff0000;\n}\n";
-    let r = run_over(spec(), &[("a.css", css)]);
+    let r = run_over(spec(), &[("styles/a.css", css)]);
     assert!(ids(&r).is_empty(), "{:?}", ids(&r));
     assert_eq!(r.report.suppressed.len(), 1);
 }
@@ -92,7 +92,7 @@ fn a_leading_waiver_suppresses_the_next_declaration() {
 fn lint_warn_changes_the_severity_and_off_drops_the_finding() {
     let css = ".a { color: #ff0000; /* crunk:waive COLOR001 */ }\n";
     let warn = spec().replace("[lint]", "[lint]\nWAIVE001 = \"warn\"");
-    let r = run_over(&warn, &[("a.css", css)]);
+    let r = run_over(&warn, &[("styles/a.css", css)]);
     let w = r
         .report
         .findings
@@ -101,7 +101,7 @@ fn lint_warn_changes_the_severity_and_off_drops_the_finding() {
         .expect("WAIVE001");
     assert_eq!(w.severity, Severity::Warn);
     let off = spec().replace("[lint]", "[lint]\nWAIVE001 = \"off\"");
-    let r = run_over(&off, &[("a.css", css)]);
+    let r = run_over(&off, &[("styles/a.css", css)]);
     assert!(!ids(&r).contains(&"WAIVE001".to_owned()));
 }
 
@@ -111,13 +111,13 @@ fn findings_from_several_files_are_ordered_by_path_line_rule() {
     let (_dir, r) = run_in(
         spec(),
         &[
-            ("z.css", ".z {\n  color: #ff0000;\n}\n"),
+            ("styles/z.css", ".z {\n  color: #ff0000;\n}\n"),
             (
-                "a.css",
+                "styles/a.css",
                 ".a {\n  color: #00ff00; /* crunk:waive COLOR001 */\n}\n",
             ),
             (
-                "m.css",
+                "styles/m.css",
                 "/* crunk:waive COLOR001 */\n.m {\n  color: #0000ff;\n}\n",
             ),
         ],
@@ -139,7 +139,7 @@ fn findings_from_several_files_are_ordered_by_path_line_rule() {
     sorted.sort();
     assert_eq!(rows, sorted, "document order is (path, line, rule)");
     assert!(rows.len() >= 5, "{rows:?}");
-    assert_eq!(rows[0].0, "a.css");
+    assert_eq!(rows[0].0, "styles/a.css");
 }
 
 // frob:tests crates/crunk-rules/src/registry.rs::render_markdown

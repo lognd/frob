@@ -2,14 +2,15 @@
 id = "01M4DS4WD63KWJHV1498M993C2"
 title = "crunk-ingest: rustdoc -D warnings fails on jsx module docs linking private items (CI red)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 class = "expedite"
 points = 1
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T12:52:24Z"
-updated = "2026-10-08T13:04:12Z"
+updated = "2026-10-08T13:19:12Z"
 scope = ["crates/crunk-ingest/**", "changelog.d/**"]
 
 [[acceptance]]
