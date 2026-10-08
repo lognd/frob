@@ -8,7 +8,7 @@ class = "expedite"
 points = 1
 reporter = "lognd"
 created = "2026-10-08T03:34:35Z"
-updated = "2026-10-08T04:05:51Z"
+updated = "2026-10-08T04:05:52Z"
 scope = ["crates/gob-macros/**"]
 
 [[acceptance]]
