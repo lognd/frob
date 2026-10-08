@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Audit notes/review/audit-2026-10-07.md M6: doable is O(candidates x live leases x repository files) with glob sets rebuilt per pair in frob-lease/src/overlap.rs; precompute per lease."
+at = "2026-10-08T03:56:01Z"
+actor = "lognd"
+rev = 1
