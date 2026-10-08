@@ -161,6 +161,17 @@ experimental. Record such lands in the status log.
 
 ## Status log (newest first)
 
+- 2026-10-07 (night): owner: profile every command, profiling in CI, fix
+  experimental, audit, adjust plan, burn down; follow scrum with frob
+  enforcing it; usable for another project soon. CI red since 10-06 16:25
+  (Windows ui_rule_attr OS error text, ~1ZE1H1X). Stale cycle ~VCCMDF6
+  closed with retro; sprint ~XAFQ008 (10-07..10-09) planned; every
+  dispatched ticket must be a sized cycle member. Global frob = v2 debug
+  copy (~/.local/opt/frob-v2/current), v1 kept as frob-v1 for MCP serve and
+  the vet hook. Audit: notes/review/audit-2026-10-07.md, epic ~TNT2Q1E.
+  Until ~GHMWDGG lands, check `gh run list` on experimental before each
+  land batch (lands must not go onto a red base).
+
 - 2026-10-06 (evening): 36 landed today (web engine through gob-frameworks,
   C#, product front end, ruff/ty test infrastructure, CI hygiene, GRL
   printer, ticket-branch bootstrap, crunk COLOR001, grimble SYS013). Design
