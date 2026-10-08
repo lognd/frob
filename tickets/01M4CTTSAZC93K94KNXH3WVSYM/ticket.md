@@ -8,8 +8,12 @@ points = 5
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:36Z"
-updated = "2026-10-08T04:02:36Z"
+updated = "2026-10-08T04:02:53Z"
 scope = ["changelog.d/**", "crates/frob-worktree/**", "crates/frob-ledger/**", "crates/frob/**", "docs/guides/**", "docs/design/tickets.md"]
+
+[[links]]
+kind = "relates"
+target = "01M3ZX82YQ43A8SWS4F128J4NT"
 
 [[acceptance]]
 text = "Given a repository whose ledger lives on an orphan ticket branch, when frob work and frob land run, then the worktree is built from the code base branch and the land succeeds"
