@@ -2,12 +2,12 @@
 id = "01M4CS7ZMEY096RVK91RWD03DW"
 title = "cargo dev profile: time every frob, grimble and crunk command, budget file, CI profile job"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-08T03:34:51Z"
-updated = "2026-10-08T03:34:51Z"
+updated = "2026-10-08T03:35:32Z"
 scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "Cargo.toml", "Cargo.lock", "docs/design/build-test-ci.md", "changelog.d/**"]
 
 [[acceptance]]
