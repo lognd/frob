@@ -1,0 +1,13 @@
+kind = "create"
+title = "CLI test for work --unplanned --reason parsing"
+type = "task"
+category = "todo"
+priority = "low"
+points = 1
+parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
+scope = ["changelog.d/**", "crates/frob/**"]
+acceptance = ["Given work --unplanned without --reason, when parsed, then it is a usage error"]
+body = "Follow-up from ~57FX1J2 (verified by hand only)."
+at = "2026-10-08T07:29:36Z"
+actor = "lognd"
+rev = 1
