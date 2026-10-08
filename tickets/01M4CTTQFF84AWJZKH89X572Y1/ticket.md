@@ -2,13 +2,14 @@
 id = "01M4CTTQFF84AWJZKH89X572Y1"
 title = "README for v2 and a getting-started guide (init to land) plus a command reference generated from the CLI"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:34Z"
-updated = "2026-10-08T07:33:49Z"
+updated = "2026-10-08T08:54:58Z"
 labels = ["creates:crates/frob/tests/doc_commands.rs"]
 scope = ["changelog.d/**", "README.md", "docs/guides/**", "crates/frob/tests/doc_commands.rs"]
 
