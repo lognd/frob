@@ -2,7 +2,8 @@
 id = "01M4CXTVBZE3MSYVQTHNZMJSTK"
 title = "gob-ir: an Unknown or unclassified edge widens hi to the frontier instead of being dropped (formal review H1)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 class = "expedite"
 points = 3
