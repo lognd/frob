@@ -2,7 +2,8 @@
 id = "01M44YQV7C3FYXB3QH20R4E5N8"
 title = "C# test detection: NUnit, xUnit, MSTest, UnityTest"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
