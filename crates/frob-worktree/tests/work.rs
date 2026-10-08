@@ -1100,9 +1100,13 @@ fn the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it() {
         leases: &leases,
         config: &cfg,
     };
+    let gated = WorkOptions {
+        sprint_gate: true,
+        ..WorkOptions::default()
+    };
     let planned = Fixture::ticket(&ledger, "Planned", TicketType::Task, &["a/**"]);
     // No active cycle: the gate is silent.
-    ws.work(&planned.to_string(), &WorkOptions::default())
+    ws.work(&planned.to_string(), &gated)
         .expect("no cycle, no gate");
     ws.requeue(&planned.to_string(), "test").expect("requeue");
 
@@ -1117,7 +1121,7 @@ fn the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it() {
         .expect("member");
     let stranger = Fixture::ticket(&ledger, "Stranger", TicketType::Task, &["b/**"]);
     let err = ws
-        .work(&stranger.to_string(), &WorkOptions::default())
+        .work(&stranger.to_string(), &gated)
         .expect_err("outside the cycle");
     assert_eq!(refusal_code(&err), "E-PM-NOT-IN-CYCLE");
     let hint = match &err {
@@ -1131,7 +1135,7 @@ fn the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it() {
     assert_eq!(category(&ledger, stranger), Category::Todo);
 
     // A member of the cycle starts.
-    ws.work(&planned.to_string(), &WorkOptions::default())
+    ws.work(&planned.to_string(), &gated)
         .expect("member starts");
 
     // Expedite is exempt.
@@ -1139,14 +1143,12 @@ fn the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it() {
     hot.scope = vec!["c/**".to_owned()];
     hot.class = Class::Expedite;
     let hot = ledger.new_ticket(hot).expect("new").ticket.front.id;
-    ws.work(&hot.to_string(), &WorkOptions::default())
-        .expect("expedite starts");
+    ws.work(&hot.to_string(), &gated).expect("expedite starts");
 
     // --unplanned --reason joins the cycle as an over-commit and starts.
     let opts = WorkOptions {
-        sprint_gate: true,
         unplanned: Some("customer escalation".to_owned()),
-        ..WorkOptions::default()
+        ..gated.clone()
     };
     ws.work(&stranger.to_string(), &opts)
         .expect("unplanned starts");
