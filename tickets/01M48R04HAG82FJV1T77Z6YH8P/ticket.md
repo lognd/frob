@@ -4,10 +4,11 @@ title = "Migrate grimble MDL and SYS rules to the two-file shape"
 type = "story"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:08Z"
-updated = "2026-10-06T13:56:08Z"
+updated = "2026-10-08T03:52:00Z"
 scope = ["crates/grimble-model/**", "crates/grimble-bind/**", "crates/grimble-check/**"]
 
 [[links]]
