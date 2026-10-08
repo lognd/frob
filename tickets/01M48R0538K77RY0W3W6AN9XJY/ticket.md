@@ -4,10 +4,11 @@ title = "Migrate crunk COLOR001 to the two-file shape; later crunk rules use onl
 type = "story"
 category = "todo"
 priority = "medium"
+points = 1
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:08Z"
-updated = "2026-10-06T13:56:08Z"
+updated = "2026-10-08T03:52:07Z"
 scope = ["crates/crunk-check/**"]
 
 [[links]]

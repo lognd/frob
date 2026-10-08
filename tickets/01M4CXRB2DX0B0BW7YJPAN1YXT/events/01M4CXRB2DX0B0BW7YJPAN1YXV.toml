@@ -1,0 +1,13 @@
+kind = "create"
+title = "crunk rename and crunk extract-token rewrite every reference"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
+scope = ["changelog.d/**", "crates/crunk/**", "crates/crunk-spec/**"]
+acceptance = ["Given a token used in CSS, TSX and specs, when renamed or extracted, then every reference is rewritten and crunk check is clean"]
+body = "docs/design/crunk.md section 5."
+at = "2026-10-08T04:53:42Z"
+actor = "lognd"
+rev = 1

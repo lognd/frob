@@ -1466,3 +1466,60 @@ fn a_pruned_expired_lease_is_renewed_for_the_ticket_worktree_when_landing_from_t
     let out = land(&fx.root, &Fixture::opts(&s), &later).expect("land from the primary");
     assert!(out.closed, "renewed for the ticket worktree, then landed");
 }
+
+/// Run one land with the system clock.
+fn land_now(fx: &Fixture, s: &Started) -> Result<frob_land::LandOutcome, LandError> {
+    land(
+        &fx.root,
+        &Fixture::opts(s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+}
+
+// frob:ticket 01M4BMRY81T9B3T7SC3BWMVSPZ
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn two_lands_back_to_back_from_one_primary_both_succeed_without_failure_warnings() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let a = fx.start("Add a", &["src/a/**"]);
+    let b = fx.start("Add b", &["src/b/**"]);
+    Fixture::commit_in(&a.wt, "src/a/a.rs", "fn a() {}\n");
+    Fixture::evidence(&a, "src/a/a.rs");
+    Fixture::commit_in(&b.wt, "src/b/b.rs", "fn b() {}\n");
+    Fixture::evidence(&b, "src/b/b.rs");
+    let first = land_now(&fx, &a).expect("first land");
+    assert!(first.closed && first.worktree_removed, "{first:?}");
+    let second =
+        land_now(&fx, &b).expect("second land exits ok after the first removed its branch");
+    assert!(second.closed && second.worktree_removed, "{second:?}");
+    assert!(
+        second.warnings.iter().all(|w| !w.contains("failed")),
+        "{:?}",
+        second.warnings
+    );
+}
+
+// frob:ticket 01M4BMRY81T9B3T7SC3BWMVSPZ
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn the_base_is_resolved_by_full_ref_so_a_same_named_tag_cannot_shadow_it() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add t", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/t.rs", "fn t() {}\n");
+    Fixture::evidence(&s, "src/t.rs");
+    // A bare `main` now resolves to the tag (git prefers tags to heads).
+    git(&fx.root, &["tag", "main", &fx.main_tip()]);
+    let out = land_now(&fx, &s).expect("land with a tag named like the base");
+    assert!(out.closed, "{out:?}");
+    let blob = fx
+        .repo()
+        .read_blob_at("refs/heads/main", "src/t.rs")
+        .expect("read");
+    assert_eq!(blob.as_deref(), Some(b"fn t() {}\n".as_slice()));
+}

@@ -1,0 +1,8 @@
+kind = "create"
+object = "cycle"
+goal = "Green CI on Linux and Windows, every command profiled with a CI budget gate, audit-driven structural fixes, scrum rules enforced by frob"
+start = "2026-10-07"
+end = "2026-10-09"
+at = "2026-10-08T03:46:54Z"
+actor = "lognd"
+rev = 1

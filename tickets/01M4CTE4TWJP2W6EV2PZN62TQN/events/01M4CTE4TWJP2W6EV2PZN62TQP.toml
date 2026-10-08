@@ -1,0 +1,13 @@
+kind = "create"
+title = "crunk applies exceptions (crunk-check/src/product.rs 78) and gob-check owns binding (audit M4)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
+scope = ["changelog.d/**", "crates/crunk-check/**", "crates/gob-check/**"]
+acceptance = ["Given a crunk finding covered by a frob:waive exception, when crunk check runs, then it is reported as excepted, not open"]
+body = "notes/review/audit-2026-10-07.md M4."
+at = "2026-10-08T03:55:42Z"
+actor = "lognd"
+rev = 1
