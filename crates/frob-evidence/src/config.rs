@@ -9,8 +9,8 @@ pub const DEFAULT_STORE: &str = "dir:.git/frob/artifacts";
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "evidence", materialize)]
 pub struct EvidenceTable {
-    /// Programs the `command` provider may run (the first word of the command must be listed); the `pytest`, `vitest` and `jest` providers need their own name listed too.
-    #[config(default = vec!["cargo".to_owned(), "git".to_owned(), "pytest".to_owned(), "vitest".to_owned(), "jest".to_owned()])]
+    /// Programs the `command` provider may run (the first word of the command must be listed); the `pytest`, `vitest`, `jest` and `dotnet` providers need their own name listed too.
+    #[config(default = vec!["cargo".to_owned(), "git".to_owned(), "pytest".to_owned(), "vitest".to_owned(), "jest".to_owned(), "dotnet".to_owned()])]
     pub allowed_tools: Vec<String>,
     /// Transcripts up to this many bytes are stored inline in the event file.
     #[config(default = 16_384)]
@@ -27,4 +27,14 @@ pub struct EvidenceTable {
     /// Value for `cargo nextest run --profile`; empty leaves nextest's own default.
     #[config(default = String::new())]
     pub nextest_profile: String,
+}
+
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// The `dotnet` evidence provider (`[evidence.dotnet]`).
+#[derive(Debug, Clone, ConfigTable)]
+#[config(table = "evidence.dotnet", materialize)]
+pub struct DotnetTable {
+    /// Path of the `dotnet` executable the provider runs; empty finds `dotnet` on `PATH`.
+    #[config(default = String::new())]
+    pub path: String,
 }

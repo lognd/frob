@@ -69,12 +69,22 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
-| `allowed_tools` | `Vec<String>` | `["cargo", "git", "pytest", "vitest", "jest"]` | no | Programs the `command` provider may run (the first word of the command must be listed); the `pytest`, `vitest` and `jest` providers need their own name listed too. |
+| `allowed_tools` | `Vec<String>` | `["cargo", "git", "pytest", "vitest", "jest", "dotnet"]` | no | Programs the `command` provider may run (the first word of the command must be listed); the `pytest`, `vitest`, `jest` and `dotnet` providers need their own name listed too. |
 | `attesters` | `Vec<String>` | `[]` | yes | Identities (git `user.email`) that may attest a criterion; `frob init` and `config sync` write the repository owner's email, and an empty list means nobody may. |
 | `inline_max_bytes` | `u64` | `16384` | no | Transcripts up to this many bytes are stored inline in the event file. |
 | `nextest_profile` | `String` | `""` | no | Value for `cargo nextest run --profile`; empty leaves nextest's own default. |
 | `store` | `String` | `"dir:.git/frob/artifacts"` | no | Blob store: `dir:<path>` (relative paths start at the repository root, `.git/` at the common dir) or an `https://` URL (recorded only). |
 | `timeout_secs` | `u64` | `1800` | no | Wall-clock limit in seconds for one provider process. |
+
+## `[evidence.dotnet]`
+
+The `dotnet` evidence provider (`[evidence.dotnet]`).
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `path` | `String` | `""` | no | Path of the `dotnet` executable the provider runs; empty finds `dotnet` on `PATH`. |
 
 ## `[gc]`
 

@@ -548,7 +548,8 @@ finds nothing and commits nothing. The GUI renders blobs through
 the same fetch. Changed: evidence providers are a trait
 (`pytest`, `cargo test`, `ctest`, `vitest`, `junit`, `command`) so
 Rust-only or docs-only repos close tickets natively (milestone 1 ships
-`nextest`, `pytest`, `command` and `file` providers; the `command` and
+`nextest`, `pytest`, `command` and `file` providers, later `vitest`, `jest` and
+`dotnet` (`dotnet test` with a TRX report); the `command` and
 `pytest` providers may run only programs in `[evidence] allowed_tools`,
 and `pytest` is listed by default like `cargo` and `git`); the close guard
 requires a Measured record for the code-changing types task, bug,

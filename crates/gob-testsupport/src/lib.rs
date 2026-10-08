@@ -28,20 +28,30 @@ pub fn fake_sibling() -> PathBuf {
     BUILT.get_or_init(build_fake_sibling).clone()
 }
 
-/// Run `cargo build --bin fake-sibling` and return the executable cargo reports.
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// The `fake-dotnet` helper binary (a stand-in `dotnet` that writes a canned TRX), built on first use and cached.
+///
+/// # Panics
+/// As [`fake_sibling`].
+#[must_use]
+pub fn fake_dotnet() -> PathBuf {
+    static BUILT: OnceLock<PathBuf> = OnceLock::new();
+    BUILT.get_or_init(|| build_helper("fake-dotnet")).clone()
+}
+
+/// Build the `fake-sibling` helper; see [`build_helper`].
 fn build_fake_sibling() -> PathBuf {
-    tracing::debug!("building the fake-sibling helper");
+    build_helper("fake-sibling")
+}
+
+/// Run `cargo build --bin <name>` and return the executable cargo reports.
+fn build_helper(name: &str) -> PathBuf {
+    tracing::debug!(name, "building a test helper");
     let spec = Spec {
         program: Program::Cargo,
-        args: [
-            "build",
-            "--quiet",
-            "--message-format=json",
-            "--bin",
-            "fake-sibling",
-        ]
-        .map(str::to_owned)
-        .to_vec(),
+        args: ["build", "--quiet", "--message-format=json", "--bin", name]
+            .map(str::to_owned)
+            .to_vec(),
         cwd: Some(PathBuf::from(env!("CARGO_MANIFEST_DIR"))),
         env: Vec::new(),
         timeout: BUILD_TIMEOUT,
@@ -49,20 +59,20 @@ fn build_fake_sibling() -> PathBuf {
     };
     let out = Runner::new(Limits { jobs: 1 })
         .run(&spec)
-        .expect("run cargo build for fake-sibling");
+        .expect("run cargo build for a test helper");
     assert!(
         out.status == Outcome::Exited(0),
-        "cargo build --bin fake-sibling failed: {:?}\n{}",
+        "cargo build --bin {name} failed: {:?}\n{}",
         out.status,
         out.stderr
     );
     out.stdout
         .lines()
         .filter_map(|l| serde_json::from_str::<serde_json::Value>(l).ok())
-        .filter(|m| m["reason"] == "compiler-artifact" && m["target"]["name"] == "fake-sibling")
+        .filter(|m| m["reason"] == "compiler-artifact" && m["target"]["name"] == name)
         .filter_map(|m| m["executable"].as_str().map(PathBuf::from))
         .next_back()
-        .expect("cargo reported no fake-sibling executable")
+        .expect("cargo reported no helper executable")
 }
 
 // frob:ticket 01M43A5MA7GRAACT7E0M525Y1M

@@ -1,0 +1,13 @@
+kind = "create"
+title = "ticket doctor: home-path (TICK004) scan only over files changed since the last clean scan"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M4D6NB00MBEV0PRHN15CXZP8"
+scope = ["changelog.d/**", "crates/frob-ledger/**"]
+acceptance = ["Given a clean scan recorded at a tree id, when ticket doctor runs after one ticket write, then only that ticket's files are scanned"]
+body = "Follow-up from ~VXFAY3P: home_path_findings reads every ledger file (about 1 s)."
+at = "2026-10-08T12:07:26Z"
+actor = "lognd"
+rev = 1
