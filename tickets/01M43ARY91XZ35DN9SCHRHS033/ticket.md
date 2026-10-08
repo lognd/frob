@@ -2,13 +2,13 @@
 id = "01M43ARY91XZ35DN9SCHRHS033"
 title = "crunk-ingest: ProjectStyles from CSS, bucket and organization model, walk"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:48Z"
-updated = "2026-10-04T11:28:48Z"
+updated = "2026-10-08T08:22:16Z"
 idempotency_key = "crunk-plan-ing"
 labels = ["area:crunk"]
 scope = ["crates/crunk-ingest/**", "Cargo.lock"]
