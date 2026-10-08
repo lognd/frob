@@ -2,7 +2,8 @@
 id = "01M44YQXBGJW1VKDF64YJ5RTJ6"
 title = "C# test selection in frob test"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
