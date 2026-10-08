@@ -2,13 +2,13 @@
 id = "01M3ZX7DYR7PR1PBCZ7E8Q56WW"
 title = "GRL name and type checks: GRL001, GRL003, GRL004, GRL005, GRL013"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-03T03:34:20Z"
+updated = "2026-10-08T07:32:15Z"
 idempotency_key = "m2-grl-check-names"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/check/names.rs", "crates/gob-plan/src/check/mod.rs"]
