@@ -1,0 +1,412 @@
+{
+  "ns0_a0": {
+    "entries": [
+      [
+        "--color-bg-primary",
+        "#282828"
+      ],
+      [
+        "--color-fg-primary",
+        "#ebdbb2"
+      ],
+      [
+        "--space-0",
+        "0px"
+      ],
+      [
+        "--space-4",
+        "4px"
+      ],
+      [
+        "--space-8",
+        "8px"
+      ],
+      [
+        "--space-12",
+        "12px"
+      ],
+      [
+        "--space-16",
+        "16px"
+      ],
+      [
+        "--space-24",
+        "24px"
+      ],
+      [
+        "--space-32",
+        "32px"
+      ],
+      [
+        "--space-48",
+        "48px"
+      ],
+      [
+        "--space-64",
+        "64px"
+      ],
+      [
+        "--font-size-16",
+        "16px"
+      ],
+      [
+        "--font-size-18",
+        "18px"
+      ],
+      [
+        "--font-size-20",
+        "20px"
+      ],
+      [
+        "--font-size-24",
+        "24px"
+      ],
+      [
+        "--font-size-30",
+        "30px"
+      ],
+      [
+        "--font-size-36",
+        "36px"
+      ],
+      [
+        "--font-size-48",
+        "48px"
+      ],
+      [
+        "--font-family-base",
+        "\"JetBrains Mono\", ui-monospace, monospace"
+      ]
+    ],
+    "theme": {
+      "bg-primary": "var(--color-bg-primary)",
+      "fg-primary": "var(--color-fg-primary)",
+      "0": "var(--space-0)",
+      "4": "var(--space-4)",
+      "8": "var(--space-8)",
+      "12": "var(--space-12)",
+      "16": "var(--font-size-16)",
+      "24": "var(--font-size-24)",
+      "32": "var(--space-32)",
+      "48": "var(--font-size-48)",
+      "64": "var(--space-64)",
+      "18": "var(--font-size-18)",
+      "20": "var(--font-size-20)",
+      "30": "var(--font-size-30)",
+      "36": "var(--font-size-36)"
+    }
+  },
+  "ns0_a1": {
+    "entries": [
+      [
+        "--color-bg-primary",
+        "#282828"
+      ],
+      [
+        "--color-fg-primary",
+        "#ebdbb2"
+      ],
+      [
+        "--color-bg-primary-rgb",
+        "40 40 40"
+      ],
+      [
+        "--color-fg-primary-rgb",
+        "235 219 178"
+      ],
+      [
+        "--space-0",
+        "0px"
+      ],
+      [
+        "--space-4",
+        "4px"
+      ],
+      [
+        "--space-8",
+        "8px"
+      ],
+      [
+        "--space-12",
+        "12px"
+      ],
+      [
+        "--space-16",
+        "16px"
+      ],
+      [
+        "--space-24",
+        "24px"
+      ],
+      [
+        "--space-32",
+        "32px"
+      ],
+      [
+        "--space-48",
+        "48px"
+      ],
+      [
+        "--space-64",
+        "64px"
+      ],
+      [
+        "--font-size-16",
+        "16px"
+      ],
+      [
+        "--font-size-18",
+        "18px"
+      ],
+      [
+        "--font-size-20",
+        "20px"
+      ],
+      [
+        "--font-size-24",
+        "24px"
+      ],
+      [
+        "--font-size-30",
+        "30px"
+      ],
+      [
+        "--font-size-36",
+        "36px"
+      ],
+      [
+        "--font-size-48",
+        "48px"
+      ],
+      [
+        "--font-family-base",
+        "\"JetBrains Mono\", ui-monospace, monospace"
+      ]
+    ],
+    "theme": {
+      "bg-primary": "rgb(var(--color-bg-primary-rgb) / <alpha-value>)",
+      "fg-primary": "rgb(var(--color-fg-primary-rgb) / <alpha-value>)",
+      "0": "var(--space-0)",
+      "4": "var(--space-4)",
+      "8": "var(--space-8)",
+      "12": "var(--space-12)",
+      "16": "var(--font-size-16)",
+      "24": "var(--font-size-24)",
+      "32": "var(--space-32)",
+      "48": "var(--font-size-48)",
+      "64": "var(--space-64)",
+      "18": "var(--font-size-18)",
+      "20": "var(--font-size-20)",
+      "30": "var(--font-size-30)",
+      "36": "var(--font-size-36)"
+    }
+  },
+  "ns1_a0": {
+    "entries": [
+      [
+        "--color-bg-primary",
+        "#282828"
+      ],
+      [
+        "--color-fg-primary",
+        "#ebdbb2"
+      ],
+      [
+        "--space-0",
+        "0px"
+      ],
+      [
+        "--space-4",
+        "4px"
+      ],
+      [
+        "--space-8",
+        "8px"
+      ],
+      [
+        "--space-12",
+        "12px"
+      ],
+      [
+        "--space-16",
+        "16px"
+      ],
+      [
+        "--space-24",
+        "24px"
+      ],
+      [
+        "--space-32",
+        "32px"
+      ],
+      [
+        "--space-48",
+        "48px"
+      ],
+      [
+        "--space-64",
+        "64px"
+      ],
+      [
+        "--font-size-16",
+        "16px"
+      ],
+      [
+        "--font-size-18",
+        "18px"
+      ],
+      [
+        "--font-size-20",
+        "20px"
+      ],
+      [
+        "--font-size-24",
+        "24px"
+      ],
+      [
+        "--font-size-30",
+        "30px"
+      ],
+      [
+        "--font-size-36",
+        "36px"
+      ],
+      [
+        "--font-size-48",
+        "48px"
+      ],
+      [
+        "--font-family-base",
+        "\"JetBrains Mono\", ui-monospace, monospace"
+      ]
+    ],
+    "theme": {
+      "bg-primary": "var(--color-bg-primary)",
+      "fg-primary": "var(--color-fg-primary)",
+      "space-0": "var(--space-0)",
+      "space-4": "var(--space-4)",
+      "space-8": "var(--space-8)",
+      "space-12": "var(--space-12)",
+      "space-16": "var(--space-16)",
+      "space-24": "var(--space-24)",
+      "space-32": "var(--space-32)",
+      "space-48": "var(--space-48)",
+      "space-64": "var(--space-64)",
+      "font-size-16": "var(--font-size-16)",
+      "font-size-18": "var(--font-size-18)",
+      "font-size-20": "var(--font-size-20)",
+      "font-size-24": "var(--font-size-24)",
+      "font-size-30": "var(--font-size-30)",
+      "font-size-36": "var(--font-size-36)",
+      "font-size-48": "var(--font-size-48)"
+    }
+  },
+  "ns1_a1": {
+    "entries": [
+      [
+        "--color-bg-primary",
+        "#282828"
+      ],
+      [
+        "--color-fg-primary",
+        "#ebdbb2"
+      ],
+      [
+        "--color-bg-primary-rgb",
+        "40 40 40"
+      ],
+      [
+        "--color-fg-primary-rgb",
+        "235 219 178"
+      ],
+      [
+        "--space-0",
+        "0px"
+      ],
+      [
+        "--space-4",
+        "4px"
+      ],
+      [
+        "--space-8",
+        "8px"
+      ],
+      [
+        "--space-12",
+        "12px"
+      ],
+      [
+        "--space-16",
+        "16px"
+      ],
+      [
+        "--space-24",
+        "24px"
+      ],
+      [
+        "--space-32",
+        "32px"
+      ],
+      [
+        "--space-48",
+        "48px"
+      ],
+      [
+        "--space-64",
+        "64px"
+      ],
+      [
+        "--font-size-16",
+        "16px"
+      ],
+      [
+        "--font-size-18",
+        "18px"
+      ],
+      [
+        "--font-size-20",
+        "20px"
+      ],
+      [
+        "--font-size-24",
+        "24px"
+      ],
+      [
+        "--font-size-30",
+        "30px"
+      ],
+      [
+        "--font-size-36",
+        "36px"
+      ],
+      [
+        "--font-size-48",
+        "48px"
+      ],
+      [
+        "--font-family-base",
+        "\"JetBrains Mono\", ui-monospace, monospace"
+      ]
+    ],
+    "theme": {
+      "bg-primary": "rgb(var(--color-bg-primary-rgb) / <alpha-value>)",
+      "fg-primary": "rgb(var(--color-fg-primary-rgb) / <alpha-value>)",
+      "space-0": "var(--space-0)",
+      "space-4": "var(--space-4)",
+      "space-8": "var(--space-8)",
+      "space-12": "var(--space-12)",
+      "space-16": "var(--space-16)",
+      "space-24": "var(--space-24)",
+      "space-32": "var(--space-32)",
+      "space-48": "var(--space-48)",
+      "space-64": "var(--space-64)",
+      "font-size-16": "var(--font-size-16)",
+      "font-size-18": "var(--font-size-18)",
+      "font-size-20": "var(--font-size-20)",
+      "font-size-24": "var(--font-size-24)",
+      "font-size-30": "var(--font-size-30)",
+      "font-size-36": "var(--font-size-36)",
+      "font-size-48": "var(--font-size-48)"
+    }
+  }
+}

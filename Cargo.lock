@@ -590,6 +590,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "crunk-tokens"
+version = "0.532.0"
+dependencies = [
+ "crunk-spec",
+ "crunk-tailwind",
+ "crunk-values",
+ "indexmap",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "crunk-values"
 version = "0.532.0"
 dependencies = [
