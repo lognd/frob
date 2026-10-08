@@ -2,7 +2,8 @@
 id = "01M43ATASM383KB9130JY79XVV"
 title = "crunk-rules: rule registry, family metadata, waivers and WAIVE001"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
