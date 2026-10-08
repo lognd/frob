@@ -2,7 +2,8 @@
 id = "01M44YQWY2SWCH7PS9F9W0WEA9"
 title = "dotnet evidence provider (TRX)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
