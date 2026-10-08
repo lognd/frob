@@ -1,0 +1,1 @@
+crunk: crunk-ingest reads JSX and TS sources named by `[jsx] globs`: inline `style={{...}}` entries become declarations of a `Bucket::Jsx` sheet (never auto-fixed), `className`, `createElement` and `.ts` class constants become located utilities, and a class site with a part that is not static is recorded as dynamic.

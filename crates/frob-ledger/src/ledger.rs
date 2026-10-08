@@ -345,19 +345,28 @@ impl Ledger {
         )
     }
 
-    /// Paths below the tree named by `spec` (`<oid>`, `<oid>:<path>`), relative to it.
-    pub(crate) fn list_files(&self, spec: &str) -> Result<Vec<String>> {
-        let empty: Oid = EMPTY_TREE
-            .parse()
-            .unwrap_or_else(|e| unreachable!("constant is a valid object id: {e}"));
-        match self
-            .repo
-            .diff_names(&TreeRef::Oid(empty), &TreeRef::Ref(spec.to_owned()))
-        {
-            Ok(paths) => Ok(paths.into_iter().map(|p| p.path).collect()),
+    /// Blobs below the tree named by `spec` (`<oid>`, `<oid>:<path>`) as `(path relative to it, blob id)`, from one tree walk.
+    pub(crate) fn list_blobs(&self, spec: &str) -> Result<Vec<(String, Oid)>> {
+        match self.repo.blobs_at(spec) {
+            Ok(blobs) => Ok(blobs),
             Err(e) if is_rev_error(&e) => Ok(Vec::new()),
             Err(e) => Err(e.into()),
         }
+    }
+
+    /// Paths below the tree named by `spec` (`<oid>`, `<oid>:<path>`), relative to it.
+    pub(crate) fn list_files(&self, spec: &str) -> Result<Vec<String>> {
+        Ok(self
+            .list_blobs(spec)?
+            .into_iter()
+            .map(|(path, _)| path)
+            .collect())
+    }
+
+    /// UTF-8 text of the blob `oid`, which was listed as `path` (named in the error only).
+    pub(crate) fn text_of(&self, path: &str, oid: &Oid) -> Result<String> {
+        String::from_utf8(self.repo.read_blob(oid)?)
+            .map_err(|_| LedgerError::malformed(path, "not valid UTF-8"))
     }
 
     fn blob(&self, rev: &str, path: &str) -> Result<Option<Vec<u8>>> {
@@ -426,7 +435,7 @@ impl Ledger {
             return Ok(scan.clone());
         }
         let mut scan = BranchScan::default();
-        for path in self.list_files(tip)? {
+        for (path, oid) in self.list_blobs(tip)? {
             if let Some(rest) = path.strip_prefix(&format!("{}/", layout::EVENTS_DIR)) {
                 if let Some(id) = rest.split('/').next().and_then(|s| s.parse().ok()) {
                     scan.with_events.insert(id);
@@ -436,9 +445,7 @@ impl Ledger {
             if !layout::is_branch_ticket_candidate(&path) {
                 continue;
             }
-            let Some(text) = self.text(tip, &path)? else {
-                continue;
-            };
+            let text = self.text_of(&path, &oid)?;
             let Some(id) = doc::parse(&path, &text)
                 .ok()
                 .map(|t| t.front.id)
@@ -529,7 +536,7 @@ impl Ledger {
             Layout::Branch => layout::branch_events_dir(id),
         };
         let mut events = Vec::new();
-        for name in self.list_files(&format!("{tip}:{dir}"))? {
+        for (name, oid) in self.list_blobs(&format!("{tip}:{dir}"))? {
             let Some(stem) = name.strip_suffix(".toml") else {
                 continue;
             };
@@ -537,10 +544,7 @@ impl Ledger {
                 tracing::warn!(ticket = %id, file = %name, "ignoring non-ULID file in events/");
                 continue;
             };
-            let path = format!("{dir}/{name}");
-            let text = self
-                .text(tip, &path)?
-                .ok_or_else(|| LedgerError::malformed(&path, "listed but unreadable"))?;
+            let text = self.text_of(&format!("{dir}/{name}"), &oid)?;
             events.push(Event::parse(eid, &text)?);
         }
         crate::event::sort_events(&mut events);
@@ -566,14 +570,9 @@ impl Ledger {
         };
         let mut out: BTreeMap<TicketId, Vec<Event>> =
             ids.iter().map(|id| (*id, Vec::new())).collect();
-        // Read blobs relative to the listed tree, which skips re-resolving the commit per file.
-        let root = match self.repo.rev_parse(&spec) {
-            Ok(oid) => oid.to_string(),
-            Err(e) if is_rev_error(&e) => return Ok(out),
-            Err(e) => return Err(e.into()),
-        };
+        // Blobs are read by id from the one walk, so no per-file path or revision lookup happens.
         let mut files = 0_usize;
-        for path in self.list_files(&spec)? {
+        for (path, oid) in self.list_blobs(&spec)? {
             let Some((id, name)) = self.event_path_parts(&path) else {
                 continue;
             };
@@ -587,9 +586,7 @@ impl Ledger {
                 tracing::warn!(ticket = %id, file = %name, "ignoring non-ULID file in events/");
                 continue;
             };
-            let text = self
-                .text(&root, &path)?
-                .ok_or_else(|| LedgerError::malformed(&path, "listed but unreadable"))?;
+            let text = self.text_of(&path, &oid)?;
             events.push(Event::parse(eid, &text)?);
             files += 1;
         }
@@ -787,13 +784,11 @@ impl Ledger {
 
     fn read_all_tickets(&self, tree: &str) -> Result<Vec<Ticket>> {
         let mut out = Vec::new();
-        for path in self.list_files(tree)? {
+        for (path, oid) in self.list_blobs(tree)? {
             if !self.is_ticket_path(&path) {
                 continue;
             }
-            let Some(text) = self.text(tree, &path)? else {
-                continue;
-            };
+            let text = self.text_of(&path, &oid)?;
             match doc::parse(&path, &text) {
                 Ok(t) => out.push(t),
                 Err(e) => tracing::warn!(error = %e, "skipping unreadable ticket while indexing"),

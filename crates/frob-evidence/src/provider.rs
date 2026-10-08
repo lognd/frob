@@ -1,4 +1,4 @@
-//! Evidence providers: `nextest`, `pytest`, `vitest`, `jest`, `command` and `file`.
+//! Evidence providers: `nextest`, `pytest`, `vitest`, `jest`, `dotnet`, `command` and `file`.
 //!
 //! Each provider turns one measurement into a [`Capture`] (or a hashed file),
 //! and [`build_record`] turns that into an [`EvidenceRecord`]: the transcript is
@@ -208,6 +208,8 @@ pub fn plain_env() -> Vec<(String, String)> {
         ("CARGO_TERM_COLOR", "never"),
         ("NO_COLOR", "1"),
         ("LC_ALL", "C"),
+        ("DOTNET_CLI_TELEMETRY_OPTOUT", "1"),
+        ("DOTNET_NOLOGO", "1"),
     ]
     .into_iter()
     .map(|(k, v)| (k.to_owned(), v.to_owned()))
@@ -856,6 +858,301 @@ pub fn hash_file(root: &Path, path: &str, accepts: &[usize], at: Stamp) -> Resul
     })
 }
 
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// The program a .NET test run needs on `PATH` (unless `[evidence.dotnet] path` names it).
+pub const DOTNET_PROGRAM: &str = "dotnet";
+
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// The file name `dotnet test` is told to write its TRX report to, inside the results directory.
+const TRX_FILE: &str = "frob.trx";
+
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// What a TRX report said: the executed and failed test ids and a readable per-test summary.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Trx {
+    /// Executed and failed test ids (`Namespace.Type.Method`).
+    pub parsed: Parsed,
+    /// One line per result (`Passed id [duration]`), with the error message and stdout under a non-passing one.
+    pub summary: String,
+}
+
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// The text of the first `<tag>` element in `body`, decoded (CDATA kept verbatim), or `None` when absent.
+fn xml_element_text(body: &str, tag: &str) -> Option<String> {
+    let open = format!("<{tag}>");
+    let from = body.find(&open)? + open.len();
+    let len = body[from..].find(&format!("</{tag}>"))?;
+    let raw = &body[from..from + len];
+    let trimmed = raw.trim();
+    Some(
+        trimmed
+            .strip_prefix("<![CDATA[")
+            .and_then(|c| c.strip_suffix("]]>"))
+            .map_or_else(|| xml_unescape(raw), str::to_owned),
+    )
+}
+
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// Map each `UnitTest` id of the TRX `TestDefinitions` to its `Namespace.Type.Method` name.
+///
+/// `MSTest` writes `className` assembly-qualified (`Ns.Type, Assembly, Version=...`); nested types use `+`.
+fn trx_definitions(xml: &str) -> std::collections::HashMap<String, String> {
+    let mut out = std::collections::HashMap::new();
+    let mut rest = xml;
+    while let Some(at) = rest.find("<UnitTest ") {
+        rest = &rest[at + "<UnitTest ".len()..];
+        let Some(tag_end) = rest.find('>') else { break };
+        let tag = &rest[..tag_end];
+        let close = rest.find("</UnitTest>").unwrap_or(rest.len());
+        let body = &rest[tag_end..close];
+        let Some(id) = xml_attr(&format!(" {tag}"), "id") else {
+            continue;
+        };
+        let Some(method_at) = body.find("<TestMethod") else {
+            continue;
+        };
+        let method_tag = &body[method_at
+            ..body[method_at..]
+                .find('>')
+                .map_or(body.len(), |e| method_at + e)];
+        let (Some(class), Some(name)) = (
+            xml_attr(method_tag, "className"),
+            xml_attr(method_tag, "name"),
+        ) else {
+            continue;
+        };
+        let class = class
+            .split(',')
+            .next()
+            .unwrap_or_default()
+            .trim()
+            .replace('+', ".");
+        let full = if name.starts_with(&format!("{class}.")) {
+            name
+        } else {
+            format!("{class}.{name}")
+        };
+        out.insert(id, full);
+    }
+    out
+}
+
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// The tests in a TRX report (`dotnet test --logger trx`), named `Namespace.Type.Method`.
+///
+/// The name comes from the result's `UnitTest` definition (`TestMethod className` and `name`), so a
+/// parameterized case folds into its method; a result without a definition keeps its `testName`.
+/// `Passed` counts as executed, `Failed`, `Error`, `Timeout` and `Aborted` as executed and failed;
+/// `NotExecuted`, `Inconclusive` and the rest did not run and are left out. A repeated name is one test,
+/// failed if any case failed. The summary lists every result with its duration; a failure also shows its
+/// error message and stdout, to be redacted and escaped with the rest of the transcript.
+pub fn parse_trx(xml: &str) -> Trx {
+    let defs = trx_definitions(xml);
+    let mut trx = Trx::default();
+    let mut rest = xml;
+    while let Some(at) = rest.find("<UnitTestResult") {
+        rest = &rest[at + "<UnitTestResult".len()..];
+        let Some(tag_end) = rest.find('>') else { break };
+        let tag = &rest[..tag_end];
+        let (body, next) = if tag.ends_with('/') {
+            ("", &rest[tag_end + 1..])
+        } else {
+            let after = &rest[tag_end + 1..];
+            let close = after.find("</UnitTestResult>").unwrap_or(after.len());
+            (&after[..close], &after[close..])
+        };
+        rest = next;
+        let outcome = xml_attr(tag, "outcome").unwrap_or_default();
+        let duration = xml_attr(tag, "duration").unwrap_or_default();
+        let test_name = xml_attr(tag, "testName").unwrap_or_default();
+        let id = xml_attr(tag, "testId")
+            .and_then(|t| defs.get(&t).cloned())
+            .unwrap_or_else(|| test_name.clone());
+        let failed = matches!(outcome.as_str(), "Failed" | "Error" | "Timeout" | "Aborted");
+        let _ = writeln!(trx.summary, "{outcome} {test_name} [{duration}]");
+        if failed {
+            for (label, tag) in [("message", "Message"), ("stdout", "StdOut")] {
+                if let Some(text) = xml_element_text(body, tag).filter(|t| !t.trim().is_empty()) {
+                    for line in text.trim().lines() {
+                        let _ = writeln!(trx.summary, "    {label}: {line}");
+                    }
+                }
+            }
+        }
+        if outcome == "Passed" || failed {
+            trx.parsed.note(&id, failed);
+        }
+    }
+    trx
+}
+
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// Backslash-escape the characters a `VSTest` filter value treats as syntax (`\ ( ) & | = ! ~`).
+fn vstest_escape(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    for c in value.chars() {
+        if matches!(c, '\\' | '(' | ')' | '&' | '|' | '=' | '!' | '~') {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
+}
+
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// The `VSTest` `--filter` expression that selects the C# tests `ids` (`Namespace.Type.Method`).
+///
+/// Each id matches exactly (`FullyQualifiedName=id`) or as the method of parameterized cases
+/// (`FullyQualifiedName~id(`, whose display name carries the arguments); an id never matches a longer method name.
+pub fn dotnet_filter(ids: &[String]) -> String {
+    ids.iter()
+        .map(|id| {
+            let e = vstest_escape(id);
+            format!("FullyQualifiedName={e}|FullyQualifiedName~{e}\\(")
+        })
+        .collect::<Vec<_>>()
+        .join("|")
+}
+
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// True when `arg` names a project or solution for `dotnet test` rather than a test id.
+fn is_dotnet_project_arg(arg: &str) -> bool {
+    [".csproj", ".fsproj", ".vbproj", ".sln", ".slnx", ".slnf"]
+        .iter()
+        .any(|ext| arg.ends_with(ext))
+}
+
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// What one `dotnet test` run needs.
+#[derive(Debug, Clone, Copy)]
+pub struct DotnetRun<'a> {
+    /// `[evidence] allowed_tools`; `dotnet` must be listed.
+    pub allowed: &'a [String],
+    /// `[evidence.dotnet] path`: the executable to run; empty finds `dotnet` on `PATH`.
+    pub path: &'a str,
+    /// The directory `dotnet test` runs in.
+    pub cwd: &'a Path,
+    /// Project or solution paths (as in the reference) and fully qualified test ids; no ids runs every test.
+    pub args: &'a [String],
+    /// Wall-clock limit for the `dotnet` process.
+    pub timeout: Duration,
+}
+
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// Run `dotnet test` on the projects and test ids in `job.args` and capture the verdict and executed tests from its TRX.
+///
+/// Arguments ending in a project or solution extension (`.csproj`, `.sln`, ...) are passed as the thing to
+/// test; every other argument is a test id and becomes part of a `--filter` ([`dotnet_filter`]). An argument
+/// starting with `-` is refused, so a reference cannot smuggle options. `dotnet` runs with a fresh
+/// `--results-directory` whose TRX is parsed and removed; the transcript is `dotnet`'s stdout and stderr then
+/// the per-test summary, left to [`build_record`] to redact and escape.
+///
+/// # Errors
+///
+/// [`EvidenceError::ToolNotAllowed`] when `dotnet` is not allowlisted, [`EvidenceError::RunnerMissing`] when
+/// the executable is absent or `dotnet --version` does not exit 0 (no SDK), [`EvidenceError::BadReference`] for
+/// an option-like argument, [`EvidenceError::Io`] when the results directory cannot be made,
+/// [`EvidenceError::Exec`] when `dotnet` cannot start.
+pub fn run_dotnet(runner: &Runner, job: &DotnetRun<'_>) -> Result<Capture> {
+    let DotnetRun {
+        allowed,
+        path,
+        cwd,
+        args,
+        timeout,
+    } = *job;
+    if !allowed.iter().any(|a| a == DOTNET_PROGRAM) {
+        tracing::warn!("dotnet evidence refused: tool not allowlisted");
+        return Err(EvidenceError::ToolNotAllowed {
+            tool: DOTNET_PROGRAM.to_owned(),
+        });
+    }
+    if let Some(bad) = args.iter().find(|a| a.starts_with('-')) {
+        tracing::warn!(arg = bad, "dotnet evidence refused: option-like argument");
+        return Err(EvidenceError::BadReference(format!(
+            "`{bad}` looks like an option; pass project paths and fully qualified test ids only"
+        )));
+    }
+    let missing = || {
+        tracing::warn!("dotnet test run refused: dotnet SDK missing");
+        EvidenceError::RunnerMissing {
+            missing: DOTNET_PROGRAM.to_owned(),
+            runner: DOTNET_PROGRAM.to_owned(),
+        }
+    };
+    let program = if path.is_empty() {
+        which::which(DOTNET_PROGRAM).map_err(|_| missing())?;
+        Program::Tool {
+            name: DOTNET_PROGRAM.to_owned(),
+        }
+    } else if Path::new(path).is_file() {
+        Program::Hook {
+            path: PathBuf::from(path),
+        }
+    } else {
+        return Err(missing());
+    };
+    let probe = runner.run(&spec(
+        program.clone(),
+        vec!["--version".to_owned()],
+        cwd,
+        Duration::from_secs(60),
+    ));
+    if !probe.is_ok_and(|o| o.status == Outcome::Exited(0)) {
+        return Err(missing());
+    }
+    let results = std::env::temp_dir().join(format!(
+        "frob-dotnet-{}-{}",
+        std::process::id(),
+        JUNIT_SEQ.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::fs::create_dir_all(&results).map_err(|e| EvidenceError::io(&results, e))?;
+    let (projects, ids): (Vec<String>, Vec<String>) =
+        args.iter().cloned().partition(|a| is_dotnet_project_arg(a));
+    let mut full = vec!["test".to_owned()];
+    full.extend(projects);
+    full.extend([
+        "--nologo".to_owned(),
+        "--logger".to_owned(),
+        format!("trx;LogFileName={TRX_FILE}"),
+        "--results-directory".to_owned(),
+        results.display().to_string(),
+    ]);
+    if !ids.is_empty() {
+        full.extend(["--filter".to_owned(), dotnet_filter(&ids)]);
+    }
+    let out = runner.run(&spec(program, full, cwd, timeout));
+    let xml = std::fs::read_to_string(results.join(TRX_FILE)).unwrap_or_default();
+    if let Err(e) = std::fs::remove_dir_all(&results) {
+        tracing::warn!(path = %results.display(), error = %e, "could not remove the results directory");
+    }
+    let out = out?;
+    let trx = parse_trx(&xml);
+    let mut transcript = out.stdout;
+    transcript.push_str(&out.stderr);
+    if !trx.summary.is_empty() {
+        transcript.push_str("\n-- trx results --\n");
+        transcript.push_str(&trx.summary);
+    }
+    let (exit_code, measured) = exit_of(out.status);
+    let passed = exit_code == Some(0) && trx.parsed.failed.is_empty();
+    tracing::info!(?exit_code, passed, tests = trx.parsed.tests.len(), failed = ?trx.parsed.failed, "dotnet tests captured");
+    Ok(Capture {
+        exit_code,
+        passed,
+        measured,
+        tests: trx.parsed.tests,
+        failed_tests: trx.parsed.failed,
+        transcript,
+    })
+}
+
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// True when a `dotnet test` run exited 0 yet executed no test (the filter matched nothing), which is no measurement.
+pub fn dotnet_matched_no_tests(cap: &Capture) -> bool {
+    cap.tests.is_empty() && cap.exit_code == Some(0)
+}
+
 /// Run the provider named by `provider` for `reference` and return its record.
 ///
 /// `reference` is the nextest filter args, the pytest arguments, the command line or the file path.
@@ -937,6 +1234,8 @@ pub fn capture(
             )?;
             cap
         }
+        // frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+        Provider::Dotnet => capture_dotnet(ws, reference)?,
         Provider::Command => {
             let argv = split_args(reference)?;
             run_command(
@@ -957,6 +1256,28 @@ pub fn capture(
         accepts,
         ws.ledger.clock().now(),
     )
+}
+
+// frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
+/// Run `dotnet test` for the project paths and test ids in `reference`, refusing a run that executed no test.
+fn capture_dotnet(ws: &Workspace, reference: &str) -> Result<Capture> {
+    let args = split_args(reference)?;
+    let cap = run_dotnet(
+        &ws.runner(),
+        &DotnetRun {
+            allowed: &ws.evidence.allowed_tools,
+            path: &ws.dotnet.path,
+            cwd: &ws.root,
+            args: &args,
+            timeout: ws.timeout(),
+        },
+    )?;
+    refuse_empty(
+        dotnet_matched_no_tests(&cap),
+        "dotnet test ran no tests",
+        reference,
+    )?;
+    Ok(cap)
 }
 
 /// Refuse to record a run that matched no test (`empty`): there is nothing to measure.

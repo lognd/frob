@@ -9,6 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
+crunk-rules = { version = "0.532.0", path = "../crunk-rules" }
 crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
 crunk-values = { version = "0.532.0", path = "../crunk-values" }
 gob-check = { version = "0.532.0", path = "../gob-check" }

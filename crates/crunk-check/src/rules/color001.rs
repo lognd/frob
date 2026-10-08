@@ -51,7 +51,7 @@ use crate::product::Crunk;
 pub struct Color001;
 
 /// Language tags whose files can hold declarations (CSS, TS/TSX style props, HTML style attributes).
-const STYLE_TAGS: [&str; 6] = ["css", "tsx", "jsx", "ts", "js", "html"];
+pub(crate) const STYLE_TAGS: [&str; 6] = ["css", "tsx", "jsx", "ts", "js", "html"];
 
 /// The registered metadata of COLOR001.
 fn meta() -> &'static RuleMeta {

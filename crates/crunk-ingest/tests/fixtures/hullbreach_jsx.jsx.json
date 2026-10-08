@@ -1,0 +1,682 @@
+{
+  "sheets": [
+    {
+      "path": "web/src/App.tsx",
+      "component": "App",
+      "declarations": [],
+      "utilities": []
+    },
+    {
+      "path": "web/src/components/Footer.tsx",
+      "component": "Footer",
+      "declarations": [],
+      "utilities": [
+        {
+          "name": "flex",
+          "line": 6,
+          "variants": []
+        },
+        {
+          "name": "items-center",
+          "line": 6,
+          "variants": []
+        },
+        {
+          "name": "justify-center",
+          "line": 6,
+          "variants": []
+        },
+        {
+          "name": "gap-space-16",
+          "line": 6,
+          "variants": []
+        },
+        {
+          "name": "bg-panel",
+          "line": 6,
+          "variants": []
+        },
+        {
+          "name": "px-space-24",
+          "line": 6,
+          "variants": []
+        },
+        {
+          "name": "py-space-16",
+          "line": 6,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-14",
+          "line": 6,
+          "variants": []
+        },
+        {
+          "name": "text-muted",
+          "line": 6,
+          "variants": []
+        }
+      ]
+    },
+    {
+      "path": "web/src/components/Header.tsx",
+      "component": "Header",
+      "declarations": [],
+      "utilities": [
+        {
+          "name": "flex",
+          "line": 29,
+          "variants": []
+        },
+        {
+          "name": "items-center",
+          "line": 29,
+          "variants": []
+        },
+        {
+          "name": "justify-between",
+          "line": 29,
+          "variants": []
+        },
+        {
+          "name": "gap-space-16",
+          "line": 29,
+          "variants": []
+        },
+        {
+          "name": "bg-panel",
+          "line": 29,
+          "variants": []
+        },
+        {
+          "name": "px-space-24",
+          "line": 29,
+          "variants": []
+        },
+        {
+          "name": "py-space-16",
+          "line": 29,
+          "variants": []
+        },
+        {
+          "name": "text-ink",
+          "line": 29,
+          "variants": []
+        },
+        {
+          "name": "order-2",
+          "line": 30,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 30,
+          "variants": []
+        },
+        {
+          "name": "items-center",
+          "line": 30,
+          "variants": []
+        },
+        {
+          "name": "gap-space-16",
+          "line": 30,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-16",
+          "line": 33,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-16",
+          "line": 36,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-16",
+          "line": 42,
+          "variants": []
+        },
+        {
+          "name": "text-muted",
+          "line": 42,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-16",
+          "line": 48,
+          "variants": []
+        },
+        {
+          "name": "order-1",
+          "line": 62,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-20",
+          "line": 62,
+          "variants": []
+        },
+        {
+          "name": "font-semibold",
+          "line": 62,
+          "variants": []
+        },
+        {
+          "name": "tracking-tight",
+          "line": 62,
+          "variants": []
+        }
+      ]
+    },
+    {
+      "path": "web/src/main.tsx",
+      "component": "main",
+      "declarations": [],
+      "utilities": []
+    },
+    {
+      "path": "web/src/pages/Login.tsx",
+      "component": "Login",
+      "declarations": [],
+      "utilities": [
+        {
+          "name": "flex",
+          "line": 38,
+          "variants": []
+        },
+        {
+          "name": "min-h-screen",
+          "line": 38,
+          "variants": []
+        },
+        {
+          "name": "flex-col",
+          "line": 38,
+          "variants": []
+        },
+        {
+          "name": "items-center",
+          "line": 38,
+          "variants": []
+        },
+        {
+          "name": "justify-center",
+          "line": 38,
+          "variants": []
+        },
+        {
+          "name": "gap-space-16",
+          "line": 38,
+          "variants": []
+        },
+        {
+          "name": "bg-paper",
+          "line": 38,
+          "variants": []
+        },
+        {
+          "name": "text-ink",
+          "line": 38,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-32",
+          "line": 39,
+          "variants": []
+        },
+        {
+          "name": "font-semibold",
+          "line": 39,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-14",
+          "line": 41,
+          "variants": []
+        },
+        {
+          "name": "text-stress-fail",
+          "line": 41,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 49,
+          "variants": []
+        },
+        {
+          "name": "w-full",
+          "line": 49,
+          "variants": []
+        },
+        {
+          "name": "max-w-[24rem]",
+          "line": 49,
+          "variants": []
+        },
+        {
+          "name": "flex-col",
+          "line": 49,
+          "variants": []
+        },
+        {
+          "name": "gap-space-12",
+          "line": 49,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 51,
+          "variants": []
+        },
+        {
+          "name": "flex-col",
+          "line": 51,
+          "variants": []
+        },
+        {
+          "name": "gap-space-4",
+          "line": 51,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-14",
+          "line": 52,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 63,
+          "variants": []
+        },
+        {
+          "name": "flex-col",
+          "line": 63,
+          "variants": []
+        },
+        {
+          "name": "gap-space-4",
+          "line": 63,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-14",
+          "line": 64,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-16",
+          "line": 76,
+          "variants": []
+        }
+      ]
+    },
+    {
+      "path": "web/src/pages/Register.tsx",
+      "component": "Register",
+      "declarations": [],
+      "utilities": [
+        {
+          "name": "flex",
+          "line": 39,
+          "variants": []
+        },
+        {
+          "name": "min-h-screen",
+          "line": 39,
+          "variants": []
+        },
+        {
+          "name": "flex-col",
+          "line": 39,
+          "variants": []
+        },
+        {
+          "name": "items-center",
+          "line": 39,
+          "variants": []
+        },
+        {
+          "name": "justify-center",
+          "line": 39,
+          "variants": []
+        },
+        {
+          "name": "gap-space-8",
+          "line": 39,
+          "variants": []
+        },
+        {
+          "name": "bg-paper",
+          "line": 39,
+          "variants": []
+        },
+        {
+          "name": "text-ink",
+          "line": 39,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-32",
+          "line": 40,
+          "variants": []
+        },
+        {
+          "name": "font-semibold",
+          "line": 40,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-16",
+          "line": 41,
+          "variants": []
+        },
+        {
+          "name": "text-muted",
+          "line": 41,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 47,
+          "variants": []
+        },
+        {
+          "name": "min-h-screen",
+          "line": 47,
+          "variants": []
+        },
+        {
+          "name": "flex-col",
+          "line": 47,
+          "variants": []
+        },
+        {
+          "name": "items-center",
+          "line": 47,
+          "variants": []
+        },
+        {
+          "name": "justify-center",
+          "line": 47,
+          "variants": []
+        },
+        {
+          "name": "gap-space-16",
+          "line": 47,
+          "variants": []
+        },
+        {
+          "name": "bg-paper",
+          "line": 47,
+          "variants": []
+        },
+        {
+          "name": "text-ink",
+          "line": 47,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-32",
+          "line": 48,
+          "variants": []
+        },
+        {
+          "name": "font-semibold",
+          "line": 48,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-14",
+          "line": 50,
+          "variants": []
+        },
+        {
+          "name": "text-stress-fail",
+          "line": 50,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 58,
+          "variants": []
+        },
+        {
+          "name": "w-full",
+          "line": 58,
+          "variants": []
+        },
+        {
+          "name": "max-w-[24rem]",
+          "line": 58,
+          "variants": []
+        },
+        {
+          "name": "flex-col",
+          "line": 58,
+          "variants": []
+        },
+        {
+          "name": "gap-space-12",
+          "line": 58,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 60,
+          "variants": []
+        },
+        {
+          "name": "flex-col",
+          "line": 60,
+          "variants": []
+        },
+        {
+          "name": "gap-space-4",
+          "line": 60,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-14",
+          "line": 61,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-14",
+          "line": 72,
+          "variants": []
+        },
+        {
+          "name": "text-stress-fail",
+          "line": 72,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 78,
+          "variants": []
+        },
+        {
+          "name": "flex-col",
+          "line": 78,
+          "variants": []
+        },
+        {
+          "name": "gap-space-4",
+          "line": 78,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-14",
+          "line": 79,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-14",
+          "line": 91,
+          "variants": []
+        },
+        {
+          "name": "text-stress-fail",
+          "line": 91,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 97,
+          "variants": []
+        },
+        {
+          "name": "flex-col",
+          "line": 97,
+          "variants": []
+        },
+        {
+          "name": "gap-space-4",
+          "line": 97,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-14",
+          "line": 98,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-14",
+          "line": 110,
+          "variants": []
+        },
+        {
+          "name": "text-stress-fail",
+          "line": 110,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-16",
+          "line": 116,
+          "variants": []
+        }
+      ]
+    },
+    {
+      "path": "web/src/router.tsx",
+      "component": "router",
+      "declarations": [],
+      "utilities": [
+        {
+          "name": "flex",
+          "line": 9,
+          "variants": []
+        },
+        {
+          "name": "min-h-screen",
+          "line": 9,
+          "variants": []
+        },
+        {
+          "name": "flex-col",
+          "line": 9,
+          "variants": []
+        },
+        {
+          "name": "items-center",
+          "line": 9,
+          "variants": []
+        },
+        {
+          "name": "justify-center",
+          "line": 9,
+          "variants": []
+        },
+        {
+          "name": "gap-space-8",
+          "line": 9,
+          "variants": []
+        },
+        {
+          "name": "bg-paper",
+          "line": 9,
+          "variants": []
+        },
+        {
+          "name": "font-base",
+          "line": 9,
+          "variants": []
+        },
+        {
+          "name": "text-ink",
+          "line": 9,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-48",
+          "line": 10,
+          "variants": []
+        },
+        {
+          "name": "font-semibold",
+          "line": 10,
+          "variants": []
+        },
+        {
+          "name": "tracking-tight",
+          "line": 10,
+          "variants": []
+        },
+        {
+          "name": "text-font-size-20",
+          "line": 13,
+          "variants": []
+        },
+        {
+          "name": "text-muted",
+          "line": 13,
+          "variants": []
+        },
+        {
+          "name": "flex",
+          "line": 21,
+          "variants": []
+        },
+        {
+          "name": "min-h-screen",
+          "line": 21,
+          "variants": []
+        },
+        {
+          "name": "flex-col",
+          "line": 21,
+          "variants": []
+        },
+        {
+          "name": "items-center",
+          "line": 21,
+          "variants": []
+        },
+        {
+          "name": "justify-center",
+          "line": 21,
+          "variants": []
+        },
+        {
+          "name": "gap-space-8",
+          "line": 21,
+          "variants": []
+        },
+        {
+          "name": "bg-paper",
+          "line": 21,
+          "variants": []
+        },
+        {
+          "name": "text-ink",
+          "line": 21,
+          "variants": []
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

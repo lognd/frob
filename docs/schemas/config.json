@@ -174,9 +174,10 @@
             "git",
             "pytest",
             "vitest",
-            "jest"
+            "jest",
+            "dotnet"
           ],
-          "description": "Programs the `command` provider may run (the first word of the command must be listed); the `pytest`, `vitest` and `jest` providers need their own name listed too.",
+          "description": "Programs the `command` provider may run (the first word of the command must be listed); the `pytest`, `vitest`, `jest` and `dotnet` providers need their own name listed too.",
           "items": {
             "type": "string"
           },
@@ -189,6 +190,18 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "dotnet": {
+          "additionalProperties": false,
+          "description": "The `dotnet` evidence provider (`[evidence.dotnet]`).",
+          "properties": {
+            "path": {
+              "default": "",
+              "description": "Path of the `dotnet` executable the provider runs; empty finds `dotnet` on `PATH`.",
+              "type": "string"
+            }
+          },
+          "type": "object"
         },
         "inline_max_bytes": {
           "default": 16384,

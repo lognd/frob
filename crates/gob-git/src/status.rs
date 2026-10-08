@@ -218,7 +218,7 @@ impl Repo {
         Ok(out)
     }
 
-    fn flatten_tree(tree: &gix::Tree<'_>) -> Result<TreeMap, GitError> {
+    pub(crate) fn flatten_tree(tree: &gix::Tree<'_>) -> Result<TreeMap, GitError> {
         let mut rec = gix::traverse::tree::Recorder::default();
         tree.traverse().breadthfirst(&mut rec).map_err(odb_err)?;
         Ok(rec
