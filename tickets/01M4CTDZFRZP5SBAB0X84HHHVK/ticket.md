@@ -2,7 +2,8 @@
 id = "01M4CTDZFRZP5SBAB0X84HHHVK"
 title = "gob-git ledger: sync_checkout skips paths whose tip blob has moved past the one being written (audit M3)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
