@@ -1338,7 +1338,7 @@ fn a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_ch
     Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
     Fixture::evidence(&s, "src/a.rs");
     // A set no real base check would produce, planted where any ticket's land reads it.
-    let planted = plant_base_set(&fx);
+    plant_base_set(&fx);
 
     let out = land(
         &fx.root,
