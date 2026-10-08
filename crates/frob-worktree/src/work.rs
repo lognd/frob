@@ -29,6 +29,8 @@ pub struct WorkOptions {
     pub worktree: Option<PathBuf>,
     /// Take over a lease held by someone else, with this reason.
     pub steal: Option<String>,
+    /// Start a ticket outside the active cycle anyway, assigning it as an over-commit with this reason.
+    pub unplanned: Option<String>,
 }
 
 /// What `work` and `start` did.
@@ -71,6 +73,13 @@ pub struct Requeued {
     pub already: bool,
 }
 
+/// The two reasoned ways past a refusal: stealing a lease and starting unplanned work.
+#[derive(Debug, Clone, Copy)]
+struct Escapes<'a> {
+    steal: Option<&'a str>,
+    unplanned: Option<&'a str>,
+}
+
 /// Where the holder works: a fresh worktree for `work`, the current checkout for `start`.
 enum Plan {
     Work { override_path: Option<PathBuf> },
@@ -86,6 +95,8 @@ pub struct Workspace<'a> {
     pub leases: &'a LeaseStore,
     /// `[worktree]` settings.
     pub config: &'a WorktreeConfig,
+    /// The `[pm]` cycle gates (`sprint_gate`).
+    pub gates: crate::cycle_gate::CycleGates,
 }
 
 impl Workspace<'_> {
@@ -102,7 +113,10 @@ impl Workspace<'_> {
             &Plan::Work {
                 override_path: opts.worktree.clone(),
             },
-            opts.steal.as_deref(),
+            Escapes {
+                steal: opts.steal.as_deref(),
+                unplanned: opts.unplanned.as_deref(),
+            },
         )
     }
 
@@ -117,7 +131,26 @@ impl Workspace<'_> {
         cwd: &Path,
         steal: Option<&str>,
     ) -> Result<Started, WorktreeError> {
-        self.begin(ticket, &Plan::Start { cwd: clean(cwd) }, steal)
+        self.start_unplanned(ticket, cwd, steal, None)
+    }
+
+    /// [`Workspace::start`] that may also start a ticket outside the active cycle, assigning it with the `unplanned` reason.
+    ///
+    /// # Errors
+    ///
+    /// As [`Workspace::start`].
+    pub fn start_unplanned(
+        &self,
+        ticket: &str,
+        cwd: &Path,
+        steal: Option<&str>,
+        unplanned: Option<&str>,
+    ) -> Result<Started, WorktreeError> {
+        self.begin(
+            ticket,
+            &Plan::Start { cwd: clean(cwd) },
+            Escapes { steal, unplanned },
+        )
     }
 
     /// Release the lease on `ticket` and move it back to `todo`.
@@ -166,7 +199,7 @@ impl Workspace<'_> {
         &self,
         ticket: &str,
         plan: &Plan,
-        steal: Option<&str>,
+        Escapes { steal, unplanned }: Escapes<'_>,
     ) -> Result<Started, WorktreeError> {
         let id = self.ledger.resolve(ticket)?;
         let view = self.ledger.show(id)?;
@@ -187,7 +220,7 @@ impl Workspace<'_> {
         // An in-progress ticket with a live lease already holds its slot (re-entry, steal).
         let needs_slot = !(view.summary.category == Category::InProgress && existing.is_some());
         if needs_slot {
-            crate::cycle_gate::check_overdue(self.ledger, view.summary.class, &handle)?;
+            self.cycle_gates((id, view.summary.class, &handle), unplanned)?;
         }
         let taking = crate::wip::Taking {
             id,
@@ -269,6 +302,17 @@ impl Workspace<'_> {
             stolen_from,
             warnings,
         })
+    }
+
+    /// The cycle gates for a ticket taking a fresh slot: no overdue cycle, and inside the active one (or started `unplanned`).
+    fn cycle_gates(
+        &self,
+        taking: (TicketId, frob_ledger::model::Class, &str),
+        unplanned: Option<&str>,
+    ) -> Result<(), WorktreeError> {
+        let (_, class, handle) = taking;
+        crate::cycle_gate::check_overdue(self.ledger, class, handle)?;
+        crate::cycle_gate::check_sprint(self.ledger, self.gates, taking, unplanned)
     }
 
     /// The current checkout when it is this ticket's own linked worktree and the ticket is in progress with no live lease.

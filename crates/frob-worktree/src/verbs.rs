@@ -12,12 +12,14 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::config::{WorktreeConfig, ledger_config};
+use crate::cycle_gate::CycleGates;
 use crate::error::WorktreeError;
 use crate::gc::{GcConfig, Mode, glue};
 use crate::work::{Requeued, Started, WorkOptions, Workspace};
 
 /// The opened pieces a verb needs.
 struct Opened {
+    gates: CycleGates,
     ledger: Ledger,
     leases: LeaseStore,
     config: WorktreeConfig,
@@ -45,6 +47,9 @@ impl Opened {
         let wip = pm.wip;
         let (leases, _) = frob_lease::open_store_from_file(&root, ctx.clock.clone())?;
         Ok(Self {
+            gates: CycleGates {
+                sprint_gate: pm.pm.sprint_gate,
+            },
             ledger: Ledger::open(repo, ledger_cfg, ctx.clock.clone()),
             leases: leases
                 .with_holder_limit(wip.in_progress_per_identity)
@@ -73,6 +78,7 @@ impl Opened {
             ledger: &self.ledger,
             leases: &self.leases,
             config: &self.config,
+            gates: self.gates,
         }
     }
 }
@@ -136,6 +142,13 @@ fn reason_arg(help: &'static str) -> Arg {
         .help(help)
 }
 
+fn unplanned_arg() -> Arg {
+    Arg::new("unplanned")
+        .long("unplanned")
+        .action(ArgAction::SetTrue)
+        .help("Start a ticket outside the active cycle: it joins the cycle as an over-commit (needs --reason)")
+}
+
 fn steal_arg() -> Arg {
     Arg::new("steal")
         .long("steal")
@@ -147,13 +160,27 @@ fn text(m: &ArgMatches, name: &str) -> Option<String> {
     m.get_one::<String>(name).cloned()
 }
 
-/// `--steal` with its reason: the reason only makes sense with the flag, and the flag needs it.
-fn steal_reason(m: &ArgMatches) -> Result<Option<String>, CliError> {
-    match (m.get_flag("steal"), text(m, "reason")) {
-        (true, Some(r)) if !r.trim().is_empty() => Ok(Some(r)),
-        (true, _) => Err(CliError::Usage("--steal needs a non-empty --reason".into())),
-        (false, Some(_)) => Err(CliError::Usage("--reason is only used with --steal".into())),
-        (false, None) => Ok(None),
+/// The reason of `--steal` and `--unplanned`: one `--reason` serves whichever flags are set, and it is required by both and meaningless alone.
+fn flag_reasons(m: &ArgMatches) -> Result<(Option<String>, Option<String>), CliError> {
+    let (steal, unplanned) = (
+        m.get_flag("steal"),
+        m.try_get_one::<bool>("unplanned")
+            .ok()
+            .flatten()
+            .copied()
+            .unwrap_or(false),
+    );
+    match (steal || unplanned, text(m, "reason")) {
+        (true, Some(r)) if !r.trim().is_empty() => {
+            Ok((steal.then(|| r.clone()), unplanned.then_some(r)))
+        }
+        (true, _) => Err(CliError::Usage(
+            "--steal and --unplanned need a non-empty --reason".into(),
+        )),
+        (false, Some(_)) => Err(CliError::Usage(
+            "--reason is only used with --steal or --unplanned".into(),
+        )),
+        (false, None) => Ok((None, None)),
     }
 }
 
@@ -191,15 +218,20 @@ impl Command for Work {
                     .help("Lease the ticket for this checkout: no new worktree or branch"),
             )
             .arg(steal_arg())
-            .arg(reason_arg("Why the lease is stale (with --steal)"))
+            .arg(unplanned_arg())
+            .arg(reason_arg(
+                "Why the lease is stale (with --steal) or why the work is unplanned (with --unplanned)",
+            ))
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let (steal, unplanned) = flag_reasons(m)?;
         Ok(Self {
             ticket: text(m, "ticket").unwrap_or_default(),
             opts: WorkOptions {
                 worktree: m.get_one::<PathBuf>("worktree").cloned(),
-                steal: steal_reason(m)?,
+                steal,
+                unplanned,
             },
             here: m.get_flag("here"),
         })
@@ -209,7 +241,7 @@ impl Command for Work {
         let opened = Opened::new(ctx)?;
         if self.here {
             tracing::debug!(ticket = %self.ticket, "work --here: leasing for this checkout");
-            return start_here(&opened, ctx, &self.ticket, self.opts.steal.as_deref());
+            return start_here(&opened, ctx, &self.ticket, &self.opts);
         }
         let notices = opened.collect_garbage();
         let started = opened.workspace().work(&self.ticket, &self.opts)?;
@@ -230,7 +262,7 @@ impl Command for Work {
 )]
 pub struct Start {
     ticket: String,
-    steal: Option<String>,
+    opts: WorkOptions,
 }
 
 impl Command for Start {
@@ -245,13 +277,16 @@ impl Command for Start {
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
         Ok(Self {
             ticket: text(m, "ticket").unwrap_or_default(),
-            steal: steal_reason(m)?,
+            opts: WorkOptions {
+                steal: flag_reasons(m)?.0,
+                ..WorkOptions::default()
+            },
         })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<StartData> {
         let opened = Opened::new(ctx)?;
-        start_here(&opened, ctx, &self.ticket, self.steal.as_deref())
+        start_here(&opened, ctx, &self.ticket, &self.opts)
     }
 }
 
@@ -260,14 +295,19 @@ fn start_here(
     opened: &Opened,
     ctx: &Context,
     ticket: &str,
-    steal: Option<&str>,
+    opts: &WorkOptions,
 ) -> Outcome<StartData> {
     let cwd = opened
         .ledger
         .repo()
         .work_dir()
         .map_or_else(|| ctx.cwd.clone(), std::path::Path::to_path_buf);
-    let started = opened.workspace().start(ticket, &cwd, steal)?;
+    let started = opened.workspace().start_unplanned(
+        ticket,
+        &cwd,
+        opts.steal.as_deref(),
+        opts.unplanned.as_deref(),
+    )?;
     Ok(start_payload(started))
 }
 
