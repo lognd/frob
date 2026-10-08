@@ -2,13 +2,13 @@
 id = "01M4CS7FW2HYBDS8NRP1ZE1H1X"
 title = "gob-macros: ui_rule_attr missing_md fails on Windows because the diagnostic embeds the OS io error text"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 class = "expedite"
 points = 1
 reporter = "lognd"
 created = "2026-10-08T03:34:35Z"
-updated = "2026-10-08T03:34:35Z"
+updated = "2026-10-08T03:35:20Z"
 scope = ["crates/gob-macros/**"]
 
 [[acceptance]]
