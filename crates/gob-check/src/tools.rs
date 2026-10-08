@@ -81,6 +81,41 @@ fn failure(stage: &ToolStage, args: &[String], what: &str, status: &str, stderr:
     )
 }
 
+/// A frob finding produced from a tool result, with the tool's own id kept beside the mapped rule id.
+#[derive(Debug, Clone)]
+pub(crate) struct ToolFinding {
+    /// The finding as the pipeline treats it.
+    pub finding: Finding,
+    /// The tool's own id (`source_rule`); `None` for a `TOOL001` about the stage itself.
+    pub source_rule: Option<String>,
+}
+
+/// A result the tool itself suppressed (`# noqa`, `eslint-disable`, `#pragma warning disable`): input of EXC017.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ToolSuppression {
+    /// Stage that ran the tool.
+    pub stage: String,
+    /// The tool's own id.
+    pub source_rule: String,
+    /// The frob rule the id maps to (`TOOL002` when unmapped).
+    pub rule: RuleId,
+    /// Repo-relative path the suppression applies to.
+    pub path: String,
+    /// SARIF suppression kind (`inSource` or `external`).
+    pub kind: String,
+    /// The author's justification, possibly empty.
+    pub justification: String,
+}
+
+/// Everything the tool stages produced.
+#[derive(Debug, Default)]
+pub(crate) struct ToolRun {
+    /// Findings (and stage failures) in stage order.
+    pub findings: Vec<ToolFinding>,
+    /// Natively suppressed results, which are not findings.
+    pub suppressed: Vec<ToolSuppression>,
+}
+
 /// What running one stage produced.
 enum StageResult {
     /// The binary was not found.
@@ -91,8 +126,8 @@ enum StageResult {
     Problem(String),
     /// The tool's version is outside the configured range.
     Lag(String),
-    /// The stage ran; these findings are its parsed output (empty without a parser).
-    Done(Vec<Finding>),
+    /// The stage ran; these are its parsed output (empty without a parser).
+    Done(ToolRun),
 }
 
 fn spec(root: &Path, stage: &ToolStage, args: Vec<String>) -> Spec {
@@ -123,6 +158,34 @@ fn normalize(root: &Path, printed: &str) -> String {
 struct Indexes(HashMap<String, Option<(String, LineIndex)>>);
 
 impl Indexes {
+    /// The range from `start` to `end` (line, character column; end exclusive), or `None` when the file is unreadable.
+    fn char_range(
+        &mut self,
+        root: &Path,
+        path: &str,
+        start: (u32, u32),
+        end: (u32, u32),
+    ) -> Option<TextRange> {
+        let slot = self.slot(root, path);
+        let (text, index) = slot?;
+        let from = char_offset(text, index, start.0, start.1)?;
+        let to = char_offset(text, index, end.0, end.1)
+            .filter(|t| *t >= from)
+            .unwrap_or(from);
+        Some(TextRange::new(from, to))
+    }
+
+    fn slot(&mut self, root: &Path, path: &str) -> Option<&(String, LineIndex)> {
+        self.0
+            .entry(path.to_owned())
+            .or_insert_with(|| {
+                let text = std::fs::read_to_string(root.join(path)).ok()?;
+                let index = LineIndex::new(&text).ok()?;
+                Some((text, index))
+            })
+            .as_ref()
+    }
+
     fn line_range(
         &mut self,
         root: &Path,
@@ -131,12 +194,8 @@ impl Indexes {
         col: u32,
         end: u32,
     ) -> Option<TextRange> {
-        let slot = self.0.entry(path.to_owned()).or_insert_with(|| {
-            let text = std::fs::read_to_string(root.join(path)).ok()?;
-            let index = LineIndex::new(&text).ok()?;
-            Some((text, index))
-        });
-        let (_, index) = slot.as_ref()?;
+        let slot = self.slot(root, path);
+        let (_, index) = slot?;
         let start = index.offset(LineCol { line, col })?;
         let stop = index
             .offset(LineCol { line, col: end })
@@ -144,6 +203,19 @@ impl Indexes {
             .unwrap_or(start);
         Some(TextRange::new(start, stop))
     }
+}
+
+/// The byte offset of 1-based character column `col` on `line`, clamped to the line's end.
+fn char_offset(text: &str, index: &LineIndex, line: u32, col: u32) -> Option<TextSize> {
+    let start = index.offset(LineCol { line, col: 1 })?;
+    let rest = &text[start.to_usize()..];
+    let line_text = rest.split('\n').next().unwrap_or_default();
+    let skip = usize::try_from(col.saturating_sub(1)).unwrap_or(usize::MAX);
+    let bytes = line_text
+        .char_indices()
+        .nth(skip)
+        .map_or(line_text.len(), |(i, _)| i);
+    Some(TextSize::new(u32::try_from(start.to_usize() + bytes).ok()?))
 }
 
 /// The span of `raw` in the repository, or `None` when the tool gave no usable location.
@@ -165,30 +237,51 @@ fn locate(
         RawRange::LineCol { line, col, end_col } => {
             indexes.line_range(root, path, line, col, end_col)?
         }
+        RawRange::CharRange {
+            line,
+            col,
+            end_line,
+            end_col,
+        } => indexes.char_range(root, path, (line, col), (end_line, end_col))?,
     };
     Some(Span::new(files.intern(path), range))
 }
 
-/// Turn the parsed findings of `stage` into frob findings (dropped ones omitted).
+/// Turn the parsed findings of `stage` into frob findings (dropped ones omitted; suppressed ones set aside).
 fn to_findings(
     root: &Path,
     stage: &ToolStage,
     raws: &[RawFinding],
     files: &mut FileInterner,
-) -> Vec<Finding> {
+) -> ToolRun {
     let mut indexes = Indexes::default();
-    let mut out = Vec::new();
+    let mut run = ToolRun::default();
     for raw in raws {
         let Some((rule, severity)) = classify(stage, raw) else {
             continue;
         };
         let path = normalize(root, &raw.path);
+        if let Some(s) = &raw.suppressed {
+            tracing::debug!(stage = %stage.name, tool_id = %raw.tool_id, rule = %rule, path = %path, kind = %s.kind, "tool result suppressed natively");
+            run.suppressed.push(ToolSuppression {
+                stage: stage.name.clone(),
+                source_rule: raw.tool_id.clone(),
+                rule,
+                path,
+                kind: s.kind.clone(),
+                justification: s.justification.clone(),
+            });
+            continue;
+        }
         let span = locate(root, files, &mut indexes, &path, &raw.range);
         let message = format!("{}/{}: {}", stage.name, raw.tool_id, raw.message);
         tracing::debug!(stage = %stage.name, tool_id = %raw.tool_id, rule = %rule, path = %path, located = span.is_some(), "tool finding");
-        out.push(Finding::new(rule, severity, span, message, &path));
+        run.findings.push(ToolFinding {
+            finding: Finding::new(rule, severity, span, message, &path),
+            source_rule: Some(raw.tool_id.clone()),
+        });
     }
-    out
+    run
 }
 
 /// The tool's version text, or `Err` with the stage result when the probe fails.
@@ -233,7 +326,7 @@ fn normal_exits(parser: ToolParser) -> &'static [i32] {
     match parser {
         ToolParser::None => &[0],
         ToolParser::ZizmorJsonV1 => &[0, 10, 11, 12, 13, 14],
-        ToolParser::ActionlintJson => &[0, 1],
+        ToolParser::ActionlintJson | ToolParser::Sarif => &[0, 1],
     }
 }
 
@@ -286,7 +379,7 @@ fn execute(
     };
     if !parsed {
         return abnormal(&output, stage)
-            .map_or(StageResult::Done(Vec::new()), StageResult::Problem);
+            .map_or(StageResult::Done(ToolRun::default()), StageResult::Problem);
     }
     // A parsed stage exits nonzero when it has findings; only an undeclared status or unreadable output is a failure.
     let declared =
@@ -324,6 +417,14 @@ fn execute(
     }
 }
 
+/// Add a finding about the stage itself (no tool id) to `run`.
+fn push_own(run: &mut ToolRun, finding: Finding) {
+    run.findings.push(ToolFinding {
+        finding,
+        source_rule: None,
+    });
+}
+
 /// Run `stages` in order; each is timed outside the budget.
 ///
 /// Findings of parsed stages carry spans interned into `files`; failures and
@@ -333,9 +434,9 @@ pub(crate) fn run_tools(
     stages: &[ToolStage],
     timing: &mut Timing,
     files: &mut FileInterner,
-) -> Vec<Finding> {
+) -> ToolRun {
     if stages.is_empty() {
-        return Vec::new();
+        return ToolRun::default();
     }
     let id: RuleId = Tool001
         .meta()
@@ -343,7 +444,7 @@ pub(crate) fn run_tools(
         .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
     let runner =
         Runner::new(Limits::default()).allow_tools(stages.iter().map(|s| s.command.clone()));
-    let mut out = Vec::new();
+    let mut out = ToolRun::default();
     for stage in stages {
         let started = Instant::now();
         let result = execute(&runner, root, stage, files);
@@ -353,26 +454,34 @@ pub(crate) fn run_tools(
         };
         match result {
             StageResult::Done(found) => {
-                tracing::info!(stage = %stage.name, findings = found.len(), "tool stage passed");
-                out.extend(found);
+                tracing::info!(stage = %stage.name, findings = found.findings.len(), suppressed = found.suppressed.len(), "tool stage passed");
+                out.findings.extend(found.findings);
+                out.suppressed.extend(found.suppressed);
             }
             StageResult::Lag(why) => {
                 tracing::warn!(stage = %stage.name, %why, "tool schema lag; output discarded");
-                out.push(unresolved(format!(
-                    "tool stage `{}` ({}) {why} (schema lag)",
-                    stage.name, stage.command
-                )));
+                push_own(
+                    &mut out,
+                    unresolved(format!(
+                        "tool stage `{}` ({}) {why} (schema lag)",
+                        stage.name, stage.command
+                    )),
+                );
             }
             StageResult::Missing(p) if stage.optional => {
                 tracing::warn!(stage = %stage.name, problem = %p, "optional tool binary missing");
-                out.push(unresolved(format!(
-                    "tool stage `{}` ({}) {p} (optional)",
-                    stage.name, stage.command
-                )));
+                push_own(
+                    &mut out,
+                    unresolved(format!(
+                        "tool stage `{}` ({}) {p} (optional)",
+                        stage.name, stage.command
+                    )),
+                );
             }
             StageResult::Failed(message) => {
                 tracing::warn!(stage = %stage.name, %message, "tool stage failed to produce evidence");
-                out.push(
+                push_own(
+                    &mut out,
                     unresolved(message).with_required(RequiredReason::ToolFailed {
                         stage: stage.name.clone(),
                     }),
@@ -381,7 +490,8 @@ pub(crate) fn run_tools(
             StageResult::Missing(p) => {
                 tracing::warn!(stage = %stage.name, problem = %p, "tool binary missing");
                 let message = failure(stage, &stage.args, &p, "not run", "");
-                out.push(
+                push_own(
+                    &mut out,
                     unresolved(message).with_required(RequiredReason::ToolFailed {
                         stage: stage.name.clone(),
                     }),
@@ -389,13 +499,16 @@ pub(crate) fn run_tools(
             }
             StageResult::Problem(p) if stage.fail_on_nonzero => {
                 tracing::warn!(stage = %stage.name, problem = %p, "tool stage failed");
-                out.push(Finding::new(
-                    id.clone(),
-                    Severity::Error,
-                    None,
-                    format!("tool stage `{}` ({}) {p}", stage.name, stage.command),
-                    &stage.name,
-                ));
+                push_own(
+                    &mut out,
+                    Finding::new(
+                        id.clone(),
+                        Severity::Error,
+                        None,
+                        format!("tool stage `{}` ({}) {p}", stage.name, stage.command),
+                        &stage.name,
+                    ),
+                );
             }
             StageResult::Problem(p) => {
                 tracing::info!(stage = %stage.name, problem = %p, "tool stage failed (not gating)");
@@ -436,14 +549,17 @@ mod tests {
     }
 
     fn run_one(stage: &ToolStage) -> Vec<Finding> {
+        run_full(stage, Path::new("."))
+            .findings
+            .into_iter()
+            .map(|t| t.finding)
+            .collect()
+    }
+
+    fn run_full(stage: &ToolStage, root: &Path) -> ToolRun {
         let mut timing = Timing::default();
         let mut files = FileInterner::default();
-        run_tools(
-            Path::new("."),
-            std::slice::from_ref(stage),
-            &mut timing,
-            &mut files,
-        )
+        run_tools(root, std::slice::from_ref(stage), &mut timing, &mut files)
     }
 
     fn assert_tool_failed(found: &[Finding], needles: &[&str]) {
@@ -541,6 +657,84 @@ mod tests {
         for script in ["echo null", "echo '[]'", "echo '[]'; exit 1"] {
             let stage = sh_stage("lint", ToolParser::ActionlintJson, script, VERSION_OK);
             assert!(run_one(&stage).is_empty(), "{script}");
+        }
+    }
+
+    const ESLINT_SARIF: &str = include_str!("../tests/fixtures/sarif-eslint-9.39.5.json");
+
+    fn sarif_stage(script: &str) -> ToolStage {
+        let mut stage = sh_stage("lint", ToolParser::Sarif, script, VERSION_OK);
+        stage.min_version = None;
+        stage.max_version = None;
+        stage.version_args = None;
+        stage
+            .id_map
+            .insert("eqeqeq".to_owned(), "NEAT002".to_owned());
+        stage
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    #[test]
+    fn sarif_results_map_keep_source_rule_and_set_suppressed_aside() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(
+            dir.path().join("a.js"),
+            "debugger;\nvar s = '\u{e9}\u{e9}'; if (s == 1) {}\n",
+        )
+        .expect("write");
+        let log =
+            ESLINT_SARIF.replace("/work/repo/a.js", &format!("{}/a.js", dir.path().display()));
+        std::fs::write(dir.path().join("out.sarif"), log).expect("write");
+        let run = run_full(&sarif_stage("cat out.sarif; exit 1"), dir.path());
+        let got: Vec<_> = run
+            .findings
+            .iter()
+            .map(|t| {
+                (
+                    t.finding.rule.to_string(),
+                    t.source_rule.clone().unwrap_or_default(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            got,
+            [
+                ("TOOL002".to_owned(), "no-debugger".to_owned()),
+                ("NEAT002".to_owned(), "eqeqeq".to_owned()),
+            ],
+            "unknown id falls back to TOOL002; the mapped one keeps its tool id"
+        );
+        assert!(run.findings[1].finding.message.starts_with("lint/eqeqeq: "));
+        assert!(run.findings.iter().all(|t| t.finding.span.is_some()));
+        assert_eq!(run.suppressed.len(), 1);
+        let s = &run.suppressed[0];
+        assert_eq!(
+            (s.source_rule.as_str(), s.kind.as_str()),
+            ("eqeqeq", "inSource")
+        );
+        assert_eq!(s.rule.as_str(), "NEAT002");
+        assert_eq!(s.path, "a.js");
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::char_offset
+    #[test]
+    fn character_columns_become_byte_offsets() {
+        let text = "ab\n\u{e9}\u{e9}x\n";
+        let index = LineIndex::new(text).expect("index");
+        assert_eq!(char_offset(text, &index, 2, 3), Some(TextSize::new(3 + 4)));
+        assert_eq!(
+            char_offset(text, &index, 2, 99),
+            Some(TextSize::new(3 + 5)),
+            "clamped to the line end"
+        );
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    #[test]
+    fn unreadable_sarif_is_a_required_tool_failed() {
+        for script in ["echo 'not sarif'", "echo '{}'", "exit 2", "exit 1"] {
+            let found = run_one(&sarif_stage(script));
+            assert_tool_failed(&found, &["`lint`"]);
         }
     }
 

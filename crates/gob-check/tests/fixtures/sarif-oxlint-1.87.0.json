@@ -1,0 +1,62 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "oxlint",
+          "version": "1.87.0",
+          "semanticVersion": "1.87.0",
+          "informationUri": "https://oxc.rs/docs/guide/usage/linter.html",
+          "rules": [
+            {
+              "id": "eslint(no-debugger)",
+              "name": "no-debugger",
+              "helpUri": "https://oxc.rs/docs/guide/usage/linter/rules/eslint/no-debugger.html",
+              "properties": {
+                "category": "correctness",
+                "plugin": "eslint",
+                "fix": "fixable_suggestion"
+              }
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "location": {
+            "uri": "a.js"
+          }
+        }
+      ],
+      "results": [
+        {
+          "ruleId": "eslint(no-debugger)",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "`debugger` statement is not allowed"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "a.js",
+                  "index": 0
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 1,
+                  "endColumn": 10
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "columnKind": "unicodeCodePoints"
+    }
+  ]
+}

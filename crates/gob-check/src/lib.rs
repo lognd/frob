@@ -64,6 +64,7 @@ mod report;
 mod required;
 mod rule_set;
 mod rules;
+mod sarif;
 pub mod sibling;
 pub mod sibling_doc;
 mod status;

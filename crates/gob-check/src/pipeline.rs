@@ -116,10 +116,23 @@ fn tool_stages(
     if opts.skip_tools || !wanted {
         return Vec::new();
     }
-    let found = run_tools(root, &table.tool, timing, files);
+    let run = run_tools(root, &table.tool, timing, files);
+    for s in &run.suppressed {
+        tracing::debug!(
+            stage = %s.stage, source_rule = %s.source_rule, rule = %s.rule.as_str(),
+            path = %s.path, kind = %s.kind, justification = %s.justification,
+            "tool result suppressed natively (EXC017 input)"
+        );
+    }
     // Spanless findings (a missing tool) always stand; located ones obey a scope.
-    found
+    run.findings
         .into_iter()
+        .map(|t| {
+            if let Some(source) = &t.source_rule {
+                tracing::debug!(rule = %t.finding.rule, source_rule = %source, "tool finding mapped");
+            }
+            t.finding
+        })
         .filter(|f| match (scope_files, f.span) {
             (Some(s), Some(span)) => files.path(span.file).is_some_and(|p| s.contains(p)),
             _ => true,

@@ -59,6 +59,9 @@ pub enum ToolParser {
     /// actionlint `-format '{{json .}}'`: an array of findings with line and column.
     #[serde(rename = "actionlint-json")]
     ActionlintJson,
+    /// SARIF 2.1.0 on stdout (oxlint, Biome, golangci-lint, Roslyn, the eslint SARIF formatter); ids come from the stage `id_map`.
+    #[serde(rename = "sarif")]
+    Sarif,
 }
 
 /// One external tool stage: a command run after the built-in rules (`[[check.tool]]`).

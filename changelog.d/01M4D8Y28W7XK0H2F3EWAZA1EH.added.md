@@ -1,0 +1,1 @@
+frob: `[[check.tool]]` stages accept `parser = "sarif"`: SARIF 2.1.0 from oxlint, Biome, golangci-lint, Roslyn error logs and the eslint formatter becomes findings through the stage `id_map` (unmapped ids are `TOOL002`), each keeping the tool id beside the frob id; natively suppressed results are set aside for EXC017, and unreadable output is a required `TOOL001`.
