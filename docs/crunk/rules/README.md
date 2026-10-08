@@ -6,6 +6,9 @@ Every rule is two files in its crate, `src/rules/<id>.rs` and `<id>.md`; this pa
 
 | Id | Slug | Family | Severity | Release | Fixable | Tiers | What it does |
 |---|---|---|---|---|---|---|---|
+| COLOR001 | color-off-palette | COLOR | error | error | no | T0, T2 | Flags a colour literal (hex, `rgb()`, `hsl()` or a named colour) that is not a palette colour, and names the nearest palette token with its distance. |
+| COLOR002 | undefined-token-reference | COLOR | error | error | no | T0, T2 | Flags a `var()` reference whose name starts with a configured token prefix and is defined neither by the spec's token export nor by a custom property of any indexed sheet. |
+| CONTRAST001 | role-contrast-below-floor | CONTRAST | error | error | no | T0, T2 | Measures the WCAG 2.2 contrast ratio of each declared role pair (foreground over background) in every declared mode and flags a pair below its own floor: 4.5 by default, lower for a role that declares the large-text or icon exception. |
 | WAIVE001 | waiver-without-reason | WAIVE | error | error | no | T0 | Flags a `crunk:waive` comment that has no `reason`, or a blank one. |
 
 ## Families

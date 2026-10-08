@@ -25,12 +25,6 @@
 | [CI010](CI010.md) | checkout-no-persist | advisory | manual | P+ | false | `actions/checkout` leaves credentials in the workspace. |
 | [CI014](CI014.md) | gha-syntax-and-schema | warn | manual | P+ | false | actionlint rejects the workflow syntax, schema, expression or runner label. |
 
-## COLOR
-
-| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
-|---|---|---|---|---|---|---|
-| [COLOR001](COLOR001.md) | color-off-palette | error | manual | P+ | false | A colour literal that is not a palette colour (and not a translucent variant of an opaque one). |
-
 ## COV
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

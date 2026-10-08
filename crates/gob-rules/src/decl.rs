@@ -125,6 +125,9 @@ pub struct Emitted {
     pub rule: &'static str,
     /// Byte offset of the finding; `None` for a finding about the repository as a whole.
     pub offset: Option<usize>,
+    /// The file `offset` addresses, set by a repo rule that locates findings (`Out::fire_in`);
+    /// `None` for a file rule (the file is the one being judged) and for a spanless finding.
+    pub path: Option<String>,
     /// Message.
     pub message: String,
     /// True when the rule could not decide (an Unresolved finding), false for a violation.
@@ -157,6 +160,25 @@ impl Emitted {
     }
 }
 
+impl Emitted {
+    /// The [`Finding`] this emission becomes when it names its own file (a located repo-rule
+    /// finding): the path is interned in `files` and is the fingerprint anchor; an emission with
+    /// no path becomes the spanless `repository` finding.
+    pub fn into_located_finding(
+        self,
+        def: &RuleDef,
+        files: &mut gob_text::FileInterner,
+    ) -> Finding {
+        match self.path.clone() {
+            Some(path) => {
+                let file = files.intern(&path);
+                self.into_finding(def, Some(file), &path)
+            }
+            None => self.into_finding(def, None, "repository"),
+        }
+    }
+}
+
 /// Typed sink that stamps `R`'s id on every finding, so a rule cannot emit another rule's id.
 pub struct Out<'a, R> {
     sink: &'a mut Vec<Emitted>,
@@ -172,11 +194,18 @@ impl<'a, R: RuleDecl> Out<'a, R> {
         }
     }
 
-    fn push(&mut self, offset: Option<usize>, message: String, unresolved: bool) {
-        tracing::trace!(rule = R::DEF.id, ?offset, unresolved, "rule emitted");
+    fn push(
+        &mut self,
+        path: Option<&str>,
+        offset: Option<usize>,
+        message: String,
+        unresolved: bool,
+    ) {
+        tracing::trace!(rule = R::DEF.id, ?path, ?offset, unresolved, "rule emitted");
         self.sink.push(Emitted {
             rule: R::DEF.id,
             offset,
+            path: path.map(str::to_owned),
             message,
             unresolved,
         });
@@ -184,17 +213,28 @@ impl<'a, R: RuleDecl> Out<'a, R> {
 
     /// Record a finding at `offset`, stamped with `R`'s id.
     pub fn fire(&mut self, offset: usize, message: impl Into<String>) {
-        self.push(Some(offset), message.into(), false);
+        self.push(None, Some(offset), message.into(), false);
     }
 
     /// Record a finding about the repository as a whole (no location).
     pub fn note(&mut self, message: impl Into<String>) {
-        self.push(None, message.into(), false);
+        self.push(None, None, message.into(), false);
     }
 
     /// Record that the rule could not decide something, stating why (an Unresolved finding).
     pub fn unresolved(&mut self, message: impl Into<String>) {
-        self.push(None, message.into(), true);
+        self.push(None, None, message.into(), true);
+    }
+
+    /// Record a finding of a repo rule at byte `offset` of the file `path` (relative to the
+    /// repository root, forward slashes), so waivers and renderers can locate it.
+    pub fn fire_in(&mut self, path: &str, offset: usize, message: impl Into<String>) {
+        self.push(Some(path), Some(offset), message.into(), false);
+    }
+
+    /// Record an Unresolved finding of a repo rule located at byte `offset` of the file `path`.
+    pub fn unresolved_in(&mut self, path: &str, offset: usize, message: impl Into<String>) {
+        self.push(Some(path), Some(offset), message.into(), true);
     }
 }
 

@@ -77,7 +77,12 @@ fn the_fixture_rules_of_the_spec_check_clean() {
         let path = entry.expect("entry").path();
         if path.extension().is_some_and(|e| e == "grl") {
             let src = std::fs::read_to_string(&path).expect("read");
-            let found = diags(&src);
+            // The spec's abbreviated rules omit the universal third example (GRL011); every
+            // other code must stay silent.
+            let found: Vec<_> = diags(&src)
+                .into_iter()
+                .filter(|d| !(d.code == Some(Code::Grl011) && d.message.contains("notapplicable")))
+                .collect();
             assert!(found.is_empty(), "{}: {found:#?}", path.display());
         }
     }
@@ -251,7 +256,7 @@ fn a_word_no_language_answers_is_grl018_but_universal_rules_are_not_checked() {
         [Code::Grl018]
     );
     assert!(codes("lang [css, rust]", "  find t: test\n  report t \"m\"").is_empty());
-    assert!(codes("lang *", "  find t: test\n  report t \"m\"").is_empty());
+    assert!(!codes("lang *", "  find t: test\n  report t \"m\"").contains(&Code::Grl018));
     assert!(codes("lang css", "  find e: style_rule\n  report e \"m\"").is_empty());
     assert_eq!(
         codes("lang rust", "  find e: element\n  report e \"m\""),

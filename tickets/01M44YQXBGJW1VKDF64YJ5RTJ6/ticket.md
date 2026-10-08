@@ -2,13 +2,14 @@
 id = "01M44YQXBGJW1VKDF64YJ5RTJ6"
 title = "C# test selection in frob test"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:01Z"
-updated = "2026-10-08T12:35:10Z"
+updated = "2026-10-08T14:17:08Z"
 idempotency_key = "d94-select"
 scope = ["crates/frob-tests/**", "crates/gob-testsupport/src/lib.rs", "docs/reference/cli/**", "docs/design/build-test-ci.md"]
 

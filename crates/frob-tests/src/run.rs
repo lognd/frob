@@ -1,19 +1,19 @@
-//! Running the selected tests: `cargo nextest run -p <pkg> -E '<filter>'`, `pytest <node id>...` and `vitest run` or `jest` per member through gob-exec.
+//! Running the selected tests: `cargo nextest run -p <pkg> -E '<filter>'`, `pytest <node id>...`, `vitest run` or `jest` per member and `dotnet test` per project through gob-exec.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use frob_evidence::provider::{
-    Capture, JsRun, NODE_PROGRAM, run_js_tests, run_nextest, run_pytest,
+    Capture, DotnetRun, JsRun, NODE_PROGRAM, run_dotnet, run_js_tests, run_nextest, run_pytest,
 };
 use frob_evidence::record::Provider;
 use gob_exec::Runner;
 use gob_walk::{WalkConfig, walk};
 
-use crate::error::Result;
+use crate::error::{Result, TestsError};
 use crate::node::{JsMembers, is_runner_test_file};
-use crate::select::{Framework, TestTarget};
+use crate::select::{CsharpOwner, CsharpOwners, Framework, TestTarget};
 
 /// How to run: where, how long, and whether to run everything.
 #[derive(Debug, Clone)]
@@ -30,6 +30,9 @@ pub struct RunOptions {
     pub all: bool,
     /// The program vitest and jest need (`node`); a missing one refuses the run.
     pub node: String,
+    // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+    /// `[evidence.dotnet] path`: the `dotnet` executable; empty finds it on `PATH`.
+    pub dotnet_path: String,
 }
 
 impl RunOptions {
@@ -48,6 +51,7 @@ impl RunOptions {
             allowed_tools,
             all,
             node: NODE_PROGRAM.to_owned(),
+            dotnet_path: String::new(),
         }
     }
 }
@@ -92,6 +96,10 @@ impl FrameworkRun {
             // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
             Framework::Vitest => Provider::Vitest,
             Framework::Jest => Provider::Jest,
+            // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+            Framework::Dotnet => Provider::Dotnet,
+            // A unity run never happens (it refuses first), so its evidence provider is the command fallback.
+            Framework::Unity => Provider::Command,
         }
     }
 }
@@ -272,15 +280,113 @@ pub fn js_groups(selected: &[TestTarget], opts: &RunOptions) -> Vec<JsGroup> {
         .collect()
 }
 
-/// Run `selected` (or the whole workspace with `opts.all`) with cargo nextest, pytest, vitest and jest.
+// frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+/// One `dotnet test` invocation: a project and the test ids to run (empty runs the whole project).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct DotnetGroup {
+    /// Repo-relative `.csproj` path.
+    pub project: String,
+    /// Fully qualified test ids, sorted and unique.
+    pub ids: Vec<String>,
+}
+
+// frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+/// The C# files of the work tree that hold tests, empty (with a warning) when the walk fails.
+fn csharp_test_files(root: &Path) -> Vec<String> {
+    match walk(root, &WalkConfig::default()) {
+        Ok(walked) => walked
+            .files
+            .into_iter()
+            .map(|f| f.path)
+            .filter(|p| gob_symbols::is_csharp_test_file(p))
+            .collect(),
+        Err(e) => {
+            tracing::warn!(error = %e, "could not walk for C# tests; dotnet and unity skipped under --all");
+            Vec::new()
+        }
+    }
+}
+
+// frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+/// The `dotnet test` invocations for `selected`: one per project, running the selected ids.
+///
+/// With `opts.all` every project that owns a C# test file is run whole instead.
+pub fn dotnet_groups(selected: &[TestTarget], opts: &RunOptions) -> Vec<DotnetGroup> {
+    let mut groups: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    if opts.all {
+        let mut owners = CsharpOwners::new(&opts.root);
+        for file in csharp_test_files(&opts.root) {
+            if let Some(CsharpOwner::Project(p)) = owners.owner(&file) {
+                groups.entry(p).or_default();
+            }
+        }
+    } else {
+        for t in selected.iter().filter(|t| t.framework == Framework::Dotnet) {
+            groups
+                .entry(t.package.clone())
+                .or_default()
+                .insert(t.test_path.clone());
+        }
+    }
+    groups
+        .into_iter()
+        .map(|(project, ids)| DotnetGroup {
+            project,
+            ids: ids.into_iter().collect(),
+        })
+        .collect()
+}
+
+// frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+/// The Unity assemblies `selected` (or, with `opts.all`, the work tree's test assemblies) would run, sorted and unique.
+pub fn unity_assemblies(selected: &[TestTarget], opts: &RunOptions) -> Vec<String> {
+    let mut found: BTreeSet<String> = BTreeSet::new();
+    if opts.all {
+        let mut owners = CsharpOwners::new(&opts.root);
+        for file in csharp_test_files(&opts.root) {
+            if let Some(CsharpOwner::Assembly(a)) = owners.owner(&file)
+                && owners.is_test_assembly(&a)
+            {
+                found.insert(a);
+            }
+        }
+    } else {
+        found.extend(
+            selected
+                .iter()
+                .filter(|t| t.framework == Framework::Unity)
+                .map(|t| t.package.clone()),
+        );
+    }
+    found.into_iter().collect()
+}
+
+/// Run `selected` (or the whole workspace with `opts.all`) with cargo nextest, pytest, vitest, jest and dotnet.
 ///
 /// A runner runs only when it has selected tests (or, with `opts.all`, when the work
 /// tree has tests for it); nextest runs first.
 ///
 /// # Errors
 ///
-/// [`crate::TestsError::Evidence`] when pytest is not allowlisted, [`crate::TestsError::Exec`] when a runner cannot be started.
+/// [`crate::TestsError::Evidence`] when pytest is not allowlisted, [`crate::TestsError::Exec`] when a runner cannot be started,
+/// [`crate::TestsError::UnityProviderMissing`] (before anything runs) when the selection includes Unity assembly tests.
 pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Result<RunReport> {
+    // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+    let unity = unity_assemblies(selected, opts);
+    if !unity.is_empty() {
+        tracing::warn!(
+            ?unity,
+            "unity tests selected but no unity provider exists; refusing the run"
+        );
+        return Err(TestsError::UnityProviderMissing {
+            assemblies: unity,
+            plan: selected
+                .iter()
+                .filter(|t| t.framework == Framework::Unity)
+                .map(TestTarget::plan_line)
+                .collect(),
+        });
+    }
     let mut report = RunReport::default();
     let nextest = if opts.all {
         vec!["--workspace".to_owned()]
@@ -336,6 +442,32 @@ pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Resul
             framework: group.framework,
             member: group.member,
             args: group.files,
+            capture,
+        });
+    }
+    // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+    for group in dotnet_groups(selected, opts) {
+        tracing::info!(
+            project = group.project,
+            ids = group.ids.len(),
+            "running dotnet tests"
+        );
+        let mut args = vec![group.project.clone()];
+        args.extend(group.ids.iter().cloned());
+        let capture = run_dotnet(
+            runner,
+            &DotnetRun {
+                allowed: &opts.allowed_tools,
+                path: &opts.dotnet_path,
+                cwd: &opts.root,
+                args: &args,
+                timeout: opts.timeout,
+            },
+        )?;
+        report.runs.push(FrameworkRun {
+            framework: Framework::Dotnet,
+            member: String::new(),
+            args,
             capture,
         });
     }
