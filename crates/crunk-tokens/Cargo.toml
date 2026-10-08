@@ -9,6 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 keywords = ["css", "design-system", "design-tokens", "tailwind"]
 categories = ["web-programming"]
+readme = "README.md"
 
 [lints]
 workspace = true

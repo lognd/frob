@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 use crunk_spec::{DesignSpec, parse_spec};
 use crunk_tokens::export::{
-    Status, Target, check, compare, render_managed, render_target, write_all,
+    Exporter as _, Status, Target, check, compare, render_managed, render_target, write_all,
 };
 use serde_json::Value;
 
@@ -246,4 +246,17 @@ fn a_same_named_copy_at_the_other_resolution_base_warns() {
         "{:?}",
         report.warnings
     );
+}
+
+// frob:tests crates/crunk-tokens/src/export/mod.rs::Target.name
+// frob:tests crates/crunk-tokens/src/export/mod.rs::Target.parse
+// frob:tests crates/crunk-tokens/src/export/mod.rs::Target.exporter
+// frob:tests crates/crunk-tokens/src/export/mod.rs::Exporter.target
+#[test]
+fn every_target_round_trips_its_name_and_owns_its_exporter() {
+    for target in Target::ALL {
+        assert_eq!(Target::parse(target.name()), Some(target));
+        assert_eq!(target.exporter().target(), target);
+    }
+    assert_eq!(Target::parse("uss"), None);
 }

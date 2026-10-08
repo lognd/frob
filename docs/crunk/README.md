@@ -9,44 +9,20 @@ families, the `crunk.toml` schema and the other verbs land in their own tickets.
 | Verb | Needs `crunk.toml` | What it does |
 |---|---|---|
 | `crunk check` | yes | Runs the (empty) rule set and prints the `gob.sibling/1` document with `product = "crunk"` (`--json`), or a count summary. `--only`, `--fail-on`, `--base`, `--ticket-scope` as for `grimble check`. |
-| `crunk tokens` | yes | Writes the generated token files from `crunk.toml`; `--target css\|json\|tailwind` prints one export instead (nothing written); `--check` compares the files on disk with the render and exits 1 naming each missing or drifted file. See [Token exports](#token-exports). |
 | `crunk doctor` | no | Reports the crunk version, the repository root and the state of `crunk.toml`. |
 | `crunk schema` | no | Built-in: the JSON Schema of a verb's output. |
 
 Global flags (`--json`, `--text`, `--format`, `--color`, `-v`, `--version`) come from
 `gob-cli`; `--version` prints the workspace lockstep version.
 
-## Token exports
-
-`crunk tokens` renders the token set of `crunk.toml` through one exporter per target; the
-exporters live in `crunk_tokens::export` behind the `Exporter` trait, so the later targets (DTCG,
-USS, a C# class) are further implementations, not new code paths.
-
-| Target | File (from `crunk.toml`) | Drift compare |
-|---|---|---|
-| `css` | `[project] tokens_file`, resolved against `css_root`; always written | byte for byte |
-| `tailwind` | `[tailwind] tokens_file`, resolved against the project root; skipped when unset | parsed JSON |
-| `json` | `[tokens] json_file`, resolved against the project root; skipped when unset | parsed JSON |
-
-- Output is byte-identical to the Python crunk (same header passthrough, banner, `-rgb` companions,
-  sorted two-space JSON with ASCII escapes).
-- Writes are atomic (temp file, fsync, rename). `--dry-run` lists the files without writing.
-- Drift reads files with universal newlines, so a checkout that converts to CRLF is clean (the
-  Python crunk behaves the same).
-- `--target` replaces the Python crunk's `--format`, which is the global output format here.
-- Bare scale keys that collide with Tailwind v3 default theme keys are reported as warnings (and in
-  `data.collisions`) unless `[tailwind] namespace_keys` is on.
-- `TOKENS001` takes its input from `crunk_tokens::export::check` (`DriftReport`), or from
-  `render_managed` plus `compare` over text it read itself.
-
 ## Exit codes (cli.md section 2)
 
 | Code | Meaning here |
 |---|---|
 | 0 | ok |
-| 1 | `check` found findings at or above `--fail-on`; `tokens --check` found a missing or drifted file |
+| 1 | `check` found findings at or above `--fail-on` |
 | 2 | usage error |
-| 3 | `E-NO-CONFIG`: no `crunk.toml` at or above the working directory (an empty file is a valid config), `E-CONFIG` for a malformed one, or `E-SPEC` (`tokens`) for a `crunk.toml` that is not a valid design spec |
+| 3 | `E-NO-CONFIG`: no `crunk.toml` at or above the working directory (an empty file is a valid config), or `E-CONFIG` for a malformed one |
 | 4 | internal error |
 
 ## Rules

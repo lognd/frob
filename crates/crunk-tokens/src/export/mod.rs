@@ -40,7 +40,7 @@ use crunk_spec::DesignSpec;
 
 use crate::model::{TokenError, TokenSet};
 
-pub use css::{BANNER, CssExporter, banner_line};
+pub use css::{BANNER, CssExporter};
 pub use drift::{DriftReport, FileDrift, Rendered, Status, check, compare, render_managed};
 pub use flat::FlatJsonExporter;
 pub use json::Json;

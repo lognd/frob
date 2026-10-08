@@ -158,8 +158,8 @@ pub fn compare(expected: &Rendered, on_disk: Option<&str>) -> FileDrift {
 
 /// Whether two JSON texts parse to the same value; unparseable text is never equal.
 fn json_equal(disk: &str, expected: &str) -> bool {
-    let parse = |text: &str| serde_json::from_str::<serde_json::Value>(text).ok();
-    if let (Some(a), Some(b)) = (parse(disk), parse(expected)) {
+    let parse_json = |text: &str| serde_json::from_str::<serde_json::Value>(text).ok();
+    if let (Some(a), Some(b)) = (parse_json(disk), parse_json(expected)) {
         return a == b;
     }
     tracing::debug!("tokens drift: unparseable json counts as drifted");
