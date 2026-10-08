@@ -1,0 +1,11 @@
+error[GRL017]: `certainly` and `possibly` cannot be used under `not` or `no`
+ --> rules/GRL017.grl:6:15
+  |
+6 |   where not f certainly calls g
+  |               ^^^^^^^^^^^^^^^^^ this sits in a negative position
+  |
+  = note: `certainly` turns an unknown edge into No and `possibly` into Yes, so under a negation the rule would fire on a guess
+  = help: move it out of the negation, or drop the word: the rule's polarity already decides whether Must or May edges count
+  = explain: grimble explain GRL017
+
+error: aborting due to 1 previous error
