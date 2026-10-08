@@ -80,7 +80,10 @@ pub use adapter::{
     ParseStatus, Precision,
 };
 pub use crates::CrateDeps;
-pub use csharp::{CSharpAdapter, is_csharp_path};
+pub use csharp::{
+    CSharpAdapter, CsharpTest, CsharpTestFramework, csharp_test, is_csharp_path,
+    is_csharp_test_file, is_csharp_test_fn, is_csharp_test_text,
+};
 pub use css::{CssAdapter, is_css_path};
 pub use dotnet::{
     Assignment, DotnetError, DotnetProjects, MalformedProject, Project, SolutionEntry,
