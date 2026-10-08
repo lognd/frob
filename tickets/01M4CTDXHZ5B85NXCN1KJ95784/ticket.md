@@ -2,7 +2,8 @@
 id = "01M4CTDXHZ5B85NXCN1KJ95784"
 title = "land ratchet: key the base-check cache by the code tree without tickets/ so ledger commits stop forcing a full re-check (audit M5)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
