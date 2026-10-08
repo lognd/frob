@@ -22,6 +22,8 @@ path = "src/main.rs"
 
 [dependencies]
 crunk-check = { version = "0.532.0", path = "../crunk-check" }
+crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
+crunk-tokens = { version = "0.532.0", path = "../crunk-tokens" }
 gob-check = { version = "0.532.0", path = "../gob-check" }
 gob-cli = { version = "0.532.0", path = "../gob-cli" }
 gob-config = { version = "0.532.0", path = "../gob-config" }

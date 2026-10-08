@@ -1,0 +1,33 @@
+[project]
+css_root = "styles"
+tokens_file = "tokens.css"
+root_font_size = 16
+
+[palette]
+ink = "#111"
+paper = "#fff"
+
+[scales]
+spacing = [0, 4]
+font_sizes = [16]
+radii = [0]
+
+[typography]
+families = ["Zürich Sans", "日本語 \"Quoted\"", "system-ui"]
+weights = [400]
+
+[typography.stacks]
+mono = ["Z\u00fcrich Sans", "system-ui"]
+
+[layers]
+base = 0
+
+[tokens]
+header = "/* H\u00e4der\nsecond line */"
+json_file = "tokens.json"
+
+[tailwind]
+tokens_file = "tailwind.tokens.json"
+
+[org]
+buckets = ["base"]

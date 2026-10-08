@@ -2,7 +2,7 @@
 //! token naming and the Tailwind theme mapping inputs.
 //!
 //! One model feeds every exporter (CSS, JSON, Tailwind), `crunk explain` and `crunk query`;
-//! rendering files and drift checks live in the exporters, not here.
+//! rendering files and drift checks live in [`export`], not in the model.
 //!
 //! ```
 //! use std::path::Path;
@@ -18,6 +18,7 @@
 //! assert!(tokens.get("--color-ink").is_some());
 //! ```
 
+pub mod export;
 pub mod model;
 pub mod naming;
 
