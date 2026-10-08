@@ -2,13 +2,13 @@
 id = "01M43ARYFVG86PAGGM78JGRZY3"
 title = "crunk-ingest: map JSX style props and className class_tokens into ProjectStyles"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:49Z"
-updated = "2026-10-06T04:32:50Z"
+updated = "2026-10-08T09:43:23Z"
 idempotency_key = "crunk-plan-jsx"
 labels = ["area:crunk"]
 scope = ["crates/crunk-ingest/src/jsx/**", "crates/crunk-ingest/tests/jsx*.rs"]
