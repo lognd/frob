@@ -1,0 +1,13 @@
+kind = "create"
+title = "crunk import dtcg and export dtcg round-trip"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4CXQTERP5YASZGVEAH6KG4H"
+scope = ["changelog.d/**", "crates/crunk-tokens/**", "crates/crunk/**"]
+acceptance = ["Given a DTCG file, when imported and exported, then the result equals the input up to key order"]
+body = "docs/design/crunk.md section 5."
+at = "2026-10-08T04:53:29Z"
+actor = "lognd"
+rev = 1
