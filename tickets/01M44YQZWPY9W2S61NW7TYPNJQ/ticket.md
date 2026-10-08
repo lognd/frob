@@ -2,13 +2,13 @@
 id = "01M44YQZWPY9W2S61NW7TYPNJQ"
 title = "unity evidence provider: editor discovery and refusal"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:03Z"
-updated = "2026-10-05T02:37:03Z"
+updated = "2026-10-08T14:59:18Z"
 idempotency_key = "d94-unityedit"
 scope = ["crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/tests/unity.rs", "docs/reference/config.md", "docs/schemas/config.json"]
 
