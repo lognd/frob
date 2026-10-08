@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-08T13:04:12Z"
+digest = "ad05552f764830babcb9224a366014b2dfde505be7ec3bba2cee906ba27db8fb"
+exit_code = 0
+inline = """
+== [1/1] docs: cargo doc --no-deps --all-features
+ok      docs                5.4s
+ci: all steps passed
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.22s
+     Running `target/debug/gob-dev ci --step docs`
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+    Checking rustls-webpki v0.103.15
+    Checking tokio-rustls v0.26.6
+    Checking rustls-platform-verifier v0.7.1
+    Checking hyper-rustls v0.27.10
+    Checking reqwest v0.13.4
+ Documenting frob-gh v0.532.0 (<worktree>/crates/frob-gh)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.36s
+   Generated <worktree>/target/doc/crunk/index.html and 55 other files
+"""
+passed = true
+provider = "command"
+ref = "cargo dev ci --step docs"
+size = 664
+status = "measured"
+at = "2026-10-08T13:04:12Z"
+actor = "lognd"
+rev = 1
