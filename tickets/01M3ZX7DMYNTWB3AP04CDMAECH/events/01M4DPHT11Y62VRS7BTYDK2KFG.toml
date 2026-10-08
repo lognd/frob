@@ -1,0 +1,8 @@
+kind = "land"
+base_ref = "refs/heads/experimental"
+commit = "e224a11a5f1480bf2a6690f47d0580e3322e6131"
+branch = "ticket/CDMAECH"
+pushed = false
+at = "2026-10-08T11:47:45Z"
+actor = "lognd"
+rev = 1
