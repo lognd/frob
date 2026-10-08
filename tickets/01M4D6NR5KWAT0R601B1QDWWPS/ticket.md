@@ -2,14 +2,15 @@
 id = "01M4D6NR5KWAT0R601B1QDWWPS"
 title = "CI dev-publish 'Move the dev tag' fails 403 since 2026-10-06: GITHUB_TOKEN cannot move a ref onto commits that change workflow files"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 class = "expedite"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T07:29:34Z"
-updated = "2026-10-08T08:14:48Z"
+updated = "2026-10-08T08:14:52Z"
 scope = ["changelog.d/**", ".github/workflows/**", "crates/frob-release/**"]
 
 [[acceptance]]

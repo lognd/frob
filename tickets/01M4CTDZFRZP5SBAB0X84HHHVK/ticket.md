@@ -2,13 +2,14 @@
 id = "01M4CTDZFRZP5SBAB0X84HHHVK"
 title = "gob-git ledger: sync_checkout skips paths whose tip blob has moved past the one being written (audit M3)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:36Z"
-updated = "2026-10-08T08:03:00Z"
+updated = "2026-10-08T09:16:01Z"
 scope = ["changelog.d/**", "crates/gob-git/**"]
 
 [[acceptance]]

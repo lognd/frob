@@ -2,16 +2,16 @@
 id = "01M43ATASM383KB9130JY79XVV"
 title = "crunk-rules: rule registry, family metadata, waivers and WAIVE001"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:34Z"
-updated = "2026-10-06T13:56:21Z"
+updated = "2026-10-08T09:19:54Z"
 idempotency_key = "crunk-plan-rfw"
-labels = ["area:crunk"]
-scope = ["crates/crunk-rules/**", "crates/crunk-check/src/rules.rs", "docs/crunk/rules/**", "Cargo.lock"]
+labels = ["area:crunk", "creates:crates/crunk-rules/**", "creates:docs/crunk/rules/**"]
+scope = ["crates/crunk-rules/**", "docs/crunk/rules/**", "Cargo.lock", "crates/crunk-check/src/**", "crates/crunk-check/Cargo.toml", "crates/crunk-check/tests/**", "docs/crunk/README.md"]
 
 [[links]]
 kind = "blocked-by"
