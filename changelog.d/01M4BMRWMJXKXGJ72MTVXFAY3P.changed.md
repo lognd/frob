@@ -1,0 +1,1 @@
+gob-git/frob-ledger: ledger walks list blobs with their ids from one tree walk (`Repo::blobs_at`) and read them by id (`Repo::read_blob`), and every opened repository enables the gix object cache; `frob board` 2.0 s -> 0.18 s and `frob ticket doctor` 10 s -> 1.3 s on this repository (release build).
