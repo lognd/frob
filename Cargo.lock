@@ -547,18 +547,15 @@ dependencies = [
 name = "crunk-check"
 version = "0.532.0"
 dependencies = [
+ "crunk-ingest",
  "crunk-rules",
  "crunk-spec",
- "crunk-values",
  "gob-check",
  "gob-config",
  "gob-diagnostics",
- "gob-ir",
  "gob-mdtest",
  "gob-rules",
- "gob-symbols",
  "gob-text",
- "gob-walk",
  "serde_json",
  "tempfile",
  "tracing",
@@ -588,10 +585,15 @@ dependencies = [
 name = "crunk-rules"
 version = "0.532.0"
 dependencies = [
+ "crunk-ingest",
  "crunk-spec",
+ "crunk-tokens",
+ "crunk-values",
+ "gob-cache",
  "gob-mdtest",
  "gob-rules",
  "gob-text",
+ "tempfile",
  "tracing",
 ]
 
@@ -2611,11 +2613,13 @@ dependencies = [
 name = "gob-plan"
 version = "0.532.0"
 dependencies = [
+ "gob-caps",
  "gob-ir",
  "gob-rules",
  "gob-text",
  "insta",
  "proptest",
+ "serde_json",
  "thiserror",
  "tracing",
 ]

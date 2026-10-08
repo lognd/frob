@@ -12,7 +12,12 @@
 //! | GRL003 | a variable used only inside `not`, `no` or `unresolved when`, bound nowhere |
 //! | GRL004 | a variable bound twice |
 //! | GRL005 | a type mismatch |
+//! | GRL009 | a def that calls itself or a def written after it |
+//! | GRL010 | a `reaches` closure without `within` |
+//! | GRL011 | a missing `fire`, `clean` or (universal rules) `notapplicable` example |
+//! | GRL012 | an `explain` text without a `## Remedy` section |
 //! | GRL013 | (warning) a `find` variable never used |
+//! | GRL014 | a side relation read but not listed in `needs` |
 //! | GRL017 | `certainly` or `possibly` in a negative position |
 //! | GRL018 | a word no language of the rule's `lang` answers |
 //!
@@ -23,10 +28,12 @@
 
 mod names;
 mod render;
+mod structure;
 mod vocab;
 
 use gob_text::{FileInterner, Span};
 
+use crate::catalog::ConfigSchema;
 use crate::grl::{self, ParseError};
 
 pub use render::render;
@@ -51,8 +58,18 @@ pub enum Code {
     Grl004,
     /// Type mismatch.
     Grl005,
+    /// Def recursion or forward reference.
+    Grl009,
+    /// Closure without `within`.
+    Grl010,
+    /// Missing fire, clean or universal third example.
+    Grl011,
+    /// Explain without `## Remedy`.
+    Grl012,
     /// Variable bound and never used (warning).
     Grl013,
+    /// Side relation used but not in `needs`.
+    Grl014,
     /// `certainly` or `possibly` in a negative position.
     Grl017,
     /// A word no language of the rule answers.
@@ -67,7 +84,12 @@ impl Code {
             Self::Grl003 => "GRL003",
             Self::Grl004 => "GRL004",
             Self::Grl005 => "GRL005",
+            Self::Grl009 => "GRL009",
+            Self::Grl010 => "GRL010",
+            Self::Grl011 => "GRL011",
+            Self::Grl012 => "GRL012",
             Self::Grl013 => "GRL013",
+            Self::Grl014 => "GRL014",
             Self::Grl017 => "GRL017",
             Self::Grl018 => "GRL018",
         }
@@ -180,7 +202,21 @@ impl Diagnostic {
 // frob:ticket 01M3ZX7DYR7PR1PBCZ7E8Q56WW
 /// Check every rule of a parsed file; diagnostics come in source order.
 pub fn check_file(file: &grl::ast::File) -> Vec<Diagnostic> {
-    let mut out: Vec<Diagnostic> = file.rules.iter().flat_map(names::check_rule).collect();
+    check_file_with(file, None)
+}
+
+// frob:ticket 01M3ZX7DMYNTWB3AP04CDMAECH
+/// Check every rule of a parsed file, typing `config.<table>` paths and rows from `config`.
+pub fn check_file_with(file: &grl::ast::File, config: Option<&ConfigSchema>) -> Vec<Diagnostic> {
+    let mut out: Vec<Diagnostic> = file
+        .rules
+        .iter()
+        .flat_map(|r| {
+            let mut d = names::check_rule(r, config);
+            d.extend(structure::check_rule(r));
+            d
+        })
+        .collect();
     out.sort_by_key(|d| d.primary.span.range.start());
     tracing::debug!(
         rules = file.rules.len(),

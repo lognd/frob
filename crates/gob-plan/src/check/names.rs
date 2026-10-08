@@ -7,11 +7,13 @@
 //! only its parameters.
 
 use std::collections::BTreeSet;
+use std::rc::Rc;
 
 use gob_text::Span;
 
-use super::vocab::{self, Langs, Ty};
+use super::vocab::{self, Ty};
 use super::{Code, Diagnostic};
+use crate::catalog::{Answers, Column, ConfigSchema};
 use crate::grl::ast::{
     Binding, Call, CastKind, ClauseKind, CmpOp, Cond, CondKind, Def, FixKind, HeaderKind, LangSet,
     Literal, LiteralKind, Message, MessagePart, Object, Path, Quant, Rel, RelKind, Rule, Shape,
@@ -48,10 +50,10 @@ impl NegVia {
 }
 
 /// What a variable ranges over, as far as fields are concerned.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 enum VarTy {
     Kind(&'static str),
-    Side,
+    Side(Option<Rc<Vec<Column>>>),
     Any,
 }
 
@@ -81,14 +83,15 @@ enum LangMode {
 }
 
 /// Check one rule.
-pub(super) fn check_rule(rule: &Rule) -> Vec<Diagnostic> {
-    let mut c = Checker::new(rule);
+pub(super) fn check_rule(rule: &Rule, config: Option<&ConfigSchema>) -> Vec<Diagnostic> {
+    let mut c = Checker::new(rule, config);
     c.run(rule);
     tracing::debug!(rule = %rule.id.text, diagnostics = c.out.len(), "checked rule names");
     c.out
 }
 
-struct Checker {
+struct Checker<'a> {
+    config: Option<&'a ConfigSchema>,
     out: Vec<Diagnostic>,
     vars: Vec<Var>,
     used: Vec<bool>,
@@ -106,8 +109,8 @@ struct Checker {
     finds: Vec<Var>,
 }
 
-impl Checker {
-    fn new(rule: &Rule) -> Self {
+impl<'a> Checker<'a> {
+    fn new(rule: &Rule, config: Option<&'a ConfigSchema>) -> Self {
         let mut knobs = Vec::new();
         let mut langs = LangMode::Universal;
         let mut lang_span = None;
@@ -131,6 +134,7 @@ impl Checker {
             }
         }
         Self {
+            config,
             out: Vec::new(),
             vars: Vec::new(),
             used: Vec::new(),
@@ -279,7 +283,7 @@ impl Checker {
             id,
             name: b.name.text.clone(),
             span: b.name.span,
-            ty: Self::source_ty(&b.source),
+            ty: self.source_ty(&b.source),
         };
         self.vars.push(v.clone());
         Some(v)
@@ -299,9 +303,9 @@ impl Checker {
         format!("{name}2")
     }
 
-    fn source_ty(s: &Source) -> VarTy {
+    fn source_ty(&self, s: &Source) -> VarTy {
         match s {
-            Source::Side(_) => VarTy::Side,
+            Source::Side(p) => VarTy::Side(self.row_columns(p)),
             Source::Shape(shape) => match &shape.node {
                 ShapeKind::Kind { kind, .. } => {
                     vocab::kind(&kind.text).map_or(VarTy::Any, |k| VarTy::Kind(k.word))
@@ -443,14 +447,11 @@ impl Checker {
             self.kind_use(w);
             return;
         }
-        if vocab::FLAGS.contains(&w.text.as_str()) {
+        if vocab::is_flag(&w.text) {
             return;
         }
         let kinds = vocab::kinds();
-        let cands = kinds
-            .iter()
-            .map(|k| k.word)
-            .chain(vocab::FLAGS.iter().copied());
+        let cands = kinds.iter().map(|k| k.word).chain(vocab::flag_names());
         self.unknown(
             w,
             "unknown kind or flag",
@@ -536,10 +537,10 @@ impl Checker {
     }
 
     fn verb(&mut self, w: &Word) {
-        if vocab::VERBS.contains(&w.text.as_str()) {
+        if vocab::is_verb(&w.text) {
             return;
         }
-        let s = vocab::suggest(&w.text, vocab::VERBS.iter().copied());
+        let s = vocab::suggest(&w.text, vocab::verb_names());
         self.unknown(w, "unknown verb", "not a kind, field or relation", s, None);
     }
 
@@ -573,14 +574,84 @@ impl Checker {
         }
     }
 
+    /// Whether a side-relation path names a relation (or, for `config`, a node of the schema).
+    fn side_known(&self, segs: &[&str]) -> bool {
+        match segs {
+            ["config"] => false,
+            ["config", rest @ ..] => self
+                .config
+                .is_none_or(|c| c.node(&rest.join(".")).is_some()),
+            _ => vocab::fixed_side(&segs[..segs.len().min(2)]).is_some(),
+        }
+    }
+
+    /// The columns of the rows a side-relation source yields, when the catalog types them.
+    fn row_columns(&self, p: &Path) -> Option<Rc<Vec<Column>>> {
+        let segs: Vec<&str> = p.segments.iter().map(|s| s.text.as_str()).collect();
+        match segs.as_slice() {
+            ["config", rest @ ..] => self
+                .config?
+                .node(&rest.join("."))?
+                .columns
+                .clone()
+                .map(Rc::new),
+            _ => vocab::fixed_side(&segs).map(|s| Rc::new(s.typed_columns())),
+        }
+    }
+
+    /// GRL001 for an unknown key under `config`, suggesting from the keys that do exist there.
+    fn unknown_config_key(&mut self, p: &Path, config: &ConfigSchema) {
+        let mut prefix = String::new();
+        for (i, seg) in p.segments.iter().enumerate().skip(1) {
+            let path = if prefix.is_empty() {
+                seg.text.clone()
+            } else {
+                format!("{prefix}.{}", seg.text)
+            };
+            if config.node(&path).is_none() {
+                let siblings: Vec<String> = if prefix.is_empty() {
+                    config.tables().into_iter().map(str::to_owned).collect()
+                } else {
+                    config
+                        .node(&prefix)
+                        .map(|n| n.children.clone())
+                        .unwrap_or_default()
+                };
+                let s = vocab::suggest(&seg.text, siblings.iter().map(String::as_str));
+                let owner = p.segments[..i]
+                    .iter()
+                    .map(|x| x.text.as_str())
+                    .collect::<Vec<_>>()
+                    .join(".");
+                let list = siblings.join(", ");
+                self.unknown(
+                    seg,
+                    "unknown config key",
+                    &format!("not a key of `{owner}`"),
+                    s,
+                    Some(&format!("the keys of `{owner}` are {list}")),
+                );
+                return;
+            }
+            prefix = path;
+        }
+    }
+
     fn side_path(&mut self, p: &Path) {
         let segs: Vec<&str> = p.segments.iter().map(|s| s.text.as_str()).collect();
-        if vocab::side_relation_known(&segs) {
+        if self.side_known(&segs) {
+            return;
+        }
+        if segs.len() >= 2
+            && segs[0] == "config"
+            && let Some(config) = self.config
+        {
+            self.unknown_config_key(p, config);
             return;
         }
         let joined = segs.join(".");
-        let root_ok = vocab::SIDE_ROOTS.contains(&segs[0]);
-        let s = vocab::suggest(&joined, vocab::SIDE_RELATIONS.iter().copied());
+        let root_ok = vocab::is_side_root(segs[0]);
+        let s = vocab::suggest(&joined, vocab::side_relation_names());
         let (span, word) = if root_ok {
             (p.span, joined)
         } else {
@@ -741,11 +812,8 @@ impl Checker {
         if self.defs.iter().any(|d| d.0 == call.name.text) {
             return Ty::Bool;
         }
-        let names: Vec<&str> = vocab::FUNCTIONS
-            .iter()
-            .copied()
-            .chain(self.defs.iter().map(|d| d.0.as_str()))
-            .collect();
+        let mut names: Vec<&str> = vocab::function_names().collect();
+        names.extend(self.defs.iter().map(|d| d.0.as_str()));
         let s = vocab::suggest(&call.name.text, names.iter().copied()).map(str::to_owned);
         self.unknown(
             &call.name,
@@ -765,11 +833,12 @@ impl Checker {
             match v.ty {
                 VarTy::Kind(k) => Ty::Node(Some(k)),
                 VarTy::Any => Ty::Node(None),
-                VarTy::Side => Ty::Any,
+                VarTy::Side(Some(cols)) => Ty::Row(cols),
+                VarTy::Side(None) => Ty::Any,
             }
         } else if first.text == "knob" && p.segments.len() == 2 {
             return self.knob(&p.segments[1]);
-        } else if vocab::SIDE_ROOTS.contains(&first.text.as_str()) {
+        } else if vocab::is_side_root(&first.text) {
             self.side_path_prefix(p);
             return Ty::Any;
         } else {
@@ -785,11 +854,10 @@ impl Checker {
     /// A term path that starts at a side-relation root (`lease.globs`, `config.lease.shared_files`).
     fn side_path_prefix(&mut self, p: &Path) {
         let segs: Vec<&str> = p.segments.iter().map(|s| s.text.as_str()).collect();
-        let known = match segs[0] {
-            "config" => segs.len() >= 2,
-            _ => vocab::side_relation_known(&segs[..segs.len().min(2)]),
-        };
-        if !known {
+        let probe = &segs[..segs
+            .len()
+            .min(if segs[0] == "config" { segs.len() } else { 2 })];
+        if !self.side_known(probe) {
             self.side_path(p);
         }
     }
@@ -806,6 +874,22 @@ impl Checker {
                 vocab::ref_field_names(),
                 "this value".to_owned(),
             ),
+            Ty::Row(cols) => {
+                if let Some(c) = cols.iter().find(|c| c.name == seg.text) {
+                    return vocab::ty_of(c.ty);
+                }
+                let names: Vec<&str> = cols.iter().map(|c| c.name.as_str()).collect();
+                let sg = vocab::suggest(&seg.text, names.iter().copied());
+                let list = names.join(", ");
+                self.unknown(
+                    seg,
+                    "unknown column",
+                    "not a column of this relation",
+                    sg,
+                    Some(&format!("the columns are {list}")),
+                );
+                return Ty::Any;
+            }
             Ty::Str | Ty::Int | Ty::Float | Ty::Bool | Ty::Regex | Ty::Glob => {
                 let s = seg.text.clone();
                 self.out.push(
@@ -1056,7 +1140,9 @@ impl Checker {
         let Some(info) = vocab::kind(&w.text) else {
             return;
         };
-        if matches!(info.langs, Langs::All) || langs.iter().any(|l| info.langs.answers(l)) {
+        if matches!(info.answers, Answers::Everywhere)
+            || langs.iter().any(|l| info.answers.answered_in(l))
+        {
             return;
         }
         if !self.seen_kind_use.insert(w.text.clone()) {
@@ -1077,7 +1163,7 @@ impl Checker {
         .with_help(format!(
             "`{}` is answered in {}; add one of them to `lang`, or remove this clause",
             w.text,
-            info.langs.describe()
+            info.answers.describe()
         ));
         if let Some(s) = self.lang_span {
             d = d.with_secondary(s, "the languages are set here");

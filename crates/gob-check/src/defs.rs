@@ -190,7 +190,12 @@ pub(crate) fn run_repo_rules<P: Product>(
             &[RuleKey::from(def)],
             files,
             &mut tally.stats,
-            |_| anchor(def, run(product, snap), None),
+            |files| {
+                run(product, snap)
+                    .into_iter()
+                    .map(|e| e.into_located_finding(def, files))
+                    .collect()
+            },
         ));
         if let Some(count) = &entry.subjects {
             let n = count(product, snap);

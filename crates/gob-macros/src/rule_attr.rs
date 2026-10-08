@@ -403,7 +403,7 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
     if let Some(id) = &id
         && valid_id(&id.value()).is_none()
     {
-        errs.at(id.span(), format!("invalid rule id `{}`; expected FAMILY (2-6 uppercase letters) + 3 digits, e.g. COV006", id.value()));
+        errs.at(id.span(), format!("invalid rule id `{}`; expected FAMILY (2-8 uppercase letters) + 3 digits, e.g. COV006", id.value()));
     }
     if let Some(s) = &slug
         && !valid_slug(&s.value())

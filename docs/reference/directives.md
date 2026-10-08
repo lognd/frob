@@ -2,6 +2,15 @@
 
 # Directives
 
+## `crunk:waive`
+
+Waive one crunk rule at the declaration this comment attaches to.
+
+| Argument | Form | Type | Required | Summary |
+|---|---|---|---|---|
+| rule | `<rule>` | string | yes | The waived rule id, for example `COLOR001`. |
+| reason | `reason=<v>` | string | no | Why the waiver exists. |
+
 ## `frob:accept`
 
 Accept one rule's finding at this site permanently, with a reason.

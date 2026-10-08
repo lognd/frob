@@ -1,0 +1,13 @@
+kind = "create"
+title = "cycle plan --apply: batch the assignments into one ledger commit"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M4D6NB00MBEV0PRHN15CXZP8"
+scope = ["changelog.d/**", "crates/frob-pm/**", "crates/frob-ledger/**"]
+acceptance = ["Given plan --apply assigning N tickets, when run, then one commit is written"]
+body = "Follow-up from ~D672RXD: 3.4 s, about 0.5 s per ticket."
+at = "2026-10-08T12:07:27Z"
+actor = "lognd"
+rev = 1
