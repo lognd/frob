@@ -8,12 +8,12 @@ points = 5
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T04:55:05Z"
-updated = "2026-10-08T06:44:08Z"
+updated = "2026-10-08T06:45:10Z"
 scope = ["changelog.d/**", "crates/gob-ir/**"]
 
 [[acceptance]]
 text = "Given proptest over random structures, completions and formulas (atoms, not/and/or, some/no, count, bounded and unbounded reach), when run, then every definite answer equals the classical answer in every sampled completion, and closed structures never yield Unknown"
-bound = false
+bound = true
 +++
 
 notes/review/formal-review-2026-10-08.md section 4 item 8. Would have found H1, the polarity bug and the within bug.
