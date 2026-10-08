@@ -2,7 +2,8 @@
 id = "01M4BMRY81T9B3T7SC3BWMVSPZ"
 title = "land exits 4 E-GIT-REV cannot resolve experimental after a successful close"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
