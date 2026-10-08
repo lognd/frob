@@ -1,0 +1,26 @@
+[package]
+name = "crunk-tokens"
+version.workspace = true
+description = "The crunk design-token model: the token set derived from a DesignSpec, token naming and Tailwind theme mapping inputs."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+keywords = ["css", "design-system", "design-tokens", "tailwind"]
+categories = ["web-programming"]
+
+[lints]
+workspace = true
+
+[dependencies]
+crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
+crunk-tailwind = { version = "0.532.0", path = "../crunk-tailwind" }
+crunk-values = { version = "0.532.0", path = "../crunk-values" }
+indexmap = { version = "2", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+tracing = "0.1"
+
+[dev-dependencies]
+serde_json = "1"
