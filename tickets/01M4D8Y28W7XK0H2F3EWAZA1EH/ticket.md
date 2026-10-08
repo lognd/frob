@@ -2,13 +2,13 @@
 id = "01M4D8Y28W7XK0H2F3EWAZA1EH"
 title = "gob-check: SARIF 2.1.0 tool parser with a per-tool id map and source_rule"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:09:03Z"
-updated = "2026-10-08T08:09:03Z"
+updated = "2026-10-08T14:30:24Z"
 scope = ["changelog.d/**", "crates/gob-check/**"]
 
 [[acceptance]]
