@@ -9,13 +9,18 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
+crunk-ingest = { version = "0.532.0", path = "../crunk-ingest" }
 crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
+crunk-tokens = { version = "0.532.0", path = "../crunk-tokens" }
+crunk-values = { version = "0.532.0", path = "../crunk-values" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 tracing = "0.1"
 
 [dev-dependencies]
+gob-cache = { version = "0.532.0", path = "../gob-cache" }
 gob-mdtest = { path = "../gob-mdtest" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
+tempfile = "3"
 
 [lints]
 workspace = true

@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["area:crunk"]
+new = ["area:crunk", "creates:crates/crunk-ingest/src/tailwind/**", "creates:crates/crunk-ingest/tests/tailwind*.rs", "creates:crates/crunk-ingest/tests/fixtures/tailwind/**", "creates:crates/crunk-ingest/tests/fixtures/dump_tailwind.py"]
+at = "2026-10-08T13:38:40Z"
+actor = "lognd"
+rev = 1

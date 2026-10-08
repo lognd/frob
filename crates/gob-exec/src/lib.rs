@@ -5,12 +5,15 @@
 //! through a [`Runner`], which bounds concurrency with a semaphore, logs
 //! the argv, duration and exit under an `exec.spawn` span, kills the whole
 //! process group on timeout, caps and redacts captured output with
-//! [`gob_log::redact`], and counts spawns (see [`SpawnCount`]).
+//! [`gob_log::redact`], and counts spawns (see [`SpawnCount`]). A caller that needs only
+//! specific variables passes an [`EnvPolicy::Scrub`] allowlist to [`Runner::run_with_env`]; a
+//! secret-shaped name is never inherited, only added explicitly per spawn.
 //! Design: `git-io.md` section 3, `architecture.md` section 9.
 
 mod cmdline;
 mod counter;
 mod discover;
+mod env;
 mod error;
 mod path;
 pub mod proc001;
@@ -24,6 +27,7 @@ pub use discover::{
     Origin, Platform, Sibling, beside_dirs, executable_names, find_sibling, plan, tool_env_dirs,
     tool_env_roots,
 };
+pub use env::{BASELINE, EnvPolicy, is_secret_shaped};
 pub use error::ExecError;
 pub use path::{
     Style, canonical, has_dot_component, path_has_dot_component, path_strictly_inside,
