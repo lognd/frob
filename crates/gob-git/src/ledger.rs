@@ -101,6 +101,24 @@ impl Repo {
         self.commit_paths_with(ref_name, changes, message, opts, &mut |_| {})
     }
 
+    /// [`Self::commit_paths_with`] plus `after_cas()`, invoked after the ref moved and before any checkout sync.
+    ///
+    /// Tests use it to interleave a second writer deterministically.
+    ///
+    /// # Errors
+    /// See [`Self::commit_paths_with`].
+    pub fn commit_paths_traced(
+        &self,
+        ref_name: &str,
+        changes: &[(RelPath, Option<Vec<u8>>)],
+        message: &str,
+        opts: &CommitOptions,
+        before_cas: &mut dyn FnMut(u32),
+        after_cas: &mut dyn FnMut(),
+    ) -> Result<CommitOutcome, GitError> {
+        self.commit_inner(ref_name, changes, message, opts, before_cas, after_cas)
+    }
+
     /// [`Self::commit_paths`] with `before_cas(attempt)` invoked just before each
     /// compare-and-swap; tests use it to force ref churn.
     ///
@@ -126,6 +144,18 @@ impl Repo {
         message: &str,
         opts: &CommitOptions,
         before_cas: &mut dyn FnMut(u32),
+    ) -> Result<CommitOutcome, GitError> {
+        self.commit_inner(ref_name, changes, message, opts, before_cas, &mut || {})
+    }
+
+    fn commit_inner(
+        &self,
+        ref_name: &str,
+        changes: &[(RelPath, Option<Vec<u8>>)],
+        message: &str,
+        opts: &CommitOptions,
+        before_cas: &mut dyn FnMut(u32),
+        after_cas: &mut dyn FnMut(),
     ) -> Result<CommitOutcome, GitError> {
         let full = full_ref_name(ref_name);
         let (name, email) = opts
@@ -180,8 +210,9 @@ impl Repo {
             match self.cas(&full, tip, new_id, &sig, message) {
                 Ok(()) => {
                     info!(ref_name = %full, oid = %new_id, retries, paths = planned.len(), "ledger commit");
+                    after_cas();
                     if checked_out {
-                        self.sync_checkout(&planned, base_tree)?;
+                        self.sync_checkout(&full, &planned, base_tree)?;
                     }
                     let unsynced = self.sync_other_checkouts(&full, &planned, base_tree);
                     return Ok(CommitOutcome {
@@ -387,7 +418,7 @@ impl Repo {
             if Some(&canon) == me.as_ref() {
                 continue;
             }
-            match self.sync_one_other(&w.path, planned, old_tree) {
+            match self.sync_one_other(full, &w.path, planned, old_tree) {
                 Ok(None) => info!(path = %w.path.display(), "checkout synced to new tip"),
                 Ok(Some(paths)) => {
                     warn!(path = %w.path.display(), ?paths, "checkout left stale: local edits");
@@ -405,6 +436,7 @@ impl Repo {
     /// Sync the checkout at `path`; `Some(paths)` when local edits blocked it.
     fn sync_one_other(
         &self,
+        full: &str,
         path: &Path,
         planned: &[Planned<'_>],
         old_tree: Oid,
@@ -427,7 +459,7 @@ impl Repo {
             })
             .collect();
         if !free.is_empty() {
-            other.sync_checkout(&free, old_tree)?;
+            other.sync_checkout(full, &free, old_tree)?;
         }
         if blocked.is_empty() {
             Ok(None)
@@ -437,7 +469,17 @@ impl Repo {
     }
 
     /// Write files and stage entries for exactly the changed paths; nothing else in the index moves.
-    fn sync_checkout(&self, planned: &[Planned<'_>], old_tree: Oid) -> Result<(), GitError> {
+    ///
+    /// Under `index.lock` the ref tip is re-read and any path whose tip blob is no longer the
+    /// one being written is skipped: a later writer owns it and syncs it itself, so applying
+    /// this older write would leave worktree and index behind HEAD.
+    // frob:ticket 01M4CTDZFRZP5SBAB0X84HHHVK
+    fn sync_checkout(
+        &self,
+        full: &str,
+        planned: &[Planned<'_>],
+        old_tree: Oid,
+    ) -> Result<(), GitError> {
         let root = self.work_dir().expect("checked_out implies a worktree");
         let old = self.gix.find_tree(old_tree).map_err(odb_err)?;
         // Hold index.lock across read-modify-write so concurrent ledger writers
@@ -455,7 +497,22 @@ impl Repo {
                 self.gix.index_path(),
             ),
         };
+        let tip_tree = match self.read_ref(full)? {
+            Some(t) => Some(self.gix.find_tree(self.tree_of(&t)?.id).map_err(odb_err)?),
+            None => None,
+        };
         for p in planned {
+            let at_tip = match &tip_tree {
+                Some(t) => t
+                    .lookup_entry_by_path(p.path.as_str())
+                    .map_err(odb_err)?
+                    .map(|e| e.object_id()),
+                None => None,
+            };
+            if at_tip != p.blob.map(|(id, _)| id) {
+                info!(path = %p.path, "tip moved past this write; checkout sync skipped for path");
+                continue;
+            }
             let rel: &BString = &p.path.as_str().into();
             let disk = root.join(p.path.as_str());
             index.remove_entries(|_, path, _| path == rel.as_bstr());

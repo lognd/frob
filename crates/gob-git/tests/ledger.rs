@@ -598,3 +598,55 @@ fn primary_with_local_edit_still_receives_the_unblocked_new_paths() {
         "new path must not appear as a staged deletion: {status:?}"
     );
 }
+
+// frob:tests gob_git::Repo::sync_checkout
+#[test]
+fn losing_sync_order_leaves_checkout_equal_to_head() {
+    use std::sync::mpsc::channel;
+    let (dir, repo) = fixture();
+    let (ready_tx, ready_rx) = channel();
+    let (go_tx, go_rx) = channel();
+    let (done_tx, done_rx) = channel();
+    let path = dir.path().to_path_buf();
+    // Writer B passes its local-edit check, then waits; A wins the CAS, so B loses and retries.
+    let b = std::thread::spawn(move || {
+        let repo = Repo::discover(&path).unwrap();
+        let mut waited = false;
+        repo.commit_paths_with(
+            MAIN,
+            &[change("tickets/t.md", "new\n")],
+            "b",
+            &opts(),
+            &mut |_| {
+                if !std::mem::replace(&mut waited, true) {
+                    ready_tx.send(()).unwrap();
+                    go_rx.recv().unwrap();
+                }
+            },
+        )
+        .unwrap();
+        done_tx.send(()).unwrap();
+    });
+    ready_rx.recv().unwrap();
+    // A's ref update lands first, but B fully syncs "new" before A syncs "old".
+    repo.commit_paths_traced(
+        MAIN,
+        &[change("tickets/t.md", "old\n")],
+        "a",
+        &opts(),
+        &mut |_| {},
+        &mut || {
+            go_tx.send(()).unwrap();
+            done_rx.recv().unwrap();
+        },
+    )
+    .unwrap();
+    b.join().unwrap();
+    let head = repo.read_blob_at(MAIN, "tickets/t.md").unwrap().unwrap();
+    assert_eq!(head, b"new\n");
+    assert_eq!(
+        std::fs::read(dir.path().join("tickets/t.md")).unwrap(),
+        b"new\n"
+    );
+    assert!(repo.status(&StatusOptions::default()).unwrap().is_empty());
+}
