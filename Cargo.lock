@@ -617,6 +617,16 @@ dependencies = [
 name = "crunk-tailwind"
 version = "0.532.0"
 dependencies = [
+ "gob-cache",
+ "gob-exec",
+ "gob-fs",
+ "gob-ir",
+ "gob-languages",
+ "gob-symbols",
+ "gob-walk",
+ "serde",
+ "serde_json",
+ "tempfile",
  "thiserror",
  "tracing",
 ]
