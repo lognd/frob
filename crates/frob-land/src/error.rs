@@ -88,6 +88,11 @@ impl From<LandError> for CliError {
                 .with_remedy("fix frob.toml as described, then rerun")
                 .into(),
             LandError::Check(c) => Self::internal(c),
+            LandError::Git(g @ GitError::Rev { .. }) => {
+                Refusal::new("E-LAND-GIT-REV", RefusalClass::GuardNeedsAction, g.to_string())
+                    .with_remedy("check that the base branch and the ticket branch exist (git branch --list), then rerun frob land")
+                    .into()
+            }
             LandError::Git(g) => Self::internal(g),
             LandError::Evidence(v) => Self::internal(v),
             LandError::Io { context, source } => Self::internal(format!("{context}: {source}")),
