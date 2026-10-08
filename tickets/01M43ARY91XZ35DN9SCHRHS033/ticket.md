@@ -2,7 +2,8 @@
 id = "01M43ARY91XZ35DN9SCHRHS033"
 title = "crunk-ingest: ProjectStyles from CSS, bucket and organization model, walk"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
