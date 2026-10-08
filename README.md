@@ -9,155 +9,110 @@
 
 # frob
 
-frob is being rewritten in Rust as a monorepo of three products built on a
-shared substrate (`gob-*` crates): **frob**, the ticket goblin that tracks
-every unit of work and turns unaccounted-for change into a failed check;
-**grimble**, the design goblin that checks code against its declared design;
-and **crunk**, the design-system linter. The sections below still describe
-the v1 Python implementation until the rewrite replaces it.
+frob is a monorepo of three products built on one shared substrate (the
+`gob-*` crates), written in Rust. This is v2 (0.532.0 and later); the Python
+v1 line ended at 0.531.0 (see [docs/guides/upgrade-from-v1.md](docs/guides/upgrade-from-v1.md)).
 
-Self-hosting status: this repository's tickets and gates are already run by
-frob v2 built from this tree (`frob check` in CI); see CONTRIBUTING.md.
+| Product | What it does | Status |
+|---|---|---|
+| **frob** | The ticket goblin: a git-tracked ticket ledger, scope leases, per-ticket worktrees, cycles and milestones, evidence-gated close and land, `check` rules, release cuts. | Released, the main product. |
+| **grimble** | The design goblin: checks code against a declared design model (`design/model.grmb`). | Preview until 0.533.0. |
+| **crunk** | The design-system linter for CSS and design tokens. | Preview: the rule set is still empty. |
 
-## Highlights
+Self-hosting: this repository's tickets and gates are run by frob v2 built
+from this tree (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
-- **Obligation graph.** Every symbol's identity, tests, docs, and tickets
-  are tracked edges, not tribal knowledge -- `frob check` fails the moment
-  one of them drifts.
-- **Statically-checkable ticket queue.** Work lives in the `tickets/`
-  directory, tracked in git, with declared scope, blockers, and evidence --
-  not a side channel that can silently fall out of sync with the code.
-- **Gates with a remedy built in.** `frob check` runs ruff, ty,
-  cycle/dup/arch/bind/exports, and every enforcement gate in one pass; every
-  violation message embeds the command that fixes it.
-- **A comment DSL, not a wiki.** `frob:ticket`, `frob:tests`, `frob:doc`,
-  `frob:invariant`, and `frob:waive` bind code to its own accounting inline,
-  where a diff can't leave it behind.
-- **Visible debt, never silence.** A waiver (`frob:waive RULE-ID
-  reason="..."`) is an explicit, reason-carrying exception -- it shows up in
-  every report instead of quietly suppressing a check.
-- **An MCP server for agent hosts.** `frob serve` exposes doable tickets,
-  stale docs, and graph queries as read-only tools over stdio.
+## What frob gives you
+
+- **A ticket ledger in git.** Tickets live under `tickets/` as append-only
+  event files, so concurrent branches merge instead of conflict. Tickets have
+  types, priorities, story points, acceptance criteria and typed links.
+- **Scope leases.** `frob work` leases a ticket's file globs and creates a
+  worktree and branch for it; `frob check` fails a change outside the lease
+  (rule SCOPE001).
+- **Evidence-gated done.** Acceptance criteria are bound to measured evidence
+  (`frob test`, `frob ticket evidence add --accepts N`); `frob land` refuses
+  until every criterion is evidenced and the check is green.
+- **Planning.** Cycles with capacity, milestones with exit criteria, a
+  scrumban `frob board` with WIP limits.
+- **Rules with a remedy.** Every finding names the command that fixes it, and
+  every command answers in one JSON envelope (`--json`, the default when
+  stdout is not a terminal) with stable exit codes.
 
 ## Install
 
-The Rust rewrite is not yet published. Build from source with the pinned
-toolchain (see `rust-toolchain.toml`):
+From PyPI (the wheel carries the Rust executables, no Python modules):
 
-```bash
-cargo build --workspace
-cargo dev --help
+```sh no-run
+uv tool install frob
+# or
+pip install frob
 ```
 
-## Quickstart
+The `frob` package depends on `grimble`, so both binaries arrive together.
+Prebuilt archives of all three binaries (`frob`, `grimble`, `crunk`) for
+Linux, macOS and Windows are attached to each release on
+[GitHub](https://github.com/lognd/frob/releases). `crunk` is only in those
+archives, not on PyPI. To build from a checkout, use the pinned toolchain in
+`rust-toolchain.toml` and run `cargo build --release -p frob`.
 
-The enforcement loop is `annotate -> check -> fix-or-waive`: bind code to a
-ticket and its tests with comment directives, let `frob check` fail on
-anything undeclared, then either close the gap or waive it with a reason.
+Upgrading from v1? `pip install -U frob` moves you to v2, which has different
+commands and a different ticket layout. Read
+[docs/guides/upgrade-from-v1.md](docs/guides/upgrade-from-v1.md) first, or pin
+`frob==0.531.0`.
 
-```bash
-frob graph build                                  # build the obligation graph cache
-frob ticket new --title "Add multiply function" \
-    --kind feature --scope "src/demo/calc.py"     # T-0001
-frob work --here T-0001                           # lease it for this checkout, -> in-progress
+## A first look
 
-# write code, bind it: `# frob:ticket T-0001` above the new symbol,
-# `# frob:tests <symref>` above the test that covers it
+In any git repository with at least one commit:
 
-frob check . --ticket T-0001                      # fails: undeclared change
-# ... add the directives, write the test ...
-frob check . --ticket T-0001                      # coverage/scope/drift clean
-
-frob test --base main                             # run exactly the touched-set tests
-frob ack src/demo/calc.py::multiply --facet sig    # acknowledge a described contract
-frob ticket close T-0001                           # requires evidence + a Done report
+```sh
+frob --version
+frob init
+frob ticket new --title "Add multiply" --scope 'src/**' --points 2
+frob ticket list
+frob board
+frob check
 ```
 
-See docs/guides/quickstart.md for the full walkthrough with real command
-output.
+`frob init` writes `frob.toml` and `.gitattributes` (the ledger merge driver)
+and ignores `.frob/`; commit them. A fresh `frob check` prints a few
+"unresolved" lines for files with no language adapter, such as `frob.toml`;
+they do not fail the gate.
 
-## Command groups
+The full loop (cycle, work, test, evidence, land, release status) is in
+[docs/guides/quickstart.md](docs/guides/quickstart.md).
 
-`frob --help` groups its surface into seven verb collections -- explore,
-quality, design, ops, ticket, vet, serve -- and every member also works as
-its own standalone top-level command. docs/guides/command-reference.md has
-the full per-group breakdown; docs/modules/cli.md carries the tier ledger
-behind the grouping. The complete table is below.
+## grimble and crunk
 
-<details>
-<summary>Full command reference (every top-level command)</summary>
+Both follow the same conventions as frob: `--json`/`--text`, one envelope,
+`check` and `doctor` verbs, and a config file at the repository root.
 
-Statically bound to the live subcommand registry -- a subcommand added or
-removed with no matching row here fails `frob check` (DOC005). The seven
-grouped rows (`explore`/`quality`/`design`/`ops`/`ticket`/`vet`/`serve`)
-are the verb collections above; everything else also works standalone.
-Use `frob <verb> --help` for flags.
+```sh
+grimble init
+grimble check
+crunk doctor
+```
 
-| Command | Description |
-|---|---|
-| `frob ack` | Acknowledge current digests for one or more symbol refs |
-| `frob agent` | Print/export the dispatched-agent guard env |
-| `frob arch` | Arch analysis: long functions, god classes, coupling |
-| `frob bind` | Verify binding declarations match source signatures |
-| `frob check` | Aggregate quality gate: ruff, ty, cycle/dup/arch/bind/exports, and every enforcement gate |
-| `frob claude` | Sync this repo's tracked Claude config to `~/.claude/` |
-| `frob clean` | Remove build/test/cache artifacts (tiered, dry-run by default) |
-| `frob coverage` | Refresh `coverage.xml` / the coverage stamp, touched-set incremental by default |
-| `frob cycle` | Detect import cycles in Python packages |
-| `frob debt` | List outstanding `frob:debt` entries |
-| `frob deploy` | Compile a host manifest into idempotent install/status/uninstall bash |
-| `frob deprecated` | List outstanding `frob:deprecated` entries |
-| `frob design` | Group: `sys`/`registry`/`docs`/`graph`/`exports` -- see docs/guides/command-reference.md |
-| `frob docs` | Extract docstrings or search `docs/` for a file/symbol |
-| `frob doctor` | Verify native extensions and report derived-state health |
-| `frob dup` | Detect duplicate/clone code segments |
-| `frob explore` | Group: `map`/`outline`/`xref`/`docs-search` -- see docs/guides/command-reference.md |
-| `frob exports` | Generate a ready-to-paste `__init__.py` from public symbols |
-| `frob fleet` | Cross-repo status/gate rollup and ticket routing over `fleet.toml` |
-| `frob fmt` | Canonicalize `frob:` directive comment line-wrapping |
-| `frob format` | `ruff check --fix` + `ruff format`, write mode |
-| `frob gitlog` | Summarize git history filtered by conventional commit type |
-| `frob graph` | Obligation graph: build the cache, query symbols, explain drift |
-| `frob map` | Recursive directory tree with file sizes and line counts |
-| `frob mutate` | Mutation testing: perturb a file, see which mutants survive |
-| `frob narrative` | Migrate a `T-####` narrative comment block |
-| `frob natives` | Build declared `[[native]]` crates via `maturin develop` |
-| `frob ops` | Group: `release`/`natives`/`doctor`/`clean`/`fleet`/`deploy`/`scaffold`/`gitlog`/`stats` -- see docs/guides/command-reference.md |
-| `frob outline` | Structural skeleton of a file: classes, functions, signatures |
-| `frob parse` | Parse tool output (pytest/ruff/ty/clang/junit) into a compact summary |
-| `frob perf` | Profile a command/test suite and inspect its heat-map |
-| `frob pool` | Ratchet-pool baseline management for warn-rule findings |
-| `frob profile` | Development profile (rapid/standard/fortress) status and downgrade |
-| `frob quality` | Group: `check`/`test`/`dup`/`arch`/`bind`/`cycle`/`mutate`/`perf` -- see docs/guides/command-reference.md |
-| `frob refactor` | Transactional symbol move/rename/split |
-| `frob registry` | Exhaustiveness drift-lock over `docs/design/registry/*.yaml` |
-| `frob release` | Mechanical semver from the public-API graph, plus the release gate |
-| `frob scaffold` | Scaffold a new project from a registered template |
-| `frob serve` | MCP stdio adapter exposing frob's enforcement queries as tools |
-| `frob stats` | DORA-ish delivery measurement: queue health + commit cadence |
-| `frob status` | Delta-first movement summary since the last stamped baseline |
-| `frob sync-skills` | Bidirectionally sync `agents/`/`skills/` into `~/.claude/` |
-| `frob sys` | strata design-model audit: model-vs-code conformance, threat/CWE/compliance/PII, deploy proofs |
-| `frob test` | Select and run tests for the touched set against a base ref (or `--all`) |
-| `frob ticket` | Group: the statically-checkable ticket queue -- see docs/guides/command-reference.md |
-| `frob verify` | The unverified-window tracker: depth/age/quarantine status |
-| `frob vet` | Group: dependency capability/CVE/supply-chain vetting -- see docs/guides/command-reference.md |
-| `frob whereis` | Print the interpreter/site-packages path of the frob actually running |
-| `frob worktree` | Manage dispatched-agent git worktrees |
-| `frob xref` | Find where a symbol is defined and every file that references it |
+`grimble init` writes `grimble.toml` and seeds `design/model.grmb`; `frob
+check` runs a `grimble` or `crunk` it finds next to the `frob` binary or on
+`PATH` and merges its findings. `crunk check` needs a `crunk.toml` first. See
+[docs/crunk/README.md](docs/crunk/README.md) and
+[docs/crunk/config.md](docs/crunk/config.md). grimble and crunk are previews:
+their rule sets and verbs are still growing.
 
-</details>
+## Reference
+
+- [docs/guides/quickstart.md](docs/guides/quickstart.md): init to land,.
+- [docs/reference/cli/frob.md](docs/reference/cli/frob.md): every `frob` verb and flag, generated from the CLI (`cargo dev gen cli`).
+- [docs/reference/config.md](docs/reference/config.md): every `frob.toml` key.
+- [docs/reference/rules/](docs/reference/rules/): one page per check rule.
+- [docs/guides/release.md](docs/guides/release.md): cutting a frob release.
+- [docs/design/README.md](docs/design/README.md): the design set and decision log.
+- [CHANGELOG.md](CHANGELOG.md): what shipped.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the ticket-queue workflow,
-comment-directive conventions, and the evidence/close/land dance. Please
-also read the [Code of Conduct](CODE_OF_CONDUCT.md). Found a security
-issue? See [SECURITY.md](SECURITY.md) -- please do not file it as a public
-issue.
-
-## More
-
-- docs/design/README.md -- the v2 design set and decision log
-- CONTRIBUTING.md -- how work is ticketed, checked and landed
-- CHANGELOG.md -- what shipped, grouped by area
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the ticket-queue workflow and the
+evidence/close/land dance. Please also read the
+[Code of Conduct](CODE_OF_CONDUCT.md). Found a security issue? See
+[SECURITY.md](SECURITY.md) and do not file it as a public issue.
