@@ -1,0 +1,11 @@
+kind = "create"
+title = "crunk-tokens: depend on crunk-tailwind with default-features = false so the token crate does not pull the node runtime stack"
+type = "task"
+category = "todo"
+priority = "low"
+labels = ["area:crunk"]
+scope = ["crates/crunk-tokens/Cargo.toml"]
+body = "Found while working ~1WS0DQ4: crunk-tailwind gained a default-on runtime feature (gob-exec, gob-cache, gob-symbols, ...). crunk-tokens only needs the default-theme tables; set default-features = false there. Blocked by neither; do after ~1WS0DQ4 lands."
+at = "2026-10-08T13:40:32Z"
+actor = "lognd"
+rev = 1
