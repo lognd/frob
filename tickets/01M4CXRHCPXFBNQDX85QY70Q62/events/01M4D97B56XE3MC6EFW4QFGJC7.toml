@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Evidence from notes/research/mining-report-2026-10-08.md 6.2: F-UI-RENDER is 11.3 percent [8.6-14.7] of escaped mistakes, the second largest class; T1 layout checks rank above SLOP tells (notes/research/lint-catalogue-2026-10-08.md 2.5)."
+at = "2026-10-08T08:14:07Z"
+actor = "lognd"
+rev = 1

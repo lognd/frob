@@ -290,13 +290,26 @@ fn assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones() 
     };
     let upload = pos("gh release upload dev");
     let tag = pos("git/refs/tags/dev");
-    let notes = pos("gh release edit dev");
+    let notes = pos("--notes-file notes.md");
     let prune = pos("gh release delete-asset");
     assert!(
         upload < tag && tag < notes && notes < prune,
         "prune must be last"
     );
     assert_eq!(steps[prune]["id"].as_str(), Some("prune"));
+    // The tag move tries the in-place update first. When the job token is refused (a workflow
+    // file changed since the old tag target) it deletes only the tag ref and republishes the
+    // release with --target, then verifies the tag; the release and its assets are never deleted.
+    let tag_run = steps[tag]["run"].as_str().unwrap();
+    assert!(tag_run.contains("-X PATCH") && tag_run.contains("-F force=true"));
+    assert!(tag_run.contains("-X DELETE \"repos/$REPO/git/refs/tags/dev\""));
+    assert!(tag_run.contains("--draft=false") && tag_run.contains("--target \"$SHA\""));
+    assert!(
+        tag_run.find("-X PATCH").unwrap() < tag_run.find("-X DELETE").unwrap(),
+        "the in-place move is tried before the recreate"
+    );
+    assert!(tag_run.contains("git/ref/tags/dev") && tag_run.contains("exit 1"));
+    assert!(!tag_run.contains("release delete") && !tag_run.contains("delete-asset"));
     // Deleting is the only destructive call before the cleanup step and it spares the new sha.
     let prune_run = steps[prune]["run"].as_str().unwrap();
     assert!(

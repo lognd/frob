@@ -1,0 +1,43 @@
+kind = "evidence"
+captured_at = "2026-10-08T07:37:38Z"
+digest = "9a7a14bdce68bf423e7562126ef654a3e57f436ded3df67bd9370862e28e14cc"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling libc v0.2.189
+   Compiling rustix v1.1.5
+   Compiling getrandom v0.4.3
+   Compiling bitflags v2.13.2
+   Compiling linux-raw-sys v0.12.1
+   Compiling fastrand v2.5.0
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling tempfile v3.27.0
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.91s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c5a51a8c-1dff-41f1-95bc-6a72292809a6 with nextest profile: default
+    Starting 10 tests across 10 binaries (65 tests skipped)
+        PASS [   0.015s] crunk-tokens::model alpha_channels_gives_every_color_an_rgb_companion
+        PASS [   0.016s] crunk-tokens::model colliding_palette_names_are_a_typed_error_naming_both
+        PASS [   0.015s] crunk-tokens::model a_stack_named_base_collides_with_the_base_family
+        PASS [   0.027s] crunk-tokens::model value_types_render_css
+        PASS [   0.030s] crunk-tokens::model naming_helpers
+        PASS [   0.029s] crunk-tokens::model bare_keys_collide_with_tailwind_defaults_only_when_not_namespaced
+        PASS [   0.030s] crunk-tailwind::defaults v4_fixture_theme_keys_collide_only_where_expected
+        PASS [   0.046s] crunk-tokens::model spec_tokens_are_unscoped_primitives_without_modes
+        PASS [   0.047s] crunk-spec::spec jsx_and_tailwind_defaults_and_values
+        PASS [   0.052s] crunk-tokens::model every_fixture_equals_the_python_token_list_and_theme_mapping
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.059s] 10 tests run: 10 passed, 65 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-spec -p crunk-tailwind -p crunk-tokens -E '(package(=crunk-spec) & (test(=jsx_and_tailwind_defaults_and_values))) | (package(=crunk-tailwind) & (test(=v4_fixture_theme_keys_collide_only_where_expected))) | (package(=crunk-tokens) & (test(=a_stack_named_base_collides_with_the_base_family) | test(=alpha_channels_gives_every_color_an_rgb_companion) | test(=bare_keys_collide_with_tailwind_defaults_only_when_not_namespaced) | test(=colliding_palette_names_are_a_typed_error_naming_both) | test(=every_fixture_equals_the_python_token_list_and_theme_mapping) | test(=naming_helpers) | test(=spec_tokens_are_unscoped_primitives_without_modes) | test(=value_types_render_css)))'"
+size = 1895
+status = "measured"
+tests = ["v4_fixture_theme_keys_collide_only_where_expected", "jsx_and_tailwind_defaults_and_values", "alpha_channels_gives_every_color_an_rgb_companion", "colliding_palette_names_are_a_typed_error_naming_both", "a_stack_named_base_collides_with_the_base_family", "value_types_render_css", "naming_helpers", "bare_keys_collide_with_tailwind_defaults_only_when_not_namespaced", "spec_tokens_are_unscoped_primitives_without_modes", "every_fixture_equals_the_python_token_list_and_theme_mapping"]
+at = "2026-10-08T07:37:38Z"
+actor = "lognd"
+rev = 1

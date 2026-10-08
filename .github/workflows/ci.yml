@@ -306,7 +306,25 @@ jobs:
       - name: Move the dev tag to the tested commit
         shell: bash
         run: |
-          gh api -X PATCH "repos/$REPO/git/refs/tags/dev" -f sha="$SHA" -F force=true
+          # A ref update that carries a change under .github/workflows (the diff between the old
+          # tag target and the tested sha) is refused to the job token with 403 "Resource not
+          # accessible by integration": the `workflows` permission cannot be granted to
+          # GITHUB_TOKEN (docs.github.com/en/rest/releases/releases). Releases the same token
+          # creates are not refused, so on that refusal the tag ref (never the release or its
+          # assets) is deleted, which drafts the release, and publishing it again with
+          # --target recreates the tag at the tested sha through the Releases API.
+          if gh api -X PATCH "repos/$REPO/git/refs/tags/dev" -f sha="$SHA" -F force=true; then
+            echo "dev tag moved in place"
+          else
+            echo "::warning::in-place tag move refused; recreating the dev tag through the release"
+            gh api -X DELETE "repos/$REPO/git/refs/tags/dev"
+            gh release edit dev --repo "$REPO" --draft=false --prerelease --target "$SHA"
+          fi
+          tagged=$(gh api "repos/$REPO/git/ref/tags/dev" --jq '.object.sha')
+          if [ "$tagged" != "$SHA" ]; then
+            echo "dev tag is at $tagged, expected $SHA" >&2
+            exit 1
+          fi
       - name: Name the tested sha in the release notes
         shell: bash
         run: |
