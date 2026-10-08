@@ -1,10 +1,11 @@
 //! The words a rule may name, with their types: the compiler's view of the relation catalog.
 //!
-//! Web-engine kinds come from [`crate::catalog`]; the core kinds, flags, verbs, side relations
-//! and built-in functions of grl-spec.md section 6 are listed here until the full catalog
-//! (~CDMAECH) absorbs them. Every lookup goes through this module so that swap is one place.
+//! The words themselves live in [`crate::catalog`]; this module adapts them to the checker's
+//! types and holds the typo-suggestion helpers.
 
-use crate::catalog::{self, FieldType};
+use std::rc::Rc;
+
+use crate::catalog::{self, Column, FieldType, Kind, SideRelation};
 use crate::grl::ast::{LiteralKind, TypeKind};
 
 /// The static type of a GRL term, as far as the checker can tell.
@@ -32,7 +33,9 @@ pub(super) enum Ty {
     Node(Option<&'static str>),
     /// A node-valued field such as `.callee` or `.target`: text as written plus parts.
     Ref,
-    /// A row of a side relation, a vocabulary or anything the checker does not model.
+    /// A row of a side relation whose columns are known.
+    Row(Rc<Vec<Column>>),
+    /// A vocabulary or anything the checker does not model.
     Any,
 }
 
@@ -50,6 +53,7 @@ impl Ty {
             Self::Const => "a constant answer",
             Self::Tokens => "a class-token answer",
             Self::Node(_) | Self::Ref => "a node",
+            Self::Row(_) => "a row",
             Self::Any => "a value",
         }
     }
@@ -116,267 +120,122 @@ pub(super) fn literal_ty(lit: &LiteralKind) -> Ty {
     }
 }
 
-/// The languages whose adapters answer a kind.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum Langs {
-    /// Every language.
-    All,
-    /// Programming languages: everything except data, prose and style files.
-    Code,
-    /// Exactly these language ids.
-    Only(&'static [&'static str]),
-}
-
-/// Language ids that are data, prose or style rather than code.
-const NON_CODE: &[&str] = &[
-    "css", "scss", "html", "markdown", "toml", "json", "yaml", "text",
-];
-
-impl Langs {
-    /// Whether the language `lang` answers the kind (unknown ids count as code).
-    pub(super) fn answers(self, lang: &str) -> bool {
-        match self {
-            Self::All => true,
-            Self::Code => !NON_CODE.contains(&lang),
-            Self::Only(ids) => ids.contains(&lang),
-        }
+/// The checker's type for a catalog field type.
+pub(super) fn ty_of(t: FieldType) -> Ty {
+    match t {
+        FieldType::Str => Ty::Str,
+        FieldType::Int => Ty::Int,
+        FieldType::Float => Ty::Float,
+        FieldType::Bool => Ty::Bool,
+        FieldType::Glob => Ty::Glob,
+        FieldType::Const => Ty::Const,
+        FieldType::Tokens => Ty::Tokens,
+        FieldType::Ref => Ty::Ref,
+        FieldType::Any => Ty::Any,
     }
-
-    /// Where the kind is answered, as a phrase for help text.
-    pub(super) fn describe(self) -> String {
-        match self {
-            Self::All => "every language".into(),
-            Self::Code => "code languages (not data, prose or style files)".into(),
-            Self::Only(ids) => ids.join(", "),
-        }
-    }
-}
-
-/// A kind a rule can name: its extra fields beyond the common ones, and where it is answered.
-#[derive(Debug, Clone)]
-pub(super) struct KindInfo {
-    /// The kind word.
-    pub(super) word: &'static str,
-    /// Fields specific to the kind.
-    pub(super) extra: Vec<(&'static str, Ty)>,
-    /// The languages that answer it.
-    pub(super) langs: Langs,
-}
-
-/// Fields every kind has (grl-spec.md section 6).
-const COMMON: &[(&str, Ty)] = &[
-    ("name", Ty::Str),
-    ("text", Ty::Str),
-    ("line", Ty::Int),
-    ("file", Ty::Ref),
-    ("path", Ty::Str),
-    ("kind", Ty::Str),
-    ("role", Ty::Str),
-    ("unit", Ty::Ref),
-    ("doc", Ty::Str),
-];
-
-/// Fields of a node-valued field (`.callee.name`, `.target.anchor`, `.file.path`).
-const REF_FIELDS: &[(&str, Ty)] = &[
-    ("name", Ty::Str),
-    ("text", Ty::Str),
-    ("path", Ty::Str),
-    ("anchor", Ty::Str),
-    ("scheme", Ty::Str),
-    ("kind", Ty::Str),
-    ("line", Ty::Int),
-    ("file", Ty::Ref),
-    ("lang", Ty::Str),
-];
-
-/// Core kinds: (word, extra fields, languages). Sorted by word.
-fn core_kinds() -> Vec<KindInfo> {
-    let k = |word, extra: Vec<(&'static str, Ty)>, langs| KindInfo { word, extra, langs };
-    vec![
-        k("artifact", vec![], Langs::All),
-        k("assignment", vec![], Langs::Code),
-        k("branch", vec![], Langs::Code),
-        k(
-            "call",
-            vec![("callee", Ty::Ref), ("args", Ty::Any)],
-            Langs::Code,
-        ),
-        k(
-            "cell",
-            vec![
-                ("node", Ty::Ref),
-                ("atom", Ty::Str),
-                ("observed", Ty::Bool),
-                ("granted", Ty::Bool),
-                ("excused", Ty::Bool),
-            ],
-            Langs::All,
-        ),
-        k("comment", vec![], Langs::All),
-        k("directive", vec![], Langs::All),
-        k("effect_use", vec![], Langs::All),
-        k("excuse", vec![], Langs::All),
-        k("fence", vec![], Langs::Only(&["markdown"])),
-        k("field", vec![], Langs::Code),
-        k("file", vec![], Langs::All),
-        k(
-            "function",
-            vec![("params", Ty::Any), ("returns", Ty::Ref)],
-            Langs::Code,
-        ),
-        k("grant", vec![], Langs::All),
-        k(
-            "heading",
-            vec![("level", Ty::Int), ("slug", Ty::Str)],
-            Langs::Only(&["markdown"]),
-        ),
-        k("import", vec![("target", Ty::Ref)], Langs::Code),
-        k(
-            "key",
-            vec![("value", Ty::Const)],
-            Langs::Only(&["toml", "json", "yaml"]),
-        ),
-        k(
-            "link",
-            vec![("target", Ty::Ref)],
-            Langs::Only(&["markdown"]),
-        ),
-        k("literal", vec![("value", Ty::Const)], Langs::All),
-        k("loop", vec![], Langs::Code),
-        k(
-            "method",
-            vec![("params", Ty::Any), ("returns", Ty::Ref)],
-            Langs::Code,
-        ),
-        k("module", vec![], Langs::Code),
-        k("node", vec![], Langs::All),
-        k("param", vec![], Langs::Code),
-        k("stmt", vec![], Langs::Code),
-        k("table", vec![], Langs::Only(&["markdown"])),
-        k("test", vec![], Langs::Code),
-        k("type", vec![], Langs::Code),
-        k("unit", vec![], Langs::Code),
-    ]
-}
-
-/// Every kind a rule can name: the core kinds plus the catalog's web-engine kinds.
-pub(super) fn kinds() -> Vec<KindInfo> {
-    let mut all = core_kinds();
-    for k in catalog::KINDS {
-        all.push(KindInfo {
-            word: k.word,
-            extra: k
-                .fields
-                .iter()
-                .map(|f| {
-                    (
-                        f.name,
-                        match f.ty {
-                            FieldType::Str => Ty::Str,
-                            FieldType::Bool => Ty::Bool,
-                            FieldType::Const => Ty::Const,
-                            FieldType::Tokens => Ty::Tokens,
-                        },
-                    )
-                })
-                .collect(),
-            langs: Langs::Only(k.languages),
-        });
-    }
-    all.sort_by_key(|k| k.word);
-    all
 }
 
 /// The kind named `word`.
-pub(super) fn kind(word: &str) -> Option<KindInfo> {
-    kinds().into_iter().find(|k| k.word == word)
+pub(super) fn kind(word: &str) -> Option<&'static Kind> {
+    catalog::kind(word)
+}
+
+/// Every kind a rule can name, sorted by word.
+pub(super) fn kinds() -> &'static [Kind] {
+    catalog::KINDS
+}
+
+fn common(name: &str) -> Option<Ty> {
+    catalog::COMMON_FIELDS
+        .iter()
+        .find(|f| f.name == name)
+        .map(|f| ty_of(f.ty))
 }
 
 /// The type of field `name` on a node of `kind` (`None` kind: any kind has it); `None` if no such field.
 pub(super) fn field(kind: Option<&str>, name: &str) -> Option<Ty> {
-    let from = |k: &KindInfo| k.extra.iter().find(|f| f.0 == name).map(|f| f.1.clone());
+    let from = |k: &Kind| k.field(name).map(|f| ty_of(f.ty));
     let specific = match kind {
-        Some(w) => self::kind(w).and_then(|k| from(&k)),
+        Some(w) => self::kind(w).and_then(from),
         None => kinds().iter().find_map(from),
     };
-    specific.or_else(|| COMMON.iter().find(|f| f.0 == name).map(|f| f.1.clone()))
+    specific.or_else(|| common(name))
 }
 
 /// The field names of a kind (kind-specific first, then the common ones).
 pub(super) fn field_names(kind: Option<&str>) -> Vec<&'static str> {
     let mut names: Vec<&'static str> = match kind {
         Some(w) => self::kind(w)
-            .map(|k| k.extra.iter().map(|f| f.0).collect())
+            .map(|k| k.fields.iter().map(|f| f.name).collect())
             .unwrap_or_default(),
         None => kinds()
             .iter()
-            .flat_map(|k| k.extra.iter().map(|f| f.0))
+            .flat_map(|k| k.fields.iter().map(|f| f.name))
             .collect(),
     };
-    names.extend(COMMON.iter().map(|f| f.0));
+    names.extend(catalog::COMMON_FIELDS.iter().map(|f| f.name));
     names.dedup();
     names
 }
 
 /// The type of field `name` of a node-valued field.
 pub(super) fn ref_field(name: &str) -> Option<Ty> {
-    REF_FIELDS.iter().find(|f| f.0 == name).map(|f| f.1.clone())
+    catalog::REF_FIELDS
+        .iter()
+        .find(|f| f.name == name)
+        .map(|f| ty_of(f.ty))
 }
 
 /// The field names of a node-valued field.
 pub(super) fn ref_field_names() -> Vec<&'static str> {
-    REF_FIELDS.iter().map(|f| f.0).collect()
+    catalog::REF_FIELDS.iter().map(|f| f.name).collect()
 }
 
-/// Words that follow `is` besides kinds: boolean fields and checks.
-pub(super) const FLAGS: &[&str] = &["async", "exported", "public", "relative", "valid_glob"];
+/// Whether `word` is a flag that follows `is`.
+pub(super) fn is_flag(word: &str) -> bool {
+    catalog::FLAGS.iter().any(|f| f.word == word)
+}
 
-/// The edge verbs of the catalog (multi-word verbs with single spaces).
-pub(super) const VERBS: &[&str] = &[
-    "calls",
-    "extends",
-    "imports",
-    "instantiates",
-    "owned by",
-    "peer of",
-    "references",
-    "resolves to",
-    "tests",
-];
+/// The flag words, for suggestions.
+pub(super) fn flag_names() -> impl Iterator<Item = &'static str> {
+    catalog::FLAGS.iter().map(|f| f.word)
+}
 
-/// Roots of side-relation paths.
-pub(super) const SIDE_ROOTS: &[&str] = &["config", "diff", "lease", "model"];
+/// Whether `word` is an edge verb.
+pub(super) fn is_verb(word: &str) -> bool {
+    catalog::verb(word).is_some()
+}
 
-/// The fixed side relations (config tables are typed later from the config schema, ~CDMAECH).
-pub(super) const SIDE_RELATIONS: &[&str] = &[
-    "diff.added",
-    "diff.changed",
-    "lease.globs",
-    "lease.ticket",
-    "model.nodes",
-    "model.selectors",
-];
+/// The verb words, for suggestions.
+pub(super) fn verb_names() -> impl Iterator<Item = &'static str> {
+    catalog::VERBS.iter().map(|v| v.word)
+}
 
-/// Built-in function names.
-pub(super) const FUNCTIONS: &[&str] = &["glob", "resolve", "slug", "valid_glob", "vocab"];
+/// Whether `word` is the root of a side-relation path.
+pub(super) fn is_side_root(word: &str) -> bool {
+    catalog::SIDE_ROOTS.contains(&word)
+}
+
+/// The fixed side-relation names, for suggestions.
+pub(super) fn side_relation_names() -> impl Iterator<Item = &'static str> {
+    catalog::SIDE_RELATIONS.iter().map(|s| s.name)
+}
+
+/// The built-in function names.
+pub(super) fn function_names() -> impl Iterator<Item = &'static str> {
+    catalog::FUNCTIONS.iter().map(|f| f.name)
+}
 
 /// The result type of the built-in function `name`.
 pub(super) fn function_ty(name: &str) -> Option<Ty> {
-    match name {
-        "glob" => Some(Ty::Glob),
-        "resolve" | "slug" => Some(Ty::Str),
-        "valid_glob" => Some(Ty::Bool),
-        "vocab" => Some(Ty::Any),
-        _ => None,
-    }
+    catalog::function(name).map(|f| ty_of(f.returns))
 }
 
-/// Whether `path` (dotted) names a known side relation; `config.*` accepts any table.
-pub(super) fn side_relation_known(segments: &[&str]) -> bool {
+/// The side relation a path of up to two segments names (`diff.changed`), if it is a fixed one.
+pub(super) fn fixed_side(segments: &[&str]) -> Option<&'static SideRelation> {
     match segments {
-        ["config", _, ..] => true,
-        [root, second] => SIDE_RELATIONS.contains(&format!("{root}.{second}").as_str()),
-        _ => false,
+        [root, second] => catalog::side_relation(&format!("{root}.{second}")),
+        _ => None,
     }
 }
 
@@ -436,19 +295,11 @@ mod tests {
 
     #[test]
     fn kinds_are_sorted_unique_and_fields_resolve() {
-        let all = kinds();
-        assert!(all.windows(2).all(|w| w[0].word < w[1].word));
+        assert!(kinds().windows(2).all(|w| w[0].word < w[1].word));
         assert_eq!(field(Some("function"), "name"), Some(Ty::Str));
         assert_eq!(field(Some("function"), "line"), Some(Ty::Int));
         assert_eq!(field(Some("function"), "callee"), None);
         assert_eq!(field(None, "callee"), Some(Ty::Ref));
         assert_eq!(field(Some("element"), "tag"), Some(Ty::Str));
-    }
-
-    #[test]
-    fn language_answers() {
-        assert!(!Langs::Code.answers("css"));
-        assert!(Langs::Code.answers("rust"));
-        assert!(Langs::Only(&["markdown"]).answers("markdown"));
     }
 }
