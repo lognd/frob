@@ -155,7 +155,10 @@ measure what erasure avoids). So:
 
 The checker is a bound tool under the existing tool-binding rules
 (versions pinned, output parsed, failures Unresolved), so frob never
-implements a type checker; it consumes one.
+implements a type checker; it consumes one. How the per-site types are
+obtained is fixed in tool-binding.md section 4 (D122): `ty server` over
+LSP for Python (`dmypy inspect` for mypy repositories), a Node helper on
+`@typescript/typescript6` for TypeScript, both behind a latency spike.
 
 ### 2.3 Will something decidable be marked undecidable? Yes, and that is bounded and visible
 
