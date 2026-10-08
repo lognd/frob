@@ -233,3 +233,21 @@ fn spellings_the_shared_grammar_flags_still_ingest_their_declaration() {
     assert!(values.contains(&("margin", "1px")), "{values:?}");
     assert!(values.contains(&("padding", "2px")), "{values:?}");
 }
+
+// frob:tests crates/crunk-ingest/src/model.rs::Bucket.as_str
+// frob:tests crates/crunk-ingest/src/model.rs::Bucket.from_name
+#[test]
+fn bucket_names_round_trip() {
+    for bucket in [
+        Bucket::Tokens,
+        Bucket::Base,
+        Bucket::Components,
+        Bucket::Layouts,
+        Bucket::Utilities,
+        Bucket::Entry,
+        Bucket::Jsx,
+    ] {
+        assert_eq!(Bucket::from_name(bucket.as_str()), Some(bucket));
+    }
+    assert_eq!(Bucket::from_name("nope"), None);
+}
