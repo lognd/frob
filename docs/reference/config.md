@@ -129,6 +129,19 @@ Materialized: no.
 |---|---|---|---|---|
 | `forbid_imports` | `Vec<ForbidImport>` | `[]` | no | Imports no file matching `from` may contain; each entry needs a `reason`. |
 
+## `[land]`
+
+The `[land]` table: which base CI checks gate a land and what an unreadable state does.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `block_on_unknown_ci` | `bool` | `false` | yes | When base CI cannot be read: false reports it as Unresolved and lands anyway, true refuses. |
+| `ci_ignore` | `Vec<String>` | `["*publish*", "*release*"]` | yes | Check-name patterns that never block a land (publish and release jobs by default, which test no code). |
+| `ci_required` | `Vec<String>` | `[]` | yes | Check-name patterns (`*` wildcard, case-insensitive) that count toward the gate; empty means every check. |
+| `require_base_green` | `bool` | `true` | yes | Refuse a land whose base tip has a failing required CI check; false turns the whole gate off. |
+
 ## `[lease]`
 
 Knobs of the lease store (tickets.md section 6, decision D26).

@@ -12,6 +12,7 @@ authors.workspace = true
 blake3 = "1"
 frob-check = { version = "0.532.0", path = "../frob-check" }
 frob-evidence = { version = "0.532.0", path = "../frob-evidence" }
+frob-release = { version = "0.532.0", path = "../frob-release" }
 frob-lease = { version = "0.532.0", path = "../frob-lease" }
 frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 frob-worktree = { version = "0.532.0", path = "../frob-worktree" }

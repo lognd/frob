@@ -65,6 +65,12 @@ impl Command for Land {
                 .help("Why no evidence or no changelog note is recorded (with --no-evidence or --no-changelog)"),
         )
         .arg(
+            Arg::new("override-base-ci")
+                .long("override-base-ci")
+                .action(ArgAction::SetTrue)
+                .help("Land despite a red or unreadable base CI; needs --reason and is audited on the ticket"),
+        )
+        .arg(
             Arg::new("no-changelog")
                 .long("no-changelog")
                 .action(ArgAction::SetTrue)
@@ -101,10 +107,19 @@ impl Command for Land {
                 "{flag} needs --reason <text> saying why"
             ))),
         };
+        let override_base_ci = m
+            .get_flag("override-base-ci")
+            .then(|| given("--override-base-ci"))
+            .transpose()?;
         let claims = frob_evidence::done::guards_apply(Some(outcome));
-        if claims && !no_evidence && !no_changelog && text(m, "reason").is_some() {
+        if claims
+            && !no_evidence
+            && !no_changelog
+            && override_base_ci.is_none()
+            && text(m, "reason").is_some()
+        {
             return Err(CliError::Usage(
-                "--reason is only used with --no-evidence, --no-changelog or an invalid, duplicate or wont-fix outcome".to_owned(),
+                "--reason is only used with --no-evidence, --no-changelog, --override-base-ci or an invalid, duplicate or wont-fix outcome".to_owned(),
             ));
         }
         let no_evidence_reason = no_evidence.then(|| given("--no-evidence")).transpose()?;
@@ -121,6 +136,8 @@ impl Command for Land {
                 reason: if claims { None } else { reason.clone() },
                 outcome,
                 retry: RetryPolicy::default(),
+                ci_reader: None,
+                override_base_ci,
             },
         })
     }

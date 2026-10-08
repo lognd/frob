@@ -1092,6 +1092,7 @@ dependencies = [
  "frob-evidence",
  "frob-lease",
  "frob-ledger",
+ "frob-release",
  "frob-worktree",
  "gob-cache",
  "gob-cli",

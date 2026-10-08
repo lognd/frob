@@ -10,6 +10,7 @@ use frob_ledger::model::Outcome;
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use crate::base_ci::CiReader;
 use crate::ratchet::FindingNote;
 
 /// Tuning of the stale-base retry loop `--wait` enables (frob:ticket ~VMHTBE7).
@@ -70,6 +71,10 @@ pub struct LandOptions {
     pub outcome: Outcome,
     /// Stale-base retry tuning; only used when `wait_secs` is above zero.
     pub retry: RetryPolicy,
+    /// Reads base CI; the GitHub CLI when absent (tests inject a canned reader).
+    pub ci_reader: Option<Arc<dyn CiReader>>,
+    /// Land despite a red or unreadable base CI, saying why (`--override-base-ci --reason`); audited on the ticket.
+    pub override_base_ci: Option<String>,
 }
 
 impl Default for LandOptions {
@@ -85,6 +90,8 @@ impl Default for LandOptions {
             reason: None,
             outcome: Outcome::Done,
             retry: RetryPolicy::default(),
+            ci_reader: None,
+            override_base_ci: None,
         }
     }
 }

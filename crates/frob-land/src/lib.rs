@@ -7,6 +7,7 @@
 //! removes the worktree. Everything runs in the foreground; `--wait` bounds
 //! the lock acquisition and the retries of a stale base (`E-LAND-STALE`). [`register`] adds the verb to a product root.
 
+pub mod base_ci;
 pub mod error;
 pub mod events;
 mod git;
@@ -17,6 +18,7 @@ pub mod plan;
 mod ratchet;
 pub mod verb;
 
+pub use base_ci::{CiReader, GhCli, LandConfig};
 pub use error::LandError;
 pub use land::land;
 pub use lock::LandLock;

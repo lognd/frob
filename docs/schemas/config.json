@@ -367,6 +367,42 @@
       },
       "type": "object"
     },
+    "land": {
+      "additionalProperties": false,
+      "description": "The `[land]` table: which base CI checks gate a land and what an unreadable state does.",
+      "properties": {
+        "block_on_unknown_ci": {
+          "default": false,
+          "description": "When base CI cannot be read: false reports it as Unresolved and lands anyway, true refuses.",
+          "type": "boolean"
+        },
+        "ci_ignore": {
+          "default": [
+            "*publish*",
+            "*release*"
+          ],
+          "description": "Check-name patterns that never block a land (publish and release jobs by default, which test no code).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "ci_required": {
+          "default": [],
+          "description": "Check-name patterns (`*` wildcard, case-insensitive) that count toward the gate; empty means every check.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "require_base_green": {
+          "default": true,
+          "description": "Refuse a land whose base tip has a failing required CI check; false turns the whole gate off.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "lease": {
       "additionalProperties": false,
       "description": "Knobs of the lease store (tickets.md section 6, decision D26).",

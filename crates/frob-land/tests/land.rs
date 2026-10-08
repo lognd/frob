@@ -1618,3 +1618,184 @@ fn a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit
         "PM033 must reflect the new ledger content, not the cached one"
     );
 }
+
+/// A canned base-CI reader: returns one state and remembers the sha it was asked about.
+#[derive(Debug)]
+struct CannedCi {
+    state: frob_release::ci::CiState,
+    asked: std::sync::Mutex<Vec<String>>,
+}
+
+impl CannedCi {
+    fn new(state: frob_release::ci::CiState) -> Arc<Self> {
+        Arc::new(Self {
+            state,
+            asked: std::sync::Mutex::new(Vec::new()),
+        })
+    }
+}
+
+impl frob_land::CiReader for CannedCi {
+    fn read(&self, _repo: &Repo, _cwd: &Path, sha: &str) -> frob_release::ci::CiState {
+        self.asked.lock().expect("lock").push(sha.to_owned());
+        self.state.clone()
+    }
+}
+
+fn failing(name: &str) -> frob_release::ci::CiState {
+    frob_release::ci::CiState::Red {
+        failures: vec![frob_release::ci::CiFailure {
+            name: name.to_owned(),
+            conclusion: "failure".to_owned(),
+            url: Some(format!(
+                "https://github.com/acme/widget/actions/runs/1/{name}"
+            )),
+        }],
+    }
+}
+
+/// A ready-to-land ticket plus options carrying `ci`.
+fn ci_land(
+    fx: &Fixture,
+    ci: Arc<CannedCi>,
+    tweak: impl FnOnce(&mut LandOptions),
+) -> (Started, Result<frob_land::LandOutcome, LandError>) {
+    let s = fx.start("Add ci", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/ci.rs", "fn ci() {}\n");
+    Fixture::evidence(&s, "src/ci.rs");
+    let mut opts = Fixture::opts(&s);
+    opts.ci_reader = Some(ci);
+    tweak(&mut opts);
+    let out = land(
+        &fx.root,
+        &opts,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    );
+    (s, out)
+}
+
+// frob:ticket 01M4CTDWJRKBC64EBQPGHMWDGG
+// frob:tests crates/frob-land/src/base_ci.rs::gate
+#[test]
+fn a_red_base_ci_refuses_naming_the_run_and_moves_nothing() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let ci = CannedCi::new(failing("rust (windows-latest)"));
+    let (_, out) = ci_land(&fx, ci.clone(), |_| {});
+    let err = out.expect_err("refused");
+    let r = refusal(&err);
+    assert_eq!(r.code, "E-LAND-BASE-RED");
+    assert!(r.message.contains("actions/runs/1/"), "{}", r.message);
+    assert_eq!(
+        fx.main_tip(),
+        ci.asked.lock().expect("lock")[0],
+        "the base did not move past the commit whose CI was read"
+    );
+    let blob = fx.repo().read_blob_at(MAIN, "src/ci.rs").expect("read");
+    assert!(blob.is_none(), "the ticket's code was not landed");
+}
+
+// frob:ticket 01M4CTDWJRKBC64EBQPGHMWDGG
+// frob:tests crates/frob-land/src/base_ci.rs::gate
+#[test]
+fn a_publish_only_failure_on_the_base_does_not_block_the_land() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let (_, out) = ci_land(&fx, CannedCi::new(failing("dev-publish")), |_| {});
+    let out = out.expect("lands");
+    assert!(out.closed);
+    assert!(
+        out.warnings.iter().any(|w| w.contains("dev-publish")),
+        "{:?}",
+        out.warnings
+    );
+}
+
+// frob:ticket 01M4CTDWJRKBC64EBQPGHMWDGG
+// frob:tests crates/frob-land/src/base_ci.rs::gate
+#[test]
+fn an_unreadable_base_ci_is_reported_unresolved_and_the_default_policy_lands() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let unknown = frob_release::ci::CiState::Unknown(frob_release::ci::CiUnknown {
+        reason: "gh is not installed".to_owned(),
+        remedy: "install gh".to_owned(),
+    });
+    let (_, out) = ci_land(&fx, CannedCi::new(unknown), |_| {});
+    let out = out.expect("lands");
+    assert!(
+        out.warnings.iter().any(|w| w.starts_with("Unresolved:")),
+        "{:?}",
+        out.warnings
+    );
+}
+
+// frob:ticket 01M4CTDWJRKBC64EBQPGHMWDGG
+// frob:tests crates/frob-land/src/base_ci.rs::gate
+#[test]
+fn a_configured_block_on_unknown_refuses_an_unreadable_base_ci() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    commit_on_main(
+        &fx,
+        "frob.toml",
+        "[pm]\ndone_requires = [\"criteria_evidenced\"]\n[land]\nblock_on_unknown_ci = true\n",
+    );
+    let unknown = frob_release::ci::CiState::Unknown(frob_release::ci::CiUnknown {
+        reason: "no network".to_owned(),
+        remedy: "restore it".to_owned(),
+    });
+    let (_, out) = ci_land(&fx, CannedCi::new(unknown), |_| {});
+    assert_eq!(
+        refusal(&out.expect_err("refused")).code,
+        "E-LAND-BASE-CI-UNKNOWN"
+    );
+}
+
+// frob:ticket 01M4CTDWJRKBC64EBQPGHMWDGG
+// frob:tests crates/frob-land/src/base_ci.rs::gate
+#[test]
+fn an_override_lands_on_a_red_base_and_records_a_decision_on_the_ticket() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let (s, out) = ci_land(&fx, CannedCi::new(failing("rust (linux)")), |o| {
+        o.override_base_ci = Some("hotfix for the red base".to_owned());
+    });
+    assert!(out.expect("overridden land").closed);
+    let events = fx.ledger().events(s.id).expect("events");
+    assert!(
+        events
+            .iter()
+            .any(|e| format!("{:?}", e.body).contains("hotfix for the red base")),
+        "the override is on the ticket"
+    );
+}
+
+// frob:ticket 01M4CTDWJRKBC64EBQPGHMWDGG
+// frob:tests crates/frob-land/src/base_ci.rs::gate
+#[test]
+fn require_base_green_false_skips_the_ci_read_entirely() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    commit_on_main(
+        &fx,
+        "frob.toml",
+        "[pm]\ndone_requires = [\"criteria_evidenced\"]\n[land]\nrequire_base_green = false\n",
+    );
+    let ci = CannedCi::new(failing("rust (linux)"));
+    let (_, out) = ci_land(&fx, ci.clone(), |_| {});
+    assert!(out.expect("lands").closed);
+    assert!(ci.asked.lock().expect("lock").is_empty());
+}

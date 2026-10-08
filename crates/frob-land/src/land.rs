@@ -20,13 +20,16 @@ use std::time::{Duration, Instant};
 use frob_check::CheckOptions;
 use frob_evidence::{DoneGuard, EvidenceGuard, Workspace};
 use frob_lease::{Lease, LeaseStore};
+use frob_ledger::event::{CommentData, EventBody};
 use frob_ledger::guards::{CloseContext, CloseGuard, default_close_guards};
 use frob_ledger::model::Category;
+use frob_ledger::model::CommentSubtype;
 use frob_ledger::ops::TicketView;
 use frob_ledger::{Ledger, RefMode, TicketId};
 use gob_diagnostics::{Refusal, RefusalClass};
 use gob_git::{MergeOutcome, Oid, Repo, StatusOptions, TreeRef};
 
+use crate::base_ci;
 use crate::error::{LandError, needs_action};
 use crate::events::{LandEvent, append_land};
 use crate::git::git;
@@ -92,6 +95,7 @@ struct Ready {
     base: String,
     branch: String,
     base_merged: bool,
+    ci_override: Option<String>,
     site: Workspace,
     evidence: EvidenceGuard,
     done: DoneGuard,
@@ -126,6 +130,13 @@ fn prepare(
             "set [tickets] ref to an existing branch in frob.toml",
         )
     })?;
+    let ci_gate = base_ci::gate(
+        &wt,
+        &wt_path,
+        base,
+        opts.ci_reader.as_deref(),
+        opts.override_base_ci.as_deref(),
+    )?;
     let mut base_merge = None;
     let mut base_merged = wt.merge_base(&base_ref(base), &branch)? == Some(base_oid);
     if !base_merged && !opts.dry_run {
@@ -134,7 +145,7 @@ fn prepare(
     } else if base_merged {
         base_merge = Some("up-to-date".to_owned());
     }
-    let mut warnings = Vec::new();
+    let mut warnings = ci_gate.warnings;
     let mut ratchet = Ratchet::default();
     if base_merged {
         ratchet = verify_check(&wt, &wt_path, &here.ledger, &handle, base, opts)?;
@@ -185,6 +196,7 @@ fn prepare(
         base: base.to_owned(),
         branch,
         base_merged,
+        ci_override: ci_gate.override_note,
         site,
         evidence,
         done,
@@ -238,6 +250,7 @@ impl Ready {
         let site = &self.site;
         let (id, base, branch) = (self.id, &self.base, &self.branch);
         let (evidence, done) = (&self.evidence, &self.done);
+        let ci_override = self.ci_override.as_deref();
         let retrying = opts.wait_secs > 0;
         let budget = opts
             .retry
@@ -253,7 +266,7 @@ impl Ready {
                 ledger_step(
                     &site.ledger,
                     id,
-                    (evidence, done),
+                    (evidence, done, ci_override),
                     opts,
                     base,
                     branch,
@@ -318,7 +331,7 @@ impl Ready {
         let closed = ledger_step(
             &self.site.ledger,
             self.id,
-            (&self.evidence, &self.done),
+            (&self.evidence, &self.done, self.ci_override.as_deref()),
             opts,
             &self.base,
             &self.branch,
@@ -948,7 +961,7 @@ fn base_ref(base: &str) -> String {
 fn ledger_step(
     ledger: &Ledger,
     id: TicketId,
-    guards: (&EvidenceGuard, &DoneGuard),
+    guards: (&EvidenceGuard, &DoneGuard, Option<&str>),
     opts: &LandOptions,
     base: &str,
     branch: &str,
@@ -970,7 +983,17 @@ fn ledger_step(
             pushed,
         },
     )?;
-    let (evidence, done) = guards;
+    let (evidence, done, ci_override) = guards;
+    if let Some(note) = ci_override {
+        ledger.append(
+            id,
+            EventBody::Comment(CommentData {
+                subtype: CommentSubtype::Decision,
+                body: note.to_owned(),
+            }),
+        )?;
+        tracing::warn!(ticket = %id, note, "base CI override recorded");
+    }
     let exempt = done.record_exemption(ledger, id)?;
     tracing::info!(ticket = %id, exempt = exempt.is_some(), "land audited the changelog exemption before closing");
     let defaults = default_close_guards();

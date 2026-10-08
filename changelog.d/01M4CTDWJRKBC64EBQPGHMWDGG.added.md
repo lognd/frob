@@ -1,0 +1,1 @@
+frob: land refuses onto a base whose latest CI run has a failing required check (E-LAND-BASE-RED, naming the run url); the checks that count, the policy for an unreadable CI state and an audited --override-base-ci --reason are configured in the new [land] table.
