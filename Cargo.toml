@@ -41,6 +41,15 @@ must_use_candidate = "allow"       # blanket #[must_use] on every getter is nois
 inherits = "release"
 lto = "thin"
 
+# frob:ticket 01M4CS7ZMEY096RVK91RWD03DW
+# The profile `cargo dev profile` builds the product binaries with (docs/design/build-test-ci.md
+# section 4, ~RWD03DW): release speed without LTO (fast to link, so profile runs stay cheap) and
+# line tables so perf and samply can attribute frames to source lines.
+[profile.profiling]
+inherits = "release"
+lto = false
+debug = "line-tables-only"
+
 # Hot crates run optimised in dev and test builds (docs/design/build-test-ci.md 5). Only gob-ir
 # is adopted: its million-level deep test is pure gob-ir work and drops from about 70 s to 8 s,
 # for a few seconds of clean compile. `package."*"` at 2 and gob-symbols, frob-check and frob-cli

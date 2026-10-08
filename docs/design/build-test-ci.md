@@ -169,6 +169,7 @@ Jobs, all on PR and main:
 | generate check | `cargo dev gen --check` | 1 min |
 | self check | `frob check` on this repo (milestone 1: frob only; merging grimble and crunk findings is Milestone 2 or later (D36)), `frob test --base origin/main` | 2 min |
 | spawn budget | snapshot test of subprocess counts per CLI scenario (git-io.md section 7) | in test linux |
+| command profile | `cargo dev profile`: every leaf command of frob, grimble and crunk against `profile.toml` budgets, report artifact, deltas against the last experimental run (Command profile below) | 20 min |
 | bench (scheduled) | criterion cold and warm check on the 100k-line fixture, regression threshold (architecture.md section 9) | 10 min |
 | deny | cargo-deny advisories, licenses, bans; cargo-shear | 1 min |
 | workflow lint | zizmor and actionlint through frob's `[[check.tool]]` stage (cicd.md section 6; adopted before the CI adapters exist) | 1 min |
@@ -251,6 +252,156 @@ local soft-budget report is skipped for a remote run. `RemoteOs` holds
 every OS-specific term (needs term, probe commands); a Windows host
 (`--remote-os windows`) is one more variant there, deliberately not built.
 CI never sets the variable.
+
+### Command profile (~RWD03DW)
+
+`cargo dev profile` times every leaf command of `frob`, `grimble` and
+`crunk` and fails when one is over its budget. Nothing is hand-listed:
+
+- **Binaries.** It builds the three products with `[profile.profiling]`
+  (inherits `release`, no LTO so a profile build links quickly,
+  `debug = "line-tables-only"` so `perf` and `samply` can attribute
+  frames). `--bin-dir DIR` skips the build.
+- **Leaf discovery.** Each binary's own `--help` is walked (`Commands:`
+  sections, recursively); a leaf is a command with no subcommands. This
+  was chosen over the clap trees in-process (`Cli::verb_flags`) because
+  linking `grimble` and `crunk` into the tool would register their verbs
+  in the command inventory and change the generated CLI reference
+  (`cargo dev gen`); help text needs no dependency and is the very
+  binary being measured. `crates/gob-dev/tests/profile_coverage.rs` does
+  use `verb_flags` (grimble and crunk as dev-dependencies, which the
+  generator test binary does not link) and fails naming every leaf with
+  no scenario and no `skip` reason, and every scenario naming no leaf.
+  Deprecated aliases are not leaves; their target is profiled.
+- **Scenarios.** `crates/gob-dev/profile.toml` holds one
+  `[scenario."<product> <verb...>"]` per leaf: `args` (`{ticket}`
+  expands to a ticket handle of the clone), `fixture` (`repo`, the
+  default, or `tmp`), `readonly`, `cold`, `timing`, `exit` (the allowed
+  exit codes; refusals such as 3 are legitimate outcomes for verbs whose
+  precondition the fixture does not meet), `runs` (a cap for slow
+  commands), `budget_ms` and, with `cold`, `cold_budget_ms`, or `skip =
+  "reason"` instead.
+- **Isolation.** No scenario runs in the source checkout. `repo` is a
+  `git clone --local` of it into a temporary directory, taken at HEAD
+  with every branch and tag copied, `experimental` forced to a local
+  branch at HEAD and `origin` removed, so no verb can push back; `tmp`
+  is a fresh repository with one empty commit. A scenario not marked
+  `readonly` (the default) gets a clone of its own, so mutating verbs
+  (`work`, `land`, `ticket new`, `ack`, `release cut`, ...) never see
+  each other's changes. A test mutates a clone (commits, moves branches
+  and tags, edits the index) and asserts that the source's HEAD, refs,
+  index, status and config are byte-identical afterwards.
+- **Measures.** One warm-up, then `--runs N` (default 5) timed runs, the
+  median reported; `cold = true` deletes `.frob/` and also times the first
+  run; peak RSS comes from one extra run under GNU `time -f %M` (Linux;
+  absent elsewhere); `timing = true` records the `--timing` stage tree of
+  `frob check`. Wall time is the supervising runner's, which polls the
+  child every 5 ms, so fast commands read up to 5 ms high.
+- **Budgets.** `budget_ms` is absolute. A run fails (exit 1, one `PROFILE:`
+  line each naming command, measured value and `budget x factor`) when a
+  warm median or cold run exceeds `budget_ms * --budget-factor`, or when
+  any run exits with a code the scenario does not allow. Seeds are about 3
+  times the warm median measured below, rounded up to 100 ms, with a floor
+  of 500 ms (cold budgets: 3 times, rounded up to a second).
+- **Output.** `target/profile/report.json` (the serde `Report` in
+  `profile/model.rs`, `schema_version` 1) and a markdown table on stdout
+  and appended to `$GITHUB_STEP_SUMMARY` when set. `--compare BASE.json`
+  adds per-command deltas and never fails (a missing base only warns).
+  `--only GLOB` (repeatable) profiles a subset, for example
+  `cargo dev profile --only 'frob ticket *'`.
+- **CI.** The `profile` job in `ci.yml` runs on ubuntu-latest in parallel
+  with the `rust` job (same toolchain pin, cache and linker step), runs
+  `cargo dev profile --budget-factor 2 --compare
+  target/profile/base/report.json` (GitHub runners are slower than the
+  seed host; the factor is the headroom), uploads `report.json` as the
+  `profile-report` artifact and downloads the newest successful
+  `experimental` run's artifact with the `gh` CLI as the comparison base.
+  It does not gate the dev channel.
+
+Measured 2026-10-08 on the aarch64 development host (12 cores, load
+average 8 to 12 from other builds, so absolute numbers are pessimistic),
+`profiling` profile, 5 runs (3 for the slow commands), milliseconds and
+MiB:
+
+| Command | Warm | Cold | RSS | Exit | Budget |
+|---|---:|---:|---:|---:|---:|
+| `crunk check` | 7 | 10 | 6 | 3 | 500 |
+| `crunk doctor` | 6 | - | 6 | 0 | 500 |
+| `crunk schema` | 6 | - | 6 | 0 | 500 |
+| `frob ack` | 2151 | - | 408 | 0 | 6500 |
+| `frob board` | 2605 | - | 49 | 0 | 7900 |
+| `frob check` | 12761 | 195569 | 449 | 0 | 38300 |
+| `frob config show` | 11 | - | 15 | 0 | 500 |
+| `frob config sync` | 6 | - | 15 | 0 | 500 |
+| `frob cycle assign` | 81 | - | 22 | 3 | 500 |
+| `frob cycle close` | 128 | - | 22 | 3 | 500 |
+| `frob cycle list` | 230 | - | 23 | 0 | 700 |
+| `frob cycle new` | 116 | - | 21 | 0 | 500 |
+| `frob cycle plan` | 96 | - | 22 | 3 | 500 |
+| `frob cycle show` | 137 | - | 23 | 0 | 500 |
+| `frob cycle unassign` | 129 | - | 22 | 3 | 500 |
+| `frob cycle velocity` | 3501 | - | 59 | 0 | 10600 |
+| `frob doctor` | 2040 | - | 35 | 0 | 6200 |
+| `frob graph affects` | 2163 | - | 409 | 0 | 6500 |
+| `frob graph why` | 1953 | - | 412 | 0 | 5900 |
+| `frob init` | 31 | - | 16 | 0 | 500 |
+| `frob land` | 16 | - | 19 | 3 | 500 |
+| `frob lease list` | 11 | - | 15 | 0 | 500 |
+| `frob lease widen` | 21 | - | 19 | 3 | 500 |
+| `frob milestone add` | 36 | - | 22 | 3 | 500 |
+| `frob milestone criterion add` | 43 | - | 22 | 0 | 500 |
+| `frob milestone criterion remove` | 32 | - | 22 | 2 | 500 |
+| `frob milestone evidence add` | 27 | - | 22 | 3 | 500 |
+| `frob milestone evidence list` | 31 | - | 22 | 0 | 500 |
+| `frob milestone list` | 47 | - | 23 | 0 | 500 |
+| `frob milestone new` | 33 | - | 21 | 0 | 500 |
+| `frob milestone show` | 50 | - | 23 | 0 | 500 |
+| `frob release adopt` | 42 | - | 22 | 0 | 500 |
+| `frob release bump` | 16 | - | 14 | 0 | 500 |
+| `frob release changelog` | 82 | - | 19 | 3 | 500 |
+| `frob release cut` | 31 | - | 22 | 3 | 500 |
+| `frob release notes` | 6 | - | 13 | 0 | 500 |
+| `frob release status` | 1581 | - | 44 | 0 | 4800 |
+| `frob requeue` | 22 | - | 19 | 0 | 500 |
+| `frob schema` | 7 | - | 13 | 0 | 500 |
+| `frob test` | 4918 | - | 455 | 0 | 14800 |
+| `frob ticket branch init` | 20 | - | 15 | 0 | 500 |
+| `frob ticket close` | 57 | - | 24 | 3 | 500 |
+| `frob ticket comment` | 157 | - | 47 | 0 | 500 |
+| `frob ticket doable` | 36 | - | 21 | 0 | 500 |
+| `frob ticket doctor` | 8888 | - | 62 | 0 | 26700 |
+| `frob ticket drop` | 17 | - | 19 | 0 | 500 |
+| `frob ticket evidence add` | 11 | - | 19 | 3 | 500 |
+| `frob ticket evidence fetch` | 37 | - | 24 | 3 | 500 |
+| `frob ticket evidence list` | 26 | - | 24 | 0 | 500 |
+| `frob ticket fragment` | 21 | - | 19 | 3 | 500 |
+| `frob ticket link` | 17 | - | 19 | 3 | 500 |
+| `frob ticket list` | 28 | - | 22 | 0 | 500 |
+| `frob ticket new` | 144 | - | 30 | 0 | 500 |
+| `frob ticket reopen` | 21 | - | 19 | 0 | 500 |
+| `frob ticket show` | 41 | - | 24 | 0 | 500 |
+| `frob ticket triage accept` | 36 | - | 24 | 0 | 500 |
+| `frob ticket triage decline` | 16 | - | 19 | 2 | 500 |
+| `frob ticket triage duplicate` | 41 | - | 24 | 3 | 500 |
+| `frob ticket triage snooze` | 39 | - | 24 | 3 | 500 |
+| `frob ticket unlink` | 19 | - | 19 | 0 | 500 |
+| `frob ticket update` | 21 | - | 19 | 0 | 500 |
+| `frob work` | 16 | - | 19 | 3 | 500 |
+| `grimble ack` | 11 | - | 11 | 2 | 500 |
+| `grimble check` | 964 | 1087 | 185 | 0 | 2900 |
+| `grimble doctor` | 412 | - | 126 | 0 | 1300 |
+| `grimble exceptions list` | 1031 | - | 151 | 0 | 3100 |
+| `grimble fmt` | 532 | - | 143 | 1 | 1600 |
+| `grimble init` | 11 | - | 11 | 0 | 500 |
+| `grimble schema` | 5 | - | 7 | 0 | 500 |
+
+Findings from the first run, filed as follow-ups rather than fixed here:
+`frob check` takes about 13 s warm in a fresh clone against the 2 s warm
+budget of architecture.md section 9 (cold 196 s against 20-30 s measured
+in release by the `full_check` bench), `frob ticket doctor` about 9 s,
+`frob cycle velocity` 3.5 s, `frob test` 4.9 s, and `frob board` and
+`frob doctor` 2 to 3 s; their budgets above are the measured numbers, not
+targets.
 
 ## 5. Developer loop
 
