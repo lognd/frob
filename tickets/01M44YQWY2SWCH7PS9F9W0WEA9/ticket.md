@@ -2,15 +2,16 @@
 id = "01M44YQWY2SWCH7PS9F9W0WEA9"
 title = "dotnet evidence provider (TRX)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:00Z"
-updated = "2026-10-05T02:37:00Z"
+updated = "2026-10-08T10:54:03Z"
 idempotency_key = "d94-dotnetev"
-scope = ["crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/src/scrub.rs", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/tests/dotnet.rs", "crates/gob-testsupport/src/lib.rs", "docs/reference/config.md", "docs/schemas/config.json", "docs/design/build-test-ci.md", "docs/design/tickets.md", "Cargo.lock"]
+labels = ["creates:crates/frob-evidence/tests/dotnet.rs", "creates:crates/gob-testsupport/src/bin/fake_dotnet.rs"]
+scope = ["crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/src/scrub.rs", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/tests/dotnet.rs", "crates/gob-testsupport/src/lib.rs", "docs/reference/config.md", "docs/schemas/config.json", "docs/design/build-test-ci.md", "docs/design/tickets.md", "Cargo.lock", "crates/gob-testsupport/Cargo.toml", "crates/gob-testsupport/src/bin/fake_dotnet.rs", "docs/guides/quickstart.md", "crates/frob-evidence/src/lib.rs", "crates/frob-evidence/src/workspace.rs"]
 
 [[links]]
 kind = "blocked-by"

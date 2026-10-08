@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/src/scrub.rs", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/tests/dotnet.rs", "crates/gob-testsupport/src/lib.rs", "docs/reference/config.md", "docs/schemas/config.json", "docs/design/build-test-ci.md", "docs/design/tickets.md", "Cargo.lock", "crates/gob-testsupport/Cargo.toml", "crates/gob-testsupport/src/bin/fake_dotnet.rs"]
+new = ["crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/src/scrub.rs", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/tests/dotnet.rs", "crates/gob-testsupport/src/lib.rs", "docs/reference/config.md", "docs/schemas/config.json", "docs/design/build-test-ci.md", "docs/design/tickets.md", "Cargo.lock", "crates/gob-testsupport/Cargo.toml", "crates/gob-testsupport/src/bin/fake_dotnet.rs", "docs/guides/quickstart.md"]
+at = "2026-10-08T10:44:08Z"
+actor = "lognd"
+rev = 1
