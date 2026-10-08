@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-08T06:34:29Z"
-updated = "2026-10-08T14:30:40Z"
+updated = "2026-10-08T14:39:24Z"
 labels = ["creates:crates/frob-obligations/tests/csharp.rs"]
 scope = ["crates/frob-obligations/src/cov.rs", "crates/frob-obligations/tests/csharp.rs"]
 +++
