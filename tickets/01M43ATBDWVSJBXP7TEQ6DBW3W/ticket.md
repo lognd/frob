@@ -2,13 +2,13 @@
 id = "01M43ATBDWVSJBXP7TEQ6DBW3W"
 title = "Rules SPACE001, TYPE001-003, RADIUS001, SIZE001 (Rust, tier-0)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:35Z"
-updated = "2026-10-04T11:29:35Z"
+updated = "2026-10-08T12:23:51Z"
 idempotency_key = "crunk-plan-rscale"
 labels = ["area:crunk"]
 scope = ["crates/crunk-rules/src/scales/**", "crates/crunk-rules/src/typography/**", "crates/crunk-rules/tests/scales*.rs", "crates/crunk-rules/tests/typography*.rs"]
