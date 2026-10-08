@@ -2,7 +2,8 @@
 id = "01M4D6NE2VCV26EG54JD672RXD"
 title = "frob-ledger: sync the ticket index incrementally by tree diff, keyed by tree id; pm writes update the key"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
