@@ -7,8 +7,9 @@ use crate::term::NodeId;
 
 /// A finite binary relation over nodes; each stored pair is `Yes` or `Unknown`.
 ///
-/// An absent pair is `No` as far as the relation knows (see [`crate::eval::Ctx::holds`]
-/// for the poison-aware reading). Composition is max-min, so a path is as certain as
+/// An absent pair is `No` unless its source is in the `unknown_out` frontier: a node with an
+/// Unknown or unclassified outgoing edge may relate to anything, so every absent pair from it is
+/// `Unknown` (the top of the hi bound). Composition is max-min, so a path is as certain as
 /// its weakest edge and alternatives are as certain as their strongest.
 ///
 /// ```
@@ -29,6 +30,7 @@ use crate::term::NodeId;
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Relation {
     pairs: BTreeMap<(NodeId, NodeId), Truth>,
+    unknown_out: BTreeSet<NodeId>,
 }
 
 impl Relation {
@@ -46,9 +48,31 @@ impl Relation {
         *e = (*e).max(t);
     }
 
-    /// The stored truth of `(a, b)`; `No` when absent.
+    /// Mark `a` as having an Unknown or unclassified outgoing edge (it may relate to anything).
+    pub fn mark_unknown_out(&mut self, a: NodeId) {
+        self.unknown_out.insert(a);
+    }
+
+    /// True when `a` is on the Unknown frontier.
+    pub fn is_unknown_out(&self, a: NodeId) -> bool {
+        self.unknown_out.contains(&a)
+    }
+
+    /// The nodes on the Unknown frontier.
+    pub fn unknown_out(&self) -> impl Iterator<Item = NodeId> + '_ {
+        self.unknown_out.iter().copied()
+    }
+
+    /// The truth of `(a, b)`: the stored pair, else `Unknown` on the frontier, else `No`.
     pub fn get(&self, a: NodeId, b: NodeId) -> Truth {
-        self.pairs.get(&(a, b)).copied().unwrap_or(Truth::No)
+        self.pairs
+            .get(&(a, b))
+            .copied()
+            .unwrap_or(if self.unknown_out.contains(&a) {
+                Truth::Unknown
+            } else {
+                Truth::No
+            })
     }
 
     /// Number of stored pairs.
@@ -81,6 +105,7 @@ impl Relation {
         for (a, b, t) in other.iter() {
             out.insert(a, b, t);
         }
+        out.unknown_out.extend(other.unknown_out.iter().copied());
         out
     }
 
@@ -92,14 +117,19 @@ impl Relation {
             for (c, t2) in other.image(b) {
                 out.insert(a, c, t1.and(t2));
             }
+            if other.unknown_out.contains(&b) {
+                out.unknown_out.insert(a);
+            }
         }
+        out.unknown_out.extend(self.unknown_out.iter().copied());
         out
     }
 
     /// Transitive closure: the least fixpoint of `R = self union (R ; self)`.
     ///
     /// A pair is `Yes` when a path of `Yes` edges exists, `Unknown` when only paths
-    /// using some `Unknown` edge exist.
+    /// using some `Unknown` edge exist. Every node that can reach the `unknown_out` frontier
+    /// joins it, so its absent pairs read `Unknown` rather than `No`.
     #[must_use]
     pub fn closure(&self) -> Self {
         let mut adj: BTreeMap<NodeId, Vec<(NodeId, Truth)>> = BTreeMap::new();
@@ -107,6 +137,7 @@ impl Relation {
             adj.entry(a).or_default().push((b, t));
         }
         let mut out = Self::new();
+        out.unknown_out = self.frontier_closure();
         for &src in adj.keys() {
             let sure = reach(&adj, src, true);
             let any = reach(&adj, src, false);
@@ -123,6 +154,24 @@ impl Relation {
             }
         }
         out
+    }
+
+    /// `unknown_out` plus every node with a stored path to it.
+    fn frontier_closure(&self) -> BTreeSet<NodeId> {
+        let mut rev: BTreeMap<NodeId, Vec<NodeId>> = BTreeMap::new();
+        for (a, b, _) in self.iter() {
+            rev.entry(b).or_default().push(a);
+        }
+        let mut seen = self.unknown_out.clone();
+        let mut stack: Vec<NodeId> = seen.iter().copied().collect();
+        while let Some(n) = stack.pop() {
+            for &m in rev.get(&n).map_or(&[][..], Vec::as_slice) {
+                if seen.insert(m) {
+                    stack.push(m);
+                }
+            }
+        }
+        seen
     }
 }
 

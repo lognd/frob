@@ -302,9 +302,11 @@ impl RuleProgram {
         }
         let ctx = Ctx::new(model);
         for (name, f) in &self.strata {
+            ctx.clear_poison();
             let rel = f(&ctx);
-            debug!(rule = %self.rule, stratum = %name, pairs = rel.len(), "stratum derived");
-            ctx.set_derived(name, rel);
+            let poison = ctx.poison();
+            debug!(rule = %self.rule, stratum = %name, pairs = rel.len(), poisoned = poison.len(), "stratum derived");
+            ctx.set_derived(name, rel, poison);
         }
         ctx.clear_poison();
 
