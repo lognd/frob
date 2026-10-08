@@ -2,7 +2,8 @@
 id = "01M43ARYFVG86PAGGM78JGRZY3"
 title = "crunk-ingest: map JSX style props and className class_tokens into ProjectStyles"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
