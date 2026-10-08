@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-08T12:23:32Z"
+updated = "2026-10-08T12:27:30Z"
 idempotency_key = "m2-grl-check-structure"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/check/structure.rs", "crates/gob-plan/src/check/mod.rs", "crates/gob-plan/src/check/render.rs", "crates/gob-plan/tests/**", "crates/gob-plan/Cargo.toml"]
@@ -19,11 +19,11 @@ target = "01M3ZX7DYR7PR1PBCZ7E8Q56WW"
 
 [[acceptance]]
 text = "Given a def that calls itself, a closure without `within`, an explain without `## Remedy` and a rule using `diff.changed` without `needs diff`, when compiled, then GRL009, GRL010, GRL012 and GRL014 are emitted with their goldens"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a rule without a clean example, when compiled, then GRL011 is emitted with a scaffold of the missing example"
-bound = false
+bound = true
 +++
 
 Implements grl-spec.md sections 7.4, 9 and 10.
