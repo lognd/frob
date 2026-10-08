@@ -2,7 +2,8 @@
 id = "01M4CT016NKN4QRVY0Y57FX1J2"
 title = "Sprint gate: frob work refuses a ticket outside the active cycle unless expedite or --unplanned --reason"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
