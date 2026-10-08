@@ -8,8 +8,12 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:45Z"
-updated = "2026-10-08T03:55:45Z"
+updated = "2026-10-08T03:57:28Z"
 scope = ["changelog.d/**", "crates/frob/**", "crates/gob-cli/**", "crates/frob-land/**", "crates/frob-lease/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M4CTE6TNY9C5R18NE53J42W1"
 
 [[acceptance]]
 text = "Given frob land, when it runs, then the repository is opened once (counter test)"
