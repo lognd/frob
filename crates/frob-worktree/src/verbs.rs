@@ -12,14 +12,13 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::config::{WorktreeConfig, ledger_config};
-use crate::cycle_gate::CycleGates;
 use crate::error::WorktreeError;
 use crate::gc::{GcConfig, Mode, glue};
 use crate::work::{Requeued, Started, WorkOptions, Workspace};
 
 /// The opened pieces a verb needs.
 struct Opened {
-    gates: CycleGates,
+    sprint_gate: bool,
     ledger: Ledger,
     leases: LeaseStore,
     config: WorktreeConfig,
@@ -47,9 +46,7 @@ impl Opened {
         let wip = pm.wip;
         let (leases, _) = frob_lease::open_store_from_file(&root, ctx.clock.clone())?;
         Ok(Self {
-            gates: CycleGates {
-                sprint_gate: pm.pm.sprint_gate,
-            },
+            sprint_gate: pm.pm.sprint_gate,
             ledger: Ledger::open(repo, ledger_cfg, ctx.clock.clone()),
             leases: leases
                 .with_holder_limit(wip.in_progress_per_identity)
@@ -73,12 +70,19 @@ impl Opened {
         glue::notices(&report)
     }
 
+    /// `opts` with the sprint gate set from `[pm] sprint_gate`.
+    fn gated(&self, opts: &WorkOptions) -> WorkOptions {
+        WorkOptions {
+            sprint_gate: self.sprint_gate,
+            ..opts.clone()
+        }
+    }
+
     fn workspace(&self) -> Workspace<'_> {
         Workspace {
             ledger: &self.ledger,
             leases: &self.leases,
             config: &self.config,
-            gates: self.gates,
         }
     }
 }
@@ -232,6 +236,7 @@ impl Command for Work {
                 worktree: m.get_one::<PathBuf>("worktree").cloned(),
                 steal,
                 unplanned,
+                sprint_gate: false,
             },
             here: m.get_flag("here"),
         })
@@ -244,7 +249,9 @@ impl Command for Work {
             return start_here(&opened, ctx, &self.ticket, &self.opts);
         }
         let notices = opened.collect_garbage();
-        let started = opened.workspace().work(&self.ticket, &self.opts)?;
+        let started = opened
+            .workspace()
+            .work(&self.ticket, &opened.gated(&self.opts))?;
         Ok(notices
             .into_iter()
             .fold(start_payload(started), Payload::with_warning))
@@ -302,12 +309,9 @@ fn start_here(
         .repo()
         .work_dir()
         .map_or_else(|| ctx.cwd.clone(), std::path::Path::to_path_buf);
-    let started = opened.workspace().start_unplanned(
-        ticket,
-        &cwd,
-        opts.steal.as_deref(),
-        opts.unplanned.as_deref(),
-    )?;
+    let started = opened
+        .workspace()
+        .start_with(ticket, &cwd, &opened.gated(opts))?;
     Ok(start_payload(started))
 }
 

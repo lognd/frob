@@ -121,7 +121,6 @@ fn work_creates_worktree_and_is_idempotent_for_the_holder() {
         ledger: &ledger,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let id = Fixture::ticket(&ledger, "Do it", TicketType::Task, &["crates/x/**"]);
 
@@ -178,13 +177,11 @@ fn another_holder_is_refused_and_can_steal_with_a_reason() {
         ledger: &alice,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let ws_b = Workspace {
         ledger: &bob,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let id = Fixture::ticket(&alice, "Do it", TicketType::Task, &["src/newmod/**"]);
     let other = Fixture::ticket(&alice, "Overlaps", TicketType::Task, &["src/newmod/a.rs"]);
@@ -219,6 +216,7 @@ fn another_holder_is_refused_and_can_steal_with_a_reason() {
                 worktree: None,
                 steal: Some("alice is gone".to_owned()),
                 unplanned: None,
+                sprint_gate: false,
             },
         )
         .expect("steal");
@@ -254,13 +252,11 @@ fn work_events_carry_no_absolute_path() {
         ledger: &alice,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let ws_b = Workspace {
         ledger: &bob,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let id = Fixture::ticket(&alice, "Do it", TicketType::Task, &["src/newmod/**"]);
     let started = ws_a
@@ -272,6 +268,7 @@ fn work_events_carry_no_absolute_path() {
             worktree: None,
             steal: Some("alice is gone".to_owned()),
             unplanned: None,
+            sprint_gate: false,
         },
     )
     .expect("steal");
@@ -333,7 +330,6 @@ fn concurrent_work_on_overlapping_tickets_grants_exactly_one() {
                     ledger: &ledger,
                     leases: &leases,
                     config: &wt,
-                    gates: frob_worktree::CycleGates::default(),
                 };
                 barrier.wait();
                 ws.work(&id.to_string(), &WorkOptions::default())
@@ -372,7 +368,6 @@ fn worktree_dir_knob_moves_the_worktree() {
         ledger: &ledger,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let id = Fixture::ticket(&ledger, "Do it", TicketType::Task, &["x/**"]);
     let s = ws
@@ -401,13 +396,11 @@ fn unworkable_tickets_are_refused() {
         ledger: &ledger,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let ws_b = Workspace {
         ledger: &other,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let epic = Fixture::ticket(&ledger, "Epic", TicketType::Epic, &[]);
     let err = ws
@@ -452,7 +445,6 @@ fn start_leases_the_current_checkout_and_requeue_releases() {
         ledger: &ledger,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let id = Fixture::ticket(&ledger, "Do it", TicketType::Task, &["s/**"]);
 
@@ -492,7 +484,6 @@ fn doable_hides_tickets_overlapping_a_live_lease() {
         ledger: &ledger,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let a = Fixture::ticket(&ledger, "A", TicketType::Task, &["src/newmod/**"]);
     let b = Fixture::ticket(&ledger, "B", TicketType::Task, &["src/newmod/x.rs"]);
@@ -572,7 +563,6 @@ fn fill_wip(ledger: &Ledger, leases: &LeaseStore, cfg: &WorktreeConfig, n: usize
         ledger,
         leases,
         config: cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     (0..n)
         .map(|i| {
@@ -608,7 +598,6 @@ fn work_refuses_past_the_repository_limit_naming_both_holders() {
         ledger: &ledger,
         leases: &limited,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let third = Fixture::ticket(&ledger, "Third", TicketType::Task, &["area9/**"]);
     let err = ws
@@ -682,7 +671,6 @@ fn concurrent_work_for_the_last_wip_slot_grants_exactly_one() {
                         ledger: &ledger,
                         leases: &leases,
                         config: &wt,
-                        gates: frob_worktree::CycleGates::default(),
                     };
                     barrier.wait();
                     ws.work(&id.to_string(), &WorkOptions::default())
@@ -720,7 +708,6 @@ fn limit_zero_is_off_and_reentry_is_not_a_new_slot() {
         ledger: &ledger,
         leases: &off_leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let more = Fixture::ticket(&ledger, "More", TicketType::Task, &["area8/**"]);
     off.work(&more.to_string(), &WorkOptions::default())
@@ -731,7 +718,6 @@ fn limit_zero_is_off_and_reentry_is_not_a_new_slot() {
         ledger: &ledger,
         leases: &tight_leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let again = tight
         .work(&ids[0].to_string(), &WorkOptions::default())
@@ -759,7 +745,6 @@ fn a_stale_in_progress_ticket_does_not_count_and_is_named() {
         ledger: &ledger,
         leases: &limited,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let next = Fixture::ticket(&ledger, "Next", TicketType::Task, &["area7/**"]);
     ws.work(&next.to_string(), &WorkOptions::default())
@@ -963,7 +948,6 @@ fn expired_run(fx: &Fixture, scope: &[&str]) -> (TicketId, PathBuf) {
         ledger: &ledger,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     let id = Fixture::ticket(&ledger, "Do it", TicketType::Task, scope);
     let started = ws
@@ -994,7 +978,6 @@ fn work_from(wt: &Path, id: TicketId) -> Result<frob_worktree::Started, Worktree
         ledger: &ledger,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     }
     .work(&id.to_string(), &WorkOptions::default())
 }
@@ -1075,7 +1058,6 @@ fn an_overdue_active_cycle_refuses_standard_work_but_not_expedite() {
         ledger: &ledger,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates::default(),
     };
     cycle_at(&ledger, -8, -2);
     let plain = Fixture::ticket(&ledger, "Plain", TicketType::Task, &["a/**"]);
@@ -1117,7 +1099,6 @@ fn the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it() {
         ledger: &ledger,
         leases: &leases,
         config: &cfg,
-        gates: frob_worktree::CycleGates { sprint_gate: true },
     };
     let planned = Fixture::ticket(&ledger, "Planned", TicketType::Task, &["a/**"]);
     // No active cycle: the gate is silent.
@@ -1163,6 +1144,7 @@ fn the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it() {
 
     // --unplanned --reason joins the cycle as an over-commit and starts.
     let opts = WorkOptions {
+        sprint_gate: true,
         unplanned: Some("customer escalation".to_owned()),
         ..WorkOptions::default()
     };

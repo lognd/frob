@@ -20,7 +20,6 @@ pub mod wip;
 pub mod work;
 
 pub use config::{WorktreeConfig, ledger_config};
-pub use cycle_gate::CycleGates;
 pub use error::WorktreeError;
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
 pub use gc::GcConfig;

@@ -172,7 +172,6 @@ impl Fixture {
             ledger: &ledger,
             leases: &leases,
             config: &cfg,
-            gates: frob_worktree::CycleGates::default(),
         };
         let started = ws
             .work(&id.to_string(), &WorkOptions::default())

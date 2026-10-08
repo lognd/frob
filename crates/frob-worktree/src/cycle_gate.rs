@@ -28,13 +28,6 @@ pub const OVERDUE_CODE: &str = "E-PM-CYCLE-OVERDUE";
 /// The refusal code of starting a ticket outside the active cycle.
 pub const NOT_IN_CYCLE_CODE: &str = "E-PM-NOT-IN-CYCLE";
 
-/// The cycle gates a [`crate::work::Workspace`] applies: `[pm] sprint_gate`; off by default so a bare workspace gates nothing.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct CycleGates {
-    /// Refuse standard tickets outside the active cycle (`[pm] sprint_gate`).
-    pub sprint_gate: bool,
-}
-
 /// The refusal for taking `handle` while `overdue` cycles are still active; `None` when there are none.
 pub fn overdue_refusal(overdue: &[Overdue], handle: &str) -> Option<Refusal> {
     if overdue.is_empty() {
@@ -85,7 +78,7 @@ pub fn not_in_cycle_refusal(alias: &str, elsewhere: Option<&str>, handle: &str) 
     Refusal::new(NOT_IN_CYCLE_CODE, RefusalClass::GuardNeedsAction, msg).with_remedy(remedy)
 }
 
-/// Apply the sprint gate to `handle` (`id`, `class`) when `gates` has it on.
+/// Apply the sprint gate to `handle` (`id`, `class`) when `sprint_gate` is on.
 ///
 /// Expedite tickets and repositories with no active cycle pass. A ticket outside the
 /// active cycle is refused with `E-PM-NOT-IN-CYCLE`, or, when `unplanned` carries a
@@ -96,12 +89,12 @@ pub fn not_in_cycle_refusal(alias: &str, elsewhere: Option<&str>, handle: &str) 
 /// `E-PM-NOT-IN-CYCLE`; ledger and store failures.
 pub fn check_sprint(
     ledger: &Ledger,
-    gates: CycleGates,
+    sprint_gate: bool,
     taking: (TicketId, Class, &str),
     unplanned: Option<&str>,
 ) -> Result<(), WorktreeError> {
     let (id, class, handle) = taking;
-    if !gates.sprint_gate {
+    if !sprint_gate {
         tracing::debug!(handle, "sprint gate off");
         return Ok(());
     }
