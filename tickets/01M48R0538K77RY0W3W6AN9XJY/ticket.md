@@ -2,13 +2,14 @@
 id = "01M48R0538K77RY0W3W6AN9XJY"
 title = "Migrate crunk COLOR001 to the two-file shape; later crunk rules use only the attribute"
 type = "story"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 1
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:08Z"
-updated = "2026-10-08T03:52:07Z"
+updated = "2026-10-08T12:35:32Z"
 scope = ["crates/crunk-check/**"]
 
 [[links]]
