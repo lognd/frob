@@ -1,0 +1,32 @@
+[package]
+name = "crunk-ingest"
+version.workspace = true
+description = "CSS ingest for crunk: ProjectStyles from a project's stylesheets, bucket placement and the organization inventory."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+keywords = ["css", "design-system", "lint", "ingest"]
+categories = ["web-programming", "parser-implementations"]
+
+[lints]
+workspace = true
+
+[dependencies]
+crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
+crunk-values = { version = "0.532.0", path = "../crunk-values" }
+gob-cache = { version = "0.532.0", path = "../gob-cache" }
+gob-exec = { version = "0.532.0", path = "../gob-exec" }
+gob-directives = { version = "0.532.0", path = "../gob-directives" }
+gob-ir = { version = "0.532.0", path = "../gob-ir" }
+gob-languages = { version = "0.532.0", path = "../gob-languages" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+thiserror = "2"
+tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3"

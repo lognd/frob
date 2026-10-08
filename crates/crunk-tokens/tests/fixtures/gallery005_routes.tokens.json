@@ -1,0 +1,206 @@
+{
+  "ns0_a0": {
+    "entries": [
+      [
+        "--color-ink",
+        "#1a1a1a"
+      ],
+      [
+        "--space-0",
+        "0px"
+      ],
+      [
+        "--space-4",
+        "4px"
+      ],
+      [
+        "--space-8",
+        "8px"
+      ],
+      [
+        "--font-size-12",
+        "12px"
+      ],
+      [
+        "--font-size-16",
+        "16px"
+      ],
+      [
+        "--radius-0",
+        "0px"
+      ],
+      [
+        "--radius-4",
+        "4px"
+      ],
+      [
+        "--font-family-base",
+        "Inter"
+      ]
+    ],
+    "theme": {
+      "ink": "var(--color-ink)",
+      "0": "var(--radius-0)",
+      "4": "var(--radius-4)",
+      "8": "var(--space-8)",
+      "12": "var(--font-size-12)",
+      "16": "var(--font-size-16)"
+    }
+  },
+  "ns0_a1": {
+    "entries": [
+      [
+        "--color-ink",
+        "#1a1a1a"
+      ],
+      [
+        "--color-ink-rgb",
+        "26 26 26"
+      ],
+      [
+        "--space-0",
+        "0px"
+      ],
+      [
+        "--space-4",
+        "4px"
+      ],
+      [
+        "--space-8",
+        "8px"
+      ],
+      [
+        "--font-size-12",
+        "12px"
+      ],
+      [
+        "--font-size-16",
+        "16px"
+      ],
+      [
+        "--radius-0",
+        "0px"
+      ],
+      [
+        "--radius-4",
+        "4px"
+      ],
+      [
+        "--font-family-base",
+        "Inter"
+      ]
+    ],
+    "theme": {
+      "ink": "rgb(var(--color-ink-rgb) / <alpha-value>)",
+      "0": "var(--radius-0)",
+      "4": "var(--radius-4)",
+      "8": "var(--space-8)",
+      "12": "var(--font-size-12)",
+      "16": "var(--font-size-16)"
+    }
+  },
+  "ns1_a0": {
+    "entries": [
+      [
+        "--color-ink",
+        "#1a1a1a"
+      ],
+      [
+        "--space-0",
+        "0px"
+      ],
+      [
+        "--space-4",
+        "4px"
+      ],
+      [
+        "--space-8",
+        "8px"
+      ],
+      [
+        "--font-size-12",
+        "12px"
+      ],
+      [
+        "--font-size-16",
+        "16px"
+      ],
+      [
+        "--radius-0",
+        "0px"
+      ],
+      [
+        "--radius-4",
+        "4px"
+      ],
+      [
+        "--font-family-base",
+        "Inter"
+      ]
+    ],
+    "theme": {
+      "ink": "var(--color-ink)",
+      "space-0": "var(--space-0)",
+      "space-4": "var(--space-4)",
+      "space-8": "var(--space-8)",
+      "font-size-12": "var(--font-size-12)",
+      "font-size-16": "var(--font-size-16)",
+      "radius-0": "var(--radius-0)",
+      "radius-4": "var(--radius-4)"
+    }
+  },
+  "ns1_a1": {
+    "entries": [
+      [
+        "--color-ink",
+        "#1a1a1a"
+      ],
+      [
+        "--color-ink-rgb",
+        "26 26 26"
+      ],
+      [
+        "--space-0",
+        "0px"
+      ],
+      [
+        "--space-4",
+        "4px"
+      ],
+      [
+        "--space-8",
+        "8px"
+      ],
+      [
+        "--font-size-12",
+        "12px"
+      ],
+      [
+        "--font-size-16",
+        "16px"
+      ],
+      [
+        "--radius-0",
+        "0px"
+      ],
+      [
+        "--radius-4",
+        "4px"
+      ],
+      [
+        "--font-family-base",
+        "Inter"
+      ]
+    ],
+    "theme": {
+      "ink": "rgb(var(--color-ink-rgb) / <alpha-value>)",
+      "space-0": "var(--space-0)",
+      "space-4": "var(--space-4)",
+      "space-8": "var(--space-8)",
+      "font-size-12": "var(--font-size-12)",
+      "font-size-16": "var(--font-size-16)",
+      "radius-0": "var(--radius-0)",
+      "radius-4": "var(--radius-4)"
+    }
+  }
+}

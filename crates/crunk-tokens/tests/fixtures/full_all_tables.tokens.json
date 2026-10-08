@@ -1,0 +1,554 @@
+{
+  "ns0_a0": {
+    "entries": [
+      [
+        "--paper",
+        "#fafaf7"
+      ],
+      [
+        "--ink",
+        "#1a1a1a"
+      ],
+      [
+        "--accent",
+        "#2f6fed"
+      ],
+      [
+        "--muted",
+        "#5c6670cc"
+      ],
+      [
+        "--rebecca",
+        "#663399"
+      ],
+      [
+        "--zed",
+        "#ff0000"
+      ],
+      [
+        "--sp-0",
+        "0px"
+      ],
+      [
+        "--sp-4",
+        "4px"
+      ],
+      [
+        "--sp-6_5",
+        "6.5px"
+      ],
+      [
+        "--sp-8",
+        "8px"
+      ],
+      [
+        "--sp-16",
+        "16px"
+      ],
+      [
+        "--fs-12",
+        "12px"
+      ],
+      [
+        "--fs-14",
+        "14px"
+      ],
+      [
+        "--fs-16",
+        "16px"
+      ],
+      [
+        "--r-0",
+        "0px"
+      ],
+      [
+        "--r-4",
+        "4px"
+      ],
+      [
+        "--sz-16",
+        "16px"
+      ],
+      [
+        "--sz-32",
+        "32px"
+      ],
+      [
+        "--sz-64",
+        "64px"
+      ],
+      [
+        "--z-toast",
+        "300"
+      ],
+      [
+        "--z-base",
+        "0"
+      ],
+      [
+        "--z-dropdown",
+        "100"
+      ],
+      [
+        "--ff-base",
+        "Inter, system-ui, \"JetBrains Mono\""
+      ],
+      [
+        "--ff-sans",
+        "Inter, system-ui"
+      ],
+      [
+        "--ff-mono",
+        "\"jetbrains mono\""
+      ]
+    ],
+    "theme": {
+      "paper": "var(--paper)",
+      "ink": "var(--ink)",
+      "accent": "var(--accent)",
+      "muted": "var(--muted)",
+      "rebecca": "var(--rebecca)",
+      "zed": "var(--zed)",
+      "0": "var(--r-0)",
+      "4": "var(--r-4)",
+      "6_5": "var(--sp-6_5)",
+      "8": "var(--sp-8)",
+      "16": "var(--sz-16)",
+      "12": "var(--fs-12)",
+      "14": "var(--fs-14)",
+      "toast": "var(--z-toast)",
+      "base": "var(--z-base)",
+      "dropdown": "var(--z-dropdown)",
+      "32": "var(--sz-32)",
+      "64": "var(--sz-64)"
+    }
+  },
+  "ns0_a1": {
+    "entries": [
+      [
+        "--paper",
+        "#fafaf7"
+      ],
+      [
+        "--ink",
+        "#1a1a1a"
+      ],
+      [
+        "--accent",
+        "#2f6fed"
+      ],
+      [
+        "--muted",
+        "#5c6670cc"
+      ],
+      [
+        "--rebecca",
+        "#663399"
+      ],
+      [
+        "--zed",
+        "#ff0000"
+      ],
+      [
+        "--paper-rgb",
+        "250 250 247"
+      ],
+      [
+        "--ink-rgb",
+        "26 26 26"
+      ],
+      [
+        "--accent-rgb",
+        "47 111 237"
+      ],
+      [
+        "--muted-rgb",
+        "92 102 112"
+      ],
+      [
+        "--rebecca-rgb",
+        "102 51 153"
+      ],
+      [
+        "--zed-rgb",
+        "255 0 0"
+      ],
+      [
+        "--sp-0",
+        "0px"
+      ],
+      [
+        "--sp-4",
+        "4px"
+      ],
+      [
+        "--sp-6_5",
+        "6.5px"
+      ],
+      [
+        "--sp-8",
+        "8px"
+      ],
+      [
+        "--sp-16",
+        "16px"
+      ],
+      [
+        "--fs-12",
+        "12px"
+      ],
+      [
+        "--fs-14",
+        "14px"
+      ],
+      [
+        "--fs-16",
+        "16px"
+      ],
+      [
+        "--r-0",
+        "0px"
+      ],
+      [
+        "--r-4",
+        "4px"
+      ],
+      [
+        "--sz-16",
+        "16px"
+      ],
+      [
+        "--sz-32",
+        "32px"
+      ],
+      [
+        "--sz-64",
+        "64px"
+      ],
+      [
+        "--z-toast",
+        "300"
+      ],
+      [
+        "--z-base",
+        "0"
+      ],
+      [
+        "--z-dropdown",
+        "100"
+      ],
+      [
+        "--ff-base",
+        "Inter, system-ui, \"JetBrains Mono\""
+      ],
+      [
+        "--ff-sans",
+        "Inter, system-ui"
+      ],
+      [
+        "--ff-mono",
+        "\"jetbrains mono\""
+      ]
+    ],
+    "theme": {
+      "paper": "rgb(var(--paper-rgb) / <alpha-value>)",
+      "ink": "rgb(var(--ink-rgb) / <alpha-value>)",
+      "accent": "rgb(var(--accent-rgb) / <alpha-value>)",
+      "muted": "rgb(var(--muted-rgb) / <alpha-value>)",
+      "rebecca": "rgb(var(--rebecca-rgb) / <alpha-value>)",
+      "zed": "rgb(var(--zed-rgb) / <alpha-value>)",
+      "0": "var(--r-0)",
+      "4": "var(--r-4)",
+      "6_5": "var(--sp-6_5)",
+      "8": "var(--sp-8)",
+      "16": "var(--sz-16)",
+      "12": "var(--fs-12)",
+      "14": "var(--fs-14)",
+      "toast": "var(--z-toast)",
+      "base": "var(--z-base)",
+      "dropdown": "var(--z-dropdown)",
+      "32": "var(--sz-32)",
+      "64": "var(--sz-64)"
+    }
+  },
+  "ns1_a0": {
+    "entries": [
+      [
+        "--paper",
+        "#fafaf7"
+      ],
+      [
+        "--ink",
+        "#1a1a1a"
+      ],
+      [
+        "--accent",
+        "#2f6fed"
+      ],
+      [
+        "--muted",
+        "#5c6670cc"
+      ],
+      [
+        "--rebecca",
+        "#663399"
+      ],
+      [
+        "--zed",
+        "#ff0000"
+      ],
+      [
+        "--sp-0",
+        "0px"
+      ],
+      [
+        "--sp-4",
+        "4px"
+      ],
+      [
+        "--sp-6_5",
+        "6.5px"
+      ],
+      [
+        "--sp-8",
+        "8px"
+      ],
+      [
+        "--sp-16",
+        "16px"
+      ],
+      [
+        "--fs-12",
+        "12px"
+      ],
+      [
+        "--fs-14",
+        "14px"
+      ],
+      [
+        "--fs-16",
+        "16px"
+      ],
+      [
+        "--r-0",
+        "0px"
+      ],
+      [
+        "--r-4",
+        "4px"
+      ],
+      [
+        "--sz-16",
+        "16px"
+      ],
+      [
+        "--sz-32",
+        "32px"
+      ],
+      [
+        "--sz-64",
+        "64px"
+      ],
+      [
+        "--z-toast",
+        "300"
+      ],
+      [
+        "--z-base",
+        "0"
+      ],
+      [
+        "--z-dropdown",
+        "100"
+      ],
+      [
+        "--ff-base",
+        "Inter, system-ui, \"JetBrains Mono\""
+      ],
+      [
+        "--ff-sans",
+        "Inter, system-ui"
+      ],
+      [
+        "--ff-mono",
+        "\"jetbrains mono\""
+      ]
+    ],
+    "theme": {
+      "paper": "var(--paper)",
+      "ink": "var(--ink)",
+      "accent": "var(--accent)",
+      "muted": "var(--muted)",
+      "rebecca": "var(--rebecca)",
+      "zed": "var(--zed)",
+      "sp-0": "var(--sp-0)",
+      "sp-4": "var(--sp-4)",
+      "sp-6_5": "var(--sp-6_5)",
+      "sp-8": "var(--sp-8)",
+      "sp-16": "var(--sp-16)",
+      "fs-12": "var(--fs-12)",
+      "fs-14": "var(--fs-14)",
+      "fs-16": "var(--fs-16)",
+      "r-0": "var(--r-0)",
+      "r-4": "var(--r-4)",
+      "toast": "var(--z-toast)",
+      "base": "var(--z-base)",
+      "dropdown": "var(--z-dropdown)",
+      "sz-16": "var(--sz-16)",
+      "sz-32": "var(--sz-32)",
+      "sz-64": "var(--sz-64)"
+    }
+  },
+  "ns1_a1": {
+    "entries": [
+      [
+        "--paper",
+        "#fafaf7"
+      ],
+      [
+        "--ink",
+        "#1a1a1a"
+      ],
+      [
+        "--accent",
+        "#2f6fed"
+      ],
+      [
+        "--muted",
+        "#5c6670cc"
+      ],
+      [
+        "--rebecca",
+        "#663399"
+      ],
+      [
+        "--zed",
+        "#ff0000"
+      ],
+      [
+        "--paper-rgb",
+        "250 250 247"
+      ],
+      [
+        "--ink-rgb",
+        "26 26 26"
+      ],
+      [
+        "--accent-rgb",
+        "47 111 237"
+      ],
+      [
+        "--muted-rgb",
+        "92 102 112"
+      ],
+      [
+        "--rebecca-rgb",
+        "102 51 153"
+      ],
+      [
+        "--zed-rgb",
+        "255 0 0"
+      ],
+      [
+        "--sp-0",
+        "0px"
+      ],
+      [
+        "--sp-4",
+        "4px"
+      ],
+      [
+        "--sp-6_5",
+        "6.5px"
+      ],
+      [
+        "--sp-8",
+        "8px"
+      ],
+      [
+        "--sp-16",
+        "16px"
+      ],
+      [
+        "--fs-12",
+        "12px"
+      ],
+      [
+        "--fs-14",
+        "14px"
+      ],
+      [
+        "--fs-16",
+        "16px"
+      ],
+      [
+        "--r-0",
+        "0px"
+      ],
+      [
+        "--r-4",
+        "4px"
+      ],
+      [
+        "--sz-16",
+        "16px"
+      ],
+      [
+        "--sz-32",
+        "32px"
+      ],
+      [
+        "--sz-64",
+        "64px"
+      ],
+      [
+        "--z-toast",
+        "300"
+      ],
+      [
+        "--z-base",
+        "0"
+      ],
+      [
+        "--z-dropdown",
+        "100"
+      ],
+      [
+        "--ff-base",
+        "Inter, system-ui, \"JetBrains Mono\""
+      ],
+      [
+        "--ff-sans",
+        "Inter, system-ui"
+      ],
+      [
+        "--ff-mono",
+        "\"jetbrains mono\""
+      ]
+    ],
+    "theme": {
+      "paper": "rgb(var(--paper-rgb) / <alpha-value>)",
+      "ink": "rgb(var(--ink-rgb) / <alpha-value>)",
+      "accent": "rgb(var(--accent-rgb) / <alpha-value>)",
+      "muted": "rgb(var(--muted-rgb) / <alpha-value>)",
+      "rebecca": "rgb(var(--rebecca-rgb) / <alpha-value>)",
+      "zed": "rgb(var(--zed-rgb) / <alpha-value>)",
+      "sp-0": "var(--sp-0)",
+      "sp-4": "var(--sp-4)",
+      "sp-6_5": "var(--sp-6_5)",
+      "sp-8": "var(--sp-8)",
+      "sp-16": "var(--sp-16)",
+      "fs-12": "var(--fs-12)",
+      "fs-14": "var(--fs-14)",
+      "fs-16": "var(--fs-16)",
+      "r-0": "var(--r-0)",
+      "r-4": "var(--r-4)",
+      "toast": "var(--z-toast)",
+      "base": "var(--z-base)",
+      "dropdown": "var(--z-dropdown)",
+      "sz-16": "var(--sz-16)",
+      "sz-32": "var(--sz-32)",
+      "sz-64": "var(--sz-64)"
+    }
+  }
+}

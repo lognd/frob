@@ -1,0 +1,1 @@
+gob-plan: GRL name and type checks (`gob_plan::check`): GRL001 unknown word with did-you-mean, GRL003 variable used only inside `not`/`no`/`unresolved when`, GRL004 variable bound twice, GRL005 type mismatch, warning GRL013 unused `find`, plus GRL017 (`certainly`/`possibly` in a negative position) and GRL018 (a word no `lang` answers), each with a byte-exact golden.

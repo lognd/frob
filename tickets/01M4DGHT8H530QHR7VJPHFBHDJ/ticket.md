@@ -1,0 +1,13 @@
++++
+id = "01M4DGHT8H530QHR7VJPHFBHDJ"
+title = "gob-config schema export drops the $defs entries its $ref links point at, so row columns (ForbidImport) are untyped"
+type = "bug"
+category = "todo"
+priority = "medium"
+reporter = "lognd"
+created = "2026-10-08T10:22:01Z"
+updated = "2026-10-08T10:22:01Z"
+scope = ["crates/gob-config/src/schema.rs", "docs/schemas/config.json"]
++++
+
+found while working ~CDMAECH. docs/schemas/config.json has $ref to #/$defs/ForbidImport (also FailOn, ToolStage, ExternalPack, Pull) but no $defs object, so the GRL catalog cannot type the columns of config.invariants.forbid_imports. The exporter (schemars subschemas) must carry the definitions into the document root. gob-plan reads $defs when present (ConfigSchema::from_json).

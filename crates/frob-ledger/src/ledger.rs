@@ -7,7 +7,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
-use gob_git::{CommitOptions, Oid, RelPath, Repo, TreeRef};
+use gob_git::{ChangeKind, CommitOptions, Oid, RelPath, Repo, TreeRef};
 
 use crate::doc;
 use crate::error::{LedgerError, Result};
@@ -101,6 +101,8 @@ pub struct Ledger {
     layout: Layout,
     /// Ticket-branch scan of the last commit read, so id lookups cost one tree walk per commit.
     branch_scan: std::sync::Mutex<Option<(String, std::sync::Arc<BranchScan>)>>,
+    /// Full index rebuilds this handle has performed (the incremental path does not count).
+    rebuilds: std::sync::atomic::AtomicUsize,
 }
 
 /// What one walk of a ticket-branch commit found: where each ticket file is, by frontmatter ULID.
@@ -182,6 +184,7 @@ impl Ledger {
             clock,
             layout: Layout::Dir,
             branch_scan: std::sync::Mutex::new(None),
+            rebuilds: std::sync::atomic::AtomicUsize::new(0),
         }
     }
 
@@ -663,17 +666,25 @@ impl Ledger {
     }
 
     /// Open the index and bring it up to date with the ledger ref.
+    ///
+    /// A stale key is first repaired incrementally from the tree diff between the tree the index
+    /// reflects and the current one; only an unusable key falls back to a full rebuild.
     pub(crate) fn synced(&self) -> Result<Synced> {
         let ref_name = self.ledger_ref()?;
         let tip = self.tip_of(&ref_name)?;
         let tree = self.tickets_tree(tip)?;
         let key = self.key_of(tree);
         let mut index = Index::open(&self.index_path)?;
-        if index.key()?.as_deref() != Some(key.as_str()) {
+        let stored = index.key()?;
+        if stored.as_deref() != Some(key.as_str())
+            && !self.sync_incrementally(&mut index, stored.as_deref(), tree, &key)?
+        {
             let tickets = match tree {
                 Some(t) => self.read_all_tickets(&t.to_string())?,
                 None => Vec::new(),
             };
+            self.rebuilds
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             index.rebuild(&key, &tickets, self.cfg.handle_min_len)?;
         }
         Ok(Synced {
@@ -685,16 +696,99 @@ impl Ledger {
         })
     }
 
+    /// How many full index rebuilds this handle has done (tests and diagnostics).
+    pub fn index_rebuilds(&self) -> usize {
+        self.rebuilds.load(std::sync::atomic::Ordering::Relaxed)
+    }
+
+    /// The tree id and handle length a stored index key names, or `None` when it is not one of ours.
+    fn parse_key(stored: &str) -> Option<(Oid, usize)> {
+        let (tree, min_len) = stored.split_once('|')?;
+        let tree = if tree == "empty" { EMPTY_TREE } else { tree };
+        Some((tree.parse().ok()?, min_len.parse().ok()?))
+    }
+
+    /// Whether `path` (relative to the tickets tree) is a file the index reads as a ticket.
+    fn is_ticket_path(&self, path: &str) -> bool {
+        match self.layout {
+            Layout::Dir => path
+                .strip_suffix("/ticket.md")
+                .is_some_and(|id| id.parse::<TicketId>().is_ok()),
+            Layout::Branch => layout::is_branch_ticket_candidate(path),
+        }
+    }
+
+    /// Bring `index` from the tree its key names to `tree` by upserting and deleting only the
+    /// tickets whose files changed; `false` means the caller must rebuild in full.
+    ///
+    /// The result equals a full rebuild: a changed file first drops the ticket its old blob
+    /// indexed, then the new blob (if it parses) is upserted, and a file that would make two
+    /// files claim one id is refused so the rebuild decides.
+    fn sync_incrementally(
+        &self,
+        index: &mut Index,
+        stored: Option<&str>,
+        tree: Option<Oid>,
+        key: &str,
+    ) -> Result<bool> {
+        let Some(stored) = stored else {
+            return Ok(false);
+        };
+        let Some((old, min_len)) = Self::parse_key(stored) else {
+            tracing::debug!(stored, "index key unreadable; full rebuild");
+            return Ok(false);
+        };
+        if min_len != self.cfg.handle_min_len {
+            tracing::debug!(min_len, "handle length changed; full rebuild");
+            return Ok(false);
+        }
+        let empty: Oid = EMPTY_TREE
+            .parse()
+            .unwrap_or_else(|e| unreachable!("constant is a valid object id: {e}"));
+        let new = tree.unwrap_or(empty);
+        let changes = match self.repo.diff_names(&TreeRef::Oid(old), &TreeRef::Oid(new)) {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::info!(error = %e, "previous index tree unreadable; full rebuild");
+                return Ok(false);
+            }
+        };
+        let (old_hex, new_hex) = (old.to_string(), new.to_string());
+        let mut removed: Vec<TicketId> = Vec::new();
+        let mut upserts: Vec<Ticket> = Vec::new();
+        for change in changes.iter().filter(|c| self.is_ticket_path(&c.path)) {
+            if change.kind != ChangeKind::Added
+                && let Some(text) = self.text(&old_hex, &change.path)?
+                && let Ok(t) = doc::parse(&change.path, &text)
+            {
+                removed.push(t.front.id);
+            }
+            if change.kind != ChangeKind::Deleted
+                && let Some(text) = self.text(&new_hex, &change.path)?
+            {
+                match doc::parse(&change.path, &text) {
+                    Ok(t) => upserts.push(t),
+                    Err(e) => {
+                        tracing::warn!(error = %e, "skipping unreadable ticket while indexing");
+                    }
+                }
+            }
+        }
+        let done = index.patch(stored, key, &removed, &upserts, self.cfg.handle_min_len)?;
+        tracing::debug!(
+            changed = changes.len(),
+            removed = removed.len(),
+            upserted = upserts.len(),
+            done,
+            "index synced by tree diff"
+        );
+        Ok(done)
+    }
+
     fn read_all_tickets(&self, tree: &str) -> Result<Vec<Ticket>> {
         let mut out = Vec::new();
         for path in self.list_files(tree)? {
-            let wanted = match self.layout {
-                Layout::Dir => path
-                    .strip_suffix("/ticket.md")
-                    .is_some_and(|id| id.parse::<TicketId>().is_ok()),
-                Layout::Branch => layout::is_branch_ticket_candidate(&path),
-            };
-            if !wanted {
+            if !self.is_ticket_path(&path) {
                 continue;
             }
             let Some(text) = self.text(tree, &path)? else {

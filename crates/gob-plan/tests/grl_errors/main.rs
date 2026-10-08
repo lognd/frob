@@ -30,10 +30,11 @@ use std::path::PathBuf;
 use gob_plan::grl::parse;
 use gob_text::FileInterner;
 
-/// Every code with a golden: GRL001-GRL015 compile errors and the GRL016 test diff.
-const CODES: [&str; 16] = [
+/// Every code with a golden: GRL001-GRL015 compile errors, the GRL016 test diff, and the
+/// review-driven GRL017 (`certainly` in a negative position) and GRL018 (a word no `lang` answers).
+const CODES: [&str; 18] = [
     "GRL001", "GRL002", "GRL003", "GRL004", "GRL005", "GRL006", "GRL007", "GRL008", "GRL009",
-    "GRL010", "GRL011", "GRL012", "GRL013", "GRL014", "GRL015", "GRL016",
+    "GRL010", "GRL011", "GRL012", "GRL013", "GRL014", "GRL015", "GRL016", "GRL017", "GRL018",
 ];
 
 /// A checker: given the display path and the source of a rule file, the exact text to print.
@@ -42,8 +43,12 @@ type Render = fn(path: &str, source: &str) -> String;
 /// The renderer of the compiler's output for `code`, once its checker has landed.
 fn checker(code: &str) -> Option<Render> {
     // Each checker ticket adds its codes here, e.g. `"GRL001" => Some(gob_plan::...::render)`.
-    let _ = code;
-    None
+    match code {
+        "GRL001" | "GRL003" | "GRL004" | "GRL005" | "GRL013" | "GRL017" | "GRL018" => {
+            Some(gob_plan::check::compile_report)
+        }
+        _ => None,
+    }
 }
 
 /// One golden: the rule file, where it is shown from, and what must be printed.
@@ -321,11 +326,11 @@ macro_rules! goldens {
 }
 
 goldens! {
-    pending golden_grl001 "GRL001" "pending: GRL001 checker not landed (~E8Q56WW)";
+    enabled golden_grl001 "GRL001" "landed (~E8Q56WW)";
     pending golden_grl002 "GRL002" "pending: GRL002 checker not landed (~APQDEAP)";
-    pending golden_grl003 "GRL003" "pending: GRL003 checker not landed (~E8Q56WW)";
-    pending golden_grl004 "GRL004" "pending: GRL004 checker not landed (~E8Q56WW)";
-    pending golden_grl005 "GRL005" "pending: GRL005 checker not landed (~E8Q56WW)";
+    enabled golden_grl003 "GRL003" "landed (~E8Q56WW)";
+    enabled golden_grl004 "GRL004" "landed (~E8Q56WW)";
+    enabled golden_grl005 "GRL005" "landed (~E8Q56WW)";
     pending golden_grl006 "GRL006" "pending: GRL006 checker not landed (~APQDEAP)";
     pending golden_grl007 "GRL007" "pending: GRL007 checker not landed (~APQDEAP)";
     pending golden_grl008 "GRL008" "pending: GRL008 checker not landed (~APQDEAP)";
@@ -333,10 +338,12 @@ goldens! {
     pending golden_grl010 "GRL010" "pending: GRL010 checker not landed (~ZKM5W7Y)";
     pending golden_grl011 "GRL011" "pending: GRL011 checker not landed (~ZKM5W7Y)";
     pending golden_grl012 "GRL012" "pending: GRL012 checker not landed (~ZKM5W7Y)";
-    pending golden_grl013 "GRL013" "pending: GRL013 checker not landed (~E8Q56WW)";
+    enabled golden_grl013 "GRL013" "landed (~E8Q56WW)";
     pending golden_grl014 "GRL014" "pending: GRL014 checker not landed (~ZKM5W7Y)";
     pending golden_grl015 "GRL015" "pending: GRL015 checker not landed (~16R03NG)";
     pending golden_grl016 "GRL016" "pending: GRL016 example runner not landed (grimble rule test)";
+    enabled golden_grl017 "GRL017" "landed (~E8Q56WW)";
+    enabled golden_grl018 "GRL018" "landed (~E8Q56WW)";
 }
 
 // frob:ticket 01M3ZX7D9CT156TR8J4YTQ622S

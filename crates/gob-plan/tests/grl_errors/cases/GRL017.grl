@@ -1,0 +1,22 @@
+rule NOPE017 "certainly-under-not" {
+  lang rust
+
+  find f: function
+  find g: function
+  where not f certainly calls g
+  report f "no certain call to g"
+
+  example fire """
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+  """
+  example clean """
+    fn f(x: u32) -> u32 { x }
+  """
+
+  explain """
+    `dbg!` prints to stderr and is meant for local debugging only.
+
+    ## Remedy
+    Delete the call, or log through `tracing` if the value matters.
+  """
+}

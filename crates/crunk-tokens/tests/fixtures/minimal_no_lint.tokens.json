@@ -1,0 +1,110 @@
+{
+  "ns0_a0": {
+    "entries": [
+      [
+        "--color-a",
+        "#ffffff"
+      ],
+      [
+        "--space-1",
+        "1px"
+      ],
+      [
+        "--font-size-10",
+        "10px"
+      ],
+      [
+        "--font-family-base",
+        "x"
+      ]
+    ],
+    "theme": {
+      "a": "var(--color-a)",
+      "1": "var(--space-1)",
+      "10": "var(--font-size-10)"
+    }
+  },
+  "ns0_a1": {
+    "entries": [
+      [
+        "--color-a",
+        "#ffffff"
+      ],
+      [
+        "--color-a-rgb",
+        "255 255 255"
+      ],
+      [
+        "--space-1",
+        "1px"
+      ],
+      [
+        "--font-size-10",
+        "10px"
+      ],
+      [
+        "--font-family-base",
+        "x"
+      ]
+    ],
+    "theme": {
+      "a": "rgb(var(--color-a-rgb) / <alpha-value>)",
+      "1": "var(--space-1)",
+      "10": "var(--font-size-10)"
+    }
+  },
+  "ns1_a0": {
+    "entries": [
+      [
+        "--color-a",
+        "#ffffff"
+      ],
+      [
+        "--space-1",
+        "1px"
+      ],
+      [
+        "--font-size-10",
+        "10px"
+      ],
+      [
+        "--font-family-base",
+        "x"
+      ]
+    ],
+    "theme": {
+      "a": "var(--color-a)",
+      "space-1": "var(--space-1)",
+      "font-size-10": "var(--font-size-10)"
+    }
+  },
+  "ns1_a1": {
+    "entries": [
+      [
+        "--color-a",
+        "#ffffff"
+      ],
+      [
+        "--color-a-rgb",
+        "255 255 255"
+      ],
+      [
+        "--space-1",
+        "1px"
+      ],
+      [
+        "--font-size-10",
+        "10px"
+      ],
+      [
+        "--font-family-base",
+        "x"
+      ]
+    ],
+    "theme": {
+      "a": "rgb(var(--color-a-rgb) / <alpha-value>)",
+      "space-1": "var(--space-1)",
+      "font-size-10": "var(--font-size-10)"
+    }
+  }
+}
