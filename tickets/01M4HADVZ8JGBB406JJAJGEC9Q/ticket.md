@@ -2,7 +2,8 @@
 id = "01M4HADVZ8JGBB406JJAJGEC9Q"
 title = "Scoped cargo stages at land: clippy and fmt over affected crates and reverse dependencies (-p)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 reporter = "lognd"
