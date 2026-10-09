@@ -498,6 +498,24 @@ to the file's crate instead of recording Passed over an incomplete set
 selection through nextest and records evidence on the lease-holding
 ticket; TEST001 is owned by frob-tests.
 
+C# tests (~YJ5RTJ6) are detected by attribute (NUnit, xUnit, MSTest,
+UnityTest) and selected through the same reach graph; a changed C# file
+seeds its changed members (a namespace or type whose own signature is
+unchanged is not a seed, so editing one method does not select every test
+of the file), and the parts of a partial type are one unit. A selected test
+is a `TestTarget` carrying the fully qualified method name
+(`Namespace.Type.Method`) and its owner: a Unity `.asmdef` assembly when
+the file belongs to one, else its `.csproj` project. Plan lines are
+`dotnet <project> <id>` and `unity <assembly> <id>`. Projects run through the
+`dotnet` evidence provider, one `dotnet test <project> --filter ...` per
+project (`--all` runs each test project whole), and the TRX results become
+one evidence event per project. Selecting a Unity assembly test refuses the
+run with `E-TESTS-UNITY-PROVIDER` before anything runs: the message carries
+the selection and names the unity provider (~F17DMKH), and the remedy is
+the Unity Test Runner. `--dry-run` still prints the selection. A change no
+test reaches selects nothing and the run says so (`no tests reach the
+touched set; nothing was run`).
+
 ## 6. Tests and CI modelled on ruff and ty (D98)
 
 Owner request 2026-10-06: build the tests, snapshots and CI/CD like

@@ -151,12 +151,12 @@ fn render_one(out: &mut String, path: &str, text: &SourceText, d: &Diagnostic) {
     }
 }
 
-/// An `= kind: text` line; continuation lines of a multi-line text are indented under it.
+/// An `= kind: text` line; continuation lines of a multi-line text are aligned under its first line.
 fn write_extra(out: &mut String, pad: &str, kind: &str, text: &str) {
     let mut lines = text.lines();
     let _ = writeln!(out, "{pad} = {kind}: {}", lines.next().unwrap_or(""));
     for l in lines {
-        let _ = writeln!(out, "{pad}   {l}");
+        let _ = writeln!(out, "{pad}   {}{l}", " ".repeat(kind.len() + 2));
     }
 }
 

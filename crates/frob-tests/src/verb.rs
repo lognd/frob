@@ -44,7 +44,7 @@ pub struct TestData {
     pub touched: TouchedSet,
     /// The selected tests.
     pub selected: Vec<TestTarget>,
-    /// One `package test_path` (nextest) or `pytest node_id` line per selected test.
+    /// One plan line per selected test (`package test_path` for nextest, `pytest node_id`, `dotnet project id`, `unity assembly id`).
     pub plan: Vec<String>,
     /// Whether any runner ran.
     pub ran: bool,
@@ -206,13 +206,15 @@ impl Command for TestVerb {
             warnings.push("no tests reach the touched set; nothing was run".to_owned());
             return Ok(with_warnings(data, warnings));
         }
-        let opts = RunOptions::new(
+        let mut opts = RunOptions::new(
             ws.root.clone(),
             ws.timeout(),
             ws.evidence.nextest_profile.clone(),
             ws.evidence.allowed_tools.clone(),
             self.all,
         );
+        // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+        opts.dotnet_path.clone_from(&ws.dotnet.path);
         let report = run(&ws.runner(), &data.selected, &opts).map_err(TestsError::into_cli)?;
         data.ran = true;
         data.passed = Some(report.passed());

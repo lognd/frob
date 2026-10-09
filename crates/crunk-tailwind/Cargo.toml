@@ -1,7 +1,8 @@
 [package]
 name = "crunk-tailwind"
 version.workspace = true
-description = "Tailwind default-theme key tables and the utility candidate parser for crunk."
+description = "Tailwind default-theme key tables, the utility candidate parser and the node runtime bridge for crunk."
+readme = "README.md"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -11,6 +12,31 @@ authors.workspace = true
 [lints]
 workspace = true
 
+[features]
+default = ["runtime"]
+# The node runtime bridge (`runtime`): runs the project's own tailwindcss out of process through
+# gob-exec. Off for consumers that only need the default-theme tables and the candidate parser.
+runtime = [
+    "dep:gob-cache",
+    "dep:gob-exec",
+    "dep:gob-fs",
+    "dep:gob-ir",
+    "dep:gob-symbols",
+    "dep:gob-walk",
+    "dep:serde",
+    "dep:serde_json",
+    "dep:tempfile",
+]
+
 [dependencies]
+gob-cache = { version = "0.532.0", path = "../gob-cache", optional = true }
+gob-exec = { version = "0.532.0", path = "../gob-exec", optional = true }
+gob-fs = { version = "0.532.0", path = "../gob-fs", optional = true }
+gob-ir = { version = "0.532.0", path = "../gob-ir", optional = true }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols", optional = true }
+gob-walk = { version = "0.532.0", path = "../gob-walk", optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", features = ["float_roundtrip"], optional = true }
+tempfile = { version = "3", optional = true }
 thiserror = "2"
 tracing = "0.1"

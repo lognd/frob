@@ -29,12 +29,26 @@ impl Sources {
         }
     }
 
-    /// The text of repo-relative `path`, read once.
+    // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+    /// The text of repo-relative `path`, read once, as git would store it when the work tree file has CRLF ends.
+    ///
+    /// Symbol spans are measured on the git-normalized text (a CRLF checkout of an LF blob parses as LF),
+    /// so a raw CRLF read would drift one byte per line and every attribute scan after the first method
+    /// would read the wrong place. Only a file holding a `\r` pays for the git read.
     pub fn get(&mut self, path: &str) -> Option<&str> {
         let root = &self.root;
         self.cache
             .entry(path.to_owned())
-            .or_insert_with(|| std::fs::read_to_string(root.join(path)).ok())
+            .or_insert_with(|| {
+                let raw = std::fs::read_to_string(root.join(path)).ok()?;
+                if !raw.contains('\r') {
+                    return Some(raw);
+                }
+                gob_walk::ContentSource::locate(root)
+                    .with_reader(|r| r.read_text(path))
+                    .ok()
+                    .or(Some(raw))
+            })
             .as_deref()
     }
 }

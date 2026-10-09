@@ -3,7 +3,10 @@
 use std::collections::BTreeSet;
 use std::path::Path;
 
-use gob_symbols::{SymbolGraph, SymbolKind, SymbolRecord, Symref};
+use gob_symbols::{
+    Assignment, DotnetProjects, SymbolGraph, SymbolKind, SymbolRecord, Symref, UnityAssignment,
+    UnityProjects,
+};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -25,6 +28,11 @@ pub enum Framework {
     Vitest,
     /// `jest`: TypeScript tests of a member that uses jest.
     Jest,
+    // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+    /// `dotnet test`: C# tests of a `.csproj` project.
+    Dotnet,
+    /// The Unity Test Framework: C# tests of an `.asmdef` assembly (needs the unity evidence provider).
+    Unity,
 }
 
 /// One selected test: the runner, the owning package and the name the runner knows it by.
@@ -32,16 +40,16 @@ pub enum Framework {
 pub struct TestTarget {
     /// Which runner executes it.
     pub framework: Framework,
-    /// Cargo package name (`-p`); the member directory (empty at the root) for vitest and jest; empty for pytest.
+    /// Cargo package name (`-p`); the member directory (empty at the root) for vitest and jest; the `.csproj` path for dotnet; the assembly package id (`.asmdef` path) for unity; empty for pytest.
     pub package: String,
-    /// The test's name inside its binary (`tests::doubles`, `integration_quad`), its pytest node id (`tests/test_a.py::TestC::test_m`), or its vitest or jest node id (`src/a.test.ts::suite$s::test$t`).
+    /// The test's name inside its binary (`tests::doubles`, `integration_quad`), its pytest node id (`tests/test_a.py::TestC::test_m`), its vitest or jest node id (`src/a.test.ts::suite$s::test$t`), or its C# id (`Namespace.Type.Method`).
     pub test_path: String,
     /// The test function's symref.
     pub symref: String,
 }
 
 impl TestTarget {
-    /// One plan line: `package test_path` for nextest, `pytest node_id` for pytest, `vitest node_id` or `jest node_id` for TypeScript.
+    /// One plan line: `package test_path` for nextest, `pytest node_id` for pytest, `vitest node_id` or `jest node_id` for TypeScript, `dotnet project id` or `unity assembly id` for C#.
     pub fn plan_line(&self) -> String {
         match self.framework {
             Framework::Nextest => format!("{} {}", self.package, self.test_path),
@@ -49,6 +57,9 @@ impl TestTarget {
             // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
             Framework::Vitest => format!("vitest {}", self.test_path),
             Framework::Jest => format!("jest {}", self.test_path),
+            // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+            Framework::Dotnet => format!("dotnet {} {}", self.package, self.test_path),
+            Framework::Unity => format!("unity {} {}", self.package, self.test_path),
         }
     }
 }
@@ -102,6 +113,7 @@ pub fn select_tests(root: &Path, graph: &SymbolGraph, touched: &TouchedSet) -> V
     }
     let mut packages = Packages::new(root);
     let mut members = JsMembers::new(root);
+    let mut csharp = CsharpOwners::new(root);
     let mut out: BTreeSet<TestTarget> = BTreeSet::new();
     for symref in &reach {
         let Some(rec) = graph.get(symref) else {
@@ -112,6 +124,13 @@ pub fn select_tests(root: &Path, graph: &SymbolGraph, touched: &TouchedSet) -> V
             continue;
         }
         if !is_test_fn(rec, sources.get(rec.symref.path())) {
+            continue;
+        }
+        if gob_symbols::is_csharp_path(rec.symref.path()) {
+            // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+            if let Some(target) = csharp_target(&mut csharp, rec, sources.get(rec.symref.path())) {
+                out.insert(target);
+            }
             continue;
         }
         if gob_symbols::is_typescript_path(rec.symref.path()) {
@@ -139,6 +158,79 @@ pub fn select_tests(root: &Path, graph: &SymbolGraph, touched: &TouchedSet) -> V
         "tests selected"
     );
     out.into_iter().collect()
+}
+
+// frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+/// Which C# project model owns a file: a Unity `.asmdef` assembly first, else a `.csproj` project.
+#[derive(Debug)]
+pub struct CsharpOwners {
+    unity: UnityProjects,
+    dotnet: DotnetProjects,
+}
+
+/// The package that owns a C# file and the runner for it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CsharpOwner {
+    /// A `.csproj` project (repo-relative path), run by `dotnet test`.
+    Project(String),
+    /// A Unity assembly package id (an `.asmdef` path or implicit id), run by the Unity Test Framework.
+    Assembly(String),
+}
+
+impl CsharpOwners {
+    /// A resolver for the work tree at `root`.
+    pub fn new(root: &Path) -> Self {
+        Self {
+            unity: UnityProjects::new(root),
+            dotnet: DotnetProjects::new(root),
+        }
+    }
+
+    /// The owner of repo-relative C# `file`; `None` for generated output and for files no project model owns.
+    ///
+    /// A file in a Unity project belongs to its assembly even when a generated `.csproj` encloses it.
+    pub fn owner(&mut self, file: &str) -> Option<CsharpOwner> {
+        match self.unity.assign(file) {
+            UnityAssignment::Assembly(id) => return Some(CsharpOwner::Assembly(id)),
+            UnityAssignment::Ignored => return None,
+            UnityAssignment::None => {}
+        }
+        match self.dotnet.assign(file) {
+            Assignment::Project(p) => Some(CsharpOwner::Project(p)),
+            Assignment::Ignored | Assignment::None => None,
+        }
+    }
+
+    /// True when `id` is a Unity assembly that holds tests (an `EditMode` or `PlayMode` test assembly); implicit ids are not.
+    pub fn is_test_assembly(&mut self, id: &str) -> bool {
+        matches!(self.unity.assembly(id), Some(Ok(a)) if a.is_test())
+    }
+}
+
+// frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+/// The dotnet or unity target of a C# test method: the owning project or assembly and the fully qualified method name.
+///
+/// `None` (with a warning) when `text` is unreadable or no project model owns the file.
+fn csharp_target(
+    owners: &mut CsharpOwners,
+    rec: &SymbolRecord,
+    text: Option<&str>,
+) -> Option<TestTarget> {
+    let found = gob_symbols::csharp_test(rec, text?)?;
+    let target = |framework, package: String| TestTarget {
+        framework,
+        package,
+        test_path: found.id.clone(),
+        symref: rec.symref.to_string(),
+    };
+    match owners.owner(rec.symref.path()) {
+        Some(CsharpOwner::Project(p)) => Some(target(Framework::Dotnet, p)),
+        Some(CsharpOwner::Assembly(a)) => Some(target(Framework::Unity, a)),
+        None => {
+            tracing::warn!(symref = %rec.symref, "C# test has no owning project or assembly; skipped");
+            None
+        }
+    }
 }
 
 // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK

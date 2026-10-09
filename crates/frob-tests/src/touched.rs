@@ -7,7 +7,8 @@ use gob_cache::Cache;
 use gob_git::{Repo, TreeRef};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 use gob_symbols::{
-    Digests, FileSymbols, SymbolGraph, Symref, Target, adapter_for_path, build_graph, extract_file,
+    Digests, FileSymbols, SymbolGraph, SymbolKind, SymbolRecord, Symref, Target, adapter_for_path,
+    build_graph, extract_file,
 };
 use gob_walk::{Digest, FileEntry, LanguageHint, WalkConfig, walk};
 use schemars::JsonSchema;
@@ -77,9 +78,28 @@ fn is_rust(path: &str) -> bool {
 }
 
 // frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
-/// True for the files whose symbols seed selection: Rust and Python sources.
+// frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+/// True for the files whose symbols seed selection: Rust, Python and C# sources.
 fn is_seed_source(path: &str) -> bool {
-    is_rust(path) || gob_symbols::is_python_path(path)
+    is_rust(path) || gob_symbols::is_python_path(path) || gob_symbols::is_csharp_path(path)
+}
+
+// frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+/// True when `rec` is a C# namespace or type whose own signature is unchanged since `before`.
+///
+/// Its body digest covers every member, but each member is a symbol of its own, so a changed member
+/// is already a seed; seeding the container too would widen to every method of the file.
+fn only_members_changed(rec: &SymbolRecord, before: Option<&Digests>) -> bool {
+    gob_symbols::is_csharp_path(rec.symref.path())
+        && matches!(
+            rec.kind,
+            SymbolKind::Namespace
+                | SymbolKind::Class
+                | SymbolKind::Interface
+                | SymbolKind::Record
+                | SymbolKind::Struct
+        )
+        && before.is_some_and(|d| d.sig == rec.digests.sig)
 }
 
 fn base_symbols(repo: &Repo, base: &str, path: &str) -> Result<BTreeMap<Symref, Digests>> {
@@ -101,7 +121,7 @@ fn base_symbols(repo: &Repo, base: &str, path: &str) -> Result<BTreeMap<Symref, 
 
 /// Files changed between `base` and the work tree, and the changed symbols among `graph`'s.
 ///
-/// A symbol is touched when it is new in a changed Rust or Python file or its signature or
+/// A symbol is touched when it is new in a changed Rust, Python or C# file or its signature or
 /// body digest differs from the same symref at `base`. Deleted symbols cannot be
 /// seeds (they are gone from the graph); their callers are still touched by
 /// the edits that removed the calls.
@@ -122,7 +142,8 @@ pub fn touched_set(repo: &Repo, graph: &SymbolGraph, base: &str) -> Result<Touch
             let same = before
                 .get(&rec.symref)
                 .is_some_and(|d| d.sig == rec.digests.sig && d.body == rec.digests.body);
-            if !same {
+            // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+            if !same && !only_members_changed(rec, before.get(&rec.symref)) {
                 symbols.insert(rec.symref.clone());
             }
         }

@@ -20,6 +20,11 @@
 //! `vitest run` or `jest` in the member's directory ([`node`]); a missing `node` or runner is a
 //! refusal, never a skip, and their names in evidence are the units' node ids.
 //!
+//! C# tests are selected as `Namespace.Type.Method` ids and owned by their project: a `.csproj`
+//! project runs through `dotnet test` (the `dotnet` evidence provider), a Unity `.asmdef` assembly
+//! needs the unity provider, which does not exist yet, so a run that selects one refuses before
+//! running anything and prints the selection (`E-TESTS-UNITY-PROVIDER`).
+//!
 //! What counts as a test is a heuristic documented in [`catalog`]; `TEST001`
 //! ([`test001`]) flags `frob:tests` directives that name nothing.
 
@@ -38,9 +43,10 @@ pub use error::{Result, TestsError};
 pub use lease::lease_ticket;
 pub use rule::{Test001, test001, test001_with_sources};
 pub use run::{
-    FrameworkRun, JsGroup, RunOptions, RunReport, js_groups, nextest_args, pytest_args, run,
+    DotnetGroup, FrameworkRun, JsGroup, RunOptions, RunReport, dotnet_groups, js_groups,
+    nextest_args, pytest_args, run, unity_assemblies,
 };
-pub use select::{Framework, TestTarget, select_tests};
+pub use select::{CsharpOwner, CsharpOwners, Framework, TestTarget, select_tests};
 pub use touched::{TouchedSet, build_repo_graph, touched_set};
 
 /// Register the `test` verb on `cli`, mirroring how the binary registers `ticket`.
