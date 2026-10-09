@@ -8,8 +8,8 @@ points = 2
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-09T21:54:55Z"
-updated = "2026-10-09T21:56:03Z"
-scope = ["crates/frob-check/src/product.rs", "changelog.d/**", "crates/gob-check/src/product.rs", "crates/gob-check/src/repo.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/tests/pipeline.rs"]
+updated = "2026-10-09T21:56:45Z"
+scope = ["crates/frob-check/src/product.rs", "changelog.d/**", "crates/gob-check/src/product.rs", "crates/gob-check/src/repo.rs", "crates/gob-check/tests/pipeline.rs"]
 
 [[acceptance]]
 text = "Given frob check --ticket or frob land, when the check runs, then PM rules that do not depend on the ticket's diff (PM033 replenish, cycle and backlog health) are not evaluated and the report lists them as not_evaluated with reason 'repo-wide, runs in full check'; a plain frob check still evaluates them"
