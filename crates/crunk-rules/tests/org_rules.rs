@@ -5,11 +5,12 @@
 
 mod support;
 
-use crunk_rules::org::{bem_segments, carries_prefix, case_ok};
+use crunk_rules::org::{bem_segments, carries_prefix, case_name, case_ok};
 use crunk_rules::rules::{
     layer001::Layer001, org001::Org001, org002::Org002, org003::Org003, org004::Org004,
     org005::Org005,
 };
+use crunk_rules::sheets::line_offset;
 use crunk_spec::table::ClassCase;
 use gob_rules::RepoRule;
 
@@ -192,4 +193,22 @@ fn org005_names_the_file_and_the_css_root() {
         ".old { margin: 0; }\n",
     );
     assert!(support::run::<Org005>(&ignored).is_empty());
+}
+
+// frob:tests crates/crunk-rules/src/org/mod.rs::case_name
+#[test]
+fn case_names_are_the_crunk_toml_spellings() {
+    assert_eq!(case_name(ClassCase::Kebab), "kebab");
+    assert_eq!(case_name(ClassCase::Snake), "snake");
+    assert_eq!(case_name(ClassCase::Camel), "camel");
+}
+
+// frob:tests crates/crunk-rules/src/sheets.rs::line_offset
+#[test]
+fn a_line_maps_to_the_offset_it_starts_at() {
+    let text = "a\nbb\nccc\n";
+    assert_eq!(line_offset(text, 1), 0);
+    assert_eq!(line_offset(text, 2), 2);
+    assert_eq!(line_offset(text, 3), 5);
+    assert_eq!(line_offset(text, 9), text.len());
 }
