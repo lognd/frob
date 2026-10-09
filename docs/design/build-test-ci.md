@@ -417,6 +417,60 @@ in release by the `full_check` bench), `frob ticket doctor` about 9 s,
 `frob doctor` 2 to 3 s; their budgets above are the measured numbers, not
 targets.
 
+### Fast lands: affected cone at land, full check on CI (~TSYTGDE)
+
+Landing is the throughput ceiling: a land re-ran the whole check three
+times (452 to 643 s measured, notes/research/profile-2026-10-07.md
+section 3.8). The decision (owner, 2026-10-09) is the one large
+monorepos converged on: **test the change, not the repository, before
+merge; test everything after merge, and stop the line when it is red.**
+Precedents: Google's Test Automation Platform runs, per change, only the
+tests whose build-graph cone contains a touched target and runs the
+rest continuously post-submit (Memon et al., "Taming Google-Scale
+Continuous Testing", ICSE-SEIP 2017); Uber's SubmitQueue orders and
+speculatively builds changes, merging only those that pass against the
+tip, and finds culprits by bisection (Ananthanarayanan et al., "Keeping
+Master Green at Scale", EuroSys 2019).
+
+1. **Affected cone at land.** The check of `frob land` evaluates the
+   touched files plus their dependency cone: for frob rules the reverse
+   closure over the obligation graph, with `Unknown` and `May` edges
+   included (an edge that cannot be resolved widens the cone, never
+   narrows it). Cargo stages run over the affected crates and their
+   reverse dependencies; a stage that declares input paths in
+   `frob.toml` (`dev gen --check` declares the generator inputs) is not
+   run or gated when the ticket touches none of them.
+2. **Moving base.** New base commits that touch nothing in the ticket's
+   cone, ledger-only commits included, force neither a re-check nor
+   `E-LAND-STALE`; only a commit inside the cone does.
+3. **CI split.** The full unscoped check, the whole suite and the
+   cross-platform jobs run on CI after every land. This is the safety
+   net for what the cone misses, so the cone may be conservative but
+   never needs to be exact.
+4. **Red CI stops the line.** A red CI run on the base blocks further
+   lands (`require_base_green`, already enforced) until it is fixed or
+   reverted; the culprit is found automatically by bisecting the lands
+   since the last green run, and the ticket that introduced it is
+   reopened with the failing evidence.
+5. **Cheap guards first.** Ledger-only close guards (unbound criteria,
+   missing evidence) are evaluated before any check, so a doomed land
+   refuses in seconds (~Y7E721R).
+6. **Shared build state.** Land checkouts share one persistent cargo
+   target directory and one persistent base checkout (~8J3BE8W), and
+   tool stages run concurrently (~S2EJV2N), so a scoped stage starts
+   warm.
+
+Guardrails: a land never skips a rule it cannot place in a cone (it
+runs it); a stage without declared inputs always runs; the ratchet
+(rules.md section 6) still refuses only findings the ticket introduces;
+and the cone computation is itself covered by a CI job that compares the
+scoped verdict against the full check on recent lands and reports any
+disagreement as a defect of the cone.
+
+Target: a one-crate code ticket lands in under 60 s on this repository.
+The CLI-side wording (the `land` verb's scope flags and report fields)
+belongs in cli.md section 3 and follows the implementation tickets.
+
 ## 5. Developer loop
 
 ```

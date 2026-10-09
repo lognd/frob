@@ -8,10 +8,10 @@ points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-03T03:39:11Z"
+updated = "2026-10-09T20:43:05Z"
 idempotency_key = "m2-sec-self-trust"
 labels = ["milestone:2", "area:security"]
-scope = ["frob.toml", ".github/workflows/ci.yml", "docs/guide/**"]
+scope = ["frob.toml", ".github/workflows/ci.yml", "docs/design/security.md"]
 
 [[links]]
 kind = "blocked-by"
