@@ -194,6 +194,23 @@ impl LeaseStore {
         &self.resolver
     }
 
+    /// Match `scope` and every live lease's scope against the work tree before the lock is taken.
+    ///
+    /// The tree walk and glob matching dominate an overlap check; doing them here keeps them out of
+    /// the critical section (the in-lock check then hits the resolver cache). Best effort: a failure
+    /// here resurfaces, typed, from the in-lock check.
+    fn prewarm(&self, scope: &[String]) {
+        let started = std::time::Instant::now();
+        let _ = self.resolver.matching(scope);
+        for lease in self.live_snapshot().unwrap_or_default() {
+            let _ = self.resolver.matching(&lease.scope);
+        }
+        tracing::debug!(
+            elapsed_ms = ?started.elapsed(),
+            "lease scopes prewarmed outside the lock"
+        );
+    }
+
     fn lease_path(&self, ticket: TicketId) -> PathBuf {
         self.dir.join(format!("{ticket}.toml"))
     }
@@ -367,6 +384,7 @@ impl LeaseStore {
         scope: &[String],
         admit: impl FnOnce(&[Lease]) -> Result<(), E>,
     ) -> Result<Acquired, E> {
+        self.prewarm(scope);
         let lock = self.lock()?;
         let now = self.now();
         if let Some(c) = self
@@ -556,6 +574,7 @@ impl LeaseStore {
         new_scope: &[String],
         cfg: &LeaseConfig,
     ) -> Result<Lease, LeaseError> {
+        self.prewarm(new_scope);
         let lock = self.lock()?;
         let now = self.now();
         let live = self.live_pruned(&lock, now)?;

@@ -25,6 +25,21 @@ impl FromArg for DocTarget {
     }
 }
 
+/// A code symref `path::name` naming the symbol a doc section describes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CodeTarget(pub Symref);
+
+impl FromArg for CodeTarget {
+    const KIND: ArgKind = ArgKind::Str;
+
+    fn from_token(token: &Token) -> Result<Self, &'static str> {
+        match Symref::parse(&token.value) {
+            Ok(s) if !matches!(s.target(), Target::Anchor(_)) => Ok(Self(s)),
+            _ => Err("a `path::name` code symref"),
+        }
+    }
+}
+
 /// Bind this site to one ticket by its full ULID.
 #[derive(Debug, Clone, PartialEq, Eq, Directive)]
 #[directive(namespace = "frob", verb = "ticket")]
@@ -53,6 +68,15 @@ pub struct Doc {
     /// The documentation anchor, `path#slug`.
     #[arg(positional)]
     pub target: DocTarget,
+}
+
+/// Doc-side half of the doc-code pair: this doc section describes a code symbol (pairs like `frob:doc`).
+#[derive(Debug, Clone, PartialEq, Eq, Directive)]
+#[directive(namespace = "frob", verb = "describes")]
+pub struct Describes {
+    /// The described code symbol, `path::name`.
+    #[arg(positional)]
+    pub symbol: CodeTarget,
 }
 
 /// Declare that this site tests a target (a test item names what it covers).

@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:10:46Z"
-updated = "2026-10-09T17:08:25Z"
+updated = "2026-10-09T20:17:36Z"
 labels = ["adoption:hullbreach"]
-scope = ["crates/frob-tests/**", "crates/frob-evidence/**", "changelog.d/**", "docs/reference/config.md", "docs/schemas/config.json", "docs/design/build-test-ci.md"]
+scope = ["changelog.d/**", "docs/reference/config.md", "docs/schemas/config.json", "docs/design/build-test-ci.md", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/src/lib.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/workspace.rs", "crates/frob-evidence/tests/evidence.rs", "crates/frob-tests/src/run.rs", "crates/frob-tests/src/verb.rs", "crates/frob-tests/tests/selection.rs"]
 
 [[acceptance]]
 text = "Given a Python project with a uv-managed .venv, when frob test runs, then pytest is invoked through the project interpreter (uv run or .venv/bin/python -m pytest) and --dry-run prints the resolved runner"

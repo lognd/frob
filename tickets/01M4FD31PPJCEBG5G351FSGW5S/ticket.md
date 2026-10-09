@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T04:00:10Z"
-updated = "2026-10-09T04:14:30Z"
-labels = ["adoption:hullbreach"]
-scope = ["crates/frob-evidence/**", "crates/frob/**", "changelog.d/**"]
+updated = "2026-10-09T21:43:27Z"
+labels = ["adoption:hullbreach", "creates:crates/frob-evidence/tests/providers.rs"]
+scope = ["changelog.d/**", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/tests/providers.rs"]
 
 [[acceptance]]
 text = "Given a C# repository, when frob ticket evidence add --provider dotnet runs with a TRX-producing command, then the TRX is parsed into evidence; the --provider value list is generated from the provider registry so a new provider is never missing"

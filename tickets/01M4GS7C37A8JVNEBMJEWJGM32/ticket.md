@@ -2,12 +2,12 @@
 id = "01M4GS7C37A8JVNEBMJEWJGM32"
 title = "Engine cache fingerprint uses the executable's size and mtime, so every binary copy or reinstall (global install, landing binary) starts from a cold cache; key it by build identity instead"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T16:51:29Z"
-updated = "2026-10-09T17:50:47Z"
+updated = "2026-10-09T18:29:20Z"
 scope = ["changelog.d/**", "crates/gob-cache/src/lib.rs", "crates/gob-cache/Cargo.toml"]
 
 [[acceptance]]

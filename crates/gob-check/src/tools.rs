@@ -91,8 +91,8 @@ enum StageResult {
     Problem(String),
     /// The tool's version is outside the configured range.
     Lag(String),
-    /// The stage ran; these findings are its parsed output (empty without a parser).
-    Done(Vec<Finding>),
+    /// The stage ran; these are the tool's parsed findings, not yet located (empty without a parser).
+    Done(Vec<RawFinding>),
 }
 
 fn spec(root: &Path, stage: &ToolStage, args: Vec<String>) -> Spec {
@@ -250,12 +250,7 @@ fn abnormal(o: &Output, stage: &ToolStage) -> Option<String> {
     }
 }
 
-fn execute(
-    runner: &Runner,
-    root: &Path,
-    stage: &ToolStage,
-    files: &mut FileInterner,
-) -> StageResult {
+fn execute(runner: &Runner, root: &Path, stage: &ToolStage) -> StageResult {
     let parsed = stage.parser != ToolParser::None;
     if parsed {
         match tool_version(runner, root, stage) {
@@ -312,7 +307,7 @@ fn execute(
     match parse(stage.parser, &output.stdout) {
         Ok(raws) => {
             tracing::info!(stage = %stage.name, findings = raws.len(), "tool output parsed");
-            StageResult::Done(to_findings(root, stage, &raws, files))
+            StageResult::Done(raws)
         }
         Err(err) => StageResult::Failed(failure(
             stage,
@@ -324,35 +319,125 @@ fn execute(
     }
 }
 
-/// Run `stages` in order; each is timed outside the budget.
+/// One stage's outcome and wall time, as a worker thread produced it.
+type Finished = (usize, StageResult, Duration);
+
+/// Tool stages running on background threads; [`ToolRun::finish`] joins them and builds the findings.
 ///
-/// Findings of parsed stages carry spans interned into `files`; failures and
-/// version lag yield at most one `TOOL001` per stage.
-pub(crate) fn run_tools(
+/// Stages that share a cargo target directory lock (every `cargo` command) run one after the
+/// other on one thread, in configured order; every other stage gets a thread of its own, so
+/// the run takes as long as its slowest group, not the sum of its stages
+/// (frob:ticket 01M4D6NEQYAZEFFX3P0S2EJV2N).
+pub(crate) struct ToolRun {
+    root: std::path::PathBuf,
+    stages: Vec<ToolStage>,
+    workers: Vec<std::thread::JoinHandle<Vec<Finished>>>,
+}
+
+/// The lock group of a stage: stages with an equal key run serially.
+fn group_key(stage: &ToolStage, index: usize) -> String {
+    if stage.command == "cargo" {
+        "cargo".to_owned()
+    } else {
+        format!("stage-{index}")
+    }
+}
+
+/// Start `stages` on background threads and return at once; `None` when there are no stages.
+pub(crate) fn start_tools(root: &Path, stages: &[ToolStage]) -> Option<ToolRun> {
+    if stages.is_empty() {
+        return None;
+    }
+    let runner = std::sync::Arc::new(
+        Runner::new(Limits::default()).allow_tools(stages.iter().map(|s| s.command.clone())),
+    );
+    let mut groups: Vec<(String, Vec<usize>)> = Vec::new();
+    for (i, stage) in stages.iter().enumerate() {
+        let key = group_key(stage, i);
+        match groups.iter_mut().find(|(k, _)| *k == key) {
+            Some((_, members)) => members.push(i),
+            None => groups.push((key, vec![i])),
+        }
+    }
+    tracing::info!(
+        stages = stages.len(),
+        groups = groups.len(),
+        "tool stages started"
+    );
+    let workers = groups
+        .into_iter()
+        .map(|(key, members)| {
+            let runner = std::sync::Arc::clone(&runner);
+            let root = root.to_path_buf();
+            let work: Vec<(usize, ToolStage)> = members
+                .into_iter()
+                .map(|i| (i, stages[i].clone()))
+                .collect();
+            std::thread::spawn(move || {
+                tracing::debug!(group = %key, "tool group running");
+                work.into_iter()
+                    .map(|(i, stage)| {
+                        let started = Instant::now();
+                        let result = execute(&runner, &root, &stage);
+                        (i, result, started.elapsed())
+                    })
+                    .collect()
+            })
+        })
+        .collect();
+    Some(ToolRun {
+        root: root.to_path_buf(),
+        stages: stages.to_vec(),
+        workers,
+    })
+}
+
+impl ToolRun {
+    /// Wait for every stage and return its findings in configured stage order.
+    ///
+    /// Each stage is timed outside the budget with its own duration, so the per-stage
+    /// timing still adds up to more than the wall time when stages overlapped.
+    /// Findings of parsed stages carry spans interned into `files`; failures and version lag
+    /// yield at most one `TOOL001` per stage.
+    pub(crate) fn finish(self, timing: &mut Timing, files: &mut FileInterner) -> Vec<Finding> {
+        let mut done: Vec<Finished> = Vec::with_capacity(self.stages.len());
+        for worker in self.workers {
+            match worker.join() {
+                Ok(mut part) => done.append(&mut part),
+                Err(panic) => std::panic::resume_unwind(panic),
+            }
+        }
+        done.sort_by_key(|(i, _, _)| *i);
+        let id: RuleId = Tool001
+            .meta()
+            .rule_id()
+            .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
+        let mut out = Vec::new();
+        for (index, result, took) in done {
+            let stage = &self.stages[index];
+            timing.push(format!("tool:{}", stage.name), took, false);
+            out.extend(stage_findings(&self.root, &id, stage, result, files));
+        }
+        out
+    }
+}
+
+/// The findings one finished stage contributes.
+fn stage_findings(
     root: &Path,
-    stages: &[ToolStage],
-    timing: &mut Timing,
+    id: &RuleId,
+    stage: &ToolStage,
+    result: StageResult,
     files: &mut FileInterner,
 ) -> Vec<Finding> {
-    if stages.is_empty() {
-        return Vec::new();
-    }
-    let id: RuleId = Tool001
-        .meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
-    let runner =
-        Runner::new(Limits::default()).allow_tools(stages.iter().map(|s| s.command.clone()));
     let mut out = Vec::new();
-    for stage in stages {
-        let started = Instant::now();
-        let result = execute(&runner, root, stage, files);
-        timing.push(format!("tool:{}", stage.name), started.elapsed(), false);
+    {
         let unresolved = |message: String| {
             Finding::new(id.clone(), Severity::Unresolved, None, message, &stage.name)
         };
         match result {
-            StageResult::Done(found) => {
+            StageResult::Done(raws) => {
+                let found = to_findings(root, stage, &raws, files);
                 tracing::info!(stage = %stage.name, findings = found.len(), "tool stage passed");
                 out.extend(found);
             }
@@ -438,12 +523,41 @@ mod tests {
     fn run_one(stage: &ToolStage) -> Vec<Finding> {
         let mut timing = Timing::default();
         let mut files = FileInterner::default();
-        run_tools(
-            Path::new("."),
-            std::slice::from_ref(stage),
-            &mut timing,
-            &mut files,
-        )
+        start_tools(Path::new("."), std::slice::from_ref(stage))
+            .expect("one stage")
+            .finish(&mut timing, &mut files)
+    }
+
+    // frob:ticket 01M4D6NEQYAZEFFX3P0S2EJV2N
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
+    #[test]
+    fn independent_stages_overlap_and_keep_their_order_and_timing() {
+        let slow = |name: &str| sh_stage(name, ToolParser::None, "sleep 1", "true");
+        let stages = [slow("a"), slow("b"), slow("c")];
+        let mut timing = Timing::default();
+        let mut files = FileInterner::default();
+        let started = Instant::now();
+        let found = start_tools(Path::new("."), &stages)
+            .expect("stages")
+            .finish(&mut timing, &mut files);
+        let wall = started.elapsed();
+        assert!(found.is_empty(), "{found:?}");
+        let names: Vec<_> = timing.stages.iter().map(|t| t.name.as_str()).collect();
+        assert_eq!(names, ["tool:a", "tool:b", "tool:c"]);
+        assert!(timing.tools_ms() >= 3000, "each stage reports its own time");
+        assert!(wall < Duration::from_millis(2500), "ran serially: {wall:?}");
+    }
+
+    // frob:ticket 01M4D6NEQYAZEFFX3P0S2EJV2N
+    // frob:tests crates/gob-check/src/tools.rs::group_key
+    #[test]
+    fn cargo_stages_share_one_group_and_others_get_their_own() {
+        let mut cargo = sh_stage("c", ToolParser::None, "true", "true");
+        cargo.command = "cargo".to_owned();
+        let other = sh_stage("o", ToolParser::None, "true", "true");
+        assert_eq!(group_key(&cargo, 0), group_key(&cargo, 5));
+        assert_ne!(group_key(&other, 1), group_key(&other, 2));
+        assert_ne!(group_key(&cargo, 0), group_key(&other, 0));
     }
 
     fn assert_tool_failed(found: &[Finding], needles: &[&str]) {
@@ -463,7 +577,7 @@ mod tests {
 
     const VERSION_OK: &str = "echo actionlint 1.7.12";
 
-    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn a_missing_binary_is_a_required_tool_failed() {
         let mut stage = sh_stage("lint", ToolParser::ActionlintJson, "true", VERSION_OK);
@@ -474,7 +588,7 @@ mod tests {
         );
     }
 
-    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn an_unresolvable_pin_fails_the_version_probe_loudly() {
         let stage = sh_stage(
@@ -493,7 +607,7 @@ mod tests {
         );
     }
 
-    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn an_undeclared_exit_with_empty_output_names_status_and_stderr() {
         let stage = sh_stage(
@@ -513,7 +627,7 @@ mod tests {
         );
     }
 
-    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn a_findings_exit_with_no_output_is_a_failure() {
         let stage = sh_stage("lint", ToolParser::ActionlintJson, "exit 1", VERSION_OK);
@@ -523,7 +637,7 @@ mod tests {
         );
     }
 
-    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn unparseable_output_is_a_failure() {
         let stage = sh_stage(
@@ -535,7 +649,7 @@ mod tests {
         assert_tool_failed(&run_one(&stage), &["parser cannot read", "exit 0"]);
     }
 
-    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn a_clean_run_yields_no_finding() {
         for script in ["echo null", "echo '[]'", "echo '[]'; exit 1"] {
