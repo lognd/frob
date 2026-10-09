@@ -2,12 +2,12 @@
 id = "01M4FEMT44H1WREASQ7EK8T90W"
 title = "TICK002 under ref_mode = branch resolves ticket refs against main instead of the current branch's ledger"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T04:27:15Z"
-updated = "2026-10-09T17:44:48Z"
+updated = "2026-10-09T17:44:52Z"
 labels = ["adoption:hullbreach", "creates:changelog.d/01M4FEMT44H1WREASQ7EK8T90W*"]
 scope = ["crates/frob-ledger/tests/ledger.rs", "changelog.d/01M4FEMT44H1WREASQ7EK8T90W*", "crates/frob-check/src/scope.rs"]
 
