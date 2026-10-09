@@ -1,0 +1,13 @@
+kind = "create"
+title = "Upgrade guide: recipe for merging v2 main into a v1 branch (ticket tree rename conflicts: take main's tickets/ tree, or git merge -X no-renames)"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 1
+labels = ["adoption:logand-app"]
+scope = ["docs/guides/upgrade-from-v1.md", "changelog.d/**"]
+acceptance = ["Given a v1 branch and v2 main, when a reader follows the guide's recipe, then the merge resolves with main's tickets/ tree and no ticket data is lost; the importer report points at the recipe"]
+body = "logand.app-v2 F-547: about 600 ticket file conflicts from rename detection pairing v1 done-report.md with v2 events/*.toml."
+at = "2026-10-09T15:05:26Z"
+actor = "lognd"
+rev = 1
