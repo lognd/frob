@@ -7,12 +7,16 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T04:00:10Z"
-updated = "2026-10-09T04:00:10Z"
+updated = "2026-10-09T04:14:30Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-evidence/**", "crates/frob/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a C# repository, when frob ticket evidence add --provider dotnet runs with a TRX-producing command, then the TRX is parsed into evidence; the --provider value list is generated from the provider registry so a new provider is never missing"
+bound = false
+
+[[acceptance]]
+text = "Given no [evidence] allowed_tools in frob.toml, when frob config show runs, then the default includes dotnet as config.md and the quickstart state, and a test pins the default list to the documented one"
 bound = false
 +++
 
