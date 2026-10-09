@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:53:26Z"
-updated = "2026-10-09T05:13:07Z"
-labels = ["adoption:logand-app"]
-scope = ["crates/gob-directives/**", "crates/frob-tests/**", "changelog.d/**"]
+updated = "2026-10-09T06:30:16Z"
+labels = ["adoption:logand-app", "creates:crates/gob-directives/src/compat.rs", "creates:crates/gob-directives/tests/mdtest/continuation.md"]
+scope = ["changelog.d/**", "crates/gob-directives/src/comments.rs", "crates/gob-directives/src/lex.rs", "crates/gob-directives/src/lib.rs", "crates/gob-directives/src/compat.rs", "crates/gob-directives/tests/mdtest/continuation.md"]
 
 [[acceptance]]
 text = '''Given '# frob:tests path::test_x\' followed by '# kind="unit"' (including a break mid-token), when directives are parsed, then one directive with both arguments results, with no PARSE001 and no TEST001 naming a backslash'''
