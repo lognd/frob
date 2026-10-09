@@ -416,7 +416,14 @@ fn pass<P: Product>(
 
     let mut files = snap.core.files.clone();
     raw.extend(run_repo_rules(
-        product, &snap, &cache, &mut files, &wanted, &mut tally, table,
+        product,
+        &snap,
+        &cache,
+        &mut files,
+        &wanted,
+        &mut tally,
+        table,
+        scope_files.is_some(),
     ));
 
     raw.extend(defs::run_repo_rules(
