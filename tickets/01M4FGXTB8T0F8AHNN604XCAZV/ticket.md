@@ -2,7 +2,8 @@
 id = "01M4FGXTB8T0F8AHNN604XCAZV"
 title = "Registry misses core-effects atoms: process.spawn, the fs parent and process.env are MDL016"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
