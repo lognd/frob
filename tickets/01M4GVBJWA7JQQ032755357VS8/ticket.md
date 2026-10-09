@@ -7,7 +7,7 @@ priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T17:28:44Z"
-updated = "2026-10-09T17:40:40Z"
+updated = "2026-10-09T19:06:51Z"
 scope = ["design/**", "changelog.d/**"]
 
 [[acceptance]]
