@@ -159,8 +159,9 @@ intangible_share = 0.2
 [pm.wip]
 # Most tickets one holder (actor plus worktree path) may have in progress; 1 makes an agent finish before starting another, 0 is off.
 in_progress_per_identity = 1
-# Repository WIP cap: three building agents (sccache halves worktree builds, measured 2026-10-03: 110 s cold to 58 s warm) plus the coordinator design ticket.
-in_progress = 10
+# Repository WIP cap: wide agent waves (owner 2026-10-09); suite runs go to the goway helpers with
+# per-host job fitting (goway ~K60F05J), so local builds stay scoped. Finished-but-unlanded tickets count.
+in_progress = 16
 
 [release]
 # When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green.
