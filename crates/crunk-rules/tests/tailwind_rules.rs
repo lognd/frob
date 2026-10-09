@@ -219,3 +219,28 @@ fn tokens001_names_the_drifted_file() {
     );
     assert!(support::run::<Tokens001>(&current).is_empty());
 }
+
+// frob:tests crates/crunk-rules/src/tailwind/mod.rs::scale_and_token
+// frob:tests crates/crunk-rules/src/tailwind/mod.rs::unresolved_message
+// frob:tests crates/crunk-rules/src/tailwind/mod.rs::TailwindFacts.class
+// frob:tests crates/crunk-rules/src/tailwind/mod.rs::TailwindFacts.fingerprint
+#[test]
+fn facts_answer_per_utility_and_fingerprint_stably() {
+    let host = tsx("p-[13px]", None);
+    let (scale, token) = crunk_rules::tailwind::scale_and_token(&host.spec, "rounded", 8.0);
+    assert_eq!(scale, host.spec.scales.radii);
+    assert_eq!(token, "--radius-8");
+    assert!(matches!(
+        host.tailwind.class("p-[13px]"),
+        crunk_rules::tailwind::ClassState::Valid(_)
+    ));
+    assert!(matches!(
+        host.tailwind.class("not-asked"),
+        crunk_rules::tailwind::ClassState::Unresolved(_)
+    ));
+    assert_eq!(host.tailwind.fingerprint(), host.tailwind.fingerprint());
+    assert_eq!(
+        crunk_rules::tailwind::unresolved_message("x", "why"),
+        "utility 'x' is unresolved-by-tailwind (why); skipped rather than guessed from its name"
+    );
+}
