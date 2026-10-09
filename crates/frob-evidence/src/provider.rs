@@ -1153,6 +1153,190 @@ pub fn dotnet_matched_no_tests(cap: &Capture) -> bool {
     cap.tests.is_empty() && cap.exit_code == Some(0)
 }
 
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// The project-relative file that names the editor version a Unity project needs.
+pub const UNITY_VERSION_FILE: &str = "ProjectSettings/ProjectVersion.txt";
+
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// The operating system family, which decides where Unity Hub installs editors.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnityHost {
+    /// Windows: `C:/Program Files/Unity/Hub/Editor/<version>/Editor/Unity.exe`.
+    Windows,
+    /// macOS: `/Applications/Unity/Hub/Editor/<version>/Unity.app/Contents/MacOS/Unity`.
+    MacOs,
+    /// Linux and the rest: `~/Unity/Hub/Editor/<version>/Editor/Unity`.
+    Linux,
+}
+
+impl UnityHost {
+    /// The family this binary was built for.
+    pub fn current() -> Self {
+        if cfg!(windows) {
+            Self::Windows
+        } else if cfg!(target_os = "macos") {
+            Self::MacOs
+        } else {
+            Self::Linux
+        }
+    }
+
+    /// Unity Hub's default editor install directories (each holds one directory per version) for this family.
+    ///
+    /// `home` is the user's home directory, needed on Linux only.
+    pub fn hub_roots(self, home: Option<&Path>) -> Vec<PathBuf> {
+        match self {
+            Self::Windows => vec![PathBuf::from("C:/Program Files/Unity/Hub/Editor")],
+            Self::MacOs => vec![PathBuf::from("/Applications/Unity/Hub/Editor")],
+            Self::Linux => home
+                .map(|h| h.join("Unity/Hub/Editor"))
+                .into_iter()
+                .collect(),
+        }
+    }
+
+    /// The editor executable inside one version directory of a Hub install root.
+    pub fn editor_in(self, hub_root: &Path, version: &str) -> PathBuf {
+        let dir = hub_root.join(version);
+        match self {
+            Self::Windows => dir.join("Editor/Unity.exe"),
+            Self::MacOs => dir.join("Unity.app/Contents/MacOS/Unity"),
+            Self::Linux => dir.join("Editor/Unity"),
+        }
+    }
+}
+
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// The editor version `ProjectSettings/ProjectVersion.txt` requires (`m_EditorVersion: 6000.0.43f1`), or `None` when absent.
+pub fn parse_unity_version(text: &str) -> Option<String> {
+    text.lines().find_map(|line| {
+        let v = line.trim().strip_prefix("m_EditorVersion:")?.trim();
+        (!v.is_empty()).then(|| v.to_owned())
+    })
+}
+
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// Where to find the Unity editor for one project.
+#[derive(Debug, Clone, Copy)]
+pub struct UnityLookup<'a> {
+    /// The Unity project directory (the one holding `ProjectSettings/`).
+    pub project: &'a Path,
+    /// `[evidence.unity] editor`: an explicit editor path (relative paths start at `base`); empty uses the Hub.
+    pub configured: &'a str,
+    /// The directory a relative `configured` path starts at (the repository root).
+    pub base: &'a Path,
+    /// The Hub editor install directories to search, in order ([`UnityHost::hub_roots`]).
+    pub hub_roots: &'a [PathBuf],
+    /// The OS family, which decides the editor's path under a Hub root.
+    pub host: UnityHost,
+}
+
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// The Unity editor a run will use.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UnityEditor {
+    /// The editor executable.
+    pub path: PathBuf,
+    /// The version the project requires, when its version file says (an explicit path is used whatever it says).
+    pub version: Option<String>,
+}
+
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// Find the Unity editor for `look.project`: `[evidence.unity] editor` when set, else the version in `ProjectVersion.txt` under the Hub roots.
+///
+/// An explicit editor is used whatever the version file says. Otherwise the editor must be the exact
+/// version the project names; no other version is ever substituted, and nothing is guessed when the
+/// version file is missing.
+///
+/// # Errors
+///
+/// [`EvidenceError::UnityEditor`] naming the required version and the `[evidence.unity] editor` key when the
+/// configured path is not a file, the version file is missing or unreadable, or no Hub root holds that version.
+pub fn find_unity_editor(look: &UnityLookup<'_>) -> Result<UnityEditor> {
+    let version_file = look.project.join(UNITY_VERSION_FILE);
+    let version = std::fs::read_to_string(&version_file)
+        .ok()
+        .and_then(|t| parse_unity_version(&t));
+    if !look.configured.is_empty() {
+        let path = look.base.join(look.configured);
+        if path.is_file() {
+            tracing::info!(editor = %path.display(), "unity editor taken from [evidence.unity] editor");
+            return Ok(UnityEditor { path, version });
+        }
+        tracing::warn!(editor = %path.display(), "unity editor refused: configured path is not a file");
+        return Err(EvidenceError::UnityEditor {
+            problem: format!(
+                "[evidence.unity] editor is `{}` but no file exists there",
+                look.configured
+            ),
+        });
+    }
+    let Some(wanted) = version.clone() else {
+        tracing::warn!(file = %version_file.display(), "unity editor refused: no editor version");
+        return Err(EvidenceError::UnityEditor {
+            problem: format!(
+                "cannot tell which editor version the project needs ({UNITY_VERSION_FILE} is missing or has no m_EditorVersion) and [evidence.unity] editor is not set"
+            ),
+        });
+    };
+    let tried: Vec<PathBuf> = look
+        .hub_roots
+        .iter()
+        .map(|root| look.host.editor_in(root, &wanted))
+        .collect();
+    if let Some(path) = tried.iter().find(|p| p.is_file()) {
+        tracing::info!(editor = %path.display(), version = %wanted, "unity editor found in the Hub");
+        return Ok(UnityEditor {
+            path: path.clone(),
+            version,
+        });
+    }
+    let searched = if tried.is_empty() {
+        "no Unity Hub install location is known on this machine".to_owned()
+    } else {
+        format!(
+            "looked for {}",
+            tried
+                .iter()
+                .map(|p| format!("`{}`", p.display()))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    };
+    tracing::warn!(version = %wanted, %searched, "unity editor refused: required version not installed");
+    Err(EvidenceError::UnityEditor {
+        problem: format!(
+            "the project needs Unity editor {wanted} (from {UNITY_VERSION_FILE}) and it is not installed ({searched}); set [evidence.unity] editor to the executable to use another location"
+        ),
+    })
+}
+
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// A refusal when the editor's output says it has no valid license, else `None`.
+///
+/// Unity prints `No valid Unity Editor license found` (and variants for an expired or unacquirable license)
+/// to its log and exits without running anything; a run whose log says so measured nothing and must record
+/// nothing. `version` is the required editor version for the message. The match is on those documented
+/// phrases, case-insensitively, anywhere in `log`.
+pub fn unity_license_refusal(version: Option<&str>, log: &str) -> Option<EvidenceError> {
+    const PHRASES: [&str; 5] = [
+        "no valid unity editor license",
+        "no valid license",
+        "failed to acquire license",
+        "unable to acquire license",
+        "license has expired",
+    ];
+    let hit = log.lines().find(|line| {
+        let l = line.to_ascii_lowercase();
+        PHRASES.iter().any(|p| l.contains(p))
+    })?;
+    tracing::warn!(line = hit.trim(), "unity editor reports no valid license");
+    Some(EvidenceError::UnityLicense {
+        version: version.unwrap_or("(version unknown)").to_owned(),
+        detail: hit.trim().to_owned(),
+    })
+}
+
 /// Run the provider named by `provider` for `reference` and return its record.
 ///
 /// `reference` is the nextest filter args, the pytest arguments, the command line or the file path.
