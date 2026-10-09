@@ -2,7 +2,8 @@
 id = "01M4GRTCXB57TSTJHK1TSYTGDE"
 title = "Design: fast lands in docs/design/cli.md and build-test-ci.md (affected cone, CI split, guardrails, precedents with citations)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
