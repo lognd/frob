@@ -103,6 +103,7 @@ Name an invariant that this site upholds.
 | Argument | Form | Type | Required | Summary |
 |---|---|---|---|---|
 | name | `<name>` | string | yes | The invariant's name. |
+| reason | `<reason>...` | string | no | The remaining words, kept as the reason. |
 
 ## `frob:pure`
 

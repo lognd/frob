@@ -12,7 +12,8 @@ exclude = ["target/", ".frob/", "CHANGELOG.md", "CHANGELOG-v1.md", "notes/", "cr
 # Which Unresolved findings fail the gate: `required`, `never` or `all`.
 fail_on_unresolved = "required"
 # Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7).
-sibling_timeout_secs = 120
+# 120 s timed out the grimble sibling under agent load (SIB001 is required); ~77B0T1W caches its binding.
+sibling_timeout_secs = 600
 # When true an unusable configured sibling is a required Unresolved (`SIB001`).
 require_siblings = true
 
@@ -25,6 +26,7 @@ process_spawners = ["gob-exec", "gob-git"]
 name = "cargo"
 command = "cargo"
 args = ["fmt", "--all", "--check"]
+inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain*", "clippy.toml", "rustfmt.toml", ".cargo/**"]
 # Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
 timeout_secs = 1200
 
@@ -32,6 +34,7 @@ timeout_secs = 1200
 name = "cargo"
 command = "cargo"
 args = ["clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
+inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain*", "clippy.toml", "rustfmt.toml", ".cargo/**"]
 # Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
 timeout_secs = 1200
 
@@ -39,6 +42,8 @@ timeout_secs = 1200
 name = "cargo"
 command = "cargo"
 args = ["dev", "gen", "all", "--check"]
+# Generated pages are functions of the Rust registrations and the generated files themselves.
+inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "docs/reference/**", "docs/schemas/**", "crates/*/tests/mdtest/**", "crates/*/src/rules/**"]
 # Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
 timeout_secs = 1200
 
