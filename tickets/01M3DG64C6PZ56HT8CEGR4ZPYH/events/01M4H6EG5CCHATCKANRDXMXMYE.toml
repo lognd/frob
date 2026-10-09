@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/webapp/", "tests/fixtures/webapp/", "tests/unit/test_webapp_precision.py", "docs/modules/webapp.md", "docs/design/crunk.md"]
+new = ["src/frob/webapp/", "tests/fixtures/webapp/", "tests/unit/test_webapp_precision.py", "docs/design/crunk.md"]
+at = "2026-10-09T20:42:34Z"
+actor = "lognd"
+rev = 1
