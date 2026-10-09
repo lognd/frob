@@ -2,7 +2,8 @@
 id = "01M43ATBDWVSJBXP7TEQ6DBW3W"
 title = "Rules SPACE001, TYPE001-003, RADIUS001, SIZE001 (Rust, tier-0)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
