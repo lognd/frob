@@ -2,7 +2,8 @@
 id = "01M4D6NFZGVDDT0GG78KVA1TA6"
 title = "frob-tests: use the shared repository cache for the touched-set graph instead of Cache::null()"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
