@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "yield to KP5659Y and SZ3EANE lands"
+at = "2026-10-09T16:26:43Z"
+actor = "lognd"
+rev = 1
