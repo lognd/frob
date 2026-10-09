@@ -1,0 +1,1 @@
+The `unity` evidence provider can find the Unity editor: `[evidence.unity] editor` or the version in `ProjectSettings/ProjectVersion.txt` under Unity Hub's install locations, refusing with a remedy when the editor or its license is missing.

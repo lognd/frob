@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a v1 branch and v2 main, when a reader follows the guide's recipe, then the merge resolves with main's tickets/ tree and no ticket data is lost; the importer report points at the recipe"]
+new = ["Given a v1 branch and v2 main, when a reader follows the guide's recipe, then the merge resolves with main's tickets/ tree and no ticket data is lost; the importer report points at the recipe", "Given the upgrade guide, when it lands, then it states that 0.532.0 is on PyPI (logand F-552)"]
+moved = [1]
+at = "2026-10-09T15:10:30Z"
+actor = "lognd"
+rev = 1

@@ -2,13 +2,14 @@
 id = "01M4CTTVCB8JJ9JB2NQHQP5ARY"
 title = "frob migrate v1: a user-facing v1 to v2 import verb (no gob-dev, no source checkout), with the guide reordered"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 points = 5
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:38Z"
-updated = "2026-10-08T04:02:38Z"
+updated = "2026-10-09T16:28:37Z"
 scope = ["changelog.d/**", "crates/gob-dev/**", "crates/frob/**", "crates/frob-ledger/**", "docs/guides/upgrade-from-v1.md", "docs/migration/**"]
 
 [[acceptance]]

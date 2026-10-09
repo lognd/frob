@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a Python project, when frob release bump and cut run, then pyproject.toml's version changes and no Cargo file is created or rewritten", "Given a project without [release] registry settings, when release status runs, then no frob-specific item appears"]
+new = ["Given a Python project, when frob release bump and cut run, then pyproject.toml's version changes and no Cargo file is created or rewritten", "Given a project without [release] registry settings, when release status runs, then no frob-specific item appears", "Given a non-Rust project whose pyproject name is logand-app, when REL002 runs, then it names the package by its pyproject name and does not require Cargo.toml/pyproject lockstep unless the project declares it (logand.app-v2 F-505)"]
+moved = [1, 2]
+at = "2026-10-09T04:54:23Z"
+actor = "lognd"
+rev = 1

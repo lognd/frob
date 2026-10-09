@@ -300,9 +300,9 @@ impl Parser<'_> {
             )?),
             "must_measure" => HeaderKind::MustMeasure,
             "needs" => {
-                let mut names = vec![self.name("a name after `needs`")?];
+                let mut names = vec![self.need("a name after `needs`")?];
                 while self.eat(&TokenKind::Comma).is_some() {
-                    names.push(self.name("a name after `,`")?);
+                    names.push(self.need("a name after `,`")?);
                 }
                 HeaderKind::Needs(names)
             }
@@ -312,6 +312,18 @@ impl Parser<'_> {
             node,
             span: cover(start, self.prev_span()),
         })
+    }
+
+    /// One `needs` entry: a capability name, or `vocab(NAME)` kept as the single word `vocab(NAME)`.
+    fn need(&mut self, what: &str) -> PResult<Word> {
+        let mut word = self.name(what)?;
+        if word.text == "vocab" && self.eat(&TokenKind::LParen).is_some() {
+            let inner = self.name("a vocabulary knob name after `vocab(`")?;
+            let close = self.expect(&TokenKind::RParen, "`)` closing `vocab(`")?;
+            word.text = format!("vocab({})", inner.text);
+            word.span = cover(word.span, close);
+        }
+        Ok(word)
     }
 
     fn lang_set(&mut self) -> PResult<LangSet> {

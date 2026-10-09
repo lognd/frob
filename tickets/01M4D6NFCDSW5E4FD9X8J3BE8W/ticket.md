@@ -2,14 +2,14 @@
 id = "01M4D6NFCDSW5E4FD9X8J3BE8W"
 title = "frob-land: one check pass, a stable shared target dir for land checkouts, background worktree removal"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:25Z"
-updated = "2026-10-08T07:29:25Z"
-scope = ["changelog.d/**", "crates/frob-land/**"]
+updated = "2026-10-09T17:13:34Z"
+scope = ["changelog.d/**", "crates/frob-land/**", "crates/gob-fs/tests/inventory.rs"]
 
 [[acceptance]]
 text = "Given a land whose merge is a no-op, when it runs, then the check runs once and the tool stages reuse a persistent target dir; measured land time is reported in the done-report"

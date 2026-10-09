@@ -98,11 +98,11 @@ Fidelity F1; extensions `.cs`.
 
 | Capability | Cell | Precision |
 |---|---|---|
-| resolve_ref | Gap | none |
+| resolve_ref | Implemented | by-name-in-crate (May) |
 | apply_targets | Gap | none |
 | visibility | Implemented | keyword |
 | effects | Gap | none |
-| test_items | Gap | none |
+| test_items | Implemented | syntactic |
 | imports | Gap | none |
 | expand | Gap | none |
 | order | Gap | none |
