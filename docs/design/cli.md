@@ -51,6 +51,11 @@ Every verb, every time:
   `--text` are aliases of `--format json` and `--format text`. Text
   rendering is a view over the same envelope, so nothing exists in text
   that is absent from JSON.
+- A verb whose gate fails with findings (`check`, exit 1) returns `ok`
+  false with every finding as a structured record in `findings`, the
+  verb `data` kept, and a one-line `error.message` summary; the finding
+  lines are text-view detail only (`CliError::Findings`). Sibling
+  products keep the `ok` true document-on-exit-1 form (`CliError::Gate`).
 - Exit codes are one table, implemented as `gob_diagnostics::RefusalClass`
   (`DomainNegative` 1, `UsageError` 2, `GuardRetryByWaiting` 3 with
   `retryable`, `GuardNeedsAction` 3, `Timeout` 3 with `retryable`,
