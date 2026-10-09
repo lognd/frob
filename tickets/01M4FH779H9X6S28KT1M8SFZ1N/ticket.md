@@ -2,7 +2,8 @@
 id = "01M4FH779H9X6S28KT1M8SFZ1N"
 title = "crunk.toml accepts unknown tables and keys (a [bogus] table, v1 [layers]) although the config contract says unknown keys are errors"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
