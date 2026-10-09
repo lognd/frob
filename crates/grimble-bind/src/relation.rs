@@ -85,7 +85,7 @@ pub fn resolve_symref(code: &Code, text: &str) -> Resolution {
     let mut hits = exact;
     hits.dedup_by(|a, b| a.symref == b.symref);
     if hits.is_empty()
-        && let (Some(folded), Ok(sel)) = (&file.folded, Selector::parse(&format!("{text:?}")))
+        && let (Some(folded), Ok(sel)) = (file.folded(), Selector::parse(&format!("{text:?}")))
     {
         let m = select(&sel, &folded.term, &folded.scopes, &code.walk);
         hits = m
@@ -241,7 +241,7 @@ fn selector_clause(
         let Some(file) = code.file(&m.path) else {
             continue;
         };
-        let Some(folded) = &file.folded else {
+        let Some(folded) = file.folded() else {
             result.hidden.push(Reason::UnseenRemainder);
             rel.rows
                 .push(residual(entity, clause, Reason::UnseenRemainder));

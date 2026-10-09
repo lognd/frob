@@ -2792,6 +2792,7 @@ dependencies = [
 name = "grimble-bind"
 version = "0.532.0"
 dependencies = [
+ "gob-cache",
  "gob-directives",
  "gob-ir",
  "gob-languages",
@@ -2801,6 +2802,7 @@ dependencies = [
  "gob-text",
  "gob-walk",
  "grimble-model",
+ "postcard",
  "rayon",
  "serde_json",
  "tempfile",

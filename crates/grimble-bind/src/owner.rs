@@ -226,7 +226,7 @@ pub fn build(
             fo.units.push(file.path.clone());
         } else if !claim.is_empty() || expand.contains(&file.path) {
             fo.expanded = true;
-            if let Some(f) = &file.folded {
+            if let Some(f) = file.folded() {
                 for u in f.term.units() {
                     let text = u.symref.to_string();
                     if out.units.contains_key(&text) {
