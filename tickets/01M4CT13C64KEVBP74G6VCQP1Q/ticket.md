@@ -8,7 +8,7 @@ points = 1
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:48:34Z"
-updated = "2026-10-09T22:02:51Z"
+updated = "2026-10-09T23:13:04Z"
 scope = ["changelog.d/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs"]
 
 [[acceptance]]
