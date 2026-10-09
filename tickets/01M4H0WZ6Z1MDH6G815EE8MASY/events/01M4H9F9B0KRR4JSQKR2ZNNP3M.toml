@@ -1,0 +1,68 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-09T21:24:15Z"
+digest = "f433fba2dbdf33c20a728e549c25e492e44d5051e4bee0a6b8ba3a39e2f0e3cd"
+exit_code = 0
+inline = """
+100 generated files up to date
+goway: note: queued at position 7 behind other runs, waiting up to 1h
+goway: note: queued at position 6 behind other runs, waiting up to 1h
+goway: note: queued at position 5 behind other runs, waiting up to 1h
+goway: note: queued at position 4 behind other runs, waiting up to 1h
+goway: note: no host has room yet (quasar: 3.2 GiB of memory free, this repository needs about 4.2 GiB; xanders-laptop: 33.6 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 2.8 GiB of memory free, this repository needs about 4.2 GiB; xanders-laptop: 33.6 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 202.7 GiB free (0 B of it evictable), this repository needs about 211.2 GiB; xanders-laptop: 33.6 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 3.1 GiB of memory free, this repository needs about 4.2 GiB; xanders-laptop: 33.6 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 3.2 GiB of memory free, this repository needs about 4.2 GiB; xanders-laptop: 33.6 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 3.6 GiB of memory free, this repository needs about 4.2 GiB; xanders-laptop: 33.6 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no helper has disk room for this repository's recorded footprint (about 211.2 GiB; the roomiest, quasar, can free 202.7 GiB); running there anyway. The record may be stale: `goway gc --repo 34f5a9e78cc30b56` forgets it, `--ignore-footprint` skips the check
+goway: note: picked quasar (load 2.84 on 12 cores, 0 goway jobs)
+goway: note: tool versions differ across your hosts: clang 21.1.8 here (major: 10 vs 21 vs 18) (cached by goway doctor 5h ago; builds may behave differently here)
+goway: note: synced 13781 files (5 sent, 14495188 bytes, 2 deleted)
+goway: info: running on quasar (x86_64, Quasar) at 192.168.4.61 [cores>=8 (12 cores)]: cargo dev gen all --check
+   Compiling gob-macros v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-macros)
+   Compiling gob-rules v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-rules)
+   Compiling gob-config v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-diagnostics)
+   Compiling gob-ir v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-ir)
+   Compiling gob-mdtest v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-mdtest)
+   Compiling frob-ledger v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-ledger)
+   Compiling gob-cli v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-cli)
+   Compiling crunk-spec v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/crunk-spec)
+   Compiling gob-symbols v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-symbols)
+   Compiling gob-lock v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-lock)
+   Compiling frob-pm v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-pm)
+   Compiling gob-directives v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-directives)
+   Compiling gob-check v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-check)
+   Compiling crunk-tailwind v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/crunk-tailwind)
+   Compiling frob-ack v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-ack)
+   Compiling grimble-model v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/grimble-model)
+   Compiling crunk-ingest v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/crunk-tokens)
+   Compiling frob-release v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-release)
+   Compiling grimble-bind v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/grimble-bind)
+   Compiling crunk-rules v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/crunk-rules)
+   Compiling gob-product v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-product)
+   Compiling crunk-check v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/crunk-check)
+   Compiling frob-lease v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-lease)
+   Compiling grimble-check v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/grimble-check)
+   Compiling frob-evidence v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-evidence)
+   Compiling frob-worktree v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-worktree)
+   Compiling frob-tests v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-check)
+   Compiling frob-land v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-land)
+   Compiling frob-cli v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob)
+   Compiling gob-dev v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-dev)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.19s
+     Running `~/.cache/goway/cache/34f5a9e78cc30b56/target-0/debug/gob-dev gen all --check`
+goway: done: exit 0 on quasar in 653.5s
+"""
+passed = true
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --wait 60m -- cargo dev gen all --check"
+size = 6029
+status = "measured"
+at = "2026-10-09T21:24:15Z"
+actor = "lognd"
+rev = 1
