@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T15:10:08Z"
-updated = "2026-10-09T16:10:45Z"
+updated = "2026-10-09T18:13:10Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-check/**", "crates/frob-evidence/**", "crates/frob-land/**", "changelog.d/**"]
 
@@ -25,6 +25,10 @@ bound = false
 
 [[acceptance]]
 text = "Given a ticket worktree of a uv/venv Python project whose shared .venv is an editable install of the main checkout, when frob work creates the worktree, then tests in that worktree import the worktree's code (a per-worktree venv or an editable re-point), never the main checkout's (logand F-560)"
+bound = false
+
+[[acceptance]]
+text = 'Given a tool stage that needs gitignored build output (e.g. a wasm-pack package or a generated setup file), when it declares requires = ["<command>"] or the repository declares [check] setup steps, then land checkouts and fresh worktrees run them before the stage, and a stage whose prerequisite failed reports Unresolved naming the prerequisite instead of passing failures as pre-existing (logand F-567)'
 bound = false
 +++
 

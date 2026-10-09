@@ -2,15 +2,15 @@
 id = "01M4BMRX5T7R0BH9P7HZZQ6PA9"
 title = "ticket doable takes about 23 s on this repository"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-07T16:57:28Z"
-updated = "2026-10-08T07:29:23Z"
+updated = "2026-10-09T18:27:34Z"
 idempotency_key = "ticket-doable-slow"
 labels = ["milestone:2", "area:pm"]
-scope = ["crates/frob-ledger/src/**", "crates/frob/src/ticket/**"]
+scope = ["crates/frob-ledger/src/**", "crates/frob/src/ticket/**", "crates/frob-lease/src/**"]
 
 [[acceptance]]
 text = "Given this repository's ledger, when ticket doable runs, then the done-report names where the time goes (-vv log counts) and the fix removes the per-ticket repeated work, with a test asserting the repeated step runs once"

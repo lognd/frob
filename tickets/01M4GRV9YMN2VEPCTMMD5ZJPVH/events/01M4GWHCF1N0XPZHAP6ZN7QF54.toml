@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the fast-lands epic design, when this lands, then the behaviour in the title holds with a test"]
+new = ["Given the fast-lands epic design, when this lands, then the behaviour in the title holds with a test", "Given other lands advance the base while a land's check runs, when the new base commits touch nothing in the ticket's affected cone (ledger-only commits included), then the land does not re-check and does not go E-LAND-STALE; only commits touching the cone force a re-check, so --wait 120 suffices on a busy repository (logand F-565)"]
+moved = [1]
+at = "2026-10-09T17:49:23Z"
+actor = "lognd"
+rev = 1
