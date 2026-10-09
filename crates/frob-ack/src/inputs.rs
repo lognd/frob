@@ -89,12 +89,12 @@ fn scan_file(
     out
 }
 
+// frob:ticket 01M4FD0TNGWDEYHP9FHH0RPXYR
 /// The (code symbol, doc section) pair of a `frob:doc` or `frob:describes` directive at `path`.
 ///
 /// `frob:doc` binds the annotated symbol to the named section; `frob:describes`
 /// sits in a doc and binds the named symbol to the enclosing section (the file
 /// when above any heading). Malformed arguments yield `None` (PARSE001 reports them).
-// frob:ticket 01M4FD0TNGWDEYHP9FHH0RPXYR
 pub fn doc_pair(
     namespace: &str,
     verb: &str,
@@ -109,26 +109,19 @@ pub fn doc_pair(
         Binding::Symbol(s) => s.clone(),
         Binding::File => Symref::file(path),
     };
-    match verb {
-        "doc" => match Doc::parse_args(args) {
-            Ok(doc) => Some((here, doc.target.0)),
-            Err(_) => {
-                tracing::debug!(path, "malformed frob:doc skipped (PARSE001 reports it)");
-                None
-            }
-        },
-        "describes" => match Describes::parse_args(args) {
-            Ok(d) => Some((d.symbol.0, here)),
-            Err(_) => {
-                tracing::debug!(
-                    path,
-                    "malformed frob:describes skipped (PARSE001 reports it)"
-                );
-                None
-            }
-        },
-        _ => None,
+    let pair = match verb {
+        "doc" => Doc::parse_args(args).ok().map(|doc| (here, doc.target.0)),
+        "describes" => Describes::parse_args(args).ok().map(|d| (d.symbol.0, here)),
+        _ => return None,
+    };
+    if pair.is_none() {
+        tracing::debug!(
+            path,
+            verb,
+            "malformed doc directive skipped (PARSE001 reports it)"
+        );
     }
+    pair
 }
 
 /// One `frob:doc` directive: a symbol bound to a markdown section.
