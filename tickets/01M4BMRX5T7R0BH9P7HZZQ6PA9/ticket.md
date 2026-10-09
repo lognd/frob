@@ -2,7 +2,8 @@
 id = "01M4BMRX5T7R0BH9P7HZZQ6PA9"
 title = "ticket doable takes about 23 s on this repository"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
