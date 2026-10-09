@@ -392,26 +392,31 @@ impl Product for Frob {
                 },
             ),
             // frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
+            // frob:ticket 01M4HAJZA6JTNSSGJYV040TA9M
             RepoGroup::new(
                 "repo:pm",
                 vec![Pm034.meta(), Pm001.meta(), Pm002.meta()],
                 |s: &Snapshot<Self>, _| strict_pm(&s.inputs, pm_findings(&s.inputs)),
-            ),
+            )
+            .full_only(),
             // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
             RepoGroup::new("repo:wip", vec![Pm013.meta()], |s: &Snapshot<Self>, _| {
                 strict_pm(&s.inputs, wip_findings(&s.inputs))
-            }),
+            })
+            .full_only(),
             // frob:ticket 01M4CSZFC0QF9PH544ARF60RCZ
             RepoGroup::new("repo:cycle", vec![Pm036.meta()], |s: &Snapshot<Self>, _| {
                 strict_pm(&s.inputs, cycle_findings(&s.inputs))
-            }),
+            })
+            .full_only(),
             // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
             RepoGroup::new("repo:replenish", vec![Pm033.meta()], {
                 let lease = self.opts.lease.clone();
                 move |s: &Snapshot<Self>, _| {
                     strict_pm(&s.inputs, replenish_findings(&s.inputs, lease.as_ref()))
                 }
-            }),
+            })
+            .full_only(),
             // frob:ticket 01M4069WNGJ8YR9DTTM9K9K8V5
             RepoGroup::new(
                 "repo:release",

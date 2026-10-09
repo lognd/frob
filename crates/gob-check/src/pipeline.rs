@@ -24,7 +24,7 @@ use crate::status::{
     FidelityReport, SubjectStatus, is_binary, opaque_finding_for, unreadable_finding,
 };
 use crate::telemetry;
-use crate::tools::{ToolRun, start_tools};
+use crate::tools::{ToolRun, applicable_stages, start_tools};
 
 /// The engine fingerprint scoping every cached rule result: binary identity plus `EXTRACTOR_VERSION`.
 ///
@@ -107,6 +107,7 @@ fn begin_tools(
     opts: &RunOptions,
     table: &CheckTable,
     only: &[String],
+    scope_files: Option<&std::collections::BTreeSet<String>>,
 ) -> Option<ToolRun> {
     let wanted = only.is_empty()
         || only
@@ -115,7 +116,7 @@ fn begin_tools(
     if opts.skip_tools || !wanted {
         return None;
     }
-    start_tools(root, &table.tool)
+    start_tools(root, &applicable_stages(&table.tool, scope_files))
 }
 
 /// Join the background tool stages and keep the findings a scope allows.
@@ -324,13 +325,12 @@ fn pass<P: Product>(
         findings: collected,
     };
     let core_digests = snap.core.index.digests.clone();
-    let tools = begin_tools(root, opts, table, only);
-
     let scope = match &opts.scope {
         Some(reference) => Some(product.resolve_scope(&snap, table, reference)?),
         None => None,
     };
     let scope_files = scope.as_ref().map(ScopeView::files);
+    let tools = begin_tools(root, opts, table, only, scope_files);
     product.start_external(&snap, table, scope_files);
 
     let wanted = |m: &RuleMeta| matches_only(only, m.family, m.id);
@@ -387,7 +387,14 @@ fn pass<P: Product>(
 
     let mut files = snap.core.files.clone();
     raw.extend(run_repo_rules(
-        product, &snap, &cache, &mut files, &wanted, &mut tally, table,
+        product,
+        &snap,
+        &cache,
+        &mut files,
+        &wanted,
+        &mut tally,
+        table,
+        scope_files.is_some(),
     ));
 
     raw.extend(defs::run_repo_rules(
