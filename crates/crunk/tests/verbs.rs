@@ -109,6 +109,7 @@ fn check_json_with_a_valid_config_is_a_valid_sibling_document() {
         "crunk.toml",
         crunk_spec::presets::preset("default").expect("default preset"),
     );
+    write(dir.path(), "styles/base/a.css", ".a { margin: 0; }\n");
     let (code, env, _) = crunk(dir.path(), &["check", "--json"]);
     assert_eq!(code, 0, "{env}");
     assert_eq!(env["ok"], true);
