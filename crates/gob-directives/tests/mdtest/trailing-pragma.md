@@ -19,6 +19,6 @@ fn a() {}
 ## Rust: an unrecognised trailing comment is still an extra argument
 
 ```rust expect=fire
-/* frob:invariant name # nope */ // error: PARSE001
+/* frob:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E2 # nope */ // error: PARSE001
 fn a() {}
 ```

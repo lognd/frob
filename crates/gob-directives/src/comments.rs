@@ -1,6 +1,14 @@
 //! Comment discovery: comment texts split into candidate directive lines.
 
+use std::borrow::Cow;
+
 use gob_languages::{Language, ParsedTree, comment_spans};
+
+/// Placeholder byte for source text elided by a line continuation.
+///
+/// A joined segment keeps the byte length of its source extent so offsets stay
+/// valid; the lexer drops these bytes and maps token ranges back.
+pub(crate) const ELIDED: char = '\0';
 
 /// One logical comment line: its content (prefix stripped, trimmed) and file offset.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -8,7 +16,7 @@ pub(crate) struct Segment<'t> {
     /// Byte offset of `text` in the file.
     pub(crate) offset: usize,
     /// Trimmed content after the comment markers.
-    pub(crate) text: &'t str,
+    pub(crate) text: Cow<'t, str>,
     /// True for inner doc comments (`//!`, `/*!`) that document the container.
     pub(crate) inner_doc: bool,
 }
@@ -24,7 +32,7 @@ fn push<'t>(out: &mut Vec<Segment<'t>>, offset: usize, s: &'t str, inner_doc: bo
     if !text.is_empty() {
         out.push(Segment {
             offset: offset + lead,
-            text,
+            text: Cow::Borrowed(text),
             inner_doc,
         });
     }
@@ -102,6 +110,56 @@ fn hash_comment<'t>(out: &mut Vec<Segment<'t>>, text: &'t str, offset: usize) {
     );
 }
 
+/// True when `text` opens like a directive: `<word>:<verb>` then space or end.
+fn looks_like_directive(text: &str) -> bool {
+    let Some((ns, rest)) = text.split_once(':') else {
+        return false;
+    };
+    let verb = rest.split(char::is_whitespace).next().unwrap_or("");
+    crate::lex::is_word(ns, false) && crate::lex::is_word(verb, true)
+}
+
+/// The gap between two segments when `next` continues `prev` across a line break.
+///
+/// `prev` must end in a backslash; the gap must hold only the rest of its line
+/// (blank), one newline and the next line's comment marker (`#`, `//`, `///`,
+/// `//!`, a block-comment `*`).
+fn continuation_gap<'s>(src: &'s str, prev: &Segment<'_>, next: &Segment<'_>) -> Option<&'s str> {
+    if !prev.text.ends_with('\\') || !looks_like_directive(&prev.text) {
+        return None;
+    }
+    let gap = src.get(prev.offset + prev.text.len()..next.offset)?;
+    let (before, after) = gap.split_once('\n')?;
+    let marker_only = after
+        .chars()
+        .all(|c| c.is_whitespace() && c != '\n' || "#/!*".contains(c));
+    (before.trim().is_empty() && marker_only).then_some(gap)
+}
+
+/// Join directive lines ended by `\` with the comment line that follows (v1 wrapping).
+///
+/// The backslash, newline and next marker become [`ELIDED`] bytes, so the text
+/// joins directly (a break may fall mid-token) and every offset still maps.
+fn join_continuations<'t>(src: &'t str, segs: Vec<Segment<'t>>) -> Vec<Segment<'t>> {
+    let mut out: Vec<Segment<'t>> = Vec::with_capacity(segs.len());
+    for seg in segs {
+        let gap = out
+            .last()
+            .and_then(|prev| continuation_gap(src, prev, &seg));
+        if let (Some(gap), Some(prev)) = (gap, out.last_mut()) {
+            let mut joined = String::with_capacity(prev.text.len() + gap.len() + seg.text.len());
+            joined.push_str(&prev.text[..prev.text.len() - 1]);
+            joined.extend(std::iter::repeat_n(ELIDED, 1 + gap.len()));
+            joined.push_str(&seg.text);
+            tracing::debug!(offset = prev.offset, "directive continuation joined");
+            prev.text = Cow::Owned(joined);
+        } else {
+            out.push(seg);
+        }
+    }
+    out
+}
+
 // frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
 // frob:ticket 01M43PEZ2CNVTHKJGPR02G4F97
 /// All comment segments of `text`, split from the spans `gob_languages::comment_spans` finds.
@@ -123,6 +181,7 @@ pub(crate) fn segments<'t>(
             hash_comment(&mut out, raw, span.start);
         }
     }
+    let out = join_continuations(text, out);
     tracing::trace!(
         language = language.name(),
         count = out.len(),
@@ -137,7 +196,7 @@ mod tests {
     use gob_languages::parse_comment_spans;
 
     fn texts(v: &[Segment<'_>]) -> Vec<String> {
-        v.iter().map(|s| s.text.to_owned()).collect()
+        v.iter().map(|s| s.text.to_string()).collect()
     }
 
     fn segs(language: Language, src: &str) -> Vec<Segment<'_>> {
@@ -151,6 +210,26 @@ mod tests {
         assert_eq!(texts(&s), ["a", "b", "c"]);
         assert!(s[2].inner_doc && !s[1].inner_doc);
         assert_eq!(&src[s[1].offset..=s[1].offset], "b");
+    }
+
+    #[test]
+    fn continuation_joins_hash_slash_and_block_lines() {
+        let hash = "# frob:tests a::te\\\n# st kind=\"unit\"\n";
+        let s = segs(Language::Python, hash);
+        assert_eq!(s.len(), 1);
+        assert_eq!(
+            s[0].text.replace(ELIDED, ""),
+            "frob:tests a::test kind=\"unit\""
+        );
+        assert_eq!(s[0].text.len(), hash.trim_end().len() - 2);
+        let slash = "// frob:tests a::t \\\n// kind=\"unit\"\n";
+        assert_eq!(segs(Language::Rust, slash).len(), 1);
+        let block = "/* frob:tests a::t \\\n * kind=\"unit\" */\n";
+        assert_eq!(segs(Language::Rust, block).len(), 1);
+        let prose = "# note \\\n# frob:ticket X\n";
+        assert_eq!(segs(Language::Python, prose).len(), 2);
+        let closed = "/* frob:tests a \\ */\n// next\n";
+        assert_eq!(segs(Language::Rust, closed).len(), 2);
     }
 
     #[test]

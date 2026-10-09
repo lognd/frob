@@ -3,6 +3,7 @@
 use gob_text::{TextRange, TextSize};
 
 use crate::args::{ArgList, Keyed, Token};
+use crate::comments::ELIDED;
 
 /// A malformed tail: what is wrong and where.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -87,7 +88,46 @@ fn quoted(text: &str, open: usize, base: usize) -> Result<(String, usize), LexEr
 }
 
 /// Split `text` (the tail after the verb, starting at file offset `base`) into arguments.
+///
+/// Bytes elided by a line continuation are dropped first, so a token may span a
+/// break; ranges still point at the original bytes.
 pub(crate) fn tokenize(text: &str, base: usize) -> Result<ArgList, LexError> {
+    if !text.contains(ELIDED) {
+        return tokenize_plain(text, base);
+    }
+    let mut compact = String::with_capacity(text.len());
+    let mut origin: Vec<usize> = Vec::with_capacity(text.len() + 1);
+    for (i, c) in text.char_indices() {
+        if c != ELIDED {
+            compact.push(c);
+            origin.extend((0..c.len_utf8()).map(|k| i + k));
+        }
+    }
+    origin.push(text.len());
+    let remap = |r: TextRange| {
+        let (start, end) = (u32::from(r.start()) as usize, u32::from(r.end()) as usize);
+        let last = if end > start {
+            origin[end - 1] + 1
+        } else {
+            origin[end]
+        };
+        range_at(base, origin[start], last.max(origin[start]))
+    };
+    let mut out = tokenize_plain(&compact, 0).map_err(|e| LexError {
+        range: remap(e.range),
+        message: e.message,
+    })?;
+    for t in &mut out.positional {
+        t.range = remap(t.range);
+    }
+    for k in &mut out.keyed {
+        k.key_range = remap(k.key_range);
+        k.value.range = remap(k.value.range);
+    }
+    Ok(out)
+}
+
+fn tokenize_plain(text: &str, base: usize) -> Result<ArgList, LexError> {
     let mut out = ArgList::default();
     let mut i = 0;
     while i < text.len() {
@@ -230,6 +270,17 @@ mod tests {
             vals(&tokenize("a # note b", 0).unwrap()),
             ["a", "#", "note", "b"]
         );
+    }
+
+    #[test]
+    fn elided_bytes_join_tokens_and_keep_ranges() {
+        let text = "p::te\0\0\0st kind=\"unit\"";
+        let a = tokenize(text, 10).unwrap();
+        assert_eq!(vals(&a), ["p::test"]);
+        assert_eq!(u32::from(a.positional[0].range.start()), 10);
+        assert_eq!(u32::from(a.positional[0].range.end()), 10 + 10);
+        let k = a.get("kind").unwrap();
+        assert_eq!(k.value.as_str(), "unit");
     }
 
     #[test]

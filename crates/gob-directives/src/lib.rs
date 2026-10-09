@@ -42,6 +42,7 @@ extern crate self as gob_directives;
 mod args;
 mod bind;
 mod comments;
+mod compat;
 mod config;
 mod effects;
 pub mod frob;
