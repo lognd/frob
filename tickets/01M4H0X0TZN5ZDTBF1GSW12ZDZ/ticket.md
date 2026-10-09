@@ -8,13 +8,13 @@ points = 2
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:38Z"
-updated = "2026-10-09T21:49:17Z"
+updated = "2026-10-09T21:52:36Z"
 idempotency_key = "docs-consolidation-2026-10-09-p8"
 scope = ["changelog.d/**"]
 
 [[acceptance]]
 text = "Given the todo tickets whose scope names a path under docs/modules, docs/strata or docs/guide, when phase 8 is done, then each has a v2 scope or is dropped with a recorded reason, and no todo ticket scope names a docs path absent at HEAD"
-bound = false
+bound = true
 +++
 
 Phase 8 of notes/review/docs-consolidation-2026-10-09.md (section 2.3, last bullet). Ledger edits only (`frob ticket update`, `frob ticket drop`).
