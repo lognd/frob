@@ -2,7 +2,8 @@
 id = "01M3ZX7ETPH5Z6K2VJ64K5XTMX"
 title = "Plan executor core: find, where, containment, position, three-valued connectives"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
