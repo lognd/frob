@@ -25,6 +25,41 @@ pub(crate) fn is_word(s: &str, dash: bool) -> bool {
             .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || (dash && c == '-'))
 }
 
+/// Foreign-tool pragma openers that end a directive's argument list.
+const HASH_PRAGMAS: &[&str] = &[
+    "noqa", "type:", "pragma", "pylint:", "fmt:", "isort:", "ruff:", "nosec", "mypy:", "pyright:",
+    "flake8:", "yapf:", "nolint", "pytype:",
+];
+
+/// Foreign-tool pragma openers after `//`.
+const SLASH_PRAGMAS: &[&str] = &[
+    "eslint-",
+    "@ts-",
+    "prettier-ignore",
+    "noinspection",
+    "nolint",
+    "NOLINT",
+    "tslint:",
+    "jshint",
+    "istanbul",
+    "biome-ignore",
+    "rustfmt",
+    "lint:",
+];
+
+/// True when `rest` starts a trailing foreign pragma such as `# noqa: E501`.
+fn is_foreign_pragma(rest: &str) -> bool {
+    let (marker, openers) = if let Some(r) = rest.strip_prefix('#') {
+        (r, HASH_PRAGMAS)
+    } else if let Some(r) = rest.strip_prefix("//") {
+        (r, SLASH_PRAGMAS)
+    } else {
+        return false;
+    };
+    let body = marker.trim_start();
+    openers.iter().any(|o| body.starts_with(o))
+}
+
 /// Reads a double-quoted value starting at the opening quote at `open`.
 ///
 /// Returns the unescaped value and the index just past the closing quote.
@@ -61,6 +96,10 @@ pub(crate) fn tokenize(text: &str, base: usize) -> Result<ArgList, LexError> {
         if c.is_whitespace() {
             i += c.len_utf8();
             continue;
+        }
+        if is_foreign_pragma(rest) {
+            tracing::debug!(at = base + i, "trailing foreign pragma ends the arguments");
+            break;
         }
         let start = i;
         let stop = rest
@@ -172,6 +211,25 @@ mod tests {
     fn escapes() {
         let a = tokenize(r#"k="a \"b\" \\ c""#, 0).unwrap();
         assert_eq!(a.get("k").unwrap().value, r#"a "b" \ c"#);
+    }
+
+    #[test]
+    fn trailing_foreign_pragmas_end_the_arguments() {
+        for tail in [
+            "p::t kind=\"unit\"  # noqa: E501",
+            "p::t kind=\"unit\" //eslint-disable-line",
+            "p::t kind=\"unit\" # type: ignore[arg-type]",
+        ] {
+            let a = tokenize(tail, 0).unwrap();
+            assert_eq!(vals(&a), ["p::t"], "{tail}");
+            assert_eq!(a.get("kind").unwrap().value, "unit", "{tail}");
+        }
+        let q = tokenize("k=\"a # noqa b\"", 0).unwrap();
+        assert_eq!(q.get("k").unwrap().value, "a # noqa b");
+        assert_eq!(
+            vals(&tokenize("a # note b", 0).unwrap()),
+            ["a", "#", "note", "b"]
+        );
     }
 
     #[test]

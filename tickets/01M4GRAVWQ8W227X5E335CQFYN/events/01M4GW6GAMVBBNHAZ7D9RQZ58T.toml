@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-v2-wt/35CQFYN; scope: notes/review/docs-consolidation-*, changelog.d/**; ttl 7200s"
+at = "2026-10-09T17:42:30Z"
+actor = "lognd"
+rev = 1

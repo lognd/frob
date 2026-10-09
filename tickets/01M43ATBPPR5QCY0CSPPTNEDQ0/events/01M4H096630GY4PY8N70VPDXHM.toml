@@ -1,0 +1,75 @@
+kind = "evidence"
+accepts = [1, 2, 3]
+captured_at = "2026-10-09T18:24:04Z"
+digest = "c71933932a528433044c952af1631d383fa70b3c6b542bb0f67103c7a4d03c24"
+inline = """
+goway: warning: CROSS-OS: `cargo` is portable, but this run stays on linux hosts
+goway: note:   other-OS hosts that could take it: nova-windows
+goway: note:   allow every OS for this run:      goway run --any-os -- ...
+goway: note:   allow it for this project:        cross_os = true in goway.toml
+goway: note:   silence this hint:                cross_os = false in goway.toml
+goway: note: queued at position 9 behind other runs, waiting up to 1h
+goway: note: queued at position 8 behind other runs, waiting up to 1h
+goway: note: queued at position 7 behind other runs, waiting up to 1h
+goway: note: queued at position 6 behind other runs, waiting up to 1h
+goway: note: queued at position 5 behind other runs, waiting up to 1h
+goway: note: queued at position 4 behind other runs, waiting up to 1h
+goway: note: no host has room yet (quasar: 0.2 GiB free, 1.5 GiB needed per job; xanders-laptop: 33.9 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 0.0 GiB free, 1.5 GiB needed per job; xanders-laptop: 33.9 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 0.2 GiB free, 1.5 GiB needed per job; xanders-laptop: 33.9 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 1.1 GiB free, 1.5 GiB needed per job; xanders-laptop: 33.9 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 2.2 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.9 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 2.9 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.9 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 6.1 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.9 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 0.0 GiB free, 1.5 GiB needed per job; xanders-laptop: 33.9 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 0.0 GiB free, 1.5 GiB needed per job; xanders-laptop: 33.9 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 0.0 GiB free, 1.5 GiB needed per job; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 1.3 GiB free, 1.5 GiB needed per job; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 1.6 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 1.8 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 2.0 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 1.9 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 1.6 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 1.3 GiB free, 1.5 GiB needed per job; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 1.5 GiB free, 1.5 GiB needed per job; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 1.4 GiB free, 1.5 GiB needed per job; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 1.8 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 2.0 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 3.6 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 4.4 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 4.6 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 4.4 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 4.6 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 4.8 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 4.9 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.2 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.3 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.0 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.1 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.2 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.5 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.4 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.6 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.5 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.4 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.6 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.7 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 1, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.8 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 1, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.3 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 1, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.7 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 1, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.8 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 1, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.7 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 1, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.8 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 1, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.9 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 1, waiting up to 1h
+goway: note: no host has room yet (quasar: 6.0 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 1, waiting up to 1h
+goway: note: no host has room yet (quasar: 6.1 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 1, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.7 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 1, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.4 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 1, waiting up to 1h
+"""
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --wait 60m -- cargo nextest run --profile ci --workspace"
+size = 12836
+status = "unmeasured"
+at = "2026-10-09T18:24:04Z"
+actor = "lognd"
+rev = 1
