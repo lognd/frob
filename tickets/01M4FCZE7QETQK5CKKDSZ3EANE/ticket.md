@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T03:58:12Z"
-updated = "2026-10-09T06:12:15Z"
+updated = "2026-10-09T16:39:21Z"
 labels = ["adoption:hullbreach", "creates:crates/gob-directives/tests/mdtest/trailing-pragma.md"]
 scope = ["changelog.d/**", "crates/gob-directives/src/lex.rs", "crates/gob-directives/tests/mdtest/trailing-pragma.md"]
 
