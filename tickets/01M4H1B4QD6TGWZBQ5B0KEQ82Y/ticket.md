@@ -2,15 +2,15 @@
 id = "01M4H1B4QD6TGWZBQ5B0KEQ82Y"
 title = "Plan IR: P- subject/formula split, unresolved-when conditions and report notes, so the outcome layer can run from a plan alone"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-09T19:13:21Z"
-updated = "2026-10-09T19:13:21Z"
+updated = "2026-10-09T20:37:29Z"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/plan/ir.rs", "crates/gob-plan/src/plan/codec.rs", "crates/gob-plan/src/plan/validate.rs", "crates/gob-plan/src/plan/tests/props.rs"]
+scope = ["crates/gob-plan/src/plan/ir.rs", "crates/gob-plan/src/plan/codec.rs", "crates/gob-plan/src/plan/validate.rs", "crates/gob-plan/src/plan/tests/props.rs", "crates/gob-plan/src/plan/mod.rs", "crates/gob-plan/src/plan/tests/mod.rs", "crates/gob-plan/tests/support/mod.rs"]
 
 [[links]]
 kind = "blocked-by"
