@@ -2,7 +2,8 @@
 id = "01M44AZ69FG7NFQFNAWMQ1NM4Q"
 title = "frob serve: read-only MCP surface generated from verb metadata"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 reporter = "lognd"
