@@ -2,7 +2,8 @@
 id = "01M4FKQX0B87SRQSR7Z0FRZ6FG"
 title = "gob-plan grl_spec tests fail at HEAD: NEAT013 spec block does not parse and print_stability fixed-point fails"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
