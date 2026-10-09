@@ -2,7 +2,8 @@
 id = "01M4H1B4QD6TGWZBQ5B0KEQ82Y"
 title = "Plan IR: P- subject/formula split, unresolved-when conditions and report notes, so the outcome layer can run from a plan alone"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
