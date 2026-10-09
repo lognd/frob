@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["adoption:logand-app"]
+new = ["adoption:logand-app", "creates:crates/frob/tests/envelope_invariant.rs", "creates:crates/frob/tests/ticket_trunk_notice.rs", "creates:changelog.d/01M4FG552GZ9FMB000B76AS8XH*"]
+at = "2026-10-09T18:58:40Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-cli/**"]
+new = ["crates/gob-cli/**", "crates/gob-macros/src/command.rs"]
+at = "2026-10-09T17:22:50Z"
+actor = "lognd"
+rev = 1

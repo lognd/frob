@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["adoption:hullbreach", "creates:changelog.d/*EK8T90W*"]
+new = ["adoption:hullbreach", "creates:changelog.d/01M4FEMT44H1WREASQ7EK8T90W*"]
+at = "2026-10-09T17:44:03Z"
+actor = "lognd"
+rev = 1
