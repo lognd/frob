@@ -8,7 +8,7 @@ points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:37Z"
-updated = "2026-10-09T05:08:17Z"
+updated = "2026-10-09T05:08:23Z"
 idempotency_key = "logand-gaps-K2"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble*/**", "crates/gob-*/**", "changelog.d/**"]
@@ -16,6 +16,10 @@ scope = ["crates/grimble*/**", "crates/gob-*/**", "changelog.d/**"]
 [[links]]
 kind = "relates"
 target = "01M3Z714MQBXMW4PJVRQNDWNDM"
+
+[[links]]
+kind = "relates"
+target = "01M4FGYK3ZMG2PFK5FF7N3TMXS"
 
 [[acceptance]]
 text = "Given claim noflow A -> B and a declared flow path A to B, when grimble check runs, then the claim is REFUTED with the path"
