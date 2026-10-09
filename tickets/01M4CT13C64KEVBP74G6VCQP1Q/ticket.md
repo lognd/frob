@@ -2,7 +2,8 @@
 id = "01M4CT13C64KEVBP74G6VCQP1Q"
 title = "cycle close --next-goal and --next-days are silently ignored when nothing is carried"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
