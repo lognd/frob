@@ -2,7 +2,8 @@
 id = "01M4FD0TNGWDEYHP9FHH0RPXYR"
 title = "frob:describes in docs: the doc-side half of the doc-code pair (doc-consistency.md), parsed and paired with frob:doc for DRIFT001"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
