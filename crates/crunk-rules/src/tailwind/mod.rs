@@ -94,6 +94,14 @@ impl TailwindFacts {
         }
     }
 
+    /// A stable text of everything the facts hold, for cache keys: a rule's cached result must not
+    /// outlive a change of theme or of any compiled utility.
+    pub fn fingerprint(&self) -> String {
+        let mut classes: Vec<_> = self.classes.values().collect();
+        classes.sort_by(|a, b| a.candidate.cmp(&b.candidate));
+        format!("{:?}|{classes:?}|{:?}", self.theme, self.unresolved)
+    }
+
     fn reason(&self) -> &str {
         self.unresolved
             .as_deref()
