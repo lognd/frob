@@ -2,12 +2,12 @@
 id = "01M4HDRT4RSDZN3PRJ4CV286BH"
 title = "Ticket check still spends 17 s in repo:obligations and 20-57 s in sibling:grimble; scope or skip them for diff-unrelated tickets"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T22:50:32Z"
-updated = "2026-10-09T22:51:59Z"
+updated = "2026-10-09T22:52:00Z"
 scope = ["crates/frob-check/src/sibling/mod.rs", "changelog.d/**"]
 
 [[acceptance]]
