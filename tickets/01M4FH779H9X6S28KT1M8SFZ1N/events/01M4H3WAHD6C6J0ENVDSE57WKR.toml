@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given crunk.toml with a [bogus] table or the v1 [layers] table, when crunk check or frob check runs, then the load fails with the unknown-key error naming the table, exactly as frob.toml does"]
+new = ["Given crunk.toml with a [bogus] table or the v1 [layers] table, when crunk check or frob check runs, then the load fails with the unknown-key error naming the table, exactly as frob.toml does", "Given a known crunk.toml table (e.g. [layers]) containing keys outside its v2 schema (v1-shaped content), when crunk check or frob check runs, then the load fails naming each unknown key, the same as an unknown table"]
+moved = [1]
+at = "2026-10-09T19:57:41Z"
+actor = "lognd"
+rev = 1

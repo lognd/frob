@@ -8,13 +8,14 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use gob_ir::{Location, Model, NodeId, Truth};
+use gob_ir::{Location, Model, NodeId, Relation, Truth};
 use gob_text::SourceText;
 use regex::Regex;
 
 use super::field::{Datum, Reader, Scalar, compare};
-use super::kind::{KindTest, may_hide_members};
+use super::kind::{KindTest, is_canonical_unit, may_hide_members};
 use super::verdict::{Doubt, Verdict};
+use crate::exec::relations::{self, Count, PEER_OF, SideRow, SideTable};
 use crate::plan::{Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
 
 /// A value a variable is bound to.
@@ -22,6 +23,8 @@ use crate::plan::{Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
 pub enum Val {
     /// A node of the model.
     Node(NodeId),
+    /// A row of a side relation (`find p: diff.changed`).
+    Row(SideRow),
 }
 
 /// Variable slots; `None` is unbound.
@@ -36,6 +39,15 @@ pub(crate) enum Matcher {
     Glob(globset::GlobMatcher),
 }
 
+/// The relation inputs a plan names, resolved by the plan string that names them.
+#[derive(Default)]
+pub(crate) struct Wired<'a> {
+    /// Edge relations by the string id of the verb word or `via` family.
+    pub(crate) edges: HashMap<StrId, &'a Relation>,
+    /// Side tables by the string id of the relation name.
+    pub(crate) side: HashMap<StrId, &'a SideTable>,
+}
+
 /// The evaluator for one plan over one model.
 pub(crate) struct Eval<'a> {
     pub(crate) plan: &'a PlanParts,
@@ -43,6 +55,7 @@ pub(crate) struct Eval<'a> {
     pub(crate) hidden: bool,
     kinds: HashMap<StrId, KindTest>,
     matchers: HashMap<OpId, Matcher>,
+    wired: Wired<'a>,
     order: Vec<NodeId>,
     domains: RefCell<HashMap<StrId, Domain>>,
 }
@@ -55,6 +68,7 @@ impl<'a> Eval<'a> {
         source: Option<&'a SourceText>,
         kinds: HashMap<StrId, KindTest>,
         matchers: HashMap<OpId, Matcher>,
+        wired: Wired<'a>,
     ) -> Self {
         Self {
             plan,
@@ -62,6 +76,7 @@ impl<'a> Eval<'a> {
             hidden: may_hide_members(model),
             kinds,
             matchers,
+            wired,
             order: model.term().nodes_by_location(),
             domains: RefCell::default(),
         }
@@ -95,6 +110,24 @@ impl<'a> Eval<'a> {
     fn node(env: &Env, v: VarId) -> NodeId {
         match env[usize::from(v)] {
             Some(Val::Node(n)) => n,
+            Some(Val::Row(_)) => {
+                unreachable!("a side-relation row is read by column, never as a node")
+            }
+            None => unreachable!("validated plans use only bound variables"),
+        }
+    }
+
+    /// The rows of the side relation named by string `table`, in supply order.
+    pub(crate) fn side_rows(&self, table: StrId) -> u32 {
+        let rows = self.wired.side[&table].len();
+        u32::try_from(rows).expect("side tables are far below u32::MAX rows")
+    }
+
+    /// Reads field `f` of the variable `v`: a node field, or a column of a side-relation row.
+    fn field_of(&self, env: &Env, v: VarId, f: StrId) -> Datum {
+        match env[usize::from(v)] {
+            Some(Val::Node(n)) => self.rd.field(n, self.string(f)),
+            Some(Val::Row(r)) => self.wired.side[&r.table].cell(r.index, self.string(f)),
             None => unreachable!("validated plans use only bound variables"),
         }
     }
@@ -103,7 +136,7 @@ impl<'a> Eval<'a> {
     pub(crate) fn datum(&self, o: &Operand, env: &Env) -> Datum {
         match *o {
             Operand::Var(v) => Datum::Node(Self::node(env, v)),
-            Operand::Field(v, f) => self.rd.field(Self::node(env, v), self.string(f)),
+            Operand::Field(v, f) => self.field_of(env, v, f),
             Operand::Int(i) => Datum::Known(Scalar::Int(i)),
             Operand::Str(s) => Datum::text(self.string(s)),
             Operand::Bool(b) => Datum::Known(Scalar::Bool(b)),
@@ -113,7 +146,10 @@ impl<'a> Eval<'a> {
     fn describe(&self, o: &Operand, env: &Env) -> Doubt {
         match *o {
             Operand::Field(v, f) => Doubt::Dynamic {
-                node: Some(Self::node(env, v)),
+                node: match env[usize::from(v)] {
+                    Some(Val::Node(n)) => Some(n),
+                    _ => None,
+                },
                 field: self.string(f).to_owned(),
             },
             _ => Doubt::Dynamic {
@@ -177,9 +213,73 @@ impl<'a> Eval<'a> {
             Op::MatchRegex { subject, .. } | Op::MatchGlob { subject, .. } => {
                 self.matches(id, subject, env)
             }
-            Op::Find { .. } | Op::FindSide { .. } | Op::Verb { .. } | Op::Reaches { .. } => {
-                unreachable!("refused before the run starts")
+            Op::Verb {
+                subject,
+                object,
+                verb,
+                certainty,
+            } => {
+                let (a, b) = (Self::node(env, *subject), Self::node(env, *object));
+                if self.string(*verb) == PEER_OF {
+                    return Verdict::certain(self.peer_of(a, b));
+                }
+                relations::verb(self.wired.edges[verb], a, b, *certainty)
             }
+            Op::Reaches {
+                from,
+                to,
+                via,
+                within,
+                certainty,
+            } => {
+                let (a, b) = (Self::node(env, *from), self.unit_of(Self::node(env, *to)));
+                relations::reaches(self.wired.edges[via], a, b, *within, *certainty)
+            }
+            Op::Find { .. } | Op::FindSide { .. } => {
+                unreachable!("binders are clauses, enumerated by the run")
+            }
+        }
+    }
+
+    /// The unit a closure target stands for: the node itself if it is a unit, else the nearest
+    /// enclosing unit (`f reaches call(...)` ends at the unit containing the call, 7.1).
+    fn unit_of(&self, node: NodeId) -> NodeId {
+        let model = self.rd.model;
+        std::iter::once(node)
+            .chain(model.term().ancestors(node))
+            .find(|&n| is_canonical_unit(model, n))
+            .unwrap_or(node)
+    }
+
+    /// `a peer of b`: distinct nodes under the same nearest enclosing unit (or both at the top).
+    fn peer_of(&self, a: NodeId, b: NodeId) -> bool {
+        let model = self.rd.model;
+        let up = |n: NodeId| {
+            model
+                .term()
+                .ancestors(n)
+                .into_iter()
+                .find(|&p| is_canonical_unit(model, p))
+        };
+        a != b && up(a) == up(b)
+    }
+
+    /// `count(var: kind where cond)` under `env`: the interval of satisfying members (7.0.2).
+    ///
+    /// `lo` counts members whose membership and condition are both Yes; `hi` those for which
+    /// neither is No; `hi` is unbounded when the model has unread regions.
+    pub(crate) fn count(&self, var: VarId, kind: StrId, cond: OpId, env: &mut Env) -> Count {
+        let (mut lo, mut hi) = (0u64, 0u64);
+        for &(n, member) in self.domain(kind).iter() {
+            env[usize::from(var)] = Some(Val::Node(n));
+            let t = self.eval(cond, env).truth & member;
+            lo += u64::from(t == Truth::Yes);
+            hi += u64::from(t != Truth::No);
+        }
+        env[usize::from(var)] = None;
+        Count {
+            lo,
+            hi: (!self.hidden).then_some(hi),
         }
     }
 

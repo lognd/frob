@@ -2,13 +2,13 @@
 id = "01M4GS7C37A8JVNEBMJEWJGM32"
 title = "Engine cache fingerprint uses the executable's size and mtime, so every binary copy or reinstall (global install, landing binary) starts from a cold cache; key it by build identity instead"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T16:51:29Z"
-updated = "2026-10-09T16:51:29Z"
-scope = ["crates/gob-cache/**", "crates/gob-check/**", "changelog.d/**"]
+updated = "2026-10-09T18:29:20Z"
+scope = ["changelog.d/**", "crates/gob-cache/src/lib.rs", "crates/gob-cache/Cargo.toml"]
 
 [[acceptance]]
 text = "Given the same frob build copied to a new path with a new mtime, when frob check runs, then the cache is warm (fingerprint = crate version + git commit + profile + rule registry digest, not exe size/mtime); a rebuild with different code still invalidates"
