@@ -1,0 +1,81 @@
+kind = "evidence"
+accepts = [1, 2, 3]
+captured_at = "2026-10-09T04:17:08Z"
+digest = "0ce6a543e1ef69c5202b99e1ba6a123a7b25139c6ae6f0da20da9e9e041b2b8b"
+exit_code = 125
+inline = """
+goway: warning: CROSS-OS: `cargo` is portable, but this run stays on linux hosts
+goway: note:   other-OS hosts that could take it: nova-windows
+goway: note:   allow every OS for this run:      goway run --any-os -- ...
+goway: note:   allow it for this project:        cross_os = true in goway.toml
+goway: note:   silence this hint:                cross_os = false in goway.toml
+goway: note: no host has room yet (quasar: 3.2 GiB of memory free, this repository needs about 7.2 GiB); queued at position 2, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.5 GiB of memory free, this repository needs about 7.2 GiB); queued at position 2, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.4 GiB of memory free, this repository needs about 7.2 GiB); queued at position 2, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.3 GiB of memory free, this repository needs about 7.2 GiB); queued at position 2, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.6 GiB of memory free, this repository needs about 7.2 GiB); queued at position 2, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.2 GiB of memory free, this repository needs about 7.2 GiB); queued at position 2, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.3 GiB of memory free, this repository needs about 7.2 GiB); queued at position 2, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.4 GiB of memory free, this repository needs about 7.2 GiB); queued at position 2, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.5 GiB of memory free, this repository needs about 7.2 GiB); queued at position 2, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.6 GiB of memory free, this repository needs about 7.2 GiB); queued at position 2, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.2 GiB of memory free, this repository needs about 7.2 GiB); queued at position 2, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.9 GiB of memory free, this repository needs about 7.2 GiB); queued at position 2, waiting up to 20m
+goway: note: no host has room yet (quasar: 0.0 GiB free, 1.5 GiB needed per job); queued at position 2, waiting up to 20m
+goway: note: no host has room yet (quasar: 0.0 GiB free, 1.5 GiB needed per job); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 0.6 GiB free, 1.5 GiB needed per job); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 0.9 GiB free, 1.5 GiB needed per job); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 2.9 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.2 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.4 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.5 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 6.5 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.7 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.8 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.3 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.5 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.4 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.5 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 2.9 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.2 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.3 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.4 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.5 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.6 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.7 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.8 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.9 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.3 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.1 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.4 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 0.0 GiB free, 1.5 GiB needed per job); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 0.3 GiB free, 1.5 GiB needed per job); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 1.1 GiB free, 1.5 GiB needed per job); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 2.7 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.4 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.3 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.4 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.3 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.5 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.9 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.7 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.6 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 3.8 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.2 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.3 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.2 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+goway: note: no host has room yet (quasar: 4.3 GiB of memory free, this repository needs about 7.2 GiB); queued at position 1, waiting up to 20m
+2026-10-09T04:37:18.561703Z  WARN gave up waiting for a host elapsed=1200.000221261s
+goway: error: no usable host:
+  |   waited 20m in the queue (position 1) for a host with a free job slot, memory and disk for one more job
+  |   quasar: 4.3 GiB of memory free, this repository needs about 7.2 GiB
+  |   next: `goway status` shows each host's state; `goway add NAME` adds another helper; `goway run --host local -- CMD` runs on this machine, and `[local] fallback = true` in the config does that automatically when no helper is reachable
+"""
+passed = false
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --wait 20m -- cargo nextest run --profile ci --workspace"
+size = 8875
+status = "measured"
+at = "2026-10-09T04:17:08Z"
+actor = "lognd"
+rev = 1
