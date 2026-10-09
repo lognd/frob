@@ -462,7 +462,10 @@ fn rel001(repo: &Repo) -> Vec<String> {
         .unwrap_or_default()
         .iter()
         .filter(|f| {
-            f["rule"] == "REL001" && f["message"].as_str().is_some_and(|m| m.starts_with("tag"))
+            f["rule"] == "REL001"
+                && f["message"]
+                    .as_str()
+                    .is_some_and(|m| m.contains("REL001: tag"))
         })
         .map(|f| f["message"].to_string())
         .collect()
