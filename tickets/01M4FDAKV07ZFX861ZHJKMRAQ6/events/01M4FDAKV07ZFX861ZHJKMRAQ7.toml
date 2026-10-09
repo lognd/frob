@@ -1,0 +1,13 @@
+kind = "create"
+title = "Derived story points: a parent's points are the rollup of its pointed children; cycle assign accepts it; capacity counts leaves only; [pm] point_scale knob"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["adoption:hullbreach"]
+scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/gob-config/**", "docs/design/pm-enforcement.md", "changelog.d/**"]
+acceptance = ["Given a story with no entered points whose subtasks have 2, 2 and 3 points, when frob cycle assign runs on it, then it is accepted with derived points 7 shown as derived, and the cycle commitment counts 7 once (leaves only, never parent plus children)", 'Given [pm] point_scale = "integer", when a ticket is pointed 4, then it is accepted; with the default fibonacci scale 4 is refused as today', "Given a story with entered points and pointed children whose sum differs, when ticket doctor runs, then a PM finding reports the mismatch"]
+body = "Hullbreach convention (from its Jira): story points are the sum of subtask points and subtasks are the backlog items; sums like 4, 6, 7, 11 and 18 cannot be entered on the Fibonacci scale, and rounding would break the totals the course grades against. Coordinator decision: derive parent points from children (not entered), count only leaves toward capacity, and add a point_scale knob for repositories that use plain integers."
+at = "2026-10-09T04:04:18Z"
+actor = "lognd"
+rev = 1

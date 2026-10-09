@@ -1,0 +1,14 @@
+kind = "create"
+title = "Directives accept v1 ticket aliases: frob:todo T-#### and frob:ticket T-#### resolve through imported ticket aliases"
+type = "task"
+category = "todo"
+priority = "medium"
+class = "expedite"
+points = 3
+labels = ["adoption:hullbreach"]
+scope = ["crates/gob-directives/**", "crates/frob-obligations/**", "changelog.d/**"]
+acceptance = ["Given a ticket imported from v1 with alias T-0042, when a file carries frob:todo T-0042, then the directive resolves to that ticket with no finding, and an unknown T-#### is an unresolved-reference finding naming the alias"]
+body = "Request from the hullbreach adoption (platform 130, game 116 v1 tickets): both repos use frob:todo T-#### throughout; v2 requires the 26-char ULID. Resolve v1 aliases from the ticket ledger's aliases field (set by the importer) instead of rewriting every file."
+at = "2026-10-09T03:47:03Z"
+actor = "lognd"
+rev = 1
