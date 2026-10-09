@@ -568,6 +568,7 @@ name = "crunk-ingest"
 version = "0.532.0"
 dependencies = [
  "crunk-spec",
+ "crunk-tailwind",
  "crunk-values",
  "gob-cache",
  "gob-directives",
@@ -576,11 +577,13 @@ dependencies = [
  "gob-languages",
  "gob-symbols",
  "gob-walk",
+ "indexmap",
  "serde",
  "serde_json",
  "tempfile",
  "thiserror",
  "tracing",
+ "tree-sitter",
 ]
 
 [[package]]
@@ -1306,6 +1309,7 @@ dependencies = [
  "frob-evidence",
  "frob-ledger",
  "gob-cache",
+ "gob-caps",
  "gob-cli",
  "gob-directives",
  "gob-exec",

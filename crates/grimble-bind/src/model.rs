@@ -4,6 +4,7 @@
 //! document uses for provenance (binding.md 2.2 item 5).
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
+// frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 
 use std::collections::BTreeMap;
 
@@ -32,6 +33,21 @@ pub struct Clause {
     pub symref: Option<String>,
 }
 
+/// A `may ATOM [at SEL]` grant of a node (binding.md 7.2: the grants of the capability cell).
+#[derive(Clone, Debug)]
+pub struct Grant {
+    /// The granted atom name without its pack prefix (`fs.read`, or the parent `fs`).
+    pub atom: String,
+    /// The atom as written, for messages.
+    pub written: String,
+    /// The `at` selector when it parsed; `None` grants the atom over the whole node.
+    pub at: Option<Selector>,
+    /// The .grmb file the grant is written in.
+    pub file: String,
+    /// The clause span in that file.
+    pub span: Span,
+}
+
 /// An entity of the model (binding.md 1.1, the set E).
 #[derive(Clone, Debug)]
 pub struct Entity {
@@ -49,6 +65,8 @@ pub struct Entity {
     pub ends: Option<(Option<String>, Option<String>)>,
     /// True for a node with `kind external` (it owns no code).
     pub external: bool,
+    /// The `may` grants (nodes only carry them).
+    pub grants: Vec<Grant>,
     /// The proof rung of a claim, `1` to `5`, when written.
     pub proof: Option<u8>,
     /// True when the claim is `assumed`.
@@ -167,6 +185,23 @@ fn add_clause(ent: &mut Entity, file: &str, c: &grimble_model::ast::Clause) {
         ClauseKind::Evidence(Evidence::Ref(s)) => {
             push(ent, Role::Evidence, None, Some(s.value.clone()));
         }
+        ClauseKind::May(m) => {
+            let at = match m.at.as_ref().map(|s| s.parsed.as_ref()) {
+                None => None,
+                Some(Ok(sel)) => Some(sel.clone()),
+                Some(Err(_)) => {
+                    tracing::debug!(entity = %ent.anchor, atom = %m.atom.name, "grant selector did not parse; grant skipped");
+                    return;
+                }
+            };
+            ent.grants.push(Grant {
+                atom: m.atom.name.clone(),
+                written: m.atom.written(),
+                at,
+                file: file.to_owned(),
+                span: c.span,
+            });
+        }
         ClauseKind::Ref(s) => push(ent, Role::Ref, None, Some(s.value.clone())),
         ClauseKind::Kind(k) if k.text == "external" => ent.external = true,
         ClauseKind::Proof(p) => ent.proof = parse_proof(&p.text),
@@ -203,6 +238,7 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
                 clauses: Vec::new(),
                 ends: None,
                 external: false,
+                grants: Vec::new(),
                 proof: None,
                 assumed: false,
                 infer_requested: false,
