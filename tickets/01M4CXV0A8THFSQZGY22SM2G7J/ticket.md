@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T04:55:09Z"
-updated = "2026-10-08T15:21:07Z"
+updated = "2026-10-09T04:16:40Z"
 scope = ["changelog.d/**", "docs/design/grl-spec.md", "docs/design/README.md"]
 
 [[acceptance]]
