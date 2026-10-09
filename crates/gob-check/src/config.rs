@@ -99,6 +99,9 @@ pub struct ToolStage {
     /// When true a missing binary is a non-required Unresolved finding instead of a required one.
     #[serde(default)]
     pub optional: bool,
+    /// Repo-relative globs of the files this stage reads; a `--ticket` run whose scope matches none of them skips the stage (CI still runs it). Empty means the stage always runs.
+    #[serde(default)]
+    pub inputs: Vec<String>,
 }
 
 fn default_tool_timeout() -> u64 {
