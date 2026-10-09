@@ -26,6 +26,8 @@ pub struct CommandMeta {
     pub deprecated: Option<&'static str>,
     /// True when the verb has a markdown view (`#[command(markdown)]`); `--format md` is refused elsewhere.
     pub markdown: bool,
+    /// True when the verb never changes repository state; `serve` exposes only these as MCP tools (`#[command(read_only)]`).
+    pub read_only: bool,
 }
 
 impl CommandMeta {
@@ -117,6 +119,7 @@ mod tests {
             module: "m",
             deprecated,
             markdown: false,
+            read_only: false,
         }
     }
 
