@@ -7,10 +7,10 @@ priority = "low"
 points = 2
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-04T22:22:26Z"
+updated = "2026-10-09T20:42:56Z"
 aliases = ["T-6603"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
-scope = ["src/frob/testing/_runners.py", "src/frob/testing/_collect.py", "docs/modules/testing.md"]
+scope = ["src/frob/testing/_runners.py", "src/frob/testing/_collect.py", "docs/modules/testing.md", "docs/design/testing.md"]
 +++
 
 Reported by the crunk session (2026-09-26, crunk T-0224): `frob test` on a
