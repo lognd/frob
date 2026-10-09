@@ -2,14 +2,14 @@
 id = "01M4GRV9YMN2VEPCTMMD5ZJPVH"
 title = "Land checks the affected cone: touched files plus dependency cone for frob rules, Unknown edges included"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-09T16:44:53Z"
-updated = "2026-10-09T17:49:23Z"
-scope = ["crates/frob-land/**", "changelog.d/**"]
+updated = "2026-10-09T22:35:30Z"
+scope = ["crates/frob-land/**", "changelog.d/**", "crates/frob-check/src/scope.rs"]
 
 [[acceptance]]
 text = "Given the fast-lands epic design, when this lands, then the behaviour in the title holds with a test"

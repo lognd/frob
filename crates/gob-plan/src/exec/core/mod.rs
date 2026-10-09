@@ -135,6 +135,8 @@ pub struct Run {
     pub rows: Vec<Row>,
     /// Whether the model has unread regions that may hide members of any kind.
     pub hidden: bool,
+    /// How many def views were materialised (one per def and distinct argument values).
+    pub views: usize,
 }
 
 /// Kind tests by kind word, compiled patterns by op and the supplied relations the plan names.
@@ -153,11 +155,14 @@ fn missing(p: &PlanParts, what: &'static str, name: &str) -> ExecError {
 fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecError> {
     let mut kinds = HashMap::new();
     let mut matchers = HashMap::new();
-    let mut wired = Wired::default();
+    let mut wired = Wired {
+        knobs: rels.knobs.clone(),
+        ..Wired::default()
+    };
     for (i, op) in p.ops.iter().enumerate() {
         let id = OpId::try_from(i).expect("validated plans have at most MAX_OPS ops");
         match op {
-            Op::Find { kind, .. } | Op::Quant { kind, .. } => {
+            Op::Find { kind, .. } | Op::Quant { kind, .. } | Op::CountCmp { kind, .. } => {
                 let word = &p.strings[*kind as usize];
                 let test = KindTest::from_word(word).ok_or_else(|| ExecError::UnsupportedKind {
                     rule: p.rule.clone(),
@@ -198,6 +203,7 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
             Op::And(_)
             | Op::Or(_)
             | Op::Not(_)
+            | Op::Call { .. }
             | Op::Inside { .. }
             | Op::Order { .. }
             | Op::Cmp { .. } => {}
@@ -224,11 +230,12 @@ fn free_vars(p: &PlanParts, id: OpId, out: &mut Vec<VarId>) {
     match &p.ops[id as usize] {
         Op::And(cs) | Op::Or(cs) => cs.iter().for_each(|&c| free_vars(p, c, out)),
         Op::Not(c) => free_vars(p, *c, out),
-        Op::Quant { var, cond, .. } => {
+        Op::Quant { var, cond, .. } | Op::CountCmp { var, cond, .. } => {
             let mut inner = Vec::new();
             free_vars(p, *cond, &mut inner);
             out.extend(inner.into_iter().filter(|v| v != var));
         }
+        Op::Call { args, .. } => out.extend(args.iter().copied()),
         Op::Inside { sub: a, sup: b, .. } | Op::Order { a, b, .. } => out.extend([*a, *b]),
         Op::Verb {
             subject, object, ..
@@ -348,10 +355,11 @@ pub fn run_with(plan: &Plan, input: &Input<'_>, rels: &Relations) -> Result<Run,
     if start.truth != Truth::No {
         enumerate(&ev, &sched, 0, &mut env, start, &mut rows);
     }
-    tracing::debug!(rule = %p.rule, rows = rows.len(), hidden = ev.hidden, "plan run");
+    tracing::debug!(rule = %p.rule, rows = rows.len(), hidden = ev.hidden, views = ev.view_count(), "plan run");
     Ok(Run {
         rows,
         hidden: ev.hidden,
+        views: ev.view_count(),
     })
 }
 

@@ -24,7 +24,7 @@ use crate::status::{
     FidelityReport, SubjectStatus, is_binary, opaque_finding_for, unreadable_finding,
 };
 use crate::telemetry;
-use crate::tools::run_tools;
+use crate::tools::{ToolRun, applicable_stages, start_tools};
 
 /// The engine fingerprint scoping every cached rule result: binary identity plus `EXTRACTOR_VERSION`.
 ///
@@ -99,24 +99,37 @@ fn resolve_exceptions<P: Product>(
     (findings, suppressed)
 }
 
-/// Run the `[[check.tool]]` stages unless skipped or filtered out by `--only`.
-fn tool_stages(
+/// Start the `[[check.tool]]` stages in the background unless skipped or filtered out by `--only`.
+///
+/// They read the tree, not the rule results, so they overlap the in-process stages.
+fn begin_tools(
     root: &Path,
     opts: &RunOptions,
     table: &CheckTable,
     only: &[String],
     scope_files: Option<&std::collections::BTreeSet<String>>,
-    timing: &mut Timing,
-    files: &mut FileInterner,
-) -> Vec<Finding> {
+) -> Option<ToolRun> {
     let wanted = only.is_empty()
         || only
             .iter()
             .any(|o| o.starts_with("TOOL") || o.starts_with("CI"));
     if opts.skip_tools || !wanted {
-        return Vec::new();
+        return None;
     }
-    let found = run_tools(root, &table.tool, timing, files);
+    start_tools(root, &applicable_stages(&table.tool, scope_files))
+}
+
+/// Join the background tool stages and keep the findings a scope allows.
+fn tool_stages(
+    run: Option<ToolRun>,
+    scope_files: Option<&std::collections::BTreeSet<String>>,
+    timing: &mut Timing,
+    files: &mut FileInterner,
+) -> Vec<Finding> {
+    let Some(run) = run else {
+        return Vec::new();
+    };
+    let found = run.finish(timing, files);
     // Spanless findings (a missing tool) always stand; located ones obey a scope.
     found
         .into_iter()
@@ -312,12 +325,12 @@ fn pass<P: Product>(
         findings: collected,
     };
     let core_digests = snap.core.index.digests.clone();
-
     let scope = match &opts.scope {
         Some(reference) => Some(product.resolve_scope(&snap, table, reference)?),
         None => None,
     };
     let scope_files = scope.as_ref().map(ScopeView::files);
+    let tools = begin_tools(root, opts, table, only, scope_files);
     product.start_external(&snap, table, scope_files);
 
     let wanted = |m: &RuleMeta| matches_only(only, m.family, m.id);
@@ -426,10 +439,7 @@ fn pass<P: Product>(
 
     // Tool findings join the raw set so exceptions apply to them like native ones.
     raw.extend(tool_stages(
-        root,
-        opts,
-        table,
-        only,
+        tools,
         scope_files,
         &mut tally.timing,
         &mut files,

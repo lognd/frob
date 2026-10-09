@@ -2342,6 +2342,7 @@ name = "gob-check"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "globset",
  "gob-cache",
  "gob-caps",
  "gob-config",
