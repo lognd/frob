@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-v2-wt/Y6GKQPS; scope: crates/frob-check/**, crates/frob/**, crates/gob-cli/**, changelog.d/**; ttl 7200s"
+at = "2026-10-09T04:01:54Z"
+actor = "lognd"
+rev = 1

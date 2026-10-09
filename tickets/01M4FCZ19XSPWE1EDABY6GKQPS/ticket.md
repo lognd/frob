@@ -2,12 +2,12 @@
 id = "01M4FCZ19XSPWE1EDABY6GKQPS"
 title = "check --json on exit 1 returns data null and findings [] with every finding as text in error.message"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T03:57:58Z"
-updated = "2026-10-09T03:57:58Z"
+updated = "2026-10-09T04:01:54Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-check/**", "crates/frob/**", "crates/gob-cli/**", "changelog.d/**"]
 
