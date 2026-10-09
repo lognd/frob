@@ -8,13 +8,17 @@ points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T15:06:06Z"
-updated = "2026-10-09T15:31:39Z"
+updated = "2026-10-09T15:31:41Z"
 labels = ["grimble"]
 scope = ["docs/design/grmb-planning.md", "docs/design/README.md", "docs/design/grmb-spec.md", "notes/research/grmb-corpus/**", "changelog.d/**"]
 
 [[links]]
 kind = "blocked-by"
 target = "01M4FCWY3H8CRHYYHVQ19SEHXJ"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4GMKVN0XRRH5FFXV5QA6P6W"
 
 [[acceptance]]
 text = "Given the R1 synthesis and the owner decisions in this ticket, when rev 2 lands, then grmb-planning.md applies every C item or records why not, and README.md has a decision row per owner decision"
