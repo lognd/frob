@@ -8,7 +8,7 @@ points = 5
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-09T16:45:23Z"
-updated = "2026-10-09T22:12:23Z"
+updated = "2026-10-09T22:18:44Z"
 scope = ["changelog.d/**", "frob.toml", "crates/gob-check/src/config.rs", "crates/gob-check/src/tools.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/Cargo.toml", "Cargo.lock", "crates/gob-check/src/tool_parse.rs", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
@@ -21,5 +21,5 @@ bound = true
 
 [[acceptance]]
 text = "Given frob.toml, when this lands, then [check] sibling_timeout_secs is 600 (folded in from ~H33QRVD)"
-bound = false
+bound = true
 +++
