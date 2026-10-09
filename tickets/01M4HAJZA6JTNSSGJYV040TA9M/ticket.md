@@ -8,7 +8,7 @@ points = 2
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-09T21:54:55Z"
-updated = "2026-10-09T22:42:30Z"
+updated = "2026-10-09T22:55:13Z"
 scope = ["crates/frob-check/src/product.rs", "changelog.d/**", "crates/gob-check/src/product.rs", "crates/gob-check/src/repo.rs", "crates/gob-check/tests/pipeline.rs", "crates/gob-check/src/pipeline.rs"]
 
 [[acceptance]]
