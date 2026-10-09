@@ -335,6 +335,7 @@ pub(crate) fn share_build_dir(common: &Path, checkout: &Path) {
         tracing::warn!(error = %e, dir = %shared.display(), "shared build directory not created; cargo stages run cold");
         return;
     }
+    exclude_target(common);
     #[cfg(unix)]
     match std::os::unix::fs::symlink(&shared, &link) {
         Ok(()) => {
@@ -346,6 +347,29 @@ pub(crate) fn share_build_dir(common: &Path, checkout: &Path) {
     }
     #[cfg(not(unix))]
     tracing::debug!(checkout = %checkout.display(), "build directory sharing is unix-only");
+}
+
+/// Make git ignore a `/target` entry of any kind: the `target/` pattern of a `.gitignore` matches
+/// directories only, so the shared-build symlink would show as an untracked file (and as a SCOPE001 target).
+fn exclude_target(common: &Path) {
+    let path = common.join("info").join("exclude");
+    let text = std::fs::read_to_string(&path).unwrap_or_default();
+    if text.lines().any(|l| l.trim() == "/target") {
+        return;
+    }
+    let mut next = text;
+    if !next.is_empty() && !next.ends_with('\n') {
+        next.push('\n');
+    }
+    next.push_str("/target\n");
+    let result =
+        std::fs::create_dir_all(common.join("info")).and_then(|()| std::fs::write(&path, next));
+    match result {
+        Ok(()) => {
+            tracing::info!(path = %path.display(), "excluded /target for the shared build link")
+        }
+        Err(e) => tracing::warn!(path = %path.display(), error = %e, "could not exclude /target"),
+    }
 }
 
 /// The ratchet's decision for one land.
