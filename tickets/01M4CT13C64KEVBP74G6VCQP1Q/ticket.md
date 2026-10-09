@@ -2,14 +2,14 @@
 id = "01M4CT13C64KEVBP74G6VCQP1Q"
 title = "cycle close --next-goal and --next-days are silently ignored when nothing is carried"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:48:34Z"
-updated = "2026-10-08T03:48:34Z"
-scope = ["crates/frob-pm/**", "crates/frob/**", "changelog.d/**"]
+updated = "2026-10-09T20:40:03Z"
+scope = ["changelog.d/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs"]
 
 [[acceptance]]
 text = "Given a close with --next-goal and nothing carried, when it runs, then the next cycle is created with that goal (or the flags are refused), never ignored"

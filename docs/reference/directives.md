@@ -46,6 +46,14 @@ Park one rule's finding at this site until a ticket pays it.
 | ticket | `ticket=<v>` | string | yes | The ticket that will pay the debt (full ULID). |
 | until | `until=<v>` | string | no | An optional earlier date or metric target. |
 
+## `frob:describes`
+
+Doc-side half of the doc-code pair: this doc section describes a code symbol (pairs like `frob:doc`).
+
+| Argument | Form | Type | Required | Summary |
+|---|---|---|---|---|
+| symbol | `<symbol>` | string | yes | The described code symbol, `path::name`. |
+
 ## `frob:dispatcher`
 
 Mark this unit as an intentional dispatcher, opting out of the dispatcher rule.

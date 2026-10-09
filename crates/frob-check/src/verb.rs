@@ -241,6 +241,7 @@ impl Described for Check {
         module: module_path!(),
         deprecated: None,
         markdown: false,
+        read_only: true,
     };
 }
 

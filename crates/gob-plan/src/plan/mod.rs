@@ -28,10 +28,10 @@ mod tests;
 
 pub use error::PlanError;
 pub use ir::{
-    Certainty, CmpOp, CostClass, Langs, Need, NeedSet, Op, OpId, Operand, PlanParts, Polarity,
-    Position, Provenance, Quant, Report, StrId, VarId,
+    Certainty, CmpOp, CostClass, Def, Langs, Limit, Need, NeedSet, Op, OpId, Operand, PlanParts,
+    Polarity, Position, Provenance, Quant, Report, StrId, VarId,
 };
-pub use limits::{MAX_BYTES, MAX_DEPTH, MAX_OPS, MAX_STR_LEN, MAX_STRINGS};
+pub use limits::{MAX_BYTES, MAX_DEFS, MAX_DEPTH, MAX_OPS, MAX_STR_LEN, MAX_STRINGS};
 
 /// A validated plan: the only form the executor accepts.
 #[derive(Debug, Clone, PartialEq, Eq)]
