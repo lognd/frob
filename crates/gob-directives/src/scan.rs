@@ -14,7 +14,7 @@ use crate::config::DirectivesConfig;
 use crate::lex::{is_word, range_at, tokenize};
 use crate::meta::{DirectiveEntry, entries};
 use crate::rules::{Dsl001, Dsl002, Parse001};
-use crate::ulid::{is_full_ulid, looks_like_ticket_ref};
+use crate::ulid::{is_full_ulid, is_v1_alias, looks_like_ticket_ref};
 
 /// The verb whose binding is reoriented to its named target inside a test item.
 pub const REORIENT_VERB: &str = "tests";
@@ -366,7 +366,7 @@ fn check_ticket_refs<'m>(
         let Some(t) = token.filter(|_| a.ticket_ref) else {
             continue;
         };
-        if is_full_ulid(&t.value) {
+        if is_full_ulid(&t.value) || is_v1_alias(&t.value) {
             continue;
         }
         let span = ctx.span(t.range);

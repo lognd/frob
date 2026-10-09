@@ -302,10 +302,11 @@ them until their milestone):
 
 Ticket ids in `frob:ticket`, `frob:todo` and
 `ticket=` are full ULIDs: a fixer expands a `~handle`, a TICK rule flags
-an abbreviation, and v1 `T-0042` aliases resolve until `frob migrate
-directives` rewrites them. In milestone 1 the parser's DSL002 flags any
-abbreviated id, including a v1 `T-####`, with the remedy `frob ticket
-expand`. The `[directives] namespaces` knob is a `ConfigTable`
+an abbreviation, and v1 `T-0042` aliases are accepted by the parser and
+resolve through the `aliases` field the importer sets on a ticket (REF001
+names an alias no ticket carries) until `frob migrate directives` rewrites
+them. The parser's DSL002 flags every other abbreviated id with the remedy
+`frob ticket expand`. The `[directives] namespaces` knob is a `ConfigTable`
 (gob-directives `DirectivesConfig`, default namespaces `frob`, `grimble`,
 `crunk`); frob-check, frob-ack and frob-obligations still scan with
 `ScanConfig::default()` (frob only) until grimble and crunk register verbs. Milestone 1 (D36) parses the `frob:`
