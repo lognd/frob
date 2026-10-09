@@ -1,0 +1,13 @@
+kind = "create"
+title = "Remove the .strata migration path from the design: grimble is not strata's successor (owner 2026-10-09); strata is deprecated"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 1
+labels = ["grimble"]
+scope = ["docs/design/**", "changelog.d/**"]
+acceptance = ["Given docs/design, when the change lands, then migration.md has no grimble migrate row for .strata, grimble-model.md no longer calls itself the v1 strata successor, the grimble verb list has no migrate, and README.md records the decision"]
+body = "Owner decision 2026-10-09; dropped ~X85A7ZD."
+at = "2026-10-09T04:36:15Z"
+actor = "lognd"
+rev = 1

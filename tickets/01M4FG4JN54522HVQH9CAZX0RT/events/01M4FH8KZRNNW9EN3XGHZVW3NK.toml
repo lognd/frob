@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ['''Given '# frob:tests path::test_x\' followed by '# kind="unit"' (including a break mid-token), when directives are parsed, then one directive with both arguments results, with no PARSE001 and no TEST001 naming a backslash''']
+new = ['''Given '# frob:tests path::test_x\' followed by '# kind="unit"' (including a break mid-token), when directives are parsed, then one directive with both arguments results, with no PARSE001 and no TEST001 naming a backslash''', 'Given v1 key forms frob:todo T-1 note="multi word" and frob:invariant NAME reason="...", when parsed, then they are accepted as the note text and reason (v1 compatibility) and fmt or --fix rewrites them to the v2 form']
+moved = [1]
+at = "2026-10-09T05:13:07Z"
+actor = "lognd"
+rev = 1
