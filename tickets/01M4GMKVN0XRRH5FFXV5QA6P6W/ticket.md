@@ -2,7 +2,8 @@
 id = "01M4GMKVN0XRRH5FFXV5QA6P6W"
 title = "grmb research cycle R2 (early): verification and traceability practice (G); ambient faults and exhaustive error handling (H)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
