@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T03:58:57Z"
-updated = "2026-10-09T18:24:02Z"
+updated = "2026-10-09T19:52:53Z"
 labels = ["adoption:hullbreach", "creates:crates/gob-directives/tests/describes.rs"]
 scope = ["changelog.d/**", "crates/gob-directives/src/frob.rs", "crates/gob-directives/tests/describes.rs", "crates/frob-ack/src/inputs.rs", "crates/frob-ack/tests/ack.rs", "docs/reference/directives.md", "docs/schemas/directives.json", "crates/frob-ack/src/lib.rs", "crates/gob-directives/tests/scan.rs", "crates/frob-check/src/snapshot.rs"]
 
