@@ -8,7 +8,7 @@ points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T15:06:06Z"
-updated = "2026-10-09T15:24:53Z"
+updated = "2026-10-09T15:25:49Z"
 labels = ["grimble"]
 scope = ["docs/design/grmb-planning.md", "docs/design/README.md", "docs/design/grmb-spec.md", "notes/research/grmb-corpus/**", "changelog.d/**"]
 
@@ -30,6 +30,10 @@ bound = false
 
 [[acceptance]]
 text = "Given a waypoint whose error set cannot be determined exactly (Python raise sets, TS throw), when the outcome-map check runs, then it reuses the existing opaque/Unresolved mechanism of binding.md (opaque-cone, required Unresolved fails the gate), and the declared outcome map acts as the explicit error-set claim: answers resting on it are conditional per D121 (clean in CI, Unresolved at release) until per-arm verified_by tests exercise each mapped error. The doc must not describe weak languages as a tolerated gap (owner 2026-10-09: grimble already throws on opaque)"
+bound = false
+
+[[acceptance]]
+text = "Given the owner request 2026-10-09 to codify what must be written, when rev 2 lands, then grmb-planning.md defines the required-waypoint set over a step's derived code cone (entry to next step's entry or actor return, over call and framework edges, all routes): R1 entry (actor-kind specific handler), R2 ownership crossing between owning nodes, R3 transport gap (no call edge: HTTP/RPC/queue/IPC/FFI/DB), R4 effect site of a granted capability atom, R5 error origin of each non-ok variant and any producible unmapped escaping error, R6 boundary-entity crossing, R7 hand-off continuity to the next step; states that verbosity is a function of declared node granularity; and specifies rules missing-waypoint (Error, suggest-only fix), chain-break (Error or Unresolved on opaque), unattributed-error (Error, opaque -> Unresolved), off-path waypoint (Error) and redundant waypoint (Advisory); R2 questions recorded: branching code paths (one_of waypoint alternatives), async hand-off semantics, which atoms count as observable effects"
 bound = false
 +++
 
