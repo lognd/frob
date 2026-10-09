@@ -1,0 +1,20 @@
++++
+id = "01M4FCB5W45KZSXZ0AWHT9HBY2"
+title = "C# F1: test_items and resolve_ref by name (NUnit Test/TestFixture, UnityTest) so frob:tests bindings under Unity Assets/Tests resolve"
+type = "task"
+category = "in-progress"
+priority = "medium"
+class = "expedite"
+points = 5
+reporter = "lognd"
+created = "2026-10-09T03:47:08Z"
+updated = "2026-10-09T05:25:10Z"
+labels = ["adoption:hullbreach"]
+scope = ["crates/gob-caps/**", "crates/gob-symbols/**", "crates/gob-languages/**", "crates/frob-tests/**", "changelog.d/**", "docs/reference/languages.md", "crates/gob-directives/src/bind.rs"]
+
+[[acceptance]]
+text = "Given a Unity project with Assets/Scripts/Foo.cs::Foo and an NUnit test in Assets/Tests carrying frob:tests Assets/Scripts/Foo.cs::Foo kind=unit, when frob check runs, then the binding resolves (not Unknown) and the C# row of the capability matrix reports test_items and resolve_ref as supported by name"
+bound = true
++++
+
+Hullbreach game repo: C# test_items and resolve_ref are Gap in gob-caps matrix, so every frob:tests binding is Unknown. Builds on ~0R4E5N8 (test detection) and ~C8HB0GQ (asmdef model). cf. v1 T-6570.
