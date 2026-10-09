@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T16:35:41Z"
-updated = "2026-10-09T17:42:30Z"
+updated = "2026-10-09T18:25:58Z"
 scope = ["notes/review/docs-consolidation-*", "changelog.d/**"]
 
 [[acceptance]]
