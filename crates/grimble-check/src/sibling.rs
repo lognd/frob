@@ -86,7 +86,7 @@ pub fn sibling_document(run: &GrimbleRun) -> Value {
         exceptions: exceptions_json(run),
         entities: run.view.entities_json(),
         bindings: run.bindings.clone(),
-        // Repository packs (atoms only) are the used packs; a built-in is compiled in and not listed.
+        // Repository packs (atoms only) are the used packs; built-ins are not listed.
         packs: run.has_config.then(|| {
             let packs: Vec<serde_json::Value> = run
                 .loaded_packs

@@ -3,7 +3,7 @@
 //! The minimal slice of the pack loader (packs.md 3.3): the file is parsed for its `[pack]`
 //! version and its `[[atom]]` names, and handed to the model rules as a
 //! [`PackPin`]. The lock, the other tiers, templates and external packs stay with the full
-//! loader. Built-in `grimble/...` packs are compiled in and need no file.
+//! loader. Built-in `grimble/...` packs have no file here and stay unloaded (their atoms are compiled into the registry).
 
 // frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
 
@@ -53,7 +53,7 @@ pub fn load(root: &Path, table: &PacksTable) -> LoadedPacks {
     let mut out = LoadedPacks::default();
     for id in &table.enabled {
         if id.starts_with("grimble/") {
-            tracing::debug!(%id, "built-in pack is compiled in; nothing to load");
+            tracing::debug!(%id, "built-in pack has no file to load");
             continue;
         }
         let Some(name) = id.strip_prefix("local/") else {

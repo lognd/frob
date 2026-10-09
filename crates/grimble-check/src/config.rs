@@ -58,18 +58,14 @@ impl PacksTable {
     }
 
     /// True when the repository asks for packs this build does not load: external packs and
-    /// enabled ids outside the `grimble/` built-ins and the `local/` repository packs.
+    /// enabled ids outside the `local/` repository packs (a built-in is only partly compiled in).
     pub fn requests_packs(&self) -> bool {
-        !self.external.is_empty()
-            || self
-                .enabled
-                .iter()
-                .any(|id| !id.starts_with("grimble/") && !id.starts_with("local/"))
+        !self.external.is_empty() || self.enabled.iter().any(|id| !id.starts_with("local/"))
     }
 }
 
 /// The warning printed when packs are requested but not loaded.
-pub const PACKS_NOT_LOADED: &str = "packs are enabled in grimble.toml but this build loads only local/ packs (atoms) and built-ins; external packs, the lock and PACK rules are not evaluated";
+pub const PACKS_NOT_LOADED: &str = "packs are enabled in grimble.toml but this build loads only local/ packs (atoms); external packs, the lock and PACK rules are not evaluated";
 
 /// The conventional model root `grimble init` seeds and the `models` knob defaults to.
 pub const DEFAULT_MODEL_ROOT: &str = "design/model.grmb";
