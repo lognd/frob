@@ -13,6 +13,8 @@ gob-caps = { version = "0.532.0", path = "../gob-caps" }
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
+globset = "0.4"
+regex = "1"
 serde_json = "1"
 thiserror = "2"
 tracing = "0.1"

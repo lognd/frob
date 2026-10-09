@@ -1,138 +1,113 @@
-//! A GRL rule over `element` and `attribute` compiles against the catalog and runs on a hand-built U term.
+//! The web-engine rules (`element`, `attribute`) run on the general plan executor over a
+//! hand-built U term (grl-spec.md section 6, language-engines.md section 5).
+//!
+//! The GRL compiler does not lower to plans yet, so the plans are built by hand with the shape
+//! the compiler will emit; GRL001 (unknown kind or field) is the checker's, tested in
+//! `check_names.rs`.
+
+mod support;
 
 use gob_ir::markup::{self, ELEMENT, TAG};
-use gob_ir::{GroupOrder, Location, Model, NodeId, NodeSpec, Operator, TermBuilder};
+use gob_ir::{NodeId, Operator, Truth};
 use gob_plan::catalog;
-use gob_plan::exec::{CompileError, compile};
-use gob_plan::grl::parse;
-use gob_text::FileInterner;
+use gob_plan::exec::{Input, run};
+use gob_plan::plan::{CmpOp, Polarity, Quant};
+use support::{Doc, PlanBuilder};
 
-const ALT_RULE: &str = r#"
-rule ALT001 "img-alt" {
-  lang tsx
-
-  find e: element(tag = "img")
-  where not e has attribute(name = "alt")
-  report e "img needs an alt attribute"
-
-  example fire """
-    const a = <img src="x.png" />;
-  """
-  example clean """
-    const a = <img src="x.png" alt="x" />;
-  """
-
-  explain """
-    Images need alternative text.
-  """
-}
-"#;
-
-fn compile_src(src: &str) -> Result<gob_plan::exec::Program, CompileError> {
-    let file = FileInterner::new().intern("rules/T.grl");
-    let parsed = parse(file, src);
-    assert!(parsed.is_ok(), "{:#?}", parsed.errors);
-    compile(&parsed.file.rules[0])
-}
-
-struct Doc {
-    tb: TermBuilder,
-    f: gob_text::FileId,
-    at: u32,
-}
-
-impl Doc {
-    fn add(&mut self, op: Operator, name: Option<&str>, kids: &[NodeId]) -> NodeId {
-        self.at += 1;
-        let mut spec = NodeSpec::new(op, Location::text(self.f, self.at, self.at + 1));
-        if let Some(n) = name {
-            spec = spec.named(n);
-        }
-        self.tb.node(spec, kids).unwrap()
+fn img(d: &mut Doc, attrs: &[(&str, &str)], spread: bool) -> NodeId {
+    let head = d.add(Operator::lit(TAG, "img"), None, &[]);
+    let mut kids = vec![head];
+    for (n, v) in attrs {
+        let val = d.add(Operator::lit("str", v), None, &[]);
+        kids.push(d.add(markup::attribute_op(), Some(n), &[val]));
     }
-    fn img(&mut self, attrs: &[(&str, &str)], spread: bool) -> NodeId {
-        let head = self.add(Operator::lit(TAG, "img"), None, &[]);
-        let mut kids = vec![head];
-        for (n, v) in attrs {
-            let val = self.add(Operator::lit("str", v), None, &[]);
-            kids.push(self.add(markup::attribute_op(), Some(n), &[val]));
-        }
-        if spread {
-            let e = self.add(Operator::reference("props"), None, &[]);
-            kids.push(self.add(markup::spread_op(), None, &[e]));
-        }
-        self.add(Operator::apply(ELEMENT), None, &kids)
+    if spread {
+        let e = d.add(Operator::reference("props"), None, &[]);
+        kids.push(d.add(markup::spread_op(), None, &[e]));
     }
+    d.add(Operator::apply(ELEMENT), None, &kids)
 }
 
+/// `find e: element where e.tag == "img" where not e has attribute(name = "alt")`.
+fn alt_plan() -> gob_plan::plan::Plan {
+    let mut b = PlanBuilder::new("ALT001", Polarity::Pplus);
+    let e = b.find("element");
+    let (tag, img) = (b.field(e, "tag"), b.str_lit("img"));
+    let is_img = b.cmp(tag, CmpOp::Eq, img);
+    b.clause(is_img);
+    let has_alt = b.quant(Quant::Some, "attribute", |b, a| {
+        let inside = b.inside(a, e, true);
+        let (name, alt) = (b.field(a, "name"), b.str_lit("alt"));
+        let named = b.cmp(name, CmpOp::Eq, alt);
+        b.op(gob_plan::plan::Op::And(vec![inside, named]))
+    });
+    let none = b.op(gob_plan::plan::Op::Not(has_alt));
+    b.clause(none);
+    b.report(None, e, "img needs an alt attribute");
+    b.build()
+}
+
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run
 #[test]
 fn element_attribute_rule_runs_on_a_hand_built_term() {
-    let mut files = FileInterner::new();
-    let mut d = Doc {
-        tb: TermBuilder::new("a.tsx", "tsx"),
-        f: files.intern("a.tsx"),
-        at: 0,
-    };
-    let bad = d.img(&[("src", "x.png")], false);
-    let good = d.img(&[("src", "x.png"), ("alt", "logo")], false);
-    let maybe = d.img(&[("src", "y.png")], true);
-    let root = d.add(
-        Operator::group(GroupOrder::Sequence),
-        None,
-        &[bad, good, maybe],
-    );
-    let model = Model::lexical(d.tb.finish(root).unwrap());
+    let mut d = Doc::new("a.tsx", "tsx");
+    let bad = img(&mut d, &[("src", "x.png")], false);
+    let good = img(&mut d, &[("src", "x.png"), ("alt", "logo")], false);
+    let maybe = img(&mut d, &[("src", "y.png")], true);
+    let (model, _) = d.root(&[bad, good, maybe]);
 
-    let program = compile_src(ALT_RULE).unwrap();
-    assert_eq!((program.rule(), program.var()), ("ALT001", "e"));
-    let out = program.run(&model);
-    assert_eq!(out.fired, vec![bad]);
-    assert_eq!(out.unresolved, vec![maybe], "a spread may supply alt");
-    assert_eq!(out.message, "img needs an alt attribute");
+    let out = run(
+        &alt_plan(),
+        &Input {
+            model: &model,
+            source: None,
+        },
+    )
+    .unwrap();
+    let truth = |n: NodeId| {
+        out.rows
+            .iter()
+            .find(|r| r.node(0) == Some(n))
+            .map(|r| r.verdict.truth)
+    };
+    assert_eq!(truth(bad), Some(Truth::Yes));
+    assert_eq!(truth(good), None, "an alt attribute rules the element out");
+    assert_eq!(
+        truth(maybe),
+        Some(Truth::Unknown),
+        "a spread may supply alt"
+    );
 }
 
 #[test]
 fn attribute_rule_reads_const_values() {
-    let src = ALT_RULE
-        .replace(
-            r#"find e: element(tag = "img")"#,
-            r#"find a: attribute(name = "role")"#,
-        )
-        .replace(
-            r#"where not e has attribute(name = "alt")"#,
-            r#"where a.value == "presentation""#,
-        )
-        .replace("report e", "report a");
-    let program = compile_src(&src).unwrap();
-    let mut files = FileInterner::new();
-    let mut d = Doc {
-        tb: TermBuilder::new("a.tsx", "tsx"),
-        f: files.intern("a.tsx"),
-        at: 0,
-    };
-    let hit = d.img(&[("role", "presentation")], false);
-    let miss = d.img(&[("role", "img")], false);
-    let root = d.add(Operator::group(GroupOrder::Sequence), None, &[hit, miss]);
-    let model = Model::lexical(d.tb.finish(root).unwrap());
-    let out = program.run(&model);
-    assert_eq!(out.fired.len(), 1);
-    assert!(out.unresolved.is_empty());
-    let els = markup::elements(&model);
-    assert_eq!(out.fired[0], els[0].attributes[0].node);
-}
+    let mut b = PlanBuilder::new("ALT001", Polarity::Pplus);
+    let a = b.find("attribute");
+    let (name, role) = (b.field(a, "name"), b.str_lit("role"));
+    let named = b.cmp(name, CmpOp::Eq, role);
+    b.clause(named);
+    let (value, pres) = (b.field(a, "value"), b.str_lit("presentation"));
+    let hit = b.cmp(value, CmpOp::Eq, pres);
+    b.clause(hit);
+    b.report(None, a, "presentational role");
+    let plan = b.build();
 
-#[test]
-fn unknown_kind_and_field_are_grl001() {
-    let bad_kind = ALT_RULE.replace("element(", "elemnt(");
-    assert!(matches!(
-        compile_src(&bad_kind),
-        Err(CompileError::UnknownKind { ref word, .. }) if word == "elemnt"
-    ));
-    let bad_field = ALT_RULE.replace("tag", "tga");
-    assert!(matches!(
-        compile_src(&bad_field),
-        Err(CompileError::UnknownField { kind: "element", ref field, .. }) if field == "tga"
-    ));
+    let mut d = Doc::new("a.tsx", "tsx");
+    let hit = img(&mut d, &[("role", "presentation")], false);
+    let miss = img(&mut d, &[("role", "img")], false);
+    let (model, _) = d.root(&[hit, miss]);
+    let out = run(
+        &plan,
+        &Input {
+            model: &model,
+            source: None,
+        },
+    )
+    .unwrap();
+    assert_eq!(out.rows.len(), 1);
+    let els = markup::elements(&model);
+    assert_eq!(out.rows[0].node(0), Some(els[0].attributes[0].node));
+    assert_eq!(out.rows[0].verdict.truth, Truth::Yes);
 }
 
 #[test]
