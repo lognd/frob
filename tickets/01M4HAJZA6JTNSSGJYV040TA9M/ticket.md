@@ -2,7 +2,8 @@
 id = "01M4HAJZA6JTNSSGJYV040TA9M"
 title = "check --ticket and land run repo-wide PM rules (PM033 replenish took 99.8 s of a 173 s ticket check); skip diff-independent PM rules there and keep them in the full check and CI"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
