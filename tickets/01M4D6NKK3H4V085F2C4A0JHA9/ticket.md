@@ -2,7 +2,8 @@
 id = "01M4D6NKK3H4V085F2C4A0JHA9"
 title = "Dev profile: opt-level 3 for gix-*, zlib-rs, toml and tree-sitter, measured"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
