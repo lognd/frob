@@ -502,6 +502,30 @@ fn collection_error_files(transcript: &str) -> Vec<String> {
     files
 }
 
+// frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+/// The refusal for a pytest run that exited `code` (2, 3 or 4) without running the tests, naming the files it failed to collect.
+fn runner_error(code: i32, transcript: &str) -> EvidenceError {
+    let files = collection_error_files(transcript);
+    let detail = if files.is_empty() {
+        transcript
+            .lines()
+            .rev()
+            .find(|l| !l.trim().is_empty())
+            .map_or_else(String::new, |l| format!("; last output: {}", l.trim()))
+    } else {
+        format!("; collection errors in {}", files.join(", "))
+    };
+    tracing::warn!(
+        code,
+        detail,
+        "pytest could not run the tests; recording nothing"
+    );
+    EvidenceError::RunnerError {
+        exit_code: code,
+        files: detail,
+    }
+}
+
 /// Run `pytest -o junit_family=xunit1 --junitxml=<tmp> <args>` in `cwd` and capture the verdict and executed tests.
 ///
 /// `pytest` must be in `allowed` (`[evidence] allowed_tools`); `python` is `[tests] python` (see [`pytest_runner`]).
@@ -552,25 +576,7 @@ pub fn run_pytest(
     transcript.push_str(&out.stderr);
     let (exit_code, measured) = exit_of(out.status);
     if let Some(code @ 2..=4) = exit_code {
-        let files = collection_error_files(&transcript);
-        let detail = if files.is_empty() {
-            transcript
-                .lines()
-                .rev()
-                .find(|l| !l.trim().is_empty())
-                .map_or_else(String::new, |l| format!("; last output: {}", l.trim()))
-        } else {
-            format!("; collection errors in {}", files.join(", "))
-        };
-        tracing::warn!(
-            code,
-            detail,
-            "pytest could not run the tests; recording nothing"
-        );
-        return Err(EvidenceError::RunnerError {
-            exit_code: code,
-            files: detail,
-        });
+        return Err(runner_error(code, &transcript));
     }
     let passed = exit_code == Some(0) && seen.failed.is_empty();
     tracing::info!(

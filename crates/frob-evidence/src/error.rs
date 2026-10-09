@@ -223,12 +223,7 @@ impl EvidenceError {
                     }),
             ),
             // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
-            Self::RunnerError { .. } => Some(
-                Refusal::new("E-EVIDENCE-RUNNER-ERROR", GuardNeedsAction, self.to_string())
-                    .with_remedy(
-                        "fix the collection or import error named above (is the project importable by the pytest interpreter? set [tests] python in frob.toml), then rerun",
-                    ),
-            ),
+            Self::RunnerError { .. } => Some(runner_error_refusal(self.to_string())),
             // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
             Self::UnityEditor { .. } => Some(
                 Refusal::new("E-EVIDENCE-UNITY-EDITOR", GuardNeedsAction, self.to_string())
@@ -305,3 +300,11 @@ fn code_of(e: &EvidenceError) -> &'static str {
 
 /// The result type of this crate.
 pub type Result<T> = std::result::Result<T, EvidenceError>;
+
+// frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+/// The refusal for a pytest run that could not run the tests.
+fn runner_error_refusal(message: String) -> Refusal {
+    Refusal::new("E-EVIDENCE-RUNNER-ERROR", RefusalClass::GuardNeedsAction, message).with_remedy(
+        "fix the collection or import error named above (is the project importable by the pytest interpreter? set [tests] python in frob.toml), then rerun",
+    )
+}
