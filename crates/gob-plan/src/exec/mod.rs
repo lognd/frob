@@ -5,6 +5,7 @@
 //! relations and outcomes on top of it.
 
 mod core;
+pub mod outcome;
 pub mod relations;
 
 pub use self::core::{
