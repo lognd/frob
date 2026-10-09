@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T05:12:21Z"
-updated = "2026-10-09T20:55:38Z"
+updated = "2026-10-09T20:57:19Z"
 labels = ["adoption:logand-app"]
 scope = ["changelog.d/**", "crates/crunk-check/src/product.rs", "crates/crunk-spec/src/error.rs", "crates/crunk-spec/src/load.rs", "crates/crunk-check/tests/spec_errors.rs", "crates/crunk-spec/tests/spec.rs"]
 
