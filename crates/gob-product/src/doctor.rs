@@ -25,6 +25,7 @@ impl<P: Product> Described for Doctor<P> {
         module: module_path!(),
         deprecated: None,
         markdown: false,
+        read_only: true,
     };
 }
 

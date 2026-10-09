@@ -14,6 +14,7 @@ use crate::{CliError, Command, Context, Outcome, Payload};
     verb = "schema",
     product = "any",
     idempotent = true,
+    read_only,
     exits(ok, usage, internal)
 )]
 pub struct SchemaCmd;

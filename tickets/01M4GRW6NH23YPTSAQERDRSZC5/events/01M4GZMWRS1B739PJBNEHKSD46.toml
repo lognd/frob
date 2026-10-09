@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the fast-lands epic design, when this lands, then the behaviour in the title holds with a test"]
+new = ["Given the fast-lands epic design, when this lands, then the behaviour in the title holds with a test", "Given a tool stage whose declared inputs (paths) the ticket does not touch, when the ticket lands, then that stage is not run or gated at land (it runs on CI); stages declare inputs in frob.toml (logand F-569/F-570)"]
+moved = [1]
+at = "2026-10-09T18:43:43Z"
+actor = "lognd"
+rev = 1

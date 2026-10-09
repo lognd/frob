@@ -33,7 +33,7 @@ pub use ack::{AckOutcome, ack, plan_ack};
 pub use cmd::{Ack, AckData, GraphAffects, GraphWhy, register};
 pub use error::AckError;
 pub use gob_lock::Plan;
-pub use inputs::{DocDirective, Inputs, PRODUCT, section_digest};
+pub use inputs::{DocDirective, Inputs, PRODUCT, doc_pair, section_digest};
 pub use rules::{
     Affect001, Drift001, Drift002, Drift003, Drift004, check, evaluate, partial_parse_files,
 };

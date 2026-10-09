@@ -33,11 +33,13 @@ fn run_over(spec_text: &str, files: &[(&str, &str)]) -> CrunkRun {
     run_in(spec_text, files).1
 }
 
+/// The rule ids found, ORG001 left out: the fixture sheets sit directly under `css_root`.
 fn ids(run: &CrunkRun) -> Vec<String> {
     run.report
         .findings
         .iter()
         .map(|f| f.rule.to_string())
+        .filter(|id| id != "ORG001")
         .collect()
 }
 
