@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T05:12:21Z"
-updated = "2026-10-09T19:57:41Z"
+updated = "2026-10-09T20:55:36Z"
 labels = ["adoption:logand-app"]
-scope = ["crates/crunk*/**", "crates/gob-config/**", "changelog.d/**"]
+scope = ["changelog.d/**", "crates/crunk-check/src/product.rs", "crates/crunk-spec/src/error.rs", "crates/crunk-spec/src/load.rs", "crates/crunk-check/tests/spec_errors.rs", "crates/crunk-spec/tests/spec.rs"]
 
 [[acceptance]]
 text = "Given crunk.toml with a [bogus] table or the v1 [layers] table, when crunk check or frob check runs, then the load fails with the unknown-key error naming the table, exactly as frob.toml does"
