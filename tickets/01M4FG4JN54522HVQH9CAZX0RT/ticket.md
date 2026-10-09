@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:53:26Z"
-updated = "2026-10-09T20:03:49Z"
+updated = "2026-10-09T22:48:25Z"
 labels = ["adoption:logand-app", "creates:crates/gob-directives/src/compat.rs", "creates:crates/gob-directives/tests/mdtest/continuation.md", "creates:crates/gob-directives/tests/mdtest/v1-keys.md"]
 scope = ["changelog.d/**", "crates/gob-directives/src/comments.rs", "crates/gob-directives/src/lex.rs", "crates/gob-directives/src/lib.rs", "crates/gob-directives/src/compat.rs", "crates/gob-directives/tests/mdtest/continuation.md", "crates/gob-directives/src/frob.rs", "crates/gob-directives/src/scan.rs", "crates/gob-directives/tests/mdtest/trailing-pragma.md", "crates/gob-directives/tests/mdtest/v1-keys.md", "docs/reference/directives.md", "docs/schemas/directives.json", "changelog.d/01M4FCZE7QETQK5CKKDSZ3EANE.fixed.md"]
 
