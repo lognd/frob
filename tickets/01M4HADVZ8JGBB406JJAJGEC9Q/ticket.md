@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T21:52:07Z"
-updated = "2026-10-09T23:09:22Z"
+updated = "2026-10-09T23:54:06Z"
 scope = ["crates/gob-check/src/tools.rs", "crates/gob-check/src/config.rs", "changelog.d/**", "crates/gob-check/src/packages.rs", "crates/gob-check/src/lib.rs", "crates/gob-check/src/tool_parse.rs", "crates/gob-check/Cargo.toml", "frob.toml", "crates/gob-check/src/pipeline.rs"]
 
 [[acceptance]]
