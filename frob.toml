@@ -25,6 +25,7 @@ process_spawners = ["gob-exec", "gob-git"]
 name = "cargo"
 command = "cargo"
 args = ["fmt", "--all", "--check"]
+inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain*", "clippy.toml", "rustfmt.toml", ".cargo/**"]
 # Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
 timeout_secs = 1200
 
@@ -32,6 +33,7 @@ timeout_secs = 1200
 name = "cargo"
 command = "cargo"
 args = ["clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
+inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain*", "clippy.toml", "rustfmt.toml", ".cargo/**"]
 # Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
 timeout_secs = 1200
 
@@ -39,6 +41,8 @@ timeout_secs = 1200
 name = "cargo"
 command = "cargo"
 args = ["dev", "gen", "all", "--check"]
+# Generated pages are functions of the Rust registrations and the generated files themselves.
+inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "docs/reference/**", "docs/schemas/**", "crates/*/tests/mdtest/**", "crates/*/src/rules/**"]
 # Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
 timeout_secs = 1200
 

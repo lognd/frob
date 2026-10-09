@@ -380,6 +380,7 @@ mod tests {
             max_version: None,
             version_args: None,
             optional: false,
+            inputs: Vec::new(),
         }
     }
 
