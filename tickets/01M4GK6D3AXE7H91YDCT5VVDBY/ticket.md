@@ -8,7 +8,7 @@ points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T15:06:06Z"
-updated = "2026-10-09T15:23:01Z"
+updated = "2026-10-09T15:24:53Z"
 labels = ["grimble"]
 scope = ["docs/design/grmb-planning.md", "docs/design/README.md", "docs/design/grmb-spec.md", "notes/research/grmb-corpus/**", "changelog.d/**"]
 
@@ -26,6 +26,10 @@ bound = false
 
 [[acceptance]]
 text = "Given the owner direction of 2026-10-09 (impl blocks as traced, verified, fallibility-checked chains), when rev 2 lands, then grmb-planning.md specifies impl blocks as ordered waypoint chains (ui, api route, call, store, pack kinds) using the scenario chain tokens with reach semantics; per-hop verified_by; per-waypoint outcome maps (variant <- error type/status) checked both ways (unmapped producible error, unproducible variant) at the binding's fidelity (Exact/May/Unknown, Unknown reported Unresolved); hop reachability over the code graph; cross-language hops matched by HTTP method and route between client call sites and server routes; a derived full path shown by grimble trace with suggest-only pinning (waypoints, never every hop: bind by selector, never restate); and the convention of a sibling X.impl.grmb file"
+bound = false
+
+[[acceptance]]
+text = "Given a waypoint whose error set cannot be determined exactly (Python raise sets, TS throw), when the outcome-map check runs, then it reuses the existing opaque/Unresolved mechanism of binding.md (opaque-cone, required Unresolved fails the gate), and the declared outcome map acts as the explicit error-set claim: answers resting on it are conditional per D121 (clean in CI, Unresolved at release) until per-arm verified_by tests exercise each mapped error. The doc must not describe weak languages as a tolerated gap (owner 2026-10-09: grimble already throws on opaque)"
 bound = false
 +++
 
