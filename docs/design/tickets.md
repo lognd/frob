@@ -205,6 +205,9 @@ Acks are not events: they live in the ack log of the product lock file.
   writes leave the frontmatter behind the fold. No mirror step, no
   overlay. In the default mode a land carries no ledger diff because the
   ledger was never branch-local.
+  `land --dry-run` treats a base that moved only by commits under the
+  ledger directory as merged, so trunk-mode ticket commits do not make
+  it skip the check.
 
 ### 2b. CI, forks and offline clones
 
