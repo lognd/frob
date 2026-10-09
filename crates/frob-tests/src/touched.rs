@@ -7,8 +7,8 @@ use gob_cache::Cache;
 use gob_git::{Repo, TreeRef};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 use gob_symbols::{
-    BuildStats, Digests, FileSymbols, SymbolGraph, SymbolKind, SymbolRecord, Symref, Target, adapter_for_path,
-    build_graph_with_stats, extract_file,
+    BuildStats, Digests, FileSymbols, SymbolGraph, SymbolKind, SymbolRecord, Symref, Target,
+    adapter_for_path, build_graph_with_stats, extract_file,
 };
 use gob_walk::{Digest, FileEntry, LanguageHint, WalkConfig, walk};
 use schemars::JsonSchema;
