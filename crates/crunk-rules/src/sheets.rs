@@ -25,3 +25,17 @@ pub fn is_tokens_sheet(sheet: &Stylesheet) -> bool {
 pub fn examined_sheets(styles: &ProjectStyles) -> usize {
     styles.sheets.iter().filter(|s| !is_tokens_sheet(s)).count()
 }
+
+/// The byte offset where the 1-based `line` starts in `source`, so a line-located fact (a class
+/// selector, a custom property) can anchor a finding; a line past the end maps to the end.
+// frob:ticket 01M43ATBPPR5QCY0CSPPTNEDQ0
+pub fn line_offset(source: &str, line: u32) -> usize {
+    let skip = line.saturating_sub(1) as usize;
+    if skip == 0 {
+        return 0;
+    }
+    source
+        .match_indices('\n')
+        .nth(skip - 1)
+        .map_or(source.len(), |(at, _)| at + 1)
+}
