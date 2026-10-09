@@ -8,8 +8,9 @@ points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:28Z"
-updated = "2026-10-08T07:29:28Z"
-scope = ["changelog.d/**", "crates/gob-git/**", "crates/gob-walk/**"]
+updated = "2026-10-09T20:02:02Z"
+labels = ["creates:crates/gob-git/tests/shared_reader.rs"]
+scope = ["changelog.d/**", "crates/gob-git/src/content.rs", "crates/gob-git/tests/shared_reader.rs"]
 
 [[acceptance]]
 text = "Given a warm grimble check, when traced, then the repository and index are opened once and each file hashed once"
