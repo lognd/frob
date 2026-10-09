@@ -4,11 +4,10 @@ title = "Directives accept v1 ticket aliases: frob:todo T-#### and frob:ticket T
 type = "task"
 category = "todo"
 priority = "medium"
-class = "expedite"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T03:47:03Z"
-updated = "2026-10-09T03:47:03Z"
+updated = "2026-10-09T03:51:11Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/gob-directives/**", "crates/frob-obligations/**", "changelog.d/**"]
 
