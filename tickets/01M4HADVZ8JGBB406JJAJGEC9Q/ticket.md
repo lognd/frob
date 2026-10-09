@@ -2,12 +2,12 @@
 id = "01M4HADVZ8JGBB406JJAJGEC9Q"
 title = "Scoped cargo stages at land: clippy and fmt over affected crates and reverse dependencies (-p)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T21:52:07Z"
-updated = "2026-10-09T21:52:07Z"
+updated = "2026-10-09T22:42:14Z"
 scope = ["crates/gob-check/src/tools.rs", "crates/gob-check/src/config.rs", "changelog.d/**"]
 
 [[acceptance]]
