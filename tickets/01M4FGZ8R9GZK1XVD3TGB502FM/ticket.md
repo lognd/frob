@@ -8,10 +8,14 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:08:00Z"
-updated = "2026-10-09T05:08:00Z"
+updated = "2026-10-09T05:08:18Z"
 idempotency_key = "logand-gaps-D4"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["docs/design/exceptions.md", "docs/design/grmb-spec.md", "changelog.d/**"]
+
+[[links]]
+kind = "relates"
+target = "01M4FCB1QKVVA2EWYEGKP5659Y"
 
 [[acceptance]]
 text = "Given defer ... ticket=T-0042 in a repo migrated from v1, when the decision is read, then the doc states MDL013 behaviour, who resolves the alias and the finding when it is unknown"
