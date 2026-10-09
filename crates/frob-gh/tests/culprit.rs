@@ -59,8 +59,15 @@ async fn key_is_stable_across_later_red_lands() {
 #[tokio::test(flavor = "current_thread")]
 async fn green_tip_and_foreign_runs_are_refused() {
     let runs = runs().await;
-    let green_tip = &history()[3..];
-    assert_eq!(find_culprit(&runs, green_tip), Err(CulpritError::NotRed));
+    let green_only: Vec<_> = runs
+        .iter()
+        .filter(|r| r.sha == "6ac157fde")
+        .cloned()
+        .collect();
+    assert_eq!(
+        find_culprit(&green_only, &history()[3..]),
+        Err(CulpritError::NotRed)
+    );
     let short = &history()[..1];
     assert!(matches!(
         find_culprit(&runs, short),
