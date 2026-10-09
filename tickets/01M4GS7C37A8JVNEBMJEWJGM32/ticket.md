@@ -7,8 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T16:51:29Z"
-updated = "2026-10-09T16:51:29Z"
-scope = ["crates/gob-cache/**", "crates/gob-check/**", "changelog.d/**"]
+updated = "2026-10-09T17:45:12Z"
+labels = ["creates:crates/gob-check/build.rs"]
+scope = ["changelog.d/**", "crates/gob-check/src/pipeline.rs", "crates/gob-check/Cargo.toml", "crates/gob-cache/src/lib.rs", "crates/gob-check/build.rs"]
 
 [[acceptance]]
 text = "Given the same frob build copied to a new path with a new mtime, when frob check runs, then the cache is warm (fingerprint = crate version + git commit + profile + rule registry digest, not exe size/mtime); a rebuild with different code still invalidates"
