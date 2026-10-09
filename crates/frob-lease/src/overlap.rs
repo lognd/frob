@@ -271,7 +271,11 @@ impl Resolver {
                 ..WalkConfig::default()
             };
             gob_walk::walk(&self.root, &cfg)
-                .map(|r| r.files.into_iter().map(|f| f.path).collect())
+                .map(|r| {
+                    let mut paths: Vec<String> = r.files.into_iter().map(|f| f.path).collect();
+                    paths.sort_unstable();
+                    paths
+                })
                 .map_err(|e| e.to_string())
         });
         walked
@@ -298,13 +302,17 @@ impl Resolver {
         if let Some(hit) = cached {
             return Ok(hit);
         }
-        let set = glob_set(scope)?;
-        let files: BTreeSet<String> = self
-            .all_files()?
-            .iter()
-            .filter(|f| set.is_match(f.as_str()))
-            .cloned()
-            .collect();
+        let all = self.all_files()?;
+        let mut files = BTreeSet::new();
+        for g in scope {
+            // `all` is sorted, so the files under the glob's literal prefix are one contiguous run.
+            let g = normalize(g);
+            let prefix = literal_prefix(&g);
+            let start = all.partition_point(|f| f.as_str() < prefix);
+            let run = all[start..].iter().take_while(|f| f.starts_with(prefix));
+            let m = matcher(&g)?;
+            files.extend(run.filter(|f| m.is_match(f.as_str())).cloned());
+        }
         self.match_runs.fetch_add(1, Ordering::Relaxed);
         tracing::debug!(
             globs = scope.len(),
