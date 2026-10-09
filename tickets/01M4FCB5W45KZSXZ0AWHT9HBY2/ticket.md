@@ -2,7 +2,8 @@
 id = "01M4FCB5W45KZSXZ0AWHT9HBY2"
 title = "C# F1: test_items and resolve_ref by name (NUnit Test/TestFixture, UnityTest) so frob:tests bindings under Unity Assets/Tests resolve"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 class = "expedite"
 points = 5
