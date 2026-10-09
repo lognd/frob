@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/testing/_runners.py", "src/frob/testing/_collect.py", "src/frob/tickets/_land_verify.py", "src/frob/app/config.py", "tests/unit/test_runner_outcome_executed.py", "docs/modules/testing.md", "docs/design/testing.md"]
+new = ["src/frob/testing/_runners.py", "src/frob/testing/_collect.py", "src/frob/tickets/_land_verify.py", "src/frob/app/config.py", "tests/unit/test_runner_outcome_executed.py", "docs/design/testing.md"]
+at = "2026-10-09T20:42:50Z"
+actor = "lognd"
+rev = 1
