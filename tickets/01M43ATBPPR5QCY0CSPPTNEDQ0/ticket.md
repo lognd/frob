@@ -8,10 +8,10 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:35Z"
-updated = "2026-10-09T16:35:22Z"
+updated = "2026-10-09T16:38:49Z"
 idempotency_key = "crunk-plan-rorg"
-labels = ["area:crunk"]
-scope = ["crates/crunk-rules/src/layers/**", "crates/crunk-rules/src/org/**", "crates/crunk-rules/tests/org*.rs", "crates/crunk-rules/tests/layers*.rs"]
+labels = ["area:crunk", "creates:crates/crunk-rules/src/rules/layer001*", "creates:crates/crunk-rules/src/rules/org00*"]
+scope = ["crates/crunk-rules/src/layers/**", "crates/crunk-rules/src/org/**", "crates/crunk-rules/tests/org*.rs", "crates/crunk-rules/tests/layers*.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/src/sheets.rs", "crates/crunk-rules/tests/rules.rs", "docs/crunk/rules/README.md", "changelog.d/01M43ATBPPR5QCY0CSPPTNEDQ0*", "crates/crunk-rules/src/rules/layer001*", "crates/crunk-rules/src/rules/org00*"]
 
 [[links]]
 kind = "blocked-by"
