@@ -157,7 +157,10 @@ fn doctor_reports_a_drifted_milestone_and_a_dangling_cycle_member_and_fix_repair
         .collect();
     assert!(kinds.contains(&"milestone") && kinds.contains(&"cycle"));
 
-    let fixed = repo.ok(&["ticket", "doctor", "--fix"]);
+    // The dangling member cannot be repaired, so even --fix reports ok: false (exit 1).
+    let fixed_out = repo.frob(&["ticket", "doctor", "--fix"]);
+    assert_eq!(code(&fixed_out), 1);
+    let fixed: Value = serde_json::from_slice(&fixed_out.stdout).expect("json");
     assert!(
         fixed["data"]["pm_fixed"]
             .as_array()
@@ -167,7 +170,8 @@ fn doctor_reports_a_drifted_milestone_and_a_dangling_cycle_member_and_fix_repair
         "{fixed}"
     );
     // The drift is repaired; the dangling member is the only problem left.
-    let after = repo.ok(&["ticket", "doctor"]);
+    let after: Value =
+        serde_json::from_slice(&repo.frob(&["ticket", "doctor"]).stdout).expect("json");
     let left: Vec<&str> = after["data"]["pm_issues"]
         .as_array()
         .expect("issues")
