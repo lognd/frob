@@ -319,6 +319,53 @@ fn execute(runner: &Runner, root: &Path, stage: &ToolStage) -> StageResult {
     }
 }
 
+/// True when `stage` declares inputs and none of the scoped `files` matches one of them.
+///
+/// A stage without inputs, or an input glob that does not parse, never counts as untouched:
+/// the stage runs (frob:ticket 01M4GRW6NH23YPTSAQERDRSZC5).
+fn untouched(stage: &ToolStage, files: &std::collections::BTreeSet<String>) -> bool {
+    if stage.inputs.is_empty() {
+        return false;
+    }
+    let mut builder = globset::GlobSetBuilder::new();
+    for glob in &stage.inputs {
+        match globset::Glob::new(glob) {
+            Ok(g) => {
+                builder.add(g);
+            }
+            Err(e) => {
+                tracing::warn!(stage = %stage.name, %glob, error = %e, "bad tool input glob; the stage runs");
+                return false;
+            }
+        }
+    }
+    match builder.build() {
+        Ok(set) => !files.iter().any(|f| set.is_match(f)),
+        Err(e) => {
+            tracing::warn!(stage = %stage.name, error = %e, "tool inputs not compiled; the stage runs");
+            false
+        }
+    }
+}
+
+/// The stages a run executes: all of them unscoped, else those whose declared inputs the scope touches.
+pub(crate) fn applicable_stages(
+    stages: &[ToolStage],
+    scope_files: Option<&std::collections::BTreeSet<String>>,
+) -> Vec<ToolStage> {
+    stages
+        .iter()
+        .filter(|stage| {
+            let skip = scope_files.is_some_and(|files| untouched(stage, files));
+            if skip {
+                tracing::info!(stage = %stage.name, "tool stage skipped: the scope touches none of its inputs");
+            }
+            !skip
+        })
+        .cloned()
+        .collect()
+}
+
 /// One stage's outcome and wall time, as a worker thread produced it.
 type Finished = (usize, StageResult, Duration);
 
@@ -517,6 +564,7 @@ mod tests {
             max_version: Some("1.7.99".to_owned()),
             version_args: Some(vec!["-c".to_owned(), probe.to_owned()]),
             optional: false,
+            inputs: Vec::new(),
         }
     }
 
@@ -546,6 +594,36 @@ mod tests {
         assert_eq!(names, ["tool:a", "tool:b", "tool:c"]);
         assert!(timing.tools_ms() >= 3000, "each stage reports its own time");
         assert!(wall < Duration::from_millis(2500), "ran serially: {wall:?}");
+    }
+
+    // frob:ticket 01M4GRW6NH23YPTSAQERDRSZC5
+    // frob:tests crates/gob-check/src/tools.rs::applicable_stages
+    #[test]
+    fn a_stage_is_skipped_only_when_it_declares_inputs_the_scope_misses() {
+        let mut stage = sh_stage("gen", ToolParser::None, "true", "true");
+        let scope: std::collections::BTreeSet<String> =
+            ["docs/a.md".to_owned()].into_iter().collect();
+        assert_eq!(
+            applicable_stages(std::slice::from_ref(&stage), Some(&scope)).len(),
+            1
+        );
+        stage.inputs = vec!["crates/**/*.rs".to_owned()];
+        assert!(applicable_stages(std::slice::from_ref(&stage), Some(&scope)).is_empty());
+        assert_eq!(
+            applicable_stages(std::slice::from_ref(&stage), None).len(),
+            1
+        );
+        let hit: std::collections::BTreeSet<String> =
+            ["crates/x/src/lib.rs".to_owned()].into_iter().collect();
+        assert_eq!(
+            applicable_stages(std::slice::from_ref(&stage), Some(&hit)).len(),
+            1
+        );
+        stage.inputs = vec!["[".to_owned()];
+        assert_eq!(
+            applicable_stages(std::slice::from_ref(&stage), Some(&scope)).len(),
+            1
+        );
     }
 
     // frob:ticket 01M4D6NEQYAZEFFX3P0S2EJV2N

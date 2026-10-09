@@ -7,8 +7,8 @@ use gob_cache::Cache;
 use gob_git::{Repo, TreeRef};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 use gob_symbols::{
-    Digests, FileSymbols, SymbolGraph, SymbolKind, SymbolRecord, Symref, Target, adapter_for_path,
-    build_graph, extract_file,
+    BuildStats, Digests, FileSymbols, SymbolGraph, SymbolKind, SymbolRecord, Symref, Target,
+    adapter_for_path, build_graph_with_stats, extract_file,
 };
 use gob_walk::{Digest, FileEntry, LanguageHint, WalkConfig, walk};
 use schemars::JsonSchema;
@@ -55,20 +55,36 @@ impl TouchedSet {
     }
 }
 
-/// Build the symbol graph of the work tree at `root` (no cache; the tree is the input).
+/// State directory whose shared cache holds the per-file symbol artifacts.
+const STATE_DIR: &str = ".frob";
+
+/// Build the symbol graph of the work tree at `root`, reusing the repository-shared artifact cache.
 ///
 /// # Errors
 ///
 /// [`crate::TestsError::Walk`] for an unusable walk configuration.
 pub fn build_repo_graph(root: &Path) -> Result<SymbolGraph> {
+    build_repo_graph_with_stats(root).map(|(graph, _)| graph)
+}
+
+// frob:ticket 01M4D6NFZGVDDT0GG78KVA1TA6
+/// Like [`build_repo_graph`], also returning how many files were extracted versus read from cache.
+///
+/// # Errors
+///
+/// [`crate::TestsError::Walk`] for an unusable walk configuration.
+pub fn build_repo_graph_with_stats(root: &Path) -> Result<(SymbolGraph, BuildStats)> {
     let walked = walk(root, &WalkConfig::default())?;
-    let graph = build_graph(root, &walked.files, &Cache::null());
+    let cache = Cache::open_shared(root, STATE_DIR);
+    let (graph, stats) = build_graph_with_stats(root, &walked.files, &cache);
     tracing::info!(
         files = walked.files.len(),
         nodes = graph.node_count(),
+        extracted = stats.extracted,
+        cached = stats.cached,
         "repository graph built"
     );
-    Ok(graph)
+    Ok((graph, stats))
 }
 
 fn is_rust(path: &str) -> bool {
