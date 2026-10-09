@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-09T16:35:43Z"
+updated = "2026-10-09T16:39:44Z"
 idempotency_key = "m2-exec-relations"
-labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/exec/relations/**"]
+labels = ["milestone:2", "area:grl", "creates:crates/gob-plan/tests/exec_relations.rs", "creates:crates/gob-plan/src/exec/relations/**"]
+scope = ["crates/gob-plan/src/exec/relations/**", "crates/gob-plan/src/exec/mod.rs", "crates/gob-plan/src/exec/core/**", "crates/gob-plan/tests/exec_relations.rs"]
 
 [[links]]
 kind = "blocked-by"
