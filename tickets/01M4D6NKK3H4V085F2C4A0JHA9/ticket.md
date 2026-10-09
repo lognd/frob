@@ -2,13 +2,13 @@
 id = "01M4D6NKK3H4V085F2C4A0JHA9"
 title = "Dev profile: opt-level 3 for gix-*, zlib-rs, toml and tree-sitter, measured"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:29Z"
-updated = "2026-10-08T07:29:29Z"
+updated = "2026-10-09T19:30:08Z"
 scope = ["changelog.d/**", "Cargo.toml"]
 
 [[acceptance]]

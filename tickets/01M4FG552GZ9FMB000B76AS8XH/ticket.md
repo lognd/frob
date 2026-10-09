@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:53:45Z"
-updated = "2026-10-09T19:02:33Z"
+updated = "2026-10-09T19:28:58Z"
 labels = ["adoption:logand-app", "creates:crates/frob/tests/envelope_invariant.rs", "creates:crates/frob/tests/ticket_trunk_notice.rs", "creates:changelog.d/01M4FG552GZ9FMB000B76AS8XH*", "creates:crates/gob-cli/tests/envelope_ok.rs"]
-scope = ["crates/gob-cli/src/command.rs", "crates/frob/tests/envelope_invariant.rs", "crates/frob/tests/ticket_trunk_notice.rs", "changelog.d/01M4FG552GZ9FMB000B76AS8XH*", "crates/gob-cli/src/error.rs", "docs/design/tickets.md", "crates/frob/src/workspace.rs", "crates/gob-cli/tests/envelope_ok.rs"]
+scope = ["crates/gob-cli/src/command.rs", "crates/frob/tests/envelope_invariant.rs", "crates/frob/tests/ticket_trunk_notice.rs", "changelog.d/01M4FG552GZ9FMB000B76AS8XH*", "crates/gob-cli/src/error.rs", "docs/design/tickets.md", "crates/frob/src/workspace.rs", "crates/gob-cli/tests/envelope_ok.rs", "crates/frob-land/src/land.rs", "crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
 text = "Given [tickets] ref = refs/heads/main and a checkout on a feature branch, when ticket doctor or ticket list runs, then the output says which ref it reads and that the working tree is not the ledger, and a writing verb states it commits to main (or refuses without --to-trunk)"
