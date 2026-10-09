@@ -2,12 +2,12 @@
 id = "01M4GR6HMS7VPTVZ9C23AP1RKR"
 title = "Raise [pm.wip] in_progress from 10 to 16: owner wants wider parallel waves; tests run on goway helpers, not local builds"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T16:33:33Z"
-updated = "2026-10-09T16:33:33Z"
+updated = "2026-10-09T16:33:54Z"
 scope = ["frob.toml", "changelog.d/**"]
 
 [[acceptance]]
