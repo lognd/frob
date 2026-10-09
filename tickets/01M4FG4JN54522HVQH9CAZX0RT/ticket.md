@@ -2,7 +2,8 @@
 id = "01M4FG4JN54522HVQH9CAZX0RT"
 title = "Directive parser: support v1 backslash continuation onto the next comment line, and never echo a stray backslash as a TEST001 symref"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
