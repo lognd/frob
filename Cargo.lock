@@ -530,6 +530,8 @@ version = "0.532.0"
 dependencies = [
  "assert_cmd",
  "crunk-check",
+ "crunk-spec",
+ "crunk-tokens",
  "gob-check",
  "gob-cli",
  "gob-config",
@@ -639,9 +641,12 @@ dependencies = [
  "crunk-spec",
  "crunk-tailwind",
  "crunk-values",
+ "gob-exec",
+ "gob-fs",
  "indexmap",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror",
  "tracing",
 ]
@@ -2622,12 +2627,14 @@ dependencies = [
 name = "gob-plan"
 version = "0.532.0"
 dependencies = [
+ "globset",
  "gob-caps",
  "gob-ir",
  "gob-rules",
  "gob-text",
  "insta",
  "proptest",
+ "regex",
  "serde_json",
  "thiserror",
  "tracing",
