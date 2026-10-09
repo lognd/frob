@@ -6,10 +6,10 @@ category = "todo"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T22:22:26Z"
+updated = "2026-10-09T20:42:27Z"
 aliases = ["T-6518"]
 labels = ["v1-cluster:C1a", "triage:accepted"]
-scope = ["src/frob/verify/", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/coord/_status.py", "tests/unit/verify/", "docs/modules/tickets-verify-sweep.md"]
+scope = ["src/frob/verify/", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/coord/_status.py", "tests/unit/verify/", "docs/modules/tickets-verify-sweep.md", "docs/design/tickets.md"]
 +++
 
 Measured 2026-09-25 12:30 UTC on the coordinator host (23 GB RAM): four
