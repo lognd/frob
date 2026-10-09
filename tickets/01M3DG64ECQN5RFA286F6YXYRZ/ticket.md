@@ -7,10 +7,10 @@ priority = "medium"
 points = 3
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-09T20:42:59Z"
+updated = "2026-10-09T20:43:01Z"
 aliases = ["T-6604"]
 labels = ["v1-cluster:C1b", "triage:accepted"]
-scope = ["src/frob/app/check_runner.py", "src/frob/process/", "src/frob/_cli_parsers/_check.py", "docs/modules/check.md", "docs/design/rules.md"]
+scope = ["src/frob/app/check_runner.py", "src/frob/process/", "src/frob/_cli_parsers/_check.py", "docs/design/rules.md"]
 +++
 
 Measured twice on 2026-09-26 (14:00 and 23:05 local): implementer agents
