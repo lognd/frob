@@ -55,6 +55,21 @@ fn error_finding_exits_1_and_fail_on_none_exits_0() {
     assert_eq!(v["data"]["findings"][0]["rule"], "TODO001");
 }
 
+// frob:ticket 01M4FCZ19XSPWE1EDABY6GKQPS
+#[test]
+fn failing_check_json_carries_structured_findings_and_a_one_line_message() {
+    let dir = tree();
+    let failing = frob(dir.path(), &["check", "--json"]);
+    assert_eq!(code(&failing), 1);
+    let v: Value = serde_json::from_slice(&failing.stdout).expect("json");
+    assert_eq!(v["ok"], false);
+    let findings = v["findings"].as_array().expect("findings array");
+    assert!(findings.iter().any(|f| f["rule"] == "TODO001"));
+    let message = v["error"]["message"].as_str().expect("message");
+    assert!(!message.contains('\n'), "message is one line: {message}");
+    assert!(message.contains("1 error(s)"));
+}
+
 #[test]
 fn explain_prints_the_rule_page_and_unknown_is_usage() {
     let dir = tree();
