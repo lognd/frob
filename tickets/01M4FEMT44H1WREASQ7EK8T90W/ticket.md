@@ -2,7 +2,8 @@
 id = "01M4FEMT44H1WREASQ7EK8T90W"
 title = "TICK002 under ref_mode = branch resolves ticket refs against main instead of the current branch's ledger"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
