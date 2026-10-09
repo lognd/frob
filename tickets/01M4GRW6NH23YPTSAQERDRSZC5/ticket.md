@@ -2,7 +2,8 @@
 id = "01M4GRW6NH23YPTSAQERDRSZC5"
 title = "Scoped tool stages at land: cargo clippy/fmt over affected crates and reverse deps; dev gen --check only when its inputs changed"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
