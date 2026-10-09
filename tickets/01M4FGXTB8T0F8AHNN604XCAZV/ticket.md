@@ -2,13 +2,14 @@
 id = "01M4FGXTB8T0F8AHNN604XCAZV"
 title = "Registry misses core-effects atoms: process.spawn, the fs parent and process.env are MDL016"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:03Z"
-updated = "2026-10-09T17:55:34Z"
+updated = "2026-10-09T19:19:34Z"
 idempotency_key = "logand-gaps-A1"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble*/**", "changelog.d/**", "crates/gob-ir/src/registry.rs", "crates/gob-ir/tests/queries.rs"]

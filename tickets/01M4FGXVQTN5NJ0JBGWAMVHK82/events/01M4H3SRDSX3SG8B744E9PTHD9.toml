@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [1, 2, 3]
+captured_at = "2026-10-09T19:49:04Z"
+digest = "bff8f3e4a075f165aa2f5df90f5b1dfba51b76dbaec0b4d6ffe23fd4ce9d2a1e"
+exit_code = 0
+passed = true
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --wait 60m -- cargo nextest run --profile ci -p grimble-check -p grimble-model -p grimble-bind -p grimble"
+size = 28993
+status = "measured"
+uri = "dir:.git/frob/artifacts/bff8f3e4a075f165aa2f5df90f5b1dfba51b76dbaec0b4d6ffe23fd4ce9d2a1e"
+at = "2026-10-09T19:49:04Z"
+actor = "lognd"
+rev = 1

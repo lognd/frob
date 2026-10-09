@@ -18,6 +18,10 @@ const EXITS: [(&str, &str); 5] = [
 ];
 
 #[derive(Debug, FromDeriveInput)]
+#[allow(
+    clippy::struct_excessive_bools,
+    reason = "one bool per #[command(...)] switch"
+)]
 #[darling(attributes(command), forward_attrs(doc), supports(struct_any))]
 struct CommandArgs {
     ident: syn::Ident,
@@ -34,6 +38,8 @@ struct CommandArgs {
     deprecated: Option<String>,
     #[darling(default)]
     markdown: bool,
+    #[darling(default)]
+    read_only: bool,
 }
 
 /// True for lowercase words separated by single spaces (`config show`).
@@ -122,6 +128,7 @@ pub(crate) fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
         idempotent,
         dry_run,
         markdown,
+        read_only,
         deprecated,
         ..
     } = args;
@@ -141,6 +148,7 @@ pub(crate) fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
                 module: ::core::module_path!(),
                 deprecated: #deprecated,
                 markdown: #markdown,
+                read_only: #read_only,
             };
         }
 

@@ -45,9 +45,9 @@ fn ungranted_open_exec_and_listen_are_cap001_errors() {
     assert_eq!(
         anchors,
         [
-            "cap/node/a/exec",
             "cap/node/a/fs.read",
-            "cap/node/a/net.listen"
+            "cap/node/a/net.listen",
+            "cap/node/a/process.spawn"
         ],
         "{f:?}"
     );
@@ -94,4 +94,18 @@ fn a_node_with_neither_use_nor_grant_is_a_clean_subject_of_both() {
     assert!(b.subjects.get("CAP001").copied().unwrap_or(0) > 0);
     assert!(b.subjects.get("CAP002").copied().unwrap_or(0) > 0);
     assert!(!b.not_applicable.contains_key("CAP002"));
+}
+
+// frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_parent_grant_and_an_alias_grant_cover_their_children_and_canonical_atom() {
+    let py = "import subprocess\nimport os\n\ndef go():\n    open(\"x\")\n    subprocess.run([\"ls\"])\n    os.getenv(\"HOME\")\n";
+    let b = bind_py(py, "  may fs;\n  may exec;\n  may process.env;\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+    assert!(of(&b, "CAP002").is_empty(), "{:?}", b.findings);
+    let b = bind_py(py, "  may fs;\n  may process.spawn;\n");
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{f:?}");
+    assert_eq!(f[0].anchor, "cap/node/a/process.env");
 }
