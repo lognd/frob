@@ -2,7 +2,8 @@
 id = "01M4FGXVQTN5NJ0JBGWAMVHK82"
 title = "Repo packs load: packs/NAME.toml with [packs] enabled supplies atoms and the pack entity resolves"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
