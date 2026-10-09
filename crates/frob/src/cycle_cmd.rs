@@ -502,6 +502,7 @@ impl Command for CycleNew {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "cycle show",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)
@@ -554,6 +555,7 @@ impl Command for CycleShow {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "cycle list",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)
@@ -1258,6 +1260,7 @@ pub struct VelocityData {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "cycle velocity",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)

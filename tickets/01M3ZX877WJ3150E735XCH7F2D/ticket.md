@@ -2,13 +2,14 @@
 id = "01M3ZX877WJ3150E735XCH7F2D"
 title = "docs/SUMMARY.md generated from docs/order.toml with a coverage check"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:46Z"
-updated = "2026-10-03T03:34:46Z"
+updated = "2026-10-09T20:45:26Z"
 idempotency_key = "m2-nav-summary"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/gob-dev/src/render/summary.rs", "docs/order.toml"]
