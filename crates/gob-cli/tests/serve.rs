@@ -85,7 +85,11 @@ fn cli() -> Cli {
 
 /// Send `requests` (one JSON value per line) and return the parsed replies.
 fn talk(requests: &[Value]) -> Vec<Value> {
-    let input: String = requests.iter().map(|r| format!("{r}\n")).collect();
+    let input = requests
+        .iter()
+        .map(Value::to_string)
+        .collect::<Vec<_>>()
+        .join("\n");
     let mut out = Vec::new();
     let cwd = std::env::temp_dir();
     cli()
@@ -98,7 +102,7 @@ fn talk(requests: &[Value]) -> Vec<Value> {
         .collect()
 }
 
-fn call(name: &str, arguments: Value) -> Value {
+fn call(name: &str, arguments: &Value) -> Value {
     let replies = talk(&[json!({
         "jsonrpc": "2.0", "id": 1, "method": "tools/call",
         "params": { "name": name, "arguments": arguments }
@@ -126,7 +130,7 @@ fn a_mutating_verb_is_absent_and_uncallable() {
     let replies = talk(&[json!({"jsonrpc":"2.0","id":1,"method":"tools/list"})]);
     let text = replies[0].to_string();
     assert!(!text.contains("dummy_thing_poke"), "{text}");
-    let reply = call("dummy_thing_poke", json!({}));
+    let reply = call("dummy_thing_poke", &json!({}));
     assert_eq!(reply["error"]["code"], -32602, "{reply}");
 }
 
@@ -135,7 +139,7 @@ fn write_flags_are_not_exposed() {
     let replies = talk(&[json!({"jsonrpc":"2.0","id":1,"method":"tools/list"})]);
     let props = &replies[0]["result"]["tools"][1]["inputSchema"]["properties"];
     assert!(props.get("fix").is_none(), "{props}");
-    let reply = call("dummy_thing_peek", json!({"name": "a", "fix": true}));
+    let reply = call("dummy_thing_peek", &json!({"name": "a", "fix": true}));
     assert_eq!(reply["error"]["code"], -32602, "{reply}");
 }
 
@@ -143,7 +147,7 @@ fn write_flags_are_not_exposed() {
 fn a_call_returns_the_cli_envelope() {
     let reply = call(
         "dummy_thing_peek",
-        json!({"name": "-dash", "loud": true, "tag": ["x", "y"]}),
+        &json!({"name": "-dash", "loud": true, "tag": ["x", "y"]}),
     );
     assert_eq!(reply["result"]["isError"], false, "{reply}");
     let text = reply["result"]["content"][0]["text"].as_str().unwrap();
@@ -158,7 +162,7 @@ fn a_call_returns_the_cli_envelope() {
 
 #[test]
 fn a_usage_failure_is_an_error_result_with_the_envelope() {
-    let reply = call("dummy_thing_peek", json!({}));
+    let reply = call("dummy_thing_peek", &json!({}));
     assert_eq!(reply["result"]["isError"], true, "{reply}");
     let text = reply["result"]["content"][0]["text"].as_str().unwrap();
     let env: Value = serde_json::from_str(text).expect("envelope");

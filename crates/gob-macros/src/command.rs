@@ -18,6 +18,10 @@ const EXITS: [(&str, &str); 5] = [
 ];
 
 #[derive(Debug, FromDeriveInput)]
+#[allow(
+    clippy::struct_excessive_bools,
+    reason = "one bool per #[command(...)] switch"
+)]
 #[darling(attributes(command), forward_attrs(doc), supports(struct_any))]
 struct CommandArgs {
     ident: syn::Ident,

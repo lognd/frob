@@ -196,11 +196,11 @@ fn word(key: &str, v: &Value) -> Result<String, String> {
 }
 
 /// Turn tool arguments into the verb's argv (always `--json`); options first, positionals after `--`.
-fn argv_of(tool: &Tool, args: &Map<String, Value>) -> Result<Vec<OsString>, String> {
+fn argv_of(tool: &Tool, given: &Map<String, Value>) -> Result<Vec<OsString>, String> {
     let mut argv: Vec<OsString> = tool.verb.split(' ').map(OsString::from).collect();
     argv.push("--json".into());
     let mut positionals: Vec<(usize, String)> = Vec::new();
-    for (key, value) in args {
+    for (key, value) in given {
         let Some(p) = tool.params.iter().find(|p| &p.key == key) else {
             return Err(format!("unknown argument `{key}` for `{}`", tool.name));
         };
@@ -255,7 +255,7 @@ fn argv_of(tool: &Tool, args: &Map<String, Value>) -> Result<Vec<OsString>, Stri
 }
 
 /// A JSON-RPC error reply.
-fn rpc_error(id: Value, code: i64, message: &str) -> Value {
+fn rpc_error(id: &Value, code: i64, message: &str) -> Value {
     json!({ "jsonrpc": "2.0", "id": id, "error": { "code": code, "message": message } })
 }
 
@@ -325,10 +325,10 @@ impl Cli {
     fn mcp_reply(&self, tools: &[Tool], line: &str, cwd: &Path) -> Option<Value> {
         let Ok(msg) = serde_json::from_str::<Value>(line) else {
             tracing::debug!("mcp: unparseable request");
-            return Some(rpc_error(Value::Null, -32700, "parse error"));
+            return Some(rpc_error(&Value::Null, -32700, "parse error"));
         };
         let Some(obj) = msg.as_object() else {
-            return Some(rpc_error(Value::Null, -32600, "request must be an object"));
+            return Some(rpc_error(&Value::Null, -32600, "request must be an object"));
         };
         let id = obj.get("id").cloned();
         let method = obj
@@ -351,9 +351,9 @@ impl Cli {
             "tools/list" => json!({ "tools": tools.iter().map(Tool::listing).collect::<Vec<_>>() }),
             "tools/call" => match self.mcp_call(tools, &params, cwd) {
                 Ok(v) => v,
-                Err(message) => return Some(rpc_error(id, -32602, &message)),
+                Err(message) => return Some(rpc_error(&id, -32602, &message)),
             },
-            _ => return Some(rpc_error(id, -32601, "method not found")),
+            _ => return Some(rpc_error(&id, -32601, "method not found")),
         };
         Some(json!({ "jsonrpc": "2.0", "id": id, "result": result }))
     }
@@ -369,12 +369,12 @@ impl Cli {
             .find(|t| t.name == name)
             .ok_or_else(|| format!("unknown tool `{name}`"))?;
         let empty = Map::new();
-        let args = match params.get("arguments") {
+        let given = match params.get("arguments") {
             None | Some(Value::Null) => &empty,
             Some(Value::Object(m)) => m,
             Some(_) => return Err("arguments must be an object".to_owned()),
         };
-        let argv = argv_of(tool, args)?;
+        let argv = argv_of(tool, given)?;
         tracing::info!(tool = name, "mcp tool call");
         let exec = self.execute(argv, Some(cwd), false);
         let text = if exec.stdout.is_empty() {
