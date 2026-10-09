@@ -7,10 +7,10 @@ priority = "low"
 parent = "01M3AXSD8TNZP3PQVKB7EKCR7M"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T22:22:24Z"
+updated = "2026-10-09T20:42:09Z"
 aliases = ["T-6396"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
-scope = ["src/frob/lang/_config_detect.py (new)", "src/frob/lang/_config_doc.py (new)", "docs/modules/lang.md"]
+scope = ["src/frob/lang/_config_detect.py (new)", "src/frob/lang/_config_doc.py (new)", "docs/modules/lang.md", "docs/design/language-engines.md"]
 +++
 
 frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its story scaffold, none exists on dev yet"
