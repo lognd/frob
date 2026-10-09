@@ -552,6 +552,8 @@ dependencies = [
  "crunk-ingest",
  "crunk-rules",
  "crunk-spec",
+ "crunk-tailwind",
+ "gob-cache",
  "gob-check",
  "gob-config",
  "gob-diagnostics",
