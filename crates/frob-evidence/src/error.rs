@@ -32,6 +32,17 @@ pub enum EvidenceError {
         /// The runner that needed it: `vitest`, `jest` or `dotnet`.
         runner: String,
     },
+    // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+    /// pytest could not run the tests (exit 2, 3 or 4: interrupted, internal or usage and collection error), so nothing was measured.
+    #[error(
+        "E-EVIDENCE-RUNNER-ERROR: pytest exited {exit_code} (runner-error: it could not run the tests){files}; nothing was recorded"
+    )]
+    RunnerError {
+        /// The pytest exit code.
+        exit_code: i32,
+        /// ` ; collection errors in <paths>` or the last transcript line, ready to append.
+        files: String,
+    },
     // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
     /// No usable Unity editor: none at the configured path or Hub location, or none for the version the project names.
     #[error(
@@ -210,6 +221,13 @@ impl EvidenceError {
                     } else {
                         format!("install {runner} in the package (npm install --save-dev {runner}) or on PATH so `{runner} --version` runs, then rerun")
                     }),
+            ),
+            // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+            Self::RunnerError { .. } => Some(
+                Refusal::new("E-EVIDENCE-RUNNER-ERROR", GuardNeedsAction, self.to_string())
+                    .with_remedy(
+                        "fix the collection or import error named above (is the project importable by the pytest interpreter? set [tests] python in frob.toml), then rerun",
+                    ),
             ),
             // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
             Self::UnityEditor { .. } => Some(
