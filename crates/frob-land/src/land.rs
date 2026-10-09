@@ -1108,10 +1108,10 @@ fn sweep_removing(parent: &Path) {
         }
         match std::fs::remove_dir_all(e.path()) {
             Ok(()) => {
-                tracing::info!(dir = %e.path().display(), "background worktree deletion done")
+                tracing::info!(dir = %e.path().display(), "background worktree deletion done");
             }
             Err(err) => {
-                tracing::warn!(dir = %e.path().display(), error = %err, "background worktree deletion failed")
+                tracing::warn!(dir = %e.path().display(), error = %err, "background worktree deletion failed");
             }
         }
     }
