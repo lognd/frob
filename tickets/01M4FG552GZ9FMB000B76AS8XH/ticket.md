@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:53:45Z"
-updated = "2026-10-09T04:53:45Z"
+updated = "2026-10-09T16:10:47Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob-ledger/**", "crates/frob/**", "crates/gob-cli/**", "changelog.d/**"]
 
@@ -17,6 +17,10 @@ bound = false
 
 [[acceptance]]
 text = "Given any verb whose data.ok is false, when it prints the envelope, then the top-level ok is false too (a test asserts the invariant for every verb)"
+bound = false
+
+[[acceptance]]
+text = "Given trunk mode where ticket verbs commit ledger-only changes to main, when frob land --dry-run runs, then ledger-only commits on main do not make it report main as not merged (logand F-562)"
 bound = false
 +++
 
