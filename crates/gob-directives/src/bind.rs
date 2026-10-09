@@ -144,6 +144,10 @@ pub(crate) fn is_test_item(index: &LineIndex, text: &str, sym: &SymbolRecord) ->
     if gob_symbols::is_python_test_fn(sym) {
         return true;
     }
+    // frob:ticket 01M4FCB5W45KZSXZ0AWHT9HBY2
+    if gob_symbols::is_csharp_test_fn(sym, text) {
+        return true;
+    }
     if path.starts_with("tests/") || path.contains("/tests/") {
         return true;
     }

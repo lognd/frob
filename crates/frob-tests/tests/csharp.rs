@@ -106,3 +106,49 @@ fn a_method_called_only_by_a_test_is_reached_from_that_test() {
     let rec = graph.get(&test).expect("test record");
     assert!(is_test_fn(rec, Some(TESTS)));
 }
+
+const FOO: &str = "namespace Game { public class Foo { public int Bar(int n) { return n; } } }\n";
+const FOO_TESTS: &str = "using NUnit.Framework;\nnamespace Game.Tests {\npublic class FooTests {\n  [Test] public void Works() {\n    // frob:tests Assets/Scripts/Foo.cs::Foo kind=\"unit\"\n  }\n  // frob:tests Assets/Scripts/Foo.cs::Missing kind=\"unit\"\n  [Test] public void Broken() { }\n}}\n";
+
+#[test]
+// frob:ticket 01M4FCB5W45KZSXZ0AWHT9HBY2
+// frob:tests crates/frob-tests/src/rule.rs::test001_with_sources
+fn unity_binding_by_name_resolves_and_a_missing_one_is_reported() {
+    use gob_directives::{ScanConfig, Scanner};
+    use gob_languages::Language;
+    use gob_symbols::{SymbolGraph, extract_file};
+    use gob_walk::{Digest, FileEntry, LanguageHint};
+
+    let files = [
+        ("Assets/Scripts/Foo.cs", FOO),
+        ("Assets/Tests/FooTests.cs", FOO_TESTS),
+    ];
+    let mut symbols = Vec::new();
+    let mut records = Vec::new();
+    for (path, src) in files {
+        let entry = FileEntry {
+            path: path.into(),
+            size: src.len() as u64,
+            digest: Digest::of(src.as_bytes()),
+            language: LanguageHint::Other("cs".into()),
+        };
+        let syms = extract_file(&entry, src);
+        let scan = Scanner::new(&ScanConfig::default()).scan(Language::CSharp, src, &syms);
+        assert!(scan.findings.is_empty(), "{:?}", scan.findings);
+        records.extend(scan.directives);
+        symbols.push(syms);
+    }
+    let graph = SymbolGraph::from_files(symbols);
+    let findings = frob_tests::test001(&records, &graph);
+    let msgs: Vec<&str> = findings.iter().map(|f| f.message.as_str()).collect();
+    assert_eq!(findings.len(), 1, "{msgs:#?}");
+    assert!(msgs[0].contains("Missing"), "{msgs:#?}");
+    assert_eq!(
+        gob_caps::precision(gob_caps::Lang::CSharp, gob_caps::Capability::ResolveRef),
+        gob_caps::Precision::ByNameInCrate
+    );
+    assert!(gob_caps::provides(
+        gob_caps::Lang::CSharp,
+        gob_caps::Capability::TestItems
+    ));
+}

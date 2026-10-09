@@ -44,7 +44,7 @@ use Fidelity::{F0, F1, F2, F3, F4};
 pub const MATRIX: [Row; 12] = [
     r(Lang::Rust,       F3, [LexI, By,  Kw,  G,  Syn, Syn,  G,  Dec, Man, Syn, NA,  NA ]),
     r(Lang::Python,     F2, [Lex,  By,  Syn, G,  Syn, Syn,  G,  G,   G,   Syn, NA,  NA ]),
-    r(Lang::CSharp,     F1, [G,    G,   Kw,  G,  G,   G,    G,  G,   Man, Syn, NA,  NA ]),
+    r(Lang::CSharp,     F1, [By,   G,   Kw,  G,  Syn, G,    G,  G,   Man, Syn, NA,  NA ]),
     r(Lang::TypeScript, F2, [Lex,  By,  Kw,  G,  Syn, LexI, G,  G,   Man, Syn, Syn, Syn]),
     r(Lang::Css,        F2, [By,   G,   NA,  NA, NA,  G,    NA, G,   G,   Syn, Syn, NA ]),
     r(Lang::Html,       F2, [NA,   NA,  NA,  NA, NA,  G,    NA, G,   G,   Syn, Syn, Syn]),

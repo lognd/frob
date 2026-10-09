@@ -1301,6 +1301,7 @@ dependencies = [
  "frob-evidence",
  "frob-ledger",
  "gob-cache",
+ "gob-caps",
  "gob-cli",
  "gob-directives",
  "gob-exec",
