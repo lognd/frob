@@ -45,6 +45,8 @@ pub struct Frob {
     siblings: Siblings,
     /// Paths of the `--ticket` branch diff, recorded by the scoped rules for the text view.
     diff: std::sync::Mutex<Option<std::collections::BTreeSet<String>>>,
+    /// The `--ticket` cone (scope files plus dependents), recorded by the scoped rules.
+    cone: std::sync::Mutex<Option<std::collections::BTreeSet<String>>>,
 }
 
 impl Frob {
@@ -54,7 +56,17 @@ impl Frob {
             opts,
             siblings: Siblings::default(),
             diff: std::sync::Mutex::new(None),
+            cone: std::sync::Mutex::new(None),
         }
+    }
+
+    // frob:ticket 01M4GRW6NH23YPTSAQED5ZJPVH
+    /// The affected cone of the last `--ticket` run: the ticket's files plus their dependents, unresolved calls included; `None` outside `--ticket`.
+    pub fn cone_paths(&self) -> Option<std::collections::BTreeSet<String>> {
+        self.cone
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
     }
 
     // frob:ticket 01M413V8CDKKBSBV8JDV92VDGB
@@ -468,6 +480,10 @@ impl Product for Frob {
     ) -> ScopedFindings {
         let base = self.opts.base.clone().unwrap_or_else(|| table.base.clone());
         let mut diff = None;
+        *self
+            .cone
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(scope.files.clone());
         let mut findings = scope::ticket_rules(snap, scope, &base, &mut diff);
         *self
             .diff
