@@ -16,7 +16,7 @@ use gob_rules::{Finding, Rule, RuleId, RuleMeta, Severity};
 use gob_text::{FileInterner, Span, TextRange, TextSize};
 
 use crate::config::CheckTable;
-use crate::product::{Product, RepoGroup, Snapshot};
+use crate::product::{FULL_ONLY_REASON, Product, RepoGroup, Snapshot};
 use crate::report::{Stats, Tally};
 use crate::rules::Proc001;
 use crate::store;
@@ -193,6 +193,7 @@ pub(crate) fn builtin_groups<P: Product>(spawners: Vec<String>) -> Vec<RepoGroup
 /// Run every repo-scope rule (cached) and return the raw findings.
 ///
 /// Subject counts of every group that ran or hit the cache go to `tally.subjects`.
+#[allow(clippy::too_many_arguments)] // one pass-wide context per argument; a bundle struct would only move them
 pub(crate) fn run_repo_rules<P: Product>(
     product: &P,
     snap: &Snapshot<P>,
@@ -201,6 +202,7 @@ pub(crate) fn run_repo_rules<P: Product>(
     wanted: &dyn Fn(&RuleMeta) -> bool,
     tally: &mut Tally,
     table: &CheckTable,
+    scoped: bool,
 ) -> Vec<Finding> {
     let digest = inputs_digest(product, snap);
     let mut out = Vec::new();
@@ -209,6 +211,18 @@ pub(crate) fn run_repo_rules<P: Product>(
     for group in groups {
         if !group.metas.iter().any(|m| wanted(m)) {
             tracing::debug!(group = group.name, "repo group skipped by --only");
+            continue;
+        }
+        // frob:ticket 01M4HAJZA6JTNSSGJYV040TA9M
+        if scoped && group.full_only {
+            for meta in group.metas.iter().filter(|m| wanted(m)) {
+                tally.fidelity.add_inapplicable(meta.id, FULL_ONLY_REASON);
+            }
+            tracing::info!(
+                group = group.name,
+                why = FULL_ONLY_REASON,
+                "repo group not evaluated in a scoped run"
+            );
             continue;
         }
         let started = Instant::now();

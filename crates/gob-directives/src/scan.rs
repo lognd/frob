@@ -10,6 +10,7 @@ use gob_text::{FileId, FileInterner, LineIndex, Span, TextRange};
 use crate::args::{ArgList, Token};
 use crate::bind::{Binding, Site, bind, is_test_item};
 use crate::comments::{Segment, segments};
+use crate::compat::{fold_v1_key, v1_finding};
 use crate::config::DirectivesConfig;
 use crate::lex::{is_word, range_at, tokenize};
 use crate::meta::{DirectiveEntry, entries};
@@ -216,7 +217,7 @@ impl Scanner {
             return;
         };
         let tail_at = colon + 1 + verb_len;
-        let args = match tokenize(&seg.text[tail_at..], seg.offset + tail_at) {
+        let mut args = match tokenize(&seg.text[tail_at..], seg.offset + tail_at) {
             Ok(a) => a,
             Err(e) => {
                 emit(
@@ -227,6 +228,7 @@ impl Scanner {
                 return;
             }
         };
+        let v1 = fold_v1_key(ns, verb, &mut args);
         if let Err(e) = (entry.validate)(&args) {
             let span = e.range().map_or(whole, |r| ctx.span(r));
             emit(&Parse001::META, span, format!("`{ns}:{verb}`: {e}"));
@@ -236,9 +238,12 @@ impl Scanner {
             emit(meta, span, message);
             return;
         }
-        if let Some(rec) = Self::record(ctx, seg, (ns, verb), args, whole, &mut emit) {
-            out.directives.push(rec);
+        let rec = Self::record(ctx, seg, (ns, verb), args, whole, &mut emit);
+        if let Some(v1) = v1 {
+            out.findings
+                .push(v1_finding(&v1, ctx.file, &ctx.symbols.path));
         }
+        out.directives.extend(rec);
     }
 
     // frob:ticket 01M418CXCED7DEBX4WV2PM2R2K

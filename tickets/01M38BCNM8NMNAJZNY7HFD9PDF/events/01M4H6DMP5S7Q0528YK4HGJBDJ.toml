@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/tickets/_evidence.py", "docs/strata/vmodel.md", "tests/system/test_cli_evidence_enforcement.py"]
+new = ["src/frob/tickets/_evidence.py", "docs/strata/vmodel.md", "tests/system/test_cli_evidence_enforcement.py", "docs/design/grmb-spec.md"]
+at = "2026-10-09T20:42:06Z"
+actor = "lognd"
+rev = 1

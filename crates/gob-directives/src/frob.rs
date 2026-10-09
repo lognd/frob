@@ -98,6 +98,9 @@ pub struct Invariant {
     /// The invariant's name.
     #[arg(positional)]
     pub name: String,
+    /// The remaining words, kept as the reason.
+    #[arg(list)]
+    pub reason: Vec<String>,
 }
 
 /// Accept one rule's finding at this site permanently, with a reason.
