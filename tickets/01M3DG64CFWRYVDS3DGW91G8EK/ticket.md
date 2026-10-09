@@ -6,10 +6,10 @@ category = "todo"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-09T20:42:42Z"
+updated = "2026-10-09T20:42:43Z"
 aliases = ["T-6543"]
 labels = ["v1-cluster:C2", "triage:accepted"]
-scope = ["src/frob/tickets/_done_report.py", "src/frob/check/__init__.py", "src/frob/gates/_fix_engine.py", "tests/unit/tickets/test_done_report_readonly.py", "docs/modules/tickets-lifecycle.md", "docs/design/tickets.md"]
+scope = ["src/frob/tickets/_done_report.py", "src/frob/check/__init__.py", "src/frob/gates/_fix_engine.py", "tests/unit/tickets/test_done_report_readonly.py", "docs/design/tickets.md"]
 +++
 
 Source: logand.app-v2 FROBLEMS.md (peer coordinator report, 2026-09-26, frob 0.531.1.dev332). Reproduction lives in that repo (read-only for frob agents); the frob-side positive control must be a fixture here.
