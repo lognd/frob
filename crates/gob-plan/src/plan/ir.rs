@@ -315,6 +315,16 @@ pub enum Op {
     },
 }
 
+/// An `unresolved when COND because "reason"` clause: a binding for which the condition is Yes
+/// or Unknown is Unresolved with the reason, replacing fire or clean (grl-spec.md 7.0.5).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Unresolved {
+    /// The condition, over the `find` variables.
+    pub when: OpId,
+    /// The reason text (string pool).
+    pub reason: StrId,
+}
+
 /// A `report` clause: the first whose `when` holds produces the finding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Report {
@@ -355,6 +365,11 @@ pub struct PlanParts {
     pub defs: Vec<Def>,
     /// Top-level clauses in planner order.
     pub clauses: Vec<OpId>,
+    /// P- only: how many leading clauses select the rule's subjects (the `find`s and their
+    /// `where`); the rest describe the good thing, whose absence fires (7.0.5). Zero otherwise.
+    pub subjects: u16,
+    /// `unresolved when` clauses in text order.
+    pub unresolved: Vec<Unresolved>,
     /// Reports in text order.
     pub reports: Vec<Report>,
 }
