@@ -210,3 +210,17 @@ fn a_licensed_editor_log_is_not_a_license_refusal() {
     std::fs::write(proj.path().join("fake-unity.log"), "Licensing: ok\n").expect("log");
     assert!(unity_license_refusal(None, &run_fake(proj.path())).is_none());
 }
+
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+// frob:tests crates/frob-evidence/src/provider.rs::UnityHost.current
+#[test]
+fn the_current_host_matches_the_build_target() {
+    let expected = if cfg!(windows) {
+        UnityHost::Windows
+    } else if cfg!(target_os = "macos") {
+        UnityHost::MacOs
+    } else {
+        UnityHost::Linux
+    };
+    assert_eq!(UnityHost::current(), expected);
+}
