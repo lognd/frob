@@ -2,7 +2,8 @@
 id = "01M4FCZ19XSPWE1EDABY6GKQPS"
 title = "check --json on exit 1 returns data null and findings [] with every finding as text in error.message"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
