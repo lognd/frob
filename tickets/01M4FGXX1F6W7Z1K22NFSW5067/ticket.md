@@ -2,7 +2,8 @@
 id = "01M4FGXX1F6W7Z1K22NFSW5067"
 title = "CAP001 and CAP002 fire and are writable in accept and defer"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
