@@ -2,12 +2,12 @@
 id = "01M4FH779H9X6S28KT1M8SFZ1N"
 title = "crunk.toml accepts unknown tables and keys (a [bogus] table, v1 [layers]) although the config contract says unknown keys are errors"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T05:12:21Z"
-updated = "2026-10-09T20:55:36Z"
+updated = "2026-10-09T20:55:38Z"
 labels = ["adoption:logand-app"]
 scope = ["changelog.d/**", "crates/crunk-check/src/product.rs", "crates/crunk-spec/src/error.rs", "crates/crunk-spec/src/load.rs", "crates/crunk-check/tests/spec_errors.rs", "crates/crunk-spec/tests/spec.rs"]
 
