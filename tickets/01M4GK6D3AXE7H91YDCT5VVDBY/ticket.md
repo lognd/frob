@@ -8,7 +8,7 @@ points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T15:06:06Z"
-updated = "2026-10-09T15:06:16Z"
+updated = "2026-10-09T15:23:01Z"
 labels = ["grimble"]
 scope = ["docs/design/grmb-planning.md", "docs/design/README.md", "docs/design/grmb-spec.md", "notes/research/grmb-corpus/**", "changelog.d/**"]
 
@@ -22,6 +22,10 @@ bound = false
 
 [[acceptance]]
 text = "Given synthesis section 6, when the corpus lands, then notes/research/grmb-corpus holds one mockup set per domain and one fixture per stress case, each with expected findings, plus a list of what the grammar could not express"
+bound = false
+
+[[acceptance]]
+text = "Given the owner direction of 2026-10-09 (impl blocks as traced, verified, fallibility-checked chains), when rev 2 lands, then grmb-planning.md specifies impl blocks as ordered waypoint chains (ui, api route, call, store, pack kinds) using the scenario chain tokens with reach semantics; per-hop verified_by; per-waypoint outcome maps (variant <- error type/status) checked both ways (unmapped producible error, unproducible variant) at the binding's fidelity (Exact/May/Unknown, Unknown reported Unresolved); hop reachability over the code graph; cross-language hops matched by HTTP method and route between client call sites and server routes; a derived full path shown by grimble trace with suggest-only pinning (waypoints, never every hop: bind by selector, never restate); and the convention of a sibling X.impl.grmb file"
 bound = false
 +++
 
