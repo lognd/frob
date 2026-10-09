@@ -8,7 +8,7 @@ class = "expedite"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T03:47:08Z"
-updated = "2026-10-09T05:25:10Z"
+updated = "2026-10-09T15:56:12Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/gob-caps/**", "crates/gob-symbols/**", "crates/gob-languages/**", "crates/frob-tests/**", "changelog.d/**", "docs/reference/languages.md", "crates/gob-directives/src/bind.rs"]
 
