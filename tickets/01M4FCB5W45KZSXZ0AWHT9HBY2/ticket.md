@@ -2,13 +2,13 @@
 id = "01M4FCB5W45KZSXZ0AWHT9HBY2"
 title = "C# F1: test_items and resolve_ref by name (NUnit Test/TestFixture, UnityTest) so frob:tests bindings under Unity Assets/Tests resolve"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 class = "expedite"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T03:47:08Z"
-updated = "2026-10-09T03:47:08Z"
+updated = "2026-10-09T03:50:22Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/gob-caps/**", "crates/gob-symbols/**", "crates/gob-languages/**", "crates/frob-tests/**", "changelog.d/**"]
 
