@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T22:53:11Z"
-updated = "2026-10-09T23:30:54Z"
+updated = "2026-10-09T23:46:07Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob-land/src/ratchet.rs", "crates/frob-land/tests/**", "changelog.d/**"]
 
