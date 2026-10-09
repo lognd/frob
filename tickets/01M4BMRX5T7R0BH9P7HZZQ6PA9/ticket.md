@@ -7,10 +7,10 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-07T16:57:28Z"
-updated = "2026-10-09T16:59:53Z"
+updated = "2026-10-09T17:01:10Z"
 idempotency_key = "ticket-doable-slow"
 labels = ["milestone:2", "area:pm"]
-scope = ["crates/frob-ledger/src/**", "crates/frob/src/ticket/**"]
+scope = ["crates/frob-ledger/src/**", "crates/frob/src/ticket/**", "crates/frob-lease/src/**"]
 
 [[acceptance]]
 text = "Given this repository's ledger, when ticket doable runs, then the done-report names where the time goes (-vv log counts) and the fix removes the per-ticket repeated work, with a test asserting the repeated step runs once"
