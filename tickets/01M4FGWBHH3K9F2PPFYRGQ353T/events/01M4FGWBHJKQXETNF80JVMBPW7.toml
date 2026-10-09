@@ -1,0 +1,16 @@
+kind = "create"
+title = "grimble enforcement gaps from the logand.app-v2 model"
+type = "epic"
+category = "todo"
+priority = "high"
+idempotency_key = "logand-grimble-gaps-epic"
+labels = ["adoption:logand-app", "grimble"]
+body = """
+A real-world grimble model of logand.app-v2 (693 entities, grimble 9421e33bf, branch feat/grimble-model) produced 23 gap repros under ~/projects/frob-v2-repros/logand-grimble-20261009/INDEX.md. Children group repros by shared fix. Priority order: CAP enforcement and atoms/packs, the claim kernel, SYS013 binding accuracy, vmodel, ergonomics.
+
+Works as designed (no new ticket): 22 sys013-python-flat-layout is the control for 16 and reports SYS013 correctly. 09/11 REL200 (reliability waivers) is owned by the sysdesign pack (~7JKZD66), not core, so MDL013 for REL200 stays correct until that pack lands; SYS101 declared-never-observed is CAP002 in v2 (migration note in the CAP ticket). 05 carries/PII: grmb-spec 14.1 item 16 assigns PII to a pack (~QVSC54Z COMPLY-PII), so MDL000 on a bare carries clause is by design; the open point is the attr convention, decided in the data-category docs ticket. 13 manual test and several runnables per test is amended onto planning ticket ~D4J3YZ2 (P4), plus the decision in the vmodel docs ticket.
+
+Related existing tickets: ~V56RXG4 (G14 CAP001-003), ~QNDWNDM (G16 CLAIM and VMOD), ~CTGEA64 (repo pack loader), ~HC9450N (tier-1 pack content), ~KP5659Y (directives accept v1 aliases), ~FKR5TXQ (planning epic)."""
+at = "2026-10-09T05:06:25Z"
+actor = "lognd"
+rev = 1

@@ -15,6 +15,7 @@ workspace = true
 
 [dependencies]
 crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
+crunk-tailwind = { version = "0.532.0", path = "../crunk-tailwind" }
 crunk-values = { version = "0.532.0", path = "../crunk-values" }
 gob-cache = { version = "0.532.0", path = "../gob-cache" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
@@ -23,9 +24,11 @@ gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
+indexmap = { version = "2", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "2"
+tree-sitter = "=0.27.0"
 tracing = "0.1"
 
 [dev-dependencies]

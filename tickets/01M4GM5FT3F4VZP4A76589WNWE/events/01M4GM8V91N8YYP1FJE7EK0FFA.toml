@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given Rust fn returning Result<T, PaymentError>, Python def raising PaymentDeclined and calling httpx, and a TS function that throws, when error facts are computed, then Rust yields the enum variants Exact, Python the explicit raises plus callee raises as May, TS Unknown, each with a reason"]
+new = ["Given Rust fn returning Result<T, PaymentError>, Python def raising PaymentDeclined and calling httpx, and a TS function that throws, when error facts are computed, then Rust yields the enum variants Exact, Python the explicit raises plus callee raises as May, TS Unknown, each with a reason", "Given an error set that is not exact, when the facts are consumed by grimble, then the gap surfaces through the existing opaque-cone Unresolved path (no new severity) and an outcome-map declaration on the waypoint is accepted as the claim that resolves it conditionally (D121)"]
+moved = [1]
+at = "2026-10-09T15:24:54Z"
+actor = "lognd"
+rev = 1

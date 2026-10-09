@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ['''Given '# frob:tests path::test_x\' followed by '# kind="unit"' (including a break mid-token), when directives are parsed, then one directive with both arguments results, with no PARSE001 and no TEST001 naming a backslash''', 'Given v1 key forms frob:todo T-1 note="multi word" and frob:invariant NAME reason="...", when parsed, then they are accepted as the note text and reason (v1 compatibility) and fmt or --fix rewrites them to the v2 form']
+new = ['''Given '# frob:tests path::test_x\' followed by '# kind="unit"' (including a break mid-token), when directives are parsed, then one directive with both arguments results, with no PARSE001 and no TEST001 naming a backslash''', 'Given v1 key forms frob:todo T-1 note="multi word" and frob:invariant NAME reason="...", when parsed, then they are accepted as the note text and reason (v1 compatibility) and fmt or --fix rewrites them to the v2 form', "Given C-like comments (// and /* */ in TS, TSX and Rust), when v1 continuation, note= forms or frob:waive appear in them, then they are handled exactly like the # forms (logand.app-v2 F-549)"]
+moved = [1, 2]
+at = "2026-10-09T15:05:50Z"
+actor = "lognd"
+rev = 1

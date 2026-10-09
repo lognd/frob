@@ -1,6 +1,7 @@
 //! The SYS rule declarations of the binding family (binding.md section 6), one derived struct each.
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
+// frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 
 #[rustfmt::skip]
 macro_rules! sys_rule {
@@ -146,4 +147,48 @@ sys_rule!(
     false,
     "An import or call edge between two owners with no flow between them.",
     "Fires once per ordered pair of nodes when a Must import or call edge (TS, TSX, JSX component use, Python, C#, Rust) runs from code owned at Must by one node to code owned at Must by another and the model declares no flow between the two nodes in either direction. Edges into unowned (foreign) code or outside the repository are not checked. Unresolved when an edge is May or has no known target, or an end is owned only at May."
+);
+
+#[rustfmt::skip]
+macro_rules! cap_rule {
+    ($name:ident, $id:literal, $slug:literal, $sev:ident, $pol:ident, $summary:literal, $explain:literal) => {
+        #[doc = $summary]
+        #[doc = ""]
+        #[doc = $explain]
+        #[derive(Debug, Clone, Copy, Default, gob_rules::Rule)]
+        #[rule(
+                    id = $id,
+                    slug = $slug,
+                    family = "CAP",
+                    product = "grimble",
+                    severity = $sev,
+                    tier = Lang,
+                    scope = Repo,
+                    fix = Manual,
+                    polarity = $pol,
+                    must_measure = false,
+                    version = 1,
+                    since = "2.0.0"
+                )]
+        pub struct $name;
+    };
+}
+
+cap_rule!(
+    Cap001,
+    "CAP001",
+    "cap-undeclared",
+    Error,
+    Pplus,
+    "Code a node owns uses a capability atom the node does not grant.",
+    "Deny by default (binding.md 7.2 item 3): fires once per node and atom when a call in Must-owned code matches the callee vocabulary of the atom for its language and no `may` of the node covers it (the atom itself or its parent, at the grant's `at` files). One finding per node and atom, anchored at the node, so an `accept CAP001` inside the node suppresses it. Unresolved when the code is owned only at May. An excuse never hides a use (CAP004 is not implemented yet)."
+);
+cap_rule!(
+    Cap002,
+    "CAP002",
+    "cap-declared-unused",
+    Warn,
+    Pminus,
+    "A node grants a capability atom that no code it owns uses.",
+    "Fires per `may` clause when every file the node owns is fully seen, every language present has a detector for the atom and no use is observed in the grant's scope (binding.md 7.2 item 6). Silent, never clean, when a language has no detector, the code is owned only at May or a file hides units: absence is then not Exact."
 );

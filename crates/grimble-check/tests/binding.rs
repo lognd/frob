@@ -337,3 +337,57 @@ fn the_configured_ledger_dir_is_frob_owned_and_nothing_else_moves() {
         "{anchors:?}"
     );
 }
+
+const CAP_SRC: &str = "import subprocess\n\ndef go():\n    subprocess.run([\"ls\"])\n";
+
+fn cap_run(node_body: &str) -> serde_json::Value {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    );
+    write(
+        dir.path(),
+        "design/m.grmb",
+        &format!(
+            "grimble = \"2\";\nmodule m;\nnode a : trusted {{\n  owns \"src/**\";\n{node_body}}}\n"
+        ),
+    );
+    write(dir.path(), "src/x.py", CAP_SRC);
+    let r = run(dir.path(), &CheckOptions::default()).unwrap();
+    sibling_document(&r)
+}
+
+fn rule_ids(doc: &serde_json::Value, key: &str) -> Vec<String> {
+    doc[key]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|f| f["rule"].as_str().unwrap().to_owned())
+        .collect()
+}
+
+// frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn cap_rules_are_listed_fire_and_are_writable_in_accept() {
+    let doc = cap_run("");
+    let rules = rule_ids(&doc, "rules");
+    assert!(rules.contains(&"CAP001".to_owned()) && rules.contains(&"CAP002".to_owned()));
+    assert!(rule_ids(&doc, "findings").contains(&"CAP001".to_owned()));
+
+    let doc = cap_run(
+        "  may fs.write;\n  accept CAP001 because=\"audited\";\n  accept CAP002 because=\"reserved\";\n",
+    );
+    let findings = rule_ids(&doc, "findings");
+    assert!(!findings.contains(&"MDL013".to_owned()), "{findings:?}");
+    assert!(!findings.contains(&"CAP001".to_owned()), "{findings:?}");
+    assert!(!findings.contains(&"CAP002".to_owned()), "{findings:?}");
+    assert_eq!(
+        rule_ids(&doc, "exceptions").len(),
+        2,
+        "{}",
+        doc["exceptions"]
+    );
+}

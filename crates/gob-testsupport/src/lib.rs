@@ -39,6 +39,17 @@ pub fn fake_dotnet() -> PathBuf {
     BUILT.get_or_init(|| build_helper("fake-dotnet")).clone()
 }
 
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// The `fake-unity` helper binary (a stand-in Unity editor that writes canned `NUnit` XML), built on first use and cached.
+///
+/// # Panics
+/// As [`fake_sibling`].
+#[must_use]
+pub fn fake_unity() -> PathBuf {
+    static BUILT: OnceLock<PathBuf> = OnceLock::new();
+    BUILT.get_or_init(|| build_helper("fake-unity")).clone()
+}
+
 /// Build the `fake-sibling` helper; see [`build_helper`].
 fn build_fake_sibling() -> PathBuf {
     build_helper("fake-sibling")

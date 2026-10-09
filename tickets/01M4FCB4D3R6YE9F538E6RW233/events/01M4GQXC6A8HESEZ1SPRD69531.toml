@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Owner 2026-10-09: no migrate command; v1 to v2 migration is done by hand with the upgrade guide (key mapping documented there)"
+at = "2026-10-09T16:28:33Z"
+actor = "lognd"
+rev = 1

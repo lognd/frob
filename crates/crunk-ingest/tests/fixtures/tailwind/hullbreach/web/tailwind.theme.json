@@ -1,0 +1,58 @@
+{
+  "borderRadius": {
+    "radius-0": "var(--radius-0)",
+    "radius-16": "var(--radius-16)",
+    "radius-4": "var(--radius-4)",
+    "radius-8": "var(--radius-8)"
+  },
+  "colors": {
+    "accent": "var(--color-accent)",
+    "ink": "var(--color-ink)",
+    "muted": "var(--color-muted)",
+    "panel": "var(--color-panel)",
+    "paper": "var(--color-paper)",
+    "stress-fail": "var(--color-stress-fail)",
+    "stress-ok": "var(--color-stress-ok)",
+    "stress-warn": "var(--color-stress-warn)"
+  },
+  "fontFamily": {
+    "base": [
+      "Inter",
+      "system-ui",
+      "sans-serif"
+    ]
+  },
+  "fontSize": {
+    "font-size-12": "var(--font-size-12)",
+    "font-size-14": "var(--font-size-14)",
+    "font-size-16": "var(--font-size-16)",
+    "font-size-20": "var(--font-size-20)",
+    "font-size-24": "var(--font-size-24)",
+    "font-size-32": "var(--font-size-32)",
+    "font-size-48": "var(--font-size-48)",
+    "font-size-64": "var(--font-size-64)"
+  },
+  "height": {},
+  "maxHeight": {},
+  "maxWidth": {},
+  "minHeight": {},
+  "minWidth": {},
+  "spacing": {
+    "space-0": "var(--space-0)",
+    "space-12": "var(--space-12)",
+    "space-16": "var(--space-16)",
+    "space-24": "var(--space-24)",
+    "space-32": "var(--space-32)",
+    "space-4": "var(--space-4)",
+    "space-48": "var(--space-48)",
+    "space-64": "var(--space-64)",
+    "space-8": "var(--space-8)"
+  },
+  "width": {},
+  "zIndex": {
+    "base": "var(--layer-base)",
+    "dropdown": "var(--layer-dropdown)",
+    "overlay": "var(--layer-overlay)",
+    "toast": "var(--layer-toast)"
+  }
+}

@@ -1,0 +1,11 @@
+kind = "create"
+title = "gob-plan grl_spec tests fail at HEAD: NEAT013 spec block does not parse and print_stability fixed-point fails"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/gob-plan/**", "docs/design/grl-spec.md"]
+acceptance = ["Given the grl-spec examples, when gob-plan tests run, then both tests pass"]
+body = "found while working ~FSW5067: nextest ci run shows grl::parse::tests::every_grl_example_in_grl_spec_parses (NEAT013 block with vocab(...) knob) and gob-plan print_stability::every_whole_rule_in_the_spec_is_a_fixed_point_and_round_trips failing; unrelated to the CAP change."
+at = "2026-10-09T05:56:25Z"
+actor = "lognd"
+rev = 1

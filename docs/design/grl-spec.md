@@ -226,9 +226,10 @@ header     = "lang" lang_set
            | "severity" ( "error" | "warn" | "advisory" )
            | "scope" ( "file" | "repo" )
            | "must_measure"
-           | "needs" NAME { "," NAME }
+           | "needs" need { "," need }
            | "rollup" ( "file" | "directory" | "unit" )
            | knob ;
+need       = NAME | "vocab" "(" NAME ")" ;
 lang_set   = "*" | "-" | LANG | "[" LANG { "," LANG } "]" ;
 knob       = "knob" NAME ":" type "=" literal STRING ;
 type       = "int" | "float" | "string" | "bool" | "glob" | "regex"

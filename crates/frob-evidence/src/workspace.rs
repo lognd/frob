@@ -7,7 +7,7 @@ use frob_ledger::{Ledger, LedgerConfig, RefMode};
 use gob_exec::{Limits, Runner};
 use gob_git::Repo;
 
-use crate::config::{DotnetTable, EvidenceTable};
+use crate::config::{DotnetTable, EvidenceTable, UnityTable};
 use crate::error::{EvidenceError, Result};
 use crate::scrub::PathScrub;
 use crate::store::BlobStore;
@@ -27,6 +27,9 @@ pub struct Workspace {
     // frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
     /// The effective `[evidence.dotnet]` table.
     pub dotnet: DotnetTable,
+    // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+    /// The effective `[evidence.unity]` table.
+    pub unity: UnityTable,
     /// The blob store built from it.
     pub store: BlobStore,
 }
@@ -53,6 +56,9 @@ impl Workspace {
         let dotnet = gob_config::load::<DotnetTable>(&root, PRODUCT)
             .map_err(|e| EvidenceError::Config(e.to_string()))?
             .value;
+        let unity = gob_config::load::<UnityTable>(&root, PRODUCT)
+            .map_err(|e| EvidenceError::Config(e.to_string()))?
+            .value;
         let ledger_cfg = ledger_config(&root)?;
         let store = BlobStore::open(&evidence, &repo)?;
         tracing::debug!(root = %root.display(), "evidence workspace opened");
@@ -61,6 +67,7 @@ impl Workspace {
             root,
             evidence,
             dotnet,
+            unity,
             store,
         })
     }

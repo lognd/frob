@@ -2,13 +2,14 @@
 id = "01M4FD17P5R19N6VBBB18H72WH"
 title = "frob migrate exceptions: rewrite v1 frob:waive to frob:accept or frob:defer, delete waivers of rules v2 lacks, report each"
 type = "story"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 3
 parent = "01M4CTTVCB8JJ9JB2NQHQP5ARY"
 reporter = "lognd"
 created = "2026-10-09T03:59:10Z"
-updated = "2026-10-09T03:59:10Z"
+updated = "2026-10-09T16:28:35Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/gob-dev/**", "crates/frob/**", "changelog.d/**"]
 

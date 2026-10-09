@@ -10,7 +10,7 @@
 //! | 4 | nothing: the hidden remainder, as rows with status `unknown` | [`relation`] |
 //!
 //! [`owner`] merges the ranks into the owner function of binding.md 2.6 and [`rules`] evaluates
-//! `SYS001`-`SYS005`, `SYS009`-`SYS011` and `SYS013` ([`rule_defs`]). [`bind`] runs the whole pipeline.
+//! `SYS001`-`SYS005`, `SYS009`-`SYS011`, `SYS013`, `CAP001` and `CAP002` ([`rule_defs`], [`caps`]). [`bind`] runs the whole pipeline.
 //!
 //! # Known limits, each a decision-log proposal
 //!
@@ -28,8 +28,10 @@
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
 // frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
 // frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
+// frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 
 pub mod ack;
+pub mod caps;
 pub mod code;
 pub mod directives;
 pub mod drift;
@@ -51,14 +53,15 @@ use grimble_model::ModelFiles;
 use serde_json::Value;
 
 pub use rule_defs::{
-    Sys001, Sys002, Sys003, Sys004, Sys005, Sys006, Sys007, Sys008, Sys009, Sys010, Sys011, Sys013,
+    Cap001, Cap002, Sys001, Sys002, Sys003, Sys004, Sys005, Sys006, Sys007, Sys008, Sys009, Sys010,
+    Sys011, Sys013,
 };
 pub use types::{BindFinding, Reason, Role, Row, Source, Status};
 
 /// The rule ids this crate evaluates.
-pub const RULES: [&str; 12] = [
+pub const RULES: [&str; 14] = [
     "SYS001", "SYS002", "SYS003", "SYS004", "SYS005", "SYS006", "SYS007", "SYS008", "SYS009",
-    "SYS010", "SYS011", "SYS013",
+    "SYS010", "SYS011", "SYS013", "CAP001", "CAP002",
 ];
 
 /// The product name: the lock is `grimble.lock`.
@@ -128,6 +131,8 @@ fn declare_not_applicable(
         ("SYS010", rules::sys010_inapplicable(model)),
         ("SYS011", rules::sys011_inapplicable(model)),
         ("SYS013", edges::sys013_inapplicable(model, graph)),
+        ("CAP001", caps::caps_inapplicable(model)),
+        ("CAP002", caps::caps_inapplicable(model)),
     ];
     let mut out = BTreeMap::new();
     for (rule, why) in verdicts {
@@ -218,7 +223,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
             r.overridden = n.as_str() != r.entity;
         }
     }
-    let graph = if edges::needs_graph(&model) {
+    let graph = if edges::needs_graph(&model) || caps::caps_inapplicable(&model).is_none() {
         edges::build_graph(input.root, &code)
     } else {
         gob_symbols::SymbolGraph::default()

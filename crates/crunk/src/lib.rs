@@ -2,7 +2,8 @@
 //!
 //! [`cli`] assembles the root; `main` only runs it. The generic `check` (the `gob.sibling/1`
 //! document) and `doctor` verbs come from `gob-product`; [`doctor`] holds crunk's own report
-//! rows and the built-in `schema` verb comes from `gob-cli`. Every verb but `doctor` refuses
+//! rows, [`tokens`] exports and checks the generated token files, and the built-in `schema` verb
+//! comes from `gob-cli`. Every verb but `doctor` refuses
 //! with `E-NO-CONFIG` (exit 3) when no `crunk.toml` exists. No frob crate is linked (the
 //! boundary test in `tests/boundary.rs`).
 
@@ -10,6 +11,7 @@
 // frob:ticket 01M47QSGHYD2EQ4552V1B4EEQZ
 
 pub mod doctor;
+pub mod tokens;
 
 use std::path::Path;
 
@@ -21,7 +23,7 @@ use serde_json::Value;
 /// Product name, also the config file stem (`crunk.toml`).
 pub const PRODUCT: &str = crunk_check::PRODUCT;
 
-/// crunk as a [`Product`]: no verbs beyond the generic `check` and `doctor`.
+/// crunk as a [`Product`]: the generic `check` and `doctor` plus [`tokens`].
 #[derive(Debug, Clone, Copy, Default)]
 pub struct CrunkProduct;
 
@@ -72,7 +74,7 @@ impl Product for CrunkProduct {
     }
 
     fn register(cli: Cli) -> Cli {
-        cli
+        cli.register::<tokens::Tokens>()
     }
 }
 

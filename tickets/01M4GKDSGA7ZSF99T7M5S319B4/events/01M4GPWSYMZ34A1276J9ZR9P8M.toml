@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a fresh ticket worktree or land base checkout without .venv, when a uv-run tool stage runs, then frob syncs the environment first (or the stage reports Unresolved with the remedy), never a red gate", "Given a vitest project, when the vitest evidence provider runs, then node_modules/.bin is on PATH", "Given an agent actor, when attestation evidence is refused, then the message names the agent-usable providers to use instead"]
+new = ["Given a fresh ticket worktree or land base checkout without .venv, when a uv-run tool stage runs, then frob syncs the environment first (or the stage reports Unresolved with the remedy), never a red gate", "Given a vitest project, when the vitest evidence provider runs, then node_modules/.bin is on PATH", "Given an agent actor, when attestation evidence is refused, then the message names the agent-usable providers to use instead", "Given a ticket worktree of a uv/venv Python project whose shared .venv is an editable install of the main checkout, when frob work creates the worktree, then tests in that worktree import the worktree's code (a per-worktree venv or an editable re-point), never the main checkout's (logand F-560)"]
+moved = [1, 2, 3]
+at = "2026-10-09T16:10:45Z"
+actor = "lognd"
+rev = 1

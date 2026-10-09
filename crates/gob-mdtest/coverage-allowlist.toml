@@ -301,3 +301,13 @@ ticket = "~QSK0WB1"
 product = "grimble"
 rule = "SYS013"
 ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "CAP001"
+ticket = "~QSK0WB1"
+
+[[gap]]
+product = "grimble"
+rule = "CAP002"
+ticket = "~QSK0WB1"

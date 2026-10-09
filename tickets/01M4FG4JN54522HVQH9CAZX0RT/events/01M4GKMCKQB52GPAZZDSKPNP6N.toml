@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["adoption:logand-app", "creates:crates/gob-directives/src/compat.rs", "creates:crates/gob-directives/tests/mdtest/continuation.md"]
+new = ["adoption:logand-app", "creates:crates/gob-directives/src/compat.rs", "creates:crates/gob-directives/tests/mdtest/continuation.md", "creates:crates/gob-directives/tests/mdtest/v1-keys.md"]
+at = "2026-10-09T15:13:34Z"
+actor = "lognd"
+rev = 1

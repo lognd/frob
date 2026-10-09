@@ -1,0 +1,12 @@
+kind = "create"
+title = "Raise [pm.wip] in_progress from 10 to 16: owner wants wider parallel waves; tests run on goway helpers, not local builds"
+type = "chore"
+category = "todo"
+priority = "medium"
+points = 1
+scope = ["frob.toml", "changelog.d/**"]
+acceptance = ["Given frob.toml, when the change lands, then [pm.wip] in_progress is 16 with a comment stating why"]
+body = "Owner 2026-10-09: use as many agents as needed while watching resources; goway per-host fitting (~K60F05J) now spreads suite runs over both helpers."
+at = "2026-10-09T16:33:33Z"
+actor = "lognd"
+rev = 1

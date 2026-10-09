@@ -86,6 +86,16 @@ Materialized: yes.
 |---|---|---|---|---|
 | `path` | `String` | `""` | no | Path of the `dotnet` executable the provider runs; empty finds `dotnet` on `PATH`. |
 
+## `[evidence.unity]`
+
+The `unity` evidence provider (`[evidence.unity]`).
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `editor` | `String` | `""` | no | Path of the Unity editor executable the provider runs, used whatever `ProjectSettings/ProjectVersion.txt` says; empty looks for the version that file names under Unity Hub's standard install locations. |
+
 ## `[gc]`
 
 Garbage-collection settings: what the throttled pass may reclaim and how much to keep.

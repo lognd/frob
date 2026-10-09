@@ -38,3 +38,13 @@ pub struct DotnetTable {
     #[config(default = String::new())]
     pub path: String,
 }
+
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// The `unity` evidence provider (`[evidence.unity]`).
+#[derive(Debug, Clone, ConfigTable)]
+#[config(table = "evidence.unity", materialize)]
+pub struct UnityTable {
+    /// Path of the Unity editor executable the provider runs, used whatever `ProjectSettings/ProjectVersion.txt` says; empty looks for the version that file names under Unity Hub's standard install locations.
+    #[config(default = String::new())]
+    pub editor: String,
+}

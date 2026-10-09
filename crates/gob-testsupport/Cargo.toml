@@ -23,6 +23,11 @@ name = "fake-dotnet"
 path = "src/bin/fake_dotnet.rs"
 test = false
 
+[[bin]]
+name = "fake-unity"
+path = "src/bin/fake_unity.rs"
+test = false
+
 [dependencies]
 gob-config = { path = "../gob-config" }
 gob-exec = { path = "../gob-exec" }

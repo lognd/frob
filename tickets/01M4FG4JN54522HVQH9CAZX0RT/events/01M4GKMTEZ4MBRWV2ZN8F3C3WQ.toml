@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-v2-wt/CAZX0RT; scope: changelog.d/**, crates/gob-directives/src/comments.rs, crates/gob-directives/src/lex.rs, crates/gob-directives/src/lib.rs, crates/gob-directives/src/compat.rs, crates/gob-directives/tests/mdtest/continuation.md, crates/gob-directives/src/frob.rs, crates/gob-directives/src/scan.rs, crates/gob-directives/tests/mdtest/trailing-pragma.md, crates/gob-directives/tests/mdtest/v1-keys.md; ttl 7200s"
+at = "2026-10-09T15:13:46Z"
+actor = "lognd"
+rev = 1

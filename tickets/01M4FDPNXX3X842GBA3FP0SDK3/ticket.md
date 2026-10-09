@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:10:46Z"
-updated = "2026-10-09T04:10:46Z"
+updated = "2026-10-09T05:13:08Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-tests/**", "crates/frob-evidence/**", "changelog.d/**"]
 
@@ -17,5 +17,9 @@ bound = false
 
 [[acceptance]]
 text = "Given pytest exits 2, 3 or 4 (interrupted, internal or usage/collection error), when frob test finishes, then no evidence is recorded, the outcome is Unresolved with reason runner-error and the collection error names the file path, never a module symref"
+bound = false
+
+[[acceptance]]
+text = "Given a uv workspace whose packages are not importable by a PATH pytest, when frob test --base main runs, then pytest runs from the workspace .venv (or uv run) and a [tests] python knob can name the interpreter (logand.app-v2 F-543)"
 bound = false
 +++
