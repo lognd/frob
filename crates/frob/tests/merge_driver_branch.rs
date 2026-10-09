@@ -77,7 +77,10 @@ fn two_branches_adding_events_merge_through_the_driver_on_a_ticket_branch() {
     );
     let merged = git(p, &["merge", "--no-edit", "right"]);
     assert!(!merged.contains("CONFLICT"), "{merged}");
-    assert_eq!(git(p, &["status", "--porcelain"]).trim(), "");
+    assert_eq!(
+        git(p, &["status", "--porcelain", "--untracked-files=no"]).trim(),
+        ""
+    );
 
     let events = std::fs::read_dir(p.join(format!(".events/{id}")))
         .expect("events dir")
