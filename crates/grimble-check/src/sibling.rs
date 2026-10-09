@@ -86,10 +86,21 @@ pub fn sibling_document(run: &GrimbleRun) -> Value {
         exceptions: exceptions_json(run),
         entities: run.view.entities_json(),
         bindings: run.bindings.clone(),
-        // No pack is loaded yet, so the used-pack list is empty; its digest is that of `[]`.
-        packs: run.has_config.then(|| PacksField {
-            packs: Vec::new(),
-            digest: blake3_tagged(b"[]"),
+        // Repository packs (atoms only) are the used packs; a built-in is compiled in and not listed.
+        packs: run.has_config.then(|| {
+            let packs: Vec<serde_json::Value> = run
+                .loaded_packs
+                .iter()
+                .map(|(name, version, digest)| {
+                    serde_json::json!({"name": name, "version": version, "digest": digest})
+                })
+                .collect();
+            let digest = blake3_tagged(
+                serde_json::Value::Array(packs.clone())
+                    .to_string()
+                    .as_bytes(),
+            );
+            PacksField { packs, digest }
         }),
     })
 }

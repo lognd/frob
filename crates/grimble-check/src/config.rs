@@ -1,9 +1,10 @@
 //! The `grimble.toml` tables owned by grimble: `[compute]`, `[packs]` and `[grimble]`.
 //!
 //! `[check]` and `[perf]` belong to `gob-check`. The pack tables are accepted and
-//! validated here (packs.md 3.6) but no pack is loaded yet; a run that enables one says so.
+//! validated here (packs.md 3.6); repository packs load atoms only (see `packs`), and a run that enables anything else says so.
 
 // frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
+// frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
 
 use std::path::Path;
 
@@ -56,14 +57,19 @@ impl PacksTable {
         Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
     }
 
-    /// True when the repository asks for packs, which this build does not load.
+    /// True when the repository asks for packs this build does not load: external packs and
+    /// enabled ids outside the `grimble/` built-ins and the `local/` repository packs.
     pub fn requests_packs(&self) -> bool {
-        !self.enabled.is_empty() || !self.external.is_empty()
+        !self.external.is_empty()
+            || self
+                .enabled
+                .iter()
+                .any(|id| !id.starts_with("grimble/") && !id.starts_with("local/"))
     }
 }
 
 /// The warning printed when packs are requested but not loaded.
-pub const PACKS_NOT_LOADED: &str = "packs are enabled in grimble.toml but this build does not load packs yet; PACK rules and pack atoms are not evaluated";
+pub const PACKS_NOT_LOADED: &str = "packs are enabled in grimble.toml but this build loads only local/ packs (atoms) and built-ins; external packs, the lock and PACK rules are not evaluated";
 
 /// The conventional model root `grimble init` seeds and the `models` knob defaults to.
 pub const DEFAULT_MODEL_ROOT: &str = "design/model.grmb";
