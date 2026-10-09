@@ -111,6 +111,7 @@ fn call(name: &str, arguments: &Value) -> Value {
 }
 
 #[test]
+// frob:tests crates/gob-cli/src/serve.rs::Cli.serve_mcp
 fn lists_every_read_only_verb_with_the_verb_input_schema() {
     let replies = talk(&[json!({"jsonrpc":"2.0","id":1,"method":"tools/list"})]);
     let tools = replies[0]["result"]["tools"].as_array().expect("tools");
@@ -126,6 +127,7 @@ fn lists_every_read_only_verb_with_the_verb_input_schema() {
 }
 
 #[test]
+// frob:tests crates/gob-cli/src/serve.rs::Cli.serve_mcp
 fn a_mutating_verb_is_absent_and_uncallable() {
     let replies = talk(&[json!({"jsonrpc":"2.0","id":1,"method":"tools/list"})]);
     let text = replies[0].to_string();
@@ -135,6 +137,7 @@ fn a_mutating_verb_is_absent_and_uncallable() {
 }
 
 #[test]
+// frob:tests crates/gob-cli/src/serve.rs::Cli.serve_mcp
 fn write_flags_are_not_exposed() {
     let replies = talk(&[json!({"jsonrpc":"2.0","id":1,"method":"tools/list"})]);
     let props = &replies[0]["result"]["tools"][1]["inputSchema"]["properties"];
@@ -144,6 +147,7 @@ fn write_flags_are_not_exposed() {
 }
 
 #[test]
+// frob:tests crates/gob-cli/src/serve.rs::Cli.serve_mcp
 fn a_call_returns_the_cli_envelope() {
     let reply = call(
         "dummy_thing_peek",
@@ -161,6 +165,7 @@ fn a_call_returns_the_cli_envelope() {
 }
 
 #[test]
+// frob:tests crates/gob-cli/src/serve.rs::Cli.serve_mcp
 fn a_usage_failure_is_an_error_result_with_the_envelope() {
     let reply = call("dummy_thing_peek", &json!({}));
     assert_eq!(reply["result"]["isError"], true, "{reply}");
@@ -171,6 +176,7 @@ fn a_usage_failure_is_an_error_result_with_the_envelope() {
 }
 
 #[test]
+// frob:tests crates/gob-cli/src/serve.rs::Cli.serve_mcp
 fn the_handshake_and_notifications_follow_mcp() {
     let replies = talk(&[
         json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26"}}),
@@ -186,6 +192,7 @@ fn the_handshake_and_notifications_follow_mcp() {
 }
 
 #[test]
+// frob:tests crates/gob-cli/src/serve.rs::Cli.serve_mcp
 fn garbage_gets_a_parse_error() {
     let mut out = Vec::new();
     cli()

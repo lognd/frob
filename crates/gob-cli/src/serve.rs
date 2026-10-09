@@ -7,6 +7,8 @@
 //! The transport is newline-delimited JSON-RPC 2.0 on stdin and stdout; EOF on stdin ends the
 //! server, and between requests it blocks on stdin, so an idle server uses no CPU.
 
+// frob:ticket 01M44AZ69FG7NFQFNAWMQ1NM4Q
+
 use std::ffi::OsString;
 use std::io::{BufRead, Write};
 use std::path::Path;
