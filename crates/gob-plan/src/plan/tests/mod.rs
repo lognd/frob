@@ -306,8 +306,8 @@ fn binding_defects_are_rejected() {
     };
     assert_eq!(err(p), PlanError::Rebound { var: 0 });
     let mut p = sample();
-    p.vars = 4;
-    assert_eq!(err(p), PlanError::UnusedVar { var: 3 });
+    p.vars = 6;
+    assert_eq!(err(p), PlanError::UnusedVar { var: 5 });
     let mut p = sample();
     p.reports[0].subject = 2;
     assert_eq!(err(p), PlanError::Unbound { var: 2 });
@@ -388,7 +388,7 @@ fn a_find_nested_in_a_condition_is_misplaced() {
     p.ops[2] = Op::Find { var: 2, kind: 0 };
     p.clauses = vec![0, 1, 3, 6];
     p.ops.push(Op::Not(2));
-    p.reports[0].when = Some(8);
+    p.reports[0].when = Some(12);
     p.reports[1].when = Some(7);
     assert!(matches!(err(p), PlanError::Misplaced { op: 2, .. }));
 }
