@@ -108,9 +108,10 @@ pub enum EvidenceError {
         /// The fact as given.
         fact: String,
     },
-    /// A provider name is not one of `nextest`, `command`, `file`.
+    /// A provider name is not in the provider registry ([`crate::record::Provider::ALL`]).
     #[error(
-        "E-EVIDENCE-PROVIDER: `{0}` is not a provider; expected nextest, pytest, vitest, jest, dotnet, command, file or attestation"
+        "E-EVIDENCE-PROVIDER: `{0}` is not a provider; expected {expected}",
+        expected = crate::record::Provider::expected()
     )]
     BadProvider(String),
     /// An acceptance index is zero or beyond the ticket's criteria.
