@@ -25,7 +25,8 @@ process_spawners = ["gob-exec", "gob-git"]
 [[check.tool]]
 name = "cargo"
 command = "cargo"
-args = ["fmt", "--all", "--check"]
+args = ["fmt", "{packages}", "--check"]
+unscoped_packages = ["--all"]
 inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain*", "clippy.toml", "rustfmt.toml", ".cargo/**"]
 # Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
 timeout_secs = 1200
@@ -33,7 +34,7 @@ timeout_secs = 1200
 [[check.tool]]
 name = "cargo"
 command = "cargo"
-args = ["clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
+args = ["clippy", "{packages}", "--all-targets", "--all-features", "--", "-D", "warnings"]
 inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain*", "clippy.toml", "rustfmt.toml", ".cargo/**"]
 # Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
 timeout_secs = 1200
