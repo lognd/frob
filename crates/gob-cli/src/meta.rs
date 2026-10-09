@@ -4,6 +4,10 @@ use gob_diagnostics::ExitCode;
 
 /// Static description of a verb, enough to generate the CLI reference.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(
+    clippy::struct_excessive_bools,
+    reason = "independent verb capabilities declared in #[command(...)], not a state machine"
+)]
 pub struct CommandMeta {
     /// Verb path, words separated by single spaces (`config show`).
     pub verb: &'static str,
