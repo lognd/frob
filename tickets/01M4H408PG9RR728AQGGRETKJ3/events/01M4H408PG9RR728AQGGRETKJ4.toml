@@ -1,0 +1,13 @@
+kind = "create"
+title = "Standalone grimble check does not run the CAP rules (CAP001/CAP002); only frob check hosting grimble does, so grimble alone reports a clean model that frob rejects"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+labels = ["grimble"]
+scope = ["crates/grimble/**", "crates/grimble-check/**", "changelog.d/**"]
+acceptance = ["Given a model node using exec with no grant, when grimble check runs standalone, then CAP001 fires exactly as under frob check, and the rule list is identical in both hosts"]
+body = "Found by ~5357VS8's implementer 2026-10-09: grimble check returned no findings while frob check reported 6 CAP001 errors on the same model. Violates sibling-contract.md (the standalone product applies its own rules)."
+at = "2026-10-09T19:59:50Z"
+actor = "lognd"
+rev = 1
