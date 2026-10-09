@@ -2,7 +2,8 @@
 id = "01M3ZX7EYANWG9GE031G17RK4A"
 title = "Plan executor relations: edge verbs, bounded reaches, count, defs, knobs, side relations"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
