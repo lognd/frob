@@ -4,10 +4,11 @@ title = "Wire the ticket-branch layout into the merge-driver verb and .gitattrib
 type = "task"
 category = "todo"
 priority = "high"
+points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-07T03:20:47Z"
-updated = "2026-10-07T03:20:47Z"
+updated = "2026-10-09T19:04:49Z"
 labels = ["area:mirror"]
 scope = ["crates/frob/src/ticket/merge_cmd.rs", "crates/frob/src/init.rs", "crates/frob/tests/**"]
 
