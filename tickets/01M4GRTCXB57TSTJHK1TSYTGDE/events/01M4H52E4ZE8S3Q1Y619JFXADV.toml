@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-09T20:18:30Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+inline = ""
+passed = true
+provider = "command"
+ref = """python3 -c "import sys; t=open('docs/design/build-test-ci.md').read(); sys.exit(0 if all(k in t for k in ('EuroSys 2019','Taming Google-Scale','Fast lands')) else 1)""""
+size = 0
+status = "measured"
+at = "2026-10-09T20:18:30Z"
+actor = "lognd"
+rev = 1

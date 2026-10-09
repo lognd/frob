@@ -5,7 +5,8 @@
 //! relations and outcomes on top of it.
 
 mod core;
+pub mod relations;
 
 pub use self::core::{
-    Datum, Doubt, ExecError, Input, Row, Run, Scalar, Val, Verdict, compare, run,
+    Datum, Doubt, ExecError, Input, Row, Run, Scalar, Val, Verdict, compare, count, run, run_with,
 };
