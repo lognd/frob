@@ -141,6 +141,10 @@ fn tokenize_plain(text: &str, base: usize) -> Result<ArgList, LexError> {
             tracing::debug!(at = base + i, "trailing foreign pragma ends the arguments");
             break;
         }
+        if rest.trim_end() == "\\" {
+            tracing::debug!(at = base + i, "dangling continuation backslash ignored");
+            break;
+        }
         let start = i;
         let stop = rest
             .find(|ch: char| ch.is_whitespace() || ch == '=' || ch == '"')
@@ -281,6 +285,12 @@ mod tests {
         assert_eq!(u32::from(a.positional[0].range.end()), 10 + 10);
         let k = a.get("kind").unwrap();
         assert_eq!(k.value.as_str(), "unit");
+    }
+
+    #[test]
+    fn dangling_backslash_is_ignored() {
+        let a = tokenize("p::t kind=\"unit\" \\", 0).unwrap();
+        assert_eq!(vals(&a), ["p::t"]);
     }
 
     #[test]

@@ -125,7 +125,10 @@ fn looks_like_directive(text: &str) -> bool {
 /// (blank), one newline and the next line's comment marker (`#`, `//`, `///`,
 /// `//!`, a block-comment `*`).
 fn continuation_gap<'s>(src: &'s str, prev: &Segment<'_>, next: &Segment<'_>) -> Option<&'s str> {
-    if !prev.text.ends_with('\\') || !looks_like_directive(&prev.text) {
+    if !prev.text.ends_with('\\')
+        || !looks_like_directive(&prev.text)
+        || looks_like_directive(&next.text)
+    {
         return None;
     }
     let gap = src.get(prev.offset + prev.text.len()..next.offset)?;
@@ -228,6 +231,8 @@ mod tests {
         assert_eq!(segs(Language::Rust, block).len(), 1);
         let prose = "# note \\\n# frob:ticket X\n";
         assert_eq!(segs(Language::Python, prose).len(), 2);
+        let stray = "# frob:tests a::t \\\n# frob:tests b::t\n";
+        assert_eq!(segs(Language::Python, stray).len(), 2);
         let closed = "/* frob:tests a \\ */\n// next\n";
         assert_eq!(segs(Language::Rust, closed).len(), 2);
     }
