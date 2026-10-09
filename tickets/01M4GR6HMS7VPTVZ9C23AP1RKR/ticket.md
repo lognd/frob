@@ -2,7 +2,8 @@
 id = "01M4GR6HMS7VPTVZ9C23AP1RKR"
 title = "Raise [pm.wip] in_progress from 10 to 16: owner wants wider parallel waves; tests run on goway helpers, not local builds"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
