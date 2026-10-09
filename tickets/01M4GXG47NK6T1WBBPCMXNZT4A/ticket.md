@@ -2,15 +2,15 @@
 id = "01M4GXG47NK6T1WBBPCMXNZT4A"
 title = "Plan IR: count, knob and def-call ops so the executor's count/knobs/defs are reachable from a rule"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-09T18:06:10Z"
-updated = "2026-10-09T18:06:10Z"
+updated = "2026-10-09T19:54:06Z"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/plan/ir.rs", "crates/gob-plan/src/plan/codec.rs", "crates/gob-plan/src/plan/validate.rs", "crates/gob-plan/src/plan/tests/props.rs", "crates/gob-plan/src/exec/relations/count.rs", "crates/gob-plan/src/exec/core/eval.rs", "crates/gob-plan/src/exec/core/mod.rs"]
+scope = ["crates/gob-plan/src/plan/ir.rs", "crates/gob-plan/src/plan/codec.rs", "crates/gob-plan/src/plan/validate.rs", "crates/gob-plan/src/plan/tests/props.rs", "crates/gob-plan/src/exec/relations/count.rs", "crates/gob-plan/src/exec/core/eval.rs", "crates/gob-plan/src/exec/core/mod.rs", "crates/gob-plan/src/plan/limits.rs", "crates/gob-plan/src/plan/mod.rs", "crates/gob-plan/src/plan/error.rs", "crates/gob-plan/src/plan/tests/mod.rs", "crates/gob-plan/tests/support/mod.rs", "crates/gob-plan/tests/exec_relations.rs"]
 
 [[links]]
 kind = "blocked-by"
