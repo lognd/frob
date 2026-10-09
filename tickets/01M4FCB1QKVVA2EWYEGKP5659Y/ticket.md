@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T03:47:03Z"
-updated = "2026-10-09T04:23:07Z"
+updated = "2026-10-09T05:06:24Z"
 labels = ["adoption:hullbreach"]
-scope = ["crates/gob-directives/**", "crates/frob-obligations/**", "changelog.d/**"]
+scope = ["crates/gob-directives/**", "crates/frob-obligations/**", "changelog.d/**", "docs/design/code-model.md"]
 
 [[acceptance]]
 text = "Given a ticket imported from v1 with alias T-0042, when a file carries frob:todo T-0042, then the directive resolves to that ticket with no finding, and an unknown T-#### is an unresolved-reference finding naming the alias"
