@@ -59,6 +59,21 @@ impl<T> Payload<T> {
     }
 }
 
+/// The payload of [`CliError::Findings`], boxed to keep the error small.
+#[derive(Debug)]
+pub struct FindingsFailure {
+    /// One-line summary, the envelope `error.message`.
+    pub summary: String,
+    /// The finding lines for the text view.
+    pub detail: String,
+    /// The verb's data, serialized as the envelope `data`.
+    pub data: serde_json::Value,
+    /// Every finding as a structured record.
+    pub findings: Vec<FindingRecord>,
+    /// Non-fatal notices.
+    pub warnings: Vec<String>,
+}
+
 /// Why a verb did not succeed; fixes the exit code (cli.md section 2).
 #[derive(Debug, thiserror::Error)]
 pub enum CliError {
@@ -88,19 +103,8 @@ pub enum CliError {
     ///
     /// JSON mode prints `ok` false with `findings` carrying every record, `data` kept and a
     /// one-line `error.message` (`summary`); text mode prints `summary` then `detail` on stderr.
-    #[error("findings gate failed: {summary}")]
-    Findings {
-        /// One-line summary, the envelope `error.message`.
-        summary: String,
-        /// The finding lines for the text view.
-        detail: String,
-        /// The verb's data, serialized as the envelope `data`.
-        data: serde_json::Value,
-        /// Every finding as a structured record.
-        findings: Vec<FindingRecord>,
-        /// Non-fatal notices.
-        warnings: Vec<String>,
-    },
+    #[error("findings gate failed: {}", .0.summary)]
+    Findings(Box<FindingsFailure>),
     /// A bug (exit 4).
     #[error("internal: {0}")]
     Internal(Box<dyn std::error::Error + Send + Sync>),
@@ -117,7 +121,7 @@ impl CliError {
         match self {
             Self::Refusal(r) => r.exit_code(),
             Self::Usage(_) => ExitCode::Usage,
-            Self::Negative(_) | Self::Gate { .. } | Self::Findings { .. } => ExitCode::Negative,
+            Self::Negative(_) | Self::Gate { .. } | Self::Findings(_) => ExitCode::Negative,
             Self::Internal(_) => ExitCode::Internal,
         }
     }

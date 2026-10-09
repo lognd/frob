@@ -12,7 +12,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use crate::command::Erased;
-use crate::error::CliError;
+use crate::error::{CliError, FindingsFailure};
 
 /// The finished result of one invocation, not yet written anywhere.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -134,13 +134,13 @@ pub(crate) fn failure(verb: Option<&str>, err: &CliError, json: bool) -> Executi
     let body = envelope_error(err);
     if json {
         let mut envelope = Envelope::failure(body);
-        if let CliError::Findings {
-            data,
-            findings,
-            warnings,
-            ..
-        } = err
-        {
+        if let CliError::Findings(f) = err {
+            let FindingsFailure {
+                data,
+                findings,
+                warnings,
+                ..
+            } = &**f;
             tracing::debug!(
                 findings = findings.len(),
                 "failure envelope carries findings"
@@ -161,8 +161,8 @@ pub(crate) fn failure(verb: Option<&str>, err: &CliError, json: bool) -> Executi
         };
     }
     let mut text = format!("error[{}]: {}\n", body.code, body.message);
-    if let CliError::Findings { detail, .. } = err {
-        text.push_str(detail);
+    if let CliError::Findings(f) = err {
+        text.push_str(&f.detail);
         text.push('\n');
     }
     if let Some(remedy) = &body.remedy {
@@ -186,7 +186,7 @@ pub(crate) fn envelope_error(err: &CliError) -> EnvelopeError {
         CliError::Refusal(r) => EnvelopeError::from(r),
         CliError::Usage(m) => plain("E-USAGE", m.clone()),
         CliError::Negative(m) | CliError::Gate { message: m, .. } => plain("E-NEGATIVE", m.clone()),
-        CliError::Findings { summary, .. } => plain("E-NEGATIVE", summary.clone()),
+        CliError::Findings(f) => plain("E-NEGATIVE", f.summary.clone()),
         CliError::Internal(e) => plain("E-INTERNAL", e.to_string()),
     }
 }
@@ -316,13 +316,13 @@ mod tests {
             "a.rs",
         );
         let record = FindingRecord::from_finding(&finding, &sources, Registry::global());
-        let err = CliError::Findings {
+        let err = CliError::Findings(Box::new(FindingsFailure {
             summary: "1 error(s)".to_owned(),
             detail: "TICK001 bad".to_owned(),
             data: serde_json::json!({"n": 1}),
             findings: vec![record],
             warnings: Vec::new(),
-        };
+        }));
         let exec = failure(Some("check"), &err, true);
         assert_eq!(exec.exit, 1);
         let v: Value = serde_json::from_str(&exec.stdout).unwrap();

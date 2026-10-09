@@ -27,7 +27,7 @@ pub use clap;
 pub use cli::{Cli, Guard, run_for_test};
 pub use command::Command;
 pub use context::{ColorMode, Context, FormatChoice};
-pub use error::{CliError, Outcome, Payload};
+pub use error::{CliError, FindingsFailure, Outcome, Payload};
 pub use gob_diagnostics::{ExitCode, Refusal, RefusalClass};
 pub use gob_macros::Command;
 pub use inventory;

@@ -2,8 +2,8 @@
 
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{
-    Cli, CliError, Command, CommandMeta, Context, Described, ExitCode, Outcome, Payload, Refusal,
-    RefusalClass,
+    Cli, CliError, Command, CommandMeta, Context, Described, ExitCode, FindingsFailure, Outcome,
+    Payload, Refusal, RefusalClass,
 };
 use gob_diagnostics::{FindingRecord, MemorySources};
 use std::collections::{BTreeMap, BTreeSet};
@@ -361,13 +361,13 @@ impl Command for Check {
                 .join("\n");
             let findings = data.findings.clone();
             let data = serde_json::to_value(&data).map_err(CliError::internal)?;
-            return Err(CliError::Findings {
+            return Err(CliError::Findings(Box::new(FindingsFailure {
                 summary,
                 detail,
                 data,
                 findings,
                 warnings: report.warnings,
-            });
+            })));
         }
         let mut payload = Payload::new(data);
         payload.warnings = report.warnings;
