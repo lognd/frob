@@ -8,9 +8,9 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-07T03:20:47Z"
-updated = "2026-10-09T19:04:49Z"
-labels = ["area:mirror"]
-scope = ["crates/frob/src/ticket/merge_cmd.rs", "crates/frob/src/init.rs", "crates/frob/tests/**"]
+updated = "2026-10-09T19:06:11Z"
+labels = ["area:mirror", "creates:crates/frob/tests/merge_driver_branch.rs"]
+scope = ["crates/frob/src/ticket/merge_cmd.rs", "crates/frob/src/init.rs", "crates/frob/src/ticket/branch_cmd.rs", "crates/frob-ledger/src/branch.rs", "crates/frob-ledger/src/layout.rs", "crates/frob/tests/ticket_branch.rs", "changelog.d/**", "crates/frob/tests/merge_driver_branch.rs"]
 
 [[links]]
 kind = "blocked-by"
