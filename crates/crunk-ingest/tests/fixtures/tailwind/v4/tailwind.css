@@ -1,0 +1,18 @@
+/* Pure Tailwind v4 CSS-first config fixture (T-0163): no JS config file,
+   @theme only -- exercises parse_tailwind_config's v4 reader end to end. */
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #282828;
+  --color-secondary: var(--color-primary);
+  --spacing-sm: 4px;
+  --radius-md: 8px;
+  --breakpoint-md: 48rem;
+  --font-sans: Inter, sans-serif;
+}
+
+@theme inline {
+  --text-lg: 1.25rem;
+  --color-accent: var(--color-missing);
+  --spacing-lg: calc(var(--spacing-sm) * 4);
+}

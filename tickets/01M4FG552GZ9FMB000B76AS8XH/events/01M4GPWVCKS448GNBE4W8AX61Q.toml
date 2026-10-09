@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given [tickets] ref = refs/heads/main and a checkout on a feature branch, when ticket doctor or ticket list runs, then the output says which ref it reads and that the working tree is not the ledger, and a writing verb states it commits to main (or refuses without --to-trunk)", "Given any verb whose data.ok is false, when it prints the envelope, then the top-level ok is false too (a test asserts the invariant for every verb)"]
+new = ["Given [tickets] ref = refs/heads/main and a checkout on a feature branch, when ticket doctor or ticket list runs, then the output says which ref it reads and that the working tree is not the ledger, and a writing verb states it commits to main (or refuses without --to-trunk)", "Given any verb whose data.ok is false, when it prints the envelope, then the top-level ok is false too (a test asserts the invariant for every verb)", "Given trunk mode where ticket verbs commit ledger-only changes to main, when frob land --dry-run runs, then ledger-only commits on main do not make it report main as not merged (logand F-562)"]
+moved = [1, 2]
+at = "2026-10-09T16:10:47Z"
+actor = "lognd"
+rev = 1

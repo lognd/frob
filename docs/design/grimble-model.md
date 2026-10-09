@@ -20,6 +20,12 @@ scenario, refine, entity/architecture/configuration, host, Kerberos,
 deploy, or the six-phase boundary grammar. 79 of 139 v1 keywords never
 reached the prover.
 
+The planning layer (grmb-planning.md, D124-D133) adds the left arm of
+the V above the architecture: actors, goal variant trees, scenarios of
+steps with typed outcomes and exhaustive handling, and impl blocks that
+bind steps to code; it is the one behaviour construct, kept because it
+is checkable.
+
 ## 2. Core grammar (kept, tightened)
 
 ```
@@ -186,6 +192,11 @@ with no rule yet. Rows whose deferred ticket closes go red, as in v1.
   `grimble graph --json` (Unresolved when grimble is absent). An epic can
   be "implement flow f_parse", and the flow's SYS005 finding closes when
   the ticket lands.
+- Planning entities (`goal/...`, `scenario/...`, `impl/...`) are
+  `implements` targets too; grimble emits their `status` and
+  `obligations` in the graph export and frob adds the close guard
+  `design_bound`, PM037-PM039 and `frob plan --from-design`
+  (grmb-planning.md 9 and 10).
 - Exceptions that name a ticket (`defer`, `hotfix`): grimble parses the
   `ticket=` value as opaque and emits it in `--json`; standalone grimble
   reports such an exception as UnresolvedExit, and frob evaluates the

@@ -28,6 +28,7 @@ tracing = "0.1"
 [dev-dependencies]
 gob-time = { version = "0.532.0", path = "../gob-time" }
 gob-languages = { path = "../gob-languages" }
+gob-caps = { path = "../gob-caps" }
 gob-testsupport = { path = "../gob-testsupport" }
 serde_json = "1"
 tempfile = "3"

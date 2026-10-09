@@ -9,6 +9,7 @@
 //! or May, or whose end owner is May or Unknown, is Unresolved and never reads clean.
 
 // frob:ticket 01M48FXAG32KFM90XWVFS8AX88
+// frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -176,6 +177,10 @@ pub fn build_graph(root: &std::path::Path, code: &Code) -> SymbolGraph {
 
 /// Evaluate SYS013 over the edges of `graph`.
 pub fn sys013(cx: &Cx<'_>, out: &mut Output) {
+    if !needs_graph(cx.model) {
+        // The graph may exist for the CAP rules; with one code-owning node no edge crosses owners.
+        return;
+    }
     let graph = cx.graph;
     let mut t = Tally::default();
     let mut seen = BTreeSet::new();
