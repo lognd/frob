@@ -8,10 +8,14 @@ points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:16Z"
-updated = "2026-10-09T05:07:16Z"
+updated = "2026-10-09T05:08:10Z"
 idempotency_key = "logand-gaps-A3"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble*/**", "crates/gob-*/**", "changelog.d/**", "docs/design/rules.md"]
+
+[[links]]
+kind = "relates"
+target = "01M3Z714EEST9EGEHWWV56RXG4"
 
 [[acceptance]]
 text = "Given node a owning Python that calls open(), subprocess.run and socket.listen with no grants, when grimble check runs, then CAP001 is an Error for fs.read, exec and net.listen"
