@@ -16,7 +16,7 @@ pub struct PlanBuilder {
     ops: Vec<Op>,
     defs: Vec<Def>,
     clauses: Vec<OpId>,
-    subjects: u16,
+    subjects: Option<u16>,
     unresolved: Vec<Unresolved>,
     reports: Vec<Report>,
     vars: u16,
@@ -33,7 +33,7 @@ impl PlanBuilder {
             ops: Vec::new(),
             defs: Vec::new(),
             clauses: Vec::new(),
-            subjects: 0,
+            subjects: None,
             unresolved: Vec::new(),
             reports: Vec::new(),
             vars: 0,
@@ -172,9 +172,9 @@ impl PlanBuilder {
         })
     }
 
-    /// P-: the clauses added so far select the rule's subjects; later ones are the formula.
+    /// P-: the clauses added so far select (default: through the last `find`) the rule's subjects; later ones are the formula.
     pub fn end_subjects(&mut self) -> &mut Self {
-        self.subjects = u16::try_from(self.clauses.len()).unwrap();
+        self.subjects = Some(u16::try_from(self.clauses.len()).unwrap());
         self
     }
 
@@ -192,6 +192,18 @@ impl PlanBuilder {
             subject,
             message,
         });
+    }
+
+    /// P- plans select subjects through the last binder unless `end_subjects` says otherwise.
+    fn default_subjects(&self) -> u16 {
+        if self.polarity != Polarity::Pminus {
+            return 0;
+        }
+        let last = self
+            .clauses
+            .iter()
+            .rposition(|&c| matches!(self.ops[c as usize], Op::Find { .. } | Op::FindSide { .. }));
+        last.map_or(0, |i| u16::try_from(i + 1).unwrap())
     }
 
     pub fn build(&mut self) -> Plan {
@@ -220,7 +232,7 @@ impl PlanBuilder {
             ops: self.ops.clone(),
             defs: self.defs.clone(),
             clauses: self.clauses.clone(),
-            subjects: self.subjects,
+            subjects: self.subjects.unwrap_or_else(|| self.default_subjects()),
             unresolved: self.unresolved.clone(),
             reports: self.reports.clone(),
         };

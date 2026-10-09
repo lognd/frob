@@ -421,7 +421,7 @@ fn accessors_expose_the_validated_fields() {
     let plan = Plan::new(sample()).expect("valid");
     assert_eq!(plan.parts(), &sample());
     assert_eq!(plan.rule(), "NEAT013");
-    assert_eq!(plan.polarity(), Polarity::Pminus);
+    assert_eq!(plan.polarity(), Polarity::Pplus);
     assert_eq!(plan.cost(), CostClass::Closure(3));
     assert_eq!(plan.needs().iter().collect::<Vec<_>>(), [Need::Diff]);
     assert_eq!(
@@ -507,13 +507,13 @@ fn a_later_def_may_call_an_earlier_one() {
     });
     p.defs.push(Def {
         params: vec![5],
-        body: 12,
+        body: 13,
     });
     p.ops.push(Op::Call {
         def: 1,
         args: vec![0],
     });
-    p.clauses.push(13);
+    p.clauses.push(14);
     let plan = Plan::new(p).expect("def 1 calls def 0");
     assert_eq!(Plan::load(&plan.to_bytes()).expect("load"), plan);
 }
