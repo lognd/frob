@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T16:51:29Z"
-updated = "2026-10-09T17:51:01Z"
+updated = "2026-10-09T18:29:20Z"
 scope = ["changelog.d/**", "crates/gob-cache/src/lib.rs", "crates/gob-cache/Cargo.toml"]
 
 [[acceptance]]
