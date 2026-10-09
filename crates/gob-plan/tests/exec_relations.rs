@@ -10,7 +10,7 @@ use gob_ir::{Model, NodeId, NodeSpec, Operator, Relation, Truth};
 use gob_plan::catalog::{Column, FieldType};
 use gob_plan::exec::relations::{Count, Knobs, Relations, SideData, SideError, SideTable};
 use gob_plan::exec::{Doubt, ExecError, Input, Scalar, count, run, run_with};
-use gob_plan::plan::{Certainty, CmpOp, Need, NeedSet, Op, Polarity, Quant};
+use gob_plan::plan::{Certainty, CmpOp, Limit, Need, NeedSet, Op, Plan, Polarity, Quant};
 use support::{Doc, PlanBuilder};
 
 fn func(d: &mut Doc, name: &str, start: u32) -> NodeId {
@@ -270,4 +270,82 @@ fn a_knob_override_changes_a_count_threshold() {
         count(&plan, &input(&m), &rels, 0, row),
         Err(ExecError::NotCountable { .. })
     ));
+}
+
+fn fan_in_edges(fs: &[NodeId]) -> Relation {
+    let mut calls = Relation::new();
+    calls.insert(fs[1], fs[0], Truth::Yes);
+    calls.insert(fs[2], fs[0], Truth::Yes);
+    calls.insert(fs[3], fs[0], Truth::Unknown);
+    calls
+}
+
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
+#[test]
+fn a_count_op_compares_against_a_knob_that_the_rules_table_overrides() {
+    let (m, fs) = model(&["target", "x", "y", "z"]);
+    let rels = Relations::new().with_edges("calls", fan_in_edges(&fs));
+
+    let mut b = PlanBuilder::new("FANIN002", Polarity::Pn);
+    let f = b.find("function");
+    let name = b.s("max_fan_in");
+    let c = b.count_cmp(
+        "function",
+        CmpOp::Gt,
+        Limit::Knob { name, default: 5 },
+        |b, c| b.verb(c, "calls", f, Certainty::Default),
+    );
+    b.clause(c);
+    b.report(None, f, "fan-in");
+    // The plan survives its own wire form before it runs.
+    let plan = Plan::load(&b.build().to_bytes()).unwrap();
+
+    let bound = |rels: &Relations| -> Vec<(Option<NodeId>, Truth)> {
+        run_with(&plan, &input(&m), rels)
+            .unwrap()
+            .rows
+            .iter()
+            .map(|r| (r.node(f), r.verdict.truth))
+            .collect()
+    };
+    assert!(
+        bound(&rels).is_empty(),
+        "[2,3] > 5 is No for every function"
+    );
+    let tight = rels.clone().with_knobs(Knobs::new().with("max_fan_in", 1));
+    assert_eq!(bound(&tight), vec![(Some(fs[0]), Truth::Yes)]);
+    let edge = rels.with_knobs(Knobs::new().with("max_fan_in", 2));
+    let rows = run_with(&plan, &input(&m), &edge).unwrap().rows;
+    assert_eq!(rows[0].verdict.truth, Truth::Unknown);
+    assert_eq!(
+        rows[0].verdict.doubts,
+        vec![Doubt::CountBounds { lo: 2, hi: Some(3) }]
+    );
+}
+
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
+#[test]
+fn a_def_is_a_view_computed_once_per_distinct_arguments() {
+    let (m, fs) = model(&["target", "x", "y", "z"]);
+    let rels = Relations::new().with_edges("calls", fan_in_edges(&fs));
+
+    let mut b = PlanBuilder::new("DEF001", Polarity::Pplus);
+    let d = b.def(1, |b, p| {
+        b.quant(Quant::Some, "function", |b, c| {
+            b.verb(c, "calls", p[0], Certainty::Default)
+        })
+    });
+    let f = b.find("function");
+    let (first, second) = (b.call(d, &[f]), b.call(d, &[f]));
+    b.clause(first);
+    b.clause(second);
+    b.report(None, f, "called");
+    let plan = b.build();
+
+    let out = run_with(&plan, &input(&m), &rels).unwrap();
+    assert_eq!(out.rows.len(), 1);
+    assert_eq!(out.rows[0].node(f), Some(fs[0]));
+    assert_eq!(out.rows[0].verdict.truth, Truth::Yes);
+    // Four functions, two call sites each: four views, not eight evaluations.
+    assert_eq!(out.views, 4);
 }
