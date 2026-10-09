@@ -2,13 +2,13 @@
 id = "01M4D6NEQYAZEFFX3P0S2EJV2N"
 title = "gob-check: run external tool stages concurrently with the in-process stages (cargo stages grouped by target lock)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:24Z"
-updated = "2026-10-08T07:29:24Z"
+updated = "2026-10-09T19:24:15Z"
 scope = ["changelog.d/**", "crates/gob-check/**"]
 
 [[acceptance]]
