@@ -4,12 +4,11 @@ title = "frob migrate v1 converts frob.toml: map v1 keys ([tickets] default_mile
 type = "task"
 category = "todo"
 priority = "medium"
-class = "expedite"
 points = 3
 parent = "01M4CTTVCB8JJ9JB2NQHQP5ARY"
 reporter = "lognd"
 created = "2026-10-09T03:47:06Z"
-updated = "2026-10-09T03:47:06Z"
+updated = "2026-10-09T03:51:12Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/gob-dev/**", "crates/gob-config/**", "docs/guides/upgrade-from-v1.md", "changelog.d/**"]
 
