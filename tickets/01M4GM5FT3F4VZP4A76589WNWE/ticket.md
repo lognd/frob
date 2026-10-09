@@ -7,9 +7,13 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T15:23:04Z"
-updated = "2026-10-09T15:23:04Z"
+updated = "2026-10-09T15:23:05Z"
 labels = ["grimble"]
 scope = ["crates/gob-ir/**", "crates/gob-symbols/**", "changelog.d/**"]
+
+[[links]]
+kind = "relates"
+target = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 
 [[acceptance]]
 text = "Given Rust fn returning Result<T, PaymentError>, Python def raising PaymentDeclined and calling httpx, and a TS function that throws, when error facts are computed, then Rust yields the enum variants Exact, Python the explicit raises plus callee raises as May, TS Unknown, each with a reason"
