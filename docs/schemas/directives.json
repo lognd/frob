@@ -187,6 +187,13 @@
         "name": {
           "description": "The invariant's name.",
           "type": "string"
+        },
+        "reason": {
+          "description": "The remaining words, kept as the reason.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         }
       },
       "required": [
