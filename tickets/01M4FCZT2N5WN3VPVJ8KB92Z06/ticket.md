@@ -5,10 +5,9 @@ type = "bug"
 category = "todo"
 priority = "medium"
 points = 3
-parent = "01M4CTTVCB8JJ9JB2NQHQP5ARY"
 reporter = "lognd"
 created = "2026-10-09T03:58:24Z"
-updated = "2026-10-09T03:58:24Z"
+updated = "2026-10-09T16:28:49Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/gob-dev/**", "docs/guides/upgrade-from-v1.md", "changelog.d/**"]
 

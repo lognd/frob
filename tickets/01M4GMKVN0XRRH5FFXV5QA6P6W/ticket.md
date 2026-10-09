@@ -7,13 +7,13 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T15:30:55Z"
-updated = "2026-10-09T15:31:06Z"
+updated = "2026-10-09T17:01:13Z"
 labels = ["grimble"]
 scope = ["notes/research/grmb-r2-*", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given topics G and H, when R2-early completes, then notes/research/grmb-r2-verification.md and grmb-r2-faults.md exist with search log, coverage argument, graded findings, ADOPT/ADAPT/REJECT implications and candidate rules, every source looked up or marked [unverified]"
-bound = false
+bound = true
 +++
 
 Research cycle R2 (early start, owner request 2026-10-09). Same rules as the R1 brief (ticket ~19SEHXJ body): exhaustive with a coverage argument, every source looked up, credibility line per source (venue; authors' practical standing at scale), primary sources over blogs, anonymous blogs excluded, [unverified] never invented, ADOPT/ADAPT/REJECT implications for grmb with candidate rules (predicate, polarity, source).
