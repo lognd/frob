@@ -8,9 +8,9 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-09T18:06:10Z"
-updated = "2026-10-09T20:02:49Z"
+updated = "2026-10-09T20:27:21Z"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/plan/ir.rs", "crates/gob-plan/src/plan/codec.rs", "crates/gob-plan/src/plan/validate.rs", "crates/gob-plan/src/plan/tests/props.rs", "crates/gob-plan/src/exec/relations/count.rs", "crates/gob-plan/src/exec/core/eval.rs", "crates/gob-plan/src/exec/core/mod.rs", "crates/gob-plan/src/plan/limits.rs", "crates/gob-plan/src/plan/mod.rs", "crates/gob-plan/src/plan/error.rs", "crates/gob-plan/src/plan/tests/mod.rs", "crates/gob-plan/tests/support/mod.rs", "crates/gob-plan/tests/exec_relations.rs"]
+scope = ["crates/gob-plan/src/plan/ir.rs", "crates/gob-plan/src/plan/codec.rs", "crates/gob-plan/src/plan/validate.rs", "crates/gob-plan/src/plan/tests/props.rs", "crates/gob-plan/src/exec/relations/count.rs", "crates/gob-plan/src/exec/core/eval.rs", "crates/gob-plan/src/exec/core/mod.rs", "crates/gob-plan/src/plan/limits.rs", "crates/gob-plan/src/plan/mod.rs", "crates/gob-plan/src/plan/error.rs", "crates/gob-plan/src/plan/tests/mod.rs", "crates/gob-plan/tests/support/mod.rs", "crates/gob-plan/tests/exec_relations.rs", "crates/gob-plan/src/exec/core/verdict.rs"]
 
 [[links]]
 kind = "blocked-by"
