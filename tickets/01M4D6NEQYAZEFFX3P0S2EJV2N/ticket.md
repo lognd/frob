@@ -8,8 +8,8 @@ points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:24Z"
-updated = "2026-10-09T19:24:15Z"
-scope = ["changelog.d/**", "crates/gob-check/**"]
+updated = "2026-10-09T19:28:43Z"
+scope = ["changelog.d/**", "crates/gob-check/src/tools.rs", "crates/gob-check/src/pipeline.rs", "crates/frob-check/tests/check.rs"]
 
 [[acceptance]]
 text = "Given frob check warm on this repository, when timed, then wall time is below the sum of stage times and per-stage timing is still reported"
