@@ -1,0 +1,13 @@
+kind = "create"
+title = "frob check --timing prints nothing; per-stage timings exist only in .frob/telemetry.jsonl"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+labels = ["adoption:logand-app"]
+scope = ["crates/frob-check/**", "crates/gob-check/**", "changelog.d/**"]
+acceptance = ["Given frob check --timing, when it finishes, then a per-stage and per-rule timing table is printed (text) or included under data.timing (json)"]
+body = "logand.app-v2 F-553."
+at = "2026-10-09T15:09:07Z"
+actor = "lognd"
+rev = 1

@@ -54,6 +54,9 @@ U encoding of section 9 never needs `phase`). It does not describe
 runtime behaviour (the six-phase boundary blocks, sagas, crash and
 breach scenarios, hosts, Kerberos, `refine`, `entity/architecture`,
 `policy` and `scenario` of v1 are not in the language; section 14).
+The one exception is the planning layer, grmb-planning.md: typed step
+outcomes with exhaustive handling, the only behaviour the checker can
+verify (D124).
 
 ## 2. Lexical structure
 
@@ -83,6 +86,9 @@ escape     = "\\" ( '"' | "\\" | "n" | "t" | "r" | "u{" HEX { HEX } "}" ) ;
 punct      = "{" | "}" | "(" | ")" | "[" | "]" | ";" | "," | ":" | "::"
            | "." | "=" | "->" | "<=" | "&" | "|" | "!" | "~" | "!=" ;
 ```
+
+grmb-planning.md 2.2 adds `=>`, `-|>`, `-?>` and `*` by maximal munch;
+each was a lexical error before, so the addition is valid within major 2.
 
 - A string contains no raw newline; a multi-line text is written as
   adjacent strings joined by the parser (`"a" "b"` is `"ab"`) only in
@@ -166,6 +172,16 @@ keywords. The parser decides by position (a clause starts a statement; a
 predicate occurs inside a selector). `noflow` and `reach` are claim
 verbs, reserved as well. Metric names after `bound` are `age`, `rate`,
 `latency`, `size` and `utilization`.
+
+Contextual planning words (grmb-planning.md 2.1, D125), recognized only
+at item position (the first line) or inside a planning item (the rest),
+identifiers everywhere else:
+
+```
+actor goal impl page scenario step system
+_ else end entry err fails from handle in max ok realizes requires retry
+title verified_by with
+```
 
 The keyword table is the single source for the generated editor grammar:
 `cargo dev gen editors` reads the table from the `Keyword` derive in
@@ -321,7 +337,9 @@ grimble = "2";
 An ENTITY is a named, declared thing; it is a `unit` in U. There are
 eight kinds: `node`, `flow`, `contract`, `claim`, `vmodel`, `boundary`,
 `pack` and `template`. (grimble-model.md 9.3 lists six; `boundary` is kept
-because D6 keeps it and `template` is added by D75; section 14.) Every statement inside an
+because D6 keeps it and `template` is added by D75; section 14.) grmb-planning.md 4
+adds seven planning kinds (`system`, `actor`, `goal`, `step`, `scenario`,
+`impl`, `page`) in the same namespace. Every statement inside an
 entity body is a CLAUSE; a clause is an `attr` in U. A clause key may be
 repeated only where the table says "list".
 
@@ -1185,6 +1203,10 @@ of an Error (the model must fail loudly, not quietly pass).
 | MDL020 | MDL-INCLUDE-OUTSIDE | Error | an include (or glob) names a file above the including file's directory without the `outside` marker (3.2); the include is skipped |
 | MDL021 | MDL-NO-ROOT | Unresolved (required) | no model root is declared (`[grimble] models` empty) while `.grmb` files exist, or a declared root is not a `.grmb` file of the walk (3.1) |
 
+MDL022-MDL031 (exhaustiveness, error sets, retry bounds, scenario
+start, goal `requires` cycles, planning placement) are defined in
+grmb-planning.md 7.1.
+
 Cyclic flows are allowed and are not an MDL rule: a cycle is a legal
 model and the kernel's age and demand computations handle it by SCC
 condensation. What the kernel does with a rate-fed cycle (+infinity with a
@@ -1252,6 +1274,7 @@ test the U adapter hold the expected U term and scope graph per construct
 | `fmt/order/` | canonical item, clause and operand order |
 | `fmt/comments/` | comments and directives travel; a file with a hole is not rewritten |
 | `recovery/holes.grmb` | resynchronization at `;` and `}`, rest of file still parsed, Unresolved for subjects in a hole |
+| `plan/` | the planning layer: one directory per construct and per MDL022-MDL031 rule, plus the two worked examples of grmb-planning.md 12 and 13 (P1) |
 | `example/frob.grmb` | the worked model of section 13 (with its include) loads with zero Errors and the documented warnings |
 
 ## 13. Worked example: this repository

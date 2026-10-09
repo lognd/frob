@@ -2,12 +2,13 @@
 id = "01M4FCET3GBDKBRK9JP83H49E3"
 title = "grmb planning layer design: actors, goal variant trees, scenarios with Zig/Rust outcome handling, impl blocks bound to code, ticket lifecycle (D123+)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T03:49:07Z"
-updated = "2026-10-09T04:42:22Z"
+updated = "2026-10-09T06:22:09Z"
 labels = ["grimble", "creates:docs/design/grmb-planning.md"]
 scope = ["changelog.d/**", "docs/design/grmb-spec.md", "docs/design/grimble-model.md", "docs/design/grmb-planning.md", "docs/design/README.md"]
 

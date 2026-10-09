@@ -1,0 +1,110 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-09T06:12:15Z"
+digest = "c0383eef8c8c5e5ad3c4bcfa47d2705da5930f6c7b91bd860bb85592c64bd5f7"
+exit_code = 0
+inline = '''
+goway: warning: CROSS-OS: `cargo` is portable, but this run stays on linux hosts
+goway: note:   other-OS hosts that could take it: nova-windows
+goway: note:   allow every OS for this run:      goway run --any-os -- ...
+goway: note:   allow it for this project:        cross_os = true in goway.toml
+goway: note:   silence this hint:                cross_os = false in goway.toml
+goway: note: skipped for disk room: xanders-laptop: 10.2 GiB free (919.0 MiB of it evictable), this repository needs about 66.4 GiB; using quasar
+goway: note: picked quasar (load 3.42 on 12 cores, 0 goway jobs)
+goway: note: tool versions differ across your hosts: clang 21.1.8 here (major: 10 vs 21 vs 18) (cached by goway doctor 57m ago; builds may behave differently here)
+goway: note: synced 13247 files (0 sent, 0 bytes, 0 deleted)
+goway: note: quasar has 7.0 GiB free: running with 4 of 12 jobs (CARGO_BUILD_JOBS=4, NEXTEST_TEST_THREADS=4, MOLD_JOBS=1, GOWAY_LINK_THREADS=4, estimated peak 5.9 GiB)
+goway: info: running on quasar (x86_64, Quasar) at 192.168.4.61 [cores>=8 (12 cores)]: cargo nextest run --profile ci -p gob-directives
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3746d642-a1dd-46d7-b09a-a2be87c5cb27 with nextest profile: ci
+    Starting 77 tests across 4 binaries
+        PASS [   0.004s] ( 1/77) gob-directives comments::tests::html_and_hash
+        PASS [   0.004s] ( 2/77) gob-directives comments::tests::line_and_doc_prefixes
+        PASS [   0.004s] ( 3/77) gob-directives comments::tests::block_lines
+        PASS [   0.007s] ( 4/77) gob-directives comments::tests::segments_cover_exactly_the_shared_corpus_spans
+        PASS [   0.004s] ( 5/77) gob-directives effects::tests::errors_name_the_offending_token
+        PASS [   0.004s] ( 6/77) gob-directives effects::tests::display_round_trips
+        PASS [   0.005s] ( 7/77) gob-directives effects::tests::atom_lists_combine_sort_and_dedupe
+        PASS [   0.005s] ( 8/77) gob-directives effects::tests::levels_parse_alone_and_with_total
+        PASS [   0.004s] ( 9/77) gob-directives effects::tests::panic_and_diverge_parse_without_total
+        PASS [   0.004s] (10/77) gob-directives effects::tests::symref_errors_point_inside_the_parentheses
+        PASS [   0.005s] (11/77) gob-directives lex::tests::errors_have_positions
+        PASS [   0.004s] (12/77) gob-directives lex::tests::positionals_and_keys
+        PASS [   0.006s] (13/77) gob-directives lex::tests::escapes
+        PASS [   0.006s] (14/77) gob-directives lex::tests::trailing_foreign_pragmas_end_the_arguments
+        PASS [   0.005s] (15/77) gob-directives scan::python_tests::csharp_directives_come_from_comments_not_strings
+        PASS [   0.005s] (16/77) gob-directives scan::python_tests::css_waiver_is_found_in_the_crunk_namespace_with_its_span
+        PASS [   0.004s] (17/77) gob-directives ulid::tests::full_ulid_accepted
+        PASS [   0.004s] (18/77) gob-directives ulid::tests::near_misses_rejected
+        PASS [   0.005s] (19/77) gob-directives scan::python_tests::stacked_python_directives_bind_to_the_next_def
+        PASS [   0.004s] (20/77) gob-directives ulid::tests::ref_shapes
+        PASS [   0.004s] (21/77) gob-directives wire::tests::records_round_trip
+        PASS [   0.005s] (22/77) gob-directives::derive constants_and_meta
+        PASS [   0.005s] (23/77) gob-directives::derive optionals_may_be_absent
+        PASS [   0.005s] (24/77) gob-directives::derive parses_every_mode
+        PASS [   0.005s] (25/77) gob-directives::derive typed_errors
+        PASS [   0.005s] (26/77) gob-directives::scan binds_to_adjacent_fn_and_doc_comment_form
+        PASS [   0.005s] (27/77) gob-directives::scan blank_line_ends_the_directive_block
+        PASS [   0.006s] (28/77) gob-directives::scan aliases_yield_the_same_claim_as_the_long_form
+        PASS [   0.019s] (29/77) gob-directives::corpus mdtest_corpus
+        PASS [   0.005s] (30/77) gob-directives::scan block_comment_lines_are_scanned_individually
+        PASS [   0.004s] (31/77) gob-directives::scan claim_verbs_are_registered_and_documented
+        PASS [   0.004s] (32/77) gob-directives::scan directives_config_defaults_and_scan_config
+        PASS [   0.005s] (33/77) gob-directives::scan dsl002_names_the_remedy_and_has_no_fix
+        PASS [   0.006s] (34/77) gob-directives::scan dsl001_suggests_the_new_claim_verbs
+        PASS [   0.007s] (35/77) gob-directives::scan dsl001_suggests_close_verb_and_points_at_it
+        PASS [   0.007s] (36/77) gob-directives::scan effect_set_errors_point_inside_the_token
+        PASS [   0.005s] (37/77) gob-directives::scan effects_record_carries_the_parsed_atom_set
+        PASS [   0.004s] (38/77) gob-directives::scan file_level_when_no_symbols
+        PASS [   0.004s] (39/77) gob-directives::scan grimble_binds_is_registered_and_read_only_when_the_namespace_is_honoured
+        PASS [   0.007s] (40/77) gob-directives::scan enclosing_symbol_when_nothing_follows
+        PASS [   0.005s] (41/77) gob-directives::scan inner_doc_binds_to_container_not_next_item
+        PASS [   0.005s] (42/77) gob-directives::scan innermost_enclosing_wins
+        PASS [   0.005s] (43/77) gob-directives::scan markdown_before_first_heading_is_file
+        PASS [   0.005s] (44/77) gob-directives::scan markdown_binds_to_preceding_heading
+        PASS [   0.005s] (45/77) gob-directives::scan markdown_code_span_over_line_break_is_text
+        PASS [   0.005s] (46/77) gob-directives::scan markdown_comment_opening_a_line_is_an_html_block_not_span_content
+        PASS [   0.005s] (47/77) gob-directives::scan markdown_directive_right_after_code_span_counts
+        PASS [   0.005s] (48/77) gob-directives::scan markdown_double_backtick_span_with_inner_backtick_is_text
+        PASS [   0.005s] (49/77) gob-directives::scan markdown_inline_code_span_directive_is_text
+        PASS [   0.006s] (50/77) gob-directives::scan markdown_fenced_block_directive_still_text
+        PASS [   0.007s] (51/77) gob-directives::scan markdown_escaped_backtick_does_not_open_a_span
+        PASS [   0.005s] (52/77) gob-directives::scan markdown_prose_and_front_matter_mentioning_waive_are_not_directives
+        PASS [   0.005s] (53/77) gob-directives::scan markdown_stacked_comments_bind_to_the_same_heading
+        PASS [   0.004s] (54/77) gob-directives::scan record_span_covers_directive_text
+        PASS [   0.007s] (55/77) gob-directives::scan markdown_real_directive_beside_code_span_text_is_found
+        PASS [   0.007s] (56/77) gob-directives::scan parse001_points_at_the_exact_token
+        PASS [   0.004s] (57/77) gob-directives::scan rules_are_registered_with_d32_identity
+        PASS [   0.005s] (58/77) gob-directives::scan registry_lists_every_verb_with_schemas
+        PASS [   0.005s] (59/77) gob-directives::scan stacked_directives_in_a_block_comment_and_below_it_bind
+        PASS [   0.005s] (60/77) gob-directives::scan stacked_directives_mixed_with_comments_docs_and_attributes_bind
+        PASS [   0.005s] (61/77) gob-directives::scan tests_directive_at_the_end_of_a_file_is_not_attached
+        PASS [   0.005s] (62/77) gob-directives::scan tests_directive_naming_nothing_still_binds_so_test001_judges_the_symref
+        PASS [   0.005s] (63/77) gob-directives::scan tests_directive_separated_by_a_blank_line_is_not_attached
+        PASS [   0.005s] (64/77) gob-directives::scan tests_inside_module_tests_reorients
+        PASS [   0.005s] (65/77) gob-directives::scan tests_with_bad_target_in_test_item_is_parse001
+        PASS [   0.006s] (66/77) gob-directives::scan tests_outside_a_test_item_does_not_reorient
+        PASS [   0.006s] (67/77) gob-directives::scan tests_reorients_to_target_inside_test_item
+        PASS [   0.005s] (68/77) gob-directives::scan three_stacked_tests_directives_all_bind
+        PASS [   0.005s] (69/77) gob-directives::scan toml_hash_comment_is_file_bound
+        PASS [   0.005s] (70/77) gob-directives::scan two_blank_lines_also_end_the_block
+        PASS [   0.005s] (71/77) gob-directives::scan two_stacked_tests_directives_all_bind
+        PASS [   0.005s] (72/77) gob-directives::scan typed_args_round_trip
+        PASS [   0.004s] (73/77) gob-directives::scan yaml_blank_line_gap_does_not_attach_to_the_next_key
+        PASS [   0.005s] (74/77) gob-directives::scan yaml_accept_binds_to_the_key_on_the_next_line
+        PASS [   0.006s] (75/77) gob-directives::scan unhonoured_namespaces_are_ignored_and_honoured_ones_all_unknown
+        PASS [   0.005s] (76/77) gob-directives::scan yaml_stacked_comments_bind_to_the_same_key
+        PASS [   0.004s] (77/77) gob-directives::scan yaml_trailing_comment_binds_to_its_own_key
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.106s] 77 tests run: 77 passed, 0 skipped
+goway: done: exit 0 on quasar in 14.9s
+'''
+passed = true
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --wait 60m -- cargo nextest run --profile ci -p gob-directives"
+size = 8965
+status = "measured"
+at = "2026-10-09T06:12:15Z"
+actor = "lognd"
+rev = 1
