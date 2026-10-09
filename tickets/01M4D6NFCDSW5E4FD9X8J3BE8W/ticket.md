@@ -2,7 +2,8 @@
 id = "01M4D6NFCDSW5E4FD9X8J3BE8W"
 title = "frob-land: one check pass, a stable shared target dir for land checkouts, background worktree removal"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
