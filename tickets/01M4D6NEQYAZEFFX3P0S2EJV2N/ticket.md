@@ -2,7 +2,8 @@
 id = "01M4D6NEQYAZEFFX3P0S2EJV2N"
 title = "gob-check: run external tool stages concurrently with the in-process stages (cargo stages grouped by target lock)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
