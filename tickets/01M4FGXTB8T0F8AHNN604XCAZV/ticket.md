@@ -8,10 +8,14 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:03Z"
-updated = "2026-10-09T05:07:03Z"
+updated = "2026-10-09T05:08:14Z"
 idempotency_key = "logand-gaps-A1"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble*/**", "crates/gob-*/**", "changelog.d/**"]
+
+[[links]]
+kind = "relates"
+target = "01M3ZX7JRYNHG0BHJ3ZHC9450N"
 
 [[acceptance]]
 text = "Given a node with may process.spawn, may fs and may process.env, when grimble check runs, then none is MDL016 and exec resolves as the alias of process.spawn"
