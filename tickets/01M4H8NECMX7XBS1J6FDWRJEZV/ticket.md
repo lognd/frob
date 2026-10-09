@@ -7,12 +7,12 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T21:21:19Z"
-updated = "2026-10-09T23:50:06Z"
+updated = "2026-10-09T23:51:52Z"
 scope = ["crates/frob-land/src/ratchet.rs", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a land run from a ticket worktree that is later removed, when the next land reuses the base checkout, then its target symlink resolves (absolute path to the common dir's frob/land-target, canonicalized), and an existing dangling link is repaired"
-bound = false
+bound = true
 +++
 
 Found 2026-10-09 after ~8J3BE8W: .git/frob/land-checkout/target -> .git/worktrees/G17RK4A/../../frob/land-target dangled after G17RK4A's worktree was removed; repaired by hand.
