@@ -6,10 +6,10 @@ category = "todo"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-09T20:42:48Z"
+updated = "2026-10-09T20:42:50Z"
 aliases = ["T-6549"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
-scope = ["src/frob/testing/_runners.py", "src/frob/testing/_collect.py", "src/frob/tickets/_land_verify.py", "src/frob/app/config.py", "tests/unit/test_runner_outcome_executed.py", "docs/modules/testing.md", "docs/design/testing.md"]
+scope = ["src/frob/testing/_runners.py", "src/frob/testing/_collect.py", "src/frob/tickets/_land_verify.py", "src/frob/app/config.py", "tests/unit/test_runner_outcome_executed.py", "docs/design/testing.md"]
 +++
 
 Source: logand.app-v2 coordinator report, 2026-09-26 (frob 0.531.1.dev332), found while working F-410.
