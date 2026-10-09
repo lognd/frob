@@ -2,7 +2,8 @@
 id = "01M4HDXNTJQ77R9Z81VVNK49V8"
 title = "Land base-findings cache key is the crate version plus ledger config, not the engine: after a binary refresh adds rules or atoms, cached base findings omit them and every new-rule finding looks NEW, refusing every land"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
