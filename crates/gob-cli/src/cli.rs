@@ -5,19 +5,20 @@ use std::path::{Path, PathBuf};
 
 use clap::error::{ContextKind, ContextValue, ErrorKind};
 use clap::{Arg, ArgAction, ArgMatches};
-use gob_diagnostics::{ColorChoice, is_tty};
+use gob_diagnostics::{ColorChoice, ExitCode, is_tty};
 
 use crate::command::{Command, Registered};
 use crate::context::{ColorMode, Context, FormatChoice};
 use crate::error::CliError;
 use crate::render::{self, Execution};
 use crate::schema_cmd::SchemaCmd;
+use crate::serve::ServeCmd;
 
 /// A product's command-line root: global flags plus its registered verbs.
 pub struct Cli {
-    product: &'static str,
-    version: &'static str,
-    verbs: Vec<Registered>,
+    pub(crate) product: &'static str,
+    pub(crate) version: &'static str,
+    pub(crate) verbs: Vec<Registered>,
     // frob:ticket 01M40FXV09GYGBH9YZZANDZXZ4
     guard: Option<Guard>,
 }
@@ -48,6 +49,7 @@ impl Cli {
             guard: None,
         }
         .register::<SchemaCmd>()
+        .register::<ServeCmd>()
     }
 
     /// Run `guard` before every verb (not `--schema`); an `Err` stops the verb and is rendered.
@@ -73,6 +75,18 @@ impl Cli {
         T: Into<OsString>,
     {
         let exec = self.execute(args, None, true);
+        if let Some(cwd) = &exec.serve_cwd {
+            tracing::info!(product = self.product, cwd = %cwd.display(), "serve: MCP over stdio");
+            let stdin = std::io::stdin();
+            let mut stdout = std::io::stdout();
+            return match self.serve_mcp(stdin.lock(), &mut stdout, cwd) {
+                Ok(()) => 0,
+                Err(e) => {
+                    tracing::error!(error = %e, "serve: transport failed");
+                    ExitCode::Internal.code()
+                }
+            };
+        }
         render::emit(&exec);
         exec.exit
     }
@@ -180,7 +194,7 @@ impl Cli {
     ///
     /// `relaxed` drops every verb argument's `required`, so `--schema` can be
     /// answered without the verb's positionals.
-    fn build(&self, relaxed: bool) -> clap::Command {
+    pub(crate) fn build(&self, relaxed: bool) -> clap::Command {
         let mut root = clap::Command::new(self.product)
             .version(self.version)
             .bin_name(self.product)
@@ -225,6 +239,10 @@ impl Cli {
             return render::failure(None, &err, ctx.json);
         };
         let dotted = path.replace(' ', ".");
+        if path == ServeCmd::VERB && !leaf.get_flag("schema") {
+            tracing::debug!(cwd = %ctx.cwd.display(), "serve requested");
+            return Execution::serving(ctx.cwd.clone());
+        }
         if leaf.get_flag("schema") {
             let text = serde_json::to_string_pretty(&(verb.schema)()).unwrap_or_default();
             return Execution::out(format!("{text}\n"));

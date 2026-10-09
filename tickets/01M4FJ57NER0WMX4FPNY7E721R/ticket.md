@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T05:28:44Z"
-updated = "2026-10-09T05:28:44Z"
-scope = ["crates/frob-land/**", "crates/frob-evidence/**", "changelog.d/**"]
+updated = "2026-10-09T17:45:00Z"
+scope = ["changelog.d/**", "crates/frob-land/src/land.rs", "crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
 text = "Given a ticket whose acceptance criterion is unbound, when frob land runs, then it refuses with E-DONE-CRITERIA-UNBOUND before merging or checking anything (within seconds), and the order of guards is documented"

@@ -3,6 +3,8 @@
 //! Entries are `inventory` submissions, so a grimble pack extends the registries by
 //! linking a crate that calls `inventory::submit!`.
 
+// frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
+
 use std::collections::BTreeSet;
 
 use crate::answer::Answer;
@@ -40,7 +42,9 @@ pub struct DetectorEntry {
 pub struct AtomEntry {
     /// Dotted atom name.
     pub name: &'static str,
-    /// Detectors per language.
+    /// Extra spellings of the same atom (`exec` for `process.spawn`).
+    pub aliases: &'static [&'static str],
+    /// Detectors per language; a parent atom such as `fs` has none of its own.
     pub detectors: &'static [DetectorEntry],
 }
 
@@ -65,11 +69,16 @@ pub fn atoms() -> Vec<&'static AtomEntry> {
     v
 }
 
-/// The atom named `name`.
+/// The atom named `name`, or the one that lists `name` as an alias.
 pub fn atom(name: &str) -> Option<&'static AtomEntry> {
     inventory::iter::<AtomEntry>
         .into_iter()
-        .find(|a| a.name == name)
+        .find(|a| a.name == name || a.aliases.contains(&name))
+}
+
+/// The canonical atom name for `name` (an alias resolves to its atom); `None` when unregistered.
+pub fn canonical(name: &str) -> Option<&'static str> {
+    atom(name).map(|a| a.name)
 }
 
 /// Detector kinds for `atom` in `lang`: `Exact` when declared, `NotApplicable` when the only
@@ -114,6 +123,7 @@ pub fn callee_vocab(lang: &str, class: &str) -> Answer<BTreeSet<&'static str>> {
 inventory::submit! {
     AtomEntry {
         name: "net.connect",
+        aliases: &[],
         detectors: &[
             DetectorEntry { lang: "rust", kind: DetectorKind::Callee },
             DetectorEntry { lang: "python", kind: DetectorKind::Callee },
@@ -125,6 +135,7 @@ inventory::submit! {
 inventory::submit! {
     AtomEntry {
         name: "fs.write",
+        aliases: &[],
         detectors: &[
             DetectorEntry { lang: "rust", kind: DetectorKind::Callee },
             DetectorEntry { lang: "python", kind: DetectorKind::Callee },
