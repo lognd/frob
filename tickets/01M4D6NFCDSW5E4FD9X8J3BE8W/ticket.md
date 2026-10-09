@@ -8,8 +8,8 @@ points = 5
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:25Z"
-updated = "2026-10-09T17:13:34Z"
-scope = ["changelog.d/**", "crates/frob-land/**", "crates/gob-fs/tests/inventory.rs"]
+updated = "2026-10-09T17:55:35Z"
+scope = ["changelog.d/**", "crates/gob-fs/tests/inventory.rs", "crates/frob-land/src/land.rs", "crates/frob-land/src/ratchet.rs"]
 
 [[acceptance]]
 text = "Given a land whose merge is a no-op, when it runs, then the check runs once and the tool stages reuse a persistent target dir; measured land time is reported in the done-report"
