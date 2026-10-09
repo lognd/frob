@@ -48,7 +48,10 @@ fn an_unknown_key_in_a_known_table_fails_naming_table_and_key() {
 fn v1_shaped_layers_content_fails_the_load() {
     let text = spec().replace("[layers]\n", "[layers]\nmodal = { z = 10 }\n");
     let e = refused(&text);
-    assert!(e.to_string().contains("layers"), "{e}");
+    assert!(
+        matches!(&e, ConfigError::Invalid { table, .. } if table == "layers"),
+        "{e}"
+    );
 }
 
 // frob:tests crates/crunk-check/src/product.rs::Crunk

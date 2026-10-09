@@ -167,11 +167,14 @@ impl<'a> Ctx<'a> {
     fn section_at(&self, offset: usize) -> String {
         fn descend(table: &dyn TableLike, offset: usize, path: &mut Vec<String>) -> bool {
             for (key, child) in table.iter() {
-                if table
+                let key_hit = table
                     .get_key_value(key)
                     .and_then(|(k, _)| k.span())
-                    .is_some_and(|s| s.contains(&offset))
-                {
+                    .is_some_and(|s| s.contains(&offset));
+                // A value that is itself the error (a table where an integer belongs) starts at
+                // the offset: it is a problem of the table that holds it.
+                let value_hit = child.span().is_some_and(|s| s.start == offset);
+                if key_hit || value_hit {
                     return true;
                 }
                 let inners: Vec<&dyn TableLike> = match child {

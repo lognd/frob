@@ -154,10 +154,19 @@ impl SpecError {
             }
             Self::Invalid {
                 path, at, detail, ..
-            } => ConfigError::Invalid {
-                table: "crunk.toml".to_owned(),
-                message: format!("{}{}: {detail}", path.display(), at_text(at)),
-            },
+            } => {
+                let (table, message) = match detail
+                    .strip_prefix('[')
+                    .and_then(|rest| rest.split_once("]: "))
+                {
+                    Some((sec, rest)) => (sec.to_owned(), rest.to_owned()),
+                    None => ("crunk.toml".to_owned(), detail),
+                };
+                ConfigError::Invalid {
+                    table,
+                    message: format!("{}{}: {message}", path.display(), at_text(at)),
+                }
+            }
         }
     }
 }
