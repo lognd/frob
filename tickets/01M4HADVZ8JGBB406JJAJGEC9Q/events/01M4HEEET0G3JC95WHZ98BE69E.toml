@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-check/src/tools.rs", "crates/gob-check/src/config.rs", "changelog.d/**", "crates/gob-check/src/packages.rs", "crates/gob-check/src/lib.rs", "crates/gob-check/src/tool_parse.rs", "crates/gob-check/Cargo.toml", "frob.toml"]
+new = ["crates/gob-check/src/tools.rs", "crates/gob-check/src/config.rs", "changelog.d/**", "crates/gob-check/src/packages.rs", "crates/gob-check/src/lib.rs", "crates/gob-check/src/tool_parse.rs", "crates/gob-check/Cargo.toml", "frob.toml", "crates/gob-check/src/pipeline.rs"]
+at = "2026-10-09T23:02:17Z"
+actor = "lognd"
+rev = 1

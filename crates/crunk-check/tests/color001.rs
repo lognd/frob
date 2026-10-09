@@ -19,7 +19,8 @@ fn write(root: &Path, rel: &str, text: &str) {
     std::fs::write(path, text).expect("write");
 }
 
-/// Run crunk over one source file of a fresh repository holding the default preset.
+/// Run crunk over one source file of a fresh repository holding the default preset; ORG001 is left
+/// out because the fixture sheets sit directly under `css_root`, which is not what these tests judge.
 fn findings_of(spec_text: &str, rel: &str, source: &str) -> Vec<gob_rules::Finding> {
     let dir = tempfile::tempdir().expect("tempdir");
     write(dir.path(), "crunk.toml", spec_text);
@@ -28,6 +29,9 @@ fn findings_of(spec_text: &str, rel: &str, source: &str) -> Vec<gob_rules::Findi
         .expect("run")
         .report
         .findings
+        .into_iter()
+        .filter(|f| f.rule.as_str() != "ORG001")
+        .collect()
 }
 
 // frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
@@ -52,10 +56,14 @@ fn off_in_lint_silences_the_rule() {
     assert!(findings_of(&off, "styles/a.css", ".a { color: #ff0000; }\n").is_empty());
 }
 
-// frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
+// frob:tests crates/crunk-check/src/product.rs::Crunk
 #[test]
-fn without_a_valid_spec_the_rule_does_not_apply() {
-    assert!(findings_of("", "styles/a.css", ".a { color: #ff0000; }\n").is_empty());
+fn an_unusable_spec_refuses_the_run_instead_of_passing_it() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "crunk.toml", "");
+    write(dir.path(), "styles/a.css", ".a { color: #ff0000; }\n");
+    let refused = run(dir.path(), &CheckOptions::default());
+    assert!(matches!(refused, Err(gob_check::CheckError::Config(_))));
 }
 
 // frob:tests crates/crunk-rules/src/rules/color001.rs::Color001

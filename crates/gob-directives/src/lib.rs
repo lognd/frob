@@ -25,7 +25,12 @@
 //! Arguments are whitespace separated: a bare word, `key=value`, or
 //! `key="quoted value"` (`\"` and `\\` escapes). Positionals fill the
 //! positional fields in order; a `list` field takes the rest. Unknown
-//! namespaces are ignored; one directive per comment line.
+//! namespaces are ignored; one directive per comment line. A trailing foreign
+//! pragma (`# noqa`, `// eslint-disable-line`, `# type: ignore`) ends the
+//! arguments. A line ending in `\` continues onto the next comment line
+//! (`#`, `//`, block-comment `*`), joining directly even mid-token. The v1
+//! forms `note="..."` on `frob:todo` and `reason="..."` on `frob:invariant`
+//! are read as trailing text and reported as DSL002 with a `--fix` rewrite.
 //!
 //! # Binding
 //!
@@ -42,6 +47,7 @@ extern crate self as gob_directives;
 mod args;
 mod bind;
 mod comments;
+mod compat;
 mod config;
 mod effects;
 pub mod frob;

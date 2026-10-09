@@ -4,6 +4,7 @@
 
 use std::path::PathBuf;
 
+use gob_config::ConfigError;
 use gob_diagnostics::{ExitCode, RefusalClass};
 
 /// Which way loading `crunk.toml` failed (the Python `SpecError` kinds).
@@ -115,6 +116,57 @@ impl SpecError {
         match self {
             Self::Invalid { suggestion, .. } => suggestion.as_deref(),
             _ => None,
+        }
+    }
+}
+
+impl SpecError {
+    /// This failure as the shared [`ConfigError`] a check run reports, naming the offending table
+    /// and key the way a `frob.toml` error does; the location is kept in the message.
+    pub fn into_config_error(self) -> ConfigError {
+        match self {
+            Self::Missing { path, reason } => ConfigError::Io {
+                path: path.clone(),
+                source: std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    reason.unwrap_or_else(|| format!("{} not found", path.display())),
+                ),
+            },
+            Self::Malformed { path, at, message } => ConfigError::Parse {
+                message: format!("{}{}", message, at_text(at)),
+                path,
+            },
+            Self::Invalid {
+                key: Some(key),
+                suggestion,
+                detail,
+                ..
+            } => {
+                let table = detail
+                    .strip_prefix('[')
+                    .and_then(|rest| rest.split_once(']'))
+                    .map_or_else(|| "crunk.toml".to_owned(), |(sec, _)| sec.to_owned());
+                ConfigError::UnknownKey {
+                    table,
+                    key,
+                    suggestion,
+                }
+            }
+            Self::Invalid {
+                path, at, detail, ..
+            } => {
+                let (table, message) = match detail
+                    .strip_prefix('[')
+                    .and_then(|rest| rest.split_once("]: "))
+                {
+                    Some((sec, rest)) => (sec.to_owned(), rest.to_owned()),
+                    None => ("crunk.toml".to_owned(), detail),
+                };
+                ConfigError::Invalid {
+                    table,
+                    message: format!("{}{}: {message}", path.display(), at_text(at)),
+                }
+            }
         }
     }
 }

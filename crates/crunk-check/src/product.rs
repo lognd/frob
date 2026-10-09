@@ -84,9 +84,13 @@ impl Product for Crunk {
     fn collect(&self, cx: &mut CollectCx<'_>) -> Result<Collected<Self>, CheckError> {
         let spec = match crunk_spec::load_spec(&cx.core.root) {
             Ok(spec) => Some(spec),
-            Err(err) => {
-                tracing::info!(%err, "crunk collect: no usable design spec; spec rules do not apply");
+            Err(err @ crunk_spec::SpecError::Missing { reason: None, .. }) => {
+                tracing::info!(%err, "crunk collect: no crunk.toml; spec rules do not apply");
                 None
+            }
+            Err(err) => {
+                tracing::warn!(%err, "crunk collect: crunk.toml is unusable; the check refuses to run");
+                return Err(CheckError::Config(err.into_config_error()));
             }
         };
         let styles = spec.as_ref().and_then(|spec| {
