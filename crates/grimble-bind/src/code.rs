@@ -200,6 +200,18 @@ impl Code {
         }
     }
 
+    /// Folds the terms of `paths` now, in parallel, so later serial readers find them ready.
+    pub fn prefold(&self, paths: impl IntoIterator<Item = impl AsRef<str>>) {
+        let files: Vec<&CodeFile> = paths
+            .into_iter()
+            .filter_map(|p| self.file(p.as_ref()))
+            .collect();
+        tracing::debug!(files = files.len(), "prefolding terms in parallel");
+        files.par_iter().for_each(|f| {
+            f.folded();
+        });
+    }
+
     /// The file at `path`.
     pub fn file(&self, path: &str) -> Option<&CodeFile> {
         self.by_path.get(path).map(|&i| &self.files[i])

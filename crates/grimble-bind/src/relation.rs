@@ -60,10 +60,15 @@ pub fn hidden_reason(f: &CodeFile) -> Option<Reason> {
     }
 }
 
+/// The file path of a symref text (`path::qualname` or `path#slug`).
+fn path_of_symref(text: &str) -> &str {
+    let path = text.split('#').next().unwrap_or(text);
+    path.split("::").next().unwrap_or(path)
+}
+
 /// Resolve `text` (`path::qualname` or `path#slug`): exact spelling, then the unique-suffix rule.
 pub fn resolve_symref(code: &Code, text: &str) -> Resolution {
-    let path = text.split('#').next().unwrap_or(text);
-    let path = path.split("::").next().unwrap_or(path);
+    let path = path_of_symref(text);
     let Some(file) = code.file(path) else {
         return Resolution::NotFound {
             file_in_walk: false,
@@ -229,6 +234,7 @@ fn selector_clause(
     rel: &mut Relation,
 ) {
     let pm = select_files(sel, &code.walk);
+    code.prefold(pm.iter().map(|m| m.path.as_str()));
     let mut result = ClauseResult {
         entity: entity.anchor.clone(),
         clause: clause.clone(),
@@ -646,6 +652,20 @@ fn infer(model: &Model, _code: &Code, _rel: &mut Relation) {
 /// Build B from the four sources.
 pub fn build(model: &Model, code: &Code, directives: &[CodeDirective]) -> Relation {
     let mut rel = Relation::default();
+    // Directive operands and targets resolve serially below; fold their files in parallel first.
+    code.prefold(
+        directives
+            .iter()
+            .flat_map(|d| [d.file.as_str(), d.target.as_str(), d.operand.as_str()])
+            .chain(
+                model
+                    .entities
+                    .values()
+                    .flat_map(|e| &e.clauses)
+                    .filter_map(|c| c.symref.as_deref()),
+            )
+            .map(path_of_symref),
+    );
     for entity in model.entities.values() {
         for clause in &entity.clauses {
             if let Some(sel) = &clause.selector {
