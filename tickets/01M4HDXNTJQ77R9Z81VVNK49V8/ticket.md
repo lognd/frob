@@ -2,12 +2,12 @@
 id = "01M4HDXNTJQ77R9Z81VVNK49V8"
 title = "Land base-findings cache key is the crate version plus ledger config, not the engine: after a binary refresh adds rules or atoms, cached base findings omit them and every new-rule finding looks NEW, refusing every land"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T22:53:11Z"
-updated = "2026-10-09T22:53:11Z"
+updated = "2026-10-09T23:19:52Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob-land/src/ratchet.rs", "crates/frob-land/tests/**", "changelog.d/**"]
 
