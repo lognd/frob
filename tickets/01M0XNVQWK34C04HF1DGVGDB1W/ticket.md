@@ -6,10 +6,10 @@ category = "todo"
 priority = "low"
 reporter = "human"
 created = "2026-08-26T00:00:00Z"
-updated = "2026-10-04T22:22:20Z"
+updated = "2026-10-09T20:41:47Z"
 aliases = ["T-2963"]
 labels = ["v1-cluster:E1", "triage:accepted"]
-scope = ["src/frob/serve/**", "src/frob/app/_daemon_proxy.py", "tests/test_app_daemon_proxy.py", "tests/test_serve_socket.py", "tests/test_serve_events.py", "tests/test_serve_leases.py", "docs/modules/serve.md"]
+scope = ["src/frob/serve/**", "src/frob/app/_daemon_proxy.py", "tests/test_app_daemon_proxy.py", "tests/test_serve_socket.py", "tests/test_serve_events.py", "tests/test_serve_leases.py", "docs/modules/serve.md", "docs/design/cli.md"]
 +++
 
 EPIC, not a single-session task. Filed per T-2961's own assessment
