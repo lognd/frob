@@ -2,7 +2,8 @@
 id = "01M4GXG47NK6T1WBBPCMXNZT4A"
 title = "Plan IR: count, knob and def-call ops so the executor's count/knobs/defs are reachable from a rule"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
