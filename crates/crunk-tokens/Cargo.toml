@@ -9,6 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 keywords = ["css", "design-system", "design-tokens", "tailwind"]
 categories = ["web-programming"]
+readme = "README.md"
 
 [lints]
 workspace = true
@@ -17,10 +18,13 @@ workspace = true
 crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
 crunk-tailwind = { version = "0.532.0", path = "../crunk-tailwind" }
 crunk-values = { version = "0.532.0", path = "../crunk-values" }
+gob-exec = { version = "0.532.0", path = "../gob-exec" }
+gob-fs = { version = "0.532.0", path = "../gob-fs" }
 indexmap = { version = "2", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 thiserror = "2"
 tracing = "0.1"
 
 [dev-dependencies]
-serde_json = "1"
+tempfile = "3"

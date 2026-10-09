@@ -7,6 +7,7 @@
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
 // frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
 // frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
+// frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -953,7 +954,8 @@ fn sys011(cx: &Cx<'_>, out: &mut Output) {
 pub fn evaluate(cx: &Cx<'_>) -> Output {
     let mut out = Output::default();
     for rule in [
-        "SYS001", "SYS002", "SYS003", "SYS004", "SYS009", "SYS010", "SYS011", "SYS013",
+        "SYS001", "SYS002", "SYS003", "SYS004", "SYS009", "SYS010", "SYS011", "SYS013", "CAP001",
+        "CAP002",
     ] {
         out.subjects.entry(rule).or_default();
     }
@@ -966,6 +968,7 @@ pub fn evaluate(cx: &Cx<'_>) -> Output {
     sys010(cx, &mut out);
     sys011(cx, &mut out);
     crate::edges::sys013(cx, &mut out);
+    crate::caps::evaluate(cx, &mut out);
     tracing::info!(findings = out.findings.len(), "binding rules evaluated");
     out
 }

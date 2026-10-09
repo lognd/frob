@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a repository with C# sources and no C# tests, when frob check runs, then COV001 counts the C# files as test-capable subjects and reports the untested ones"]
+moved = []
+at = "2026-10-09T15:06:38Z"
+actor = "lognd"
+rev = 1
