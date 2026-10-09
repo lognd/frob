@@ -2,7 +2,8 @@
 id = "01M43ARZH9F9MCPJCKXM635E0X"
 title = "crunk-tokens: export targets css, json, tailwind and `crunk tokens`"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
