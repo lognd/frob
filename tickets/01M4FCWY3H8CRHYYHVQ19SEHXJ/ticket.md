@@ -2,12 +2,12 @@
 id = "01M4FCWY3H8CRHYYHVQ19SEHXJ"
 title = "grmb research cycle R1: exhaustive cited audits of design practice, failure modes, languages, incompleteness and graph languages"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-09T03:56:43Z"
-updated = "2026-10-09T03:57:17Z"
+updated = "2026-10-09T05:12:35Z"
 labels = ["grimble"]
 scope = ["notes/research/grmb-*", "changelog.d/**"]
 
@@ -17,6 +17,10 @@ bound = false
 
 [[acceptance]]
 text = "Given the five notes, when the synthesis lands, then notes/research/grmb-r1-synthesis.md lists the design changes for grmb-planning.md, each with citations"
+bound = false
+
+[[acceptance]]
+text = "Given topic F, when R1 completes, then notes/research/grmb-r1-ergonomics.md covers Rust, Zig and other languages' quality-of-life semantics with cited user evidence, lists predicted .grmb annoyances and gives a concrete mitigation for each"
 bound = false
 +++
 
@@ -108,3 +112,21 @@ E graphs: lessons from graph and modeling languages: UML metamodel and
   design notations (algebraic data types in Alloy/TLA+/P, sealed
   hierarchies), and what a minimal, composable graph core for grmb
   should be.
+
+F ergonomics: quality-of-life semantics that make languages pleasant:
+  what Rust and Zig do (exhaustive match with good diagnostics, error
+  messages with suggestions (rustc, Elm's error message work), editions
+  for evolution, inference that stays local, comptime, error unions and
+  `try`, labeled blocks, shadowing, formatter as law, LSP-first tooling),
+  and what others teach (Elm, Gleam, Roc, Kotlin, Swift, TypeScript,
+  Go's gofmt and simplicity, Python's readability, Nix/Dhall/CUE/HCL/
+  Starlark for config-like languages, Pkl, KDL, TOML). Collect evidence
+  of what users find annoying (language surveys: Rust annual survey,
+  Stack Overflow, Go survey; usability studies at PLATEAU/CHI/OOPSLA/
+  Onward; Cognitive Dimensions). Then predict what would be annoying in
+  .grmb (verbosity of exhaustive handling, string vs identifier names,
+  ceremony for small models, refactor cost when a variant is added, merge
+  conflicts on shared files, error noise on incomplete models, learning
+  curve for non-programmers such as PMs and designers) and give a
+  concrete mitigation for each (defaults, inference, sugar, quick-fixes,
+  `grimble fmt`, LSP code actions, progressive disclosure).

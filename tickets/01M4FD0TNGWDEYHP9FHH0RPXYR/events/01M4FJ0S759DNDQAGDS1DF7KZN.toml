@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-directives/**", "crates/frob-obligations/**", "crates/frob-ack/**", "changelog.d/**"]
+new = ["changelog.d/**", "crates/gob-directives/src/frob.rs", "crates/gob-directives/tests/describes.rs", "crates/frob-ack/src/inputs.rs", "crates/frob-ack/tests/ack.rs", "crates/frob-check/src/snapshot.rs", "docs/reference/directives.md", "docs/schemas/directives.json"]
+at = "2026-10-09T05:26:08Z"
+actor = "lognd"
+rev = 1

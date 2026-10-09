@@ -47,9 +47,10 @@ notes/research/rule-languages.md sections 6 and 7).
    using the same engine as `check` (L8).
 7. **Its own syntax, not YAML.** Snippets are raw text in backticks; no
    escaping except `$` (L9, P5).
-8. **Bounded by construction.** No user recursion, closures carry a
-   bound, the planner orders the work, every plan terminates in
-   polynomial time and reports its cost class (L11, P7). A budget
+8. **Bounded by construction.** No user recursion, closures are the
+   engine's (two-pass and budgeted), the planner orders the work, every
+   plan terminates in polynomial time for a fixed rule and reports its
+   cost class (L11, P7). A budget
    overrun is Unresolved, never clean.
 9. **Small.** Twenty constructs (section 4). Anything new must first be
    expressed with existing constructs (P12).
@@ -204,7 +205,7 @@ That is the whole loop: paste, read, test, refine, run, ask why. Section
 | 9 | containment | `inside`, `has`, `directly inside`, `directly has`, `in unit` | ancestors and descendants |
 | 10 | position | `before`, `after`, `adjoins` | order and adjacency |
 | 11 | edge verbs | `calls`, `imports`, `references`, `resolves to`, `owned by`, `tests`, `extends`, `instantiates` | graph edges with Must/May status |
-| 12 | reaches | `a reaches b via calls within 6` | bounded closure |
+| 12 | reaches | `a reaches b via calls within 6` | closure; `within` is a budget |
 | 13 | count | `count(s: stmt directly inside d) > 40` | counting |
 | 14 | fields | `x.name`, `x.text`, `x.line`, `x.unit`, `x is public`, `x has attr "k"` | properties |
 | 15 | side relations | `find row: config.invariants.forbid_imports`, `p in diff.changed` | typed tables outside U |
@@ -225,9 +226,10 @@ header     = "lang" lang_set
            | "severity" ( "error" | "warn" | "advisory" )
            | "scope" ( "file" | "repo" )
            | "must_measure"
-           | "needs" NAME { "," NAME }
+           | "needs" need { "," need }
            | "rollup" ( "file" | "directory" | "unit" )
            | knob ;
+need       = NAME | "vocab" "(" NAME ")" ;
 lang_set   = "*" | "-" | LANG | "[" LANG { "," LANG } "]" ;
 knob       = "knob" NAME ":" type "=" literal STRING ;
 type       = "int" | "float" | "string" | "bool" | "glob" | "regex"
@@ -264,7 +266,8 @@ rel        = [ "directly" ] ( "inside" | "has" ) object
            | "under" term                           (* module or path segments, not characters *)
            | ( "before" | "after" | "adjoins" ) object
            | VERB object
-           | "reaches" object "via" VERB_LIST "within" term ;
+           | "reaches" object "via" VERB_LIST [ "within" term ]
+           | [ "certainly" | "possibly" ] VERB object ;
 object     = term | shape ;                         (* a bound variable, or an anonymous shape *)
 term       = NAME { "." NAME } | literal | "knob" "." NAME | count | term ARITH term ;
 count      = "count" "(" NAME ":" source { rel } [ "where" cond ] ")" ;
@@ -339,7 +342,7 @@ the compiler and the engine read one source. `grimble rule catalog
 | `owned by` | verb | Q32, Q36 | the grimble node owning a unit |
 | `tests` | verb | Q35 plus `frob:tests` | a test linked to a callable |
 | `reaches ... via ... within N` | closure | Q30 | Yes, No or Unknown with the frontier |
-| `vocab(NAME)` | value | Q47 | empty means NotApplicable, never "no hits" |
+| `vocab(NAME)` | value | Q47 | an empty vocabulary is a NotApplicable cell decided per (rule, language) through `needs` (7.0.7); inside a formula it is the empty set |
 | `config.<table>` | side relation | config schema | typed from docs/schemas/config.json |
 | `diff.changed`, `diff.added` | side relation | gob-git | needs `diff` |
 | `lease.globs`, `lease.ticket` | side relation | frob-lease | needs `lease` |
@@ -358,6 +361,308 @@ same pattern. The bare form is canonical and is what the printer emits
 the dot is how the same field is read in a condition (`e.tag`, section 6).
 
 ## 7. Semantics
+
+### 7.0 Denotational semantics
+
+This section is the meaning of a rule; 7.1-7.4 are readings of it for
+authors. A rule denotes a function from a structure to an outcome per
+binding: [[rule]] : Structure -> (Binding -> Outcome). It is defined
+compositionally over the abstract syntax of sections 4 and 5 (the
+concrete parse of a quantifier body followed by a connective is fixed by
+section 5, ~K0FVJFM; the denotation does not depend on it).
+
+#### 7.0.1 The semantic domain
+
+**Truth values.** K3 = {No, Unknown, Yes}, Kleene's strong three-valued
+logic (SEP "Many-valued logic", https://plato.stanford.edu/entries/logic-manyvalued/).
+Two orders matter:
+
+- the truth order No < Unknown < Yes, in which `and` is min, `or` is
+  max and `not` swaps Yes and No;
+- the information order <=_k, in which Unknown <=_k Yes and
+  Unknown <=_k No, and Yes, No are incomparable. Unknown is "not yet
+  decided", never a third answer.
+
+Every construct below except `certainly` and `possibly` is monotone in
+<=_k. That is the property soundness rests on: refining an Unknown input
+to Yes or No can refine the output, never flip a Yes to a No (Cousot and
+Cousot 1977, https://doi.org/10.1145/512950.512973; Sagiv, Reps and
+Wilhelm 2002, https://doi.org/10.1145/514188.514190).
+
+**Structures.** A rule is evaluated over a structure
+S = (U, {(R_lo, R_hi)}_R, {D}) where:
+
+- U is the finite set of nodes of the U terms in the rule's scope, plus
+  the values their fields take (names, text, numbers, paths);
+- for every relation R of the catalog (section 6: containment, position,
+  edge verbs, `resolves to`, `tests`, ...) there is a pair
+  R_lo <= R_hi of finite relations. A pair in R_lo is certain (a Must
+  edge), a pair in R_hi but not R_lo is possible (a May edge). An
+  Unknown or unclassified edge out of a node `a` puts `a` on the
+  frontier: (a, b) is in R_hi for every b (gob-ir `Relation::unknown_out`,
+  the H1 fix ~NZMJSTK);
+- each kind `K` names a Bounds domain D_K = (lo, hi, open): lo <= hi are
+  the nodes certainly and possibly of kind K, and `open` is true when
+  the domain may have members that are not in U at all (an opaque
+  region, a partial parse, an Unknown subject answer in scope).
+
+**Adapter hypothesis (H).** For every relation, R_lo <= R_true <= R_hi,
+where R_true is the relation in the source; for every domain,
+lo <= D_true, and D_true <= hi unless `open`. This is the soundness
+contract of universal-model.md 4.4, stated as an inequality. A
+concretisation of S is any classical structure C over U (plus hidden
+members of open domains) that satisfies the same inequalities;
+gamma(S) is the set of them. Under (H) the true source is one of them.
+
+**Atoms.** For a relation R and a tuple t:
+
+    atom_R(t) = Yes      if t in R_lo
+                No       if t not in R_hi
+                Unknown  otherwise
+
+and for a domain, mem_D(x) = Yes if x in lo, Unknown if x in hi minus
+lo, No otherwise.
+
+**Values and counts.** A term denotes a value or `unknown` (a field the
+adapter cannot fix, a `const_value` over budget). A number-valued term
+denotes an interval [l, h] with 0 <= l <= h <= inf; a known number n is
+[n, n].
+
+An environment `eta` maps the variables in scope to elements of U.
+[[c]] eta is in K3.
+
+#### 7.0.2 Conditions
+
+| Construct | Denotation [[ . ]] eta |
+|---|---|
+| `t REL o` (containment, `in unit`, `under`, position, `peer of`) | atom_REL(eta t, eta o). These relations are syntactic, so lo = hi on parsed regions; a pair that touches an `opaque`, `hole` or parse-error node is Unknown. |
+| `t VERB o` (`calls`, `imports`, `references`, `resolves to`, `owned by`, `tests`, ...) | atom_VERB(eta t, eta o) over the verb's (lo, hi) pair, frontier included. |
+| `t VERB SHAPE`, `t inside SHAPE` (anonymous shape) | [[some x: SHAPE where t VERB x]] eta, x fresh (7.1). |
+| `x is KIND`, `x is public`, `x has attr "k"` | the query answer as K3: Yes or No when the adapter answers it, Unknown when its answer is Unknown. |
+| `t CMP t'` on values | the classical comparison when both values are known; Unknown when either is `unknown`. |
+| `t CMP t'` on numbers | interval comparison of [a, b] and [c, d]: `<` is Yes iff b < c and No iff a >= d; `<=` is Yes iff b <= c and No iff a > d; `==` is Yes iff a = b = c = d and No iff the intervals are disjoint; `>`, `>=`, `!=` by symmetry and `not`. Otherwise Unknown. |
+| `t ~ r`, `t matches g`, `t in xs` | classical on known values; a list on the right is the `or` over its elements; Unknown when `t` is `unknown`. |
+| `x is SNIPPET` | Yes if the snippet matches the node; No if it does not and the match never inspected a `hole`, `opaque` or unexpanded `phase` node; Unknown otherwise. A metavariable used twice is an equality test, and the equality is alpha-equivalence of U terms (review 3.5). |
+| `exists t` | Yes if the value is known to be present, No if known absent, else Unknown. |
+| `not c`; `c and c'`; `c or c'`; `any { c1, ..., cn }` | Kleene: swap; min; max; max over the list. |
+| `some x: SRC RELS where c` | the `or`, over x in hi(SRC), of mem(x) and [[RELS and c]] eta[x], and additionally `or` Unknown when SRC is `open` (a hidden member might satisfy c). |
+| `no x: ...` | `not` of the matching `some`. |
+| `count(x: SRC RELS where c)` | the interval [l, h] with l = #{x : mem(x) and [[RELS and c]] = Yes} and h = #{x in hi(SRC) : mem(x) and [[RELS and c]] != No}, and h = inf when SRC is `open`. |
+| `t ARITH t'` | interval arithmetic: [a,b] + [c,d] = [a+c, b+d]; [a,b] - [c,d] = [a-d, b-c]; `*` takes the min and max of the four endpoint products (0 * inf = 0). Sound; it loses the correlation between two counts over the same domain (NEAT031), which can only add Unknown. |
+| `a reaches b via V within N` | see 7.0.3. |
+| `a reaches b via V` (no `within`) | see 7.0.3. |
+| `certainly c`, `possibly c` | see 7.0.4. |
+| `d(t1, ..., tk)` (def call) | V_d(eta t1, ..., eta tk), where V_d : U^k -> K3 is the def's view: V_d(u) = [[body]] [params := u], computed once per structure and stored. GRL009 forbids recursion and forward reference, so the views form strata in text order. A view has the same meaning as inlining (substitution) and polynomial cost; inlining a chain `d_i = d_{i-1} and d_{i-1}` is exponential (review 2.5 item 1). |
+
+Two consequences worth stating. Evaluating a non-monotone predicate at
+the endpoints of an interval is unsound ("count is even" with l = 1,
+h = 3 is odd at both ends, but 2 is possible), which is why `count`
+offers only interval comparison and arithmetic (Ross and Sagiv 1992,
+https://doi.org/10.1145/137097.137852). And `not` needs no special
+treatment: because (H) bounds R_true from above, an absent pair is No
+only when it is outside R_hi, so `not t calls f` is Unknown, not Yes,
+when the only call is a May edge.
+
+#### 7.0.3 Closures
+
+Let E be the union of the relations named in `via`, with E_lo and E_hi.
+
+**Unbounded: `a reaches b via V`.** Two classical least fixpoints, one
+per bound: Yes iff (a, b) is in E_lo^+, the transitive closure of the
+certain edges; No iff (a, b) is not in E_hi^+ and no node reachable from
+`a` in E_hi (`a` included) is on the frontier; Unknown otherwise, with the frontier
+nodes as the reason. This is the two-pass computation of
+`Relation::closure` (gob-ir eval/relation.rs). It is NOT the
+information-order (Kripke-Kleene, Fitting 1985,
+https://doi.org/10.1016/s0743-1066(85)80005-4) fixpoint, which leaves an
+unfounded loop Unknown even on a closed structure (review 2.2 item 4);
+on a closed structure lo = hi and the answer is the classical one.
+
+**Bounded: `a reaches b via V within N`.** Unbounded reaches are legal; N is a budget, not part of
+the question: the rule asks whether `a` reaches `b`, and N says how far
+the engine may look. Let H_k be the nodes reachable from `a` by at most
+k edges of E_hi.
+
+- Yes iff a path of at most N certain edges leads from a to b.
+- Otherwise Unknown, reason `may-edge`, if b is in H_N.
+- Otherwise Unknown, reason the frontier, if some node of H_N is on the
+  frontier.
+- Otherwise No if H_(N+1) = H_N: the possible-edge search was
+  exhausted within N steps, so no path of any length exists.
+- Otherwise Unknown, reason `budget`: the search was truncated.
+
+A certain path longer than N therefore gives Unknown `budget`, never No.
+This is what keeps COV001 honest (review 2.4): a test that reaches `f`
+at depth 13 with `within 12` makes the binding Unresolved, not a fire.
+The cost is O(N * |E_hi|) per source.
+
+When `b` is a call site, the closure ends at the unit containing it
+(7.1).
+
+Because an unbounded `reaches` is a two-pass fixpoint and always
+terminates, GRL010 (closure without `within`) is retired (section 10).
+
+#### 7.0.4 `certainly` and `possibly`
+
+    [[certainly c]] = Yes if [[c]] = Yes, else No
+    [[possibly c]]  = No  if [[c]] = No,  else Yes
+
+They collapse Unknown, so they are not monotone in <=_k, and no
+positional restriction alone makes them sound: in a positive position of
+a P+ rule, `certainly` turns a May edge into No and certifies clean on a
+guess, and `possibly` fires on a guess. Two rules together make them
+sound:
+
+1. **Position (GRL017).** They may occur only in positive positions:
+   under an even number of `not` and `no`. Inside an `unresolved when`
+   condition they are allowed, because that condition only adds doubt.
+   This keeps each word meaning what it says (`certainly` can only
+   remove fires, `possibly` can only add them).
+2. **Collapse is an assumption.** Let V1 be the binding's value as
+   defined above and V0 its value with every `certainly` and `possibly`
+   read as the identity. Then V0 <=_k V1 (induction on the formula:
+   both operators send a definite value to itself and every other
+   construct is monotone), so a collapse can turn Unknown into a
+   definite answer but never flip one. When V0 is Unknown and V1 is
+   definite, the outcome is a conditional answer with reason
+   `assumed:certainly@<span>` or `assumed:possibly@<span>`, as for
+   unverified claims (7.0.6). A conditional fire is capped at Advisory.
+
+#### 7.0.5 From value to outcome: polarity
+
+A binding is an assignment of the `find` variables. Each `find x: SRC`
+ranges over hi(SRC); the binding's value is
+
+    F(eta) = (and over finds of mem(x)) and (and over where and quantifier clauses) and W
+
+where W is the `or` of the `report ... when` conditions (W = Yes when a
+`report` has no `when`). If a `find` source is `open`, the hidden
+members are one Unresolved per opaque region, as in universal-model.md
+4.2 subject accounting (vacuous, opaque subjects and `must_measure` are
+unchanged). The polarity maps F to the outcome; no author code is
+involved:
+
+| Polarity | F = Yes | F = Unknown | F = No |
+|---|---|---|---|
+| P+ (the formula describes the bad thing) | fire | Unresolved | clean |
+| P- (the formula describes the good thing) | clean | Unresolved | fire |
+
+P0, Pn and Pc are the P+ map over a restricted formula: P0 is the P+ map
+over an equality, and its formula is an equality or inequality of values (Unresolved unless both sides are
+known), Pn's is an interval comparison of a count with a limit (max-type
+`count > N` fires iff l > N and is clean iff h <= N; min-type
+`count < N` fires iff h < N and is clean iff l >= N), Pc's is a closure
+atom (7.0.3). The headers stay because they fix the formula shape GRL
+accepts and the wording of the Unresolved message.
+
+The reasons of an Unresolved are the reasons of the Unknown leaves F
+depends on: `may-edge`, the frontier, `budget`, `parse-error`,
+`opaque:<reason>`, `capability gap:<cap>`, `conflict:<a>-vs-<b>`
+(universal-model.md 4.4.1), `assumed:<claim>`. A Belnap conflict between
+two sources of one fact is resolved by the knowledge meet over the whole
+fact, so the dependent answer is Unresolved with reason
+`conflict:<a>-vs-<b>`. `rule why` prints them,
+clause by clause; this is why-provenance (Green, Karvounarakis and
+Tannen 2007, https://doi.org/10.1145/1265530.1265535) with a Must/May
+annotation.
+
+**`report ... when`.** In a P+ rule (and P0, Pn, Pc) a firing binding
+uses the first `report` in text order whose `when` is Yes; earlier
+clauses whose `when` is Unknown are attached as notes ("may also: ...").
+A firing binding always has such a clause, because F = Yes implies
+W = Yes. `report ... when` in a P- rule is a compile error (the next free GRL
+code; no rule in section 12 needs it, and its message selection has no
+sound reading when F is No).
+
+**Witnesses.** A message names the first witness in source order whose
+`some` body is Yes; an Unresolved message names the first whose body is
+Unknown, as "possible witness".
+
+**`unresolved when C because "r"`.** If [[C]] is Yes or Unknown for a
+binding, its outcome is Unresolved with reason r, replacing fire or
+clean.
+
+#### 7.0.6 Conditional answers
+
+An atom whose lo or hi bound rests on an UNVERIFIED claim (a
+`grimble:effects` claim on an unanalysable body, an annotation without
+checker closure, a `frob:calls` directive that narrows an Unknown
+resolution) is evaluated with the claim, and every outcome whose
+definiteness depends on it is conditional, with reason
+`assumed:<claim>` (cohesion.md D121; D119's rule that an unverified
+claim never narrows hi on its own). Dependence is decided as for
+`certainly` in 7.0.4: evaluate once without the claim; if that value is
+Unknown and the value with the claim is definite, the outcome is
+conditional. A conditional clean counts as clean in check and CI and as
+Unresolved at the release gate (D121). A conditional fire is emitted as
+Advisory with the assumption in the message, never as Error or Warn
+(universal-model.md Theorem 3(b) is about Error and Warn).
+
+#### 7.0.7 NotApplicable is not a value
+
+K3 has three values; there is no fourth. NotApplicable is a property of
+a (rule, language) pair, decided before evaluation from the capability
+matrix (gob-caps):
+
+    needs(rule) = the capabilities declared in `needs`
+                  plus the capability of every `find` source's kind
+    App(rule, L) = NotApplicable                  if some cap in needs(rule) is NA in L
+                   Unresolved("capability gap:c")  else if some cell c is a gap in L
+                   Applicable                      otherwise
+
+Inside a formula, a kind or relation whose cell is NA in L denotes the
+empty set exactly (lo = hi = empty, not open). So `not d inside test` in
+a language with no test convention is Yes, which is the classical
+answer, and a P- rule that quantifies over tests (COV001) is excluded
+by declaring `needs test_items`, not by a value that silently erases
+every subject. An empty vocabulary is the same: a rule that is
+meaningless without `vocab(NAME)` declares it in `needs`; otherwise
+`v in knob.sources` is simply No. GRL018 is the compile-time special
+case: a word that no language in `lang` answers can only ever be empty.
+A NotApplicable pair produces no finding and is counted once per
+language in the fidelity report (7.2).
+
+#### 7.0.8 Cost
+
+GRL is non-recursive first-order logic with counting over finite
+relational structures, plus the engine's closures and external
+relations: in database terms, non-recursive Datalog with stratified
+negation and aggregation (universal-model.md 4.3). Such languages are
+local and cannot express reachability (Libkin 2003,
+https://doi.org/10.1016/s0304-3975(02)00736-3), which is why `reaches`
+is a built-in.
+
+- **Data complexity is polynomial for a fixed rule, when defs are
+  materialised views (7.0.2).** A clause with k simultaneously live
+  variables costs at most O(|U|^k) over stored relations; an unbounded
+  closure is two graph searches per source, O(|V| * (|V| + |E|)); a
+  bounded one is O(N * |E|) per source.
+- **Engine relations are the engine's cost.** `cell`, owner resolution,
+  `resolves to`, `const_value` and the closures each run under a stated
+  budget; an overrun is Unknown with reason `budget`.
+- **Snippets.** Matching a snippet whose metavariables each occur once
+  is linear in the tree for a fixed pattern (such patterns are regular
+  tree languages: Thatcher and Wright 1968,
+  https://doi.org/10.1007/bf01691346; Doner 1970,
+  https://doi.org/10.1016/s0022-0000(70)80041-1). A repeated SEQUENCE
+  metavariable (`$$$XS` used twice) makes matching NP-complete in the
+  size of the pattern (Angluin 1980,
+  https://doi.org/10.1016/0022-0000(80)90041-0; Ehrenfeucht and
+  Rozenberg 1979, https://doi.org/10.1016/0020-0190(79)90135-2); it is
+  polynomial, n^k for k such variables, only for a fixed pattern. GRL
+  therefore bounds them: a snippet may repeat at most two sequence
+  metavariables (proposal: a new compile error, the next free GRL
+  code), and every match runs under the rule's budget.
+- **Combined complexity is not polynomial.** For the first-order core
+  it is PSPACE-complete (Vardi 1982, https://doi.org/10.1145/800070.802186),
+  and the plan validator's limit of 1024 variables makes "polynomial"
+  meaningless for a hostile pack. The runtime budget is the guard, and
+  `grimble rule check` reports, besides per file, per repository and
+  closure depth, the plan's width: the largest number of simultaneously
+  live variables. Joins are bounded by the AGM bound (Atserias, Grohe
+  and Marx 2008, https://doi.org/10.1109/focs.2008.43), and acyclic
+  joins run in time linear in input plus output (Beeri, Fagin, Maier and
+  Yannakakis 1983, https://doi.org/10.1145/2402.322389).
 
 ### 7.1 Bindings and findings
 
@@ -381,7 +686,9 @@ the dot is how the same field is read in a condition (`e.tag`, section 6).
 - `directly inside` means one structural level: the statements directly
   inside a function are its top-level body statements, not those nested
   in its branches and loops.
-- `a reaches b via calls within N` follows at most N call edges. `b`
+- `a reaches b via calls within N` asks whether `a` reaches `b`; N is a
+  budget on the search, and a longer path gives Unknown `budget`, never
+  No (7.0.3). `b`
   may be a unit, or a call site (then the closure ends at the unit that
   contains the call): `f reaches call(callee = "exit") via calls within 3`.
   Verbs never introduce names: to name the target of an edge, bind it
@@ -392,48 +699,54 @@ the dot is how the same field is read in a condition (`e.tag`, section 6).
   would bind it (GRL003).
 - **One finding per binding.** A finding is produced for each distinct
   assignment of the `find` variables that satisfies every clause. If a
-  rule has several `report ... when` clauses, they are tried in text
-  order and the first that holds produces the finding, so one binding
-  never yields two findings (survey 8.6).
+  rule has several `report ... when` clauses, the first in text order
+  whose `when` is Yes produces the finding and earlier clauses whose
+  `when` is Unknown become notes, so one binding never yields two
+  findings (survey 8.6, 7.0.5). `report ... when` is a compile error in
+  a P- rule.
 - **Witnesses.** A `report` message may name a variable bound by `some`;
   it shows the first witness in source order (file path, then byte
-  offset), which is deterministic.
+  offset) whose body is Yes, or Unknown for an Unresolved message,
+  which is deterministic (7.0.5).
 - Lists on the right of `in`, `~` and `matches` mean "any element":
   `p matches lease.globs` is true if any glob matches. There is no
   second spelling.
 
 ### 7.2 Three values and polarity
 
-Every condition evaluates to Yes, No, Unknown or NotApplicable
-(universal-model.md 4.1, Kleene connectives). Sources of Unknown: May
-edges, Unknown visibility, partial parses, opaque regions, budget
-overruns, an Unknown-status closure frontier. Sources of NotApplicable:
-a language that does not answer a word the rule uses (empty vocabulary,
-no test convention).
+Every condition evaluates to Yes, No or Unknown (Kleene's strong
+three-valued logic, 7.0). Sources of Unknown: May edges, the Unknown
+frontier of a resolution, Unknown visibility, partial parses, opaque
+regions, budget overruns (including a `within` bound), and source
+conflicts (`conflict:<a>-vs-<b>`). NotApplicable is not a value: it is
+decided per rule and language before evaluation (7.0.7).
 
-The rule's polarity (default P+) decides the outcome per binding, with
-no author code:
+The rule's polarity (default P+) maps the three-valued value F of each
+binding (7.0.5) to its outcome, with no author code:
 
-| Polarity | Fires when | Unresolved when | Certifies clean when |
-|---|---|---|---|
-| P+ (a bad thing exists) | the bad pattern holds on Must facts | it holds only on May facts or Unknown | it fails even on May facts |
-| P- (a good thing is missing) | the good thing is absent even on May facts | it is present only on May facts | it holds on Must facts |
-| P0 (a fact to report) | it holds | Unknown | never fires otherwise |
-| Pn (a count crosses a limit) | the lower bound crosses | the upper bound crosses, the lower does not | the upper bound stays under |
-| Pc (a closure property) | Must closure proves it | the frontier is Unknown | May closure disproves it |
+| Polarity | Shape of the formula | F = Yes | F = Unknown | F = No |
+|---|---|---|---|---|
+| P+ (a bad thing exists) | any | fire | Unresolved, naming the Unknown atoms | clean |
+| P- (a good thing is missing) | any; the formula describes the good thing | clean | Unresolved, naming the Unknown atoms | fire |
+| P0 (a fact or an equality) | equality or inequality of values | fire | Unresolved unless both sides are known | clean |
+| Pn (a count crosses a limit) | interval comparison (7.0.2) | fire (max-type: l > N; min-type: h < N) | Unresolved | clean (max-type: h <= N; min-type: l >= N) |
+| Pc (a closure property) | closure atom (7.0.3) | fire (a path of certain edges) | Unresolved, naming the frontier | clean (no path even through possible edges) |
 
-So `reaches`, `calls` and `owned by` pick Must or May edges themselves;
-`certainly` and `possibly` before a verb override the choice and are
-rarely needed. `unresolved when COND because "reason"` adds doubt the
+The formula is evaluated once, in K3, with May edges and Unknown
+answers as Unknown atoms; no clause chooses an edge set. `certainly`
+and `possibly` collapse Unknown; they are allowed only in positive
+positions (GRL017) and an answer that depends on the collapse is
+conditional, capped at Advisory when it fires (7.0.4). `unresolved when COND because "reason"` adds doubt the
 engine cannot see (a malformed config entry). Hits on parse-error nodes
 and absence claims over partially parsed files are Unresolved with
 reason `parse-error`. NotApplicable never produces a finding; it is
 counted once per language in the fidelity report.
 
-`grimble rule why` and `explain` always print the polarity and which
-edge set each clause used ("used May edges because polarity P-"), so the
-invisible part of the semantics is visible on request (survey 8.5
-item 7).
+`grimble rule why` and `explain` always print the polarity and, for
+each clause, its value and the atoms that made it Unknown ("Unknown
+because `t calls f` is a May edge at a.py:12; under `not` this keeps
+the rule Unresolved"), so the invisible part of the semantics is
+visible on request (survey 8.5 item 7).
 
 ### 7.3 Universal rules and roles
 
@@ -456,11 +769,15 @@ languages.
 ### 7.4 Bounds and cost
 
 No construct recurses. `def` may call earlier defs but never itself or
-a later one (GRL009). `reaches` requires `within N` (a literal or knob;
-GRL010 without it). Counts and arithmetic are over finite sets. Every
-plan therefore terminates in polynomial time (universal-model.md 4.3).
+a later one (GRL009). An unbounded `reaches` is an engine closure
+(two-pass fixpoint) and `within N` is a budget (7.0.3); GRL010 is
+retired. Counts and arithmetic are over finite sets. Every plan
+therefore terminates, in polynomial time for a fixed rule with defs as
+materialised views; combined complexity is not polynomial and the
+budget is the guard (7.0.8, universal-model.md 4.3).
 `grimble rule check` prints the plan's cost class (per file; per
-repository; closure depth N) and its prefilter (the node kinds a file
+repository; closure depth N), the plan's width (the largest number of
+simultaneously live variables) and its prefilter (the node kinds a file
 must contain for the rule to run), and a run over its budget reports
 Unresolved `budget` (plugins.md 6.5).
 
@@ -522,13 +839,15 @@ Unresolved `budget` (plugins.md 6.5).
 | GRL007 | `as roles` snippet contains a node with no universal operator | names the node |
 | GRL008 | metavariable used in a fix or message but bound by no snippet | |
 | GRL009 | def recursion or forward reference | |
-| GRL010 | closure without `within` | add `within knob.depth` |
+| GRL010 | (retired 2026-10-08) closure without `within` | none: an unbounded `reaches` is a legal two-pass fixpoint and `within N` is a budget, not part of the question (7.0.3, D123) |
 | GRL011 | missing fire or clean example (or the universal third example) | a scaffold of the missing example |
 | GRL012 | explain without `## Remedy` | |
 | GRL013 | (warning) variable bound and never used | |
 | GRL014 | side relation used but not in `needs` | add it to `needs` |
 | GRL015 | fix without applicability, or a plugin fix outside its span | |
 | GRL016 | example expectation does not match (a test failure, not a compile error) | the diff of expected and actual findings |
+| GRL017 | `certainly` or `possibly` in a negative position (under `not` or `no`) | "move it out of the negation, or drop the word: the rule's polarity already decides whether Must or May edges count" (7.0.4) |
+| GRL018 | a word no language of `lang` answers (the rule would be NotApplicable everywhere) | add a language that answers it to `lang`, or remove the clause (7.0.7) |
 
 Error messages use the user's words, never the theory's: "`d` is only
 used inside `no`; add a `find d:` clause" rather than "ungrounded
@@ -827,6 +1146,7 @@ pack is invisible to rule authors.
 rule NEAT013 "ambient-source-call" {
   lang *
   severity warn
+  needs vocab(sources)
   knob sources: vocab = vocab("clock", "rng", "env", "fs", "net", "stdio", "exit") "ambient sources"
 
   find fn: function where not fn has attr "frob:shell"
@@ -855,9 +1175,10 @@ rule NEAT013 "ambient-source-call" {
 }
 ```
 
-`v` is a witness of `some` (7.1), so the message can name it; an empty
-vocabulary makes `v in knob.sources` NotApplicable, so Lua is not
-reported clean.
+`v` is a witness of `some` (7.1), so the message can name it; NEAT013
+declares the vocabulary in `needs` (`needs vocab(sources)`), so Lua is NotApplicable for the
+rule as a whole and not reported clean; inside the formula an empty
+vocabulary is the empty set (7.0.7).
 
 ### NEAT031 dispatch-site-owns-logic
 
@@ -962,7 +1283,7 @@ design document cannot prove. Before the grammar is frozen:
    in quantifiers and the meaning of `directly` are now stated. Round 2
    runs with people, or with the implemented `rule test`, before the
    grammar is frozen.
-2. **Error goldens** for GRL001-GRL016 written before the compiler, so
+2. **Error goldens** for GRL001-GRL018 written before the compiler, so
    the messages are designed, not accidental.
 3. **The std pack as corpus.** Every std rule is written in GRL, and its
    source is the first block of its reference page (L12).
