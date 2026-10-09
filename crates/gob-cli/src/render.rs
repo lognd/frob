@@ -141,7 +141,10 @@ pub(crate) fn failure(verb: Option<&str>, err: &CliError, json: bool) -> Executi
             ..
         } = err
         {
-            tracing::debug!(findings = findings.len(), "failure envelope carries findings");
+            tracing::debug!(
+                findings = findings.len(),
+                "failure envelope carries findings"
+            );
             envelope.data = Some(data.clone());
             envelope.findings.clone_from(findings);
             envelope.warnings.clone_from(warnings);

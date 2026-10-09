@@ -456,11 +456,15 @@ fn hand_cut() -> Repo {
 fn rel001(repo: &Repo) -> Vec<String> {
     let out = repo.frob(&["check"]);
     let v = json(&out);
-    let message = v["error"]["message"].as_str().unwrap_or_default();
-    message
-        .lines()
-        .filter(|l| l.contains("REL001: tag"))
-        .map(str::to_owned)
+    v["findings"]
+        .as_array()
+        .map(Vec::as_slice)
+        .unwrap_or_default()
+        .iter()
+        .filter(|f| {
+            f["rule"] == "REL001" && f["message"].as_str().is_some_and(|m| m.starts_with("tag"))
+        })
+        .map(|f| f["message"].to_string())
         .collect()
 }
 
