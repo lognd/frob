@@ -8,7 +8,7 @@ points = 1
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:29Z"
-updated = "2026-10-09T19:47:32Z"
+updated = "2026-10-09T22:07:34Z"
 scope = ["changelog.d/**", "Cargo.toml"]
 
 [[acceptance]]
