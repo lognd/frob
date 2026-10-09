@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["area:crunk", "creates:crates/crunk-rules/src/rules/bp00*", "creates:crates/crunk-rules/src/rules/tw00*", "creates:crates/crunk-rules/src/rules/tokens001*", "creates:changelog.d/01M43ATBY4CHA4FYVC7BWK6MXR.added.md", "creates:crates/crunk-check/src/tailwind.rs"]
+new = ["area:crunk", "creates:crates/crunk-rules/src/rules/bp00*", "creates:crates/crunk-rules/src/rules/tw00*", "creates:crates/crunk-rules/src/rules/tokens001*", "creates:changelog.d/01M43ATBY4CHA4FYVC7BWK6MXR.added.md", "creates:crates/crunk-check/src/tailwind.rs", "creates:crates/crunk-check/tests/tokens001.rs"]
+at = "2026-10-09T22:51:37Z"
+actor = "lognd"
+rev = 1

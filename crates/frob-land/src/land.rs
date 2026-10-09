@@ -698,6 +698,10 @@ fn verify_check(
     base: &str,
     opts: &LandOptions,
 ) -> Result<Ratchet, LandError> {
+    // Both runs read the same tree, so the tool stages (minutes of cargo) run once, in the
+    // unscoped head run whose findings the ratchet compares; the scoped run adds only the
+    // ticket-only rules (frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W).
+    ratchet::share_build_dir(wt.common_dir(), wt_path);
     let run = |ticket: Option<&str>| {
         frob_check::run(
             wt_path,
@@ -707,6 +711,7 @@ fn verify_check(
                 ledger: Some(ledger.config().clone()),
                 clock: Some(ledger.clock().clone()),
                 skip_telemetry: true,
+                skip_tools: ticket.is_some(),
                 changelog_exempt: opts.no_changelog_reason.is_some(),
                 ..CheckOptions::default()
             },
@@ -1091,6 +1096,53 @@ fn leave_worktree(wt_path: &Path, primary: &Path) {
     }
 }
 
+/// Suffix of a worktree directory renamed aside and waiting for its background deletion.
+const REMOVING_SUFFIX: &str = ".removing";
+
+/// Rename `wt_path` aside in one step and delete it (and any earlier leftovers) on a background thread.
+///
+/// Deleting a worktree with a large build directory took 4-9 s of the land
+/// (frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W); a rename is instant, and the caller prunes the
+/// now-dangling registration. The process may exit before the deletion finishes: the next
+/// land sweeps the `.removing` leftover. Returns false when the rename failed (the caller
+/// then removes the worktree through git).
+fn detach_worktree(wt_path: &Path) -> bool {
+    let (Some(parent), Some(name)) = (wt_path.parent(), wt_path.file_name()) else {
+        return false;
+    };
+    let mut aside_name = name.to_os_string();
+    aside_name.push(REMOVING_SUFFIX);
+    let aside = parent.join(aside_name);
+    if let Err(e) = std::fs::rename(wt_path, &aside) {
+        tracing::warn!(error = %e, "worktree not renamed aside; removing it through git");
+        return false;
+    }
+    tracing::info!(aside = %aside.display(), "worktree renamed aside; deleting in the background");
+    let parent = parent.to_path_buf();
+    std::thread::spawn(move || sweep_removing(&parent));
+    true
+}
+
+/// Delete every `*.removing` directory directly under `parent`; failures are logged.
+fn sweep_removing(parent: &Path) {
+    let Ok(entries) = std::fs::read_dir(parent) else {
+        return;
+    };
+    for e in entries.flatten() {
+        if !e.file_name().to_string_lossy().ends_with(REMOVING_SUFFIX) {
+            continue;
+        }
+        match std::fs::remove_dir_all(e.path()) {
+            Ok(()) => {
+                tracing::info!(dir = %e.path().display(), "background worktree deletion done");
+            }
+            Err(err) => {
+                tracing::warn!(dir = %e.path().display(), error = %err, "background worktree deletion failed");
+            }
+        }
+    }
+}
+
 /// Remove the worktree and its (now merged) branch; failures are warnings because the land is done.
 fn remove_worktree(
     repo: &Repo,
@@ -1105,10 +1157,14 @@ fn remove_worktree(
     let merged = repo
         .rev_parse(branch)
         .is_ok_and(|b| repo.merge_base(&base_ref(base), branch).ok().flatten() == Some(b));
-    let mut cleanup: Vec<(&str, Vec<&str>)> = vec![(
-        "worktree remove",
-        vec!["worktree", "remove", "--force", &path],
-    )];
+    let mut cleanup: Vec<(&str, Vec<&str>)> = if detach_worktree(wt_path) {
+        vec![("worktree prune", vec!["worktree", "prune"])]
+    } else {
+        vec![(
+            "worktree remove",
+            vec!["worktree", "remove", "--force", &path],
+        )]
+    };
     if merged {
         cleanup.push(("branch delete", vec!["branch", "-D", branch]));
     } else {
@@ -1136,6 +1192,22 @@ fn remove_worktree(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W
+    // frob:tests crates/frob-land/src/land.rs::detach_worktree
+    #[test]
+    fn a_detached_worktree_vanishes_at_once_and_its_leftover_is_swept() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let wt = tmp.path().join("wt");
+        std::fs::create_dir_all(wt.join("src")).expect("mkdir");
+        let stale = tmp.path().join(format!("old{REMOVING_SUFFIX}"));
+        std::fs::create_dir_all(&stale).expect("stale");
+        assert!(detach_worktree(&wt));
+        assert!(!wt.exists(), "the worktree path is free immediately");
+        sweep_removing(tmp.path());
+        assert!(!stale.exists());
+        assert!(!tmp.path().join(format!("wt{REMOVING_SUFFIX}")).exists());
+    }
 
     // frob:ticket 01M41RK1G648EJJNRK4G5RJY40
     // frob:tests crates/frob-land/src/land.rs::is_inside

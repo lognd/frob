@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["strata-core/src/parse/grammar_infra.rs", "docs/strata/surface.md#std-infra", "src/frob/strata/_models.py", "docs/design/grmb-spec.md"]
+new = ["strata-core/src/parse/grammar_infra.rs", "src/frob/strata/_models.py", "docs/design/grmb-spec.md"]
+at = "2026-10-09T20:42:14Z"
+actor = "lognd"
+rev = 1
