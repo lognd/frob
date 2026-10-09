@@ -1,0 +1,13 @@
+kind = "create"
+title = "frob check writes .crunk/telemetry.jsonl into the worktree and then reports it as an opaque file (DRIFT001)"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+labels = ["adoption:hullbreach"]
+scope = ["crates/crunk*/**", "crates/frob-check/**", "crates/gob-check/**", "changelog.d/**"]
+acceptance = ["Given a fresh repository, when frob check runs, then no file appears in the worktree outside .frob or gitignored state, and crunk telemetry goes to the cache dir"]
+body = "Hullbreach platform repro."
+at = "2026-10-09T03:58:45Z"
+actor = "lognd"
+rev = 1

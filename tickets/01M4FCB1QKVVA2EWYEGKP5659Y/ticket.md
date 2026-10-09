@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T03:47:03Z"
-updated = "2026-10-09T03:51:23Z"
+updated = "2026-10-09T04:23:07Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/gob-directives/**", "crates/frob-obligations/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a ticket imported from v1 with alias T-0042, when a file carries frob:todo T-0042, then the directive resolves to that ticket with no finding, and an unknown T-#### is an unresolved-reference finding naming the alias"
-bound = false
+bound = true
 +++
 
 Request from the hullbreach adoption (platform 130, game 116 v1 tickets): both repos use frob:todo T-#### throughout; v2 requires the 26-char ULID. Resolve v1 aliases from the ticket ledger's aliases field (set by the importer) instead of rewriting every file.

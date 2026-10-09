@@ -2,14 +2,14 @@
 id = "01M4FCET3GBDKBRK9JP83H49E3"
 title = "grmb planning layer design: actors, goal variant trees, scenarios with Zig/Rust outcome handling, impl blocks bound to code, ticket lifecycle (D123+)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T03:49:07Z"
-updated = "2026-10-09T03:51:32Z"
+updated = "2026-10-09T04:41:50Z"
 labels = ["grimble", "creates:docs/design/grmb-planning.md"]
-scope = ["changelog.d/**", "docs/design/grmb-spec.md", "docs/design/grimble-model.md", "docs/design/grmb-planning.md"]
+scope = ["changelog.d/**", "docs/design/grmb-spec.md", "docs/design/grimble-model.md", "docs/design/grmb-planning.md", "docs/design/README.md"]
 
 [[acceptance]]
 text = "Given the owner mockup and the coordinator brief, when docs/design/grmb-planning.md lands, then it specifies the grammar (EBNF), operators, well-formedness rules with ids, U encoding, graph JSON status and obligations, the frob ticket join and the milestone cut, and docs/design/README.md records D123 onward"
