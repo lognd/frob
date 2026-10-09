@@ -2,7 +2,8 @@
 id = "01M4GVBJWA7JQQ032755357VS8"
 title = "experimental CI red: CAP001 fires on frob-v2's own model since ~FSW5067 (no may grants for fs.read and exec in design/model.grmb)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 2
 reporter = "lognd"
