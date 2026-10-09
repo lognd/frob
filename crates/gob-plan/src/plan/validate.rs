@@ -12,7 +12,9 @@ use std::str::FromStr;
 use gob_rules::RuleId;
 
 use super::error::PlanError;
-use super::ir::{CostClass, Langs, Limit, Op, OpId, Operand, PlanParts, Provenance, StrId, VarId};
+use super::ir::{
+    CostClass, Langs, Limit, Op, OpId, Operand, PlanParts, Polarity, Provenance, StrId, VarId,
+};
 use super::limits::{
     MAX_DEFS, MAX_DEPTH, MAX_LIST, MAX_OPS, MAX_PACK_NAME, MAX_PARAMS, MAX_STR_LEN, MAX_STRINGS,
     MAX_VARS, MAX_WITHIN,
@@ -22,7 +24,39 @@ use super::limits::{
 pub fn validate(p: &PlanParts) -> Result<(), PlanError> {
     limits_and_names(p)?;
     references(p)?;
+    polarity_shape(p)?;
     Walk::new(p).run()
+}
+
+/// The P- split: `subjects` is zero except in P- plans, where it cuts the clause list into the
+/// subject selection (all binders) and the good-thing formula; `report ... when` has no sound
+/// reading in P- (grl-spec.md 7.0.5).
+fn polarity_shape(p: &PlanParts) -> Result<(), PlanError> {
+    let invalid = |what, why| Err(PlanError::Invalid { what, why });
+    if p.polarity != Polarity::Pminus {
+        return if p.subjects == 0 {
+            Ok(())
+        } else {
+            invalid("subjects", "only a P- plan splits its clauses")
+        };
+    }
+    if usize::from(p.subjects) > p.clauses.len() {
+        return invalid("subjects", "more subject clauses than clauses");
+    }
+    if p.reports.iter().any(|r| r.when.is_some()) {
+        return invalid("report", "`report ... when` is not allowed in a P- plan");
+    }
+    let formula = &p.clauses[usize::from(p.subjects)..];
+    if let Some(&op) = formula
+        .iter()
+        .find(|&&c| matches!(p.ops[c as usize], Op::Find { .. } | Op::FindSide { .. }))
+    {
+        return Err(PlanError::Misplaced {
+            op,
+            why: "a find must be among the subject clauses of a P- plan",
+        });
+    }
+    Ok(())
 }
 
 fn too_large(what: &'static str, found: usize, limit: usize) -> PlanError {
@@ -48,6 +82,7 @@ fn limits_and_names(p: &PlanParts) -> Result<(), PlanError> {
     check_len("defs", p.defs.len(), MAX_DEFS)?;
     check_len("clauses", p.clauses.len(), MAX_LIST)?;
     check_len("reports", p.reports.len(), MAX_LIST)?;
+    check_len("unresolved clauses", p.unresolved.len(), MAX_LIST)?;
     check_len("prefilter", p.prefilter.len(), MAX_LIST)?;
     for s in &p.strings {
         check_len("string length", s.len(), MAX_STR_LEN)?;
@@ -266,6 +301,10 @@ fn references(p: &PlanParts) -> Result<(), PlanError> {
     for &c in &p.clauses {
         op_ref(c)?;
     }
+    for u in &p.unresolved {
+        op_ref(u.when)?;
+        str_in_range(u.reason, n)?;
+    }
     for r in &p.reports {
         if let Some(w) = r.when {
             op_ref(w)?;
@@ -318,6 +357,9 @@ impl<'a> Walk<'a> {
         self.in_def = None;
         for &c in &p.clauses {
             self.visit(c, 0, true)?;
+        }
+        for u in &p.unresolved {
+            self.visit(u.when, 0, false)?;
         }
         for r in &p.reports {
             if let Some(w) = r.when {

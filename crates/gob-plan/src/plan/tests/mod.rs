@@ -26,7 +26,7 @@ pub(super) fn sample() -> PlanParts {
     PlanParts {
         rule: "NEAT013".into(),
         provenance: Provenance::Pack("acme-pack".into()),
-        polarity: Polarity::Pminus,
+        polarity: Polarity::Pplus,
         langs: Langs::Only(vec![0, 4]),
         needs: NeedSet::of(&[Need::Diff]),
         prefilter: vec![0],
@@ -94,12 +94,23 @@ pub(super) fn sample() -> PlanParts {
                 def: 0,
                 args: vec![0],
             },
+            // The `unresolved when` condition.
+            Op::Cmp {
+                lhs: Operand::Field(0, 4),
+                op: CmpOp::Eq,
+                rhs: Operand::Str(5),
+            },
         ],
         defs: vec![Def {
             params: vec![4],
             body: 8,
         }],
         clauses: vec![0, 1, 2, 3, 6, 10, 11],
+        subjects: 0,
+        unresolved: vec![Unresolved {
+            when: 12,
+            reason: 6,
+        }],
         reports: vec![
             Report {
                 when: Some(7),
@@ -127,7 +138,7 @@ fn round_trip_keeps_every_header_field() {
     assert_eq!(back, plan);
     assert_eq!(back.rule(), "NEAT013");
     assert_eq!(back.provenance(), &Provenance::Pack("acme-pack".into()));
-    assert_eq!(back.polarity(), Polarity::Pminus);
+    assert_eq!(back.polarity(), Polarity::Pplus);
     assert!(back.needs().contains(Need::Diff) && !back.needs().contains(Need::Lease));
     assert_eq!(back.prefilter_kinds().collect::<Vec<_>>(), ["function"]);
     assert_eq!(back.cost(), CostClass::Closure(3));
@@ -146,6 +157,12 @@ fn std_provenance_and_other_polarities_round_trip() {
         let mut p = sample();
         p.provenance = Provenance::Std;
         p.polarity = pol;
+        if pol == Polarity::Pminus {
+            // P- splits its clauses and has no `report ... when`.
+            p.subjects = 2;
+            p.reports.iter_mut().for_each(|r| r.when = None);
+            p.clauses.push(7);
+        }
         let plan = Plan::new(p).expect("valid");
         assert_eq!(Plan::load(&plan.to_bytes()).expect("load"), plan);
     }
@@ -274,7 +291,7 @@ fn shared_and_orphan_ops_are_rejected() {
     assert_eq!(err(p), PlanError::SharedOp { op: 2 });
     let mut p = sample();
     p.ops.push(Op::And(vec![]));
-    assert_eq!(err(p), PlanError::OrphanOp { op: 12 });
+    assert_eq!(err(p), PlanError::OrphanOp { op: 13 });
 }
 
 #[test]
@@ -282,6 +299,7 @@ fn deep_nesting_is_rejected_not_overflowed() {
     let mut p = sample();
     p.ops.truncate(8);
     p.defs.clear();
+    p.unresolved.clear();
     for i in 8..4000u32 {
         p.ops.push(Op::Not(i - 1));
     }
@@ -388,7 +406,7 @@ fn a_find_nested_in_a_condition_is_misplaced() {
     p.ops[2] = Op::Find { var: 2, kind: 0 };
     p.clauses = vec![0, 1, 3, 6];
     p.ops.push(Op::Not(2));
-    p.reports[0].when = Some(12);
+    p.reports[0].when = Some(13);
     p.reports[1].when = Some(7);
     assert!(matches!(err(p), PlanError::Misplaced { op: 2, .. }));
 }
@@ -403,7 +421,7 @@ fn accessors_expose_the_validated_fields() {
     let plan = Plan::new(sample()).expect("valid");
     assert_eq!(plan.parts(), &sample());
     assert_eq!(plan.rule(), "NEAT013");
-    assert_eq!(plan.polarity(), Polarity::Pminus);
+    assert_eq!(plan.polarity(), Polarity::Pplus);
     assert_eq!(plan.cost(), CostClass::Closure(3));
     assert_eq!(plan.needs().iter().collect::<Vec<_>>(), [Need::Diff]);
     assert_eq!(
@@ -489,13 +507,74 @@ fn a_later_def_may_call_an_earlier_one() {
     });
     p.defs.push(Def {
         params: vec![5],
-        body: 12,
+        body: 13,
     });
     p.ops.push(Op::Call {
         def: 1,
         args: vec![0],
     });
-    p.clauses.push(13);
+    p.clauses.push(14);
     let plan = Plan::new(p).expect("def 1 calls def 0");
     assert_eq!(Plan::load(&plan.to_bytes()).expect("load"), plan);
+}
+
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn the_p_minus_split_and_unresolved_clauses_are_checked() {
+    let p_minus = || {
+        let mut p = sample();
+        p.polarity = Polarity::Pminus;
+        p.subjects = 2;
+        p.reports.iter_mut().for_each(|r| r.when = None);
+        p.clauses.push(7);
+        p
+    };
+    let plan = Plan::new(p_minus()).expect("a P- plan with a split is valid");
+    assert_eq!(Plan::load(&plan.to_bytes()).expect("load"), plan);
+    assert_eq!(plan.parts().unresolved.len(), 1);
+
+    let mut p = p_minus();
+    p.reports[0].when = Some(7);
+    p.clauses.pop();
+    assert!(matches!(err(p), PlanError::Invalid { what: "report", .. }));
+    // Only P- splits.
+    let mut p = sample();
+    p.subjects = 1;
+    assert!(matches!(
+        err(p),
+        PlanError::Invalid {
+            what: "subjects",
+            ..
+        }
+    ));
+    let mut p = p_minus();
+    p.subjects = 99;
+    assert!(matches!(
+        err(p),
+        PlanError::Invalid {
+            what: "subjects",
+            ..
+        }
+    ));
+    // A find after the split is not a subject.
+    let mut p = p_minus();
+    p.subjects = 1;
+    assert!(matches!(err(p), PlanError::Misplaced { op: 1, .. }));
+    // An unresolved condition is a reachable op over bound variables, with a pooled reason.
+    let mut p = sample();
+    p.unresolved[0].reason = 99;
+    assert!(matches!(
+        err(p),
+        PlanError::OutOfRange { what: "string", .. }
+    ));
+    let mut p = sample();
+    p.ops[12] = Op::Cmp {
+        lhs: Operand::Field(2, 4),
+        op: CmpOp::Eq,
+        rhs: Operand::Str(5),
+    };
+    assert_eq!(err(p), PlanError::Unbound { var: 2 });
+    let mut p = sample();
+    p.unresolved.clear();
+    assert_eq!(err(p), PlanError::OrphanOp { op: 12 });
 }

@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T22:50:32Z"
-updated = "2026-10-09T22:52:00Z"
+updated = "2026-10-09T23:01:35Z"
 scope = ["crates/frob-check/src/sibling/mod.rs", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a ticket whose diff touches no grimble inputs, when check --ticket runs, then sibling:grimble is skipped and reported not evaluated"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given frob.toml, when this lands, then cargo-deny, cargo-shear, typos, zizmor and actionlint declare inputs (Cargo.lock/Cargo.toml/deny.toml; **/Cargo.toml; text files for typos; .github/workflows/** for zizmor and actionlint) so a ticket touching none of them skips them at land (inputs key from ~RDRSZC5)"

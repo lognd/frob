@@ -1,0 +1,20 @@
++++
+id = "01M4HEMAM737MTY3385G7VKXQ4"
+title = "Repo packs declare detectors (callee vocabularies per language) so CAP001/CAP002 enforce pack atoms; an atom with no detector for a language is reported Unresolved once per node, never silently unenforced"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
+reporter = "lognd"
+created = "2026-10-09T23:05:34Z"
+updated = "2026-10-09T23:05:34Z"
+labels = ["grimble", "adoption:logand-app"]
+scope = ["crates/grimble-check/src/packs.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs", "changelog.d/**"]
+
+[[acceptance]]
+text = "Given packs/logand-effects.toml declaring atom fetch_url with a Python callee vocabulary (httpx.get, requests.get, ...) and a TS vocabulary (fetch), when grimble check runs, then an ungranted use is CAP001, an unused grant is CAP002, and a granted atom with no detector for a node's language yields one Unresolved per node naming the atom and language (grimble-model.md 9.6)"
+bound = false
++++
+
+logand.app-v2: 29 pack-atom grants (fetch_url, client_storage, html_render, ffi, eval, sql, net_mutate) are declared but never enforced because ~AMVHK82 loads atoms only. The detector row schema is in grimble-model.md 9.6; the full pack loader is ~CTGEA64.
