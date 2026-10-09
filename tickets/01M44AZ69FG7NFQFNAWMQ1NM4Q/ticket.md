@@ -7,8 +7,8 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T20:51:28Z"
-updated = "2026-10-09T17:22:50Z"
-scope = ["crates/gob-cli/**", "crates/gob-macros/src/command.rs"]
+updated = "2026-10-09T17:22:58Z"
+scope = ["crates/gob-cli/**", "crates/gob-macros/src/command.rs", "crates/gob-product/src/**"]
 
 [[acceptance]]
 text = "Given the verb registry, when frob serve starts, then every read-only verb is listed as an MCP tool whose input schema equals the verb schema"
