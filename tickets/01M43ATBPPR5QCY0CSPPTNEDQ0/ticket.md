@@ -2,13 +2,13 @@
 id = "01M43ATBPPR5QCY0CSPPTNEDQ0"
 title = "Rules LAYER001 and ORG001-005 (Rust now, GRL follow-up)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:35Z"
-updated = "2026-10-04T11:29:35Z"
+updated = "2026-10-09T16:35:22Z"
 idempotency_key = "crunk-plan-rorg"
 labels = ["area:crunk"]
 scope = ["crates/crunk-rules/src/layers/**", "crates/crunk-rules/src/org/**", "crates/crunk-rules/tests/org*.rs", "crates/crunk-rules/tests/layers*.rs"]
