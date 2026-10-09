@@ -2,12 +2,13 @@
 id = "01M4FF3S2QCSHSR4W6JX85A7ZD"
 title = "grimble migrate: convert v1 .strata models to .grmb (code to owns, interface to surface, may via to may at) with a report of every unmapped construct"
 type = "story"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T04:35:31Z"
-updated = "2026-10-09T04:35:31Z"
+updated = "2026-10-09T04:36:14Z"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble/**", "crates/grimble-model/**", "changelog.d/**"]
 
