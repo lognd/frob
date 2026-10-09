@@ -151,6 +151,32 @@ pub enum Quant {
     No,
 }
 
+/// The limit a count is compared against (grl-spec.md 7.0.2, 7.4).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Limit {
+    /// A fixed number.
+    Int(u64),
+    /// A knob: the value in `[rules]` named by the string, else the default.
+    Knob {
+        /// The knob's name (string pool).
+        name: StrId,
+        /// The value when the repository does not override it.
+        default: u64,
+    },
+}
+
+/// A non-recursive def: a named condition over parameters, evaluated as a view (7.0.2).
+///
+/// The parameters are variable slots that are bound only inside the body; a body may call
+/// only earlier defs, so views form strata in text order (GRL009).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Def {
+    /// The parameter slots, in call order.
+    pub params: Vec<VarId>,
+    /// The body condition.
+    pub body: OpId,
+}
+
 /// A value a condition compares.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Operand {
@@ -244,6 +270,26 @@ pub enum Op {
         /// Edge-set choice.
         certainty: Certainty,
     },
+    /// Condition: `count(var: kind where cond) op limit`, an interval comparison (7.0.2).
+    CountCmp {
+        /// Scoped variable.
+        var: VarId,
+        /// Node kind iterated.
+        kind: StrId,
+        /// The condition each candidate is tested against.
+        cond: OpId,
+        /// Comparison of the count with the limit.
+        op: CmpOp,
+        /// What the count is compared with.
+        limit: Limit,
+    },
+    /// Condition: `d(a1, ..., ak)`, a call of def `def` with variables as arguments.
+    Call {
+        /// Index into [`PlanParts::defs`].
+        def: u16,
+        /// The argument variables, as many as the def has parameters.
+        args: Vec<VarId>,
+    },
     /// Condition: compare two operands.
     Cmp {
         /// Left.
@@ -305,6 +351,8 @@ pub struct PlanParts {
     pub strings: Vec<String>,
     /// Op arena.
     pub ops: Vec<Op>,
+    /// Defs in text order; a def body calls only earlier defs.
+    pub defs: Vec<Def>,
     /// Top-level clauses in planner order.
     pub clauses: Vec<OpId>,
     /// Reports in text order.

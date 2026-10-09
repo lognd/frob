@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/serve/**", "src/frob/app/_daemon_proxy.py", "tests/test_app_daemon_proxy.py", "tests/test_serve_socket.py", "tests/test_serve_events.py", "tests/test_serve_leases.py", "docs/modules/serve.md"]
+new = ["src/frob/serve/**", "src/frob/app/_daemon_proxy.py", "tests/test_app_daemon_proxy.py", "tests/test_serve_socket.py", "tests/test_serve_events.py", "tests/test_serve_leases.py", "docs/modules/serve.md", "docs/design/cli.md"]
+at = "2026-10-09T20:41:47Z"
+actor = "lognd"
+rev = 1
