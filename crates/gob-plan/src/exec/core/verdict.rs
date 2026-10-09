@@ -28,6 +28,25 @@ pub enum Doubt {
         /// The node.
         node: NodeId,
     },
+    /// The only edge between two nodes is a May edge (possible, not certain).
+    MayEdge {
+        /// The edge source.
+        from: NodeId,
+        /// The edge target.
+        to: NodeId,
+    },
+    /// Nodes with an Unknown or unclassified outgoing edge, which may relate to anything.
+    Frontier {
+        /// The frontier nodes, in node order.
+        nodes: Vec<NodeId>,
+    },
+    /// A bounded search stopped at its `within` limit before it was exhausted.
+    Budget {
+        /// Where the search started.
+        from: NodeId,
+        /// The bound, in edges.
+        within: u16,
+    },
 }
 
 impl Not for Verdict {

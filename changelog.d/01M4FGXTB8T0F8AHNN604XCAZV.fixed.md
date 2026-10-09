@@ -1,0 +1,1 @@
+grimble: the registry now carries the core-effects atoms process.spawn (with exec as its alias), the fs parent and process.env, and MDL016 names a registered near miss such as process.env for a bare env.

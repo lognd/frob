@@ -2,16 +2,16 @@
 id = "01M4FGXVQTN5NJ0JBGWAMVHK82"
 title = "Repo packs load: packs/NAME.toml with [packs] enabled supplies atoms and the pack entity resolves"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:14Z"
-updated = "2026-10-09T05:08:12Z"
+updated = "2026-10-09T19:46:59Z"
 idempotency_key = "logand-gaps-A2"
 labels = ["adoption:logand-app", "grimble"]
-scope = ["crates/grimble*/**", "crates/gob-packs/**", "changelog.d/**"]
+scope = ["changelog.d/**", "crates/grimble-check/src/lib.rs", "crates/grimble-check/src/config.rs", "crates/grimble-check/src/packs.rs", "crates/grimble-check/tests/packs.rs", "crates/grimble-model/src/model.rs", "crates/grimble-model/src/atoms.rs", "crates/grimble/src/doctor.rs", "crates/grimble-model/src/rules.rs", "crates/grimble-check/src/sibling.rs"]
 
 [[links]]
 kind = "relates"
