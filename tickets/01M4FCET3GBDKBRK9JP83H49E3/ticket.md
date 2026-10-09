@@ -2,7 +2,8 @@
 id = "01M4FCET3GBDKBRK9JP83H49E3"
 title = "grmb planning layer design: actors, goal variant trees, scenarios with Zig/Rust outcome handling, impl blocks bound to code, ticket lifecycle (D123+)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
