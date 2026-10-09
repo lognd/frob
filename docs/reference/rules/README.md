@@ -8,6 +8,13 @@
 |---|---|---|---|---|---|---|
 | [AFFECT001](AFFECT001.md) | dependents-not-updated | warn | manual | P+ | false | A public symbol changed its signature and its dependents were not re-acked. |
 
+## CAP
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [CAP001](CAP001.md) | cap-undeclared | error | manual | P+ | false | Code a node owns uses a capability atom the node does not grant. |
+| [CAP002](CAP002.md) | cap-declared-unused | warn | manual | P- | false | A node grants a capability atom that no code it owns uses. |
+
 ## CFG
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
