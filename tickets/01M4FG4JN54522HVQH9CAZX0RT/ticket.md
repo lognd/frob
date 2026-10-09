@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:53:26Z"
-updated = "2026-10-09T15:35:01Z"
+updated = "2026-10-09T16:20:53Z"
 labels = ["adoption:logand-app", "creates:crates/gob-directives/src/compat.rs", "creates:crates/gob-directives/tests/mdtest/continuation.md", "creates:crates/gob-directives/tests/mdtest/v1-keys.md"]
-scope = ["changelog.d/**", "crates/gob-directives/src/comments.rs", "crates/gob-directives/src/lex.rs", "crates/gob-directives/src/lib.rs", "crates/gob-directives/src/compat.rs", "crates/gob-directives/tests/mdtest/continuation.md", "crates/gob-directives/src/frob.rs", "crates/gob-directives/src/scan.rs", "crates/gob-directives/tests/mdtest/trailing-pragma.md", "crates/gob-directives/tests/mdtest/v1-keys.md"]
+scope = ["changelog.d/**", "crates/gob-directives/src/comments.rs", "crates/gob-directives/src/lex.rs", "crates/gob-directives/src/lib.rs", "crates/gob-directives/src/compat.rs", "crates/gob-directives/tests/mdtest/continuation.md", "crates/gob-directives/src/frob.rs", "crates/gob-directives/src/scan.rs", "crates/gob-directives/tests/mdtest/trailing-pragma.md", "crates/gob-directives/tests/mdtest/v1-keys.md", "docs/reference/directives.md", "docs/schemas/directives.json", "changelog.d/01M4FCZE7QETQK5CKKDSZ3EANE.fixed.md"]
 
 [[acceptance]]
 text = '''Given '# frob:tests path::test_x\' followed by '# kind="unit"' (including a break mid-token), when directives are parsed, then one directive with both arguments results, with no PARSE001 and no TEST001 naming a backslash'''
