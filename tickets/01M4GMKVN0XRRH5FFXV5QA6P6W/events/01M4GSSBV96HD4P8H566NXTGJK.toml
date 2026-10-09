@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-09T17:01:13Z"
+digest = "61c57d579d02c93f056c5fcf34e885b87434619a237b3124023e238f649b943d"
+provider = "file"
+ref = "notes/research/grmb-r2-faults.md"
+size = 56755
+status = "measured"
+at = "2026-10-09T17:01:13Z"
+actor = "lognd"
+rev = 1

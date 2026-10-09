@@ -5,6 +5,9 @@
 //! the Kleene [`Verdict`] of its conditions (grl-spec.md 7.0 and 7.1). Outcomes (fire,
 //! Unresolved, clean) are the polarity layer's job, not this one's.
 //!
+//! Edge verbs, `reaches`, side-relation finds and `count` read their data from
+//! [`Relations`](super::relations::Relations); [`run`] supplies none, [`run_with`] supplies them.
+//!
 //! # Semantics implemented here
 //!
 //! - Connectives are Kleene's, via [`gob_ir::Truth`]; a [`Verdict`] keeps the doubts that decide
@@ -27,12 +30,14 @@ use gob_text::SourceText;
 use regex::RegexBuilder;
 
 pub use eval::Val;
+pub(crate) use eval::Wired;
 pub use field::{Datum, Scalar, compare};
 pub use verdict::{Doubt, Verdict};
 
 use eval::{Env, Eval, Matcher};
 use kind::KindTest;
 
+use crate::exec::relations::{Count, PEER_OF, Relations, SideRow};
 use crate::plan::{Op, OpId, Operand, Plan, PlanParts, StrId, VarId};
 
 /// Compiled regexes are refused above this size, in bytes (security.md 2.5).
@@ -60,6 +65,24 @@ pub enum ExecError {
         op: OpId,
         /// Its name.
         what: &'static str,
+    },
+    /// The plan names an edge relation or side table the caller did not supply.
+    #[error("rule {rule}: no {what} `{name}` was supplied to the run")]
+    MissingRelation {
+        /// The rule.
+        rule: String,
+        /// `edge relation` or `side table`.
+        what: &'static str,
+        /// The relation's name as the plan writes it.
+        name: String,
+    },
+    /// [`count`] was given an op that is not a quantifier.
+    #[error("rule {rule}: op {op} is not a quantifier, so it cannot be counted")]
+    NotCountable {
+        /// The rule.
+        rule: String,
+        /// The op.
+        op: OpId,
     },
     /// A regex or glob pattern does not compile (or is too large).
     #[error("rule {rule}: pattern `{pattern}` is invalid: {why}")]
@@ -98,7 +121,10 @@ impl Row {
             .get(usize::from(var))
             .copied()
             .flatten()
-            .map(|Val::Node(n)| n)
+            .and_then(|v| match v {
+                Val::Node(n) => Some(n),
+                Val::Row(_) => None,
+            })
     }
 }
 
@@ -111,23 +137,23 @@ pub struct Run {
     pub hidden: bool,
 }
 
-/// Op names for refusals.
-fn op_name(op: &Op) -> &'static str {
-    match op {
-        Op::FindSide { .. } => "find side relation",
-        Op::Verb { .. } => "verb",
-        Op::Reaches { .. } => "reaches",
-        _ => "op",
+/// Kind tests by kind word, compiled patterns by op and the supplied relations the plan names.
+type Prepared<'r> = (HashMap<StrId, KindTest>, HashMap<OpId, Matcher>, Wired<'r>);
+
+fn missing(p: &PlanParts, what: &'static str, name: &str) -> ExecError {
+    ExecError::MissingRelation {
+        rule: p.rule.clone(),
+        what,
+        name: name.to_owned(),
     }
 }
 
-/// Kind tests by kind word and compiled patterns by op.
-type Prepared = (HashMap<StrId, KindTest>, HashMap<OpId, Matcher>);
-
-/// Resolves every kind word and compiles every pattern, or names what cannot run.
-fn prepare(p: &PlanParts) -> Result<Prepared, ExecError> {
+/// Resolves every kind word, compiles every pattern and finds every relation the plan names,
+/// or names what cannot run.
+fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecError> {
     let mut kinds = HashMap::new();
     let mut matchers = HashMap::new();
+    let mut wired = Wired::default();
     for (i, op) in p.ops.iter().enumerate() {
         let id = OpId::try_from(i).expect("validated plans have at most MAX_OPS ops");
         match op {
@@ -152,12 +178,22 @@ fn prepare(p: &PlanParts) -> Result<Prepared, ExecError> {
                 let g = globset::Glob::new(src).map_err(|e| bad_pattern(p, src, &e))?;
                 matchers.insert(id, Matcher::Glob(g.compile_matcher()));
             }
-            Op::FindSide { .. } | Op::Verb { .. } | Op::Reaches { .. } => {
-                return Err(ExecError::UnsupportedOp {
-                    rule: p.rule.clone(),
-                    op: id,
-                    what: op_name(op),
-                });
+            Op::FindSide { table, .. } => {
+                let name = &p.strings[*table as usize];
+                let t = rels
+                    .side
+                    .get(name)
+                    .ok_or_else(|| missing(p, "side table", name))?;
+                wired.side.insert(*table, t);
+            }
+            Op::Verb { verb: word, .. } if p.strings[*word as usize] == PEER_OF => {}
+            Op::Verb { verb: word, .. } | Op::Reaches { via: word, .. } => {
+                let name = &p.strings[*word as usize];
+                let r = rels
+                    .edges
+                    .get(name)
+                    .ok_or_else(|| missing(p, "edge relation", name))?;
+                wired.edges.insert(*word, r);
             }
             Op::And(_)
             | Op::Or(_)
@@ -167,7 +203,7 @@ fn prepare(p: &PlanParts) -> Result<Prepared, ExecError> {
             | Op::Cmp { .. } => {}
         }
     }
-    Ok((kinds, matchers))
+    Ok((kinds, matchers, wired))
 }
 
 fn bad_pattern(p: &PlanParts, src: &str, e: &dyn std::fmt::Display) -> ExecError {
@@ -240,15 +276,71 @@ fn schedule(p: &PlanParts) -> Schedule {
     Schedule { binders, ready }
 }
 
-/// Runs `plan` over `input`.
+/// Runs `plan` over `input` with no edge relations, side tables or knobs.
 ///
 /// # Errors
-/// [`ExecError`] when the plan names a kind or op this executor cannot run, or a pattern that
-/// does not compile; nothing is evaluated in that case.
+/// As [`run_with`]; a plan that names a verb, `reaches` family or side table fails with
+/// [`ExecError::MissingRelation`].
 pub fn run(plan: &Plan, input: &Input<'_>) -> Result<Run, ExecError> {
+    run_with(plan, input, &Relations::new())
+}
+
+/// Builds the evaluator for `plan`, or says why it cannot run.
+fn evaluator<'a>(
+    plan: &'a Plan,
+    input: &Input<'a>,
+    rels: &'a Relations,
+) -> Result<Eval<'a>, ExecError> {
     let p = plan.parts();
-    let (kinds, matchers) = prepare(p)?;
-    let ev = Eval::new(p, input.model, input.source, kinds, matchers);
+    let (kinds, matchers, wired) = prepare(p, rels)?;
+    Ok(Eval::new(
+        p,
+        input.model,
+        input.source,
+        kinds,
+        matchers,
+        wired,
+    ))
+}
+
+/// Counts the members of the quantifier `quant` (an op of `plan`) under the bindings of `row`:
+/// `[l, h]` where `l` counts those whose body is certainly true and `h` those for which it is not
+/// certainly false, `h` unbounded when the model has unread regions (grl-spec.md 7.0.2).
+///
+/// # Errors
+/// [`ExecError::NotCountable`] when `quant` is not a quantifier, plus the refusals of
+/// [`run_with`].
+pub fn count(
+    plan: &Plan,
+    input: &Input<'_>,
+    rels: &Relations,
+    quant: OpId,
+    row: &Row,
+) -> Result<Count, ExecError> {
+    let p = plan.parts();
+    let Some(&Op::Quant {
+        var, kind, cond, ..
+    }) = p.ops.get(quant as usize)
+    else {
+        return Err(ExecError::NotCountable {
+            rule: p.rule.clone(),
+            op: quant,
+        });
+    };
+    let ev = evaluator(plan, input, rels)?;
+    let mut env = row.vars.clone();
+    Ok(ev.count(var, kind, cond, &mut env))
+}
+
+/// Runs `plan` over `input`, reading edges, side tables and knobs from `rels`.
+///
+/// # Errors
+/// [`ExecError`] when the plan names a kind or op this executor cannot run, a pattern that
+/// does not compile, or an edge relation or side table `rels` lacks; nothing is evaluated in
+/// that case.
+pub fn run_with(plan: &Plan, input: &Input<'_>, rels: &Relations) -> Result<Run, ExecError> {
+    let p = plan.parts();
+    let ev = evaluator(plan, input, rels)?;
     let sched = schedule(p);
     let mut rows = Vec::new();
     let mut env: Env = vec![None; usize::from(p.vars)];
@@ -295,8 +387,20 @@ fn enumerate(
         });
         return;
     };
-    let Op::Find { var, kind } = ev.plan.ops[binder as usize] else {
-        unreachable!("side-relation finds are refused before the run starts");
+    let (var, kind) = match ev.plan.ops[binder as usize] {
+        Op::Find { var, kind } => (var, kind),
+        Op::FindSide { var, table, .. } => {
+            for index in 0..ev.side_rows(table) {
+                env[usize::from(var)] = Some(Val::Row(SideRow { table, index }));
+                let v = ready_verdict(ev, s, depth + 1, env, acc.clone());
+                if v.truth != Truth::No {
+                    enumerate(ev, s, depth + 1, env, v, rows);
+                }
+            }
+            env[usize::from(var)] = None;
+            return;
+        }
+        _ => unreachable!("binders are finds"),
     };
     for &(n, member) in ev.domain(kind).iter() {
         env[usize::from(var)] = Some(Val::Node(n));

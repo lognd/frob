@@ -97,6 +97,21 @@
       "title": "frob:defer",
       "type": "object"
     },
+    "frob:describes": {
+      "additionalProperties": false,
+      "description": "Doc-side half of the doc-code pair: this doc section describes a code symbol (pairs like `frob:doc`).",
+      "properties": {
+        "symbol": {
+          "description": "The described code symbol, `path::name`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "symbol"
+      ],
+      "title": "frob:describes",
+      "type": "object"
+    },
     "frob:dispatcher": {
       "additionalProperties": false,
       "description": "Mark this unit as an intentional dispatcher, opting out of the dispatcher rule.",
@@ -307,6 +322,9 @@
     },
     {
       "$ref": "#/$defs/frob:defer"
+    },
+    {
+      "$ref": "#/$defs/frob:describes"
     },
     {
       "$ref": "#/$defs/frob:dispatcher"
