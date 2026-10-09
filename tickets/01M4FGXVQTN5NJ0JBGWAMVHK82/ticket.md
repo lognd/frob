@@ -8,10 +8,14 @@ points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:14Z"
-updated = "2026-10-09T05:07:14Z"
+updated = "2026-10-09T05:08:12Z"
 idempotency_key = "logand-gaps-A2"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble*/**", "crates/gob-packs/**", "changelog.d/**"]
+
+[[links]]
+kind = "relates"
+target = "01M3ZX7K7BN0CEADJFMCTGEA64"
 
 [[acceptance]]
 text = "Given packs/logand-effects.toml declaring fetch_url and [packs] enabled naming it, when grimble check runs, then may fetch_url is not MDL016 and the registry shows provenance repo:packs/logand-effects"
