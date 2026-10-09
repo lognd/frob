@@ -54,6 +54,7 @@ fn calls(edges: &[(NodeId, NodeId, Truth)]) -> Relation {
 fn caller_plan(pol: Polarity) -> (Plan, u16) {
     let mut b = PlanBuilder::new("CALL001", pol);
     let f = b.find("function");
+    b.end_subjects();
     let q = b.quant(Quant::Some, "function", |b, t| {
         b.verb(t, "calls", f, Certainty::Default)
     });

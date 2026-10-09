@@ -38,7 +38,7 @@ use eval::Matcher;
 use kind::KindTest;
 
 use crate::exec::relations::{Count, PEER_OF, Relations, SideRow};
-use crate::plan::{Op, OpId, Operand, Plan, PlanParts, StrId, VarId};
+use crate::plan::{Op, OpId, Operand, Plan, PlanParts, Polarity, StrId, VarId};
 
 /// Compiled regexes are refused above this size, in bytes (security.md 2.5).
 const REGEX_SIZE_LIMIT: usize = 1 << 20;
@@ -267,7 +267,11 @@ struct Schedule {
 }
 
 fn schedule(p: &PlanParts) -> Schedule {
-    let split = usize::from(p.subjects).min(p.clauses.len());
+    let split = if p.polarity == Polarity::Pminus {
+        usize::from(p.subjects).min(p.clauses.len())
+    } else {
+        p.clauses.len()
+    };
     let (subjects, formula) = p.clauses.split_at(split);
     let binders: Vec<OpId> = subjects
         .iter()
