@@ -1,0 +1,267 @@
+kind = "evidence"
+captured_at = "2026-10-08T14:39:24Z"
+digest = "3331f3285115f0e008b11d068a1e9489e060f57e9a381d4ed44f9c2cdedadbb3"
+exit_code = 0
+inline = '''
+   Compiling unicode-ident v1.0.26
+   Compiling ident_case v1.0.1
+   Compiling either v1.18.0
+   Compiling indexmap v2.14.2
+   Compiling proc-macro2 v1.0.107
+   Compiling rayon v1.12.0
+   Compiling ucd-trie v0.1.7
+   Compiling serde_json v1.0.151
+   Compiling pest v2.9.2
+   Compiling quote v1.0.47
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling pest_meta v2.9.2
+   Compiling wait-timeout v0.2.1
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive v1.0.229
+   Compiling zerocopy-derive v0.8.59
+   Compiling tracing-attributes v0.1.31
+   Compiling thiserror v2.0.21
+   Compiling zerocopy v0.8.59
+   Compiling gix-path v0.12.6
+   Compiling tracing v0.1.44
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling ahash v0.8.12
+   Compiling serde v1.0.229
+   Compiling gix-hash v0.26.2
+   Compiling hashbrown v0.14.5
+   Compiling gix-fs v0.22.1
+   Compiling gix-hashtable v0.16.0
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive_internals v0.30.0
+   Compiling schemars_derive v1.2.2
+   Compiling gix-glob v0.27.1
+   Compiling dashmap v6.2.1
+   Compiling ref-cast v1.0.27
+   Compiling darling_core v0.20.11
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-tempfile v24.0.0
+   Compiling darling_macro v0.20.11
+   Compiling gix-attributes v0.35.0
+   Compiling darling v0.20.11
+   Compiling gix-config-value v0.19.1
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-packetline v0.22.2
+   Compiling gix-ignore v0.22.1
+   Compiling gix-pathspec v0.20.0
+   Compiling gix-url v0.38.0
+   Compiling tracing-serde v0.2.0
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-zlib v0.1.0
+   Compiling gix-traverse v0.61.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-revision v0.49.1
+   Compiling gix-index v0.55.0
+   Compiling gix-transport v0.59.2
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling gix-shallow v0.13.0
+   Compiling gix-worktree v0.56.0
+   Compiling gix-refspec v0.45.1
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-macros v0.1.6
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gix-protocol v0.65.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-status v0.34.1
+   Compiling gix-merge v0.20.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-odb v0.84.0
+   Compiling schemars v1.2.2
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling hashlink v0.9.1
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gix v0.87.1
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling rusqlite v0.32.1
+   Compiling rand v0.9.5
+   Compiling tree-sitter v0.27.0
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling cobs v0.3.0
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling postcard v1.1.3
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling clap_derive v4.6.7
+   Compiling error_set_impl v0.9.2
+   Compiling ulid v1.2.1
+   Compiling pest_generator v2.9.2
+   Compiling pest_derive v2.9.2
+   Compiling insta v1.48.0
+   Compiling clap v4.6.7
+   Compiling error_set v0.9.2
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling num-traits v0.2.19
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling predicates-core v1.0.10
+   Compiling termtree v0.5.1
+   Compiling quick-error v1.2.3
+   Compiling bit-vec v0.8.0
+   Compiling difflib v0.4.0
+   Compiling bit-set v0.8.0
+   Compiling predicates v3.1.4
+   Compiling rusty-fork v0.3.1
+   Compiling predicates-tree v1.0.13
+   Compiling rand_xorshift v0.4.0
+   Compiling unarray v0.1.4
+   Compiling assert_cmd v2.2.2
+   Compiling proptest v1.11.0
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling half v2.7.1
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling ciborium-io v0.2.2
+   Compiling ciborium-ll v0.2.2
+   Compiling itertools v0.10.5
+   Compiling cast v0.3.0
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling criterion-plot v0.5.0
+   Compiling ciborium v0.2.2
+   Compiling tinytemplate v1.2.1
+   Compiling is-terminal v0.4.17
+   Compiling oorandom v11.1.5
+   Compiling anes v0.1.6
+   Compiling criterion v0.5.1
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling target-tuple v1.0.2
+   Compiling termcolor v1.4.1
+   Compiling glob v0.3.4
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_spanned v1.1.1
+   Compiling serde_yaml_ng v0.10.0
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling nix v0.31.3
+   Compiling trybuild v1.0.121
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling petgraph v0.8.3
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 499f8c02-9d47-42e9-9dc5-d2ef496e03de with nextest profile: default
+    Starting 51 tests across 106 binaries (982 tests skipped)
+        SLOW [> 30.000s] frob-check::check a_tickets_own_fragment_is_never_scope001
+        SLOW [> 30.000s] frob-check::check ticket_text_leads_with_diff_findings_and_counts_the_rest
+        SLOW [> 30.000s] frob-check::check a_recorded_changelog_d_glob_still_checks_but_covers_only_the_own_fragment
+        SLOW [> 30.000s] frob-check::check uncommitted_out_of_scope_edits_still_fire_scope001
+        SLOW [> 30.000s] frob-check::check another_tickets_or_a_malformed_fragment_is_still_scope001
+        SLOW [> 30.000s] frob-check::check the_ledger_directory_is_exempt_from_scope001
+        SLOW [> 30.000s] frob-check::check ticket_text_never_folds_a_required_unreadable_finding_into_a_count
+        SLOW [> 30.000s] frob-check::check untouched_symlinks_never_fire_scope001_and_a_retarget_does
+        SLOW [> 30.000s] frob-check::check a_branch_touching_an_out_of_scope_file_still_fires_scope001
+        SLOW [> 30.000s] frob-check::check ticket_json_keeps_every_finding_and_errors_outside_the_diff_print_in_full
+        SLOW [> 30.000s] frob-check::check base_advancing_does_not_leak_into_scope001
+        SLOW [> 30.000s] frob-check::check lock_files_written_by_ack_are_not_scope001_but_other_edits_are
+        PASS [  31.948s] frob-check::check another_tickets_or_a_malformed_fragment_is_still_scope001
+        PASS [  31.951s] frob-check::check a_tickets_own_fragment_is_never_scope001
+        PASS [  31.952s] frob-check::check a_branch_touching_an_out_of_scope_file_still_fires_scope001
+        PASS [  31.953s] frob-check::check uncommitted_out_of_scope_edits_still_fire_scope001
+        PASS [  31.954s] frob-check::check ticket_text_never_folds_a_required_unreadable_finding_into_a_count
+        PASS [  31.980s] frob-check::check lock_files_written_by_ack_are_not_scope001_but_other_edits_are
+        PASS [  32.006s] frob-check::check base_advancing_does_not_leak_into_scope001
+        PASS [  32.005s] frob-check::check ticket_text_leads_with_diff_findings_and_counts_the_rest
+        PASS [  32.016s] frob-check::check a_recorded_changelog_d_glob_still_checks_but_covers_only_the_own_fragment
+        PASS [   0.009s] frob-land ratchet::count_tests::a_config_change_invalidates_the_cached_base_set
+        PASS [  32.022s] frob-check::check the_ledger_directory_is_exempt_from_scope001
+        PASS [  32.029s] frob-check::check ticket_json_keeps_every_finding_and_errors_outside_the_diff_print_in_full
+        PASS [  32.058s] frob-check::check untouched_symlinks_never_fire_scope001_and_a_retarget_does
+        PASS [   0.016s] frob-ledger id::tests::handles_lengthen_only_on_collision
+        PASS [   0.024s] frob-ledger::branch bad_names_are_refused_before_any_write
+        PASS [   0.032s] frob-ledger::branch creates_then_reports_already_and_leaves_main_alone
+        PASS [   0.298s] frob-evidence::evidence verbs_add_list_and_fetch_round_trip
+        PASS [   0.167s] frob-ledger::layout a_moved_ticket_file_resolves_through_its_ulid_and_still_equals_the_fold
+        PASS [   0.232s] frob-ledger::layout sub_epics_are_flattened_and_a_title_change_does_not_move_the_file
+        PASS [   0.557s] frob-land::land a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path
+        PASS [   0.104s] frob-obligations::csharp an_untested_public_csharp_method_is_a_cov001_finding_and_a_tested_one_is_not
+        PASS [   0.011s] frob-worktree::gc jail_refuses_symlinks_out_of_the_tree_and_never_deletes_their_target
+        PASS [   0.159s] frob-obligations::csharp csharp_files_are_counted_as_cov001_subjects
+        PASS [   0.159s] gob-check repo::tests::a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh
+        PASS [   0.058s] gob-dev::import_v1 home_paths_and_private_terms_are_redacted
+        PASS [   0.045s] gob-dev::import_v1 imports_maps_and_verifies
+        PASS [   0.173s] gob-check repo::tests::engines_never_share_a_cached_repo_group
+        PASS [   0.023s] gob-dev::import_v1 open_category_triage_places_open_tickets_in_triage
+        PASS [   0.023s] gob-dev::import_v1 selection_imports_requirement_bearing_open_tickets_only
+        PASS [   0.717s] frob-ledger::ledger doable_orders_by_class_then_priority_then_age
+        PASS [   1.082s] frob-land::land a_base_commit_changing_code_misses_the_cached_base_set
+        PASS [   0.021s] gob-trust::state ci_ignores_in_tree_cache_and_tree_root_is_refused
+        PASS [   1.086s] frob-land::land happy_path_lands_closes_and_cleans_up
+        PASS [   0.010s] gob-trust::trust domain_separation
+        PASS [   0.080s] gob-trust::trust files::first_use_creates_owner_only_key_and_reload_is_stable
+        PASS [   1.203s] frob-land::land a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check
+        PASS [   0.017s] gob-trust::trust mac_verifies_and_one_byte_change_fails
+        PASS [   0.014s] gob-trust::trust record_mac_roundtrip_and_field_boundaries
+        PASS [   0.016s] gob-trust::trust tag_hex_roundtrip_and_debug_redaction
+        PASS [   0.014s] grimble-model::model the_adapter_is_f4_and_folds_through_the_gob_symbols_contract
+        PASS [   0.015s] grimble-model::model the_file_symbols_of_a_grmb_file_list_its_entities
+        PASS [   1.352s] frob-land::land base_commits_differing_only_under_tickets_share_the_cached_base_set
+        PASS [   0.432s] gob-plan::print_stability generated_trees_round_trip_and_print_to_a_fixed_point
+        PASS [   0.766s] gob-trust::trust concurrent_first_use_yields_one_key
+        PASS [   1.385s] gob-plan::print_stability a_printer_that_changes_the_tree_fails_with_a_shrunk_minimal_tree
+        PASS [   2.783s] frob-cli::ticket new_update_close_makes_three_commits_and_frontmatter_equals_the_fold
+        PASS [   5.070s] frob-cli::ticket_scrub doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same
+        PASS [   9.256s] frob-check::sibling the_ticket_scope_is_passed_through_to_the_sibling
+        PASS [   9.453s] frob-check::sibling ticket_bound_sibling_exceptions_get_frobs_exits
+        PASS [   9.570s] frob-cli::ticket links_blocked_doable_and_repeat_semantics
+        SLOW [> 30.000s] gob-macros::ui_rule_attr ui_rule_attr
+        SLOW [> 60.000s] gob-macros::ui_rule_attr ui_rule_attr
+        SLOW [> 90.000s] gob-macros::ui_rule_attr ui_rule_attr
+        SLOW [>120.000s] gob-macros::ui_rule_attr ui_rule_attr
+        SLOW [>150.000s] gob-macros::ui_rule_attr ui_rule_attr
+        PASS [ 159.409s] gob-macros::ui_rule_attr ui_rule_attr
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [ 192.327s] 51 tests run: 51 passed (13 slow), 982 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -p frob-cli -p frob-evidence -p frob-land -p frob-ledger -p frob-obligations -p frob-worktree -p gob-check -p gob-dev -p gob-macros -p gob-plan -p gob-trust -p grimble-model -E '(package(=frob-check) & (test(=a_branch_touching_an_out_of_scope_file_still_fires_scope001) | test(=a_recorded_changelog_d_glob_still_checks_but_covers_only_the_own_fragment) | test(=a_tickets_own_fragment_is_never_scope001) | test(=another_tickets_or_a_malformed_fragment_is_still_scope001) | test(=base_advancing_does_not_leak_into_scope001) | test(=lock_files_written_by_ack_are_not_scope001_but_other_edits_are) | test(=the_ledger_directory_is_exempt_from_scope001) | test(=the_ticket_scope_is_passed_through_to_the_sibling) | test(=ticket_bound_sibling_exceptions_get_frobs_exits) | test(=ticket_json_keeps_every_finding_and_errors_outside_the_diff_print_in_full) | test(=ticket_text_leads_with_diff_findings_and_counts_the_rest) | test(=ticket_text_never_folds_a_required_unreadable_finding_into_a_count) | test(=uncommitted_out_of_scope_edits_still_fire_scope001) | test(=untouched_symlinks_never_fire_scope001_and_a_retarget_does))) | (package(=frob-cli) & (test(=doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same) | test(=links_blocked_doable_and_repeat_semantics) | test(=new_update_close_makes_three_commits_and_frontmatter_equals_the_fold))) | (package(=frob-evidence) & (test(=verbs_add_list_and_fetch_round_trip))) | (package(=frob-land) & (test(=a_base_commit_changing_code_misses_the_cached_base_set) | test(=a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path) | test(=a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check) | test(=base_commits_differing_only_under_tickets_share_the_cached_base_set) | test(=happy_path_lands_closes_and_cleans_up) | test(=ratchet::count_tests::a_config_change_invalidates_the_cached_base_set))) | (package(=frob-ledger) & (test(=a_moved_ticket_file_resolves_through_its_ulid_and_still_equals_the_fold) | test(=bad_names_are_refused_before_any_write) | test(=creates_then_reports_already_and_leaves_main_alone) | test(=doable_orders_by_class_then_priority_then_age) | test(=id::tests::handles_lengthen_only_on_collision) | test(=sub_epics_are_flattened_and_a_title_change_does_not_move_the_file))) | (package(=frob-obligations) & (test(=an_untested_public_csharp_method_is_a_cov001_finding_and_a_tested_one_is_not) | test(=csharp_files_are_counted_as_cov001_subjects))) | (package(=frob-worktree) & (test(=jail_refuses_symlinks_out_of_the_tree_and_never_deletes_their_target))) | (package(=gob-check) & (test(=repo::tests::a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh) | test(=repo::tests::engines_never_share_a_cached_repo_group))) | (package(=gob-dev) & (test(=home_paths_and_private_terms_are_redacted) | test(=imports_maps_and_verifies) | test(=open_category_triage_places_open_tickets_in_triage) | test(=selection_imports_requirement_bearing_open_tickets_only))) | (package(=gob-macros) & (test(=ui_rule_attr))) | (package(=gob-plan) & (test(=a_printer_that_changes_the_tree_fails_with_a_shrunk_minimal_tree) | test(=generated_trees_round_trip_and_print_to_a_fixed_point))) | (package(=gob-trust) & (test(=ci_ignores_in_tree_cache_and_tree_root_is_refused) | test(=concurrent_first_use_yields_one_key) | test(=domain_separation) | test(=files::first_use_creates_owner_only_key_and_reload_is_stable) | test(=mac_verifies_and_one_byte_change_fails) | test(=record_mac_roundtrip_and_field_boundaries) | test(=tag_hex_roundtrip_and_debug_redaction))) | (package(=grimble-model) & (test(=the_adapter_is_f4_and_folds_through_the_gob_symbols_contract) | test(=the_file_symbols_of_a_grmb_file_list_its_entities)))'"
+size = 14185
+status = "measured"
+tests = ["ratchet::count_tests::a_config_change_invalidates_the_cached_base_set", "another_tickets_or_a_malformed_fragment_is_still_scope001", "a_tickets_own_fragment_is_never_scope001", "a_branch_touching_an_out_of_scope_file_still_fires_scope001", "uncommitted_out_of_scope_edits_still_fire_scope001", "ticket_text_never_folds_a_required_unreadable_finding_into_a_count", "lock_files_written_by_ack_are_not_scope001_but_other_edits_are", "base_advancing_does_not_leak_into_scope001", "ticket_text_leads_with_diff_findings_and_counts_the_rest", "a_recorded_changelog_d_glob_still_checks_but_covers_only_the_own_fragment", "the_ledger_directory_is_exempt_from_scope001", "ticket_json_keeps_every_finding_and_errors_outside_the_diff_print_in_full", "untouched_symlinks_never_fire_scope001_and_a_retarget_does", "id::tests::handles_lengthen_only_on_collision", "bad_names_are_refused_before_any_write", "creates_then_reports_already_and_leaves_main_alone", "verbs_add_list_and_fetch_round_trip", "a_moved_ticket_file_resolves_through_its_ulid_and_still_equals_the_fold", "sub_epics_are_flattened_and_a_title_change_does_not_move_the_file", "jail_refuses_symlinks_out_of_the_tree_and_never_deletes_their_target", "an_untested_public_csharp_method_is_a_cov001_finding_and_a_tested_one_is_not", "csharp_files_are_counted_as_cov001_subjects", "repo::tests::a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh", "repo::tests::engines_never_share_a_cached_repo_group", "home_paths_and_private_terms_are_redacted", "imports_maps_and_verifies", "open_category_triage_places_open_tickets_in_triage", "selection_imports_requirement_bearing_open_tickets_only", "doable_orders_by_class_then_priority_then_age", "ci_ignores_in_tree_cache_and_tree_root_is_refused", "the_adapter_is_f4_and_folds_through_the_gob_symbols_contract", "the_file_symbols_of_a_grmb_file_list_its_entities", "a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path", "a_base_commit_changing_code_misses_the_cached_base_set", "happy_path_lands_closes_and_cleans_up", "a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check", "base_commits_differing_only_under_tickets_share_the_cached_base_set", "domain_separation", "files::first_use_creates_owner_only_key_and_reload_is_stable", "mac_verifies_and_one_byte_change_fails", "record_mac_roundtrip_and_field_boundaries", "tag_hex_roundtrip_and_debug_redaction", "concurrent_first_use_yields_one_key", "generated_trees_round_trip_and_print_to_a_fixed_point", "a_printer_that_changes_the_tree_fails_with_a_shrunk_minimal_tree", "doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same", "the_ticket_scope_is_passed_through_to_the_sibling", "ticket_bound_sibling_exceptions_get_frobs_exits", "new_update_close_makes_three_commits_and_frontmatter_equals_the_fold", "links_blocked_doable_and_repeat_semantics", "ui_rule_attr"]
+at = "2026-10-08T14:39:24Z"
+actor = "lognd"
+rev = 1

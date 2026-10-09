@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-plan/src/exec/core/**", "crates/gob-plan/src/exec.rs", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/web_rule.rs", "crates/gob-plan/Cargo.toml", "crates/gob-plan/README.md", "crates/gob-plan/src/exec/mod.rs", "crates/gob-plan/tests/exec_core.rs"]
+new = ["crates/gob-plan/src/exec/core/**", "crates/gob-plan/src/exec.rs", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/web_rule.rs", "crates/gob-plan/Cargo.toml", "crates/gob-plan/README.md", "crates/gob-plan/src/exec/mod.rs", "crates/gob-plan/tests/exec_core.rs", "crates/gob-plan/tests/support/**"]
+at = "2026-10-08T14:52:39Z"
+actor = "lognd"
+rev = 1

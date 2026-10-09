@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1, 2, 3]
+captured_at = "2026-10-09T03:54:37Z"
+digest = "43001a74dd5414350ea71762dc9e9e428e74a733b07eda4549e07ee734072b13"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.60s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1c1daf63-3f53-453d-9ab5-edaff048ddf4 with nextest profile: default
+    Starting 8 tests across 1 binary
+        PASS [   0.012s] frob-evidence::unity version_is_read_from_project_version_txt
+        PASS [   0.017s] frob-evidence::unity a_configured_editor_wins_whatever_the_version_file_says
+        PASS [   0.014s] frob-evidence::unity hub_locations_follow_each_operating_system
+        PASS [   0.017s] frob-evidence::unity a_missing_editor_refuses_naming_the_version_and_the_config_key
+        PASS [   0.017s] frob-evidence::unity only_the_exact_required_version_is_ever_used
+        PASS [   0.021s] frob-evidence::unity no_version_file_and_no_config_refuses_without_guessing
+        PASS [   1.173s] frob-evidence::unity a_licensed_editor_log_is_not_a_license_refusal
+        PASS [   1.321s] frob-evidence::unity an_editor_without_a_valid_license_refuses_with_a_remedy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.323s] 8 tests run: 8 passed, 0 skipped
+'''
+passed = true
+provider = "command"
+ref = "cargo nextest run -p frob-evidence --test unity"
+size = 1375
+status = "measured"
+at = "2026-10-09T03:54:37Z"
+actor = "lognd"
+rev = 1

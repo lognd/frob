@@ -1,0 +1,19 @@
++++
+id = "01M4FD0TNGWDEYHP9FHH0RPXYR"
+title = "frob:describes in docs: the doc-side half of the doc-code pair (doc-consistency.md), parsed and paired with frob:doc for DRIFT001"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 3
+reporter = "lognd"
+created = "2026-10-09T03:58:57Z"
+updated = "2026-10-09T03:58:57Z"
+labels = ["adoption:hullbreach"]
+scope = ["crates/gob-directives/**", "crates/frob-obligations/**", "crates/frob-ack/**", "changelog.d/**"]
+
+[[acceptance]]
+text = "Given a markdown doc with <!-- frob:describes src/x.py::Sym --> and no code-side frob:doc, when frob check runs, then the pair is formed and DRIFT001 fires when either side changes until acked"
+bound = false
++++
+
+Designed in doc-consistency.md but unimplemented (DSL001 today). Hullbreach platform has 61 uses.

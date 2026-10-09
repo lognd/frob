@@ -1,0 +1,1 @@
+docs: grl-spec.md 7.0 states the denotational semantics of GRL over lo/hi structures in Kleene K3 (counts as intervals, within N as a budget, polarity map, certainly/possibly positions, NotApplicable decided before evaluation, defs as views, cost), rewrites the 7.2 polarity table, retires GRL010 and lists GRL017 and GRL018.

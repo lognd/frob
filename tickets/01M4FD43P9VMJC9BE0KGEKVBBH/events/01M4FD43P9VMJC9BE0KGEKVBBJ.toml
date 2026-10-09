@@ -1,0 +1,13 @@
+kind = "create"
+title = "frob init: write tickets/** text eol=lf to .gitattributes when core.autocrlf is set; note [evidence] attesters origin in the upgrade guide"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 2
+labels = ["adoption:hullbreach"]
+scope = ["crates/frob/**", "docs/guides/upgrade-from-v1.md", "changelog.d/**"]
+acceptance = ["Given a repository with core.autocrlf=true, when frob init runs, then .gitattributes contains tickets/** text eol=lf and the init report says so; the upgrade guide explains that attesters defaults to the runner's git user.email"]
+body = "Hullbreach game (E, F)."
+at = "2026-10-09T04:00:45Z"
+actor = "lognd"
+rev = 1

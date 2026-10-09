@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["milestone:2", "area:grl", "creates:crates/gob-plan/src/exec/mod.rs", "creates:crates/gob-plan/tests/exec_core.rs"]
+new = ["milestone:2", "area:grl", "creates:crates/gob-plan/src/exec/mod.rs", "creates:crates/gob-plan/tests/exec_core.rs", "creates:crates/gob-plan/tests/support/**"]
+at = "2026-10-08T14:52:39Z"
+actor = "lognd"
+rev = 1

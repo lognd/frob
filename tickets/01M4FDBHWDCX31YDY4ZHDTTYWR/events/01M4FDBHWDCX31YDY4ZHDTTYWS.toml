@@ -1,0 +1,18 @@
+kind = "create"
+title = "P6 grmb planning: behaviour-to-architecture check (node of a step use, PLAN009, SYS015)"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
+labels = ["grimble"]
+scope = ["crates/grimble-bind/**", "docs/design/binding.md", "changelog.d/**"]
+acceptance = ["Given the firmware example of grmb-planning.md 13, when grimble check runs, then exactly one SYS015 is reported for tick.fires to temp_sensor.signals_sample (core to adc) and declaring a core -> adc flow clears it", "Given a step use whose node is Unknown, when SYS015 is evaluated, then the result is Unresolved, never clean"]
+body = "grmb-planning.md 6.4, 6.5 and 7.3, row P6. node(st, s) from in node, actor node or the owner of bound identities; PLAN009 node mismatch; SYS015 consecutive step uses in different nodes with no flow in that direction, Unresolved when a node is Unknown."
+at = "2026-10-09T04:04:48Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4FDBG95B8D1NERFERXC0PXF"

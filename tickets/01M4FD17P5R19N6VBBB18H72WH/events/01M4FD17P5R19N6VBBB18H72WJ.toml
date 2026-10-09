@@ -1,0 +1,14 @@
+kind = "create"
+title = "frob migrate exceptions: rewrite v1 frob:waive to frob:accept or frob:defer, delete waivers of rules v2 lacks, report each"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4CTTVCB8JJ9JB2NQHQP5ARY"
+labels = ["adoption:hullbreach"]
+scope = ["crates/gob-dev/**", "crates/frob/**", "changelog.d/**"]
+acceptance = ["Given v1 frob:waive comments for an existing rule with a reason, with follow_up, and for a retired rule, when the migration runs, then they become accept, defer and a deletion respectively, each listed in the report"]
+body = "exceptions.md section on migration. Hullbreach platform has 119 waivers (DOC006, OPAQUE001, WIRE001, REF002, TEST001)."
+at = "2026-10-09T03:59:10Z"
+actor = "lognd"
+rev = 1
