@@ -25,16 +25,22 @@ process_spawners = ["gob-exec", "gob-git"]
 name = "cargo"
 command = "cargo"
 args = ["fmt", "--all", "--check"]
+# Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
+timeout_secs = 1200
 
 [[check.tool]]
 name = "cargo"
 command = "cargo"
 args = ["clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
+# Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
+timeout_secs = 1200
 
 [[check.tool]]
 name = "cargo"
 command = "cargo"
 args = ["dev", "gen", "all", "--check"]
+# Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
+timeout_secs = 1200
 
 # zizmor and actionlint are bound through `uvx` (pinned versions); frob maps
 # their findings to CI ids. The version range makes a tool that lags the
@@ -97,6 +103,8 @@ cas_retries = 5
 [lease]
 # Append-shared files nearly every crate ticket touches; exempt from overlap checks.
 shared_files = ["Cargo.lock"]
+# 5 s refused work, land and heartbeats with about 15 agents (2026-10-09); ~ZZQ6PA9 shrinks the hold time.
+lock_timeout_ms = 30000
 
 [tickets]
 # Ref holding the ledger. This is `experimental` while the Rust rewrite lives
