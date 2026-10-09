@@ -2,7 +2,8 @@
 id = "01M44YQZWPY9W2S61NW7TYPNJQ"
 title = "unity evidence provider: editor discovery and refusal"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
