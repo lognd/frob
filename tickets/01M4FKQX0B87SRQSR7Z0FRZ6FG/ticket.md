@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T05:56:25Z"
-updated = "2026-10-09T15:04:41Z"
+updated = "2026-10-09T15:16:08Z"
 scope = ["crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
 text = "Given the grl-spec examples, when gob-plan tests run, then both tests pass"
-bound = false
+bound = true
 +++
 
 found while working ~FSW5067: nextest ci run shows grl::parse::tests::every_grl_example_in_grl_spec_parses (NEAT013 block with vocab(...) knob) and gob-plan print_stability::every_whole_rule_in_the_spec_is_a_fixed_point_and_round_trips failing; unrelated to the CAP change.
