@@ -7,13 +7,13 @@ priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-09T03:56:43Z"
-updated = "2026-10-09T17:29:48Z"
+updated = "2026-10-09T17:41:59Z"
 labels = ["grimble"]
 scope = ["notes/research/grmb-*", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given the five topics A-E, when R1 completes, then notes/research/grmb-r1-{practice,failure,languages,incompleteness,graphs}.md exist with a search log, coverage argument, findings with evidence strength, ADOPT/ADAPT/REJECT implications, candidate lint rules and a bibliography where every source was looked up or is marked [unverified]"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the five notes, when the synthesis lands, then notes/research/grmb-r1-synthesis.md lists the design changes for grmb-planning.md, each with citations"
