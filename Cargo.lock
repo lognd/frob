@@ -592,12 +592,14 @@ version = "0.532.0"
 dependencies = [
  "crunk-ingest",
  "crunk-spec",
+ "crunk-tailwind",
  "crunk-tokens",
  "crunk-values",
  "gob-cache",
  "gob-mdtest",
  "gob-rules",
  "gob-text",
+ "indexmap",
  "tempfile",
  "tracing",
 ]

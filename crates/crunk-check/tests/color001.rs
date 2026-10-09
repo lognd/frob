@@ -19,8 +19,8 @@ fn write(root: &Path, rel: &str, text: &str) {
     std::fs::write(path, text).expect("write");
 }
 
-/// Run crunk over one source file of a fresh repository holding the default preset; ORG001 is left
-/// out because the fixture sheets sit directly under `css_root`, which is not what these tests judge.
+/// Run crunk over one source file of a fresh repository holding the default preset; ORG001 and TOKENS001 are
+/// left out because the fixture sheets sit directly under `css_root` and no tokens file is generated, which is not what these tests judge.
 fn findings_of(spec_text: &str, rel: &str, source: &str) -> Vec<gob_rules::Finding> {
     let dir = tempfile::tempdir().expect("tempdir");
     write(dir.path(), "crunk.toml", spec_text);
@@ -30,7 +30,7 @@ fn findings_of(spec_text: &str, rel: &str, source: &str) -> Vec<gob_rules::Findi
         .report
         .findings
         .into_iter()
-        .filter(|f| f.rule.as_str() != "ORG001")
+        .filter(|f| !matches!(f.rule.as_str(), "ORG001" | "TOKENS001"))
         .collect()
 }
 
