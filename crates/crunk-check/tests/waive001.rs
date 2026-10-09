@@ -33,11 +33,13 @@ fn run_over(spec_text: &str, files: &[(&str, &str)]) -> CrunkRun {
     run_in(spec_text, files).1
 }
 
+/// The rule ids found, ORG001 left out: the fixture sheets sit directly under `css_root`.
 fn ids(run: &CrunkRun) -> Vec<String> {
     run.report
         .findings
         .iter()
         .map(|f| f.rule.to_string())
+        .filter(|id| id != "ORG001")
         .collect()
 }
 
@@ -70,7 +72,7 @@ fn a_waiver_without_a_reason_fires_waive001_and_does_not_suppress() {
 fn a_waiver_with_a_reason_suppresses_its_rule_only() {
     let css = ".a {\n  color: #ff0000; /* crunk:waive COLOR001 reason=\"brand red\" */\n  background: #00ff00;\n}\n";
     let r = run_over(spec(), &[("styles/a.css", css)]);
-    let live: Vec<String> = ids(&r).into_iter().filter(|id| id != "ORG001").collect();
+    let live = ids(&r);
     assert_eq!(live, ["COLOR001"], "the second colour stays: {live:?}");
     assert_eq!(r.report.suppressed.len(), 1);
     let (f, ex) = &r.report.suppressed[0];
