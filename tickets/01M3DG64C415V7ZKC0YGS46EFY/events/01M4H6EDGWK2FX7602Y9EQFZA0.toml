@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/gates/_waive.py", "src/frob/strata/_selfconform.py", "src/frob/graph/cache.py", "tests/unit/strata/test_sys113_waiver_determinism.py", "docs/modules/gates.md", "docs/design/rules.md"]
+new = ["src/frob/gates/_waive.py", "src/frob/strata/_selfconform.py", "src/frob/graph/cache.py", "tests/unit/strata/test_sys113_waiver_determinism.py", "docs/design/rules.md"]
+at = "2026-10-09T20:42:31Z"
+actor = "lognd"
+rev = 1

@@ -2,16 +2,16 @@
 id = "01M43ATBY4CHA4FYVC7BWK6MXR"
 title = "Rules TW001-005, BP001-003 and TOKENS001 (Rust, tier-0)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:35Z"
-updated = "2026-10-04T11:29:35Z"
+updated = "2026-10-09T20:59:18Z"
 idempotency_key = "crunk-plan-rtw"
-labels = ["area:crunk"]
-scope = ["crates/crunk-rules/src/tailwind/**", "crates/crunk-rules/src/breakpoints/**", "crates/crunk-rules/src/tokens_drift.rs", "crates/crunk-rules/tests/tailwind*.rs", "crates/crunk-rules/tests/breakpoints*.rs"]
+labels = ["area:crunk", "creates:crates/crunk-rules/src/rules/bp00*", "creates:crates/crunk-rules/src/rules/tw00*", "creates:crates/crunk-rules/src/rules/tokens001*", "creates:changelog.d/01M43ATBY4CHA4FYVC7BWK6MXR.added.md"]
+scope = ["crates/crunk-rules/src/tailwind/**", "crates/crunk-rules/src/breakpoints/**", "crates/crunk-rules/src/tokens_drift.rs", "crates/crunk-rules/tests/tailwind*.rs", "crates/crunk-rules/tests/breakpoints*.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/src/host.rs", "crates/crunk-rules/Cargo.toml", "crates/crunk-rules/tests/rules.rs", "crates/crunk-rules/tests/support/mod.rs", "crates/crunk-check/Cargo.toml", "crates/crunk-check/tests/rule_coverage.rs", "docs/crunk/rules/README.md", "crates/crunk-rules/src/rules/bp00*", "crates/crunk-rules/src/rules/tw00*", "crates/crunk-rules/src/rules/tokens001*", "changelog.d/01M43ATBY4CHA4FYVC7BWK6MXR.added.md"]
 
 [[links]]
 kind = "blocked-by"

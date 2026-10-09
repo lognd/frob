@@ -18,3 +18,7 @@ pub const MAX_DEPTH: u32 = 64;
 pub const MAX_WITHIN: u16 = 1024;
 /// Longest pack name.
 pub const MAX_PACK_NAME: usize = 64;
+/// Most defs.
+pub const MAX_DEFS: usize = 1 << 10;
+/// Most parameters or arguments of one def.
+pub const MAX_PARAMS: usize = 32;

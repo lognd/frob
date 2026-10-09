@@ -6,9 +6,10 @@
 use crunk_rules::family::{CheckTier, FAMILIES, Gate, family, gate_severity, is_waivable};
 use crunk_rules::registry::{catalog_mismatches, entries, render_markdown, unknown_families};
 use crunk_rules::rules::{
-    INDEX, color001::Color001, color002::Color002, contrast001::Contrast001, radius001::Radius001,
-    size001::Size001, space001::Space001, type001::Type001, type002::Type002, type003::Type003,
-    waive001::Waive001,
+    INDEX, color001::Color001, color002::Color002, contrast001::Contrast001, layer001::Layer001,
+    org001::Org001, org002::Org002, org003::Org003, org004::Org004, org005::Org005,
+    radius001::Radius001, size001::Size001, space001::Space001, type001::Type001, type002::Type002,
+    type003::Type003, waive001::Waive001,
 };
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
@@ -35,6 +36,12 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/type003.rs::Type003
     // frob:tests crates/crunk-rules/src/rules/radius001.rs::Radius001
     // frob:tests crates/crunk-rules/src/rules/size001.rs::Size001
+    // frob:tests crates/crunk-rules/src/rules/layer001.rs::Layer001
+    // frob:tests crates/crunk-rules/src/rules/org001.rs::Org001
+    // frob:tests crates/crunk-rules/src/rules/org002.rs::Org002
+    // frob:tests crates/crunk-rules/src/rules/org003.rs::Org003
+    // frob:tests crates/crunk-rules/src/rules/org004.rs::Org004
+    // frob:tests crates/crunk-rules/src/rules/org005.rs::Org005
     let host = support::project(&case.file_name, &case.text, case.config.as_deref());
     match case.rule.as_str() {
         "COLOR001" => support::run::<Color001>(&host),
@@ -46,6 +53,12 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
         "TYPE003" => support::run::<Type003>(&host),
         "RADIUS001" => support::run::<Radius001>(&host),
         "SIZE001" => support::run::<Size001>(&host),
+        "LAYER001" => support::run::<Layer001>(&host),
+        "ORG001" => support::run::<Org001>(&host),
+        "ORG002" => support::run::<Org002>(&host),
+        "ORG003" => support::run::<Org003>(&host),
+        "ORG004" => support::run::<Org004>(&host),
+        "ORG005" => support::run::<Org005>(&host),
         other => unreachable!("no runner for {other}"),
     }
 }
@@ -73,6 +86,12 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
             "COLOR001",
             "COLOR002",
             "CONTRAST001",
+            "LAYER001",
+            "ORG001",
+            "ORG002",
+            "ORG003",
+            "ORG004",
+            "ORG005",
             "RADIUS001",
             "SIZE001",
             "SPACE001",
@@ -205,6 +224,6 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids.len(), 10);
+    assert_eq!(ids.len(), 16);
     assert!(ids.contains(&"SPACE001"));
 }

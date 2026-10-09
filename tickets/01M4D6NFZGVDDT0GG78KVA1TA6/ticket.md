@@ -2,13 +2,14 @@
 id = "01M4D6NFZGVDDT0GG78KVA1TA6"
 title = "frob-tests: use the shared repository cache for the touched-set graph instead of Cache::null()"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:25Z"
-updated = "2026-10-09T18:57:38Z"
+updated = "2026-10-09T21:01:36Z"
 labels = ["creates:crates/frob-tests/tests/graph_cache.rs"]
 scope = ["changelog.d/**", "crates/frob-tests/src/touched.rs", "crates/frob-tests/src/lib.rs", "crates/frob-tests/tests/graph_cache.rs"]
 

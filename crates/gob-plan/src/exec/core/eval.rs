@@ -15,8 +15,8 @@ use regex::Regex;
 use super::field::{Datum, Reader, Scalar, compare};
 use super::kind::{KindTest, is_canonical_unit, may_hide_members};
 use super::verdict::{Doubt, Verdict};
-use crate::exec::relations::{self, Count, PEER_OF, SideRow, SideTable};
-use crate::plan::{Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
+use crate::exec::relations::{self, Count, Knobs, PEER_OF, SideRow, SideTable};
+use crate::plan::{Limit, Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
 
 /// A value a variable is bound to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -46,6 +46,8 @@ pub(crate) struct Wired<'a> {
     pub(crate) edges: HashMap<StrId, &'a Relation>,
     /// Side tables by the string id of the relation name.
     pub(crate) side: HashMap<StrId, &'a SideTable>,
+    /// The `[rules]` knob overrides.
+    pub(crate) knobs: Knobs,
 }
 
 /// The evaluator for one plan over one model.
@@ -58,6 +60,8 @@ pub(crate) struct Eval<'a> {
     wired: Wired<'a>,
     order: Vec<NodeId>,
     domains: RefCell<HashMap<StrId, Domain>>,
+    /// Materialised def views by (def, argument values): each is computed once (7.0.2).
+    views: RefCell<HashMap<(u16, Vec<Val>), Verdict>>,
 }
 
 impl<'a> Eval<'a> {
@@ -79,6 +83,7 @@ impl<'a> Eval<'a> {
             wired,
             order: model.term().nodes_by_location(),
             domains: RefCell::default(),
+            views: RefCell::default(),
         }
     }
 
@@ -213,6 +218,26 @@ impl<'a> Eval<'a> {
             Op::MatchRegex { subject, .. } | Op::MatchGlob { subject, .. } => {
                 self.matches(id, subject, env)
             }
+            Op::CountCmp {
+                var,
+                kind,
+                cond,
+                op,
+                limit,
+            } => {
+                let n = self.count(*var, *kind, *cond, env);
+                let limit = match *limit {
+                    Limit::Int(n) => Count::exactly(n),
+                    Limit::Knob { name, default } => {
+                        self.wired.knobs.limit(self.string(name), default)
+                    }
+                };
+                Verdict::of(n.compare(*op, &limit), || Doubt::CountBounds {
+                    lo: n.lo,
+                    hi: n.hi,
+                })
+            }
+            Op::Call { def, args } => self.call(*def, args, env),
             Op::Verb {
                 subject,
                 object,
@@ -239,6 +264,32 @@ impl<'a> Eval<'a> {
                 unreachable!("binders are clauses, enumerated by the run")
             }
         }
+    }
+
+    /// The number of def views computed so far.
+    pub(crate) fn view_count(&self) -> usize {
+        self.views.borrow().len()
+    }
+
+    /// `d(args)`: the def's view at the argument values, computed once per distinct arguments.
+    fn call(&self, def: u16, args: &[VarId], env: &Env) -> Verdict {
+        let vals: Vec<Val> = args
+            .iter()
+            .map(|&a| env[usize::from(a)].expect("validated plans use only bound variables"))
+            .collect();
+        let key = (def, vals);
+        if let Some(v) = self.views.borrow().get(&key) {
+            return v.clone();
+        }
+        let d = &self.plan.defs[usize::from(def)];
+        let mut inner: Env = vec![None; usize::from(self.plan.vars)];
+        for (&p, &v) in d.params.iter().zip(&key.1) {
+            inner[usize::from(p)] = Some(v);
+        }
+        let v = self.eval(d.body, &mut inner);
+        tracing::trace!(def, truth = ?v.truth, "def view computed");
+        self.views.borrow_mut().insert(key, v.clone());
+        v
     }
 
     /// The unit a closure target stands for: the node itself if it is a unit, else the nearest

@@ -5,6 +5,10 @@ mod props;
 use super::*;
 
 /// A valid plan using every op family; also the seed for mutation properties.
+#[allow(
+    clippy::too_many_lines,
+    reason = "one flat match or field list per wire item"
+)]
 pub(super) fn sample() -> PlanParts {
     let strings = [
         "function",
@@ -15,6 +19,7 @@ pub(super) fn sample() -> PlanParts {
         "main",
         "avoid {f.name}",
         "todo",
+        "max_callers",
     ]
     .map(String::from)
     .to_vec();
@@ -26,7 +31,7 @@ pub(super) fn sample() -> PlanParts {
         needs: NeedSet::of(&[Need::Diff]),
         prefilter: vec![0],
         cost: CostClass::Closure(3),
-        vars: 3,
+        vars: 5,
         strings,
         ops: vec![
             Op::Find { var: 0, kind: 0 },
@@ -64,8 +69,37 @@ pub(super) fn sample() -> PlanParts {
                 subject: Operand::Field(0, 4),
                 pattern: 7,
             },
+            // The def body, then a count against a knob and a call of the def.
+            Op::Cmp {
+                lhs: Operand::Field(4, 4),
+                op: CmpOp::Eq,
+                rhs: Operand::Str(5),
+            },
+            Op::Inside {
+                sub: 3,
+                sup: 0,
+                direct: false,
+            },
+            Op::CountCmp {
+                var: 3,
+                kind: 1,
+                cond: 9,
+                op: CmpOp::Gt,
+                limit: Limit::Knob {
+                    name: 8,
+                    default: 3,
+                },
+            },
+            Op::Call {
+                def: 0,
+                args: vec![0],
+            },
         ],
-        clauses: vec![0, 1, 2, 3, 6],
+        defs: vec![Def {
+            params: vec![4],
+            body: 8,
+        }],
+        clauses: vec![0, 1, 2, 3, 6, 10, 11],
         reports: vec![
             Report {
                 when: Some(7),
@@ -166,7 +200,7 @@ fn hostile_counts_do_not_allocate_or_panic() {
     // Overwrite the string count (after magic, version, rule, provenance, ..) by scanning for it.
     let at = bytes
         .windows(4)
-        .position(|w| w == 8u32.to_le_bytes())
+        .position(|w| w == 9u32.to_le_bytes())
         .expect("string count");
     bytes[at..at + 4].copy_from_slice(&u32::MAX.to_le_bytes());
     assert!(matches!(
@@ -240,13 +274,14 @@ fn shared_and_orphan_ops_are_rejected() {
     assert_eq!(err(p), PlanError::SharedOp { op: 2 });
     let mut p = sample();
     p.ops.push(Op::And(vec![]));
-    assert_eq!(err(p), PlanError::OrphanOp { op: 8 });
+    assert_eq!(err(p), PlanError::OrphanOp { op: 12 });
 }
 
 #[test]
 fn deep_nesting_is_rejected_not_overflowed() {
     let mut p = sample();
     p.ops.truncate(8);
+    p.defs.clear();
     for i in 8..4000u32 {
         p.ops.push(Op::Not(i - 1));
     }
@@ -271,8 +306,8 @@ fn binding_defects_are_rejected() {
     };
     assert_eq!(err(p), PlanError::Rebound { var: 0 });
     let mut p = sample();
-    p.vars = 4;
-    assert_eq!(err(p), PlanError::UnusedVar { var: 3 });
+    p.vars = 6;
+    assert_eq!(err(p), PlanError::UnusedVar { var: 5 });
     let mut p = sample();
     p.reports[0].subject = 2;
     assert_eq!(err(p), PlanError::Unbound { var: 2 });
@@ -353,7 +388,7 @@ fn a_find_nested_in_a_condition_is_misplaced() {
     p.ops[2] = Op::Find { var: 2, kind: 0 };
     p.clauses = vec![0, 1, 3, 6];
     p.ops.push(Op::Not(2));
-    p.reports[0].when = Some(8);
+    p.reports[0].when = Some(12);
     p.reports[1].when = Some(7);
     assert!(matches!(err(p), PlanError::Misplaced { op: 2, .. }));
 }
@@ -377,4 +412,90 @@ fn accessors_expose_the_validated_fields() {
             .collect::<Vec<_>>(),
         [Need::Config, Need::Model]
     );
+}
+
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn count_limits_and_def_calls_are_checked() {
+    // The sample round-trips with a knob limit, a def and a call (see `sample`).
+    let plan = Plan::new(sample()).expect("valid");
+    assert!(plan.parts().ops.iter().any(|o| matches!(
+        o,
+        Op::CountCmp {
+            limit: Limit::Knob { .. },
+            ..
+        }
+    )));
+    assert_eq!(Plan::load(&plan.to_bytes()).expect("load"), plan);
+
+    // A def may not call itself or a later def.
+    let mut p = sample();
+    p.ops[8] = Op::Call {
+        def: 0,
+        args: vec![4],
+    };
+    assert!(matches!(err(p), PlanError::Misplaced { op: 8, .. }));
+    // A call names a def that exists, with as many arguments as parameters.
+    let mut p = sample();
+    p.ops[11] = Op::Call {
+        def: 3,
+        args: vec![0],
+    };
+    assert!(matches!(err(p), PlanError::OutOfRange { what: "def", .. }));
+    let mut p = sample();
+    p.ops[11] = Op::Call {
+        def: 0,
+        args: vec![0, 0],
+    };
+    assert!(matches!(err(p), PlanError::Invalid { what: "call", .. }));
+    // The knob's name is a pooled string.
+    let mut p = sample();
+    p.ops[10] = Op::CountCmp {
+        var: 3,
+        kind: 1,
+        cond: 9,
+        op: CmpOp::Gt,
+        limit: Limit::Knob {
+            name: 99,
+            default: 3,
+        },
+    };
+    assert!(matches!(
+        err(p),
+        PlanError::OutOfRange {
+            what: "string",
+            index: 99,
+            ..
+        }
+    ));
+    // A def body sees only its parameters, not the rule's variables.
+    let mut p = sample();
+    p.ops[8] = Op::Cmp {
+        lhs: Operand::Field(0, 4),
+        op: CmpOp::Eq,
+        rhs: Operand::Str(5),
+    };
+    assert_eq!(err(p), PlanError::Unbound { var: 0 });
+}
+
+#[test]
+fn a_later_def_may_call_an_earlier_one() {
+    let mut p = sample();
+    // Def 1 (param 2 is bound by the rule's quantifier, so use a fresh slot) calls def 0.
+    p.vars = 6;
+    p.ops.push(Op::Call {
+        def: 0,
+        args: vec![5],
+    });
+    p.defs.push(Def {
+        params: vec![5],
+        body: 12,
+    });
+    p.ops.push(Op::Call {
+        def: 1,
+        args: vec![0],
+    });
+    p.clauses.push(13);
+    let plan = Plan::new(p).expect("def 1 calls def 0");
+    assert_eq!(Plan::load(&plan.to_bytes()).expect("load"), plan);
 }
