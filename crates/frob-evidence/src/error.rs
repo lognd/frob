@@ -32,6 +32,35 @@ pub enum EvidenceError {
         /// The runner that needed it: `vitest`, `jest` or `dotnet`.
         runner: String,
     },
+    // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+    /// No usable Unity editor: none at the configured path or Hub location, or none for the version the project names.
+    #[error(
+        "E-EVIDENCE-UNITY-EDITOR: {problem}; the Unity tests were not run and nothing was recorded"
+    )]
+    UnityEditor {
+        /// What is wrong, naming the required editor version and where it was looked for.
+        problem: String,
+    },
+    // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+    /// The editor reported no valid Unity license, so it cannot run tests.
+    #[error(
+        "E-EVIDENCE-UNITY-LICENSE: the Unity editor {version} reports no valid license ({detail}); the Unity tests were not run and nothing was recorded"
+    )]
+    UnityLicense {
+        /// The editor version the project requires (`unknown` when the project does not say).
+        version: String,
+        /// The license line the editor printed.
+        detail: String,
+    },
+    // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+    /// The project is already open in another editor instance, and a Unity project cannot be opened twice.
+    #[error(
+        "E-EVIDENCE-UNITY-OPEN: the Unity project `{project}` is already open in another editor instance; the Unity tests were not run and nothing was recorded"
+    )]
+    UnityProjectOpen {
+        /// The project directory, repository-relative or as given.
+        project: String,
+    },
     /// An attestation was attempted without a person at a terminal.
     #[error("E-ATTEST-NOT-HUMAN: an attestation is a person's statement; refused because {}", .reasons.join("; "))]
     NotHuman {
@@ -181,6 +210,27 @@ impl EvidenceError {
                     } else {
                         format!("install {runner} in the package (npm install --save-dev {runner}) or on PATH so `{runner} --version` runs, then rerun")
                     }),
+            ),
+            // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+            Self::UnityEditor { .. } => Some(
+                Refusal::new("E-EVIDENCE-UNITY-EDITOR", GuardNeedsAction, self.to_string())
+                    .with_remedy(
+                        "install the editor version named in ProjectSettings/ProjectVersion.txt with Unity Hub, or set [evidence.unity] editor in frob.toml to the Unity executable, then rerun",
+                    ),
+            ),
+            // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+            Self::UnityLicense { .. } => Some(
+                Refusal::new("E-EVIDENCE-UNITY-LICENSE", GuardNeedsAction, self.to_string())
+                    .with_remedy(
+                        "sign in to Unity Hub and activate a license for this editor version (or provide a serial with -serial / a floating license server), then rerun",
+                    ),
+            ),
+            // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+            Self::UnityProjectOpen { .. } => Some(
+                Refusal::new("E-EVIDENCE-UNITY-OPEN", GuardNeedsAction, self.to_string())
+                    .with_remedy(
+                        "close the Unity editor (or the other batch run) that has the project open, then rerun",
+                    ),
             ),
             Self::BadReference(_) | Self::BadProvider(_) | Self::BadAccepts(_) => {
                 Some(Refusal::new(code_of(&self), UsageError, self.to_string()))

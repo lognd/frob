@@ -1,0 +1,1 @@
+crunk: SPACE001, TYPE001-003, RADIUS001 and SIZE001 join crunk-rules in the two-file shape: spacing, font-size, radius and box-size lengths against their scales (nearest step named, max-width exempt, sizes fall back to spacing), font stacks against the declared stacks and font weights against the declared weights.
