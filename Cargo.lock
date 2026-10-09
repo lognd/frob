@@ -2321,6 +2321,7 @@ dependencies = [
 name = "gob-cache"
 version = "0.532.0"
 dependencies = [
+ "blake3",
  "criterion",
  "gob-exec",
  "gob-time",
