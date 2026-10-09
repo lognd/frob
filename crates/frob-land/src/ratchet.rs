@@ -366,7 +366,7 @@ fn exclude_target(common: &Path) {
         std::fs::create_dir_all(common.join("info")).and_then(|()| std::fs::write(&path, next));
     match result {
         Ok(()) => {
-            tracing::info!(path = %path.display(), "excluded /target for the shared build link")
+            tracing::info!(path = %path.display(), "excluded /target for the shared build link");
         }
         Err(e) => tracing::warn!(path = %path.display(), error = %e, "could not exclude /target"),
     }
