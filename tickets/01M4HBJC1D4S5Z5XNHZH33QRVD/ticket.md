@@ -2,12 +2,13 @@
 id = "01M4HBJC1D4S5Z5XNHZH33QRVD"
 title = "Raise [check] sibling_timeout_secs from 120 to 600: the grimble sibling times out under agent load (SIB001 is required and fails the gate)"
 type = "chore"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T22:12:04Z"
-updated = "2026-10-09T22:12:04Z"
+updated = "2026-10-09T22:12:26Z"
 scope = ["frob.toml", "changelog.d/**"]
 
 [[acceptance]]
