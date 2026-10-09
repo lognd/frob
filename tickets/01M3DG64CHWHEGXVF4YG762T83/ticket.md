@@ -6,10 +6,10 @@ category = "todo"
 priority = "low"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-04T22:22:26Z"
+updated = "2026-10-09T20:42:45Z"
 aliases = ["T-6545"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
-scope = ["src/frob/testing/_collect.py", "tests/unit/test_runner_language_aliases.py", "docs/modules/testing.md"]
+scope = ["src/frob/testing/_collect.py", "tests/unit/test_runner_language_aliases.py", "docs/modules/testing.md", "docs/design/testing.md"]
 +++
 
 Source: logand.app-v2 FROBLEMS.md F-410 (peer coordinator report, 2026-09-26, frob 0.531.1.dev332).
