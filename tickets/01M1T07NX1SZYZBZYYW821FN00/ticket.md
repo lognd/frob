@@ -6,10 +6,14 @@ category = "todo"
 priority = "medium"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T22:22:21Z"
+updated = "2026-10-09T17:02:06Z"
 aliases = ["T-4001"]
 labels = ["v1-cluster:E3", "triage:accepted"]
 scope = ["src/frob/app/doctor_runner.py"]
+
+[[acceptance]]
+text = "Given a dev or debug build, when frob --version runs, then it prints the release version plus a dev suffix and commit (e.g. 0.533.0-dev+ec63b58), never the bare released version (hullbreach: a dev build printed 0.532.0)"
+bound = false
 +++
 
 WE SHIP BEHAVIOUR CHANGES UNDER AN UNCHANGED VERSION STRING, so a consumer
