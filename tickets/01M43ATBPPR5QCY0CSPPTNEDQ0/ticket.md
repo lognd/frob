@@ -2,7 +2,8 @@
 id = "01M43ATBPPR5QCY0CSPPTNEDQ0"
 title = "Rules LAYER001 and ORG001-005 (Rust now, GRL follow-up)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
