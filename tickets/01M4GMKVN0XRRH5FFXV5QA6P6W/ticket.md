@@ -2,12 +2,12 @@
 id = "01M4GMKVN0XRRH5FFXV5QA6P6W"
 title = "grmb research cycle R2 (early): verification and traceability practice (G); ambient faults and exhaustive error handling (H)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T15:30:55Z"
-updated = "2026-10-09T15:30:55Z"
+updated = "2026-10-09T15:31:06Z"
 labels = ["grimble"]
 scope = ["notes/research/grmb-r2-*", "changelog.d/**"]
 
