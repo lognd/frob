@@ -101,8 +101,14 @@ fn skip_reason(
     let files = scope?;
     let touched = files.iter().any(|f| {
         is_sibling_input(product, config, models, f)
-            || gob_languages::Language::detect(f)
-                .is_some_and(|l| l != gob_languages::Language::Markdown)
+            || gob_languages::Language::detect(f).is_some_and(|l| {
+                !matches!(
+                    l,
+                    gob_languages::Language::Markdown
+                        | gob_languages::Language::Toml
+                        | gob_languages::Language::Yaml
+                )
+            })
     });
     (!touched).then(|| {
         format!(
