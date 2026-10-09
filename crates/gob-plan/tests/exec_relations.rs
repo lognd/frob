@@ -193,6 +193,16 @@ fn find_over_a_side_relation_binds_the_typed_rows() {
     ));
 }
 
+// frob:tests crates/gob-plan/src/exec/relations/side.rs::SideTable.columns
+// frob:tests crates/gob-plan/src/exec/relations/side.rs::SideTable.is_empty
+#[test]
+fn side_tables_report_their_shape() {
+    let t = SideTable::new(vec![col("glob", FieldType::Str)], vec![]);
+    assert!(t.is_empty());
+    assert_eq!(t.len(), 0);
+    assert_eq!(t.columns(), [col("glob", FieldType::Str)]);
+}
+
 #[test]
 fn side_tables_are_typed_against_the_catalog() {
     let mut side = SideData::new();
