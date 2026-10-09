@@ -1,5 +1,10 @@
 # Fidelity accounting
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: user
+
 `frob check` never skips a file silently. Every walked file is classified per
 rule by `gob_check::subject_status_for` (design: `docs/design/universal-model.md`
 sections 4.1, 4.2 and 4.6).

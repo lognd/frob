@@ -1,6 +1,11 @@
 # frob v2: goals and principles
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). This
+Status: current
+Owner: gob
+Decisions: none
+Audience: owner
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). This
 file is the charter; the architecture lives in `architecture.md` and each
 subsystem has its own file.
 

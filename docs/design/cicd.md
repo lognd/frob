@@ -1,7 +1,12 @@
 # CI/CD and deployment languages
 
-Status: DRAFT under T-0001; decision D60 is accepted (2026-10-04).
-Owner: grimble (family CI and DK in the crate `grimble-ci`, boundaries.md
+Status: draft
+Owner: grimble
+Decisions: D60
+Audience: contributor
+
+Provenance: DRAFT under T-0001; decision D60 is accepted (2026-10-04).
+Ownership note: grimble (family CI and DK in the crate `grimble-ci`, boundaries.md
 section 2.5). Evidence:
 notes/research/cicd-survey.md (1069 repositories: 249 curated developer
 tools plus 820 top-starred per language; 9890 GitHub Actions workflows,

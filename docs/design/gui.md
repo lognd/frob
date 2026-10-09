@@ -1,6 +1,11 @@
 # Stateless GUI
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Owner direction: eventually a GUI (TUI or a
+Status: draft
+Owner: frob
+Decisions: D36
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Owner direction: eventually a GUI (TUI or a
 small local server with a TypeScript/React front end) that runs the
 CLI under the hood and gives Jira's interactability without Jira's
 state.

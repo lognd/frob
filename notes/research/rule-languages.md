@@ -2,7 +2,7 @@
 
 Date: 2026-10-02. Status: research input for grl-spec.md (ticket ~4QBTKCK, decision D80) and
 for plugins.md sections 4 and 6. ASCII only. Raw data, clones and measurement scripts lived under
-`/tmp/claude-1000/-home-logan-projects-frob-v2/62e4a831-7814-4d7a-bff3-31149f162233/scratchpad/grl/`
+`<scratchpad>/grl/`
 (never in the repo; clones deleted after writing, see section 9). Complements, does not repeat,
 notes/research/plugins.md (which surveys plugin architecture, not rule-language usability).
 

@@ -1,6 +1,11 @@
 # Enforcing project management
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Owner direction 2026-10-01: enforce good
+Status: current
+Owner: frob
+Decisions: D36
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Owner direction 2026-10-01: enforce good
 project-management practice, not just record it: structured user
 stories for functional goals, velocity-aware cycle commitments, and
 real estimates of time to deploy.

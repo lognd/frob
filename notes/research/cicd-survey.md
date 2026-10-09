@@ -58,7 +58,7 @@ security audit corpus.
 ### 1.1 Construction
 
 Scripts and raw data live under the session scratchpad
-`/tmp/claude-1000/-home-logan-projects-frob-v2/62e4a831-7814-4d7a-bff3-31149f162233/scratchpad/cicd/`
+`<scratchpad>/cicd/`
 (never in the repo): `01_sample.py` (sample), `02_fetch.py` (trees and workflow bodies),
 `03_lint.py` (zizmor and actionlint), `04_analyze.py` (feature extraction to `features.json`),
 `05_stats.py` (tables to `stats.txt`), `06_perwf.py` (per-workflow rule violation rates to `perwf.txt`),

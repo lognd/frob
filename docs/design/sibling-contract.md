@@ -1,6 +1,11 @@
 # The sibling JSON contract (G03)
 
-Status: DRAFT under T-0001 (a v1-format id that migrates with an alias);
+Status: current
+Owner: gob
+Decisions: D28, D97
+Audience: contributor
+
+Provenance: DRAFT under T-0001 (a v1-format id that migrates with an alias);
 written under ticket 01M3Z712PSRGMHPGJ01CMBK6TR (G03). It makes
 grimble-model.md section 9.5 precise: the one document a sibling product
 (grimble, crunk) prints for `check --json`, how frob validates and merges

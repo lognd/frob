@@ -1,6 +1,10 @@
 # Release workflow is hand-written around `dist build`
 
-- Status: accepted
+Status: current
+Owner: frob
+Decisions: none
+Audience: owner
+
 - Date: 2026-10-03
 - Ticket: 01M4069XFWGEFARNVXTXHT82FS
 

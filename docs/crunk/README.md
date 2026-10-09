@@ -1,15 +1,21 @@
 # crunk
 
-crunk is the CSS and design-token product of the goblin family. This scaffold
-ships the `crunk` binary and the `crunk-check` crate with an empty rule set; rule
-families, the `crunk.toml` schema and the other verbs land in their own tickets.
+Status: current
+Owner: crunk
+Decisions: none
+Audience: user
+
+crunk is the CSS and design-token product of the goblin family. It ships the `crunk` binary,
+the `crunk-check` crate with the rule set listed in [rules/README.md](rules/README.md), the
+`crunk.toml` schema ([config.md](config.md)) and a design-token exporter (`crunk tokens`).
 
 ## Verbs
 
 | Verb | Needs `crunk.toml` | What it does |
 |---|---|---|
-| `crunk check` | yes | Runs the (empty) rule set and prints the `gob.sibling/1` document with `product = "crunk"` (`--json`), or a count summary. `--only`, `--fail-on`, `--base`, `--ticket-scope` as for `grimble check`. |
+| `crunk check` | yes | Runs the rule set and prints the `gob.sibling/1` document with `product = "crunk"` (`--json`), or a count summary. `--only`, `--fail-on`, `--base`, `--ticket-scope` as for `grimble check`. |
 | `crunk doctor` | no | Reports the crunk version, the repository root and the state of `crunk.toml`. |
+| `crunk tokens` | yes | Writes, previews (`--target` css, json or tailwind) or drift-checks (`--check`) the generated token files. |
 | `crunk schema` | no | Built-in: the JSON Schema of a verb's output. |
 
 Global flags (`--json`, `--text`, `--format`, `--color`, `-v`, `--version`) come from

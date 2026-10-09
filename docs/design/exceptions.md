@@ -1,6 +1,11 @@
 # Exceptions: waivers, debt, quick fixes, and permanent decisions
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Owner direction 2026-10-02: v1 never had a
+Status: current
+Owner: gob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Owner direction 2026-10-02: v1 never had a
 clean line between a waiver, debt, a quick fix that should expire
 "somehow", and a permanent decision. Evidence: notes/v1/gates-and-rules.md
 sections 15-16 (waive with until, follow_up, permanent, presets, debt,

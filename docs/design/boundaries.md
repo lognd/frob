@@ -1,6 +1,11 @@
 # Boundaries: what belongs to frob, grimble, crunk, and the shared substrate
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias).
+Status: current
+Owner: gob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias).
 Supersedes the crate list in architecture.md section 1 and refines
 products.md. Owner question 2026-10-02: where exactly do the boundaries
 sit, is grimble a standalone binary, should there be more splits, and
