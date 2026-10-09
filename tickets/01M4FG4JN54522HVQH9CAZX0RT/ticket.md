@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:53:26Z"
-updated = "2026-10-09T06:30:16Z"
+updated = "2026-10-09T15:05:50Z"
 labels = ["adoption:logand-app", "creates:crates/gob-directives/src/compat.rs", "creates:crates/gob-directives/tests/mdtest/continuation.md"]
 scope = ["changelog.d/**", "crates/gob-directives/src/comments.rs", "crates/gob-directives/src/lex.rs", "crates/gob-directives/src/lib.rs", "crates/gob-directives/src/compat.rs", "crates/gob-directives/tests/mdtest/continuation.md"]
 
@@ -17,6 +17,10 @@ bound = false
 
 [[acceptance]]
 text = 'Given v1 key forms frob:todo T-1 note="multi word" and frob:invariant NAME reason="...", when parsed, then they are accepted as the note text and reason (v1 compatibility) and fmt or --fix rewrites them to the v2 form'
+bound = false
+
+[[acceptance]]
+text = "Given C-like comments (// and /* */ in TS, TSX and Rust), when v1 continuation, note= forms or frob:waive appear in them, then they are handled exactly like the # forms (logand.app-v2 F-549)"
 bound = false
 +++
 
