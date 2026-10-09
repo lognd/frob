@@ -2,7 +2,8 @@
 id = "01M4FCB1QKVVA2EWYEGKP5659Y"
 title = "Directives accept v1 ticket aliases: frob:todo T-#### and frob:ticket T-#### resolve through imported ticket aliases"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
