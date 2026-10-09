@@ -342,8 +342,8 @@ impl Command for Check {
         );
         if report.exit_code() == ExitCode::Negative {
             let c = data.counts;
-            return Err(CliError::Negative(format!(
-                "{} error(s), {} warning(s), {} advisory at or above `{}`; {} unresolved ({} required, gate `{}`):\n{}",
+            let summary = format!(
+                "{} error(s), {} warning(s), {} advisory at or above `{}`; {} unresolved ({} required, gate `{}`)",
                 c.error,
                 c.warn,
                 c.advisory,
@@ -351,13 +351,23 @@ impl Command for Check {
                 c.unresolved,
                 data.required_unresolved,
                 report.fail_on_unresolved.name(),
-                data.lines
-                    .iter()
-                    .chain(&data.elsewhere)
-                    .cloned()
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            )));
+            );
+            let detail = data
+                .lines
+                .iter()
+                .chain(&data.elsewhere)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join("\n");
+            let findings = data.findings.clone();
+            let data = serde_json::to_value(&data).map_err(CliError::internal)?;
+            return Err(CliError::Findings {
+                summary,
+                detail,
+                data,
+                findings,
+                warnings: report.warnings,
+            });
         }
         let mut payload = Payload::new(data);
         payload.warnings = report.warnings;

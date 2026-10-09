@@ -1,6 +1,6 @@
 //! Verb outcomes: the payload on success and [`CliError`] on failure.
 
-use gob_diagnostics::{ExitCode, Refusal};
+use gob_diagnostics::{ExitCode, FindingRecord, Refusal};
 use gob_rules::Finding;
 
 /// Everything a successful verb returns besides process exit state.
@@ -84,6 +84,23 @@ pub enum CliError {
         /// Non-fatal notices.
         warnings: Vec<String>,
     },
+    /// The run completed, its gate failed (exit 1), and the findings are the answer.
+    ///
+    /// JSON mode prints `ok` false with `findings` carrying every record, `data` kept and a
+    /// one-line `error.message` (`summary`); text mode prints `summary` then `detail` on stderr.
+    #[error("findings gate failed: {summary}")]
+    Findings {
+        /// One-line summary, the envelope `error.message`.
+        summary: String,
+        /// The finding lines for the text view.
+        detail: String,
+        /// The verb's data, serialized as the envelope `data`.
+        data: serde_json::Value,
+        /// Every finding as a structured record.
+        findings: Vec<FindingRecord>,
+        /// Non-fatal notices.
+        warnings: Vec<String>,
+    },
     /// A bug (exit 4).
     #[error("internal: {0}")]
     Internal(Box<dyn std::error::Error + Send + Sync>),
@@ -100,7 +117,7 @@ impl CliError {
         match self {
             Self::Refusal(r) => r.exit_code(),
             Self::Usage(_) => ExitCode::Usage,
-            Self::Negative(_) | Self::Gate { .. } => ExitCode::Negative,
+            Self::Negative(_) | Self::Gate { .. } | Self::Findings { .. } => ExitCode::Negative,
             Self::Internal(_) => ExitCode::Internal,
         }
     }
