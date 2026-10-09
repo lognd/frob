@@ -2,7 +2,8 @@
 id = "01M4FCZE7QETQK5CKKDSZ3EANE"
 title = "Directive parser rejects trailing foreign pragmas after a directive (# noqa: E501, // eslint-disable-line, # type: ignore) with PARSE001"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
