@@ -7,7 +7,7 @@ priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-09T03:56:43Z"
-updated = "2026-10-09T17:42:41Z"
+updated = "2026-10-09T17:42:43Z"
 labels = ["grimble"]
 scope = ["notes/research/grmb-*", "changelog.d/**"]
 
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the five notes, when the synthesis lands, then notes/research/grmb-r1-synthesis.md lists the design changes for grmb-planning.md, each with citations"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given topic F, when R1 completes, then notes/research/grmb-r1-ergonomics.md covers Rust, Zig and other languages' quality-of-life semantics with cited user evidence, lists predicted .grmb annoyances and gives a concrete mitigation for each"
