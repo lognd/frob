@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T22:50:32Z"
-updated = "2026-10-09T22:51:49Z"
-scope = ["crates/frob-check/src/sibling/mod.rs", "frob.toml", "changelog.d/**"]
+updated = "2026-10-09T22:51:59Z"
+scope = ["crates/frob-check/src/sibling/mod.rs", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a ticket whose diff touches no grimble inputs, when check --ticket runs, then sibling:grimble is skipped and reported not evaluated"
