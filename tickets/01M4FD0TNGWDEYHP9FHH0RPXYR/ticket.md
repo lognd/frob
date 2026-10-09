@@ -2,12 +2,12 @@
 id = "01M4FD0TNGWDEYHP9FHH0RPXYR"
 title = "frob:describes in docs: the doc-side half of the doc-code pair (doc-consistency.md), parsed and paired with frob:doc for DRIFT001"
 type = "story"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T03:58:57Z"
-updated = "2026-10-09T16:27:37Z"
+updated = "2026-10-09T16:27:56Z"
 labels = ["adoption:hullbreach", "creates:crates/gob-directives/tests/describes.rs"]
 scope = ["changelog.d/**", "crates/gob-directives/src/frob.rs", "crates/gob-directives/tests/describes.rs", "crates/frob-ack/src/inputs.rs", "crates/frob-ack/tests/ack.rs", "docs/reference/directives.md", "docs/schemas/directives.json", "crates/frob-ack/src/lib.rs", "crates/gob-directives/tests/scan.rs", "crates/frob-check/src/snapshot.rs"]
 
