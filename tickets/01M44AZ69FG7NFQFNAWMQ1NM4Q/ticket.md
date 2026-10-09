@@ -2,12 +2,12 @@
 id = "01M44AZ69FG7NFQFNAWMQ1NM4Q"
 title = "frob serve: read-only MCP surface generated from verb metadata"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T20:51:28Z"
-updated = "2026-10-08T03:53:11Z"
+updated = "2026-10-09T16:35:39Z"
 
 [[acceptance]]
 text = "Given the verb registry, when frob serve starts, then every read-only verb is listed as an MCP tool whose input schema equals the verb schema"

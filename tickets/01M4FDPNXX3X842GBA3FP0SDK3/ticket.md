@@ -2,12 +2,12 @@
 id = "01M4FDPNXX3X842GBA3FP0SDK3"
 title = "frob test runs pytest from PATH instead of the project interpreter, and records a runner error as negative evidence; collection errors yield module symrefs as test ids"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:10:46Z"
-updated = "2026-10-09T05:13:08Z"
+updated = "2026-10-09T16:35:26Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-tests/**", "crates/frob-evidence/**", "changelog.d/**"]
 
