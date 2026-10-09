@@ -2,13 +2,13 @@
 id = "01M4FGXX1F6W7Z1K22NFSW5067"
 title = "CAP001 and CAP002 fire and are writable in accept and defer"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:16Z"
-updated = "2026-10-09T05:14:50Z"
+updated = "2026-10-09T05:14:52Z"
 idempotency_key = "logand-gaps-A3"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble*/**", "changelog.d/**", "docs/design/rules.md"]
