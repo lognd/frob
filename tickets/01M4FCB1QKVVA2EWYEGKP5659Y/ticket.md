@@ -2,12 +2,12 @@
 id = "01M4FCB1QKVVA2EWYEGKP5659Y"
 title = "Directives accept v1 ticket aliases: frob:todo T-#### and frob:ticket T-#### resolve through imported ticket aliases"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T03:47:03Z"
-updated = "2026-10-09T03:51:11Z"
+updated = "2026-10-09T03:51:23Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/gob-directives/**", "crates/frob-obligations/**", "changelog.d/**"]
 
