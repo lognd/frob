@@ -7,10 +7,10 @@ priority = "low"
 parent = "01M3AXSDBEQGV8V5VHYGXBEQTV"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T22:22:26Z"
+updated = "2026-10-09T20:42:23Z"
 aliases = ["T-6487"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
-scope = ["strata-core/src/parse/grammar_node.rs", "docs/strata/surface.md#node", "src/frob/strata/_models.py"]
+scope = ["strata-core/src/parse/grammar_node.rs", "docs/strata/surface.md#node", "src/frob/strata/_models.py", "docs/design/grmb-spec.md"]
 
 [[links]]
 kind = "blocked-by"
