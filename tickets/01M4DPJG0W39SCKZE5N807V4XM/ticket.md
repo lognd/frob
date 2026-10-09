@@ -2,7 +2,8 @@
 id = "01M4DPJG0W39SCKZE5N807V4XM"
 title = "frob-ledger: event blobs per ticket from one snapshot walk (no per-ticket tip:dir rev_parse)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
