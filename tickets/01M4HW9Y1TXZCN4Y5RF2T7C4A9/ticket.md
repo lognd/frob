@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-10T03:04:33Z"
-updated = "2026-10-10T03:22:33Z"
+updated = "2026-10-10T03:49:10Z"
 labels = ["grimble", "adoption:logand-app"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs", "crates/grimble-bind/tests/**", "changelog.d/**", "crates/grimble-bind/src/code.rs"]
 
