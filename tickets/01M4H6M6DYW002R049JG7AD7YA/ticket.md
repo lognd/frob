@@ -8,8 +8,8 @@ points = 1
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T20:45:41Z"
-updated = "2026-10-10T01:53:25Z"
-scope = ["docs/design/README.md", "docs/design/tickets.md", "docs/design/cli.md", "docs/design/build-test-ci.md", "crates/frob-lease/src/config.rs", "crates/frob-lease/src/lib.rs", "docs/schemas/config.json", "docs/reference/config.md", "changelog.d/**"]
+updated = "2026-10-10T19:12:43Z"
+scope = ["docs/design/README.md", "docs/design/tickets.md", "docs/design/cli.md", "docs/design/build-test-ci.md", "crates/frob-lease/src/config.rs", "crates/frob-lease/src/lib.rs", "docs/schemas/config.json", "docs/reference/config.md", "changelog.d/**", "docs/README.md", "docs/design/sibling-contract.md", "docs/reference/tool-stages.md", "docs/design/tool-binding.md"]
 
 [[acceptance]]
 text = "Given docs/design/README.md, tickets.md, cli.md and build-test-ci.md, when this lands, then each starts with the Status/Owner/Decisions/Audience block and docs/README.md lists them as current instead of current*"
