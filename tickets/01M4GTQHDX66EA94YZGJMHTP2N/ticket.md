@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T17:17:47Z"
-updated = "2026-10-10T00:50:00Z"
+updated = "2026-10-10T02:10:38Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-check/src/sibling/spawn.rs", "crates/frob-check/tests/sibling.rs", "docs/design/sibling-contract.md", "changelog.d/**"]
 
