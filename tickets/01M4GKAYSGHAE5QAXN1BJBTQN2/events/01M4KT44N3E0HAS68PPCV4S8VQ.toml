@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T21:04:53Z"
+digest = "7d3c8fc2312513d71f41ff8073b6b35242c8eb49a9fc150ebb7e33ddbe84b425"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e5f6d210-3752-4fde-9468-636998cdd7d2 with nextest profile: default
+    Starting 1 test across 39 binaries (276 tests skipped)
+        PASS [   0.408s] frob-cli::ticket list_full_emits_every_ticket_with_its_events_and_aliases_in_one_call
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.410s] 1 test run: 1 passed, 276 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(=list_full_emits_every_ticket_with_its_events_and_aliases_in_one_call)'"
+size = 567
+status = "measured"
+tests = ["list_full_emits_every_ticket_with_its_events_and_aliases_in_one_call"]
+at = "2026-10-10T21:04:53Z"
+actor = "Claude"
+rev = 1
