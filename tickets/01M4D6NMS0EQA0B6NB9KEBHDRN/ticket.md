@@ -2,13 +2,13 @@
 id = "01M4D6NMS0EQA0B6NB9KEBHDRN"
 title = "grimble ack: validate arguments and preconditions before binding the repository; it errors on this repository after 6-9 s"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:30Z"
-updated = "2026-10-08T07:29:30Z"
+updated = "2026-10-10T19:36:35Z"
 scope = ["changelog.d/**", "crates/grimble/**", "crates/grimble-check/**"]
 
 [[acceptance]]
