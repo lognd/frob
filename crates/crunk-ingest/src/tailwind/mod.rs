@@ -39,6 +39,7 @@ mod v4;
 pub use collisions::{COLLISION_RULE, ThemeCollision};
 pub use ingest::{
     Engine, Source, TailwindTheme, Version, detect_version, ingest_tailwind, parse_tailwind_config,
+    runtime_sources,
 };
 pub use v3::{Entry, V3Read, Val, read_v3};
 pub use v4::{V4Read, read_v4, split_namespace};

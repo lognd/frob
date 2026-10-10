@@ -1,0 +1,1 @@
+frob test and the pytest provider run pytest through the project interpreter ([tests] python, else .venv, else PATH), and a pytest exit of 2, 3 or 4 is a runner-error refusal naming the files that failed to collect, never evidence

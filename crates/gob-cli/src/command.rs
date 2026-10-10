@@ -6,7 +6,7 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::context::Context;
-use crate::error::{CliError, Outcome};
+use crate::error::{CliError, FindingsFailure, Outcome, clear_notes, take_notes};
 use crate::meta::{CommandMeta, Described};
 
 /// A verb: parse its flags, run, return typed data.
@@ -65,13 +65,19 @@ impl Registered {
             meta: &<C as Described>::META,
             configure: C::configure,
             run: |matches, ctx| {
+                clear_notes();
                 let verb = C::from_matches(matches)?;
                 let payload = verb.run(ctx)?;
                 let data = serde_json::to_value(&payload.data).map_err(CliError::internal)?;
+                let mut warnings = payload.warnings;
+                warnings.extend(take_notes());
+                if data.get("ok") == Some(&serde_json::Value::Bool(false)) {
+                    return Err(data_not_ok(C::META.verb, data, &payload.findings, warnings));
+                }
                 Ok(Erased {
                     data,
                     findings: payload.findings,
-                    warnings: payload.warnings,
+                    warnings,
                     already: payload.already,
                     rendered: payload.rendered,
                 })
@@ -82,4 +88,39 @@ impl Registered {
             },
         }
     }
+}
+
+// frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+/// The failure for a verb whose own `data.ok` is false: the envelope `ok` may not contradict it (cli.md section 2).
+///
+/// Data, findings and warnings are kept; the exit is 1 like any other gate that found problems.
+fn data_not_ok(
+    verb: &str,
+    data: serde_json::Value,
+    findings: &[Finding],
+    warnings: Vec<String>,
+) -> CliError {
+    let sources = gob_diagnostics::MemorySources::new();
+    let registry = gob_rules::Registry::global();
+    let records: Vec<_> = findings
+        .iter()
+        .map(|f| gob_diagnostics::FindingRecord::from_finding(f, &sources, registry))
+        .collect();
+    let detail = findings
+        .iter()
+        .map(|f| format!("{} {}", f.rule, f.message))
+        .collect::<Vec<_>>()
+        .join("\n");
+    tracing::info!(
+        verb,
+        findings = records.len(),
+        "data.ok is false; envelope ok follows"
+    );
+    CliError::Findings(Box::new(FindingsFailure {
+        summary: format!("{verb} reports ok: false ({} finding(s))", records.len()),
+        detail,
+        data,
+        findings: records,
+        warnings,
+    }))
 }

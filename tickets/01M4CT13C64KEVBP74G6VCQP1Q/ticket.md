@@ -2,13 +2,14 @@
 id = "01M4CT13C64KEVBP74G6VCQP1Q"
 title = "cycle close --next-goal and --next-days are silently ignored when nothing is carried"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:48:34Z"
-updated = "2026-10-09T22:02:51Z"
+updated = "2026-10-09T23:13:04Z"
 scope = ["changelog.d/**", "crates/frob/src/cycle_cmd.rs", "crates/frob/tests/cycle.rs"]
 
 [[acceptance]]
