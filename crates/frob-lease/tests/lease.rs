@@ -1019,3 +1019,79 @@ fn each_scope_is_matched_once_across_many_overlap_checks() {
         "4 distinct scopes, matched once each"
     );
 }
+
+// frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
+#[test]
+fn lease_config_reads_the_base_ref_over_a_stale_worktree_copy() {
+    use gob_git::{CommitOptions, RelPath, Repo};
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let root = tmp.path();
+    let repo = Repo::init(root).expect("init");
+    let cfg = std::fs::read_to_string(repo.git_dir().join("config")).expect("config");
+    std::fs::write(
+        repo.git_dir().join("config"),
+        format!("{cfg}[user]\n\tname = T\n\temail = t@example.com\n"),
+    )
+    .expect("identity");
+    repo.commit_paths(
+        "refs/heads/main",
+        &[(
+            RelPath::new("frob.toml").expect("path"),
+            Some(b"[lease]\nttl_secs = 900\n".to_vec()),
+        )],
+        "base config",
+        &CommitOptions::default(),
+    )
+    .expect("commit");
+    std::fs::write(root.join("frob.toml"), "[lease]\nttl_secs = 60\n").expect("stale");
+    let cfg = LeaseConfig::load_repo_wide(root, "refs/heads/main").expect("load");
+    assert_eq!(cfg.ttl_secs, 900);
+    let unknown = LeaseConfig::load_repo_wide(root, "refs/heads/nope").expect("fallback");
+    assert_eq!(unknown.ttl_secs, 60, "an unresolvable ref keeps the file");
+}
+
+// frob:ticket 01M4GPWWWZFCHYMKYNKB3S3XGJ
+// frob:tests crates/frob-lease/src/config.rs::default_generated_files
+#[test]
+fn a_broad_docs_lease_does_not_block_generated_outputs_or_a_declared_append_only_registry() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "docs/reference/config.md");
+    write(dir.path(), "docs/registry.md");
+    write(dir.path(), "docs/guide.md");
+    let store = store_in(dir.path(), cfg(&["docs/registry.md"]));
+    store
+        .acquire(TicketId::mint(), &holder("a"), &scope(&["docs/**"]))
+        .expect("a holds docs/**");
+    store
+        .acquire(
+            TicketId::mint(),
+            &holder("b"),
+            &scope(&["docs/reference/config.md", "docs/registry.md"]),
+        )
+        .expect("b shares the generated page and the registry");
+    let err = store
+        .acquire(TicketId::mint(), &holder("c"), &scope(&["docs/guide.md"]))
+        .expect_err("a hand-written page stays exclusive");
+    assert!(matches!(err, LeaseError::Held { .. }));
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "docs/reference/config.md");
+    let strict = store_in(
+        dir.path(),
+        LeaseConfig {
+            generated_files: Vec::new(),
+            ..cfg(&[])
+        },
+    );
+    strict
+        .acquire(TicketId::mint(), &holder("a"), &scope(&["docs/**"]))
+        .expect("a");
+    assert!(matches!(
+        strict.acquire(
+            TicketId::mint(),
+            &holder("b"),
+            &scope(&["docs/reference/config.md"])
+        ),
+        Err(LeaseError::Held { .. })
+    ));
+}

@@ -87,3 +87,32 @@ fn unknown_pull_policy_is_refused() {
     let err = load("[pm]\npull = \"rnak\"\n").expect_err("refused");
     assert!(err.to_string().contains("did you mean `rank`?"), "{err}");
 }
+
+// frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
+#[test]
+fn repo_wide_tables_come_from_the_base_ref_over_a_stale_worktree_copy() {
+    use gob_git::{CommitOptions, RelPath, Repo};
+    let dir = tempfile::tempdir().expect("tempdir");
+    let repo = Repo::init(dir.path()).expect("init");
+    let cfg = std::fs::read_to_string(repo.git_dir().join("config")).expect("config");
+    std::fs::write(
+        repo.git_dir().join("config"),
+        format!("{cfg}[user]\n\tname = T\n\temail = t@example.com\n"),
+    )
+    .expect("identity");
+    repo.commit_paths(
+        "refs/heads/main",
+        &[(
+            RelPath::new("frob.toml").expect("path"),
+            Some(b"[pm.wip]\nin_progress = 16\n".to_vec()),
+        )],
+        "base config",
+        &CommitOptions::default(),
+    )
+    .expect("commit");
+    std::fs::write(dir.path().join("frob.toml"), "[pm.wip]\nin_progress = 10\n").expect("stale");
+    let cfg = PmConfig::load_repo_wide(dir.path(), "refs/heads/main").expect("load");
+    assert_eq!(cfg.wip.in_progress, 16);
+    let fallback = PmConfig::load_repo_wide(dir.path(), "refs/heads/nope").expect("fallback");
+    assert_eq!(fallback.wip.in_progress, 10);
+}

@@ -1,0 +1,11 @@
+kind = "create"
+title = "gob-dev profile.toml has no scenario or skip reason for frob ticket closeout"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/gob-dev/**"]
+acceptance = ["Given the closeout verb, when gob-dev profile_coverage runs, then every_leaf_command_has_a_scenario_or_a_skip_reason passes"]
+body = "found while working ~C8N7M9Q: gob-dev::profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason fails on experimental: leaf commands with no scenario and no skip reason: frob ticket closeout"
+at = "2026-10-10T21:53:08Z"
+actor = "Claude"
+rev = 1

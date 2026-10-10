@@ -27,6 +27,13 @@ pub fn default_shared_files() -> Vec<String> {
     LOCKFILES.iter().map(|n| format!("**/{n}")).collect()
 }
 
+/// The default of `[lease] generated_files`: the outputs of `gen all` (reference pages and schemas), which every ticket regenerates and a rebase re-derives.
+// frob:ticket 01M4GPWWWZFCHYMKYNKB3S3XGJ
+#[must_use]
+pub fn default_generated_files() -> Vec<String> {
+    vec!["docs/reference/**".to_owned(), "docs/schemas/**".to_owned()]
+}
+
 /// True when `path` matches the default shared-file patterns (the very ones [`default_shared_files`] returns).
 #[must_use]
 pub fn is_lockfile(path: &str) -> bool {
@@ -62,6 +69,10 @@ pub struct LeaseConfig {
     /// Append-shared files exempt from overlap checks; unset means the well-known lockfiles (`Cargo.lock`, `uv.lock`, ...), an explicit list (even `[]`) replaces them.
     #[config(default = default_shared_files())]
     pub shared_files: Vec<String>,
+    /// Generated outputs exempt from overlap checks like `shared_files`, so a broad docs lease does not block a ticket that regenerates them; unset means the reference pages and schemas, an explicit list (even `[]`) replaces them.
+    // frob:ticket 01M4GPWWWZFCHYMKYNKB3S3XGJ
+    #[config(default = default_generated_files())]
+    pub generated_files: Vec<String>,
 }
 
 impl LeaseConfig {
@@ -72,5 +83,26 @@ impl LeaseConfig {
     /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
     pub fn load(root: &Path) -> Result<Self, ConfigError> {
         Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
+    }
+
+    /// Like [`LeaseConfig::load`], but `[lease]` comes from `<rev>:frob.toml` when that blob exists, so a branch cut before a knob changed enforces the current value; a missing blob or unreadable `rev` keeps the file in `root`.
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable or invalid file in `root` or an invalid blob at `rev`.
+    // frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
+    pub fn load_repo_wide(root: &Path, rev: &str) -> Result<Self, ConfigError> {
+        let local = Self::load(root)?;
+        let text = gob_git::Repo::discover(root)
+            .ok()
+            .and_then(|repo| match repo.read_blob_at(rev, "frob.toml") {
+                Ok(blob) => blob.and_then(|b| String::from_utf8(b).ok()),
+                Err(e) => {
+                    tracing::debug!(rev, error = %e, "base-ref frob.toml unavailable; using the worktree copy");
+                    None
+                }
+            });
+        let Some(text) = text else { return Ok(local) };
+        Ok(gob_config::load_str::<Self>(&text, Path::new(rev))?.value)
     }
 }

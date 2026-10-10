@@ -11,6 +11,7 @@ authors.workspace = true
 [dependencies]
 frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-git = { version = "0.532.0", path = "../gob-git" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-time = { version = "0.532.0", path = "../gob-time" }
 schemars = "1"
@@ -21,7 +22,6 @@ toml = "1"
 tracing = "0.1"
 
 [dev-dependencies]
-gob-git = { path = "../gob-git" }
 gob-mdtest = { path = "../gob-mdtest" }
 tempfile = "3"
 

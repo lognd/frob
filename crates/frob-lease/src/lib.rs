@@ -56,7 +56,7 @@ pub fn open_store(
     Ok((LeaseStore::open(&repo, cfg, clock)?, root))
 }
 
-/// Open the lease store of `cwd` with `[lease]` loaded from its `frob.toml`.
+/// Open the lease store of `cwd` with `[lease]` read from the ledger ref's `frob.toml` (the worktree copy only when the ref has none).
 ///
 /// For verbs that live outside the `frob` binary and so cannot see `FrobConfig`.
 ///
@@ -71,7 +71,12 @@ pub fn open_store_from_file(
     let root = repo.work_dir().map(Path::to_path_buf).ok_or_else(|| {
         LeaseError::Repo(format!("{} is not inside a git work tree", cwd.display()))
     })?;
-    let cfg = LeaseConfig::load(&root).map_err(|e| LeaseError::Repo(e.to_string()))?;
+    // frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
+    let ledger_ref = frob_ledger::config::load_ledger_config(&root)
+        .map_err(LeaseError::Repo)?
+        .ref_name;
+    let cfg = LeaseConfig::load_repo_wide(&root, &ledger_ref)
+        .map_err(|e| LeaseError::Repo(e.to_string()))?;
     open_store(cwd, cfg, clock)
 }
 

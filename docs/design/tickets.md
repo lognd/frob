@@ -336,7 +336,13 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   `poetry.lock`, `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`,
   `go.sum`, `Gemfile.lock`, `composer.lock`, `flake.lock`); an explicit
   value, including `[]`, replaces that default, and an `E-LEASE-HELD` whose
-  overlap is only lockfiles names the key in its remedy. At land, a base
+  overlap is only lockfiles names the key in its remedy. Generated
+  outputs are exempt the same way through `[lease] generated_files`
+  (default `docs/reference/**` and `docs/schemas/**`, the `gen all`
+  outputs; an explicit value, including `[]`, replaces it), so a broad
+  `docs/**` lease does not block a ticket that regenerates them.
+  <!-- frob:ticket 01M4GPWWWZFCHYMKYNKB3S3XGJ -->
+  At land, a base
   merge whose conflicts are all shared lockfiles takes the base side and
   regenerates `Cargo.lock` with `cargo metadata --offline` (it keeps locked
   versions, unlike `cargo update --workspace`), committing the result in
