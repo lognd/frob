@@ -2,7 +2,8 @@
 id = "01M4K4QKXHB534W7BMFWXKT9TC"
 title = "frob doctor fails CFG001: frob.toml lacks the materialized tickets.branch knob"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "Claude"
