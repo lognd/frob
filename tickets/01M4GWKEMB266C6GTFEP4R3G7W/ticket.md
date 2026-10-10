@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T17:50:30Z"
-updated = "2026-10-10T21:26:07Z"
+updated = "2026-10-10T21:26:35Z"
 scope = ["crates/frob-pm/**", "crates/frob-lease/**", "crates/gob-config/**", "changelog.d/**", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/work.rs", "docs/design/pm-enforcement.md"]
 
 [[acceptance]]
