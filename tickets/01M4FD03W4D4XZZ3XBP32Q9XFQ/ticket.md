@@ -2,7 +2,8 @@
 id = "01M4FD03W4D4XZZ3XBP32Q9XFQ"
 title = "frob init on a non-main branch writes [tickets] ref = the current branch instead of the base branch"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
