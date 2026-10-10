@@ -2,7 +2,8 @@
 id = "01M4FD31PPJCEBG5G351FSGW5S"
 title = "ticket evidence add --provider has no dotnet or unity choice although [evidence.dotnet] exists and the dotnet provider landed"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
