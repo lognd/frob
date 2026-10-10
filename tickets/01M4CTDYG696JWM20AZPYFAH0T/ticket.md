@@ -2,13 +2,13 @@
 id = "01M4CTDYG696JWM20AZPYFAH0T"
 title = "gob-exec: kill the whole process tree on timeout (Windows job object, unix process group) and bound the post-kill join (audit M2)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:35Z"
-updated = "2026-10-08T03:55:35Z"
+updated = "2026-10-10T14:59:13Z"
 scope = ["changelog.d/**", "crates/gob-exec/**"]
 
 [[acceptance]]
