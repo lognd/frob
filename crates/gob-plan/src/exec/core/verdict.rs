@@ -47,6 +47,8 @@ pub enum Doubt {
         /// The members possibly counted; `None` is unbounded.
         hi: Option<u64>,
     },
+    /// The run's evaluation budget ran out before this was decided.
+    StepBudget,
     /// A bounded search stopped at its `within` limit before it was exhausted.
     Budget {
         /// Where the search started.

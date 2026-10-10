@@ -14,6 +14,7 @@ use super::cargo::CargoAdapter;
 use super::config::{GIB, GcConfig, MIB};
 use super::git::git;
 use super::jail::Jail;
+use super::removing;
 use super::scan::scan;
 use super::stamp::{self, Stamp, Usage};
 use super::worktrees::{self, Decision, WorktreeEnv};
@@ -88,7 +89,7 @@ pub fn default_adapters() -> [&'static dyn BuildAdapter; 1] {
 /// One thing the pass removed (or, in a dry run, would remove).
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct Action {
-    /// `worktrees`, `build`, `caches`, `artifacts` or `land-base`.
+    /// `worktrees`, `removing`, `build`, `caches`, `artifacts` or `land-base`.
     pub category: String,
     /// What it is, as a path.
     pub target: String,
@@ -298,6 +299,9 @@ fn collect(run: &mut Run<'_>) -> Vec<Usage> {
     if env.config.worktrees {
         collect_worktrees(run, &wenv);
     }
+    if !run.deadline.expired() {
+        collect_removing(run);
+    }
     let state_jail = Jail::new([common.join("frob")]);
     if !run.deadline.expired() {
         collect_land_base(run, &common, &state_jail);
@@ -395,6 +399,30 @@ fn collect_worktrees(run: &mut Run<'_>, wenv: &WorktreeEnv<'_>) {
     }
     if removed_any {
         worktrees::prune(wenv);
+    }
+}
+
+// frob:ticket 01M4HF7GJZZ2EX5JNABSVTM10F
+/// Delete unregistered `*.removing` directories a land left behind (its background deletion died with it).
+fn collect_removing(run: &mut Run<'_>) {
+    let env = run.env;
+    let dirs = removing::leftovers(env.repo, env.worktree_parent);
+    if dirs.is_empty() {
+        return;
+    }
+    if run.dry {
+        for d in &dirs {
+            let bytes = scan(d).bytes;
+            run.did("removing", d, bytes);
+        }
+        return;
+    }
+    let (done, failed) = removing::sweep(env.worktree_parent, &dirs);
+    for (d, bytes) in done {
+        run.did("removing", &d, bytes);
+    }
+    for f in failed {
+        run.warn(f);
     }
 }
 

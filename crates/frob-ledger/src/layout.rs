@@ -83,8 +83,9 @@ pub fn branch_events_dir(id: TicketId) -> String {
     format!("{EVENTS_DIR}/{id}")
 }
 
-/// Whether `path` (branch-relative) can be a ticket file: a markdown file outside dot
-/// directories that is not the generated front page.
+/// Whether `path` (branch-relative) can be a ticket file: a markdown file exactly one directory
+/// deep (`<dir>/<slug>.md`, never milestone or cycle objects below it) outside dot directories
+/// that is not the generated front page.
 #[must_use]
 pub fn is_branch_ticket_candidate(path: &str) -> bool {
     std::path::Path::new(path)
@@ -92,7 +93,7 @@ pub fn is_branch_ticket_candidate(path: &str) -> bool {
         .is_some_and(|ext| ext.eq_ignore_ascii_case("md"))
         && path != "README.md"
         && !path.starts_with('.')
-        && path.contains('/')
+        && path.matches('/').count() == 1
 }
 
 /// The ticket id named by the `id = "<ULID>"` line of a ticket file's frontmatter, even when the
@@ -174,6 +175,7 @@ mod tests {
         assert!(is_branch_ticket_candidate("epic/a.md"));
         assert!(!is_branch_ticket_candidate(".events/x/y.toml"));
         assert!(!is_branch_ticket_candidate("README.md"));
+        assert!(!is_branch_ticket_candidate("_milestones/x/milestone.md"));
     }
 
     // frob:ticket 01M3ZX82TWWY2616S1Q5N48KNK

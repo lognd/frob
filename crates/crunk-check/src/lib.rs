@@ -23,6 +23,7 @@ use gob_diagnostics as _; // unused today; removal tracked in ~MKG678C
 mod product;
 pub mod product_rules;
 pub mod sibling;
+mod tailwind;
 
 use std::path::{Path, PathBuf};
 use std::time::Instant;
