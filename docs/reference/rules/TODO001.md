@@ -21,18 +21,19 @@ The marker words are the four upper-case words to-do, fix-me, triple-x and
 hack (see the rule table of `docs/design/rules.md`). A marker is owned when
 a `frob:todo <ulid>` directive sits on the same or the previous line, or
 when the marker is written with a full ULID in parentheses right after it.
-File a ticket and add the directive.
+Comments of every scanned language count, YAML and TOML included (see
+`docs/reference/fidelity.md`). File a ticket and add the directive.
 
 ## Examples
 
-### TODO001 bare work markers / Fires on a bare marker in a block comment #1 (line 6) (fire)
+### TODO001 bare work markers / Fires on a bare marker in a block comment #1 (line 7) (fire)
 
 ```rust
 /* TODO tidy this */ // error: TODO001
 fn a() {}
 ```
 
-### TODO001 bare work markers / Fires on each marker word #2 (line 13) (fire)
+### TODO001 bare work markers / Fires on each marker word #2 (line 14) (fire)
 
 ```rust
 // FIXME later // error: TODO001
@@ -41,7 +42,7 @@ fn a() {}
 fn a() {}
 ```
 
-### TODO001 bare work markers / Fires in a markdown comment #3 (line 22) (fire)
+### TODO001 bare work markers / Fires in a markdown comment #3 (line 23) (fire)
 
 ```markdown
 # Title
@@ -49,7 +50,22 @@ fn a() {}
 <!-- TODO write this --> <!-- error: TODO001 -->
 ```
 
-### TODO001 bare work markers / Clean when a todo directive sits on the previous line #4 (line 30) (clean)
+### TODO001 bare work markers / Fires in a YAML comment #4 (line 33) (fire)
+
+```yaml
+# TODO tidy this # error: TODO001
+name: ci
+```
+
+### TODO001 bare work markers / Clean in a YAML comment owned by a todo directive #5 (line 40) (clean)
+
+```yaml
+# frob:todo 01J9QKX3M8Z4T7N2V5B6C0D1E2 tidy
+# TODO tidy this
+name: ci
+```
+
+### TODO001 bare work markers / Clean when a todo directive sits on the previous line #6 (line 48) (clean)
 
 ```rust
 /* frob:todo 01J9QKX3M8Z4T7N2V5B6C0D1E2 tidy */
@@ -57,21 +73,21 @@ fn a() {}
 fn a() {}
 ```
 
-### TODO001 bare work markers / Clean when the id follows the marker in parentheses #5 (line 38) (clean)
+### TODO001 bare work markers / Clean when the id follows the marker in parentheses #7 (line 56) (clean)
 
 ```rust
 // TODO(01J9QKX3M8Z4T7N2V5B6C0D1E2): tidy this
 fn a() {}
 ```
 
-### TODO001 bare work markers / Clean for lowercase words and strings #6 (line 45) (clean)
+### TODO001 bare work markers / Clean for lowercase words and strings #8 (line 63) (clean)
 
 ```rust
 // todo is fine in lowercase, and so is TODO001 as a rule id
 fn a() -> &'static str { "TODO inside a string" }
 ```
 
-### TODO001 bare work markers / Clean inside a fenced block of markdown #7 (line 52) (clean)
+### TODO001 bare work markers / Clean inside a fenced block of markdown #9 (line 70) (clean)
 
 ````markdown
 # Title

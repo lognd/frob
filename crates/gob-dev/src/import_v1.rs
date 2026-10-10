@@ -19,6 +19,7 @@
 // frob:ticket 01M3WYJ80SRC0JBM9T7DFTJSB7
 // frob:ticket 01M43A53W5X4PBCXWCTTM4E1PN
 // frob:ticket 01M43BEAR3MSMEANKENBQ1KDT7
+// frob:ticket 01M4FCZT2N5WN3VPVJ8KB92Z06
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
@@ -60,6 +61,7 @@ const CARRIED: &[&str] = &[
     "parent",
     "tier",
     "milestone",
+    "sprint",
     "flavour",
     "points",
     "scope",
@@ -79,10 +81,6 @@ pub const DROPPED_FIELDS: &[(&str, &str)] = &[
     (
         "branch",
         "per-checkout lease state; v2 derives the branch name from the handle",
-    ),
-    (
-        "sprint",
-        "v2 has no sprint field (cycles arrive in milestone 2)",
     ),
     ("due", "v2 has no due-date field"),
     ("rank", "v2 orders by priority and points; no manual rank"),
@@ -270,6 +268,8 @@ struct V1Front {
     #[serde(default)]
     milestone: Option<String>,
     #[serde(default)]
+    sprint: Option<serde_yaml_ng::Value>,
+    #[serde(default)]
     flavour: Option<String>,
     #[serde(default)]
     points: Option<u8>,
@@ -411,6 +411,7 @@ impl Clock {
 fn split_front<'a>(label: &str, text: &'a str) -> Result<(&'a str, &'a str), ImportError> {
     let rest = text
         .strip_prefix("---\n")
+        .or_else(|| text.strip_prefix("---\r\n"))
         .ok_or_else(|| ticket_err(label, "missing opening `---` fence"))?;
     let mut offset = 0;
     for line in rest.split_inclusive('\n') {
@@ -420,6 +421,17 @@ fn split_front<'a>(label: &str, text: &'a str) -> Result<(&'a str, &'a str), Imp
         offset += line.len();
     }
     Err(ticket_err(label, "missing closing `---` fence"))
+}
+
+/// The `sprint:<value>` label of a v1 `sprint` field (a string or a number), or `None` when it is empty.
+fn sprint_label(v: Option<&serde_yaml_ng::Value>) -> Option<String> {
+    use serde_yaml_ng::Value;
+    let text = match v? {
+        Value::String(s) => s.trim().to_owned(),
+        Value::Number(n) => n.to_string(),
+        _ => return None,
+    };
+    (!text.is_empty()).then(|| format!("sprint:{text}"))
 }
 
 fn is_empty_value(v: &serde_yaml_ng::Value) -> bool {
@@ -678,6 +690,7 @@ fn create_data(
     let (parent, links) = links_of(f, ids, report);
     let mut labels = f.labels.clone();
     labels.extend(f.milestone.iter().map(|m| format!("milestone:{m}")));
+    labels.extend(sprint_label(f.sprint.as_ref()));
     labels.extend(f.component.iter().map(|c| format!("component:{c}")));
     labels.extend(decision.cluster.iter().map(|c| format!("v1-cluster:{c}")));
     labels.extend(decision.area.iter().map(|a| format!("area:{a}")));
@@ -1273,7 +1286,7 @@ pub fn render_report_md(report: &ImportReport) -> String {
          | `state` done, archived | category `done`, outcome `done` |\n\
          | `state` dropped | category `done`, outcome `wont-fix`, drop reason kept as a comment event |\n\
          | `blocked_by`, `parent` | `blocked-by` links, `parent` (mapped through the id map) |\n\
-         | `milestone`, `component` | labels `milestone:<v>`, `component:<v>` |\n\
+         | `milestone`, `sprint`, `component` | labels `milestone:<v>`, `sprint:<v>`, `component:<v>` |\n\
          | `origin` | actor of the `create` event and reporter |\n\
          | `acceptance` | acceptance criteria with `bound = false` |\n\
          | `evidence` (`cmd:` lines) | `evidence` events, provider `command`, status measured when exit is 0 |\n\

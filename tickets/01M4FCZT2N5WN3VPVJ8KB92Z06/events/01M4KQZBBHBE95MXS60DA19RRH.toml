@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T20:27:20Z"
+digest = "c6583b16d967ec8f8bca982b2c2c0af3508701ce6051a70c4bc59f3347d402dc"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 56bb6cf6-0301-4366-b9e6-4624d2904081 with nextest profile: default
+    Starting 1 test across 7 binaries (132 tests skipped)
+        PASS [   0.008s] gob-dev::bin/gob-dev tests::import_v1_tickets_has_no_default_selection_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 132 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(=tests::import_v1_tickets_has_no_default_selection_file)'"
+size = 556
+status = "measured"
+tests = ["tests::import_v1_tickets_has_no_default_selection_file"]
+at = "2026-10-10T20:27:20Z"
+actor = "Claude"
+rev = 1
