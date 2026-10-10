@@ -4,7 +4,7 @@
 //! over the hi bound of their kind's domain, weight each candidate by its membership truth, and
 //! add an Unknown disjunct when the model has unread regions (review 2.2 item 7).
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -48,6 +48,8 @@ pub(crate) struct Wired<'a> {
     pub(crate) side: HashMap<StrId, &'a SideTable>,
     /// The `[rules]` knob overrides.
     pub(crate) knobs: Knobs,
+    /// The most condition evaluations before the run gives up.
+    pub(crate) budget: u64,
 }
 
 /// The evaluator for one plan over one model.
@@ -62,6 +64,7 @@ pub(crate) struct Eval<'a> {
     domains: RefCell<HashMap<StrId, Domain>>,
     /// Materialised def views by (def, argument values): each is computed once (7.0.2).
     views: RefCell<HashMap<(u16, Vec<Val>), Verdict>>,
+    steps: Cell<u64>,
 }
 
 impl<'a> Eval<'a> {
@@ -84,6 +87,7 @@ impl<'a> Eval<'a> {
             order: model.term().nodes_by_location(),
             domains: RefCell::default(),
             views: RefCell::default(),
+            steps: Cell::new(0),
         }
     }
 
@@ -164,8 +168,43 @@ impl<'a> Eval<'a> {
         }
     }
 
-    /// Evaluates condition `id` under `env`.
+    /// Whether the evaluation budget is spent.
+    pub(crate) fn exhausted(&self) -> bool {
+        self.steps.get() > self.wired.budget
+    }
+
+    /// Evaluates condition `id` under `env`; Unknown once the budget is spent.
     pub(crate) fn eval(&self, id: OpId, env: &mut Env) -> Verdict {
+        self.steps.set(self.steps.get() + 1);
+        if self.exhausted() {
+            return Verdict::unknown(Doubt::StepBudget);
+        }
+        self.eval_op(id, env)
+    }
+
+    /// The first member of `kind` in location order whose body `cond` has the truth `want`
+    /// under `env` (grl-spec.md 7.0.5 witnesses).
+    pub(crate) fn witness(
+        &self,
+        var: VarId,
+        kind: StrId,
+        cond: OpId,
+        want: Truth,
+        env: &mut Env,
+    ) -> Option<NodeId> {
+        let mut found = None;
+        for &(n, member) in self.domain(kind).iter() {
+            env[usize::from(var)] = Some(Val::Node(n));
+            if self.eval(cond, env).truth & member == want {
+                found = Some(n);
+                break;
+            }
+        }
+        env[usize::from(var)] = None;
+        found
+    }
+
+    fn eval_op(&self, id: OpId, env: &mut Env) -> Verdict {
         match &self.plan.ops[id as usize] {
             Op::And(cs) => {
                 let mut acc = Verdict::yes();

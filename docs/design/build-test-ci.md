@@ -237,6 +237,14 @@ yet executed no test refuses as `E-EVIDENCE-NO-TESTS`. Its tests need no .NET SD
 run the `fake-dotnet` helper binary of `gob-testsupport` (a stand-in that copies a canned
 TRX to the results directory; a native executable, not a shell script, so it runs on
 Windows too).
+The `pytest` provider and `frob test` start pytest through the project interpreter
+(~FP0SDK3): `[tests] python` when set (a name on `PATH`, or a path relative to the
+repository root), else `.venv/bin/python` in the repository root when it exists, else
+`pytest` on `PATH`; the first two run `<python> -m pytest`, and `frob test --dry-run`
+prints the resolved launcher as `pytest_runner`. Exit 2, 3 or 4 (interrupted, internal or
+usage and collection errors) means pytest could not run the tests: the run refuses with
+`E-EVIDENCE-RUNNER-ERROR` (reason `runner-error`) naming the files that failed to
+collect, and records no evidence.
 Tests that run pytest (frob-evidence and frob-tests) need `python3` and
 `pytest` on `PATH` and skip with a named reason when they are absent
 (`gob_testsupport::python_test_prerequisites`); setting

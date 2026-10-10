@@ -87,5 +87,5 @@ preview = []
 ref = "refs/heads/main"
 # Name of the orphan branch `frob ticket branch init` creates for the ledger (`mirror.md` section 1).
 branch = "frob-tickets"
-# `trunk` commits to `ref`; `branch` commits to the checked-out branch.
+# `trunk` commits to `ref`; `branch` commits to the checked-out branch; `orphan` commits to the ticket branch `branch` in the ticket-branch layout and keeps `ref` as the code base.
 ref_mode = "trunk"

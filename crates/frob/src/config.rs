@@ -19,6 +19,8 @@ pub enum RefModeKnob {
     Trunk,
     /// Commits go on the currently checked-out branch (protected trunk, forks).
     Branch,
+    /// Commits go on the orphan ticket branch `[tickets] branch`; `ref` stays the code base branch.
+    Orphan,
 }
 
 impl From<RefModeKnob> for frob_ledger::RefMode {
@@ -26,6 +28,7 @@ impl From<RefModeKnob> for frob_ledger::RefMode {
         match k {
             RefModeKnob::Trunk => Self::Trunk,
             RefModeKnob::Branch => Self::Branch,
+            RefModeKnob::Orphan => Self::Orphan,
         }
     }
 }
@@ -43,7 +46,7 @@ pub struct TicketsTable {
     /// Directory of ticket files, relative to the repository root.
     #[config(default = "tickets".to_owned())]
     pub dir: String,
-    /// `trunk` commits to `ref`; `branch` commits to the checked-out branch.
+    /// `trunk` commits to `ref`; `branch` commits to the checked-out branch; `orphan` commits to the ticket branch `branch` in the ticket-branch layout and keeps `ref` as the code base.
     #[config(default = RefModeKnob::Trunk, enforcement)]
     pub ref_mode: RefModeKnob,
     /// Shortest ticket handle shown (`~` plus this many id characters).
@@ -106,6 +109,7 @@ impl FrobConfig {
         frob_ledger::LedgerConfig {
             ref_name: self.tickets.r#ref.clone(),
             mode: self.tickets.ref_mode.into(),
+            branch: self.tickets.branch.clone(),
             dir: self.tickets.dir.clone(),
             cas_retries: self.git.cas_retries,
             handle_min_len: self.tickets.handle_min_len as usize,

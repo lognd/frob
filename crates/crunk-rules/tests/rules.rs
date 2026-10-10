@@ -6,10 +6,11 @@
 use crunk_rules::family::{CheckTier, FAMILIES, Gate, family, gate_severity, is_waivable};
 use crunk_rules::registry::{catalog_mismatches, entries, render_markdown, unknown_families};
 use crunk_rules::rules::{
-    INDEX, color001::Color001, color002::Color002, contrast001::Contrast001, layer001::Layer001,
-    org001::Org001, org002::Org002, org003::Org003, org004::Org004, org005::Org005,
-    radius001::Radius001, size001::Size001, space001::Space001, type001::Type001, type002::Type002,
-    type003::Type003, waive001::Waive001,
+    INDEX, bp001::Bp001, bp002::Bp002, bp003::Bp003, color001::Color001, color002::Color002,
+    contrast001::Contrast001, layer001::Layer001, org001::Org001, org002::Org002, org003::Org003,
+    org004::Org004, org005::Org005, radius001::Radius001, size001::Size001, space001::Space001,
+    tokens001::Tokens001, tw001::Tw001, tw002::Tw002, tw003::Tw003, tw004::Tw004, tw005::Tw005,
+    type001::Type001, type002::Type002, type003::Type003, waive001::Waive001,
 };
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
@@ -42,6 +43,15 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/org003.rs::Org003
     // frob:tests crates/crunk-rules/src/rules/org004.rs::Org004
     // frob:tests crates/crunk-rules/src/rules/org005.rs::Org005
+    // frob:tests crates/crunk-rules/src/rules/bp001.rs::Bp001
+    // frob:tests crates/crunk-rules/src/rules/bp002.rs::Bp002
+    // frob:tests crates/crunk-rules/src/rules/bp003.rs::Bp003
+    // frob:tests crates/crunk-rules/src/rules/tokens001.rs::Tokens001
+    // frob:tests crates/crunk-rules/src/rules/tw001.rs::Tw001
+    // frob:tests crates/crunk-rules/src/rules/tw002.rs::Tw002
+    // frob:tests crates/crunk-rules/src/rules/tw003.rs::Tw003
+    // frob:tests crates/crunk-rules/src/rules/tw004.rs::Tw004
+    // frob:tests crates/crunk-rules/src/rules/tw005.rs::Tw005
     let host = support::project(&case.file_name, &case.text, case.config.as_deref());
     match case.rule.as_str() {
         "COLOR001" => support::run::<Color001>(&host),
@@ -59,6 +69,15 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
         "ORG003" => support::run::<Org003>(&host),
         "ORG004" => support::run::<Org004>(&host),
         "ORG005" => support::run::<Org005>(&host),
+        "BP001" => support::run::<Bp001>(&host),
+        "BP002" => support::run::<Bp002>(&host),
+        "BP003" => support::run::<Bp003>(&host),
+        "TOKENS001" => support::run::<Tokens001>(&host),
+        "TW001" => support::run::<Tw001>(&host),
+        "TW002" => support::run::<Tw002>(&host),
+        "TW003" => support::run::<Tw003>(&host),
+        "TW004" => support::run::<Tw004>(&host),
+        "TW005" => support::run::<Tw005>(&host),
         other => unreachable!("no runner for {other}"),
     }
 }
@@ -83,6 +102,9 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
     assert_eq!(
         ids,
         [
+            "BP001",
+            "BP002",
+            "BP003",
             "COLOR001",
             "COLOR002",
             "CONTRAST001",
@@ -95,6 +117,12 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
             "RADIUS001",
             "SIZE001",
             "SPACE001",
+            "TOKENS001",
+            "TW001",
+            "TW002",
+            "TW003",
+            "TW004",
+            "TW005",
             "TYPE001",
             "TYPE002",
             "TYPE003",
@@ -224,6 +252,6 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids.len(), 16);
+    assert_eq!(ids.len(), 25);
     assert!(ids.contains(&"SPACE001"));
 }

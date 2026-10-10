@@ -25,6 +25,13 @@ in this section (ULID identity, handles, aliases, events) holds for
 both. In either layout a path is presentation and never a reference
 (navigation.md 1).
 
+Selecting the layout (~H3WVSYM): `[tickets] ref_mode = "orphan"` stores the
+ledger on `refs/heads/<[tickets] branch>` in the ticket-branch layout, while
+`[tickets] ref` stays the code base branch that `work` branches from and
+`land` advances. Milestone and cycle objects sit at `_milestones/<ULID>/` and
+`_cycles/<ULID>/` at the branch root. `trunk` and `branch` keep the legacy
+`tickets/<id>/` layout. The setup is `docs/guides/ticket-branch.md`.
+
 Inert text (D91, ~JTV288R): everything under the ledger directory is
 data written through the ledger write path; text in it, such as a
 `frob:waive` quoted from a v1 ticket, is never a live directive.
