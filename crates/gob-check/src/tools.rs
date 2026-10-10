@@ -43,14 +43,52 @@ fn escape(text: &str) -> String {
         .collect()
 }
 
-/// The escaped, capped tail of a stream, or `(empty)`.
+// frob:ticket 01M4GKCBT6MW3BHED91718ANQ7
+/// True when a stderr line looks like the tool reporting a failure rather than progress.
+fn error_looking(line: &str) -> bool {
+    let l = line.to_ascii_lowercase();
+    ["error", "fatal", "panic", "failed", "cannot", "no such"]
+        .iter()
+        .any(|k| l.contains(k))
+}
+
+// frob:ticket 01M4GKCBT6MW3BHED91718ANQ7
+/// The escaped, capped excerpt of a stream, or `(empty)`.
+///
+/// Output that fits the cap is quoted whole. Longer output shows the last two
+/// error-looking lines and the last two lines, so leading INFO noise is dropped.
 fn excerpt(text: &str) -> String {
-    let t = tail(text);
+    let t = text.trim();
     if t.is_empty() {
-        "(empty)".to_owned()
-    } else {
-        escape(&t)
+        return "(empty)".to_owned();
     }
+    if t.chars().count() <= TAIL {
+        return escape(t);
+    }
+    let lines: Vec<&str> = t.lines().map(str::trim).filter(|l| !l.is_empty()).collect();
+    let mut keep: Vec<usize> = lines
+        .iter()
+        .enumerate()
+        .filter(|(_, l)| error_looking(l))
+        .map(|(i, _)| i)
+        .rev()
+        .take(2)
+        .collect();
+    keep.extend(lines.len().saturating_sub(2)..lines.len());
+    keep.sort_unstable();
+    keep.dedup();
+    let picked: Vec<String> = keep
+        .iter()
+        .map(|&i| {
+            let l = lines[i];
+            if l.chars().count() > 90 {
+                format!("{}...", l.chars().take(90).collect::<String>())
+            } else {
+                l.to_owned()
+            }
+        })
+        .collect();
+    escape(&tail(&picked.join(" | ")))
 }
 
 /// The command line of a stage invocation, for a finding.
@@ -815,5 +853,42 @@ mod tests {
         assert!(msg.len() < 900, "capped: {}", msg.len());
         let esc = escape("\u{1b}[31mx\n");
         assert_eq!(esc, "\\u{1b}[31mx\\n");
+    }
+
+    // frob:ticket 01M4GKCBT6MW3BHED91718ANQ7
+    #[test]
+    fn the_excerpt_shows_error_lines_and_the_tail_not_leading_info_noise() {
+        let mut lines: Vec<String> = (0..40)
+            .map(|i| format!("INFO starting step {i} of the long running tool"))
+            .collect();
+        lines.push("error: could not parse config.yml line 7".to_owned());
+        lines.extend((0..10).map(|i| format!("INFO cleanup {i}")));
+        lines.push("tool exited with status 3".to_owned());
+        let text = lines.join("\n");
+        let out = excerpt(&text);
+        assert!(!out.contains("starting step 0"), "{out}");
+        assert!(
+            out.contains("error: could not parse config.yml line 7"),
+            "{out}"
+        );
+        assert!(out.contains("tool exited with status 3"), "{out}");
+        assert!(out.contains("INFO cleanup 9"), "{out}");
+        assert!(out.chars().count() <= TAIL + 8, "capped: {}", out.len());
+    }
+
+    // frob:ticket 01M4GKCBT6MW3BHED91718ANQ7
+    #[test]
+    fn a_failing_tool_with_info_noise_quotes_its_error_line_in_tool001() {
+        let stage = sh_stage(
+            "lint",
+            ToolParser::ActionlintJson,
+            "for i in $(seq 1 60); do echo \"INFO warming up $i\" >&2; done; echo 'error: bad workflow file' >&2; echo 'INFO done' >&2; exit 2",
+            VERSION_OK,
+        );
+        let found = run_one(&stage);
+        let msg = &found[0].message;
+        assert!(msg.contains("error: bad workflow file"), "{msg}");
+        assert!(msg.contains("INFO done"), "{msg}");
+        assert!(!msg.contains("warming up 1 "), "{msg}");
     }
 }
