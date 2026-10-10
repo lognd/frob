@@ -2,12 +2,12 @@
 id = "01M4GSTXC34Q811RXW8SH36RMT"
 title = "ref_mode = branch with a detached HEAD gives E-LEDGER-DETACHED even for read-only verbs (doctor, check), and every CI pull_request checkout is detached"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T17:02:09Z"
-updated = "2026-10-09T17:02:09Z"
+updated = "2026-10-10T20:39:38Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-ledger/**", "crates/frob/**", "changelog.d/**"]
 
