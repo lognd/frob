@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4K4QKXHB534W7BMFWXKT9TC"
+text = "doctor gate is red on experimental (CFG001); one-line config sync"
+at = "2026-10-10T14:51:05Z"
+actor = "Claude"
+rev = 1
