@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T15:04:50Z"
-updated = "2026-10-10T19:26:14Z"
+updated = "2026-10-10T19:27:57Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/grimble-model/src/directive.rs", "changelog.d/**", "crates/gob-directives/src/lib.rs"]
 
