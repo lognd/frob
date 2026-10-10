@@ -8,10 +8,10 @@ points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:33Z"
-updated = "2026-10-10T15:59:33Z"
+updated = "2026-10-10T16:00:11Z"
 idempotency_key = "m2-sec-state-tracked"
-labels = ["milestone:2", "area:security", "creates:crates/gob-trust/tests/guard.rs", "creates:crates/gob-trust/src/guard.rs"]
-scope = ["crates/gob-diagnostics/src/refusal.rs", "crates/gob-trust/src/lib.rs", "crates/gob-trust/src/error.rs", "docs/design/security.md", "crates/gob-trust/tests/guard.rs", "crates/gob-trust/src/guard.rs"]
+labels = ["milestone:2", "area:security", "creates:crates/gob-trust/tests/guard.rs", "creates:crates/gob-trust/src/guard.rs", "creates:crates/gob-diagnostics/tests/state_tracked.rs"]
+scope = ["crates/gob-diagnostics/src/refusal.rs", "crates/gob-trust/src/lib.rs", "crates/gob-trust/src/error.rs", "docs/design/security.md", "crates/gob-trust/tests/guard.rs", "crates/gob-trust/src/guard.rs", "crates/gob-diagnostics/tests/state_tracked.rs"]
 
 [[links]]
 kind = "blocked-by"
