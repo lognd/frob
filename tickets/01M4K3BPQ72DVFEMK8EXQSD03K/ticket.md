@@ -7,7 +7,7 @@ priority = "critical"
 points = 3
 reporter = "Claude"
 created = "2026-10-10T14:27:06Z"
-updated = "2026-10-10T14:41:30Z"
+updated = "2026-10-10T14:42:35Z"
 scope = ["design/model.grmb", "crates/grimble-*/**"]
 
 [[acceptance]]
