@@ -51,6 +51,15 @@ pub enum LockError {
         /// The version found.
         found: u32,
     },
+    // frob:ticket 01M4GK4M8KKRE7X7JCP6YJ5K96
+    /// The file is a leftover frob v1 lock, a format this build never read.
+    #[error(
+        "E-LOCK-V1: {path} is a v1 frob.lock (frob v1 wrote it; this build reads version {OLDEST_VERSION} to {LOCK_VERSION}); delete it and run `frob ack --all` to regenerate"
+    )]
+    LegacyV1 {
+        /// The file.
+        path: PathBuf,
+    },
     /// The in-memory lock could not be rendered as TOML (a bug).
     #[error("E-LOCK-RENDER: {0}")]
     Render(String),
@@ -517,22 +526,36 @@ impl LockFile {
     ///
     /// # Errors
     ///
-    /// [`LockError::Parse`] for malformed TOML, [`LockError::Version`] for a newer format.
+    /// [`LockError::Parse`] for malformed TOML, [`LockError::Version`] for a newer format,
+    /// [`LockError::LegacyV1`] for a lock frob v1 wrote (JSON, or TOML with no `version`).
     pub fn parse(text: &str, origin: &Path) -> Result<Self, LockError> {
         let parse_err = |e: toml::de::Error| LockError::Parse {
             path: origin.to_path_buf(),
             message: e.to_string(),
         };
-        let header: Header = toml::from_str(text).map_err(parse_err)?;
+        // frob:ticket 01M4GK4M8KKRE7X7JCP6YJ5K96
+        let legacy = || LockError::LegacyV1 {
+            path: origin.to_path_buf(),
+        };
+        if text.trim_start().starts_with('{') {
+            return Err(legacy());
+        }
+        let header: Header = match toml::from_str(text) {
+            Ok(h) => h,
+            Err(_)
+                if toml::from_str::<toml::Table>(text)
+                    .is_ok_and(|t| !t.contains_key("version")) =>
+            {
+                return Err(legacy());
+            }
+            Err(e) => return Err(parse_err(e)),
+        };
         match header.version {
             v if v > LOCK_VERSION => Err(LockError::Version {
                 path: origin.to_path_buf(),
                 found: v,
             }),
-            v if v < OLDEST_VERSION => Err(LockError::Parse {
-                path: origin.to_path_buf(),
-                message: format!("unsupported lock version {v}"),
-            }),
+            v if v < OLDEST_VERSION => Err(legacy()),
             1 => Ok(Self::from_v1(toml::from_str(text).map_err(parse_err)?)),
             _ => Self::from_v2(toml::from_str(text).map_err(parse_err)?, origin),
         }

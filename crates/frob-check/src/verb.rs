@@ -208,6 +208,13 @@ fn cli_error(err: CheckError) -> CliError {
             &err,
             "run inside the repository that holds the ticket ledger",
         ),
+        // frob:ticket 01M4GK4M8KKRE7X7JCP6YJ5K96
+        CheckError::Lock(gob_lock::LockError::LegacyV1 { .. }) => refusal(
+            "E-CHECK-LOCK",
+            RefusalClass::GuardNeedsAction,
+            &err,
+            "delete the v1 frob.lock, then run `frob ack --all`",
+        ),
         CheckError::Lock(_) => refusal(
             "E-CHECK-LOCK",
             RefusalClass::GuardNeedsAction,

@@ -2,7 +2,7 @@
 
 use gob_lock::{
     Current, CurrentFlow, CurrentSymbol, EntryKind, Facet, FacetSet, FlowEnd, FlowEntry, LockEntry,
-    LockFile, LockTarget, PlanError, PlanOptions, diff, file_name, plan,
+    LockError, LockFile, LockTarget, PlanError, PlanOptions, diff, file_name, plan,
 };
 
 fn entry(sig: &str) -> LockEntry {
@@ -342,4 +342,29 @@ fn rename_log_and_absent_shape_contract_round_trip() {
     let back = LockFile::from_toml(&text).unwrap();
     assert_eq!(back, lock);
     assert_eq!(back.ack_log[0].target.as_deref(), Some("a.rs::new"));
+}
+
+// frob:ticket 01M4GK4M8KKRE7X7JCP6YJ5K96
+#[test]
+fn a_v1_frob_lock_is_named_as_such_with_the_remedy() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("frob.lock");
+    for text in [
+        "{\"entries\": {}}\n",
+        "[pins]\nkey = \"x\"\n",
+        "version = 0\n",
+    ] {
+        std::fs::write(&path, text).unwrap();
+        let err = LockFile::load(&path).unwrap_err();
+        assert!(matches!(err, LockError::LegacyV1 { .. }), "{text}: {err}");
+        let msg = err.to_string();
+        assert!(msg.contains(&path.display().to_string()), "{msg}");
+        assert!(msg.contains("v1"), "{msg}");
+        assert!(msg.contains("delete it and run `frob ack"), "{msg}");
+    }
+    std::fs::write(&path, "not = [toml").unwrap();
+    assert!(
+        matches!(LockFile::load(&path), Err(LockError::Parse { .. })),
+        "plain garbage stays a parse error"
+    );
 }

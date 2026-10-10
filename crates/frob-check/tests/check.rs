@@ -1305,3 +1305,16 @@ fn the_ticket_cone_includes_cross_crate_callers_and_leaves_unrelated_crates_out(
         frob_check::run_with_cone(dir.path(), &CheckOptions::default()).expect("unscoped");
     assert!(none.is_none());
 }
+
+// frob:ticket 01M4GK4M8KKRE7X7JCP6YJ5K96
+#[test]
+fn a_leftover_v1_lock_aborts_the_check_naming_file_version_and_remedy() {
+    let dir = fixture();
+    write(dir.path(), "frob.lock", "{\"entries\": {}}\n");
+    let err = run(dir.path(), &quiet()).expect_err("v1 lock refuses");
+    let msg = err.to_string();
+    assert!(msg.starts_with("E-CHECK-LOCK"), "{msg}");
+    assert!(msg.contains("frob.lock"), "{msg}");
+    assert!(msg.contains("v1"), "{msg}");
+    assert!(msg.contains("frob ack"), "{msg}");
+}
