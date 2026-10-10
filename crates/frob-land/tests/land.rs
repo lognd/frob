@@ -1923,7 +1923,16 @@ fn a_red_base_files_one_blocking_fix_ticket_and_later_lands_wait_for_it() {
             .len()
     };
     assert_eq!(blockers(&fx), 1);
-    let (_, again) = ci_land(&fx, ci, |_| {});
+    let t = fx.start("Add other", &["lib/**"]);
+    Fixture::commit_in(&t.wt, "lib/o.rs", "fn o() {}\n");
+    Fixture::evidence(&t, "lib/o.rs");
+    let mut opts = Fixture::opts(&t);
+    opts.ci_reader = Some(ci);
+    let again = land(
+        &fx.root,
+        &opts,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    );
     let second = refusal(&again.expect_err("still refused")).message.clone();
     assert!(
         second.contains("blocked until the fix ticket closes"),
