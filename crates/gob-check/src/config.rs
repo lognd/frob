@@ -102,6 +102,13 @@ pub struct ToolStage {
     /// Repo-relative globs of the files this stage reads; a `--ticket` run whose scope matches none of them skips the stage (CI still runs it). Empty means the stage always runs.
     #[serde(default)]
     pub inputs: Vec<String>,
+    /// What the `{packages}` argument token expands to outside a `--ticket` run (default `--workspace`); in a `--ticket` run it becomes `-p <name>` for each affected cargo package.
+    #[serde(default = "default_unscoped_packages")]
+    pub unscoped_packages: Vec<String>,
+}
+
+fn default_unscoped_packages() -> Vec<String> {
+    vec!["--workspace".to_owned()]
 }
 
 fn default_tool_timeout() -> u64 {
