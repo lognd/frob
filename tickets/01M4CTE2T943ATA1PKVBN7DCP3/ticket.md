@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:40Z"
-updated = "2026-10-10T02:07:07Z"
+updated = "2026-10-10T02:07:08Z"
 scope = ["changelog.d/**", ".github/workflows/**", "crates/gob-dev/src/ci.rs"]
 
 [[acceptance]]
@@ -25,6 +25,10 @@ bound = false
 
 [[acceptance]]
 text = "Given a push that changes only tickets/**, changelog.d/** or docs/** (docs not under generated reference checks), when CI triggers, then the Rust jobs are skipped by paths filters and a cheap docs job runs instead"
+bound = false
+
+[[acceptance]]
+text = "Given the dev-artifacts job, when experimental is green, then it builds at most once per hour or only for the newest green commit, not on every land; and workspace crates are cached across runs (sccache with the GitHub Actions cache backend, or rust-cache cache-workspace-crates) with the measured hit rate reported"
 bound = false
 +++
 
