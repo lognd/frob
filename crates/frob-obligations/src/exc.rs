@@ -1,23 +1,24 @@
-//! Exceptions: `frob:accept` and `frob:defer` suppress findings; EXC001, EXC003, EXC005 and EXC007 police them.
+//! Exceptions: `frob:accept` and `frob:defer` suppress findings; the EXC rules police them.
 
 use gob_directives::frob::{Accept, Defer};
 use gob_directives::{Binding, Directive, DirectiveRecord};
 use gob_lock::LockFile;
 use gob_rules::{
     BoundException, Exception, ExceptionCtx, ExceptionKind, Finding, ReasonPolicy, Resolved,
-    RuleId, apply_exceptions, check_reason,
+    RuleId, Severity, apply_exceptions, check_reason,
 };
 use gob_symbols::{SymbolGraph, Symref};
 use gob_text::{FileInterner, Span};
+use gob_time::Day;
 
-use crate::rules::{Exc001, Exc003, Exc005, Exc007};
+use crate::rules::{Exc001, Exc003, Exc005, Exc007, Exc014, Exc016};
 use crate::tickets::{Standing, Tickets};
 use crate::util::finding;
 
 /// One parsed `frob:accept` or `frob:defer` with where it applies.
-struct Bound {
+pub(crate) struct Bound {
     /// The exception and its binding, in the shape gob-rules matches.
-    inner: BoundException,
+    pub(crate) inner: BoundException,
     /// Where the directive text sits.
     at: Span,
     /// The symref lock entries are keyed by (the file symref for file-bound).
@@ -29,7 +30,7 @@ fn to_usize(n: u32) -> usize {
 }
 
 /// The exceptions written in `directives`, malformed ones skipped (PARSE001 reports them).
-fn collect(
+pub(crate) fn collect(
     graph: &SymbolGraph,
     directives: &[DirectiveRecord],
     files: &FileInterner,
@@ -167,27 +168,146 @@ fn police(
     out
 }
 
+// frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+/// What an `until=` value says about a defer on a given day.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Lapse {
+    /// No `until`, a metric target decided elsewhere, or a day not yet past.
+    Live,
+    /// The last day (inclusive) was before today.
+    Expired(Day),
+    /// Neither a `YYYY-MM-DD` day nor a metric target.
+    Malformed,
+}
+
+// frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+/// Evaluate the `until` of `ex` against `today`; only defers expire (an accept never lapses).
+pub(crate) fn lapse(ex: &Exception, today: Day) -> Lapse {
+    let Some(until) = ex
+        .until
+        .as_deref()
+        .filter(|_| ex.kind == ExceptionKind::Defer)
+    else {
+        return Lapse::Live;
+    };
+    if until.contains(':') {
+        return Lapse::Live;
+    }
+    match until.parse::<Day>() {
+        Ok(day) if day.days_since(today) < 0 => Lapse::Expired(day),
+        Ok(_) => Lapse::Live,
+        Err(_) => Lapse::Malformed,
+    }
+}
+
+// frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+/// The exceptions of `bound` still in force on `today` (expired defers no longer cover).
+pub(crate) fn in_force(bound: &[Bound], today: Day) -> Vec<BoundException> {
+    bound
+        .iter()
+        .filter(|b| !matches!(lapse(&b.inner.exception, today), Lapse::Expired(_)))
+        .map(|b| b.inner.clone())
+        .collect()
+}
+
+// frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+/// EXC014 for a defer whose `until` has passed or is not a date.
+fn expiry(b: &Bound, today: Day) -> Option<Finding> {
+    let ex = &b.inner.exception;
+    let anchor = format!("{}:{}", b.symref, ex.rule);
+    match lapse(ex, today) {
+        Lapse::Live => None,
+        Lapse::Expired(day) => Some(finding(
+            &Exc014,
+            Some(b.at),
+            format!(
+                "`frob:defer {}` expired on {day} (today is {today}); the deferred finding stands again. Pay the debt or re-defer with a new date",
+                ex.rule
+            ),
+            &anchor,
+        )),
+        Lapse::Malformed => Some(finding(
+            &Exc014,
+            Some(b.at),
+            format!(
+                "`frob:defer {}` has `until={}`, which is neither a YYYY-MM-DD day nor a `kind:target` metric",
+                ex.rule,
+                ex.until.as_deref().unwrap_or_default()
+            ),
+            &anchor,
+        )),
+    }
+}
+
+// frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+/// Apply `exceptions` to `raw`; an Unresolved finding yields only to a defer, and each accept that names one gets EXC016.
+fn apply_in_force(
+    raw: Vec<Finding>,
+    exceptions: &[BoundException],
+    files: &FileInterner,
+    bound: &[Bound],
+) -> Resolved {
+    let ctx = ExceptionCtx { files };
+    let (unresolved, resolvable): (Vec<Finding>, Vec<Finding>) = raw
+        .into_iter()
+        .partition(|f| f.severity == Severity::Unresolved);
+    let mut resolved = apply_exceptions(resolvable, exceptions, &ctx);
+    let deferrable: Vec<BoundException> = exceptions
+        .iter()
+        .filter(|b| b.exception.kind != ExceptionKind::Accept)
+        .cloned()
+        .collect();
+    for b in bound
+        .iter()
+        .filter(|b| b.inner.exception.kind == ExceptionKind::Accept)
+    {
+        let hit = unresolved
+            .iter()
+            .filter(|f| b.inner.covers(f, &ctx))
+            .count();
+        if hit > 0 {
+            let ex = &b.inner.exception;
+            resolved.findings.push(finding(
+                &Exc016,
+                Some(b.at),
+                format!(
+                    "`frob:accept {}` covers {hit} Unresolved finding(s), which an accept cannot park; they stand. Park with `frob:defer {}` and a ticket, or baseline them",
+                    ex.rule, ex.rule
+                ),
+                &format!("{}:{}", b.symref, ex.rule),
+            ));
+        }
+    }
+    let rest = apply_exceptions(unresolved, &deferrable, &ctx);
+    resolved.findings.extend(rest.findings);
+    resolved.suppressed.extend(rest.suppressed);
+    resolved
+}
+
 /// Apply the exceptions of `directives` to `raw`, appending EXC findings.
 ///
-/// `until` dates are not evaluated at milestone 1; a rejected reason, an
-/// expired or missing ticket or a stale attestation each raise an EXC finding
-/// but the exception still suppresses, so one problem fails the gate once.
+/// A defer whose `until` day has passed no longer suppresses (EXC014). An
+/// Unresolved finding is parked only by a defer; an accept naming one raises
+/// EXC016 and the finding stands. A rejected reason, a missing or finished
+/// ticket or a stale attestation each raise an EXC finding while the
+/// exception still suppresses, so one problem fails the gate once.
 pub(crate) fn resolve(
     graph: &SymbolGraph,
     lock: &LockFile,
     directives: &[DirectiveRecord],
     files: &FileInterner,
     tickets: &Tickets<'_>,
+    today: Day,
     raw: Vec<Finding>,
 ) -> Resolved {
     let bound = collect(graph, directives, files);
     let policy = ReasonPolicy::default();
-    let exceptions: Vec<BoundException> = bound.iter().map(|b| b.inner.clone()).collect();
-    let mut resolved = apply_exceptions(raw, &exceptions, &ExceptionCtx { files });
+    let mut resolved = apply_in_force(raw, &in_force(&bound, today), files, &bound);
     for b in &bound {
         resolved
             .findings
             .extend(police(b, graph, lock, tickets, &policy));
+        resolved.findings.extend(expiry(b, today));
     }
     resolved
 }

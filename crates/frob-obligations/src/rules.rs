@@ -268,3 +268,67 @@ pub struct Exc005;
     version = 1
 )]
 pub struct Exc007;
+
+// frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+/// A defer directive's `until` date has passed.
+///
+/// The defer names a calendar day (`until=YYYY-MM-DD`, UTC) that is before
+/// today, so the debt is overdue: the deferred finding stands again and this
+/// rule names the expiry. A value that is not a date and holds no `:` is
+/// reported here too. Metric targets (`until=ticket-closed:...`) are decided
+/// by the product that knows the metric, not here. Pay the debt, or replace
+/// the directive with a new defer and a fresh date after review.
+#[derive(Debug, Clone, Copy, Default, Rule)]
+#[rule(
+    id = "EXC014",
+    slug = "defer-expired",
+    family = "EXC",
+    severity = Error,
+    tier = Universal,
+    scope = Repo,
+    fix = Manual,
+    polarity = Pplus,
+    version = 1
+)]
+pub struct Exc014;
+
+/// An accept directive names a rule at a site where the finding is Unresolved.
+///
+/// An Unresolved finding means the tool could not examine the site. Accepting
+/// it would silence the failure without supplying the declaration that fixes
+/// it, so the accept does not suppress it and the finding stands. Park it with
+/// `frob:defer` and a ticket, or put it in a baseline.
+#[derive(Debug, Clone, Copy, Default, Rule)]
+#[rule(
+    id = "EXC016",
+    slug = "accept-on-unresolved",
+    family = "EXC",
+    severity = Error,
+    tier = Universal,
+    scope = Repo,
+    fix = Manual,
+    polarity = Pplus,
+    version = 1
+)]
+pub struct Exc016;
+
+/// A native suppression of a rule bound through a tool stage has no frob exception.
+///
+/// A `[[check.tool]]` stage maps tool ids to frob rule ids with `id_map`. A
+/// native suppression of such an id (`#[allow(..)]`, `#[expect(..)]`,
+/// `# zizmor: ignore[..]` or `// eslint-disable ..`) hides a finding from the
+/// tool, so frob never sees it. Add a `frob:accept` or `frob:defer` of the
+/// mapped rule at the same site so the suppression has a reason and an owner.
+#[derive(Debug, Clone, Copy, Default, Rule)]
+#[rule(
+    id = "EXC017",
+    slug = "native-suppression-without-exception",
+    family = "EXC",
+    severity = Warn,
+    tier = Universal,
+    scope = Repo,
+    fix = Manual,
+    polarity = Pplus,
+    version = 1
+)]
+pub struct Exc017;
