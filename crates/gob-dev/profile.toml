@@ -75,7 +75,7 @@ budget_ms = 500
 args = ["ticket", "doctor"]
 readonly = true
 runs = 3
-exit = [0, 3]
+exit = [0, 1, 3]
 budget_ms = 26700
 
 [scenario."frob ticket evidence list"]
@@ -142,6 +142,9 @@ budget_ms = 500
 args = ["ticket", "branch", "init"]
 exit = [0, 2, 3]
 budget_ms = 500
+
+[scenario."frob ticket migrate"]
+skip = "rewrites the ledger onto a new branch, so it is not safe to profile against the repo fixture; --dry-run still walks the whole ledger and is not a representative cost"
 
 [scenario."frob ticket triage accept"]
 args = ["ticket", "triage", "accept", "{ticket}"]

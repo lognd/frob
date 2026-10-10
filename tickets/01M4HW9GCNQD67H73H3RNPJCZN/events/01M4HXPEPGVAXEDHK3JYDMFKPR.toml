@@ -1,0 +1,164 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T03:28:29Z"
+digest = "c461154126c784d60357fbc6e6e1612ccd8d4f0387446250ebd821ec09173317"
+exit_code = 0
+inline = '''
+goway: warning: CROSS-OS: `cargo` is portable, but this run stays on linux hosts
+goway: note:   other-OS hosts that could take it: nova-windows
+goway: note:   allow every OS for this run:      goway run --any-os -- ...
+goway: note:   allow it for this project:        cross_os = true in goway.toml
+goway: note:   silence this hint:                cross_os = false in goway.toml
+goway: note: no helper has disk room for this repository's recorded footprint (about 211.2 GiB; the roomiest, quasar, can free 202.7 GiB); running there anyway. The record may be stale: `goway gc --repo 34f5a9e78cc30b56` forgets it, `--ignore-footprint` skips the check
+goway: note: picked quasar (load 2.71 on 12 cores, 0 goway jobs)
+goway: note: tool versions differ across your hosts: clang 21.1.8 here (major: 10 vs 21) (cached by goway doctor 11h ago; builds may behave differently here)
+goway: note: synced 14498 files (0 sent, 0 bytes, 0 deleted)
+goway: note: quasar has 6.9 GiB free: running with 1 of 12 jobs (CARGO_BUILD_JOBS=1, NEXTEST_TEST_THREADS=1, MOLD_JOBS=1, GOWAY_LINK_THREADS=1, estimated peak 5.6 GiB)
+goway: info: running on quasar (x86_64, Quasar) at 192.168.4.61 [cores>=8 (12 cores)]: cargo nextest run --profile ci -p gob-dev
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID edd3b8e1-c2db-4bff-8aa0-a869c447684d with nextest profile: ci
+    Starting 131 tests across 7 binaries
+        PASS [   0.013s] (  1/131) gob-dev ci::tests::a_remote_command_failure_is_a_step_failure_naming_the_host
+        PASS [   0.006s] (  2/131) gob-dev ci::tests::check_step_builds_the_workspace_siblings_before_running_frob
+        PASS [   0.006s] (  3/131) gob-dev ci::tests::clippy_windows_declares_target_and_mingw
+        PASS [   0.006s] (  4/131) gob-dev ci::tests::clippy_windows_is_in_the_default_run_before_nextest
+        PASS [   0.006s] (  5/131) gob-dev ci::tests::docs_step_sets_rustdocflags_and_nextest_uses_ci_profile
+        PASS [   0.005s] (  6/131) gob-dev ci::tests::goway_binary_path_or_bare_name
+        PASS [   0.040s] (  7/131) gob-dev ci::tests::goway_exit_125_is_a_goway_failure_after_retries_not_a_test_failure
+        PASS [   0.005s] (  8/131) gob-dev ci::tests::host_platform_matches_the_target_os
+        PASS [   0.006s] (  9/131) gob-dev ci::tests::hygiene_steps_exist_pin_installs_inside_the_frob_toml_range_and_msrv_follows_manifest
+        PASS [   0.005s] ( 10/131) gob-dev ci::tests::junit_report_gives_suite_time_and_slowest_tests_first
+        PASS [   0.006s] ( 11/131) gob-dev ci::tests::linux_only_steps_are_reported_skipped_elsewhere
+        PASS [   0.005s] ( 12/131) gob-dev ci::tests::missing_system_tool_fails_before_running_and_names_the_install_command
+        PASS [   0.005s] ( 13/131) gob-dev ci::tests::missing_target_error_carries_the_rustup_command
+        PASS [   0.005s] ( 14/131) gob-dev ci::tests::msrv_is_dropped_only_when_rust_version_is_the_toolchain_series
+        PASS [   0.005s] ( 15/131) gob-dev ci::tests::nextest_ci_profile_is_a_hang_guard_not_a_speed_budget
+        PASS [   0.006s] ( 16/131) gob-dev ci::tests::nextest_runs_the_suite_once_through_insta_rejecting_unreferenced_snapshots
+        PASS [   0.006s] ( 17/131) gob-dev ci::tests::only_heavy_steps_are_offloadable
+        PASS [   0.006s] ( 18/131) gob-dev ci::tests::pins_come_from_frob_toml
+        PASS [   0.033s] ( 19/131) gob-dev ci::tests::remote_prerequisites_are_probed_on_the_host_and_the_step_is_pinned_to_it
+        PASS [   0.015s] ( 20/131) gob-dev ci::tests::remote_step_calls_goway_with_the_exact_argv_and_env_and_names_the_host
+        PASS [   0.006s] ( 21/131) gob-dev ci::tests::soft_budget_warns_on_slow_tests_and_a_slow_suite_only
+        PASS [   0.012s] ( 22/131) gob-dev ci::tests::steps_not_marked_offload_stay_local
+        PASS [   0.007s] ( 23/131) gob-dev ci::tests::stops_at_first_failure_and_keep_going_continues
+        PASS [   0.031s] ( 24/131) gob-dev ci::tests::stray_pending_snapshot_fails_the_guard_and_a_clean_tree_passes
+        PASS [   0.006s] ( 25/131) gob-dev ci::tests::unknown_step_names_the_valid_ones
+        PASS [   0.005s] ( 26/131) gob-dev isolation::tests::isolated_non_windows_and_non_rebuilding_runs_pass
+        PASS [   0.005s] ( 27/131) gob-dev isolation::tests::windows_rebuild_from_the_shared_target_dir_names_the_alias
+        PASS [   0.005s] ( 28/131) gob-dev profile::discover::tests::reads_the_commands_section_only
+        PASS [   0.050s] ( 29/131) gob-dev profile::discover::tests::walks_the_help_tree_down_to_its_leaves
+        PASS [   0.253s] ( 30/131) gob-dev profile::fixture::tests::mutating_the_clone_leaves_the_source_checkout_untouched
+        PASS [   0.057s] ( 31/131) gob-dev profile::fixture::tests::tmp_fixture_is_an_isolated_repository
+        PASS [   0.005s] ( 32/131) gob-dev profile::glob::tests::wildcards
+        PASS [   0.081s] ( 33/131) gob-dev profile::measure::tests::measure_times_runs_checks_exit_codes_and_clears_the_cold_cache
+        PASS [   0.005s] ( 34/131) gob-dev profile::measure::tests::median_of_odd_even_and_empty
+        PASS [   0.006s] ( 35/131) gob-dev profile::measure::tests::ticket_placeholder_expands
+        PASS [   0.005s] ( 36/131) gob-dev profile::model::tests::budget_factor_scales_the_limit
+        PASS [   0.006s] ( 37/131) gob-dev profile::model::tests::over_budget_names_command_measured_and_budget
+        PASS [   0.006s] ( 38/131) gob-dev profile::model::tests::unexpected_exit_and_skips
+        PASS [   0.006s] ( 39/131) gob-dev profile::render::tests::compare_shows_signed_deltas
+        PASS [   0.005s] ( 40/131) gob-dev profile::render::tests::table_lists_measured_and_skipped_rows
+        PASS [   0.006s] ( 41/131) gob-dev profile::scenarios::tests::measured_scenarios_need_a_budget_and_skips_a_reason
+        PASS [   0.006s] ( 42/131) gob-dev profile::scenarios::tests::shipped_file_parses
+        PASS [   0.005s] ( 43/131) gob-dev profile::tests::a_leaf_without_a_scenario_is_named
+        PASS [   0.005s] ( 44/131) gob-dev profile::tests::a_scenario_for_a_hidden_verb_is_allowed
+        PASS [   0.006s] ( 45/131) gob-dev profile::tests::report_round_trips
+        PASS [   0.005s] ( 46/131) gob-dev publish::tests::a_different_version_on_the_index_does_not_count
+        PASS [   0.006s] ( 47/131) gob-dev publish::tests::a_failure_stops_the_run_and_a_rerun_resumes_at_the_failed_crate
+        PASS [   0.006s] ( 48/131) gob-dev publish::tests::cargo_output_is_classified_into_success_rate_limit_or_failure
+        PASS [   0.006s] ( 49/131) gob-dev publish::tests::cycles_are_an_error_naming_the_stuck_crates
+        PASS [   0.006s] ( 50/131) gob-dev publish::tests::dry_run_prints_the_order_and_publishes_nothing
+        PASS [   0.005s] ( 51/131) gob-dev publish::tests::index_lists_matches_the_exact_version_including_yanked
+        PASS [   0.005s] ( 52/131) gob-dev publish::tests::index_paths_follow_the_sparse_layout
+        PASS [   0.006s] ( 53/131) gob-dev publish::tests::orders_dependencies_first_and_leaves_out_publish_false
+        PASS [   0.005s] ( 54/131) gob-dev publish::tests::path_only_dev_dependencies_do_not_order_or_cycle_but_versioned_ones_do
+        PASS [   0.006s] ( 55/131) gob-dev publish::tests::publish_starts_at_the_first_unpublished_crate
+        PASS [   0.006s] ( 56/131) gob-dev publish::tests::rate_limit_past_the_budget_stops_resumably_naming_the_next_crate
+        PASS [   0.005s] ( 57/131) gob-dev publish::tests::rate_limit_within_the_budget_waits_and_continues
+        PASS [   0.006s] ( 58/131) gob-dev publish::tests::reserve_apply_paces_after_the_burst_and_resumes_past_reserved_names
+        PASS [   0.006s] ( 59/131) gob-dev publish::tests::reserve_waits_out_a_rate_limit_and_stops_resumably_past_the_budget
+        PASS [   0.006s] ( 60/131) gob-dev publish::tests::reserve_without_apply_lists_missing_names_and_the_plan_and_publishes_nothing
+        PASS [   0.005s] ( 61/131) gob-dev publish::tests::retry_time_comes_from_the_message_or_the_header
+        PASS [   0.005s] ( 62/131) gob-dev publish::tests::the_budget_is_shared_across_crates
+        PASS [   0.006s] ( 63/131) gob-dev publish::tests::the_placeholder_manifest_has_no_code_and_points_at_the_repository
+        PASS [   0.073s] ( 64/131) gob-dev publish::tests::this_workspace_reads_and_plans_without_a_cycle
+        PASS [   0.006s] ( 65/131) gob-dev publish::tests::unreadable_metadata_is_an_error
+        PASS [   0.006s] ( 66/131) gob-dev publish::tests::waits_for_the_index_between_dependents_and_times_out_if_it_never_shows
+        PASS [   0.005s] ( 67/131) gob-dev render::rules::tests::fence_grows_past_inner_backticks
+        PASS [   0.005s] ( 68/131) gob-dev render::rules::tests::index_groups_by_family_and_escapes
+        PASS [   0.005s] ( 69/131) gob-dev render::rules::tests::index_row_shows_polarity_and_must_measure
+        PASS [   0.005s] ( 70/131) gob-dev render::rules::tests::page_has_title_table_explanation_examples
+        PASS [   0.005s] ( 71/131) gob-dev render::rules::tests::page_without_examples_has_no_examples_section
+        PASS [   0.006s] ( 72/131) gob-dev tests::finds_workspace_root_from_nested_dir
+        PASS [   0.017s] ( 73/131) gob-dev tests::real_workspace_found_regardless_of_compile_time_path
+        PASS [   0.005s] ( 74/131) gob-dev wheel::tests::compatibility_defaults_on_linux_and_honours_the_override
+        PASS [   0.006s] ( 75/131) gob-dev wheel::tests::plan_builds_every_product_for_each_of_the_five_targets
+        PASS [   0.005s] ( 76/131) gob-dev wheel::tests::product_filter_keeps_order_and_rejects_unknown_names
+        PASS [   0.005s] ( 77/131) gob-dev wheel::tests::the_real_products_file_lists_frob_grimble_and_crunk
+        PASS [   0.005s] ( 78/131) gob-dev wheel::tests::venv_executables_follow_the_os_layout_never_a_bare_python
+        PASS [   0.006s] ( 79/131) gob-dev wheel_smoke::tests::fixture_loop_gets_a_forward_slash_script_path_and_the_bin_dir
+        PASS [   0.007s] ( 80/131) gob-dev wheel_smoke::tests::installs_use_the_local_wheels_only_for_each_venv_layout
+        PASS [   0.007s] ( 81/131) gob-dev wheel_smoke::tests::on_path_finds_executables_with_the_host_suffix
+        PASS [   0.005s] ( 82/131) gob-dev wheel_smoke::tests::tool_install_sets_isolated_tool_and_bin_dirs
+        PASS [   0.005s] ( 83/131) gob-dev wheel_smoke::tests::wheel_info_script_is_valid_json_producer
+        PASS [   0.008s] ( 84/131) gob-dev::ci_parity a_check_missing_from_cargo_dev_ci_fails_naming_it
+        PASS [   0.005s] ( 85/131) gob-dev::ci_parity a_missing_prerequisite_install_fails_naming_it
+        PASS [   0.015s] ( 86/131) gob-dev::ci_parity a_raw_or_dropped_check_in_ci_yml_fails_naming_it
+        PASS [   0.007s] ( 87/131) gob-dev::ci_parity ci_cancels_superseded_runs_has_timeouts_and_filters_by_job
+        PASS [   0.005s] ( 88/131) gob-dev::ci_parity ci_definition_sets_require_python_tests_and_pins_pytest
+        PASS [   0.004s] ( 89/131) gob-dev::ci_parity ci_yml_installs_every_linux_step_prerequisite
+        PASS [   0.004s] ( 90/131) gob-dev::ci_parity ci_yml_installs_the_windows_target
+        PASS [   0.008s] ( 91/131) gob-dev::ci_parity ci_yml_runs_exactly_the_cargo_dev_ci_steps
+        PASS [   0.004s] ( 92/131) gob-dev::ci_parity dev_alias_shares_the_workspace_target_dir
+        PASS [   0.004s] ( 93/131) gob-dev::ci_parity dev_isolated_alias_builds_the_tool_in_its_own_target_dir
+        PASS [   0.004s] ( 94/131) gob-dev::ci_parity goway_toml_declares_uv_as_a_required_tool
+        PASS [   0.004s] ( 95/131) gob-dev::ci_parity pytest_step_installs_with_uv_not_pip_and_nextest_sees_it
+        PASS [   0.007s] ( 96/131) gob-dev::ci_parity rust_jobs_cache_workspace_crates_with_sccache
+        PASS [   0.007s] ( 97/131) gob-dev::ci_parity the_matrix_points_dev_at_the_right_alias_per_os
+        PASS [   0.011s] ( 98/131) gob-dev::ci_parity windows_steps_use_the_isolated_alias_with_the_same_names_and_order
+        PASS [   0.070s] ( 99/131) gob-dev::generate check_reports_stale_and_missing_files_without_writing
+        PASS [   0.006s] (100/131) gob-dev::generate committed_pages_have_no_orphans_on_disk
+        PASS [   0.055s] (101/131) gob-dev::generate crunk_config_reference_and_schema_are_generated_apart_from_frobs
+        PASS [   0.023s] (102/131) gob-dev::generate every_rule_has_a_page_and_every_page_a_rule
+        PASS [   0.243s] (103/131) gob-dev::generate one_required_reason_and_one_polarity
+        PASS [   0.165s] (104/131) gob-dev::generate output_is_deterministic_and_check_passes
+        PASS [   0.010s] (105/131) gob-dev::import_v1 an_unmapped_open_ticket_stops_the_run
+        PASS [   0.013s] (106/131) gob-dev::import_v1 home_paths_and_private_terms_are_redacted
+        PASS [   0.011s] (107/131) gob-dev::import_v1 imports_maps_and_verifies
+        PASS [   0.011s] (108/131) gob-dev::import_v1 merge_adds_only_new_ticket_directories
+        PASS [   0.013s] (109/131) gob-dev::import_v1 merge_refuses_id_and_alias_collisions_without_writing
+        PASS [   0.010s] (110/131) gob-dev::import_v1 open_category_triage_places_open_tickets_in_triage
+        PASS [   0.008s] (111/131) gob-dev::import_v1 refuses_a_non_empty_target
+        PASS [   0.008s] (112/131) gob-dev::import_v1 renders_the_id_map
+        PASS [   0.008s] (113/131) gob-dev::import_v1 renders_the_migration_report
+        PASS [   0.008s] (114/131) gob-dev::import_v1 renders_the_summary_table
+        PASS [   0.009s] (115/131) gob-dev::import_v1 selection_imports_requirement_bearing_open_tickets_only
+        PASS [   0.008s] (116/131) gob-dev::import_v1 ulids_keep_creation_order
+        PASS [   0.010s] (117/131) gob-dev::profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason
+        PASS [   0.007s] (118/131) gob-dev::profile_coverage skips_carry_a_reason_and_measured_scenarios_a_budget
+        PASS [   0.005s] (119/131) gob-dev::rules_index a_crate_with_attribute_rules_gets_a_generated_mod_rs_path
+        PASS [   0.005s] (120/131) gob-dev::rules_index a_crate_without_a_families_key_is_not_family_checked
+        PASS [   0.005s] (121/131) gob-dev::rules_index a_rule_in_a_crate_that_does_not_own_its_family_is_rejected
+        PASS [   0.004s] (122/131) gob-dev::rules_index every_product_crate_denies_unused_dependencies_and_lists_its_rules
+        PASS [   0.004s] (123/131) gob-dev::rules_index gob_dev_has_no_rule_link_anchor
+        PASS [   0.004s] (124/131) gob-dev::rules_index product_lists_hold_no_rule_ids_that_repeat
+        PASS [   0.004s] (125/131) gob-dev::rules_index the_explicit_product_list_names_every_product_once
+        PASS [   0.004s] (126/131) gob-dev::bin/gob-dev tests::gen_check_parses
+        PASS [   0.004s] (127/131) gob-dev::bin/gob-dev tests::import_parses
+        PASS [   0.004s] (128/131) gob-dev::bin/gob-dev tests::profile_parses_its_knobs
+        PASS [   0.004s] (129/131) gob-dev::bin/gob-dev tests::publish_parses
+        PASS [   0.004s] (130/131) gob-dev::bin/gob-dev tests::publish_reserve_parses_and_apply_needs_reserve
+        PASS [   0.004s] (131/131) gob-dev::bin/gob-dev tests::wheel_and_wheel_smoke_parse_the_workflow_arguments
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.933s] 131 tests run: 131 passed, 0 skipped
+goway: done: exit 0 on quasar in 21.5s
+'''
+passed = true
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --wait 60m -- cargo nextest run --profile ci -p gob-dev"
+size = 15451
+status = "measured"
+at = "2026-10-10T03:28:29Z"
+actor = "lognd"
+rev = 1
