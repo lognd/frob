@@ -2,12 +2,12 @@
 id = "01M4FH7QN0DHJD45C4HC8N7M9Q"
 title = "frob check --only refuses sibling rule ids and families (COLOR001, COLOR) as neither a rule family nor a rule id"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T05:12:38Z"
-updated = "2026-10-09T05:12:38Z"
+updated = "2026-10-10T21:26:32Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob-check/**", "crates/gob-check/**", "changelog.d/**"]
 
