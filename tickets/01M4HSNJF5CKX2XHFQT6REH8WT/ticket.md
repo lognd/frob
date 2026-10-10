@@ -2,12 +2,12 @@
 id = "01M4HSNJF5CKX2XHFQT6REH8WT"
 title = "CI profile job fails: frob ticket doctor now exits 1 when it reports issues (~76AS8XH), but its profile scenario expects exit 0"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-10T02:18:29Z"
-updated = "2026-10-10T02:18:29Z"
+updated = "2026-10-10T02:22:26Z"
 scope = ["crates/gob-dev/profile.toml", "changelog.d/**"]
 
 [[acceptance]]
