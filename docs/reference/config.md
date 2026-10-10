@@ -176,7 +176,7 @@ Materialized: yes.
 
 ## `[packs]`
 
-Which data packs the repository enables (packs.md 3.6). Packs are not loaded yet.
+Which data packs the repository enables (packs.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.
 
 Materialized: yes.
 
