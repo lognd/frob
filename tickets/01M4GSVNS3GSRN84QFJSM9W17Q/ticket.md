@@ -2,7 +2,7 @@
 id = "01M4GSVNS3GSRN84QFJSM9W17Q"
 title = "Concurrent ledger writes (ticket new, update, evidence) race on .git/index.lock; retry with backoff instead of failing"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
