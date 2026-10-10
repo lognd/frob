@@ -2,7 +2,8 @@
 id = "01M4HDRT4RSDZN3PRJ4CV286BH"
 title = "Ticket check still spends 17 s in repo:obligations and 20-57 s in sibling:grimble; scope or skip them for diff-unrelated tickets"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
