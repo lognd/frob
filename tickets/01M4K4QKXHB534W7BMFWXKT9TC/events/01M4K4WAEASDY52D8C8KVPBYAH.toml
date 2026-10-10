@@ -1,16 +1,16 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-10T14:51:16Z"
-digest = "4dd870e01274092fb70d96bf64a2f2a07d1d27a9af860aaaae74bef38ab41600"
+digest = "210f77f52396a19a0bb22ec9d99ec62382ecff45219e729d985ee6b91e489442"
 exit_code = 0
 inline = """
-{"verb":"doctor","already":false,"ok":true,"data":{"cache":{"artifacts":0,"dir":"<worktree>/.frob","findings":0,"repo_rule":0,"state":"ok"},"config":{"error":null,"missing_knobs":0,"path":"<worktree>/frob.toml","present":true},"driver":{"command":null,"detail":null,"fix":null,"state":"unset"},"gc":{"kept":[],"last_reclaimed_bytes":0,"last_run_unix":1791643865,"passes":3,"state":"ok","total_reclaimed_bytes":14785166133,"usage":[{"bytes":15672399648,"category":"build"},{"bytes":105987685,"category":"worktrees"},{"bytes":103279274,"category":"caches"},{"bytes":1299982,"category":"artifacts"},{"bytes":0,"category":"land-base"}],"would_reclaim":[],"would_reclaim_bytes":0},"git":{"branch":"ticket/WXKT9TC","discovered":true,"error":null,"head":"e1534b2a30c6a879dee14aa2a5a8664f53a3f043","linked_worktree":true,"root":"<worktree>"},"leases":{"corrupt":[],"state":"ok"},"ledger":{"error":null,"oid":"4dc5de9ff6b1b66034179ec40cb2e0dfb5098dbb","reachable":true,"ref":"refs/heads/experimental"},"siblings":[{"location":"path","path":"/home/user/repo/target/debug/grimble","product":"grimble","version":"grimble 0.532.0"},{"location":"path","path":"/home/user/repo/target/debug/crunk","product":"crunk","version":"crunk 0.532.0"}],"toolchain":{"cargo":"cargo 1.98.0 (797e8a9bc 2026-08-05)","rustc":"rustc 1.98.0 (88d9e12ae 2026-08-18)"}},"findings":[],"warnings":[],"error":null,"schema_version":1}
-{"timestamp":"2026-10-10T14:53:38.352704Z","level":"WARN","fields":{"message":"gc refused a path outside its roots","path":"/home/user/repo/.git/frob/land-checkout","resolved":"/home/user/repo/.git/frob/land-checkout"},"target":"frob_worktree::gc::jail"}
+{"verb":"doctor","already":false,"ok":true,"data":{"cache":{"artifacts":0,"dir":"<worktree>/.frob","findings":0,"repo_rule":0,"state":"ok"},"config":{"error":null,"missing_knobs":0,"path":"<worktree>/frob.toml","present":true},"driver":{"command":null,"detail":null,"fix":null,"state":"unset"},"gc":{"kept":[],"last_reclaimed_bytes":0,"last_run_unix":1791643865,"passes":3,"state":"ok","total_reclaimed_bytes":14785166133,"usage":[{"bytes":15672399648,"category":"build"},{"bytes":105987685,"category":"worktrees"},{"bytes":103279274,"category":"caches"},{"bytes":1299982,"category":"artifacts"},{"bytes":0,"category":"land-base"}],"would_reclaim":[],"would_reclaim_bytes":0},"git":{"branch":"ticket/WXKT9TC","discovered":true,"error":null,"head":"e1534b2a30c6a879dee14aa2a5a8664f53a3f043","linked_worktree":true,"root":"<worktree>"},"leases":{"corrupt":[],"state":"ok"},"ledger":{"error":null,"oid":"4dc5de9ff6b1b66034179ec40cb2e0dfb5098dbb","reachable":true,"ref":"refs/heads/experimental"},"siblings":[{"location":"path","path":"<repo>/target/debug/grimble","product":"grimble","version":"grimble 0.532.0"},{"location":"path","path":"<repo>/target/debug/crunk","product":"crunk","version":"crunk 0.532.0"}],"toolchain":{"cargo":"cargo 1.98.0 (797e8a9bc 2026-08-05)","rustc":"rustc 1.98.0 (88d9e12ae 2026-08-18)"}},"findings":[],"warnings":[],"error":null,"schema_version":1}
+{"timestamp":"2026-10-10T14:53:38.352704Z","level":"WARN","fields":{"message":"gc refused a path outside its roots","path":"repo/.git/frob/land-checkout","resolved":"repo/.git/frob/land-checkout"},"target":"frob_worktree::gc::jail"}
 """
 passed = true
 provider = "command"
 ref = "cargo run -q -p frob-cli -- doctor"
-size = 1651
+size = 1611
 status = "measured"
 at = "2026-10-10T14:51:16Z"
 actor = "Claude"
