@@ -2,12 +2,12 @@
 id = "01M4KZWDQ2EATVKFDQX16ATP75"
 title = "base-ref config tests commit without an identity and fail NoIdentity on CI"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-10T22:45:34Z"
-updated = "2026-10-10T22:45:34Z"
+updated = "2026-10-10T22:46:10Z"
 scope = ["crates/frob-lease/tests/lease.rs", "crates/frob-pm/tests/config.rs"]
 
 [[acceptance]]
