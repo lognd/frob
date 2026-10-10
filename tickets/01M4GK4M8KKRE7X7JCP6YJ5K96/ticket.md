@@ -7,13 +7,13 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T15:05:08Z"
-updated = "2026-10-10T19:05:55Z"
+updated = "2026-10-10T19:08:12Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-lock/**", "crates/frob-check/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a v1-format frob.lock, when frob check runs, then the error names the file, says it is a v1 lock and gives the remedy (delete it and run frob ack)"
-bound = false
+bound = true
 +++
 
 logand.app-v2 F-548.

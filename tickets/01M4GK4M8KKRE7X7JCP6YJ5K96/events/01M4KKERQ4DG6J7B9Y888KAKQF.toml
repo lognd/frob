@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T19:08:12Z"
+digest = "b015d50c17dc91252b35fc6e89f9aa74e0edd39fa516877c9dd4aac539031b7f"
+exit_code = 0
+inline = '''
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized] target(s) in 9.80s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d43ec06f-49e4-4d47-bca5-c6f962e0a7bf with nextest profile: default
+    Starting 1 test across 15 binaries (86 tests skipped)
+        PASS [   0.073s] frob-check::check a_leftover_v1_lock_aborts_the_check_naming_file_version_and_remedy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.074s] 1 test run: 1 passed, 86 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -E 'test(=a_leftover_v1_lock_aborts_the_check_naming_file_version_and_remedy)'"
+size = 628
+status = "measured"
+tests = ["a_leftover_v1_lock_aborts_the_check_naming_file_version_and_remedy"]
+at = "2026-10-10T19:08:12Z"
+actor = "Claude"
+rev = 1
