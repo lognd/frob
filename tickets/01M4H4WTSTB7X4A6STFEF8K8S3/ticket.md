@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T20:15:26Z"
-updated = "2026-10-10T18:34:03Z"
+updated = "2026-10-10T18:34:10Z"
 labels = ["grimble"]
 scope = ["crates/grimble-check/src/config.rs", "docs/schemas/config.json", "docs/reference/config.md", "changelog.d/**", "crates/grimble-check/tests/packs.rs"]
 
