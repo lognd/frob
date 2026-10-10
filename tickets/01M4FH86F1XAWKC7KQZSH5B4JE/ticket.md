@@ -2,12 +2,12 @@
 id = "01M4FH86F1XAWKC7KQZSH5B4JE"
 title = "Rust adapter: a // frob:doc line between a /// doc block and its item hides the doc comment (false DOC001)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T05:12:53Z"
-updated = "2026-10-09T05:12:53Z"
+updated = "2026-10-10T19:57:32Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-symbols/**", "crates/gob-languages/**", "crates/frob-obligations/**", "changelog.d/**"]
 
