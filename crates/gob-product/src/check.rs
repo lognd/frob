@@ -38,6 +38,7 @@ impl<P: Product> Described for Check<P> {
         module: module_path!(),
         deprecated: None,
         markdown: false,
+        read_only: true,
     };
 }
 

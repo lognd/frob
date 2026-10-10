@@ -391,3 +391,23 @@ fn cap_rules_are_listed_fire_and_are_writable_in_accept() {
         doc["exceptions"]
     );
 }
+
+// frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
+// frob:tests crates/grimble-model/src/rules.rs::check_model
+#[test]
+fn core_effects_atoms_resolve_and_a_bare_env_names_its_near_miss() {
+    let doc = cap_run("  may process.spawn;\n  may fs;\n  may process.env;\n  may exec;\n");
+    let findings = rule_ids(&doc, "findings");
+    assert!(!findings.contains(&"MDL016".to_owned()), "{findings:?}");
+    let doc = cap_run("  may env;\n");
+    let hit = doc["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["rule"] == "MDL016")
+        .expect("MDL016 for bare env");
+    assert!(
+        hit["message"].as_str().unwrap().contains("`process.env`"),
+        "{hit}"
+    );
+}

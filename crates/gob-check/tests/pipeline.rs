@@ -4,8 +4,8 @@ use std::path::Path;
 use std::sync::Arc;
 
 use gob_check::{
-    CheckCtx, CheckError, CollectCx, Collected, FileCheck, NoScope, Product, RepoGroup, RunOptions,
-    SharedCtx, Snapshot, run,
+    CheckCtx, CheckError, CollectCx, Collected, FileCheck, Product, RepoGroup, RunOptions,
+    ScopeView, SharedCtx, Snapshot, run,
 };
 use gob_diagnostics::ExitCode;
 use gob_rules::{
@@ -86,10 +86,32 @@ struct Toy {
     applicable: bool,
 }
 
+/// A fixed scope over `a.txt`.
+struct ToyScope(std::collections::BTreeSet<String>);
+
+impl ScopeView for ToyScope {
+    fn label(&self) -> &'static str {
+        "toy-scope"
+    }
+
+    fn files(&self) -> &std::collections::BTreeSet<String> {
+        &self.0
+    }
+}
+
 impl Product for Toy {
     type Shared = ();
     type Inputs = ();
-    type Scope = NoScope;
+    type Scope = ToyScope;
+
+    fn resolve_scope(
+        &self,
+        _snap: &Snapshot<Self>,
+        _table: &gob_check::CheckTable,
+        _reference: &str,
+    ) -> Result<ToyScope, CheckError> {
+        Ok(ToyScope(["a.txt".to_owned()].into()))
+    }
 
     fn name(&self) -> &'static str {
         "toy"
@@ -113,7 +135,8 @@ impl Product for Toy {
             RepoGroup::new("repo:toy", vec![Toy002.meta()], |_: &Snapshot<Self>, _| {
                 Vec::new()
             })
-            .counting(move |_| vec![("TOY002", n)]),
+            .counting(move |_| vec![("TOY002", n)])
+            .full_only(),
         ]
     }
 
@@ -269,4 +292,35 @@ fn only_accepts_this_products_rules_and_rejects_the_others() {
         ),
         "TOOL001 belongs to frob's namespace, not toy's"
     );
+}
+
+// frob:tests crates/gob-check/src/repo.rs::run_repo_rules
+#[test]
+fn a_scoped_run_skips_full_only_groups_with_a_reason_and_a_full_run_keeps_them() {
+    let dir = tree();
+    let toy = Toy {
+        subjects: 4,
+        applicable: true,
+    };
+    let scoped = RunOptions {
+        scope: Some("anything".to_owned()),
+        ..quiet()
+    };
+    let report = run(&toy, dir.path(), &scoped).expect("scoped run");
+    assert_eq!(
+        report.subjects_examined.get("TOY002"),
+        None,
+        "group skipped"
+    );
+    assert_eq!(
+        report
+            .fidelity
+            .inapplicable
+            .get("TOY002")
+            .map(String::as_str),
+        Some("repo-wide, runs in full check")
+    );
+    let full = run(&toy, dir.path(), &quiet()).expect("full run");
+    assert_eq!(full.subjects_examined.get("TOY002"), Some(&4));
+    assert!(full.fidelity.inapplicable.is_empty());
 }

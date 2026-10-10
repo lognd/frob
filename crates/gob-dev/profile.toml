@@ -395,3 +395,12 @@ args = ["tokens", "--check"]
 readonly = true
 exit = [0, 1, 3]
 budget_ms = 500
+
+[scenario."frob serve"]
+skip = "a long-running stdio MCP server that blocks on stdin; there is no run to time (per-tool costs are the underlying read verbs)"
+
+[scenario."grimble serve"]
+skip = "a long-running stdio MCP server that blocks on stdin; there is no run to time (per-tool costs are the underlying read verbs)"
+
+[scenario."crunk serve"]
+skip = "a long-running stdio MCP server that blocks on stdin; there is no run to time (per-tool costs are the underlying read verbs)"

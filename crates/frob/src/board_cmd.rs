@@ -122,6 +122,7 @@ fn last_commit(runner: &Runner, root: &Path, branch: &str) -> Option<Stamp> {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "board",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)

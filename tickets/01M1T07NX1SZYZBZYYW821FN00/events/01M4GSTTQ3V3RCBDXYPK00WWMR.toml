@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a dev or debug build, when frob --version runs, then it prints the release version plus a dev suffix and commit (e.g. 0.533.0-dev+ec63b58), never the bare released version (hullbreach: a dev build printed 0.532.0)"]
+moved = []
+at = "2026-10-09T17:02:06Z"
+actor = "lognd"
+rev = 1

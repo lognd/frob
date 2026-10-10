@@ -2,7 +2,8 @@
 
 use std::path::{Path, PathBuf};
 
-use gob_cli::{CliError, Refusal, RefusalClass};
+use frob_ledger::{Ledger, RefMode};
+use gob_cli::{CliError, Payload, Refusal, RefusalClass};
 use gob_config::{ConfigError, TableDescription, all_tables};
 use gob_git::Repo;
 
@@ -80,4 +81,32 @@ pub(crate) fn registered_tables() -> Vec<TableDescription> {
     let mut tables: Vec<TableDescription> = all_tables().collect();
     tables.sort_by(|a, b| a.table.cmp(&b.table));
     tables
+}
+
+// frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+/// The notice for a trunk-mode ledger read from a feature branch, or `None` when the checkout is the ledger's branch.
+///
+/// Ticket verbs there read and commit to the trunk ref, never to the checked-out tree, which is
+/// what surprised the first adopters (F-504, F-562).
+pub(crate) fn ledger_site_notice(ledger: &Ledger) -> Option<String> {
+    if ledger.config().mode != RefMode::Trunk {
+        return None;
+    }
+    let ledger_ref = ledger.ledger_ref().ok()?;
+    let branch = ledger.repo().current_branch().ok().flatten()?;
+    if ledger_ref == format!("refs/heads/{branch}") {
+        return None;
+    }
+    Some(format!(
+        "ticket ledger: reading and committing to {ledger_ref} (ref_mode = trunk) while `{branch}` is checked out; the working tree is not the ledger, so tickets and edits on `{branch}` are invisible here until they reach {ledger_ref}"
+    ))
+}
+
+// frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+/// Queue [`ledger_site_notice`] on the running verb's envelope (nothing when the checkout is the ledger's branch).
+pub(crate) fn note_ledger_site(ledger: &Ledger) {
+    if let Some(notice) = ledger_site_notice(ledger) {
+        tracing::info!(%notice, "ticket verb runs off the trunk ledger branch");
+        Payload::note(notice);
+    }
 }

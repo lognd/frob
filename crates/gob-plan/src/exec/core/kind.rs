@@ -158,7 +158,7 @@ fn unit_kind_is(model: &Model, node: NodeId, want: &str) -> bool {
 }
 
 /// A unit that is not the `sig` facet child of another unit (one identity is one subject).
-fn is_canonical_unit(model: &Model, node: NodeId) -> bool {
+pub(crate) fn is_canonical_unit(model: &Model, node: NodeId) -> bool {
     let n = model.term().node(node);
     matches!(n.op(), Operator::Universal(Universal::Unit { .. }))
         && n.attrs().get_str(gob_ir::reserved::FACET) != Some("sig")

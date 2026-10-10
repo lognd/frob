@@ -56,6 +56,7 @@ mod error;
 mod filecheck;
 mod fix;
 mod options;
+mod packages;
 mod pipeline;
 mod product;
 mod product_rules;

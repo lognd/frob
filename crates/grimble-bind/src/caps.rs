@@ -12,6 +12,7 @@
 //! severity table is not consulted (CAP001 is an Error, CAP002 a Warning); a grant's `at`
 //! selector is compared at file granularity; `may` arguments are ignored.
 
+// frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -156,9 +157,10 @@ fn observe(cx: &Cx<'_>) -> Uses {
 
 /// True when `grant` covers `atom` (the atom itself or its parent) at `file`.
 fn covers(cx: &Cx<'_>, grant: &Grant, atom: &str, file: &str) -> bool {
-    let named = grant.atom == atom
+    let granted = gob_ir::registry::canonical(&grant.atom).unwrap_or(&grant.atom);
+    let named = granted == atom
         || atom
-            .strip_prefix(grant.atom.as_str())
+            .strip_prefix(granted)
             .is_some_and(|rest| rest.starts_with('.'));
     named
         && grant.at.as_ref().is_none_or(|sel| {
@@ -275,7 +277,7 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
         for g in &e.grants {
             out.count("CAP002", 1);
             let site = Some((g.file.as_str(), (g.span.start, g.span.end)));
-            let atoms = expansion(&g.atom);
+            let atoms = expansion(gob_ir::registry::canonical(&g.atom).unwrap_or(&g.atom));
             if atoms.is_empty() || files.is_empty() {
                 tracing::debug!(node = %e.anchor, atom = %g.atom, "grant has no detectable atom or no owned code; not judged");
                 continue;

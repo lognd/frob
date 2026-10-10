@@ -1,0 +1,15 @@
+kind = "create"
+title = "Sibling document packs[] entries carry source provenance (repo:packs/NAME)"
+type = "task"
+category = "todo"
+priority = "low"
+scope = ["crates/gob-check/src/sibling_doc.rs", "crates/gob-check/src/sibling.rs"]
+acceptance = ["Given a repo pack loaded from packs/NAME.toml, when check --json runs, then packs[] carries source repo:packs/NAME"]
+body = "found while working ~AMVHK82: PackRef has only name, version, digest, so a repo pack's provenance repo:packs/NAME is only logged."
+at = "2026-10-09T19:05:33Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4D8Y28W7XK0H2F3EWAZA1EH"

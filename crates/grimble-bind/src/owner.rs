@@ -205,6 +205,14 @@ pub fn build(
     expand: &BTreeSet<String>,
 ) -> Owners {
     let mut out = Owners::default();
+    code.prefold(
+        code.files
+            .iter()
+            .filter(|f| {
+                !f.unreadable && (expand.contains(&f.path) || !claimants(all, f).is_empty())
+            })
+            .map(|f| f.path.as_str()),
+    );
     for file in &code.files {
         let claim = claimants(all, file);
         let mut fo = FileOwn {
@@ -226,7 +234,7 @@ pub fn build(
             fo.units.push(file.path.clone());
         } else if !claim.is_empty() || expand.contains(&file.path) {
             fo.expanded = true;
-            if let Some(f) = &file.folded {
+            if let Some(f) = file.folded() {
                 for u in f.term.units() {
                     let text = u.symref.to_string();
                     if out.units.contains_key(&text) {

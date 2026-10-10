@@ -512,7 +512,7 @@ const MISSING_TOOL: &str = "[[check.tool]]\nname = \"ghost\"\ncommand = \"frob-n
 
 const FAILING_ACTIONLINT: &str = "[[check.tool]]\nname = \"lint\"\ncommand = \"sh\"\nargs = [\"-c\", \"echo unsatisfiable pin >&2; exit 2\"]\nparser = \"actionlint-json\"\nversion_args = [\"-c\", \"echo 1.7.12\"]\n";
 
-// frob:tests crates/gob-check/src/tools.rs::run_tools
+// frob:tests crates/gob-check/src/tools.rs::start_tools
 #[test]
 fn a_failed_parsed_tool_fails_the_default_gate_with_its_stderr() {
     let dir = tempfile::tempdir().expect("tempdir");

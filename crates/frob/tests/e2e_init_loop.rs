@@ -124,9 +124,30 @@ impl Fresh {
 
 /// The full loop on a repository whose default branch is `branch`.
 fn full_loop(branch: &str) {
+    full_loop_in(branch, false);
+}
+
+/// Switch `root` to the orphan ticket branch: `ref_mode = "orphan"`, the branch created, the config committed.
+fn use_orphan_ledger(root: &Path) {
+    let path = root.join("frob.toml");
+    let text = std::fs::read_to_string(&path).expect("read frob.toml");
+    let edited = text.replace("ref_mode = \"trunk\"", "ref_mode = \"orphan\"");
+    assert_ne!(text, edited, "init materializes ref_mode = trunk");
+    std::fs::write(&path, edited).expect("write frob.toml");
+    Fresh::ok(root, &["ticket", "branch", "init"]);
+    git(root, &["add", "-A"]);
+    git(root, &["commit", "-q", "-m", "chore: ticket branch"]);
+}
+
+/// The full loop; with `orphan` the ledger lives on `frob-tickets` and the code branch stays code-only.
+fn full_loop_in(branch: &str, orphan: bool) {
     let repo = Fresh::new(branch);
     let root = repo.root.as_path();
     repo.init_committed();
+    if orphan {
+        use_orphan_ledger(root);
+    }
+    let commits_before = git(root, &["rev-list", "--count", branch]);
 
     // ticket new
     let new = Fresh::ok(
@@ -243,6 +264,24 @@ fn full_loop(branch: &str) {
     let branches = git(root, &["branch", "--list", "ticket/*"]);
     assert!(branches.is_empty(), "ticket branch removed: {branches}");
 
+    if orphan {
+        // the ledger commits (new, work, evidence, close) never touched the code branch
+        let commits = git(root, &["rev-list", "--count", branch]);
+        let before: u32 = commits_before.parse().expect("count");
+        assert_eq!(commits, (before + 1).to_string(), "only the feature commit");
+        let on_code = git(root, &["ls-tree", "-r", "--name-only", branch]);
+        assert!(
+            !on_code.lines().any(|l| l.starts_with("tickets/")),
+            "{on_code}"
+        );
+        let on_branch = git(root, &["ls-tree", "-r", "--name-only", "frob-tickets"]);
+        assert!(
+            on_branch.contains("_unfiled/make-add-overflow-safe.md"),
+            "{on_branch}"
+        );
+        assert!(on_branch.contains(&format!(".events/{id}/")), "{on_branch}");
+    }
+
     // ledger healthy
     let doctor = Fresh::ok(root, &["ticket", "doctor"]);
     assert_eq!(doctor["data"]["ok"], true);
@@ -257,6 +296,14 @@ fn loop_on_main() {
 #[test]
 fn loop_on_trunk() {
     full_loop("trunk");
+}
+
+/// Ticket-branch mode: work builds the worktree from the code branch and land succeeds with the ledger on the orphan branch.
+// frob:ticket 01M4CTTSAZC93K94KNXH3WVSYM
+// frob:tests crates/frob-worktree/src/work.rs::base_branch
+#[test]
+fn loop_with_the_ledger_on_the_orphan_branch() {
+    full_loop_in("main", true);
 }
 
 /// frob:ticket 01M4069YW2EF551WF2J7R0EMJ4

@@ -19,6 +19,12 @@ pub fn is_full_ulid(s: &str) -> bool {
         && s.starts_with(|c: char| ('0'..='7').contains(&c))
 }
 
+/// True when `s` is a v1 ticket alias (`T-` then digits), resolved through the ledger's aliases.
+pub fn is_v1_alias(s: &str) -> bool {
+    s.strip_prefix("T-")
+        .is_some_and(|d| !d.is_empty() && d.chars().all(|c| c.is_ascii_digit()))
+}
+
 /// True when `s` is not a full ULID but reads like a ticket reference.
 ///
 /// Covers v1 `T-0042` forms, `~handle` forms, and bare Crockford strings of
@@ -41,6 +47,15 @@ pub fn looks_like_ticket_ref(s: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // frob:tests crates/gob-directives/src/ulid.rs::is_v1_alias
+    #[test]
+    fn v1_aliases_are_recognised() {
+        assert!(is_v1_alias("T-0042"));
+        assert!(!is_v1_alias("t-0042"));
+        assert!(!is_v1_alias("T-"));
+        assert!(!is_v1_alias("T-4x"));
+    }
 
     #[test]
     fn full_ulid_accepted() {

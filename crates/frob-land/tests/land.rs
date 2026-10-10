@@ -413,6 +413,7 @@ fn conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean() {
     let fx = Fixture::new();
     let s = fx.start("Edit readme", &["README.md"]);
     Fixture::commit_in(&s.wt, "README.md", "from the ticket\n");
+    Fixture::evidence(&s, "README.md");
     fx.repo()
         .commit_paths(
             MAIN,
@@ -454,14 +455,18 @@ fn a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_workt
     Fixture::commit_in(
         &s.wt,
         "frob.toml",
-        "[pm]\ndone_requires = [\"criteria_evidenced\", \"ticket\"]\n",
+        "[pm]\ndone_requires = [\"criteria_evidenced\", \"no_open_children\"]\n",
     );
+    Fixture::evidence(&s, "frob.toml");
     fx.repo()
         .commit_paths(
             MAIN,
             &[(
                 RelPath::new("frob.toml").expect("path"),
-                Some(b"[pm]\ndone_requires = [\"criteria_evidenced\", \"base\"]\n".to_vec()),
+                Some(
+                    b"[pm]\ndone_requires = [\"criteria_evidenced\", \"objective_target_met\"]\n"
+                        .to_vec(),
+                ),
             )],
             "base config edit",
             &CommitOptions::default(),
@@ -510,13 +515,14 @@ fn a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_r
     Fixture::commit_in(
         &s.wt,
         "frob.toml",
-        "[pm]\ndone_requires = [\"criteria_evidenced\", \"ticket\"]\n",
+        "[pm]\ndone_requires = [\"criteria_evidenced\", \"no_open_children\"]\n",
     );
+    Fixture::evidence(&s, "frob.toml");
     move_main(&fx.root, "uv.lock", "moved\n");
     move_main(
         &fx.root,
         "frob.toml",
-        "[pm]\ndone_requires = [\"criteria_evidenced\", \"base\"]\n",
+        "[pm]\ndone_requires = [\"criteria_evidenced\", \"objective_target_met\"]\n",
     );
     let head = git_out(&s.wt, &["rev-parse", "HEAD"]).1;
     let status = git_out(&s.wt, &["status", "--porcelain"]).1;
@@ -609,6 +615,43 @@ fn dry_run_plan_is_deterministic_and_changes_nothing() {
     assert_eq!(
         fx.ledger().show(s.id).expect("show").summary.category,
         Category::InProgress
+    );
+}
+
+// frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+// frob:tests crates/frob-land/src/land.rs::ledger_only_ahead
+#[test]
+fn dry_run_treats_a_base_that_moved_only_by_ledger_commits_as_merged() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add g", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/g.rs", "fn g() {}\n");
+    Fixture::evidence(&s, "src/g.rs");
+    let dry = LandOptions {
+        dry_run: true,
+        ..Fixture::opts(&s)
+    };
+    let clock = || Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
+
+    move_main(&fx.root, "tickets/zz-note.txt", "note\n");
+    let ledger_only = land(&fx.root, &dry, &clock()).expect("dry run");
+    assert!(
+        !ledger_only
+            .warnings
+            .iter()
+            .any(|w| w.contains("check skipped")),
+        "{:?}",
+        ledger_only.warnings
+    );
+
+    move_main(&fx.root, "src/other.rs", "fn other() {}\n");
+    let code = land(&fx.root, &dry, &clock()).expect("dry run");
+    assert!(
+        code.warnings.iter().any(|w| w.contains("check skipped")),
+        "a code commit on the base is still reported: {:?}",
+        code.warnings
     );
 }
 
@@ -716,6 +759,35 @@ fn an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_noth
     assert_eq!(
         fx.ledger().show(s.id).expect("show").summary.category,
         Category::InProgress
+    );
+}
+
+// frob:ticket 01M4FJ57NER0WMX4FPNY7E721R
+// frob:tests crates/frob-land/src/land.rs::prepare
+#[test]
+fn the_close_guards_refuse_before_the_base_is_merged_or_checked() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start_with("Add h", &["src/**"], &["h answers"]);
+    Fixture::commit_in(&s.wt, "src/h.rs", "fn h() {}\n");
+    Fixture::evidence(&s, "src/h.rs");
+    // A code commit on the base: a land that got as far as the merge would move the branch tip.
+    move_main(&fx.root, "src/other.rs", "fn other() {}\n");
+    let tip = git_out(&s.wt, &["rev-parse", "HEAD"]).1;
+
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("unbound criterion");
+    assert_eq!(refusal(&err).code, "E-DONE-CRITERIA-UNBOUND");
+    assert_eq!(
+        git_out(&s.wt, &["rev-parse", "HEAD"]).1,
+        tip,
+        "the base was not merged into the ticket branch"
     );
 }
 
@@ -1085,6 +1157,7 @@ fn a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts() {
         .expect("commit");
     let s = fx.start("Touch uv", &["uv.lock"]);
     Fixture::commit_in(&s.wt, "uv.lock", "ticket\n");
+    Fixture::evidence(&s, "uv.lock");
     move_main(&fx.root, "uv.lock", "moved\n");
     let before = fx.main_tip();
     let err = land(

@@ -340,6 +340,7 @@ pub fn add_evidence(
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "milestone evidence list",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)

@@ -33,6 +33,9 @@ pub struct RunOptions {
     // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
     /// `[evidence.dotnet] path`: the `dotnet` executable; empty finds it on `PATH`.
     pub dotnet_path: String,
+    // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+    /// `[tests] python`: the interpreter that runs pytest; empty prefers the repository's `.venv`.
+    pub python: String,
 }
 
 impl RunOptions {
@@ -52,6 +55,7 @@ impl RunOptions {
             all,
             node: NODE_PROGRAM.to_owned(),
             dotnet_path: String::new(),
+            python: String::new(),
         }
     }
 }
@@ -410,6 +414,7 @@ pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Resul
             runner,
             &opts.allowed_tools,
             &opts.root,
+            &opts.python,
             &pytest,
             opts.timeout,
         )?;

@@ -7,6 +7,9 @@ node frob : trusted {
   clearance Internal;
   owns "crates/frob-*/**";
   owns "crates/frob/**";
+  may fs.read at "crates/frob*/**";
+  may fs.write at "crates/frob*/**";
+  may exec at "crates/frob*/tests/**";
 }
 
 /// The shared substrate.
@@ -14,6 +17,11 @@ node gob : trusted {
   kind component;
   clearance Internal;
   owns "crates/gob-*/**";
+  may fs.read at "crates/gob-*/**";
+  may fs.write at "crates/gob-*/**";
+  may exec at "crates/gob-*/tests/**";
+  may exec at "crates/gob-exec/**";
+  may exec at "crates/gob-git/**";
 }
 
 /// The design goblin.
@@ -22,6 +30,9 @@ node grimble : trusted {
   clearance Internal;
   owns "crates/grimble-*/**";
   owns "crates/grimble/**";
+  may fs.read at "crates/grimble*/**";
+  may fs.write at "crates/grimble*/**";
+  may exec at "crates/grimble*/tests/**";
 }
 
 /// The style goblin.
@@ -30,6 +41,9 @@ node crunk : trusted {
   clearance Internal;
   owns "crates/crunk-*/**";
   owns "crates/crunk/**";
+  may fs.read at "crates/crunk*/**";
+  may fs.write at "crates/crunk*/**";
+  may exec at "crates/crunk*/tests/**";
 }
 
 /// Substrate data (check results, locks, walks) flows to crunk, which calls it (SYS013 allows an edge in either direction of a flow).

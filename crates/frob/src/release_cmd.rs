@@ -251,6 +251,7 @@ pub struct StatusData {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "release status",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, internal)

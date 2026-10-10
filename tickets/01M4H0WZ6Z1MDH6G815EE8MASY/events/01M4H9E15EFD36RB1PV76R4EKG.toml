@@ -1,0 +1,16 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-09T21:34:43Z"
+digest = "9fa8dc9570625be2be53d308f958332981ec8fb8137d3dd7ba0ae5da317eaa7d"
+exit_code = 0
+inline = """
+[]
+"""
+passed = true
+provider = "command"
+ref = 'python3 -c "import pathlib,sys; skip={\"docs/design/README.md\",\"docs/design/tickets.md\",\"docs/design/cli.md\",\"docs/design/build-test-ci.md\"}; bad=[str(p) for p in pathlib.Path(\"docs\").rglob(\"*.md\") if \"reference/rules\" not in str(p) and str(p) not in skip and not p.read_text().startswith(\"<!--\") and not any(l.startswith(\"Audience: \") for l in p.read_text().splitlines()[:8])]; print(bad); sys.exit(1 if bad else 0)"'
+size = 3
+status = "measured"
+at = "2026-10-09T21:34:43Z"
+actor = "lognd"
+rev = 1

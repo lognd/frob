@@ -30,17 +30,18 @@
 //! so the grimble binary never links frob (boundaries.md).
 
 // frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
+// frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
 
 // A rule crate that is a dependency but not in `product_rules!` is an unused dependency (D107).
 #![cfg_attr(not(test), deny(unused_crate_dependencies))]
 
 use gob_diagnostics as _; // unused today; removal tracked in ~MKG678C
-use toml as _; // unused today; removal tracked in ~MKG678C
 
 pub mod bind_cache;
 pub mod config;
 pub mod fidelity;
 pub mod model_view;
+pub mod packs;
 mod product;
 pub mod product_rules;
 pub mod sibling;
@@ -94,6 +95,8 @@ pub struct GrimbleRun {
     pub packs: PacksTable,
     /// True when `grimble.toml` exists (the document then carries `packs`).
     pub has_config: bool,
+    /// The repository packs that loaded, as `(id, version, digest)`, for the document's `packs`.
+    pub loaded_packs: Vec<(String, String, String)>,
     /// Echo of `--ticket-scope`.
     pub ticket_scope: Option<Vec<String>>,
     /// Echo of `--base`.
@@ -131,6 +134,11 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
         .trace
         .into_inner()
         .unwrap_or_else(PoisonError::into_inner);
+    let loaded_packs: Vec<(String, String, String)> = packs::load(root, &packs)
+        .pins
+        .into_iter()
+        .map(|(id, pin)| (id, pin.version, pin.digest.unwrap_or_default()))
+        .collect();
     let mut warnings = report.warnings.clone();
     if packs.requests_packs() {
         warnings.push(config::PACKS_NOT_LOADED.to_owned());
@@ -154,6 +162,7 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
         compute,
         compute_source,
         packs,
+        loaded_packs,
         has_config: root.join(format!("{PRODUCT}.toml")).is_file(),
         ticket_scope: opts.ticket_scope.clone(),
         base: opts.base.clone(),
@@ -212,6 +221,14 @@ pub fn read_models(root: &Path, entries: &[FileEntry], table: &GrimbleTable) -> 
         }
     }
     model.walk = Some(walk);
+    match PacksTable::load(root) {
+        Ok(table) => {
+            let loaded = packs::load(root, &table);
+            model.packs = loaded.pins;
+            model.pack_problems = loaded.problems;
+        }
+        Err(err) => tracing::warn!(%err, "[packs] unreadable; no pack is loaded"),
+    }
     tracing::info!(roots = ?table.models, files = model.files.len(), "model roots declared");
     model.with_declared_roots(table.models.clone())
 }

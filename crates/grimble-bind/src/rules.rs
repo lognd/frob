@@ -705,17 +705,12 @@ fn modeled_unit(
     acc: &mut Modeled,
     out: &mut Output,
 ) {
-    let Some(folded) = &f.folded else { return };
+    let Some(syms) = f.symbols() else { return };
     if f.fidelity < Fidelity::F2 {
         *acc.unknown_vis.entry(f.path.clone()).or_default() += 1;
         return;
     }
-    let Some(rec) = folded
-        .file
-        .symbols
-        .iter()
-        .find(|s| s.symref.to_string() == text)
-    else {
+    let Some(rec) = syms.symbols.iter().find(|s| s.symref.to_string() == text) else {
         return;
     };
     if !CODE_KINDS.contains(&rec.kind) {
@@ -770,7 +765,7 @@ fn sys005(cx: &Cx<'_>, out: &mut Output) {
             let Some(f) = cx.code.file(&m.path) else {
                 continue;
             };
-            let Some(folded) = &f.folded else {
+            let Some(folded) = f.folded() else {
                 *acc.unknown_vis.entry(f.path.clone()).or_default() += 1;
                 continue;
             };

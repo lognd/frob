@@ -1,0 +1,23 @@
+kind = "create"
+title = "shared specs part 2: code-model, universal-model, rules, packs-and-plugins, security, documentation, build-test-ci, grl-spec and sibling-contract under docs/design/shared/"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 8
+parent = "01M4H0WWHV461NXWVCCNKAH3YP"
+idempotency_key = "docs-consolidation-2026-10-09-p4b"
+labels = ["creates:docs/design/shared/**"]
+scope = ["docs/design/*.md", "docs/README.md", "crates/gob-mdtest/FORMAT.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/shared/**"]
+acceptance = ["Given code-model 1-4 and 8-10, language-engines 2-5 and dotnet-unity, when phase 4b lands, then docs/design/shared/code-model.md has one adapter chapter for every language including C#", "Given rules, rule-authoring, testing, exceptions, tool-binding 2-5 and build-test-ci 6, when phase 4b lands, then docs/design/shared/rules.md states exceptions once and has one 'testing a rule' chapter", "Given plugins, packs, security, documentation, doc-consistency and navigation 3-5, when phase 4b lands, then packs-and-plugins.md, security.md and documentation.md under docs/design/shared/ each state their subject once", "Given docs/design, when phase 4b lands, then no design file remains at the docs/design top level except README.md, and frob check reports zero DOC002 and zero DRIFT002 findings, and `cargo dev gen --check` is clean"]
+body = "Phase 4b of notes/review/docs-consolidation-2026-10-09.md (sections 3.1, 3.2). Lifts the hold on new frob:doc/frob:describes into docs/design (owner decision 5); ~Y9W8WYP follows. Prose citations ('x.md section N') in crates/ that this phase moves are rewritten by `frob doc remap`; before running it, add the exact files from `frob doc remap --dry-run` to this ticket's scope with `frob ticket update`. Ledger text and notes are never rewritten. No new frob:doc or frob:describes into docs/design until phase 4b lands (owner decision 5)."
+at = "2026-10-09T19:05:46Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4H0X5DZZ0DAHBJKD9TGBAW8"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4H0X78V0F2GV0GW6AZ4P6PQ"

@@ -30,6 +30,8 @@ pub enum RefMode {
     Trunk,
     /// The currently checked-out branch, for protected-trunk and fork flows.
     Branch,
+    /// The orphan ticket branch `[tickets] branch` in the ticket-branch layout; `ref` stays the code base branch.
+    Orphan,
 }
 
 impl std::str::FromStr for RefMode {
@@ -39,8 +41,9 @@ impl std::str::FromStr for RefMode {
         match s {
             "trunk" => Ok(Self::Trunk),
             "branch" => Ok(Self::Branch),
+            "orphan" => Ok(Self::Orphan),
             other => Err(format!(
-                "`{other}` is not a ref mode; expected trunk or branch"
+                "`{other}` is not a ref mode; expected trunk, branch or orphan"
             )),
         }
     }
@@ -53,6 +56,8 @@ pub struct LedgerConfig {
     pub ref_name: String,
     /// Trunk or branch mode.
     pub mode: RefMode,
+    /// Name of the orphan ticket branch (`[tickets] branch`), the ledger ref when `mode` is [`RefMode::Orphan`].
+    pub branch: String,
     /// Directory of ticket directories, relative to the repo root.
     pub dir: String,
     /// Compare-and-swap retries (`[git] cas_retries`).
@@ -79,6 +84,7 @@ impl Default for LedgerConfig {
         Self {
             ref_name: "refs/heads/main".to_owned(),
             mode: RefMode::Trunk,
+            branch: "frob-tickets".to_owned(),
             dir: "tickets".to_owned(),
             cas_retries: 5,
             handle_min_len: crate::id::DEFAULT_HANDLE_MIN_LEN,
@@ -103,6 +109,9 @@ pub struct Ledger {
     branch_scan: std::sync::Mutex<Option<(String, std::sync::Arc<BranchScan>)>>,
     /// Full index rebuilds this handle has performed (the incremental path does not count).
     rebuilds: std::sync::atomic::AtomicUsize,
+    /// Git reads that resolve a revision (tree walks and path reads) this handle has made.
+    // frob:ticket 01M4DPJG0W39SCKZE5N807V4XM
+    git_reads: std::sync::atomic::AtomicUsize,
 }
 
 /// What one walk of a ticket-branch commit found: where each ticket file is, by frontmatter ULID.
@@ -175,16 +184,22 @@ impl Ledger {
             || repo.git_dir().join("frob").join("tickets.sqlite"),
             |w| w.join(".frob").join("tickets.sqlite"),
         );
-        tracing::debug!(index = %index_path.display(), ref_name = %cfg.ref_name, mode = ?cfg.mode, "ledger opened");
+        let layout = if cfg.mode == RefMode::Orphan {
+            Layout::Branch
+        } else {
+            Layout::Dir
+        };
+        tracing::debug!(index = %index_path.display(), ref_name = %cfg.ref_name, mode = ?cfg.mode, ?layout, "ledger opened");
         Self {
             repo,
             cfg,
             index_path,
             redact: std::sync::OnceLock::new(),
             clock,
-            layout: Layout::Dir,
+            layout,
             branch_scan: std::sync::Mutex::new(None),
             rebuilds: std::sync::atomic::AtomicUsize::new(0),
+            git_reads: std::sync::atomic::AtomicUsize::new(0),
         }
     }
 
@@ -200,8 +215,26 @@ impl Ledger {
         self.layout
     }
 
+    /// Refuse `verb` on the ticket-branch layout, which it does not write yet.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::Invalid`] naming the verb when the layout is [`Layout::Branch`].
+    pub(crate) fn require_dir_layout(&self, verb: &str) -> Result<()> {
+        if self.layout == Layout::Branch {
+            tracing::warn!(
+                verb,
+                "verb refused: not implemented for the ticket-branch layout"
+            );
+            return Err(LedgerError::invalid(format!(
+                "`{verb}` does not support the ticket-branch layout yet (ref_mode = \"orphan\")"
+            )));
+        }
+        Ok(())
+    }
+
     /// Prefix that turns a path relative to the ledger tree into a repository path.
-    fn tree_prefix(&self) -> String {
+    pub fn tree_prefix(&self) -> String {
         match self.layout {
             Layout::Dir => format!("{}/", self.cfg.dir),
             Layout::Branch => String::new(),
@@ -298,6 +331,13 @@ impl Ledger {
                 let branch = self.repo.current_branch()?.ok_or(LedgerError::Detached)?;
                 Ok(format!("refs/heads/{branch}"))
             }
+            RefMode::Orphan => {
+                let name = full_ref(&self.cfg.branch);
+                if self.repo.rev_parse(&name).is_ok() {
+                    return Ok(name);
+                }
+                Err(LedgerError::RefMissing { ref_name: name })
+            }
             RefMode::Trunk => {
                 let name = full_ref(&self.cfg.ref_name);
                 if self.repo.rev_parse(&name).is_ok() {
@@ -347,6 +387,7 @@ impl Ledger {
 
     /// Blobs below the tree named by `spec` (`<oid>`, `<oid>:<path>`) as `(path relative to it, blob id)`, from one tree walk.
     pub(crate) fn list_blobs(&self, spec: &str) -> Result<Vec<(String, Oid)>> {
+        self.count_git_read();
         match self.repo.blobs_at(spec) {
             Ok(blobs) => Ok(blobs),
             Err(e) if is_rev_error(&e) => Ok(Vec::new()),
@@ -370,6 +411,7 @@ impl Ledger {
     }
 
     fn blob(&self, rev: &str, path: &str) -> Result<Option<Vec<u8>>> {
+        self.count_git_read();
         Ok(self.repo.read_blob_at(rev, path)?)
     }
 
@@ -597,6 +639,53 @@ impl Ledger {
         Ok(out)
     }
 
+    /// Read the ticket document of every ticket in `ids` at commit `tip` with one walk of the tree.
+    ///
+    /// A ticket without a file maps to `None`; a document that does not parse maps to its error,
+    /// so one bad card does not hide the rest.
+    ///
+    /// # Errors
+    ///
+    /// Git read failures of the walk itself.
+    // frob:ticket 01M4DPJG0W39SCKZE5N807V4XM
+    pub fn read_tickets_many_at(
+        &self,
+        tip: &str,
+        ids: &[TicketId],
+    ) -> Result<BTreeMap<TicketId, Result<Option<Ticket>>>> {
+        let (spec, mut wanted): (String, BTreeMap<String, TicketId>) = match self.layout {
+            Layout::Dir => (
+                format!("{tip}:{}", self.cfg.dir),
+                ids.iter()
+                    .map(|id| (format!("{id}/ticket.md"), *id))
+                    .collect(),
+            ),
+            Layout::Branch => {
+                let scan = self.branch_scan_at(tip)?;
+                (
+                    format!("{tip}^{{tree}}"),
+                    ids.iter()
+                        .filter_map(|id| scan.files.get(id).map(|p| (p.clone(), *id)))
+                        .collect(),
+                )
+            }
+        };
+        let mut out: BTreeMap<TicketId, Result<Option<Ticket>>> =
+            ids.iter().map(|id| (*id, Ok(None))).collect();
+        for (path, oid) in self.list_blobs(&spec)? {
+            let Some(id) = wanted.remove(&path) else {
+                continue;
+            };
+            let parsed = self
+                .text_of(&path, &oid)
+                .and_then(|t| doc::parse(&path, &t))
+                .map(Some);
+            out.insert(id, parsed);
+        }
+        tracing::debug!(tickets = ids.len(), "ticket documents walked once");
+        Ok(out)
+    }
+
     /// Split a path listed under the ticket root into (ticket, event file name), if it is an event file.
     fn event_path_parts<'a>(&self, path: &'a str) -> Option<(TicketId, &'a str)> {
         let mut parts = path.split('/');
@@ -691,6 +780,17 @@ impl Ledger {
             tree,
             key,
         })
+    }
+
+    /// Count one git read that resolves a revision.
+    fn count_git_read(&self) {
+        self.git_reads
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    /// How many revision-resolving git reads (tree walks, path reads) this handle has made (tests and diagnostics).
+    pub fn git_reads(&self) -> usize {
+        self.git_reads.load(std::sync::atomic::Ordering::Relaxed)
     }
 
     /// How many full index rebuilds this handle has done (tests and diagnostics).

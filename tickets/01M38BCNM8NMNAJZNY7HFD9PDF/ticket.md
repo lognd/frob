@@ -7,10 +7,10 @@ priority = "low"
 points = 3
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-10-04T22:22:24Z"
+updated = "2026-10-09T20:42:08Z"
 aliases = ["T-5768"]
 labels = ["v1-cluster:B3d", "triage:accepted"]
-scope = ["src/frob/tickets/_evidence.py", "docs/strata/vmodel.md", "tests/system/test_cli_evidence_enforcement.py"]
+scope = ["src/frob/tickets/_evidence.py", "tests/system/test_cli_evidence_enforcement.py", "docs/design/grmb-spec.md"]
 
 [[links]]
 kind = "blocked-by"

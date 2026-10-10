@@ -293,6 +293,29 @@ ops groups, `waive audit` and `pool` (replaced by `exceptions`). v1's
 `sys`, `cycle`, `dup`, `arch`, `bind` live in grimble; `vet` too
 (boundaries.md section 2.3).
 
+### 4.1 `serve`: read-only MCP from verb metadata (D134)
+
+`frob serve [--mcp]` speaks MCP (newline-delimited JSON-RPC 2.0) on
+stdin and stdout and lists one tool per live verb declared
+`#[command(read_only)]`; there is no hand-written second API.
+
+- Tool name: product and verb words joined by `_` (`frob_ticket_show`).
+- Input schema: derived from the verb's own clap arguments (flags are
+  booleans or integers for counts, repeatable options are arrays, enums
+  list their values, positionals are named by their id), with
+  `additionalProperties: false`. The verb's `data` schema is not in the
+  listing (it is 100 KB across the tools); `frob <verb> --schema` prints it.
+- Result: the same JSON envelope the CLI prints for the verb (the call
+  runs the verb in-process with `--json`); `isError` is true for exit
+  codes 2 and above, and a negative result (exit 1) is not an error.
+- Absent by construction: any verb without `read_only` (default false),
+  deprecated aliases, and the write flags `--fix` and `--dry-run` of
+  read-only verbs; a call that names them is refused as invalid params.
+- Server-side work happens only inside a call. Between calls the process
+  blocks on stdin, so idle CPU is zero; EOF on stdin exits 0.
+- Tools run in the directory `serve` was started in; point the client
+  at the repository by launching it there (or with `--cwd`).
+
 ## 5. Human ergonomics kept
 
 Color and tables on a TTY, `-v` for the span tree, shell completions,

@@ -130,7 +130,10 @@ fn arb_parts() -> impl Strategy<Value = PlanParts> {
             vars,
             strings: ["a", "b", "c", "d"].map(String::from).to_vec(),
             ops,
+            defs: vec![],
             clauses,
+            subjects: 0,
+            unresolved: vec![],
             reports: reports
                 .into_iter()
                 .map(|(when, subject)| Report {
@@ -204,7 +207,10 @@ fn arb_valid() -> impl Strategy<Value = PlanParts> {
                 vars,
                 strings,
                 ops,
+                defs: vec![],
                 clauses,
+                subjects: 0,
+                unresolved: vec![],
                 reports: vec![Report {
                     when: None,
                     subject: 0,

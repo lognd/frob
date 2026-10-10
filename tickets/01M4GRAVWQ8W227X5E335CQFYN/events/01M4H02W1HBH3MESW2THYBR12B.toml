@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-09T18:39:46Z"
+digest = "09438102a9b14d3e799538f4083e93c74b2aae9112d19023e34071bf305cb104"
+exit_code = 1
+passed = false
+provider = "command"
+ref = "frob check --ticket ~35CQFYN"
+size = 2100040
+status = "measured"
+uri = "dir:.git/frob/artifacts/09438102a9b14d3e799538f4083e93c74b2aae9112d19023e34071bf305cb104"
+at = "2026-10-09T18:39:46Z"
+actor = "lognd"
+rev = 1

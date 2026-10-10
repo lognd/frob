@@ -7,10 +7,10 @@ priority = "low"
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-04T22:22:26Z"
+updated = "2026-10-09T20:42:40Z"
 aliases = ["T-6540"]
 labels = ["v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
-scope = ["src/frob/webapp/__init__.py", "src/frob/lang/_project_detect.py", "tests/unit/test_webapp_workspace_detection.py", "docs/modules/webapp.md"]
+scope = ["src/frob/webapp/__init__.py", "src/frob/lang/_project_detect.py", "tests/unit/test_webapp_workspace_detection.py", "docs/design/crunk.md"]
 +++
 
 Source: logand.app-v2 FROBLEMS.md (peer coordinator report, 2026-09-26, frob 0.531.1.dev332). Reproduction lives in that repo (read-only for frob agents); the frob-side positive control must be a fixture here.

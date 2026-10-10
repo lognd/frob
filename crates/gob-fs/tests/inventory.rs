@@ -13,6 +13,10 @@ const ALLOWED: &[(&str, &str)] = &[
         "quarantines a corrupt lease file; moves, never writes",
     ),
     (
+        "frob-land/src/land.rs",
+        "renames a merged worktree directory aside for background deletion; moves, never writes",
+    ),
+    (
         "gob-trust/src/key.rs",
         "no-clobber hard-link publish so one creator wins",
     ),

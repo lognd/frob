@@ -6,10 +6,10 @@ category = "todo"
 priority = "low"
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-04T22:22:26Z"
+updated = "2026-10-09T20:42:31Z"
 aliases = ["T-6532"]
 labels = ["v1-cluster:B3c", "triage:accepted"]
-scope = ["src/frob/gates/_waive.py", "src/frob/strata/_selfconform.py", "src/frob/graph/cache.py", "tests/unit/strata/test_sys113_waiver_determinism.py", "docs/modules/gates.md"]
+scope = ["src/frob/gates/_waive.py", "src/frob/strata/_selfconform.py", "src/frob/graph/cache.py", "tests/unit/strata/test_sys113_waiver_determinism.py", "docs/design/rules.md"]
 +++
 
 Source: logand.app-v2 FROBLEMS.md (peer coordinator report, 2026-09-26, frob 0.531.1.dev332). Reproduction lives in that repo (read-only for frob agents); the frob-side positive control must be a fixture here.

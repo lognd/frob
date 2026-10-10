@@ -57,13 +57,12 @@ impl Live {
     pub fn build(code: &Code) -> Self {
         let mut out = Self::default();
         for file in &code.files {
-            let Some(folded) = &file.folded else {
+            let Some(syms) = file.symbols() else {
                 out.unreadable.push(file.path.clone());
                 continue;
             };
-            for rec in &folded.file.symbols {
-                let unknown = folded
-                    .file
+            for rec in &syms.symbols {
+                let unknown = syms
                     .extras
                     .iter()
                     .find(|x| x.symref == rec.symref)
@@ -108,7 +107,7 @@ pub fn body_tokens(code: &Code, path: &str, symref: &str) -> usize {
     let Some(file) = code.file(path) else {
         return 0;
     };
-    let Some(folded) = &file.folded else {
+    let Some(folded) = file.folded() else {
         return 0;
     };
     let Some(unit) = file.units().into_iter().find(|u| u.symref == symref) else {

@@ -2,12 +2,13 @@
 id = "01M4FCZE7QETQK5CKKDSZ3EANE"
 title = "Directive parser rejects trailing foreign pragmas after a directive (# noqa: E501, // eslint-disable-line, # type: ignore) with PARSE001"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T03:58:12Z"
-updated = "2026-10-09T06:12:15Z"
+updated = "2026-10-09T16:39:21Z"
 labels = ["adoption:hullbreach", "creates:crates/gob-directives/tests/mdtest/trailing-pragma.md"]
 scope = ["changelog.d/**", "crates/gob-directives/src/lex.rs", "crates/gob-directives/tests/mdtest/trailing-pragma.md"]
 

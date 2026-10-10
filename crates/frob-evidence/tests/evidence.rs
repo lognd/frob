@@ -824,6 +824,31 @@ fn pytest_collecting_nothing_refuses_and_records_nothing() {
     assert_eq!(count, 0);
 }
 
+// frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+#[test]
+fn a_pytest_collection_error_is_a_runner_error_and_records_nothing() {
+    // frob:tests crates/frob-evidence/src/provider.rs::run_pytest
+    if !gob_testsupport::python_test_prerequisites("a_pytest_collection_error_is_a_runner_error") {
+        return;
+    }
+    let dir = pytest_repo(None);
+    std::fs::write(
+        dir.path().join("tests/test_broken.py"),
+        "import no_such_module_anywhere\n\ndef test_x():\n    pass\n",
+    )
+    .expect("broken");
+    git(dir.path(), &["add", "-A"]);
+    git(dir.path(), &["commit", "-q", "-m", "broken"]);
+    let (code, out, err, count) = add_pytest(dir.path(), "tests");
+    assert_eq!(code, 3, "{out}{err}");
+    let e = &json(&out)["error"];
+    assert_eq!(e["code"], "E-EVIDENCE-RUNNER-ERROR", "{out}");
+    let message = e["message"].as_str().expect("message");
+    assert!(message.contains("tests/test_broken.py"), "{message}");
+    assert!(!message.contains("tests::test_broken"), "{message}");
+    assert_eq!(count, 0);
+}
+
 // frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
 #[test]
 fn pytest_outside_the_allowlist_is_refused_without_running_anything() {

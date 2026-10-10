@@ -188,6 +188,7 @@ pub struct ShowData {
 #[derive(Debug, Clone, Copy, Default, gob_cli::Command)]
 #[command(
     verb = "config show",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)

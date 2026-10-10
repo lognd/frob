@@ -248,6 +248,7 @@ fn changed_facets(inputs: &Inputs, rec: &SymbolRecord) -> Vec<String> {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "graph why",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, usage, internal)
@@ -345,6 +346,7 @@ pub struct AffectsData {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "graph affects",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, usage, internal)

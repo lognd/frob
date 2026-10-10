@@ -3,11 +3,11 @@
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use frob_ledger::{Ledger, LedgerConfig, RefMode};
+use frob_ledger::{Ledger, LedgerConfig};
 use gob_exec::{Limits, Runner};
 use gob_git::Repo;
 
-use crate::config::{DotnetTable, EvidenceTable, UnityTable};
+use crate::config::{DotnetTable, EvidenceTable, TestsTable, UnityTable};
 use crate::error::{EvidenceError, Result};
 use crate::scrub::PathScrub;
 use crate::store::BlobStore;
@@ -30,6 +30,9 @@ pub struct Workspace {
     // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
     /// The effective `[evidence.unity]` table.
     pub unity: UnityTable,
+    // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+    /// The effective `[tests]` table.
+    pub tests: TestsTable,
     /// The blob store built from it.
     pub store: BlobStore,
 }
@@ -59,6 +62,9 @@ impl Workspace {
         let unity = gob_config::load::<UnityTable>(&root, PRODUCT)
             .map_err(|e| EvidenceError::Config(e.to_string()))?
             .value;
+        let tests = gob_config::load::<TestsTable>(&root, PRODUCT)
+            .map_err(|e| EvidenceError::Config(e.to_string()))?
+            .value;
         let ledger_cfg = ledger_config(&root)?;
         let store = BlobStore::open(&evidence, &repo)?;
         tracing::debug!(root = %root.display(), "evidence workspace opened");
@@ -68,6 +74,7 @@ impl Workspace {
             evidence,
             dotnet,
             unity,
+            tests,
             store,
         })
     }
@@ -106,54 +113,5 @@ impl Workspace {
 /// [`EvidenceError::Config`] when the file is unreadable or not TOML, or a
 /// known key has the wrong type.
 pub fn ledger_config(root: &Path) -> Result<LedgerConfig> {
-    let mut cfg = LedgerConfig::default();
-    let path = root.join(format!("{PRODUCT}.toml"));
-    let text = match std::fs::read_to_string(&path) {
-        Ok(t) => t,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(cfg),
-        Err(e) => return Err(EvidenceError::Config(format!("{}: {e}", path.display()))),
-    };
-    let table: toml::Table = text
-        .parse()
-        .map_err(|e: toml::de::Error| EvidenceError::Config(format!("{}: {e}", path.display())))?;
-    let bad = |key: &str| EvidenceError::Config(format!("{key} has the wrong type"));
-    if let Some(t) = table.get("tickets").and_then(toml::Value::as_table) {
-        if let Some(v) = t.get("ref") {
-            v.as_str()
-                .ok_or_else(|| bad("tickets.ref"))?
-                .clone_into(&mut cfg.ref_name);
-        }
-        if let Some(v) = t.get("dir") {
-            v.as_str()
-                .ok_or_else(|| bad("tickets.dir"))?
-                .clone_into(&mut cfg.dir);
-        }
-        if let Some(v) = t.get("ref_mode") {
-            cfg.mode = v
-                .as_str()
-                .ok_or_else(|| bad("tickets.ref_mode"))?
-                .parse::<RefMode>()
-                .map_err(EvidenceError::Config)?;
-        }
-        if let Some(v) = t.get("handle_min_len") {
-            let n = v
-                .as_integer()
-                .ok_or_else(|| bad("tickets.handle_min_len"))?;
-            cfg.handle_min_len = usize::try_from(n).map_err(|_| bad("tickets.handle_min_len"))?;
-        }
-        if let Some(v) = t.get("actor") {
-            let a = v.as_str().ok_or_else(|| bad("tickets.actor"))?;
-            cfg.actor = (!a.is_empty()).then(|| a.to_owned());
-        }
-    }
-    if let Some(v) = table
-        .get("git")
-        .and_then(toml::Value::as_table)
-        .and_then(|g| g.get("cas_retries"))
-    {
-        let n = v.as_integer().ok_or_else(|| bad("git.cas_retries"))?;
-        cfg.cas_retries = u32::try_from(n).map_err(|_| bad("git.cas_retries"))?;
-    }
-    tracing::debug!(ref_name = %cfg.ref_name, mode = ?cfg.mode, "ledger config read");
-    Ok(cfg)
+    frob_ledger::config::load_ledger_config(root).map_err(EvidenceError::Config)
 }

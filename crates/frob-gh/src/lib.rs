@@ -13,6 +13,7 @@
 //! error-policy ticket, which builds on this client.
 
 mod client;
+mod culprit;
 mod error;
 mod fixture;
 mod live;
@@ -21,6 +22,10 @@ mod token;
 mod transport;
 
 pub use client::{Client, Method, Pause, Policy, Reply, TokioPause};
+pub use culprit::{
+    BLOCKS_LANDS_LABEL, Commit, Culprit, CulpritError, FixTicket, LAND_PREFIX, RunRecord, Verdict,
+    find_culprit,
+};
 pub use error::Error;
 pub use fixture::{Exchange, FixtureTransport, RecordedRequest, RecordedResponse};
 pub use live::ReqwestTransport;

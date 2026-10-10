@@ -1,8 +1,10 @@
 //! The land transaction: preconditions, then the locked publish (tickets.md section 10, D25).
 //!
 //! Order: resolve and vet the lease, check the worktree is the holder's and
-//! clean, merge the base into the ticket branch (refusing on conflicts), run
-//! the ticket-scoped check and the close guards, then under the land lock
+//! clean, run the close guards (evidence, criteria, changelog: ledger and
+//! worktree reads only, so a refusal such as `E-DONE-CRITERIA-UNBOUND` comes in
+//! seconds), merge the base into the ticket branch (refusing on conflicts), run
+//! the ticket-scoped check, then under the land lock
 //! fast-forward the base branch, write the `land` event, close the ticket,
 //! release the lease and remove the worktree. A dry run stops after the
 //! preconditions and prints the plan.
@@ -102,6 +104,22 @@ struct Ready {
     out: LandOutcome,
 }
 
+// frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+/// True when every path that changed from `fork` to `base_oid` lies under the ledger directory `dir` (trunk-mode ticket commits).
+fn ledger_only_ahead(
+    wt: &Repo,
+    fork: Option<Oid>,
+    base_oid: Oid,
+    dir: &str,
+) -> Result<bool, LandError> {
+    let Some(fork) = fork else {
+        return Ok(false);
+    };
+    let prefix = format!("{}/", dir.trim_end_matches('/'));
+    let changed = wt.diff_names(&TreeRef::Oid(fork), &TreeRef::Oid(base_oid))?;
+    Ok(changed.iter().all(|c| c.path.starts_with(&prefix)))
+}
+
 /// Check every precondition (merging the base into the ticket branch unless dry-running).
 fn prepare(
     repo: Repo,
@@ -123,40 +141,9 @@ fn prepare(
     let branch = ticket_branch(&wt, base, &wt_path, &handle)?;
     ensure_clean(&wt, &wt_path)?;
 
-    let base_oid = wt.rev_parse(&base_ref(base)).map_err(|_| {
-        needs_action(
-            "E-LAND-NO-BASE",
-            format!("base branch `{base}` does not exist"),
-            "set [tickets] ref to an existing branch in frob.toml",
-        )
-    })?;
-    let ci_gate = base_ci::gate(
-        &wt,
-        &wt_path,
-        base,
-        opts.ci_reader.as_deref(),
-        opts.override_base_ci.as_deref(),
-    )?;
-    let mut base_merge = None;
-    let mut base_merged = wt.merge_base(&base_ref(base), &branch)? == Some(base_oid);
-    if !base_merged && !opts.dry_run {
-        base_merge = Some(merge_base_in(&wt, &wt_path, base, &handle)?);
-        base_merged = true;
-    } else if base_merged {
-        base_merge = Some("up-to-date".to_owned());
-    }
-    let mut warnings = ci_gate.warnings;
-    let mut ratchet = Ratchet::default();
-    if base_merged {
-        ratchet = verify_check(&wt, &wt_path, &here.ledger, &handle, base, opts)?;
-    } else {
-        // A dry run leaves the base unmerged, so the ticket-scoped diff would
-        // include the base's own changes; the real land merges first.
-        warnings.push(format!(
-            "check skipped: {base} is not merged into {branch} yet and a dry run does not merge it"
-        ));
-    }
-
+    // frob:ticket 01M4FJ57NER0WMX4FPNY7E721R
+    // The close guards read only the ledger and the worktree, so they run before any merge or check:
+    // an unbound criterion refuses in seconds, not after a cold build.
     let site = if here.ledger.config().mode == RefMode::Branch {
         Workspace::open(&wt_path, clock.clone())?
     } else if primary == cwd_root {
@@ -174,6 +161,51 @@ fn prepare(
         done = done.allow_no_changelog(reason.clone());
     }
     run_guards(view, &handle, &evidence, &done, opts)?;
+
+    let base_oid = wt.rev_parse(&base_ref(base)).map_err(|_| {
+        needs_action(
+            "E-LAND-NO-BASE",
+            format!("base branch `{base}` does not exist"),
+            "set [tickets] ref to an existing branch in frob.toml",
+        )
+    })?;
+    let ci_gate = base_ci::gate(
+        &wt,
+        &wt_path,
+        base,
+        opts.ci_reader.as_deref(),
+        opts.override_base_ci.as_deref(),
+    )?;
+    let mut base_merge = None;
+    let fork = wt.merge_base(&base_ref(base), &branch)?;
+    let mut base_merged = fork == Some(base_oid);
+    if !base_merged && !opts.dry_run {
+        base_merge = Some(merge_base_in(&wt, &wt_path, base, &handle)?);
+        base_merged = true;
+    } else if base_merged {
+        base_merge = Some("up-to-date".to_owned());
+    } else if ledger_only_ahead(&wt, fork, base_oid, &site.ledger.config().dir)? {
+        // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+        // Trunk-mode ticket verbs commit to the base all the time; those commits carry no code.
+        tracing::info!(
+            base,
+            "dry run: the base is ahead only by ledger commits; treated as merged"
+        );
+        base_merge = Some("up-to-date (the base moved only by ledger commits)".to_owned());
+        base_merged = true;
+    }
+    let mut warnings = ci_gate.warnings;
+    let mut ratchet = Ratchet::default();
+    if base_merged {
+        ratchet = verify_check(&wt, &wt_path, &site.ledger, &handle, base, opts)?;
+    } else {
+        // A dry run leaves the base unmerged, so the ticket-scoped diff would
+        // include the base's own changes; the real land merges first.
+        warnings.push(format!(
+            "check skipped: {base} is not merged into {branch} yet and a dry run does not merge it"
+        ));
+    }
+
     let mut done_view = view.ticket.clone();
     done_view.front.outcome = Some(opts.outcome);
     warnings.extend(done.warnings(&done_view));
@@ -672,6 +704,10 @@ fn verify_check(
     base: &str,
     opts: &LandOptions,
 ) -> Result<Ratchet, LandError> {
+    // Both runs read the same tree, so the tool stages (minutes of cargo) run once, in the
+    // unscoped head run whose findings the ratchet compares; the scoped run adds only the
+    // ticket-only rules (frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W).
+    ratchet::share_build_dir(wt.common_dir(), wt_path);
     let run = |ticket: Option<&str>| {
         frob_check::run(
             wt_path,
@@ -681,6 +717,7 @@ fn verify_check(
                 ledger: Some(ledger.config().clone()),
                 clock: Some(ledger.clock().clone()),
                 skip_telemetry: true,
+                skip_tools: ticket.is_some(),
                 changelog_exempt: opts.no_changelog_reason.is_some(),
                 ..CheckOptions::default()
             },
@@ -1065,6 +1102,53 @@ fn leave_worktree(wt_path: &Path, primary: &Path) {
     }
 }
 
+/// Suffix of a worktree directory renamed aside and waiting for its background deletion.
+const REMOVING_SUFFIX: &str = ".removing";
+
+/// Rename `wt_path` aside in one step and delete it (and any earlier leftovers) on a background thread.
+///
+/// Deleting a worktree with a large build directory took 4-9 s of the land
+/// (frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W); a rename is instant, and the caller prunes the
+/// now-dangling registration. The process may exit before the deletion finishes: the next
+/// land sweeps the `.removing` leftover. Returns false when the rename failed (the caller
+/// then removes the worktree through git).
+fn detach_worktree(wt_path: &Path) -> bool {
+    let (Some(parent), Some(name)) = (wt_path.parent(), wt_path.file_name()) else {
+        return false;
+    };
+    let mut aside_name = name.to_os_string();
+    aside_name.push(REMOVING_SUFFIX);
+    let aside = parent.join(aside_name);
+    if let Err(e) = std::fs::rename(wt_path, &aside) {
+        tracing::warn!(error = %e, "worktree not renamed aside; removing it through git");
+        return false;
+    }
+    tracing::info!(aside = %aside.display(), "worktree renamed aside; deleting in the background");
+    let parent = parent.to_path_buf();
+    std::thread::spawn(move || sweep_removing(&parent));
+    true
+}
+
+/// Delete every `*.removing` directory directly under `parent`; failures are logged.
+fn sweep_removing(parent: &Path) {
+    let Ok(entries) = std::fs::read_dir(parent) else {
+        return;
+    };
+    for e in entries.flatten() {
+        if !e.file_name().to_string_lossy().ends_with(REMOVING_SUFFIX) {
+            continue;
+        }
+        match std::fs::remove_dir_all(e.path()) {
+            Ok(()) => {
+                tracing::info!(dir = %e.path().display(), "background worktree deletion done");
+            }
+            Err(err) => {
+                tracing::warn!(dir = %e.path().display(), error = %err, "background worktree deletion failed");
+            }
+        }
+    }
+}
+
 /// Remove the worktree and its (now merged) branch; failures are warnings because the land is done.
 fn remove_worktree(
     repo: &Repo,
@@ -1079,10 +1163,14 @@ fn remove_worktree(
     let merged = repo
         .rev_parse(branch)
         .is_ok_and(|b| repo.merge_base(&base_ref(base), branch).ok().flatten() == Some(b));
-    let mut cleanup: Vec<(&str, Vec<&str>)> = vec![(
-        "worktree remove",
-        vec!["worktree", "remove", "--force", &path],
-    )];
+    let mut cleanup: Vec<(&str, Vec<&str>)> = if detach_worktree(wt_path) {
+        vec![("worktree prune", vec!["worktree", "prune"])]
+    } else {
+        vec![(
+            "worktree remove",
+            vec!["worktree", "remove", "--force", &path],
+        )]
+    };
     if merged {
         cleanup.push(("branch delete", vec!["branch", "-D", branch]));
     } else {
@@ -1110,6 +1198,22 @@ fn remove_worktree(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W
+    // frob:tests crates/frob-land/src/land.rs::detach_worktree
+    #[test]
+    fn a_detached_worktree_vanishes_at_once_and_its_leftover_is_swept() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let wt = tmp.path().join("wt");
+        std::fs::create_dir_all(wt.join("src")).expect("mkdir");
+        let stale = tmp.path().join(format!("old{REMOVING_SUFFIX}"));
+        std::fs::create_dir_all(&stale).expect("stale");
+        assert!(detach_worktree(&wt));
+        assert!(!wt.exists(), "the worktree path is free immediately");
+        sweep_removing(tmp.path());
+        assert!(!stale.exists());
+        assert!(!tmp.path().join(format!("wt{REMOVING_SUFFIX}")).exists());
+    }
 
     // frob:ticket 01M41RK1G648EJJNRK4G5RJY40
     // frob:tests crates/frob-land/src/land.rs::is_inside

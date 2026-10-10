@@ -1,0 +1,323 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-09T18:29:20Z"
+digest = "7869a3551a205f8cb936e8c7cf8b908cef8a4919f81b532c95b239dc674d4392"
+inline = """
+goway: warning: CROSS-OS: `cargo` is portable, but this run stays on linux hosts
+goway: note:   other-OS hosts that could take it: nova-windows
+goway: note:   allow every OS for this run:      goway run --any-os -- ...
+goway: note:   allow it for this project:        cross_os = true in goway.toml
+goway: note:   silence this hint:                cross_os = false in goway.toml
+goway: note: queued at position 9 behind other runs, waiting up to 1h
+goway: note: queued at position 8 behind other runs, waiting up to 1h
+goway: note: queued at position 7 behind other runs, waiting up to 1h
+goway: note: queued at position 6 behind other runs, waiting up to 1h
+goway: note: queued at position 5 behind other runs, waiting up to 1h
+goway: note: queued at position 4 behind other runs, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.5 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.3 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.4 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.0 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 4.6 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 4.5 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 4.4 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 4.3 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 4.4 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 5.5 GiB of memory free, this repository needs about 6.2 GiB; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no host has room yet (quasar: 0.3 GiB free, 1.5 GiB needed per job; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: no host has room yet (quasar: 0.9 GiB free, 1.5 GiB needed per job; xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB); queued at position 2, waiting up to 1h
+goway: note: skipped for disk room: xanders-laptop: 33.7 GiB free (918.5 MiB of it evictable), this repository needs about 85.7 GiB; using quasar
+goway: note: picked quasar (load 0.63 on 12 cores, 1 goway jobs)
+goway: note: tool versions differ across your hosts: clang 21.1.8 here (major: 10 vs 21 vs 18) (cached by goway doctor 3h ago; builds may behave differently here)
+goway: note: synced 13588 files (53 sent, 16533297 bytes, 3 deleted)
+goway: note: quasar has 6.9 GiB free: running with 3 of 12 jobs (CARGO_BUILD_JOBS=3, NEXTEST_TEST_THREADS=3, MOLD_JOBS=1, GOWAY_LINK_THREADS=3, estimated peak 6.0 GiB)
+goway: info: running on quasar (x86_64, Quasar) at 192.168.4.61 [cores>=8 (12 cores)]: cargo nextest run --profile ci --workspace
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling cfg-if v1.0.5
+   Compiling libc v0.2.189
+   Compiling once_cell v1.21.4
+   Compiling memchr v2.8.3
+   Compiling thiserror v2.0.21
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling thiserror-impl v2.0.21
+   Compiling itoa v1.0.18
+   Compiling regex-syntax v0.8.11
+   Compiling aho-corasick v1.1.5
+   Compiling serde v1.0.229
+   Compiling regex-automata v0.4.18
+   Compiling bitflags v2.13.2
+   Compiling serde_derive v1.0.229
+   Compiling getrandom v0.4.3
+   Compiling foldhash v0.2.0
+   Compiling allocator-api2 v0.2.21
+   Compiling equivalent v1.0.2
+   Compiling fastrand v2.5.0
+   Compiling hashbrown v0.17.1
+   Compiling serde_core v1.0.229
+   Compiling pin-project-lite v0.2.17
+   Compiling rustix v1.1.5
+   Compiling linux-raw-sys v0.12.1
+   Compiling find-msvc-tools v0.1.14
+   Compiling shlex v2.0.1
+   Compiling cc v1.5.1
+   Compiling tracing-core v0.1.36
+   Compiling same-file v1.0.6
+   Compiling walkdir v2.5.0
+   Compiling tracing-attributes v0.1.31
+   Compiling tempfile v3.27.0
+   Compiling zerocopy v0.8.59
+   Compiling zerocopy-derive v0.8.59
+   Compiling tracing v0.1.44
+   Compiling zmij v1.0.23
+   Compiling autocfg v1.5.1
+   Compiling fnv v1.0.7
+   Compiling bstr v1.13.1
+   Compiling version_check v0.9.5
+   Compiling parking_lot_core v0.9.12
+   Compiling crossbeam-utils v0.8.23
+   Compiling scopeguard v1.2.0
+   Compiling lock_api v0.4.14
+   Compiling smallvec v1.16.2
+   Compiling stable_deref_trait v1.2.1
+   Compiling gix-trace v0.1.21
+   Compiling tinyvec v1.13.3
+   Compiling gix-validate v0.11.4
+   Compiling unicode-normalization v0.1.25
+   Compiling gix-path v0.12.6
+   Compiling crc32fast v1.5.2
+   Compiling gix-utils v0.3.6
+   Compiling crossbeam-channel v0.5.17
+   Compiling serde_json v1.0.151
+   Compiling jiff-core v0.1.1
+   Compiling jiff v0.2.37
+   Compiling getrandom v0.3.4
+   Compiling arrayvec v0.7.8
+   Compiling generic-array v0.14.7
+   Compiling heapless v0.8.0
+   Compiling typenum v1.20.1
+   Compiling byteorder v1.5.0
+   Compiling hash32 v0.3.1
+   Compiling faster-hex v0.10.1
+   Compiling gix-error v0.3.2
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling cpufeatures v0.2.17
+   Compiling gix-quote v0.8.0
+   Compiling digest v0.10.7
+   Compiling blake3 v1.8.7
+   Compiling ref-cast v1.0.27
+   Compiling sha1 v0.10.7
+   Compiling sha1-checked v0.10.0
+   Compiling ref-cast-impl v1.0.27
+   Compiling cpufeatures v0.3.1
+   Compiling constant_time_eq v0.4.2
+   Compiling log v0.4.34
+   Compiling strsim v0.11.1
+   Compiling gix-command v0.10.1
+   Compiling gix-date v0.16.0
+   Compiling serde_derive_internals v0.30.0
+   Compiling regex v1.13.1
+   Compiling gix-actor v0.42.0
+   Compiling schemars_derive v1.2.2
+   Compiling dyn-clone v1.0.20
+   Compiling indexmap v2.14.2
+   Compiling memmap2 v0.9.11
+   Compiling lazy_static v1.5.1
+   Compiling tracing-log v0.2.0
+   Compiling sharded-slab v0.1.7
+   Compiling matchers v0.2.0
+   Compiling thread_local v1.1.10
+   Compiling ident_case v1.0.1
+   Compiling nu-ansi-term v0.50.3
+   Compiling darling_core v0.20.11
+   Compiling gob-text v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-text)
+   Compiling darling_macro v0.20.11
+   Compiling winnow v1.0.4
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling parking_lot v0.12.5
+   Compiling darling v0.20.11
+   Compiling gix-chunk v0.8.0
+   Compiling ahash v0.8.12
+   Compiling gob-macros v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-macros)
+   Compiling nonempty v0.12.0
+   Compiling inventory v0.3.24
+   Compiling cfg_aliases v0.2.2
+   Compiling schemars v1.2.2
+   Compiling prodash v31.0.1
+   Compiling unicode-bom v2.0.3
+   Compiling gix-features v0.49.1
+   Compiling hashbrown v0.14.5
+   Compiling which v8.0.6
+   Compiling tracing-serde v0.2.0
+   Compiling percent-encoding v2.3.2
+   Compiling tracing-subscriber v0.3.23
+   Compiling rustversion v1.0.23
+   Compiling gob-caps v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-caps)
+   Compiling gob-log v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-log)
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_spanned v1.1.1
+   Compiling gob-rules v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-rules)
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling gix-hash v0.26.2
+   Compiling gix-packetline v0.22.2
+   Compiling gix-bitmap v0.4.0
+   Compiling gix-config-value v0.19.1
+   Compiling gix-sec v0.14.2
+   Compiling filetime v0.2.29
+   Compiling dashmap v6.2.1
+   Compiling gix-fs v0.22.1
+   Compiling encoding_rs v0.8.42
+   Compiling gix-tempfile v24.0.0
+   Compiling nix v0.31.3
+   Compiling multiversion_no_op v1.0.0
+   Compiling core_detect v1.0.0
+   Compiling simdutf8 v0.1.5
+   Compiling gix-hashtable v0.16.0
+   Compiling crossbeam-epoch v0.9.21
+   Compiling crossbeam-deque v0.8.8
+   Compiling gix-object v0.64.1
+   Compiling gob-exec v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-exec)
+   Compiling gix-url v0.38.0
+   Compiling gix-imara-diff v0.2.5
+   Compiling hashbrown v0.16.1
+   Compiling zlib-rs v0.6.8
+   Compiling clru v0.6.3
+   Compiling gix-lock v24.0.0
+   Compiling gix-zlib v0.1.0
+   Compiling uluru v3.1.0
+   Compiling gix-glob v0.27.1
+   Compiling arc-swap v1.9.2
+   Compiling gix-macros v0.1.6
+   Compiling io-close v0.3.7
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-traverse v0.61.0
+   Compiling gix-ignore v0.22.1
+   Compiling gix-ref v0.67.1
+   Compiling gix-index v0.55.0
+   Compiling gix-pathspec v0.20.0
+   Compiling gix-filter v0.34.0
+   Compiling gix-worktree v0.56.0
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-revision v0.49.1
+   Compiling gix-pack v0.74.2
+   Compiling gix-shallow v0.13.0
+   Compiling gix-transport v0.59.2
+   Compiling gix-refspec v0.45.1
+   Compiling gix-protocol v0.65.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-odb v0.84.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling either v1.18.0
+   Compiling anstyle v1.0.14
+   Compiling gix v0.87.1
+   Compiling utf8parse v0.2.2
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling anstyle-query v1.1.5
+   Compiling colorchoice v1.0.5
+   Compiling vcpkg v0.2.15
+   Compiling pkg-config v0.3.34
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling libsqlite3-sys v0.30.1
+   Compiling fallible-iterator v0.3.0
+   Compiling gob-time v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-time)
+   Compiling gob-git v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-git)
+   Compiling rayon-core v1.13.0
+   Compiling globset v0.4.20
+   Compiling rayon v1.12.0
+   Compiling ignore v0.4.33
+   Compiling hashlink v0.9.1
+   Compiling rusqlite v0.32.1
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gob-config v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-config)
+   Compiling gob-walk v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-walk)
+   Compiling tree-sitter-language v0.1.8
+   Compiling anstyle-parse v0.2.7
+   Compiling anstream v0.6.21
+   Compiling gob-ir v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-ir)
+   Compiling gob-diagnostics v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-diagnostics)
+   Compiling tree-sitter v0.27.0
+   Compiling tree-sitter-javascript v0.25.0
+   Compiling tree-sitter-toml-ng v0.7.0
+   Compiling tree-sitter-c-sharp v0.23.5
+   Compiling tree-sitter-html v0.23.2
+   Compiling tree-sitter-rust v0.24.2
+   Compiling tree-sitter-python v0.25.0
+   Compiling tree-sitter-md v0.5.3
+   Compiling tree-sitter-typescript v0.23.2
+   Compiling tree-sitter-css v0.25.0
+   Compiling streaming-iterator v0.1.9
+   Compiling gob-cache v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-cache)
+   Compiling foldhash v0.1.5
+   Compiling hashbrown v0.15.5
+   Compiling cobs v0.3.0
+   Compiling fixedbitset v0.5.7
+   Compiling gob-languages v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-languages)
+   Compiling petgraph v0.8.3
+   Compiling postcard v1.1.3
+   Compiling gob-fs v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-fs)
+   Compiling gob-symbols v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-symbols)
+   Compiling rand_core v0.9.5
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling rand v0.9.5
+   Compiling heck v0.5.0
+   Compiling anstyle-parse v1.0.0
+   Compiling anstream v1.0.0
+   Compiling clap_lex v1.1.1
+   Compiling similar v2.7.0
+   Compiling clap_builder v4.6.7
+   Compiling clap_derive v4.6.7
+   Compiling clap v4.6.7
+   Compiling ucd-trie v0.1.7
+   Compiling pest v2.9.2
+   Compiling pest_meta v2.9.2
+   Compiling pest_generator v2.9.2
+   Compiling pest_derive v2.9.2
+   Compiling console v0.16.6
+   Compiling error_set_impl v0.9.2
+   Compiling insta v1.48.0
+   Compiling ulid v1.2.1
+   Compiling num-traits v0.2.19
+   Compiling gob-cli v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-cli)
+   Compiling error_set v0.9.2
+   Compiling frob-ledger v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/frob-ledger)
+   Compiling gob-lock v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-lock)
+   Compiling wait-timeout v0.2.1
+   Compiling semver v1.0.28
+   Compiling crunk-values v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/crunk-values)
+   Compiling crunk-spec v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/crunk-spec)
+   Compiling gob-directives v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-directives)
+   Compiling frob-pm v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/frob-pm)
+   Compiling gob-check v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-check)
+   Compiling crunk-tailwind v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/crunk-tailwind)
+   Compiling frob-release v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/frob-release)
+   Compiling bit-vec v0.8.0
+   Compiling bit-set v0.8.0
+   Compiling crunk-ingest v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/crunk-ingest)
+   Compiling frob-lease v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/frob-lease)
+   Compiling frob-ack v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/frob-ack)
+   Compiling frob-evidence v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/frob-evidence)
+   Compiling crunk-tokens v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/crunk-tokens)
+   Compiling grimble-model v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/grimble-model)
+   Compiling gob-mdtest v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/gob-mdtest)
+   Compiling frob-tests v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-1/crates/frob-tests)
+   Compiling quick-error v1.2.3
+"""
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --wait 60m -- cargo nextest run --profile ci --workspace"
+size = 15589
+status = "unmeasured"
+at = "2026-10-09T18:29:20Z"
+actor = "lognd"
+rev = 1

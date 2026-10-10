@@ -421,18 +421,125 @@ pub fn parse_junit(xml: &str) -> Parsed {
 
 static JUNIT_SEQ: AtomicU64 = AtomicU64::new(0);
 
+// frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+/// How pytest is started: the program, the arguments before pytest's own, and a label for `--dry-run`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PytestRunner {
+    program: Program,
+    prefix: Vec<String>,
+    label: String,
+}
+
+impl PytestRunner {
+    /// The command line as shown by `frob test --dry-run` (the interpreter relative to the repository when it lives there).
+    pub fn label(&self) -> &str {
+        &self.label
+    }
+}
+
+// frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+/// Pick the pytest launcher for the work tree `root`.
+///
+/// `python` (`[tests] python`) wins: a bare name is found on `PATH`, a path is taken from `root` when relative.
+/// Without it the project's own `.venv` interpreter in `root` runs `-m pytest`; with neither, `pytest` on `PATH`.
+pub fn pytest_runner(root: &Path, python: &str) -> PytestRunner {
+    let interpreter = |path: PathBuf| {
+        let label = path
+            .strip_prefix(root)
+            .map_or_else(|_| path.display().to_string(), |r| r.display().to_string());
+        PytestRunner {
+            label: format!("{} -m pytest", label.replace('\\', "/")),
+            program: Program::Hook { path },
+            prefix: vec!["-m".to_owned(), "pytest".to_owned()],
+        }
+    };
+    if !python.is_empty() {
+        if python.contains(['/', '\\']) {
+            return interpreter(root.join(python));
+        }
+        return PytestRunner {
+            program: Program::Tool {
+                name: python.to_owned(),
+            },
+            prefix: vec!["-m".to_owned(), "pytest".to_owned()],
+            label: format!("{python} -m pytest"),
+        };
+    }
+    for rel in [".venv/bin/python", ".venv/Scripts/python.exe"] {
+        let path = root.join(rel);
+        if path.is_file() {
+            return interpreter(path);
+        }
+    }
+    PytestRunner {
+        program: Program::Tool {
+            name: "pytest".to_owned(),
+        },
+        prefix: Vec::new(),
+        label: "pytest".to_owned(),
+    }
+}
+
+// frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+/// The files pytest's transcript names as failing to collect (`ERROR collecting <file>` headers and `ERROR <file> - ...` summary lines), in order and unique.
+fn collection_error_files(transcript: &str) -> Vec<String> {
+    let mut files: Vec<String> = Vec::new();
+    for line in transcript.lines() {
+        let line = line.trim().trim_matches('_').trim();
+        let token = if let Some(rest) = line.strip_prefix("ERROR collecting ") {
+            rest.split_whitespace().next()
+        } else if let Some(rest) = line.strip_prefix("ERROR ") {
+            rest.split_whitespace().next()
+        } else {
+            None
+        };
+        let Some(token) = token else { continue };
+        let file = token.split("::").next().unwrap_or(token);
+        if file.contains(".py") && !files.iter().any(|f| f == file) {
+            files.push(file.to_owned());
+        }
+    }
+    files
+}
+
+// frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+/// The refusal for a pytest run that exited `code` (2, 3 or 4) without running the tests, naming the files it failed to collect.
+fn runner_error(code: i32, transcript: &str) -> EvidenceError {
+    let files = collection_error_files(transcript);
+    let detail = if files.is_empty() {
+        transcript
+            .lines()
+            .rev()
+            .find(|l| !l.trim().is_empty())
+            .map_or_else(String::new, |l| format!("; last output: {}", l.trim()))
+    } else {
+        format!("; collection errors in {}", files.join(", "))
+    };
+    tracing::warn!(
+        code,
+        detail,
+        "pytest could not run the tests; recording nothing"
+    );
+    EvidenceError::RunnerError {
+        exit_code: code,
+        files: detail,
+    }
+}
+
 /// Run `pytest -o junit_family=xunit1 --junitxml=<tmp> <args>` in `cwd` and capture the verdict and executed tests.
 ///
-/// `pytest` must be in `allowed` (`[evidence] allowed_tools`); the junit file is read, then removed. The transcript is
-/// pytest's stdout then stderr, left to [`build_record`] to redact and escape.
+/// `pytest` must be in `allowed` (`[evidence] allowed_tools`); `python` is `[tests] python` (see [`pytest_runner`]).
+/// The junit file is read, then removed. The transcript is pytest's stdout then stderr, left to [`build_record`] to redact and escape.
 ///
 /// # Errors
 ///
-/// [`EvidenceError::ToolNotAllowed`] when `pytest` is not allowlisted, [`EvidenceError::Exec`] when it cannot start.
+/// [`EvidenceError::ToolNotAllowed`] when `pytest` is not allowlisted, [`EvidenceError::Exec`] when it cannot start,
+/// [`EvidenceError::RunnerError`] when pytest exits 2, 3 or 4 (it could not run the tests, so there is nothing to record).
 pub fn run_pytest(
     runner: &Runner,
     allowed: &[String],
     cwd: &Path,
+    python: &str,
     args: &[String],
     timeout: Duration,
 ) -> Result<Capture> {
@@ -447,16 +554,16 @@ pub fn run_pytest(
         std::process::id(),
         JUNIT_SEQ.fetch_add(1, Ordering::Relaxed)
     ));
-    let mut full = vec![
+    let launcher = pytest_runner(cwd, python);
+    tracing::info!(runner = launcher.label(), "starting pytest");
+    let mut full = launcher.prefix;
+    full.extend([
         "-o".to_owned(),
         "junit_family=xunit1".to_owned(),
         format!("--junitxml={}", junit.display()),
-    ];
+    ]);
     full.extend(args.iter().cloned());
-    let program = Program::Tool {
-        name: "pytest".to_owned(),
-    };
-    let out = runner.run(&spec(program, full, cwd, timeout));
+    let out = runner.run(&spec(launcher.program, full, cwd, timeout));
     let xml = std::fs::read_to_string(&junit).unwrap_or_default();
     if junit.exists()
         && let Err(e) = std::fs::remove_file(&junit)
@@ -468,6 +575,9 @@ pub fn run_pytest(
     let mut transcript = out.stdout;
     transcript.push_str(&out.stderr);
     let (exit_code, measured) = exit_of(out.status);
+    if let Some(code @ 2..=4) = exit_code {
+        return Err(runner_error(code, &transcript));
+    }
     let passed = exit_code == Some(0) && seen.failed.is_empty();
     tracing::info!(
         ?exit_code,
@@ -1386,6 +1496,7 @@ pub fn capture(
                 &ws.runner(),
                 &ws.evidence.allowed_tools,
                 &ws.root,
+                &ws.tests.python,
                 &args,
                 ws.timeout(),
             )?;
@@ -1628,6 +1739,7 @@ mod tests {
             &runner,
             &["cargo".to_owned()],
             Path::new("."),
+            "",
             &[],
             Duration::from_secs(5),
         )
@@ -1769,5 +1881,37 @@ mod tests {
         assert!(cap.transcript.contains("--ci --json"), "{}", cap.transcript);
         assert!(cap.transcript.contains("x.test.ts"), "{}", cap.transcript);
         assert!(!js_matched_no_tests(&cap));
+    }
+
+    // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+    #[test]
+    fn pytest_runs_through_the_project_interpreter_when_there_is_one() {
+        // frob:tests crates/frob-evidence/src/provider.rs::pytest_runner
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path();
+        assert_eq!(pytest_runner(root, "").label(), "pytest");
+        std::fs::create_dir_all(root.join(".venv/bin")).expect("venv");
+        std::fs::write(root.join(".venv/bin/python"), "").expect("python");
+        let venv = pytest_runner(root, "");
+        assert_eq!(venv.label(), ".venv/bin/python -m pytest");
+        assert_eq!(venv.prefix, ["-m", "pytest"]);
+        assert!(matches!(venv.program, Program::Hook { .. }));
+        let named = pytest_runner(root, "python3.12");
+        assert_eq!(named.label(), "python3.12 -m pytest");
+        assert!(matches!(named.program, Program::Tool { .. }));
+        let pathed = pytest_runner(root, "tools/py");
+        assert_eq!(pathed.label(), "tools/py -m pytest");
+    }
+
+    // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+    #[test]
+    fn collection_errors_are_named_by_file_path_never_module() {
+        // frob:tests crates/frob-evidence/src/provider.rs::collection_error_files
+        let out = "_____ ERROR collecting tests/test_m.py _____\nImportError\n=== short test summary info ===\nERROR tests/test_m.py - ImportError: no module\nERROR tests/sub/test_n.py::TestK - boom\n";
+        assert_eq!(
+            collection_error_files(out),
+            ["tests/test_m.py", "tests/sub/test_n.py"]
+        );
+        assert!(collection_error_files("1 passed").is_empty());
     }
 }

@@ -3,7 +3,7 @@
 use std::path::Path;
 
 use gob_cache::{ArtifactKey, Cache};
-use gob_directives::frob::Doc;
+use gob_directives::frob::{Describes, Doc};
 use gob_directives::{Binding, Directive, ScanConfig, Scanner};
 use gob_languages::{Language, grammar_identity};
 use gob_lock::{LockFile, file_name};
@@ -20,10 +20,10 @@ use crate::error::AckError;
 pub const PRODUCT: &str = "frob";
 
 /// The verb text that makes a file worth scanning (cheap prefilter).
-const DOC_MARKER: &str = "frob:doc";
+const DOC_MARKER: &str = "frob:";
 
 /// Bump when the scan or its binding output changes for the same input; part of the cache key.
-const SCAN_VERSION: u32 = 2;
+const SCAN_VERSION: u32 = 3;
 
 /// One cached `frob:doc` directive of a file, free of interner ids.
 #[derive(Serialize, Deserialize)]
@@ -74,25 +74,54 @@ fn scan_file(
     let file = ids.intern(&entry.path);
     let mut out = Vec::new();
     for d in scanner.scan_in(file, lang, &text, &symbols).directives {
-        if d.namespace != "frob" || d.verb != "doc" {
+        let Some((symbol, target)) =
+            doc_pair(&d.namespace, &d.verb, &d.args, &d.bound, &entry.path)
+        else {
             continue;
-        }
-        let Ok(doc) = Doc::parse_args(&d.args) else {
-            tracing::debug!(path = %entry.path, "malformed frob:doc skipped (PARSE001 reports it)");
-            continue;
-        };
-        let symbol = match d.bound {
-            Binding::Symbol(s) => s,
-            Binding::File => Symref::file(&entry.path),
         };
         out.push(Stored {
             start: u32::from(d.span.range.start()),
             end: u32::from(d.span.range.end()),
             symbol,
-            target: doc.target.0,
+            target,
         });
     }
     out
+}
+
+// frob:ticket 01M4FD0TNGWDEYHP9FHH0RPXYR
+/// The (code symbol, doc section) pair of a `frob:doc` or `frob:describes` directive at `path`.
+///
+/// `frob:doc` binds the annotated symbol to the named section; `frob:describes`
+/// sits in a doc and binds the named symbol to the enclosing section (the file
+/// when above any heading). Malformed arguments yield `None` (PARSE001 reports them).
+pub fn doc_pair(
+    namespace: &str,
+    verb: &str,
+    args: &gob_directives::ArgList,
+    bound: &Binding,
+    path: &str,
+) -> Option<(Symref, Symref)> {
+    if namespace != "frob" {
+        return None;
+    }
+    let here = match bound {
+        Binding::Symbol(s) => s.clone(),
+        Binding::File => Symref::file(path),
+    };
+    let pair = match verb {
+        "doc" => Doc::parse_args(args).ok().map(|doc| (here, doc.target.0)),
+        "describes" => Describes::parse_args(args).ok().map(|d| (d.symbol.0, here)),
+        _ => return None,
+    };
+    if pair.is_none() {
+        tracing::debug!(
+            path,
+            verb,
+            "malformed doc directive skipped (PARSE001 reports it)"
+        );
+    }
+    pair
 }
 
 /// One `frob:doc` directive: a symbol bound to a markdown section.

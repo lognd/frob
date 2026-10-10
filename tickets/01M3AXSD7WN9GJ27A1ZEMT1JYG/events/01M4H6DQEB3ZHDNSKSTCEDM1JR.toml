@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/lang/_config_detect.py (new)", "src/frob/lang/_config_doc.py (new)", "docs/modules/lang.md"]
+new = ["src/frob/lang/_config_detect.py (new)", "src/frob/lang/_config_doc.py (new)", "docs/modules/lang.md", "docs/design/language-engines.md"]
+at = "2026-10-09T20:42:09Z"
+actor = "lognd"
+rev = 1

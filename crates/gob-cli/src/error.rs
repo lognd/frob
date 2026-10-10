@@ -59,6 +59,35 @@ impl<T> Payload<T> {
     }
 }
 
+thread_local! {
+    /// Notices queued by [`Payload::note`] during the running verb.
+    static NOTES: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+impl Payload<()> {
+    /// Queue a warning for the running verb's envelope from anywhere below its handler (a shared helper that opens the ledger, say).
+    ///
+    /// The root drains the queue into `warnings` when the verb returns, success or failure.
+    pub fn note(message: impl Into<String>) {
+        let message = message.into();
+        tracing::debug!(%message, "verb notice queued");
+        NOTES.with(|n| n.borrow_mut().push(message));
+    }
+}
+
+/// Drop notices left by an earlier verb on this thread (a refused verb never drains its queue).
+pub(crate) fn clear_notes() {
+    NOTES.with(|n| n.borrow_mut().clear());
+}
+
+/// Take the notices queued since [`clear_notes`], oldest first, without duplicates.
+pub(crate) fn take_notes() -> Vec<String> {
+    let mut notes = NOTES.with(|n| std::mem::take(&mut *n.borrow_mut()));
+    let mut seen = std::collections::BTreeSet::new();
+    notes.retain(|m| seen.insert(m.clone()));
+    notes
+}
+
 /// The payload of [`CliError::Findings`], boxed to keep the error small.
 #[derive(Debug)]
 pub struct FindingsFailure {

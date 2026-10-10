@@ -5,20 +5,18 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
 
-use frob_ack::{DocDirective, Inputs};
+use frob_ack::{DocDirective, Inputs, doc_pair};
 use frob_ledger::{Ledger, LedgerConfig};
 use frob_obligations::{InvariantsConfig, ObligationInputs};
 use gob_cache::{ArtifactKey, Cache};
 use gob_check::{CollectCx, Collected};
-use gob_directives::frob::Doc;
 use gob_directives::{
-    Binding, Directive, DirectiveRecord, ScanConfig, Scanner, WIRE_VERSION, decode_records,
-    encode_records,
+    DirectiveRecord, ScanConfig, Scanner, WIRE_VERSION, decode_records, encode_records,
 };
 use gob_languages::{Language, grammar_identity};
 use gob_lock::{LockFile, file_name};
 use gob_rules::Finding;
-use gob_symbols::{EXTRACTOR_VERSION, Symref, Target, build_graph_with_stats, extract_file};
+use gob_symbols::{EXTRACTOR_VERSION, Target, build_graph_with_stats, extract_file};
 use gob_text::{FileId, FileInterner};
 use gob_walk::{FileEntry, Roles};
 use rayon::prelude::*;
@@ -298,29 +296,23 @@ fn scan_one(
     }))
 }
 
-/// The `frob:doc` directives among `directives`, in the shape `frob-ack` evaluates.
+// frob:ticket 01M4FD0TNGWDEYHP9FHH0RPXYR
+/// The `frob:doc` and `frob:describes` directives among `directives`, in the shape `frob-ack` evaluates.
 fn doc_directives(directives: &[DirectiveRecord], files: &FileInterner) -> Vec<DocDirective> {
     let mut out = Vec::new();
-    for d in directives
-        .iter()
-        .filter(|d| d.namespace == "frob" && d.verb == "doc")
-    {
-        let Ok(doc) = Doc::parse_args(&d.args) else {
-            tracing::debug!("malformed frob:doc skipped (PARSE001 reports it)");
-            continue;
-        };
+    for d in directives {
         let Some(path) = files.path(d.span.file) else {
             continue;
         };
-        let symbol = match &d.bound {
-            Binding::Symbol(s) => s.clone(),
-            Binding::File => Symref::file(path),
+        let Some((symbol, target)) = doc_pair(&d.namespace, &d.verb, &d.args, &d.bound, path)
+        else {
+            continue;
         };
         out.push(DocDirective {
             file: path.to_owned(),
             span: d.span,
             symbol,
-            target: doc.target.0,
+            target,
         });
     }
     out

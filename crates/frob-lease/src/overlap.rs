@@ -9,9 +9,10 @@
 //! missed overlap costs a merge conflict. Files matching the configured shared
 //! patterns never count.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use std::path::PathBuf;
-use std::sync::OnceLock;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use frob_ledger::TicketId;
 use frob_release::{Kind, parse_name};
@@ -241,6 +242,10 @@ fn literal_vs_wild(literal: &str, wild: &str) -> Result<bool, LeaseError> {
 pub struct Resolver {
     root: PathBuf,
     files: OnceLock<Result<Vec<String>, String>>,
+    /// Files matched per scope (before the shared exemption), so a scope is matched once.
+    matched: Mutex<HashMap<Vec<String>, Arc<BTreeSet<String>>>>,
+    /// How many scopes were actually matched against the file list (cache misses).
+    match_runs: AtomicUsize,
 }
 
 impl Resolver {
@@ -249,7 +254,14 @@ impl Resolver {
         Self {
             root,
             files: OnceLock::new(),
+            matched: Mutex::new(HashMap::new()),
+            match_runs: AtomicUsize::new(0),
         }
+    }
+
+    /// How many scopes were matched against the file list so far; repeats are served from the cache.
+    pub fn match_runs(&self) -> usize {
+        self.match_runs.load(Ordering::Relaxed)
     }
 
     fn all_files(&self) -> Result<&[String], LeaseError> {
@@ -259,13 +271,60 @@ impl Resolver {
                 ..WalkConfig::default()
             };
             gob_walk::walk(&self.root, &cfg)
-                .map(|r| r.files.into_iter().map(|f| f.path).collect())
+                .map(|r| {
+                    let mut paths: Vec<String> = r.files.into_iter().map(|f| f.path).collect();
+                    paths.sort_unstable();
+                    paths
+                })
                 .map_err(|e| e.to_string())
         });
         walked
             .as_ref()
             .map(Vec::as_slice)
             .map_err(|e| LeaseError::Walk(e.clone()))
+    }
+
+    /// Files matching any of `scope`, shared exemption not applied, computed once per distinct scope.
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::BadGlob`] or [`LeaseError::Walk`].
+    pub fn matching(&self, scope: &[String]) -> Result<Arc<BTreeSet<String>>, LeaseError> {
+        if scope.is_empty() {
+            return Ok(Arc::default());
+        }
+        let cached = self
+            .matched
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get(scope)
+            .cloned();
+        if let Some(hit) = cached {
+            return Ok(hit);
+        }
+        let all = self.all_files()?;
+        let mut files = BTreeSet::new();
+        for g in scope {
+            // `all` is sorted, so the files under the glob's literal prefix are one contiguous run.
+            let g = normalize(g);
+            let prefix = literal_prefix(&g);
+            let start = all.partition_point(|f| f.as_str() < prefix);
+            let run = all[start..].iter().take_while(|f| f.starts_with(prefix));
+            let m = matcher(&g)?;
+            files.extend(run.filter(|f| m.is_match(f.as_str())).cloned());
+        }
+        self.match_runs.fetch_add(1, Ordering::Relaxed);
+        tracing::debug!(
+            globs = scope.len(),
+            files = files.len(),
+            "scope matched against the work tree"
+        );
+        let files = Arc::new(files);
+        self.matched
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(scope.to_vec(), files.clone());
+        Ok(files)
     }
 
     /// Files matching any of `scope`, minus those matching `shared`.
@@ -278,14 +337,10 @@ impl Resolver {
         scope: &[String],
         shared: &GlobSet,
     ) -> Result<BTreeSet<String>, LeaseError> {
-        if scope.is_empty() {
-            return Ok(BTreeSet::new());
-        }
-        let set = glob_set(scope)?;
         Ok(self
-            .all_files()?
+            .matching(scope)?
             .iter()
-            .filter(|f| set.is_match(f.as_str()) && !shared.is_match(f.as_str()))
+            .filter(|f| !shared.is_match(f.as_str()))
             .cloned()
             .collect())
     }
@@ -340,13 +395,16 @@ pub fn scopes_overlap(
             }
         }
     }
-    let (mut ra, mut rb) = (
-        resolver.resolve(&ea, shared)?,
-        resolver.resolve(&eb, shared)?,
-    );
-    ra.retain(|f| !is_own_fragment(f, a_ticket));
-    rb.retain(|f| !is_own_fragment(f, b_ticket));
-    let common: Vec<&String> = ra.intersection(&rb).take(3).collect();
+    let (ra, rb) = (resolver.matching(&ea)?, resolver.matching(&eb)?);
+    let common: Vec<&String> = ra
+        .intersection(&rb)
+        .filter(|f| {
+            !shared.is_match(f.as_str())
+                && !is_own_fragment(f, a_ticket)
+                && !is_own_fragment(f, b_ticket)
+        })
+        .take(3)
+        .collect();
     Ok((!common.is_empty()).then(|| {
         common
             .iter()

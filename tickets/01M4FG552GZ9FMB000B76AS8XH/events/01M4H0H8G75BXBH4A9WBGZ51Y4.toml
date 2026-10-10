@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-cli/src/command.rs", "crates/gob-cli/src/lib.rs", "crates/gob-cli/src/render.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/doctor_cmd.rs", "crates/frob-land/src/land.rs", "docs/design/cli.md", "crates/frob/tests/envelope_invariant.rs", "crates/frob/tests/ticket_trunk_notice.rs", "changelog.d/01M4FG552GZ9FMB000B76AS8XH*", "crates/frob-land/tests/land.rs"]
+new = ["crates/gob-cli/src/command.rs", "crates/gob-cli/src/render.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/doctor_cmd.rs", "crates/frob-land/src/land.rs", "docs/design/cli.md", "crates/frob/tests/envelope_invariant.rs", "crates/frob/tests/ticket_trunk_notice.rs", "changelog.d/01M4FG552GZ9FMB000B76AS8XH*", "crates/frob-land/tests/land.rs", "crates/gob-cli/src/error.rs"]
+at = "2026-10-09T18:59:13Z"
+actor = "lognd"
+rev = 1

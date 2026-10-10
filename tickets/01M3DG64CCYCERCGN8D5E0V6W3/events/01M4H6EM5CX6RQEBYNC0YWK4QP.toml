@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/webapp/__init__.py", "src/frob/lang/_project_detect.py", "tests/unit/test_webapp_workspace_detection.py", "docs/modules/webapp.md"]
+new = ["src/frob/webapp/__init__.py", "src/frob/lang/_project_detect.py", "tests/unit/test_webapp_workspace_detection.py", "docs/modules/webapp.md", "docs/design/crunk.md"]
+at = "2026-10-09T20:42:38Z"
+actor = "lognd"
+rev = 1

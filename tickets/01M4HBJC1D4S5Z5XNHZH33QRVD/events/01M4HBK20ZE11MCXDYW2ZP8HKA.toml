@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "folded into ~RDRSZC5, which already changes frob.toml and lands next (WIP cap full)"
+at = "2026-10-09T22:12:26Z"
+actor = "lognd"
+rev = 1

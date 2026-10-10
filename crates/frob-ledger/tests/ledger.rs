@@ -1126,3 +1126,23 @@ fn events_many_equals_events_per_ticket(layout: Layout) {
     ));
 }
 both_layouts!(events_many_equals_events_per_ticket);
+
+// frob:ticket 01M4DPJG0W39SCKZE5N807V4XM
+fn doctor_resolves_the_ledger_revision_a_fixed_number_of_times(layout: Layout) {
+    let reads_for = |tickets: usize| {
+        let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+        for n in 0..tickets {
+            ledger
+                .new_ticket(NewTicket::new(format!("T{n}"), TicketType::Task))
+                .expect("new");
+        }
+        let before = ledger.git_reads();
+        let report = ledger.doctor(false).expect("doctor");
+        assert!(report.is_clean(), "{:?}", report.issues);
+        assert_eq!(report.tickets, tickets);
+        ledger.git_reads() - before
+    };
+    let (few, many) = (reads_for(2), reads_for(12));
+    assert_eq!(few, many, "doctor must not read git once per ticket");
+}
+both_layouts!(doctor_resolves_the_ledger_revision_a_fixed_number_of_times);

@@ -7,10 +7,10 @@ priority = "medium"
 parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T22:22:22Z"
+updated = "2026-10-09T20:41:59Z"
 aliases = ["T-4113"]
 labels = ["v1-cluster:B4", "triage:accepted"]
-scope = ["src/frob/strata/_outbound_destination.py", "tests/unit/strata/test_outbound_destination.py", "src/frob/strata/_waive.py", "src/frob/strata/__init__.py", "src/frob/app/sys_runner.py", "docs/strata/threat.md", "docs/design/registry/check-coverage.yaml", "design/frob.strata", "docs/design/registry/capability-via-ratchet.lock.json"]
+scope = ["src/frob/strata/_outbound_destination.py", "tests/unit/strata/test_outbound_destination.py", "src/frob/strata/_waive.py", "src/frob/strata/__init__.py", "src/frob/app/sys_runner.py", "design/frob.strata", "docs/design/security.md", "docs/design/binding.md"]
 +++
 
 F-307 H3-3 (verbatim, quoted at the bottom of T-4109's body). SYS100/SYS101

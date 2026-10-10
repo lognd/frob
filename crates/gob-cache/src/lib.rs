@@ -12,7 +12,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
-use std::time::{Duration, UNIX_EPOCH};
+use std::time::Duration;
 
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 
@@ -106,35 +106,40 @@ pub struct Cache {
     clock: std::sync::Arc<dyn gob_time::Clock>,
 }
 
-/// The default engine fingerprint of the running binary: crate version plus the executable's size and mtime.
+/// The default engine fingerprint of the running binary: crate version plus a blake3 digest of the executable's bytes.
 ///
-/// A rebuilt binary (upgrade, worktree build, any source edit) differs in
-/// size or mtime, so results cached by another build are misses. Measured
-/// at runtime from the executable's metadata (no build script, so editing a
-/// low-level crate does not force a rebuild of everything above it); when
-/// the metadata is unreadable the fingerprint is `unknown` and still scoped
-/// by the crate version.
+/// Build identity, not file identity: a rebuilt binary (upgrade, worktree
+/// build, any source edit) has different bytes, so results cached by another
+/// build are misses, while a byte-identical copy at a new path or with a new
+/// mtime (global install, landing binary) shares the cache. Measured at
+/// runtime (no build script, so editing a low-level crate does not force a
+/// rebuild of everything above it); when the executable is unreadable the
+/// fingerprint is `unknown` and still scoped by the crate version.
+// frob:ticket 01M4GS7C37A8JVNEBMJEWJGM32
 pub fn default_engine() -> &'static str {
     static ENGINE: OnceLock<String> = OnceLock::new();
     ENGINE.get_or_init(|| {
         let id = std::env::current_exe()
-            .and_then(std::fs::metadata)
-            .ok()
-            .map_or_else(
-                || "unknown".to_owned(),
-                |m| {
-                    let ns = m
-                        .modified()
-                        .ok()
-                        .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
-                        .map_or(0, |d| d.as_nanos());
-                    format!("{}-{ns}", m.len())
-                },
-            );
+            .and_then(|exe| exe_digest(&exe))
+            .unwrap_or_else(|e| {
+                tracing::warn!(error = %e, "executable unreadable; engine fingerprint is unknown");
+                "unknown".to_owned()
+            });
         let engine = format!("gob-cache/{}/exe:{id}", env!("CARGO_PKG_VERSION"));
         tracing::debug!(%engine, "default engine fingerprint");
         engine
     })
+}
+
+/// The hex blake3 digest of the file at `path`, streamed so a large debug binary is never held in memory.
+// frob:ticket 01M4GS7C37A8JVNEBMJEWJGM32
+fn exe_digest(path: &Path) -> std::io::Result<String> {
+    let started = std::time::Instant::now();
+    let mut hasher = blake3::Hasher::new();
+    hasher.update_reader(std::fs::File::open(path)?)?;
+    let digest = hasher.finalize().to_hex().to_string();
+    tracing::debug!(path = %path.display(), elapsed_ms = started.elapsed().as_millis(), "hashed executable");
+    Ok(digest)
 }
 
 /// The clock a cache uses until [`Cache::with_clock`] replaces it: rows are dated, never compared across runs.
@@ -466,6 +471,25 @@ mod tests {
             rule_version: 1,
             side_input_digest: "s".into(),
         }
+    }
+
+    // frob:tests exe_digest
+    // frob:ticket 01M4GS7C37A8JVNEBMJEWJGM32
+    #[test]
+    fn exe_digest_follows_content_not_path_or_mtime() {
+        let dir = tempfile::tempdir().unwrap();
+        let a = dir.path().join("a");
+        let b = dir.path().join("b");
+        std::fs::write(&a, b"build one").unwrap();
+        let first = exe_digest(&a).unwrap();
+        // Same bytes at a new path written later (new mtime): same build identity.
+        std::thread::sleep(Duration::from_millis(20));
+        std::fs::copy(&a, &b).unwrap();
+        assert_eq!(exe_digest(&b).unwrap(), first);
+        // Different bytes, even of the same length: a different build.
+        std::fs::write(&b, b"build two").unwrap();
+        assert_ne!(exe_digest(&b).unwrap(), first);
+        assert!(exe_digest(&dir.path().join("missing")).is_err());
     }
 
     #[test]

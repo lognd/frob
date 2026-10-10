@@ -4,6 +4,10 @@ use gob_diagnostics::ExitCode;
 
 /// Static description of a verb, enough to generate the CLI reference.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(
+    clippy::struct_excessive_bools,
+    reason = "independent verb capabilities declared in #[command(...)], not a state machine"
+)]
 pub struct CommandMeta {
     /// Verb path, words separated by single spaces (`config show`).
     pub verb: &'static str,
@@ -26,6 +30,8 @@ pub struct CommandMeta {
     pub deprecated: Option<&'static str>,
     /// True when the verb has a markdown view (`#[command(markdown)]`); `--format md` is refused elsewhere.
     pub markdown: bool,
+    /// True when the verb never changes repository state; `serve` exposes only these as MCP tools (`#[command(read_only)]`).
+    pub read_only: bool,
 }
 
 impl CommandMeta {
@@ -117,6 +123,7 @@ mod tests {
             module: "m",
             deprecated,
             markdown: false,
+            read_only: false,
         }
     }
 

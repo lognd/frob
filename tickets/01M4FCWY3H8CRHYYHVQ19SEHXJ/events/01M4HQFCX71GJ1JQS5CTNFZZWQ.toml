@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-10T01:40:09Z"
+digest = "0ed0d94190a2b05e5ebbe9982d81e5ed7704b77b5dff644e9e9460c641597de2"
+provider = "file"
+ref = "notes/research/grmb-r1-ergonomics.md"
+size = 62957
+status = "measured"
+at = "2026-10-10T01:40:09Z"
+actor = "lognd"
+rev = 1

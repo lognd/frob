@@ -47,7 +47,7 @@ pub use run::{
     nextest_args, pytest_args, run, unity_assemblies,
 };
 pub use select::{CsharpOwner, CsharpOwners, Framework, TestTarget, select_tests};
-pub use touched::{TouchedSet, build_repo_graph, touched_set};
+pub use touched::{TouchedSet, build_repo_graph, build_repo_graph_with_stats, touched_set};
 
 /// Register the `test` verb on `cli`, mirroring how the binary registers `ticket`.
 #[must_use]

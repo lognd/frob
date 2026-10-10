@@ -185,7 +185,7 @@ impl LedgerError {
                 format!("ledger ref `{ref_name}` does not exist"),
             )
             .with_remedy(
-                "set [tickets] ref in frob.toml to an existing branch, or create the branch",
+                "set [tickets] ref in frob.toml to an existing branch, create the branch, or for ref_mode = \"orphan\" run `frob ticket branch init`",
             ),
             Self::Detached => Refusal::new(
                 "E-LEDGER-DETACHED",

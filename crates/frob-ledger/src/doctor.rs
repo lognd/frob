@@ -47,6 +47,12 @@ impl DoctorReport {
     }
 }
 
+/// One ticket's card and events from the bulk walks; `None` where a bulk read failed.
+struct Prefetched {
+    card: Option<Result<Option<crate::model::Ticket>>>,
+    events: Option<Vec<crate::event::Event>>,
+}
+
 impl Ledger {
     /// Re-fold every ticket from the ledger tip and compare with its frontmatter.
     ///
@@ -83,9 +89,22 @@ impl Ledger {
                 }
             }
         }
+        // One tree walk each for every card and every event; a failed bulk read falls back to
+        // per-ticket reads, which report the unreadable ticket individually.
+        let mut cards = self.read_tickets_many_at(&hex, &ids).ok();
+        let mut event_sets = self.read_events_many_at(&hex, &known).ok();
+        tracing::debug!(
+            bulk_cards = cards.is_some(),
+            bulk_events = event_sets.is_some(),
+            "doctor prefetch"
+        );
         for id in &ids {
             report.tickets += 1;
-            if self.check_ticket(&hex, *id, &known, &mut report) {
+            let pre = Prefetched {
+                card: cards.as_mut().and_then(|m| m.remove(id)),
+                events: event_sets.as_mut().and_then(|m| m.remove(id)),
+            };
+            if self.check_ticket(&hex, *id, &known, pre, &mut report) {
                 to_fix.push(*id);
             }
         }
@@ -117,6 +136,7 @@ impl Ledger {
         hex: &str,
         id: TicketId,
         known: &std::collections::BTreeSet<TicketId>,
+        pre: Prefetched,
         report: &mut DoctorReport,
     ) -> bool {
         let issue = |code: &str, message: String| Issue {
@@ -124,7 +144,7 @@ impl Ledger {
             ticket: id,
             message,
         };
-        let stored = match self.read_ticket_at(hex, id) {
+        let stored = match pre.card.unwrap_or_else(|| self.read_ticket_at(hex, id)) {
             Ok(Some(t)) => t,
             Ok(None) => return false,
             Err(e) => {
@@ -151,7 +171,7 @@ impl Ledger {
                 ),
             ));
         }
-        let events = match self.read_events_at(hex, id) {
+        let events = match pre.events.map_or_else(|| self.read_events_at(hex, id), Ok) {
             Ok(e) => e,
             Err(e) => {
                 report

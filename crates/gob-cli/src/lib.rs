@@ -19,6 +19,7 @@ mod error;
 mod meta;
 mod render;
 mod schema_cmd;
+mod serve;
 
 // The derive expands to `::gob_cli::...`, which must resolve in this crate too.
 extern crate self as gob_cli;
@@ -35,3 +36,4 @@ pub use meta::{
     CommandEntry, CommandMeta, Described, all_commands, dangling_deprecations, markdown_verbs,
 };
 pub use schema_cmd::{SchemaCmd, SchemaData};
+pub use serve::{ServeCmd, ServeError};

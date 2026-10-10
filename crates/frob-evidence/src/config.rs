@@ -48,3 +48,13 @@ pub struct UnityTable {
     #[config(default = String::new())]
     pub editor: String,
 }
+
+// frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+/// How `frob test` and the `pytest` provider find the Python interpreter (`[tests]`).
+#[derive(Debug, Clone, ConfigTable)]
+#[config(table = "tests", materialize)]
+pub struct TestsTable {
+    /// Interpreter that runs `-m pytest` (a name on `PATH` or a path, relative ones from the repository root); empty uses `.venv` in the repository root when it has one, else `pytest` on `PATH`.
+    #[config(default = String::new())]
+    pub python: String,
+}

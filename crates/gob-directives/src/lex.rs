@@ -3,6 +3,7 @@
 use gob_text::{TextRange, TextSize};
 
 use crate::args::{ArgList, Keyed, Token};
+use crate::comments::ELIDED;
 
 /// A malformed tail: what is wrong and where.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -23,6 +24,41 @@ pub(crate) fn is_word(s: &str, dash: bool) -> bool {
     chars.next().is_some_and(|c| c.is_ascii_lowercase())
         && chars
             .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || (dash && c == '-'))
+}
+
+/// Foreign-tool pragma openers that end a directive's argument list.
+const HASH_PRAGMAS: &[&str] = &[
+    "noqa", "type:", "pragma", "pylint:", "fmt:", "isort:", "ruff:", "nosec", "mypy:", "pyright:",
+    "flake8:", "yapf:", "nolint", "pytype:",
+];
+
+/// Foreign-tool pragma openers after `//`.
+const SLASH_PRAGMAS: &[&str] = &[
+    "eslint-",
+    "@ts-",
+    "prettier-ignore",
+    "noinspection",
+    "nolint",
+    "NOLINT",
+    "tslint:",
+    "jshint",
+    "istanbul",
+    "biome-ignore",
+    "rustfmt",
+    "lint:",
+];
+
+/// True when `rest` starts a trailing foreign pragma such as `# noqa: E501`.
+fn is_foreign_pragma(rest: &str) -> bool {
+    let (marker, openers) = if let Some(r) = rest.strip_prefix('#') {
+        (r, HASH_PRAGMAS)
+    } else if let Some(r) = rest.strip_prefix("//") {
+        (r, SLASH_PRAGMAS)
+    } else {
+        return false;
+    };
+    let body = marker.trim_start();
+    openers.iter().any(|o| body.starts_with(o))
 }
 
 /// Reads a double-quoted value starting at the opening quote at `open`.
@@ -52,7 +88,46 @@ fn quoted(text: &str, open: usize, base: usize) -> Result<(String, usize), LexEr
 }
 
 /// Split `text` (the tail after the verb, starting at file offset `base`) into arguments.
+///
+/// Bytes elided by a line continuation are dropped first, so a token may span a
+/// break; ranges still point at the original bytes.
 pub(crate) fn tokenize(text: &str, base: usize) -> Result<ArgList, LexError> {
+    if !text.contains(ELIDED) {
+        return tokenize_plain(text, base);
+    }
+    let mut compact = String::with_capacity(text.len());
+    let mut origin: Vec<usize> = Vec::with_capacity(text.len() + 1);
+    for (i, c) in text.char_indices() {
+        if c != ELIDED {
+            compact.push(c);
+            origin.extend((0..c.len_utf8()).map(|k| i + k));
+        }
+    }
+    origin.push(text.len());
+    let remap = |r: TextRange| {
+        let (start, end) = (u32::from(r.start()) as usize, u32::from(r.end()) as usize);
+        let last = if end > start {
+            origin[end - 1] + 1
+        } else {
+            origin[end]
+        };
+        range_at(base, origin[start], last.max(origin[start]))
+    };
+    let mut out = tokenize_plain(&compact, 0).map_err(|e| LexError {
+        range: remap(e.range),
+        message: e.message,
+    })?;
+    for t in &mut out.positional {
+        t.range = remap(t.range);
+    }
+    for k in &mut out.keyed {
+        k.key_range = remap(k.key_range);
+        k.value.range = remap(k.value.range);
+    }
+    Ok(out)
+}
+
+fn tokenize_plain(text: &str, base: usize) -> Result<ArgList, LexError> {
     let mut out = ArgList::default();
     let mut i = 0;
     while i < text.len() {
@@ -61,6 +136,14 @@ pub(crate) fn tokenize(text: &str, base: usize) -> Result<ArgList, LexError> {
         if c.is_whitespace() {
             i += c.len_utf8();
             continue;
+        }
+        if is_foreign_pragma(rest) {
+            tracing::debug!(at = base + i, "trailing foreign pragma ends the arguments");
+            break;
+        }
+        if rest.trim_end() == "\\" {
+            tracing::debug!(at = base + i, "dangling continuation backslash ignored");
+            break;
         }
         let start = i;
         let stop = rest
@@ -172,6 +255,42 @@ mod tests {
     fn escapes() {
         let a = tokenize(r#"k="a \"b\" \\ c""#, 0).unwrap();
         assert_eq!(a.get("k").unwrap().value, r#"a "b" \ c"#);
+    }
+
+    #[test]
+    fn trailing_foreign_pragmas_end_the_arguments() {
+        for tail in [
+            "p::t kind=\"unit\"  # noqa: E501",
+            "p::t kind=\"unit\" //eslint-disable-line",
+            "p::t kind=\"unit\" # type: ignore[arg-type]",
+        ] {
+            let a = tokenize(tail, 0).unwrap();
+            assert_eq!(vals(&a), ["p::t"], "{tail}");
+            assert_eq!(a.get("kind").unwrap().value, "unit", "{tail}");
+        }
+        let q = tokenize("k=\"a # noqa b\"", 0).unwrap();
+        assert_eq!(q.get("k").unwrap().value, "a # noqa b");
+        assert_eq!(
+            vals(&tokenize("a # note b", 0).unwrap()),
+            ["a", "#", "note", "b"]
+        );
+    }
+
+    #[test]
+    fn elided_bytes_join_tokens_and_keep_ranges() {
+        let text = "p::te\0\0\0st kind=\"unit\"";
+        let a = tokenize(text, 10).unwrap();
+        assert_eq!(vals(&a), ["p::test"]);
+        assert_eq!(u32::from(a.positional[0].range.start()), 10);
+        assert_eq!(u32::from(a.positional[0].range.end()), 10 + 10);
+        let k = a.get("kind").unwrap();
+        assert_eq!(k.value.as_str(), "unit");
+    }
+
+    #[test]
+    fn dangling_backslash_is_ignored() {
+        let a = tokenize("p::t kind=\"unit\" \\", 0).unwrap();
+        assert_eq!(vals(&a), ["p::t"]);
     }
 
     #[test]

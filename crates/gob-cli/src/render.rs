@@ -20,6 +20,8 @@ pub(crate) struct Execution {
     pub exit: i32,
     pub stdout: String,
     pub stderr: String,
+    /// Set by `serve`: run the MCP loop in this directory instead of writing.
+    pub serve_cwd: Option<std::path::PathBuf>,
 }
 
 impl Execution {
@@ -29,6 +31,15 @@ impl Execution {
             exit: ExitCode::Ok.code(),
             stdout,
             stderr: String::new(),
+            serve_cwd: None,
+        }
+    }
+
+    /// Hand control to the MCP loop rooted at `cwd`.
+    pub(crate) fn serving(cwd: std::path::PathBuf) -> Self {
+        Self {
+            serve_cwd: Some(cwd),
+            ..Self::out(String::new())
         }
     }
 }
@@ -129,6 +140,7 @@ pub(crate) fn failure(verb: Option<&str>, err: &CliError, json: bool) -> Executi
             exit,
             stdout: to_json(&wire),
             stderr: String::new(),
+            serve_cwd: None,
         };
     }
     let body = envelope_error(err);
@@ -158,6 +170,7 @@ pub(crate) fn failure(verb: Option<&str>, err: &CliError, json: bool) -> Executi
             exit,
             stdout: to_json(&wire),
             stderr: String::new(),
+            serve_cwd: None,
         };
     }
     let mut text = format!("error[{}]: {}\n", body.code, body.message);
@@ -177,6 +190,7 @@ pub(crate) fn failure(verb: Option<&str>, err: &CliError, json: bool) -> Executi
         exit,
         stdout: String::new(),
         stderr: text,
+        serve_cwd: None,
     }
 }
 

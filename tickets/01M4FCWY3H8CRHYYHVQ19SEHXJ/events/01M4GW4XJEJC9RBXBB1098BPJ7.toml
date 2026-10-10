@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-09T17:42:32Z"
+digest = "4710f3fb62af58a14f0789dcbe4767136c5a617b59e7438eace7e01a53b7c7a0"
+provider = "file"
+ref = "notes/research/grmb-r1-languages.md"
+size = 71159
+status = "measured"
+at = "2026-10-09T17:42:32Z"
+actor = "lognd"
+rev = 1

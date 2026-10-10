@@ -1,6 +1,7 @@
 //! Models across files (grmb-spec 3 and 5): include resolution, cycles, names and scoping.
 
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
+// frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -36,6 +37,8 @@ pub struct ModelFiles {
     pub walk: Option<Vec<String>>,
     /// Enabled packs by pack id (the `ref` of a `pack` entity).
     pub packs: BTreeMap<String, PackPin>,
+    /// Why an enabled pack could not be loaded, by pack id (a missing or malformed pack file).
+    pub pack_problems: BTreeMap<String, String>,
     /// Rule ids accepted by exception clauses besides the registered ones.
     pub extra_rules: BTreeSet<String>,
 }

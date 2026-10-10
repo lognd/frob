@@ -449,6 +449,7 @@ impl Command for MilestoneAdd {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "milestone show",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)
@@ -485,6 +486,7 @@ impl Command for MilestoneShow {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "milestone list",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)

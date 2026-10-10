@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use frob_ledger::event::Event;
-use frob_ledger::merge::{resolve, ticket_id_of_path};
+use frob_ledger::merge::{locate, resolve_at};
 use gob_cli::clap::{Arg, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload};
 use schemars::JsonSchema;
@@ -59,7 +59,9 @@ pub struct MergeData {
     exits(ok, negative, usage, internal)
 )]
 pub struct MergeDriver {
+    base: PathBuf,
     ours: PathBuf,
+    theirs: PathBuf,
     path: String,
 }
 
@@ -105,7 +107,7 @@ impl Command for MergeDriver {
             .arg(
                 Arg::new("base")
                     .required(true)
-                    .help("Common ancestor version (%O), unused"),
+                    .help("Common ancestor version (%O); read only to find the ticket id"),
             )
             .arg(
                 Arg::new("ours")
@@ -115,7 +117,7 @@ impl Command for MergeDriver {
             .arg(
                 Arg::new("theirs")
                     .required(true)
-                    .help("Their version (%B), unused"),
+                    .help("Their version (%B); read only to find the ticket id"),
             )
             .arg(
                 Arg::new("path")
@@ -125,7 +127,14 @@ impl Command for MergeDriver {
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let path_arg = |name: &str| {
+            m.get_one::<String>(name)
+                .map(PathBuf::from)
+                .unwrap_or_default()
+        };
         Ok(Self {
+            base: path_arg("base"),
+            theirs: path_arg("theirs"),
             ours: m
                 .get_one::<String>("ours")
                 .map(PathBuf::from)
@@ -138,8 +147,22 @@ impl Command for MergeDriver {
         if frob_pm::merge::object_of_path(&self.path).is_ok() {
             return self.run_pm(ctx);
         }
-        let ledger = open(ctx)?;
-        let id = ticket_id_of_path(&self.path).map_err(|e| CliError::Usage(e.to_string()))?;
+        let abs = |p: &PathBuf| {
+            if p.is_absolute() {
+                p.clone()
+            } else {
+                ctx.cwd.join(p)
+            }
+        };
+        let ours = abs(&self.ours);
+        let texts: Vec<String> = [&ours, &abs(&self.base), &abs(&self.theirs)]
+            .into_iter()
+            .map(|p| std::fs::read_to_string(p).unwrap_or_default())
+            .collect();
+        let versions: Vec<&str> = texts.iter().map(String::as_str).collect();
+        let (layout, id) =
+            locate(&self.path, &versions).map_err(|e| CliError::Usage(e.to_string()))?;
+        let ledger = open(ctx)?.with_layout(layout);
         let root = ledger
             .repo()
             .work_dir()
@@ -153,12 +176,8 @@ impl Command for MergeDriver {
                 Err(e) => tracing::debug!(side, error = %e, "no events readable from this side"),
             }
         }
-        let ours = if self.ours.is_absolute() {
-            self.ours.clone()
-        } else {
-            ctx.cwd.join(&self.ours)
-        };
-        let report = resolve(&root, &self.path, &ours, extra)
+        tracing::debug!(path = %self.path, ?layout, %id, "merge driver located the ticket");
+        let report = resolve_at(&root, &self.path, layout, id, &ours, extra)
             .map_err(|e| CliError::Negative(e.to_string()))?;
         Ok(Payload::new(MergeData {
             ticket: report.ticket.to_string(),

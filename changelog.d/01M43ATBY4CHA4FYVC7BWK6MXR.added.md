@@ -1,0 +1,1 @@
+crunk: BP001-003, TW001-005 and TOKENS001 join crunk-rules: media queries, class-list bases and fixed widths against the declared breakpoints; arbitrary and default-scale Tailwind utilities judged on the CSS the project's own Tailwind compiles (Unresolved when it cannot run); and drift of the generated token files.

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob/src/ticket/migrate_cmd.rs", "frob.toml", "crates/frob-worktree/src/config.rs", ".gitattributes", "goway.toml", ".github/workflows/ci.yml"]
+new = ["crates/frob/src/ticket/migrate_cmd.rs", "crates/frob-ledger/src/migrate.rs", "crates/frob-ledger/src/lib.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/ticket_migrate.rs", "docs/reference/cli/frob.md", "changelog.d/**"]
+at = "2026-10-10T01:16:08Z"
+actor = "lognd"
+rev = 1

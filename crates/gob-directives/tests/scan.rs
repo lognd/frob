@@ -357,6 +357,7 @@ fn registry_lists_every_verb_with_schemas() {
             "frob:calls",
             "frob:core",
             "frob:defer",
+            "frob:describes",
             "frob:dispatcher",
             "frob:doc",
             "frob:effects",

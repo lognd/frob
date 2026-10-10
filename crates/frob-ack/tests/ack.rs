@@ -241,6 +241,34 @@ fn code_and_doc_changes_under_an_acked_binding_fire_drift001_naming_the_facet() 
     );
 }
 
+// frob:tests crates/frob-ack/src/rules.rs::Drift001
+#[test]
+fn describes_in_a_doc_pairs_without_a_code_side_frob_doc() {
+    let fx = Fixture::new();
+    fx.edit(
+        "docs/guide.md",
+        "Says goodbye.",
+        "<!-- frob:describes src/lib.rs::plain -->\nSays goodbye.",
+    );
+    fx.ack(&["src/lib.rs::plain"]);
+    assert_eq!(ids(&fx.findings()), Vec::<String>::new());
+
+    fx.edit("docs/guide.md", "Says goodbye.", "Says farewell.");
+    let found = fx.findings();
+    assert_eq!(ids(&found), ["DRIFT001"], "{found:?}");
+    assert!(messages(&found, "DRIFT001")[0].contains("target facet"));
+    fx.ack(&["src/lib.rs::plain"]);
+
+    fx.edit(
+        "src/lib.rs",
+        "x + 1\n}\n\npub fn base",
+        "x + 2\n}\n\npub fn base",
+    );
+    let found = fx.findings();
+    assert_eq!(ids(&found), ["DRIFT001"], "{found:?}");
+    assert!(messages(&found, "DRIFT001")[0].contains("body facet"));
+}
+
 // frob:tests crates/frob-ack/src/rules.rs::Affect001
 #[test]
 fn changed_public_signature_with_unacked_dependents_fires_affect001() {
