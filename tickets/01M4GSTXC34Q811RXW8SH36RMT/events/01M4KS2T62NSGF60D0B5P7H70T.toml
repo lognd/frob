@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T20:46:39Z"
+digest = "34912fe89c36f4e05f555e6f6657cca1e845d62653f819c339881386f4ae8523"
+exit_code = 0
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized] target(s) in 3.04s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2f404d7c-09f3-4848-8d4e-32f7801fdb6a with nextest profile: default
+    Starting 1 test across 9 binaries (116 tests skipped)
+        PASS [   0.036s] frob-ledger::ledger branch_mode_reads_the_configured_ref_on_a_detached_head_and_only_writes_refuse
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.037s] 1 test run: 1 passed, 116 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(=branch_mode_reads_the_configured_ref_on_a_detached_head_and_only_writes_refuse)'"
+size = 645
+status = "measured"
+tests = ["branch_mode_reads_the_configured_ref_on_a_detached_head_and_only_writes_refuse"]
+at = "2026-10-10T20:46:39Z"
+actor = "Claude"
+rev = 1
