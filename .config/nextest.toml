@@ -31,6 +31,14 @@ path = "junit.xml"
 filter = "package(gob-macros) & (binary(ui) | binary(ui_rule_attr))"
 slow-timeout = { period = "30s", terminate-after = 10 }
 
+# frob:ticket 01M4M2PCXZDTQRDNG0Z5SP0J59
+# gob-check ui_product (~5SP0J59) is the same kind of trybuild compile-fail test: it cold-builds
+# its own project dir under target/tests/trybuild and hit the 120 s guard on Windows CI
+# (TIMEOUT 120.076 s) while gob-macros ui was SLOW at 90 s. It gets the same reviewed 300 s allowance.
+[[profile.ci.overrides]]
+filter = "package(gob-check) & binary(ui_product)"
+slow-timeout = { period = "30s", terminate-after = 10 }
+
 # ~2E4H9EG: the two trybuild binaries share one project dir, target/tests/trybuild/gob-macros,
 # and each run rewrites its Cargo.toml and workspace; run concurrently (nextest runs binaries in
 # parallel) they raced: one binary's manifest and cargo lock were replaced under the other, which
@@ -43,8 +51,18 @@ trybuild = { max-threads = 1 }
 filter = "package(gob-macros) & (binary(ui) | binary(ui_rule_attr))"
 test-group = "trybuild"
 
+# frob:ticket 01M4M2PCXZDTQRDNG0Z5SP0J59
+[[profile.default.overrides]]
+filter = "package(gob-check) & binary(ui_product)"
+test-group = "trybuild"
+
 [[profile.ci.overrides]]
 filter = "package(gob-macros) & (binary(ui) | binary(ui_rule_attr))"
+test-group = "trybuild"
+
+# frob:ticket 01M4M2PCXZDTQRDNG0Z5SP0J59
+[[profile.ci.overrides]]
+filter = "package(gob-check) & binary(ui_product)"
 test-group = "trybuild"
 
 # ~2E4H9EG measurements (goway quasar, 12 cores, debug; cold unloaded -> 24 spinners, load ~35):
