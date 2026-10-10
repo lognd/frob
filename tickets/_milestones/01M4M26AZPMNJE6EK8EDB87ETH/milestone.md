@@ -30,4 +30,8 @@ bound = false
 [[criteria]]
 text = "CI is green on experimental on Linux and Windows at the release commit"
 bound = false
+
+[[criteria]]
+text = "frob release status reports no unresolved items for 0.533.0"
+bound = false
 +++
