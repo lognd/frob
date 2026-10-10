@@ -2,7 +2,8 @@
 id = "01M4GWS3GBJTFXFEGSNFB7J4FQ"
 title = "frob-land: wire culprit finding into the base-red refusal and file the blocking fix ticket"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
