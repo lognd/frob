@@ -131,3 +131,26 @@ fn every_walked_file_appears_in_the_fidelity_counts() {
     assert_eq!(report.fidelity.languages["markdown"].files_examined, 1);
     assert!(!report.fidelity.lines().is_empty());
 }
+
+// frob:ticket 01M4GKD8WNG2NW2VAR1MBP382J
+// frob:tests crates/gob-check/src/status.rs::locate_hole
+#[test]
+fn a_partial_markdown_parse_points_at_the_table_row_and_names_the_cause() {
+    let dir = fixture();
+    write(
+        dir.path(),
+        "docs/table.md",
+        b"# Table\n\n| Name | Use |\n|---|---|\n| `x|y` | fine |\n| `a||b` | broken |\n\nAfter.\n",
+    );
+    let report = run(dir.path(), &options()).expect("run");
+    let hits: Vec<&Finding> = report
+        .findings
+        .iter()
+        .filter(|f| f.severity == Severity::Unresolved && f.message.contains("docs/table.md"))
+        .filter(|f| f.message.contains("unescaped `|`"))
+        .collect();
+    assert!(!hits.is_empty(), "{:?}", report.findings);
+    let span = hits[0].span.expect("anchored");
+    assert_ne!(span.range, gob_text::TextRange::default(), "not 1:1");
+    assert!(hits[0].message.contains("line 6"), "{}", hits[0].message);
+}
