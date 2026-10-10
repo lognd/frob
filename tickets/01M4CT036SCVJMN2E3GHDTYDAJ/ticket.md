@@ -2,7 +2,7 @@
 id = "01M4CT036SCVJMN2E3GHDTYDAJ"
 title = "PM010-PM012: cycle over capacity, cycle without goal, not-ready cycle members"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
