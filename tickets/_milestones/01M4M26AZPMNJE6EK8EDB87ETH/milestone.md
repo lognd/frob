@@ -18,4 +18,8 @@ bound = false
 [[criteria]]
 text = "Every ticket under the crunk-in-the-monorepo epic is done and crunk reaches parity with the Python crunk"
 bound = false
+
+[[criteria]]
+text = "Every ticket under the M2 universal-model epic (grimble foundation, neatness and CI families) is done"
+bound = false
 +++
