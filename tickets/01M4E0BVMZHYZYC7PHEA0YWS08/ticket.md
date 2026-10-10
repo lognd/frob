@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T14:58:33Z"
-updated = "2026-10-10T15:46:45Z"
+updated = "2026-10-10T15:47:39Z"
 scope = ["changelog.d/**", "crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given `count(...)` with `certainly` or `possibly` in its body compared with `<`, `<=`, `==` or `!=`, when compiled, then GRL017 fires; `>` and `>=` stay clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a `report ... when C` clause that has a later `report` clause, when compiled and C holds `certainly` or `possibly`, then GRL017 fires; the last `report`'s `when` stays clean"
