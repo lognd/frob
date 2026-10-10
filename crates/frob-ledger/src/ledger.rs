@@ -103,6 +103,9 @@ pub struct Ledger {
     branch_scan: std::sync::Mutex<Option<(String, std::sync::Arc<BranchScan>)>>,
     /// Full index rebuilds this handle has performed (the incremental path does not count).
     rebuilds: std::sync::atomic::AtomicUsize,
+    /// Git reads that resolve a revision (tree walks and path reads) this handle has made.
+    // frob:ticket 01M4DPJG0W39SCKZE5N807V4XM
+    git_reads: std::sync::atomic::AtomicUsize,
 }
 
 /// What one walk of a ticket-branch commit found: where each ticket file is, by frontmatter ULID.
@@ -185,6 +188,7 @@ impl Ledger {
             layout: Layout::Dir,
             branch_scan: std::sync::Mutex::new(None),
             rebuilds: std::sync::atomic::AtomicUsize::new(0),
+            git_reads: std::sync::atomic::AtomicUsize::new(0),
         }
     }
 
@@ -347,6 +351,7 @@ impl Ledger {
 
     /// Blobs below the tree named by `spec` (`<oid>`, `<oid>:<path>`) as `(path relative to it, blob id)`, from one tree walk.
     pub(crate) fn list_blobs(&self, spec: &str) -> Result<Vec<(String, Oid)>> {
+        self.count_git_read();
         match self.repo.blobs_at(spec) {
             Ok(blobs) => Ok(blobs),
             Err(e) if is_rev_error(&e) => Ok(Vec::new()),
@@ -370,6 +375,7 @@ impl Ledger {
     }
 
     fn blob(&self, rev: &str, path: &str) -> Result<Option<Vec<u8>>> {
+        self.count_git_read();
         Ok(self.repo.read_blob_at(rev, path)?)
     }
 
@@ -597,6 +603,53 @@ impl Ledger {
         Ok(out)
     }
 
+    /// Read the ticket document of every ticket in `ids` at commit `tip` with one walk of the tree.
+    ///
+    /// A ticket without a file maps to `None`; a document that does not parse maps to its error,
+    /// so one bad card does not hide the rest.
+    ///
+    /// # Errors
+    ///
+    /// Git read failures of the walk itself.
+    // frob:ticket 01M4DPJG0W39SCKZE5N807V4XM
+    pub fn read_tickets_many_at(
+        &self,
+        tip: &str,
+        ids: &[TicketId],
+    ) -> Result<BTreeMap<TicketId, Result<Option<Ticket>>>> {
+        let (spec, mut wanted): (String, BTreeMap<String, TicketId>) = match self.layout {
+            Layout::Dir => (
+                format!("{tip}:{}", self.cfg.dir),
+                ids.iter()
+                    .map(|id| (format!("{id}/ticket.md"), *id))
+                    .collect(),
+            ),
+            Layout::Branch => {
+                let scan = self.branch_scan_at(tip)?;
+                (
+                    format!("{tip}^{{tree}}"),
+                    ids.iter()
+                        .filter_map(|id| scan.files.get(id).map(|p| (p.clone(), *id)))
+                        .collect(),
+                )
+            }
+        };
+        let mut out: BTreeMap<TicketId, Result<Option<Ticket>>> =
+            ids.iter().map(|id| (*id, Ok(None))).collect();
+        for (path, oid) in self.list_blobs(&spec)? {
+            let Some(id) = wanted.remove(&path) else {
+                continue;
+            };
+            let parsed = self
+                .text_of(&path, &oid)
+                .and_then(|t| doc::parse(&path, &t))
+                .map(Some);
+            out.insert(id, parsed);
+        }
+        tracing::debug!(tickets = ids.len(), "ticket documents walked once");
+        Ok(out)
+    }
+
     /// Split a path listed under the ticket root into (ticket, event file name), if it is an event file.
     fn event_path_parts<'a>(&self, path: &'a str) -> Option<(TicketId, &'a str)> {
         let mut parts = path.split('/');
@@ -691,6 +744,17 @@ impl Ledger {
             tree,
             key,
         })
+    }
+
+    /// Count one git read that resolves a revision.
+    fn count_git_read(&self) {
+        self.git_reads
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    /// How many revision-resolving git reads (tree walks, path reads) this handle has made (tests and diagnostics).
+    pub fn git_reads(&self) -> usize {
+        self.git_reads.load(std::sync::atomic::Ordering::Relaxed)
     }
 
     /// How many full index rebuilds this handle has done (tests and diagnostics).

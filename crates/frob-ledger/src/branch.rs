@@ -81,7 +81,7 @@ pub fn check_branch_name(name: &str) -> Result<(), BranchError> {
     }
 }
 
-/// Create the orphan ticket branch `branch` with a placeholder `README.md`, or report it as already there.
+/// Create the orphan ticket branch `branch` with a placeholder `README.md` and the merge-driver `.gitattributes`, or report it as already there.
 ///
 /// # Errors
 ///
@@ -107,10 +107,16 @@ pub fn init_branch(repo: &Repo, branch: &str, cas_retries: u32) -> Result<Branch
             remote_ref,
         });
     }
-    let changes = [(
-        RelPath::new("README.md")?,
-        Some(README_PLACEHOLDER.as_bytes().to_vec()),
-    )];
+    let changes = [
+        (
+            RelPath::new("README.md")?,
+            Some(README_PLACEHOLDER.as_bytes().to_vec()),
+        ),
+        (
+            RelPath::new(".gitattributes")?,
+            Some(crate::layout::branch_gitattributes("tickets").into_bytes()),
+        ),
+    ];
     let opts = CommitOptions {
         cas_retries,
         author: None,

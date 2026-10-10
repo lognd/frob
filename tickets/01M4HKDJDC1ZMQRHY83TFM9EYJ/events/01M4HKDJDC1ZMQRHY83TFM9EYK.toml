@@ -1,0 +1,13 @@
+kind = "create"
+title = "TOOL001 from a tool-stage timeout is reported retryable:false; a timeout is not a deterministic failure and the land refusal should be retryable"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 1
+labels = ["adoption:logand-app"]
+scope = ["crates/gob-check/src/tools.rs", "crates/frob-land/src/**", "changelog.d/**"]
+acceptance = ["Given a land refused only because a tool stage timed out, when the refusal is printed, then retryable is true and the remedy says to re-run (or raise timeout_secs)"]
+body = "logand.app-v2 F-574: a coverage stage timed out at 900 s under load 33-39; the land refusal said retryable:false; a plain re-run passed."
+at = "2026-10-10T00:29:15Z"
+actor = "lognd"
+rev = 1
