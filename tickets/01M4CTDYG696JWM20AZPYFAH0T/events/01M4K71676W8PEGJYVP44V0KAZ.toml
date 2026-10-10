@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T15:31:03Z"
+digest = "0ed92ec0ca05ef9ac07f1d4643ea8efdf86baf020addbaca6b658ae0c077f402"
+exit_code = 0
+inline = '''
+   Compiling serde_core v1.0.229
+   Compiling serde v1.0.229
+   Compiling syn v2.0.119
+   Compiling serde_json v1.0.151
+   Compiling tracing-serde v0.2.0
+   Compiling tracing-attributes v0.1.31
+   Compiling tracing v0.1.44
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+    Finished `test` profile [unoptimized] target(s) in 11.01s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6814eaa1-62ff-42c6-ae52-a903d8176087 with nextest profile: default
+    Starting 1 test across 6 binaries (45 tests skipped)
+        PASS [   0.442s] gob-exec::runner timeout_kills_setsid_grandchild_and_returns_promptly
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.442s] 1 test run: 1 passed, 45 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-exec -E 'test(=timeout_kills_setsid_grandchild_and_returns_promptly)'"
+size = 930
+status = "measured"
+tests = ["timeout_kills_setsid_grandchild_and_returns_promptly"]
+at = "2026-10-10T15:31:03Z"
+actor = "Claude"
+rev = 1
