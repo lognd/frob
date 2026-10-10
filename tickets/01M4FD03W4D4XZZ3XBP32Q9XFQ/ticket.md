@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T03:58:34Z"
-updated = "2026-10-10T19:50:57Z"
+updated = "2026-10-10T19:51:14Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob/**", "crates/frob-ledger/**", "changelog.d/**", "docs/design/cli.md"]
 
 [[acceptance]]
 text = "Given a repository on a feature branch with main as default branch, when frob init runs, then [tickets] ref names refs/heads/main (the remote default or main), and an explicit flag overrides it"
-bound = false
+bound = true
 +++
 
 Hullbreach platform repro on branch lognd/frob-v2-migration.
