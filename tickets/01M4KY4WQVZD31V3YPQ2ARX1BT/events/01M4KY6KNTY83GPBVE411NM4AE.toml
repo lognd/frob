@@ -1,18 +1,18 @@
 kind = "evidence"
 accepts = [1]
 captured_at = "2026-10-10T22:15:39Z"
-digest = "042f69716789def1356647cd16b3dbea10f7d10ce1a7aa171c106e33a30aefe0"
+digest = "0bc95a50fd20eefc9c00cece8719c12d437049b02c12bbfe614657f1cb0b6e93"
 exit_code = 0
 inline = """
     Blocking waiting for file lock on package cache
     Blocking waiting for file lock on build directory
     Finished `dev` profile [unoptimized] target(s) in 30.93s
-   Generated /home/user/repo/target/doc/gob_check/index.html
+   Generated <repo>/target/doc/gob_check/index.html
 """
 passed = true
 provider = "command"
 ref = """python3 -c 'import os,subprocess,sys; e=dict(os.environ, RUSTDOCFLAGS="-D warnings"); sys.exit(subprocess.call(["cargo","doc","--no-deps","-p","gob-check"],env=e))'"""
-size = 228
+size = 219
 status = "measured"
 at = "2026-10-10T22:15:39Z"
 actor = "lognd"
