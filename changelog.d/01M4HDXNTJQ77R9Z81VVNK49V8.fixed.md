@@ -1,0 +1,1 @@
+The land base-findings cache is keyed by the engine fingerprint (executable content) plus ledger config, so a refreshed binary that adds rules or atoms recomputes the base instead of reusing stale findings.

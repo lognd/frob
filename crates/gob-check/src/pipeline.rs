@@ -15,6 +15,7 @@ use crate::error::CheckError;
 use crate::filecheck::{opaque_binary, run_file_checks};
 use crate::fix;
 use crate::options::RunOptions;
+use crate::packages::{Affected, Workspace};
 use crate::product::{CollectCx, Collected, Product, ScopeView, Snapshot};
 use crate::repo::run_repo_rules;
 use crate::report::{CheckReport, Counts, FixOutcome, Tally, Timing};
@@ -24,7 +25,7 @@ use crate::status::{
     FidelityReport, SubjectStatus, is_binary, opaque_finding_for, unreadable_finding,
 };
 use crate::telemetry;
-use crate::tools::{ToolRun, start_tools};
+use crate::tools::{ToolRun, applicable_stages, start_tools};
 
 /// The engine fingerprint scoping every cached rule result: binary identity plus `EXTRACTOR_VERSION`.
 ///
@@ -99,6 +100,15 @@ fn resolve_exceptions<P: Product>(
     (findings, suppressed)
 }
 
+/// The cargo packages `files` touch (and their reverse dependencies), read from the walked manifests.
+fn affected_packages(
+    root: &Path,
+    manifests: &[String],
+    files: &std::collections::BTreeSet<String>,
+) -> Affected {
+    Workspace::load(root, manifests).affected(files)
+}
+
 /// Start the `[[check.tool]]` stages in the background unless skipped or filtered out by `--only`.
 ///
 /// They read the tree, not the rule results, so they overlap the in-process stages.
@@ -107,6 +117,8 @@ fn begin_tools(
     opts: &RunOptions,
     table: &CheckTable,
     only: &[String],
+    scope_files: Option<&std::collections::BTreeSet<String>>,
+    manifests: &[String],
 ) -> Option<ToolRun> {
     let wanted = only.is_empty()
         || only
@@ -115,7 +127,18 @@ fn begin_tools(
     if opts.skip_tools || !wanted {
         return None;
     }
-    start_tools(root, &table.tool)
+    let affected = scope_files
+        .filter(|_| {
+            table
+                .tool
+                .iter()
+                .any(|t| t.args.iter().any(|a| a == "{packages}"))
+        })
+        .map(|files| affected_packages(root, manifests, files));
+    start_tools(
+        root,
+        &applicable_stages(&table.tool, scope_files, affected.as_ref()),
+    )
 }
 
 /// Join the background tool stages and keep the findings a scope allows.
@@ -324,13 +347,19 @@ fn pass<P: Product>(
         findings: collected,
     };
     let core_digests = snap.core.index.digests.clone();
-    let tools = begin_tools(root, opts, table, only);
-
     let scope = match &opts.scope {
         Some(reference) => Some(product.resolve_scope(&snap, table, reference)?),
         None => None,
     };
     let scope_files = scope.as_ref().map(ScopeView::files);
+    let manifests: Vec<String> = snap
+        .core
+        .entries
+        .iter()
+        .filter(|e| e.path == "Cargo.toml" || e.path.ends_with("/Cargo.toml"))
+        .map(|e| e.path.clone())
+        .collect();
+    let tools = begin_tools(root, opts, table, only, scope_files, &manifests);
     product.start_external(&snap, table, scope_files);
 
     let wanted = |m: &RuleMeta| matches_only(only, m.family, m.id);
@@ -387,7 +416,14 @@ fn pass<P: Product>(
 
     let mut files = snap.core.files.clone();
     raw.extend(run_repo_rules(
-        product, &snap, &cache, &mut files, &wanted, &mut tally, table,
+        product,
+        &snap,
+        &cache,
+        &mut files,
+        &wanted,
+        &mut tally,
+        table,
+        scope_files.is_some(),
     ));
 
     raw.extend(defs::run_repo_rules(

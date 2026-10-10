@@ -57,6 +57,155 @@ debug = "line-tables-only"
 [profile.dev.package.gob-ir]
 opt-level = 2
 
+# frob:ticket 01M4D6NKK3H4V085F2C4A0JHA9
+# The ledger read path (gix object/ref/index, zlib inflate, toml, tree-sitter) is the user-visible
+# cost of every ticket verb and `frob check` in the dev profile: at opt-level 0 `ticket doable` is
+# ~12x slower than release (notes/research/profile-2026-10-07.md section 4 item 6). These
+# dependencies change rarely, so the clean-compile cost is paid once per lockfile change.
+[profile.dev.package.gix]
+opt-level = 3
+
+[profile.dev.package.gix-actor]
+opt-level = 3
+
+[profile.dev.package.gix-attributes]
+opt-level = 3
+
+[profile.dev.package.gix-config]
+opt-level = 3
+
+[profile.dev.package.gix-config-value]
+opt-level = 3
+
+[profile.dev.package.gix-date]
+opt-level = 3
+
+[profile.dev.package.gix-diff]
+opt-level = 3
+
+[profile.dev.package.gix-discover]
+opt-level = 3
+
+[profile.dev.package.gix-features]
+opt-level = 3
+
+[profile.dev.package.gix-filter]
+opt-level = 3
+
+[profile.dev.package.gix-fs]
+opt-level = 3
+
+[profile.dev.package.gix-glob]
+opt-level = 3
+
+[profile.dev.package.gix-hash]
+opt-level = 3
+
+[profile.dev.package.gix-hashtable]
+opt-level = 3
+
+[profile.dev.package.gix-ignore]
+opt-level = 3
+
+[profile.dev.package.gix-index]
+opt-level = 3
+
+[profile.dev.package.gix-object]
+opt-level = 3
+
+[profile.dev.package.gix-odb]
+opt-level = 3
+
+[profile.dev.package.gix-pack]
+opt-level = 3
+
+[profile.dev.package.gix-path]
+opt-level = 3
+
+[profile.dev.package.gix-pathspec]
+opt-level = 3
+
+[profile.dev.package.gix-ref]
+opt-level = 3
+
+[profile.dev.package.gix-refspec]
+opt-level = 3
+
+[profile.dev.package.gix-revision]
+opt-level = 3
+
+[profile.dev.package.gix-revwalk]
+opt-level = 3
+
+[profile.dev.package.gix-status]
+opt-level = 3
+
+[profile.dev.package.gix-traverse]
+opt-level = 3
+
+[profile.dev.package.gix-utils]
+opt-level = 3
+
+[profile.dev.package.gix-validate]
+opt-level = 3
+
+[profile.dev.package.gix-worktree]
+opt-level = 3
+
+[profile.dev.package.gix-zlib]
+opt-level = 3
+
+[profile.dev.package.zlib-rs]
+opt-level = 3
+
+[profile.dev.package.sha1]
+opt-level = 3
+
+[profile.dev.package.sha1-checked]
+opt-level = 3
+
+[profile.dev.package.toml]
+opt-level = 3
+
+[profile.dev.package.toml_edit]
+opt-level = 3
+
+[profile.dev.package.toml_parser]
+opt-level = 3
+
+[profile.dev.package.toml_datetime]
+opt-level = 3
+
+[profile.dev.package.tree-sitter]
+opt-level = 3
+
+[profile.dev.package.tree-sitter-c-sharp]
+opt-level = 3
+
+[profile.dev.package.tree-sitter-css]
+opt-level = 3
+
+[profile.dev.package.tree-sitter-html]
+opt-level = 3
+
+[profile.dev.package.tree-sitter-javascript]
+opt-level = 3
+
+[profile.dev.package.tree-sitter-md]
+opt-level = 3
+
+[profile.dev.package.tree-sitter-python]
+opt-level = 3
+
+[profile.dev.package.tree-sitter-rust]
+opt-level = 3
+
+[profile.dev.package.tree-sitter-toml-ng]
+opt-level = 3
+
+[profile.dev.package.tree-sitter-typescript]
+opt-level = 3
+
 # cargo-shear (build-test-ci.md section 4, D98). Every entry is a known finding whose removal is
 # tracked in ~MKG678C (the dependency removals; the full hit list is on that ticket), which deletes
 # both the dependencies and these entries. Names are workspace-wide, so this is deliberately

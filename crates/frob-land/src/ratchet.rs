@@ -77,11 +77,22 @@ pub(crate) fn notes(report: &CheckReport) -> Vec<FindingNote> {
         .collect()
 }
 
-/// The cache key of a base set: engine version plus a digest of the ledger config the check runs with.
+/// The cache key of a base set: the running engine fingerprint plus a digest of the ledger config the check runs with.
+///
+/// The engine is the gob-cache default (crate version plus executable size and mtime), so a
+/// refreshed binary that adds rules or atoms misses and recomputes the base (~VNK49V8).
 // frob:ticket 01M42MGPC19KXFQ0DS2F4YA3S9
+// frob:ticket 01M4HDXNTJQ77R9Z81VVNK49V8
 #[must_use]
 pub fn cache_key(ledger: &LedgerConfig) -> String {
+    cache_key_for(gob_cache::default_engine(), ledger)
+}
+
+/// [`cache_key`] under an explicit engine fingerprint (a filename-safe digest of engine and config).
+fn cache_key_for(engine: &str, ledger: &LedgerConfig) -> String {
     let mut h = blake3::Hasher::new();
+    h.update(engine.as_bytes());
+    h.update(b"\0");
     h.update(format!("{ledger:?}").as_bytes());
     let digest = h.finalize().to_hex();
     format!("{}-{}", env!("CARGO_PKG_VERSION"), &digest.as_str()[..16])
@@ -476,6 +487,27 @@ mod count_tests {
         let notes = [note("x"), note("x"), note("y")];
         let c = counts(&notes);
         assert_eq!((c["x"], c["y"]), (2, 1));
+    }
+
+    // frob:tests crates/frob-land/src/ratchet.rs::cache_key
+    #[test]
+    fn a_new_engine_invalidates_the_cached_base_set() {
+        // frob:ticket 01M4HDXNTJQ77R9Z81VVNK49V8
+        let cfg = LedgerConfig::default();
+        let old = cache_key_for("gob-cache/0.532.0/exe:1-1", &cfg);
+        let new = cache_key_for("gob-cache/0.532.0/exe:2-2", &cfg);
+        assert_eq!(old, cache_key_for("gob-cache/0.532.0/exe:1-1", &cfg));
+        assert_ne!(old, new, "same version, rebuilt binary");
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let path = tmp.path().join("s.json");
+        let set = BaseSet {
+            oid: "o".to_owned(),
+            key: old.clone(),
+            findings: vec![note("x")],
+        };
+        write_cache(&path, &set);
+        assert!(read_cache(&path, "o", &old).is_some());
+        assert!(read_cache(&path, "o", &new).is_none());
     }
 
     // frob:tests crates/frob-land/src/ratchet.rs::cache_key
