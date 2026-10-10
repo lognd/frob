@@ -10,6 +10,7 @@ pub mod branch_cmd;
 pub mod doctor_cmd;
 pub mod fragment_cmd;
 pub mod merge_cmd;
+pub mod migrate_cmd;
 pub mod read;
 pub mod terminal_lease;
 pub mod triage_cmd;
@@ -198,6 +199,7 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<triage_cmd::InboxList>()
         .register::<fragment_cmd::Fragment>()
         .register::<branch_cmd::BranchInit>()
+        .register::<migrate_cmd::Migrate>()
         .register::<doctor_cmd::TicketDoctor>()
         .register::<merge_cmd::MergeDriver>()
 }
