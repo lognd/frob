@@ -1,0 +1,38 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T16:08:58Z"
+digest = "2900e40eb14952985589f46afb78e14836a84353ef19eb03d527c6016d7b58c4"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling serde_core v1.0.229
+   Compiling syn v2.0.119
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling tracing-serde v0.2.0
+   Compiling tracing-attributes v0.1.31
+   Compiling tracing v0.1.44
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+    Finished `test` profile [unoptimized] target(s) in 7.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d759c59f-f305-44b8-9f57-20df19e3e3ef with nextest profile: default
+    Starting 1 test across 4 binaries (25 tests skipped)
+        PASS [   0.070s] gob-trust::guard tracked_state_files_are_named
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.071s] 1 test run: 1 passed, 25 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-trust -E 'test(=tracked_state_files_are_named)'"
+size = 1180
+status = "measured"
+tests = ["tracked_state_files_are_named"]
+at = "2026-10-10T16:08:58Z"
+actor = "Claude"
+rev = 1
