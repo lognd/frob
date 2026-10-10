@@ -135,10 +135,10 @@ enum Task {
         /// Convert and verify in memory; write nothing.
         #[arg(long)]
         dry_run: bool,
-        /// The selection file naming which open v1 tickets import (generated from the v1 gap report).
-        #[arg(long, default_value = "docs/migration/v1-selection.toml")]
-        selection: PathBuf,
-        /// Import every v1 ticket as open work, ignoring the selection (the pre-selection behaviour).
+        /// A selection file naming which open v1 tickets import (for example `docs/migration/v1-selection.toml`); without one every v1 ticket imports.
+        #[arg(long)]
+        selection: Option<PathBuf>,
+        /// Import every v1 ticket as open work, ignoring any selection (the default without `--selection`).
         #[arg(long)]
         all: bool,
         /// `--to` may be an existing v2 ledger: write only new ticket directories; refuse on any id or alias collision.
@@ -213,7 +213,7 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
                 from,
                 to,
                 dry_run,
-                selection: (!all).then_some(selection),
+                selection: selection.filter(|_| !all),
                 merge,
                 open_category: open_category.into(),
                 privacy_dir: gob_git::Repo::discover(".")
@@ -572,6 +572,18 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    // frob:ticket 01M4FCZT2N5WN3VPVJ8KB92Z06
+    // frob:tests crates/gob-dev/src/main.rs::Task
+    #[test]
+    fn import_v1_tickets_has_no_default_selection_file() {
+        let cli =
+            Cli::try_parse_from(["gob-dev", "import-v1-tickets", "--to", "out"]).expect("parses");
+        let Task::ImportV1Tickets { selection, .. } = cli.command else {
+            panic!("not an import task");
+        };
+        assert_eq!(selection, None);
     }
 
     // frob:tests crates/gob-dev/src/main.rs::profile_commands

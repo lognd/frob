@@ -426,3 +426,34 @@ fn open_category_triage_places_open_tickets_in_triage() {
     );
     assert_eq!(by("T-0003").front.category, Category::Done);
 }
+
+// frob:ticket 01M4FCZT2N5WN3VPVJ8KB92Z06
+// frob:tests crates/gob-dev/src/import_v1.rs::run
+#[test]
+fn crlf_tickets_import_and_a_sprint_becomes_a_label() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let v1 = tmp.path().join("v1");
+    for (id, sprint) in [("T-0001", "sprint: s7\n"), ("T-0002", "sprint: 12\n")] {
+        let dir = v1.join(id);
+        std::fs::create_dir_all(&dir).expect("mkdir");
+        let text = format!(
+            "---\nid: {id}\ntitle: Crlf\nstate: queued\nkind: bug\n{HEAD}{sprint}---\nbody\n"
+        )
+        .replace('\n', "\r\n");
+        std::fs::write(dir.join("ticket.md"), text).expect("write");
+    }
+    let report = run(&opts(tmp.path(), false)).expect("CRLF tickets import");
+    assert_eq!(report.rows.len(), 2);
+    assert!(!report.dropped.contains_key("sprint"));
+    let tree = load_tree(&tmp.path().join("v2")).expect("load");
+    let labels = |alias: &str| {
+        tree.iter()
+            .map(|t| doc::parse("t", &t.ticket_md).expect("parse"))
+            .find(|t| t.front.aliases == [alias])
+            .expect("alias present")
+            .front
+            .labels
+    };
+    assert!(labels("T-0001").contains(&"sprint:s7".to_owned()));
+    assert!(labels("T-0002").contains(&"sprint:12".to_owned()));
+}

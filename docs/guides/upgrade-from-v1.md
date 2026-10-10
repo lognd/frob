@@ -139,6 +139,11 @@ or PyPI. You need a checkout of the v2 source and a Rust toolchain.
 cargo dev import-v1-tickets --from /path/to/your-repo/tickets --to /path/to/tickets-v2
 ```
 
+By default every v1 ticket imports (open ones as open work); pass
+`--selection FILE` to import only the open tickets that file names. Ticket files
+with CRLF line endings (`core.autocrlf=true`) are read as they are. A v1 `sprint`
+field becomes a `sprint:<value>` label, like `milestone` becomes `milestone:<value>`.
+
 `--to` must be empty or absent. `--dry-run` converts and verifies in memory and
 writes nothing. `--map-out FILE` writes a `T-NNNN<TAB>ulid` map and
 `--report-md FILE` writes the migration report.
@@ -169,7 +174,7 @@ Limits, stated plainly:
   from it. Real times are in git history.
 - A `blocked_by` that names a ticket missing from the ledger (for example a
   draft id) is dropped, with a warning.
-- Many v1 fields are dropped: worktree, branch, sprint, rank, token usage, the
+- Many v1 fields are dropped: worktree, branch, rank, token usage, the
   scope, body and triage audit trails, waivers and others. The full list with
   reasons is in [the v1 import report](../migration/v1-import.md).
 - Only tickets move. `frob.toml`, `frob.lock`, `frob:` directives in your code,
