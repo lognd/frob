@@ -2,12 +2,12 @@
 id = "01M4FD03W4D4XZZ3XBP32Q9XFQ"
 title = "frob init on a non-main branch writes [tickets] ref = the current branch instead of the base branch"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T03:58:34Z"
-updated = "2026-10-09T03:58:34Z"
+updated = "2026-10-10T19:47:49Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob/**", "crates/frob-ledger/**", "changelog.d/**"]
 
