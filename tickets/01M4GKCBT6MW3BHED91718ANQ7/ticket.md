@@ -2,7 +2,8 @@
 id = "01M4GKCBT6MW3BHED91718ANQ7"
 title = "TOOL001 quotes a noisy INFO stderr line instead of the error; pick the excerpt from error-looking lines and the tail"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
