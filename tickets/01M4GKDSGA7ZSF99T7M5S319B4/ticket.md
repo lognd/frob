@@ -2,12 +2,12 @@
 id = "01M4GKDSGA7ZSF99T7M5S319B4"
 title = "Tool stages and evidence in fresh worktrees: uv run --no-sync fails with no .venv, vitest provider lacks node_modules/.bin on PATH, E-ATTEST-NOT-HUMAN fallback unclear"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T15:10:08Z"
-updated = "2026-10-09T22:43:57Z"
+updated = "2026-10-10T00:09:39Z"
 labels = ["adoption:logand-app", "creates:crates/frob-worktree/tests/python_env.rs"]
 scope = ["changelog.d/**", "crates/gob-check/src/tools.rs", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/tests/python_env.rs"]
 
