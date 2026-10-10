@@ -2,13 +2,13 @@
 id = "01M4E0BVMZHYZYC7PHEA0YWS08"
 title = "GRL017 misses negative positions: def bodies reset the negation count, def call sites under not do not carry it, count bodies under < or == and earlier report when clauses are not treated as negative"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T14:58:33Z"
-updated = "2026-10-10T15:00:44Z"
+updated = "2026-10-10T15:00:46Z"
 scope = ["changelog.d/**", "crates/gob-plan/**"]
 
 [[acceptance]]
