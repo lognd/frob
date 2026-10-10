@@ -1,0 +1,76 @@
+kind = "evidence"
+captured_at = "2026-10-10T23:33:18Z"
+digest = "d85b3db21f47f72261e377147d53578694fbd67e1abbb917f955323ca43962fe"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized] target(s) in 41.51s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e2bc1f99-3ee2-4341-952a-3f2a4336b483 with nextest profile: default
+    Starting 12 tests across 7 binaries (123 tests skipped)
+        PASS [   0.011s] gob-dev render::rules::tests::page_without_examples_has_no_examples_section
+        PASS [   0.016s] gob-dev render::rules::tests::fence_grows_past_inner_backticks
+        PASS [   0.024s] gob-dev render::rules::tests::page_has_title_table_explanation_examples
+        PASS [   0.009s] gob-dev::generate committed_pages_have_no_orphans_on_disk
+        PASS [   0.028s] gob-dev tests::real_workspace_found_regardless_of_compile_time_path
+        PASS [   0.027s] gob-dev::generate every_rule_has_a_page_and_every_page_a_rule
+        PASS [   0.092s] gob-dev::generate grl_catalog_page_is_generated
+        PASS [   0.111s] gob-dev::generate check_reports_stale_and_missing_files_without_writing
+        PASS [   0.099s] gob-dev::generate crunk_config_reference_and_schema_are_generated_apart_from_frobs
+        PASS [   0.118s] gob-dev::generate stale_grl_catalog_page_is_reported
+        PASS [   0.226s] gob-dev::generate one_required_reason_and_one_polarity
+        PASS [   0.245s] gob-dev::generate output_is_deterministic_and_check_passes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.366s] 12 tests run: 12 passed, 123 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E '(package(=gob-dev) & (test(=check_reports_stale_and_missing_files_without_writing) | test(=committed_pages_have_no_orphans_on_disk) | test(=crunk_config_reference_and_schema_are_generated_apart_from_frobs) | test(=every_rule_has_a_page_and_every_page_a_rule) | test(=grl_catalog_page_is_generated) | test(=one_required_reason_and_one_polarity) | test(=output_is_deterministic_and_check_passes) | test(=render::rules::tests::fence_grows_past_inner_backticks) | test(=render::rules::tests::page_has_title_table_explanation_examples) | test(=render::rules::tests::page_without_examples_has_no_examples_section) | test(=stale_grl_catalog_page_is_reported) | test(=tests::real_workspace_found_regardless_of_compile_time_path)))'"
+size = 4266
+status = "measured"
+tests = ["render::rules::tests::page_without_examples_has_no_examples_section", "render::rules::tests::fence_grows_past_inner_backticks", "render::rules::tests::page_has_title_table_explanation_examples", "tests::real_workspace_found_regardless_of_compile_time_path", "committed_pages_have_no_orphans_on_disk", "every_rule_has_a_page_and_every_page_a_rule", "grl_catalog_page_is_generated", "check_reports_stale_and_missing_files_without_writing", "crunk_config_reference_and_schema_are_generated_apart_from_frobs", "stale_grl_catalog_page_is_reported", "one_required_reason_and_one_polarity", "output_is_deterministic_and_check_passes"]
+at = "2026-10-10T23:33:18Z"
+actor = "lognd"
+rev = 1
