@@ -986,3 +986,36 @@ fn heartbeat_from_inside_the_worktree_renews_its_lease() {
         "14000 s after the take, live only because the heartbeat at 7000 s renewed it"
     );
 }
+
+// frob:ticket 01M4BMRX5T7R0BH9P7HZZQ6PA9
+#[test]
+fn each_scope_is_matched_once_across_many_overlap_checks() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    for f in ["a/x.rs", "b/y.rs", "c/z.rs", "d/w.rs"] {
+        write(dir.path(), f);
+    }
+    let store = store_in(dir.path(), LeaseConfig::default());
+    let scopes = [scope(&["a/*.rs"]), scope(&["b/*.rs"]), scope(&["c/*.rs"])];
+    let held: Vec<(TicketId, Holder, Vec<String>)> = scopes
+        .iter()
+        .map(|s| (TicketId::mint(), holder("alice"), s.clone()))
+        .collect();
+    for (id, h, s) in &held {
+        store.acquire(*id, h, s).expect("acquire");
+    }
+    // Many further acquires each overlap-check against every live lease; nothing is re-matched.
+    for _ in 0..5 {
+        for (id, h, s) in &held {
+            store.acquire(*id, h, s).expect("renew");
+        }
+        store
+            .acquire(TicketId::mint(), &holder("bob"), &scope(&["d/*.rs"]))
+            .map(|_| ())
+            .ok();
+    }
+    assert_eq!(
+        store.resolver().match_runs(),
+        4,
+        "4 distinct scopes, matched once each"
+    );
+}

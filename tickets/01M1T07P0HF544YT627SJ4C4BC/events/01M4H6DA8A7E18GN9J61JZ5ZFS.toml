@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/strata/_outbound_destination.py", "tests/unit/strata/test_outbound_destination.py", "src/frob/strata/_waive.py", "src/frob/strata/__init__.py", "src/frob/app/sys_runner.py", "docs/strata/threat.md", "docs/design/registry/check-coverage.yaml", "design/frob.strata", "docs/design/registry/capability-via-ratchet.lock.json", "docs/design/security.md"]
+new = ["src/frob/strata/_outbound_destination.py", "tests/unit/strata/test_outbound_destination.py", "src/frob/strata/_waive.py", "src/frob/strata/__init__.py", "src/frob/app/sys_runner.py", "docs/design/registry/check-coverage.yaml", "design/frob.strata", "docs/design/registry/capability-via-ratchet.lock.json", "docs/design/security.md"]
+at = "2026-10-09T20:41:55Z"
+actor = "lognd"
+rev = 1
