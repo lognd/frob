@@ -85,6 +85,7 @@ impl Ledger {
     ///
     /// Git read or commit failures, or a ticket whose scrubbed events no longer fold.
     pub fn scrub(&self, tools: &ScrubTools<'_>) -> Result<ScrubReport> {
+        self.require_dir_layout("ticket scrub")?;
         let rules = self.redaction()?.clone().with_home_path();
         let mut report = ScrubReport::default();
         let ref_name = self.ledger_ref()?;

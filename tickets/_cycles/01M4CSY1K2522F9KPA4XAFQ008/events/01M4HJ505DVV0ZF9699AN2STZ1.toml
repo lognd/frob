@@ -1,0 +1,6 @@
+kind = "cycle"
+op = "retro"
+text = "73 tickets / 256 points done in 3 days (over-committed: 162 points carried). Went well: research loop R1+R2 with cited, verified notes and owner decisions; adopter repos (hullbreach, logand) found ~60 real gaps, most fixed same day; grimble CAP enforcement live and validated as a gate on a real model; ticket doable 35s->3.6s, frob test 13s->3.5s; optimized landing binary and queue cut lands from 30-45 min to 4-10 min. Went badly: machine crash lost a ledger write; experimental CI went red twice (grl-spec example vs parser; CAP001 on frob-v2's own model), both from ticket-scoped land checks; lease contention from crate-wide globs and a full WIP cap idled agents; a global refresh broke an adopter's lands (base cache keyed by version, not engine); agents killed processes by name. Actions: fast-lands epic ~HWZXYC7 (affected cone, scoped cargo, skip repo PM rules, culprit finding); file-exact scopes and lease widen; ready-to-land column outside WIP (~F696589); engine-keyed land cache (~VNK49V8, landed); refresh announcements and rule ramp-in (~VGQ66DC); no kill-by-name rule; next cycle planned against measured velocity, not ambition."
+at = "2026-10-10T00:06:50Z"
+actor = "lognd"
+rev = 1

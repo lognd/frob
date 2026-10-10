@@ -1,0 +1,139 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T01:05:25Z"
+digest = "840c096830564475fc17ea7f1da3c1ba65029fab80680db05684a39513a06ae1"
+exit_code = 0
+inline = '''
+goway: warning: CROSS-OS: `cargo` is portable, but this run stays on linux hosts
+goway: note:   other-OS hosts that could take it: nova-windows
+goway: note:   allow every OS for this run:      goway run --any-os -- ...
+goway: note:   allow it for this project:        cross_os = true in goway.toml
+goway: note:   silence this hint:                cross_os = false in goway.toml
+goway: note: no host has room yet (quasar: 4.1 GiB of memory free, this repository needs about 7.0 GiB; xanders-laptop: 35.7 GiB free (16.8 GiB of it evictable), this repository needs about 85.7 GiB); queued at position 3, waiting up to 1h
+goway: note: no helper has disk room for this repository's recorded footprint (about 211.2 GiB; the roomiest, quasar, can free 202.3 GiB); running there anyway. The record may be stale: `goway gc --repo 34f5a9e78cc30b56` forgets it, `--ignore-footprint` skips the check
+goway: note: picked quasar (load 1.63 on 12 cores, 0 goway jobs)
+goway: note: tool versions differ across your hosts: clang 21.1.8 here (major: 10 vs 21) (cached by goway doctor 9h ago; builds may behave differently here)
+goway: note: synced 14303 files (76 sent, 17088728 bytes, 4 deleted)
+goway: note: quasar has 7.0 GiB free: running with 1 of 12 jobs (CARGO_BUILD_JOBS=1, NEXTEST_TEST_THREADS=1, MOLD_JOBS=1, GOWAY_LINK_THREADS=1, estimated peak 6.4 GiB); even this may not fit, it is the lowest there is
+goway: info: running on quasar (x86_64, Quasar) at 192.168.4.61 [cores>=8 (12 cores)]: cargo nextest run --profile ci -p frob-land
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling memchr v2.8.3
+   Compiling tracing-serde v0.2.0
+   Compiling schemars v1.2.2
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-log v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-log)
+   Compiling gob-caps v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-caps)
+   Compiling gob-rules v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-exec)
+   Compiling indexmap v2.14.2
+   Compiling gob-git v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-git)
+   Compiling gob-time v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-time)
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gob-config v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-config)
+   Compiling aho-corasick v1.1.5
+   Compiling regex-automata v0.4.18
+   Compiling gob-diagnostics v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-diagnostics)
+   Compiling gob-walk v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-walk)
+   Compiling tree-sitter v0.27.0
+   Compiling regex v1.13.1
+   Compiling error_set_impl v0.9.2
+   Compiling error_set v0.9.2
+   Compiling gob-ir v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-ir)
+   Compiling gob-cache v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-cache)
+   Compiling petgraph v0.8.3
+   Compiling postcard v1.1.3
+   Compiling gob-languages v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-languages)
+   Compiling frob-ledger v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-ledger)
+   Compiling gob-cli v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-cli)
+   Compiling frob-pm v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-pm)
+   Compiling gob-symbols v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-symbols)
+   Compiling similar v2.7.0
+   Compiling frob-release v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-release)
+   Compiling frob-lease v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-lease)
+   Compiling gob-directives v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-directives)
+   Compiling gob-lock v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-lock)
+   Compiling frob-evidence v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-evidence)
+   Compiling frob-tests v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-tests)
+   Compiling frob-ack v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-ack)
+   Compiling gob-check v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-check)
+   Compiling frob-obligations v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-check)
+   Compiling frob-worktree v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-worktree)
+   Compiling frob-land v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 55.09s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 584f1f8e-b26d-4229-82ad-ec4f7fc593eb with nextest profile: ci
+    Starting 60 tests across 2 binaries
+        PASS [   0.004s] ( 1/60) frob-land base_ci::tests::a_failing_code_job_refuses_naming_the_run_url
+        PASS [   0.004s] ( 2/60) frob-land base_ci::tests::a_publish_only_failure_does_not_block
+        PASS [   0.004s] ( 3/60) frob-land base_ci::tests::a_required_list_narrows_the_gate_to_the_named_jobs
+        PASS [   0.004s] ( 4/60) frob-land base_ci::tests::an_override_lets_a_red_base_through_with_an_audit_note
+        PASS [   0.004s] ( 5/60) frob-land base_ci::tests::unknown_is_unresolved_by_default_and_refuses_when_configured
+        PASS [   0.004s] ( 6/60) frob-land base_ci::tests::wildcards_match_case_insensitively
+        PASS [   0.582s] ( 7/60) frob-land git::tests::a_git_command_waits_out_a_held_index_lock
+        PASS [   0.004s] ( 8/60) frob-land git::tests::only_lock_collisions_are_retried
+        PASS [   0.005s] ( 9/60) frob-land land::tests::a_detached_worktree_vanishes_at_once_and_its_leftover_is_swept
+        PASS [   0.005s] (10/60) frob-land land::tests::is_inside_is_true_for_the_dir_and_its_descendants_only
+        PASS [   0.165s] (11/60) frob-land ratchet::count_tests::a_config_change_invalidates_the_cached_base_set
+        PASS [   0.004s] (12/60) frob-land ratchet::count_tests::a_new_engine_invalidates_the_cached_base_set
+        PASS [   0.004s] (13/60) frob-land ratchet::count_tests::counts_are_per_fingerprint_multiplicities
+        PASS [   0.006s] (14/60) frob-land ratchet::tests::a_checkout_without_a_target_shares_the_land_target_and_one_with_keeps_its_own
+        PASS [   0.004s] (15/60) frob-land ratchet::tests::the_base_checkout_path_is_stable_and_outside_the_gc_swept_prefix
+        PASS [   0.725s] (16/60) frob-land::land a_base_commit_changing_code_misses_the_cached_base_set
+        PASS [   0.298s] (17/60) frob-land::land a_check_in_a_fresh_worktree_hits_the_cache_the_primary_warmed
+        PASS [   0.176s] (18/60) frob-land::land a_configured_block_on_unknown_refuses_an_unreadable_base_ci
+        PASS [   1.256s] (19/60) frob-land::land a_conflict_confined_to_cargo_lock_is_regenerated_at_land
+        PASS [   0.161s] (20/60) frob-land::land a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts
+        PASS [   0.209s] (21/60) frob-land::land a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses
+        PASS [   0.187s] (22/60) frob-land::land a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_worktree
+        PASS [   0.696s] (23/60) frob-land::land a_finding_already_on_the_base_lands_and_is_reported_pre_existing
+        PASS [   0.457s] (24/60) frob-land::land a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path
+        PASS [   0.630s] (25/60) frob-land::land a_new_finding_refuses_naming_only_the_new_one
+        PASS [   0.637s] (26/60) frob-land::land a_pruned_expired_lease_is_renewed_for_the_ticket_worktree_when_landing_from_the_primary
+        PASS [   0.636s] (27/60) frob-land::land a_publish_only_failure_on_the_base_does_not_block_the_land
+        PASS [   0.183s] (28/60) frob-land::land a_red_base_ci_refuses_naming_the_run_and_moves_nothing
+        PASS [   0.627s] (29/60) frob-land::land a_release_finding_the_ticket_introduces_refuses
+        PASS [   0.688s] (30/60) frob-land::land a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket
+        PASS [   0.602s] (31/60) frob-land::land a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one
+        PASS [   0.644s] (32/60) frob-land::land a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check
+        PASS [   0.959s] (33/60) frob-land::land a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands
+        PASS [   0.193s] (34/60) frob-land::land an_expired_lease_is_not_renewed_when_another_holder_took_an_overlap
+        PASS [   0.682s] (35/60) frob-land::land an_expired_lease_is_renewed_and_lands_when_nothing_overlapped_since
+        PASS [   0.709s] (36/60) frob-land::land an_override_lands_on_a_red_base_and_records_a_decision_on_the_ticket
+        PASS [   0.592s] (37/60) frob-land::land an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_nothing
+        PASS [   0.244s] (38/60) frob-land::land an_unleased_ticket_and_another_worktree_are_refused
+        PASS [   0.668s] (39/60) frob-land::land an_unreadable_base_ci_is_reported_unresolved_and_the_default_policy_lands
+        PASS [   0.665s] (40/60) frob-land::land base_commits_differing_only_under_tickets_share_the_cached_base_set
+        PASS [   0.155s] (41/60) frob-land::land conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean
+        PASS [   0.135s] (42/60) frob-land::land dirty_worktree_refuses_and_lists_paths
+        PASS [   0.627s] (43/60) frob-land::land dry_run_plan_is_deterministic_and_changes_nothing
+        PASS [   0.566s] (44/60) frob-land::land dry_run_treats_a_base_that_moved_only_by_ledger_commits_as_merged
+        PASS [   0.678s] (45/60) frob-land::land fixing_a_base_finding_is_reported_resolved
+        PASS [   0.668s] (46/60) frob-land::land happy_path_lands_closes_and_cleans_up
+        PASS [   0.663s] (47/60) frob-land::land land_runs_the_throttled_gc_pass_after_removing_the_worktree
+        PASS [   0.632s] (48/60) frob-land::land landing_from_inside_the_worktree_defaults_to_its_ticket
+        PASS [   0.708s] (49/60) frob-land::land lock_contention_refuses_retryably_naming_the_holder
+        PASS [   0.695s] (50/60) frob-land::land missing_evidence_refuses_unless_bypassed_with_a_reason
+        PASS [   0.794s] (51/60) frob-land::land no_changelog_with_a_reason_lands_without_a_fragment_and_records_the_event
+        PASS [   0.555s] (52/60) frob-land::land red_check_lists_only_blocking_findings_and_counts_the_rest
+        PASS [   0.604s] (53/60) frob-land::land red_check_refuses_with_exit_3_and_moves_nothing
+        PASS [   0.638s] (54/60) frob-land::land require_base_green_false_skips_the_ci_read_entirely
+        PASS [   0.659s] (55/60) frob-land::land the_base_is_resolved_by_full_ref_so_a_same_named_tag_cannot_shadow_it
+        PASS [   1.008s] (56/60) frob-land::land two_lands_back_to_back_from_one_primary_both_succeed_without_failure_warnings
+        PASS [   0.614s] (57/60) frob-land::land wait_gives_up_naming_the_attempts_when_the_base_keeps_moving
+        PASS [   0.694s] (58/60) frob-land::land wait_retries_a_base_that_moved_once_with_ledger_only_commits
+        PASS [   0.809s] (59/60) frob-land::land wait_retries_a_base_that_moved_with_a_code_change
+        PASS [   0.824s] (60/60) frob-land::land without_wait_a_moved_base_is_not_retried
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  27.058s] 60 tests run: 60 passed, 0 skipped
+goway: done: exit 0 on quasar in 223.4s
+'''
+passed = true
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --wait 60m -- cargo nextest run --profile ci -p frob-land"
+size = 11955
+status = "measured"
+at = "2026-10-10T01:05:25Z"
+actor = "lognd"
+rev = 1

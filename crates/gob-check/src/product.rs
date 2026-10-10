@@ -125,7 +125,13 @@ pub struct RepoGroup<P: Product> {
     pub run: RunFn<P>,
     /// `(rule id, subjects examined)` per rule, evaluated on every run (cache hit or not).
     pub subjects: CountFn<P>,
+    // frob:ticket 01M4HAJZA6JTNSSGJYV040TA9M
+    /// Whether the group is repo-wide (independent of any ticket diff): a ticket-scoped run skips it.
+    pub full_only: bool,
 }
+
+/// Why a ticket-scoped run reports a [`RepoGroup::full_only`] rule as not evaluated.
+pub const FULL_ONLY_REASON: &str = "repo-wide, runs in full check";
 
 impl<P: Product> RepoGroup<P> {
     /// A group without subject accounting; chain [`RepoGroup::counting`] to add it.
@@ -139,7 +145,16 @@ impl<P: Product> RepoGroup<P> {
             metas,
             run: Box::new(run),
             subjects: Box::new(|_| Vec::new()),
+            full_only: false,
         }
+    }
+
+    // frob:ticket 01M4HAJZA6JTNSSGJYV040TA9M
+    /// Mark the group repo-wide: a scoped (`--ticket`) run skips it and a full run evaluates it.
+    #[must_use]
+    pub fn full_only(mut self) -> Self {
+        self.full_only = true;
+        self
     }
 
     /// Attach the per-rule subject counter of this group.

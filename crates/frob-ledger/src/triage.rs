@@ -135,6 +135,7 @@ impl Ledger {
         req: &TriageRequest,
         now: Stamp,
     ) -> Result<TriageReport> {
+        self.require_dir_layout("ticket triage")?;
         validate(req, now)?;
         let s = self.synced()?;
         let hex = s.tip.map(|t| t.to_string());
