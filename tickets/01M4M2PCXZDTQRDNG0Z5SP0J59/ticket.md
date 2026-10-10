@@ -2,13 +2,13 @@
 id = "01M4M2PCXZDTQRDNG0Z5SP0J59"
 title = "nextest ci profile: gob-check ui_product (trybuild) hits the 120 s hang guard on Windows; add it to the reviewed override list with the trybuild test group"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-10T23:34:42Z"
-updated = "2026-10-10T23:34:42Z"
+updated = "2026-10-10T23:37:11Z"
 scope = [".config/nextest.toml"]
 
 [[acceptance]]
