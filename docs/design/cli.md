@@ -240,7 +240,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `rule test` (also `grimble rule test`) | frob, grimble | gob-rules | yes, read-only | 0 1 2 4 | 2 |
 | `batch` | frob | frob-ledger | yes, all or nothing | 0 2 3 4 | 2 |
 | `ticket new` | frob | frob-ledger | only with `--idempotency-key` or an identical request | 0 2 3 4 | 1 |
-| `ticket show [--events] [--format md]`, `ticket list [--tree] [--category C]` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
+| `ticket show [--events] [--format md]`, `ticket list [--tree] [--category C] [--full]` (`--full` adds every row's aliases and events in one pass) | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
 | `ticket doable` (policy: lease-aware dispatch order) | frob | frob-lease | yes, read-only | 0 2 4 | 1 |
 | `ticket update\|link\|unlink\|comment\|body\|accept` | frob | frob-ledger | yes, same request | 0 2 3 4 | 1 |
 | `ticket attach\|component` | frob | frob-ledger | yes | 0 2 3 4 | 2 |

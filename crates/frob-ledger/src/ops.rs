@@ -299,6 +299,25 @@ impl Ledger {
         }
     }
 
+    /// The v1 aliases of every ticket in `ids`, from one sync (a ticket without aliases maps to an empty list).
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::NotFound`] when any ticket is absent, or store failures.
+    // frob:ticket 01M4GKAYSGHAE5QAXN1BJBTQN2
+    pub fn aliases_many(
+        &self,
+        ids: &BTreeSet<TicketId>,
+    ) -> Result<BTreeMap<TicketId, Vec<String>>> {
+        let s = self.synced()?;
+        let mut out = BTreeMap::new();
+        for id in ids {
+            let (_, ticket) = Self::load(&s, *id)?;
+            out.insert(*id, ticket.front.aliases.clone());
+        }
+        Ok(out)
+    }
+
     // frob:ticket 01M44C546DQRE4D11HHPM0HX6M
     pub(crate) fn load(s: &Synced, id: TicketId) -> Result<(Summary, Ticket)> {
         let not_found = || LedgerError::NotFound {

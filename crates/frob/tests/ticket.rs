@@ -730,3 +730,33 @@ fn zero_match_scope_warns_on_new_and_update_but_new_scope_declares_it() {
         "{new_decl}"
     );
 }
+
+// frob:ticket 01M4GKAYSGHAE5QAXN1BJBTQN2
+// frob:tests crates/frob/src/ticket/read.rs::List
+#[test]
+fn list_full_emits_every_ticket_with_its_events_and_aliases_in_one_call() {
+    let repo = Repo::new(false);
+    let a = repo.id_of(&["ticket", "new", "--title", "first"]);
+    let b = repo.id_of(&["ticket", "new", "--title", "second"]);
+    repo.ok(&["ticket", "comment", &a, "--body", "hello"]);
+    let plain = repo.ok(&["ticket", "list"]);
+    assert!(plain["data"]["tickets"][0].get("events").is_none());
+    let full = repo.ok(&["ticket", "list", "--full"]);
+    assert_eq!(full["data"]["count"], 2);
+    let rows = full["data"]["tickets"].as_array().expect("tickets");
+    for row in rows {
+        assert!(row["aliases"].is_array(), "{row}");
+        assert!(!row["events"].as_array().expect("events").is_empty());
+    }
+    let by_id = |id: &str| rows.iter().find(|r| r["id"] == id).expect("row");
+    let kinds = |id: &str| -> Vec<String> {
+        by_id(id)["events"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["kind"].as_str().unwrap().to_owned())
+            .collect()
+    };
+    assert!(kinds(&a).contains(&"comment".to_owned()), "{:?}", kinds(&a));
+    assert!(!kinds(&b).contains(&"comment".to_owned()));
+}

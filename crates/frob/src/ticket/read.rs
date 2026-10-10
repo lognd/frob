@@ -244,6 +244,12 @@ pub struct ListRow {
     /// Set for a snoozed ticket listed with `--category triage --all`: when it returns.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub snoozed_until: Option<Stamp>,
+    /// With `--full`: the ticket's v1 aliases.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aliases: Option<Vec<String>>,
+    /// With `--full`: the ticket's events in fold order.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub events: Option<Vec<EventView>>,
 }
 
 impl From<InboxEntry> for ListRow {
@@ -251,6 +257,8 @@ impl From<InboxEntry> for ListRow {
         Self {
             summary: e.summary,
             snoozed_until: e.snoozed_until,
+            aliases: None,
+            events: None,
         }
     }
 }
@@ -277,6 +285,8 @@ impl ListData {
                 .map(|summary| ListRow {
                     summary,
                     snoozed_until: None,
+                    aliases: None,
+                    events: None,
                 })
                 .collect(),
         }
@@ -299,6 +309,7 @@ pub struct List {
     blocked: bool,
     at: Option<String>,
     all: bool,
+    full: bool,
 }
 
 impl Command for List {
@@ -331,6 +342,12 @@ impl Command for List {
                     "With --category triage: include snoozed tickets, with the time each returns",
                 ),
         )
+        .arg(
+            gob_cli::clap::Arg::new("full")
+                .long("full")
+                .action(ArgAction::SetTrue)
+                .help("Also emit every listed ticket's aliases and events, read in one pass"),
+        )
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
@@ -342,6 +359,7 @@ impl Command for List {
             blocked: m.get_flag("blocked"),
             at: get(m, "at"),
             all: m.get_flag("all"),
+            full: m.get_flag("full"),
         })
     }
 
@@ -369,8 +387,29 @@ impl Command for List {
         };
         let tickets = ledger.list(&filter).map_err(cli_err)?;
         tracing::debug!(count = tickets.len(), "ticket list");
-        Ok(Payload::new(ListData::of(tickets)))
+        let mut data = ListData::of(tickets);
+        if self.full {
+            fill_full(&ledger, &mut data)?;
+        }
+        Ok(Payload::new(data))
     }
+}
+
+// frob:ticket 01M4GKAYSGHAE5QAXN1BJBTQN2
+/// Add aliases and events to every row of `data` with one ledger sync and one tree walk.
+fn fill_full(ledger: &frob_ledger::Ledger, data: &mut ListData) -> Result<(), CliError> {
+    let ids: std::collections::BTreeSet<TicketId> =
+        data.tickets.iter().map(|r| r.summary.id).collect();
+    let mut aliases = ledger.aliases_many(&ids).map_err(cli_err)?;
+    let mut events = ledger.events_many(&ids).map_err(cli_err)?;
+    for row in &mut data.tickets {
+        row.aliases = aliases.remove(&row.summary.id);
+        row.events = events
+            .remove(&row.summary.id)
+            .map(|all| all.iter().map(EventView::from).collect());
+    }
+    tracing::debug!(tickets = data.tickets.len(), "ticket list --full filled");
+    Ok(())
 }
 
 impl List {
