@@ -2,7 +2,8 @@
 id = "01M4GSTXC34Q811RXW8SH36RMT"
 title = "ref_mode = branch with a detached HEAD gives E-LEDGER-DETACHED even for read-only verbs (doctor, check), and every CI pull_request checkout is detached"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
