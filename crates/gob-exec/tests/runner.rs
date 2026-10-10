@@ -222,3 +222,72 @@ fn output_under_the_cap_is_returned_whole() {
         .unwrap();
     assert_eq!(out.stdout.trim(), "small");
 }
+
+// frob:ticket 01M4CTDYG696JWM20AZPYFAH0T
+/// True when `pid` is gone or a zombie (Linux `/proc`); `None` where `/proc` is absent.
+#[cfg(unix)]
+fn pid_dead(pid: &str) -> Option<bool> {
+    if !std::path::Path::new("/proc/self").exists() {
+        return None;
+    }
+    let stat = std::fs::read_to_string(std::path::Path::new("/proc").join(pid).join("stat"))
+        .unwrap_or_default();
+    Some(stat.is_empty() || stat.contains(") Z "))
+}
+
+// frob:ticket 01M4CTDYG696JWM20AZPYFAH0T
+#[cfg(unix)]
+#[test]
+fn timeout_kills_setsid_grandchild_and_returns_promptly() {
+    let runner = Runner::new(Limits { jobs: 1 });
+    // The grandchild leaves the process group and keeps the capture pipes open for 30 s.
+    let spec = Spec {
+        program: Program::Tool { name: "sh".into() },
+        args: vec!["-c".into(), "setsid sleep 30 & echo $!; wait".into()],
+        cwd: None,
+        env: vec![],
+        timeout: Duration::from_millis(300),
+        capture: true,
+    };
+    let t = Instant::now();
+    let out = runner.run(&spec).unwrap();
+    let took = t.elapsed();
+    assert_eq!(out.status, Outcome::TimedOut);
+    assert!(
+        took < Duration::from_millis(300) + Duration::from_secs(2),
+        "run took {took:?}"
+    );
+    let pid = out.stdout.trim();
+    assert!(!pid.is_empty(), "grandchild pid should have been captured");
+    std::thread::sleep(Duration::from_millis(100));
+    if let Some(dead) = pid_dead(pid) {
+        assert!(dead, "setsid grandchild {pid} survived the timeout");
+    }
+}
+
+// frob:ticket 01M4CTDYG696JWM20AZPYFAH0T
+#[cfg(unix)]
+#[test]
+fn normal_exit_does_not_block_on_pipe_held_by_background_child() {
+    let runner = Runner::new(Limits { jobs: 1 });
+    let spec = Spec {
+        program: Program::Tool { name: "sh".into() },
+        args: vec!["-c".into(), "setsid sleep 30 & echo $!; echo out".into()],
+        cwd: None,
+        env: vec![],
+        timeout: Duration::from_secs(10),
+        capture: true,
+    };
+    let t = Instant::now();
+    let out = runner.run(&spec).unwrap();
+    assert_eq!(out.status, Outcome::Exited(0));
+    assert!(t.elapsed() < Duration::from_secs(5), "join was not bounded");
+    assert!(
+        out.stdout.contains("out"),
+        "partial output kept: {:?}",
+        out.stdout
+    );
+    if let Some(pid) = out.stdout.lines().next() {
+        let _ = std::process::Command::new("kill").arg(pid).status();
+    }
+}
