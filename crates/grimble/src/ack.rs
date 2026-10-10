@@ -5,12 +5,14 @@
 //! it atomically when the root is not a repository). Mirrors `frob ack` without linking frob.
 
 // frob:ticket 01M3Z714820D1SK6X44T9R1B70
+// frob:ticket 01M4D6NMS0EQA0B6NB9KEBHDRN
 
 use std::path::Path;
 
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use gob_git::{CommitOptions, RelPath, Repo};
+use gob_lock::PlanError;
 use grimble_bind::PRODUCT;
 use grimble_bind::ack::{AckError, AckRequest, plan_ack};
 use schemars::JsonSchema;
@@ -120,6 +122,19 @@ fn write_lock(
     }
 }
 
+impl Ack {
+    /// The argument errors that need no repository: refused before the slow bind.
+    fn precheck(&self) -> Result<(), AckError> {
+        if self.reason.as_deref().is_none_or(|r| r.trim().is_empty()) {
+            return Err(AckError::ReasonRequired);
+        }
+        if self.targets.is_empty() && !self.all && self.renames.is_empty() {
+            return Err(AckError::Plan(PlanError::NothingToAck));
+        }
+        Ok(())
+    }
+}
+
 impl Command for Ack {
     type Data = AckData;
 
@@ -174,7 +189,15 @@ impl Command for Ack {
     }
 
     fn run(&self, ctx: &Context) -> Outcome<AckData> {
+        self.precheck().map_err(cli_error)?;
         let root = locate_root(&ctx.cwd);
+        if self.all && self.targets.is_empty() && self.renames.is_empty() {
+            let lock = gob_lock::LockFile::load(&root.join(gob_lock::file_name(PRODUCT)))
+                .map_err(|e| cli_error(AckError::Lock(e)))?;
+            if lock.entries.is_empty() && lock.flows.is_empty() {
+                return Err(cli_error(AckError::Plan(PlanError::NothingToAck)));
+            }
+        }
         let binding = bind_root(&root)?;
         let actor = Repo::discover(&root)
             .ok()
