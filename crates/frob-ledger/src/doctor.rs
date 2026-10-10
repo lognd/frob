@@ -85,7 +85,12 @@ impl Ledger {
     ///
     /// Git read or commit failures; unreadable tickets are reported as issues, not errors.
     pub fn doctor(&self, fix: bool) -> Result<DoctorReport> {
-        let ref_name = self.ledger_ref()?;
+        // frob:ticket 01M4GSTXC34Q811RXW8SH36RMT
+        let ref_name = if fix {
+            self.ledger_write_ref()?
+        } else {
+            self.ledger_ref()?
+        };
         let mut report = DoctorReport {
             tickets: 0,
             events: 0,

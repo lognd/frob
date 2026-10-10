@@ -1146,3 +1146,36 @@ fn doctor_resolves_the_ledger_revision_a_fixed_number_of_times(layout: Layout) {
     assert_eq!(few, many, "doctor must not read git once per ticket");
 }
 both_layouts!(doctor_resolves_the_ledger_revision_a_fixed_number_of_times);
+
+// frob:ticket 01M4GSTXC34Q811RXW8SH36RMT
+#[test]
+fn branch_mode_reads_the_configured_ref_on_a_detached_head_and_only_writes_refuse() {
+    let (dir, ledger) = fixture(Layout::Dir, RefMode::Branch);
+    ledger
+        .new_ticket(NewTicket::new("Before detaching", TicketType::Task))
+        .expect("new");
+    let tip = ledger.repo().rev_parse(MAIN).expect("main");
+    std::fs::write(ledger.repo().git_dir().join("HEAD"), format!("{tip}\n")).expect("detach");
+    let ledger = Ledger::open(
+        Repo::discover(dir.path()).expect("discover"),
+        ledger.config().clone(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
+    assert_eq!(ledger.ticket_ids().expect("read while detached").len(), 1);
+    assert!(
+        ledger
+            .doctor(false)
+            .expect("doctor reads")
+            .issues
+            .is_empty()
+    );
+    let err = ledger
+        .new_ticket(NewTicket::new("While detached", TicketType::Task))
+        .expect_err("a write refuses");
+    assert!(matches!(err, LedgerError::Detached), "{err}");
+    assert_eq!(
+        ledger.repo().rev_parse(MAIN).expect("main"),
+        tip,
+        "nothing moved"
+    );
+}
