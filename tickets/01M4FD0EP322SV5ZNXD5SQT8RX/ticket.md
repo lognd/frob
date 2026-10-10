@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T03:58:45Z"
-updated = "2026-10-10T19:14:57Z"
+updated = "2026-10-10T19:17:54Z"
 labels = ["adoption:hullbreach"]
-scope = ["crates/crunk*/**", "crates/frob-check/**", "crates/gob-check/**", "changelog.d/**"]
+scope = ["crates/crunk*/**", "crates/frob-check/**", "crates/gob-check/**", "changelog.d/**", "crates/gob-cli/**"]
 
 [[acceptance]]
 text = "Given a fresh repository, when frob check runs, then no file appears in the worktree outside .frob or gitignored state, and crunk telemetry goes to the cache dir"
