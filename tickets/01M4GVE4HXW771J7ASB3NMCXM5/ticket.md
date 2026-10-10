@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T17:30:08Z"
-updated = "2026-10-10T00:42:53Z"
+updated = "2026-10-10T02:53:07Z"
 scope = [".github/workflows/release.yml", "docs/design/README.md", "docs/guides/release.md", "changelog.d/**", "crates/frob-release/tests/products.rs", "packaging/pypi/BUILDING.md", "crates/frob-release/tests/release_workflow.rs"]
 
 [[acceptance]]
