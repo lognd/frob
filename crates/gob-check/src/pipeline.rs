@@ -488,6 +488,8 @@ fn pass<P: Product>(
     }
     warnings.extend(external.warnings);
 
+    // frob:ticket 01M4FG5RCDA668CK81QT54E67N
+    let raw = crate::status::merge_opaque_notices(raw);
     let (mut findings, mut suppressed) =
         resolve_exceptions(product, &snap, &files, raw, only, &mut tally.timing);
     suppressed.extend(external.suppressed);

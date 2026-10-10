@@ -56,17 +56,28 @@ fn a_p_plus_rule_over_an_opaque_text_file_is_unresolved_not_silent() {
     let dir = fixture();
     let report = run(dir.path(), &options()).expect("run");
     // The bare marker in the adapter-less .json is invisible to TODO001: Unresolved, never Warn or Error.
-    let todo = of(&report.findings, "TODO001");
-    assert_eq!(todo.len(), 1, "{todo:?}");
-    assert_eq!(todo[0].severity, Severity::Unresolved);
-    assert!(todo[0].message.contains("tool.json"), "{}", todo[0].message);
+    // frob:ticket 01M4FG5RCDA668CK81QT54E67N
+    // The notice is emitted once per run, naming every rule that could not read the file.
+    let notices: Vec<_> = report
+        .findings
+        .iter()
+        .filter(|f| f.message.contains("opaque text file(s)"))
+        .collect();
+    assert_eq!(notices.len(), 1, "one opaque notice per run: {notices:?}");
+    let todo = notices[0];
+    assert_eq!(todo.severity, Severity::Unresolved);
+    assert!(todo.message.contains("tool.json"), "{}", todo.message);
+    for rule in ["TODO001", "REF001"] {
+        assert!(
+            todo.message.contains(rule),
+            "names {rule}: {}",
+            todo.message
+        );
+    }
     assert!(
-        !todo[0].message.contains("logo.png"),
+        !todo.message.contains("logo.png"),
         "binary is NotApplicable"
     );
-    let refs = of(&report.findings, "REF001");
-    assert_eq!(refs.len(), 1);
-    assert_eq!(refs[0].severity, Severity::Unresolved);
 }
 
 // frob:tests crates/gob-check/src/status.rs::hole_caveat
