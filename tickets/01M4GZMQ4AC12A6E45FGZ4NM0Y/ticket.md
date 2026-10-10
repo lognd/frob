@@ -2,12 +2,12 @@
 id = "01M4GZMQ4AC12A6E45FGZ4NM0Y"
 title = "TOOL001 pre-existing match is keyed on the raw failure excerpt, so a tool stage already red on the base is NEW on every land when its output varies (timings, ordering)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T18:43:37Z"
-updated = "2026-10-10T02:50:29Z"
+updated = "2026-10-10T02:50:30Z"
 labels = ["adoption:logand-app", "creates:crates/gob-check/src/tool_key.rs"]
 scope = ["changelog.d/**", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/lib.rs", "crates/gob-check/src/tool_key.rs"]
 
