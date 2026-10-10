@@ -8,10 +8,10 @@ points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-10T23:27:32Z"
+updated = "2026-10-10T23:27:33Z"
 idempotency_key = "m2-grl-catalog-docs"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-dev/src/render/**", "docs/reference/grl/**", "crates/gob-dev/src/lib.rs"]
+scope = ["crates/gob-dev/src/render/**", "docs/reference/grl/**", "crates/gob-dev/src/lib.rs", "crates/gob-dev/Cargo.toml"]
 
 [[links]]
 kind = "blocked-by"
