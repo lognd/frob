@@ -8,11 +8,15 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:42Z"
-updated = "2026-10-10T23:27:37Z"
+updated = "2026-10-10T23:28:11Z"
 scope = ["changelog.d/**", "crates/crunk-check/**", "crates/gob-check/**"]
 
 [[acceptance]]
-text = "Given a crunk finding covered by a frob:waive exception, when crunk check runs, then it is reported as excepted, not open"
+text = "Given a COLOR001 finding covered by a crunk:waive comment with a reason, when crunk check runs, then it is reported in report.suppressed with that reason and is absent from the open findings"
+bound = false
+
+[[acceptance]]
+text = "Given a crunk:waive comment without a reason, when crunk check runs, then nothing is suppressed and WAIVE001 fires"
 bound = false
 +++
 
