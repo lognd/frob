@@ -2,7 +2,8 @@
 id = "01M4CTDYG696JWM20AZPYFAH0T"
 title = "gob-exec: kill the whole process tree on timeout (Windows job object, unix process group) and bound the post-kill join (audit M2)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
