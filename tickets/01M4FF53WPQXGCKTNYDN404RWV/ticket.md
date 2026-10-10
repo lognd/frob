@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T04:36:15Z"
-updated = "2026-10-10T19:06:31Z"
+updated = "2026-10-10T19:06:32Z"
 labels = ["grimble"]
 scope = ["docs/design/**", "changelog.d/**"]
 
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given migration.md, when the change lands, then it states that .strata models are rewritten by hand as .grmb (no tool)"
-bound = false
+bound = true
 +++
 
 Owner decision 2026-10-09; dropped ~X85A7ZD.
