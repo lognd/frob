@@ -703,7 +703,7 @@ fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<
     }
 }
 
-// frob:ticket 01M4GRW6NH23YPTSAQED5ZJPVH
+// frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH
 /// True when a base move `changes` can alter the ticket's verdict: it touches a non-ledger path in `cone` or under the ticket's `scope` globs (any non-ledger path when there is no cone).
 fn touches_cone(
     changes: &[gob_git::ChangedPath],
@@ -741,7 +741,7 @@ fn verify_check(
     // themselves to the stages and cargo packages the scope touches; the unscoped head run only
     // supplies the repository-level findings the ratchet compares like with like, so it skips
     // them and is served mostly from the shared file cache
-    // (frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W, 01M4GRW6NH23YPTSAQED5ZJPVH).
+    // (frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W, 01M4GRV9YMN2VEPCTMMD5ZJPVH).
     ratchet::share_build_dir(wt.common_dir(), wt_path);
     let options = |ticket: Option<&str>| CheckOptions {
         ticket: ticket.map(str::to_owned),
@@ -1237,7 +1237,7 @@ fn remove_worktree(
 mod tests {
     use super::*;
 
-    // frob:ticket 01M4GRW6NH23YPTSAQED5ZJPVH
+    // frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH
     // frob:tests crates/frob-land/src/land.rs::touches_cone
     #[test]
     fn a_base_move_forces_a_recheck_only_when_it_touches_the_cone() {

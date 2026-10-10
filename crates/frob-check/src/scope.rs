@@ -39,7 +39,7 @@ impl ScopeView for TicketScope {
 /// Resolved and ambiguous (May) edges count as written. An unresolved edge (a call into another
 /// crate, or one the resolver cannot place) counts against every function or method of the same
 /// name the call's qualifier does not rule out, so the cone only ever errs wide
-/// (frob:ticket 01M4GRW6NH23YPTSAQED5ZJPVH).
+/// (frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH).
 fn dependents(graph: &SymbolGraph) -> HashMap<String, BTreeSet<String>> {
     let mut map: HashMap<String, BTreeSet<String>> = HashMap::new();
     let mut add = |callee: &str, caller: &str| {

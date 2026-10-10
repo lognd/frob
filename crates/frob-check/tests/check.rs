@@ -1258,7 +1258,7 @@ fn a_corrupt_ledger_index_is_required_unresolved_findings_and_fails_the_gate() {
     );
 }
 
-// frob:ticket 01M4GRW6NH23YPTSAQED5ZJPVH
+// frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH
 // frob:tests crates/frob-check/src/lib.rs::run_with_cone
 #[test]
 fn the_ticket_cone_includes_cross_crate_callers_and_leaves_unrelated_crates_out() {
