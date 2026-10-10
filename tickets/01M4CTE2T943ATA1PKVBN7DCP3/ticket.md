@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:40Z"
-updated = "2026-10-08T03:55:40Z"
+updated = "2026-10-10T02:07:07Z"
 scope = ["changelog.d/**", ".github/workflows/**", "crates/gob-dev/src/ci.rs"]
 
 [[acceptance]]
@@ -17,6 +17,10 @@ bound = false
 
 [[acceptance]]
 text = "Given every CI job, when inspected, then each has timeout-minutes and no check runs twice per OS"
+bound = false
+
+[[acceptance]]
+text = "Given several pushes to experimental within minutes, when CI runs, then a concurrency group per workflow and ref cancels the superseded in-progress run (never for release or publish jobs), so only the newest commit's run completes"
 bound = false
 +++
 
