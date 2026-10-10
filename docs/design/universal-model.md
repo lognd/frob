@@ -1,6 +1,11 @@
 # The universal structural model (gob-ir)
 
-Status: DRAFT under T-0001; decision D56 is accepted (2026-10-04) and this
+Status: current
+Owner: gob
+Decisions: D56
+Audience: contributor
+
+Provenance: DRAFT under T-0001; decision D56 is accepted (2026-10-04) and this
 file supersedes code-model.md section 5 (now a pointer here). Evidence: notes/research/paradigms.md (202
 languages, 33 families), notes/research/calculi.md (calculi, type
 theories, universal cores, impossibility results),

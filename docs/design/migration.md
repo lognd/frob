@@ -1,6 +1,11 @@
 # Migration from v1 and rollout
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias).
+Status: draft
+Owner: frob
+Decisions: D36, D95
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias).
 
 Milestone 1 (D36) migrates only this repository's own tickets, by a
 one-off script that mints ULIDs and writes the ledger; the verbs and

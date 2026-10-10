@@ -1,6 +1,11 @@
 # Navigation: canonical ids, a verifiable reindex, generated docs, profiles and a tour
 
-Status: ACCEPTED (D81, owner decisions 2026-10-04 on the documentation
+Status: current
+Owner: frob
+Decisions: D81
+Audience: contributor
+
+Provenance: ACCEPTED (D81, owner decisions 2026-10-04 on the documentation
 survey, ticket ~AMBGYQ4). Evidence: notes/research/docs-survey.md (1254
 repositories, ten exemplars). Depends on mirror.md (the ticket branch),
 tickets.md (identity, events), documentation.md (generators, GEN001),

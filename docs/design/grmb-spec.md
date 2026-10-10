@@ -1,6 +1,11 @@
 # The .grmb language specification (G01)
 
-Status: DRAFT under T-0001 (a v1-format id that migrates with an alias);
+Status: draft
+Owner: grimble
+Decisions: none
+Audience: rule author
+
+Provenance: DRAFT under T-0001 (a v1-format id that migrates with an alias);
 written under ticket 01M3Z712GP8XV2WEAS1VHQ7FD4 (G01). It is the grammar
 that grimble-model.md section 9.3 promised: until it landed, sections 1-3
 of grimble-model.md were illustrative. Where this file and those sections

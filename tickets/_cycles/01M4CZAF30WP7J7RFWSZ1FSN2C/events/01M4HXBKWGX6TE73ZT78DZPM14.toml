@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4HW9GCNQD67H73H3RNPJCZN"
+text = "CI red: profile_coverage"
+at = "2026-10-10T03:22:56Z"
+actor = "lognd"
+rev = 1

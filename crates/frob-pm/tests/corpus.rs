@@ -1,10 +1,11 @@
-//! `PM034`, `PM001`, `PM002`, `PM013`, `PM033` and `PM036` markdown corpus: each block is a small ledger built from a line DSL.
+//! `PM034`, `PM001`, `PM002`, `PM010`-`PM013`, `PM033` and `PM036` markdown corpus: each block is a small ledger built from a line DSL.
 // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
 // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
 // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
 // frob:ticket 01M416Z11V5GR012FR47HWFTBP
 // frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
 // frob:ticket 01M4CSZFC0QF9PH544ARF60RCZ
+// frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -12,7 +13,7 @@ use frob_ledger::guards::NoLeases;
 use frob_ledger::model::{Category, Outcome, TicketType};
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig, TicketId};
-use frob_pm::rules::{cycle, membership::evaluate, milestone, replenish, wip};
+use frob_pm::rules::{cycle, cycle_plan, membership::evaluate, milestone, replenish, wip};
 use frob_pm::{NewObject, ObjectKind, PmStore, State, event::Op};
 use gob_git::{CommitOptions, RelPath, Repo};
 use gob_mdtest::Case;
@@ -53,7 +54,7 @@ fn opts<'a>(words: &[&'a str]) -> BTreeMap<&'a str, &'a str> {
 }
 
 /// Create the cycle of a `cycle KEY start=N end=M [closed]` line; `N` and `M` are day offsets from the UTC today (the clock is never pinned).
-fn add_cycle(ledger: &Ledger, o: &BTreeMap<&str, &str>, closed: bool) {
+fn add_cycle(ledger: &Ledger, o: &BTreeMap<&str, &str>, closed: bool) -> frob_pm::ObjectId {
     let store = PmStore::new(ledger);
     let today = store.today();
     let at = |k: &str| {
@@ -65,15 +66,20 @@ fn add_cycle(ledger: &Ledger, o: &BTreeMap<&str, &str>, closed: bool) {
         .create(NewObject::Cycle {
             start: at("start"),
             end: at("end"),
-            goal: "goal".to_owned(),
-            capacity_points: None,
+            goal: match o.get("goal") {
+                Some(&"none") => String::new(),
+                _ => "goal".to_owned(),
+            },
+            capacity_points: o.get("capacity").map(|c| c.parse().expect("capacity")),
         })
         .expect("cycle");
+    let id = applied.object.id();
     if closed {
         store
             .transition(ObjectKind::Cycle, applied.object.id(), State::Closed, None)
             .expect("close");
     }
+    id
 }
 
 /// `PM036` over the ledger's cycles.
@@ -121,7 +127,44 @@ fn add_milestone(
     }
 }
 
-/// Build the ledger a block describes and evaluate the block's rule (`PM034`, `PM001`, `PM002`, `PM013`, `PM033` or `PM036`) over it.
+/// The ticket a `epic|task|story KEY [parent= points= scope= criteria= labels= class= value=none]` line describes.
+fn new_ticket(
+    w: &[&str],
+    o: &BTreeMap<&str, &str>,
+    keys: &BTreeMap<String, TicketId>,
+) -> NewTicket {
+    let ty = match w[0] {
+        "epic" => TicketType::Epic,
+        "story" => TicketType::Story,
+        _ => TicketType::Task,
+    };
+    let list = |k: &str| -> Vec<String> {
+        o.get(k)
+            .map(|l| l.split(',').map(str::to_owned).collect())
+            .unwrap_or_default()
+    };
+    let mut t = NewTicket::new(w[1], ty);
+    t.parent = o.get("parent").map(|k| keys[*k]);
+    t.points = o.get("points").map(|p| p.parse().expect("points"));
+    t.scope = list("scope");
+    t.labels = list("labels");
+    t.acceptance = (0..o
+        .get("criteria")
+        .map_or(0, |n| n.parse().expect("criteria")))
+        .map(|i| format!("criterion {i}"))
+        .collect();
+    if ty == TicketType::Story && o.get("value") != Some(&"none") {
+        t.persona = Some("maintainer".to_owned());
+        t.capability = Some("see the plan".to_owned());
+        t.outcome_text = Some("work is clear".to_owned());
+    }
+    if let Some(class) = o.get("class") {
+        t.class = class.parse().expect("class");
+    }
+    t
+}
+
+/// Build the ledger a block describes and evaluate the block's rule (`PM034`, `PM001`, `PM002`, `PM010`-`PM013`, `PM033` or `PM036`) over it.
 fn runner(case: &Case) -> Vec<Finding> {
     // frob:tests crates/frob-pm/src/rules/membership.rs::pm034
     // frob:tests crates/frob-pm/src/rules/membership.rs::evaluate
@@ -133,25 +176,13 @@ fn runner(case: &Case) -> Vec<Finding> {
     let mut ready_min = 0_u32;
     let mut expedite_max = 1_u32;
     let mut live: BTreeSet<TicketId> = BTreeSet::new();
+    let mut pm = frob_pm::PmConfig::load(dir.path()).expect("defaults").pm;
     for line in case.text.lines().filter(|l| !l.trim().is_empty()) {
         let w: Vec<&str> = line.split_whitespace().collect();
         let o = opts(&w);
         match w[0] {
-            "epic" | "task" => {
-                let ty = if w[0] == "epic" {
-                    TicketType::Epic
-                } else {
-                    TicketType::Task
-                };
-                let mut t = NewTicket::new(w[1], ty);
-                t.parent = o.get("parent").map(|k| keys[*k]);
-                t.labels = o
-                    .get("labels")
-                    .map(|l| l.split(',').map(str::to_owned).collect())
-                    .unwrap_or_default();
-                if let Some(class) = o.get("class") {
-                    t.class = class.parse().expect("class");
-                }
+            "epic" | "task" | "story" => {
+                let t = new_ticket(&w, &o, &keys);
                 let id = ledger.new_ticket(t).expect("ticket").ticket.front.id;
                 if o.get("state") == Some(&"done") {
                     ledger
@@ -171,7 +202,27 @@ fn runner(case: &Case) -> Vec<Finding> {
             "limit" => limit = w[1].parse().expect("limit"),
             "ready_min" => ready_min = w[1].parse().expect("ready_min"),
             "expedite_max" => expedite_max = w[1].parse().expect("expedite_max"),
-            "cycle" => add_cycle(&ledger, &o, w.contains(&"closed")),
+            "ready_requires" => {
+                pm.ready_requires = w[1]
+                    .split(',')
+                    .map(|r| r.parse().expect("ready requirement"))
+                    .collect();
+            }
+            "min_history" => pm.min_history = w[1].parse().expect("min_history"),
+            "cycle" => {
+                let id = add_cycle(&ledger, &o, w.contains(&"closed"));
+                for k in o
+                    .get("members")
+                    .copied()
+                    .unwrap_or("")
+                    .split(',')
+                    .filter(|k| !k.is_empty())
+                {
+                    PmStore::new(&ledger)
+                        .set_member(ObjectKind::Cycle, id, keys[k], Op::Add)
+                        .expect("member");
+                }
+            }
             "milestone" => add_milestone(&ledger, &w, &o, &keys),
             other => unreachable!("unknown DSL verb {other}"),
         }
@@ -181,6 +232,23 @@ fn runner(case: &Case) -> Vec<Finding> {
         // frob:tests crates/frob-pm/src/rules/milestone.rs::pm002
         // frob:tests crates/frob-pm/src/rules/milestone.rs::evaluate
         return milestone::evaluate(&ledger)
+            .expect("evaluate")
+            .findings
+            .into_iter()
+            .filter(|f| f.rule == case.rule)
+            .collect();
+    }
+    if matches!(case.rule.to_string().as_str(), "PM010" | "PM011" | "PM012") {
+        // frob:tests crates/frob-pm/src/rules/cycle_plan.rs::pm010
+        // frob:tests crates/frob-pm/src/rules/cycle_plan.rs::pm011
+        // frob:tests crates/frob-pm/src/rules/cycle_plan.rs::pm012
+        // frob:tests crates/frob-pm/src/rules/cycle_plan.rs::evaluate
+        // frob:tests crates/frob-pm/src/rules/cycle_plan.rs::ready_failures
+        // frob:tests crates/frob-pm/src/cycle/history.rs::deliveries
+        // frob:tests crates/frob-pm/src/cycle/history.rs::done_points
+        // frob:tests crates/frob-pm/src/cycle/history.rs::cycle_events
+        // frob:tests crates/frob-pm/src/cycle/history.rs::member_status
+        return cycle_plan::evaluate(&ledger, &pm)
             .expect("evaluate")
             .findings
             .into_iter()
@@ -233,6 +301,9 @@ macro_rules! corpus_file {
 
 corpus_file!(pm001, "pm001.md");
 corpus_file!(pm002, "pm002.md");
+corpus_file!(pm010, "pm010.md");
+corpus_file!(pm011, "pm011.md");
+corpus_file!(pm012, "pm012.md");
 corpus_file!(pm013, "pm013.md");
 corpus_file!(pm033, "pm033.md");
 corpus_file!(pm034, "pm034.md");
@@ -252,7 +323,8 @@ fn every_corpus_file_has_a_test() {
     assert_eq!(
         files,
         [
-            "pm001.md", "pm002.md", "pm013.md", "pm033.md", "pm034.md", "pm036.md"
+            "pm001.md", "pm002.md", "pm010.md", "pm011.md", "pm012.md", "pm013.md", "pm033.md",
+            "pm034.md", "pm036.md"
         ],
         "corpus files and corpus_file! lines must match"
     );

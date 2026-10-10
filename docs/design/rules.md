@@ -1,6 +1,11 @@
 # Rules, gates, and the check pipeline
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Ownership after products.md: the rule framework (sections 1, 2, 5, 6) is `gob-rules`; family ownership between frob and grimble is in boundaries.md. Inputs: notes/v1/gates-and-rules.md (667 rule
+Status: current
+Owner: gob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Ownership after products.md: the rule framework (sections 1, 2, 5, 6) is `gob-rules`; family ownership between frob and grimble is in boundaries.md. Inputs: notes/v1/gates-and-rules.md (667 rule
 ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
 
 ## 1. Decisions in one screen

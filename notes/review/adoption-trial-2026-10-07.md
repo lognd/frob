@@ -1,6 +1,6 @@
 # frob v2 adoption trial, 2026-10-07 (binary 0.532.0 debug)
 
-Fixture: /tmp/claude-1000/-home-logan-projects-frob-v2/0df856f6-40e0-412c-9911-4dd0adff1a79/scratchpad/adopt/
+Fixture: <scratchpad>/adopt/
 (proj = python pkg in py/ + rust crate in rs/ + one git repo; v1repo, v1b, tb, mst = side trials).
 Docs used: README.md, docs/guides/{release,upgrade-from-v1}.md, docs/migration/*, docs/reference/*.
 Everything below was run against the installed `frob`; grimble/crunk from target/debug (both present).

@@ -1,6 +1,11 @@
 # Diagnostics that teach, and fixes that are safe to apply
 
-Status: ACCEPTED with changes (D78, owner review 2026-10-04, ticket
+Status: current
+Owner: gob
+Decisions: D78
+Audience: contributor
+
+Provenance: ACCEPTED with changes (D78, owner review 2026-10-04, ticket
 ~J8PJHKX). The changes: first-occurrence teaching is on by default and
 a long explanation can always be repeated (section 5.1); `--fix` stays
 within the current ticket's scope (section 3).

@@ -61,7 +61,7 @@ forecasts, exception kinds hotfix and baseline, migration tooling.
 ## Implementer workflow (frob v2 self-hosted, from 2026-10-04)
 
 The repository is checked and ticketed by the v2 binary. Build it with
-`CARGO_TARGET_DIR=/home/logan/projects/frob-v2-wt/.target cargo build -p
+`CARGO_TARGET_DIR=<worktrees>/.target cargo build -p
 frob-cli` and call `$CARGO_TARGET_DIR/debug/frob` (alias F). Verbs:
 `F ticket doable`, `F work <handle>` (worktree under ../frob-v2-wt/,
 branch ticket/<handle>, lease taken), implement, `F test --base
@@ -79,7 +79,7 @@ for history.
    identity; one worktree per ticket; base and land target = experimental).
 2. Implementer works only inside that worktree and only inside the ticket
    scope (`frob ticket show T-####` lists it). Design docs are read from
-   the primary checkout path /home/logan/projects/frob-v2/docs/design
+   the primary checkout path docs/design
    until they are committed there.
 3. Verification inside the worktree: `cargo fmt --check`, `cargo clippy
    --all-targets -- -D warnings`, `cargo nextest run`, `RUSTDOCFLAGS="-D
@@ -101,8 +101,8 @@ for history.
   and retired (2026-10-04): diverging worktrees reuse each other's
   workspace-crate artifacts (phantom compile errors), and the landing
   binary got overwritten by agent builds. The landing binary is
-  F=/home/logan/projects/frob-v2/target/debug/frob, built only in the
-  primary from experimental. /home/logan/projects/frob-v2-wt/.cargo/
+  F=<frob-v2>/target/debug/frob, built only in the
+  primary from experimental. <worktrees>/.cargo/
   config.toml caps jobs at 4 and sets no target-dir.
 - At most two implementers building at once.
 - Two Claude Code crashes (one Bun bus error) happened while long
@@ -115,7 +115,7 @@ for history.
   uvx, worktree creation and agent dispatches when free space on / is
   under 80 GB (DISK_GUARD_MIN_GB); cleanup and inspection always pass.
 - Worktree builds use line-tables-only debug info and no incremental
-  cache (/home/logan/projects/frob-v2-wt/.cargo/config.toml).
+  cache (<worktrees>/.cargo/config.toml).
 - At most two building agents; delete a stopped worktree's target/
   immediately; never recreate a shared target dir.
 
@@ -244,7 +244,7 @@ experimental. Record such lands in the status log.
   the ONLY damaged ref is ticket/EHPFVKD (its tip commit object is empty).
   experimental and all other branches read cleanly. The G09 worktree
   files are intact and backed up to
-  /home/logan/frob-v2-recovery/EHPFVKD-20261002-2001 (tar + reflog).
+  ~/frob-v2-recovery/EHPFVKD-20261002-2001 (tar + reflog).
   NEXT SESSION: (1) repair: in the EHPFVKD worktree, reset the branch to
   the newest readable commit from the saved reflog with `git reset
   --soft` (keeps the files), re-commit the work, then delete the 26

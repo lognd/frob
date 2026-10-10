@@ -1143,6 +1143,7 @@ dependencies = [
 name = "frob-gh"
 version = "0.532.0"
 dependencies = [
+ "frob-release",
  "reqwest",
  "rustls",
  "serde",

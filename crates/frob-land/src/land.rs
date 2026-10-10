@@ -180,6 +180,7 @@ fn prepare(
         base,
         opts.ci_reader.as_deref(),
         opts.override_base_ci.as_deref(),
+        (&site.ledger, &handle),
     )?;
     let mut base_merge = None;
     let fork = wt.merge_base(&base_ref(base), &branch)?;

@@ -1,5 +1,10 @@
 # Upgrade from frob v1 to v2
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: user
+
 How-to guide (Diataxis: task). Read this if you use frob 0.531.0 or earlier,
 or if you have never seen v2 and want to know what the 0.532.0 upgrade does.
 

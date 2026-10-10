@@ -1,6 +1,11 @@
 # Binding semantics over U (G02)
 
-Status: DRAFT under T-0001 (a v1-format id that migrates with an alias);
+Status: draft
+Owner: grimble
+Decisions: none
+Audience: contributor
+
+Provenance: DRAFT under T-0001 (a v1-format id that migrates with an alias);
 written under ticket 01M3Z712KRPYF3DQG6ZFCWVPS7 (G02). It makes
 grimble-model.md section 9.1 precise: what "binds" means, which of four
 ranked sources produces each fact, how the sources merge, what each of

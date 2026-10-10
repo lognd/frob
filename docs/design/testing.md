@@ -1,6 +1,11 @@
 # Testing rules against the universal model (D106)
 
-Status: accepted, coordinator decision 2026-10-06 (owner: "make sure the
+Status: current
+Owner: gob
+Decisions: D106, D103
+Audience: rule author
+
+Provenance: accepted, coordinator decision 2026-10-06 (owner: "make sure the
 lints, mdtests, snapshots and so forth are designed with [the universal
 model] in mind"). Evidence: notes/research/u-testing-audit.md (the audit
 of D103 against U), notes/research/rule-testing.md (ruff, ty, clippy,

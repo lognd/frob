@@ -441,4 +441,4 @@ Not verified from source (relied on docs or inference):
 15. ruff `ruff_mdtest` is young: only 56 files, one `fixes` file, one `panicy` self-test. Treat the
     exact public API (`ruff_mdtest::run`, crates/ruff_mdtest/src/lib.rs:30-53@RUFF) as unstable.
 
-Clones under /tmp/claude-1000/-home-logan-projects-frob-v2/0df1ac2f-a018-4421-a08d-9047b377bf72/scratchpad/ref2 are deleted after this file was written.
+Clones under <scratchpad>/ref2 are deleted after this file was written.

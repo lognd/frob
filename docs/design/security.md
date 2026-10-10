@@ -1,6 +1,11 @@
 # Security of packs, plugins, tool stages and the mirror
 
-Status: ACCEPTED (D82, ticket ~AR02B3E), from the pessimistic audit
+Status: current
+Owner: gob
+Decisions: D82
+Audience: contributor
+
+Provenance: ACCEPTED (D82, ticket ~AR02B3E), from the pessimistic audit
 notes/review/plugin-security-audit.md (34 findings: 4 critical, 17 high,
 10 medium, 3 low). The owner decisions on three judgment calls are section 5.
 Applies to frob, grimble and crunk; the shared pieces live in gob crates.

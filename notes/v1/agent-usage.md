@@ -13,7 +13,7 @@ intermediates live in the session scratchpad, no source file was touched.
 | A kinds | tool 112,263; cli 30,467; dispatch 1,828; ticket 807; gate_rule_counts 221 |
 | Source B: Claude Code transcripts (-home-logan-projects-frob) | 753 JSONL files, 742 are subagent files, 11 are top-level sessions; 2026-08-25 .. 2026-09-27 (34 days), ~1.6 GB |
 | B frob invocations extracted | 36,610 (resolved to a tool_result: 36,600; 10 unresolved) |
-| Excluded | /home/logan/.claude/projects/-home-logan-projects-frob-v2 (this redesign session, not v1 usage) |
+| Excluded | ~/.claude/projects/<project> (this redesign session, not v1 usage) |
 | ticket verbs in the parser | 57 (regex over src/frob/_cli_parsers/_ticket); top-level verbs 52 |
 
 Fields in `kind=cli`: args_head (<= 512 chars, truncated), subcommand, subverb/verb (absent on 19% of

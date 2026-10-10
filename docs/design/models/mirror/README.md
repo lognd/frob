@@ -1,6 +1,11 @@
 # Formal model of the one-way ticket mirror
 
-Status: model-checked 2026-10-03 with TLC 2.19 (tla2tools.jar of the
+Status: current
+Owner: frob
+Decisions: none
+Audience: contributor
+
+Provenance: model-checked 2026-10-03 with TLC 2.19 (tla2tools.jar of the
 v1.7.4 release, sha256 936a2620...0e88). Subject: docs/design/mirror.md
 section 3.1 (reconcile, never block), security.md 2.11 (I12) and the
 event model of tickets.md 2a. Nothing in mirror.md was edited; the

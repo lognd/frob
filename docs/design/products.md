@@ -1,6 +1,11 @@
 # Product split: three goblins, one workspace
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Owner direction 2026-10-01: make the
+Status: current
+Owner: gob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Owner direction 2026-10-01: make the
 responsibilities of frob and crunk unmistakable; rename strata (v1 name) into its
 own goblin-named tool; decide whether the structural linter and the
 design model belong together.

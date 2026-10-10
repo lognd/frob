@@ -12,6 +12,7 @@ authors.workspace = true
 # HTTP stack (docs/design/git-io.md section 4: a thin reqwest client). tokio lives only in the
 # serve crates and here (architecture.md async IO row). Pinned exactly; rustls with the ring
 # provider installed by hand so no aws-lc C build lands on Windows or musl.
+frob-release = { version = "0.532.0", path = "../frob-release" }
 reqwest = { version = "=0.13.4", default-features = false, features = ["rustls-no-provider", "http2"] }
 rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std"] }
 tokio = { version = "=1.53.1", default-features = false, features = ["rt", "time"] }
