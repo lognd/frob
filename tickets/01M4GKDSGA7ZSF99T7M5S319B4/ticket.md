@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T15:10:08Z"
-updated = "2026-10-10T00:54:40Z"
+updated = "2026-10-10T00:54:45Z"
 labels = ["adoption:logand-app", "creates:crates/frob-worktree/tests/python_env.rs", "creates:crates/frob-worktree/src/python_env.rs"]
 scope = ["changelog.d/**", "crates/gob-check/src/tools.rs", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/tests/python_env.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/src/python_env.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/tests/providers.rs"]
 
