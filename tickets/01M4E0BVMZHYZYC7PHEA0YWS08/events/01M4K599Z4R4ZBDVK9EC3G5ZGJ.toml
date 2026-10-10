@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given each listed form, when compiled, then GRL017 fires with the span of the certainly or possibly"]
+new = ["Given `not d(f)` where def d contains `certainly` or `possibly` at even depth, when compiled, then GRL017 fires; a def body with `not` inside it still fires; `d(f)` outside any negation stays clean", "Given `count(...)` with `certainly` or `possibly` in its body compared with `<`, `<=`, `==` or `!=`, when compiled, then GRL017 fires; `>` and `>=` stay clean", "Given a `report ... when C` clause that has a later `report` clause, when compiled and C holds `certainly` or `possibly`, then GRL017 fires; the last `report`'s `when` stays clean", "Docs (grl-spec 7.0.4) state the def, count and report-when negative positions"]
+moved = [0]
+at = "2026-10-10T15:00:44Z"
+actor = "Claude"
+rev = 1

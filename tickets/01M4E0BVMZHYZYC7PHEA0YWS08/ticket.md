@@ -2,17 +2,29 @@
 id = "01M4E0BVMZHYZYC7PHEA0YWS08"
 title = "GRL017 misses negative positions: def bodies reset the negation count, def call sites under not do not carry it, count bodies under < or == and earlier report when clauses are not treated as negative"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T14:58:33Z"
-updated = "2026-10-08T14:58:33Z"
-scope = ["changelog.d/**", "crates/gob-plan/**"]
+updated = "2026-10-10T15:29:10Z"
+scope = ["changelog.d/**", "crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
-text = "Given each listed form, when compiled, then GRL017 fires with the span of the certainly or possibly"
+text = "Given `not d(f)` where def d contains `certainly` or `possibly` at even depth, when compiled, then GRL017 fires; a def body with `not` inside it still fires; `d(f)` outside any negation stays clean"
+bound = false
+
+[[acceptance]]
+text = "Given `count(...)` with `certainly` or `possibly` in its body compared with `<`, `<=`, `==` or `!=`, when compiled, then GRL017 fires; `>` and `>=` stay clean"
+bound = false
+
+[[acceptance]]
+text = "Given a `report ... when C` clause that has a later `report` clause, when compiled and C holds `certainly` or `possibly`, then GRL017 fires; the last `report`'s `when` stays clean"
+bound = false
+
+[[acceptance]]
+text = "Docs (grl-spec 7.0.4) state the def, count and report-when negative positions"
 bound = false
 +++
 
