@@ -2,7 +2,8 @@
 id = "01M4FD3KT1XFB1N1GZYXFRMPT7"
 title = "TODO001 fires on a comment in .github/workflows/ci.yml although YAML is not a scanned language for directives"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
