@@ -2,7 +2,8 @@
 id = "01M4KYH3CT4JRJ2V0HGVVFYE34"
 title = "gob-dev: profile.toml has no scenario for frob ticket closeout, so cargo dev profile aborts in CI"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
