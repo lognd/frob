@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T21:14:18Z"
+digest = "d802470ed0a561178081a498121654db2100b5cc6feb789f75cf06f664239f94"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 51dbd563-a9f7-4bb3-8f2f-231b43a8563c with nextest profile: default
+    Starting 1 test across 39 binaries (278 tests skipped)
+        PASS [   0.407s] frob-cli::cycle a_retroactive_closeout_is_not_delivered_work_of_the_current_cycle
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.408s] 1 test run: 1 passed, 278 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(=a_retroactive_closeout_is_not_delivered_work_of_the_current_cycle)'"
+size = 563
+status = "measured"
+tests = ["a_retroactive_closeout_is_not_delivered_work_of_the_current_cycle"]
+at = "2026-10-10T21:14:18Z"
+actor = "Claude"
+rev = 1
