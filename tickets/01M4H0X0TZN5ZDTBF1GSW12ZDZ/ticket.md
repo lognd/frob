@@ -2,7 +2,8 @@
 id = "01M4H0X0TZN5ZDTBF1GSW12ZDZ"
 title = "Ledger hygiene: queued imported v1 tickets whose scopes name v1 doc paths (docs/modules, docs/strata, docs/guide) get a v2 scope or are dropped with a reason"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
