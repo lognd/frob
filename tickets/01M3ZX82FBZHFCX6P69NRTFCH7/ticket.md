@@ -2,13 +2,13 @@
 id = "01M3ZX82FBZHFCX6P69NRTFCH7"
 title = "Ticket slug function"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-03T03:34:41Z"
+updated = "2026-10-10T23:27:40Z"
 idempotency_key = "m2-nav-slug"
 labels = ["milestone:2", "area:navigation", "good-first"]
 scope = ["crates/frob-ledger/src/slug.rs"]
