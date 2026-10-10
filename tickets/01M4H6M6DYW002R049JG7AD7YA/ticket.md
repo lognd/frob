@@ -2,7 +2,8 @@
 id = "01M4H6M6DYW002R049JG7AD7YA"
 title = "Docs phase 1 leftovers: status header on the four leased design docs and the tickets.md section 6 citations in frob-lease"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
