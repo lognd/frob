@@ -7,7 +7,7 @@ priority = "critical"
 points = 3
 reporter = "Claude"
 created = "2026-10-10T14:27:06Z"
-updated = "2026-10-10T14:40:51Z"
+updated = "2026-10-10T14:41:29Z"
 scope = ["design/model.grmb", "crates/grimble-*/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = false
 
 [[acceptance]]
 text = "clap::Command::new is not observed as process.spawn (only std::process::Command is)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "process.env reads are granted in design/model.grmb only where the code legitimately reads the environment"
