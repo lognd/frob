@@ -12,6 +12,7 @@ use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
 use frob_pm::rules::cycle::Pm036;
+use frob_pm::rules::cycle_plan::{Pm010, Pm011, Pm012};
 use frob_pm::rules::membership::Pm034;
 use frob_pm::rules::milestone::{Pm001, Pm002};
 use frob_pm::rules::replenish::Pm033;
@@ -242,6 +243,26 @@ fn cycle_findings(inputs: &FrobInputs) -> Vec<Finding> {
         .map_err(|e| failed(ALL, e))])
 }
 
+/// `PM010`-`PM012` findings for the `repo:cycle-plan` group; empty without a ledger or cycles, `[pm]` knobs from `frob.toml`.
+// frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
+fn cycle_plan_findings(inputs: &FrobInputs) -> Vec<Finding> {
+    const ALL: &[&str] = &["PM010", "PM011", "PM012"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
+    };
+    let pm = match frob_pm::PmConfig::load(&inputs.root) {
+        Ok(cfg) => cfg.pm,
+        Err(e) => {
+            return settle([Err(failed(ALL, format_args!("pm config unreadable: {e}")))]);
+        }
+    };
+    settle([frob_pm::rules::cycle_plan::evaluate(&state.ledger, &pm)
+        .map(|e| e.findings)
+        .map_err(|e| failed(ALL, e))])
+}
+
 /// Ticket ids holding a live lease, the liveness input of `PM013`; `None` (every in-progress ticket counts) when the lease store cannot be read.
 // frob:ticket 01M416Z11V5GR012FR47HWFTBP
 fn live_leases(
@@ -408,6 +429,13 @@ impl Product for Frob {
             RepoGroup::new("repo:cycle", vec![Pm036.meta()], |s: &Snapshot<Self>, _| {
                 strict_pm(&s.inputs, cycle_findings(&s.inputs))
             })
+            .full_only(),
+            // frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
+            RepoGroup::new(
+                "repo:cycle-plan",
+                vec![Pm010.meta(), Pm011.meta(), Pm012.meta()],
+                |s: &Snapshot<Self>, _| strict_pm(&s.inputs, cycle_plan_findings(&s.inputs)),
+            )
             .full_only(),
             // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
             RepoGroup::new("repo:replenish", vec![Pm033.meta()], {
