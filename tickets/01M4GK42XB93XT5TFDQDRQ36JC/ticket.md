@@ -2,7 +2,8 @@
 id = "01M4GK42XB93XT5TFDQDRQ36JC"
 title = "grimble-model directive check_args still rejects v1 ticket aliases (T-####) on frob:ticket and frob:todo, disagreeing with gob-directives after ~KP5659Y"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
