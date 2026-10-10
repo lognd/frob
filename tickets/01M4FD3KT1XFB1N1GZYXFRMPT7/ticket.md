@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T04:00:28Z"
-updated = "2026-10-10T20:08:59Z"
+updated = "2026-10-10T20:10:55Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-obligations/**", "crates/gob-directives/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a TODO comment in a workflow YAML file, when frob check runs, then TODO001 follows the documented language set (no finding if YAML is unscanned, or docs updated if the decision is to scan YAML)"
-bound = false
+bound = true
 +++
 
 Hullbreach game repro (D).
