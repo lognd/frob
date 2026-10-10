@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T04:11:34Z"
-updated = "2026-10-10T18:49:24Z"
+updated = "2026-10-10T18:53:16Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-release/**", "crates/frob/**", "changelog.d/**", "docs/reference/changelog.md", "docs/reference/config.md", "docs/schemas/config.json"]
 
