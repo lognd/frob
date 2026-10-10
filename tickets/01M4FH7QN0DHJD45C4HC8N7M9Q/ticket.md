@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T05:12:38Z"
-updated = "2026-10-10T21:48:03Z"
+updated = "2026-10-10T21:53:08Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob-check/**", "crates/gob-check/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given crunk and grimble configured, when frob check --only COLOR001 or --only COLOR or --only SYS runs, then the sibling's rules are selected and other rules are skipped; an id unknown to every product is still refused"
-bound = false
+bound = true
 +++
 
 logand.app-v2 F-542 (second half). The crunk rule coverage gap is the crunk rule tickets in flight; telemetry in the worktree is ~5SQT8RX.
