@@ -2,7 +2,8 @@
 id = "01M4H408PG9RR728AQGGRETKJ3"
 title = "Standalone grimble check does not run the CAP rules (CAP001/CAP002); only frob check hosting grimble does, so grimble alone reports a clean model that frob rejects"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
