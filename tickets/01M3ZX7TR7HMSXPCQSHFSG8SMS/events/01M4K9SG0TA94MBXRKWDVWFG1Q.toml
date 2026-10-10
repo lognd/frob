@@ -1,0 +1,8 @@
+kind = "land"
+base_ref = "refs/heads/experimental"
+commit = "fac9b4f32ba47c1a326d76b812be1ee9b4f7c7c3"
+branch = "ticket/FSG8SMS"
+pushed = false
+at = "2026-10-10T16:15:29Z"
+actor = "Claude"
+rev = 1
