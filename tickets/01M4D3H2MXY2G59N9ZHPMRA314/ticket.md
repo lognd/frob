@@ -2,7 +2,8 @@
 id = "01M4D3H2MXY2G59N9ZHPMRA314"
 title = "COV001: count C# files as test-capable subjects"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
