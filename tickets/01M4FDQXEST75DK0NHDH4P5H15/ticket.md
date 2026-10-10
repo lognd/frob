@@ -2,7 +2,8 @@
 id = "01M4FDQXEST75DK0NHDH4P5H15"
 title = "ticket fragment text starts with a 'frob: ' prefix in consumer repositories"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
