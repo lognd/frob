@@ -132,7 +132,7 @@ pub fn locate_hole(path: &str, text: &str) -> Option<HoleSite> {
 }
 
 // frob:ticket 01M4GKD8WNG2NW2VAR1MBP382J
-/// [`unresolved_finding_for`] anchored at `site` of `file` and naming its line and likely cause.
+/// `unresolved_finding_for` anchored at `site` of `file` and naming its line and likely cause.
 pub fn unresolved_finding_at(
     id: &str,
     file: FileId,
