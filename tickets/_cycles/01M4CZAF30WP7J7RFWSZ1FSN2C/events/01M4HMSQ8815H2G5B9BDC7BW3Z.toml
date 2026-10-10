@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4DYPDCTK6KR5DXFQW7NXA6R"
+text = "coordinator-assigned land plumbing bug; cycle over capacity"
+at = "2026-10-10T00:53:21Z"
+actor = "lognd"
+rev = 1

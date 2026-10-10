@@ -11,9 +11,11 @@ authors.workspace = true
 [dependencies]
 crunk-ingest = { version = "0.532.0", path = "../crunk-ingest" }
 crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
+crunk-tailwind = { version = "0.532.0", path = "../crunk-tailwind" }
 crunk-tokens = { version = "0.532.0", path = "../crunk-tokens" }
 crunk-values = { version = "0.532.0", path = "../crunk-values" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
+indexmap = "2"
 tracing = "0.1"
 
 [dev-dependencies]
