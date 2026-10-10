@@ -2,7 +2,8 @@
 id = "01M4FDQFHJKT30DHZEEA6GWB4R"
 title = "Retroactive closeout: record evidence and close a ticket outside any active cycle without a lease, with a reason, excluded from the current sprint's commitment"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
