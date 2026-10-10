@@ -1,6 +1,11 @@
 # crunk: an agent-first design tool where every interface is batch-checkable (D108-D117)
 
-Status: accepted direction, owner request 2026-10-08: "crunk needs to
+Status: draft
+Owner: crunk
+Decisions: D108-D117, D96
+Audience: contributor
+
+Provenance: accepted direction, owner request 2026-10-08: "crunk needs to
 mirror modern graphic design tools like Figma, but in a manner easy to
 use for an agent, and every design/user interface needs to be
 batch-checkable and lintable"; "not just Figma, the modern UX/UI/GX

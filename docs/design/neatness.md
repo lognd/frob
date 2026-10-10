@@ -1,7 +1,12 @@
 # Neatness: the NEAT rule family
 
-Status: DRAFT under T-0001; decision D59 is accepted (2026-10-04).
-Owner: grimble. The NEAT rules live in `grimble-lints` (boundaries.md
+Status: draft
+Owner: grimble
+Decisions: D59
+Audience: rule author
+
+Provenance: DRAFT under T-0001; decision D59 is accepted (2026-10-04).
+Ownership note: grimble. The NEAT rules live in `grimble-lints` (boundaries.md
 section 2.5), their knobs under `[neat]` in `grimble.toml`, and frob
 only orchestrates the bound tool stages that feed them. Evidence:
 notes/research/neatness.md (Logan Smith's channel, 13 videos; Tony Van

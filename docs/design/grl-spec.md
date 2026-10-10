@@ -1,6 +1,11 @@
 # GRL: the grimble rule language
 
-Status: ACCEPTED as the design (D80, ticket ~4QBTKCK); the newcomer test
+Status: draft
+Owner: grimble
+Decisions: D80
+Audience: rule author
+
+Provenance: ACCEPTED as the design (D80, ticket ~4QBTKCK); the newcomer test
 of section 13 is still to run. Evidence:
 notes/research/rule-languages.md (17 rule systems surveyed, six run
 locally with their error messages measured, ten frob rules rewritten).

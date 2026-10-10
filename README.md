@@ -102,7 +102,8 @@ their rule sets and verbs are still growing.
 
 ## Reference
 
-- [docs/guides/quickstart.md](docs/guides/quickstart.md): init to land,.
+- [docs/README.md](docs/README.md): the index of every document, with its status.
+- [docs/guides/quickstart.md](docs/guides/quickstart.md): init to land.
 - [docs/reference/cli/frob.md](docs/reference/cli/frob.md): every `frob` verb and flag, generated from the CLI (`cargo dev gen cli`).
 - [docs/reference/config.md](docs/reference/config.md): every `frob.toml` key.
 - [docs/reference/rules/](docs/reference/rules/): one page per check rule.

@@ -1,6 +1,11 @@
 # Language engines: what lives in gob, what lives in a product (D96)
 
-Status: accepted, coordinator decision 2026-10-06 under the owner's
+Status: current
+Owner: gob
+Decisions: D96
+Audience: contributor
+
+Provenance: accepted, coordinator decision 2026-10-06 under the owner's
 delegation; owner prompt: "Make sure the language engines make sense
 (for example, what from JSX/TSX goes in gob or crunk? Don't we need it
 for grimble as well?). We want both universal capabilities and

@@ -1,6 +1,11 @@
 # Paths: one discipline from type to lint (D86)
 
-Status: accepted direction, owner request 2026-10-03 ("structural and
+Status: draft
+Owner: gob
+Decisions: D86
+Audience: contributor
+
+Provenance: accepted direction, owner request 2026-10-03 ("structural and
 powerful, not a cheap hotfix"). The `/` versus `\` difference broke this
 repository's CI on every first Windows run: the merge driver command
 line, the command-tool allowlist compare, a `--cwd` string compare, a

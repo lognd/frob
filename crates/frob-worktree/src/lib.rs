@@ -1,4 +1,4 @@
-//! `frob work [--here]` (hidden alias `start`) and `frob requeue` (tickets.md section 6, cli.md sections 3 and 5).
+//! `frob work [--here]` (hidden alias `start`) and `frob requeue` (tickets.md section 3, cli.md sections 3 and 5).
 //!
 //! [`Workspace::work`] takes the scope lease ([`frob_lease`]), creates a linked
 //! worktree on branch `ticket/<handle>` from the base branch (`[tickets] ref`),

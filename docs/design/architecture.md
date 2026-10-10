@@ -1,6 +1,11 @@
 # Architecture: workspace, data flow, errors, logging
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias).
+Status: current
+Owner: gob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias).
 Inputs: notes/rust-ecosystem.md, notes/v1/ops-and-integrations.md
 (telemetry), notes/v1/gates-and-rules.md.
 

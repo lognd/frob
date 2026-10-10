@@ -1,5 +1,10 @@
 # Cut a release
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: owner
+
 How-to guide (Diataxis: task). Read this if you are the owner cutting a frob
 release, here 0.532.0 for the first time. It lists the one-time setup, the
 steps for every release, and what to do when a step fails.

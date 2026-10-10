@@ -1,6 +1,11 @@
 # Releases: a scrumban flow wired to milestones, cycles and incremental releases
 
-Status: ACCEPTED (D83, ticket ~5MAFAAY; version scheme decided by the
+Status: current
+Owner: frob
+Decisions: D83
+Audience: contributor
+
+Provenance: ACCEPTED (D83, ticket ~5MAFAAY; version scheme decided by the
 owner 2026-10-03). Builds on pm-enforcement.md (cycles,
 capacity, velocity, forecasts, flow metrics, WIP limits, the PM family),
 documentation.md 6 (changelog fragments), monorepo.md 4 (lockstep crate

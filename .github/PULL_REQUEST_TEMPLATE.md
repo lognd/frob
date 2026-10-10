@@ -1,6 +1,6 @@
 ## Ticket
 
-<!-- e.g. T-1234 -->
+<!-- The ticket handle, e.g. ~ABC1234 (frob ticket show) -->
 
 ## Summary
 

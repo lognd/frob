@@ -672,7 +672,7 @@ Mapping each planned mechanism to evidence. Design numbers are suggestions with 
 
 ## 7. Reproducibility
 
-All under `/tmp/claude-1000/-home-logan-projects-frob-v2/62e4a831-7814-4d7a-bff3-31149f162233/scratchpad/docgen/`:
+All under `<scratchpad>/docgen/`:
 `10_fetch.py` (configs, scripts, lib.rs, md sample), `11_analyze.py` (feature regexes; the overrides block
 after the precision audit is authoritative), `12_stats.py`, `13_codesearch.py` -> `codesearch.json`,
 `14_dupfetch.py` -> `full/`, `15_deep.py` -> `deep/`, `16_lang.py` (per-language), `17_deep_analyze.py`,
@@ -680,7 +680,7 @@ after the precision audit is authoritative), `12_stats.py`, `13_codesearch.py` -
 `20b_evidence.py` -> `evidence.json`, `evidence2.json`, `21_final.py` -> `final_stats.txt`, `22_dups.py` ->
 `dups.json`, `23_score.py` -> `scores.json`, `24_cross.py`, `getf.sh` and `ex/` (hand-read exemplar files),
 `frontier.tsv` (the external frontier store). Earlier data from
-`/tmp/claude-1000/-home-logan-projects-frob-v2/62e4a831-7814-4d7a-bff3-31149f162233/scratchpad/docs/`.
+`<scratchpad>/docs/`.
 Resumable: every fetch step skips files it already has.
 
 Precision notes per feature (audited by sampling matched text): `-update`-style snapshot flags and

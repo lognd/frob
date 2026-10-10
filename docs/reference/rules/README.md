@@ -122,6 +122,9 @@
 |---|---|---|---|---|---|---|
 | [PM001](PM001.md) | milestone-without-goal | warn | manual | P+ | false | A milestone has no goal statement or no exit criteria. |
 | [PM002](PM002.md) | milestone-epics-incomplete | warn | manual | P+ | false | A milestone has no epics, or a member epic is done while work under it is open. |
+| [PM010](PM010.md) | cycle-over-capacity | advisory | manual | P+ | false | An open or planned cycle commits more points than its capacity. |
+| [PM011](PM011.md) | cycle-without-goal | warn | manual | P+ | false | An open or planned cycle states no goal. |
+| [PM012](PM012.md) | cycle-member-not-ready | advisory | manual | P+ | false | A not-yet-started member of an open or planned cycle fails the definition of ready. |
 | [PM013](PM013.md) | wip-limit-exceeded | warn | manual | P+ | false | The repository has more tickets in progress than `[pm.wip] in_progress` allows. |
 | [PM033](PM033.md) | ready-queue-low | advisory | manual | P+ | false | The ready queue holds fewer doable tickets than `[pm] ready_min`. |
 | [PM034](PM034.md) | milestone-member-outside-epics | warn | manual | P+ | false | A ticket claims a milestone that its epic ancestry does not reach. |

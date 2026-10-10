@@ -1,6 +1,11 @@
 # Time: one clock, one zone, from type to lint (D93)
 
-Status: section 5 step 1 built (gob-time, one pinned clock in the command context, clippy
+Status: draft
+Owner: gob
+Decisions: D93, D86
+Audience: contributor
+
+Provenance: section 5 step 1 built (gob-time, one pinned clock in the command context, clippy
 confinement); steps 2 and 3 follow. Accepted direction, owner request 2026-10-04 ("Can we add a time
 lint?"). ~AAZFNR5 turned CI red at 00:06 UTC: `frob cycle` derived a
 cycle's state from the UTC day while the library's `Day::today()` used

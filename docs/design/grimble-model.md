@@ -1,6 +1,11 @@
 # grimble: the system-design model and its code binding
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Ownership after products.md: this is the grimble model (v1 name: strata), crates `grimble-model`, `grimble-kernel`, `grimble-bind`. Inputs: notes/v1/strata.md (surface grammar,
+Status: draft
+Owner: grimble
+Decisions: D36
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Ownership after products.md: this is the grimble model (v1 name: strata), crates `grimble-model`, `grimble-kernel`, `grimble-bind`. Inputs: notes/v1/strata.md (surface grammar,
 kernel, 12 binding mechanisms, rule inputs, measured adoption), the
 binding requirement in goals.md, code-model.md.
 

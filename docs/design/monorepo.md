@@ -1,6 +1,11 @@
 # Monorepo: frob, grimble and crunk in one workspace
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Inputs: notes/crunk.md (crunk survey and its
+Status: current
+Owner: gob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/crunk.md (crunk survey and its
 FROBLEMS.md complaints), notes/rust-ecosystem.md section 1 (ruff/ty
 layout).
 

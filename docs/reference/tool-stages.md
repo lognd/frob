@@ -1,5 +1,10 @@
 # Tool stages (`[[check.tool]]`)
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: user
+
 A tool stage runs an external command after the built-in rules of `frob check`. Design: `docs/design/cicd.md` section 3.
 
 | Key | Default | Meaning |

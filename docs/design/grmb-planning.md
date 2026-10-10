@@ -1,6 +1,11 @@
 # The .grmb planning layer
 
-Status: DRAFT, written under ticket ~83H49E3 from the owner's mockup of
+Status: draft
+Owner: grimble
+Decisions: D124-D133
+Audience: contributor
+
+Provenance: DRAFT, written under ticket ~83H49E3 from the owner's mockup of
 2026-10-08 and the coordinator's decisions (D124-D133 in README.md).
 Owner intent: "multi-level, mirroring the design cycle getting more
 specific, but with actual bindings to code/tickets and when tickets are
