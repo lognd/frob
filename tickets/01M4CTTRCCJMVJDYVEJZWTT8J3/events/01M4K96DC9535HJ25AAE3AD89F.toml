@@ -1,0 +1,160 @@
+kind = "evidence"
+captured_at = "2026-10-10T16:02:43Z"
+digest = "add4b9f9327d36f3c25e39f961fff7870a3d1b8a4efc8fdf697fcd3ce27064ea"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling ahash v0.8.12
+   Compiling tree-sitter v0.27.0
+   Compiling error_set v0.9.2
+   Compiling insta v1.48.0
+   Compiling hashbrown v0.14.5
+   Compiling dashmap v6.2.1
+   Compiling hashlink v0.9.1
+   Compiling rusqlite v0.32.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gix-shallow v0.13.0
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling ciborium v0.2.2
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-traverse v0.61.0
+   Compiling gix-filter v0.34.0
+   Compiling gix-index v0.55.0
+   Compiling gix-worktree v0.56.0
+   Compiling gix-discover v0.55.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-config v0.60.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-pack v0.74.2
+   Compiling gix-odb v0.84.0
+   Compiling gix-submodule v0.34.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-protocol v0.65.1
+   Compiling gix v0.87.1
+   Compiling tinytemplate v1.2.1
+   Compiling criterion v0.5.1
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling fluent-uri v0.4.1
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling jsonschema-value v0.58.5
+   Compiling referencing v0.58.5
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling email_address v0.2.9
+   Compiling jsonschema v0.58.5
+   Compiling tracing-subscriber v0.3.23
+   Compiling schemars v1.2.2
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling trybuild v1.0.121
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling syn v2.0.119
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling darling_core v0.20.11
+   Compiling darling v0.20.11
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+    Finished `test` profile [unoptimized] target(s) in 5m 24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4cc839b9-0b86-489d-9221-50ae54e97cb6 with nextest profile: default
+    Starting 49 tests across 101 binaries (728 tests skipped)
+        PASS [   0.014s] crunk::boundary no_frob_crate_is_a_direct_or_transitive_dependency_of_a_crunk_crate
+        PASS [   0.394s] frob-check::check a_recorded_changelog_d_glob_still_checks_but_covers_only_the_own_fragment
+        PASS [   0.394s] frob-check::check a_branch_touching_an_out_of_scope_file_still_fires_scope001
+        PASS [   0.397s] frob-check::check a_tickets_own_fragment_is_never_scope001
+        PASS [   0.390s] frob-check::check another_tickets_or_a_malformed_fragment_is_still_scope001
+        PASS [   0.248s] frob-check::check the_ledger_directory_is_exempt_from_scope001
+        PASS [   0.284s] frob-check::check base_advancing_does_not_leak_into_scope001
+        PASS [   0.277s] frob-check::check ticket_json_keeps_every_finding_and_errors_outside_the_diff_print_in_full
+        PASS [   0.285s] frob-check::check lock_files_written_by_ack_are_not_scope001_but_other_edits_are
+        PASS [   0.301s] frob-check::check ticket_text_leads_with_diff_findings_and_counts_the_rest
+        PASS [   0.320s] frob-check::check uncommitted_out_of_scope_edits_still_fire_scope001
+        PASS [   0.355s] frob-check::check ticket_text_never_folds_a_required_unreadable_finding_into_a_count
+        PASS [   0.506s] frob-check::check untouched_symlinks_never_fire_scope001_and_a_retarget_does
+        PASS [   0.500s] frob-cli::merge_driver_branch two_branches_adding_events_merge_through_the_driver_on_a_ticket_branch
+        PASS [   1.023s] frob-check::sibling the_ticket_scope_is_passed_through_to_the_sibling
+        PASS [   0.933s] frob-cli::ticket new_update_close_makes_three_commits_and_frontmatter_equals_the_fold
+        PASS [   1.484s] frob-check::sibling ticket_bound_sibling_exceptions_get_frobs_exits
+        PASS [   0.019s] frob-land ratchet::count_tests::a_config_change_invalidates_the_cached_base_set
+        PASS [   0.014s] frob-land ratchet::count_tests::a_new_engine_invalidates_the_cached_base_set
+        PASS [   0.436s] frob-evidence::evidence verbs_add_list_and_fetch_round_trip
+        PASS [   1.842s] frob-cli::ticket links_blocked_doable_and_repeat_semantics
+        PASS [   1.466s] frob-cli::ticket_scrub doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same
+        PASS [   0.609s] frob-land::land a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path
+        PASS [   1.721s] frob-land::land a_base_commit_changing_code_misses_the_cached_base_set
+        PASS [   0.015s] frob-ledger id::tests::handles_lengthen_only_on_collision
+        PASS [   1.232s] frob-land::land a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check
+        PASS [   0.027s] frob-ledger::branch bad_names_are_refused_before_any_write
+        PASS [   0.049s] frob-ledger::branch creates_then_reports_already_and_leaves_main_alone
+        PASS [   0.223s] frob-ledger::layout a_moved_ticket_file_resolves_through_its_ulid_and_still_equals_the_fold
+        PASS [   0.225s] frob-ledger::layout sub_epics_are_flattened_and_a_title_change_does_not_move_the_file
+        PASS [   1.245s] frob-land::land base_commits_differing_only_under_tickets_share_the_cached_base_set
+        PASS [   1.257s] frob-land::land happy_path_lands_closes_and_cleans_up
+        PASS [   0.295s] frob-ledger::ledger doable_orders_by_class_then_priority_then_age
+        PASS [   0.381s] frob-tests::dotnet the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies
+        PASS [   0.641s] frob-tests::typescript run_groups_selected_tests_by_member_and_maps_results_back_to_units
+        PASS [   0.762s] frob-tests::typescript a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip
+        PASS [   0.901s] frob-tests::rust_root a_crate_under_a_subdirectory_runs_nextest_from_that_directory
+        PASS [   0.010s] gob-check::boundary no_frob_crate_is_a_direct_or_transitive_dependency
+        PASS [   0.174s] gob-check repo::tests::a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh
+        PASS [   0.192s] gob-check repo::tests::engines_never_share_a_cached_repo_group
+        PASS [   0.011s] gob-trust::trust domain_separation
+        PASS [   0.020s] gob-trust::trust files::first_use_creates_owner_only_key_and_reload_is_stable
+        PASS [   0.011s] gob-trust::trust mac_verifies_and_one_byte_change_fails
+        PASS [   0.013s] gob-trust::trust record_mac_roundtrip_and_field_boundaries
+        PASS [   0.014s] gob-trust::trust tag_hex_roundtrip_and_debug_redaction
+        PASS [   0.106s] gob-trust::trust concurrent_first_use_yields_one_key
+        PASS [   0.016s] grimble::boundary no_frob_crate_is_a_direct_or_transitive_dependency_of_a_grimble_crate
+        PASS [   1.280s] frob-tests::rust_root a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code
+        SLOW [> 30.000s] gob-macros::ui_rule_attr ui_rule_attr
+        PASS [  41.123s] gob-macros::ui_rule_attr ui_rule_attr
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  46.719s] 49 tests run: 49 passed (1 slow), 728 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -p frob-check -p frob-cli -p frob-evidence -p frob-land -p frob-ledger -p frob-tests -p gob-check -p gob-macros -p gob-trust -p grimble -E '(package(=crunk) & (test(=no_frob_crate_is_a_direct_or_transitive_dependency_of_a_crunk_crate))) | (package(=frob-check) & (test(=a_branch_touching_an_out_of_scope_file_still_fires_scope001) | test(=a_recorded_changelog_d_glob_still_checks_but_covers_only_the_own_fragment) | test(=a_tickets_own_fragment_is_never_scope001) | test(=another_tickets_or_a_malformed_fragment_is_still_scope001) | test(=base_advancing_does_not_leak_into_scope001) | test(=lock_files_written_by_ack_are_not_scope001_but_other_edits_are) | test(=the_ledger_directory_is_exempt_from_scope001) | test(=the_ticket_scope_is_passed_through_to_the_sibling) | test(=ticket_bound_sibling_exceptions_get_frobs_exits) | test(=ticket_json_keeps_every_finding_and_errors_outside_the_diff_print_in_full) | test(=ticket_text_leads_with_diff_findings_and_counts_the_rest) | test(=ticket_text_never_folds_a_required_unreadable_finding_into_a_count) | test(=uncommitted_out_of_scope_edits_still_fire_scope001) | test(=untouched_symlinks_never_fire_scope001_and_a_retarget_does))) | (package(=frob-cli) & (test(=doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same) | test(=links_blocked_doable_and_repeat_semantics) | test(=new_update_close_makes_three_commits_and_frontmatter_equals_the_fold) | test(=two_branches_adding_events_merge_through_the_driver_on_a_ticket_branch))) | (package(=frob-evidence) & (test(=verbs_add_list_and_fetch_round_trip))) | (package(=frob-land) & (test(=a_base_commit_changing_code_misses_the_cached_base_set) | test(=a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path) | test(=a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check) | test(=base_commits_differing_only_under_tickets_share_the_cached_base_set) | test(=happy_path_lands_closes_and_cleans_up) | test(=ratchet::count_tests::a_config_change_invalidates_the_cached_base_set) | test(=ratchet::count_tests::a_new_engine_invalidates_the_cached_base_set))) | (package(=frob-ledger) & (test(=a_moved_ticket_file_resolves_through_its_ulid_and_still_equals_the_fold) | test(=bad_names_are_refused_before_any_write) | test(=creates_then_reports_already_and_leaves_main_alone) | test(=doable_orders_by_class_then_priority_then_age) | test(=id::tests::handles_lengthen_only_on_collision) | test(=sub_epics_are_flattened_and_a_title_change_does_not_move_the_file))) | (package(=frob-tests) & (test(=a_crate_under_a_subdirectory_runs_nextest_from_that_directory) | test(=a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip) | test(=a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code) | test(=run_groups_selected_tests_by_member_and_maps_results_back_to_units) | test(=the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies))) | (package(=gob-check) & (test(=no_frob_crate_is_a_direct_or_transitive_dependency) | test(=repo::tests::a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh) | test(=repo::tests::engines_never_share_a_cached_repo_group))) | (package(=gob-macros) & (test(=ui_rule_attr))) | (package(=gob-trust) & (test(=concurrent_first_use_yields_one_key) | test(=domain_separation) | test(=files::first_use_creates_owner_only_key_and_reload_is_stable) | test(=mac_verifies_and_one_byte_change_fails) | test(=record_mac_roundtrip_and_field_boundaries) | test(=tag_hex_roundtrip_and_debug_redaction))) | (package(=grimble) & (test(=no_frob_crate_is_a_direct_or_transitive_dependency_of_a_grimble_crate)))'"
+size = 9667
+status = "measured"
+tests = ["no_frob_crate_is_a_direct_or_transitive_dependency_of_a_crunk_crate", "a_recorded_changelog_d_glob_still_checks_but_covers_only_the_own_fragment", "a_branch_touching_an_out_of_scope_file_still_fires_scope001", "a_tickets_own_fragment_is_never_scope001", "another_tickets_or_a_malformed_fragment_is_still_scope001", "the_ledger_directory_is_exempt_from_scope001", "base_advancing_does_not_leak_into_scope001", "ticket_json_keeps_every_finding_and_errors_outside_the_diff_print_in_full", "lock_files_written_by_ack_are_not_scope001_but_other_edits_are", "ticket_text_leads_with_diff_findings_and_counts_the_rest", "uncommitted_out_of_scope_edits_still_fire_scope001", "ticket_text_never_folds_a_required_unreadable_finding_into_a_count", "untouched_symlinks_never_fire_scope001_and_a_retarget_does", "two_branches_adding_events_merge_through_the_driver_on_a_ticket_branch", "the_ticket_scope_is_passed_through_to_the_sibling", "ticket_bound_sibling_exceptions_get_frobs_exits", "ratchet::count_tests::a_config_change_invalidates_the_cached_base_set", "ratchet::count_tests::a_new_engine_invalidates_the_cached_base_set", "verbs_add_list_and_fetch_round_trip", "new_update_close_makes_three_commits_and_frontmatter_equals_the_fold", "links_blocked_doable_and_repeat_semantics", "doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same", "id::tests::handles_lengthen_only_on_collision", "bad_names_are_refused_before_any_write", "creates_then_reports_already_and_leaves_main_alone", "a_moved_ticket_file_resolves_through_its_ulid_and_still_equals_the_fold", "sub_epics_are_flattened_and_a_title_change_does_not_move_the_file", "a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path", "a_base_commit_changing_code_misses_the_cached_base_set", "a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check", "base_commits_differing_only_under_tickets_share_the_cached_base_set", "happy_path_lands_closes_and_cleans_up", "doable_orders_by_class_then_priority_then_age", "the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies", "run_groups_selected_tests_by_member_and_maps_results_back_to_units", "a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip", "no_frob_crate_is_a_direct_or_transitive_dependency", "repo::tests::a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh", "repo::tests::engines_never_share_a_cached_repo_group", "domain_separation", "files::first_use_creates_owner_only_key_and_reload_is_stable", "mac_verifies_and_one_byte_change_fails", "record_mac_roundtrip_and_field_boundaries", "tag_hex_roundtrip_and_debug_redaction", "concurrent_first_use_yields_one_key", "no_frob_crate_is_a_direct_or_transitive_dependency_of_a_grimble_crate", "a_crate_under_a_subdirectory_runs_nextest_from_that_directory", "a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code", "ui_rule_attr"]
+at = "2026-10-10T16:02:43Z"
+actor = "Claude"
+rev = 1
