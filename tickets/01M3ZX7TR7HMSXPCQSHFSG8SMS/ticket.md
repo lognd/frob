@@ -2,13 +2,13 @@
 id = "01M3ZX7TR7HMSXPCQSHFSG8SMS"
 title = "E-STATE-TRACKED guard: refuse when git tracks a state or cache directory"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:33Z"
-updated = "2026-10-03T03:34:33Z"
+updated = "2026-10-10T15:59:24Z"
 idempotency_key = "m2-sec-state-tracked"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-trust/src/guard.rs", "crates/gob-diagnostics/src/refusal.rs"]
