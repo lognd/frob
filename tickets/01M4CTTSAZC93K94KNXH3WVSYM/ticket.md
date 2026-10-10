@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:36Z"
-updated = "2026-10-10T00:52:08Z"
+updated = "2026-10-10T01:13:02Z"
 scope = ["changelog.d/**", "docs/design/tickets.md", "crates/frob-ledger/src/config.rs", "crates/frob-ledger/src/error.rs", "crates/frob-ledger/src/layout.rs", "crates/frob-ledger/src/ledger.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/scrub.rs", "crates/frob-ledger/src/triage.rs", "crates/frob-pm/src/store.rs", "crates/frob-evidence/src/workspace.rs", "crates/frob-worktree/src/config.rs", "crates/frob/src/config.rs", "crates/frob/src/init.rs", "crates/frob/tests/doc_commands.rs", "crates/frob/tests/e2e_init_loop.rs", "crates/frob/tests/snapshots/cli__init_frob_toml.snap", "docs/guides/ticket-branch.md", "docs/reference/config.md", "docs/reference/cli/frob.md", "docs/schemas/config.json"]
 
 [[links]]
