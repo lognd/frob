@@ -25,6 +25,13 @@ in this section (ULID identity, handles, aliases, events) holds for
 both. In either layout a path is presentation and never a reference
 (navigation.md 1).
 
+Selecting the layout (~H3WVSYM): `[tickets] ref_mode = "orphan"` stores the
+ledger on `refs/heads/<[tickets] branch>` in the ticket-branch layout, while
+`[tickets] ref` stays the code base branch that `work` branches from and
+`land` advances. Milestone and cycle objects sit at `_milestones/<ULID>/` and
+`_cycles/<ULID>/` at the branch root. `trunk` and `branch` keep the legacy
+`tickets/<id>/` layout. The setup is `docs/guides/ticket-branch.md`.
+
 Inert text (D91, ~JTV288R): everything under the ledger directory is
 data written through the ledger write path; text in it, such as a
 `frob:waive` quoted from a v1 ticket, is never a live directive.
@@ -205,6 +212,12 @@ Acks are not events: they live in the ack log of the product lock file.
   writes leave the frontmatter behind the fold. No mirror step, no
   overlay. In the default mode a land carries no ledger diff because the
   ledger was never branch-local.
+  In trunk mode with a feature branch checked out, every ticket verb
+  adds a warning to its envelope naming the ref it reads and commits to
+  and stating that the working tree is not the ledger (F-504, F-562).
+  `land --dry-run` treats a base that moved only by commits under the
+  ledger directory as merged, so trunk-mode ticket commits do not make
+  it skip the check.
 
 ### 2b. CI, forks and offline clones
 

@@ -1,6 +1,6 @@
 //! The `test` verb: `frob test --base <ref> [--all] [--dry-run]`.
 
-use frob_evidence::provider::build_record;
+use frob_evidence::provider::{build_record, pytest_runner};
 use frob_evidence::{EvidenceError, Workspace, events};
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
@@ -10,7 +10,7 @@ use serde::Serialize;
 use crate::error::TestsError;
 use crate::lease::lease_ticket;
 use crate::run::{RunOptions, RunReport, run};
-use crate::select::{TestTarget, select_tests};
+use crate::select::{Framework, TestTarget, select_tests};
 use crate::touched::{TouchedSet, build_repo_graph, touched_set};
 
 /// The evidence event a run appended to the leased ticket.
@@ -46,6 +46,10 @@ pub struct TestData {
     pub selected: Vec<TestTarget>,
     /// One plan line per selected test (`package test_path` for nextest, `pytest node_id`, `dotnet project id`, `unity assembly id`).
     pub plan: Vec<String>,
+    // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+    /// How pytest would be started (`.venv/bin/python -m pytest`, `[tests] python`, or `pytest`); absent when no Python test is planned.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pytest_runner: Option<String>,
     /// Whether any runner ran.
     pub ran: bool,
     /// The verdict, when it ran.
@@ -184,6 +188,7 @@ impl Command for TestVerb {
             touched,
             selected,
             plan,
+            pytest_runner: None,
             ran: false,
             passed: None,
             executed: Vec::new(),
@@ -197,6 +202,17 @@ impl Command for TestVerb {
             .into_iter()
             .map(|f| format!("unresolved {}: {}", f.rule, f.message))
             .collect();
+        // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+        if self.all
+            || data
+                .selected
+                .iter()
+                .any(|t| t.framework == Framework::Pytest)
+        {
+            let launcher = pytest_runner(&ws.root, &ws.tests.python);
+            tracing::info!(runner = launcher.label(), "resolved the pytest runner");
+            data.pytest_runner = Some(launcher.label().to_owned());
+        }
         if ctx.dry_run {
             tracing::info!(selected = data.selected.len(), "dry run: nothing executed");
             return Ok(with_warnings(data, warnings));
@@ -215,6 +231,8 @@ impl Command for TestVerb {
         );
         // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
         opts.dotnet_path.clone_from(&ws.dotnet.path);
+        // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+        opts.python.clone_from(&ws.tests.python);
         let report = run(&ws.runner(), &data.selected, &opts).map_err(TestsError::into_cli)?;
         data.ran = true;
         data.passed = Some(report.passed());

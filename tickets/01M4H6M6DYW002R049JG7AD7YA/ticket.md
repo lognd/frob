@@ -8,7 +8,7 @@ points = 1
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T20:45:41Z"
-updated = "2026-10-09T20:45:41Z"
+updated = "2026-10-10T00:13:29Z"
 scope = ["docs/design/README.md", "docs/design/tickets.md", "docs/design/cli.md", "docs/design/build-test-ci.md", "crates/frob-lease/src/config.rs", "crates/frob-lease/src/lib.rs", "docs/schemas/config.json", "docs/reference/config.md", "changelog.d/**"]
 
 [[acceptance]]
@@ -17,6 +17,10 @@ bound = false
 
 [[acceptance]]
 text = "Given the doc comments in crates/frob-lease/src/config.rs and lib.rs and their generated copies docs/schemas/config.json and docs/reference/config.md, when this lands, then they cite tickets.md section 3 instead of the nonexistent section 6, and cargo dev gen --check is clean"
+bound = false
+
+[[acceptance]]
+text = "Given ~CV286BH landed, when this lands, then docs/design/sibling-contract.md describes the sibling skip in check --ticket and land (inputs: config, packs lock, model roots, any code-language file; reported as a warning with a reason)"
 bound = false
 +++
 

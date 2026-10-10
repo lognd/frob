@@ -57,6 +57,7 @@
 
 pub mod branch;
 mod brief;
+pub mod config;
 pub mod doc;
 pub mod doctor;
 pub mod error;

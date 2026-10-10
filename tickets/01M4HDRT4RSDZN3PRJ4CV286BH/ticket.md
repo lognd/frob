@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T22:50:32Z"
-updated = "2026-10-09T23:01:35Z"
+updated = "2026-10-10T00:11:20Z"
 scope = ["crates/frob-check/src/sibling/mod.rs", "changelog.d/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given frob.toml, when this lands, then cargo-deny, cargo-shear, typos, zizmor and actionlint declare inputs (Cargo.lock/Cargo.toml/deny.toml; **/Cargo.toml; text files for typos; .github/workflows/** for zizmor and actionlint) so a ticket touching none of them skips them at land (inputs key from ~RDRSZC5)"
-bound = false
+bound = true
 +++
 
 found while working ~040TA9M: after skipping PM groups, check --ticket (profiling build, load 47) still shows repo:obligations 17.3 s, sibling:grimble 21.0 s, tool:cargo-deny 17.4 s, tool:cargo 18.1 s.

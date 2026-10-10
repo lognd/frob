@@ -26,12 +26,28 @@ pub use side::{SideData, SideError, SideRow, SideTable};
 /// The relation word that is answered from the term itself (same parent unit).
 pub(crate) const PEER_OF: &str = "peer of";
 
+/// The default cap on condition evaluations per run; an overrun is Unknown with reason `budget`
+/// (grl-spec.md 7.0.8, plugins.md 6.5).
+pub const DEFAULT_STEP_BUDGET: u64 = 20_000_000;
+
 /// The typed inputs of a run beyond the model: edges, side tables and knobs.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Relations {
     pub(crate) edges: BTreeMap<String, Relation>,
     pub(crate) side: SideData,
     pub(crate) knobs: Knobs,
+    pub(crate) step_budget: u64,
+}
+
+impl Default for Relations {
+    fn default() -> Self {
+        Self {
+            edges: BTreeMap::new(),
+            side: SideData::default(),
+            knobs: Knobs::default(),
+            step_budget: DEFAULT_STEP_BUDGET,
+        }
+    }
 }
 
 impl Relations {
@@ -60,6 +76,14 @@ impl Relations {
     #[must_use]
     pub fn with_knobs(mut self, knobs: Knobs) -> Self {
         self.knobs = knobs;
+        self
+    }
+
+    /// Caps the condition evaluations of one run at `steps`; an overrun leaves the remaining
+    /// bindings Unknown with the `budget` reason instead of running on.
+    #[must_use]
+    pub fn with_step_budget(mut self, steps: u64) -> Self {
+        self.step_budget = steps;
         self
     }
 

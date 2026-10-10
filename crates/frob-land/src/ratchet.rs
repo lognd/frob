@@ -335,17 +335,35 @@ fn run_at_base(
 /// directory (measured: 45-200 s per cold pass, ~TSK0M4Y, ~8J3BE8W). An existing `target`
 /// (a real directory or a link) is left alone. Failures are logged and the checks run cold.
 // frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W
+// frob:ticket 01M4H8NECMX7XBS1J6FDWRJEZV
 pub(crate) fn share_build_dir(common: &Path, checkout: &Path) {
     let link = checkout.join("target");
-    if std::fs::symlink_metadata(&link).is_ok() {
-        tracing::debug!(link = %link.display(), "checkout already has a build directory");
-        return;
+    if let Ok(meta) = std::fs::symlink_metadata(&link) {
+        if meta.file_type().is_symlink() && std::fs::metadata(&link).is_err() {
+            tracing::warn!(link = %link.display(), "dangling build directory link; repairing");
+            if let Err(e) = std::fs::remove_file(&link) {
+                tracing::warn!(error = %e, "dangling link not removed; cargo stages run cold");
+                return;
+            }
+        } else {
+            tracing::debug!(link = %link.display(), "checkout already has a build directory");
+            return;
+        }
     }
     let shared = common.join("frob").join(SHARED_TARGET_DIR);
     if let Err(e) = std::fs::create_dir_all(&shared) {
         tracing::warn!(error = %e, dir = %shared.display(), "shared build directory not created; cargo stages run cold");
         return;
     }
+    // Canonical and absolute: `common` may be spelled through a worktree's git dir
+    // (`.git/worktrees/<T>/../..`), which dangles once that worktree is removed.
+    let shared = match gob_exec::canonical(&shared) {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::warn!(error = %e, dir = %shared.display(), "shared build directory not canonicalized; cargo stages run cold");
+            return;
+        }
+    };
     exclude_target(common);
     #[cfg(unix)]
     match std::os::unix::fs::symlink(&shared, &link) {
@@ -565,6 +583,38 @@ mod tests {
                 .file_type()
                 .is_symlink()
         );
+    }
+
+    // frob:tests crates/frob-land/src/ratchet.rs::share_build_dir
+    #[test]
+    fn the_link_is_canonical_and_a_dangling_link_is_repaired() {
+        // frob:ticket 01M4H8NECMX7XBS1J6FDWRJEZV
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let common = tmp.path().join("common");
+        let a = tmp.path().join("a");
+        for d in [&common, &a, &common.join("worktrees").join("T")] {
+            std::fs::create_dir_all(d).expect("dir");
+        }
+        // The common dir spelled through a worktree git dir, as a worktree's own repo reports it.
+        let via_wt = common.join("worktrees").join("T").join("..").join("..");
+        share_build_dir(&via_wt, &a);
+        let target = std::fs::read_link(a.join("target")).expect("link");
+        let want = gob_exec::canonical(&common)
+            .expect("canon")
+            .join("frob")
+            .join(SHARED_TARGET_DIR);
+        assert_eq!(target, want, "absolute, no .. through the worktree dir");
+        // A dangling link (its old target is gone) is replaced.
+        let b = tmp.path().join("b");
+        std::fs::create_dir_all(&b).expect("dir");
+        std::os::unix::fs::symlink(
+            tmp.path().join("gone").join("land-target"),
+            b.join("target"),
+        )
+        .expect("dangling");
+        share_build_dir(&common, &b);
+        assert_eq!(std::fs::read_link(b.join("target")).expect("link"), want);
+        assert!(b.join("target").is_dir());
     }
 
     // frob:tests crates/frob-land/src/ratchet.rs::base_checkout_paths
