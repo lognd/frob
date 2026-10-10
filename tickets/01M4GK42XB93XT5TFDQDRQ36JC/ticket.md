@@ -7,9 +7,9 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T15:04:50Z"
-updated = "2026-10-10T19:26:01Z"
+updated = "2026-10-10T19:26:14Z"
 labels = ["adoption:logand-app"]
-scope = ["crates/grimble-model/src/directive.rs", "changelog.d/**"]
+scope = ["crates/grimble-model/src/directive.rs", "changelog.d/**", "crates/gob-directives/src/lib.rs"]
 
 [[acceptance]]
 text = "Given a .grmb file with // frob:ticket T-0042, when grimble check runs, then no DSL002 or abbreviation finding fires, matching frob's directive scanner"
