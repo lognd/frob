@@ -1,0 +1,119 @@
+kind = "evidence"
+captured_at = "2026-10-10T21:13:43Z"
+digest = "4e65dff2c257abab13981ee2ede30b742e0bcbeb98c9c165da5bff4402057a29"
+exit_code = 0
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized] target(s) in 18.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f1e488fc-86ee-4aad-b0db-422078ef69c6 with nextest profile: default
+    Starting 90 tests across 75 binaries (541 tests skipped)
+        PASS [   0.429s] frob-cli::close_guards a_chore_with_an_unbound_criterion_is_refused_naming_the_criterion_and_the_bypass
+        PASS [   0.437s] frob-cli::close_guards a_non_done_outcome_without_a_reason_is_a_usage_error_and_changes_nothing
+        PASS [   0.481s] frob-cli::close_guards a_missing_fragment_refuses_with_the_remedy_and_a_present_one_closes
+        PASS [   0.611s] frob-cli::close_guards a_done_close_with_an_unmerged_ticket_branch_is_refused_naming_commits_and_remedy
+        PASS [   0.421s] frob-cli::close_guards a_refused_close_keeps_the_exemption_event_and_a_retry_does_not_repeat_it
+        PASS [   0.421s] frob-cli::close_guards an_invalid_fragment_refuses_close_with_the_validation_message
+        PASS [   0.476s] frob-cli::close_guards all_criteria_bound_closes_and_a_ticket_without_criteria_warns
+        PASS [   0.395s] frob-cli::close_guards an_objective_flavour_is_unresolved_and_a_plain_ticket_passes
+        PASS [   0.293s] frob-cli::close_guards an_unevaluable_requirement_is_unresolved_and_the_bypass_does_not_cover_it
+        PASS [   0.486s] frob-cli::close_guards an_open_child_refuses_the_parent_close_and_is_named
+        PASS [   0.441s] frob-cli::close_guards closeout_needs_bound_evidence_and_a_reason_then_closes_done_without_a_lease
+        PASS [   0.320s] frob-cli::close_guards fixed_on_a_bug_without_evidence_is_still_refused
+        PASS [   0.667s] frob-cli::close_guards exempt_types_and_tickets_with_criteria_still_close
+        PASS [   0.254s] frob-cli::close_guards land_with_a_non_done_outcome_needs_a_reason
+        PASS [   0.912s] frob-cli::close_guards doctor_reports_a_done_ticket_whose_branch_is_unmerged_unless_exempted
+        PASS [   0.656s] frob-cli::close_guards invalid_duplicate_and_wont_fix_close_a_bug_on_a_reason_alone
+        PASS [   0.304s] frob-cli::close_guards no_changelog_without_a_reason_is_a_usage_error_and_changes_nothing
+        PASS [   0.469s] frob-cli::close_guards no_changelog_with_a_reason_closes_without_a_fragment_and_records_the_event
+        PASS [   0.580s] frob-cli::close_guards no_land_with_a_reason_closes_and_audits_and_without_a_reason_is_a_usage_error
+        PASS [   0.505s] frob-cli::close_guards story_bug_and_security_without_criteria_are_refused_on_that_close_naming_the_type
+        PASS [   0.405s] frob-cli::close_guards the_bypass_closes_and_records_the_event
+        PASS [   0.286s] frob-cli::close_guards the_missing_fragment_remedy_names_both_the_fragment_verb_and_the_exemption
+        PASS [   1.041s] frob-cli::close_guards merged_and_deleted_ticket_branches_close_cleanly_and_non_done_outcomes_are_exempt
+        PASS [   0.349s] frob-cli::close_guards the_running_frob_is_an_allowed_command_tool_without_listing_it
+        PASS [   0.341s] frob-cli::cycle a_cycle_starting_tomorrow_is_planned_and_a_closed_cycle_stays_closed
+        PASS [   0.736s] frob-cli::cycle a_closed_cycle_does_not_block_the_same_dates_and_the_new_alias_is_suffixed
+        PASS [   0.661s] frob-cli::cycle a_retroactive_closeout_is_not_delivered_work_of_the_current_cycle
+        PASS [   0.685s] frob-cli::cycle assign_and_unassign_are_idempotent_and_say_capacity_is_not_enforced_yet
+        PASS [   0.756s] frob-cli::cycle assign_defaults_to_the_open_cycle_holding_today_else_the_next_planned
+        PASS [   0.522s] frob-cli::cycle assign_refuses_epics_and_tickets_without_points_with_remedies
+        PASS [   0.537s] frob-cli::cycle assigning_to_another_cycle_moves_the_ticket
+        PASS [   0.393s] frob-cli::cycle close_early_without_next_goal_refuses_and_the_remedy_names_it
+        PASS [   0.746s] frob-cli::cycle close_carries_incomplete_members_and_records_the_ratio_and_retro
+        PASS [   0.469s] frob-cli::cycle close_is_refused_while_a_member_is_in_progress_with_a_live_lease
+        PASS [   0.605s] frob-cli::cycle close_early_with_next_goal_creates_the_next_cycle_carries_members_and_counts_them
+        PASS [   0.470s] frob-cli::cycle close_retries_after_a_failure_between_the_create_and_the_carry
+        PASS [   0.549s] frob-cli::cycle close_next_days_defaults_to_cycle_days
+        PASS [   0.507s] frob-cli::cycle close_with_next_goal_on_a_reused_range_gets_a_unique_alias
+        PASS [   0.718s] frob-cli::cycle close_without_a_next_cycle_is_refused_unless_carry_to_names_one
+        PASS [   0.423s] frob-cli::cycle closing_on_the_first_day_frees_the_next_day_and_shows_both_ends
+        PASS [   0.417s] frob-cli::cycle closing_on_the_last_day_or_a_legacy_close_keeps_the_planned_end
+        PASS [   0.474s] frob-cli::cycle doctor_is_clean_after_an_early_close_and_a_same_day_recreate
+        PASS [   0.514s] frob-cli::cycle explicit_capacity_is_enforced_and_over_commit_records_the_reason
+        PASS [   0.763s] frob-cli::cycle doctor_fix_numbers_existing_duplicate_aliases_in_creation_order
+        PASS [   0.371s] frob-cli::cycle new_takes_its_end_from_cycle_days_and_a_repeat_is_already
+        PASS [   0.378s] frob-cli::cycle overlapping_an_open_cycle_is_refused_with_a_remedy
+        PASS [   1.538s] frob-cli::cycle computed_capacity_applies_once_min_history_cycles_have_closed
+        PASS [   0.615s] frob-cli::cycle plan_proposes_a_fill_to_capacity_and_apply_assigns_idempotently
+        PASS [   0.442s] frob-cli::cycle plan_without_enforced_capacity_is_refused_unless_points_is_given
+        PASS [   0.457s] frob-cli::cycle show_and_list_report_cycles_and_unknown_references_suggest
+        PASS [   0.421s] frob-cli::cycle state_is_derived_from_the_clock_in_show_list_and_assign
+        PASS [   0.569s] frob-cli::cycle velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once
+        PASS [   0.695s] frob-cli::cycle velocity_agrees_with_the_close_record_and_ignores_unassigned_done_work
+        PASS [   0.005s] frob-pm cycle::assign::tests::a_member_elsewhere_moves_and_a_repeat_is_already
+        PASS [   0.010s] frob-pm cycle::assign::tests::eligibility_and_capacity_decide_the_plan
+        PASS [   0.007s] frob-pm cycle::lifecycle::tests::close_blocks_on_live_leases_then_carries_and_totals
+        PASS [   0.008s] frob-pm cycle::lifecycle::tests::close_needs_a_target_only_when_something_carries
+        PASS [   0.008s] frob-pm cycle::lifecycle::tests::closing_early_records_the_close_day_and_moves_the_suggested_start
+        PASS [   0.006s] frob-pm cycle::plan::tests::fills_in_rank_order_and_leaves_out_what_does_not_fit
+        PASS [   0.010s] frob-pm cycle::plan::tests::members_and_other_cycles_are_not_reassigned_and_replanning_is_stable
+        PASS [   0.008s] frob-pm cycle::plan::tests::next_milestone_leads_the_plain_lane_only
+        PASS [   0.008s] frob-pm cycle::plan::tests::unenforced_capacity_and_closed_cycles_are_refused
+        PASS [   0.412s] frob-cli::cycle velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero
+        PASS [   0.008s] frob-pm cycle::velocity::tests::an_early_close_truncates_the_window
+        PASS [   0.007s] frob-pm cycle::velocity::tests::capacity_is_set_unenforced_or_mean_minus_k_stddev
+        PASS [   0.007s] frob-pm cycle::velocity::tests::carry_over_counts_only_in_the_completing_cycle
+        PASS [   0.012s] frob-pm cycle::velocity::tests::epics_and_out_of_window_work_never_count
+        PASS [   0.012s] frob-pm cycle::velocity::tests::delivery_agrees_with_the_close_definition_and_prefers_the_recorded_ratio
+        PASS [   0.007s] frob-pm cycle::velocity::tests::velocity_over_three_closed_cycles_is_the_hand_computed_mean_and_stddev
+        PASS [   0.007s] frob-pm cycle::velocity::tests::history_capacity_matches_capacity_for_a_cycle_without_a_set_limit
+        PASS [   0.314s] frob-cli::cycle velocity_with_no_closed_cycles_says_so_and_exits_zero
+        PASS [   0.165s] frob-tests::dotnet the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies
+        PASS [   0.032s] gob-exec::runner captured_output_is_redacted_and_env_added
+        PASS [   0.224s] frob-tests::typescript a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip
+        PASS [   0.252s] frob-tests::typescript run_groups_selected_tests_by_member_and_maps_results_back_to_units
+        PASS [   0.033s] gob-exec::runner spawn_counter_counts_only_real_spawns
+        PASS [   0.233s] gob-exec::runner timeout_kills_group
+        PASS [   0.433s] gob-exec::runner concurrency_is_bounded_by_jobs
+        PASS [   1.540s] frob-cli::cycle velocity_lists_closed_cycles_and_its_capacity_is_what_assign_reports
+        PASS [   0.009s] gob-exec::runner unlisted_program_is_not_allowed
+        PASS [   0.055s] gob-plan::exec_core executor_connectives_follow_the_kleene_tables
+        PASS [   0.428s] gob-exec::runner timeout_kills_setsid_grandchild_and_returns_promptly
+        PASS [   0.008s] gob-plan::print_stability a_printer_that_never_settles_fails_with_a_shrunk_minimal_example
+        PASS [   0.433s] gob-exec::runner timeout_leaves_no_grandchild
+        PASS [   0.025s] gob-plan::print_stability the_real_printer_is_stable_over_generated_sizes
+        PASS [   0.006s] grimble-model::stability a_broken_printer_fails_with_a_shrunk_minimal_example
+        PASS [   0.040s] grimble-model::stability the_real_formatter_is_stable_over_generated_sizes
+        PASS [   1.040s] gob-exec::runner normal_exit_does_not_block_on_pipe_held_by_background_child
+        PASS [   0.272s] gob-plan::print_stability generated_trees_round_trip_and_print_to_a_fixed_point
+        PASS [   0.746s] gob-plan::print_stability a_printer_that_changes_the_tree_fails_with_a_shrunk_minimal_tree
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   9.107s] 90 tests run: 90 passed, 541 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p frob-pm -p frob-tests -p gob-exec -p gob-plan -p grimble-model -E '(package(=frob-cli) & (test(=a_chore_with_an_unbound_criterion_is_refused_naming_the_criterion_and_the_bypass) | test(=a_closed_cycle_does_not_block_the_same_dates_and_the_new_alias_is_suffixed) | test(=a_cycle_starting_tomorrow_is_planned_and_a_closed_cycle_stays_closed) | test(=a_done_close_with_an_unmerged_ticket_branch_is_refused_naming_commits_and_remedy) | test(=a_missing_fragment_refuses_with_the_remedy_and_a_present_one_closes) | test(=a_non_done_outcome_without_a_reason_is_a_usage_error_and_changes_nothing) | test(=a_refused_close_keeps_the_exemption_event_and_a_retry_does_not_repeat_it) | test(=a_retroactive_closeout_is_not_delivered_work_of_the_current_cycle) | test(=all_criteria_bound_closes_and_a_ticket_without_criteria_warns) | test(=an_invalid_fragment_refuses_close_with_the_validation_message) | test(=an_objective_flavour_is_unresolved_and_a_plain_ticket_passes) | test(=an_open_child_refuses_the_parent_close_and_is_named) | test(=an_unevaluable_requirement_is_unresolved_and_the_bypass_does_not_cover_it) | test(=assign_and_unassign_are_idempotent_and_say_capacity_is_not_enforced_yet) | test(=assign_defaults_to_the_open_cycle_holding_today_else_the_next_planned) | test(=assign_refuses_epics_and_tickets_without_points_with_remedies) | test(=assigning_to_another_cycle_moves_the_ticket) | test(=close_carries_incomplete_members_and_records_the_ratio_and_retro) | test(=close_early_with_next_goal_creates_the_next_cycle_carries_members_and_counts_them) | test(=close_early_without_next_goal_refuses_and_the_remedy_names_it) | test(=close_is_refused_while_a_member_is_in_progress_with_a_live_lease) | test(=close_next_days_defaults_to_cycle_days) | test(=close_retries_after_a_failure_between_the_create_and_the_carry) | test(=close_with_next_goal_on_a_reused_range_gets_a_unique_alias) | test(=close_without_a_next_cycle_is_refused_unless_carry_to_names_one) | test(=closeout_needs_bound_evidence_and_a_reason_then_closes_done_without_a_lease) | test(=closing_on_the_first_day_frees_the_next_day_and_shows_both_ends) | test(=closing_on_the_last_day_or_a_legacy_close_keeps_the_planned_end) | test(=computed_capacity_applies_once_min_history_cycles_have_closed) | test(=doctor_fix_numbers_existing_duplicate_aliases_in_creation_order) | test(=doctor_is_clean_after_an_early_close_and_a_same_day_recreate) | test(=doctor_reports_a_done_ticket_whose_branch_is_unmerged_unless_exempted) | test(=exempt_types_and_tickets_with_criteria_still_close) | test(=explicit_capacity_is_enforced_and_over_commit_records_the_reason) | test(=fixed_on_a_bug_without_evidence_is_still_refused) | test(=invalid_duplicate_and_wont_fix_close_a_bug_on_a_reason_alone) | test(=land_with_a_non_done_outcome_needs_a_reason) | test(=merged_and_deleted_ticket_branches_close_cleanly_and_non_done_outcomes_are_exempt) | test(=new_takes_its_end_from_cycle_days_and_a_repeat_is_already) | test(=no_changelog_with_a_reason_closes_without_a_fragment_and_records_the_event) | test(=no_changelog_without_a_reason_is_a_usage_error_and_changes_nothing) | test(=no_land_with_a_reason_closes_and_audits_and_without_a_reason_is_a_usage_error) | test(=overlapping_an_open_cycle_is_refused_with_a_remedy) | test(=plan_proposes_a_fill_to_capacity_and_apply_assigns_idempotently) | test(=plan_without_enforced_capacity_is_refused_unless_points_is_given) | test(=show_and_list_report_cycles_and_unknown_references_suggest) | test(=state_is_derived_from_the_clock_in_show_list_and_assign) | test(=story_bug_and_security_without_criteria_are_refused_on_that_close_naming_the_type) | test(=the_bypass_closes_and_records_the_event) | test(=the_missing_fragment_remedy_names_both_the_fragment_verb_and_the_exemption) | test(=the_running_frob_is_an_allowed_command_tool_without_listing_it) | test(=velocity_agrees_with_the_close_record_and_ignores_unassigned_done_work) | test(=velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once) | test(=velocity_lists_closed_cycles_and_its_capacity_is_what_assign_reports) | test(=velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero) | test(=velocity_with_no_closed_cycles_says_so_and_exits_zero))) | (package(=frob-pm) & (test(=cycle::assign::tests::a_member_elsewhere_moves_and_a_repeat_is_already) | test(=cycle::assign::tests::eligibility_and_capacity_decide_the_plan) | test(=cycle::lifecycle::tests::close_blocks_on_live_leases_then_carries_and_totals) | test(=cycle::lifecycle::tests::close_needs_a_target_only_when_something_carries) | test(=cycle::lifecycle::tests::closing_early_records_the_close_day_and_moves_the_suggested_start) | test(=cycle::plan::tests::fills_in_rank_order_and_leaves_out_what_does_not_fit) | test(=cycle::plan::tests::members_and_other_cycles_are_not_reassigned_and_replanning_is_stable) | test(=cycle::plan::tests::next_milestone_leads_the_plain_lane_only) | test(=cycle::plan::tests::unenforced_capacity_and_closed_cycles_are_refused) | test(=cycle::velocity::tests::an_early_close_truncates_the_window) | test(=cycle::velocity::tests::capacity_is_set_unenforced_or_mean_minus_k_stddev) | test(=cycle::velocity::tests::carry_over_counts_only_in_the_completing_cycle) | test(=cycle::velocity::tests::delivery_agrees_with_the_close_definition_and_prefers_the_recorded_ratio) | test(=cycle::velocity::tests::epics_and_out_of_window_work_never_count) | test(=cycle::velocity::tests::history_capacity_matches_capacity_for_a_cycle_without_a_set_limit) | test(=cycle::velocity::tests::velocity_over_three_closed_cycles_is_the_hand_computed_mean_and_stddev))) | (package(=frob-tests) & (test(=a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip) | test(=run_groups_selected_tests_by_member_and_maps_results_back_to_units) | test(=the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies))) | (package(=gob-exec) & (test(=captured_output_is_redacted_and_env_added) | test(=concurrency_is_bounded_by_jobs) | test(=normal_exit_does_not_block_on_pipe_held_by_background_child) | test(=spawn_counter_counts_only_real_spawns) | test(=timeout_kills_group) | test(=timeout_kills_setsid_grandchild_and_returns_promptly) | test(=timeout_leaves_no_grandchild) | test(=unlisted_program_is_not_allowed))) | (package(=gob-plan) & (test(=a_printer_that_changes_the_tree_fails_with_a_shrunk_minimal_tree) | test(=a_printer_that_never_settles_fails_with_a_shrunk_minimal_example) | test(=executor_connectives_follow_the_kleene_tables) | test(=generated_trees_round_trip_and_print_to_a_fixed_point) | test(=the_real_printer_is_stable_over_generated_sizes))) | (package(=grimble-model) & (test(=a_broken_printer_fails_with_a_shrunk_minimal_example) | test(=the_real_formatter_is_stable_over_generated_sizes)))'"
+size = 10517
+status = "measured"
+tests = ["a_chore_with_an_unbound_criterion_is_refused_naming_the_criterion_and_the_bypass", "a_non_done_outcome_without_a_reason_is_a_usage_error_and_changes_nothing", "a_missing_fragment_refuses_with_the_remedy_and_a_present_one_closes", "a_done_close_with_an_unmerged_ticket_branch_is_refused_naming_commits_and_remedy", "a_refused_close_keeps_the_exemption_event_and_a_retry_does_not_repeat_it", "an_invalid_fragment_refuses_close_with_the_validation_message", "all_criteria_bound_closes_and_a_ticket_without_criteria_warns", "an_objective_flavour_is_unresolved_and_a_plain_ticket_passes", "an_unevaluable_requirement_is_unresolved_and_the_bypass_does_not_cover_it", "an_open_child_refuses_the_parent_close_and_is_named", "closeout_needs_bound_evidence_and_a_reason_then_closes_done_without_a_lease", "fixed_on_a_bug_without_evidence_is_still_refused", "exempt_types_and_tickets_with_criteria_still_close", "land_with_a_non_done_outcome_needs_a_reason", "doctor_reports_a_done_ticket_whose_branch_is_unmerged_unless_exempted", "invalid_duplicate_and_wont_fix_close_a_bug_on_a_reason_alone", "no_changelog_without_a_reason_is_a_usage_error_and_changes_nothing", "no_changelog_with_a_reason_closes_without_a_fragment_and_records_the_event", "no_land_with_a_reason_closes_and_audits_and_without_a_reason_is_a_usage_error", "story_bug_and_security_without_criteria_are_refused_on_that_close_naming_the_type", "the_bypass_closes_and_records_the_event", "the_missing_fragment_remedy_names_both_the_fragment_verb_and_the_exemption", "merged_and_deleted_ticket_branches_close_cleanly_and_non_done_outcomes_are_exempt", "the_running_frob_is_an_allowed_command_tool_without_listing_it", "cycle::assign::tests::a_member_elsewhere_moves_and_a_repeat_is_already", "cycle::assign::tests::eligibility_and_capacity_decide_the_plan", "cycle::lifecycle::tests::close_blocks_on_live_leases_then_carries_and_totals", "cycle::lifecycle::tests::close_needs_a_target_only_when_something_carries", "cycle::lifecycle::tests::closing_early_records_the_close_day_and_moves_the_suggested_start", "cycle::plan::tests::fills_in_rank_order_and_leaves_out_what_does_not_fit", "cycle::plan::tests::members_and_other_cycles_are_not_reassigned_and_replanning_is_stable", "cycle::plan::tests::next_milestone_leads_the_plain_lane_only", "cycle::plan::tests::unenforced_capacity_and_closed_cycles_are_refused", "cycle::velocity::tests::an_early_close_truncates_the_window", "cycle::velocity::tests::capacity_is_set_unenforced_or_mean_minus_k_stddev", "cycle::velocity::tests::carry_over_counts_only_in_the_completing_cycle", "cycle::velocity::tests::epics_and_out_of_window_work_never_count", "cycle::velocity::tests::delivery_agrees_with_the_close_definition_and_prefers_the_recorded_ratio", "cycle::velocity::tests::velocity_over_three_closed_cycles_is_the_hand_computed_mean_and_stddev", "cycle::velocity::tests::history_capacity_matches_capacity_for_a_cycle_without_a_set_limit", "the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies", "a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip", "run_groups_selected_tests_by_member_and_maps_results_back_to_units", "a_cycle_starting_tomorrow_is_planned_and_a_closed_cycle_stays_closed", "a_closed_cycle_does_not_block_the_same_dates_and_the_new_alias_is_suffixed", "a_retroactive_closeout_is_not_delivered_work_of_the_current_cycle", "assign_and_unassign_are_idempotent_and_say_capacity_is_not_enforced_yet", "assign_defaults_to_the_open_cycle_holding_today_else_the_next_planned", "assign_refuses_epics_and_tickets_without_points_with_remedies", "assigning_to_another_cycle_moves_the_ticket", "close_early_without_next_goal_refuses_and_the_remedy_names_it", "close_carries_incomplete_members_and_records_the_ratio_and_retro", "close_is_refused_while_a_member_is_in_progress_with_a_live_lease", "close_early_with_next_goal_creates_the_next_cycle_carries_members_and_counts_them", "close_retries_after_a_failure_between_the_create_and_the_carry", "close_next_days_defaults_to_cycle_days", "close_with_next_goal_on_a_reused_range_gets_a_unique_alias", "close_without_a_next_cycle_is_refused_unless_carry_to_names_one", "closing_on_the_first_day_frees_the_next_day_and_shows_both_ends", "closing_on_the_last_day_or_a_legacy_close_keeps_the_planned_end", "doctor_is_clean_after_an_early_close_and_a_same_day_recreate", "explicit_capacity_is_enforced_and_over_commit_records_the_reason", "doctor_fix_numbers_existing_duplicate_aliases_in_creation_order", "new_takes_its_end_from_cycle_days_and_a_repeat_is_already", "overlapping_an_open_cycle_is_refused_with_a_remedy", "computed_capacity_applies_once_min_history_cycles_have_closed", "plan_proposes_a_fill_to_capacity_and_apply_assigns_idempotently", "plan_without_enforced_capacity_is_refused_unless_points_is_given", "show_and_list_report_cycles_and_unknown_references_suggest", "state_is_derived_from_the_clock_in_show_list_and_assign", "velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once", "velocity_agrees_with_the_close_record_and_ignores_unassigned_done_work", "velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero", "velocity_with_no_closed_cycles_says_so_and_exits_zero", "velocity_lists_closed_cycles_and_its_capacity_is_what_assign_reports", "executor_connectives_follow_the_kleene_tables", "a_broken_printer_fails_with_a_shrunk_minimal_example", "the_real_formatter_is_stable_over_generated_sizes", "captured_output_is_redacted_and_env_added", "spawn_counter_counts_only_real_spawns", "timeout_kills_group", "concurrency_is_bounded_by_jobs", "unlisted_program_is_not_allowed", "timeout_kills_setsid_grandchild_and_returns_promptly", "timeout_leaves_no_grandchild", "normal_exit_does_not_block_on_pipe_held_by_background_child", "a_printer_that_never_settles_fails_with_a_shrunk_minimal_example", "the_real_printer_is_stable_over_generated_sizes", "generated_trees_round_trip_and_print_to_a_fixed_point", "a_printer_that_changes_the_tree_fails_with_a_shrunk_minimal_tree"]
+at = "2026-10-10T21:13:43Z"
+actor = "Claude"
+rev = 1
