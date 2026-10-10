@@ -223,6 +223,34 @@ fn exit_of(status: Outcome) -> (Option<i32>, bool) {
     }
 }
 
+// frob:ticket 01M4M0ABX9R9J96C1CF1PSGNZP
+/// `"default"` when no profile is configured and the inherited `NEXTEST_PROFILE` names one that
+/// the nextest config around `cwd` does not define (an outer `cargo nextest run --profile ci`
+/// exports it to every test process, and a nested crate need not have that profile); else `None`.
+fn inherited_profile_fallback(
+    cwd: &Path,
+    configured: &str,
+    inherited: Option<&str>,
+) -> Option<String> {
+    if !configured.is_empty() {
+        return None;
+    }
+    let inherited = inherited?.trim();
+    if inherited.is_empty() || inherited == "default" || inherited.starts_with("default-") {
+        return None;
+    }
+    let defined = cwd.ancestors().find_map(|dir| {
+        let text = std::fs::read_to_string(dir.join(".config").join("nextest.toml")).ok()?;
+        let doc: toml::Table = text.parse().ok()?;
+        Some(
+            doc.get("profile")
+                .and_then(toml::Value::as_table)
+                .is_some_and(|profiles| profiles.contains_key(inherited)),
+        )
+    });
+    (!defined.unwrap_or(false)).then(|| "default".to_owned())
+}
+
 /// Run `cargo nextest run [--profile <profile>] <filter_args>` in `cwd` and capture the verdict and executed tests.
 ///
 /// An empty `profile` passes no `--profile`.
@@ -241,6 +269,12 @@ pub fn run_nextest(
     timeout: Duration,
 ) -> Result<Capture> {
     let mut args = vec!["nextest".to_owned(), "run".to_owned()];
+    let inherited = inherited_profile_fallback(
+        cwd,
+        profile,
+        std::env::var("NEXTEST_PROFILE").ok().as_deref(),
+    );
+    let profile = inherited.as_deref().unwrap_or(profile);
     if !profile.is_empty() {
         args.extend(["--profile".to_owned(), profile.to_owned()]);
     }
@@ -1618,6 +1652,30 @@ fn refuse_empty(empty: bool, what: &str, reference: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // frob:ticket 01M4M0ABX9R9J96C1CF1PSGNZP
+    #[test]
+    fn an_inherited_profile_the_project_lacks_falls_back_to_default() {
+        let dir = tempfile::tempdir().unwrap();
+        let cfg = dir.path().join(".config");
+        std::fs::create_dir_all(&cfg).unwrap();
+        std::fs::write(cfg.join("nextest.toml"), "[profile.ci]\nretries = 0\n").unwrap();
+        let fallback =
+            |cwd: &Path, conf: &str, env: Option<&str>| inherited_profile_fallback(cwd, conf, env);
+        assert_eq!(fallback(dir.path(), "", Some("ci")), None, "defined here");
+        assert_eq!(
+            fallback(dir.path(), "", Some("nope")).as_deref(),
+            Some("default")
+        );
+        assert_eq!(fallback(dir.path(), "x", Some("nope")), None, "configured");
+        assert_eq!(fallback(dir.path(), "", Some("default")), None);
+        assert_eq!(fallback(dir.path(), "", None), None);
+        let bare = tempfile::tempdir().unwrap();
+        assert_eq!(
+            fallback(bare.path(), "", Some("ci")).as_deref(),
+            Some("default")
+        );
+    }
 
     #[test]
     fn split_args_honours_quotes() {
