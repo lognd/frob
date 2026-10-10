@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-10T23:34:11Z"
+updated = "2026-10-10T23:34:22Z"
 idempotency_key = "m2-grl-catalog-docs"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-dev/src/render/**", "docs/reference/grl/**", "crates/gob-dev/src/lib.rs", "crates/gob-dev/Cargo.toml", "crates/gob-dev/tests/generate.rs", "Cargo.lock"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a catalog word added without regeneration, when `--check` runs, then GEN001 reports the stale page"
-bound = false
+bound = true
 +++
 
 Implements grl-spec.md section 6; documentation.md section 3.
