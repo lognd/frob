@@ -2,7 +2,8 @@
 id = "01M4GRV9YMN2VEPCTMMD5ZJPVH"
 title = "Land checks the affected cone: touched files plus dependency cone for frob rules, Unknown edges included"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
