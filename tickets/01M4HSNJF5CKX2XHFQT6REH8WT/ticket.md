@@ -2,7 +2,8 @@
 id = "01M4HSNJF5CKX2XHFQT6REH8WT"
 title = "CI profile job fails: frob ticket doctor now exits 1 when it reports issues (~76AS8XH), but its profile scenario expects exit 0"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
