@@ -410,6 +410,40 @@ fn python_dry_run_lists_pytest_node_ids_and_runs_nothing() {
     assert!(out.contains("ran: false"), "{out}");
 }
 
+// frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+#[test]
+fn dry_run_prints_the_resolved_pytest_runner() {
+    // frob:tests crates/frob-tests/src/verb.rs::TestVerb
+    let (dir, base) = python_fixture();
+    write(
+        dir.path(),
+        "pkg/calc.py",
+        &CALC.replace("x * 3", "x + x + x"),
+    );
+    let dry = |dir: &Path| {
+        let (code, out, err) = gob_cli::run_for_test(
+            &cli(),
+            &["--json", "test", "--base", &base, "--dry-run"],
+            dir,
+        );
+        assert_eq!(code, 0, "{out}{err}");
+        let v: serde_json::Value = serde_json::from_str(&out).expect("json");
+        v["data"]["pytest_runner"]
+            .as_str()
+            .expect("runner")
+            .to_owned()
+    };
+    assert_eq!(dry(dir.path()), "pytest");
+    write(dir.path(), ".venv/bin/python", "");
+    assert_eq!(dry(dir.path()), ".venv/bin/python -m pytest");
+    write(
+        dir.path(),
+        "frob.toml",
+        "[tests]\npython = \"python3.12\"\n",
+    );
+    assert_eq!(dry(dir.path()), "python3.12 -m pytest");
+}
+
 // frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
 #[test]
 fn test_verb_runs_selected_pytest_tests_and_appends_pytest_evidence() {
