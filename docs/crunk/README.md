@@ -46,6 +46,11 @@ waiver applies, the severity at the release gate) are `crunk_rules::family::FAMI
   still silenced its rule.
 - Findings are reported ordered by file, then position, then rule.
 
+## CI
+
+<!-- frob:ticket 01M43ARWT173GKANZ322H41VF1 -->
+Path-filtered jobs and the optional node job: [ci.md](ci.md).
+
 ## Boundary
 
 No frob crate is a dependency of `crunk` or `crunk-check` (`crates/crunk/tests/boundary.rs`).
