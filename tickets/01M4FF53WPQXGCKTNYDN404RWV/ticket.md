@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T04:36:15Z"
-updated = "2026-10-10T19:06:32Z"
+updated = "2026-10-10T19:06:57Z"
 labels = ["grimble"]
 scope = ["docs/design/**", "changelog.d/**"]
 
