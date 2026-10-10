@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-pm/**", "crates/frob-evidence/**", "crates/frob/**", "changelog.d/**"]
+new = ["crates/frob-pm/**", "crates/frob-evidence/**", "crates/frob/**", "changelog.d/**", "docs/reference/cli/frob.md", "docs/design/cli.md"]
+at = "2026-10-10T21:13:35Z"
+actor = "Claude"
+rev = 1
