@@ -366,7 +366,7 @@ fn portable_file(file: &str) -> String {
 ///
 /// Needs the xunit1 `file` attribute; `classname` minus the module's dotted path gives the
 /// classes. Without `file` (collection errors) the classname and name are joined with `::`.
-fn node_id(tag: &str) -> String {
+fn node_id(tag: &str, prefix: &str) -> String {
     let name = xml_attr(tag, "name").unwrap_or_default();
     let class = xml_attr(tag, "classname").unwrap_or_default();
     let Some(file) = xml_attr(tag, "file") else {
@@ -378,6 +378,11 @@ fn node_id(tag: &str) -> String {
     };
     let file = portable_file(&file);
     let module = file.strip_suffix(".py").unwrap_or(&file).replace('/', ".");
+    let file = if prefix.is_empty() {
+        file
+    } else {
+        format!("{prefix}/{file}")
+    };
     let classes = class
         .strip_prefix(&module)
         .map_or("", |c| c.trim_start_matches('.'));
@@ -393,9 +398,15 @@ fn node_id(tag: &str) -> String {
 
 /// The tests in a pytest junit XML report (written with `-o junit_family=xunit1`).
 ///
-/// Each `testcase` is named by its node id; one with a `failure` or `error` child failed, one
-/// with a `skipped` child did not execute and is left out.
+/// Each `testcase` is named by its node id, relative to pytest's rootdir; one with a `failure` or
+/// `error` child failed, one with a `skipped` child did not execute and is left out.
 pub fn parse_junit(xml: &str) -> Parsed {
+    parse_junit_under(xml, "")
+}
+
+// frob:ticket 01M4GKBEBGBTA03VFB90SDR858
+/// [`parse_junit`] with every node id's file prefixed by `prefix`, the rootdir's path below the repository root.
+pub fn parse_junit_under(xml: &str, prefix: &str) -> Parsed {
     let mut parsed = Parsed::default();
     let mut rest = xml;
     while let Some(at) = rest.find("<testcase") {
@@ -414,9 +425,26 @@ pub fn parse_junit(xml: &str) -> Parsed {
             continue;
         }
         let failed = body.contains("<failure") || body.contains("<error");
-        parsed.note(&node_id(tag), failed);
+        parsed.note(&node_id(tag, prefix), failed);
     }
     parsed
+}
+
+// frob:ticket 01M4GKBEBGBTA03VFB90SDR858
+/// The pytest rootdir below `root` (repository-relative, `/`-separated), read from the `rootdir:` header of `transcript`.
+///
+/// Empty when pytest ran with `-q` (no header), when the rootdir is `root` itself or is outside it.
+fn rootdir_prefix(transcript: &str, root: &Path) -> String {
+    let Some(line) = transcript.lines().find_map(|l| l.strip_prefix("rootdir: ")) else {
+        return String::new();
+    };
+    let dir = Path::new(line.split(", ").next().unwrap_or(line).trim());
+    let canon = |p: &Path| gob_exec::canonical(p).unwrap_or_else(|_| p.to_path_buf());
+    let rel = canon(dir)
+        .strip_prefix(canon(root))
+        .map(|r| r.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    portable_file(&rel)
 }
 
 static JUNIT_SEQ: AtomicU64 = AtomicU64::new(0);
@@ -571,7 +599,8 @@ pub fn run_pytest(
         tracing::warn!(path = %junit.display(), error = %e, "could not remove the junit file");
     }
     let out = out?;
-    let seen = parse_junit(&xml);
+    let prefix = rootdir_prefix(&out.stdout, cwd);
+    let seen = parse_junit_under(&xml, &prefix);
     let mut transcript = out.stdout;
     transcript.push_str(&out.stderr);
     let (exit_code, measured) = exit_of(out.status);
@@ -1722,6 +1751,27 @@ mod tests {
             ]
         );
         assert_eq!(parsed.failed, ["tests/test_probe.py::TestK::test_bad"]);
+    }
+
+    #[test]
+    // frob:ticket 01M4GKBEBGBTA03VFB90SDR858
+    fn a_rootdir_below_the_repository_prefixes_the_node_ids() {
+        let root = tempfile::tempdir().unwrap();
+        let sub = root.path().join("py/sub");
+        std::fs::create_dir_all(&sub).unwrap();
+        let header = format!(
+            "============ test session starts ============\nrootdir: {}, configfile: pytest.ini\n",
+            sub.display()
+        );
+        let prefix = rootdir_prefix(&header, root.path());
+        assert_eq!(prefix, "py/sub");
+        let xml = "<testcase classname=\"tests.test_m.TestC\" name=\"test_e\" file=\"tests/test_m.py\" />";
+        assert_eq!(
+            parse_junit_under(xml, &prefix).tests,
+            ["py/sub/tests/test_m.py::TestC::test_e"]
+        );
+        assert_eq!(rootdir_prefix(&header, &sub), "", "rootdir is the root");
+        assert_eq!(rootdir_prefix("no header\n", root.path()), "");
     }
 
     #[test]
