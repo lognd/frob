@@ -96,7 +96,10 @@ not re-lock, but it does change the tree digest and so needs trust again.
   store refuses a root inside the work tree.
 - Guard: if git tracks any state or cache directory (`.frob/`,
   `.grimble/`, `.crunk/`), the run refuses with exit 3
-  (`E-STATE-TRACKED`) naming the files.
+  (`E-STATE-TRACKED`) naming the files. The check is
+  `gob_trust::check_state_untracked` (it asks `git ls-files`, so a
+  staged file counts); `Refusal::state_tracked` maps it to the refusal.
+  A directory outside any git repository passes.
 - CI mode (`--base` or `CI=true`) ignores any in-tree cache. CI caching
   of compiled artefacts across trust boundaries is a cicd.md finding
   unless the MAC key comes from a secret pull-request jobs do not get.
