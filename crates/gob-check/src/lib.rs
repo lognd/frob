@@ -92,7 +92,7 @@ pub use rules::{
     Ci001, Ci003, Ci006, Ci007, Ci010, Ci014, Perf001, Proc001, Read001, Tool001, Tool002,
 };
 pub use status::{
-    FidelityReport, LanguageFidelity, OtherCopy, SiblingRow, SkippedReport, SubjectStatus,
-    hole_caveat, is_binary, opaque_finding, subject_status, subject_status_for, unreadable_finding,
-    unresolved_finding,
+    FidelityReport, HoleSite, LanguageFidelity, OtherCopy, SiblingRow, SkippedReport,
+    SubjectStatus, hole_caveat, is_binary, locate_hole, opaque_finding, subject_status,
+    subject_status_for, unreadable_finding, unresolved_finding, unresolved_finding_at,
 };

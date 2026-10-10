@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 use crate::applicability::{Applies, FileFacts, resolve, temporary_applies};
 use gob_rules::{Finding, RequiredReason, RuleId, RuleMeta, Severity, UnresolvedReason};
 use gob_symbols::{FileInfo, ParseStatus, SkipKind, SkippedFile};
-use gob_text::{FileId, Span, TextRange};
+use gob_text::{FileId, Span, TextRange, TextSize};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -62,6 +62,93 @@ pub(crate) fn hole_caveat_of(info: &FileInfo, applies: &Applies) -> Option<Strin
         )),
         _ => None,
     }
+}
+
+// frob:ticket 01M4GKD8WNG2NW2VAR1MBP382J
+/// Where a partial markdown parse most likely failed: a table row with an unescaped `|` in a code span.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HoleSite {
+    /// Byte range of the offending line.
+    pub range: TextRange,
+    /// 1-based line number.
+    pub line: usize,
+    /// The likely cause, one sentence.
+    pub cause: &'static str,
+}
+
+// frob:ticket 01M4GKD8WNG2NW2VAR1MBP382J
+/// The first line of markdown `text` (`path` must be markdown) that likely broke the parse.
+///
+/// Only the table-row cause is recognised: a row starting with `|` whose code span holds an
+/// unescaped `|`, which splits the row mid-span. `None` for other files or causes.
+pub fn locate_hole(path: &str, text: &str) -> Option<HoleSite> {
+    let ext = std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())?
+        .to_ascii_lowercase();
+    if ext != "md" && ext != "markdown" {
+        return None;
+    }
+    let mut offset = 0usize;
+    let mut first: Option<HoleSite> = None;
+    for (i, raw) in text.split_inclusive('\n').enumerate() {
+        let start = offset;
+        offset += raw.len();
+        let line = raw.trim_end_matches(['\n', '\r']);
+        if !line.trim_start().starts_with('|') {
+            continue;
+        }
+        let (mut in_code, mut prev) = (false, ' ');
+        let (mut bad, mut doubled) = (false, false);
+        for c in line.chars() {
+            if c == '|' && in_code && prev != '\\' {
+                bad = true;
+                doubled |= prev == '|';
+            }
+            if c == '`' {
+                in_code = !in_code;
+            }
+            prev = c;
+        }
+        if !bad {
+            continue;
+        }
+        let range = TextRange::new(
+            TextSize::new(u32::try_from(start).ok()?),
+            TextSize::new(u32::try_from(start + line.len()).ok()?),
+        );
+        let site = HoleSite {
+            range,
+            line: i + 1,
+            cause: "a table row has an unescaped `|` inside a code span; write it as `\\|`",
+        };
+        // A doubled `||` inside a span is the strongest sign: it reads as an empty cell.
+        if doubled {
+            return Some(site);
+        }
+        first.get_or_insert(site);
+    }
+    first
+}
+
+// frob:ticket 01M4GKD8WNG2NW2VAR1MBP382J
+/// [`unresolved_finding_for`] anchored at `site` of `file` and naming its line and likely cause.
+pub fn unresolved_finding_at(
+    id: &str,
+    file: FileId,
+    path: &str,
+    reason: &str,
+    site: &HoleSite,
+) -> Finding {
+    let mut f = unresolved_finding_for(
+        id,
+        Some(file),
+        path,
+        &format!("{reason}; line {}: likely cause: {}", site.line, site.cause),
+        UnresolvedReason::Partial,
+    );
+    f.span = Some(Span::new(file, site.range));
+    f
 }
 
 /// One Unresolved finding of `meta` anchored at the start of `file` (or spanless), typed `fidelity`.
@@ -548,5 +635,25 @@ mod tests {
         let raw = vec![opaque_finding_for("TODO001", &["a.txt"])];
         let out = merge_opaque_notices(raw.clone());
         assert_eq!(out, raw);
+    }
+
+    // frob:ticket 01M4GKD8WNG2NW2VAR1MBP382J
+    #[test]
+    fn locate_hole_points_at_the_table_row_with_the_pipe_in_a_code_span() {
+        let text = "# T\n\n| a | b |\n|---|---|\n| `x|y` | ok |\n| `p||q` | bad |\n";
+        let site = locate_hole("docs/t.md", text).expect("a site");
+        assert_eq!(site.line, 6, "the doubled pipe is the strongest sign");
+        assert_eq!(&text[site.range.to_usize_range()], "| `p||q` | bad |");
+        assert!(site.cause.contains("unescaped `|`"));
+        let only = locate_hole("t.md", "| `x|y` | ok |\n").expect("fallback");
+        assert_eq!(only.line, 1);
+        assert!(
+            locate_hole("t.md", "| `x\\|y` | ok |\n").is_none(),
+            "escaped"
+        );
+        assert!(
+            locate_hole("t.rs", "| `x|y` |\n").is_none(),
+            "markdown only"
+        );
     }
 }

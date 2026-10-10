@@ -176,6 +176,7 @@ fn gate_file(
     file: FileId,
     path: &str,
     head: &[u8],
+    text: &str,
     found: Vec<Finding>,
     opaque: &mut BTreeMap<&'static str, (&'static RuleMeta, Vec<String>)>,
 ) -> Vec<Finding> {
@@ -191,7 +192,13 @@ fn gate_file(
             gob_check::SubjectStatus::Examine => {
                 examined.push(meta.id);
                 if let Some(why) = gob_check::hole_caveat(info, meta) {
-                    out.push(gob_check::unresolved_finding(meta, Some(file), path, &why));
+                    // frob:ticket 01M4GKD8WNG2NW2VAR1MBP382J
+                    out.push(match gob_check::locate_hole(path, text) {
+                        Some(site) => {
+                            gob_check::unresolved_finding_at(meta.id, file, path, &why, &site)
+                        }
+                        None => gob_check::unresolved_finding(meta, Some(file), path, &why),
+                    });
                 }
             }
             gob_check::SubjectStatus::NotApplicable(why) => {
@@ -309,7 +316,15 @@ pub fn evaluate(inputs: &ObligationInputs<'_>) -> Evaluation {
         let directives = by_path.get(path).map_or(&[][..], Vec::as_slice);
         let found = file_rules(inputs, &tickets, file, path, &text, directives);
         let head = &bytes[..bytes.len().min(4096)];
-        raw.extend(gate_file(inputs, file, path, head, found, &mut opaque));
+        raw.extend(gate_file(
+            inputs,
+            file,
+            path,
+            head,
+            &text,
+            found,
+            &mut opaque,
+        ));
     }
     for (meta, files) in opaque.into_values() {
         let names: Vec<&str> = files.iter().map(String::as_str).collect();
