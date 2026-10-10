@@ -89,6 +89,21 @@ impl Refusal {
         r
     }
 
+    // frob:ticket 01M3ZX7TR7HMSXPCQSHFSG8SMS
+    /// `E-STATE-TRACKED`: git tracks state or cache files; exit 3, names every file.
+    pub fn state_tracked(files: &[String]) -> Self {
+        Self::new(
+            "E-STATE-TRACKED",
+            RefusalClass::GuardNeedsAction,
+            format!(
+                "git tracks state or cache files that must stay untracked: {}",
+                files.join(", ")
+            ),
+        )
+        .with_remedy("git rm -r --cached <path> for each listed file, then ignore its directory")
+        .requiring_human()
+    }
+
     /// Attach the exact corrected command.
     #[must_use]
     pub fn with_remedy(mut self, remedy: impl Into<String>) -> Self {
