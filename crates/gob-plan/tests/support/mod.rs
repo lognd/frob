@@ -3,8 +3,8 @@
 
 use gob_ir::{GroupOrder, Location, Model, NodeId, NodeSpec, Operator, TermBuilder};
 use gob_plan::plan::{
-    Certainty, CmpOp, CostClass, Langs, NeedSet, Op, OpId, Operand, Plan, PlanParts, Polarity,
-    Position, Provenance, Quant, Report, StrId, VarId,
+    Certainty, CmpOp, CostClass, Def, Langs, Limit, NeedSet, Op, OpId, Operand, Plan, PlanParts,
+    Polarity, Position, Provenance, Quant, Report, StrId, Unresolved, VarId,
 };
 use gob_text::{FileId, FileInterner};
 
@@ -14,7 +14,10 @@ pub struct PlanBuilder {
     polarity: Polarity,
     strings: Vec<String>,
     ops: Vec<Op>,
+    defs: Vec<Def>,
     clauses: Vec<OpId>,
+    subjects: Option<u16>,
+    unresolved: Vec<Unresolved>,
     reports: Vec<Report>,
     vars: u16,
     needs: NeedSet,
@@ -28,7 +31,10 @@ impl PlanBuilder {
             polarity,
             strings: Vec::new(),
             ops: Vec::new(),
+            defs: Vec::new(),
             clauses: Vec::new(),
+            subjects: None,
+            unresolved: Vec::new(),
             reports: Vec::new(),
             vars: 0,
             needs: NeedSet::default(),
@@ -131,6 +137,54 @@ impl PlanBuilder {
         })
     }
 
+    /// A def with `n` fresh parameters whose body `body` builds; returns its index.
+    pub fn def(&mut self, n: usize, body: impl FnOnce(&mut Self, &[VarId]) -> OpId) -> u16 {
+        let params: Vec<VarId> = (0..n).map(|_| self.var()).collect();
+        let body = body(self, &params);
+        self.defs.push(Def { params, body });
+        u16::try_from(self.defs.len() - 1).unwrap()
+    }
+
+    pub fn call(&mut self, def: u16, args: &[VarId]) -> OpId {
+        self.op(Op::Call {
+            def,
+            args: args.to_vec(),
+        })
+    }
+
+    /// `count(var: kind where body(var)) op limit`.
+    pub fn count_cmp(
+        &mut self,
+        kind: &str,
+        op: CmpOp,
+        limit: Limit,
+        body: impl FnOnce(&mut Self, VarId) -> OpId,
+    ) -> OpId {
+        let var = self.var();
+        let cond = body(self, var);
+        let kind = self.s(kind);
+        self.op(Op::CountCmp {
+            var,
+            kind,
+            cond,
+            op,
+            limit,
+        })
+    }
+
+    /// P-: the clauses added so far select (default: through the last `find`) the rule's subjects; later ones are the formula.
+    pub fn end_subjects(&mut self) -> &mut Self {
+        self.subjects = Some(u16::try_from(self.clauses.len()).unwrap());
+        self
+    }
+
+    /// `unresolved when cond because "reason"`.
+    pub fn unresolved_when(&mut self, when: OpId, reason: &str) -> &mut Self {
+        let reason = self.s(reason);
+        self.unresolved.push(Unresolved { when, reason });
+        self
+    }
+
     pub fn report(&mut self, when: Option<OpId>, subject: VarId, message: &str) {
         let message = self.s(message);
         self.reports.push(Report {
@@ -138,6 +192,18 @@ impl PlanBuilder {
             subject,
             message,
         });
+    }
+
+    /// P- plans select subjects through the last binder unless `end_subjects` says otherwise.
+    fn default_subjects(&self) -> u16 {
+        if self.polarity != Polarity::Pminus {
+            return 0;
+        }
+        let last = self
+            .clauses
+            .iter()
+            .rposition(|&c| matches!(self.ops[c as usize], Op::Find { .. } | Op::FindSide { .. }));
+        last.map_or(0, |i| u16::try_from(i + 1).unwrap())
     }
 
     pub fn build(&mut self) -> Plan {
@@ -164,7 +230,10 @@ impl PlanBuilder {
             vars: self.vars,
             strings: self.strings.clone(),
             ops: self.ops.clone(),
+            defs: self.defs.clone(),
             clauses: self.clauses.clone(),
+            subjects: self.subjects.unwrap_or_else(|| self.default_subjects()),
+            unresolved: self.unresolved.clone(),
             reports: self.reports.clone(),
         };
         Plan::new(parts).expect("test plan is valid")

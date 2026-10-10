@@ -1,13 +1,13 @@
 //! The land ratchet: land refuses only findings the ticket introduces (rules.md section 6, ~QAFRXM3).
 //!
 //! The base side is the same check run without a ticket scope on the base tip,
-//! in a throwaway detached worktree under the git common dir. Its finding
+//! in a persistent detached checkout (`<git common dir>/frob/land-checkout`, moved to each base tip under a lock, its `target/` shared with the ticket worktree through `frob/land-target`). Its finding
 //! fingerprints are cached per code tree (the base tree without the ledger directory), engine version and
 //! config digest in `<git common dir>/frob/land-base/<tree>-<key>.json`, shared by every worktree, so a second land on
 //! the same code (from any ticket, a ledger-only base commit, or a `--wait` retry that did not move it) costs
 //! one tool-free exact-commit pass; a base with changed code, a new engine or a changed config has a new key and so is recomputed (~F4YA3S9).
 //! Findings are compared as multisets: a second occurrence of a fingerprint the base has once is new.
-//! The throwaway worktree's check opens the repository-shared cache (gob-cache), so every file
+//! The base checkout's check opens the repository-shared cache (gob-cache), so every file
 //! unchanged since an earlier check is a cache hit (~TSK0M4Y).
 
 use std::collections::{HashMap, HashSet};
@@ -77,11 +77,22 @@ pub(crate) fn notes(report: &CheckReport) -> Vec<FindingNote> {
         .collect()
 }
 
-/// The cache key of a base set: engine version plus a digest of the ledger config the check runs with.
+/// The cache key of a base set: the running engine fingerprint plus a digest of the ledger config the check runs with.
+///
+/// The engine is the gob-cache default (crate version plus executable size and mtime), so a
+/// refreshed binary that adds rules or atoms misses and recomputes the base (~VNK49V8).
 // frob:ticket 01M42MGPC19KXFQ0DS2F4YA3S9
+// frob:ticket 01M4HDXNTJQ77R9Z81VVNK49V8
 #[must_use]
 pub fn cache_key(ledger: &LedgerConfig) -> String {
+    cache_key_for(gob_cache::default_engine(), ledger)
+}
+
+/// [`cache_key`] under an explicit engine fingerprint (a filename-safe digest of engine and config).
+fn cache_key_for(engine: &str, ledger: &LedgerConfig) -> String {
     let mut h = blake3::Hasher::new();
+    h.update(engine.as_bytes());
+    h.update(b"\0");
     h.update(format!("{ledger:?}").as_bytes());
     let digest = h.finalize().to_hex();
     format!("{}-{}", env!("CARGO_PKG_VERSION"), &digest.as_str()[..16])
@@ -213,24 +224,49 @@ fn write_cache(path: &Path, set: &BaseSet) {
     }
 }
 
-/// Check out `oid` detached in a throwaway worktree, run the unscoped check there and remove it again.
-fn run_at_base(
-    wt: &Repo,
-    wt_path: &Path,
-    oid: &str,
-    ledger: &LedgerConfig,
-    skip_tools: bool,
-) -> Result<Vec<FindingNote>, LandError> {
-    let dir: PathBuf = wt.common_dir().join("frob").join(format!(
-        "land-base-{}-{}",
-        &oid[..oid.len().min(12)],
-        std::process::id()
-    ));
+/// Directory (under `<common>/frob/`) of the persistent ratchet base checkout.
+///
+/// The name deliberately does not start with `land-base-`, the prefix the garbage
+/// collector sweeps as abandoned per-process checkouts.
+pub const BASE_CHECKOUT_DIR: &str = "land-checkout";
+
+/// Directory (under `<common>/frob/`) of the cargo target directory every land checkout shares.
+pub const SHARED_TARGET_DIR: &str = "land-target";
+
+/// The persistent checkout path and its lock path for the repository whose git dir is `common`.
+fn base_checkout_paths(common: &Path) -> (PathBuf, PathBuf) {
+    let frob = common.join("frob");
+    (
+        frob.join(BASE_CHECKOUT_DIR),
+        frob.join(format!("{BASE_CHECKOUT_DIR}.lock")),
+    )
+}
+
+/// Move the persistent base checkout to `oid`, creating it on first use or when it is unusable.
+///
+/// A stable path keeps cargo's path-dependent fingerprints of the workspace crates valid from
+/// one land to the next, which a fresh per-process directory never did.
+fn checkout_base(wt: &Repo, wt_path: &Path, dir: &Path, oid: &str) -> Result<(), LandError> {
     let dir_text = dir.to_string_lossy().into_owned();
-    if let Some(parent) = dir.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| LandError::Config(format!("{}: {e}", parent.display())))?;
+    if dir.join(".git").exists() {
+        let moved = git(
+            wt,
+            dir,
+            &["checkout", "--detach", "--force", "--quiet", oid],
+        );
+        if moved.as_ref().is_ok_and(crate::git::GitRun::ok) {
+            // Untracked leftovers of an earlier check; ignored files (target/) stay.
+            let _ = git(wt, dir, &["clean", "-fdq"]);
+            tracing::info!(oid, dir = %dir.display(), "land base checkout reused");
+            return Ok(());
+        }
+        tracing::warn!(dir = %dir.display(), "land base checkout unusable; recreating");
+        let _ = git(wt, wt_path, &["worktree", "remove", "--force", &dir_text]);
     }
+    if dir.exists() {
+        let _ = std::fs::remove_dir_all(dir);
+    }
+    let _ = git(wt, wt_path, &["worktree", "prune"]);
     let add = git(
         wt,
         wt_path,
@@ -242,8 +278,44 @@ fn run_at_base(
             add.text
         )));
     }
-    tracing::info!(oid, dir = %dir.display(), "land base checkout");
-    share_build_dir(wt_path, &dir);
+    tracing::info!(oid, dir = %dir.display(), "land base checkout created");
+    Ok(())
+}
+
+/// Hold the exclusive lock of the persistent base checkout until the returned file is dropped.
+fn lock_base_checkout(lock: &Path) -> Result<std::fs::File, LandError> {
+    if let Some(parent) = lock.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| LandError::io(format!("creating {}", parent.display()), e))?;
+    }
+    let file = std::fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(lock)
+        .map_err(|e| LandError::io(format!("opening {}", lock.display()), e))?;
+    file.lock()
+        .map_err(|e| LandError::io(format!("locking {}", lock.display()), e))?;
+    Ok(file)
+}
+
+/// Check out `oid` detached in the persistent base checkout and run the unscoped check there.
+fn run_at_base(
+    wt: &Repo,
+    wt_path: &Path,
+    oid: &str,
+    ledger: &LedgerConfig,
+    skip_tools: bool,
+) -> Result<Vec<FindingNote>, LandError> {
+    let common = wt.common_dir();
+    let (dir, lock) = base_checkout_paths(common);
+    if let Some(parent) = dir.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| LandError::Config(format!("{}: {e}", parent.display())))?;
+    }
+    let _guard = lock_base_checkout(&lock)?;
+    checkout_base(wt, wt_path, &dir, oid)?;
+    share_build_dir(common, &dir);
     let result = frob_check::run(
         &dir,
         &CheckOptions {
@@ -253,37 +325,62 @@ fn run_at_base(
             ..CheckOptions::default()
         },
     );
-    let removed = git(wt, wt_path, &["worktree", "remove", "--force", &dir_text]);
-    if !removed.as_ref().is_ok_and(crate::git::GitRun::ok) {
-        tracing::warn!(dir = %dir.display(), "base checkout not removed; deleting directly");
-        let _ = std::fs::remove_dir_all(&dir);
-        let _ = git(wt, wt_path, &["worktree", "prune"]);
-    }
     Ok(notes(&result?))
 }
 
-/// Point the base checkout's `target/` at the ticket worktree's, so the cargo tool stages of the
-/// base check reuse the dependency builds the head checks just made instead of compiling the
-/// workspace from nothing in a fresh directory (measured: minutes in a debug build, ~TSK0M4Y).
-/// Only for a real `target/` directory; failures are logged and the base check simply runs cold.
-// frob:ticket 01M42B6T28RX9PVM3X6TSK0M4Y
-fn share_build_dir(wt_path: &Path, base_dir: &Path) {
-    let from = wt_path.join("target");
-    if !std::fs::symlink_metadata(&from).is_ok_and(|m| m.is_dir()) {
-        tracing::debug!(from = %from.display(), "no build directory to share with the base checkout");
+/// Point `checkout`'s `target/` at the repository-shared land target directory when it has none.
+///
+/// Every land checkout (the ticket worktree and the persistent base checkout) then reuses the
+/// registry dependency builds of every earlier land instead of compiling from an empty
+/// directory (measured: 45-200 s per cold pass, ~TSK0M4Y, ~8J3BE8W). An existing `target`
+/// (a real directory or a link) is left alone. Failures are logged and the checks run cold.
+// frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W
+pub(crate) fn share_build_dir(common: &Path, checkout: &Path) {
+    let link = checkout.join("target");
+    if std::fs::symlink_metadata(&link).is_ok() {
+        tracing::debug!(link = %link.display(), "checkout already has a build directory");
         return;
     }
+    let shared = common.join("frob").join(SHARED_TARGET_DIR);
+    if let Err(e) = std::fs::create_dir_all(&shared) {
+        tracing::warn!(error = %e, dir = %shared.display(), "shared build directory not created; cargo stages run cold");
+        return;
+    }
+    exclude_target(common);
     #[cfg(unix)]
-    match std::os::unix::fs::symlink(&from, base_dir.join("target")) {
+    match std::os::unix::fs::symlink(&shared, &link) {
         Ok(()) => {
-            tracing::info!(from = %from.display(), "base checkout shares the worktree's build directory");
+            tracing::info!(shared = %shared.display(), checkout = %checkout.display(), "checkout shares the land build directory");
         }
         Err(e) => {
-            tracing::warn!(error = %e, "base checkout build directory not shared; its cargo stages run cold");
+            tracing::warn!(error = %e, "build directory not shared; cargo stages run cold");
         }
     }
     #[cfg(not(unix))]
-    tracing::debug!(base = %base_dir.display(), "build directory sharing is unix-only");
+    tracing::debug!(checkout = %checkout.display(), "build directory sharing is unix-only");
+}
+
+/// Make git ignore a `/target` entry of any kind: the `target/` pattern of a `.gitignore` matches
+/// directories only, so the shared-build symlink would show as an untracked file (and as a SCOPE001 target).
+fn exclude_target(common: &Path) {
+    let path = common.join("info").join("exclude");
+    let text = std::fs::read_to_string(&path).unwrap_or_default();
+    if text.lines().any(|l| l.trim() == "/target") {
+        return;
+    }
+    let mut next = text;
+    if !next.is_empty() && !next.ends_with('\n') {
+        next.push('\n');
+    }
+    next.push_str("/target\n");
+    let result =
+        std::fs::create_dir_all(common.join("info")).and_then(|()| std::fs::write(&path, next));
+    match result {
+        Ok(()) => {
+            tracing::info!(path = %path.display(), "excluded /target for the shared build link");
+        }
+        Err(e) => tracing::warn!(path = %path.display(), error = %e, "could not exclude /target"),
+    }
 }
 
 /// The ratchet's decision for one land.
@@ -394,6 +491,27 @@ mod count_tests {
 
     // frob:tests crates/frob-land/src/ratchet.rs::cache_key
     #[test]
+    fn a_new_engine_invalidates_the_cached_base_set() {
+        // frob:ticket 01M4HDXNTJQ77R9Z81VVNK49V8
+        let cfg = LedgerConfig::default();
+        let old = cache_key_for("gob-cache/0.532.0/exe:1-1", &cfg);
+        let new = cache_key_for("gob-cache/0.532.0/exe:2-2", &cfg);
+        assert_eq!(old, cache_key_for("gob-cache/0.532.0/exe:1-1", &cfg));
+        assert_ne!(old, new, "same version, rebuilt binary");
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let path = tmp.path().join("s.json");
+        let set = BaseSet {
+            oid: "o".to_owned(),
+            key: old.clone(),
+            findings: vec![note("x")],
+        };
+        write_cache(&path, &set);
+        assert!(read_cache(&path, "o", &old).is_some());
+        assert!(read_cache(&path, "o", &new).is_none());
+    }
+
+    // frob:tests crates/frob-land/src/ratchet.rs::cache_key
+    #[test]
     fn a_config_change_invalidates_the_cached_base_set() {
         let a = LedgerConfig::default();
         let b = LedgerConfig {
@@ -421,22 +539,40 @@ mod tests {
 
     // frob:tests crates/frob-land/src/ratchet.rs::share_build_dir
     #[test]
-    fn the_base_checkout_shares_a_real_target_directory_and_only_then() {
+    fn a_checkout_without_a_target_shares_the_land_target_and_one_with_keeps_its_own() {
         let tmp = tempfile::tempdir().expect("tempdir");
-        let (wt, base) = (tmp.path().join("wt"), tmp.path().join("base"));
-        std::fs::create_dir_all(&wt).expect("wt");
-        std::fs::create_dir_all(&base).expect("base");
-        share_build_dir(&wt, &base);
-        assert!(!base.join("target").exists(), "no target to share");
-        std::fs::create_dir_all(wt.join("target")).expect("target");
-        std::fs::write(wt.join("target").join("marker"), "x").expect("marker");
-        share_build_dir(&wt, &base);
-        assert!(base.join("target").join("marker").is_file());
+        let (common, a, b) = (
+            tmp.path().join("common"),
+            tmp.path().join("a"),
+            tmp.path().join("b"),
+        );
+        for d in [&common, &a, &b] {
+            std::fs::create_dir_all(d).expect("dir");
+        }
+        share_build_dir(&common, &a);
+        let shared = common.join("frob").join(SHARED_TARGET_DIR);
+        std::fs::write(shared.join("marker"), "x").expect("marker");
+        share_build_dir(&common, &b);
+        assert!(a.join("target").join("marker").is_file());
+        assert!(b.join("target").join("marker").is_file(), "same directory");
+        // A real directory is never replaced.
+        let c = tmp.path().join("c");
+        std::fs::create_dir_all(c.join("target")).expect("own target");
+        share_build_dir(&common, &c);
         assert!(
-            std::fs::symlink_metadata(base.join("target"))
+            !std::fs::symlink_metadata(c.join("target"))
                 .expect("meta")
                 .file_type()
                 .is_symlink()
         );
+    }
+
+    // frob:tests crates/frob-land/src/ratchet.rs::base_checkout_paths
+    #[test]
+    fn the_base_checkout_path_is_stable_and_outside_the_gc_swept_prefix() {
+        let (dir, lock) = base_checkout_paths(Path::new("/g"));
+        assert_eq!(dir, Path::new("/g/frob").join(BASE_CHECKOUT_DIR));
+        assert_ne!(dir, lock);
+        assert!(!BASE_CHECKOUT_DIR.starts_with("land-base-"));
     }
 }

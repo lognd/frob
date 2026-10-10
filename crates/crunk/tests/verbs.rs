@@ -91,9 +91,25 @@ fn check_without_crunk_toml_refuses_with_the_shared_no_config_code() {
 
 // frob:tests crates/gob-product/src/check.rs::Check
 #[test]
-fn check_json_with_an_empty_config_is_a_valid_sibling_document() {
+fn check_json_with_an_unusable_config_is_refused_not_passed() {
     let dir = repo();
     write(dir.path(), "crunk.toml", "");
+    let (code, env, _) = crunk(dir.path(), &["check", "--json"]);
+    assert_eq!(code, 3, "{env}");
+    assert_eq!(env["ok"], false);
+    assert_eq!(env["error"]["code"], "E-CONFIG");
+}
+
+// frob:tests crates/gob-product/src/check.rs::Check
+#[test]
+fn check_json_with_a_valid_config_is_a_valid_sibling_document() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "crunk.toml",
+        crunk_spec::presets::preset("default").expect("default preset"),
+    );
+    write(dir.path(), "styles/base/a.css", ".a { margin: 0; }\n");
     let (code, env, _) = crunk(dir.path(), &["check", "--json"]);
     assert_eq!(code, 0, "{env}");
     assert_eq!(env["ok"], true);
@@ -101,7 +117,6 @@ fn check_json_with_an_empty_config_is_a_valid_sibling_document() {
     let doc = &env["data"];
     assert_eq!(doc["schema_version"], "gob.sibling/1");
     assert_eq!(doc["product"], "crunk");
-    assert_eq!(doc["findings"].as_array().unwrap().len(), 0);
 }
 
 // frob:tests crates/gob-product/src/doctor.rs::Doctor

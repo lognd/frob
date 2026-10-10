@@ -12,7 +12,8 @@ exclude = ["target/", ".frob/", "CHANGELOG.md", "CHANGELOG-v1.md", "notes/", "cr
 # Which Unresolved findings fail the gate: `required`, `never` or `all`.
 fail_on_unresolved = "required"
 # Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7).
-sibling_timeout_secs = 120
+# 120 s timed out the grimble sibling under agent load (SIB001 is required); ~77B0T1W caches its binding.
+sibling_timeout_secs = 600
 # When true an unusable configured sibling is a required Unresolved (`SIB001`).
 require_siblings = true
 
@@ -24,17 +25,28 @@ process_spawners = ["gob-exec", "gob-git"]
 [[check.tool]]
 name = "cargo"
 command = "cargo"
-args = ["fmt", "--all", "--check"]
+args = ["fmt", "{packages}", "--check"]
+unscoped_packages = ["--all"]
+inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain*", "clippy.toml", "rustfmt.toml", ".cargo/**"]
+# Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
+timeout_secs = 1200
 
 [[check.tool]]
 name = "cargo"
 command = "cargo"
-args = ["clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
+args = ["clippy", "{packages}", "--all-targets", "--all-features", "--", "-D", "warnings"]
+inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain*", "clippy.toml", "rustfmt.toml", ".cargo/**"]
+# Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
+timeout_secs = 1200
 
 [[check.tool]]
 name = "cargo"
 command = "cargo"
 args = ["dev", "gen", "all", "--check"]
+# Generated pages are functions of the Rust registrations and the generated files themselves.
+inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "docs/reference/**", "docs/schemas/**", "crates/*/tests/mdtest/**", "crates/*/src/rules/**"]
+# Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
+timeout_secs = 1200
 
 # zizmor and actionlint are bound through `uvx` (pinned versions); frob maps
 # their findings to CI ids. The version range makes a tool that lags the
@@ -43,6 +55,7 @@ args = ["dev", "gen", "all", "--check"]
 [[check.tool]]
 name = "zizmor"
 command = "uvx"
+inputs = [".github/workflows/**", ".github/actions/**"]
 args = ["zizmor@1.30.1", "--offline", "--format", "json-v1", "--no-exit-codes", "."]
 parser = "zizmor-json-v1"
 version_args = ["zizmor@1.30.1", "--version"]
@@ -52,6 +65,7 @@ max_version = "1.30.99"
 [[check.tool]]
 name = "actionlint"
 command = "uvx"
+inputs = [".github/workflows/**"]
 args = ["--from", "actionlint-py==1.7.12.25", "actionlint", "-format", "{{json .}}"]
 parser = "actionlint-json"
 version_args = ["--from", "actionlint-py==1.7.12.25", "actionlint", "-version"]
@@ -66,6 +80,7 @@ labels = []
 [[check.tool]]
 name = "cargo-deny"
 command = "cargo-deny"
+inputs = ["Cargo.lock", "**/Cargo.toml", "deny.toml"]
 args = ["check"]
 version_args = ["--version"]
 min_version = "0.19.0"
@@ -75,6 +90,7 @@ optional = true
 [[check.tool]]
 name = "cargo-shear"
 command = "cargo-shear"
+inputs = ["Cargo.lock", "**/Cargo.toml", "**/*.rs"]
 args = []
 version_args = ["--version"]
 min_version = "1.14.0"
@@ -84,6 +100,7 @@ optional = true
 [[check.tool]]
 name = "typos"
 command = "typos"
+inputs = ["**/*.rs", "**/*.md", "**/*.toml", "**/*.py", "**/*.yml", "**/*.yaml", "**/*.json", "**/*.txt", "typos.toml", "_typos.toml", ".typos.toml"]
 args = []
 version_args = ["--version"]
 min_version = "1.50.0"
@@ -97,6 +114,8 @@ cas_retries = 5
 [lease]
 # Append-shared files nearly every crate ticket touches; exempt from overlap checks.
 shared_files = ["Cargo.lock"]
+# 5 s refused work, land and heartbeats with about 15 agents (2026-10-09); ~ZZQ6PA9 shrinks the hold time.
+lock_timeout_ms = 30000
 
 [tickets]
 # Ref holding the ledger. This is `experimental` while the Rust rewrite lives
@@ -159,8 +178,9 @@ intangible_share = 0.2
 [pm.wip]
 # Most tickets one holder (actor plus worktree path) may have in progress; 1 makes an agent finish before starting another, 0 is off.
 in_progress_per_identity = 1
-# Repository WIP cap: three building agents (sccache halves worktree builds, measured 2026-10-03: 110 s cold to 58 s warm) plus the coordinator design ticket.
-in_progress = 10
+# Repository WIP cap: wide agent waves (owner 2026-10-09); suite runs go to the goway helpers with
+# per-host job fitting (goway ~K60F05J), so local builds stay scoped. Finished-but-unlanded tickets count.
+in_progress = 16
 
 [release]
 # When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green.

@@ -1,0 +1,6 @@
+kind = "transition"
+from = "active"
+to = "closed"
+at = "2026-10-10T00:06:50Z"
+actor = "lognd"
+rev = 1
