@@ -1,10 +1,11 @@
 //! The bounded runner: spec in, redacted output out.
 
+// frob:ticket 01M4CTDYG696JWM20AZPYFAH0T
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -21,6 +22,10 @@ pub const DEFAULT_OUTPUT_CAP: usize = 64 * 1024 * 1024;
 
 /// How often a running child is polled for exit.
 const POLL: Duration = Duration::from_millis(5);
+
+/// How long to wait for the output readers once the child is gone; a grandchild that kept the
+/// pipe open past this point is abandoned and the partial output returned.
+const JOIN_GRACE: Duration = Duration::from_secs(1);
 
 /// Concurrency limits for a [`Runner`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -190,8 +195,9 @@ impl Runner {
             return Err(ExecError::OutputCap { limit: cap });
         }
         let duration = started.elapsed();
-        let stdout = out_t.map(collect).unwrap_or_default();
-        let stderr = err_t.map(collect).unwrap_or_default();
+        let join_deadline = Instant::now() + JOIN_GRACE;
+        let stdout = out_t.map(|d| collect(d, join_deadline)).unwrap_or_default();
+        let stderr = err_t.map(|d| collect(d, join_deadline)).unwrap_or_default();
         info!(program = %label, ?status, ?duration, "exec finished");
         Ok(Output {
             status,
@@ -203,22 +209,30 @@ impl Runner {
     }
 }
 
+/// A pipe reader thread plus the bytes it has read so far.
+struct Drain {
+    /// The reader thread.
+    handle: thread::JoinHandle<()>,
+    /// Bytes read so far, shared so partial output survives an abandoned thread.
+    buf: Arc<Mutex<Vec<u8>>>,
+}
+
 /// Read a pipe on a helper thread until its end or past `cap` bytes, which sets `exceeded`.
-fn drain(
-    mut r: impl Read + Send + 'static,
-    cap: usize,
-    exceeded: &Arc<AtomicBool>,
-) -> thread::JoinHandle<Vec<u8>> {
+fn drain(mut r: impl Read + Send + 'static, cap: usize, exceeded: &Arc<AtomicBool>) -> Drain {
     let exceeded = Arc::clone(exceeded);
-    thread::spawn(move || {
-        let mut buf = Vec::new();
+    let buf = Arc::new(Mutex::new(Vec::new()));
+    let shared = Arc::clone(&buf);
+    let handle = thread::spawn(move || {
         let mut chunk = [0_u8; 8 * 1024];
         loop {
             match r.read(&mut chunk) {
                 Ok(0) => break,
                 Ok(n) => {
-                    buf.extend_from_slice(&chunk[..n]);
-                    if buf.len() > cap {
+                    let mut b = shared
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    b.extend_from_slice(&chunk[..n]);
+                    if b.len() > cap {
                         exceeded.store(true, Ordering::Relaxed);
                         break;
                     }
@@ -230,13 +244,28 @@ fn drain(
                 }
             }
         }
-        buf
-    })
+    });
+    Drain { handle, buf }
 }
 
-/// Join a drain thread and return redacted lossy UTF-8.
-fn collect(h: thread::JoinHandle<Vec<u8>>) -> String {
-    let bytes = h.join().unwrap_or_default();
+/// Wait for a reader until `deadline`, then return what it read as redacted lossy UTF-8.
+///
+/// A reader still blocked at the deadline (a grandchild holds the pipe open) is detached.
+fn collect(d: Drain, deadline: Instant) -> String {
+    while !d.handle.is_finished() && Instant::now() < deadline {
+        thread::sleep(POLL);
+    }
+    if d.handle.is_finished() {
+        let _ = d.handle.join();
+    } else {
+        warn!("output reader still blocked after the child ended; abandoning it");
+    }
+    let bytes = std::mem::take(
+        &mut *d
+            .buf
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner),
+    );
     gob_log::redact(&String::from_utf8_lossy(&bytes)).into_owned()
 }
 
@@ -266,23 +295,87 @@ fn supervise(
     }
 }
 
-/// Kill the child's whole process group (child only on non-unix).
+/// Kill the child's whole process tree: its process group plus every descendant, so children
+/// that left the group (`setsid`) die too.
 #[cfg(unix)]
 fn kill_group(child: &mut Child) {
-    use nix::sys::signal::{Signal, killpg};
+    use nix::sys::signal::{Signal, kill, killpg};
     use nix::unistd::Pid;
     let Ok(pid) = i32::try_from(child.id()) else {
         let _ = child.kill();
         return;
     };
+    // Snapshot before killing: orphans are reparented and the tree can no longer be walked.
+    let tree = descendants(pid);
     if let Err(e) = killpg(Pid::from_raw(pid), Signal::SIGKILL) {
         warn!(error = %e, "killpg failed; killing child only");
         let _ = child.kill();
     }
+    for p in tree {
+        // ESRCH just means it already died with the group.
+        let _ = kill(Pid::from_raw(p), Signal::SIGKILL);
+    }
 }
 
-/// Kill the child (no process groups on this platform).
+/// Pids of every live descendant of `root` (Linux `/proc`; empty elsewhere).
+#[cfg(target_os = "linux")]
+fn descendants(root: i32) -> Vec<i32> {
+    let mut parent_of = Vec::new();
+    if let Ok(dir) = std::fs::read_dir("/proc") {
+        for entry in dir.flatten() {
+            let Some(pid) = entry
+                .file_name()
+                .to_str()
+                .and_then(|n| n.parse::<i32>().ok())
+            else {
+                continue;
+            };
+            let Ok(stat) = std::fs::read_to_string(entry.path().join("stat")) else {
+                continue;
+            };
+            // "pid (comm) S ppid ..."; comm may contain spaces and parens, so split at the last ')'.
+            let parent = stat
+                .rsplit_once(')')
+                .and_then(|(_, rest)| rest.split_whitespace().nth(1))
+                .and_then(|p| p.parse::<i32>().ok());
+            if let Some(parent) = parent {
+                parent_of.push((pid, parent));
+            }
+        }
+    }
+    let mut found = vec![root];
+    let mut i = 0;
+    while i < found.len() {
+        let cur = found[i];
+        found.extend(
+            parent_of
+                .iter()
+                .filter(|&&(_, pp)| pp == cur)
+                .map(|&(p, _)| p),
+        );
+        i += 1;
+    }
+    found.remove(0);
+    found
+}
+
+/// Pids of every live descendant of `root` (not implemented off Linux; the group kill applies).
+#[cfg(all(unix, not(target_os = "linux")))]
+fn descendants(_root: i32) -> Vec<i32> {
+    Vec::new()
+}
+
+/// Kill the child and its descendants with `taskkill /T` (Windows has no process groups).
 #[cfg(not(unix))]
 fn kill_group(child: &mut Child) {
+    let tree = Command::new("taskkill")
+        .args(["/PID", &child.id().to_string(), "/T", "/F"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
+    if !tree.is_ok_and(|s| s.success()) {
+        warn!("taskkill failed; killing child only");
+    }
     let _ = child.kill();
 }
