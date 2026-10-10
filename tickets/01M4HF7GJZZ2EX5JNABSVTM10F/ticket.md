@@ -7,13 +7,13 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T23:16:02Z"
-updated = "2026-10-10T00:30:45Z"
+updated = "2026-10-10T00:32:59Z"
 labels = ["creates:crates/frob-worktree/src/gc/removing.rs"]
 scope = ["changelog.d/**", "crates/frob-worktree/src/gc/pass.rs", "crates/frob-worktree/src/gc/mod.rs", "crates/frob-worktree/tests/gc.rs", "crates/frob-worktree/src/gc/removing.rs"]
 
 [[acceptance]]
 text = "Given a land whose process exits before its background removal finishes, when the next land or frob gc runs, then every unregistered <worktree-dir>/*.removing directory is deleted, and frob doctor reports any that remain"
-bound = false
+bound = true
 +++
 
 2026-10-09: 11 *.removing dirs (36 GB) remained in ../frob-v2-wt after queue lands; host C: drive fell from 306 GB to 142 GB free. Introduced by ~8J3BE8W; removed by hand.
