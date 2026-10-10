@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-dev/src/render/**", "docs/reference/grl/**", "crates/gob-dev/src/lib.rs", "crates/gob-dev/Cargo.toml", "crates/gob-dev/tests/generate.rs"]
+new = ["crates/gob-dev/src/render/**", "docs/reference/grl/**", "crates/gob-dev/src/lib.rs", "crates/gob-dev/Cargo.toml", "crates/gob-dev/tests/generate.rs", "Cargo.lock"]
+at = "2026-10-10T23:27:35Z"
+actor = "lognd"
+rev = 1
