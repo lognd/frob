@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-10T15:47:41Z"
+digest = "9ff041932c80e44cb0268910a34af24cb5067a200a3c6031d50a5549c5d24dd3"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a49a9395-b638-483d-a1ed-eda665eb7301 with nextest profile: default
+    Starting 1 test across 11 binaries (162 tests skipped)
+        PASS [   0.010s] gob-plan::check_names the_fixture_rules_of_the_spec_check_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 162 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=the_fixture_rules_of_the_spec_check_clean)'"
+size = 545
+status = "measured"
+tests = ["the_fixture_rules_of_the_spec_check_clean"]
+at = "2026-10-10T15:47:41Z"
+actor = "Claude"
+rev = 1

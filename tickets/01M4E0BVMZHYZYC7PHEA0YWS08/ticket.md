@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T14:58:33Z"
-updated = "2026-10-10T15:47:40Z"
+updated = "2026-10-10T15:47:41Z"
 scope = ["changelog.d/**", "crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "Docs (grl-spec 7.0.4) state the def, count and report-when negative positions"
-bound = false
+bound = true
 +++
 
 Found by the grl-spec 7.0 draft (2026-10-08). Example: not d(f) with certainly inside d passes.
