@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T03:58:45Z"
-updated = "2026-10-10T20:01:57Z"
+updated = "2026-10-10T20:12:40Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/crunk*/**", "crates/frob-check/**", "crates/gob-check/**", "changelog.d/**", "crates/gob-cli/**"]
 
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the installed crunk, when crunk schema runs, then it prints the crunk-specific config tables ([project], [palette], [scales], [typography], [layers], [org], [jsx], [tailwind], [tokens], [lint]) with their keys and types, not only the shared check/compute/directives/perf tables (logand could not validate its crunk.toml)"
-bound = false
+bound = true
 +++
 
 Hullbreach platform repro.
