@@ -68,5 +68,6 @@ pub use inventory;
 pub use meta::{Directive, DirectiveEntry, DirectiveMeta, all_directives, validate};
 pub use rules::{Dsl001, Dsl002, Parse001};
 pub use scan::{DirectiveRecord, NOT_ATTACHED, REORIENT_VERB, ScanConfig, ScanResult, Scanner};
-pub use ulid::{is_full_ulid, looks_like_ticket_ref};
+// frob:ticket 01M4GK42XB93XT5TFDQDRQ36JC
+pub use ulid::{is_full_ulid, is_v1_alias, looks_like_ticket_ref};
 pub use wire::{WIRE_VERSION, decode_records, encode_records};
