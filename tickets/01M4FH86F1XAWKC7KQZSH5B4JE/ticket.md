@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T05:12:53Z"
-updated = "2026-10-10T20:01:40Z"
+updated = "2026-10-10T20:04:51Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-symbols/**", "crates/gob-languages/**", "crates/frob-obligations/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given /// docs, then // frob:doc path#anchor, then pub fn f, when frob check runs, then f has its doc comment and no DOC001 fires; the directive still binds to f"
-bound = false
+bound = true
 +++
 
 logand.app-v2 F-544: 26 false DOC001 in wasm-engine.
