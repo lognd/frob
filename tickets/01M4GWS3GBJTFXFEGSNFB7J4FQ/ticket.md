@@ -8,8 +8,9 @@ points = 3
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-09T17:53:24Z"
-updated = "2026-10-09T17:53:24Z"
-scope = ["crates/frob-land/**", "changelog.d/**"]
+updated = "2026-10-10T03:11:11Z"
+labels = ["creates:crates/frob-release/src/culprit.rs"]
+scope = ["changelog.d/**", "crates/frob-land/src/base_ci.rs", "crates/frob-land/src/land.rs", "crates/frob-land/src/error.rs", "crates/frob-land/Cargo.toml", "crates/frob-land/tests/land.rs", "crates/frob-release/src/lib.rs", "crates/frob-release/src/ci.rs", "crates/frob-gh/src/culprit.rs", "crates/frob-gh/src/lib.rs", "crates/frob-gh/Cargo.toml", "crates/frob-gh/tests/culprit.rs", "Cargo.lock", "crates/frob-release/src/culprit.rs"]
 
 [[links]]
 kind = "blocked-by"
