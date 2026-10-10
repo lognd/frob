@@ -2,13 +2,13 @@
 id = "01M4HW9Y1TXZCN4Y5RF2T7C4A9"
 title = "CAP false negative: Path.read_text on a module-level Path constant is not observed as fs.read (receiver type not inferred through the constant), so an ungranted read reports 0 CAP001"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-10T03:04:33Z"
-updated = "2026-10-10T03:04:33Z"
+updated = "2026-10-10T03:04:58Z"
 labels = ["grimble", "adoption:logand-app"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs", "crates/grimble-bind/tests/**", "changelog.d/**"]
 
