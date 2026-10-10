@@ -2,7 +2,8 @@
 id = "01M4H4WTSTB7X4A6STFEF8K8S3"
 title = "PacksTable doc comment still says 'Packs are not loaded yet' after ~AMVHK82 loads local packs; fix it and regenerate config.json and config.md"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
