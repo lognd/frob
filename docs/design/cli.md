@@ -240,7 +240,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `rule test` (also `grimble rule test`) | frob, grimble | gob-rules | yes, read-only | 0 1 2 4 | 2 |
 | `batch` | frob | frob-ledger | yes, all or nothing | 0 2 3 4 | 2 |
 | `ticket new` | frob | frob-ledger | only with `--idempotency-key` or an identical request | 0 2 3 4 | 1 |
-| `ticket show [--events] [--format md]`, `ticket list [--tree] [--category C]` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
+| `ticket show [--events] [--format md]`, `ticket list [--tree] [--category C] [--full]` (`--full` adds every row's aliases and events in one pass) | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
 | `ticket doable` (policy: lease-aware dispatch order) | frob | frob-lease | yes, read-only | 0 2 4 | 1 |
 | `ticket update\|link\|unlink\|comment\|body\|accept` | frob | frob-ledger | yes, same request | 0 2 3 4 | 1 |
 | `ticket attach\|component` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
@@ -250,6 +250,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `ticket evidence fetch` (the action `fetch` is a positional of `ticket evidence`) | frob | frob-evidence | yes | 0 2 3 4 | 2 |
 | `work [--here]`, `requeue` (top-level: lease and worktree lifecycle) | frob | frob-lease | `work --here` only for the same holder; others get 3 | 0 2 3 4 | 1 |
 | `ticket close\|drop\|reopen` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
+| `ticket closeout --reason TEXT` | frob | frob-ledger | yes; closes done after the fact under the same evidence, changelog and merge guards, takes no lease, and the close reason is prefixed `retroactive closeout: ` so the ticket counts in no cycle's delivery | 0 2 3 4 | 1 |
 | `ticket review` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
 | `ticket reconcile\|doctor` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
 | `merge-driver` (hidden, git invokes it) | frob | frob-ledger | yes, pure union and re-fold | git contract: 0 merged, 1 conflict | 1 |

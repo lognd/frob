@@ -812,6 +812,63 @@ impl Command for Close {
     }
 }
 
+// frob:ticket 01M4FDQFHJKT30DHZEEA6GWB4R
+/// Close a finished ticket after the fact: needs bound evidence and a reason, takes no lease and counts toward no cycle.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "ticket closeout",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct Closeout {
+    ticket: String,
+    reason: String,
+}
+
+impl Command for Closeout {
+    type Data = ChangeData;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        cmd.arg(ticket_arg()).arg(
+            Arg::new("reason")
+                .long("reason")
+                .value_name("TEXT")
+                .required(true)
+                .help("Why the ticket is closed after the fact; recorded on the close event"),
+        )
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            ticket: get(m, "ticket").unwrap_or_default(),
+            reason: get(m, "reason").unwrap_or_default(),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> CliOutcome<ChangeData> {
+        if self.reason.trim().is_empty() {
+            return Err(CliError::Usage(
+                "--reason needs text saying why the ticket is closed after the fact".to_owned(),
+            ));
+        }
+        // The evidence, changelog and merge guards all apply: only the lease and the cycle are skipped.
+        Close {
+            ticket: self.ticket.clone(),
+            outcome: Some(Outcome::Done),
+            reason: Some(format!(
+                "{}{}",
+                frob_pm::cycle::velocity::RETROACTIVE_PREFIX,
+                self.reason.trim()
+            )),
+            no_evidence: false,
+            no_changelog: false,
+            no_land: false,
+        }
+        .run(ctx)
+    }
+}
+
 /// Drop a ticket: close it as wont-fix with a required reason.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(

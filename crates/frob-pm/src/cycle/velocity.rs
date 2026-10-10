@@ -33,6 +33,10 @@ pub const fn counts(ty: TicketType) -> bool {
     )
 }
 
+// frob:ticket 01M4FDQFHJKT30DHZEEA6GWB4R
+/// Reason prefix of a retroactive closeout (`frob ticket closeout`): such a ticket was finished outside the cycle it is dated in, so it counts toward no cycle's delivery.
+pub const RETROACTIVE_PREFIX: &str = "retroactive closeout: ";
+
 /// A ticket that finished its work: when, how big and of what type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DoneFact {
@@ -63,13 +67,20 @@ pub fn done_facts(ledger: &Ledger) -> Result<Vec<DoneFact>> {
     let mut events = ledger.events_many(&ids)?;
     let mut out = Vec::new();
     for s in counted {
-        let at = events
-            .remove(&s.id)
-            .unwrap_or_default()
+        let events = events.remove(&s.id).unwrap_or_default();
+        let done = events
             .iter()
             .rev()
-            .find(|e| matches!(&e.body, EventBody::Transition(t) if t.to == Category::Done))
-            .map(|e| e.at);
+            .find(|e| matches!(&e.body, EventBody::Transition(t) if t.to == Category::Done));
+        // frob:ticket 01M4FDQFHJKT30DHZEEA6GWB4R
+        if done.is_some_and(|e| {
+            matches!(&e.body, EventBody::Transition(t)
+                if t.reason.as_deref().is_some_and(|r| r.starts_with(RETROACTIVE_PREFIX)))
+        }) {
+            tracing::info!(ticket = %s.id, "retroactive closeout; not counted as delivered");
+            continue;
+        }
+        let at = done.map(|e| e.at);
         let Some(at) = at else {
             tracing::warn!(ticket = %s.id, "done ticket has no transition to done; skipped for velocity");
             continue;

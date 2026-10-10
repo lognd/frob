@@ -1231,3 +1231,32 @@ fn doctor_fix_numbers_existing_duplicate_aliases_in_creation_order() {
         [1, 2, 3]
     );
 }
+
+// frob:ticket 01M4FDQFHJKT30DHZEEA6GWB4R
+// frob:tests crates/frob-pm/src/cycle/velocity.rs::done_facts
+#[test]
+fn a_retroactive_closeout_is_not_delivered_work_of_the_current_cycle() {
+    let repo = Repo::new();
+    repo.done_ticket("5");
+    let late = repo.ticket("todo", "3");
+    repo.ok(&[
+        "ticket",
+        "evidence",
+        "add",
+        &late,
+        "--provider",
+        "file",
+        "--ref",
+        "frob.toml",
+    ]);
+    repo.ok(&[
+        "ticket",
+        "closeout",
+        &late,
+        "--reason",
+        "finished in a closed cycle",
+    ]);
+    let facts = frob_pm::cycle::velocity::done_facts(&repo.ledger()).expect("facts");
+    assert_eq!(facts.len(), 1, "only the ordinary close counts: {facts:?}");
+    assert_eq!(facts[0].points, 5);
+}

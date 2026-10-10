@@ -186,6 +186,7 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<write::Unlink>()
         .register::<write::Comment>()
         .register::<write::Close>()
+        .register::<write::Closeout>()
         .register::<write::DropTicket>()
         .register::<write::Reopen>()
         .register::<read::Show>()
