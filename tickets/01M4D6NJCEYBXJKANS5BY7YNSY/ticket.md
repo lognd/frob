@@ -2,7 +2,8 @@
 id = "01M4D6NJCEYBXJKANS5BY7YNSY"
 title = "gob-git/gob-walk: one repository, index and filter pipeline per process; hash each file once"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
