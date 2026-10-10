@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T05:12:53Z"
-updated = "2026-10-10T19:57:32Z"
+updated = "2026-10-10T20:01:40Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-symbols/**", "crates/gob-languages/**", "crates/frob-obligations/**", "changelog.d/**"]
 
