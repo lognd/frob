@@ -2,7 +2,8 @@
 id = "01M4GWKEMB266C6GTFEP4R3G7W"
 title = "Repository-wide limits ([pm.wip], [lease], [pm] sprint gate) are read from the worktree's own frob.toml, so a branch cut before a config change keeps enforcing the old values"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
