@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T15:08:35Z"
-updated = "2026-10-10T20:58:04Z"
+updated = "2026-10-10T21:04:20Z"
 labels = ["adoption:logand-app"]
-scope = ["crates/frob-ledger/**", "crates/frob/**", "changelog.d/**"]
+scope = ["crates/frob-ledger/**", "crates/frob/**", "changelog.d/**", "docs/design/cli.md"]
 
 [[acceptance]]
 text = "Given 451 tickets, when frob ticket list --full --json runs, then every ticket with its aliases and events is emitted in one call within a few seconds"
