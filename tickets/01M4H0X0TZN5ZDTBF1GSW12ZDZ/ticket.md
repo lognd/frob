@@ -8,7 +8,7 @@ points = 2
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:38Z"
-updated = "2026-10-09T21:52:36Z"
+updated = "2026-10-10T00:52:27Z"
 idempotency_key = "docs-consolidation-2026-10-09-p8"
 scope = ["changelog.d/**"]
 
