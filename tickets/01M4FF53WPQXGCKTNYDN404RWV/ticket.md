@@ -2,7 +2,8 @@
 id = "01M4FF53WPQXGCKTNYDN404RWV"
 title = "Remove the .strata migration path from the design: grimble is not strata's successor (owner 2026-10-09); strata is deprecated"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
