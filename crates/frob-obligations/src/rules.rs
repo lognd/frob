@@ -1,5 +1,7 @@
 //! The rules declared by this crate; findings are built in the sibling modules.
 
+// frob:ticket 01M4FD3KT1XFB1N1GZYXFRMPT7
+
 use gob_rules::Rule;
 
 /// A public function or method has no test that reaches it.
@@ -51,7 +53,8 @@ pub struct Cov003;
 /// hack (see the rule table of `docs/design/rules.md`). A marker is owned when
 /// a `frob:todo <ulid>` directive sits on the same or the previous line, or
 /// when the marker is written with a full ULID in parentheses right after it.
-/// File a ticket and add the directive.
+/// Comments of every scanned language count, YAML and TOML included (see
+/// `docs/reference/fidelity.md`). File a ticket and add the directive.
 #[derive(Debug, Clone, Copy, Default, Rule)]
 #[rule(
     id = "TODO001",
