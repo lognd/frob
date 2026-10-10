@@ -7,12 +7,12 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-10T22:21:54Z"
-updated = "2026-10-10T22:21:56Z"
+updated = "2026-10-10T22:23:03Z"
 scope = ["crates/gob-dev/profile.toml"]
 
 [[acceptance]]
 text = "the profile_coverage test passes"
-bound = false
+bound = true
 +++
 
 found while fixing red base CI: profile step aborts
