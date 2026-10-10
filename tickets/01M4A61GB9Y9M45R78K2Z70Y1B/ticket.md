@@ -2,7 +2,8 @@
 id = "01M4A61GB9Y9M45R78K2Z70Y1B"
 title = "Wire the ticket-branch layout into the merge-driver verb and .gitattributes generation"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
