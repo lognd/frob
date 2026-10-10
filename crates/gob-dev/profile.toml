@@ -128,6 +128,11 @@ args = ["ticket", "close", "{ticket}"]
 exit = [0, 2, 3]
 budget_ms = 500
 
+[scenario."frob ticket closeout"]
+args = ["ticket", "closeout", "{ticket}", "--reason", "profile probe"]
+exit = [0, 2, 3]
+budget_ms = 500
+
 [scenario."frob ticket drop"]
 args = ["ticket", "drop", "{ticket}", "--reason", "profile probe"]
 exit = [0, 2, 3]
