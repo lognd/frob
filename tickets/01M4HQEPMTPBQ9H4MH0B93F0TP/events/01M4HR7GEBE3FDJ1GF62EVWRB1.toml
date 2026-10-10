@@ -1,0 +1,22 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T01:51:02Z"
+digest = "ec042f7746654d4d3e7cad4739aca1e9d041c1708463440efb0e5fb1f9c724f0"
+exit_code = 0
+inline = '''
+goway: note: tool versions differ across your hosts: rustc 1.98.0 here (minor: 1.99 vs 1.98) (cached by goway doctor 8m ago; builds may behave differently here)
+goway: note: synced 14376 files (6 sent, 16630972 bytes, 2 deleted)
+goway: info: running on nova-windows (aarch64, NOVA) at this machine (Windows): cargo clippy -p frob-land --all-targets -- -D warnings
+goway: sh was not on PATH; appended C:\Program Files\Git\usr\bin (Git for Windows)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.24s
+goway: warning: the lifeline connection to nova-windows broke while the job ran (ssh exit status: 0); the helper stops a job whose client it considers gone, which would explain an unexpected exit 143
+goway: done: exit 0 on nova-windows in 131.5s
+'''
+passed = true
+provider = "command"
+ref = "goway run --with-git --host nova-windows -- cargo clippy -p frob-land --all-targets -- -D warnings"
+size = 765
+status = "measured"
+at = "2026-10-10T01:51:02Z"
+actor = "lognd"
+rev = 1

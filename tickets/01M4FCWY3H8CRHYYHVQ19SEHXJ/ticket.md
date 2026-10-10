@@ -7,7 +7,7 @@ priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-09T03:56:43Z"
-updated = "2026-10-10T00:27:09Z"
+updated = "2026-10-10T01:40:09Z"
 labels = ["grimble"]
 scope = ["notes/research/grmb-*", "changelog.d/**"]
 
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given topic F, when R1 completes, then notes/research/grmb-r1-ergonomics.md covers Rust, Zig and other languages' quality-of-life semantics with cited user evidence, lists predicted .grmb annoyances and gives a concrete mitigation for each"
-bound = false
+bound = true
 +++
 
 # Research brief: grimble planning language, cycle R1 (exhaustive, cited)
