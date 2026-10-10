@@ -1,7 +1,7 @@
 kind = "evidence"
 accepts = [2]
 captured_at = "2026-10-10T19:18:04Z"
-digest = "5a0378f617bb4afbb6bc147c8126d0d10f9c4ce544a75bda24611e5f2bdfd8d3"
+digest = "417526d6ba22b87c6591aaab9f9d9277035f0978a5a1beb1cd4dee0272e9a73f"
 exit_code = 0
 inline = """
 103 generated files up to date
@@ -38,12 +38,12 @@ inline = """
    Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
    Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
     Finished `dev` profile [unoptimized] target(s) in 31.18s
-     Running `/home/user/repo/target/debug/gob-dev gen all --check`
+     Running `<repo>/target/debug/gob-dev gen all --check`
 """
 passed = true
 provider = "command"
 ref = "cargo run -p gob-dev -- gen all --check"
-size = 2230
+size = 2221
 status = "measured"
 at = "2026-10-10T19:18:04Z"
 actor = "Claude"
