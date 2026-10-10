@@ -2,12 +2,12 @@
 id = "01M4HQEPMTPBQ9H4MH0B93F0TP"
 title = "experimental CI red: clippy-windows fails on unused variable 'shared' in frob-land ratchet.rs share_build_dir (symlink code is unix-only), from ~DWRJEZV"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 1
 reporter = "lognd"
 created = "2026-10-10T01:39:46Z"
-updated = "2026-10-10T01:39:46Z"
+updated = "2026-10-10T01:40:43Z"
 scope = ["crates/frob-land/src/ratchet.rs", "changelog.d/**"]
 
 [[acceptance]]
