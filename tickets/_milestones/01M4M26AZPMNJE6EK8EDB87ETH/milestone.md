@@ -6,4 +6,8 @@ state = "open"
 epics = ["01M3Z6XVPGS23NYVXDF0BTGRT5", "01M3ZWPE0CNFWB4PTW3D05GDWP", "01M3ZX776JJSRQXW8Q0327K9QN", "01M43ANVJYA7GHN0Y8GX0SN72M", "01M4CTDVKQVPSY0SF4XTNT2Q1E"]
 created = "2026-10-10T23:25:56Z"
 updated = "2026-10-10T23:25:56Z"
+
+[[criteria]]
+text = "Every ticket under the audit epic (land cost, build cost, adoption readiness) is done"
+bound = false
 +++
