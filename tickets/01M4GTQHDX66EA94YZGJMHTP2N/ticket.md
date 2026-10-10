@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T17:17:47Z"
-updated = "2026-10-09T17:17:47Z"
+updated = "2026-10-10T00:45:23Z"
 labels = ["adoption:hullbreach"]
-scope = ["crates/gob-product/**", "crates/frob-check/**", "changelog.d/**"]
+scope = ['["crates/frob-check/src/sibling/spawn.rs"', '"crates/frob-check/tests/sibling.rs"', '"docs/design/sibling-contract.md"', '"changelog.d/**"]']
 
 [[acceptance]]
 text = "Given a crunk on PATH that does not speak gob.sibling/1 (v1 Python crunk 0.1.1), when frob check runs, then frob probes it before passing v2 flags and SIB001 names the found binary, its version and the required contract version and install remedy, instead of 'unrecognized arguments: --base'"
