@@ -5,17 +5,15 @@ each a maturin `bindings = "bin"` build of that product's Cargo package and carr
 own binary. `frob`'s wheel requires `grimble==<same version>`, so installing `frob` pulls
 `grimble` and installing `grimble` alone installs only `grimble`; `crunk` likewise installs alone.
 
-### Gates on crunk (D87)
+### Gates on crunk
 
 - `frob`'s wheel depends on `crunk` only from the first crunk preview release (~AYA6294); until
   then `frob` depends on `grimble` alone. `products.rs` pins the current set, so adding the
   dependency is a deliberate test change in that release ticket.
-- The crunk wheel is built and smoked on every release run but is not uploaded: the `pypi` job
-  deletes the five crunk wheels (counting them first) before its per-product checks, because the
-  Python crunk (lognd/crunk) keeps publishing the PyPI project `crunk` until it is retired. A
-  Rust wheel under that name would replace it. When it is retired, drop the hold-back step and add
-  crunk to the upload loop (a test pins the hold-back until then). The PyPI side of lognd/crunk
-  is never touched from here.
+- The crunk wheel is uploaded with the others from 0.533.0: the Rust crunk supersedes the
+  Python crunk (lognd/crunk, 0.1.x) as the PyPI project `crunk` (owner decision 2026-10-09,
+  lifting the D87 hold-back; docs/design/README.md D135). The `crunk` project must trust this
+  repository's `release.yml` with environment `pypi`.
 
 The product list is `products.toml` (name, Cargo package and manifest, summary, keywords,
 dependencies). `render.py` turns each entry into a maturin project (`pyproject.toml`,

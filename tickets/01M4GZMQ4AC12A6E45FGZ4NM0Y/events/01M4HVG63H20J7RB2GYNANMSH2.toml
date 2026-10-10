@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["adoption:logand-app"]
+new = ["adoption:logand-app", "creates:crates/gob-check/src/tool_key.rs"]
+at = "2026-10-10T02:50:29Z"
+actor = "lognd"
+rev = 1

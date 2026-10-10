@@ -10,7 +10,7 @@
 //! The base checkout's check opens the repository-shared cache (gob-cache), so every file
 //! unchanged since an earlier check is a cache hit (~TSK0M4Y).
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use frob_check::CheckOptions;
@@ -57,6 +57,8 @@ pub(crate) struct Ratchet {
     pub pre_existing: Vec<FindingNote>,
     /// Base findings the ticket fixed.
     pub resolved: Vec<FindingNote>,
+    /// The ticket's affected cone at the checked tree (scope files plus dependents); `None` when the check did not report one.
+    pub cone: Option<BTreeSet<String>>,
 }
 
 /// The notes of every finding in `report`, with fingerprints as the report prints them.
@@ -454,7 +456,14 @@ pub(crate) fn verdict(scoped: &CheckReport, head: &CheckReport, base: &[FindingN
         let ticket_only = !head_fps.contains(n.fingerprint.as_str())
             && (n.path.is_some() || !head_rules.contains(n.rule.as_str()));
         if ticket_only && seen.insert(n.fingerprint.clone()) {
-            out.new.push(n);
+            // A tool stage of the scoped run can report a finding the base already has.
+            match budget.get_mut(n.fingerprint.as_str()) {
+                Some(left) if *left > 0 => {
+                    *left -= 1;
+                    out.pre_existing.push(n);
+                }
+                _ => out.new.push(n),
+            }
         }
     }
     // Multiset comparison: each base occurrence of a fingerprint absorbs one head occurrence.
