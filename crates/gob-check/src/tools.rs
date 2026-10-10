@@ -13,6 +13,7 @@ use gob_rules::{Finding, RequiredReason, Rule, RuleId, Severity};
 use gob_text::{FileInterner, LineCol, LineIndex, Span, TextRange, TextSize};
 
 use crate::config::{ToolParser, ToolStage};
+use crate::packages::Affected;
 use crate::report::Timing;
 use crate::rules::Tool001;
 use crate::tool_parse::{
@@ -319,6 +320,91 @@ fn execute(runner: &Runner, root: &Path, stage: &ToolStage) -> StageResult {
     }
 }
 
+/// True when `stage` declares inputs and none of the scoped `files` matches one of them.
+///
+/// A stage without inputs, or an input glob that does not parse, never counts as untouched:
+/// the stage runs (frob:ticket 01M4GRW6NH23YPTSAQERDRSZC5).
+fn untouched(stage: &ToolStage, files: &std::collections::BTreeSet<String>) -> bool {
+    if stage.inputs.is_empty() {
+        return false;
+    }
+    let mut builder = globset::GlobSetBuilder::new();
+    for glob in &stage.inputs {
+        match globset::Glob::new(glob) {
+            Ok(g) => {
+                builder.add(g);
+            }
+            Err(e) => {
+                tracing::warn!(stage = %stage.name, %glob, error = %e, "bad tool input glob; the stage runs");
+                return false;
+            }
+        }
+    }
+    match builder.build() {
+        Ok(set) => !files.iter().any(|f| set.is_match(f)),
+        Err(e) => {
+            tracing::warn!(stage = %stage.name, error = %e, "tool inputs not compiled; the stage runs");
+            false
+        }
+    }
+}
+
+/// The argument token a stage uses to ask for the affected cargo packages.
+const PACKAGES_TOKEN: &str = "{packages}";
+
+/// `stage` with its `{packages}` token expanded for `affected`, or `None` when no package is affected.
+///
+/// Unscoped runs and [`Affected::Everything`] expand to the stage's `unscoped_packages`; a named set
+/// becomes one `-p <name>` pair per package. A stage without the token is returned unchanged.
+fn expand_packages(stage: &ToolStage, affected: Option<&Affected>) -> Option<ToolStage> {
+    if !stage.args.iter().any(|a| a == PACKAGES_TOKEN) {
+        return Some(stage.clone());
+    }
+    let replacement: Vec<String> = match affected {
+        Some(Affected::Packages(names)) if names.is_empty() => return None,
+        Some(Affected::Packages(names)) => names
+            .iter()
+            .flat_map(|n| ["-p".to_owned(), n.clone()])
+            .collect(),
+        Some(Affected::Everything) | None => stage.unscoped_packages.clone(),
+    };
+    let mut out = stage.clone();
+    out.args = stage
+        .args
+        .iter()
+        .flat_map(|a| {
+            if a == PACKAGES_TOKEN {
+                replacement.clone()
+            } else {
+                vec![a.clone()]
+            }
+        })
+        .collect();
+    Some(out)
+}
+
+/// The stages a run executes: all of them unscoped, else those whose declared inputs the scope touches, with `{packages}` expanded.
+pub(crate) fn applicable_stages(
+    stages: &[ToolStage],
+    scope_files: Option<&std::collections::BTreeSet<String>>,
+    affected: Option<&Affected>,
+) -> Vec<ToolStage> {
+    stages
+        .iter()
+        .filter_map(|stage| {
+            if scope_files.is_some_and(|files| untouched(stage, files)) {
+                tracing::info!(stage = %stage.name, "tool stage skipped: the scope touches none of its inputs");
+                return None;
+            }
+            let expanded = expand_packages(stage, affected);
+            if expanded.is_none() {
+                tracing::info!(stage = %stage.name, "tool stage skipped: no cargo package is affected");
+            }
+            expanded
+        })
+        .collect()
+}
+
 /// One stage's outcome and wall time, as a worker thread produced it.
 type Finished = (usize, StageResult, Duration);
 
@@ -517,6 +603,8 @@ mod tests {
             max_version: Some("1.7.99".to_owned()),
             version_args: Some(vec!["-c".to_owned(), probe.to_owned()]),
             optional: false,
+            inputs: Vec::new(),
+            unscoped_packages: vec!["--workspace".to_owned()],
         }
     }
 
@@ -546,6 +634,60 @@ mod tests {
         assert_eq!(names, ["tool:a", "tool:b", "tool:c"]);
         assert!(timing.tools_ms() >= 3000, "each stage reports its own time");
         assert!(wall < Duration::from_millis(2500), "ran serially: {wall:?}");
+    }
+
+    // frob:ticket 01M4GRW6NH23YPTSAQERDRSZC5
+    // frob:tests crates/gob-check/src/tools.rs::applicable_stages
+    #[test]
+    fn a_stage_is_skipped_only_when_it_declares_inputs_the_scope_misses() {
+        let mut stage = sh_stage("gen", ToolParser::None, "true", "true");
+        let scope: std::collections::BTreeSet<String> =
+            ["docs/a.md".to_owned()].into_iter().collect();
+        assert_eq!(
+            applicable_stages(std::slice::from_ref(&stage), Some(&scope), None).len(),
+            1
+        );
+        stage.inputs = vec!["crates/**/*.rs".to_owned()];
+        assert!(applicable_stages(std::slice::from_ref(&stage), Some(&scope), None).is_empty());
+        assert_eq!(
+            applicable_stages(std::slice::from_ref(&stage), None, None).len(),
+            1
+        );
+        let hit: std::collections::BTreeSet<String> =
+            ["crates/x/src/lib.rs".to_owned()].into_iter().collect();
+        assert_eq!(
+            applicable_stages(std::slice::from_ref(&stage), Some(&hit), None).len(),
+            1
+        );
+        stage.inputs = vec!["[".to_owned()];
+        assert_eq!(
+            applicable_stages(std::slice::from_ref(&stage), Some(&scope), None).len(),
+            1
+        );
+    }
+
+    // frob:ticket 01M4HADVZ8JGBB406JJAJGEC9Q
+    // frob:tests crates/gob-check/src/tools.rs::expand_packages
+    #[test]
+    fn the_packages_token_expands_to_the_affected_set_or_the_unscoped_default() {
+        let mut stage = sh_stage("clippy", ToolParser::None, "true", "true");
+        stage.args = vec![
+            "clippy".to_owned(),
+            PACKAGES_TOKEN.to_owned(),
+            "--all-targets".to_owned(),
+        ];
+        let set = Affected::Packages(vec!["a".to_owned(), "b".to_owned()]);
+        let scoped = expand_packages(&stage, Some(&set)).expect("runs");
+        assert_eq!(
+            scoped.args,
+            ["clippy", "-p", "a", "-p", "b", "--all-targets"]
+        );
+        let all = expand_packages(&stage, Some(&Affected::Everything)).expect("runs");
+        assert_eq!(all.args, ["clippy", "--workspace", "--all-targets"]);
+        assert_eq!(expand_packages(&stage, None).expect("runs").args, all.args);
+        assert!(expand_packages(&stage, Some(&Affected::Packages(Vec::new()))).is_none());
+        let plain = sh_stage("gen", ToolParser::None, "true", "true");
+        assert_eq!(expand_packages(&plain, Some(&set)), Some(plain.clone()));
     }
 
     // frob:ticket 01M4D6NEQYAZEFFX3P0S2EJV2N

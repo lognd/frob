@@ -12,6 +12,7 @@ authors.workspace = true
 workspace = true
 
 [dependencies]
+blake3 = "1"
 gob-time = { version = "0.532.0", path = "../gob-time" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
 rusqlite = { version = "0.32", features = ["bundled"] }

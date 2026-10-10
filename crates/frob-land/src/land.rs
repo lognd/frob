@@ -102,6 +102,22 @@ struct Ready {
     out: LandOutcome,
 }
 
+// frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+/// True when every path that changed from `fork` to `base_oid` lies under the ledger directory `dir` (trunk-mode ticket commits).
+fn ledger_only_ahead(
+    wt: &Repo,
+    fork: Option<Oid>,
+    base_oid: Oid,
+    dir: &str,
+) -> Result<bool, LandError> {
+    let Some(fork) = fork else {
+        return Ok(false);
+    };
+    let prefix = format!("{}/", dir.trim_end_matches('/'));
+    let changed = wt.diff_names(&TreeRef::Oid(fork), &TreeRef::Oid(base_oid))?;
+    Ok(changed.iter().all(|c| c.path.starts_with(&prefix)))
+}
+
 /// Check every precondition (merging the base into the ticket branch unless dry-running).
 fn prepare(
     repo: Repo,
@@ -138,12 +154,22 @@ fn prepare(
         opts.override_base_ci.as_deref(),
     )?;
     let mut base_merge = None;
-    let mut base_merged = wt.merge_base(&base_ref(base), &branch)? == Some(base_oid);
+    let fork = wt.merge_base(&base_ref(base), &branch)?;
+    let mut base_merged = fork == Some(base_oid);
     if !base_merged && !opts.dry_run {
         base_merge = Some(merge_base_in(&wt, &wt_path, base, &handle)?);
         base_merged = true;
     } else if base_merged {
         base_merge = Some("up-to-date".to_owned());
+    } else if ledger_only_ahead(&wt, fork, base_oid, &here.ledger.config().dir)? {
+        // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+        // Trunk-mode ticket verbs commit to the base all the time; those commits carry no code.
+        tracing::info!(
+            base,
+            "dry run: the base is ahead only by ledger commits; treated as merged"
+        );
+        base_merge = Some("up-to-date (the base moved only by ledger commits)".to_owned());
+        base_merged = true;
     }
     let mut warnings = ci_gate.warnings;
     let mut ratchet = Ratchet::default();

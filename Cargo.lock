@@ -2321,6 +2321,7 @@ dependencies = [
 name = "gob-cache"
 version = "0.532.0"
 dependencies = [
+ "blake3",
  "criterion",
  "gob-exec",
  "gob-time",
@@ -2342,6 +2343,7 @@ name = "gob-check"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "globset",
  "gob-cache",
  "gob-caps",
  "gob-config",
@@ -2792,6 +2794,7 @@ dependencies = [
 name = "grimble-bind"
 version = "0.532.0"
 dependencies = [
+ "gob-cache",
  "gob-directives",
  "gob-ir",
  "gob-languages",
@@ -2801,6 +2804,7 @@ dependencies = [
  "gob-text",
  "gob-walk",
  "grimble-model",
+ "postcard",
  "rayon",
  "serde_json",
  "tempfile",

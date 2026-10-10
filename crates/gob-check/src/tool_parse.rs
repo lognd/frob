@@ -380,6 +380,8 @@ mod tests {
             max_version: None,
             version_args: None,
             optional: false,
+            inputs: Vec::new(),
+            unscoped_packages: vec!["--workspace".to_owned()],
         }
     }
 
