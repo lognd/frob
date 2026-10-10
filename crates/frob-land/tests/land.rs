@@ -756,6 +756,35 @@ fn an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_noth
     );
 }
 
+// frob:ticket 01M4FJ57NER0WMX4FPNY7E721R
+// frob:tests crates/frob-land/src/land.rs::prepare
+#[test]
+fn the_close_guards_refuse_before_the_base_is_merged_or_checked() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start_with("Add h", &["src/**"], &["h answers"]);
+    Fixture::commit_in(&s.wt, "src/h.rs", "fn h() {}\n");
+    Fixture::evidence(&s, "src/h.rs");
+    // A code commit on the base: a land that got as far as the merge would move the branch tip.
+    move_main(&fx.root, "src/other.rs", "fn other() {}\n");
+    let tip = git_out(&s.wt, &["rev-parse", "HEAD"]).1;
+
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("unbound criterion");
+    assert_eq!(refusal(&err).code, "E-DONE-CRITERIA-UNBOUND");
+    assert_eq!(
+        git_out(&s.wt, &["rev-parse", "HEAD"]).1,
+        tip,
+        "the base was not merged into the ticket branch"
+    );
+}
+
 // frob:ticket 01M1T07NXZ5WQR200M5H1NWDN9
 // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
 #[test]
