@@ -1021,18 +1021,13 @@ fn each_scope_is_matched_once_across_many_overlap_checks() {
 }
 
 // frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
+// frob:ticket 01M4KZWDQ2EATVKFDQX16ATP75
 #[test]
 fn lease_config_reads_the_base_ref_over_a_stale_worktree_copy() {
     use gob_git::{CommitOptions, RelPath, Repo};
     let tmp = tempfile::tempdir().expect("tempdir");
     let root = tmp.path();
     let repo = Repo::init(root).expect("init");
-    let cfg = std::fs::read_to_string(repo.git_dir().join("config")).expect("config");
-    std::fs::write(
-        repo.git_dir().join("config"),
-        format!("{cfg}[user]\n\tname = T\n\temail = t@example.com\n"),
-    )
-    .expect("identity");
     repo.commit_paths(
         "refs/heads/main",
         &[(
@@ -1040,7 +1035,10 @@ fn lease_config_reads_the_base_ref_over_a_stale_worktree_copy() {
             Some(b"[lease]\nttl_secs = 900\n".to_vec()),
         )],
         "base config",
-        &CommitOptions::default(),
+        &CommitOptions {
+            author: Some(("Test".into(), "test@example.com".into())),
+            ..CommitOptions::default()
+        },
     )
     .expect("commit");
     std::fs::write(root.join("frob.toml"), "[lease]\nttl_secs = 60\n").expect("stale");

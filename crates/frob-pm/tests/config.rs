@@ -89,17 +89,12 @@ fn unknown_pull_policy_is_refused() {
 }
 
 // frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
+// frob:ticket 01M4KZWDQ2EATVKFDQX16ATP75
 #[test]
 fn repo_wide_tables_come_from_the_base_ref_over_a_stale_worktree_copy() {
     use gob_git::{CommitOptions, RelPath, Repo};
     let dir = tempfile::tempdir().expect("tempdir");
     let repo = Repo::init(dir.path()).expect("init");
-    let cfg = std::fs::read_to_string(repo.git_dir().join("config")).expect("config");
-    std::fs::write(
-        repo.git_dir().join("config"),
-        format!("{cfg}[user]\n\tname = T\n\temail = t@example.com\n"),
-    )
-    .expect("identity");
     repo.commit_paths(
         "refs/heads/main",
         &[(
@@ -107,7 +102,10 @@ fn repo_wide_tables_come_from_the_base_ref_over_a_stale_worktree_copy() {
             Some(b"[pm.wip]\nin_progress = 16\n".to_vec()),
         )],
         "base config",
-        &CommitOptions::default(),
+        &CommitOptions {
+            author: Some(("Test".into(), "test@example.com".into())),
+            ..CommitOptions::default()
+        },
     )
     .expect("commit");
     std::fs::write(dir.path().join("frob.toml"), "[pm.wip]\nin_progress = 10\n").expect("stale");
