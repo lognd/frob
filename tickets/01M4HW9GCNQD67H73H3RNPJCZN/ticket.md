@@ -2,7 +2,8 @@
 id = "01M4HW9GCNQD67H73H3RNPJCZN"
 title = "gob-dev profile_coverage fails on experimental: frob ticket migrate has no scenario or skip reason"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 1
 reporter = "lognd"
