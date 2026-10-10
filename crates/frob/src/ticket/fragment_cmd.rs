@@ -1,5 +1,6 @@
 //! `ticket fragment`: write the reviewed changelog fragment skeleton of a ticket (documentation.md 6).
 // frob:ticket 01M4069WHH6KXYWDAJD3TXB8SR
+// frob:ticket 01M4FDQXEST75DK0NHDH4P5H15
 
 use std::path::PathBuf;
 
@@ -67,7 +68,7 @@ impl Command for Fragment {
             )
             .arg(text_flag(
                 "sentence",
-                "The user-facing sentence (default: `frob: <ticket title>.`; required for bug, security and incident tickets, whose titles describe the problem)",
+                "The user-facing sentence (default: `<ticket title>.`, after `[release] fragment_prefix`; required for bug, security and incident tickets, whose titles describe the problem)",
             ))
             .arg(
                 Arg::new("force")
@@ -112,7 +113,7 @@ impl Command for Fragment {
             .as_deref()
             .and_then(Kind::parse)
             .unwrap_or_else(|| default_kind(front.ty.as_str()));
-        let root = fragment_root(ctx, id)?;
+        let (root, prefix) = fragment_root(ctx, id)?;
         let ulid = id.to_string();
         let resolver = |u: &str| -> Option<String> {
             let t: frob_ledger::TicketId = u.parse().ok()?;
@@ -122,6 +123,7 @@ impl Command for Fragment {
             root: &root,
             ulid: &ulid,
             title: &front.title,
+            prefix: &prefix,
             kind,
             text: self.text.as_deref(),
             force: self.force,
@@ -140,8 +142,8 @@ impl Command for Fragment {
     }
 }
 
-/// The worktree to write into: the live lease holder's for the ticket, else the repository of the cwd.
-fn fragment_root(ctx: &Context, id: frob_ledger::TicketId) -> Result<PathBuf, CliError> {
+/// The worktree to write into (the live lease holder's for the ticket, else the repository of the cwd) and the configured fragment prefix.
+fn fragment_root(ctx: &Context, id: frob_ledger::TicketId) -> Result<(PathBuf, String), CliError> {
     let (_, root) = Located::discover(&ctx.cwd).into_repo()?;
     let cfg = FrobConfig::load(&root).map_err(|e| crate::workspace::config_refusal(&e))?;
     let held = frob_lease::open_store(&ctx.cwd, cfg.lease, ctx.clock.clone())
@@ -151,9 +153,9 @@ fn fragment_root(ctx: &Context, id: frob_ledger::TicketId) -> Result<PathBuf, Cl
     match held {
         Some(wt) if wt.is_dir() => {
             tracing::debug!(worktree = %wt.display(), "writing into the lease holder's worktree");
-            Ok(wt)
+            Ok((wt, cfg.release.fragment_prefix))
         }
-        _ => Ok(root),
+        _ => Ok((root, cfg.release.fragment_prefix)),
     }
 }
 

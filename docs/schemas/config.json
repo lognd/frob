@@ -646,6 +646,11 @@
       "additionalProperties": false,
       "description": "Release policy knobs read by `frob release status`, `release cut`, `release changelog` and REL001.",
       "properties": {
+        "fragment_prefix": {
+          "default": "",
+          "description": "Text `frob ticket fragment` puts before the ticket title in the skeleton (for example `frob: `); empty adds nothing.",
+          "type": "string"
+        },
         "preview": {
           "default": [],
           "description": "Products that ship as a preview: their tag message and changelog heading carry \" (preview)\".",
