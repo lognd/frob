@@ -2,12 +2,12 @@
 id = "01M4HF7GJZZ2EX5JNABSVTM10F"
 title = "Landed worktrees renamed to <name>.removing are never deleted: the background removal thread dies with the land process and the next land does not sweep leftovers (36 GB accumulated in one afternoon)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T23:16:02Z"
-updated = "2026-10-10T00:30:44Z"
+updated = "2026-10-10T00:30:45Z"
 labels = ["creates:crates/frob-worktree/src/gc/removing.rs"]
 scope = ["changelog.d/**", "crates/frob-worktree/src/gc/pass.rs", "crates/frob-worktree/src/gc/mod.rs", "crates/frob-worktree/tests/gc.rs", "crates/frob-worktree/src/gc/removing.rs"]
 
