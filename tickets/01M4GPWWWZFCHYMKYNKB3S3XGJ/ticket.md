@@ -2,7 +2,8 @@
 id = "01M4GPWWWZFCHYMKYNKB3S3XGJ"
 title = "Leases: generated files (gen outputs) are shareable by default alongside declared append-only shared files"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
