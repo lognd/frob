@@ -1,0 +1,1 @@
+grimble: a clap-qualified Command::new is no longer observed as process.spawn, and the repository model grants process.env to each node's own crates, so frob check on experimental is green of CAP001 again.

@@ -3,6 +3,7 @@
 
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
+// frob:ticket 01M4K3BPQ72DVFEMK8EXQSD03K
 
 use grimble_bind::{BindInput, Binding};
 use grimble_model::ModelFiles;
@@ -234,4 +235,16 @@ fn rust_fs_paths_read_and_write_including_qualified_forms() {
         b.findings
     );
     assert!(of(&b, "CAP001").iter().all(|f| f.reason.is_none()));
+}
+
+// frob:ticket 01M4K3BPQ72DVFEMK8EXQSD03K
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_clap_command_is_not_a_process_spawn_but_std_process_command_is() {
+    let clap = "fn cli() {\n    let _ = clap::Command::new(\"x\");\n}\n";
+    let b = bind_file("src/x.rs", clap, "");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+    let std = "fn go() {\n    let _ = std::process::Command::new(\"ls\");\n}\n";
+    let b = bind_file("src/x.rs", std, "");
+    assert_eq!(atoms(&b), ["cap/node/a/process.spawn"], "{:?}", b.findings);
 }

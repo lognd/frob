@@ -85,13 +85,21 @@ fn callee_of(text: &str) -> &str {
     text.strip_suffix("(..)").unwrap_or(text)
 }
 
+/// Crates whose `Command` is a builder type, not a process: `clap::Command::new` names a CLI
+/// command and must not match the `Command::new` spawn entry behind its extra leading segments.
+const NON_PROCESS_CRATES: &[&str] = &["clap"];
+
 /// True when the written `callee` names the vocabulary entry `name` (a Rust path entry also
-/// matches behind extra leading segments: `std::fs::read` names `fs::read`).
+/// matches behind extra leading segments: `std::fs::read` names `fs::read`, but a path rooted
+/// in a `NON_PROCESS_CRATES` crate names nothing).
 fn names_callee(lang: &str, names: &BTreeSet<&str>, callee: &str) -> bool {
     if names.contains(callee) {
         return true;
     }
     lang == "rust"
+        && !callee
+            .split_once("::")
+            .is_some_and(|(root, _)| NON_PROCESS_CRATES.contains(&root))
         && names
             .iter()
             .any(|n| n.contains("::") && callee.ends_with(&format!("::{n}")))
