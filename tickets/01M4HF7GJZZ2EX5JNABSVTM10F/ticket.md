@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T23:16:02Z"
-updated = "2026-10-10T00:32:59Z"
+updated = "2026-10-10T02:14:17Z"
 labels = ["creates:crates/frob-worktree/src/gc/removing.rs"]
 scope = ["changelog.d/**", "crates/frob-worktree/src/gc/pass.rs", "crates/frob-worktree/src/gc/mod.rs", "crates/frob-worktree/tests/gc.rs", "crates/frob-worktree/src/gc/removing.rs"]
 
