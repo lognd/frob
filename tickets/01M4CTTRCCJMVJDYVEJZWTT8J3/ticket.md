@@ -8,12 +8,12 @@ points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:35Z"
-updated = "2026-10-10T16:02:43Z"
+updated = "2026-10-10T16:09:08Z"
 scope = ["changelog.d/**", "crates/frob-tests/**", "crates/frob-evidence/**", "crates/frob/**"]
 
 [[acceptance]]
 text = "Given a repository with a Rust crate under rs/ and no root Cargo.toml, when frob test selects its tests, then nextest runs in rs/ and passes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a runner that exits non-zero before running tests, when frob test runs, then the output shows the runner's stderr tail and exit code"
