@@ -2,7 +2,8 @@
 id = "01M4KY4WQVZD31V3YPQ2ARX1BT"
 title = "gob-check: rustdoc link to a private item breaks the Docs CI step"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
