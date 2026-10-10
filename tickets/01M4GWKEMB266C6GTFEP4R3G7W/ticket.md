@@ -2,12 +2,12 @@
 id = "01M4GWKEMB266C6GTFEP4R3G7W"
 title = "Repository-wide limits ([pm.wip], [lease], [pm] sprint gate) are read from the worktree's own frob.toml, so a branch cut before a config change keeps enforcing the old values"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T17:50:30Z"
-updated = "2026-10-09T17:50:30Z"
+updated = "2026-10-10T21:22:04Z"
 scope = ["crates/frob-pm/**", "crates/frob-lease/**", "crates/gob-config/**", "changelog.d/**"]
 
 [[acceptance]]
