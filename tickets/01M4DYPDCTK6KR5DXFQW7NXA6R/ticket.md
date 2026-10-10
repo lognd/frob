@@ -8,8 +8,8 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T14:29:21Z"
-updated = "2026-10-08T14:29:21Z"
-scope = ["changelog.d/**", "crates/frob-land/**", "crates/gob-git/**"]
+updated = "2026-10-10T00:53:09Z"
+scope = ["changelog.d/**", "crates/frob-land/src/git.rs"]
 
 [[acceptance]]
 text = "Given a concurrent ledger write holding index.lock during advance, when land runs, then it waits or retries and succeeds (deterministic test with an injected lock)"
