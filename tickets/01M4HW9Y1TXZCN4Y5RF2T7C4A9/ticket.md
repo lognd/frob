@@ -2,7 +2,8 @@
 id = "01M4HW9Y1TXZCN4Y5RF2T7C4A9"
 title = "CAP false negative: Path.read_text on a module-level Path constant is not observed as fs.read (receiver type not inferred through the constant), so an ungranted read reports 0 CAP001"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
