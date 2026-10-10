@@ -8,12 +8,12 @@ points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T14:58:33Z"
-updated = "2026-10-10T15:29:10Z"
+updated = "2026-10-10T15:46:45Z"
 scope = ["changelog.d/**", "crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
 text = "Given `not d(f)` where def d contains `certainly` or `possibly` at even depth, when compiled, then GRL017 fires; a def body with `not` inside it still fires; `d(f)` outside any negation stays clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given `count(...)` with `certainly` or `possibly` in its body compared with `<`, `<=`, `==` or `!=`, when compiled, then GRL017 fires; `>` and `>=` stay clean"
