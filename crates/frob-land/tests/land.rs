@@ -413,6 +413,7 @@ fn conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean() {
     let fx = Fixture::new();
     let s = fx.start("Edit readme", &["README.md"]);
     Fixture::commit_in(&s.wt, "README.md", "from the ticket\n");
+    Fixture::evidence(&s, "README.md");
     fx.repo()
         .commit_paths(
             MAIN,
@@ -454,14 +455,18 @@ fn a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_workt
     Fixture::commit_in(
         &s.wt,
         "frob.toml",
-        "[pm]\ndone_requires = [\"criteria_evidenced\", \"ticket\"]\n",
+        "[pm]\ndone_requires = [\"criteria_evidenced\", \"no_open_children\"]\n",
     );
+    Fixture::evidence(&s, "frob.toml");
     fx.repo()
         .commit_paths(
             MAIN,
             &[(
                 RelPath::new("frob.toml").expect("path"),
-                Some(b"[pm]\ndone_requires = [\"criteria_evidenced\", \"base\"]\n".to_vec()),
+                Some(
+                    b"[pm]\ndone_requires = [\"criteria_evidenced\", \"objective_target_met\"]\n"
+                        .to_vec(),
+                ),
             )],
             "base config edit",
             &CommitOptions::default(),
@@ -510,13 +515,14 @@ fn a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_r
     Fixture::commit_in(
         &s.wt,
         "frob.toml",
-        "[pm]\ndone_requires = [\"criteria_evidenced\", \"ticket\"]\n",
+        "[pm]\ndone_requires = [\"criteria_evidenced\", \"no_open_children\"]\n",
     );
+    Fixture::evidence(&s, "frob.toml");
     move_main(&fx.root, "uv.lock", "moved\n");
     move_main(
         &fx.root,
         "frob.toml",
-        "[pm]\ndone_requires = [\"criteria_evidenced\", \"base\"]\n",
+        "[pm]\ndone_requires = [\"criteria_evidenced\", \"objective_target_met\"]\n",
     );
     let head = git_out(&s.wt, &["rev-parse", "HEAD"]).1;
     let status = git_out(&s.wt, &["status", "--porcelain"]).1;
@@ -1151,6 +1157,7 @@ fn a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts() {
         .expect("commit");
     let s = fx.start("Touch uv", &["uv.lock"]);
     Fixture::commit_in(&s.wt, "uv.lock", "ticket\n");
+    Fixture::evidence(&s, "uv.lock");
     move_main(&fx.root, "uv.lock", "moved\n");
     let before = fx.main_tip();
     let err = land(
