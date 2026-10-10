@@ -11,6 +11,10 @@ created = "2026-10-10T01:13:36Z"
 updated = "2026-10-10T01:13:36Z"
 scope = ["crates/frob-land/src/land.rs", "changelog.d/**"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M4GRV9YMN2VEPCTMMD5ZJPVH"
+
 [[acceptance]]
 text = "Given leftover *.removing dirs, when frob land runs, then they are deleted before its own cleanup"
 bound = false
