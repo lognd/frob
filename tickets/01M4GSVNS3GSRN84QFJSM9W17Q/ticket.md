@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T17:02:34Z"
-updated = "2026-10-09T17:02:34Z"
+updated = "2026-10-10T00:40:49Z"
 labels = ["adoption:hullbreach"]
-scope = ["crates/gob-git/**", "crates/frob-ledger/**", "changelog.d/**"]
+scope = ["changelog.d/**", "crates/gob-git/src/ledger.rs", "crates/gob-git/tests/ledger.rs"]
 
 [[acceptance]]
 text = "Given several processes writing ledger events concurrently in one repository, when one finds .git/index.lock held, then it retries with bounded backoff (configurable via [git] cas_retries) and succeeds without the caller retrying"
