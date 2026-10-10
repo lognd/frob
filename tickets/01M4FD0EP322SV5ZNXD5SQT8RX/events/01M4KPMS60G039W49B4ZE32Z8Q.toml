@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-10T20:01:57Z"
+digest = "8f97c7b563ef6290e1fcf4548d261fc45273d1ecd170c1e9a7232e2fff8b21f6"
+exit_code = 101
+inline = """
+    Blocking waiting for file lock on build directory
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+error[E0433]: cannot find `SchemaExtension` in `gob_cli`
+  --> crates/crunk/src/lib.rs:34:14
+   |
+34 |     gob_cli::SchemaExtension::new(crunk_spec::schema::schema)
+   |              ^^^^^^^^^^^^^^^ could not find `SchemaExtension` in `gob_cli`
+
+For more information about this error, try `rustc --explain E0433`.
+error: could not compile `crunk` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `crunk` (lib test) due to 1 previous error
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics --package crunk` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "-p crunk -E 'test(=schema_prints_the_crunk_tables_with_keys_and_types_not_only_the_shared_ones)'"
+size = 800
+status = "measured"
+at = "2026-10-10T20:01:57Z"
+actor = "Claude"
+rev = 1

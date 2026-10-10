@@ -790,3 +790,17 @@ fn macro_arguments_stay_may_for_declared_macros_and_shadowed_names() {
             .all(|(_, s)| *s != Status::Must)
     );
 }
+
+// frob:ticket 01M4FH86F1XAWKC7KQZSH5B4JE
+#[test]
+fn a_plain_comment_between_a_doc_block_and_its_item_keeps_the_doc() {
+    let plain = extract("x.rs", "/// Doc one.\npub fn f() {}\n");
+    let split = extract(
+        "x.rs",
+        "/// Doc one.\n// frob:doc docs/x.md#f\npub fn f() {}\n",
+    );
+    let none = extract("x.rs", "// frob:doc docs/x.md#f\npub fn f() {}\n");
+    let doc = |fs: &FileSymbols| find(fs, "x.rs::f").digests.doc;
+    assert_eq!(doc(&split), doc(&plain));
+    assert_ne!(doc(&split), doc(&none));
+}

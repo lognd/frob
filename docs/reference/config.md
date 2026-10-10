@@ -164,7 +164,7 @@ Materialized: no.
 
 ## `[lease]`
 
-Knobs of the lease store (tickets.md section 6, decision D26).
+Knobs of the lease store (tickets.md section 3, decision D26).
 
 Materialized: yes.
 

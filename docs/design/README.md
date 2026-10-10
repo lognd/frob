@@ -1,5 +1,10 @@
 # frob v2 design
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: contributor
+
 Design-first rewrite of frob in Rust. Start with goals.md, then
 products.md and boundaries.md, then the rest. Where files disagree,
 the later files win in this order: products.md, boundaries.md,

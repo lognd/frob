@@ -1,6 +1,11 @@
 # Build, test, docs generation, CI
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Inputs: notes/rust-ecosystem.md sections 1 and
+Status: current
+Owner: frob
+Decisions: D102
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/rust-ecosystem.md sections 1 and
 5, notes/v1/ops-and-integrations.md section 8 (v1 CI: 7 green of the
 last 100 runs, green median 123 minutes).
 

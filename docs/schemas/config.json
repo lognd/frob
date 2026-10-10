@@ -430,7 +430,7 @@
     },
     "lease": {
       "additionalProperties": false,
-      "description": "Knobs of the lease store (tickets.md section 6, decision D26).",
+      "description": "Knobs of the lease store (tickets.md section 3, decision D26).",
       "properties": {
         "lock_timeout_ms": {
           "default": 5000,

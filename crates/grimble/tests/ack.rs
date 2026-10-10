@@ -2,6 +2,7 @@
 //! against it, and a stale scheme forces re-attestation.
 
 // frob:ticket 01M3Z714820D1SK6X44T9R1B70
+// frob:ticket 01M4D6NMS0EQA0B6NB9KEBHDRN
 
 use std::path::Path;
 
@@ -171,4 +172,41 @@ fn ack_honours_the_grimble_table_like_check() {
     );
     let (code, env, err) = grimble(dir.path(), &["ack", "flow/f", "--reason", "x", "--json"]);
     assert_eq!(code, 0, "{env} {err}");
+}
+
+// frob:tests crates/grimble/src/ack.rs::Ack
+#[test]
+fn invalid_arguments_are_refused_before_the_repository_is_bound() {
+    let dir = tempfile::tempdir().unwrap();
+    fixture(dir.path());
+    // A config that cannot load: binding would fail first and replace the argument error.
+    write(dir.path(), "grimble.toml", "[grimble\n");
+    let (code, env, err) = grimble(dir.path(), &["ack", "flow/f", "--json"]);
+    assert_eq!(code, 2, "{env} {err}");
+    assert!(
+        env["error"]["message"]
+            .as_str()
+            .unwrap_or(&err)
+            .contains("E-ACK-REASON"),
+        "{env} {err}"
+    );
+    let (code, env, err) = grimble(dir.path(), &["ack", "--reason", "x", "--json"]);
+    assert_eq!(code, 2, "{env} {err}");
+    assert!(
+        env["error"]["message"]
+            .as_str()
+            .unwrap_or(&err)
+            .contains("E-ACK-EMPTY"),
+        "{env} {err}"
+    );
+    // --all over a lock with nothing in it is E-ACK-EMPTY without binding either.
+    let (code, env, err) = grimble(dir.path(), &["ack", "--all", "--reason", "x", "--json"]);
+    assert_eq!(code, 2, "{env} {err}");
+    assert!(
+        env["error"]["message"]
+            .as_str()
+            .unwrap_or(&err)
+            .contains("E-ACK-EMPTY"),
+        "{env} {err}"
+    );
 }

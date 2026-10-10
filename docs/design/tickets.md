@@ -1,6 +1,11 @@
 # Tickets: the project-management core
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias).
+Status: current
+Owner: frob
+Decisions: D26
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias).
 Inputs: notes/v1/tickets.md (data model, 25 incident classes, Jira gap
 list), notes/rust-ecosystem.md section 3, notes/v1/ops-and-integrations.md
 (telemetry), notes/jira.md and notes/v1/agent-usage.md (sections 7 and 8).

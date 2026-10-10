@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T20:05:03Z"
+digest = "cdc32b61fb3070109682f1cdad266f884bf940de8950b5f7a8b36f4e3e645d21"
+exit_code = 0
+inline = '''
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized] target(s) in 1.70s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 01836afc-bea5-422b-9c37-f95016c0a6cb with nextest profile: default
+    Starting 1 test across 4 binaries (35 tests skipped)
+        PASS [   0.069s] frob-obligations::repo a_frob_doc_line_between_a_doc_block_and_its_item_does_not_raise_doc001
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.070s] 1 test run: 1 passed, 35 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E 'test(=a_frob_doc_line_between_a_doc_block_and_its_item_does_not_raise_doc001)'"
+size = 648
+status = "measured"
+tests = ["a_frob_doc_line_between_a_doc_block_and_its_item_does_not_raise_doc001"]
+at = "2026-10-10T20:05:03Z"
+actor = "Claude"
+rev = 1

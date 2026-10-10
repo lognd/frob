@@ -1,0 +1,27 @@
+kind = "evidence"
+captured_at = "2026-10-10T19:40:55Z"
+digest = "78847f0cb2f7a4d8851ea877f59493ab32b179c8e9a7fd64779844d190f5a39c"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c085af07-7eae-43ee-a1aa-a2a3bcbda40e with nextest profile: default
+    Starting 6 tests across 5 binaries (9 tests skipped)
+        PASS [   0.036s] grimble::ack ack_without_a_reason_is_a_usage_error_with_the_remedy
+        PASS [   0.140s] grimble::ack ack_dry_run_writes_nothing_and_a_node_target_is_refused
+        PASS [   0.145s] grimble::ack ack_honours_the_grimble_table_like_check
+        PASS [   0.019s] grimble::ack invalid_arguments_are_refused_before_the_repository_is_bound
+        PASS [   0.188s] grimble::ack ack_refuses_a_stale_scheme_for_a_targeted_ack_and_all_with_reason_migrates
+        PASS [   0.158s] grimble::ack ack_writes_the_lock_and_check_reports_contract_skew_after_a_producer_edit
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.195s] 6 tests run: 6 passed, 9 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble -E '(package(=grimble) & (test(=ack_dry_run_writes_nothing_and_a_node_target_is_refused) | test(=ack_honours_the_grimble_table_like_check) | test(=ack_refuses_a_stale_scheme_for_a_targeted_ack_and_all_with_reason_migrates) | test(=ack_without_a_reason_is_a_usage_error_with_the_remedy) | test(=ack_writes_the_lock_and_check_reports_contract_skew_after_a_producer_edit) | test(=invalid_arguments_are_refused_before_the_repository_is_bound)))'"
+size = 1042
+status = "measured"
+tests = ["ack_without_a_reason_is_a_usage_error_with_the_remedy", "ack_dry_run_writes_nothing_and_a_node_target_is_refused", "ack_honours_the_grimble_table_like_check", "invalid_arguments_are_refused_before_the_repository_is_bound", "ack_refuses_a_stale_scheme_for_a_targeted_ack_and_all_with_reason_migrates", "ack_writes_the_lock_and_check_reports_contract_skew_after_a_producer_edit"]
+at = "2026-10-10T19:40:55Z"
+actor = "Claude"
+rev = 1
