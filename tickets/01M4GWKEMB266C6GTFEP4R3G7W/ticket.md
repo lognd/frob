@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T17:50:30Z"
-updated = "2026-10-10T21:22:04Z"
-scope = ["crates/frob-pm/**", "crates/frob-lease/**", "crates/gob-config/**", "changelog.d/**"]
+updated = "2026-10-10T21:22:39Z"
+scope = ["crates/frob-pm/**", "crates/frob-lease/**", "crates/gob-config/**", "changelog.d/**", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/work.rs", "docs/design/pm-enforcement.md"]
 
 [[acceptance]]
 text = "Given [pm.wip] in_progress raised on the base branch and a ticket worktree branched before that change, when frob work or a lease operation runs in that worktree, then the repository-wide limits come from the base branch (or the ledger ref) config, not the worktree copy; per-worktree code config stays per worktree"
