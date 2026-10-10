@@ -2,12 +2,12 @@
 id = "01M4GKAYSGHAE5QAXN1BJBTQN2"
 title = "Bulk ticket read: ticket list --full (or export) emits every ticket with aliases and events in one call"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T15:08:35Z"
-updated = "2026-10-09T15:08:35Z"
+updated = "2026-10-10T20:58:04Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob-ledger/**", "crates/frob/**", "changelog.d/**"]
 
