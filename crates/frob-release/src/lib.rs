@@ -11,6 +11,7 @@ pub mod bump;
 pub mod changelog;
 pub mod ci;
 pub mod config;
+pub mod culprit;
 pub mod cut;
 pub mod error;
 pub mod fragment;

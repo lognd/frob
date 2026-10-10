@@ -1697,6 +1697,7 @@ fn a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit
 struct CannedCi {
     state: frob_release::ci::CiState,
     asked: std::sync::Mutex<Vec<String>>,
+    runs: Option<Vec<frob_release::culprit::RunRecord>>,
 }
 
 impl CannedCi {
@@ -1704,6 +1705,19 @@ impl CannedCi {
         Arc::new(Self {
             state,
             asked: std::sync::Mutex::new(Vec::new()),
+            runs: None,
+        })
+    }
+
+    /// A reader that also lists `runs` for culprit finding.
+    fn with_runs(
+        state: frob_release::ci::CiState,
+        runs: Vec<frob_release::culprit::RunRecord>,
+    ) -> Arc<Self> {
+        Arc::new(Self {
+            state,
+            asked: std::sync::Mutex::new(Vec::new()),
+            runs: Some(runs),
         })
     }
 }
@@ -1712,6 +1726,15 @@ impl frob_land::CiReader for CannedCi {
     fn read(&self, _repo: &Repo, _cwd: &Path, sha: &str) -> frob_release::ci::CiState {
         self.asked.lock().expect("lock").push(sha.to_owned());
         self.state.clone()
+    }
+
+    fn runs(
+        &self,
+        _repo: &Repo,
+        _cwd: &Path,
+        _branch: &str,
+    ) -> Option<Vec<frob_release::culprit::RunRecord>> {
+        self.runs.clone()
     }
 }
 
@@ -1871,4 +1894,40 @@ fn require_base_green_false_skips_the_ci_read_entirely() {
     let (_, out) = ci_land(&fx, ci.clone(), |_| {});
     assert!(out.expect("lands").closed);
     assert!(ci.asked.lock().expect("lock").is_empty());
+}
+
+// frob:ticket 01M4GWS3GBJTFXFEGSNFB7J4FQ
+// frob:tests crates/frob-land/src/base_ci.rs::with_culprit
+#[test]
+fn a_red_base_files_one_blocking_fix_ticket_and_later_lands_wait_for_it() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let tip = fx.main_tip();
+    let red = vec![frob_release::culprit::RunRecord {
+        sha: tip,
+        verdict: frob_release::culprit::Verdict::Red,
+    }];
+    let ci = CannedCi::with_runs(failing("rust (linux)"), red);
+    let (_, out) = ci_land(&fx, ci.clone(), |_| {});
+    let first = refusal(&out.expect_err("refused")).message.clone();
+    assert!(first.contains("fix ticket ~"), "{first}");
+    let blockers = |fx: &Fixture| {
+        fx.ledger()
+            .list(&frob_ledger::index::ListFilter {
+                label: Some("blocks-lands".to_owned()),
+                ..Default::default()
+            })
+            .expect("list")
+            .len()
+    };
+    assert_eq!(blockers(&fx), 1);
+    let (_, again) = ci_land(&fx, ci, |_| {});
+    let second = refusal(&again.expect_err("still refused")).message.clone();
+    assert!(
+        second.contains("blocked until the fix ticket closes"),
+        "{second}"
+    );
+    assert_eq!(blockers(&fx), 1, "no second fix ticket");
 }
