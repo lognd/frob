@@ -2,12 +2,12 @@
 id = "01M4GKBEBGBTA03VFB90SDR858"
 title = "Evidence test node ids are pytest-rootdir-relative instead of repository-relative; test-only tickets need an explicit changelog exemption path"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T15:08:51Z"
-updated = "2026-10-09T15:08:51Z"
+updated = "2026-10-10T20:47:51Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob-evidence/**", "crates/frob-tests/**", "crates/frob-release/**", "changelog.d/**"]
 
