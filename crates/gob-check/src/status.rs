@@ -139,6 +139,74 @@ pub(crate) fn opaque_finding_for(id: &str, files: &[&str]) -> Finding {
     )
 }
 
+// frob:ticket 01M4FG5RCDA668CK81QT54E67N
+/// Marker text shared by every per-rule opaque-files notice.
+const OPAQUE_MARK: &str = " opaque text file(s) (no adapter, first `";
+
+/// Collapse every per-rule opaque-files notice in `raw` into one run-wide notice.
+///
+/// The notice names the file count and the rules that could not read the
+/// files, so a repository with many opaque files reports it once, not once
+/// per rule. Other findings keep their order; the notice takes the place of
+/// the first one it replaces.
+pub(crate) fn merge_opaque_notices(raw: Vec<Finding>) -> Vec<Finding> {
+    let is_notice = |f: &Finding| {
+        f.severity == Severity::Unresolved
+            && f.reason == Some(UnresolvedReason::Fidelity)
+            && f.span.is_none()
+            && f.message.contains(OPAQUE_MARK)
+    };
+    if raw.iter().filter(|f| is_notice(f)).count() < 2 {
+        return raw;
+    }
+    let mut rules: Vec<String> = Vec::new();
+    let mut count = 0usize;
+    let mut first = "";
+    for f in raw.iter().filter(|f| is_notice(f)) {
+        let id = f.rule.to_string();
+        if !rules.contains(&id) {
+            rules.push(id);
+        }
+        let n = f
+            .message
+            .split(OPAQUE_MARK)
+            .next()
+            .and_then(|head| head.rsplit(' ').next())
+            .and_then(|n| n.parse::<usize>().ok());
+        if let Some(n) = n.filter(|n| *n > count) {
+            count = n;
+            first = f
+                .message
+                .split(OPAQUE_MARK)
+                .nth(1)
+                .and_then(|t| t.split('`').next())
+                .unwrap_or_default();
+        }
+    }
+    rules.sort();
+    let merged = unresolved_finding_for(
+        &rules[0],
+        None,
+        "repository",
+        &format!(
+            "{count} opaque text file(s) (no adapter, first `{first}`) were not read for comments or directives by {} rules ({})",
+            rules.len(),
+            rules.join(", ")
+        ),
+        UnresolvedReason::Fidelity,
+    );
+    let mut merged = Some(merged);
+    raw.into_iter()
+        .filter_map(|f| {
+            if is_notice(&f) {
+                merged.take()
+            } else {
+                Some(f)
+            }
+        })
+        .collect()
+}
+
 /// Extensions that are binary regardless of content.
 const BINARY_EXTENSIONS: &[&str] = &[
     "png", "jpg", "jpeg", "gif", "ico", "webp", "pdf", "zip", "gz", "xz", "zst", "tar", "woff",
@@ -444,5 +512,41 @@ mod tests {
         assert!(is_binary("a.png", b""));
         assert!(is_binary("a.dat", &[1, 0, 2]));
         assert!(!is_binary("a.py", b"print"));
+    }
+
+    // frob:ticket 01M4FG5RCDA668CK81QT54E67N
+    #[test]
+    fn opaque_notices_of_many_rules_merge_into_one_naming_count_and_rules() {
+        let files: Vec<String> = (0..59).map(|i| format!("f{i}.txt")).collect();
+        let refs: Vec<&str> = files.iter().map(String::as_str).collect();
+        let other =
+            unresolved_finding_for("DOC001", None, "a.rs", "hole", UnresolvedReason::Partial);
+        let raw = vec![
+            opaque_finding_for("TODO001", &refs),
+            other,
+            opaque_finding_for("DOC001", &refs),
+            opaque_finding_for("REF001", &refs),
+        ];
+        let out = merge_opaque_notices(raw);
+        let notices: Vec<&Finding> = out
+            .iter()
+            .filter(|f| f.message.contains(OPAQUE_MARK))
+            .collect();
+        assert_eq!(notices.len(), 1, "one notice per run, not per rule");
+        assert_eq!(out.len(), 2, "unrelated findings are kept");
+        let m = &notices[0].message;
+        assert!(m.contains("59 opaque text file(s)"), "{m}");
+        assert!(m.contains("`f0.txt`"), "{m}");
+        for rule in ["DOC001", "REF001", "TODO001"] {
+            assert!(m.contains(rule), "{m}");
+        }
+    }
+
+    // frob:ticket 01M4FG5RCDA668CK81QT54E67N
+    #[test]
+    fn a_single_opaque_notice_is_left_untouched() {
+        let raw = vec![opaque_finding_for("TODO001", &["a.txt"])];
+        let out = merge_opaque_notices(raw.clone());
+        assert_eq!(out, raw);
     }
 }

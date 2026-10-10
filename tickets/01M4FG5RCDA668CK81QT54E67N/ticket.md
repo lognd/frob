@@ -2,12 +2,13 @@
 id = "01M4FG5RCDA668CK81QT54E67N"
 title = "The opaque-files notice is repeated as an unresolved finding once per rule; emit it once per run"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T04:54:04Z"
-updated = "2026-10-10T18:45:40Z"
+updated = "2026-10-10T18:49:35Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-check/**", "crates/frob-check/**", "changelog.d/**"]
 
