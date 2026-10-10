@@ -790,6 +790,43 @@ fn cli_work_past_the_repository_limit_exits_3_with_the_wip_code() {
     assert!(err.contains("`start` is deprecated"), "{err}");
 }
 
+/// Commit `text` as `frob.toml` on the ledger ref, leaving the work tree file alone.
+fn commit_base_config(fx: &Fixture, text: &str) {
+    let repo = Repo::discover(&fx.root).expect("repo");
+    repo.commit_paths(
+        MAIN,
+        &[(
+            RelPath::new("frob.toml").expect("path"),
+            Some(text.as_bytes().to_vec()),
+        )],
+        "raise the cap",
+        &CommitOptions::default(),
+    )
+    .expect("commit config");
+}
+
+// frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
+// frob:tests crates/frob-worktree/src/verbs.rs::Work
+#[test]
+fn work_takes_the_repository_wip_limit_from_the_base_ref_not_the_worktree_copy() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    // The worktree copy is stale (cap 1); the base ref raised it to 3.
+    commit_base_config(&fx, "[pm.wip]\nin_progress = 3\n");
+    std::fs::write(fx.root.join("frob.toml"), "[pm.wip]\nin_progress = 1\n").expect("stale");
+    let ledger = fx.ledger(None);
+    let a = Fixture::ticket(&ledger, "First", TicketType::Task, &["a/**"]);
+    let b = Fixture::ticket(&ledger, "Second", TicketType::Task, &["b/**"]);
+    drop(ledger);
+    let cli = frob_worktree::register(gob_cli::Cli::new("frob", "0.0.0"));
+    for t in [a, b] {
+        let (code, out, err) = gob_cli::run_for_test(&cli, &["work", &t.to_string()], &fx.root);
+        assert_eq!(code, 0, "base cap 3 admits both: {out}{err}");
+    }
+}
+
 fn classed_ticket(ledger: &Ledger, title: &str, class: Class, scope: &str) -> TicketId {
     let mut req = NewTicket::new(title, TicketType::Task);
     req.class = class;

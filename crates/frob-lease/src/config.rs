@@ -73,4 +73,25 @@ impl LeaseConfig {
     pub fn load(root: &Path) -> Result<Self, ConfigError> {
         Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
     }
+
+    /// Like [`LeaseConfig::load`], but `[lease]` comes from `<rev>:frob.toml` when that blob exists, so a branch cut before a knob changed enforces the current value; a missing blob or unreadable `rev` keeps the file in `root`.
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable or invalid file in `root` or an invalid blob at `rev`.
+    // frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
+    pub fn load_repo_wide(root: &Path, rev: &str) -> Result<Self, ConfigError> {
+        let local = Self::load(root)?;
+        let text = gob_git::Repo::discover(root)
+            .ok()
+            .and_then(|repo| match repo.read_blob_at(rev, "frob.toml") {
+                Ok(blob) => blob.and_then(|b| String::from_utf8(b).ok()),
+                Err(e) => {
+                    tracing::debug!(rev, error = %e, "base-ref frob.toml unavailable; using the worktree copy");
+                    None
+                }
+            });
+        let Some(text) = text else { return Ok(local) };
+        Ok(gob_config::load_str::<Self>(&text, Path::new(rev))?.value)
+    }
 }

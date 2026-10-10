@@ -279,6 +279,13 @@ counted in their own lane, exempt from `in_progress` and capped by
 as standard). PM013 fires when live standard holders exceed
 `in_progress` and when live expedite holders exceed `expedite_max`.
 
+The repository-wide tables (`[pm]`, `[pm.wip]`, `[pm.classes]` and
+`[lease]`) are read from `frob.toml` at the ledger ref (`[tickets] ref`),
+not from the worktree copy, so a branch cut before a limit changed
+enforces the current value; the worktree file is used only when the ref
+has none. Per-worktree code config stays per worktree.
+<!-- frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W -->
+
 ## 7. Rule family PM (generated like every other family)
 
 | Id | Checks |
