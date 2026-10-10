@@ -8,10 +8,10 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:47Z"
-updated = "2026-10-10T23:29:08Z"
+updated = "2026-10-10T23:32:03Z"
 idempotency_key = "crunk-plan-ci"
 labels = ["area:crunk"]
-scope = [".github/workflows/ci.yml", "docs/crunk/ci.md", ".github/scripts/plan-jobs.py", "crates/gob-dev/tests/ci_plan.rs", "crates/gob-dev/tests/ci_parity.rs"]
+scope = [".github/workflows/ci.yml", "docs/crunk/ci.md", ".github/scripts/plan-jobs.py", "crates/gob-dev/tests/ci_plan.rs", "crates/gob-dev/tests/ci_parity.rs", "docs/crunk/README.md"]
 
 [[links]]
 kind = "blocked-by"
