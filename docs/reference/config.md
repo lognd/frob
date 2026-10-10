@@ -252,6 +252,16 @@ Materialized: yes.
 | `require_ci` | `bool` | `true` | yes | When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green. |
 | `tag` | `String` | `"v{version}"` | yes | Tag name pattern of a release: `{version}` is required, `{product}` is replaced by each product name (one tag per product). |
 
+## `[tests]`
+
+How `frob test` and the `pytest` provider find the Python interpreter (`[tests]`).
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `python` | `String` | `""` | no | Interpreter that runs `-m pytest` (a name on `PATH` or a path, relative ones from the repository root); empty uses `.venv` in the repository root when it has one, else `pytest` on `PATH`. |
+
 ## `[tickets]`
 
 Where the ticket ledger lives.

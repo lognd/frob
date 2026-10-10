@@ -15,6 +15,8 @@ pub const EVENTS_DIR: &str = ".events";
 pub const UNFILED_DIR: &str = "_unfiled";
 /// File name of a top epic's own ticket inside its directory.
 pub const EPIC_FILE: &str = "EPIC.md";
+/// The `.gitattributes` attribute that routes a ledger document to the frob merge driver.
+pub const MERGE_DRIVER_ATTR: &str = "merge=frob-ledger";
 /// Longest ticket slug, cut on a word boundary.
 pub const SLUG_MAX: usize = 60;
 
@@ -132,6 +134,14 @@ pub fn attribute_patterns(layout: Layout, dir: &str, driver_attr: &str) -> Vec<S
     }
 }
 
+/// The `.gitattributes` text of the ticket branch: the [`Layout::Branch`] patterns, one per line.
+#[must_use]
+pub fn branch_gitattributes(dir: &str) -> String {
+    let mut text = attribute_patterns(Layout::Branch, dir, MERGE_DRIVER_ATTR).join("\n");
+    text.push('\n');
+    text
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -182,5 +192,14 @@ mod tests {
         assert_eq!(dir[0], "tickets/**/ticket.md merge=frob-ledger");
         let branch = attribute_patterns(Layout::Branch, "tickets", "merge=frob-ledger");
         assert_eq!(branch, vec!["*/*.md merge=frob-ledger".to_owned()]);
+    }
+
+    // frob:ticket 01M4A61GB9Y9M45R78K2Z70Y1B
+    #[test]
+    fn the_branch_gitattributes_holds_the_branch_pattern() {
+        assert_eq!(
+            branch_gitattributes("tickets"),
+            "*/*.md merge=frob-ledger\n"
+        );
     }
 }
