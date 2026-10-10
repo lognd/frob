@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a repository that tracks .frob/cache.sqlite, when any check runs, then it exits 3 with E-STATE-TRACKED naming the file", "Given untracked or ignored state directories, when a check runs, then it proceeds normally"]
+new = ["Given a git repository that tracks .frob/cache.sqlite, when gob_trust::check_state_untracked runs, then it returns StateTracked naming .frob/cache.sqlite, and files under .grimble/ and .crunk/ are named too", "Given that error, when converted by Refusal::state_tracked, then the code is E-STATE-TRACKED, the class is guard-needs-action, the exit code is 3 and the message names every tracked file", "Given state directories that are untracked or git-ignored, or a directory that is not a git repository, when check_state_untracked runs, then it returns Ok"]
+moved = [0, 0]
+at = "2026-10-10T15:59:33Z"
+actor = "Claude"
+rev = 1
