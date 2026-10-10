@@ -8,7 +8,7 @@ points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:28Z"
-updated = "2026-10-09T20:35:42Z"
+updated = "2026-10-10T00:12:15Z"
 labels = ["creates:crates/gob-git/tests/shared_reader.rs"]
 scope = ["changelog.d/**", "crates/gob-git/src/content.rs", "crates/gob-git/tests/shared_reader.rs"]
 
