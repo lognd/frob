@@ -2,13 +2,14 @@
 id = "01M3ZX7F1SGDAFM6ZQ8BP7TEN3"
 title = "Plan executor outcomes: polarity, unresolved when, one finding per binding, witnesses, budgets"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-09T23:15:28Z"
+updated = "2026-10-10T01:04:50Z"
 idempotency_key = "m2-exec-outcome"
 labels = ["milestone:2", "area:grl", "creates:crates/gob-plan/tests/exec_outcome.rs"]
 scope = ["crates/gob-plan/src/exec/outcome/**", "crates/gob-plan/src/exec/mod.rs", "crates/gob-plan/src/exec/core/mod.rs", "crates/gob-plan/src/exec/core/eval.rs", "crates/gob-plan/src/exec/core/verdict.rs", "crates/gob-plan/src/exec/relations/mod.rs", "crates/gob-plan/tests/exec_outcome.rs", "crates/gob-plan/tests/support/mod.rs"]
