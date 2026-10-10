@@ -2,13 +2,13 @@
 id = "01M4CTE2T943ATA1PKVBN7DCP3"
 title = "CI hygiene: concurrency cancel, paths filters, job timeouts, drop checks run twice, fold the Windows isolated-tool duplicates (audit M18)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:40Z"
-updated = "2026-10-10T02:07:22Z"
+updated = "2026-10-10T02:07:31Z"
 scope = ["changelog.d/**", ".github/workflows/ci.yml", ".github/workflows/build-smoke.yml", "crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/ci_parity.rs"]
 
 [[acceptance]]
