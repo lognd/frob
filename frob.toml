@@ -123,6 +123,8 @@ lock_timeout_ms = 30000
 ref = "refs/heads/experimental"
 # `trunk` commits to `ref`; `branch` commits to the checked-out branch.
 ref_mode = "trunk"
+# Name of the orphan branch `frob ticket branch init` creates for the ledger (`mirror.md` section 1).
+branch = "frob-tickets"
 
 [evidence]
 # Programs the `command` evidence provider may run; grimble runs bind as evidence; goway runs the
