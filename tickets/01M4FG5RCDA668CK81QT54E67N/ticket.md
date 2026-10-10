@@ -2,7 +2,8 @@
 id = "01M4FG5RCDA668CK81QT54E67N"
 title = "The opaque-files notice is repeated as an unresolved finding once per rule; emit it once per run"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
