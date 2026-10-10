@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:42Z"
-updated = "2026-10-10T23:28:48Z"
+updated = "2026-10-10T23:34:56Z"
 scope = ["changelog.d/**", "crates/crunk-check/**", "crates/gob-check/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a crunk:waive comment without a reason, when crunk check runs, then nothing is suppressed and WAIVE001 fires"
-bound = false
+bound = true
 +++
 
 notes/review/audit-2026-10-07.md M4.
