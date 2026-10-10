@@ -10,6 +10,7 @@ pub mod branch_cmd;
 pub mod doctor_cmd;
 pub mod fragment_cmd;
 pub mod merge_cmd;
+pub mod migrate_cmd;
 pub mod read;
 pub mod terminal_lease;
 pub mod triage_cmd;
@@ -29,7 +30,10 @@ use crate::workspace::{Located, config_refusal};
 pub(crate) fn open(ctx: &Context) -> Result<Ledger, CliError> {
     let (repo, root) = Located::discover(&ctx.cwd).into_repo()?;
     let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
-    Ok(Ledger::open(repo, cfg.ledger(), ctx.clock.clone()))
+    let ledger = Ledger::open(repo, cfg.ledger(), ctx.clock.clone());
+    // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+    crate::workspace::note_ledger_site(&ledger);
+    Ok(ledger)
 }
 
 /// Open the lease store of `ctx.cwd` with the materialized `[lease]` table of `frob.toml`.
@@ -195,6 +199,7 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<triage_cmd::InboxList>()
         .register::<fragment_cmd::Fragment>()
         .register::<branch_cmd::BranchInit>()
+        .register::<migrate_cmd::Migrate>()
         .register::<doctor_cmd::TicketDoctor>()
         .register::<merge_cmd::MergeDriver>()
 }

@@ -57,6 +57,7 @@
 
 pub mod branch;
 mod brief;
+pub mod config;
 pub mod doc;
 pub mod doctor;
 pub mod error;
@@ -69,6 +70,7 @@ pub mod layout;
 pub mod ledger;
 pub mod links;
 pub mod merge;
+pub mod migrate;
 pub mod model;
 pub mod objects;
 pub mod ops;

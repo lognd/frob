@@ -12,16 +12,51 @@ use std::str::FromStr;
 use gob_rules::RuleId;
 
 use super::error::PlanError;
-use super::ir::{CostClass, Langs, Op, OpId, Operand, PlanParts, Provenance, StrId, VarId};
+use super::ir::{
+    CostClass, Langs, Limit, Op, OpId, Operand, PlanParts, Polarity, Provenance, StrId, VarId,
+};
 use super::limits::{
-    MAX_DEPTH, MAX_LIST, MAX_OPS, MAX_PACK_NAME, MAX_STR_LEN, MAX_STRINGS, MAX_VARS, MAX_WITHIN,
+    MAX_DEFS, MAX_DEPTH, MAX_LIST, MAX_OPS, MAX_PACK_NAME, MAX_PARAMS, MAX_STR_LEN, MAX_STRINGS,
+    MAX_VARS, MAX_WITHIN,
 };
 
 /// Checks every invariant of `p`; `Ok` means the executor may run it.
 pub fn validate(p: &PlanParts) -> Result<(), PlanError> {
     limits_and_names(p)?;
     references(p)?;
+    polarity_shape(p)?;
     Walk::new(p).run()
+}
+
+/// The P- split: `subjects` is zero except in P- plans, where it cuts the clause list into the
+/// subject selection (all binders) and the good-thing formula; `report ... when` has no sound
+/// reading in P- (grl-spec.md 7.0.5).
+fn polarity_shape(p: &PlanParts) -> Result<(), PlanError> {
+    let invalid = |what, why| Err(PlanError::Invalid { what, why });
+    if p.polarity != Polarity::Pminus {
+        return if p.subjects == 0 {
+            Ok(())
+        } else {
+            invalid("subjects", "only a P- plan splits its clauses")
+        };
+    }
+    if usize::from(p.subjects) > p.clauses.len() {
+        return invalid("subjects", "more subject clauses than clauses");
+    }
+    if p.reports.iter().any(|r| r.when.is_some()) {
+        return invalid("report", "`report ... when` is not allowed in a P- plan");
+    }
+    let formula = &p.clauses[usize::from(p.subjects)..];
+    if let Some(&op) = formula
+        .iter()
+        .find(|&&c| matches!(p.ops[c as usize], Op::Find { .. } | Op::FindSide { .. }))
+    {
+        return Err(PlanError::Misplaced {
+            op,
+            why: "a find must be among the subject clauses of a P- plan",
+        });
+    }
+    Ok(())
 }
 
 fn too_large(what: &'static str, found: usize, limit: usize) -> PlanError {
@@ -44,8 +79,10 @@ fn limits_and_names(p: &PlanParts) -> Result<(), PlanError> {
     check_len("ops", p.ops.len(), MAX_OPS)?;
     check_len("strings", p.strings.len(), MAX_STRINGS)?;
     check_len("variables", usize::from(p.vars), MAX_VARS)?;
+    check_len("defs", p.defs.len(), MAX_DEFS)?;
     check_len("clauses", p.clauses.len(), MAX_LIST)?;
     check_len("reports", p.reports.len(), MAX_LIST)?;
+    check_len("unresolved clauses", p.unresolved.len(), MAX_LIST)?;
     check_len("prefilter", p.prefilter.len(), MAX_LIST)?;
     for s in &p.strings {
         check_len("string length", s.len(), MAX_STR_LEN)?;
@@ -124,7 +161,9 @@ fn var_in_range(v: VarId, vars: u16) -> Result<(), PlanError> {
 fn children(op: &Op) -> &[OpId] {
     match op {
         Op::And(c) | Op::Or(c) => c,
-        Op::Not(c) | Op::Quant { cond: c, .. } => std::slice::from_ref(c),
+        Op::Not(c) | Op::Quant { cond: c, .. } | Op::CountCmp { cond: c, .. } => {
+            std::slice::from_ref(c)
+        }
         _ => &[],
     }
 }
@@ -141,6 +180,10 @@ fn operand_refs(o: &Operand, p: &PlanParts) -> Result<(), PlanError> {
 }
 
 /// Every index is in range; every child op comes strictly earlier than its parent.
+#[allow(
+    clippy::too_many_lines,
+    reason = "one flat match or field list per wire item"
+)]
 fn references(p: &PlanParts) -> Result<(), PlanError> {
     let n = p.strings.len();
     strictly_ascending(&p.prefilter, n, "prefilter")?;
@@ -172,7 +215,9 @@ fn references(p: &PlanParts) -> Result<(), PlanError> {
             }
         }
         match op {
-            Op::Find { var, kind } | Op::Quant { var, kind, .. } => {
+            Op::Find { var, kind }
+            | Op::Quant { var, kind, .. }
+            | Op::CountCmp { var, kind, .. } => {
                 var_in_range(*var, p.vars)?;
                 str_in_range(*kind, n)?;
             }
@@ -215,15 +260,50 @@ fn references(p: &PlanParts) -> Result<(), PlanError> {
                 operand_refs(lhs, p)?;
                 operand_refs(rhs, p)?;
             }
+            Op::Call { def, args } => {
+                let d = p.defs.get(usize::from(*def)).ok_or(PlanError::OutOfRange {
+                    what: "def",
+                    index: u64::from(*def),
+                    len: p.defs.len() as u64,
+                })?;
+                check_len("call arguments", args.len(), MAX_PARAMS)?;
+                if args.len() != d.params.len() {
+                    return Err(PlanError::Invalid {
+                        what: "call",
+                        why: "argument count differs from the def's parameters",
+                    });
+                }
+                for &a in args {
+                    var_in_range(a, p.vars)?;
+                }
+            }
             Op::MatchRegex { subject, pattern } | Op::MatchGlob { subject, pattern } => {
                 operand_refs(subject, p)?;
                 str_in_range(*pattern, n)?;
             }
             Op::And(_) | Op::Or(_) | Op::Not(_) => {}
         }
+        if let Op::CountCmp {
+            limit: Limit::Knob { name, .. },
+            ..
+        } = op
+        {
+            str_in_range(*name, n)?;
+        }
+    }
+    for d in &p.defs {
+        check_len("def parameters", d.params.len(), MAX_PARAMS)?;
+        op_ref(d.body)?;
+        for &v in &d.params {
+            var_in_range(v, p.vars)?;
+        }
     }
     for &c in &p.clauses {
         op_ref(c)?;
+    }
+    for u in &p.unresolved {
+        op_ref(u.when)?;
+        str_in_range(u.reason, n)?;
     }
     for r in &p.reports {
         if let Some(w) = r.when {
@@ -247,6 +327,8 @@ struct Walk<'a> {
     seen: Vec<bool>,
     vars: Vec<VarState>,
     max_within: Option<u16>,
+    /// The def whose body is being walked, if any (calls may only go to earlier defs).
+    in_def: Option<usize>,
 }
 
 impl<'a> Walk<'a> {
@@ -256,13 +338,28 @@ impl<'a> Walk<'a> {
             seen: vec![false; p.ops.len()],
             vars: vec![VarState::Unbound; usize::from(p.vars)],
             max_within: None,
+            in_def: None,
         }
     }
 
     fn run(mut self) -> Result<(), PlanError> {
         let p = self.p;
+        for (i, d) in p.defs.iter().enumerate() {
+            for &v in &d.params {
+                self.bind(v)?;
+            }
+            self.in_def = Some(i);
+            self.visit(d.body, 0, false)?;
+            for &v in &d.params {
+                self.vars[usize::from(v)] = VarState::Closed;
+            }
+        }
+        self.in_def = None;
         for &c in &p.clauses {
             self.visit(c, 0, true)?;
+        }
+        for u in &p.unresolved {
+            self.visit(u.when, 0, false)?;
         }
         for r in &p.reports {
             if let Some(w) = r.when {
@@ -365,7 +462,7 @@ impl<'a> Walk<'a> {
                 }
             }
             Op::Not(c) => self.visit(*c, depth + 1, false)?,
-            Op::Quant { var, cond, .. } => {
+            Op::Quant { var, cond, .. } | Op::CountCmp { var, cond, .. } => {
                 self.bind(*var)?;
                 self.visit(*cond, depth + 1, false)?;
                 self.vars[usize::from(*var)] = VarState::Closed;
@@ -386,6 +483,17 @@ impl<'a> Walk<'a> {
                 self.use_var(*from)?;
                 self.use_var(*to)?;
                 self.max_within = Some(self.max_within.map_or(*within, |m| m.max(*within)));
+            }
+            Op::Call { def, args } => {
+                if self.in_def.is_some_and(|cur| usize::from(*def) >= cur) {
+                    return Err(PlanError::Misplaced {
+                        op: id,
+                        why: "a def may call only earlier defs",
+                    });
+                }
+                for &a in args {
+                    self.use_var(a)?;
+                }
             }
             Op::Cmp { lhs, rhs, .. } => {
                 self.use_operand(lhs)?;

@@ -17,19 +17,20 @@ use std::collections::BTreeMap;
 
 use frob_ledger::Ledger;
 use frob_ledger::TicketId;
-use frob_ledger::model::{Category, Outcome as TicketOutcome, Stamp};
+use frob_ledger::model::Stamp;
 use frob_pm::cycle::assign::{AssignError, AssignPlan, TicketFacts, default_cycle, plan_assign};
+use frob_pm::cycle::history::{cycle_events, deliveries, done_points, member_status};
 use frob_pm::cycle::lifecycle::{
-    ClosePlan, CycleError, MemberFacts, MemberStatus, NewPlan, plan_close, plan_new, plan_next,
-    ratio, resolve_end, unknown_cycle, with_state,
+    ClosePlan, CycleError, MemberFacts, NewPlan, plan_close, plan_new, plan_next, ratio,
+    resolve_end, unknown_cycle, with_state,
 };
 use frob_pm::cycle::plan::{Candidate, PlanError, milestone_members, next_milestone, plan_fill};
 use frob_pm::cycle::velocity::{
-    Capacity, Delivery, ROLLING_CYCLES, capacity, committed, delivered, delivery, done_facts,
+    Capacity, Delivery, ROLLING_CYCLES, capacity, committed, delivered, done_facts,
     history_capacity, recent_closed, velocity,
 };
-use frob_pm::event::{CycleEventData, CycleOp, MemberData, Op, PmBody, PmEvent, TransitionData};
-use frob_pm::model::{Cycle, Day, ObjectId, State};
+use frob_pm::event::{CycleEventData, CycleOp, MemberData, Op, PmBody, TransitionData};
+use frob_pm::model::{Cycle, Day, State};
 use frob_pm::{NewObject, ObjectKind, PmError, PmStore};
 use gob_cli::clap::{Arg, ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
@@ -153,7 +154,7 @@ impl CycleView {
                 }
             })
             .collect();
-        let events = review_events(store, c);
+        let events = cycle_events(store, c);
         let mut carried = Vec::new();
         let mut commitment = None;
         let mut retro = None;
@@ -204,32 +205,6 @@ impl CycleView {
             over_commits,
             created: c.created,
             updated: c.updated,
-        }
-    }
-}
-
-/// The `cycle` events of `c` in fold order; unreadable history is logged and treated as empty.
-fn review_events(store: PmStore<'_>, c: &Cycle) -> Vec<CycleEventData> {
-    let read = store
-        .ledger()
-        .tip_hex()
-        .map_err(PmError::from)
-        .and_then(|tip| {
-            tip.map_or(Ok(Vec::new()), |t| {
-                store.read_events_at(&t, ObjectKind::Cycle, c.id)
-            })
-        });
-    match read {
-        Ok(events) => events
-            .into_iter()
-            .filter_map(|e: PmEvent| match e.body {
-                PmBody::Cycle(d) => Some(*d),
-                _ => None,
-            })
-            .collect(),
-        Err(e) => {
-            tracing::warn!(cycle = %c.id, error = %e, "cycle events unreadable");
-            Vec::new()
         }
     }
 }
@@ -502,6 +477,7 @@ impl Command for CycleNew {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "cycle show",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)
@@ -554,6 +530,7 @@ impl Command for CycleShow {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "cycle list",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)
@@ -588,55 +565,6 @@ fn member_facts(ctx: &Context, ledger: &Ledger, c: &Cycle) -> Result<Vec<MemberF
         .iter()
         .map(|id| member_fact(ledger, &leases, *id))
         .collect()
-}
-
-/// A member's standing from its category and outcome.
-fn member_status(category: Category, outcome: Option<TicketOutcome>) -> MemberStatus {
-    match (category, outcome) {
-        (Category::Done, Some(TicketOutcome::Fixed | TicketOutcome::Done)) => {
-            MemberStatus::Finished
-        }
-        (Category::Done, _) => MemberStatus::Dropped,
-        (Category::InProgress, _) => MemberStatus::InProgress,
-        _ => MemberStatus::Open,
-    }
-}
-
-/// The delivery of every closed cycle, by the close-time definition: the recorded ratio event, else the finished members.
-fn deliveries(store: PmStore<'_>, ledger: &Ledger, all: &[Cycle]) -> BTreeMap<ObjectId, Delivery> {
-    all.iter()
-        .filter(|c| c.state == State::Closed)
-        .map(|c| {
-            let recorded = review_events(store, c)
-                .into_iter()
-                .rev()
-                .find(|d| d.op == CycleOp::Ratio)
-                .and_then(|d| d.committed.zip(d.done));
-            let members: Vec<MemberFacts> = c
-                .tickets
-                .iter()
-                .filter_map(|id| match ledger.show(*id) {
-                    Ok(v) => Some(MemberFacts {
-                        id: *id,
-                        handle: v.summary.handle,
-                        status: member_status(v.summary.category, v.summary.outcome),
-                        live_lease: false,
-                        points: u32::from(v.summary.points.unwrap_or(0)),
-                    }),
-                    Err(e) => {
-                        tracing::warn!(ticket = %id, error = %e, "member ticket unreadable; not counted");
-                        None
-                    }
-                })
-                .collect();
-            (c.id, delivery(recorded, &members))
-        })
-        .collect()
-}
-
-/// Done points per closed cycle, the input of velocity and capacity.
-fn done_points(deliveries: &BTreeMap<ObjectId, Delivery>) -> BTreeMap<ObjectId, u32> {
-    deliveries.iter().map(|(id, d)| (*id, d.done)).collect()
 }
 
 /// The close-rule facts of one ticket.
@@ -767,7 +695,7 @@ impl Command for CycleClose {
             )
             .arg(text_flag(
                 "next-goal",
-                "Goal of the next cycle, created the day after the effective end when unfinished tickets need one and none exists",
+                "Goal of the next cycle, created the day after the effective end (also when nothing carries) unless one already follows",
             ))
             .arg(
                 text_flag(
@@ -828,9 +756,15 @@ impl Command for CycleClose {
         let closed_on = ctx.clock.today();
         let mut next: Option<Cycle> = None;
         let mut planned = plan_close(&c, &others, carry_to.as_ref(), &members, closed_on);
-        if let (Err(CycleError::NoNextCycle { .. }), Some(goal)) =
-            (&planned, self.next_goal.as_deref())
-        {
+        // frob:ticket 01M4CT13C64KEVBP74G6VCQP1Q
+        // A given --next-goal is honoured when unfinished work needs a cycle and none exists, and also when
+        // nothing carries: the flags are never silently dropped.
+        let wants_next = match &planned {
+            Err(CycleError::NoNextCycle { .. }) => true,
+            Ok(p) => p.carried.is_empty() && carry_to.is_none(),
+            Err(_) => false,
+        };
+        if let (true, Some(goal)) = (wants_next, self.next_goal.as_deref()) {
             let made = create_next(ctx, store, &c, &others, closed_on, goal, next_days)?;
             tracing::info!(cycle = %c.alias(), next = %made.alias(), "cycle close created the next cycle");
             let mut all = others.clone();
@@ -1258,6 +1192,7 @@ pub struct VelocityData {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "cycle velocity",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)

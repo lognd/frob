@@ -40,6 +40,15 @@ pub enum Doubt {
         /// The frontier nodes, in node order.
         nodes: Vec<NodeId>,
     },
+    /// A count is an interval that does not decide its comparison with the limit.
+    CountBounds {
+        /// The members certainly counted.
+        lo: u64,
+        /// The members possibly counted; `None` is unbounded.
+        hi: Option<u64>,
+    },
+    /// The run's evaluation budget ran out before this was decided.
+    StepBudget,
     /// A bounded search stopped at its `within` limit before it was exhausted.
     Budget {
         /// Where the search started.

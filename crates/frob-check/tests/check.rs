@@ -512,7 +512,7 @@ const MISSING_TOOL: &str = "[[check.tool]]\nname = \"ghost\"\ncommand = \"frob-n
 
 const FAILING_ACTIONLINT: &str = "[[check.tool]]\nname = \"lint\"\ncommand = \"sh\"\nargs = [\"-c\", \"echo unsatisfiable pin >&2; exit 2\"]\nparser = \"actionlint-json\"\nversion_args = [\"-c\", \"echo 1.7.12\"]\n";
 
-// frob:tests crates/gob-check/src/tools.rs::run_tools
+// frob:tests crates/gob-check/src/tools.rs::start_tools
 #[test]
 fn a_failed_parsed_tool_fails_the_default_gate_with_its_stderr() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -1256,4 +1256,52 @@ fn a_corrupt_ledger_index_is_required_unresolved_findings_and_fails_the_gate() {
         "{:?}",
         repaired.findings
     );
+}
+
+// frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH
+// frob:tests crates/frob-check/src/lib.rs::run_with_cone
+#[test]
+fn the_ticket_cone_includes_cross_crate_callers_and_leaves_unrelated_crates_out() {
+    let (dir, id) = ticket_fixture_scoped(&["crates/a/**"]);
+    for (krate, deps) in [("a", ""), ("b", "a = { path = \"../a\" }\n"), ("c", "")] {
+        write(
+            dir.path(),
+            &format!("crates/{krate}/Cargo.toml"),
+            &format!(
+                "[package]\nname = \"{krate}\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\n{deps}"
+            ),
+        );
+    }
+    write(
+        dir.path(),
+        "crates/a/src/lib.rs",
+        "/// Doc.\npub fn shared_helper() {}\n",
+    );
+    write(
+        dir.path(),
+        "crates/b/src/lib.rs",
+        "/// Doc.\npub fn user() { a::shared_helper(); }\n",
+    );
+    write(
+        dir.path(),
+        "crates/c/src/lib.rs",
+        "/// Doc.\npub fn alone() { other::unrelated(); }\n",
+    );
+    let opts = CheckOptions {
+        ticket: Some(id),
+        base: Some("main".to_owned()),
+        skip_tools: true,
+        ..CheckOptions::default()
+    };
+    let (_, _, cone) = frob_check::run_with_cone(dir.path(), &opts).expect("run");
+    let cone = cone.expect("a cone under --ticket");
+    assert!(cone.contains("crates/a/src/lib.rs"), "{cone:?}");
+    assert!(
+        cone.contains("crates/b/src/lib.rs"),
+        "cross-crate caller: {cone:?}"
+    );
+    assert!(!cone.contains("crates/c/src/lib.rs"), "{cone:?}");
+    let (_, _, none) =
+        frob_check::run_with_cone(dir.path(), &CheckOptions::default()).expect("unscoped");
+    assert!(none.is_none());
 }

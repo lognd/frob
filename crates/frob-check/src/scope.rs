@@ -3,10 +3,10 @@
 use std::collections::{BTreeSet, HashMap};
 
 use frob_lease::{Holder, Lease, LeaseConfig, LeaseStore, overlap::glob_set, scope001};
-use frob_ledger::LedgerConfig;
+use frob_ledger::{Ledger, LedgerConfig, RefMode, TicketId};
 use gob_git::{GitError, RelPath, Repo, TreeRef};
 use gob_rules::{Finding, Rule, RuleId, Severity};
-use gob_symbols::{CallEdge, SymbolGraph};
+use gob_symbols::{Admit, CallEdge, SymbolGraph, SymbolRecord};
 
 use gob_check::{CheckError, ScopeView, Snapshot};
 
@@ -35,6 +35,11 @@ impl ScopeView for TicketScope {
 }
 
 /// Files whose symbols call into a symbol of the keyed file, from the call edges.
+///
+/// Resolved and ambiguous (May) edges count as written. An unresolved edge (a call into another
+/// crate, or one the resolver cannot place) counts against every function or method of the same
+/// name the call's qualifier does not rule out, so the cone only ever errs wide
+/// (frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH).
 fn dependents(graph: &SymbolGraph) -> HashMap<String, BTreeSet<String>> {
     let mut map: HashMap<String, BTreeSet<String>> = HashMap::new();
     let mut add = |callee: &str, caller: &str| {
@@ -44,6 +49,12 @@ fn dependents(graph: &SymbolGraph) -> HashMap<String, BTreeSet<String>> {
                 .insert(caller.to_owned());
         }
     };
+    let mut by_name: HashMap<&str, Vec<&SymbolRecord>> = HashMap::new();
+    for rec in graph.records() {
+        if let Some(name) = rec.symref.name() {
+            by_name.entry(name).or_default().push(rec);
+        }
+    }
     for edge in graph.call_edges() {
         match edge {
             CallEdge::Resolved { caller, callee } => add(callee.path(), caller.path()),
@@ -52,7 +63,21 @@ fn dependents(graph: &SymbolGraph) -> HashMap<String, BTreeSet<String>> {
                     add(c.path(), caller.path());
                 }
             }
-            CallEdge::Unresolved { .. } => {}
+            CallEdge::Unresolved {
+                caller,
+                name,
+                qualifier,
+            } => {
+                for rec in by_name.get(name.as_str()).into_iter().flatten() {
+                    let possible = match qualifier {
+                        Some(q) => graph.admits(q, rec) != Admit::No,
+                        None => true,
+                    };
+                    if possible {
+                        add(rec.symref.path(), caller.path());
+                    }
+                }
+            }
         }
     }
     map
@@ -199,6 +224,39 @@ fn branch_changes(
     Ok(paths)
 }
 
+// frob:ticket 01M4FEMT44H1WREASQ7EK8T90W
+/// The `ids` still to check against the base: under `ref_mode = branch` the ledger lives on the
+/// checked-out branch, so ids already present on that branch are resolved and dropped here.
+///
+/// In trunk mode, or when the branch ref or a read cannot be resolved, `ids` is returned whole.
+fn missing_on_branch_ledger<'a>(ids: &[&'a str], ledger: &Ledger) -> Vec<&'a str> {
+    if ledger.config().mode != RefMode::Branch {
+        return ids.to_vec();
+    }
+    let branch_ref = match ledger.ledger_ref() {
+        Ok(r) => r,
+        Err(err) => {
+            tracing::warn!(%err, "branch ledger ref unresolved; TICK002 reads the base only");
+            return ids.to_vec();
+        }
+    };
+    ids.iter()
+        .copied()
+        .filter(|raw| {
+            let on_branch = raw.parse::<TicketId>().is_ok()
+                && ledger.ticket_exists_at(&branch_ref, raw).unwrap_or(false);
+            if on_branch {
+                tracing::debug!(
+                    ticket = raw,
+                    branch_ref,
+                    "TICK002: ticket resolved on the branch ledger"
+                );
+            }
+            !on_branch
+        })
+        .collect()
+}
+
 // frob:ticket 01M413V8CDKKBSBV8JDV92VDGB
 /// `SCOPE001` (diff against `base` versus the lease) and `TICK002` (referenced tickets on `base`).
 ///
@@ -267,6 +325,7 @@ pub(crate) fn ticket_rules(
         }
     }
     let ids: Vec<&str> = ids.into_iter().collect();
+    let ids = missing_on_branch_ledger(&ids, &state.ledger);
     match frob_ledger::rules::tick002(&ids, base, &state.ledger) {
         Ok(f) => out.extend(f),
         Err(err) => out.push(unresolved(
@@ -275,4 +334,68 @@ pub(crate) fn ticket_rules(
         )),
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use frob_ledger::model::TicketType;
+    use frob_ledger::ops::NewTicket;
+    use gob_git::CommitOptions;
+
+    // frob:ticket 01M4FEMT44H1WREASQ7EK8T90W
+    // frob:tests crates/frob-check/src/scope.rs::missing_on_branch_ledger
+    #[test]
+    fn a_ticket_created_on_the_branch_resolves_in_branch_mode_only() {
+        for (mode, resolved) in [(RefMode::Branch, true), (RefMode::Trunk, false)] {
+            let dir = tempfile::tempdir().expect("tempdir");
+            let repo = Repo::init(dir.path()).expect("init");
+            let git_dir = repo.git_dir().to_path_buf();
+            std::fs::write(git_dir.join("HEAD"), "ref: refs/heads/main\n").expect("head");
+            let cfg = std::fs::read_to_string(git_dir.join("config")).expect("config");
+            std::fs::write(
+                git_dir.join("config"),
+                format!("{cfg}[user]\n\tname = T\n\temail = t@example.com\n"),
+            )
+            .expect("identity");
+            drop(repo);
+            let repo = Repo::discover(dir.path()).expect("discover");
+            repo.commit_paths(
+                "refs/heads/main",
+                &[(
+                    RelPath::new("README.md").expect("path"),
+                    Some(b"x\n".to_vec()),
+                )],
+                "root",
+                &CommitOptions::default(),
+            )
+            .expect("root");
+            std::fs::write(
+                git_dir.join("refs/heads/topic"),
+                format!("{}\n", repo.rev_parse("refs/heads/main").expect("main")),
+            )
+            .expect("topic");
+            std::fs::write(git_dir.join("HEAD"), "ref: refs/heads/topic\n").expect("head");
+            let repo = Repo::discover(dir.path()).expect("discover");
+            let cfg = LedgerConfig {
+                mode,
+                ..LedgerConfig::default()
+            };
+            let ledger = Ledger::open(repo, cfg, std::sync::Arc::new(gob_time::SystemClock));
+            let id = ledger
+                .new_ticket(NewTicket::new("On topic", TicketType::Task))
+                .expect("new")
+                .ticket
+                .front
+                .id
+                .to_string();
+            let ghost = TicketId::mint().to_string();
+            let left = missing_on_branch_ledger(&[&id, &ghost], &ledger);
+            if resolved {
+                assert_eq!(left, vec![ghost.as_str()]);
+            } else {
+                assert_eq!(left.len(), 2);
+            }
+        }
+    }
 }

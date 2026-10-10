@@ -301,6 +301,17 @@ sibling.json and will move to docs/schemas/grimble-graph.json
   migration frob may accept `[1, 2]` for one release; the sibling prints
   only the major it implements, there is no downgrade negotiation and no
   `--schema-version` flag.
+- Probe first. Before any v2 flag (`--base`, `--ticket-scope`) is passed,
+  frob runs `<sibling> --version` and reads `<product> <major>.<minor>.<patch>`
+  from the first stdout line. A parsed version older than the first release
+  that speaks `gob.sibling/1` (0.532.0, the lockstep release; constant
+  `SIBLING_CONTRACT_SINCE` in `frob-check`) is a v1 tool (the PyPI Python
+  crunk 0.1.x is one): the check verb is never invoked and the finding is
+  `incompatible`, naming the binary found (its path), its version line, the
+  required contract (`gob.sibling/1`) and the remedy `uv tool install
+  --upgrade <product>`. A probe that cannot run, times out or prints
+  something unrecognised is skipped (logged); the document checks below
+  still decide.
 - A document whose contract name is not `gob.sibling`, whose major is
   not accepted, or that does not parse at all, is incompatible. Frob does
   not try to read its findings.

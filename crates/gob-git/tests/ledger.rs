@@ -681,3 +681,29 @@ fn blobs_listed_in_one_walk_are_read_by_oid() {
     }
     assert!(repo.blobs_at(&format!("{tip}:nope")).is_err());
 }
+
+// frob:ticket 01M4GSVNS3GSRN84QFJSM9W17Q
+// frob:tests crates/gob-git/src/ledger.rs::sync_checkout
+#[test]
+fn a_held_index_lock_is_waited_out_and_the_write_succeeds() {
+    let (dir, repo) = fixture();
+    let lock = repo.git_dir().join("index.lock");
+    std::fs::write(&lock, b"").unwrap();
+    let releaser = {
+        let lock = lock.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(700));
+            std::fs::remove_file(lock).unwrap();
+        })
+    };
+    let out = repo
+        .commit_paths(MAIN, &[change("a.txt", "one\n")], "add a", &opts())
+        .expect("the writer waits for index.lock instead of failing");
+    releaser.join().unwrap();
+    assert!(out.unsynced.is_empty());
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("a.txt")).unwrap(),
+        "one\n"
+    );
+    assert!(!lock.exists(), "the lock is released");
+}

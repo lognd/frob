@@ -12,6 +12,7 @@ use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
 use frob_pm::rules::cycle::Pm036;
+use frob_pm::rules::cycle_plan::{Pm010, Pm011, Pm012};
 use frob_pm::rules::membership::Pm034;
 use frob_pm::rules::milestone::{Pm001, Pm002};
 use frob_pm::rules::replenish::Pm033;
@@ -45,6 +46,8 @@ pub struct Frob {
     siblings: Siblings,
     /// Paths of the `--ticket` branch diff, recorded by the scoped rules for the text view.
     diff: std::sync::Mutex<Option<std::collections::BTreeSet<String>>>,
+    /// The `--ticket` cone (scope files plus dependents), recorded by the scoped rules.
+    cone: std::sync::Mutex<Option<std::collections::BTreeSet<String>>>,
 }
 
 impl Frob {
@@ -54,7 +57,17 @@ impl Frob {
             opts,
             siblings: Siblings::default(),
             diff: std::sync::Mutex::new(None),
+            cone: std::sync::Mutex::new(None),
         }
+    }
+
+    // frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH
+    /// The affected cone of the last `--ticket` run: the ticket's files plus their dependents, unresolved calls included; `None` outside `--ticket`.
+    pub fn cone_paths(&self) -> Option<std::collections::BTreeSet<String>> {
+        self.cone
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
     }
 
     // frob:ticket 01M413V8CDKKBSBV8JDV92VDGB
@@ -230,6 +243,26 @@ fn cycle_findings(inputs: &FrobInputs) -> Vec<Finding> {
         .map_err(|e| failed(ALL, e))])
 }
 
+/// `PM010`-`PM012` findings for the `repo:cycle-plan` group; empty without a ledger or cycles, `[pm]` knobs from `frob.toml`.
+// frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
+fn cycle_plan_findings(inputs: &FrobInputs) -> Vec<Finding> {
+    const ALL: &[&str] = &["PM010", "PM011", "PM012"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
+    };
+    let pm = match frob_pm::PmConfig::load(&inputs.root) {
+        Ok(cfg) => cfg.pm,
+        Err(e) => {
+            return settle([Err(failed(ALL, format_args!("pm config unreadable: {e}")))]);
+        }
+    };
+    settle([frob_pm::rules::cycle_plan::evaluate(&state.ledger, &pm)
+        .map(|e| e.findings)
+        .map_err(|e| failed(ALL, e))])
+}
+
 /// Ticket ids holding a live lease, the liveness input of `PM013`; `None` (every in-progress ticket counts) when the lease store cannot be read.
 // frob:ticket 01M416Z11V5GR012FR47HWFTBP
 fn live_leases(
@@ -380,26 +413,38 @@ impl Product for Frob {
                 },
             ),
             // frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
+            // frob:ticket 01M4HAJZA6JTNSSGJYV040TA9M
             RepoGroup::new(
                 "repo:pm",
                 vec![Pm034.meta(), Pm001.meta(), Pm002.meta()],
                 |s: &Snapshot<Self>, _| strict_pm(&s.inputs, pm_findings(&s.inputs)),
-            ),
+            )
+            .full_only(),
             // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
             RepoGroup::new("repo:wip", vec![Pm013.meta()], |s: &Snapshot<Self>, _| {
                 strict_pm(&s.inputs, wip_findings(&s.inputs))
-            }),
+            })
+            .full_only(),
             // frob:ticket 01M4CSZFC0QF9PH544ARF60RCZ
             RepoGroup::new("repo:cycle", vec![Pm036.meta()], |s: &Snapshot<Self>, _| {
                 strict_pm(&s.inputs, cycle_findings(&s.inputs))
-            }),
+            })
+            .full_only(),
+            // frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
+            RepoGroup::new(
+                "repo:cycle-plan",
+                vec![Pm010.meta(), Pm011.meta(), Pm012.meta()],
+                |s: &Snapshot<Self>, _| strict_pm(&s.inputs, cycle_plan_findings(&s.inputs)),
+            )
+            .full_only(),
             // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
             RepoGroup::new("repo:replenish", vec![Pm033.meta()], {
                 let lease = self.opts.lease.clone();
                 move |s: &Snapshot<Self>, _| {
                     strict_pm(&s.inputs, replenish_findings(&s.inputs, lease.as_ref()))
                 }
-            }),
+            })
+            .full_only(),
             // frob:ticket 01M4069WNGJ8YR9DTTM9K9K8V5
             RepoGroup::new(
                 "repo:release",
@@ -468,6 +513,10 @@ impl Product for Frob {
     ) -> ScopedFindings {
         let base = self.opts.base.clone().unwrap_or_else(|| table.base.clone());
         let mut diff = None;
+        *self
+            .cone
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(scope.files.clone());
         let mut findings = scope::ticket_rules(snap, scope, &base, &mut diff);
         *self
             .diff

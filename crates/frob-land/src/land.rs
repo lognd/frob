@@ -1,8 +1,10 @@
 //! The land transaction: preconditions, then the locked publish (tickets.md section 10, D25).
 //!
 //! Order: resolve and vet the lease, check the worktree is the holder's and
-//! clean, merge the base into the ticket branch (refusing on conflicts), run
-//! the ticket-scoped check and the close guards, then under the land lock
+//! clean, run the close guards (evidence, criteria, changelog: ledger and
+//! worktree reads only, so a refusal such as `E-DONE-CRITERIA-UNBOUND` comes in
+//! seconds), merge the base into the ticket branch (refusing on conflicts), run
+//! the ticket-scoped check, then under the land lock
 //! fast-forward the base branch, write the `land` event, close the ticket,
 //! release the lease and remove the worktree. A dry run stops after the
 //! preconditions and prints the plan.
@@ -13,6 +15,7 @@
 //! `git update-ref <ref> <new> <old>` (compare-and-swap) when no checkout
 //! has it. `gob-git` has no ref-update or worktree-removal API yet.
 
+use std::collections::BTreeSet;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
@@ -95,11 +98,31 @@ struct Ready {
     base: String,
     branch: String,
     base_merged: bool,
+    /// The ticket's affected cone at the checked tree, when the check reported one.
+    cone: Option<BTreeSet<String>>,
+    /// The ticket's scope globs, for telling whether a file the base added joins the cone.
+    scope: Vec<String>,
     ci_override: Option<String>,
     site: Workspace,
     evidence: EvidenceGuard,
     done: DoneGuard,
     out: LandOutcome,
+}
+
+// frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+/// True when every path that changed from `fork` to `base_oid` lies under the ledger directory `dir` (trunk-mode ticket commits).
+fn ledger_only_ahead(
+    wt: &Repo,
+    fork: Option<Oid>,
+    base_oid: Oid,
+    dir: &str,
+) -> Result<bool, LandError> {
+    let Some(fork) = fork else {
+        return Ok(false);
+    };
+    let prefix = format!("{}/", dir.trim_end_matches('/'));
+    let changed = wt.diff_names(&TreeRef::Oid(fork), &TreeRef::Oid(base_oid))?;
+    Ok(changed.iter().all(|c| c.path.starts_with(&prefix)))
 }
 
 /// Check every precondition (merging the base into the ticket branch unless dry-running).
@@ -123,40 +146,9 @@ fn prepare(
     let branch = ticket_branch(&wt, base, &wt_path, &handle)?;
     ensure_clean(&wt, &wt_path)?;
 
-    let base_oid = wt.rev_parse(&base_ref(base)).map_err(|_| {
-        needs_action(
-            "E-LAND-NO-BASE",
-            format!("base branch `{base}` does not exist"),
-            "set [tickets] ref to an existing branch in frob.toml",
-        )
-    })?;
-    let ci_gate = base_ci::gate(
-        &wt,
-        &wt_path,
-        base,
-        opts.ci_reader.as_deref(),
-        opts.override_base_ci.as_deref(),
-    )?;
-    let mut base_merge = None;
-    let mut base_merged = wt.merge_base(&base_ref(base), &branch)? == Some(base_oid);
-    if !base_merged && !opts.dry_run {
-        base_merge = Some(merge_base_in(&wt, &wt_path, base, &handle)?);
-        base_merged = true;
-    } else if base_merged {
-        base_merge = Some("up-to-date".to_owned());
-    }
-    let mut warnings = ci_gate.warnings;
-    let mut ratchet = Ratchet::default();
-    if base_merged {
-        ratchet = verify_check(&wt, &wt_path, &here.ledger, &handle, base, opts)?;
-    } else {
-        // A dry run leaves the base unmerged, so the ticket-scoped diff would
-        // include the base's own changes; the real land merges first.
-        warnings.push(format!(
-            "check skipped: {base} is not merged into {branch} yet and a dry run does not merge it"
-        ));
-    }
-
+    // frob:ticket 01M4FJ57NER0WMX4FPNY7E721R
+    // The close guards read only the ledger and the worktree, so they run before any merge or check:
+    // an unbound criterion refuses in seconds, not after a cold build.
     let site = if here.ledger.config().mode == RefMode::Branch {
         Workspace::open(&wt_path, clock.clone())?
     } else if primary == cwd_root {
@@ -174,6 +166,51 @@ fn prepare(
         done = done.allow_no_changelog(reason.clone());
     }
     run_guards(view, &handle, &evidence, &done, opts)?;
+
+    let base_oid = wt.rev_parse(&base_ref(base)).map_err(|_| {
+        needs_action(
+            "E-LAND-NO-BASE",
+            format!("base branch `{base}` does not exist"),
+            "set [tickets] ref to an existing branch in frob.toml",
+        )
+    })?;
+    let ci_gate = base_ci::gate(
+        &wt,
+        &wt_path,
+        base,
+        opts.ci_reader.as_deref(),
+        opts.override_base_ci.as_deref(),
+    )?;
+    let mut base_merge = None;
+    let fork = wt.merge_base(&base_ref(base), &branch)?;
+    let mut base_merged = fork == Some(base_oid);
+    if !base_merged && !opts.dry_run {
+        base_merge = Some(merge_base_in(&wt, &wt_path, base, &handle)?);
+        base_merged = true;
+    } else if base_merged {
+        base_merge = Some("up-to-date".to_owned());
+    } else if ledger_only_ahead(&wt, fork, base_oid, &site.ledger.config().dir)? {
+        // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+        // Trunk-mode ticket verbs commit to the base all the time; those commits carry no code.
+        tracing::info!(
+            base,
+            "dry run: the base is ahead only by ledger commits; treated as merged"
+        );
+        base_merge = Some("up-to-date (the base moved only by ledger commits)".to_owned());
+        base_merged = true;
+    }
+    let mut warnings = ci_gate.warnings;
+    let mut ratchet = Ratchet::default();
+    if base_merged {
+        ratchet = verify_check(&wt, &wt_path, &site.ledger, &handle, base, opts)?;
+    } else {
+        // A dry run leaves the base unmerged, so the ticket-scoped diff would
+        // include the base's own changes; the real land merges first.
+        warnings.push(format!(
+            "check skipped: {base} is not merged into {branch} yet and a dry run does not merge it"
+        ));
+    }
+
     let mut done_view = view.ticket.clone();
     done_view.front.outcome = Some(opts.outcome);
     warnings.extend(done.warnings(&done_view));
@@ -186,6 +223,7 @@ fn prepare(
         resolved: ratchet.resolved,
         ..empty_outcome(id, &handle, base, opts)
     };
+    let cone = ratchet.cone;
     Ok(Ready {
         repo,
         wt,
@@ -196,6 +234,8 @@ fn prepare(
         base: base.to_owned(),
         branch,
         base_merged,
+        cone,
+        scope: view.ticket.front.scope.clone(),
         ci_override: ci_gate.override_note,
         site,
         evidence,
@@ -256,6 +296,7 @@ impl Ready {
             .retry
             .budget
             .unwrap_or_else(|| Duration::from_secs(opts.wait_secs));
+        let mut cone = self.cone.clone();
         let mut attempt = 0_u32;
         let oid = loop {
             attempt += 1;
@@ -275,11 +316,17 @@ impl Ready {
             });
             match advanced {
                 Err(LandError::Refused(r)) if retrying && r.code == CODE_STALE => {
-                    if let Some(r) =
-                        ctx.recover_stale(&site.ledger, opts, attempt, started, budget)?
-                    {
+                    if let Some(r) = ctx.recover_stale(
+                        &site.ledger,
+                        opts,
+                        (cone.as_ref(), &self.scope),
+                        attempt,
+                        started,
+                        budget,
+                    )? {
                         self.out.pre_existing = r.pre_existing;
                         self.out.resolved = r.resolved;
+                        cone = r.cone;
                     }
                 }
                 other => break other?,
@@ -656,6 +703,24 @@ fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<
     }
 }
 
+// frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH
+/// True when a base move `changes` can alter the ticket's verdict: it touches a non-ledger path in `cone` or under the ticket's `scope` globs (any non-ledger path when there is no cone).
+fn touches_cone(
+    changes: &[gob_git::ChangedPath],
+    cone: Option<&BTreeSet<String>>,
+    scope: &[String],
+    ledger: &frob_ledger::LedgerConfig,
+) -> bool {
+    // A file the base added under the ticket's scope globs joins the cone at the next check.
+    let in_scope = frob_lease::overlap::glob_set(scope).ok();
+    changes.iter().any(|c| {
+        !ledger.is_ledger_path(&c.path)
+            && cone.is_none_or(|files| {
+                files.contains(&c.path) || in_scope.as_ref().is_none_or(|set| set.is_match(&c.path))
+            })
+    })
+}
+
 /// Run the checks in the worktree; refuse on a finding at the configured `fail_on` that is new relative to the base tip.
 ///
 /// The ratchet (rules.md section 6) compares like with like: the unscoped
@@ -672,30 +737,33 @@ fn verify_check(
     base: &str,
     opts: &LandOptions,
 ) -> Result<Ratchet, LandError> {
-    // Both runs read the same tree, so the tool stages (minutes of cargo) run once, in the
-    // unscoped head run whose findings the ratchet compares; the scoped run adds only the
-    // ticket-only rules (frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W).
+    // The tool stages (minutes of cargo) run once, in the ticket-scoped run, where they narrow
+    // themselves to the stages and cargo packages the scope touches; the unscoped head run only
+    // supplies the repository-level findings the ratchet compares like with like, so it skips
+    // them and is served mostly from the shared file cache
+    // (frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W, 01M4GRV9YMN2VEPCTMMD5ZJPVH).
     ratchet::share_build_dir(wt.common_dir(), wt_path);
-    let run = |ticket: Option<&str>| {
-        frob_check::run(
-            wt_path,
-            &CheckOptions {
-                ticket: ticket.map(str::to_owned),
-                base: ticket.map(|_| base.to_owned()),
-                ledger: Some(ledger.config().clone()),
-                clock: Some(ledger.clock().clone()),
-                skip_telemetry: true,
-                skip_tools: ticket.is_some(),
-                changelog_exempt: opts.no_changelog_reason.is_some(),
-                ..CheckOptions::default()
-            },
-        )
+    let options = |ticket: Option<&str>| CheckOptions {
+        ticket: ticket.map(str::to_owned),
+        base: ticket.map(|_| base.to_owned()),
+        ledger: Some(ledger.config().clone()),
+        clock: Some(ledger.clock().clone()),
+        skip_telemetry: true,
+        skip_tools: ticket.is_none(),
+        changelog_exempt: opts.no_changelog_reason.is_some(),
+        ..CheckOptions::default()
     };
-    let scoped = run(Some(handle))?;
-    let head = run(None)?;
+    let (scoped, _, cone) = frob_check::run_with_cone(wt_path, &options(Some(handle)))?;
+    let head = frob_check::run(wt_path, &options(None))?;
     let base_oid = wt.rev_parse(&base_ref(base))?.to_string();
     let base_set = ratchet::base_findings(wt, wt_path, &base_oid, ledger.config())?;
-    let verdict = ratchet::verdict(&scoped, &head, &base_set);
+    let mut verdict = ratchet::verdict(&scoped, &head, &base_set);
+    if let Some(cone) = &cone {
+        // The scoped run examines only the cone, so a base finding elsewhere was not re-judged.
+        verdict
+            .resolved
+            .retain(|n| n.path.as_deref().is_none_or(|p| cone.contains(p)));
+    }
     tracing::info!(
         new = verdict.new.len(),
         pre_existing = verdict.pre_existing.len(),
@@ -707,6 +775,7 @@ fn verify_check(
         return Ok(Ratchet {
             pre_existing: verdict.pre_existing,
             resolved: verdict.resolved,
+            cone,
         });
     }
     tracing::warn!(blocking = verdict.new.len(), "land check red");
@@ -820,14 +889,16 @@ impl Publish<'_> {
 
     /// After a stale compare-and-swap (frob:ticket ~VMHTBE7): back off, re-merge the moved base and re-check only if code changed.
     ///
-    /// Ledger-only moves cannot change the check verdict, so the check is
-    /// skipped unless a path outside the ledger directory differs between the
-    /// base the branch contained and the new base. Nothing is written before
+    /// Ledger-only moves, and moves that touch nothing in the ticket's affected
+    /// cone, cannot change the check verdict, so the check is skipped unless a
+    /// cone path differs between the base the branch contained and the new base
+    /// (any non-ledger path when the check reported no cone). Nothing is written before
     /// the compare-and-swap succeeds, so a crash here resumes with `frob land`.
     fn recover_stale(
         &self,
         ledger: &Ledger,
         opts: &LandOptions,
+        (cone, scope): (Option<&BTreeSet<String>>, &[String]),
         attempt: u32,
         started: Instant,
         budget: Duration,
@@ -854,11 +925,10 @@ impl Publish<'_> {
         let how = merge_base_in(self.wt, &wt_path, self.base, self.handle)?;
         let now = self.wt.rev_parse(&base_ref(self.base))?;
         let code_changed = match had {
-            Some(old) if old != now => self
-                .wt
-                .diff_names(&TreeRef::Oid(old), &TreeRef::Oid(now))?
-                .iter()
-                .any(|c| !ledger.config().is_ledger_path(&c.path)),
+            Some(old) if old != now => {
+                let changes = self.wt.diff_names(&TreeRef::Oid(old), &TreeRef::Oid(now))?;
+                touches_cone(&changes, cone, scope, ledger.config())
+            }
             Some(_) => false,
             None => true,
         };
@@ -1166,6 +1236,33 @@ fn remove_worktree(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH
+    // frob:tests crates/frob-land/src/land.rs::touches_cone
+    #[test]
+    fn a_base_move_forces_a_recheck_only_when_it_touches_the_cone() {
+        let ledger = frob_ledger::LedgerConfig::default();
+        let change = |path: &str| gob_git::ChangedPath {
+            path: path.to_owned(),
+            kind: gob_git::ChangeKind::Modified,
+        };
+        let cone: BTreeSet<String> = ["src/a.rs".to_owned()].into_iter().collect();
+        let ledger_path = format!("{}/T-1.toml", ledger.dir);
+        let scope = ["lib/**".to_owned()];
+        let touches = |paths: &[&str], cone: Option<&BTreeSet<String>>| {
+            let changes: Vec<_> = paths.iter().map(|p| change(p)).collect();
+            touches_cone(&changes, cone, &scope, &ledger)
+        };
+        assert!(!touches(&[&ledger_path], Some(&cone)));
+        assert!(!touches(&["src/other.rs"], Some(&cone)));
+        assert!(touches(&["src/a.rs"], Some(&cone)));
+        assert!(
+            touches(&["lib/new.rs"], Some(&cone)),
+            "added under the scope globs"
+        );
+        assert!(touches(&["src/other.rs"], None));
+        assert!(!touches(&[], None));
+    }
 
     // frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W
     // frob:tests crates/frob-land/src/land.rs::detach_worktree

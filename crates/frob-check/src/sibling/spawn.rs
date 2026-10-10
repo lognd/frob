@@ -13,6 +13,12 @@ pub const ACCEPTED_SIBLING_MAJORS: &[u32] = &[1];
 /// The contract name every sibling document carries.
 const CONTRACT: &str = "gob.sibling";
 
+/// The first lockstep release of a sibling that speaks `gob.sibling/1` (changelog 0.532.0); older ones are v1 tools.
+pub const SIBLING_CONTRACT_SINCE: [u64; 3] = [0, 532, 0];
+
+/// How long the `--version` probe may take before it is skipped (the document check still decides).
+const PROBE_TIMEOUT: Duration = Duration::from_secs(10);
+
 /// How a sibling run failed; one `SIB001` reason code each.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Reason {
@@ -66,7 +72,10 @@ impl Failure {
     pub(super) fn remedy(&self, product: &str) -> String {
         match self.reason {
             Reason::Absent => "uv tool install frob".to_owned(),
-            Reason::Incompatible => "uv tool install --upgrade frob".to_owned(),
+            Reason::Incompatible => self
+                .own_remedy
+                .clone()
+                .unwrap_or_else(|| "uv tool install --upgrade frob".to_owned()),
             Reason::Failed => self
                 .own_remedy
                 .clone()
@@ -137,6 +146,7 @@ fn exec(run: &Run) -> Result<Doc, Failure> {
     let runner = Runner::new(Limits { jobs: 1 })
         .allow_tools([run.product.to_owned()])
         .output_cap(run.output_cap);
+    probe(&runner, run)?;
     let spec = Spec {
         program: run.program.clone(),
         args: args(run),
@@ -197,6 +207,73 @@ fn exec(run: &Run) -> Result<Doc, Failure> {
             Err(failure)
         }
     }
+}
+
+/// Ask the sibling for `--version` before any v2 flag (`--base`) reaches it (`sibling-contract.md` section 4).
+///
+/// A parsed version older than [`SIBLING_CONTRACT_SINCE`] is a v1 tool and is `Incompatible`; a probe that
+/// cannot run or prints something unrecognised is logged and skipped, since the document check still guards.
+fn probe(runner: &Runner, run: &Run) -> Result<(), Failure> {
+    let spec = Spec {
+        program: run.program.clone(),
+        args: vec!["--version".to_owned()],
+        cwd: Some(run.root.clone()),
+        env: Vec::new(),
+        timeout: PROBE_TIMEOUT.min(run.timeout),
+        capture: true,
+    };
+    let out = match runner.run(&spec) {
+        Ok(out) if out.status == Outcome::Exited(0) => out,
+        other => {
+            tracing::debug!(product = run.product, result = ?other.map(|o| o.status), "version probe did not answer; continuing");
+            return Ok(());
+        }
+    };
+    let line = out.stdout.lines().next().unwrap_or_default().trim();
+    let Some(version) = parse_version_line(run.product, line) else {
+        tracing::debug!(
+            product = run.product,
+            line,
+            "version probe unrecognised; continuing"
+        );
+        return Ok(());
+    };
+    if version >= SIBLING_CONTRACT_SINCE {
+        tracing::debug!(product = run.product, line, "version probe accepted");
+        return Ok(());
+    }
+    let found = match &run.program {
+        Program::Hook { path } => path.display().to_string(),
+        other => other.label(),
+    };
+    let needed = SIBLING_CONTRACT_SINCE.map(|n| n.to_string()).join(".");
+    let mut failure = Failure::new(
+        Reason::Incompatible,
+        format!(
+            "found `{found}` ({line}), which predates the {CONTRACT} contract; this frob needs {CONTRACT}/{} ({} >= {needed})",
+            ACCEPTED_SIBLING_MAJORS
+                .iter()
+                .map(u32::to_string)
+                .collect::<Vec<_>>()
+                .join(" or "),
+            run.product
+        ),
+    );
+    failure.own_remedy = Some(format!("uv tool install --upgrade {}", run.product));
+    Err(failure)
+}
+
+/// `<product> <major>.<minor>.<patch>[-pre]` as numbers, or `None` for any other line.
+fn parse_version_line(product: &str, line: &str) -> Option<[u64; 3]> {
+    let rest = line.strip_prefix(product)?.trim();
+    let core = rest.split(['-', '+', ' ']).next()?;
+    let mut parts = core.split('.');
+    let v = [
+        parts.next()?.parse().ok()?,
+        parts.next()?.parse().ok()?,
+        parts.next()?.parse().ok()?,
+    ];
+    parts.next().is_none().then_some(v)
 }
 
 /// The last few hundred characters of stderr (else stdout), for a failure message.
@@ -283,5 +360,24 @@ fn check_version(declared: &str) -> Result<(), Failure> {
         Err(incompatible(format!(
             "schema major {major} is not accepted (this frob accepts {ACCEPTED_SIBLING_MAJORS:?})"
         )))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:ticket 01M4GTQHDX66EA94YZGJMHTP2N
+    #[test]
+    fn version_lines_parse_only_for_the_asked_product() {
+        assert_eq!(parse_version_line("crunk", "crunk 0.1.1"), Some([0, 1, 1]));
+        assert_eq!(
+            parse_version_line("crunk", "crunk 0.533.0-rc.1"),
+            Some([0, 533, 0])
+        );
+        assert_eq!(parse_version_line("crunk", "grimble 0.532.0"), None);
+        assert_eq!(parse_version_line("crunk", "crunk 0.1"), None);
+        assert_eq!(parse_version_line("crunk", "crunk 0.1.1.1"), None);
+        assert_eq!(parse_version_line("crunk", "{\"ok\":true}"), None);
     }
 }

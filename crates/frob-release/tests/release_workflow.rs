@@ -850,7 +850,10 @@ fn the_pypi_job_checks_each_products_wheel_count_before_uploading_both() {
         .filter_map(|s| s["run"].as_str())
         .find(|r| r.contains("-name \"$product-*.whl\""))
         .expect("a step counts each product's wheels");
-    assert!(guard.contains("for product in frob grimble; do"), "{guard}");
+    assert!(
+        guard.contains("for product in frob grimble crunk; do"),
+        "{guard}"
+    );
     assert!(guard.contains("-ne 5"), "five targets per product: {guard}");
     assert!(guard.contains("exit 1"));
     // The guard precedes the publish; the single download holds both products' artifacts.

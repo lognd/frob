@@ -1,6 +1,7 @@
 //! The MDL checks (grmb-spec 11) over the AST and the loaded model.
 
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
+// frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
 
 use std::collections::BTreeSet;
@@ -625,7 +626,14 @@ impl<'a> Checker<'a> {
     ) {
         let known = match &atom.pack {
             None if transport => TRANSPORTS.contains(&atom.name.as_str()),
-            None => gob_ir::registry::atom(&atom.name).is_some(),
+            None => {
+                gob_ir::registry::atom(&atom.name).is_some()
+                    || self
+                        .input
+                        .packs
+                        .values()
+                        .any(|pin| pin.atoms.contains(&atom.name))
+            }
             Some(p) => {
                 let declared = self
                     .idx
@@ -1366,7 +1374,10 @@ impl<'a> Checker<'a> {
                     None,
                     rec.file,
                     e.name.span,
-                    format!("pack `{id}` is not enabled or not under `packs/`"),
+                    match self.input.pack_problems.get(id) {
+                        Some(why) => format!("pack `{id}` cannot be loaded: {why}"),
+                        None => format!("pack `{id}` is not enabled or not under `packs/`"),
+                    },
                     &anchor,
                 );
                 continue;

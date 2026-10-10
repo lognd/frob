@@ -155,9 +155,12 @@ Milestone 2 or later (D36).
   one; the limit is floored to whole points. `assign` defaults the cycle to the
   open one holding today, else the next planned; a ticket lives in one open or
   planned cycle, so assigning it elsewhere moves it (`remove` then `add`);
-  epics and unestimated tickets are refused. PM010 flags cycles
-  over capacity; PM011 flags a cycle with no goal; PM012 flags stories
-  in a cycle that are not `ready`.
+  epics and unestimated tickets are refused. PM010 (advisory) flags an
+  open or planned cycle committing more points than its capacity, silent
+  while capacity is unenforced; PM011 (warn) flags such a cycle with no
+  goal; PM012 (advisory) flags its not-yet-started members (triage or
+  todo) that fail a `[pm] ready_requires` predicate, naming the failed
+  ones. Closed cycles and started or finished members are not judged.
 - Work comes from the sprint backlog. While a cycle is active and
   `[pm] sprint_gate` is true (the default), `frob work` and `start`
   refuse a ticket that is not a member of the active cycle with

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/gates/_fix_engine_tier_b.py", "src/frob/gates/_fix_engine_text.py", "src/frob/gates/_fix_engine.py", "tests/unit/gates/test_fix_engine_roundtrip.py", "docs/modules/gates.md", "docs/design/rules.md"]
+new = ["src/frob/gates/_fix_engine_tier_b.py", "src/frob/gates/_fix_engine_text.py", "src/frob/gates/_fix_engine.py", "tests/unit/gates/test_fix_engine_roundtrip.py", "docs/design/rules.md"]
+at = "2026-10-09T20:42:37Z"
+actor = "lognd"
+rev = 1

@@ -4,7 +4,7 @@
 //! over the hi bound of their kind's domain, weight each candidate by its membership truth, and
 //! add an Unknown disjunct when the model has unread regions (review 2.2 item 7).
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -15,8 +15,8 @@ use regex::Regex;
 use super::field::{Datum, Reader, Scalar, compare};
 use super::kind::{KindTest, is_canonical_unit, may_hide_members};
 use super::verdict::{Doubt, Verdict};
-use crate::exec::relations::{self, Count, PEER_OF, SideRow, SideTable};
-use crate::plan::{Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
+use crate::exec::relations::{self, Count, Knobs, PEER_OF, SideRow, SideTable};
+use crate::plan::{Limit, Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
 
 /// A value a variable is bound to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -46,6 +46,10 @@ pub(crate) struct Wired<'a> {
     pub(crate) edges: HashMap<StrId, &'a Relation>,
     /// Side tables by the string id of the relation name.
     pub(crate) side: HashMap<StrId, &'a SideTable>,
+    /// The `[rules]` knob overrides.
+    pub(crate) knobs: Knobs,
+    /// The most condition evaluations before the run gives up.
+    pub(crate) budget: u64,
 }
 
 /// The evaluator for one plan over one model.
@@ -58,6 +62,9 @@ pub(crate) struct Eval<'a> {
     wired: Wired<'a>,
     order: Vec<NodeId>,
     domains: RefCell<HashMap<StrId, Domain>>,
+    /// Materialised def views by (def, argument values): each is computed once (7.0.2).
+    views: RefCell<HashMap<(u16, Vec<Val>), Verdict>>,
+    steps: Cell<u64>,
 }
 
 impl<'a> Eval<'a> {
@@ -79,6 +86,8 @@ impl<'a> Eval<'a> {
             wired,
             order: model.term().nodes_by_location(),
             domains: RefCell::default(),
+            views: RefCell::default(),
+            steps: Cell::new(0),
         }
     }
 
@@ -159,8 +168,43 @@ impl<'a> Eval<'a> {
         }
     }
 
-    /// Evaluates condition `id` under `env`.
+    /// Whether the evaluation budget is spent.
+    pub(crate) fn exhausted(&self) -> bool {
+        self.steps.get() > self.wired.budget
+    }
+
+    /// Evaluates condition `id` under `env`; Unknown once the budget is spent.
     pub(crate) fn eval(&self, id: OpId, env: &mut Env) -> Verdict {
+        self.steps.set(self.steps.get() + 1);
+        if self.exhausted() {
+            return Verdict::unknown(Doubt::StepBudget);
+        }
+        self.eval_op(id, env)
+    }
+
+    /// The first member of `kind` in location order whose body `cond` has the truth `want`
+    /// under `env` (grl-spec.md 7.0.5 witnesses).
+    pub(crate) fn witness(
+        &self,
+        var: VarId,
+        kind: StrId,
+        cond: OpId,
+        want: Truth,
+        env: &mut Env,
+    ) -> Option<NodeId> {
+        let mut found = None;
+        for &(n, member) in self.domain(kind).iter() {
+            env[usize::from(var)] = Some(Val::Node(n));
+            if self.eval(cond, env).truth & member == want {
+                found = Some(n);
+                break;
+            }
+        }
+        env[usize::from(var)] = None;
+        found
+    }
+
+    fn eval_op(&self, id: OpId, env: &mut Env) -> Verdict {
         match &self.plan.ops[id as usize] {
             Op::And(cs) => {
                 let mut acc = Verdict::yes();
@@ -213,6 +257,26 @@ impl<'a> Eval<'a> {
             Op::MatchRegex { subject, .. } | Op::MatchGlob { subject, .. } => {
                 self.matches(id, subject, env)
             }
+            Op::CountCmp {
+                var,
+                kind,
+                cond,
+                op,
+                limit,
+            } => {
+                let n = self.count(*var, *kind, *cond, env);
+                let limit = match *limit {
+                    Limit::Int(n) => Count::exactly(n),
+                    Limit::Knob { name, default } => {
+                        self.wired.knobs.limit(self.string(name), default)
+                    }
+                };
+                Verdict::of(n.compare(*op, &limit), || Doubt::CountBounds {
+                    lo: n.lo,
+                    hi: n.hi,
+                })
+            }
+            Op::Call { def, args } => self.call(*def, args, env),
             Op::Verb {
                 subject,
                 object,
@@ -239,6 +303,32 @@ impl<'a> Eval<'a> {
                 unreachable!("binders are clauses, enumerated by the run")
             }
         }
+    }
+
+    /// The number of def views computed so far.
+    pub(crate) fn view_count(&self) -> usize {
+        self.views.borrow().len()
+    }
+
+    /// `d(args)`: the def's view at the argument values, computed once per distinct arguments.
+    fn call(&self, def: u16, args: &[VarId], env: &Env) -> Verdict {
+        let vals: Vec<Val> = args
+            .iter()
+            .map(|&a| env[usize::from(a)].expect("validated plans use only bound variables"))
+            .collect();
+        let key = (def, vals);
+        if let Some(v) = self.views.borrow().get(&key) {
+            return v.clone();
+        }
+        let d = &self.plan.defs[usize::from(def)];
+        let mut inner: Env = vec![None; usize::from(self.plan.vars)];
+        for (&p, &v) in d.params.iter().zip(&key.1) {
+            inner[usize::from(p)] = Some(v);
+        }
+        let v = self.eval(d.body, &mut inner);
+        tracing::trace!(def, truth = ?v.truth, "def view computed");
+        self.views.borrow_mut().insert(key, v.clone());
+        v
     }
 
     /// The unit a closure target stands for: the node itself if it is a unit, else the nearest

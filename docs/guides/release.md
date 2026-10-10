@@ -53,8 +53,12 @@ Same as above with the name `pypi`: you as required reviewer, and a tag rule
 
 ### 3. PyPI trusted publisher
 
-Two PyPI projects are published, `frob` and `grimble` (the `frob` wheel
-depends on `grimble` at the same version). `frob` holds v1 up to 0.531.0. Each
+Three PyPI projects are published, `frob`, `grimble` and `crunk` (the `frob`
+wheel depends on `grimble` at the same version). `frob` holds v1 up to 0.531.0.
+`crunk` holds the Python crunk 0.1.x (lognd/crunk), which the Rust crunk
+supersedes from 0.533.0 (D87 lifted, docs/design/README.md D135); the `crunk`
+PyPI project must list this repository as a trusted publisher before that
+release is cut, or the upload job fails. Each
 project must list this repository's workflow as a trusted publisher. On PyPI: project, Manage, Publishing, add a
 GitHub trusted publisher with:
 
