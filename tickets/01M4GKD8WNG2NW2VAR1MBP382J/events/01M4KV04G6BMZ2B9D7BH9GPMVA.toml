@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T21:19:51Z"
+digest = "d1b875b5bb7a581da9e67f2ea2f56aa096ed397ed4b29945d12585c157341c16"
+exit_code = 0
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized] target(s) in 20.98s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 01f2f1e0-7d6a-4146-8bff-d235745df44e with nextest profile: default
+    Starting 1 test across 6 binaries (75 tests skipped)
+        PASS [   0.008s] gob-check status::tests::locate_hole_points_at_the_table_row_with_the_pipe_in_a_code_span
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 75 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'test(=status::tests::locate_hole_points_at_the_table_row_with_the_pipe_in_a_code_span)'"
+size = 1083
+status = "measured"
+tests = ["status::tests::locate_hole_points_at_the_table_row_with_the_pipe_in_a_code_span"]
+at = "2026-10-10T21:19:51Z"
+actor = "Claude"
+rev = 1

@@ -7,13 +7,13 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T15:09:51Z"
-updated = "2026-10-10T21:01:31Z"
+updated = "2026-10-10T21:19:51Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-text/**", "crates/frob-obligations/**", "changelog.d/**", "crates/gob-check/**", "crates/frob-check/**"]
 
 [[acceptance]]
 text = "Given a markdown table row with an unescaped | inside a code span, when DOC001 reports a partial parse, then the finding points at that line and names the likely cause"
-bound = false
+bound = true
 +++
 
 logand.app-v2 F-557.
