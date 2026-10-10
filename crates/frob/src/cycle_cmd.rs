@@ -769,7 +769,7 @@ impl Command for CycleClose {
             )
             .arg(text_flag(
                 "next-goal",
-                "Goal of the next cycle, created the day after the effective end when unfinished tickets need one and none exists",
+                "Goal of the next cycle, created the day after the effective end (also when nothing carries) unless one already follows",
             ))
             .arg(
                 text_flag(
@@ -830,9 +830,15 @@ impl Command for CycleClose {
         let closed_on = ctx.clock.today();
         let mut next: Option<Cycle> = None;
         let mut planned = plan_close(&c, &others, carry_to.as_ref(), &members, closed_on);
-        if let (Err(CycleError::NoNextCycle { .. }), Some(goal)) =
-            (&planned, self.next_goal.as_deref())
-        {
+        // frob:ticket 01M4CT13C64KEVBP74G6VCQP1Q
+        // A given --next-goal is honoured when unfinished work needs a cycle and none exists, and also when
+        // nothing carries: the flags are never silently dropped.
+        let wants_next = match &planned {
+            Err(CycleError::NoNextCycle { .. }) => true,
+            Ok(p) => p.carried.is_empty() && carry_to.is_none(),
+            Err(_) => false,
+        };
+        if let (true, Some(goal)) = (wants_next, self.next_goal.as_deref()) {
             let made = create_next(ctx, store, &c, &others, closed_on, goal, next_days)?;
             tracing::info!(cycle = %c.alias(), next = %made.alias(), "cycle close created the next cycle");
             let mut all = others.clone();

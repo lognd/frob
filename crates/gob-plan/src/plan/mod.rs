@@ -29,7 +29,7 @@ mod tests;
 pub use error::PlanError;
 pub use ir::{
     Certainty, CmpOp, CostClass, Def, Langs, Limit, Need, NeedSet, Op, OpId, Operand, PlanParts,
-    Polarity, Position, Provenance, Quant, Report, StrId, VarId,
+    Polarity, Position, Provenance, Quant, Report, StrId, Unresolved, VarId,
 };
 pub use limits::{MAX_BYTES, MAX_DEFS, MAX_DEPTH, MAX_OPS, MAX_STR_LEN, MAX_STRINGS};
 

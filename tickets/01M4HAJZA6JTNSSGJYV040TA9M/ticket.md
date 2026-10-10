@@ -2,13 +2,14 @@
 id = "01M4HAJZA6JTNSSGJYV040TA9M"
 title = "check --ticket and land run repo-wide PM rules (PM033 replenish took 99.8 s of a 173 s ticket check); skip diff-independent PM rules there and keep them in the full check and CI"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-09T21:54:55Z"
-updated = "2026-10-09T22:42:30Z"
+updated = "2026-10-09T22:55:13Z"
 scope = ["crates/frob-check/src/product.rs", "changelog.d/**", "crates/gob-check/src/product.rs", "crates/gob-check/src/repo.rs", "crates/gob-check/tests/pipeline.rs", "crates/gob-check/src/pipeline.rs"]
 
 [[acceptance]]
