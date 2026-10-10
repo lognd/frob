@@ -164,7 +164,7 @@ pub fn build_graph(root: &std::path::Path, code: &Code) -> SymbolGraph {
     let files = code
         .files
         .iter()
-        .filter_map(|f| f.folded.as_ref().map(|x| x.file.clone()))
+        .filter_map(|f| f.symbols().cloned())
         .collect();
     let mut deps = CrateDeps::new(root);
     let graph = SymbolGraph::from_files_with_deps(files, &mut deps);

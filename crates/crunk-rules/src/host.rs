@@ -6,6 +6,8 @@
 use crunk_ingest::ProjectStyles;
 use crunk_spec::DesignSpec;
 
+use crate::tailwind::TailwindFacts;
+
 /// What a crunk rule may ask of its product: the validated design spec and the ingested styles.
 ///
 /// Both default to `None` (no valid `crunk.toml`, nothing ingested), which is what a rule that
@@ -19,6 +21,12 @@ pub trait CrunkHost {
 
     /// Every ingested stylesheet and JSX source of the project, when ingest ran.
     fn styles(&self) -> Option<&ProjectStyles> {
+        None
+    }
+
+    /// The Tailwind theme and compiled utilities, when the pipeline collected them (the TW rules'
+    /// side input).
+    fn tailwind(&self) -> Option<&TailwindFacts> {
         None
     }
 }

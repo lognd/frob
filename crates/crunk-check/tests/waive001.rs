@@ -33,11 +33,14 @@ fn run_over(spec_text: &str, files: &[(&str, &str)]) -> CrunkRun {
     run_in(spec_text, files).1
 }
 
+/// The rule ids found, ORG001 and TOKENS001 left out: the fixture sheets sit directly under `css_root` and
+/// no tokens file is generated.
 fn ids(run: &CrunkRun) -> Vec<String> {
     run.report
         .findings
         .iter()
         .map(|f| f.rule.to_string())
+        .filter(|id| id != "ORG001" && id != "TOKENS001")
         .collect()
 }
 
@@ -127,6 +130,7 @@ fn findings_from_several_files_are_ordered_by_path_line_rule() {
         .as_array()
         .expect("findings")
         .iter()
+        .filter(|f| f["rule"] != "TOKENS001")
         .map(|f| {
             (
                 f["file"].as_str().unwrap_or_default().to_owned(),

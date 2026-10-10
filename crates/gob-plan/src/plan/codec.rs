@@ -6,15 +6,15 @@
 
 use super::error::PlanError;
 use super::ir::{
-    Certainty, CmpOp, CostClass, Langs, Need, NeedSet, Op, Operand, PlanParts, Polarity, Position,
-    Provenance, Quant, Report,
+    Certainty, CmpOp, CostClass, Def, Langs, Limit, Need, NeedSet, Op, Operand, PlanParts,
+    Polarity, Position, Provenance, Quant, Report, Unresolved,
 };
-use super::limits::{MAX_BYTES, MAX_LIST, MAX_OPS, MAX_STR_LEN, MAX_STRINGS};
+use super::limits::{MAX_BYTES, MAX_DEFS, MAX_LIST, MAX_OPS, MAX_PARAMS, MAX_STR_LEN, MAX_STRINGS};
 
 /// File magic.
 pub const MAGIC: &[u8; 8] = b"FROBPLAN";
 /// The one format version this engine reads and writes.
-pub const VERSION: u16 = 1;
+pub const VERSION: u16 = 3;
 
 /// Encodes `p` canonically; the caller guarantees `p` is valid.
 pub fn encode(p: &PlanParts) -> Vec<u8> {
@@ -57,7 +57,13 @@ pub fn encode(p: &PlanParts) -> Vec<u8> {
     for op in &p.ops {
         put_op(&mut w, op);
     }
+    put_len(&mut w, p.defs.len());
+    for d in &p.defs {
+        put_u16s(&mut w, &d.params);
+        put_u32(&mut w, d.body);
+    }
     put_u32s(&mut w, &p.clauses);
+    put_u16(&mut w, p.subjects);
     put_len(&mut w, p.reports.len());
     for r in &p.reports {
         match r.when {
@@ -70,10 +76,19 @@ pub fn encode(p: &PlanParts) -> Vec<u8> {
         put_u16(&mut w, r.subject);
         put_u32(&mut w, r.message);
     }
+    put_len(&mut w, p.unresolved.len());
+    for u in &p.unresolved {
+        put_u32(&mut w, u.when);
+        put_u32(&mut w, u.reason);
+    }
     w
 }
 
 /// Decodes untrusted bytes into unvalidated parts; structure only, no semantics.
+#[allow(
+    clippy::too_many_lines,
+    reason = "one flat match or field list per wire item"
+)]
 pub fn decode(bytes: &[u8]) -> Result<PlanParts, PlanError> {
     if bytes.len() > MAX_BYTES {
         return Err(PlanError::TooLarge {
@@ -138,7 +153,16 @@ pub fn decode(bytes: &[u8]) -> Result<PlanParts, PlanError> {
     for _ in 0..n {
         ops.push(r.op()?);
     }
+    let n = r.count("defs", MAX_DEFS, 8)?;
+    let mut defs = Vec::with_capacity(n);
+    for _ in 0..n {
+        defs.push(Def {
+            params: r.u16s("def parameters", MAX_PARAMS)?,
+            body: r.u32("def body")?,
+        });
+    }
     let clauses = r.u32s("clauses", MAX_LIST)?;
+    let subjects = r.u16("subject clause count")?;
     let n = r.count("reports", MAX_LIST, 7)?;
     let mut reports = Vec::with_capacity(n);
     for _ in 0..n {
@@ -158,6 +182,14 @@ pub fn decode(bytes: &[u8]) -> Result<PlanParts, PlanError> {
             message: r.u32("report message")?,
         });
     }
+    let n = r.count("unresolved clauses", MAX_LIST, 8)?;
+    let mut unresolved = Vec::with_capacity(n);
+    for _ in 0..n {
+        unresolved.push(Unresolved {
+            when: r.u32("unresolved condition")?,
+            reason: r.u32("unresolved reason")?,
+        });
+    }
     if !r.b.is_empty() {
         return Err(PlanError::TrailingBytes { extra: r.b.len() });
     }
@@ -172,7 +204,10 @@ pub fn decode(bytes: &[u8]) -> Result<PlanParts, PlanError> {
         vars,
         strings,
         ops,
+        defs,
         clauses,
+        subjects,
+        unresolved,
         reports,
     })
 }
@@ -217,6 +252,13 @@ fn put_len(w: &mut Vec<u8>, n: usize) {
     put_u32(w, n as u32);
 }
 
+fn put_u16s(w: &mut Vec<u8>, v: &[u16]) {
+    put_len(w, v.len());
+    for x in v {
+        put_u16(w, *x);
+    }
+}
+
 fn put_str(w: &mut Vec<u8>, s: &str) {
     put_len(w, s.len());
     w.extend_from_slice(s.as_bytes());
@@ -255,6 +297,10 @@ fn put_operand(w: &mut Vec<u8>, o: &Operand) {
     }
 }
 
+#[allow(
+    clippy::too_many_lines,
+    reason = "one flat match or field list per wire item"
+)]
 fn put_op(w: &mut Vec<u8>, op: &Op) {
     match op {
         Op::Find { var, kind } => {
@@ -330,6 +376,35 @@ fn put_op(w: &mut Vec<u8>, op: &Op) {
             put_u16(w, *within);
             w.push(*certainty as u8);
         }
+        Op::CountCmp {
+            var,
+            kind,
+            cond,
+            op,
+            limit,
+        } => {
+            w.push(13);
+            put_u16(w, *var);
+            put_u32(w, *kind);
+            put_u32(w, *cond);
+            w.push(*op as u8);
+            match *limit {
+                Limit::Int(n) => {
+                    w.push(0);
+                    w.extend_from_slice(&n.to_le_bytes());
+                }
+                Limit::Knob { name, default } => {
+                    w.push(1);
+                    put_u32(w, name);
+                    w.extend_from_slice(&default.to_le_bytes());
+                }
+            }
+        }
+        Op::Call { def, args } => {
+            w.push(14);
+            put_u16(w, *def);
+            put_u16s(w, args);
+        }
         Op::Cmp { lhs, op, rhs } => {
             w.push(10);
             put_operand(w, lhs);
@@ -384,6 +459,26 @@ impl Reader<'_> {
 
     fn i64(&mut self, what: &'static str) -> Result<i64, PlanError> {
         Ok(i64::from_le_bytes(self.array(what)?))
+    }
+
+    fn u64(&mut self, what: &'static str) -> Result<u64, PlanError> {
+        Ok(u64::from_le_bytes(self.array(what)?))
+    }
+
+    fn u16s(&mut self, what: &'static str, limit: usize) -> Result<Vec<u16>, PlanError> {
+        let n = self.count(what, limit, 2)?;
+        (0..n).map(|_| self.u16(what)).collect()
+    }
+
+    fn limit(&mut self) -> Result<Limit, PlanError> {
+        match self.u8("limit")? {
+            0 => Ok(Limit::Int(self.u64("limit value")?)),
+            1 => Ok(Limit::Knob {
+                name: self.u32("knob name")?,
+                default: self.u64("knob default")?,
+            }),
+            tag => Err(PlanError::BadTag { what: "limit", tag }),
+        }
     }
 
     fn bool(&mut self, what: &'static str) -> Result<bool, PlanError> {
@@ -559,6 +654,17 @@ impl Reader<'_> {
             12 => Op::MatchGlob {
                 subject: self.operand()?,
                 pattern: self.u32("pattern")?,
+            },
+            13 => Op::CountCmp {
+                var: self.u16("var")?,
+                kind: self.u32("kind")?,
+                cond: self.u32("cond")?,
+                op: self.cmp_op()?,
+                limit: self.limit()?,
+            },
+            14 => Op::Call {
+                def: self.u16("def")?,
+                args: self.u16s("call arguments", MAX_PARAMS)?,
             },
             tag => return Err(PlanError::BadTag { what: "op", tag }),
         })
