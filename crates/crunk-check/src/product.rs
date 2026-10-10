@@ -11,6 +11,7 @@ use gob_rules::{BoundException, Finding, Resolved, apply_exceptions};
 use gob_text::FileInterner;
 
 use crunk_rules::CrunkHost;
+use crunk_rules::tailwind::TailwindFacts;
 use crunk_spec::DesignSpec;
 
 use crate::{PRODUCT, product_rules};
@@ -30,6 +31,8 @@ pub struct CrunkInputs {
     pub spec: Option<DesignSpec>,
     /// `None` when there is no spec or the ingest could not start (a `css_root` that is a file).
     pub styles: Option<ProjectStyles>,
+    /// The Tailwind theme and compiled utilities; `None` when there are no styles to scan.
+    pub tailwind: Option<TailwindFacts>,
 }
 
 impl CrunkHost for CrunkInputs {
@@ -39,6 +42,10 @@ impl CrunkHost for CrunkInputs {
 
     fn styles(&self) -> Option<&ProjectStyles> {
         self.styles.as_ref()
+    }
+
+    fn tailwind(&self) -> Option<&TailwindFacts> {
+        self.tailwind.as_ref()
     }
 }
 
@@ -110,9 +117,17 @@ impl Product for Crunk {
                 }
             }
         });
+        let tailwind = spec
+            .as_ref()
+            .zip(styles.as_ref())
+            .map(|(spec, styles)| crate::tailwind::collect(spec, styles, &self.state_dir()));
         Ok(Collected {
             shared: CrunkShared,
-            inputs: CrunkInputs { spec, styles },
+            inputs: CrunkInputs {
+                spec,
+                styles,
+                tailwind,
+            },
             findings: Vec::new(),
         })
     }
@@ -130,9 +145,17 @@ impl Product for Crunk {
     }
 
     fn repo_digest(&self, snap: &Snapshot<Self>) -> Vec<u8> {
-        let mut digest = format!("crunk/rules/2/ingest/{INGEST_VERSION}").into_bytes();
+        let mut digest = format!("crunk/rules/3/ingest/{INGEST_VERSION}").into_bytes();
         if let Some(spec) = &snap.inputs.spec {
             digest.extend(serde_json::to_vec(spec).unwrap_or_default());
+        }
+        if let Some(facts) = &snap.inputs.tailwind {
+            digest.extend(facts.fingerprint().into_bytes());
+        }
+        if let Some(spec) = &snap.inputs.spec {
+            // TOKENS001 reads the generated files from disk, outside the walk.
+            digest
+                .extend(format!("{:?}", crunk_rules::tokens_drift::check(spec).ok()).into_bytes());
         }
         digest
     }
