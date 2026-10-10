@@ -324,8 +324,38 @@ impl Ledger {
     ///
     /// # Errors
     ///
-    /// [`LedgerError::RefMissing`], [`LedgerError::Detached`] or a git error.
+    /// [`LedgerError::RefMissing`] or a git error. A detached HEAD in branch mode reads the configured
+    /// ticket ref; only writes ([`Ledger::ledger_write_ref`]) refuse it.
     pub fn ledger_ref(&self) -> Result<String> {
+        // frob:ticket 01M4GSTXC34Q811RXW8SH36RMT
+        match self.ledger_write_ref() {
+            Err(LedgerError::Detached) => self.detached_read_ref(),
+            other => other,
+        }
+    }
+
+    // frob:ticket 01M4GSTXC34Q811RXW8SH36RMT
+    /// The configured ticket ref (or its `origin` remote-tracking twin) a detached HEAD reads from.
+    fn detached_read_ref(&self) -> Result<String> {
+        let name = full_ref(&self.cfg.ref_name);
+        let short = name.strip_prefix("refs/heads/").unwrap_or(&name);
+        let remote = format!("refs/remotes/origin/{short}");
+        for candidate in [name.clone(), remote] {
+            if self.repo.rev_parse(&candidate).is_ok() {
+                tracing::info!(ledger_ref = %candidate, "detached HEAD: reading the ledger from the configured ref");
+                return Ok(candidate);
+            }
+        }
+        Err(LedgerError::RefMissing { ref_name: name })
+    }
+
+    // frob:ticket 01M4GSTXC34Q811RXW8SH36RMT
+    /// The ref a ledger write advances; unlike [`Ledger::ledger_ref`] it refuses a detached HEAD in branch mode.
+    ///
+    /// # Errors
+    ///
+    /// As [`Ledger::ledger_ref`], with [`LedgerError::Detached`] for a detached HEAD in `branch` mode.
+    pub fn ledger_write_ref(&self) -> Result<String> {
         match self.cfg.mode {
             RefMode::Branch => {
                 let branch = self.repo.current_branch()?.ok_or(LedgerError::Detached)?;
@@ -914,6 +944,8 @@ impl Ledger {
     /// The frontmatter is re-folded from every event (existing plus new), so
     /// the commit always satisfies `fold == frontmatter`.
     pub(crate) fn commit_events(&self, verb: &str, id: TicketId, new: &[Event]) -> Result<Applied> {
+        // frob:ticket 01M4GSTXC34Q811RXW8SH36RMT
+        self.ledger_write_ref()?;
         for ev in new {
             self.refuse_private(&ev.to_toml()?)?;
         }
@@ -1048,7 +1080,7 @@ impl Ledger {
     ///
     /// Git, parse or fold failures.
     pub fn reconcile(&self, id: TicketId) -> Result<Option<Oid>> {
-        let ref_name = self.ledger_ref()?;
+        let ref_name = self.ledger_write_ref()?;
         self.reconcile_with(&ref_name, id, MAX_RECONCILE)
     }
 
