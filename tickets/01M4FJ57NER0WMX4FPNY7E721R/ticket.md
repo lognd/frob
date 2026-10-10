@@ -2,12 +2,12 @@
 id = "01M4FJ57NER0WMX4FPNY7E721R"
 title = "land runs the full check before evaluating cheap close guards: a missing criteria binding is refused after 47 minutes instead of seconds"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T05:28:44Z"
-updated = "2026-10-09T17:45:00Z"
+updated = "2026-10-10T00:14:26Z"
 scope = ["changelog.d/**", "crates/frob-land/src/land.rs", "crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
