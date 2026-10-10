@@ -2,12 +2,12 @@
 id = "01M4FCZT2N5WN3VPVJ8KB92Z06"
 title = "v1 importer: accept CRLF front matter, default to all tickets, keep v1 sprint as a sprint:<v> label"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T03:58:24Z"
-updated = "2026-10-09T16:28:49Z"
+updated = "2026-10-10T20:24:35Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/gob-dev/**", "docs/guides/upgrade-from-v1.md", "changelog.d/**"]
 
