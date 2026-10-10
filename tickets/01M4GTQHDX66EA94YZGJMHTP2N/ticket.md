@@ -2,12 +2,12 @@
 id = "01M4GTQHDX66EA94YZGJMHTP2N"
 title = "Sibling call passes v2 flags (--base) to an incompatible sibling (PyPI crunk 0.1.1 is the v1 Python crunk); probe the sibling's contract version first and report which binary was found and what is needed"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T17:17:47Z"
-updated = "2026-10-10T00:45:38Z"
+updated = "2026-10-10T00:45:39Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-check/src/sibling/spawn.rs", "crates/frob-check/tests/sibling.rs", "docs/design/sibling-contract.md", "changelog.d/**"]
 
