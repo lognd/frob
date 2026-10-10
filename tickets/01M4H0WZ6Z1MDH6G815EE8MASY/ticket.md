@@ -2,7 +2,8 @@
 id = "01M4H0WZ6Z1MDH6G815EE8MASY"
 title = "Docs index and status headers: docs/README.md and notes/README.md, one header block on every docs file, stale facts fixed"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
