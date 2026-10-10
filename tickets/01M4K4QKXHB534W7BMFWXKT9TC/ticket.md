@@ -2,12 +2,12 @@
 id = "01M4K4QKXHB534W7BMFWXKT9TC"
 title = "frob doctor fails CFG001: frob.toml lacks the materialized tickets.branch knob"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 reporter = "Claude"
 created = "2026-10-10T14:51:04Z"
-updated = "2026-10-10T14:51:04Z"
+updated = "2026-10-10T14:51:05Z"
 scope = ["frob.toml"]
 
 [[acceptance]]
