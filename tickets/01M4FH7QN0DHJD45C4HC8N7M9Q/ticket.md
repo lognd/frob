@@ -2,7 +2,8 @@
 id = "01M4FH7QN0DHJD45C4HC8N7M9Q"
 title = "frob check --only refuses sibling rule ids and families (COLOR001, COLOR) as neither a rule family nor a rule id"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
