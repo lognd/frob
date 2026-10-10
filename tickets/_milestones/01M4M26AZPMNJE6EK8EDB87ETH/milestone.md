@@ -1,0 +1,8 @@
++++
+id = "01M4M26AZPMNJE6EK8EDB87ETH"
+version = "0.533.0"
+goal = "land and build cost are fixed and adoption-ready; GRL is the one rule language; crunk lives in the monorepo; the M2 universal model and navigation/generated docs are complete; grimble and crunk leave preview"
+state = "open"
+created = "2026-10-10T23:25:56Z"
+updated = "2026-10-10T23:25:56Z"
++++
