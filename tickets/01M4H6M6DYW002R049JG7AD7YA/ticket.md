@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the doc comments in crates/frob-lease/src/config.rs and lib.rs and their generated copies docs/schemas/config.json and docs/reference/config.md, when this lands, then they cite tickets.md section 3 instead of the nonexistent section 6, and cargo dev gen --check is clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given ~CV286BH landed, when this lands, then docs/design/sibling-contract.md describes the sibling skip in check --ticket and land (inputs: config, packs lock, model roots, any code-language file; reported as a warning with a reason)"
