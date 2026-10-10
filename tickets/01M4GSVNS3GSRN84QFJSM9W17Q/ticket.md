@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T17:02:34Z"
-updated = "2026-10-10T00:42:11Z"
+updated = "2026-10-10T02:21:09Z"
 labels = ["adoption:hullbreach"]
 scope = ["changelog.d/**", "crates/gob-git/src/ledger.rs", "crates/gob-git/tests/ledger.rs"]
 
