@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T15:08:51Z"
-updated = "2026-10-10T20:50:42Z"
+updated = "2026-10-10T20:51:44Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob-evidence/**", "crates/frob-tests/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a pytest rootdir below the repository root, when evidence is recorded, then node ids are repository-relative"
-bound = false
+bound = true
 +++
 
 logand.app-v2 F-551.
