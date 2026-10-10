@@ -1,0 +1,6 @@
+kind = "criterion"
+op = "add"
+text = "Every ticket under the crunk-in-the-monorepo epic is done and crunk reaches parity with the Python crunk"
+at = "2026-10-10T23:25:57Z"
+actor = "lognd"
+rev = 1

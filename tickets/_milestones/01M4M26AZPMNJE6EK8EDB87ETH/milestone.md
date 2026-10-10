@@ -14,4 +14,8 @@ bound = false
 [[criteria]]
 text = "Every ticket under the GRL epic (parser, catalog, compiler, plan executor, codegen, verbs) is done"
 bound = false
+
+[[criteria]]
+text = "Every ticket under the crunk-in-the-monorepo epic is done and crunk reaches parity with the Python crunk"
+bound = false
 +++
