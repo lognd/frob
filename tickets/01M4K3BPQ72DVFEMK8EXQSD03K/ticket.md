@@ -2,12 +2,12 @@
 id = "01M4K3BPQ72DVFEMK8EXQSD03K"
 title = "experimental red: 5 CAP001 errors since ~2T7C4A9 (process.env ungranted in frob/gob/grimble/crunk, clap Command::new misread as process.spawn)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 3
 reporter = "Claude"
 created = "2026-10-10T14:27:06Z"
-updated = "2026-10-10T14:27:06Z"
+updated = "2026-10-10T14:27:17Z"
 scope = ["design/model.grmb", "crates/grimble-*/**"]
 
 [[acceptance]]
