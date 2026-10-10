@@ -7,9 +7,9 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T18:43:37Z"
-updated = "2026-10-09T18:43:37Z"
-labels = ["adoption:logand-app"]
-scope = ["crates/gob-check/**", "crates/frob-land/**", "changelog.d/**"]
+updated = "2026-10-10T02:50:29Z"
+labels = ["adoption:logand-app", "creates:crates/gob-check/src/tool_key.rs"]
+scope = ["changelog.d/**", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/lib.rs", "crates/gob-check/src/tool_key.rs"]
 
 [[acceptance]]
 text = "Given a tool stage that fails on the base and on the ticket with differently worded output (vitest timings, ordering, counts), when land classifies findings, then the TOOL001 finding is pre-existing: tool-stage findings are fingerprinted by (stage, exit class) or by the parsed structured failure ids, never by excerpt text"
