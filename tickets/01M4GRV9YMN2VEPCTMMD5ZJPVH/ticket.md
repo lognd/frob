@@ -8,8 +8,8 @@ points = 5
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-09T16:44:53Z"
-updated = "2026-10-09T22:35:30Z"
-scope = ["crates/frob-land/**", "changelog.d/**", "crates/frob-check/src/scope.rs"]
+updated = "2026-10-09T23:16:53Z"
+scope = ["changelog.d/**", "crates/frob-check/src/product.rs"]
 
 [[acceptance]]
 text = "Given the fast-lands epic design, when this lands, then the behaviour in the title holds with a test"

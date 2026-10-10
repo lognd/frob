@@ -4,7 +4,7 @@
 use gob_ir::{GroupOrder, Location, Model, NodeId, NodeSpec, Operator, TermBuilder};
 use gob_plan::plan::{
     Certainty, CmpOp, CostClass, Def, Langs, Limit, NeedSet, Op, OpId, Operand, Plan, PlanParts,
-    Polarity, Position, Provenance, Quant, Report, StrId, VarId,
+    Polarity, Position, Provenance, Quant, Report, StrId, Unresolved, VarId,
 };
 use gob_text::{FileId, FileInterner};
 
@@ -16,6 +16,8 @@ pub struct PlanBuilder {
     ops: Vec<Op>,
     defs: Vec<Def>,
     clauses: Vec<OpId>,
+    subjects: Option<u16>,
+    unresolved: Vec<Unresolved>,
     reports: Vec<Report>,
     vars: u16,
     needs: NeedSet,
@@ -31,6 +33,8 @@ impl PlanBuilder {
             ops: Vec::new(),
             defs: Vec::new(),
             clauses: Vec::new(),
+            subjects: None,
+            unresolved: Vec::new(),
             reports: Vec::new(),
             vars: 0,
             needs: NeedSet::default(),
@@ -168,6 +172,19 @@ impl PlanBuilder {
         })
     }
 
+    /// P-: the clauses added so far select (default: all of them) the rule's subjects; later ones are the formula.
+    pub fn end_subjects(&mut self) -> &mut Self {
+        self.subjects = Some(u16::try_from(self.clauses.len()).unwrap());
+        self
+    }
+
+    /// `unresolved when cond because "reason"`.
+    pub fn unresolved_when(&mut self, when: OpId, reason: &str) -> &mut Self {
+        let reason = self.s(reason);
+        self.unresolved.push(Unresolved { when, reason });
+        self
+    }
+
     pub fn report(&mut self, when: Option<OpId>, subject: VarId, message: &str) {
         let message = self.s(message);
         self.reports.push(Report {
@@ -175,6 +192,15 @@ impl PlanBuilder {
             subject,
             message,
         });
+    }
+
+    /// A P- plan treats every clause as selecting subjects unless `end_subjects` splits them.
+    fn default_subjects(&self) -> u16 {
+        if self.polarity == Polarity::Pminus {
+            u16::try_from(self.clauses.len()).unwrap()
+        } else {
+            0
+        }
     }
 
     pub fn build(&mut self) -> Plan {
@@ -203,6 +229,12 @@ impl PlanBuilder {
             ops: self.ops.clone(),
             defs: self.defs.clone(),
             clauses: self.clauses.clone(),
+            subjects: if self.polarity == Polarity::Pminus {
+                self.subjects.unwrap_or_else(|| self.default_subjects())
+            } else {
+                0
+            },
+            unresolved: self.unresolved.clone(),
             reports: self.reports.clone(),
         };
         Plan::new(parts).expect("test plan is valid")

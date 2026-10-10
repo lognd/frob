@@ -29,7 +29,10 @@ use crate::workspace::{Located, config_refusal};
 pub(crate) fn open(ctx: &Context) -> Result<Ledger, CliError> {
     let (repo, root) = Located::discover(&ctx.cwd).into_repo()?;
     let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
-    Ok(Ledger::open(repo, cfg.ledger(), ctx.clock.clone()))
+    let ledger = Ledger::open(repo, cfg.ledger(), ctx.clock.clone());
+    // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+    crate::workspace::note_ledger_site(&ledger);
+    Ok(ledger)
 }
 
 /// Open the lease store of `ctx.cwd` with the materialized `[lease]` table of `frob.toml`.

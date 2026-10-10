@@ -1,9 +1,11 @@
 //! Worktree files read as git would store them (clean filters applied, symlinks as targets).
 
 // frob:ticket 01M40THSWB75TFY8949M4T7MXR
+// frob:ticket 01M4D6NJCEYBXJKANS5BY7YNSY
 
 use std::cell::OnceCell;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, OnceLock};
 
 use gix::filter::plumbing::pipeline::convert::ToGitOutcome;
 use tracing::{debug, trace};
@@ -20,8 +22,12 @@ pub struct WorktreeReader<'r> {
     prefix: &'r str,
     workdir: &'r Path,
     repo: &'r OnceCell<gix::Repository>,
+    shared: &'r SharedRepo,
     live: Option<Live<'r>>,
 }
+
+/// The process-wide repository of a [`WorktreeSource`]: opened once, its index loaded once.
+type SharedRepo = OnceLock<Result<gix::ThreadSafeRepository, String>>;
 
 /// The filter pipeline and index state, built on the first file that needs conversion.
 struct Live<'r> {
@@ -46,8 +52,14 @@ impl<'r> WorktreeReader<'r> {
         let repo = if let Some(r) = self.repo.get() {
             r
         } else {
-            let opened = gix::open(self.workdir).map_err(odb_err)?;
-            self.repo.get_or_init(|| opened)
+            let shared = self.shared.get_or_init(|| {
+                debug!(workdir = %self.workdir.display(), "opening the shared repository");
+                gix::open(self.workdir)
+                    .map(gix::Repository::into_sync)
+                    .map_err(|e| e.to_string())
+            });
+            let shared = shared.as_ref().map_err(odb_err)?;
+            self.repo.get_or_init(|| shared.to_thread_local())
         };
         let (pipeline, state) = repo
             .filter_pipeline(None)
@@ -114,6 +126,8 @@ pub struct WorktreeSource {
     /// Slash-separated path of the source root below the checkout root (empty when equal).
     prefix: String,
     root: PathBuf,
+    /// Opened on first use and shared by every reader (and thread) of this source and its clones.
+    shared: Arc<SharedRepo>,
 }
 
 impl WorktreeSource {
@@ -134,13 +148,20 @@ impl WorktreeSource {
             workdir,
             prefix,
             root: canon,
+            shared: Arc::new(OnceLock::new()),
         })
     }
 
-    /// Runs `f` with a [`WorktreeReader`] over a freshly opened repository (current config and index).
+    /// True once the shared repository has been opened (it is opened at most once per source).
+    pub fn is_open(&self) -> bool {
+        self.shared.get().is_some()
+    }
+
+    /// Runs `f` with a [`WorktreeReader`] over this source's shared repository.
     ///
-    /// The repository is opened and its filters built lazily, on the first file
-    /// that needs them; a failure there surfaces as that read's error.
+    /// The repository is opened (and its index loaded) once per source, on the first
+    /// file that needs it; each reader then builds only its own filter pipeline. A
+    /// failure surfaces as that read's error.
     pub fn with_reader<T>(&self, f: impl FnOnce(&mut WorktreeReader<'_>) -> T) -> T {
         let repo = OnceCell::new();
         let mut reader = WorktreeReader {
@@ -148,6 +169,7 @@ impl WorktreeSource {
             prefix: &self.prefix,
             workdir: &self.workdir,
             repo: &repo,
+            shared: &self.shared,
             live: None,
         };
         f(&mut reader)
@@ -172,6 +194,7 @@ impl Repo {
             workdir: root.to_path_buf(),
             prefix: String::new(),
             root: root.to_path_buf(),
+            shared: Arc::new(OnceLock::new()),
         };
         Ok(src.with_reader(f))
     }

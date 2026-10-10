@@ -46,17 +46,34 @@ impl Provider {
         }
     }
 
-    /// The accepted spellings, for flag validation.
-    pub const NAMES: &'static [&'static str] = &[
-        "nextest",
-        "pytest",
-        "vitest",
-        "jest",
-        "dotnet",
-        "command",
-        "file",
-        "attestation",
+    /// Every provider: the one registry the `--provider` flag, its help and the unknown-provider message are generated from.
+    pub const ALL: [Self; 8] = [
+        Self::Nextest,
+        Self::Pytest,
+        Self::Vitest,
+        Self::Jest,
+        Self::Dotnet,
+        Self::Command,
+        Self::File,
+        Self::Attestation,
     ];
+
+    /// The accepted spellings, for flag validation (generated from [`Provider::ALL`]).
+    pub const NAMES: &'static [&'static str] = &{
+        let mut names = [""; Self::ALL.len()];
+        let mut i = 0;
+        while i < Self::ALL.len() {
+            names[i] = Self::ALL[i].as_str();
+            i += 1;
+        }
+        names
+    };
+
+    /// The spellings as prose: `a, b or c`.
+    pub fn expected() -> String {
+        let (rest, last) = Self::NAMES.split_at(Self::NAMES.len() - 1);
+        format!("{} or {}", rest.join(", "), last[0])
+    }
 }
 
 impl FromStr for Provider {

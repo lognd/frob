@@ -1,8 +1,10 @@
 //! The land transaction: preconditions, then the locked publish (tickets.md section 10, D25).
 //!
 //! Order: resolve and vet the lease, check the worktree is the holder's and
-//! clean, merge the base into the ticket branch (refusing on conflicts), run
-//! the ticket-scoped check and the close guards, then under the land lock
+//! clean, run the close guards (evidence, criteria, changelog: ledger and
+//! worktree reads only, so a refusal such as `E-DONE-CRITERIA-UNBOUND` comes in
+//! seconds), merge the base into the ticket branch (refusing on conflicts), run
+//! the ticket-scoped check, then under the land lock
 //! fast-forward the base branch, write the `land` event, close the ticket,
 //! release the lease and remove the worktree. A dry run stops after the
 //! preconditions and prints the plan.
@@ -102,6 +104,22 @@ struct Ready {
     out: LandOutcome,
 }
 
+// frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+/// True when every path that changed from `fork` to `base_oid` lies under the ledger directory `dir` (trunk-mode ticket commits).
+fn ledger_only_ahead(
+    wt: &Repo,
+    fork: Option<Oid>,
+    base_oid: Oid,
+    dir: &str,
+) -> Result<bool, LandError> {
+    let Some(fork) = fork else {
+        return Ok(false);
+    };
+    let prefix = format!("{}/", dir.trim_end_matches('/'));
+    let changed = wt.diff_names(&TreeRef::Oid(fork), &TreeRef::Oid(base_oid))?;
+    Ok(changed.iter().all(|c| c.path.starts_with(&prefix)))
+}
+
 /// Check every precondition (merging the base into the ticket branch unless dry-running).
 fn prepare(
     repo: Repo,
@@ -123,40 +141,9 @@ fn prepare(
     let branch = ticket_branch(&wt, base, &wt_path, &handle)?;
     ensure_clean(&wt, &wt_path)?;
 
-    let base_oid = wt.rev_parse(&base_ref(base)).map_err(|_| {
-        needs_action(
-            "E-LAND-NO-BASE",
-            format!("base branch `{base}` does not exist"),
-            "set [tickets] ref to an existing branch in frob.toml",
-        )
-    })?;
-    let ci_gate = base_ci::gate(
-        &wt,
-        &wt_path,
-        base,
-        opts.ci_reader.as_deref(),
-        opts.override_base_ci.as_deref(),
-    )?;
-    let mut base_merge = None;
-    let mut base_merged = wt.merge_base(&base_ref(base), &branch)? == Some(base_oid);
-    if !base_merged && !opts.dry_run {
-        base_merge = Some(merge_base_in(&wt, &wt_path, base, &handle)?);
-        base_merged = true;
-    } else if base_merged {
-        base_merge = Some("up-to-date".to_owned());
-    }
-    let mut warnings = ci_gate.warnings;
-    let mut ratchet = Ratchet::default();
-    if base_merged {
-        ratchet = verify_check(&wt, &wt_path, &here.ledger, &handle, base, opts)?;
-    } else {
-        // A dry run leaves the base unmerged, so the ticket-scoped diff would
-        // include the base's own changes; the real land merges first.
-        warnings.push(format!(
-            "check skipped: {base} is not merged into {branch} yet and a dry run does not merge it"
-        ));
-    }
-
+    // frob:ticket 01M4FJ57NER0WMX4FPNY7E721R
+    // The close guards read only the ledger and the worktree, so they run before any merge or check:
+    // an unbound criterion refuses in seconds, not after a cold build.
     let site = if here.ledger.config().mode == RefMode::Branch {
         Workspace::open(&wt_path, clock.clone())?
     } else if primary == cwd_root {
@@ -174,6 +161,51 @@ fn prepare(
         done = done.allow_no_changelog(reason.clone());
     }
     run_guards(view, &handle, &evidence, &done, opts)?;
+
+    let base_oid = wt.rev_parse(&base_ref(base)).map_err(|_| {
+        needs_action(
+            "E-LAND-NO-BASE",
+            format!("base branch `{base}` does not exist"),
+            "set [tickets] ref to an existing branch in frob.toml",
+        )
+    })?;
+    let ci_gate = base_ci::gate(
+        &wt,
+        &wt_path,
+        base,
+        opts.ci_reader.as_deref(),
+        opts.override_base_ci.as_deref(),
+    )?;
+    let mut base_merge = None;
+    let fork = wt.merge_base(&base_ref(base), &branch)?;
+    let mut base_merged = fork == Some(base_oid);
+    if !base_merged && !opts.dry_run {
+        base_merge = Some(merge_base_in(&wt, &wt_path, base, &handle)?);
+        base_merged = true;
+    } else if base_merged {
+        base_merge = Some("up-to-date".to_owned());
+    } else if ledger_only_ahead(&wt, fork, base_oid, &site.ledger.config().dir)? {
+        // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+        // Trunk-mode ticket verbs commit to the base all the time; those commits carry no code.
+        tracing::info!(
+            base,
+            "dry run: the base is ahead only by ledger commits; treated as merged"
+        );
+        base_merge = Some("up-to-date (the base moved only by ledger commits)".to_owned());
+        base_merged = true;
+    }
+    let mut warnings = ci_gate.warnings;
+    let mut ratchet = Ratchet::default();
+    if base_merged {
+        ratchet = verify_check(&wt, &wt_path, &site.ledger, &handle, base, opts)?;
+    } else {
+        // A dry run leaves the base unmerged, so the ticket-scoped diff would
+        // include the base's own changes; the real land merges first.
+        warnings.push(format!(
+            "check skipped: {base} is not merged into {branch} yet and a dry run does not merge it"
+        ));
+    }
+
     let mut done_view = view.ticket.clone();
     done_view.front.outcome = Some(opts.outcome);
     warnings.extend(done.warnings(&done_view));

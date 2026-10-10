@@ -552,6 +552,8 @@ dependencies = [
  "crunk-ingest",
  "crunk-rules",
  "crunk-spec",
+ "crunk-tailwind",
+ "gob-cache",
  "gob-check",
  "gob-config",
  "gob-diagnostics",
@@ -592,12 +594,14 @@ version = "0.532.0"
 dependencies = [
  "crunk-ingest",
  "crunk-spec",
+ "crunk-tailwind",
  "crunk-tokens",
  "crunk-values",
  "gob-cache",
  "gob-mdtest",
  "gob-rules",
  "gob-text",
+ "indexmap",
  "tempfile",
  "tracing",
 ]
@@ -2321,6 +2325,7 @@ dependencies = [
 name = "gob-cache"
 version = "0.532.0"
 dependencies = [
+ "blake3",
  "criterion",
  "gob-exec",
  "gob-time",
@@ -2793,6 +2798,7 @@ dependencies = [
 name = "grimble-bind"
 version = "0.532.0"
 dependencies = [
+ "gob-cache",
  "gob-directives",
  "gob-ir",
  "gob-languages",
@@ -2802,6 +2808,7 @@ dependencies = [
  "gob-text",
  "gob-walk",
  "grimble-model",
+ "postcard",
  "rayon",
  "serde_json",
  "tempfile",

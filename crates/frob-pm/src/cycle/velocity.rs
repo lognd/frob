@@ -54,13 +54,18 @@ pub fn done_facts(ledger: &Ledger) -> Result<Vec<DoneFact>> {
         category: Some(Category::Done),
         ..ListFilter::default()
     })?;
+    let counted: Vec<_> = done
+        .into_iter()
+        .filter(|s| matches!(s.outcome, Some(Outcome::Fixed | Outcome::Done)))
+        .collect();
+    // One sync and one tree walk for every counted ticket's events, not one per ticket.
+    let ids: std::collections::BTreeSet<_> = counted.iter().map(|s| s.id).collect();
+    let mut events = ledger.events_many(&ids)?;
     let mut out = Vec::new();
-    for s in done {
-        if !matches!(s.outcome, Some(Outcome::Fixed | Outcome::Done)) {
-            continue;
-        }
-        let at = ledger
-            .events(s.id)?
+    for s in counted {
+        let at = events
+            .remove(&s.id)
+            .unwrap_or_default()
             .iter()
             .rev()
             .find(|e| matches!(&e.body, EventBody::Transition(t) if t.to == Category::Done))

@@ -7,14 +7,14 @@
 use super::error::PlanError;
 use super::ir::{
     Certainty, CmpOp, CostClass, Def, Langs, Limit, Need, NeedSet, Op, Operand, PlanParts,
-    Polarity, Position, Provenance, Quant, Report,
+    Polarity, Position, Provenance, Quant, Report, Unresolved,
 };
 use super::limits::{MAX_BYTES, MAX_DEFS, MAX_LIST, MAX_OPS, MAX_PARAMS, MAX_STR_LEN, MAX_STRINGS};
 
 /// File magic.
 pub const MAGIC: &[u8; 8] = b"FROBPLAN";
 /// The one format version this engine reads and writes.
-pub const VERSION: u16 = 2;
+pub const VERSION: u16 = 3;
 
 /// Encodes `p` canonically; the caller guarantees `p` is valid.
 pub fn encode(p: &PlanParts) -> Vec<u8> {
@@ -63,6 +63,7 @@ pub fn encode(p: &PlanParts) -> Vec<u8> {
         put_u32(&mut w, d.body);
     }
     put_u32s(&mut w, &p.clauses);
+    put_u16(&mut w, p.subjects);
     put_len(&mut w, p.reports.len());
     for r in &p.reports {
         match r.when {
@@ -74,6 +75,11 @@ pub fn encode(p: &PlanParts) -> Vec<u8> {
         }
         put_u16(&mut w, r.subject);
         put_u32(&mut w, r.message);
+    }
+    put_len(&mut w, p.unresolved.len());
+    for u in &p.unresolved {
+        put_u32(&mut w, u.when);
+        put_u32(&mut w, u.reason);
     }
     w
 }
@@ -156,6 +162,7 @@ pub fn decode(bytes: &[u8]) -> Result<PlanParts, PlanError> {
         });
     }
     let clauses = r.u32s("clauses", MAX_LIST)?;
+    let subjects = r.u16("subject clause count")?;
     let n = r.count("reports", MAX_LIST, 7)?;
     let mut reports = Vec::with_capacity(n);
     for _ in 0..n {
@@ -175,6 +182,14 @@ pub fn decode(bytes: &[u8]) -> Result<PlanParts, PlanError> {
             message: r.u32("report message")?,
         });
     }
+    let n = r.count("unresolved clauses", MAX_LIST, 8)?;
+    let mut unresolved = Vec::with_capacity(n);
+    for _ in 0..n {
+        unresolved.push(Unresolved {
+            when: r.u32("unresolved condition")?,
+            reason: r.u32("unresolved reason")?,
+        });
+    }
     if !r.b.is_empty() {
         return Err(PlanError::TrailingBytes { extra: r.b.len() });
     }
@@ -191,6 +206,8 @@ pub fn decode(bytes: &[u8]) -> Result<PlanParts, PlanError> {
         ops,
         defs,
         clauses,
+        subjects,
+        unresolved,
         reports,
     })
 }
