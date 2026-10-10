@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-10T20:12:40Z"
+digest = "13f4bc4f1cf83c7be7f8cb6843abfeb98d42a102cae540906b33cab35a276ad1"
+exit_code = 0
+inline = '''
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized] target(s) in 3.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d3cca487-b326-42df-9d7b-cf0509d9d77a with nextest profile: default
+    Starting 1 test across 5 binaries (13 tests skipped)
+        PASS [   0.014s] crunk::verbs schema_prints_the_crunk_tables_with_keys_and_types_not_only_the_shared_ones
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 13 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E 'test(=schema_prints_the_crunk_tables_with_keys_and_types_not_only_the_shared_ones)'"
+size = 745
+status = "measured"
+tests = ["schema_prints_the_crunk_tables_with_keys_and_types_not_only_the_shared_ones"]
+at = "2026-10-10T20:12:40Z"
+actor = "Claude"
+rev = 1
