@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "crunk already binds crunk:waive exceptions (D120); acceptance rewritten and bound to existing tests; structural half filed as ~8GS7YBF"
+at = "2026-10-10T23:36:58Z"
+actor = "lognd"
+rev = 1

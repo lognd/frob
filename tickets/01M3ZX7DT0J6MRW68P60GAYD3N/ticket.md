@@ -2,16 +2,16 @@
 id = "01M3ZX7DT0J6MRW68P60GAYD3N"
 title = "Generate docs/reference/grl/catalog.md and embed the catalog in the binary"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-03T03:34:20Z"
+updated = "2026-10-10T23:34:22Z"
 idempotency_key = "m2-grl-catalog-docs"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-dev/src/render/**", "docs/reference/grl/**"]
+scope = ["crates/gob-dev/src/render/**", "docs/reference/grl/**", "crates/gob-dev/src/lib.rs", "crates/gob-dev/Cargo.toml", "crates/gob-dev/tests/generate.rs", "Cargo.lock"]
 
 [[links]]
 kind = "blocked-by"
@@ -19,11 +19,11 @@ target = "01M3ZX7DMYNTWB3AP04CDMAECH"
 
 [[acceptance]]
 text = "Given the catalog, when `cargo dev gen all` runs, then docs/reference/grl/catalog.md is written and `cargo dev gen all --check` exits 0"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a catalog word added without regeneration, when `--check` runs, then GEN001 reports the stale page"
-bound = false
+bound = true
 +++
 
 Implements grl-spec.md section 6; documentation.md section 3.
