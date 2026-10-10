@@ -7,12 +7,12 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-10T22:53:10Z"
-updated = "2026-10-10T22:54:20Z"
+updated = "2026-10-10T22:55:12Z"
 scope = ["crates/frob-evidence/src/provider.rs", "crates/frob-tests/tests/rust_root.rs"]
 
 [[acceptance]]
 text = "a_crate_under_a_subdirectory_runs_nextest_from_that_directory passes with NEXTEST_PROFILE=ci inherited"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code passes with NEXTEST_PROFILE=ci inherited"
