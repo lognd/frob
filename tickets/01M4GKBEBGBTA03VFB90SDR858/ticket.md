@@ -2,7 +2,8 @@
 id = "01M4GKBEBGBTA03VFB90SDR858"
 title = "Evidence test node ids are pytest-rootdir-relative instead of repository-relative; test-only tickets need an explicit changelog exemption path"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
