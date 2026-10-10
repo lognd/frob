@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: Claude in repo-wt/718ANQ7; scope: crates/gob-check/**, crates/gob-exec/**, changelog.d/**; ttl 7200s"
+at = "2026-10-10T20:18:16Z"
+actor = "Claude"
+rev = 1

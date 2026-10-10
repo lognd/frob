@@ -6,6 +6,7 @@
 //! its scope semantics and how exceptions are parsed.
 
 use std::collections::{BTreeSet, HashMap};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use gob_cache::Cache;
@@ -183,6 +184,12 @@ pub trait Product: Sized + Sync {
     /// Directory under the root holding cache and telemetry; excluded from the walk.
     fn state_dir(&self) -> String {
         format!(".{}", self.name())
+    }
+
+    // frob:ticket 01M4FD0EP322SV5ZNXD5SQT8RX
+    /// Directory that receives `telemetry.jsonl`; the state directory under `root` unless a product keeps it out of the worktree.
+    fn telemetry_dir(&self, root: &Path) -> PathBuf {
+        root.join(self.state_dir())
     }
 
     /// Whether `meta` is one of this product's rules (validates `--only` and picks `must_measure` rules).

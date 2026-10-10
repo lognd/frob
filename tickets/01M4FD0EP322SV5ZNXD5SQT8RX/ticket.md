@@ -2,12 +2,13 @@
 id = "01M4FD0EP322SV5ZNXD5SQT8RX"
 title = "frob check writes .crunk/telemetry.jsonl into the worktree and then reports it as an opaque file (DRIFT001)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T03:58:45Z"
-updated = "2026-10-10T20:12:40Z"
+updated = "2026-10-10T20:14:36Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/crunk*/**", "crates/frob-check/**", "crates/gob-check/**", "changelog.d/**", "crates/gob-cli/**"]
 

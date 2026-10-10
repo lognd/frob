@@ -2,12 +2,12 @@
 id = "01M4GKCBT6MW3BHED91718ANQ7"
 title = "TOOL001 quotes a noisy INFO stderr line instead of the error; pick the excerpt from error-looking lines and the tail"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T15:09:21Z"
-updated = "2026-10-09T15:09:21Z"
+updated = "2026-10-10T20:18:16Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-check/**", "crates/gob-exec/**", "changelog.d/**"]
 
