@@ -8,11 +8,23 @@ points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T14:58:33Z"
-updated = "2026-10-08T14:58:33Z"
+updated = "2026-10-10T15:00:44Z"
 scope = ["changelog.d/**", "crates/gob-plan/**"]
 
 [[acceptance]]
-text = "Given each listed form, when compiled, then GRL017 fires with the span of the certainly or possibly"
+text = "Given `not d(f)` where def d contains `certainly` or `possibly` at even depth, when compiled, then GRL017 fires; a def body with `not` inside it still fires; `d(f)` outside any negation stays clean"
+bound = false
+
+[[acceptance]]
+text = "Given `count(...)` with `certainly` or `possibly` in its body compared with `<`, `<=`, `==` or `!=`, when compiled, then GRL017 fires; `>` and `>=` stay clean"
+bound = false
+
+[[acceptance]]
+text = "Given a `report ... when C` clause that has a later `report` clause, when compiled and C holds `certainly` or `possibly`, then GRL017 fires; the last `report`'s `when` stays clean"
+bound = false
+
+[[acceptance]]
+text = "Docs (grl-spec 7.0.4) state the def, count and report-when negative positions"
 bound = false
 +++
 
