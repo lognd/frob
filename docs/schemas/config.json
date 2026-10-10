@@ -432,6 +432,17 @@
       "additionalProperties": false,
       "description": "Knobs of the lease store (tickets.md section 3, decision D26).",
       "properties": {
+        "generated_files": {
+          "default": [
+            "docs/reference/**",
+            "docs/schemas/**"
+          ],
+          "description": "Generated outputs exempt from overlap checks like `shared_files`, so a broad docs lease does not block a ticket that regenerates them; unset means the reference pages and schemas, an explicit list (even `[]`) replaces them.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "lock_timeout_ms": {
           "default": 5000,
           "description": "Milliseconds to wait for the lease lock before refusing with a timeout.",

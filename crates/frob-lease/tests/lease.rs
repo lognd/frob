@@ -1049,3 +1049,49 @@ fn lease_config_reads_the_base_ref_over_a_stale_worktree_copy() {
     let unknown = LeaseConfig::load_repo_wide(root, "refs/heads/nope").expect("fallback");
     assert_eq!(unknown.ttl_secs, 60, "an unresolvable ref keeps the file");
 }
+
+// frob:ticket 01M4GPWWWZFCHYMKYNKB3S3XGJ
+// frob:tests crates/frob-lease/src/config.rs::default_generated_files
+#[test]
+fn a_broad_docs_lease_does_not_block_generated_outputs_or_a_declared_append_only_registry() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "docs/reference/config.md");
+    write(dir.path(), "docs/registry.md");
+    write(dir.path(), "docs/guide.md");
+    let store = store_in(dir.path(), cfg(&["docs/registry.md"]));
+    store
+        .acquire(TicketId::mint(), &holder("a"), &scope(&["docs/**"]))
+        .expect("a holds docs/**");
+    store
+        .acquire(
+            TicketId::mint(),
+            &holder("b"),
+            &scope(&["docs/reference/config.md", "docs/registry.md"]),
+        )
+        .expect("b shares the generated page and the registry");
+    let err = store
+        .acquire(TicketId::mint(), &holder("c"), &scope(&["docs/guide.md"]))
+        .expect_err("a hand-written page stays exclusive");
+    assert!(matches!(err, LeaseError::Held { .. }));
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "docs/reference/config.md");
+    let strict = store_in(
+        dir.path(),
+        LeaseConfig {
+            generated_files: Vec::new(),
+            ..cfg(&[])
+        },
+    );
+    strict
+        .acquire(TicketId::mint(), &holder("a"), &scope(&["docs/**"]))
+        .expect("a");
+    assert!(matches!(
+        strict.acquire(
+            TicketId::mint(),
+            &holder("b"),
+            &scope(&["docs/reference/config.md"])
+        ),
+        Err(LeaseError::Held { .. })
+    ));
+}

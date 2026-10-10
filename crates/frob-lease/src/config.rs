@@ -27,6 +27,13 @@ pub fn default_shared_files() -> Vec<String> {
     LOCKFILES.iter().map(|n| format!("**/{n}")).collect()
 }
 
+/// The default of `[lease] generated_files`: the outputs of `gen all` (reference pages and schemas), which every ticket regenerates and a rebase re-derives.
+// frob:ticket 01M4GPWWWZFCHYMKYNKB3S3XGJ
+#[must_use]
+pub fn default_generated_files() -> Vec<String> {
+    vec!["docs/reference/**".to_owned(), "docs/schemas/**".to_owned()]
+}
+
 /// True when `path` matches the default shared-file patterns (the very ones [`default_shared_files`] returns).
 #[must_use]
 pub fn is_lockfile(path: &str) -> bool {
@@ -62,6 +69,10 @@ pub struct LeaseConfig {
     /// Append-shared files exempt from overlap checks; unset means the well-known lockfiles (`Cargo.lock`, `uv.lock`, ...), an explicit list (even `[]`) replaces them.
     #[config(default = default_shared_files())]
     pub shared_files: Vec<String>,
+    /// Generated outputs exempt from overlap checks like `shared_files`, so a broad docs lease does not block a ticket that regenerates them; unset means the reference pages and schemas, an explicit list (even `[]`) replaces them.
+    // frob:ticket 01M4GPWWWZFCHYMKYNKB3S3XGJ
+    #[config(default = default_generated_files())]
+    pub generated_files: Vec<String>,
 }
 
 impl LeaseConfig {

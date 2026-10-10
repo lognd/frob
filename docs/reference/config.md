@@ -170,6 +170,7 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `generated_files` | `Vec<String>` | `["docs/reference/**", "docs/schemas/**"]` | no | Generated outputs exempt from overlap checks like `shared_files`, so a broad docs lease does not block a ticket that regenerates them; unset means the reference pages and schemas, an explicit list (even `[]`) replaces them. |
 | `lock_timeout_ms` | `u64` | `5000` | no | Milliseconds to wait for the lease lock before refusing with a timeout. |
 | `shared_files` | `Vec<String>` | `["**/Cargo.lock", "**/uv.lock", "**/poetry.lock", "**/package-lock.json", "**/pnpm-lock.yaml", "**/yarn.lock", "**/go.sum", "**/Gemfile.lock", "**/composer.lock", "**/flake.lock"]` | no | Append-shared files exempt from overlap checks; unset means the well-known lockfiles (`Cargo.lock`, `uv.lock`, ...), an explicit list (even `[]`) replaces them. |
 | `ttl_secs` | `u64` | `7200` | no | Seconds a lease stays live after its last renewal (default two hours). |
