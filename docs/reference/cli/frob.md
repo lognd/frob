@@ -53,6 +53,7 @@
 | `ticket fragment` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Write `changelog.d/<ULID>.<type>.md` from the ticket title (or `--sentence`, required for bug, security and incident; `--text` is the global output format); never commits. |
 | `ticket link` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Add a typed link between two tickets; repeating it is a no-op. |
 | `ticket list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List tickets from the index, filtered by category, type, parent, label or blocked; `--category triage` is the inbox. |
+| `ticket migrate` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Copy the legacy ledger onto the orphan ticket branch and verify it; `--dry-run` prints the mapping and writes nothing. |
 | `ticket new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a ticket; with `--idempotency-key` a repeat returns the first ticket. |
 | `ticket reopen` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Reopen a done ticket into todo with a required reason. |
 | `ticket show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one ticket from the index; `--events` adds its timeline, `--format md` prints it as markdown. |
