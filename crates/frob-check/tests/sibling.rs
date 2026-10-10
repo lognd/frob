@@ -472,3 +472,32 @@ fn a_v1_sibling_is_probed_and_never_sent_v2_flags() {
     );
     assert_eq!(r.exit_code(), ExitCode::Negative);
 }
+
+// frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+// frob:tests crates/gob-check/src/pipeline.rs::validate_only
+#[test]
+fn only_selects_a_sibling_rule_id_or_family_and_still_refuses_an_unknown_name() {
+    let dir = repo("valid -", "");
+    let only = |name: &str| CheckOptions {
+        only: vec![name.to_owned()],
+        ..opts()
+    };
+    let r = run(dir.path(), &only("SYS006")).expect("a sibling rule id is accepted");
+    assert_eq!(of_rule(&r, "SYS006").len(), 1, "{:?}", r.findings);
+    assert!(
+        r.findings.iter().all(|f| f.rule.as_str() == "SYS006"),
+        "other rules are skipped: {:?}",
+        r.findings
+    );
+    let r = run(dir.path(), &only("sys")).expect("a sibling family is accepted");
+    assert!(!of_rule(&r, "SYS006").is_empty());
+    assert!(r.findings.iter().all(|f| f.rule.family() == "SYS"));
+    let err = run(dir.path(), &only("ZZZ999")).expect_err("unknown to every product");
+    assert!(err.to_string().contains("ZZZ999"), "{err}");
+    let bare = tempfile::tempdir().expect("tempdir");
+    write(bare.path(), "a.txt", "aaa\n");
+    assert!(
+        run(bare.path(), &only("SYS006")).is_err(),
+        "no sibling configured, so the name is unknown"
+    );
+}

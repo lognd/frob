@@ -367,6 +367,11 @@ impl Product for Frob {
         "frob"
     }
 
+    // frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+    fn defers_unknown_only(&self) -> bool {
+        true
+    }
+
     fn collect(&self, cx: &mut CollectCx<'_>) -> Result<Collected<Self>, CheckError> {
         snapshot::collect(cx, &self.opts)
     }

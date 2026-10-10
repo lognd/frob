@@ -44,19 +44,32 @@ fn matches_only(only: &[String], family: &str, id: &str) -> bool {
     only.is_empty() || only.iter().any(|o| o == family || o == id)
 }
 
-/// Normalize `--only` entries and reject names the product's rules do not use.
-fn validate_only<P: Product>(product: &P, only: &[String]) -> Result<Vec<String>, CheckError> {
-    let registry = Registry::global();
+// frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+/// True when `name` (upper-case) is a family or id of one of the product's own rules.
+fn known_here<P: Product>(product: &P, name: &str) -> bool {
     let set = product.rule_set();
+    Registry::global()
+        .iter()
+        .filter(|m| product.includes(m))
+        .any(|m| m.family == name || m.id == name)
+        || set.defs().any(|d| d.family == name || d.id == name)
+}
+
+// frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+/// The family of a rule id: its leading letters (`COLOR001` is `COLOR`).
+fn family_of_id(id: &str) -> &str {
+    id.trim_end_matches(|c: char| c.is_ascii_digit())
+}
+
+/// Normalize `--only` entries and reject names the product's rules do not use.
+///
+/// A product that [defers](Product::defers_unknown_only) unknown names keeps them: an external
+/// product may own them, and the run refuses them after the external stages report their rules.
+fn validate_only<P: Product>(product: &P, only: &[String]) -> Result<Vec<String>, CheckError> {
     only.iter()
         .map(|raw| {
             let name = raw.trim().to_ascii_uppercase();
-            let known = registry
-                .iter()
-                .filter(|m| product.includes(m))
-                .any(|m| m.family == name || m.id == name)
-                || set.defs().any(|d| d.family == name || d.id == name);
-            if known {
+            if known_here(product, &name) || product.defers_unknown_only() {
                 Ok(name)
             } else {
                 Err(CheckError::UnknownFamily(raw.clone()))
@@ -482,6 +495,16 @@ fn pass<P: Product>(
     ));
 
     let external = product.join_external(&snap, &mut files, &mut tally.timing);
+    // frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+    if let Some(name) = only.iter().find(|n| {
+        !known_here(product, n)
+            && !external
+                .rule_ids
+                .iter()
+                .any(|id| id == *n || family_of_id(id) == n.as_str())
+    }) {
+        return Err(CheckError::UnknownFamily(name.clone()));
+    }
     raw.extend(external.findings);
     for (label, row) in external.languages {
         tally.fidelity.languages.insert(label, row);

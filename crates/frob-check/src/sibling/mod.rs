@@ -134,12 +134,19 @@ fn grimble_models(root: &Path) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// True when `--only` leaves the sibling stage on: no filter, or one naming `SIB`.
+// frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+/// True when `--only` leaves the sibling stage on: no filter, one naming `SIB`, or one naming
+/// something frob's own rules do not, which a sibling may own (the run refuses it if none does).
 fn wanted(only: &[String]) -> bool {
+    let own = |name: &str| {
+        gob_rules::Registry::global()
+            .iter()
+            .any(|m| m.product == "frob" && (m.family == name || m.id == name))
+    };
     only.is_empty()
         || only.iter().any(|o| {
             let o = o.trim().to_ascii_uppercase();
-            o == "SIB" || o == "SIB001"
+            o == "SIB" || o == "SIB001" || !own(&o)
         })
 }
 
@@ -279,6 +286,9 @@ impl Siblings {
             match spawned.result {
                 Ok(doc) => match merge::merge(product, &doc, files, &mut out) {
                     Ok(exceptions) => {
+                        // frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+                        out.rule_ids
+                            .extend(doc.rules.iter().map(|r| r.rule.clone()));
                         out.findings.extend(sibling_exception_findings(
                             root,
                             ledger,

@@ -106,6 +106,8 @@ pub struct External {
     pub languages: Vec<(String, LanguageFidelity)>,
     /// Non-fatal notes for the report's warnings.
     pub warnings: Vec<String>,
+    /// Ids of every rule the external products reported, for validating `--only` names.
+    pub rule_ids: Vec<String>,
     /// Where each external product's binary was found and its version.
     pub siblings: Vec<crate::SiblingRow>,
 }
@@ -267,6 +269,14 @@ pub trait Product: Sized + Sync {
         _table: &CheckTable,
         _scope_files: Option<&BTreeSet<String>>,
     ) {
+    }
+
+    // frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+    /// True when `--only` names no rule of this product may still be an external product's rule.
+    ///
+    /// The run then refuses a name that neither this product nor any external stage knows.
+    fn defers_unknown_only(&self) -> bool {
+        false
     }
 
     /// Join the stages started by [`Product::start_external`], timing them outside the budget.
