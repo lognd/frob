@@ -8,12 +8,19 @@
 //! (`gob_ir::registry::callee_vocab`, class = the atom name). A May-owned use never fires CAP001
 //! (it is Unresolved) and does prevent CAP002.
 //!
-//! Known limits: the template excuses and CAP004 (packs.md 6.7) are not implemented; the pack
+//! Method vocabulary (ticket 2T7C4A9): `Path.m` names method `m` on a receiver whose type is
+//! `pathlib.Path`, resolved textually (a `Path(..)` chain, or a name assigned or annotated as one
+//! in the same file); it is a Must use. A `.m` entry on a receiver that does not resolve is a May
+//! use, reported Unresolved (grimble-model.md 9.6: unknown never reads as clean).
+//!
+//! Known limits: receiver typing is per file and textual (no cross-module constants, no
+//! shadowing by unannotated parameters); `open(..)` is `fs.read` whatever its mode; the template excuses and CAP004 (packs.md 6.7) are not implemented; the pack
 //! severity table is not consulted (CAP001 is an Error, CAP002 a Warning); a grant's `at`
 //! selector is compared at file granularity; `may` arguments are ignored.
 
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
+// frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -45,6 +52,8 @@ struct Use {
     file: String,
     line: Option<u32>,
     callee: String,
+    /// False when the receiver type did not resolve: a May use whoever owns the code.
+    certain: bool,
 }
 
 impl Use {
@@ -76,25 +85,301 @@ fn callee_of(text: &str) -> &str {
     text.strip_suffix("(..)").unwrap_or(text)
 }
 
-/// The atoms whose vocabulary in `lang` names `callee`, given the calls `file_calls` of its file.
-fn atoms_of(lang: &str, callee: &str, file_calls: &BTreeSet<String>) -> Vec<&'static str> {
+/// True when the written `callee` names the vocabulary entry `name` (a Rust path entry also
+/// matches behind extra leading segments: `std::fs::read` names `fs::read`).
+fn names_callee(lang: &str, names: &BTreeSet<&str>, callee: &str) -> bool {
+    if names.contains(callee) {
+        return true;
+    }
+    lang == "rust"
+        && names
+            .iter()
+            .any(|n| n.contains("::") && callee.ends_with(&format!("::{n}")))
+}
+
+/// One atom a call may use and whether the call certainly does.
+struct Hit {
+    atom: &'static str,
+    certain: bool,
+}
+
+/// The atoms whose vocabulary in `lang` names the call `callee`, given the calls `file_calls` of
+/// its file and the lazily computed type of its receiver.
+fn atoms_of(
+    lang: &str,
+    callee: &str,
+    file_calls: &BTreeSet<String>,
+    receiver_is_path: &mut dyn FnMut(&str) -> bool,
+) -> Vec<Hit> {
     let mut out = Vec::new();
     for a in atoms() {
         let Answer::Exact(names) = callee_vocab(lang, a.name) else {
             continue;
         };
-        let direct = names.contains(callee);
-        let by_method = callee.rsplit_once('.').is_some_and(|(_, m)| {
-            names.contains(format!(".{m}").as_str())
-                && METHOD_GATES.iter().any(|(atom, l, method, gate)| {
-                    *atom == a.name && *l == lang && *method == m && file_calls.contains(*gate)
-                })
-        });
-        if direct || by_method {
-            out.push(a.name);
+        if names_callee(lang, &names, callee) {
+            out.push(Hit {
+                atom: a.name,
+                certain: true,
+            });
+            continue;
+        }
+        let Some((recv, m)) = callee.rsplit_once('.') else {
+            continue;
+        };
+        if !names.contains(format!(".{m}").as_str()) {
+            continue;
+        }
+        let gated = METHOD_GATES
+            .iter()
+            .any(|(atom, l, method, _)| *atom == a.name && *l == lang && *method == m);
+        if gated {
+            let open = METHOD_GATES.iter().any(|(atom, l, method, gate)| {
+                *atom == a.name && *l == lang && *method == m && file_calls.contains(*gate)
+            });
+            if open {
+                out.push(Hit {
+                    atom: a.name,
+                    certain: true,
+                });
+            }
+        } else if names.contains(format!("Path.{m}").as_str()) && receiver_is_path(recv) {
+            out.push(Hit {
+                atom: a.name,
+                certain: true,
+            });
+        } else {
+            tracing::debug!(
+                callee,
+                atom = a.name,
+                "vocabulary method on an unresolved receiver: May"
+            );
+            out.push(Hit {
+                atom: a.name,
+                certain: false,
+            });
         }
     }
     out
+}
+
+/// Python receiver typing: is the expression `recv` a `pathlib.Path`? Textual and per file.
+mod pytype {
+    /// Methods and attributes that keep a `Path` a `Path`.
+    const KEEPS: [&str; 14] = [
+        "resolve",
+        "absolute",
+        "parent",
+        "parents",
+        "joinpath",
+        "with_name",
+        "with_suffix",
+        "with_stem",
+        "expanduser",
+        "relative_to",
+        "readlink",
+        "home",
+        "cwd",
+        "samefile",
+    ];
+
+    fn is_ident(c: char) -> bool {
+        c.is_alphanumeric() || c == '_'
+    }
+
+    /// The index just past the bracket group opening at byte `at` of `s`, honouring quotes.
+    fn skip_group(s: &str, at: usize) -> Option<usize> {
+        let mut depth = 0usize;
+        let mut quote: Option<char> = None;
+        for (i, c) in s[at..].char_indices() {
+            match quote {
+                Some(q) => {
+                    if c == q {
+                        quote = None;
+                    }
+                }
+                None => match c {
+                    '"' | '\'' => quote = Some(c),
+                    '(' | '[' | '{' => depth += 1,
+                    ')' | ']' | '}' => {
+                        depth = depth.checked_sub(1)?;
+                        if depth == 0 {
+                            return Some(at + i + c.len_utf8());
+                        }
+                    }
+                    _ => {}
+                },
+            }
+        }
+        None
+    }
+
+    /// Split `s` on top-level `/` (true division, not `//`).
+    fn split_div(s: &str) -> Vec<&str> {
+        let mut parts = Vec::new();
+        let (mut last, mut i) = (0, 0);
+        let b = s.as_bytes();
+        while i < b.len() {
+            match b[i] {
+                b'(' | b'[' | b'{' => match skip_group(s, i) {
+                    Some(end) => {
+                        i = end;
+                        continue;
+                    }
+                    None => return vec![s],
+                },
+                b'"' | b'\'' => {
+                    let q = b[i];
+                    i += 1;
+                    while i < b.len() && b[i] != q {
+                        i += 1;
+                    }
+                }
+                b'/' if b.get(i + 1) != Some(&b'/') && i > 0 && b[i - 1] != b'/' => {
+                    parts.push(&s[last..i]);
+                    last = i + 1;
+                }
+                _ => {}
+            }
+            i += 1;
+        }
+        parts.push(&s[last..]);
+        parts
+    }
+
+    /// True when `e` is a `Path(..)` / `Path.home()` head followed only by Path-keeping steps.
+    fn path_chain(e: &str) -> bool {
+        let rest = ["pathlib.Path", "Path"]
+            .iter()
+            .find_map(|h| e.strip_prefix(h))
+            .filter(|r| !r.starts_with(is_ident));
+        let Some(mut rest) = rest else { return false };
+        loop {
+            rest = rest.trim_start();
+            if rest.is_empty() {
+                return true;
+            }
+            if rest.starts_with('(') {
+                let Some(end) = skip_group(rest, 0) else {
+                    return false;
+                };
+                rest = &rest[end..];
+                continue;
+            }
+            let Some(after) = rest.strip_prefix('.') else {
+                return false;
+            };
+            let n = after.find(|c: char| !is_ident(c)).unwrap_or(after.len());
+            if !KEEPS.contains(&&after[..n]) {
+                return false;
+            }
+            rest = &after[n..];
+        }
+    }
+
+    /// The right-hand sides and annotations evidencing `name` in `src`: `(is_path, is_evidence)`.
+    fn evidence(src: &str, name: &str, depth: usize) -> Vec<bool> {
+        let mut out = Vec::new();
+        let mut lines = src.lines().peekable();
+        while let Some(line) = lines.next() {
+            let t = line.trim_start();
+            let Some(after) = t.strip_prefix(name).filter(|r| !r.starts_with(is_ident)) else {
+                continue;
+            };
+            let after = after.trim_start();
+            let (ann, rest) = match after.strip_prefix(':') {
+                Some(a) => match a.split_once('=') {
+                    Some((ann, rhs)) if !rhs.starts_with('=') => (Some(ann.trim()), Some(rhs)),
+                    _ => (Some(a.trim().trim_end_matches(',')), None),
+                },
+                None => (
+                    None,
+                    after.strip_prefix('=').filter(|r| !r.starts_with('=')),
+                ),
+            };
+            if ann.is_none() && rest.is_none() {
+                continue;
+            }
+            if let Some(ann) = ann {
+                if ann == "Path" || ann == "pathlib.Path" {
+                    out.push(true);
+                    continue;
+                }
+                if rest.is_none() {
+                    // `name: Other` in a signature or bare annotation
+                    out.push(false);
+                    continue;
+                }
+            }
+            let mut rhs = rest.unwrap_or("").to_owned();
+            while skip_group_balanced(&rhs).is_none() {
+                match lines.next() {
+                    Some(l) => {
+                        rhs.push(' ');
+                        rhs.push_str(l.trim());
+                    }
+                    None => break,
+                }
+            }
+            out.push(is_path_expr(src, &rhs, depth + 1));
+        }
+        // `name: Path` inside a single-line signature
+        for pat in [format!("{name}: Path"), format!("{name}: pathlib.Path")] {
+            for (i, _) in src.match_indices(&pat) {
+                let before_ok = !src[..i].ends_with(is_ident);
+                let after_ok = !src[i + pat.len()..].starts_with(is_ident);
+                let line_start = src[..i].rsplit('\n').next().unwrap_or("").trim().is_empty();
+                if before_ok && after_ok && !line_start {
+                    out.push(true);
+                }
+            }
+        }
+        out
+    }
+
+    fn skip_group_balanced(s: &str) -> Option<()> {
+        let mut depth = 0i32;
+        let mut quote: Option<char> = None;
+        for c in s.chars() {
+            match quote {
+                Some(q) if c == q => quote = None,
+                Some(_) => {}
+                None => match c {
+                    '"' | '\'' => quote = Some(c),
+                    '(' | '[' | '{' => depth += 1,
+                    ')' | ']' | '}' => depth -= 1,
+                    _ => {}
+                },
+            }
+        }
+        (depth <= 0).then_some(())
+    }
+
+    /// True when the expression `expr` evaluates to a `pathlib.Path` as far as `src` shows.
+    pub(super) fn is_path_expr(src: &str, expr: &str, depth: usize) -> bool {
+        if depth > 4 || !src.contains("pathlib") {
+            return false;
+        }
+        let e = expr.trim();
+        let e = e.split('#').next().unwrap_or(e).trim();
+        if let Some(inner) = e
+            .strip_prefix('(')
+            .filter(|_| skip_group(e, 0) == Some(e.len()))
+        {
+            return is_path_expr(src, inner.strip_suffix(')').unwrap_or(inner), depth + 1);
+        }
+        let parts = split_div(e);
+        if parts.len() > 1 {
+            return parts.iter().any(|p| is_path_expr(src, p, depth + 1));
+        }
+        if path_chain(e) {
+            return true;
+        }
+        if !e.is_empty() && e.chars().all(is_ident) {
+            let ev = evidence(src, e, depth);
+            return !ev.is_empty() && ev.iter().all(|p| *p);
+        }
+        false
+    }
 }
 
 fn observe(cx: &Cx<'_>) -> Uses {
@@ -114,6 +399,7 @@ fn observe(cx: &Cx<'_>) -> Uses {
         }
     }
     let empty = BTreeSet::new();
+    let mut sources: BTreeMap<String, Option<String>> = BTreeMap::new();
     let mut uses = Uses::default();
     for e in &edges {
         let Some(text) = &e.text else { continue };
@@ -126,14 +412,34 @@ fn observe(cx: &Cx<'_>) -> Uses {
             continue;
         };
         let file_calls = calls_in.get(&uo.file).unwrap_or(&empty);
-        for atom in atoms_of(&code.language, callee, file_calls) {
+        // A cut-off callee text cannot be split; fall back to the spelled method name.
+        let spelled;
+        let callee = if callee.ends_with("...") {
+            spelled = format!("?.{}", e.name.as_deref().unwrap_or(""));
+            spelled.as_str()
+        } else {
+            callee
+        };
+        let mut is_path = |recv: &str| {
+            code.language == "python"
+                && sources
+                    .entry(uo.file.clone())
+                    .or_insert_with(|| code.source())
+                    .as_deref()
+                    .is_some_and(|src| pytype::is_path_expr(src, recv, 0))
+        };
+        for Hit { atom, certain } in atoms_of(&code.language, callee, file_calls, &mut is_path) {
             let u = Use {
                 atom,
                 file: uo.file.clone(),
                 line: e.line,
                 callee: callee.to_owned(),
+                certain,
             };
             match &uo.merged.owner {
+                Owner::Must(n) if !certain => {
+                    uses.hi.entry(n.as_str().to_owned()).or_default().push(u);
+                }
                 Owner::Must(n) => uses.lo.entry(n.as_str().to_owned()).or_default().push(u),
                 Owner::May(ns) => {
                     for n in ns {
@@ -196,15 +502,16 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
             let Some(found) = set.get(&e.anchor) else {
                 continue;
             };
-            let mut by_atom: BTreeMap<&str, Vec<&Use>> = BTreeMap::new();
+            // (atom, receiver unresolved) -> uses; an unresolved receiver is a May use.
+            let mut by_atom: BTreeMap<(&str, bool), Vec<&Use>> = BTreeMap::new();
             for u in found {
                 if !e.grants.iter().any(|g| covers(cx, g, u.atom, &u.file)) {
-                    by_atom.entry(u.atom).or_default().push(u);
+                    by_atom.entry((u.atom, !u.certain)).or_default().push(u);
                 }
             }
-            for (atom, us) in by_atom {
-                let anchor = format!("cap/{}/{atom}", e.anchor);
-                if must {
+            for ((atom, unresolved_receiver), us) in by_atom {
+                if must && !unresolved_receiver {
+                    let anchor = format!("cap/{}/{atom}", e.anchor);
                     out.fire(
                         "CAP001",
                         Severity::Error,
@@ -217,7 +524,21 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
                         &anchor,
                         site,
                     );
+                } else if unresolved_receiver {
+                    let anchor = format!("cap/{}/{atom}/receiver", e.anchor);
+                    out.unresolved(
+                        "CAP001",
+                        Reason::UnresolvedEdge,
+                        &format!(
+                            "`{atom}` may be used by `{}` with no grant; the receiver type of the call could not be resolved: {}",
+                            e.anchor,
+                            list(&us)
+                        ),
+                        &anchor,
+                        site,
+                    );
                 } else {
+                    let anchor = format!("cap/{}/{atom}", e.anchor);
                     out.unresolved(
                         "CAP001",
                         Reason::MayOnlyOwner,

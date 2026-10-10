@@ -2,6 +2,7 @@
 //! never observed is declared-unused. Repros 09 and 11 of the logand adoption run.
 
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
+// frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
 
 use grimble_bind::{BindInput, Binding};
 use grimble_model::ModelFiles;
@@ -13,10 +14,15 @@ fn model(body: &str) -> String {
 }
 
 fn bind_py(py: &str, body: &str) -> Binding {
+    bind_file("src/x.py", py, body)
+}
+
+fn bind_file(rel: &str, text: &str, body: &str) -> Binding {
+    let py = text;
     let dir = tempfile::tempdir().unwrap();
     std::fs::create_dir_all(dir.path().join("src")).unwrap();
     std::fs::create_dir_all(dir.path().join("design")).unwrap();
-    std::fs::write(dir.path().join("src/x.py"), py).unwrap();
+    std::fs::write(dir.path().join(rel), py).unwrap();
     let text = model(body);
     std::fs::write(dir.path().join("design/model.grmb"), &text).unwrap();
     let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).unwrap();
@@ -108,4 +114,124 @@ fn a_parent_grant_and_an_alias_grant_cover_their_children_and_canonical_atom() {
     let f = of(&b, "CAP001");
     assert_eq!(f.len(), 1, "{f:?}");
     assert_eq!(f[0].anchor, "cap/node/a/process.env");
+}
+
+/// The repro shape: logand `auth/passwords.py`, a module-level `Path` constant read in a function.
+const PASSWORDS: &str = "from pathlib import Path\n\n_PATH = Path(__file__).resolve().parent / \"data\" / \"x.txt\"\n\n\ndef load():\n    return _PATH.read_text(encoding=\"utf-8\")\n";
+
+fn atoms(b: &Binding) -> Vec<String> {
+    of(b, "CAP001").iter().map(|f| f.anchor.clone()).collect()
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn read_text_on_a_module_level_path_constant_is_a_must_fs_read() {
+    let b = bind_py(PASSWORDS, "");
+    let f = of(&b, "CAP001");
+    assert_eq!(atoms(&b), ["cap/node/a/fs.read"], "{f:?}");
+    assert!(f[0].reason.is_none(), "must be a resolved Error: {f:?}");
+    assert!(f[0].message.contains("src/x.py:7"), "{}", f[0].message);
+    let b = bind_py(PASSWORDS, "  may fs.read;\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn inline_path_chains_annotated_parameters_and_locals_are_path_receivers() {
+    for body in [
+        "return Path(\"/etc/hostname\").read_text()",
+        "return Path.home().joinpath(\"a\").read_bytes()",
+        "return (Path(\".\") / \"a\").read_text()",
+        "p = Path(\"x\")\n    return p.read_bytes()",
+    ] {
+        let py = format!("from pathlib import Path\n\n\ndef go():\n    {body}\n");
+        let b = bind_py(&py, "");
+        assert_eq!(
+            atoms(&b),
+            ["cap/node/a/fs.read"],
+            "{body}: {:?}",
+            b.findings
+        );
+        assert!(of(&b, "CAP001")[0].reason.is_none(), "{body}");
+    }
+    let py = "from pathlib import Path\n\n\ndef go(p: Path):\n    return p.open()\n";
+    assert_eq!(atoms(&bind_py(py, "")), ["cap/node/a/fs.read"]);
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn path_writes_are_fs_write_and_a_read_grant_does_not_cover_them() {
+    let py = "from pathlib import Path\n\n_P = Path(\"o\")\n\n\ndef go():\n    _P.write_text(\"a\")\n    _P.write_bytes(b\"a\")\n";
+    let b = bind_py(py, "  may fs.read;\n");
+    assert_eq!(atoms(&b), ["cap/node/a/fs.write"], "{:?}", b.findings);
+    assert!(of(&b, "CAP001")[0].reason.is_none());
+    assert!(of(&bind_py(py, "  may fs.write;\n"), "CAP001").is_empty());
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_vocabulary_method_on_an_unresolved_receiver_is_a_may_use_never_clean() {
+    for call in [
+        "p.read_text()",
+        "p.read_bytes()",
+        "p.open()",
+        "p.write_text(\"a\")",
+        "p.write_bytes(b\"a\")",
+    ] {
+        let py = format!("def go(p):\n    return {call}\n");
+        let b = bind_py(&py, "");
+        let f = of(&b, "CAP001");
+        assert_eq!(f.len(), 1, "{call}: {:?}", b.findings);
+        assert!(
+            f[0].reason.is_some(),
+            "{call}: must be Unresolved, not an Error: {f:?}"
+        );
+        assert!(
+            f[0].message.contains("src/x.py:2"),
+            "{call}: {}",
+            f[0].message
+        );
+        assert!(f[0].anchor.ends_with("/receiver"), "{}", f[0].anchor);
+    }
+    // a constant assigned something that is not a Path does not resolve either
+    let py = "from pathlib import Path\n\n_P = make()\n\n\ndef go():\n    return _P.read_text()\n";
+    let f = of(&bind_py(py, ""), "CAP001").len();
+    assert_eq!(f, 1);
+    // a grant silences the May use too
+    let b = bind_py("def go(p):\n    return p.read_text()\n", "  may fs.read;\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn common_python_file_apis_are_fs_uses() {
+    for (call, atom) in [
+        ("os.walk(\".\")", "fs.read"),
+        ("shutil.rmtree(\"d\")", "fs.write"),
+        ("os.remove(\"d\")", "fs.write"),
+        ("tempfile.mkdtemp()", "fs.write"),
+        ("glob.glob(\"*\")", "fs.read"),
+    ] {
+        let py = format!("import os, shutil, tempfile, glob\n\n\ndef go():\n    {call}\n");
+        let b = bind_py(&py, "");
+        assert!(
+            atoms(&b).contains(&format!("cap/node/a/{atom}")),
+            "{call}: {:?}",
+            b.findings
+        );
+    }
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn rust_fs_paths_read_and_write_including_qualified_forms() {
+    let rs = "fn go() {\n    let _ = std::fs::read_to_string(\"a\");\n    let _ = tokio::fs::write(\"a\", b\"\");\n    let _ = fs::remove_file(\"a\");\n}\n";
+    let b = bind_file("src/x.rs", rs, "");
+    assert_eq!(
+        atoms(&b),
+        ["cap/node/a/fs.read", "cap/node/a/fs.write"],
+        "{:?}",
+        b.findings
+    );
+    assert!(of(&b, "CAP001").iter().all(|f| f.reason.is_none()));
 }

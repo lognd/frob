@@ -2,6 +2,7 @@
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
 // frob:ticket 01M4D6NGJANPW3T3DKM77B0T1W
+// frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -71,6 +72,18 @@ impl CodeFile {
     /// True when the file is an adapter-less F0 opaque unit.
     pub fn is_opaque(&self) -> bool {
         self.language == OPAQUE
+    }
+
+    /// The source text re-read from disk (for textual receiver typing); `None` when unreadable.
+    pub fn source(&self) -> Option<String> {
+        let (root, entry) = &self.origin;
+        match std::fs::read_to_string(root.join(&entry.path)) {
+            Ok(t) => Some(t),
+            Err(err) => {
+                tracing::warn!(path = %self.path, %err, "source unreadable for receiver typing");
+                None
+            }
+        }
     }
 
     /// The symbol view of the file; `None` when it is unreadable.

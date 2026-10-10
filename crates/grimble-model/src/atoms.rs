@@ -7,6 +7,7 @@
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
+// frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
 
 use gob_ir::registry::{AtomEntry, DetectorEntry, DetectorKind, VocabEntry};
 
@@ -73,9 +74,31 @@ inventory::submit! {
 
 // The observed-use vocabularies of the capability rules (binding.md 7.2): one class per atom,
 // named by the atom. A leading `.` is a method name matched on any receiver; `grimble-bind`'s
-// `caps` gates it on a companion call so a bare `.listen` is not a use by itself.
+// `caps` gates it on a companion call so a bare `.listen` is not a use by itself. `Path.m` is
+// method `m` on a `pathlib.Path` receiver (a Must use once the receiver type resolves); an ungated
+// `.m` is a May use on a receiver that does not resolve. A Rust `a::b` also names `x::a::b`.
 inventory::submit! {
-    VocabEntry { lang: "python", kind: "fs.read", names: &["open", "io.open", "os.listdir", "os.scandir", "shutil.copy"] }
+    VocabEntry { lang: "python", kind: "fs.read", names: &[
+        "open", "io.open", "codecs.open", "os.listdir", "os.scandir", "os.walk", "os.stat", "os.lstat",
+        "os.path.exists", "os.path.isfile", "os.path.isdir", "os.path.getsize", "glob.glob", "glob.iglob",
+        "shutil.copy", "shutil.copy2", "shutil.copyfile", "shutil.copytree", "shutil.move",
+        "Path.read_text", "Path.read_bytes", "Path.open", "Path.iterdir", "Path.glob", "Path.rglob",
+        "Path.stat", "Path.exists", "Path.is_file", "Path.is_dir",
+        ".read_text", ".read_bytes", ".open",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "python", kind: "fs.write", names: &[
+        "os.remove", "os.unlink", "os.rename", "os.replace", "os.mkdir", "os.makedirs", "os.rmdir",
+        "os.removedirs", "os.truncate", "os.chmod", "os.symlink", "shutil.copy", "shutil.copy2",
+        "shutil.copyfile", "shutil.copytree", "shutil.move", "shutil.rmtree",
+        "tempfile.NamedTemporaryFile", "tempfile.TemporaryFile", "tempfile.mkstemp", "tempfile.mkdtemp",
+        "tempfile.TemporaryDirectory",
+        "Path.write_text", "Path.write_bytes", "Path.mkdir", "Path.touch", "Path.unlink", "Path.rmdir",
+        "Path.rename", "Path.replace",
+        ".write_text", ".write_bytes",
+    ] }
 }
 
 inventory::submit! {
@@ -87,7 +110,19 @@ inventory::submit! {
 }
 
 inventory::submit! {
-    VocabEntry { lang: "rust", kind: "fs.read", names: &["File::open", "fs::read", "fs::read_to_string", "fs::read_dir"] }
+    VocabEntry { lang: "rust", kind: "fs.read", names: &[
+        "File::open", "fs::read", "fs::read_to_string", "fs::read_dir", "fs::metadata",
+        "fs::symlink_metadata", "fs::canonicalize", "fs::read_link", "fs::copy", "OpenOptions::new",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "rust", kind: "fs.write", names: &[
+        "File::create", "File::create_new", "OpenOptions::new", "fs::write", "fs::copy", "fs::create_dir",
+        "fs::create_dir_all", "fs::remove_file", "fs::remove_dir", "fs::remove_dir_all", "fs::rename",
+        "fs::set_permissions", "fs::hard_link", "tempfile::tempfile", "tempfile::tempdir",
+        "NamedTempFile::new", "TempDir::new",
+    ] }
 }
 
 inventory::submit! {
