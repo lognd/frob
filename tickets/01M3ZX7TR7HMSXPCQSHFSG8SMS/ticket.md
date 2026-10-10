@@ -2,7 +2,8 @@
 id = "01M3ZX7TR7HMSXPCQSHFSG8SMS"
 title = "E-STATE-TRACKED guard: refuse when git tracks a state or cache directory"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
