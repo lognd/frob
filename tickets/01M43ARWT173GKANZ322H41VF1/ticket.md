@@ -2,13 +2,13 @@
 id = "01M43ARWT173GKANZ322H41VF1"
 title = "CI: path-filtered crunk jobs and an optional node and playwright job"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:47Z"
-updated = "2026-10-04T11:28:47Z"
+updated = "2026-10-10T23:27:47Z"
 idempotency_key = "crunk-plan-ci"
 labels = ["area:crunk"]
 scope = [".github/workflows/ci.yml", "docs/crunk/ci.md"]
