@@ -149,6 +149,26 @@ impl Packages {
         None
     }
 
+    // frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
+    /// The repo-relative directory cargo must run in for the package owning `file`: the nearest enclosing `[workspace]` root, else the package directory (empty at the repository root).
+    pub fn cargo_root(&mut self, file: &str) -> Option<PathBuf> {
+        let mut dir = Path::new(file).parent().map(Path::to_path_buf);
+        let pkg_dir = loop {
+            let d = dir?;
+            if let Some((_, pkg_dir)) = self.package_at(&d) {
+                break pkg_dir;
+            }
+            dir = d.parent().map(Path::to_path_buf);
+        };
+        let workspace = pkg_dir.ancestors().find(|a| {
+            std::fs::read_to_string(self.root.join(a).join("Cargo.toml"))
+                .ok()
+                .and_then(|t| t.parse::<toml::Table>().ok())
+                .is_some_and(|t| t.contains_key("workspace"))
+        });
+        Some(workspace.map_or_else(|| pkg_dir.clone(), Path::to_path_buf))
+    }
+
     fn package_at(&mut self, dir: &Path) -> Option<(String, PathBuf)> {
         if let Some(hit) = self.cache.get(dir) {
             return hit.clone();

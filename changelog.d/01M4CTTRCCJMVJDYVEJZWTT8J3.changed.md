@@ -1,0 +1,1 @@
+frob test now runs nextest from the Cargo workspace that owns the selected tests (for example a crate under rs/ with no root Cargo.toml) and, when a runner fails, prints its exit code and stderr tail.

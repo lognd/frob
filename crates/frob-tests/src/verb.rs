@@ -9,7 +9,8 @@ use serde::Serialize;
 
 use crate::error::TestsError;
 use crate::lease::lease_ticket;
-use crate::run::{RunOptions, RunReport, run};
+// frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
+use crate::run::{RunOptions, RunReport, failure_cause, run};
 use crate::select::{Framework, TestTarget, select_tests};
 use crate::touched::{TouchedSet, build_repo_graph, touched_set};
 
@@ -246,8 +247,10 @@ impl Command for TestVerb {
             payload.warnings = warnings;
             Ok(payload)
         } else {
+            // frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
+            let cause = failure_cause(&report);
             Err(CliError::Negative(format!(
-                "tests failed ({} executed, exit {:?}): {}{}",
+                "tests failed ({} executed, exit {:?}): {}{}\n{cause}",
                 data.executed.len(),
                 report.exit_code(),
                 failed_names(&data.failed),

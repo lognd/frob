@@ -11,6 +11,8 @@ use frob_evidence::record::Provider;
 use gob_exec::Runner;
 use gob_walk::{WalkConfig, walk};
 
+// frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
+use crate::catalog::Packages;
 use crate::error::{Result, TestsError};
 use crate::node::{JsMembers, is_runner_test_file};
 use crate::select::{CsharpOwner, CsharpOwners, Framework, TestTarget};
@@ -68,7 +70,7 @@ pub struct FrameworkRun {
     pub framework: Framework,
     /// The arguments that were used (after `cargo nextest run`, `pytest`, or `vitest` and `jest`: test files relative to the member).
     pub args: Vec<String>,
-    /// The member directory vitest or jest ran in (empty at the root and for the other runners).
+    /// The directory vitest or jest ran in, or the Cargo workspace directory nextest ran in, relative to the work tree (empty at the root and for the other runners).
     pub member: String,
     /// Verdict, executed test names and the redacted transcript.
     pub capture: Capture,
@@ -181,6 +183,61 @@ pub fn nextest_args(selected: &[TestTarget]) -> Vec<String> {
         .join(" | ");
     args.extend(["-E".to_owned(), expr]);
     args
+}
+
+// frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
+/// The nextest runs for `selected`: the work-tree-relative directory of each owning Cargo workspace (empty at the root) with its [`nextest_args`].
+pub fn nextest_groups(root: &Path, selected: &[TestTarget]) -> Vec<(String, Vec<String>)> {
+    let mut packages = Packages::new(root);
+    let mut by_dir: BTreeMap<String, Vec<TestTarget>> = BTreeMap::new();
+    for t in selected
+        .iter()
+        .filter(|t| t.framework == Framework::Nextest)
+    {
+        let file = t.symref.split("::").next().unwrap_or_default();
+        let dir = packages
+            .cargo_root(file)
+            .map(|d| d.to_string_lossy().replace('\\', "/"))
+            .unwrap_or_default();
+        by_dir.entry(dir).or_default().push(t.clone());
+    }
+    by_dir
+        .into_iter()
+        .map(|(dir, targets)| (dir, nextest_args(&targets)))
+        .collect()
+}
+
+// frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
+/// Why a failed report failed: the exit code and the last lines of the first failing runner's stderr (empty when everything passed).
+pub fn failure_cause(report: &RunReport) -> String {
+    const TAIL_LINES: usize = 15;
+    const TAIL_CHARS: usize = 1500;
+    let Some(run) = report.runs.iter().find(|r| !r.capture.passed) else {
+        return String::new();
+    };
+    let exit = run.capture.exit_code.map_or_else(
+        || "no exit code (signal or timeout)".to_owned(),
+        |c| format!("exit code {c}"),
+    );
+    let lines: Vec<&str> = run.capture.transcript.lines().collect();
+    let mut tail = lines[lines.len().saturating_sub(TAIL_LINES)..].join("\n");
+    if tail.len() > TAIL_CHARS {
+        let mut cut = tail.len() - TAIL_CHARS;
+        while !tail.is_char_boundary(cut) {
+            cut += 1;
+        }
+        tail = tail[cut..].to_owned();
+    }
+    let place = if run.member.is_empty() {
+        String::new()
+    } else {
+        format!(" in {}", run.member)
+    };
+    format!(
+        "{:?} runner{place} failed with {exit}; stderr tail:\n{}",
+        run.framework,
+        tail.trim_end()
+    )
 }
 
 /// Quote `args` so [`frob_evidence::provider::split_args`] reads them back unchanged.
@@ -374,6 +431,7 @@ pub fn unity_assemblies(selected: &[TestTarget], opts: &RunOptions) -> Vec<Strin
 ///
 /// [`crate::TestsError::Evidence`] when pytest is not allowlisted, [`crate::TestsError::Exec`] when a runner cannot be started,
 /// [`crate::TestsError::UnityProviderMissing`] (before anything runs) when the selection includes Unity assembly tests.
+#[allow(clippy::too_many_lines)]
 pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Result<RunReport> {
     // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
     let unity = unity_assemblies(selected, opts);
@@ -392,18 +450,20 @@ pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Resul
         });
     }
     let mut report = RunReport::default();
+    // frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
     let nextest = if opts.all {
-        vec!["--workspace".to_owned()]
+        vec![(String::new(), vec!["--workspace".to_owned()])]
     } else {
-        nextest_args(selected)
+        nextest_groups(&opts.root, selected)
     };
-    if !nextest.is_empty() {
-        tracing::info!(all = opts.all, "running nextest");
-        let capture = run_nextest(runner, &opts.root, &nextest, &opts.profile, opts.timeout)?;
+    for (member, args) in nextest {
+        tracing::info!(all = opts.all, member, "running nextest");
+        let cwd = opts.root.join(&member);
+        let capture = run_nextest(runner, &cwd, &args, &opts.profile, opts.timeout)?;
         report.runs.push(FrameworkRun {
             framework: Framework::Nextest,
-            member: String::new(),
-            args: nextest,
+            member,
+            args,
             capture,
         });
     }
