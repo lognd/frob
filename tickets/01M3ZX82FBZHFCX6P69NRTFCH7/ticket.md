@@ -8,10 +8,10 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-10T23:27:40Z"
+updated = "2026-10-10T23:28:39Z"
 idempotency_key = "m2-nav-slug"
 labels = ["milestone:2", "area:navigation", "good-first"]
-scope = ["crates/frob-ledger/src/slug.rs"]
+scope = ["crates/frob-ledger/src/slug.rs", "crates/frob-ledger/src/layout.rs", "crates/frob-ledger/src/lib.rs"]
 
 [[acceptance]]
 text = "Given the title `Parser rewrite: faster, safer (v2)!`, when slugged, then the result is `parser-rewrite-faster-safer-v2`"
