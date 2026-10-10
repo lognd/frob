@@ -2,7 +2,8 @@
 id = "01M4H8NECMX7XBS1J6FDWRJEZV"
 title = "frob-land share_build_dir writes the shared target symlink through a worktree's git dir (.git/worktrees/<T>/../../frob/land-target); it dangles once that worktree is removed and cargo stages fail with 'Not a directory'"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
