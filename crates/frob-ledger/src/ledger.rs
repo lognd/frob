@@ -30,6 +30,8 @@ pub enum RefMode {
     Trunk,
     /// The currently checked-out branch, for protected-trunk and fork flows.
     Branch,
+    /// The orphan ticket branch `[tickets] branch` in the ticket-branch layout; `ref` stays the code base branch.
+    Orphan,
 }
 
 impl std::str::FromStr for RefMode {
@@ -39,8 +41,9 @@ impl std::str::FromStr for RefMode {
         match s {
             "trunk" => Ok(Self::Trunk),
             "branch" => Ok(Self::Branch),
+            "orphan" => Ok(Self::Orphan),
             other => Err(format!(
-                "`{other}` is not a ref mode; expected trunk or branch"
+                "`{other}` is not a ref mode; expected trunk, branch or orphan"
             )),
         }
     }
@@ -53,6 +56,8 @@ pub struct LedgerConfig {
     pub ref_name: String,
     /// Trunk or branch mode.
     pub mode: RefMode,
+    /// Name of the orphan ticket branch (`[tickets] branch`), the ledger ref when `mode` is [`RefMode::Orphan`].
+    pub branch: String,
     /// Directory of ticket directories, relative to the repo root.
     pub dir: String,
     /// Compare-and-swap retries (`[git] cas_retries`).
@@ -79,6 +84,7 @@ impl Default for LedgerConfig {
         Self {
             ref_name: "refs/heads/main".to_owned(),
             mode: RefMode::Trunk,
+            branch: "frob-tickets".to_owned(),
             dir: "tickets".to_owned(),
             cas_retries: 5,
             handle_min_len: crate::id::DEFAULT_HANDLE_MIN_LEN,
@@ -178,14 +184,19 @@ impl Ledger {
             || repo.git_dir().join("frob").join("tickets.sqlite"),
             |w| w.join(".frob").join("tickets.sqlite"),
         );
-        tracing::debug!(index = %index_path.display(), ref_name = %cfg.ref_name, mode = ?cfg.mode, "ledger opened");
+        let layout = if cfg.mode == RefMode::Orphan {
+            Layout::Branch
+        } else {
+            Layout::Dir
+        };
+        tracing::debug!(index = %index_path.display(), ref_name = %cfg.ref_name, mode = ?cfg.mode, ?layout, "ledger opened");
         Self {
             repo,
             cfg,
             index_path,
             redact: std::sync::OnceLock::new(),
             clock,
-            layout: Layout::Dir,
+            layout,
             branch_scan: std::sync::Mutex::new(None),
             rebuilds: std::sync::atomic::AtomicUsize::new(0),
             git_reads: std::sync::atomic::AtomicUsize::new(0),
@@ -204,8 +215,26 @@ impl Ledger {
         self.layout
     }
 
+    /// Refuse `verb` on the ticket-branch layout, which it does not write yet.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::Invalid`] naming the verb when the layout is [`Layout::Branch`].
+    pub(crate) fn require_dir_layout(&self, verb: &str) -> Result<()> {
+        if self.layout == Layout::Branch {
+            tracing::warn!(
+                verb,
+                "verb refused: not implemented for the ticket-branch layout"
+            );
+            return Err(LedgerError::invalid(format!(
+                "`{verb}` does not support the ticket-branch layout yet (ref_mode = \"orphan\")"
+            )));
+        }
+        Ok(())
+    }
+
     /// Prefix that turns a path relative to the ledger tree into a repository path.
-    fn tree_prefix(&self) -> String {
+    pub fn tree_prefix(&self) -> String {
         match self.layout {
             Layout::Dir => format!("{}/", self.cfg.dir),
             Layout::Branch => String::new(),
@@ -301,6 +330,13 @@ impl Ledger {
             RefMode::Branch => {
                 let branch = self.repo.current_branch()?.ok_or(LedgerError::Detached)?;
                 Ok(format!("refs/heads/{branch}"))
+            }
+            RefMode::Orphan => {
+                let name = full_ref(&self.cfg.branch);
+                if self.repo.rev_parse(&name).is_ok() {
+                    return Ok(name);
+                }
+                Err(LedgerError::RefMissing { ref_name: name })
             }
             RefMode::Trunk => {
                 let name = full_ref(&self.cfg.ref_name);

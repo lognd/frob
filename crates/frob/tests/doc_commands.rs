@@ -146,6 +146,21 @@ fn quickstart_runs_from_init_to_land() {
     run_script(&script, &work, &config);
 }
 
+/// The ticket-branch guide runs end to end: the ledger lands on `frob-tickets` and the worktree comes from the code branch.
+// frob:ticket 01M4CTTSAZC93K94KNXH3WVSYM
+#[test]
+fn ticket_branch_guide_runs_in_a_fresh_repository() {
+    let text = std::fs::read_to_string(repo_root().join("docs/guides/ticket-branch.md"))
+        .expect("ticket-branch guide");
+    let script = prepare(&sh_blocks(&text));
+    assert!(
+        script.contains("ticket branch init"),
+        "guide creates the branch"
+    );
+    let (_tmp, config, work) = sandbox();
+    run_script(&script, &work, &config);
+}
+
 /// GitHub-style slug of a heading.
 fn slug(heading: &str) -> String {
     heading

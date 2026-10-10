@@ -71,6 +71,67 @@ struct Pending {
 #[derive(Default)]
 pub(crate) struct Siblings {
     pending: Mutex<Vec<Pending>>,
+    /// One note per configured sibling this pass did not run, for the report's warnings.
+    skipped: Mutex<Vec<String>>,
+}
+
+/// The paths a sibling reads beyond its own source files: its config, its pack lock and, for grimble, model files.
+fn is_sibling_input(product: &str, config: &str, models: &[String], path: &str) -> bool {
+    let path = path.strip_prefix("./").unwrap_or(path);
+    path == config
+        || path == format!("{product}.packs.lock")
+        || (product == "grimble"
+            && (Path::new(path)
+                .extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("grmb"))
+                || models.iter().any(|m| m == path)))
+}
+
+/// Why `product` can be skipped for a ticket touching `scope`, or `None` when it must run.
+///
+/// A sibling reads its config, its model files and the code its bindings select. Which code
+/// that is needs the sibling's own evaluation, so any file of a known code language counts
+/// (Markdown does not): a docs-only scope skips, a code scope runs.
+fn skip_reason(
+    product: &str,
+    config: &str,
+    models: &[String],
+    scope: Option<&BTreeSet<String>>,
+) -> Option<String> {
+    let files = scope?;
+    let touched = files.iter().any(|f| {
+        is_sibling_input(product, config, models, f)
+            || gob_languages::Language::detect(f).is_some_and(|l| {
+                !matches!(
+                    l,
+                    gob_languages::Language::Markdown
+                        | gob_languages::Language::Toml
+                        | gob_languages::Language::Yaml
+                )
+            })
+    });
+    (!touched).then(|| {
+        format!(
+            "{product} not evaluated: the ticket scope ({} files) touches none of its inputs ({config}, its models and pack lock, code files)",
+            files.len()
+        )
+    })
+}
+
+/// The root model files declared in `grimble.toml` `[grimble] models`; empty when unreadable.
+fn grimble_models(root: &Path) -> Vec<String> {
+    let text = std::fs::read_to_string(root.join("grimble.toml")).unwrap_or_default();
+    let doc: toml::Table = text.parse().unwrap_or_default();
+    doc.get("grimble")
+        .and_then(|g| g.get("models"))
+        .and_then(toml::Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_str())
+                .map(|m| m.strip_prefix("./").unwrap_or(m).to_owned())
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// True when `--only` leaves the sibling stage on: no filter, or one naming `SIB`.
@@ -97,6 +158,11 @@ impl Siblings {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         pending.clear();
+        let mut skipped = self
+            .skipped
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        skipped.clear();
         if !wanted(&opts.only) {
             tracing::info!("sibling stage skipped by --only");
             return;
@@ -104,6 +170,16 @@ impl Siblings {
         for (product, config) in SIBLINGS {
             if !root.join(config).is_file() {
                 tracing::debug!(product, "sibling not configured");
+                continue;
+            }
+            let models = if *product == "grimble" {
+                grimble_models(root)
+            } else {
+                Vec::new()
+            };
+            if let Some(note) = skip_reason(product, config, &models, scope) {
+                tracing::info!(product, "{note}");
+                skipped.push(note);
                 continue;
             }
             let (program, row) = match opts.sibling_programs.iter().find(|(p, _)| p == product) {
@@ -171,6 +247,12 @@ impl Siblings {
                 .unwrap_or_else(std::sync::PoisonError::into_inner),
         );
         let mut out = External::default();
+        out.warnings.append(
+            &mut self
+                .skipped
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner),
+        );
         for Pending {
             product,
             require,
@@ -251,5 +333,46 @@ fn unavailable(product: &str, failure: &Failure, require: bool) -> Finding {
         })
     } else {
         finding
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn scope(paths: &[&str]) -> BTreeSet<String> {
+        paths.iter().map(|p| (*p).to_owned()).collect()
+    }
+
+    // frob:ticket 01M4HDRT4RSDZN3PRJ4CV286BH
+    // frob:tests crates/frob-check/src/sibling/mod.rs::skip_reason
+    #[test]
+    fn a_docs_only_scope_skips_with_a_reason_and_an_unscoped_run_never_does() {
+        let docs = scope(&["docs/a.md", "changelog.d/x.md"]);
+        let reason = skip_reason("grimble", "grimble.toml", &[], Some(&docs)).unwrap();
+        assert!(reason.starts_with("grimble not evaluated"), "{reason}");
+        assert!(skip_reason("grimble", "grimble.toml", &[], None).is_none());
+    }
+
+    // frob:ticket 01M4HDRT4RSDZN3PRJ4CV286BH
+    // frob:tests crates/frob-check/src/sibling/mod.rs::skip_reason
+    #[test]
+    fn config_models_lock_and_code_files_keep_a_sibling_running() {
+        let models = vec!["design/model.grmb".to_owned()];
+        for touched in [
+            "grimble.toml",
+            "grimble.packs.lock",
+            "design/model.grmb",
+            "design/other.grmb",
+            "crates/x/src/lib.rs",
+        ] {
+            let files = scope(&[touched]);
+            assert!(
+                skip_reason("grimble", "grimble.toml", &models, Some(&files)).is_none(),
+                "{touched}"
+            );
+        }
+        let files = scope(&["grimble.toml"]);
+        assert!(skip_reason("crunk", "crunk.toml", &[], Some(&files)).is_some());
     }
 }
