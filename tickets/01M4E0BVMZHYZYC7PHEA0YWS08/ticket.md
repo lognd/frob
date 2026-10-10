@@ -8,8 +8,8 @@ points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T14:58:33Z"
-updated = "2026-10-10T15:00:46Z"
-scope = ["changelog.d/**", "crates/gob-plan/**"]
+updated = "2026-10-10T15:00:55Z"
+scope = ["changelog.d/**", "crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
 text = "Given `not d(f)` where def d contains `certainly` or `possibly` at even depth, when compiled, then GRL017 fires; a def body with `not` inside it still fires; `d(f)` outside any negation stays clean"
