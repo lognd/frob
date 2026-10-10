@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "needs crates/gob-check/src (production partial-parse finding site) which is leased by ~5SQT8RX; scope widening refused with E-LEASE-HELD"
+at = "2026-10-10T19:36:19Z"
+actor = "Claude"
+rev = 1
