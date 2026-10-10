@@ -2,13 +2,13 @@
 id = "01M3ZX7DT0J6MRW68P60GAYD3N"
 title = "Generate docs/reference/grl/catalog.md and embed the catalog in the binary"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-03T03:34:20Z"
+updated = "2026-10-10T23:27:03Z"
 idempotency_key = "m2-grl-catalog-docs"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-dev/src/render/**", "docs/reference/grl/**"]
