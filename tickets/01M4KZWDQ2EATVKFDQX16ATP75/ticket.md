@@ -2,7 +2,8 @@
 id = "01M4KZWDQ2EATVKFDQX16ATP75"
 title = "base-ref config tests commit without an identity and fail NoIdentity on CI"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
