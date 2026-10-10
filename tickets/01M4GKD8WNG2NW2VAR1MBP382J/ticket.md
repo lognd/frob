@@ -2,7 +2,8 @@
 id = "01M4GKD8WNG2NW2VAR1MBP382J"
 title = "DOC001 partial markdown parse is reported at 1:1 without the line that failed (unescaped | in a code span in a table row)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
