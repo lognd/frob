@@ -2,13 +2,13 @@
 id = "01M4CTTRCCJMVJDYVEJZWTT8J3"
 title = "frob test runs each test runner from the project root that owns the selected tests (Rust crate in a subdirectory) and prints the cause on failure"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:35Z"
-updated = "2026-10-08T04:02:35Z"
+updated = "2026-10-10T15:58:11Z"
 scope = ["changelog.d/**", "crates/frob-tests/**", "crates/frob-evidence/**", "crates/frob/**"]
 
 [[acceptance]]
