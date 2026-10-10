@@ -2,6 +2,7 @@
 //! atoms and satisfies the `pack` entity. Repro 03 of the logand adoption run.
 
 // frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
+// frob:ticket 01M4H4WTSTB7X4A6STFEF8K8S3
 
 use std::path::Path;
 
@@ -91,4 +92,24 @@ fn a_malformed_pack_file_is_mdl004() {
     let (_d, doc) = repo(Some("not = [valid"));
     let m = messages(&doc, "MDL004");
     assert!(m.iter().any(|x| x.contains("malformed")), "{m:?}");
+}
+
+#[test]
+fn the_packs_table_doc_and_generated_references_describe_what_loads() {
+    use gob_config::ConfigTable;
+    let doc = grimble_check::config::PacksTable::describe().doc;
+    assert!(!doc.contains("not loaded yet"), "stale doc: {doc}");
+    assert!(
+        doc.contains("local/") && doc.contains("atoms"),
+        "doc: {doc}"
+    );
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    for rel in ["docs/schemas/config.json", "docs/reference/config.md"] {
+        let text = std::fs::read_to_string(root.join(rel)).unwrap();
+        assert!(!text.contains("Packs are not loaded yet"), "{rel} is stale");
+        assert!(
+            text.contains("Only `local/` packs"),
+            "{rel} lacks the new doc"
+        );
+    }
 }
