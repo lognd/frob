@@ -2,7 +2,8 @@
 id = "01M4FCZT2N5WN3VPVJ8KB92Z06"
 title = "v1 importer: accept CRLF front matter, default to all tickets, keep v1 sprint as a sprint:<v> label"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
