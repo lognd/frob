@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+at = "2026-10-10T15:49:55Z"
+actor = "Claude"
+rev = 1
