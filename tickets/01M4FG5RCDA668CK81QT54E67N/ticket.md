@@ -7,13 +7,13 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T04:54:04Z"
-updated = "2026-10-10T18:41:19Z"
+updated = "2026-10-10T18:45:39Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-check/**", "crates/frob-check/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given 59 opaque text files, when frob check runs, then one unresolved notice names the count and the rules that could not read them, instead of one finding per rule"
-bound = false
+bound = true
 +++
 
 logand.app-v2 F-506.
