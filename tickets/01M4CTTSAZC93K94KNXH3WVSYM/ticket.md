@@ -2,7 +2,8 @@
 id = "01M4CTTSAZC93K94KNXH3WVSYM"
 title = "Ticket-branch mode for adopters: work builds the worktree from the code branch, ref_mode names the orphan branch, setup documented"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
