@@ -1,10 +1,12 @@
 //! `.github/workflows/ci.yml` and `cargo dev ci` must run the same checks: every check in the
-//! workflow is `cargo dev ci --step <name>` on Linux and `cargo dev-isolated ci --step <name>` on
-//! Windows (no argv, flags or environment of its own), in the
+//! workflow is `cargo $DEV ci --step <name>` on both OSes (the matrix sets `DEV` to `dev` on Linux
+//! and `dev-isolated` on Windows), or a Linux-only `cargo dev ci --step <name>` (no argv, flags or
+//! environment of its own), in the
 //! order of `gob_dev::ci::steps`, on the platforms the step list says, and every step is run.
 // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
 // frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
 // frob:ticket 01M43FB0TFBNDFH1AEC1CTNHZG
+// frob:ticket 01M4CTE2T943ATA1PKVBN7DCP3
 
 use std::path::PathBuf;
 
@@ -34,14 +36,15 @@ fn workflow_steps(text: &str) -> Vec<(String, Option<String>, Option<String>, bo
         .collect()
 }
 
-/// Per-OS check invocations: Linux through `cargo dev`, Windows through `cargo dev-isolated`.
+/// Check invocations: both OSes through `cargo $DEV` (matrix `dev`), or Linux alone through `cargo dev`.
 const LINUX_PREFIX: &str = "cargo dev ci --step ";
-const WINDOWS_PREFIX: &str = "cargo dev-isolated ci --step ";
+const BOTH_PREFIX: &str = "cargo $DEV ci --step ";
 
 /// The first deviation of `ci.yml` from the `cargo dev ci` step list, naming the offending step.
 ///
-/// Linux must run every step in order through `cargo dev`; Windows every non-Linux-only step in
-/// order through `cargo dev-isolated`. Neither may set env or run a raw check.
+/// Linux must run every step in order (through `cargo dev`); Windows every non-Linux-only step in
+/// order, through the shared `cargo $DEV` step, which the matrix points at `dev-isolated`. Neither
+/// may set env or run a raw check.
 fn parity(text: &str, steps: &[Step]) -> Result<(), String> {
     let mut linux = Vec::new();
     let mut windows = Vec::new();
@@ -64,10 +67,11 @@ fn parity(text: &str, steps: &[Step]) -> Result<(), String> {
                 "ci.yml step {name:?} runs a check outside cargo dev ci: {first}"
             ));
         }
-        let (prefix, os, seen) = if first.starts_with(LINUX_PREFIX) {
-            (LINUX_PREFIX, "Linux", &mut linux)
-        } else if first.starts_with(WINDOWS_PREFIX) {
-            (WINDOWS_PREFIX, "Windows", &mut windows)
+        let both = first.starts_with(BOTH_PREFIX);
+        let prefix = if both {
+            BOTH_PREFIX
+        } else if first.starts_with(LINUX_PREFIX) {
+            LINUX_PREFIX
         } else {
             continue;
         };
@@ -83,14 +87,21 @@ fn parity(text: &str, steps: &[Step]) -> Result<(), String> {
                 name, step.name
             ));
         }
-        let on_os = cond.as_deref().is_some_and(|c| c.contains(os));
-        if !on_os {
+        if both {
+            if step.linux_only {
+                return Err(format!(
+                    "step {}: `{first}` runs on Windows too, but the step is Linux-only",
+                    step.name
+                ));
+            }
+            windows.push(step.name);
+        } else if !cond.as_deref().is_some_and(|c| c.contains("Linux")) {
             return Err(format!(
-                "step {}: `{first}` must be guarded by an {os} condition, ci.yml has if={cond:?}",
+                "step {}: `{first}` must be guarded by a Linux condition, ci.yml has if={cond:?}",
                 step.name
             ));
         }
-        seen.push(step.name);
+        linux.push(step.name);
     }
     let want: Vec<&str> = steps.iter().map(|s| s.name).collect();
     if linux != want {
@@ -170,21 +181,21 @@ fn a_check_missing_from_cargo_dev_ci_fails_naming_it() {
 #[test]
 fn a_raw_or_dropped_check_in_ci_yml_fails_naming_it() {
     let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
-    let raw = text.replace("cargo dev ci --step fmt", "cargo fmt --all");
+    let raw = text.replace("cargo $DEV ci --step fmt", "cargo fmt --all");
     let err = parity(&raw, &real_steps()).unwrap_err();
     assert!(
         err.contains("rustfmt") && err.contains("cargo fmt"),
         "{err}"
     );
-    let dropped = text.replace("cargo dev ci --step docs", "echo skipped");
+    let dropped = text.replace("cargo $DEV ci --step docs", "echo skipped");
     let err = parity(&dropped, &real_steps()).unwrap_err();
     assert!(
         err.contains("missing from ci.yml") && err.contains("docs"),
         "{err}"
     );
     let with_env = text.replace(
-        "        run: cargo dev ci --step docs",
-        "        env:\n          RUSTDOCFLAGS: x\n        run: cargo dev ci --step docs",
+        "        run: cargo $DEV ci --step docs",
+        "        env:\n          RUSTDOCFLAGS: x\n        run: cargo $DEV ci --step docs",
     );
     assert!(
         parity(&with_env, &real_steps())
@@ -251,11 +262,136 @@ fn windows_steps_use_the_isolated_alias_with_the_same_names_and_order() {
     let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
     parity(&text, &real_steps()).unwrap();
     let broken = text.replace(
-        "cargo dev-isolated ci --step nextest",
+        "cargo $DEV ci --step nextest",
         "cargo dev ci --step nextest",
     );
     let err = parity(&broken, &real_steps()).unwrap_err();
     assert!(err.contains("nextest"), "{err}");
+}
+
+/// The matrix is what makes `cargo $DEV` mean `dev` on Linux and `dev-isolated` on Windows.
+// frob:ticket 01M4CTE2T943ATA1PKVBN7DCP3
+// frob:tests crates/gob-dev/tests/ci_parity.rs::the_matrix_points_dev_at_the_right_alias_per_os
+#[test]
+fn the_matrix_points_dev_at_the_right_alias_per_os() {
+    let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
+    let doc: Value = serde_yaml_ng::from_str(&text).unwrap();
+    let include = doc["jobs"]["rust"]["strategy"]["matrix"]["include"]
+        .as_sequence()
+        .unwrap();
+    let alias = |os: &str| {
+        include
+            .iter()
+            .find(|e| e["os"].as_str() == Some(os))
+            .and_then(|e| e["dev"].as_str())
+            .map(str::to_owned)
+    };
+    assert_eq!(alias("ubuntu-latest").as_deref(), Some("dev"));
+    assert_eq!(alias("windows-latest").as_deref(), Some("dev-isolated"));
+    assert_eq!(
+        doc["jobs"]["rust"]["env"]["DEV"].as_str(),
+        Some("${{ matrix.dev }}")
+    );
+}
+
+/// Superseded runs are cancelled per job (never the publisher), every job has a timeout, and a
+/// prose-only push skips the Rust jobs through the `changes` job, not a workflow `paths:` filter
+/// (a workflow that never starts leaves the commit with no checks, which the land gate reads as
+/// Unresolved).
+// frob:ticket 01M4CTE2T943ATA1PKVBN7DCP3
+// frob:tests crates/gob-dev/tests/ci_parity.rs::ci_cancels_superseded_runs_has_timeouts_and_filters_by_job
+#[test]
+fn ci_cancels_superseded_runs_has_timeouts_and_filters_by_job() {
+    let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
+    let doc: Value = serde_yaml_ng::from_str(&text).unwrap();
+    let jobs = doc["jobs"].as_mapping().unwrap();
+    for (name, job) in jobs {
+        let name = name.as_str().unwrap();
+        if job["uses"].is_string() {
+            continue; // a called workflow carries its own timeouts
+        }
+        assert!(
+            job["timeout-minutes"].as_u64().is_some_and(|m| m > 0),
+            "job {name:?} lacks timeout-minutes"
+        );
+    }
+    assert!(
+        doc["concurrency"].is_null(),
+        "a workflow-level group would cancel dev-publish mid-upload"
+    );
+    for name in ["rust", "profile"] {
+        let group = doc["jobs"][name]["concurrency"]["group"].as_str().unwrap();
+        assert!(
+            group.contains("github.workflow") && group.contains("github.ref"),
+            "{name}: {group}"
+        );
+        assert_eq!(
+            doc["jobs"][name]["concurrency"]["cancel-in-progress"].as_bool(),
+            Some(true),
+            "{name}"
+        );
+        let cond = doc["jobs"][name]["if"].as_str().unwrap();
+        assert!(
+            cond.contains("needs.changes.outputs.rust"),
+            "{name}: {cond}"
+        );
+    }
+    assert!(
+        doc["jobs"]["rust"]["concurrency"]["group"]
+            .as_str()
+            .unwrap()
+            .contains("matrix.os"),
+        "matrix legs must not cancel each other"
+    );
+    assert_eq!(
+        doc["jobs"]["dev-publish"]["concurrency"]["cancel-in-progress"].as_bool(),
+        Some(false)
+    );
+    let on = doc["on"].as_mapping().unwrap();
+    for trigger in ["push", "pull_request"] {
+        let t = &on[trigger];
+        assert!(
+            t["paths"].is_null() && t["paths-ignore"].is_null(),
+            "{trigger}: a trigger-level paths filter leaves ledger-only commits without checks"
+        );
+    }
+    assert!(doc["jobs"]["docs"]["if"].is_null(), "docs must always run");
+    let cond = doc["jobs"]["dev-artifacts"]["if"].as_str().unwrap();
+    assert!(cond.contains("needs.dev-gate.outputs.build"), "{cond}");
+}
+
+/// Workspace crates are cached by content (sccache on the GitHub Actions backend), in every job
+/// that compiles Rust.
+// frob:ticket 01M4CTE2T943ATA1PKVBN7DCP3
+// frob:tests crates/gob-dev/tests/ci_parity.rs::rust_jobs_cache_workspace_crates_with_sccache
+#[test]
+fn rust_jobs_cache_workspace_crates_with_sccache() {
+    let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
+    let doc: Value = serde_yaml_ng::from_str(&text).unwrap();
+    for name in ["rust", "profile"] {
+        let job = &doc["jobs"][name];
+        assert_eq!(
+            job["env"]["RUSTC_WRAPPER"].as_str(),
+            Some("sccache"),
+            "{name}"
+        );
+        assert_eq!(
+            job["env"]["SCCACHE_GHA_ENABLED"].as_str(),
+            Some("true"),
+            "{name}"
+        );
+        assert_eq!(
+            job["env"]["CARGO_INCREMENTAL"].as_str(),
+            Some("0"),
+            "{name}"
+        );
+        let installs = job["steps"].as_sequence().unwrap().iter().any(|s| {
+            s["uses"]
+                .as_str()
+                .is_some_and(|u| u.starts_with("mozilla-actions/sccache-action@"))
+        });
+        assert!(installs, "{name} never installs sccache");
+    }
 }
 
 // frob:ticket 01M43FB0TFBNDFH1AEC1CTNHZG

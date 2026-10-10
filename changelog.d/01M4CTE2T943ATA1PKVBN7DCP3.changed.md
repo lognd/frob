@@ -1,0 +1,1 @@
+CI cancels superseded runs per job, skips the Rust jobs for prose-only pushes, caches workspace crates with sccache, builds the dev channel at most hourly, and drops the duplicate MSRV check and Windows step pairs.
