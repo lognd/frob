@@ -2,7 +2,8 @@
 id = "01M4FCWY3H8CRHYYHVQ19SEHXJ"
 title = "grmb research cycle R1: exhaustive cited audits of design practice, failure modes, languages, incompleteness and graph languages"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 reporter = "lognd"
