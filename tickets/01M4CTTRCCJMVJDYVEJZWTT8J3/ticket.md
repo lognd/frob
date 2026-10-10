@@ -2,7 +2,8 @@
 id = "01M4CTTRCCJMVJDYVEJZWTT8J3"
 title = "frob test runs each test runner from the project root that owns the selected tests (Rust crate in a subdirectory) and prints the cause on failure"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
