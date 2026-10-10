@@ -26,4 +26,8 @@ bound = false
 [[criteria]]
 text = "Every ticket under the navigation epic (canonical ids, reindex, generated docs, profiles, tour) is done"
 bound = false
+
+[[criteria]]
+text = "CI is green on experimental on Linux and Windows at the release commit"
+bound = false
 +++
