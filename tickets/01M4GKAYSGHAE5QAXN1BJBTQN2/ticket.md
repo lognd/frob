@@ -2,7 +2,8 @@
 id = "01M4GKAYSGHAE5QAXN1BJBTQN2"
 title = "Bulk ticket read: ticket list --full (or export) emits every ticket with aliases and events in one call"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
