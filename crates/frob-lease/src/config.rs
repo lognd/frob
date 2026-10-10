@@ -48,7 +48,8 @@ pub fn overlap_is_lockfiles(overlap: &str) -> bool {
     parts.peek().is_some() && parts.all(|p| is_lockfile(p.trim()))
 }
 
-/// Knobs of the lease store (tickets.md section 6, decision D26).
+// frob:ticket 01M4H6M6DYW002R049JG7AD7YA
+/// Knobs of the lease store (tickets.md section 3, decision D26).
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "lease", materialize)]
 pub struct LeaseConfig {

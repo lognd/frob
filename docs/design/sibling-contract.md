@@ -439,6 +439,18 @@ to a reported Unresolved, and that is a tracked, reviewable config
 change. The same mechanism run by a standalone grimble applies to its
 own required findings (grimble-model.md 9.5).
 
+### 6.1 Skipping a sibling for a ticket
+
+`frob check --ticket` and `frob land` skip a configured sibling whose inputs
+the ticket scope does not touch, instead of paying for a run that cannot find
+anything new. The inputs of a sibling are its config file (`grimble.toml`), its
+pack lock (`<product>.packs.lock`), for grimble its model roots and `.grmb`
+files, and any file of a known code language (Markdown, TOML and YAML do not
+count). A docs-only scope skips; a code scope runs. The skip is reported as a
+warning with a reason, for example `grimble not evaluated: the ticket scope (3
+files) touches none of its inputs`, and the sibling's rules count as not
+evaluated, never as passed. A whole-repository `frob check` never skips.
+
 ## 7. Performance budget
 
 The 2 s warm budget of architecture.md counts frob's own pipeline. Sibling

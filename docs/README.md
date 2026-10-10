@@ -48,13 +48,13 @@ This is the one index of every document under docs/. Notes (frozen research and 
 
 | Document | Title | Status | Owner |
 |---|---|---|---|
-| [design/README.md](design/README.md) | frob v2 design: file index and the decision log (D1-D133) | current* | frob |
+| [design/README.md](design/README.md) | frob v2 design: file index and the decision log (D1-D133) | current | frob |
 | [design/architecture.md](design/architecture.md) | Architecture: workspace, data flow, errors, logging | current | gob |
 | [design/binding.md](design/binding.md) | Binding semantics over U (G02) | draft | grimble |
 | [design/boundaries.md](design/boundaries.md) | Boundaries: what belongs to frob, grimble, crunk, and the shared substrate | current | gob |
-| [design/build-test-ci.md](design/build-test-ci.md) | Build, test, docs generation, CI | current* | frob |
+| [design/build-test-ci.md](design/build-test-ci.md) | Build, test, docs generation, CI | current | frob |
 | [design/cicd.md](design/cicd.md) | CI/CD and deployment languages | draft | grimble |
-| [design/cli.md](design/cli.md) | CLI contract and verb surface | current* | frob |
+| [design/cli.md](design/cli.md) | CLI contract and verb surface | current | frob |
 | [design/code-model.md](design/code-model.md) | Code model, symbolic binding, and the directive DSL | current | gob |
 | [design/crunk.md](design/crunk.md) | crunk: an agent-first design tool where every interface is batch-checkable (D108-D117) | draft | crunk |
 | [design/diagnostics.md](design/diagnostics.md) | Diagnostics that teach, and fixes that are safe to apply | current | gob |
@@ -81,7 +81,7 @@ This is the one index of every document under docs/. Notes (frozen research and 
 | [design/rules.md](design/rules.md) | Rules, gates, and the check pipeline | current | gob |
 | [design/security.md](design/security.md) | Security of packs, plugins, tool stages and the mirror | current | gob |
 | [design/sibling-contract.md](design/sibling-contract.md) | The sibling JSON contract (G03) | current | gob |
-| [design/tickets.md](design/tickets.md) | Tickets: the project-management core | current* | frob |
+| [design/tickets.md](design/tickets.md) | Tickets: the project-management core | current | frob |
 | [design/time.md](design/time.md) | Time: one clock, one zone, from type to lint (D93) | draft | gob |
 | [design/tool-binding.md](design/tool-binding.md) | Tool binding: bind before own (D122) | draft | gob |
 | [design/universal-model.md](design/universal-model.md) | The universal structural model (gob-ir) | current | gob |

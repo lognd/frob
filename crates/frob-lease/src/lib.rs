@@ -1,4 +1,5 @@
-//! Scope leases: who may write which files (tickets.md section 6, decision D26).
+//! Scope leases: who may write which files (tickets.md section 3, decision D26).
+// frob:ticket 01M4H6M6DYW002R049JG7AD7YA
 //!
 //! A lease is `<common_dir>/frob/leases/<ticket ulid>.toml` holding the ticket,
 //! its [`Holder`] (actor plus worktree path), the scope globs, timestamps and

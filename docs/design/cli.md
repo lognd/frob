@@ -1,6 +1,11 @@
 # CLI contract and verb surface
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Inputs: notes/v1/cli-surface.md (51 verbs, 243
+Status: current
+Owner: frob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/v1/cli-surface.md (51 verbs, 243
 parser nodes), notes/v1/agent-usage.md (36,610 agent calls over 34
 days; 30,467 process calls over 13 days).
 
