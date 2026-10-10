@@ -7,7 +7,7 @@ priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-09T03:56:43Z"
-updated = "2026-10-10T01:40:09Z"
+updated = "2026-10-10T02:32:16Z"
 labels = ["grimble"]
 scope = ["notes/research/grmb-*", "changelog.d/**"]
 
