@@ -2,7 +2,8 @@
 id = "01M4HF7GJZZ2EX5JNABSVTM10F"
 title = "Landed worktrees renamed to <name>.removing are never deleted: the background removal thread dies with the land process and the next land does not sweep leftovers (36 GB accumulated in one afternoon)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
