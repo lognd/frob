@@ -2,7 +2,8 @@
 id = "01M3ZX82YQ43A8SWS4F128J4NT"
 title = "Migrate this repository's tickets from tickets/ on the code branch to the ticket branch"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
