@@ -1,0 +1,1 @@
+frob: ref_mode = "orphan" keeps the ledger on the orphan ticket branch in the ticket-branch layout while work and land use the code base branch; docs/guides/ticket-branch.md has the setup and CI fetch step.

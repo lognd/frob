@@ -721,7 +721,7 @@
         "ref_mode": {
           "$ref": "#/$defs/RefModeKnob",
           "default": "trunk",
-          "description": "`trunk` commits to `ref`; `branch` commits to the checked-out branch."
+          "description": "`trunk` commits to `ref`; `branch` commits to the checked-out branch; `orphan` commits to the ticket branch `branch` in the ticket-branch layout and keeps `ref` as the code base."
         }
       },
       "type": "object"

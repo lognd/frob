@@ -11,7 +11,7 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::PRODUCT;
-use crate::config::FrobConfig;
+use crate::config::{FrobConfig, RefModeKnob};
 use crate::config_cmd::{SyncData, sync_config};
 use crate::workspace::{Located, config_refusal};
 
@@ -606,7 +606,18 @@ impl Command for Init {
             self.driver_command.as_deref(),
             self.fix_driver,
         )?;
-        let gitattributes = ensure_gitattributes(root, Layout::Dir, &cfg.tickets.dir, ctx.dry_run)?;
+        // The ticket branch carries its own `.gitattributes`; the code branch holds no ledger files.
+        let gitattributes = if cfg.tickets.ref_mode == RefModeKnob::Orphan {
+            tracing::info!(
+                "ledger lives on the ticket branch; no ledger attributes on the code branch"
+            );
+            Step {
+                target: root.join(".gitattributes").display().to_string(),
+                changed: false,
+            }
+        } else {
+            ensure_gitattributes(root, Layout::Dir, &cfg.tickets.dir, ctx.dry_run)?
+        };
         let already = config.added.is_empty()
             && !gitignore.changed
             && !merge_driver.changed

@@ -119,7 +119,7 @@ impl<'a> PmStore<'a> {
 
     /// Repo-relative directory holding every object of `kind`.
     pub(crate) fn kind_dir(self, kind: ObjectKind) -> String {
-        format!("{}/{}", self.ledger.config().dir, kind.dir())
+        format!("{}{}", self.ledger.tree_prefix(), kind.dir())
     }
 
     /// Repo-relative directory of one object.
