@@ -2,7 +2,8 @@
 id = "01M4D6NMS0EQA0B6NB9KEBHDRN"
 title = "grimble ack: validate arguments and preconditions before binding the repository; it errors on this repository after 6-9 s"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
