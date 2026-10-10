@@ -569,10 +569,10 @@ pub fn run<P: Product>(
             .clock
             .as_ref()
             .map_or_else(|| gob_time::Clock::now(&gob_time::SystemClock), |c| c.now());
+        // frob:ticket 01M4FD0EP322SV5ZNXD5SQT8RX
         telemetry::append(
             at,
-            root,
-            &product.state_dir(),
+            &product.telemetry_dir(root),
             &report.timing,
             &report.stats,
             Counts::of(&report.findings),
