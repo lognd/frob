@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T05:28:44Z"
-updated = "2026-10-10T01:01:58Z"
+updated = "2026-10-10T01:56:16Z"
 scope = ["changelog.d/**", "crates/frob-land/src/land.rs", "crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
 text = "Given a ticket whose acceptance criterion is unbound, when frob land runs, then it refuses with E-DONE-CRITERIA-UNBOUND before merging or checking anything (within seconds), and the order of guards is documented"
-bound = false
+bound = true
 +++
 
 2026-10-09: ~WAZA1EH land spent 2797 s (cold debug build) and then refused on criteria_evidenced, a ledger-only guard.
