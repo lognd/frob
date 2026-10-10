@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:40Z"
-updated = "2026-10-10T02:07:31Z"
-scope = ["changelog.d/**", ".github/workflows/ci.yml", ".github/workflows/build-smoke.yml", "crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/ci_parity.rs"]
+updated = "2026-10-10T02:13:29Z"
+scope = ["changelog.d/**", ".github/workflows/ci.yml", ".github/workflows/build-smoke.yml", "crates/gob-dev/src/ci.rs", "crates/gob-dev/tests/ci_parity.rs", "docs/design/releases.md"]
 
 [[acceptance]]
 text = "Given a second push to the same ref, when CI starts, then the earlier run is cancelled"
