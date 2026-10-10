@@ -8,7 +8,7 @@ points = 1
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T20:45:41Z"
-updated = "2026-10-10T19:13:20Z"
+updated = "2026-10-10T19:14:55Z"
 scope = ["docs/design/README.md", "docs/design/tickets.md", "docs/design/cli.md", "docs/design/build-test-ci.md", "crates/frob-lease/src/config.rs", "crates/frob-lease/src/lib.rs", "docs/schemas/config.json", "docs/reference/config.md", "changelog.d/**", "docs/README.md", "docs/design/sibling-contract.md"]
 
 [[acceptance]]
