@@ -789,6 +789,26 @@ fn abandoned_land_base_checkouts_are_swept_and_recent_ones_left() {
     assert!(recent.exists());
 }
 
+// frob:ticket 01M4HF7GJZZ2EX5JNABSVTM10F
+// frob:tests crates/frob-worktree/src/gc/removing.rs::leftovers
+// frob:tests crates/frob-worktree/src/gc/pass.rs::run
+#[cfg(unix)]
+#[test]
+fn unregistered_removing_leftovers_are_swept_and_registered_ones_kept() {
+    let fx = Fixture::new();
+    let registered = fx.worktree("LIVE001.removing");
+    let stale = fx.parent.join("OLD001.removing");
+    write(&stale.join("target").join("big.bin"), 4096, 10);
+    let oracle = Oracle::default();
+    let dry = ctx(&fx, &oracle).run(Mode::DryRun);
+    assert!(stale.exists(), "a dry run deletes nothing");
+    assert!(dry.actions.iter().any(|a| a.category == "removing"));
+    let report = ctx(&fx, &oracle).run(sweep_mode());
+    assert!(!stale.exists(), "{report:?}");
+    assert!(registered.exists(), "a registered worktree is never swept");
+    assert!(report.actions.iter().any(|a| a.category == "removing"));
+}
+
 /// The current wall time through the one clock, as a `SystemTime` for file-time arithmetic.
 fn wall_now() -> SystemTime {
     gob_time::Clock::now(&gob_time::SystemClock).to_system_time()

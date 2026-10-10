@@ -16,20 +16,125 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
 
+# Cost controls (~BN7DCP3, audit M18):
+# - Superseded runs are cancelled per JOB, not per workflow: a workflow-level
+#   `cancel-in-progress` would also kill a `dev-publish` that is mid-upload, and a half-published
+#   release must finish (dev-publish keeps its own queue-never-cancel group). Every group is
+#   `<workflow>-<ref>-<job>`, so a second push to the same ref cancels the earlier run's jobs.
+# - A first `changes` job maps the diff to job sets. It is a job-level filter, not a workflow
+#   `paths:` filter: a workflow that never starts leaves the commit with no checks at all, and
+#   the land gate (crates/frob-land/src/base_ci.rs) reads no checks as Unresolved. A skipped job
+#   counts as passing, so every commit still carries a verdict.
+# - Workspace crates are cached across runs by sccache (GitHub Actions cache backend), which
+#   keys on content, not mtime; a fresh checkout stamps every source file with the checkout time,
+#   so cargo's own fingerprints (and rust-cache of target/) rebuild every workspace crate.
+
 jobs:
+  # Decides whether the Rust jobs run. A push is diffed against the head of the newest
+  # SUCCESSFUL ci run on the branch (a cancelled or failed run never becomes the base, so code a
+  # superseded run did not finish testing is still seen); a pull request against its base sha.
+  # Anything unreadable runs everything.
+  changes:
+    name: changes (which job sets run)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      rust: ${{ steps.diff.outputs.rust }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      EVENT: ${{ github.event_name }}
+      REF_NAME: ${{ github.ref_name }}
+      SHA: ${{ github.sha }}
+      PR_BASE: ${{ github.event.pull_request.base.sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Map the diff to job sets
+        id: diff
+        shell: bash
+        run: |
+          # Paths no Rust job reads. docs/guides, docs/crunk, docs/reference and docs/schemas are
+          # read by tests or by the generated-file check, so they are NOT here.
+          prose='^(tickets/|changelog\.d/|notes/|docs/(design|decisions|migration)/)'
+          if [ "$EVENT" = "pull_request" ]; then
+            base="$PR_BASE"
+          else
+            base=$(gh run list --repo "$REPO" --workflow ci.yml --branch "$REF_NAME" --status success --limit 1 --json headSha --jq '.[0].headSha // empty' || true)
+          fi
+          rust=true
+          if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
+            if files=$(git diff --name-only "$base" "$SHA"); then
+              # Files outside the prose set; none left means no Rust job can be affected.
+              rest=$(printf '%s\n' "$files" | grep -Ev "$prose" | grep -v '^$' || true)
+              if [ -z "$rest" ]; then
+                rust=false
+              fi
+              echo "diff base $base: Rust-relevant files: ${rest:-none}"
+            fi
+          else
+            echo "no usable diff base (${base:-none}); running everything"
+          fi
+          echo "rust=$rust" >> "$GITHUB_OUTPUT"
+          echo "rust jobs: $rust"
+
+  # The cheap job a prose-only push gets instead of the Rust pipeline: typos over the whole tree
+  # from a prebuilt binary (no compile). It always runs, so a commit always carries a verdict and
+  # the dev jobs have a job to wait for; the rust job runs the same check on code pushes.
+  docs:
+    name: docs (spelling)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Install uv (runs the prebuilt typos wheel)
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      # The pin equals gob_dev::ci::TYPOS_VERSION (a prebuilt wheel, so nothing compiles here).
+      - name: typos (spelling)
+        run: uvx typos==1.50.3
+
   rust:
     name: rust (${{ matrix.os }})
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-rust-${{ matrix.os }}
+      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        include:
+          # `dev` is the cargo alias that runs the CI tool: the shared target dir on Linux, an
+          # isolated one on Windows (a running gob-dev.exe cannot be rebuilt in place).
+          - os: ubuntu-latest
+            dev: dev
+          - os: windows-latest
+            dev: dev-isolated
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEV: ${{ matrix.dev }}
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+      CARGO_INCREMENTAL: "0"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
           # frob reads the ledger ref and diffs against origin/experimental.
           fetch-depth: 0
+      # frob:accept TOOL002 because="sccache has no maintained first-party action; pinned by commit sha"
+      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
       - name: Install pinned Rust toolchain
         shell: bash
         run: |
@@ -54,55 +159,32 @@ jobs:
       - name: Install the MinGW C compiler (libsqlite3-sys for clippy-windows)
         if: runner.os == 'Linux'
         run: sudo apt-get install -y gcc-mingw-w64-x86-64
-      # Every check below is `cargo dev ci --step <name>` on Linux and `cargo dev-isolated ci --step
-      # <name>` on Windows (a running gob-dev.exe cannot be rebuilt, so the tool lives in
-      # target/dev-tool there): the argv, flags and environment live in crates/gob-dev/src/ci.rs,
-      # so `cargo dev ci` locally runs exactly this list.
+      # Every check below is `cargo $DEV ci --step <name>` on both OSes (`cargo dev` on Linux,
+      # `cargo dev-isolated` on Windows, from the matrix: a running gob-dev.exe cannot be rebuilt,
+      # so the tool lives in target/dev-tool there), or a literal `cargo dev ci --step <name>` for
+      # a Linux-only check: the argv, flags and environment live in crates/gob-dev/src/ci.rs, so
+      # `cargo dev ci` locally runs exactly this list.
       # crates/gob-dev/tests/ci_parity.rs fails when the two diverge.
       - name: rustfmt
-        if: runner.os == 'Linux'
-        run: cargo dev ci --step fmt
-      - name: rustfmt (Windows, isolated tool)
-        if: runner.os == 'Windows'
-        run: cargo dev-isolated ci --step fmt
+        run: cargo $DEV ci --step fmt
       - name: clippy
-        if: runner.os == 'Linux'
-        run: cargo dev ci --step clippy
-      - name: clippy (Windows, isolated tool)
-        if: runner.os == 'Windows'
-        run: cargo dev-isolated ci --step clippy
+        run: cargo $DEV ci --step clippy
       - name: clippy for the Windows target
         if: runner.os == 'Linux'
         run: cargo dev ci --step clippy-windows
       - name: Docs
-        if: runner.os == 'Linux'
-        run: cargo dev ci --step docs
-      - name: Docs (Windows, isolated tool)
-        if: runner.os == 'Windows'
-        run: cargo dev-isolated ci --step docs
+        run: cargo $DEV ci --step docs
       - name: Install pinned pytest with uv (pytest-backed tests must not skip)
-        if: runner.os == 'Linux'
-        run: cargo dev ci --step pytest
-      - name: Install pinned pytest (Windows, isolated tool)
-        if: runner.os == 'Windows'
-        run: cargo dev-isolated ci --step pytest
+        run: cargo $DEV ci --step pytest
       - name: Install cargo-insta (nextest step runs through it)
         run: cargo install --locked cargo-insta --version 1.48.0
       - name: Snapshot hygiene (no pending snapshot files)
         if: runner.os == 'Linux'
         run: cargo dev ci --step snapshots
       - name: nextest
-        if: runner.os == 'Linux'
-        run: cargo dev ci --step nextest
-      - name: nextest (Windows, isolated tool)
-        if: runner.os == 'Windows'
-        run: cargo dev-isolated ci --step nextest
+        run: cargo $DEV ci --step nextest
       - name: Generated files are current (GEN001)
-        if: runner.os == 'Linux'
-        run: cargo dev ci --step gen
-      - name: Generated files are current (GEN001) (Windows, isolated tool)
-        if: runner.os == 'Windows'
-        run: cargo dev-isolated ci --step gen
+        run: cargo $DEV ci --step gen
       - name: Make the ledger ref resolvable
         if: runner.os == 'Linux'
         shell: bash
@@ -137,9 +219,9 @@ jobs:
       - name: typos (spelling)
         if: runner.os == 'Linux'
         run: cargo dev ci --step typos
-      - name: MSRV (cargo check at rust-version)
-        if: runner.os == 'Linux'
-        run: cargo dev ci --step msrv
+      # No MSRV step while `rust-version` is the pinned toolchain (the same compiler, a second
+      # full workspace check for nothing): `cargo dev ci` adds the `msrv` step back, and the
+      # parity test then demands it here, as soon as rust-version drops below the toolchain.
       - name: frob doctor (self-hosted, frob v2 built from this tree)
         if: runner.os == 'Linux'
         run: cargo dev ci --step doctor
@@ -159,19 +241,29 @@ jobs:
   profile:
     name: profile (command budgets)
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
     timeout-minutes: 60
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-profile
+      cancel-in-progress: true
     permissions:
       contents: read
       actions: read
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+      CARGO_INCREMENTAL: "0"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
           # The throwaway clone copies every branch; frob reads the ledger ref from it.
           fetch-depth: 0
+      # frob:accept TOOL002 because="sccache has no maintained first-party action; pinned by commit sha"
+      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
       - name: Install pinned Rust toolchain
         shell: bash
         run: |
@@ -215,10 +307,42 @@ jobs:
   # capped by this job's permissions. The checkout is the tested sha, never a branch. The gate
   # (push, this repository, a dev branch) is repeated on dev-publish; a skipped dev-artifacts
   # skips it as well. To add a dev branch, add its ref to the list in both `if` lines.
+  # The throttle: the dev channel is rebuilt at most once an hour (the 5-target build is the most
+  # expensive thing this workflow does, and lands arrive every few minutes). A skipped rust job
+  # (a prose-only push) skips this and everything after it; an unreadable release state builds.
+  dev-gate:
+    name: dev gate (at most one dev build an hour)
+    needs: [changes, docs, rust, profile]
+    if: ${{ github.event_name == 'push' && github.repository == 'lognd/frob' && contains(fromJSON('["refs/heads/experimental"]'), github.ref) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      build: ${{ steps.throttle.outputs.build }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Skip when the dev prerelease was refreshed within the hour
+        id: throttle
+        shell: bash
+        run: |
+          newest=$(gh release view dev --repo "$REPO" --json assets --jq '[.assets[].createdAt] | max // empty' 2>/dev/null || true)
+          build=true
+          if [ -n "$newest" ] && then_s=$(date -d "$newest" +%s 2>/dev/null); then
+            age=$(( $(date +%s) - then_s ))
+            echo "newest dev asset is $age s old"
+            if [ "$age" -lt 3600 ]; then build=false; fi
+          else
+            echo "no readable dev asset time; building"
+          fi
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+
   dev-artifacts:
     name: dev artifacts (build and smoke)
-    needs: [rust, profile]
-    if: ${{ github.event_name == 'push' && github.repository == 'lognd/frob' && contains(fromJSON('["refs/heads/experimental"]'), github.ref) }}
+    needs: [changes, docs, rust, profile, dev-gate]
+    if: ${{ github.event_name == 'push' && github.repository == 'lognd/frob' && contains(fromJSON('["refs/heads/experimental"]'), github.ref) && needs.dev-gate.outputs.build == 'true' }}
     # frob:accept TOOL002 because="actionlint accepts only ./ for a local reusable workflow; zizmor suggests $/, which actionlint rejects"
     uses: ./.github/workflows/build-smoke.yml
     permissions:
@@ -236,7 +360,7 @@ jobs:
   # recorded list, never a match by sha) and leaves the previous assets in place.
   dev-publish:
     name: publish (replace the dev prerelease assets)
-    needs: [rust, profile, dev-artifacts]
+    needs: [changes, docs, rust, profile, dev-gate, dev-artifacts]
     if: ${{ github.event_name == 'push' && github.repository == 'lognd/frob' && contains(fromJSON('["refs/heads/experimental"]'), github.ref) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15

@@ -429,3 +429,46 @@ fn the_ticket_scope_is_passed_through_to_the_sibling() {
         warn[0].message
     );
 }
+
+// frob:ticket 01M4GTQHDX66EA94YZGJMHTP2N
+// frob:tests crates/frob-check/src/sibling/spawn.rs::probe
+#[cfg(unix)]
+#[test]
+fn a_v1_sibling_is_probed_and_never_sent_v2_flags() {
+    use std::os::unix::fs::PermissionsExt;
+    let bin = tempfile::tempdir().expect("tempdir");
+    let script = bin.path().join("grimble");
+    let called = bin.path().join("check-was-called");
+    std::fs::write(
+        &script,
+        format!(
+            "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo 'grimble 0.1.1'; exit 0; fi\ntouch '{}'\necho 'unrecognized arguments: --base' >&2\nexit 2\n",
+            called.display()
+        ),
+    )
+    .expect("write script");
+    std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+    let dir = repo("valid -", "");
+    let mut o = opts();
+    o.sibling_programs = vec![("grimble".to_owned(), script.clone())];
+    let r = run(dir.path(), &o).expect("run");
+    let sib = of_rule(&r, "SIB001");
+    assert_eq!(sib.len(), 1, "{:?}", r.findings);
+    let msg = &sib[0].message;
+    assert!(msg.contains("(incompatible)"), "{msg}");
+    assert!(
+        msg.contains(&script.display().to_string()),
+        "binary named: {msg}"
+    );
+    assert!(msg.contains("grimble 0.1.1"), "version named: {msg}");
+    assert!(msg.contains("gob.sibling/1"), "contract named: {msg}");
+    assert!(
+        msg.contains("remedy: uv tool install --upgrade grimble"),
+        "{msg}"
+    );
+    assert!(
+        !called.exists(),
+        "the check verb must never be invoked on a v1 sibling"
+    );
+    assert_eq!(r.exit_code(), ExitCode::Negative);
+}
