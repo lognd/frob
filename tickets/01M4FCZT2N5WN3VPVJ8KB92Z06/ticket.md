@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T03:58:24Z"
-updated = "2026-10-10T20:24:35Z"
+updated = "2026-10-10T20:27:07Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/gob-dev/**", "docs/guides/upgrade-from-v1.md", "changelog.d/**"]
 
