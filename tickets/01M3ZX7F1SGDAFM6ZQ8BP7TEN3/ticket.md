@@ -2,7 +2,8 @@
 id = "01M3ZX7F1SGDAFM6ZQ8BP7TEN3"
 title = "Plan executor outcomes: polarity, unresolved when, one finding per binding, witnesses, budgets"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
