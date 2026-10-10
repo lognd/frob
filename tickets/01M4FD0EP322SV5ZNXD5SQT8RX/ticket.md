@@ -2,7 +2,8 @@
 id = "01M4FD0EP322SV5ZNXD5SQT8RX"
 title = "frob check writes .crunk/telemetry.jsonl into the worktree and then reports it as an opaque file (DRIFT001)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
