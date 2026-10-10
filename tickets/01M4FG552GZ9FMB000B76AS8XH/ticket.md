@@ -2,7 +2,8 @@
 id = "01M4FG552GZ9FMB000B76AS8XH"
 title = "Trunk mode on a feature branch: ticket verbs read and write the trunk ref silently; envelope ok contradicts data.ok"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
