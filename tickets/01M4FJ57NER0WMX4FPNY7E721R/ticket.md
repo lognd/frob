@@ -2,7 +2,8 @@
 id = "01M4FJ57NER0WMX4FPNY7E721R"
 title = "land runs the full check before evaluating cheap close guards: a missing criteria binding is refused after 47 minutes instead of seconds"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
