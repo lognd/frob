@@ -8,9 +8,9 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-10T03:04:33Z"
-updated = "2026-10-10T03:04:58Z"
+updated = "2026-10-10T03:06:05Z"
 labels = ["grimble", "adoption:logand-app"]
-scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs", "crates/grimble-bind/tests/**", "changelog.d/**"]
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs", "crates/grimble-bind/tests/**", "changelog.d/**", "crates/grimble-bind/src/code.rs"]
 
 [[acceptance]]
 text = "Given _PATH = Path(__file__).resolve().parent / 'data' / 'x.txt' at module level and _PATH.read_text() inside a function, in a node with no fs.read grant, when grimble check runs, then CAP001 fs.read fires (Must when the receiver type resolves to pathlib.Path)"
