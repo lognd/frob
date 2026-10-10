@@ -1,0 +1,147 @@
+kind = "evidence"
+captured_at = "2026-10-10T21:25:05Z"
+digest = "fde98a6f79113360ba24b93e64481a3da391a023dd82517c76aaf1e34ef9093b"
+exit_code = 0
+inline = '''
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized] target(s) in 33.54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0615931f-4026-4319-9f9c-ad1b24042244 with nextest profile: default
+    Starting 104 tests across 12 binaries (120 tests skipped)
+        PASS [   0.270s] frob-land::land a_configured_block_on_unknown_refuses_an_unreadable_base_ci
+        PASS [   0.310s] frob-land::land a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts
+        PASS [   0.606s] frob-land::land a_base_commit_changing_code_misses_the_cached_base_set
+        PASS [   0.308s] frob-land::land a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_worktree
+        PASS [   0.391s] frob-land::land a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses
+        PASS [   0.631s] frob-land::land a_pruned_expired_lease_is_renewed_for_the_ticket_worktree_when_landing_from_the_primary
+        PASS [   0.696s] frob-land::land a_finding_already_on_the_base_lands_and_is_reported_pre_existing
+        PASS [   0.882s] frob-land::land a_new_finding_refuses_naming_only_the_new_one
+        PASS [   0.480s] frob-land::land a_red_base_ci_refuses_naming_the_run_and_moves_nothing
+        PASS [   0.548s] frob-land::land a_red_base_files_one_blocking_fix_ticket_and_later_lands_wait_for_it
+        PASS [   0.819s] frob-land::land a_publish_only_failure_on_the_base_does_not_block_the_land
+        PASS [   2.126s] frob-land::land a_conflict_confined_to_cargo_lock_is_regenerated_at_land
+        PASS [   0.663s] frob-land::land a_release_finding_the_ticket_introduces_refuses
+        PASS [   0.621s] frob-land::land a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one
+        PASS [   0.629s] frob-land::land a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check
+        PASS [   1.024s] frob-land::land a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket
+        PASS [   0.431s] frob-land::land an_expired_lease_is_not_renewed_when_another_holder_took_an_overlap
+        PASS [   0.346s] frob-land::land an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_nothing
+        PASS [   0.784s] frob-land::land an_expired_lease_is_renewed_and_lands_when_nothing_overlapped_since
+        PASS [   1.103s] frob-land::land a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands
+        PASS [   0.308s] frob-land::land an_unleased_ticket_and_another_worktree_are_refused
+        PASS [   0.941s] frob-land::land an_override_lands_on_a_red_base_and_records_a_decision_on_the_ticket
+        PASS [   0.383s] frob-land::land conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean
+        PASS [   0.270s] frob-land::land dirty_worktree_refuses_and_lists_paths
+        PASS [   0.788s] frob-land::land base_commits_differing_only_under_tickets_share_the_cached_base_set
+        PASS [   0.902s] frob-land::land an_unreadable_base_ci_is_reported_unresolved_and_the_default_policy_lands
+        PASS [   0.773s] frob-land::land dry_run_plan_is_deterministic_and_changes_nothing
+        PASS [   1.027s] frob-land::land dry_run_treats_a_base_that_moved_only_by_ledger_commits_as_merged
+        PASS [   1.123s] frob-land::land fixing_a_base_finding_is_reported_resolved
+        PASS [   1.043s] frob-land::land happy_path_lands_closes_and_cleans_up
+        PASS [   0.899s] frob-land::land land_runs_the_throttled_gc_pass_after_removing_the_worktree
+        PASS [   1.024s] frob-land::land landing_from_inside_the_worktree_defaults_to_its_ticket
+        PASS [   0.944s] frob-land::land missing_evidence_refuses_unless_bypassed_with_a_reason
+        PASS [   1.010s] frob-land::land lock_contention_refuses_retryably_naming_the_holder
+        PASS [   1.113s] frob-land::land no_changelog_with_a_reason_lands_without_a_fragment_and_records_the_event
+        PASS [   0.940s] frob-land::land red_check_lists_only_blocking_findings_and_counts_the_rest
+        PASS [   0.887s] frob-land::land red_check_refuses_with_exit_3_and_moves_nothing
+        PASS [   0.962s] frob-land::land require_base_green_false_skips_the_ci_read_entirely
+        PASS [   0.477s] frob-land::land the_close_guards_refuse_before_the_base_is_merged_or_checked
+        PASS [   1.044s] frob-land::land the_base_is_resolved_by_full_ref_so_a_same_named_tag_cannot_shadow_it
+        PASS [   1.054s] frob-land::land wait_gives_up_naming_the_attempts_when_the_base_keeps_moving
+        PASS [   1.152s] frob-land::land wait_retries_a_base_that_moved_once_with_ledger_only_commits
+        PASS [   0.038s] frob-lease::lease a_corrupt_lease_file_is_skipped_reported_and_kept
+        PASS [   0.038s] frob-lease::lease a_lockfile_only_overlap_names_shared_files_in_the_remedy
+        PASS [   0.040s] frob-lease::lease a_stolen_lease_is_not_renewed_by_the_old_holders_activity
+        PASS [   0.036s] frob-lease::lease activity_from_the_worktree_extends_the_expiry
+        PASS [   1.060s] frob-land::land wait_retries_a_base_that_moved_with_a_code_change
+        PASS [   1.807s] frob-land::land two_lands_back_to_back_from_one_primary_both_succeed_without_failure_warnings
+        PASS [   0.039s] frob-lease::lease an_expired_lease_is_reclaimed_unless_an_overlap_was_taken_since
+        PASS [   0.038s] frob-lease::lease contention_ranks_shared_files
+        PASS [   0.037s] frob-lease::lease disjoint_scopes_coexist_and_release_frees
+        PASS [   0.117s] frob-lease::lease each_scope_is_matched_once_across_many_overlap_checks
+        PASS [   0.222s] frob-lease::lease concurrent_overlapping_globs_grant_exactly_one
+        PASS [   0.036s] frob-lease::lease guard_hides_overlapping_tickets
+        PASS [   0.020s] frob-lease::lease held_error_maps_to_retryable_refusal_naming_holder
+        PASS [   0.059s] frob-lease::lease heartbeat_from_inside_the_worktree_renews_its_lease
+        PASS [   0.030s] frob-lease::lease lease_config_reads_the_base_ref_over_a_stale_worktree_copy
+        PASS [   0.037s] frob-lease::lease renew_extends_and_wip_limit_refuses
+        PASS [   0.054s] frob-lease::lease open_store_uses_the_callers_config_not_the_file
+        PASS [   0.428s] frob-lease::lease admission_count_and_acquire_are_one_critical_section
+        PASS [   0.031s] frob-lease::lease rescope_narrows_is_idempotent_and_refuses_non_holders
+        PASS [   0.040s] frob-lease::lease rescope_into_another_live_lease_is_refused_and_leaves_the_lease
+        PASS [   0.031s] frob-lease::lease same_holder_reacquire_is_already
+        PASS [   0.035s] frob-lease::lease rescope_widens_the_lease_file_and_scope001_stops_firing
+        PASS [   0.034s] frob-lease::lease scope001_allows_the_own_fragment_only
+        PASS [   0.028s] frob-lease::lease scope001_flags_outside_paths_only
+        PASS [   0.012s] frob-lease::lease the_expedite_lane_defaults_to_one_and_is_configurable
+        PASS [   0.042s] frob-lease::lease steal_records_history_and_returns_previous
+        PASS [   0.049s] frob-lease::lease shared_files_are_exempt
+        PASS [   0.031s] frob-lease::lease ttl_expiry_frees_and_prunes
+        PASS [   0.043s] frob-lease::lease two_tickets_each_leasing_their_own_fragment_do_not_conflict
+        PASS [   0.066s] frob-lease::lease verbs_list_leases_and_contention
+        PASS [   0.085s] frob-lease::lease unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replaces_them
+        PASS [   0.011s] frob-pm::config a_done_name_is_not_a_ready_name
+        PASS [   0.012s] frob-pm::config file_values_override_defaults_across_the_nested_tables
+        PASS [   0.062s] frob-lease::lease widening_to_a_glob_covering_other_fragments_is_refused_with_a_teaching_message
+        PASS [   0.016s] frob-pm::config missing_file_loads_the_documented_defaults
+        PASS [   0.021s] frob-pm::config unknown_pm_key_is_reported_with_did_you_mean
+        PASS [   0.010s] frob-pm::config unknown_pull_policy_is_refused
+        PASS [   0.030s] frob-pm::config repo_wide_tables_come_from_the_base_ref_over_a_stale_worktree_copy
+        PASS [   0.021s] frob-pm::config unknown_requirement_name_is_refused_with_did_you_mean
+        PASS [   1.259s] frob-land::land without_wait_a_moved_base_is_not_retried
+        PASS [   0.256s] frob-worktree::work an_overdue_active_cycle_refuses_standard_work_but_not_expedite
+        PASS [   0.303s] frob-worktree::work another_holder_is_refused_and_can_steal_with_a_reason
+        PASS [   0.364s] frob-worktree::work a_second_expedite_exits_3_while_one_is_running
+        PASS [   0.444s] frob-worktree::work a_stale_in_progress_ticket_does_not_count_and_is_named
+        PASS [   0.322s] frob-worktree::work cli_work_past_the_repository_limit_exits_3_with_the_wip_code
+        PASS [   0.304s] frob-worktree::work cli_work_twice_reports_already_and_other_actor_gets_exit_3
+        PASS [   0.211s] frob-worktree::work concurrent_work_on_overlapping_tickets_grants_exactly_one
+        PASS [   0.234s] frob-worktree::work doable_hides_tickets_overlapping_a_live_lease
+        PASS [   0.234s] frob-worktree::work start_leases_the_current_checkout_and_requeue_releases
+        PASS [   0.478s] frob-worktree::work limit_zero_is_off_and_reentry_is_not_a_new_slot
+        PASS [   0.481s] frob-worktree::work expedite_is_granted_as_the_single_exception_when_the_limit_is_reached
+        PASS [   0.197s] frob-worktree::work unworkable_tickets_are_refused
+        PASS [   0.429s] frob-worktree::work the_gate_and_pm013_count_the_same_holders
+        PASS [   0.217s] frob-worktree::work work_creates_worktree_and_is_idempotent_for_the_holder
+        PASS [   0.546s] frob-worktree::work the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it
+        PASS [   0.203s] frob-worktree::work work_events_carry_no_absolute_path
+        PASS [   0.270s] frob-worktree::work work_from_its_own_worktree_refuses_when_an_overlapping_lease_was_taken_since
+        PASS [   1.530s] frob-worktree::work concurrent_work_for_the_last_wip_slot_grants_exactly_one
+        PASS [   0.211s] frob-worktree::work work_from_its_own_worktree_releases_an_expired_in_progress_ticket
+        PASS [   0.218s] frob-worktree::work worktree_dir_knob_moves_the_worktree
+        PASS [   0.332s] frob-worktree::work work_takes_the_repository_wip_limit_from_the_base_ref_not_the_worktree_copy
+        PASS [   0.545s] frob-worktree::work work_refuses_past_the_repository_limit_naming_both_holders
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  11.939s] 104 tests run: 104 passed, 120 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -p frob-lease -p frob-pm -p frob-worktree -E '(package(=frob-land) & (test(=a_base_commit_changing_code_misses_the_cached_base_set) | test(=a_configured_block_on_unknown_refuses_an_unreadable_base_ci) | test(=a_conflict_confined_to_cargo_lock_is_regenerated_at_land) | test(=a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts) | test(=a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses) | test(=a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_worktree) | test(=a_finding_already_on_the_base_lands_and_is_reported_pre_existing) | test(=a_new_finding_refuses_naming_only_the_new_one) | test(=a_pruned_expired_lease_is_renewed_for_the_ticket_worktree_when_landing_from_the_primary) | test(=a_publish_only_failure_on_the_base_does_not_block_the_land) | test(=a_red_base_ci_refuses_naming_the_run_and_moves_nothing) | test(=a_red_base_files_one_blocking_fix_ticket_and_later_lands_wait_for_it) | test(=a_release_finding_the_ticket_introduces_refuses) | test(=a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket) | test(=a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one) | test(=a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check) | test(=a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands) | test(=an_expired_lease_is_not_renewed_when_another_holder_took_an_overlap) | test(=an_expired_lease_is_renewed_and_lands_when_nothing_overlapped_since) | test(=an_override_lands_on_a_red_base_and_records_a_decision_on_the_ticket) | test(=an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_nothing) | test(=an_unleased_ticket_and_another_worktree_are_refused) | test(=an_unreadable_base_ci_is_reported_unresolved_and_the_default_policy_lands) | test(=base_commits_differing_only_under_tickets_share_the_cached_base_set) | test(=conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean) | test(=dirty_worktree_refuses_and_lists_paths) | test(=dry_run_plan_is_deterministic_and_changes_nothing) | test(=dry_run_treats_a_base_that_moved_only_by_ledger_commits_as_merged) | test(=fixing_a_base_finding_is_reported_resolved) | test(=happy_path_lands_closes_and_cleans_up) | test(=land_runs_the_throttled_gc_pass_after_removing_the_worktree) | test(=landing_from_inside_the_worktree_defaults_to_its_ticket) | test(=lock_contention_refuses_retryably_naming_the_holder) | test(=missing_evidence_refuses_unless_bypassed_with_a_reason) | test(=no_changelog_with_a_reason_lands_without_a_fragment_and_records_the_event) | test(=red_check_lists_only_blocking_findings_and_counts_the_rest) | test(=red_check_refuses_with_exit_3_and_moves_nothing) | test(=require_base_green_false_skips_the_ci_read_entirely) | test(=the_base_is_resolved_by_full_ref_so_a_same_named_tag_cannot_shadow_it) | test(=the_close_guards_refuse_before_the_base_is_merged_or_checked) | test(=two_lands_back_to_back_from_one_primary_both_succeed_without_failure_warnings) | test(=wait_gives_up_naming_the_attempts_when_the_base_keeps_moving) | test(=wait_retries_a_base_that_moved_once_with_ledger_only_commits) | test(=wait_retries_a_base_that_moved_with_a_code_change) | test(=without_wait_a_moved_base_is_not_retried))) | (package(=frob-lease) & (test(=a_corrupt_lease_file_is_skipped_reported_and_kept) | test(=a_lockfile_only_overlap_names_shared_files_in_the_remedy) | test(=a_stolen_lease_is_not_renewed_by_the_old_holders_activity) | test(=activity_from_the_worktree_extends_the_expiry) | test(=admission_count_and_acquire_are_one_critical_section) | test(=an_expired_lease_is_reclaimed_unless_an_overlap_was_taken_since) | test(=concurrent_overlapping_globs_grant_exactly_one) | test(=contention_ranks_shared_files) | test(=disjoint_scopes_coexist_and_release_frees) | test(=each_scope_is_matched_once_across_many_overlap_checks) | test(=guard_hides_overlapping_tickets) | test(=heartbeat_from_inside_the_worktree_renews_its_lease) | test(=held_error_maps_to_retryable_refusal_naming_holder) | test(=lease_config_reads_the_base_ref_over_a_stale_worktree_copy) | test(=open_store_uses_the_callers_config_not_the_file) | test(=renew_extends_and_wip_limit_refuses) | test(=rescope_into_another_live_lease_is_refused_and_leaves_the_lease) | test(=rescope_narrows_is_idempotent_and_refuses_non_holders) | test(=rescope_widens_the_lease_file_and_scope001_stops_firing) | test(=same_holder_reacquire_is_already) | test(=scope001_allows_the_own_fragment_only) | test(=scope001_flags_outside_paths_only) | test(=shared_files_are_exempt) | test(=steal_records_history_and_returns_previous) | test(=the_expedite_lane_defaults_to_one_and_is_configurable) | test(=ttl_expiry_frees_and_prunes) | test(=two_tickets_each_leasing_their_own_fragment_do_not_conflict) | test(=unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replaces_them) | test(=verbs_list_leases_and_contention) | test(=widening_to_a_glob_covering_other_fragments_is_refused_with_a_teaching_message))) | (package(=frob-pm) & (test(=a_done_name_is_not_a_ready_name) | test(=file_values_override_defaults_across_the_nested_tables) | test(=missing_file_loads_the_documented_defaults) | test(=repo_wide_tables_come_from_the_base_ref_over_a_stale_worktree_copy) | test(=unknown_pm_key_is_reported_with_did_you_mean) | test(=unknown_pull_policy_is_refused) | test(=unknown_requirement_name_is_refused_with_did_you_mean))) | (package(=frob-worktree) & (test(=a_second_expedite_exits_3_while_one_is_running) | test(=a_stale_in_progress_ticket_does_not_count_and_is_named) | test(=an_overdue_active_cycle_refuses_standard_work_but_not_expedite) | test(=another_holder_is_refused_and_can_steal_with_a_reason) | test(=cli_work_past_the_repository_limit_exits_3_with_the_wip_code) | test(=cli_work_twice_reports_already_and_other_actor_gets_exit_3) | test(=concurrent_work_for_the_last_wip_slot_grants_exactly_one) | test(=concurrent_work_on_overlapping_tickets_grants_exactly_one) | test(=doable_hides_tickets_overlapping_a_live_lease) | test(=expedite_is_granted_as_the_single_exception_when_the_limit_is_reached) | test(=limit_zero_is_off_and_reentry_is_not_a_new_slot) | test(=start_leases_the_current_checkout_and_requeue_releases) | test(=the_gate_and_pm013_count_the_same_holders) | test(=the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it) | test(=unworkable_tickets_are_refused) | test(=work_creates_worktree_and_is_idempotent_for_the_holder) | test(=work_events_carry_no_absolute_path) | test(=work_from_its_own_worktree_refuses_when_an_overlapping_lease_was_taken_since) | test(=work_from_its_own_worktree_releases_an_expired_in_progress_ticket) | test(=work_refuses_past_the_repository_limit_naming_both_holders) | test(=work_takes_the_repository_wip_limit_from_the_base_ref_not_the_worktree_copy) | test(=worktree_dir_knob_moves_the_worktree)))'"
+size = 12106
+status = "measured"
+tests = ["a_corrupt_lease_file_is_skipped_reported_and_kept", "a_lockfile_only_overlap_names_shared_files_in_the_remedy", "a_stolen_lease_is_not_renewed_by_the_old_holders_activity", "activity_from_the_worktree_extends_the_expiry", "an_expired_lease_is_reclaimed_unless_an_overlap_was_taken_since", "contention_ranks_shared_files", "disjoint_scopes_coexist_and_release_frees", "each_scope_is_matched_once_across_many_overlap_checks", "concurrent_overlapping_globs_grant_exactly_one", "guard_hides_overlapping_tickets", "held_error_maps_to_retryable_refusal_naming_holder", "heartbeat_from_inside_the_worktree_renews_its_lease", "lease_config_reads_the_base_ref_over_a_stale_worktree_copy", "renew_extends_and_wip_limit_refuses", "open_store_uses_the_callers_config_not_the_file", "admission_count_and_acquire_are_one_critical_section", "rescope_narrows_is_idempotent_and_refuses_non_holders", "rescope_into_another_live_lease_is_refused_and_leaves_the_lease", "same_holder_reacquire_is_already", "rescope_widens_the_lease_file_and_scope001_stops_firing", "scope001_allows_the_own_fragment_only", "scope001_flags_outside_paths_only", "the_expedite_lane_defaults_to_one_and_is_configurable", "steal_records_history_and_returns_previous", "shared_files_are_exempt", "ttl_expiry_frees_and_prunes", "two_tickets_each_leasing_their_own_fragment_do_not_conflict", "verbs_list_leases_and_contention", "unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replaces_them", "widening_to_a_glob_covering_other_fragments_is_refused_with_a_teaching_message", "a_done_name_is_not_a_ready_name", "file_values_override_defaults_across_the_nested_tables", "missing_file_loads_the_documented_defaults", "unknown_pm_key_is_reported_with_did_you_mean", "unknown_pull_policy_is_refused", "repo_wide_tables_come_from_the_base_ref_over_a_stale_worktree_copy", "unknown_requirement_name_is_refused_with_did_you_mean", "a_configured_block_on_unknown_refuses_an_unreadable_base_ci", "a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts", "a_base_commit_changing_code_misses_the_cached_base_set", "a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_worktree", "a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses", "a_pruned_expired_lease_is_renewed_for_the_ticket_worktree_when_landing_from_the_primary", "a_finding_already_on_the_base_lands_and_is_reported_pre_existing", "a_new_finding_refuses_naming_only_the_new_one", "a_red_base_ci_refuses_naming_the_run_and_moves_nothing", "a_red_base_files_one_blocking_fix_ticket_and_later_lands_wait_for_it", "a_publish_only_failure_on_the_base_does_not_block_the_land", "a_conflict_confined_to_cargo_lock_is_regenerated_at_land", "a_release_finding_the_ticket_introduces_refuses", "a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one", "a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check", "a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket", "an_expired_lease_is_not_renewed_when_another_holder_took_an_overlap", "an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_nothing", "an_expired_lease_is_renewed_and_lands_when_nothing_overlapped_since", "a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands", "an_unleased_ticket_and_another_worktree_are_refused", "an_override_lands_on_a_red_base_and_records_a_decision_on_the_ticket", "conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean", "dirty_worktree_refuses_and_lists_paths", "base_commits_differing_only_under_tickets_share_the_cached_base_set", "an_unreadable_base_ci_is_reported_unresolved_and_the_default_policy_lands", "dry_run_plan_is_deterministic_and_changes_nothing", "dry_run_treats_a_base_that_moved_only_by_ledger_commits_as_merged", "fixing_a_base_finding_is_reported_resolved", "happy_path_lands_closes_and_cleans_up", "land_runs_the_throttled_gc_pass_after_removing_the_worktree", "landing_from_inside_the_worktree_defaults_to_its_ticket", "missing_evidence_refuses_unless_bypassed_with_a_reason", "lock_contention_refuses_retryably_naming_the_holder", "no_changelog_with_a_reason_lands_without_a_fragment_and_records_the_event", "red_check_lists_only_blocking_findings_and_counts_the_rest", "red_check_refuses_with_exit_3_and_moves_nothing", "require_base_green_false_skips_the_ci_read_entirely", "the_close_guards_refuse_before_the_base_is_merged_or_checked", "the_base_is_resolved_by_full_ref_so_a_same_named_tag_cannot_shadow_it", "wait_gives_up_naming_the_attempts_when_the_base_keeps_moving", "wait_retries_a_base_that_moved_once_with_ledger_only_commits", "wait_retries_a_base_that_moved_with_a_code_change", "two_lands_back_to_back_from_one_primary_both_succeed_without_failure_warnings", "without_wait_a_moved_base_is_not_retried", "an_overdue_active_cycle_refuses_standard_work_but_not_expedite", "another_holder_is_refused_and_can_steal_with_a_reason", "a_second_expedite_exits_3_while_one_is_running", "a_stale_in_progress_ticket_does_not_count_and_is_named", "cli_work_past_the_repository_limit_exits_3_with_the_wip_code", "cli_work_twice_reports_already_and_other_actor_gets_exit_3", "concurrent_work_on_overlapping_tickets_grants_exactly_one", "doable_hides_tickets_overlapping_a_live_lease", "start_leases_the_current_checkout_and_requeue_releases", "limit_zero_is_off_and_reentry_is_not_a_new_slot", "expedite_is_granted_as_the_single_exception_when_the_limit_is_reached", "unworkable_tickets_are_refused", "the_gate_and_pm013_count_the_same_holders", "work_creates_worktree_and_is_idempotent_for_the_holder", "the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it", "work_events_carry_no_absolute_path", "work_from_its_own_worktree_refuses_when_an_overlapping_lease_was_taken_since", "concurrent_work_for_the_last_wip_slot_grants_exactly_one", "work_from_its_own_worktree_releases_an_expired_in_progress_ticket", "worktree_dir_knob_moves_the_worktree", "work_takes_the_repository_wip_limit_from_the_base_ref_not_the_worktree_copy", "work_refuses_past_the_repository_limit_naming_both_holders"]
+at = "2026-10-10T21:25:05Z"
+actor = "Claude"
+rev = 1
