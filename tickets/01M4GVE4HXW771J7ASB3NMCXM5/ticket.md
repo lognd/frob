@@ -2,12 +2,12 @@
 id = "01M4GVE4HXW771J7ASB3NMCXM5"
 title = "Lift D87: release.yml uploads the Rust crunk wheels to PyPI 'crunk' (superseding the Python crunk 0.1.x) from 0.533.0; record the decision"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T17:30:08Z"
-updated = "2026-10-09T17:30:08Z"
+updated = "2026-10-10T00:29:44Z"
 scope = [".github/workflows/release.yml", "docs/design/README.md", "docs/guides/release.md", "changelog.d/**"]
 
 [[acceptance]]
