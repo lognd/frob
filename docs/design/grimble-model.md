@@ -5,7 +5,7 @@ Owner: grimble
 Decisions: D36
 Audience: contributor
 
-Provenance: written under T-0001 (a v1-format id that migrates with an alias). Ownership after products.md: this is the grimble model (v1 name: strata), crates `grimble-model`, `grimble-kernel`, `grimble-bind`. Inputs: notes/v1/strata.md (surface grammar,
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Ownership after products.md: this is the grimble model (a new language; v1 strata is deprecated and has no migration path, D136), crates `grimble-model`, `grimble-kernel`, `grimble-bind`. Inputs: notes/v1/strata.md (surface grammar,
 kernel, 12 binding mechanisms, rule inputs, measured adoption), the
 binding requirement in goals.md, code-model.md.
 
@@ -365,7 +365,7 @@ gob-rules (today it lives in frob-obligations' `apply_exceptions`;
 ticket G06 moves it). grimble depends on gob-walk, gob-cache, gob-exec,
 gob-ir, gob-symbols, gob-lock, gob-check and gob-rules, never on a frob
 crate. The verbs are check, status, graph, shrink, init, doctor, fmt,
-packs, explore, ack, exceptions, migrate and serve --mcp; `vet`
+packs, explore, ack, exceptions and serve --mcp; `vet`
 follows the cut (cli.md section 4). The milestone-2 order, the 19
 tickets G01-G19 and the critical path are stated once in
 build-test-ci.md, Milestone 2; this file does not repeat them. Crate

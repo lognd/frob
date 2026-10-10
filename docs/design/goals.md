@@ -80,8 +80,8 @@ ideas are right, but:
   HTTP) is read-write behind a mandatory per-launch token (gui.md); it
   is a thin view over the same handlers, not a second code path.
 - Byte-compatibility with v1 on-disk formats. A one-shot `frob migrate`
-  imports v1 tickets, `frob.lock`, config, waivers, directives and
-  `.strata` files (migration.md); nothing else carries.
+  imports v1 tickets, `frob.lock`, config, waivers and directives
+  (migration.md); nothing else carries, and `.strata` models are rewritten by hand (D136).
 - Python interop in the core. PyO3 bindings are an optional leaf crate:
   Milestone 2 or later (D36), no crate in boundaries.md yet.
 

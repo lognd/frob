@@ -247,6 +247,7 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `fragment_prefix` | `String` | `""` | no | Text `frob ticket fragment` puts before the ticket title in the skeleton (for example `frob: `); empty adds nothing. |
 | `preview` | `Vec<String>` | `[]` | yes | Products that ship as a preview: their tag message and changelog heading carry " (preview)". |
 | `products` | `Vec<String>` | `[]` | yes | Products a release ships, one tag each; empty means one product named after the repository. |
 | `require_ci` | `bool` | `true` | yes | When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green. |

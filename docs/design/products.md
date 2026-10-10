@@ -59,7 +59,7 @@ The design goblin is **grimble** (owner: reminiscent of "grumble", what
 you do when you realize you started with a bad design). Binary
 `grimble`, crates `crates/grimble-*`, model files `design/*.grmb`, the
 model language is called grimble too; "strata" survives only as the v1
-name in notes/ and the migration map. Availability checked 2026-10-01:
+name in notes/ (no migration path, D136). Availability checked 2026-10-01:
 free on crates.io and PyPI. Alternatives considered: gnarl (PyPI taken),
 snag and skulk (both taken), krenk (free, too close to crunk).
 

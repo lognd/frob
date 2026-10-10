@@ -47,9 +47,11 @@ that succeeds.
 
 `frob ticket fragment TICKET [--type T] [--sentence S] [--force]` writes the file
 into the ticket's worktree. Without `--sentence` the text defaults to
-`frob: <ticket title>.`, except for `bug`, `security` and `incident` tickets: their
+`<ticket title>.` with no product prefix, except for `bug`, `security` and `incident` tickets: their
 titles describe the problem, so the verb exits 2 and shows
 `frob ticket fragment TICKET --sentence "<what changed for the user>"`.
+A repository that wants a prefix on every skeleton sets `[release] fragment_prefix`
+in `frob.toml` (for example `"frob: "`); it defaults to empty.
 
 ## Section shape
 

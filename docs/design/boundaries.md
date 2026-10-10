@@ -105,7 +105,7 @@ Every grimble crate is Milestone 2 or later (D36).
 
 | Crate | Capabilities |
 |---|---|
-| grimble-model | `.grmb` parser with spans, multi-file modules, typed attrs, selectors (`owns`, `surface`, `at`), flows with producer/consumer/contract, boundaries, claims, V-model, exceptions (the four kinds), JSON export, v1 strata import (`grimble migrate`) |
+| grimble-model | `.grmb` parser with spans, multi-file modules, typed attrs, selectors (`owns`, `surface`, `at`), flows with producer/consumer/contract, boundaries, claims, V-model, exceptions (the four kinds), JSON export |
 | grimble-kernel | label closure, SCC longest-path age, demand and capacity, V-model closure, claim verdicts with witnesses, assumes with expiry |
 | grimble-bind | model-to-symbol resolution, ambiguity, FOREIGN, the `binds` cross-language edge with per-`via` signature comparison, contract fingerprints, drift findings (SYS family), shrink, `grimble ack` on gob-lock |
 | grimble-capabilities | capability atoms (`Capability` derive documenting entries of the gob-ir registry), per-language detectors over U, the node x capability matrix (cells per grimble-model.md 9.6) with matrix-build template excuses, CAP family: CAP001, CAP002, CAP004 (CAP003 retired, D75) and the matrix-build rule SYS012 (binding.md 6.12) |
