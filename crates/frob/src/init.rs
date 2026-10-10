@@ -3,6 +3,7 @@
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
+use frob_ledger::layout::{self, Layout};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use gob_exec::{Arg, Limits, Outcome as ExecOutcome, Program, Runner, Shell, Spec, command_line};
 use gob_git::Repo;
@@ -24,7 +25,7 @@ pub(crate) const DRIVER_KEY: &str = "merge.frob-ledger.driver";
 /// Human label stored in git config next to the driver.
 const DRIVER_NAME: &str = "frob ledger union-and-refold";
 /// Attribute name selecting the driver in `.gitattributes`.
-const DRIVER_ATTR: &str = "merge=frob-ledger";
+const DRIVER_ATTR: &str = frob_ledger::layout::MERGE_DRIVER_ATTR;
 /// Lines that already ignore the cache directory.
 const IGNORE_FORMS: [&str; 4] = [".frob/", ".frob", "/.frob/", "/.frob"];
 /// Time a `git config` call may take.
@@ -182,21 +183,17 @@ fn ensure_gitignore(root: &Path, dry_run: bool) -> Result<Step, CliError> {
     })
 }
 
-/// The `.gitattributes` lines that route ledger files to the frob merge driver.
-fn attribute_lines(tickets_dir: &str) -> [String; 3] {
-    [
-        format!("{tickets_dir}/**/ticket.md {DRIVER_ATTR}"),
-        format!("{tickets_dir}/_milestones/*/milestone.md {DRIVER_ATTR}"),
-        format!("{tickets_dir}/_cycles/*/cycle.md {DRIVER_ATTR}"),
-    ]
-}
-
-/// Ensure the ticket, milestone and cycle attribute lines are in `.gitattributes`.
-fn ensure_gitattributes(root: &Path, tickets_dir: &str, dry_run: bool) -> Result<Step, CliError> {
+/// Ensure the attribute lines of `layout` (tickets, milestones, cycles) are in `.gitattributes`.
+fn ensure_gitattributes(
+    root: &Path,
+    layout: Layout,
+    tickets_dir: &str,
+    dry_run: bool,
+) -> Result<Step, CliError> {
     let path = root.join(".gitattributes");
     let mut text = read_or_empty(&path)?;
     let mut changed = false;
-    for line in attribute_lines(tickets_dir) {
+    for line in layout::attribute_patterns(layout, tickets_dir, DRIVER_ATTR) {
         let present = text
             .lines()
             .any(|l| l.split_whitespace().eq(line.split_whitespace()));
@@ -609,7 +606,7 @@ impl Command for Init {
             self.driver_command.as_deref(),
             self.fix_driver,
         )?;
-        let gitattributes = ensure_gitattributes(root, &cfg.tickets.dir, ctx.dry_run)?;
+        let gitattributes = ensure_gitattributes(root, Layout::Dir, &cfg.tickets.dir, ctx.dry_run)?;
         let already = config.added.is_empty()
             && !gitignore.changed
             && !merge_driver.changed

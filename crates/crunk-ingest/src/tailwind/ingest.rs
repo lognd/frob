@@ -195,6 +195,34 @@ fn detect_css_entry(root: &Path) -> Option<PathBuf> {
     })
 }
 
+/// The Tailwind config file and the v4 CSS entry `spec` names, root-joined: `[tailwind] config`, and
+/// `css_entry` or else a detected entry or a `.css` config.
+fn locate_sources(spec: &DesignSpec) -> (Option<PathBuf>, Option<PathBuf>) {
+    let cfg = &spec.tailwind;
+    let root = &spec.root;
+    let config_path = (!cfg.config.is_empty()).then(|| root.join(&cfg.config));
+    let mut css_entry = (!cfg.css_entry.is_empty())
+        .then(|| root.join(&cfg.css_entry))
+        .or_else(|| detect_css_entry(root));
+    if css_entry.is_none()
+        && let Some(p) = &config_path
+        && p.extension().is_some_and(|e| e.eq_ignore_ascii_case("css"))
+    {
+        css_entry = Some(p.clone());
+    }
+    (config_path, css_entry)
+}
+
+/// The project files the Tailwind runtime reads for `spec`: the v3 config and the v4 CSS entry,
+/// each only when it exists (the same choice [`ingest_tailwind`] makes for the theme).
+pub fn runtime_sources(spec: &DesignSpec) -> Sources {
+    let (config_path, css_entry) = locate_sources(spec);
+    Sources {
+        config_path: config_path.filter(|p| p.is_file() && css_entry.as_ref() != Some(p)),
+        css_entry: css_entry.filter(|p| p.is_file()),
+    }
+}
+
 /// Ingest the Tailwind theme of the project `spec` describes.
 ///
 /// With neither `[tailwind] config` nor `css_entry` set nothing is read and nothing runs. With
@@ -207,17 +235,7 @@ pub fn ingest_tailwind(spec: &DesignSpec, engine: Engine<'_>) -> TailwindTheme {
         tracing::debug!("tailwind ingest: no [tailwind] config or css_entry; nothing to read");
         return TailwindTheme::empty();
     }
-    let root = &spec.root;
-    let config_path = (!cfg.config.is_empty()).then(|| root.join(&cfg.config));
-    let mut css_entry = (!cfg.css_entry.is_empty())
-        .then(|| root.join(&cfg.css_entry))
-        .or_else(|| detect_css_entry(root));
-    if css_entry.is_none()
-        && let Some(p) = &config_path
-        && p.extension().is_some_and(|e| e.eq_ignore_ascii_case("css"))
-    {
-        css_entry = Some(p.clone());
-    }
+    let (config_path, _) = locate_sources(spec);
     let mut diagnostics = Vec::new();
     let mut text = String::new();
     if let Some(p) = &config_path {
@@ -233,12 +251,7 @@ pub fn ingest_tailwind(spec: &DesignSpec, engine: Engine<'_>) -> TailwindTheme {
 
     let mut static_reason = None;
     if let Engine::Node(runtime) = engine {
-        let sources = Sources {
-            config_path: config_path
-                .clone()
-                .filter(|p| p.is_file() && css_entry.as_ref() != Some(p)),
-            css_entry: css_entry.clone().filter(|p| p.is_file()),
-        };
+        let sources = runtime_sources(spec);
         match runtime.resolve_theme(&sources) {
             Ok(Evaluation::Resolved(theme)) => {
                 let version = match theme.version {

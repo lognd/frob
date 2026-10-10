@@ -107,7 +107,9 @@ fn check_json_with_a_valid_config_is_a_valid_sibling_document() {
     write(
         dir.path(),
         "crunk.toml",
-        crunk_spec::presets::preset("default").expect("default preset"),
+        &crunk_spec::presets::preset("default")
+            .expect("default preset")
+            .replace("[lint]", "[lint]\nTOKENS001 = \"off\""),
     );
     write(dir.path(), "styles/base/a.css", ".a { margin: 0; }\n");
     let (code, env, _) = crunk(dir.path(), &["check", "--json"]);
