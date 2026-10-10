@@ -7,8 +7,9 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T23:16:02Z"
-updated = "2026-10-09T23:16:02Z"
-scope = ["crates/frob-land/src/land.rs", "crates/frob-worktree/src/gc/**", "changelog.d/**"]
+updated = "2026-10-10T00:30:44Z"
+labels = ["creates:crates/frob-worktree/src/gc/removing.rs"]
+scope = ["changelog.d/**", "crates/frob-worktree/src/gc/pass.rs", "crates/frob-worktree/src/gc/mod.rs", "crates/frob-worktree/tests/gc.rs", "crates/frob-worktree/src/gc/removing.rs"]
 
 [[acceptance]]
 text = "Given a land whose process exits before its background removal finishes, when the next land or frob gc runs, then every unregistered <worktree-dir>/*.removing directory is deleted, and frob doctor reports any that remain"
