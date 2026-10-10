@@ -503,9 +503,8 @@ source; where it also feeds another source, the note says so), gives its
 v2 form, its status and what is dropped. Status words: KEPT (same
 purpose and form), CHANGED (same purpose, new form or semantics), MOVED
 (same purpose, new owner or home), DEFERRED (kept but specified by a later
-ticket), DROPPED (no v2 form). The migration report of `grimble migrate`
-lists every DROPPED and CHANGED row (migration.md: nothing is silently
-dropped).
+ticket), DROPPED (no v2 form). The rows record what v1 did; there is no
+migration report because `.strata` models are rewritten by hand (D136).
 
 | # | v1 mechanism | What it did | Source | v2 form | Status | What is dropped |
 |---|---|---|---|---|---|---|

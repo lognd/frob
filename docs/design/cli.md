@@ -274,7 +274,6 @@ described in their own files, and are Milestone 2 or later (D36).
 | `grimble ack` | grimble | grimble-bind on gob-lock | yes | 0 2 3 4 | 2 |
 | `grimble vet [--hook]` | grimble | grimble-vet | yes | 0 1 2 4 | 2 (after the G01-G19 cut; build-test-ci.md Milestone 2 item 8) |
 | `grimble explore outline\|map\|xref` | grimble | grimble-check over gob-symbols | yes, read-only | 0 2 4 | 2 |
-| `grimble migrate` | grimble | grimble-model | yes | 0 2 3 4 | 2 |
 | `grimble serve --mcp` | grimble | grimble-serve | not applicable | 0 2 4 | 2 |
 | crunk verbs (notes/crunk.md section 1) | crunk | crunk-* | per crunk | the shared table in section 2 | 2 |
 

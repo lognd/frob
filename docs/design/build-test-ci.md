@@ -67,7 +67,7 @@ grimble-model.md 9.7, cicd.md section 6 and migration.md point here.
    orchestration of the sibling stage, G14 grimble-capabilities with the
    cell set of grimble-model.md 9.6, G15 shrink, G16 kernel port, G17
    gob-pattern and GPOL (blocked by the ast-grep `Doc`-over-U spike,
-   rules.md section 3), G18 `grimble migrate`, G19 grimble-serve.
+   rules.md section 3), G18 (was `grimble migrate`; dropped, D136), G19 grimble-serve.
 6. The first ten NEAT rules (neatness.md section 4), then
    `[neat] require_effects` for this repository's public surface.
 7. The GitHub Actions and Dockerfile adapters and the CI and DK rules in
