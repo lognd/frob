@@ -22,6 +22,10 @@ bound = false
 [[acceptance]]
 text = "Given several pushes to experimental within minutes, when CI runs, then a concurrency group per workflow and ref cancels the superseded in-progress run (never for release or publish jobs), so only the newest commit's run completes"
 bound = false
+
+[[acceptance]]
+text = "Given a push that changes only tickets/**, changelog.d/** or docs/** (docs not under generated reference checks), when CI triggers, then the Rust jobs are skipped by paths filters and a cheap docs job runs instead"
+bound = false
 +++
 
 notes/review/audit-2026-10-07.md M18. Keep zizmor and actionlint clean. Coordinate with ~RWD03DW, which adds the profile job to ci.yml: land after it or rebase onto it.
