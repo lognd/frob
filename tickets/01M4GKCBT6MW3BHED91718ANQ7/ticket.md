@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T15:09:21Z"
-updated = "2026-10-10T20:32:06Z"
+updated = "2026-10-10T20:33:45Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-check/**", "crates/gob-exec/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a tool that logs INFO lines then fails with an error line, when TOOL001 fires, then its excerpt shows the error line(s) and the last lines of stderr, not the first INFO line"
-bound = false
+bound = true
 +++
 
 logand.app-v2 F-554 (the missing findings array on a failed gate is ~Y6GKQPS).
