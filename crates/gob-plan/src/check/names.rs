@@ -6,7 +6,7 @@
 //! head of `some`, `no` and `count` is visible only inside its own binding, and a `def` sees
 //! only its parameters.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashSet};
 use std::rc::Rc;
 
 use gob_text::Span;
@@ -15,9 +15,9 @@ use super::vocab::{self, Ty};
 use super::{Code, Diagnostic};
 use crate::catalog::{Answers, Column, ConfigSchema};
 use crate::grl::ast::{
-    Binding, Call, CastKind, ClauseKind, CmpOp, Cond, CondKind, Def, FixKind, HeaderKind, LangSet,
-    Literal, LiteralKind, Message, MessagePart, Object, Path, Quant, Rel, RelKind, Rule, Shape,
-    ShapeKind, Source, Spanned, Term, TermKind, Word,
+    ArithOp, Binding, Call, CastKind, ClauseKind, CmpOp, Cond, CondKind, Def, FixKind, HeaderKind,
+    LangSet, Literal, LiteralKind, Message, MessagePart, Object, Path, Quant, Rel, RelKind, Rule,
+    Shape, ShapeKind, Source, Spanned, Term, TermKind, Word,
 };
 
 /// The catalog line every unknown-word diagnostic ends with.
@@ -90,6 +90,7 @@ pub(super) fn check_rule(rule: &Rule, config: Option<&ConfigSchema>) -> Vec<Diag
     c.out
 }
 
+// frob:ticket 01M4E0BVMZHYZYC7PHEA0YWS08
 struct Checker<'a> {
     config: Option<&'a ConfigSchema>,
     out: Vec<Diagnostic>,
@@ -99,6 +100,9 @@ struct Checker<'a> {
     messages: bool,
     knobs: Vec<(String, Ty)>,
     defs: Vec<(String, usize)>,
+    def_asts: Vec<Def>,
+    carrying: Vec<String>,
+    carried: HashSet<Span>,
     langs: LangMode,
     lang_span: Option<Span>,
     neg: Option<NegVia>,
@@ -110,6 +114,7 @@ struct Checker<'a> {
 }
 
 impl<'a> Checker<'a> {
+    // frob:ticket 01M4E0BVMZHYZYC7PHEA0YWS08
     fn new(rule: &Rule, config: Option<&'a ConfigSchema>) -> Self {
         let mut knobs = Vec::new();
         let mut langs = LangMode::Universal;
@@ -142,6 +147,9 @@ impl<'a> Checker<'a> {
             messages: false,
             knobs,
             defs: Vec::new(),
+            def_asts: Vec::new(),
+            carrying: Vec::new(),
+            carried: HashSet::new(),
             langs,
             lang_span,
             neg: None,
@@ -153,6 +161,7 @@ impl<'a> Checker<'a> {
         }
     }
 
+    // frob:ticket 01M4E0BVMZHYZYC7PHEA0YWS08
     fn run(&mut self, rule: &Rule) {
         for cl in &rule.clauses {
             match &cl.node {
@@ -161,7 +170,10 @@ impl<'a> Checker<'a> {
                         self.finds.push(v);
                     }
                 }
-                ClauseKind::Def(d) => self.defs.push((d.name.text.clone(), d.params.len())),
+                ClauseKind::Def(d) => {
+                    self.defs.push((d.name.text.clone(), d.params.len()));
+                    self.def_asts.push(d.clone());
+                }
                 _ => {}
             }
         }
@@ -175,13 +187,21 @@ impl<'a> Checker<'a> {
             }
         }
         self.messages = true;
+        let mut reports_left = rule
+            .clauses
+            .iter()
+            .filter(|c| matches!(c.node, ClauseKind::Report(_)))
+            .count();
         for cl in &rule.clauses {
             match &cl.node {
                 ClauseKind::Report(r) => {
+                    reports_left -= 1;
                     self.var_ref(&r.target);
                     self.message(&r.message);
                     if let Some(w) = &r.when {
-                        self.cond(w);
+                        // A later `report` is chosen only when this `when` is not Yes, so every
+                        // `when` that has a later report behind it sits in a negative position.
+                        self.flipped(reports_left > 0, |s| s.cond(w));
                     }
                 }
                 ClauseKind::Note(n) => {
@@ -323,6 +343,16 @@ impl<'a> Checker<'a> {
         (self.neg, self.parity) = saved;
     }
 
+    // frob:ticket 01M4E0BVMZHYZYC7PHEA0YWS08
+    /// Run `f` with the polarity flipped when `flip` is set; the `neg` marker is left alone.
+    fn flipped<T>(&mut self, flip: bool, f: impl FnOnce(&mut Self) -> T) -> T {
+        let saved = self.parity;
+        self.parity ^= flip;
+        let out = f(self);
+        self.parity = saved;
+        out
+    }
+
     fn scoped(&mut self, f: impl FnOnce(&mut Self)) {
         let mark = self.vars.len();
         f(self);
@@ -369,10 +399,16 @@ impl<'a> Checker<'a> {
         }
     }
 
+    // frob:ticket 01M4E0BVMZHYZYC7PHEA0YWS08
     fn def(&mut self, d: &Def) {
+        self.walk_def(d, false);
+    }
+
+    /// Walk a def body whose polarity starts at `parity` (true when a call sits in a negative position).
+    fn walk_def(&mut self, d: &Def, parity: bool) {
         let saved_vars = std::mem::take(&mut self.vars);
         let saved = (self.neg, self.parity, self.in_def);
-        (self.neg, self.parity, self.in_def) = (None, false, true);
+        (self.neg, self.parity, self.in_def) = (None, parity, true);
         for p in &d.params {
             if let Some(first) = self.vars.iter().find(|v| v.name == p.text) {
                 let first_span = first.span;
@@ -461,11 +497,15 @@ impl<'a> Checker<'a> {
         );
     }
 
+    // frob:ticket 01M4E0BVMZHYZYC7PHEA0YWS08
     fn def_call(&mut self, call: &Call) {
         for a in &call.args {
             self.term(a);
         }
         if self.defs.iter().any(|d| d.0 == call.name.text) {
+            if self.parity {
+                self.carry_negation(&call.name.text);
+            }
             return;
         }
         let names: Vec<&str> = self.defs.iter().map(|d| d.0.as_str()).collect();
@@ -477,6 +517,37 @@ impl<'a> Checker<'a> {
             s.as_deref(),
             Some("define it with `def NAME(params) = ...` before using it"),
         );
+    }
+
+    // frob:ticket 01M4E0BVMZHYZYC7PHEA0YWS08
+    /// A def called in a negative position: its `certainly` and `possibly` at even depth inside the
+    /// body are negative here. The body is walked again with the call's polarity and only the
+    /// GRL017 findings are kept, so no other diagnostic or checker state is duplicated.
+    fn carry_negation(&mut self, name: &str) {
+        let Some(def) = self.def_asts.iter().find(|d| d.name.text == name).cloned() else {
+            return;
+        };
+        if self.carrying.iter().any(|n| n == name) {
+            return;
+        }
+        let saved_out = std::mem::take(&mut self.out);
+        let saved_sets = (self.seen_kind_use.clone(), self.seen_grl003.clone());
+        let (used, witnesses, finds) = (self.used.len(), self.witnesses.len(), self.finds.len());
+        let nested = !self.carrying.is_empty();
+        self.carrying.push(name.to_owned());
+        self.walk_def(&def, true);
+        self.carrying.pop();
+        let walked = std::mem::replace(&mut self.out, saved_out);
+        (self.seen_kind_use, self.seen_grl003) = saved_sets;
+        self.used.truncate(used);
+        self.witnesses.truncate(witnesses);
+        self.finds.truncate(finds);
+        for d in walked {
+            // Only the outermost walk dedupes; a nested one hands its findings up unfiltered.
+            if d.code == Some(Code::Grl017) && (nested || self.carried.insert(d.primary.span)) {
+                self.out.push(d);
+            }
+        }
     }
 
     // ---- relations ------------------------------------------------------------------------
@@ -745,6 +816,7 @@ impl<'a> Checker<'a> {
 
     // ---- terms and types ------------------------------------------------------------------
 
+    // frob:ticket 01M4E0BVMZHYZYC7PHEA0YWS08
     fn term(&mut self, t: &Term) -> Ty {
         match &t.node {
             TermKind::Path(p) => self.path(p),
@@ -755,8 +827,9 @@ impl<'a> Checker<'a> {
                 Ty::Int
             }
             TermKind::Call(call) => self.func(call),
-            TermKind::Binary { lhs, rhs, .. } => {
-                let (l, r) = (self.term(lhs), self.term(rhs));
+            TermKind::Binary { op, lhs, rhs } => {
+                let l = self.term(lhs);
+                let r = self.flipped(matches!(op, ArithOp::Sub), |s| s.term(rhs));
                 for (ty, side) in [(&l, lhs), (&r, rhs)] {
                     if ty.is_concrete() && !ty.is_numeric() {
                         self.out.push(
@@ -920,8 +993,14 @@ impl<'a> Checker<'a> {
         Ty::Any
     }
 
+    // frob:ticket 01M4E0BVMZHYZYC7PHEA0YWS08
     fn cmp(&mut self, op: CmpOp, lhs: &Term, rhs: &Term) {
-        let (l, r) = (self.term(lhs), self.term(rhs));
+        // A bound that is true when the term is small (`<`, `<=`) is negative in what the term
+        // counts; `==` and `!=` are both ways at once, so they are negative on each side.
+        let lhs_small = matches!(op, CmpOp::Lt | CmpOp::Le | CmpOp::Eq | CmpOp::Ne);
+        let rhs_small = matches!(op, CmpOp::Gt | CmpOp::Ge | CmpOp::Eq | CmpOp::Ne);
+        let l = self.flipped(lhs_small, |s| s.term(lhs));
+        let r = self.flipped(rhs_small, |s| s.term(rhs));
         let ordered = !matches!(op, CmpOp::Eq | CmpOp::Ne);
         let bad_order = ordered
             && ((l.is_concrete() && !l.is_numeric()) || (r.is_concrete() && !r.is_numeric()));

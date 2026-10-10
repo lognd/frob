@@ -523,6 +523,13 @@ sound:
    condition they are allowed, because that condition only adds doubt.
    This keeps each word meaning what it says (`certainly` can only
    remove fires, `possibly` can only add them).
+   Positions are counted through `def` calls (a call under `not` carries
+   the negation into the def body, whose own `not` and `no` count too),
+   through `count` (a `count` on the side that is true when it is small,
+   that is left of `<` and `<=`, right of `>` and `>=` and either side of
+   `==` and `!=`, and a subtrahend are negative in what they count) and through `report ... when` (a `when`
+   with a later `report` behind it is negative, because that later
+   report is chosen only when the earlier `when` is not Yes).
 2. **Collapse is an assumption.** Let V1 be the binding's value as
    defined above and V0 its value with every `certainly` and `possibly`
    read as the identity. Then V0 <=_k V1 (induction on the formula:

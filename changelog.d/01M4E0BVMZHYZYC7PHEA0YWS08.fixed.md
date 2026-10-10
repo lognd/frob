@@ -1,0 +1,1 @@
+gob-plan: GRL017 now fires for certainly and possibly inside a def called under not, inside a count compared with <, <=, == or != (and mirrored forms), and inside the when of a report that has a later report

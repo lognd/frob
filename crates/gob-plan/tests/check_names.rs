@@ -249,6 +249,71 @@ fn certainly_is_only_allowed_in_positive_positions() {
     );
 }
 
+// frob:ticket 01M4E0BVMZHYZYC7PHEA0YWS08
+#[test]
+fn certainly_in_a_def_body_is_negative_when_the_call_is_under_not() {
+    let h = "lang rust";
+    let def = "  def d(a, b) = a certainly calls b\n";
+    let find = "  find f: function\n  find g: function\n";
+    let src = |w: &str| format!("{def}{find}  where {w}\n  report f \"m\"");
+    assert_eq!(codes(h, &src("not d(f, g)")), [Code::Grl017]);
+    assert_eq!(codes(h, &src("no t: test where d(t, g)")), [Code::Grl017]);
+    assert!(codes(h, &src("d(f, g)")).is_empty());
+    assert!(codes(h, &src("not not d(f, g)")).is_empty());
+    // A negation inside the def is reported once, at the def, and a double negation cancels.
+    let inner = "  def e(a, b) = not a possibly calls b\n";
+    let body = format!("{inner}{find}  where e(f, g)\n  report f \"m\"");
+    assert_eq!(codes(h, &body), [Code::Grl017]);
+    let body = format!("{inner}{find}  where not e(f, g)\n  report f \"m\"");
+    assert_eq!(codes(h, &body), [Code::Grl017]);
+    // Two calls under `not` report the one certainly span once.
+    assert_eq!(
+        codes(h, &src("not d(f, g) and not d(g, f)")),
+        [Code::Grl017]
+    );
+    // A def that calls another def carries the negation through.
+    let chain =
+        format!("{def}  def e(a, b) = d(a, b)\n{find}  where not e(f, g)\n  report f \"m\"");
+    assert_eq!(codes(h, &chain), [Code::Grl017]);
+}
+
+// frob:ticket 01M4E0BVMZHYZYC7PHEA0YWS08
+#[test]
+fn certainly_in_a_count_body_is_negative_under_a_lower_bound_comparison() {
+    let h = "lang rust";
+    let src = |w: &str| format!("  find f: function\n  where {w}\n  report f \"m\"");
+    let c = "count(g: function where f certainly calls g)";
+    for op in ["<", "<=", "==", "!="] {
+        assert_eq!(
+            codes(h, &src(&format!("{c} {op} 2"))),
+            [Code::Grl017],
+            "{op}"
+        );
+    }
+    for op in [">", ">="] {
+        assert!(codes(h, &src(&format!("{c} {op} 2"))).is_empty(), "{op}");
+    }
+    // The count on the right mirrors, and a subtrahend is negative.
+    assert_eq!(codes(h, &src(&format!("2 > {c}"))), [Code::Grl017]);
+    assert!(codes(h, &src(&format!("2 < {c}"))).is_empty());
+    let d = "count(g: function where f possibly calls g)";
+    assert_eq!(codes(h, &src(&format!("1 + 3 - {d} > 0"))), [Code::Grl017]);
+    assert!(codes(h, &src(&format!("{d} - 1 > 0"))).is_empty());
+}
+
+// frob:ticket 01M4E0BVMZHYZYC7PHEA0YWS08
+#[test]
+fn certainly_in_an_earlier_report_when_is_negative() {
+    let h = "lang rust";
+    let find = "  find f: function\n  find g: function\n  where f calls g\n";
+    let early = "  report f \"a\" when f certainly calls g\n  report f \"b\"";
+    assert_eq!(codes(h, &format!("{find}{early}")), [Code::Grl017]);
+    let last = "  report f \"b\"\n  report f \"a\" when f certainly calls g";
+    assert!(codes(h, &format!("{find}{last}")).is_empty());
+    let only = "  report f \"a\" when f possibly calls g";
+    assert!(codes(h, &format!("{find}{only}")).is_empty());
+}
+
 #[test]
 fn a_word_no_language_answers_is_grl018_but_universal_rules_are_not_checked() {
     assert_eq!(
