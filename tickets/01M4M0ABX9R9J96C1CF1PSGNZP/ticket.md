@@ -2,12 +2,12 @@
 id = "01M4M0ABX9R9J96C1CF1PSGNZP"
 title = "nested nextest runs inherit an undefined NEXTEST_PROFILE and exit 96 under CI"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-10T22:53:10Z"
-updated = "2026-10-10T22:53:10Z"
+updated = "2026-10-10T22:53:14Z"
 scope = ["crates/frob-evidence/src/provider.rs", "crates/frob-tests/tests/rust_root.rs"]
 
 [[acceptance]]
