@@ -8,13 +8,29 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-02T21:06:24Z"
+updated = "2026-10-10T23:28:45Z"
 idempotency_key = "m2-excuntil"
 labels = ["milestone:2"]
-scope = ["crates/frob-obligations/**", "crates/gob-rules/**"]
+scope = ["crates/frob-obligations/**", "crates/gob-rules/**", "crates/gob-check/src/**", "crates/frob-check/src/snapshot.rs", "crates/frob-check/src/product.rs", "docs/**", "changelog/**"]
 
 [[acceptance]]
 text = "Given a defer whose until date has passed, when check runs, then the deferred finding returns with an EXC finding naming the expiry"
+bound = false
+
+[[acceptance]]
+text = "Given a defer or accept whose until date is today or later, when check runs, then the finding stays suppressed and no EXC014 is raised"
+bound = false
+
+[[acceptance]]
+text = "Given an accept covering an Unresolved finding, when check runs, then the Unresolved finding stands and EXC016 is raised at the accept; a defer of it stays suppressed"
+bound = false
+
+[[acceptance]]
+text = "Given a native suppression of a tool-bound rule (zizmor ignore, allow or eslint-disable of an id_map id) with no frob accept or defer of the mapped rule at that site, when check runs, then EXC017 is raised; with the exception present it is clean"
+bound = false
+
+[[acceptance]]
+text = "EXC014, EXC016 and EXC017 each have a rule page under docs/reference/rules, a fire and a clean mdtest case, and a changelog fragment"
 bound = false
 +++
 
