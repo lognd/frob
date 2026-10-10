@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "Claude"
 created = "2026-10-10T14:51:04Z"
-updated = "2026-10-10T14:51:16Z"
+updated = "2026-10-10T14:53:42Z"
 scope = ["frob.toml"]
 
 [[acceptance]]
