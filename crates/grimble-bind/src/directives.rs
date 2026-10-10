@@ -35,14 +35,14 @@ pub fn scan(code: &Code) -> Vec<CodeDirective> {
     });
     let mut out = Vec::new();
     for f in &code.files {
-        let (Some(text), Some(folded)) = (&f.text, &f.folded) else {
+        let (Some(text), Some(folded)) = (&f.text, f.symbols()) else {
             continue;
         };
         let Some(lang) = Language::detect(&f.path) else {
             tracing::debug!(path = %f.path, "grimble:binds in a language with no comment scanner");
             continue;
         };
-        let result = scanner.scan(lang, text, &folded.file);
+        let result = scanner.scan(lang, text, folded);
         for finding in &result.findings {
             tracing::debug!(path = %f.path, message = %finding.message, "directive scan finding");
         }

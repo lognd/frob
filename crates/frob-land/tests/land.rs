@@ -612,6 +612,43 @@ fn dry_run_plan_is_deterministic_and_changes_nothing() {
     );
 }
 
+// frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+// frob:tests crates/frob-land/src/land.rs::ledger_only_ahead
+#[test]
+fn dry_run_treats_a_base_that_moved_only_by_ledger_commits_as_merged() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add g", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/g.rs", "fn g() {}\n");
+    Fixture::evidence(&s, "src/g.rs");
+    let dry = LandOptions {
+        dry_run: true,
+        ..Fixture::opts(&s)
+    };
+    let clock = || Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
+
+    move_main(&fx.root, "tickets/zz-note.txt", "note\n");
+    let ledger_only = land(&fx.root, &dry, &clock()).expect("dry run");
+    assert!(
+        !ledger_only
+            .warnings
+            .iter()
+            .any(|w| w.contains("check skipped")),
+        "{:?}",
+        ledger_only.warnings
+    );
+
+    move_main(&fx.root, "src/other.rs", "fn other() {}\n");
+    let code = land(&fx.root, &dry, &clock()).expect("dry run");
+    assert!(
+        code.warnings.iter().any(|w| w.contains("check skipped")),
+        "a code commit on the base is still reported: {:?}",
+        code.warnings
+    );
+}
+
 #[test]
 fn missing_evidence_refuses_unless_bypassed_with_a_reason() {
     if !git_available() {

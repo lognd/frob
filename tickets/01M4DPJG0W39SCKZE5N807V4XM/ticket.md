@@ -2,13 +2,14 @@
 id = "01M4DPJG0W39SCKZE5N807V4XM"
 title = "frob-ledger: event blobs per ticket from one snapshot walk (no per-ticket tip:dir rev_parse)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T12:07:24Z"
-updated = "2026-10-09T20:36:35Z"
+updated = "2026-10-09T23:05:27Z"
 scope = ["changelog.d/**", "crates/frob-ledger/src/ledger.rs", "crates/frob-ledger/src/doctor.rs", "crates/frob-ledger/tests/ledger.rs", "crates/frob-pm/src/cycle/velocity.rs"]
 
 [[acceptance]]
