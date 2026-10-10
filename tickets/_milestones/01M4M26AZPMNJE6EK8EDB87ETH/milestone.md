@@ -22,4 +22,8 @@ bound = false
 [[criteria]]
 text = "Every ticket under the M2 universal-model epic (grimble foundation, neatness and CI families) is done"
 bound = false
+
+[[criteria]]
+text = "Every ticket under the navigation epic (canonical ids, reindex, generated docs, profiles, tour) is done"
+bound = false
 +++
