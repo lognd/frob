@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T14:29:21Z"
-updated = "2026-10-10T01:05:25Z"
+updated = "2026-10-10T02:24:45Z"
 scope = ["changelog.d/**", "crates/frob-land/src/git.rs"]
 
 [[acceptance]]
