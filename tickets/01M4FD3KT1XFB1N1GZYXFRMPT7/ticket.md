@@ -2,12 +2,12 @@
 id = "01M4FD3KT1XFB1N1GZYXFRMPT7"
 title = "TODO001 fires on a comment in .github/workflows/ci.yml although YAML is not a scanned language for directives"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T04:00:28Z"
-updated = "2026-10-09T04:00:28Z"
+updated = "2026-10-10T20:08:59Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-obligations/**", "crates/gob-directives/**", "changelog.d/**"]
 
