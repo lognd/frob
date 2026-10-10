@@ -7,12 +7,12 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-10T22:45:34Z"
-updated = "2026-10-10T22:47:17Z"
+updated = "2026-10-10T22:47:39Z"
 scope = ["crates/frob-lease/tests/lease.rs", "crates/frob-pm/tests/config.rs"]
 
 [[acceptance]]
 text = "lease_config_reads_the_base_ref_over_a_stale_worktree_copy passes with no global git identity"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "repo_wide_tables_come_from_the_base_ref_over_a_stale_worktree_copy passes with no global git identity"

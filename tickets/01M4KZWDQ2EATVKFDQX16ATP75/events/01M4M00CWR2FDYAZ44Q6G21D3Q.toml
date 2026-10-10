@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T22:47:39Z"
+digest = "8fac937ab298c625f798ee24481c6f45b527cd11c99a1db0d762cf6c4a683992"
+exit_code = 0
+inline = '''
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+    Finished `test` profile [unoptimized] target(s) in 4.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 07264e83-6421-4786-b13b-04f734dd4a18 with nextest profile: default
+    Starting 1 test across 3 binaries (44 tests skipped)
+        PASS [   0.017s] frob-lease::lease lease_config_reads_the_base_ref_over_a_stale_worktree_copy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.018s] 1 test run: 1 passed, 44 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-lease -E 'test(=lease_config_reads_the_base_ref_over_a_stale_worktree_copy)'"
+size = 687
+status = "measured"
+tests = ["lease_config_reads_the_base_ref_over_a_stale_worktree_copy"]
+at = "2026-10-10T22:47:39Z"
+actor = "lognd"
+rev = 1
