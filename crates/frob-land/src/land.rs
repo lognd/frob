@@ -1,8 +1,10 @@
 //! The land transaction: preconditions, then the locked publish (tickets.md section 10, D25).
 //!
 //! Order: resolve and vet the lease, check the worktree is the holder's and
-//! clean, merge the base into the ticket branch (refusing on conflicts), run
-//! the ticket-scoped check and the close guards, then under the land lock
+//! clean, run the close guards (evidence, criteria, changelog: ledger and
+//! worktree reads only, so a refusal such as `E-DONE-CRITERIA-UNBOUND` comes in
+//! seconds), merge the base into the ticket branch (refusing on conflicts), run
+//! the ticket-scoped check, then under the land lock
 //! fast-forward the base branch, write the `land` event, close the ticket,
 //! release the lease and remove the worktree. A dry run stops after the
 //! preconditions and prints the plan.
@@ -139,6 +141,27 @@ fn prepare(
     let branch = ticket_branch(&wt, base, &wt_path, &handle)?;
     ensure_clean(&wt, &wt_path)?;
 
+    // frob:ticket 01M4FJ57NER0WMX4FPNY7E721R
+    // The close guards read only the ledger and the worktree, so they run before any merge or check:
+    // an unbound criterion refuses in seconds, not after a cold build.
+    let site = if here.ledger.config().mode == RefMode::Branch {
+        Workspace::open(&wt_path, clock.clone())?
+    } else if primary == cwd_root {
+        here
+    } else {
+        Workspace::open(&primary, clock.clone())?
+    };
+    let mut evidence = EvidenceGuard::for_ticket(&site.ledger, &site.store, id)?;
+    let mut done = DoneGuard::for_ticket(&site.ledger, id, &wt_path)?;
+    if let Some(reason) = &opts.no_evidence_reason {
+        evidence = evidence.allow_bypass(reason.clone());
+        done = done.allow_bypass(reason.clone());
+    }
+    if let Some(reason) = &opts.no_changelog_reason {
+        done = done.allow_no_changelog(reason.clone());
+    }
+    run_guards(view, &handle, &evidence, &done, opts)?;
+
     let base_oid = wt.rev_parse(&base_ref(base)).map_err(|_| {
         needs_action(
             "E-LAND-NO-BASE",
@@ -161,7 +184,7 @@ fn prepare(
         base_merged = true;
     } else if base_merged {
         base_merge = Some("up-to-date".to_owned());
-    } else if ledger_only_ahead(&wt, fork, base_oid, &here.ledger.config().dir)? {
+    } else if ledger_only_ahead(&wt, fork, base_oid, &site.ledger.config().dir)? {
         // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
         // Trunk-mode ticket verbs commit to the base all the time; those commits carry no code.
         tracing::info!(
@@ -174,7 +197,7 @@ fn prepare(
     let mut warnings = ci_gate.warnings;
     let mut ratchet = Ratchet::default();
     if base_merged {
-        ratchet = verify_check(&wt, &wt_path, &here.ledger, &handle, base, opts)?;
+        ratchet = verify_check(&wt, &wt_path, &site.ledger, &handle, base, opts)?;
     } else {
         // A dry run leaves the base unmerged, so the ticket-scoped diff would
         // include the base's own changes; the real land merges first.
@@ -183,23 +206,6 @@ fn prepare(
         ));
     }
 
-    let site = if here.ledger.config().mode == RefMode::Branch {
-        Workspace::open(&wt_path, clock.clone())?
-    } else if primary == cwd_root {
-        here
-    } else {
-        Workspace::open(&primary, clock.clone())?
-    };
-    let mut evidence = EvidenceGuard::for_ticket(&site.ledger, &site.store, id)?;
-    let mut done = DoneGuard::for_ticket(&site.ledger, id, &wt_path)?;
-    if let Some(reason) = &opts.no_evidence_reason {
-        evidence = evidence.allow_bypass(reason.clone());
-        done = done.allow_bypass(reason.clone());
-    }
-    if let Some(reason) = &opts.no_changelog_reason {
-        done = done.allow_no_changelog(reason.clone());
-    }
-    run_guards(view, &handle, &evidence, &done, opts)?;
     let mut done_view = view.ticket.clone();
     done_view.front.outcome = Some(opts.outcome);
     warnings.extend(done.warnings(&done_view));

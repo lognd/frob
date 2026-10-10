@@ -375,7 +375,7 @@ pub(crate) fn share_build_dir(common: &Path, checkout: &Path) {
         }
     }
     #[cfg(not(unix))]
-    tracing::debug!(checkout = %checkout.display(), "build directory sharing is unix-only");
+    tracing::debug!(shared = %shared.display(), checkout = %checkout.display(), "build directory sharing is unix-only");
 }
 
 /// Make git ignore a `/target` entry of any kind: the `target/` pattern of a `.gitignore` matches
