@@ -7,8 +7,8 @@
 
 // frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
 
-use frob_ledger::model::{Category, Frontmatter, TicketType};
 use frob_ledger::Ledger;
+use frob_ledger::model::{Category, Frontmatter, TicketType};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 
 use crate::config::{PmTable, ReadyRequirement};
@@ -197,19 +197,14 @@ pub fn evaluate(ledger: &Ledger, pm: &PmTable) -> Result<Evaluation> {
                 tracing::warn!(ticket = %id, cycle = %c.alias(), "member ticket unreadable; skipped by PM010-PM012");
                 continue;
             };
-            members.push((
-                view.summary.ty,
-                u32::from(view.summary.points.unwrap_or(0)),
-            ));
+            members.push((view.summary.ty, u32::from(view.summary.points.unwrap_or(0))));
             if matches!(view.summary.category, Category::Triage | Category::Todo) {
                 let failed = ready_failures(&view.ticket.front, &pm.ready_requires);
-                out.findings
-                    .extend(pm012(c, &handle(*id), &failed));
+                out.findings.extend(pm012(c, &handle(*id), &failed));
             }
         }
         let cap = capacity(c, &all, &done, pm.min_history, pm.capacity_k);
-        out.findings
-            .extend(pm010(c, committed(&members), &cap));
+        out.findings.extend(pm010(c, committed(&members), &cap));
     }
     tracing::info!(
         subjects = out.subjects,
@@ -218,4 +213,3 @@ pub fn evaluate(ledger: &Ledger, pm: &PmTable) -> Result<Evaluation> {
     );
     Ok(out)
 }
-

@@ -127,6 +127,43 @@ fn add_milestone(
     }
 }
 
+/// The ticket a `epic|task|story KEY [parent= points= scope= criteria= labels= class= value=none]` line describes.
+fn new_ticket(
+    w: &[&str],
+    o: &BTreeMap<&str, &str>,
+    keys: &BTreeMap<String, TicketId>,
+) -> NewTicket {
+    let ty = match w[0] {
+        "epic" => TicketType::Epic,
+        "story" => TicketType::Story,
+        _ => TicketType::Task,
+    };
+    let list = |k: &str| -> Vec<String> {
+        o.get(k)
+            .map(|l| l.split(',').map(str::to_owned).collect())
+            .unwrap_or_default()
+    };
+    let mut t = NewTicket::new(w[1], ty);
+    t.parent = o.get("parent").map(|k| keys[*k]);
+    t.points = o.get("points").map(|p| p.parse().expect("points"));
+    t.scope = list("scope");
+    t.labels = list("labels");
+    t.acceptance = (0..o
+        .get("criteria")
+        .map_or(0, |n| n.parse().expect("criteria")))
+        .map(|i| format!("criterion {i}"))
+        .collect();
+    if ty == TicketType::Story && o.get("value") != Some(&"none") {
+        t.persona = Some("maintainer".to_owned());
+        t.capability = Some("see the plan".to_owned());
+        t.outcome_text = Some("work is clear".to_owned());
+    }
+    if let Some(class) = o.get("class") {
+        t.class = class.parse().expect("class");
+    }
+    t
+}
+
 /// Build the ledger a block describes and evaluate the block's rule (`PM034`, `PM001`, `PM002`, `PM010`-`PM013`, `PM033` or `PM036`) over it.
 fn runner(case: &Case) -> Vec<Finding> {
     // frob:tests crates/frob-pm/src/rules/membership.rs::pm034
@@ -145,34 +182,7 @@ fn runner(case: &Case) -> Vec<Finding> {
         let o = opts(&w);
         match w[0] {
             "epic" | "task" | "story" => {
-                let ty = match w[0] {
-                    "epic" => TicketType::Epic,
-                    "story" => TicketType::Story,
-                    _ => TicketType::Task,
-                };
-                let mut t = NewTicket::new(w[1], ty);
-                t.parent = o.get("parent").map(|k| keys[*k]);
-                t.points = o.get("points").map(|p| p.parse().expect("points"));
-                t.scope = o
-                    .get("scope")
-                    .map(|s| s.split(',').map(str::to_owned).collect())
-                    .unwrap_or_default();
-                t.acceptance = (0..o.get("criteria").map_or(0, |n| n.parse().expect("criteria")))
-                    .map(|i| format!("criterion {i}"))
-                    .collect();
-
-                t.labels = o
-                    .get("labels")
-                    .map(|l| l.split(',').map(str::to_owned).collect())
-                    .unwrap_or_default();
-                if ty == TicketType::Story && o.get("value") != Some(&"none") {
-                    t.persona = Some("maintainer".to_owned());
-                    t.capability = Some("see the plan".to_owned());
-                    t.outcome_text = Some("work is clear".to_owned());
-                }
-                if let Some(class) = o.get("class") {
-                    t.class = class.parse().expect("class");
-                }
+                let t = new_ticket(&w, &o, &keys);
                 let id = ledger.new_ticket(t).expect("ticket").ticket.front.id;
                 if o.get("state") == Some(&"done") {
                     ledger
@@ -234,6 +244,10 @@ fn runner(case: &Case) -> Vec<Finding> {
         // frob:tests crates/frob-pm/src/rules/cycle_plan.rs::pm012
         // frob:tests crates/frob-pm/src/rules/cycle_plan.rs::evaluate
         // frob:tests crates/frob-pm/src/rules/cycle_plan.rs::ready_failures
+        // frob:tests crates/frob-pm/src/cycle/history.rs::deliveries
+        // frob:tests crates/frob-pm/src/cycle/history.rs::done_points
+        // frob:tests crates/frob-pm/src/cycle/history.rs::cycle_events
+        // frob:tests crates/frob-pm/src/cycle/history.rs::member_status
         return cycle_plan::evaluate(&ledger, &pm)
             .expect("evaluate")
             .findings

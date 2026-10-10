@@ -21,8 +21,8 @@ use frob_ledger::model::Stamp;
 use frob_pm::cycle::assign::{AssignError, AssignPlan, TicketFacts, default_cycle, plan_assign};
 use frob_pm::cycle::history::{cycle_events, deliveries, done_points, member_status};
 use frob_pm::cycle::lifecycle::{
-    ClosePlan, CycleError, MemberFacts, NewPlan, plan_close, plan_new, plan_next,
-    ratio, resolve_end, unknown_cycle, with_state,
+    ClosePlan, CycleError, MemberFacts, NewPlan, plan_close, plan_new, plan_next, ratio,
+    resolve_end, unknown_cycle, with_state,
 };
 use frob_pm::cycle::plan::{Candidate, PlanError, milestone_members, next_milestone, plan_fill};
 use frob_pm::cycle::velocity::{
