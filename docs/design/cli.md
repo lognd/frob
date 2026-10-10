@@ -250,6 +250,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `ticket evidence fetch` (the action `fetch` is a positional of `ticket evidence`) | frob | frob-evidence | yes | 0 2 3 4 | 2 |
 | `work [--here]`, `requeue` (top-level: lease and worktree lifecycle) | frob | frob-lease | `work --here` only for the same holder; others get 3 | 0 2 3 4 | 1 |
 | `ticket close\|drop\|reopen` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
+| `ticket closeout --reason TEXT` | frob | frob-ledger | yes; closes done after the fact under the same evidence, changelog and merge guards, takes no lease, and the close reason is prefixed `retroactive closeout: ` so the ticket counts in no cycle's delivery | 0 2 3 4 | 1 |
 | `ticket review` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
 | `ticket reconcile\|doctor` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
 | `merge-driver` (hidden, git invokes it) | frob | frob-ledger | yes, pure union and re-fold | git contract: 0 merged, 1 conflict | 1 |
