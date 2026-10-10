@@ -172,7 +172,9 @@ fn a_check_missing_from_cargo_dev_ci_fails_naming_it() {
     steps.retain(|s| s.name != "docs");
     let err = parity(&text, &steps).unwrap_err();
     assert!(
-        err.contains("cargo dev ci --step docs") || err.contains("missing from ci.yml"),
+        err.contains("cargo dev ci --step docs")
+            || err.contains("not a cargo dev ci step")
+            || err.contains("missing from ci.yml"),
         "{err}"
     );
 }
@@ -356,6 +358,10 @@ fn ci_cancels_superseded_runs_has_timeouts_and_filters_by_job() {
         );
     }
     assert!(doc["jobs"]["docs"]["if"].is_null(), "docs must always run");
+    assert!(
+        text.contains(&format!("uvx typos=={}", ci::TYPOS_VERSION)),
+        "the docs job must run the pinned typos"
+    );
     let cond = doc["jobs"]["dev-artifacts"]["if"].as_str().unwrap();
     assert!(cond.contains("needs.dev-gate.outputs.build"), "{cond}");
 }

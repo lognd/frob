@@ -94,11 +94,11 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2.87.22
-        with:
-          tool: typos@1.50.3
+      - name: Install uv (runs the prebuilt typos wheel)
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      # The pin equals gob_dev::ci::TYPOS_VERSION (a prebuilt wheel, so nothing compiles here).
       - name: typos (spelling)
-        run: typos
+        run: uvx typos==1.50.3
 
   rust:
     name: rust (${{ matrix.os }})
