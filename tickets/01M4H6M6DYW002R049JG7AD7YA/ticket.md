@@ -8,7 +8,7 @@ points = 1
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T20:45:41Z"
-updated = "2026-10-10T19:12:43Z"
+updated = "2026-10-10T19:13:20Z"
 scope = ["docs/design/README.md", "docs/design/tickets.md", "docs/design/cli.md", "docs/design/build-test-ci.md", "crates/frob-lease/src/config.rs", "crates/frob-lease/src/lib.rs", "docs/schemas/config.json", "docs/reference/config.md", "changelog.d/**", "docs/README.md", "docs/design/sibling-contract.md", "docs/reference/tool-stages.md", "docs/design/tool-binding.md"]
 
 [[acceptance]]
@@ -21,10 +21,6 @@ bound = false
 
 [[acceptance]]
 text = "Given ~CV286BH landed, when this lands, then docs/design/sibling-contract.md describes the sibling skip in check --ticket and land (inputs: config, packs lock, model roots, any code-language file; reported as a warning with a reason)"
-bound = false
-
-[[acceptance]]
-text = "Given ~5S319B4 landed, when this lands, then docs/reference/tool-stages.md and docs/design/tool-binding.md describe the uv-run Unresolved-with-remedy behaviour and frob work's uv sync --frozen in new worktrees (with the UV_PROJECT_ENVIRONMENT skip)"
 bound = false
 +++
 
