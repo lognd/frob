@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T20:27:19Z"
+digest = "2d118414947d2525c6838be6bb3e59580eabd3974b3af7e0eb98e772308cc7d7"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 041e57fa-c982-483d-b33c-f18dc8091e28 with nextest profile: default
+    Starting 1 test across 7 binaries (132 tests skipped)
+        PASS [   0.011s] gob-dev::import_v1 crlf_tickets_import_and_a_sprint_becomes_a_label
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 132 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(=crlf_tickets_import_and_a_sprint_becomes_a_label)'"
+size = 548
+status = "measured"
+tests = ["crlf_tickets_import_and_a_sprint_becomes_a_label"]
+at = "2026-10-10T20:27:19Z"
+actor = "Claude"
+rev = 1
