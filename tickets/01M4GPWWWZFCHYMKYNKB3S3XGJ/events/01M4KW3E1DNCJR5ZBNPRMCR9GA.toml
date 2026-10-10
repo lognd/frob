@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "Leases: generated files (gen outputs) and declared append-only files are shareable by default, and lease scope can widen on demand as the diff grows"
+new = "Leases: generated files (gen outputs) are shareable by default alongside declared append-only shared files"
+at = "2026-10-10T21:39:29Z"
+actor = "Claude"
+rev = 1

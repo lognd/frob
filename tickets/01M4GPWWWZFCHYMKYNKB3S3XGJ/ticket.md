@@ -1,13 +1,13 @@
 +++
 id = "01M4GPWWWZFCHYMKYNKB3S3XGJ"
-title = "Leases: generated files (gen outputs) and declared append-only files are shareable by default, and lease scope can widen on demand as the diff grows"
+title = "Leases: generated files (gen outputs) are shareable by default alongside declared append-only shared files"
 type = "story"
 category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T16:10:48Z"
-updated = "2026-10-10T21:39:25Z"
+updated = "2026-10-10T21:39:29Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob-lease/**", "crates/gob-config/**", "changelog.d/**"]
 
