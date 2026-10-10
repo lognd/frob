@@ -8,7 +8,7 @@ points = 1
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T20:45:41Z"
-updated = "2026-10-10T19:18:03Z"
+updated = "2026-10-10T19:18:04Z"
 scope = ["docs/design/README.md", "docs/design/tickets.md", "docs/design/cli.md", "docs/design/build-test-ci.md", "crates/frob-lease/src/config.rs", "crates/frob-lease/src/lib.rs", "docs/schemas/config.json", "docs/reference/config.md", "changelog.d/**", "docs/README.md", "docs/design/sibling-contract.md"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given ~CV286BH landed, when this lands, then docs/design/sibling-contract.md describes the sibling skip in check --ticket and land (inputs: config, packs lock, model roots, any code-language file; reported as a warning with a reason)"
-bound = false
+bound = true
 +++
 
 found while working ~EE8MASY: these files were leased by in-flight tickets (MQ1NM4Q, 76AS8XH, FP0SDK3, TSYTGDE, ZZQ6PA9) so phase 1 left them; docs/README.md marks the four docs current*. Do after those tickets land.
