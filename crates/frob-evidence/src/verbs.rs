@@ -238,7 +238,10 @@ pub fn capture_args(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
             .required(true)
             .value_name("PROVIDER")
             .value_parser(PossibleValuesParser::new(Provider::NAMES))
-            .help("Measurer: nextest, pytest, vitest, jest, dotnet, command, file or attestation (a person's statement; needs a terminal and a listed attester)"),
+            .help(format!(
+                "Measurer: {} (a person's statement; needs a terminal and a listed attester)",
+                Provider::expected()
+            )),
     )
     .arg(
         Arg::new("ref")

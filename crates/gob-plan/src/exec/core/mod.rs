@@ -30,15 +30,15 @@ use gob_text::SourceText;
 use regex::RegexBuilder;
 
 pub use eval::Val;
-pub(crate) use eval::Wired;
+pub(crate) use eval::{Env, Eval, Wired};
 pub use field::{Datum, Scalar, compare};
 pub use verdict::{Doubt, Verdict};
 
-use eval::{Env, Eval, Matcher};
+use eval::Matcher;
 use kind::KindTest;
 
 use crate::exec::relations::{Count, PEER_OF, Relations, SideRow};
-use crate::plan::{Op, OpId, Operand, Plan, PlanParts, StrId, VarId};
+use crate::plan::{Op, OpId, Operand, Plan, PlanParts, Polarity, StrId, VarId};
 
 /// Compiled regexes are refused above this size, in bytes (security.md 2.5).
 const REGEX_SIZE_LIMIT: usize = 1 << 20;
@@ -112,6 +112,9 @@ pub struct Row {
     pub vars: Vec<Option<Val>>,
     /// The conjunction of memberships and condition clauses; never `No`.
     pub verdict: Verdict,
+    /// P-: the good-thing formula (the clauses after the subject split), kept even when `No`
+    /// because absence fires; `Yes` for every other polarity.
+    pub formula: Verdict,
 }
 
 impl Row {
@@ -137,6 +140,9 @@ pub struct Run {
     pub hidden: bool,
     /// How many def views were materialised (one per def and distinct argument values).
     pub views: usize,
+    /// Whether the evaluation budget ran out; the bindings not yet reached are missing and the
+    /// ones reached may carry the `budget` doubt.
+    pub truncated: bool,
 }
 
 /// Kind tests by kind word, compiled patterns by op and the supplied relations the plan names.
@@ -157,6 +163,7 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
     let mut matchers = HashMap::new();
     let mut wired = Wired {
         knobs: rels.knobs.clone(),
+        budget: rels.step_budget,
         ..Wired::default()
     };
     for (i, op) in p.ops.iter().enumerate() {
@@ -255,11 +262,18 @@ fn free_vars(p: &PlanParts, id: OpId, out: &mut Vec<VarId>) {
 struct Schedule {
     binders: Vec<OpId>,
     ready: Vec<Vec<OpId>>,
+    /// The clauses after the subject split (P-), evaluated once every binder is bound.
+    formula: Vec<OpId>,
 }
 
 fn schedule(p: &PlanParts) -> Schedule {
-    let binders: Vec<OpId> = p
-        .clauses
+    let split = if p.polarity == Polarity::Pminus {
+        usize::from(p.subjects).min(p.clauses.len())
+    } else {
+        p.clauses.len()
+    };
+    let (subjects, formula) = p.clauses.split_at(split);
+    let binders: Vec<OpId> = subjects
         .iter()
         .copied()
         .filter(|&c| matches!(p.ops[c as usize], Op::Find { .. } | Op::FindSide { .. }))
@@ -271,7 +285,7 @@ fn schedule(p: &PlanParts) -> Schedule {
         }
     }
     let mut ready = vec![Vec::new(); binders.len() + 1];
-    for &c in &p.clauses {
+    for &c in subjects {
         if binders.contains(&c) {
             continue;
         }
@@ -280,7 +294,11 @@ fn schedule(p: &PlanParts) -> Schedule {
         let at = vars.iter().map(|v| depth_of[v]).max().unwrap_or(0);
         ready[at].push(c);
     }
-    Schedule { binders, ready }
+    Schedule {
+        binders,
+        ready,
+        formula: formula.to_vec(),
+    }
 }
 
 /// Runs `plan` over `input` with no edge relations, side tables or knobs.
@@ -293,7 +311,7 @@ pub fn run(plan: &Plan, input: &Input<'_>) -> Result<Run, ExecError> {
 }
 
 /// Builds the evaluator for `plan`, or says why it cannot run.
-fn evaluator<'a>(
+pub(crate) fn evaluator<'a>(
     plan: &'a Plan,
     input: &Input<'a>,
     rels: &'a Relations,
@@ -346,21 +364,27 @@ pub fn count(
 /// does not compile, or an edge relation or side table `rels` lacks; nothing is evaluated in
 /// that case.
 pub fn run_with(plan: &Plan, input: &Input<'_>, rels: &Relations) -> Result<Run, ExecError> {
-    let p = plan.parts();
     let ev = evaluator(plan, input, rels)?;
+    Ok(rows_of(&ev))
+}
+
+/// Enumerates the bindings of the plan behind `ev` (the body of [`run_with`]).
+pub(crate) fn rows_of(ev: &Eval<'_>) -> Run {
+    let p = ev.plan;
     let sched = schedule(p);
     let mut rows = Vec::new();
     let mut env: Env = vec![None; usize::from(p.vars)];
-    let start = ready_verdict(&ev, &sched, 0, &mut env, Verdict::yes());
+    let start = ready_verdict(ev, &sched, 0, &mut env, Verdict::yes());
     if start.truth != Truth::No {
-        enumerate(&ev, &sched, 0, &mut env, start, &mut rows);
+        enumerate(ev, &sched, 0, &mut env, start, &mut rows);
     }
     tracing::debug!(rule = %p.rule, rows = rows.len(), hidden = ev.hidden, views = ev.view_count(), "plan run");
-    Ok(Run {
+    Run {
         rows,
         hidden: ev.hidden,
         views: ev.view_count(),
-    })
+        truncated: ev.exhausted(),
+    }
 }
 
 /// Conjoins `acc` with the conditions that become evaluable at `depth`.
@@ -389,9 +413,14 @@ fn enumerate(
     rows: &mut Vec<Row>,
 ) {
     let Some(&binder) = s.binders.get(depth) else {
+        let mut formula = Verdict::yes();
+        for &c in &s.formula {
+            formula = formula.and(ev.eval(c, env));
+        }
         rows.push(Row {
             vars: env.clone(),
             verdict: acc,
+            formula,
         });
         return;
     };
@@ -399,6 +428,9 @@ fn enumerate(
         Op::Find { var, kind } => (var, kind),
         Op::FindSide { var, table, .. } => {
             for index in 0..ev.side_rows(table) {
+                if ev.exhausted() {
+                    break;
+                }
                 env[usize::from(var)] = Some(Val::Row(SideRow { table, index }));
                 let v = ready_verdict(ev, s, depth + 1, env, acc.clone());
                 if v.truth != Truth::No {
@@ -411,6 +443,9 @@ fn enumerate(
         _ => unreachable!("binders are finds"),
     };
     for &(n, member) in ev.domain(kind).iter() {
+        if ev.exhausted() {
+            break;
+        }
         env[usize::from(var)] = Some(Val::Node(n));
         let mut v = acc.clone();
         if member == Truth::Unknown {

@@ -675,6 +675,18 @@
       },
       "type": "object"
     },
+    "tests": {
+      "additionalProperties": false,
+      "description": "How `frob test` and the `pytest` provider find the Python interpreter (`[tests]`).",
+      "properties": {
+        "python": {
+          "default": "",
+          "description": "Interpreter that runs `-m pytest` (a name on `PATH` or a path, relative ones from the repository root); empty uses `.venv` in the repository root when it has one, else `pytest` on `PATH`.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "tickets": {
       "additionalProperties": false,
       "description": "Where the ticket ledger lives.",
@@ -709,7 +721,7 @@
         "ref_mode": {
           "$ref": "#/$defs/RefModeKnob",
           "default": "trunk",
-          "description": "`trunk` commits to `ref`; `branch` commits to the checked-out branch."
+          "description": "`trunk` commits to `ref`; `branch` commits to the checked-out branch; `orphan` commits to the ticket branch `branch` in the ticket-branch layout and keeps `ref` as the code base."
         }
       },
       "type": "object"
