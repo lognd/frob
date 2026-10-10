@@ -172,7 +172,7 @@ impl PlanBuilder {
         })
     }
 
-    /// P-: the clauses added so far select (default: through the last `find`) the rule's subjects; later ones are the formula.
+    /// P-: the clauses added so far select (default: all of them) the rule's subjects; later ones are the formula.
     pub fn end_subjects(&mut self) -> &mut Self {
         self.subjects = Some(u16::try_from(self.clauses.len()).unwrap());
         self
@@ -194,16 +194,13 @@ impl PlanBuilder {
         });
     }
 
-    /// P- plans select subjects through the last binder unless `end_subjects` says otherwise.
+    /// A P- plan treats every clause as selecting subjects unless `end_subjects` splits them.
     fn default_subjects(&self) -> u16 {
-        if self.polarity != Polarity::Pminus {
-            return 0;
+        if self.polarity == Polarity::Pminus {
+            u16::try_from(self.clauses.len()).unwrap()
+        } else {
+            0
         }
-        let last = self
-            .clauses
-            .iter()
-            .rposition(|&c| matches!(self.ops[c as usize], Op::Find { .. } | Op::FindSide { .. }));
-        last.map_or(0, |i| u16::try_from(i + 1).unwrap())
     }
 
     pub fn build(&mut self) -> Plan {
@@ -232,7 +229,11 @@ impl PlanBuilder {
             ops: self.ops.clone(),
             defs: self.defs.clone(),
             clauses: self.clauses.clone(),
-            subjects: self.subjects.unwrap_or_else(|| self.default_subjects()),
+            subjects: if self.polarity == Polarity::Pminus {
+                self.subjects.unwrap_or_else(|| self.default_subjects())
+            } else {
+                0
+            },
             unresolved: self.unresolved.clone(),
             reports: self.reports.clone(),
         };
