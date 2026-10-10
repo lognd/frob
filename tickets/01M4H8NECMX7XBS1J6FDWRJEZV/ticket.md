@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T21:21:19Z"
-updated = "2026-10-09T23:51:52Z"
+updated = "2026-10-10T01:08:35Z"
 scope = ["crates/frob-land/src/ratchet.rs", "changelog.d/**"]
 
 [[acceptance]]
