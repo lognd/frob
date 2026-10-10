@@ -2,7 +2,8 @@
 id = "01M4M0ABX9R9J96C1CF1PSGNZP"
 title = "nested nextest runs inherit an undefined NEXTEST_PROFILE and exit 96 under CI"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
