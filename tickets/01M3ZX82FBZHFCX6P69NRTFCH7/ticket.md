@@ -8,14 +8,14 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-10T23:28:39Z"
+updated = "2026-10-11T00:27:06Z"
 idempotency_key = "m2-nav-slug"
 labels = ["milestone:2", "area:navigation", "good-first"]
 scope = ["crates/frob-ledger/src/slug.rs", "crates/frob-ledger/src/layout.rs", "crates/frob-ledger/src/lib.rs"]
 
 [[acceptance]]
 text = "Given the title `Parser rewrite: faster, safer (v2)!`, when slugged, then the result is `parser-rewrite-faster-safer-v2`"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a title of only symbols or a 90-character title, when slugged, then the first yields the handle without the tilde and the second is cut at a word boundary within 60 characters"
