@@ -1,0 +1,11 @@
+kind = "create"
+title = "dup baseline: baseline file so error-by-default does not fail existing clones"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
+acceptance = ["frob dup baseline writes current clusters; baselined clones do not fail", "Each baseline entry carries a reason and an owner ticket"]
+at = "2026-10-11T17:40:09Z"
+actor = "lognd"
+rev = 1

@@ -16,6 +16,7 @@ use frob_pm::rules::cycle_plan::{Pm010, Pm011, Pm012};
 use frob_pm::rules::good_first::Pm031;
 use frob_pm::rules::membership::Pm034;
 use frob_pm::rules::milestone::{Pm001, Pm002};
+use frob_pm::rules::pm032::Pm032;
 use frob_pm::rules::replenish::Pm033;
 use frob_pm::rules::wip::Pm013;
 use frob_release::rel001::Rel001;
@@ -340,17 +341,32 @@ fn replenish_findings(inputs: &FrobInputs, lease_cfg: Option<&LeaseConfig>) -> V
     settle([replenish_evaluated(inputs, state, lease_cfg)])
 }
 
-/// `PM033` for `state`, or the failure when `[pm]` or the ledger cannot be read.
-// frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
-fn replenish_evaluated(
+/// `PM032` findings for the `repo:good-first-pool` group; the ready pool is `Ledger::doable` under the live lease check, the minimum `[tickets] good_first_min`.
+// frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
+fn good_first_pool_findings(inputs: &FrobInputs, lease_cfg: Option<&LeaseConfig>) -> Vec<Finding> {
+    const ALL: &[&str] = &["PM032"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
+    };
+    let min = frob_pm::rules::pm032::min_ready(&inputs.root);
+    let leases = lease_check(inputs, state, lease_cfg, "PM032");
+    settle([
+        frob_pm::rules::pm032::evaluate(&state.ledger, &*leases, min)
+            .map(|e| e.findings)
+            .map_err(|e| failed(ALL, e)),
+    ])
+}
+
+/// The live lease check for `state`, or one that frees everything (logged) when the lease store cannot be opened.
+// frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
+fn lease_check(
     inputs: &FrobInputs,
     state: &snapshot::LedgerState,
     lease_cfg: Option<&LeaseConfig>,
-) -> Evaluated {
-    let ready_min = frob_pm::PmConfig::load(&inputs.root)
-        .map_err(|e| failed(&["PM033"], format_args!("pm config unreadable: {e}")))?
-        .pm
-        .ready_min;
+    rule: &str,
+) -> Box<dyn LeaseCheck> {
     let cfg = match lease_cfg {
         Some(c) => Ok(c.clone()),
         None => LeaseConfig::load(&inputs.root),
@@ -362,13 +378,27 @@ fn replenish_evaluated(
                 .map_err(|e| e.to_string())
         })
         .and_then(|(store, _)| frob_lease::LeaseGuard::new(store).map_err(|e| e.to_string()));
-    let leases: Box<dyn LeaseCheck> = match guard {
+    match guard {
         Ok(g) => Box::new(g),
         Err(msg) => {
-            tracing::warn!(error = %msg, "lease check unavailable; PM033 counts every doable ticket");
+            tracing::warn!(error = %msg, "lease check unavailable; {rule} counts every doable ticket");
             Box::new(NoLeases)
         }
-    };
+    }
+}
+
+/// `PM033` for `state`, or the failure when `[pm]` or the ledger cannot be read.
+// frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
+fn replenish_evaluated(
+    inputs: &FrobInputs,
+    state: &snapshot::LedgerState,
+    lease_cfg: Option<&LeaseConfig>,
+) -> Evaluated {
+    let ready_min = frob_pm::PmConfig::load(&inputs.root)
+        .map_err(|e| failed(&["PM033"], format_args!("pm config unreadable: {e}")))?
+        .pm
+        .ready_min;
+    let leases = lease_check(inputs, state, lease_cfg, "PM033");
     frob_pm::rules::replenish::evaluate(&state.ledger, &*leases, ready_min)
         .map(|e| e.findings)
         .map_err(|e| failed(&["PM033"], e))
@@ -464,6 +494,12 @@ impl Product for Frob {
                 vec![Pm031.meta()],
                 |s: &Snapshot<Self>, _| good_first_findings(&s.inputs),
             )
+            .full_only(),
+            // frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
+            RepoGroup::new("repo:good-first-pool", vec![Pm032.meta()], {
+                let lease = self.opts.lease.clone();
+                move |s: &Snapshot<Self>, _| good_first_pool_findings(&s.inputs, lease.as_ref())
+            })
             .full_only(),
             // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
             RepoGroup::new("repo:replenish", vec![Pm033.meta()], {
