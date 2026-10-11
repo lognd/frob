@@ -34,6 +34,7 @@
 #![cfg_attr(not(test), deny(unused_crate_dependencies))]
 
 mod filecheck;
+mod memo;
 mod options;
 mod product;
 pub mod product_rules;
@@ -50,6 +51,7 @@ pub use gob_check::{
     Counts, FailOn, FileCheck, FixOutcome, Perf001, PerfTable, Proc001, StageTime, Stats, Timing,
     Tool001, Tool002, ToolParser, ToolStage,
 };
+pub use memo::FileToolMemo;
 pub use options::CheckOptions;
 pub use product::Frob;
 pub use scope::TicketScope;
@@ -122,6 +124,11 @@ pub fn run_with_cone(
     opts.clock
         .get_or_insert_with(|| Arc::new(gob_time::SystemClock::pin()));
     let product = Frob::new(opts.clone());
-    let report = gob_check::run(&product, root, &opts.run_options())?;
+    let mut run_opts = opts.run_options();
+    if run_opts.tool_memo.is_none() {
+        run_opts.tool_memo = FileToolMemo::for_repo(root)
+            .map(|m| Arc::new(m) as Arc<dyn gob_check::ToolMemo>);
+    }
+    let report = gob_check::run(&product, root, &run_opts)?;
     Ok((report, product.diff_paths(), product.cone_paths()))
 }
