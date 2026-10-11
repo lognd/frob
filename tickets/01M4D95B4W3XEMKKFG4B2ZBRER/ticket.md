@@ -8,12 +8,12 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:13:02Z"
-updated = "2026-10-11T01:07:01Z"
+updated = "2026-10-11T01:27:00Z"
 scope = ["changelog.d/**", "crates/gob-rules/**", "crates/gob-check/**", "crates/frob-check/src/verb.rs", "crates/frob-check/tests/precision.rs", "docs/design/rules.md", "docs/schemas/envelope.json"]
 
 [[acceptance]]
 text = "Given exceptions recorded for a rule in a run, when the report builds its precision ledger, then the rule has its accepted and waived counts, open findings and a not-useful rate, and the rate is absent below the minimum sample size"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a ledger where a rule's not-useful rate is above a ceiling with enough samples, when demotions are asked for, then that rule is returned with its numbers and the rules at or below the ceiling are not"
