@@ -10,8 +10,8 @@ reporter = "lognd"
 created = "2026-10-03T03:34:45Z"
 updated = "2026-10-11T19:09:00Z"
 idempotency_key = "m2-nav-tick005"
-labels = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/replay.rs"]
-scope = ["crates/frob-obligations/src/tick_reindex.rs", "crates/frob-ledger/src/replay.rs"]
+labels = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/replay.rs", "creates:crates/frob/tests/ticket_replay.rs"]
+scope = ["crates/frob-obligations/src/tick_reindex.rs", "crates/frob-ledger/src/replay.rs", "crates/frob/tests/ticket_replay.rs"]
 
 [[links]]
 kind = "blocked-by"
