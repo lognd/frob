@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:39:06Z"
-updated = "2026-10-11T04:28:16Z"
-scope = ["crates/frob-ticket/**"]
+updated = "2026-10-11T04:30:35Z"
+scope = ["crates/frob-ticket/**", "crates/frob-lease/**", "crates/frob-ledger/**", "crates/frob/**", "docs/**"]
 
 [[acceptance]]
 text = "frob ticket doable on this ledger completes in under 1 s, measured in a benchmark test with a generated 2,000-ticket ledger"
