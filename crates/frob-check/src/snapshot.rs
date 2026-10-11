@@ -441,7 +441,6 @@ pub(crate) fn collect(
             invariants,
             tickets_configured: configured,
             changelog_exempt: opts.changelog_exempt,
-            // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
             tool_ids: frob_obligations::tool_bound_ids(root),
             today,
         },
