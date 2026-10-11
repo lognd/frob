@@ -44,7 +44,7 @@ fn primary_and_linked_worktree_share_one_cache_dir() {
     assert!(a.ends_with(".git/frob/cache/frob"), "{}", a.display());
     assert_eq!(
         git_common_dir(&linked).unwrap(),
-        gob_exec::canonical(&primary.join(".git")).unwrap()
+        gob_fs::canonical(&primary.join(".git")).unwrap()
     );
     let plain = tmp.path().join("plain");
     std::fs::create_dir_all(&plain).unwrap();
@@ -103,4 +103,23 @@ fn two_processes_open_and_write_one_fresh_cache_without_loss() {
         assert_eq!(cache.get_findings(&key("a", i)).as_deref(), Some(&b"a"[..]));
         assert_eq!(cache.get_findings(&key("b", i)).as_deref(), Some(&b"b"[..]));
     }
+}
+
+// frob:ticket 01M4M52WKHGXADHPQ08J1AS8BJ
+// frob:tests crates/gob-fs/src/gitdir.rs::git_common_dir
+#[test]
+fn gob_cache_does_not_depend_on_gob_exec() {
+    let manifest = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"))
+        .expect("gob-cache manifest");
+    let named: Vec<&str> = manifest
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.starts_with('#') && l.starts_with("gob-exec"))
+        .collect();
+    assert!(
+        named.is_empty(),
+        "gob-cache must not name gob-exec (path handling lives in gob-fs): {named:?}"
+    );
+    let (primary, linked) = fake_repo(tempfile::tempdir().unwrap().keep().as_path());
+    assert_eq!(git_common_dir(&primary), git_common_dir(&linked));
 }

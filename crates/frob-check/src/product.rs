@@ -13,6 +13,7 @@ use frob_obligations::{
 };
 use frob_pm::rules::cycle::Pm036;
 use frob_pm::rules::cycle_plan::{Pm010, Pm011, Pm012};
+use frob_pm::rules::good_first::Pm031;
 use frob_pm::rules::membership::Pm034;
 use frob_pm::rules::milestone::{Pm001, Pm002};
 use frob_pm::rules::replenish::Pm033;
@@ -312,6 +313,21 @@ fn wip_evaluated(inputs: &FrobInputs, state: &snapshot::LedgerState) -> Evaluate
         .map_err(|e| failed(&["PM013"], e))
 }
 
+/// `PM031` findings for the `repo:good-first` group; empty without a ledger, limit from `[tickets] good_first_max_points`.
+// frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
+fn good_first_findings(inputs: &FrobInputs) -> Vec<Finding> {
+    const ALL: &[&str] = &["PM031"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
+    };
+    let max = frob_pm::rules::good_first::max_points(&inputs.root);
+    settle([frob_pm::rules::good_first::evaluate(&state.ledger, max)
+        .map(|e| e.findings)
+        .map_err(|e| failed(ALL, e))])
+}
+
 /// `PM033` findings for the `repo:replenish` group; ready is `Ledger::doable` under the live lease check, as `ticket doable` computes it.
 // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
 fn replenish_findings(inputs: &FrobInputs, lease_cfg: Option<&LeaseConfig>) -> Vec<Finding> {
@@ -440,6 +456,13 @@ impl Product for Frob {
                 "repo:cycle-plan",
                 vec![Pm010.meta(), Pm011.meta(), Pm012.meta()],
                 |s: &Snapshot<Self>, _| strict_pm(&s.inputs, cycle_plan_findings(&s.inputs)),
+            )
+            .full_only(),
+            // frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
+            RepoGroup::new(
+                "repo:good-first",
+                vec![Pm031.meta()],
+                |s: &Snapshot<Self>, _| good_first_findings(&s.inputs),
             )
             .full_only(),
             // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
