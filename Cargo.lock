@@ -2540,6 +2540,7 @@ version = "0.532.0"
 dependencies = [
  "blake3",
  "criterion",
+ "gob-caps",
  "gob-rules",
  "gob-text",
  "gob-walk",
@@ -2572,8 +2573,8 @@ dependencies = [
 name = "gob-lock"
 version = "0.532.0"
 dependencies = [
+ "gob-caps",
  "gob-fs",
- "gob-ir",
  "serde",
  "tempfile",
  "thiserror",

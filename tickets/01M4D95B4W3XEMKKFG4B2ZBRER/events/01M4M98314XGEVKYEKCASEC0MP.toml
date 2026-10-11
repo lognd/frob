@@ -1,0 +1,36 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T01:29:06Z"
+digest = "2be2d2480ba0b5f2cad4a9876e0ca85464c40a95e1fe0749e4f8005151b8f950"
+exit_code = 0
+inline = '''
+   Compiling syn v3.0.6
+   Compiling serde_core v1.0.229
+   Compiling serde_derive_internals v0.30.0
+   Compiling serde_derive v1.0.229
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_json v1.0.151
+   Compiling schemars_derive v1.2.2
+   Compiling ref-cast v1.0.27
+   Compiling thiserror-impl v2.0.21
+   Compiling thiserror v2.0.21
+   Compiling serde v1.0.229
+   Compiling schemars v1.2.2
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+    Finished `test` profile [unoptimized] target(s) in 5.96s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6a6dea16-ec51-44b2-8e6f-0a74053598ac with nextest profile: default
+    Starting 1 test across 5 binaries (37 tests skipped)
+        PASS [   0.007s] gob-rules precision::tests::the_rate_counts_accepts_and_dismissals_over_decided_findings
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 37 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(=precision::tests::the_rate_counts_accepts_and_dismissals_over_decided_findings)'"
+size = 1023
+status = "measured"
+tests = ["precision::tests::the_rate_counts_accepts_and_dismissals_over_decided_findings"]
+at = "2026-10-11T01:29:06Z"
+actor = "lognd"
+rev = 1
