@@ -2,7 +2,8 @@
 id = "01M3ZX7EKNE5Q0NB0DKCH77AZX"
 title = "Lower a checked rule to a plan with a clause-ordering planner"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
