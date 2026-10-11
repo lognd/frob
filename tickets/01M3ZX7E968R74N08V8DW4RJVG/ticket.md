@@ -2,7 +2,8 @@
 id = "01M3ZX7E968R74N08V8DW4RJVG"
 title = "Fix applicability: machine, maybe-incorrect, has-placeholders, manual"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
