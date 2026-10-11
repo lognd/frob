@@ -979,3 +979,25 @@ fn a_ref_matching_over_50_tests_warns_with_the_count_and_exact_name_advice() {
     );
     assert!(narrow.warnings.is_empty(), "{:?}", narrow.warnings);
 }
+
+// frob:ticket 01M40M7QE5VN76P1HTDY06BXB6
+#[test]
+fn an_inherited_nextest_profile_the_project_lacks_does_not_select_the_profile() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let p = dir.path();
+    std::fs::write(
+        p.join("Cargo.toml"),
+        "[package]\nname = \"profile_pin_probe\"\nversion = \"0.0.0\"\nedition = \"2021\"\n\n[workspace]\n",
+    )
+    .expect("manifest");
+    std::fs::create_dir_all(p.join("src")).expect("src");
+    std::fs::write(p.join("src/lib.rs"), "#[test]\nfn present() {}\n").expect("lib");
+    let runner = Runner::new(Limits { jobs: 1 });
+    let filter = vec!["-E".to_owned(), "test(=present)".to_owned()];
+    let hostile = [("NEXTEST_PROFILE".to_owned(), "ci".to_owned())];
+    let cap =
+        provider::run_nextest_with_env(&runner, p, &filter, "", &hostile, Duration::from_secs(600))
+            .expect("capture");
+    assert!(cap.measured && cap.passed, "{}", cap.transcript);
+    assert_eq!(cap.tests.len(), 1, "{:?}", cap.tests);
+}
