@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-11T01:10:25Z"
-updated = "2026-10-11T04:08:37Z"
+updated = "2026-10-11T04:09:36Z"
 scope = ["crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/ledger.rs", "crates/frob-ledger/src/mirror_map.rs", "crates/frob-ledger/tests/layout.rs"]
 
 [[acceptance]]
