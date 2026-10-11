@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:45Z"
-updated = "2026-10-11T17:08:29Z"
+updated = "2026-10-11T18:43:47Z"
 idempotency_key = "m2-nav-tick004"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-obligations/src/tick_paths.rs"]
@@ -22,11 +22,11 @@ kind = "blocked-by"
 target = "01M3ZX82K7HX9D2VKT25KS4MV2"
 
 [[acceptance]]
-text = "Given a doc linking `https://github.com/o/r/blob/frob-tickets/parser-rewrite/x.md`, when check runs, then TICK004 fires and `--fix` rewrites it to the ticket ULID"
+text = "Given a doc linking `https://github.com/o/r/blob/frob-tickets/parser-rewrite/x.md`, when check runs, then TICK006 fires and `--fix` rewrites it to the ticket ULID"
 bound = false
 
 [[acceptance]]
-text = "Given generated pages that use relative paths, when check runs, then TICK004 does not fire"
+text = "Given generated pages that use relative paths, when check runs, then TICK006 does not fire"
 bound = false
 +++
 
