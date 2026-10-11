@@ -2,13 +2,14 @@
 id = "01M3ZX88FHDWF9C082QZR1PXXA"
 title = "frob ticket url <id>"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:47Z"
-updated = "2026-10-11T20:32:06Z"
+updated = "2026-10-11T20:52:24Z"
 idempotency_key = "m2-nav-ticket-url"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob/src/ticket/url_cmd.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/ticket_url.rs", "crates/gob-dev/profile.toml", "docs/guides/ticket-branch.md", "docs/reference/cli/frob.md"]
