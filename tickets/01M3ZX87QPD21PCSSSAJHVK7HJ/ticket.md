@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:46Z"
-updated = "2026-10-11T23:06:12Z"
+updated = "2026-10-11T23:07:22Z"
 idempotency_key = "m2-nav-doable-newcomer"
 labels = ["milestone:2", "area:navigation"]
-scope = ["crates/frob/src/ticket/read.rs", "crates/frob-ledger/src/gen/good_first.rs"]
+scope = ["crates/frob/src/ticket/read.rs", "crates/frob-ledger/src/gen/good_first.rs", "crates/frob-ledger/src/gen/mod.rs", "crates/frob-ledger/src/gen/indexes.rs", "crates/frob/tests/ticket.rs", "docs/reference/**"]
 
 [[links]]
 kind = "blocked-by"
