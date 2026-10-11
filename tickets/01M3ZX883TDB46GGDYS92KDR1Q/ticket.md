@@ -8,10 +8,10 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:47Z"
-updated = "2026-10-11T21:13:13Z"
+updated = "2026-10-11T21:13:14Z"
 idempotency_key = "m2-nav-good-first-flag"
 labels = ["milestone:2", "area:navigation"]
-scope = ["crates/frob/src/ticket/write.rs", "crates/frob-pm/src/rules/good_first.rs"]
+scope = ["crates/frob/src/ticket/write.rs", "crates/frob-pm/src/rules/good_first.rs", "crates/frob-pm/tests/mdtest/pm031.md"]
 
 [[links]]
 kind = "blocked-by"
