@@ -8,12 +8,12 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T04:55:00Z"
-updated = "2026-10-11T20:47:36Z"
+updated = "2026-10-11T20:57:49Z"
 scope = ["changelog.d/**", "crates/frob-land/**"]
 
 [[acceptance]]
 text = "Given two lands and concurrent ref churn, when run 20 times, then every land exits 0 or refuses cleanly"
-bound = false
+bound = true
 +++
 
 Follow-up from ~BWMVSPZ: the back-to-back test cannot reproduce multi-process ref churn.
