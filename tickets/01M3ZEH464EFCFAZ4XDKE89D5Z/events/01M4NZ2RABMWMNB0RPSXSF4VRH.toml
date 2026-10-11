@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T17:10:00Z"
+digest = "bac56b3213d61433b89808b7954ab258c69b2707367ea583c03a7904e0689bf1"
+exit_code = 0
+inline = '''
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+    Finished `test` profile [unoptimized] target(s) in 0.92s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a5a31d45-90d4-4e08-bd34-f4d392322942 with nextest profile: default
+    Starting 1 test across 1 binary (39 tests skipped)
+        PASS [   0.007s] gob-languages language::tests::detects_by_extension
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 39 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-languages -E 'test(=language::tests::detects_by_extension)'"
+size = 598
+status = "measured"
+tests = ["language::tests::detects_by_extension"]
+at = "2026-10-11T17:10:00Z"
+actor = "lognd"
+rev = 1

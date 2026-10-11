@@ -34,6 +34,7 @@ pub fn lang_of_language(language: Language) -> Lang {
         }
         Language::Css => Lang::Css,
         Language::Html => Lang::Html,
+        Language::Grmb => Lang::Grmb,
     }
 }
 
@@ -64,6 +65,7 @@ mod tests {
                 }
                 Language::Css => Lang::Css,
                 Language::Html => Lang::Html,
+                Language::Grmb => Lang::Grmb,
             };
             assert_eq!(lang, want, "{l:?}");
         }

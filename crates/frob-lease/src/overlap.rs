@@ -142,8 +142,8 @@ pub fn globs_overlap(a: &str, b: &str) -> Result<bool, LeaseError> {
         (false, true) => literal_vs_wild(&a, &b),
         (true, false) => literal_vs_wild(&b, &a),
         (true, true) => {
-            builder(&a)?;
-            builder(&b)?;
+            cached_matcher(&a)?;
+            cached_matcher(&b)?;
             let overlap = wild_segments_overlap(&a, &b);
             tracing::debug!(%a, %b, overlap, "wildcard glob pair tested");
             Ok(overlap)
@@ -221,10 +221,7 @@ fn wild_pair_compatible(a: &str, b: &str) -> bool {
 
 fn segment_matches(pattern: &str, literal: &str) -> bool {
     // A pattern that fails to compile is undecidable: treat it as compatible.
-    GlobBuilder::new(pattern)
-        .literal_separator(true)
-        .build()
-        .map_or(true, |g| g.compile_matcher().is_match(literal))
+    cached_matcher(pattern).map_or(true, |m| m.is_match(literal))
 }
 
 fn dir_contains(dir: &str, path: &str) -> bool {
@@ -232,8 +229,31 @@ fn dir_contains(dir: &str, path: &str) -> bool {
         .is_some_and(|rest| rest.starts_with('/'))
 }
 
+/// A compiled matcher for `glob`, built once per distinct pattern in the process.
+///
+/// Compiling a glob costs far more than matching with it, and `doable` tests every candidate
+/// scope against every live lease.
+// frob:ticket 01M4MGNX6AWFK18T5YJ566VMKA
+fn cached_matcher(glob: &str) -> Result<Arc<GlobMatcher>, LeaseError> {
+    static CACHE: OnceLock<Mutex<HashMap<String, Arc<GlobMatcher>>>> = OnceLock::new();
+    let cache = CACHE.get_or_init(Mutex::default);
+    if let Some(hit) = cache
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .get(glob)
+    {
+        return Ok(hit.clone());
+    }
+    let compiled = Arc::new(matcher(glob)?);
+    cache
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .insert(glob.to_owned(), compiled.clone());
+    Ok(compiled)
+}
+
 fn literal_vs_wild(literal: &str, wild: &str) -> Result<bool, LeaseError> {
-    let m = matcher(wild)?;
+    let m = cached_matcher(wild)?;
     Ok(m.is_match(literal) || literal_prefix(wild).starts_with(&format!("{literal}/")))
 }
 
@@ -310,7 +330,7 @@ impl Resolver {
             let prefix = literal_prefix(&g);
             let start = all.partition_point(|f| f.as_str() < prefix);
             let run = all[start..].iter().take_while(|f| f.starts_with(prefix));
-            let m = matcher(&g)?;
+            let m = cached_matcher(&g)?;
             files.extend(run.filter(|f| m.is_match(f.as_str())).cloned());
         }
         self.match_runs.fetch_add(1, Ordering::Relaxed);
@@ -380,12 +400,37 @@ pub fn scopes_overlap(
     shared: &GlobSet,
     resolver: &Resolver,
 ) -> Result<Option<String>, LeaseError> {
+    // frob:ticket 01M4MGNX6AWFK18T5YJ566VMKA
     let (ea, eb) = (
         effective(a, shared, a_ticket),
         effective(b, shared, b_ticket),
     );
-    for ga in &ea {
-        for gb in &eb {
+    effective_overlap((&ea, a_ticket), (&eb, b_ticket), shared, resolver)
+}
+
+/// The scope entries of `ticket` that survive the shared-file and fragment exemptions.
+///
+/// Compute it once per scope and pass it to [`effective_overlap`] when one scope is tested
+/// against many others.
+// frob:ticket 01M4MGNX6AWFK18T5YJ566VMKA
+pub fn effective_scope(scope: &[String], shared: &GlobSet, ticket: TicketId) -> Vec<String> {
+    effective(scope, shared, ticket)
+}
+
+/// [`scopes_overlap`] for scopes already reduced by [`effective_scope`].
+///
+/// # Errors
+///
+/// [`LeaseError::BadGlob`] or [`LeaseError::Walk`].
+// frob:ticket 01M4MGNX6AWFK18T5YJ566VMKA
+pub fn effective_overlap(
+    (ea, a_ticket): (&[String], TicketId),
+    (eb, b_ticket): (&[String], TicketId),
+    shared: &GlobSet,
+    resolver: &Resolver,
+) -> Result<Option<String>, LeaseError> {
+    for ga in ea {
+        for gb in eb {
             if globs_overlap(ga, gb)? {
                 return Ok(Some(if ga == gb {
                     ga.clone()
@@ -395,7 +440,7 @@ pub fn scopes_overlap(
             }
         }
     }
-    let (ra, rb) = (resolver.matching(&ea)?, resolver.matching(&eb)?);
+    let (ra, rb) = (resolver.matching(ea)?, resolver.matching(eb)?);
     let common: Vec<&String> = ra
         .intersection(&rb)
         .filter(|f| {

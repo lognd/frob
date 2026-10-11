@@ -218,6 +218,10 @@ struct Index {
     ext_uses: HashMap<String, Vec<UseBinding>>,
     /// Source file to the directory of the crate that owns it (only with a manifest above it).
     file_crate: HashMap<String, String>,
+    /// Rust files with no Cargo package above them (built with dependency data); nothing rules their calls out.
+    unowned: HashSet<String>,
+    /// Directories of every crate holding a Rust file (the candidates of an unowned file's calls).
+    all_crates: BTreeSet<String>,
     /// Crate directory to the directories of the crates it links transitively (unknown-receiver candidates).
     reach: HashMap<String, Vec<String>>,
     /// Crate directory to the extern crate names nameable inside it, with their directories.
@@ -273,18 +277,30 @@ impl Index {
         &self.memo[usize::try_from(h % MEMO_SHARDS as u64).expect("shard index fits usize")]
     }
 
+    /// The crates other than `here` whose code a call in `file` may reach.
+    /// frob:ticket 01M3ZWN5CJ3BQVBGBRG62ZYZ2M
+    /// A file with no Cargo package above it is never ruled out, so every crate may be reached.
+    fn linked_crates(&self, file: &str, here: &str) -> Vec<String> {
+        let all: Option<&BTreeSet<String>> =
+            self.unowned.contains(file).then_some(&self.all_crates);
+        match all {
+            Some(all) => all.iter().filter(|d| d.as_str() != here).cloned().collect(),
+            None => self
+                .file_crate
+                .get(file)
+                .and_then(|o| self.reach.get(o))
+                .into_iter()
+                .flatten()
+                .filter(|d| d.as_str() != here)
+                .cloned()
+                .collect(),
+        }
+    }
+
     /// Every function and method called `name` in the caller's crate and the crates it links.
     fn callables_in_reach(&self, caller: &Symref, name: &str) -> Vec<NodeIndex> {
         let here = crate_and_module(caller.path()).0;
-        let linked: Vec<String> = self
-            .file_crate
-            .get(caller.path())
-            .and_then(|o| self.reach.get(o))
-            .into_iter()
-            .flatten()
-            .filter(|d| **d != here)
-            .cloned()
-            .collect();
+        let linked = self.linked_crates(caller.path(), &here);
         std::iter::once(here)
             .chain(linked)
             .filter_map(|c| self.by_name.get(&(c, name.to_owned())))
@@ -864,6 +880,8 @@ impl SymbolGraph {
             uses: HashMap::new(),
             ext_uses: HashMap::new(),
             file_crate: HashMap::new(),
+            unowned: HashSet::new(),
+            all_crates: BTreeSet::new(),
             externs: HashMap::new(),
             reach: HashMap::new(),
             pubuses: HashMap::new(),
@@ -885,6 +903,12 @@ impl SymbolGraph {
         };
         for f in files.iter().filter(|f| is_rust(&f.path)) {
             let (krate, module) = crate_and_module(&f.path);
+            idx.all_crates.insert(krate.clone());
+            if let Some(d) = deps.as_deref_mut()
+                && d.crate_of(&f.path).is_none()
+            {
+                idx.unowned.insert(f.path.clone());
+            }
             if let Some(d) = deps.as_deref_mut()
                 && let Some(owner) = d.crate_of(&f.path)
             {
@@ -1563,13 +1587,9 @@ impl SymbolGraph {
         // A dependency crate's method of that name is as possible as the caller's own (soundness).
         let here = crate_and_module(caller.path()).0;
         let linked = idx
-            .file_crate
-            .get(caller.path())
-            .and_then(|o| idx.reach.get(o))
+            .linked_crates(caller.path(), &here)
             .into_iter()
-            .flatten()
-            .filter(|d| **d != here)
-            .filter_map(|d| idx.by_name.get(&(d.clone(), q.name.to_owned())))
+            .filter_map(|d| idx.by_name.get(&(d, q.name.to_owned())))
             .flatten()
             .copied();
         let mut cands: Vec<NodeIndex> = named

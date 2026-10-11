@@ -97,3 +97,4 @@ pub use status::{
     SubjectStatus, hole_caveat, is_binary, locate_hole, opaque_finding, subject_status,
     subject_status_for, unreadable_finding, unresolved_finding, unresolved_finding_at,
 };
+pub use tools::ToolMemo;
