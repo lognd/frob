@@ -1,0 +1,40 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-11T03:12:40Z"
+digest = "e5ae4549c01fcc1abc6135cb6427686510e3d4a62c5b2f7fb17f5f0c5d12cf8e"
+exit_code = 0
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized] target(s) in 14.52s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7a03e432-eaa9-4b6c-a4ed-edf5410d0a39 with nextest profile: default
+    Starting 1 test across 6 binaries (17 tests skipped)
+        PASS [   0.011s] crunk::check_exit an_unreadable_config_is_refused_with_e_config_not_passed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 17 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E 'test(=an_unreadable_config_is_refused_with_e_config_not_passed)'"
+size = 1662
+status = "measured"
+tests = ["an_unreadable_config_is_refused_with_e_config_not_passed"]
+at = "2026-10-11T03:12:40Z"
+actor = "lognd"
+rev = 1
