@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:45Z"
 updated = "2026-10-11T22:22:29Z"
 idempotency_key = "m2-nav-gen-glossary"
 labels = ["milestone:2", "area:navigation"]
-scope = ["crates/frob-ledger/src/gen/glossary.rs", "crates/frob-ledger/src/gen/mod.rs", "crates/frob-ledger/tests/gen_glossary.rs"]
+scope = ["crates/frob-ledger/src/gen/glossary.rs", "crates/frob-ledger/src/gen/mod.rs", "crates/frob-ledger/tests/gen_glossary.rs", "docs/guides/ticket-branch.md"]
 
 [[links]]
 kind = "blocked-by"
