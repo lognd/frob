@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-11T20:35:27Z"
+updated = "2026-10-11T20:54:19Z"
 idempotency_key = "m2-exec-prefilter"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/exec/prefilter.rs", "crates/gob-plan/src/exec/core/mod.rs", "crates/gob-plan/src/exec/mod.rs", "crates/gob-plan/tests/exec_prefilter.rs"]
@@ -23,7 +23,7 @@ target = "01M3ZX7ETPH5Z6K2VJ64K5XTMX"
 
 [[acceptance]]
 text = "Given a plan requiring a directive kind and a file with none, when executed, then the file is skipped and counted as skipped, not as clean-by-examination"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a file containing the kind, when executed, then results equal those of an unfiltered run"
