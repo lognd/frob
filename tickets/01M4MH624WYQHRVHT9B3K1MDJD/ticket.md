@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:47:55Z"
-updated = "2026-10-11T16:36:28Z"
+updated = "2026-10-11T16:38:12Z"
 scope = ["crates/frob-check/**", "crates/gob-check/src/tools.rs", "crates/gob-check/src/tool_parse.rs", "crates/gob-check/src/options.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/lib.rs", "crates/gob-check/Cargo.toml"]
 
 [[acceptance]]
