@@ -2,13 +2,13 @@
 id = "01M3ZX85S7ASFGT31GDYMRB5JX"
 title = "Reindex function: move files to computed paths and render the generated set in memory"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-03T03:34:44Z"
+updated = "2026-10-11T17:57:11Z"
 idempotency_key = "m2-nav-reindex-fn"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-ledger/src/reindex.rs"]
