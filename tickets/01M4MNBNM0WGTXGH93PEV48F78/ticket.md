@@ -7,12 +7,12 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T05:00:53Z"
-updated = "2026-10-11T15:57:50Z"
+updated = "2026-10-11T16:24:00Z"
 scope = ["crates/frob-worktree/src/work.rs", "crates/frob-land/src/ratchet.rs"]
 
 [[acceptance]]
 text = "a worktree created after the tip commit leaves unchanged tracked files with mtime <= the tip commit time (so cargo sees them fresh against any build of that tip), covered by a test"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a file edited in the worktree after creation has mtime newer than the tip commit time, so it is still rebuilt, covered by a test"
