@@ -17,6 +17,13 @@ use crate::rules::membership::Evaluation;
 /// The label that opts a ticket into the good-first checks.
 pub const GOOD_FIRST_LABEL: &str = "good-first";
 
+// frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
+/// The marker every unfilled placeholder of [`START_HERE_SCAFFOLD`] starts with.
+pub const PLACEHOLDER: &str = "<TODO";
+
+/// The `## Start here` body `ticket new --good-first` writes: files to read, the test command and who to ask.
+pub const START_HERE_SCAFFOLD: &str = "## Start here\n\n- Files to read first: <TODO: list the files>\n- Test command: <TODO: the command that runs the tests>\n- Who to ask: <TODO: a handle or channel>\n";
+
 /// The `[tickets] good_first_max_points` default.
 pub const DEFAULT_MAX_POINTS: u32 = 2;
 
@@ -97,8 +104,11 @@ pub fn missing_parts(ticket: &Ticket, max_points: u32) -> Vec<String> {
     } else if ticket.front.acceptance.iter().any(|a| !is_gwt(&a.text)) {
         out.push("acceptance is not Given/When/Then".to_owned());
     }
+    // frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
     if !has_start_here(&ticket.body) {
         out.push("no `## Start here` section".to_owned());
+    } else if ticket.body.contains(PLACEHOLDER) {
+        out.push("`## Start here` has unfilled placeholders".to_owned());
     }
     out
 }
@@ -166,5 +176,12 @@ mod tests {
         // frob:tests crates/frob-pm/src/rules/good_first.rs::has_start_here
         assert!(has_start_here("intro\n\n## Start here\nread x"));
         assert!(!has_start_here("### Start here later"));
+    }
+
+    #[test]
+    fn scaffold_is_a_start_here_section_full_of_placeholders() {
+        // frob:tests crates/frob-pm/src/rules/good_first.rs::START_HERE_SCAFFOLD
+        assert!(has_start_here(START_HERE_SCAFFOLD));
+        assert_eq!(START_HERE_SCAFFOLD.matches(PLACEHOLDER).count(), 3);
     }
 }

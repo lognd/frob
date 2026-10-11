@@ -49,6 +49,7 @@ struct NewRequest {
     so_that: Option<String>,
     flavour: Option<String>,
     assignee: Option<String>,
+    good_first: bool,
 }
 
 impl Command for New {
@@ -103,6 +104,12 @@ impl Command for New {
             .arg(text_flag("so-that", "Story outcome (so that ...)"))
             .arg(text_flag("flavour", "Free-form flavour such as user_story"))
             .arg(text_flag("assignee", "Assignee"))
+            .arg(
+                Arg::new("good-first")
+                    .long("good-first")
+                    .action(ArgAction::SetTrue)
+                    .help("Label the ticket good-first and append a `## Start here` scaffold to the body"),
+            )
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
@@ -134,6 +141,8 @@ impl Command for New {
                 so_that: get(m, "so-that"),
                 flavour: get(m, "flavour"),
                 assignee: get(m, "assignee"),
+                // frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
+                good_first: m.get_flag("good-first"),
             }),
         })
     }
@@ -164,7 +173,8 @@ impl Command for New {
         }
         req.acceptance.clone_from(&r.acceptance);
         req.aliases.clone_from(&r.aliases);
-        req.body.clone_from(&r.body);
+        // frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
+        req.body = good_first_body(&r.body, r.good_first, &mut req.labels);
         req.idempotency_key.clone_from(&r.key);
         req.persona.clone_from(&r.persona);
         req.capability.clone_from(&r.capability);
@@ -180,6 +190,26 @@ impl Command for New {
             .into_iter()
             .fold(payload(&applied), gob_cli::Payload::with_warning))
     }
+}
+
+/// The body for `ticket new`: `body` plus, under `--good-first`, the Start here scaffold, with the label added to `labels`.
+// frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
+fn good_first_body(body: &str, good_first: bool, labels: &mut Vec<String>) -> String {
+    if !good_first {
+        return body.to_owned();
+    }
+    let label = frob_pm::rules::good_first::GOOD_FIRST_LABEL;
+    if !labels.iter().any(|l| l == label) {
+        labels.push(label.to_owned());
+    }
+    if body.is_empty() {
+        return frob_pm::rules::good_first::START_HERE_SCAFFOLD.to_owned();
+    }
+    format!(
+        "{}\n\n{}",
+        body.trim_end(),
+        frob_pm::rules::good_first::START_HERE_SCAFFOLD
+    )
 }
 
 /// Patch fields of a ticket: `--set key=value`, dedicated flags, label, scope and acceptance edits.
@@ -979,5 +1009,37 @@ impl Command for Reopen {
         let applied = ledger.reopen(id, &self.reason).map_err(cli_err)?;
         tracing::info!(ticket = %id, already = applied.already, "ticket reopen");
         Ok(payload(&applied))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
+    #[test]
+    fn good_first_adds_the_label_and_a_start_here_scaffold() {
+        let mut labels = vec!["x".to_owned()];
+        let body = good_first_body("", true, &mut labels);
+        assert_eq!(labels, ["x", "good-first"]);
+        assert!(body.starts_with("## Start here\n"), "{body}");
+        assert!(body.contains("Test command:"), "{body}");
+    }
+
+    // frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
+    #[test]
+    fn good_first_keeps_the_given_body_and_does_not_repeat_the_label() {
+        let mut labels = vec!["good-first".to_owned()];
+        let body = good_first_body("why\n", true, &mut labels);
+        assert_eq!(labels, ["good-first"]);
+        assert!(body.starts_with("why\n\n## Start here"), "{body}");
+    }
+
+    // frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
+    #[test]
+    fn without_the_flag_body_and_labels_are_untouched() {
+        let mut labels = Vec::new();
+        assert_eq!(good_first_body("b", false, &mut labels), "b");
+        assert!(labels.is_empty());
     }
 }
