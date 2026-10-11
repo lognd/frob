@@ -2,13 +2,13 @@
 id = "01M4MC43CFCTQ7TQCHCF0C0YRR"
 title = "Library entry point: build a gob-ir Model from one example source text and language"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-11T02:19:28Z"
-updated = "2026-10-11T02:19:28Z"
+updated = "2026-10-11T03:41:44Z"
 scope = ["crates/gob-ir/**", "crates/gob-languages/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
