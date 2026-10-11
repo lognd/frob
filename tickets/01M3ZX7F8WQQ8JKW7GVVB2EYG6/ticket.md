@@ -2,16 +2,16 @@
 id = "01M3ZX7F8WQQ8JKW7GVVB2EYG6"
 title = "Example runner: fire, clean, unresolved, notapplicable, known-gap, fixed"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-06T13:56:23Z"
+updated = "2026-10-11T01:21:37Z"
 idempotency_key = "m2-grl-examples"
-labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/examples/**"]
+labels = ["milestone:2", "area:grl", "creates:crates/gob-plan/tests/example_runner.rs"]
+scope = ["crates/gob-plan/src/examples/**", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/example_runner.rs"]
 
 [[links]]
 kind = "blocked-by"

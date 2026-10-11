@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T00:48:46Z"
+digest = "11ca87278c9df4ee4be843a6a7fc6206e42dc86b71ce257c0d99b328a820be7c"
+exit_code = 0
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized] target(s) in 11.62s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3bec15a2-c281-4e0c-8384-53cfc60c0ffb with nextest profile: default
+    Starting 1 test across 12 binaries (165 tests skipped)
+        PASS [   0.011s] gob-plan::fmt_source formatting_formatted_source_returns_the_same_bytes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 165 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=formatting_formatted_source_returns_the_same_bytes)'"
+size = 732
+status = "measured"
+tests = ["formatting_formatted_source_returns_the_same_bytes"]
+at = "2026-10-11T00:48:46Z"
+actor = "lognd"
+rev = 1

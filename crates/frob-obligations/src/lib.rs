@@ -19,9 +19,12 @@
 //! | `EXC003` | Error | repo | a defer names a done or dropped ticket |
 //! | `EXC005` | Warn | repo | an accept is unattested or its symbol changed since `frob ack` |
 //! | `EXC007` | Error | repo | a defer names a ticket that does not exist |
+//! | `EXC014` | Error | repo | a defer's `until` day has passed (the finding stands again) |
+//! | `EXC016` | Error | repo | an accept names a rule at an Unresolved finding (it does not park it) |
+//! | `EXC017` | Warn | repo | a native suppression of a tool-bound rule has no frob exception |
 //!
-//! The EXC numbers follow the milestone-1 ticket (D36), not the stale and
-//! reattest numbering of the exceptions design table.
+//! The EXC numbers 001 to 007 follow the milestone-1 ticket (D36), not the stale and
+//! reattest numbering of the exceptions design table; 014, 016 and 017 follow the table.
 //!
 //! # Per-file versus repo-level
 //!
@@ -52,7 +55,10 @@
 //! is returned in [`Evaluation::suppressed`] with its [`gob_rules::Exception`],
 //! never dropped. An exception stays in force even when it is itself flagged
 //! (`EXC001`, `EXC003`, `EXC005`, `EXC007`), so the gate fails on the
-//! exception, once. The `until` key is not evaluated at milestone 1.
+//! exception, once. A defer whose `until` day (UTC, [`ObligationInputs::today`])
+//! has passed stops suppressing and raises `EXC014`; `until` values holding a
+//! `:` are metric targets and are not evaluated here. An accept never parks an
+//! Unresolved finding: it raises `EXC016` and the finding stands.
 
 mod collect;
 mod comments;
@@ -61,6 +67,7 @@ mod cov;
 mod doc;
 mod exc;
 mod inv;
+mod native;
 mod refs;
 mod rules;
 mod sibling;
@@ -75,16 +82,17 @@ use frob_ledger::Ledger;
 use gob_directives::DirectiveRecord;
 use gob_languages::Language;
 use gob_lock::LockFile;
-use gob_rules::{Exception, Finding, Rule, RuleMeta};
+use gob_rules::{Exception, Finding, Rule, RuleId, RuleMeta};
 use gob_symbols::{SymbolGraph, Target};
 use gob_text::{FileId, FileInterner};
 
 pub use collect::{CollectError, Collected, collect};
 pub use config::{ForbidImport, InvariantsConfig};
 pub use gob_rules::Resolved;
+pub use native::tool_bound_ids;
 pub use rules::{
-    Cov001, Cov003, Doc001, Doc002, Exc001, Exc003, Exc005, Exc007, Inv001, Inv002, Ref001,
-    Todo001, Todo002,
+    Cov001, Cov003, Doc001, Doc002, Exc001, Exc003, Exc005, Exc007, Exc014, Exc016, Exc017, Inv001,
+    Inv002, Ref001, Todo001, Todo002,
 };
 pub use sibling::{SiblingException, sibling_exception_findings};
 
@@ -110,6 +118,10 @@ pub struct ObligationInputs<'a> {
     pub files: &'a FileInterner,
     /// The `[invariants]` table.
     pub config: &'a InvariantsConfig,
+    /// The UTC day `until=` dates are compared with, read once from the command's clock.
+    pub today: gob_time::Day,
+    /// Tool ids bound to frob rules by `[[check.tool]]` `id_map`s (see [`tool_bound_ids`]).
+    pub tool_ids: &'a BTreeMap<String, RuleId>,
 }
 
 /// The outcome of a full evaluation.
@@ -241,7 +253,7 @@ pub fn evaluate_file(
     file_rules(inputs, &tickets, file, path, text, &directives)
 }
 
-/// The repo-level rules (`COV001`, `TODO002`, `INV001`, `INV002`); new files are interned into `files`.
+/// The repo-level rules (`COV001`, `TODO002`, `INV001`, `INV002`, `EXC017`); new files are interned into `files`.
 ///
 /// Findings are raw: exceptions are applied by [`apply_exceptions`].
 pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) -> Vec<Finding> {
@@ -250,6 +262,20 @@ pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) ->
     out.extend(todo::todo002(inputs.directives, &tickets));
     out.extend(inv::inv001(inputs.graph, inputs.directives, files));
     out.extend(inv::inv002(inputs.root, inputs.graph, inputs.config, files));
+    // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+    // Every exception counts, expired ones included: this result is cached by file digests, which
+    // do not change when the day does, and an expired defer already raises EXC014.
+    let bound: Vec<_> = exc::collect(inputs.graph, inputs.directives, files)
+        .into_iter()
+        .map(|b| b.inner)
+        .collect();
+    out.extend(native::exc017(
+        inputs.root,
+        inputs.graph,
+        files,
+        inputs.tool_ids,
+        &bound,
+    ));
     out
 }
 
@@ -275,6 +301,7 @@ pub fn apply_exceptions(
         inputs.directives,
         files,
         &tickets,
+        inputs.today,
         raw,
     );
     sort_findings(&mut resolved.findings, files);
@@ -340,6 +367,7 @@ pub fn evaluate(inputs: &ObligationInputs<'_>) -> Evaluation {
         inputs.directives,
         &files,
         &tickets,
+        inputs.today,
         raw,
     );
     sort_findings(&mut findings, &files);
