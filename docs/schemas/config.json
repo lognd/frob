@@ -743,6 +743,11 @@
           "minimum": 0,
           "type": "integer"
         },
+        "index_writer": {
+          "$ref": "#/$defs/IndexWriterKnob",
+          "default": "local",
+          "description": "`local`: a parent or title change writes its reindex commit at once; `ci`: it writes only the decision commit and the CI job runs `frob ticket reindex` (`navigation.md` 2.2)."
+        },
         "ref": {
           "default": "refs/heads/main",
           "description": "Ref holding the ledger; the ledger merge driver and `doctor` resolve it.",

@@ -235,6 +235,37 @@ pub struct UpdateData {
 /// Each record's recorded positions are first mapped through every earlier
 /// acceptance edit (`Ledger::criteria_now`), so a record written before an
 /// earlier removal is judged by the criterion it was really offered for.
+/// Write the reindex commit right after a decision commit that changed a parent or title.
+///
+/// Only on the ticket-branch layout and only when `[tickets] index_writer = "local"`; a failure
+/// is a warning because the decision commit already landed and `ticket reindex` repeats the work.
+fn reindex_after(
+    ctx: &Context,
+    ledger: &frob_ledger::Ledger,
+    id: frob_ledger::TicketId,
+    applied: &frob_ledger::Applied,
+) -> Result<Option<String>, CliError> {
+    if applied.already || ledger.layout() != frob_ledger::Layout::Branch {
+        return Ok(None);
+    }
+    let (_, root) = crate::workspace::Located::discover(&ctx.cwd).into_repo()?;
+    let cfg =
+        crate::config::FrobConfig::load(&root).map_err(|e| crate::workspace::config_refusal(&e))?;
+    if cfg.tickets.index_writer != crate::config::IndexWriterKnob::Local {
+        return Ok(None);
+    }
+    let moves = ledger.events(id).map_err(cli_err)?.into_iter().rev().find(|e| {
+        applied.events.contains(&e.id)
+            && matches!(&e.body, frob_ledger::event::EventBody::Field(f) if f.field == "parent" || f.field == "title")
+    });
+    let Some(event) = moves else { return Ok(None) };
+    Ok(Some(match ledger.reindex_commit(Some(event.id)) {
+        Ok(Some(c)) => format!("reindex commit {c} follows the decision commit"),
+        Ok(None) => "ticket files already at their computed paths".to_owned(),
+        Err(e) => format!("reindex commit failed ({e}); run `frob ticket reindex`"),
+    }))
+}
+
 fn lost_evidence(
     ledger: &frob_ledger::Ledger,
     id: frob_ledger::TicketId,
@@ -295,6 +326,7 @@ impl Command for Update {
                 "FIELD=VALUE to set (repeatable; empty value unsets a scalar, lists need --clear); lists are comma separated; acceptance needs --add-acceptance",
             ))
             .arg(text_flag("title", "New title"))
+            .arg(text_flag("parent", "New parent ticket (handle, id or alias); empty unsets it"))
             .arg(choice_flag("priority", Priority::NAMES, "New priority"))
             .arg(choice_flag("class", Class::NAMES, "New class of service"))
             .arg(text_flag("points", "New story points"))
@@ -344,6 +376,7 @@ impl Command for Update {
         }
         for (flag, field) in [
             ("title", "title"),
+            ("parent", "parent"),
             ("priority", "priority"),
             ("class", "class"),
             ("points", "points"),
@@ -407,6 +440,8 @@ impl Command for Update {
         let lost = lost_evidence(&ledger, id, &patch)?;
         let (applied, warnings) = crate::lease_cmd::update_with_lease(ctx, &ledger, id, &patch)?;
         tracing::info!(ticket = %id, already = applied.already, lost = lost.len(), "ticket update");
+        // frob:ticket 01M3ZX85X37W6QSQSJD1WYVKZG
+        let reindex_note = reindex_after(ctx, &ledger, id, &applied)?;
         let note = (!lost.is_empty() && !applied.already).then(|| {
             let each: Vec<String> = lost
                 .iter()
@@ -426,6 +461,7 @@ impl Command for Update {
         let out = warnings
             .into_iter()
             .chain(note)
+            .chain(reindex_note)
             .chain(applied.warnings.iter().cloned())
             .fold(out, gob_cli::Payload::with_warning);
         Ok(out)

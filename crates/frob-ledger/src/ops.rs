@@ -2,7 +2,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use gob_git::Oid;
+use gob_git::{CommitOptions, Oid, RelPath};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -13,12 +13,14 @@ use crate::event::{
 use crate::guards::{CloseContext, CloseGuard, LeaseCheck};
 use crate::id::{EventId, TicketId};
 use crate::index::{ListFilter, Summary};
+use crate::layout::Layout;
 use crate::ledger::{Applied, Ledger, Synced};
 use crate::links::{Edge, check_add, check_parent};
 use crate::model::{
     Category, Class, CommentSubtype, Link, LinkKind, LinkOp, Outcome, Points, Priority, Stamp,
     Ticket, TicketType,
 };
+use crate::reindex::{Move, ReindexOptions, Tree, reindex};
 use crate::schema::{FieldKind, field, get_field, set_acceptance, set_field};
 
 /// The dispatch order of `doable` and board NEXT: class lane (expedite, then fixed-date by due), then priority high to low, then oldest first.
@@ -907,9 +909,126 @@ impl Ledger {
         self.tip_of(&ref_name)
     }
 
+    /// Run the reindex function on the tip of the ticket branch and say what it would change.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::Invalid`] outside the ticket-branch layout, plus read and parse failures.
+    pub fn reindex_plan(&self) -> Result<ReindexPlan> {
+        // frob:ticket 01M3ZX85X37W6QSQSJD1WYVKZG
+        if self.layout() != Layout::Branch {
+            return Err(LedgerError::invalid(
+                "`ticket reindex` needs the ticket-branch layout (`[tickets] ref_mode = \"orphan\"`)",
+            ));
+        }
+        let ref_name = self.ledger_ref()?;
+        let Some(tip) = self.tip_of(&ref_name)? else {
+            return Ok(ReindexPlan::default());
+        };
+        let mut before = Tree::new();
+        for (path, oid) in self.list_blobs(&format!("{tip}^{{tree}}"))? {
+            before.insert(path, self.repo().read_blob(&oid)?);
+        }
+        let opts = ReindexOptions {
+            version: env!("CARGO_PKG_VERSION"),
+            handle_min_len: self.config().handle_min_len,
+            generators: &[],
+        };
+        let out = reindex(&before, &opts)?;
+        let mut changes: Vec<(String, Option<Vec<u8>>)> = Vec::new();
+        for path in before.keys().filter(|p| !out.tree.contains_key(*p)) {
+            changes.push((path.clone(), None));
+        }
+        for (path, bytes) in &out.tree {
+            if before.get(path) != Some(bytes) {
+                changes.push((path.clone(), Some(bytes.clone())));
+            }
+        }
+        changes.sort_by(|a, b| a.0.cmp(&b.0));
+        Ok(ReindexPlan {
+            moves: out.moves,
+            changes,
+            as_of: out.as_of,
+        })
+    }
+
+    /// Write the reindex commit (`tickets(reindex): after <event>`, trailer `Frob-Reindex`), or return `None` when the tree is current.
+    ///
+    /// `after` names the event that made the move necessary; the newest event of the tree when `None`.
+    ///
+    /// # Errors
+    ///
+    /// The errors of [`Ledger::reindex_plan`], plus git failures including exhausted retries.
+    pub fn reindex_commit(&self, after: Option<EventId>) -> Result<Option<Oid>> {
+        let plan = self.reindex_plan()?;
+        if plan.changes.is_empty() {
+            return Ok(None);
+        }
+        let after = after
+            .map(|e| e.to_string())
+            .or(plan.as_of)
+            .unwrap_or_default();
+        let message = format!(
+            "tickets(reindex): after {after}\n\nFrob-Reindex: {}\n",
+            env!("CARGO_PKG_VERSION")
+        );
+        let mut rel = Vec::with_capacity(plan.changes.len());
+        for (path, bytes) in &plan.changes {
+            rel.push((RelPath::new(path.clone())?, bytes.clone()));
+        }
+        let ref_name = self.ledger_write_ref()?;
+        let opts = CommitOptions {
+            cas_retries: self.config().cas_retries,
+            author: None,
+        };
+        let out = self.repo().commit_paths(&ref_name, &rel, &message, &opts)?;
+        tracing::info!(commit = %out.oid, moves = plan.moves.len(), files = rel.len(), "reindex commit");
+        Ok(Some(out.oid))
+    }
+
     /// Event ids written by a mutation, as strings (convenience for envelopes).
     pub fn event_strings(events: &[EventId]) -> Vec<String> {
         events.iter().map(ToString::to_string).collect()
+    }
+}
+
+/// What a reindex would change on the ticket branch.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ReindexPlan {
+    /// Ticket files that move.
+    pub moves: Vec<Move>,
+    /// Every file the reindex commit writes (`Some`) or deletes (`None`), in path order.
+    pub changes: Vec<(String, Option<Vec<u8>>)>,
+    /// Newest event ULID the run saw.
+    pub as_of: Option<String>,
+}
+
+impl ReindexPlan {
+    /// The plan as a capped, stable diff: one `move`, `add`, `change` or `delete` line per file.
+    #[must_use]
+    pub fn diff(&self, cap: usize) -> String {
+        let moved: BTreeSet<&str> = self
+            .moves
+            .iter()
+            .flat_map(|m| [m.from.as_str(), m.to.as_str()])
+            .collect();
+        let mut lines: Vec<String> = self
+            .moves
+            .iter()
+            .map(|m| format!("move {} -> {}", m.from, m.to))
+            .collect();
+        for (path, bytes) in &self.changes {
+            if !moved.contains(path.as_str()) {
+                let verb = if bytes.is_none() { "delete" } else { "write" };
+                lines.push(format!("{verb} {path}"));
+            }
+        }
+        let extra = lines.len().saturating_sub(cap);
+        lines.truncate(cap);
+        if extra > 0 {
+            lines.push(format!("... and {extra} more"));
+        }
+        lines.join("\n")
     }
 }
 

@@ -33,6 +33,16 @@ impl From<RefModeKnob> for frob_ledger::RefMode {
     }
 }
 
+/// Who writes the reindex commit after a parent or title change (`[tickets] index_writer`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum IndexWriterKnob {
+    /// The verb writes the reindex commit right after the decision commit.
+    Local,
+    /// Only the decision commit is written; the CI job runs `frob ticket reindex`.
+    Ci,
+}
+
 /// Where the ticket ledger lives.
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "tickets", materialize)]
@@ -49,6 +59,9 @@ pub struct TicketsTable {
     /// `trunk` commits to `ref`; `branch` commits to the checked-out branch; `orphan` commits to the ticket branch `branch` in the ticket-branch layout and keeps `ref` as the code base.
     #[config(default = RefModeKnob::Trunk, enforcement)]
     pub ref_mode: RefModeKnob,
+    /// `local`: a parent or title change writes its reindex commit at once; `ci`: it writes only the decision commit and the CI job runs `frob ticket reindex` (`navigation.md` 2.2).
+    #[config(default = IndexWriterKnob::Local)]
+    pub index_writer: IndexWriterKnob,
     /// Shortest ticket handle shown (`~` plus this many id characters).
     #[config(default = 7)]
     pub handle_min_len: u32,

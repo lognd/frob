@@ -1,0 +1,146 @@
+//! `frob ticket reindex`: decision and reindex commits on the ticket branch (`navigation.md` 2.2).
+// frob:ticket 01M3ZX85X37W6QSQSJD1WYVKZG
+
+use std::path::Path;
+use std::process::Output;
+
+use serde_json::Value;
+
+mod common;
+
+fn frob(cwd: &Path, args: &[&str]) -> Output {
+    common::frob_command()
+        .current_dir(cwd)
+        .env_remove("FROB_LOG")
+        .args(args)
+        .output()
+        .expect("run frob")
+}
+
+fn ok(cwd: &Path, args: &[&str]) -> Value {
+    let out = frob(cwd, args);
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "{args:?}: {}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    serde_json::from_slice(&out.stdout).expect("stdout is JSON")
+}
+
+fn git(cwd: &Path, args: &[&str]) -> String {
+    let out = std::process::Command::new("git")
+        .args(args)
+        .current_dir(cwd)
+        .output()
+        .expect("git");
+    String::from_utf8_lossy(&out.stdout).trim().to_owned()
+}
+
+/// A ticket-branch repository with an epic "Alpha", an epic "Beta" and a task "Move me" under Alpha.
+fn fixture(index_writer: &str) -> (tempfile::TempDir, String, String, String) {
+    let dir = common::git_repo();
+    let p = dir.path();
+    std::fs::write(p.join("code.txt"), "code\n").expect("write");
+    std::fs::write(
+        p.join("frob.toml"),
+        format!("[tickets]\nref_mode = \"orphan\"\nindex_writer = \"{index_writer}\"\n"),
+    )
+    .expect("config");
+    git(p, &["add", "-A"]);
+    git(p, &["commit", "-qm", "code"]);
+    ok(p, &["ticket", "branch", "init"]);
+    let new = |title: &str, extra: &[&str]| {
+        let mut args = vec!["ticket", "new", "--title", title];
+        args.extend_from_slice(extra);
+        ok(p, &args)["data"]["id"].as_str().expect("id").to_owned()
+    };
+    let alpha = new("Alpha", &["--type", "epic"]);
+    let beta = new("Beta", &["--type", "epic"]);
+    let task = new("Move me", &["--parent", &alpha]);
+    (dir, alpha, beta, task)
+}
+
+fn subjects(p: &Path) -> Vec<String> {
+    git(p, &["log", "--format=%s", "frob-tickets"])
+        .lines()
+        .map(str::to_owned)
+        .collect()
+}
+
+#[test]
+fn a_parent_change_writes_a_decision_commit_and_a_reindex_commit_with_the_trailer() {
+    let (dir, _alpha, beta, task) = fixture("local");
+    let p = dir.path();
+    let before = subjects(p).len();
+    let blob_before = git(p, &["rev-parse", "frob-tickets:alpha/move-me.md"]);
+    ok(p, &["ticket", "update", &task, "--parent", &beta]);
+
+    let log = subjects(p);
+    assert_eq!(log.len(), before + 2, "{log:?}");
+    assert!(log[0].starts_with("tickets(reindex): after "), "{log:?}");
+    assert!(log[1].starts_with("tickets(update): "), "{log:?}");
+    let body = git(p, &["log", "-1", "--format=%B", "frob-tickets"]);
+    assert!(body.contains("Frob-Reindex: "), "{body}");
+    // The decision commit moved nothing; the reindex commit moved the file with its blob id.
+    assert_eq!(
+        git(p, &["rev-parse", "frob-tickets:beta/move-me.md"]),
+        git(p, &["rev-parse", "frob-tickets~1:alpha/move-me.md"]),
+    );
+    assert_ne!(
+        blob_before,
+        git(p, &["rev-parse", "frob-tickets:beta/move-me.md"])
+    );
+    assert_eq!(
+        ok(p, &["ticket", "reindex", "--check"])["already"],
+        true,
+        "branch is current after the verb"
+    );
+}
+
+#[test]
+fn index_writer_ci_leaves_the_move_to_the_reindex_verb() {
+    let (dir, _alpha, beta, task) = fixture("ci");
+    let p = dir.path();
+    let before = subjects(p).len();
+    ok(p, &["ticket", "update", &task, "--parent", &beta]);
+    assert_eq!(subjects(p).len(), before + 1, "decision commit only");
+    assert!(!git(p, &["ls-tree", "-r", "--name-only", "frob-tickets"]).contains("beta/move-me.md"));
+
+    let done = ok(p, &["ticket", "reindex"]);
+    assert_eq!(done["data"]["moved"][0]["to"], "beta/move-me.md");
+    assert!(git(p, &["ls-tree", "-r", "--name-only", "frob-tickets"]).contains("beta/move-me.md"));
+}
+
+#[test]
+fn check_is_silent_and_zero_when_current_and_prints_the_diff_and_exits_one_when_stale() {
+    let (dir, _alpha, beta, task) = fixture("ci");
+    let p = dir.path();
+    let current = frob(p, &["ticket", "reindex", "--check"]);
+    assert_eq!(current.status.code(), Some(0));
+    assert!(
+        current.stderr.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&current.stderr)
+    );
+
+    ok(p, &["ticket", "update", &task, "--parent", &beta]);
+    let tip = git(p, &["rev-parse", "frob-tickets"]);
+    let stale = frob(p, &["ticket", "reindex", "--check"]);
+    assert_eq!(stale.status.code(), Some(1));
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&stale.stdout),
+        String::from_utf8_lossy(&stale.stderr)
+    );
+    assert!(
+        text.contains("move alpha/move-me.md -> beta/move-me.md"),
+        "{text}"
+    );
+    assert_eq!(
+        git(p, &["rev-parse", "frob-tickets"]),
+        tip,
+        "--check writes nothing"
+    );
+}

@@ -280,6 +280,7 @@ Materialized: yes.
 | `good_first_max_points` | `u32` | `2` | no | Most points a ticket labelled `good-first` may carry before PM031 fires (`navigation.md` section 4.2). |
 | `good_first_min` | `u32` | `3` | no | Fewest ready good-first tickets before PM032 warns; 0 turns the rule off (`navigation.md` section 4.2). |
 | `handle_min_len` | `u32` | `7` | no | Shortest ticket handle shown (`~` plus this many id characters). |
+| `index_writer` | `IndexWriterKnob` | `"local"` | no | `local`: a parent or title change writes its reindex commit at once; `ci`: it writes only the decision commit and the CI job runs `frob ticket reindex` (`navigation.md` 2.2). |
 | `ref` | `String` | `"refs/heads/main"` | yes | Ref holding the ledger; the ledger merge driver and `doctor` resolve it. |
 | `ref_mode` | `RefModeKnob` | `"trunk"` | yes | `trunk` commits to `ref`; `branch` commits to the checked-out branch; `orphan` commits to the ticket branch `branch` in the ticket-branch layout and keeps `ref` as the code base. |
 
