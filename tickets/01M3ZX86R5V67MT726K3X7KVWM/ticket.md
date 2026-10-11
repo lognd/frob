@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:45Z"
-updated = "2026-10-11T17:17:44Z"
+updated = "2026-10-11T19:04:54Z"
 idempotency_key = "m2-nav-tick005"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-obligations/src/tick_reindex.rs"]
@@ -18,11 +18,11 @@ kind = "blocked-by"
 target = "01M3ZX85X37W6QSQSJD1WYVKZG"
 
 [[acceptance]]
-text = "Given a reindex commit with one hand-edited ticket body, when checked, then TICK005 fires"
+text = "Given a reindex commit whose trailer names an unavailable frob version, when checked, then the result is Unresolved generator-version"
 bound = false
 
 [[acceptance]]
-text = "Given a reindex commit whose trailer names an unavailable frob version, when checked, then the result is Unresolved generator-version"
+text = "Given a reindex commit with one hand-edited ticket body, when checked, then TICK007 fires"
 bound = false
 +++
 
