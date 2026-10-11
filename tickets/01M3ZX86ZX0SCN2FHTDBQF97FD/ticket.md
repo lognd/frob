@@ -2,7 +2,7 @@
 id = "01M3ZX86ZX0SCN2FHTDBQF97FD"
 title = "TICK009 misfiled-ticket with machine fix"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
