@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:45Z"
 updated = "2026-10-11T20:56:43Z"
 idempotency_key = "m2-nav-gen-by-id"
 labels = ["milestone:2", "area:navigation"]
-scope = ["crates/frob-ledger/src/gen/by_id.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/reindex.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-ledger/src/replay.rs", "crates/frob-ledger/src/gen/mod.rs", "crates/frob-ledger/tests/gen_by_id.rs"]
+scope = ["crates/frob-ledger/src/gen/by_id.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/reindex.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-ledger/src/replay.rs", "crates/frob-ledger/src/gen/mod.rs", "crates/frob-ledger/tests/gen_by_id.rs", "docs/guides/ticket-branch.md"]
 
 [[links]]
 kind = "blocked-by"
