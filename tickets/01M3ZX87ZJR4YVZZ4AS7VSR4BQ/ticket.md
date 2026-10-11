@@ -2,13 +2,13 @@
 id = "01M3ZX87ZJR4YVZZ4AS7VSR4BQ"
 title = "PM032 good-first-pool-low"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:47Z"
-updated = "2026-10-03T03:34:47Z"
+updated = "2026-10-11T15:56:24Z"
 idempotency_key = "m2-nav-pm032"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-pm/src/pm032.rs"]
