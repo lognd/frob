@@ -2,16 +2,16 @@
 id = "01M3ZX85X37W6QSQSJD1WYVKZG"
 title = "frob ticket reindex [--check] [--code-readme]: decision and reindex commits"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-03T03:34:44Z"
+updated = "2026-10-11T18:12:45Z"
 idempotency_key = "m2-nav-reindex-verb"
-labels = ["milestone:2", "area:navigation"]
-scope = ["crates/frob/src/ticket/reindex_cmd.rs", "crates/frob-ledger/src/ops.rs"]
+labels = ["milestone:2", "area:navigation", "creates:crates/frob/src/ticket/reindex_cmd.rs", "creates:crates/frob/tests/ticket_reindex.rs"]
+scope = ["crates/frob/src/ticket/reindex_cmd.rs", "crates/frob-ledger/src/ops.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/write.rs", "crates/frob/src/config.rs", "crates/gob-dev/profile.toml", "docs/reference/**", "docs/design/navigation.md", "frob.toml", "crates/frob/tests/ticket_reindex.rs"]
 
 [[links]]
 kind = "blocked-by"
