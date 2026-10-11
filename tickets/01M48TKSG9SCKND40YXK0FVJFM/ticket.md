@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-06T14:41:49Z"
-updated = "2026-10-11T02:07:32Z"
+updated = "2026-10-11T02:09:09Z"
 scope = ["crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "reaches..via inside any {} parses each item separately"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the printer's parenthesis workarounds are removed and the generator covers both shapes"
