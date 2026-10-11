@@ -8,7 +8,7 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:12:57Z"
-updated = "2026-10-11T02:10:28Z"
+updated = "2026-10-11T02:11:56Z"
 labels = ["creates:crates/grimble-lints/**"]
 scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**", "Cargo.lock"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a catch-all handler in Python, TS and C# whose body is non-empty and neither rethrows nor logs, when scanned, then one ERR003 site; given one that logs or rethrows, then no site"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a Rust let _ = of a callee whose fallibility the file does not show, when scanned, then the ERR002 site is Certainty::Unknown, never Certain"
