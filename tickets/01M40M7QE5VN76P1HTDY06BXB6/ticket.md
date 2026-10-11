@@ -2,7 +2,8 @@
 id = "01M40M7QE5VN76P1HTDY06BXB6"
 title = "nextest evidence inherits NEXTEST_PROFILE from the calling environment"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
