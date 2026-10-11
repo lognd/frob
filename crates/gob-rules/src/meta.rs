@@ -1,5 +1,6 @@
 //! Rule metadata types shared by the derive, the registry and findings.
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::id::{ParseRuleIdError, RuleId};
@@ -46,6 +47,53 @@ pub enum FixKind {
     VerifyCommit,
     /// An editor fix-it suggestion.
     FixIt,
+}
+
+// frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+
+impl FixKind {
+    /// The applicability a fix of this kind carries unless its author states a weaker one.
+    ///
+    /// `Manual` maps to [`Applicability::Manual`], `Deterministic` to
+    /// [`Applicability::Machine`], `VerifyCommit` to [`Applicability::MaybeIncorrect`]
+    /// (applied only once its command passes) and `FixIt` to
+    /// [`Applicability::HasPlaceholders`] (an editor suggestion to complete).
+    #[must_use]
+    pub const fn applicability(self) -> Applicability {
+        match self {
+            Self::Manual => Applicability::Manual,
+            Self::Deterministic => Applicability::Machine,
+            Self::VerifyCommit => Applicability::MaybeIncorrect,
+            Self::FixIt => Applicability::HasPlaceholders,
+        }
+    }
+}
+
+/// How far a fix can be trusted to apply without a human (`diagnostics.md` section 3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
+pub enum Applicability {
+    /// Safe to apply mechanically.
+    Machine,
+    /// Probably right, but a human should review it.
+    MaybeIncorrect,
+    /// Contains placeholders the human must fill in.
+    HasPlaceholders,
+    /// No edit is attached; a human does the work.
+    Manual,
+}
+
+impl Applicability {
+    /// Lowercase kebab-case label used in JSON and rendered output.
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Machine => "machine",
+            Self::MaybeIncorrect => "maybe-incorrect",
+            Self::HasPlaceholders => "has-placeholders",
+            Self::Manual => "manual",
+        }
+    }
 }
 
 /// Which bound of a three-valued answer a rule may fire on and certify clean on.

@@ -1,11 +1,57 @@
 //! Serializable projection of a `gob_rules::Finding`.
 
-use gob_rules::{Finding, Registry, RequiredReason, UnresolvedReason};
+use gob_rules::{Applicability, Finding, Fix, Registry, RequiredReason, UnresolvedReason};
 use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::source::SourceProvider;
 use crate::text::severity_label;
+
+// frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+
+/// One text edit of a fix, flattened for JSON.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct EditRecord {
+    /// File path when the edited file is known.
+    pub file: Option<String>,
+    /// Byte offset where the replaced range starts.
+    pub start: u32,
+    /// Byte offset where the replaced range ends.
+    pub end: u32,
+    /// Replacement text.
+    pub replacement: String,
+}
+
+/// A proposed fix flattened for JSON.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct FixRecord {
+    /// Short human title.
+    pub title: String,
+    /// How far the fix can be trusted to apply without a human.
+    pub applicability: Applicability,
+    /// The exact edits, in the order they were attached.
+    pub edits: Vec<EditRecord>,
+}
+
+impl FixRecord {
+    /// Project `fix`, resolving edit paths through `sources`.
+    fn from_fix(fix: &Fix, sources: &dyn SourceProvider) -> Self {
+        Self {
+            title: fix.title.clone(),
+            applicability: fix.applicability,
+            edits: fix
+                .edits
+                .iter()
+                .map(|e| EditRecord {
+                    file: sources.path(e.file).map(str::to_owned),
+                    start: u32::from(e.range.start()),
+                    end: u32::from(e.range.end()),
+                    replacement: e.replacement.clone(),
+                })
+                .collect(),
+        }
+    }
+}
 
 /// A finding flattened for JSON (gob-text types carry no serde).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
@@ -28,6 +74,10 @@ pub struct FindingRecord {
     pub fingerprint: String,
     /// Title of the attached fix, if any.
     pub fix: Option<String>,
+    // frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+    /// Fixes with their applicability and exact edits; empty when none is attached.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub fixes: Vec<FixRecord>,
     /// Why this Unresolved finding fails the gate under `required`, if it does.
     pub required: Option<RequiredReason>,
     /// Typed reason an Unresolved finding could not decide (a code such as `vacuous`); absent otherwise.
@@ -67,6 +117,12 @@ impl FindingRecord {
             message: finding.message.clone(),
             fingerprint: finding.fingerprint.to_hex(),
             fix: finding.fix.as_ref().map(|f| f.title.clone()),
+            // frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+            fixes: finding
+                .fix
+                .iter()
+                .map(|f| FixRecord::from_fix(f, sources))
+                .collect(),
             required: finding.required.clone(),
             reason: finding.reason.clone(),
         }

@@ -5,7 +5,7 @@ use std::fmt;
 use gob_text::{FileId, Span, TextRange};
 
 use crate::id::RuleId;
-use crate::meta::{FixKind, Severity};
+use crate::meta::{Applicability, FixKind, Severity};
 use crate::required::RequiredReason;
 use crate::unresolved::UnresolvedReason;
 
@@ -84,6 +84,9 @@ pub struct TextEdit {
 pub struct Fix {
     /// How the fix is applied.
     pub kind: FixKind,
+    // frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+    /// How far the fix can be trusted; required, with no default.
+    pub applicability: Applicability,
     /// Short human title.
     pub title: String,
     /// Edits making up the fix.

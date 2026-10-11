@@ -10,7 +10,7 @@ use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig};
 use gob_diagnostics::{ExitCode, RequiredReason};
 use gob_git::{CommitOptions, RelPath, Repo};
-use gob_rules::{Finding, Fix, FixKind, Rule, RuleMeta, TextEdit};
+use gob_rules::{Applicability, Finding, Fix, FixKind, Rule, RuleMeta, TextEdit};
 use gob_text::{FileId, TextRange, TextSize};
 
 /// The upper-case work marker, assembled so this file does not carry one.
@@ -213,6 +213,8 @@ impl FileCheck<Frob> for Rewrite {
             )
             .with_fix(Fix {
                 kind: FixKind::Deterministic,
+                // frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+                applicability: Applicability::Machine,
                 title: "colour to color".to_owned(),
                 edits: vec![TextEdit {
                     file,

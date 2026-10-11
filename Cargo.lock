@@ -2692,6 +2692,7 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tracing",
+ "trybuild",
 ]
 
 [[package]]

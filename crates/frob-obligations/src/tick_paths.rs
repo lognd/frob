@@ -4,7 +4,7 @@
 use frob_ledger::reindex::GENERATED_MARKER_PREFIX;
 use frob_ledger::{Layout, Ledger};
 use gob_directives::is_full_ulid;
-use gob_rules::{Finding, Fix, FixKind, TextEdit};
+use gob_rules::{Applicability, Finding, Fix, FixKind, TextEdit};
 use gob_text::{FileId, Span};
 
 use crate::rules::Tick006;
@@ -124,6 +124,8 @@ fn word_finding(
             ),
             Some(Fix {
                 kind: FixKind::Deterministic,
+                // frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+                applicability: Applicability::Machine,
                 title: "replace the ticket-branch path with the ticket ULID".to_owned(),
                 edits: vec![TextEdit {
                     file,
