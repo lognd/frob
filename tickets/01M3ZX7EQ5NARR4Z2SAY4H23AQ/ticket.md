@@ -2,7 +2,8 @@
 id = "01M3ZX7EQ5NARR4Z2SAY4H23AQ"
 title = "Plan cost class and node-kind prefilter computation"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
