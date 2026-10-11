@@ -4,8 +4,8 @@ doc-valid-idents = ["GitHub", "GitLab", "SQLite", "TypeScript", "JavaScript", "O
 # One canonicalization function (docs/design/paths.md section 3): std's returns verbatim
 # (`\\?\C:\...`) paths on Windows that git and other tools cannot use.
 disallowed-methods = [
-    { path = "std::fs::canonicalize", reason = "use gob_exec::canonical, which never returns a verbatim path when it can be avoided" },
-    { path = "std::path::Path::canonicalize", reason = "use gob_exec::canonical, which never returns a verbatim path when it can be avoided" },
+    { path = "std::fs::canonicalize", reason = "use gob_fs::canonical (gob_exec re-exports it), which never returns a verbatim path when it can be avoided" },
+    { path = "std::path::Path::canonicalize", reason = "use gob_fs::canonical (gob_exec re-exports it), which never returns a verbatim path when it can be avoided" },
 
     # One clock, one zone (docs/design/time.md section 3): only gob-time reads the wall clock or the local zone.
     # `std::time::Instant` stays allowed (elapsed time is not a date).

@@ -79,7 +79,7 @@ migration ticket ends with that crate free of the allow list.
 
 `std::fs::canonicalize` returns a verbatim path (`\\?\C:\...`) on Windows that git and
 most tools reject, so it is in `disallowed-methods` (with `Path::canonicalize`) and
-`gob_exec::canonical` is the one function that calls it: it strips `\\?\` and `\\?\UNC\`
+`gob_fs::canonical` (re-exported by gob-exec) is the one function that calls it: it strips `\\?\` and `\\?\UNC\`
 when every component survives without the prefix (no dot component, reserved device name,
 trailing dot or space, `<>:"|?*`, and under `MAX_PATH`), else keeps the verbatim form. Every
 product and test call site goes through it. The pure style functions beside it
