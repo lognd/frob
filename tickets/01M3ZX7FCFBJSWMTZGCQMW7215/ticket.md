@@ -2,7 +2,8 @@
 id = "01M3ZX7FCFBJSWMTZGCQMW7215"
 title = "rule test, rule check, rule catalog and rule fmt verbs in every product"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
