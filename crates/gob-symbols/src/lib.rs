@@ -22,6 +22,8 @@
 //!   [`SymbolGraph::affects_with_status`], [`SymbolGraph::reach_with_status`]
 //!   (unresolved calls poison reach, G1-G3), [`SymbolGraph::edges_with_status`],
 //!   [`SymbolGraph::graph_digest`] and [`SymbolGraph::resolve`].
+//! - [`model_of_source`]: example source text plus a language tag to a [`gob_ir::Model`]; syntax
+//!   errors become hole nodes, never a failure.
 //! - [`build_graph`]: parallel (rayon) and incremental (per-file artifacts in
 //!   [`gob_cache::Cache`]) pipeline.
 //!
@@ -68,6 +70,8 @@ mod python;
 mod qualifier;
 mod registry;
 mod rust;
+// frob:ticket 01M4MC43CFCTQ7TQCHCF0C0YRR
+mod source_model;
 mod stdtypes;
 mod symref;
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
@@ -124,6 +128,8 @@ pub use registry::{
     fidelity_report, opaque_adapter, registry_conflicts,
 };
 pub use rust::RustAdapter;
+// frob:ticket 01M4MC43CFCTQ7TQCHCF0C0YRR
+pub use source_model::model_of_source;
 pub use symref::{Symref, SymrefError, Target};
 pub use typescript::{
     ConstProject, Evaluated, JsxElement, JsxKind, Origin, TestItem, TestRole, TypeScriptAdapter,
