@@ -2,7 +2,8 @@
 id = "01M3ZX87ZJR4YVZZ4AS7VSR4BQ"
 title = "PM032 good-first-pool-low"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
