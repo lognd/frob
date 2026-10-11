@@ -209,6 +209,7 @@
 | [TICK005](TICK005.md) | private-term | error | deterministic | P+ | false | A committed ledger file or changelog fragment holds a private term. |
 | [TICK006](TICK006.md) | ledger-path-reference | error | deterministic | P+ | false | Hand-written text links to a ticket-branch path instead of the ticket's ULID. |
 | [TICK007](TICK007.md) | reindex-not-pure | error | manual | P+ | false | A reindex commit is not what the pure reindex of its parent tree produces. |
+| [TICK008](TICK008.md) | move-outside-reindex | error | manual | P+ | false | A ledger commit without the reindex trailer renamed or deleted a ticket file, or touched an event file it did not add. |
 
 ## TODO
 
