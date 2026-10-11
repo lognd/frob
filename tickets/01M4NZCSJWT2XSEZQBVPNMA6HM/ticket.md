@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T17:15:30Z"
-updated = "2026-10-11T17:26:47Z"
+updated = "2026-10-11T17:27:24Z"
 scope = ["crates/frob-evidence/**", "crates/frob-ledger/**", "docs/**", "changelog.d/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the artifact for that run, when read by digest, then the full test-name list is still there"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an evidence ref matching more than 50 tests, when evidence add runs, then a warning names the count and suggests exact-name refs"
