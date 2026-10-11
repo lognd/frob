@@ -315,7 +315,7 @@ const GRL_RULE: &str = "rule NOPE001 \"no-dbg\" {
 // frob:ticket 01M4M5CQ9529KH526299QXXFVF
 // frob:tests crates/grimble/src/compile_cmd.rs::Compile
 #[test]
-fn compile_fails_on_an_unknown_kind_and_passes_a_valid_file() {
+fn compile_fails_on_an_unknown_kind() {
     let dir = repo();
     write(
         dir.path(),
