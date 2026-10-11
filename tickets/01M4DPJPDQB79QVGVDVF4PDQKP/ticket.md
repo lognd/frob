@@ -2,13 +2,13 @@
 id = "01M4DPJPDQB79QVGVDVF4PDQKP"
 title = "gob-symbols CSS: '! important', '!IMPORTANT' and empty '--x:;' are not syntax errors"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T12:07:31Z"
-updated = "2026-10-08T12:07:31Z"
+updated = "2026-10-11T04:27:39Z"
 scope = ["changelog.d/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
