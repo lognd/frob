@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:47:55Z"
-updated = "2026-10-11T03:53:40Z"
-scope = ["crates/frob-check/**", "crates/gob-check/src/tools.rs", "crates/gob-check/src/tool_parse.rs", "crates/gob-check/src/options.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/lib.rs", "crates/gob-check/Cargo.toml", "docs/**"]
+updated = "2026-10-11T15:56:32Z"
+scope = ["crates/frob-check/**", "crates/gob-check/src/tools.rs", "crates/gob-check/src/tool_parse.rs", "crates/gob-check/src/options.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/lib.rs", "crates/gob-check/Cargo.toml", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
 text = "a commit in a ticket worktree starts a background check for the touched packages; a later check --ticket on the same tree reads the finished result instead of re-running it, measured by a test that asserts zero tool spawns on the second call"
