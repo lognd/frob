@@ -17,7 +17,8 @@ use frob_lease::{Holder, Lease, LeaseError, LeaseStore};
 use frob_ledger::model::{Category, CommentSubtype, TicketType};
 use frob_ledger::{Ledger, TicketId};
 use gob_diagnostics::{Refusal, RefusalClass};
-use gob_git::MergeOutcome;
+use gob_exec::{Outcome, Program, Spec};
+use gob_git::{MergeOutcome, Repo};
 
 use crate::config::WorktreeConfig;
 use crate::error::WorktreeError;
@@ -420,7 +421,9 @@ impl Workspace<'_> {
                 })?;
             }
             repo.worktree_add(path, branch, &base)?;
-            tracing::info!(ticket = %id, handle, path = %path.display(), branch, base = %base, "worktree created");
+            // frob:ticket 01M4MNBNM0WGTXGH93PEV48F78
+            let aged = normalize_mtimes(repo, path);
+            tracing::info!(ticket = %id, handle, path = %path.display(), branch, base = %base, aged, "worktree created");
         }
         let (merge, conflicts) = if exists {
             (None, Vec::new())
@@ -634,4 +637,54 @@ fn ledger_relative(path: &Path, base: &Path) -> String {
     let names: Vec<String> = join(path).split('/').map(str::to_owned).collect();
     let keep = names.len().saturating_sub(2);
     names[keep..].join("/")
+}
+
+/// Set the mtime of every tracked file of the checkout at `root` that is newer than its HEAD commit back to the commit time; returns how many files were aged.
+///
+/// Cargo freshness compares source mtimes with the build's dep-info, so a checkout made after the last
+/// build of the same commit would otherwise recompile every workspace crate. Call it right after the
+/// checkout is created, before anything edits it: files changed later keep a newer mtime and rebuild.
+/// Best effort: any failure leaves mtimes as they are and returns the count so far (frob:ticket 01M4MNBNM0WGTXGH93PEV48F78).
+pub fn normalize_mtimes(repo: &Repo, root: &Path) -> usize {
+    let Some(commit_secs) = git_out(repo, root, &["log", "-1", "--format=%ct", "HEAD"])
+        .and_then(|t| t.trim().parse::<u64>().ok())
+    else {
+        tracing::debug!(root = %root.display(), "no commit time; mtimes left alone");
+        return 0;
+    };
+    let Some(listing) = git_out(repo, root, &["ls-files", "-z"]) else {
+        return 0;
+    };
+    let when = std::time::UNIX_EPOCH + std::time::Duration::from_secs(commit_secs);
+    let mut aged = 0;
+    for rel in listing.split('\0').filter(|r| !r.is_empty()) {
+        let file = root.join(rel);
+        let Ok(meta) = std::fs::symlink_metadata(&file) else {
+            continue;
+        };
+        if !meta.is_file() || meta.modified().is_ok_and(|m| m <= when) {
+            continue;
+        }
+        if std::fs::File::open(&file)
+            .and_then(|f| f.set_modified(when))
+            .is_ok()
+        {
+            aged += 1;
+        }
+    }
+    aged
+}
+
+/// Stdout of `git <args>` in `cwd` through the repository's runner, or `None` when it fails.
+fn git_out(repo: &Repo, cwd: &Path, args: &[&str]) -> Option<String> {
+    let spec = Spec {
+        program: Program::Git,
+        args: args.iter().map(|a| (*a).to_owned()).collect(),
+        cwd: Some(cwd.to_path_buf()),
+        env: Vec::new(),
+        timeout: std::time::Duration::from_secs(60),
+        capture: true,
+    };
+    let out = repo.runner().run(&spec).ok()?;
+    (out.status == Outcome::Exited(0)).then_some(out.stdout)
 }
