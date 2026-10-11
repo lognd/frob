@@ -8,12 +8,12 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:47:55Z"
-updated = "2026-10-11T16:36:06Z"
+updated = "2026-10-11T16:36:12Z"
 scope = ["crates/frob-check/**", "crates/gob-check/src/tools.rs", "crates/gob-check/src/tool_parse.rs", "crates/gob-check/src/options.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/lib.rs", "crates/gob-check/Cargo.toml"]
 
 [[acceptance]]
 text = "a second check on an unchanged tree reuses every recorded Done tool-stage result and spawns no tool process, and changing one input file misses, measured by a unit test counting spawns"
-bound = false
+bound = true
 +++
 
 measured: tool stages are 61 percent of a 142 s check. The agent or developer spends minutes editing and testing between commits, so most of that time can be hidden. Results must be keyed by input hashes so a changed tree never reuses a stale pass.
