@@ -8,7 +8,7 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-11T00:48:01Z"
+updated = "2026-10-11T00:48:10Z"
 idempotency_key = "m2-excuntil"
 labels = ["milestone:2", "creates:changelog.d/*.md"]
 scope = ["crates/frob-obligations/**", "crates/gob-rules/**", "crates/frob-check/src/snapshot.rs", "crates/frob-check/src/product.rs", "docs/design/exceptions.md", "docs/reference/rules/EXC0*.md", "docs/reference/rules/README.md", "changelog.d/*.md"]
@@ -31,7 +31,7 @@ bound = false
 
 [[acceptance]]
 text = "Given a defer whose until day is today or later, or a metric target, when check runs, then the finding stays suppressed and no EXC014 is raised"
-bound = false
+bound = true
 +++
 
 exceptions.md after the consistency review: defer and hotfix until= dates and metric bounds are evaluated; EXC016 (accept on an Unresolved finding) and EXC017 (native tool suppression of a bound rule without a frob exception) are implemented with corpora.
