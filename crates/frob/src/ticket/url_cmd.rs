@@ -104,7 +104,7 @@ fn refuse(code: &'static str, message: String, remedy: &str) -> CliError {
 }
 
 /// The `https://host/owner/repo` web base of a git remote URL (https, ssh or scp-like), `None` when it has no host and path.
-fn web_base(remote: &str) -> Option<String> {
+pub(crate) fn web_base(remote: &str) -> Option<String> {
     let remote = remote.trim();
     let rest = remote.split_once("://").map_or(remote, |(_, rest)| rest);
     let rest = rest.rsplit_once('@').map_or(rest, |(_, r)| r);
