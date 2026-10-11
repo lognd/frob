@@ -2,13 +2,14 @@
 id = "01M3ZX87KRP6G49GHANMAK5JA8"
 title = "PM031 good-first-incomplete and the frob-pm crate"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:46Z"
-updated = "2026-10-11T02:51:57Z"
+updated = "2026-10-11T03:19:21Z"
 idempotency_key = "m2-nav-pm031"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-pm/**", "crates/frob-check/src/product.rs", "crates/frob/src/config.rs", "docs/reference/**", "docs/schemas/**", "crates/frob/tests/snapshots/**", "crates/frob-check/tests/**"]

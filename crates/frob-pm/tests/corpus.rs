@@ -1,4 +1,4 @@
-//! `PM034`, `PM001`, `PM002`, `PM010`-`PM013`, `PM033` and `PM036` markdown corpus: each block is a small ledger built from a line DSL.
+//! `PM034`, `PM001`, `PM002`, `PM010`-`PM013`, `PM031`, `PM033` and `PM036` markdown corpus: each block is a small ledger built from a line DSL.
 // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
 // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
 // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
@@ -6,6 +6,7 @@
 // frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
 // frob:ticket 01M4CSZFC0QF9PH544ARF60RCZ
 // frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
+// frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -13,7 +14,9 @@ use frob_ledger::guards::NoLeases;
 use frob_ledger::model::{Category, Outcome, TicketType};
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig, TicketId};
-use frob_pm::rules::{cycle, cycle_plan, membership::evaluate, milestone, replenish, wip};
+use frob_pm::rules::{
+    cycle, cycle_plan, good_first, membership::evaluate, milestone, replenish, wip,
+};
 use frob_pm::{NewObject, ObjectKind, PmStore, State, event::Op};
 use gob_git::{CommitOptions, RelPath, Repo};
 use gob_mdtest::Case;
@@ -151,8 +154,11 @@ fn new_ticket(
     t.acceptance = (0..o
         .get("criteria")
         .map_or(0, |n| n.parse().expect("criteria")))
-        .map(|i| format!("criterion {i}"))
+        .map(|i| format!("Given a, when b, then criterion {i}"))
         .collect();
+    if o.get("start_here") != Some(&"none") {
+        "## Start here\nRead the scope first.".clone_into(&mut t.body);
+    }
     if ty == TicketType::Story && o.get("value") != Some(&"none") {
         t.persona = Some("maintainer".to_owned());
         t.capability = Some("see the plan".to_owned());
@@ -174,6 +180,7 @@ fn runner(case: &Case) -> Vec<Finding> {
     let mut keys: BTreeMap<String, TicketId> = BTreeMap::new();
     let mut limit = 0_u32;
     let mut ready_min = 0_u32;
+    let mut good_first_max = good_first::DEFAULT_MAX_POINTS;
     let mut expedite_max = 1_u32;
     let mut live: BTreeSet<TicketId> = BTreeSet::new();
     let mut pm = frob_pm::PmConfig::load(dir.path()).expect("defaults").pm;
@@ -200,6 +207,7 @@ fn runner(case: &Case) -> Vec<Finding> {
                 keys.insert(w[1].to_owned(), id);
             }
             "limit" => limit = w[1].parse().expect("limit"),
+            "good_first_max" => good_first_max = w[1].parse().expect("good_first_max"),
             "ready_min" => ready_min = w[1].parse().expect("ready_min"),
             "expedite_max" => expedite_max = w[1].parse().expect("expedite_max"),
             "ready_requires" => {
@@ -258,6 +266,13 @@ fn runner(case: &Case) -> Vec<Finding> {
     if case.rule.to_string() == "PM036" {
         return pm036_findings(&ledger);
     }
+    if case.rule.to_string() == "PM031" {
+        // frob:tests crates/frob-pm/src/rules/good_first.rs::missing_parts
+        // frob:tests crates/frob-pm/src/rules/good_first.rs::evaluate
+        return good_first::evaluate(&ledger, good_first_max)
+            .expect("evaluate")
+            .findings;
+    }
     if case.rule.to_string() == "PM033" {
         // frob:tests crates/frob-pm/src/rules/replenish.rs::pm033
         // frob:tests crates/frob-pm/src/rules/replenish.rs::evaluate
@@ -305,6 +320,7 @@ corpus_file!(pm010, "pm010.md");
 corpus_file!(pm011, "pm011.md");
 corpus_file!(pm012, "pm012.md");
 corpus_file!(pm013, "pm013.md");
+corpus_file!(pm031, "pm031.md");
 corpus_file!(pm033, "pm033.md");
 corpus_file!(pm034, "pm034.md");
 corpus_file!(pm036, "pm036.md");
@@ -323,9 +339,33 @@ fn every_corpus_file_has_a_test() {
     assert_eq!(
         files,
         [
-            "pm001.md", "pm002.md", "pm010.md", "pm011.md", "pm012.md", "pm013.md", "pm033.md",
-            "pm034.md", "pm036.md"
+            "pm001.md", "pm002.md", "pm010.md", "pm011.md", "pm012.md", "pm013.md", "pm031.md",
+            "pm033.md", "pm034.md", "pm036.md"
         ],
         "corpus files and corpus_file! lines must match"
     );
+}
+
+// frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
+/// A 5-point good-first ticket with no Start here section is reported with both parts named.
+#[test]
+fn pm031_message_names_every_missing_part() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let ledger = ledger(dir.path());
+    let w = ["task", "a"];
+    let o = opts(&[
+        "points=5",
+        "labels=good-first",
+        "start_here=none",
+        "scope=x",
+    ]);
+    let mut t = new_ticket(&w, &o, &BTreeMap::new());
+    t.acceptance = vec!["Given a, when b, then c".to_owned()];
+    ledger.new_ticket(t).expect("ticket");
+    let found = good_first::evaluate(&ledger, 2).expect("evaluate").findings;
+    assert_eq!(found.len(), 1);
+    let m = &found[0].message;
+    assert!(m.contains("5 points exceed the maximum of 2"), "{m}");
+    assert!(m.contains("no `## Start here` section"), "{m}");
+    assert!(!m.contains("no scope"), "{m}");
 }

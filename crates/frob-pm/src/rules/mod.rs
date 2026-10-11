@@ -2,6 +2,7 @@
 
 pub mod cycle;
 pub mod cycle_plan;
+pub mod good_first;
 pub mod membership;
 pub mod milestone;
 pub mod replenish;
