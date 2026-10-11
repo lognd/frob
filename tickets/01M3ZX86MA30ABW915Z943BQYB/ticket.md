@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:45Z"
 updated = "2026-10-11T18:51:49Z"
 idempotency_key = "m2-nav-tick004"
 labels = ["milestone:2", "area:navigation"]
-scope = ["crates/frob-obligations/src/tick_paths.rs", "crates/frob-ledger/src/mirror_map.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/rules.rs", "crates/frob-obligations/tests/mdtest/tick006.md", "crates/frob-check/src/filecheck.rs"]
+scope = ["crates/frob-obligations/src/tick_paths.rs", "crates/frob-ledger/src/mirror_map.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/rules.rs", "crates/frob-obligations/tests/mdtest/tick006.md", "crates/frob-check/src/filecheck.rs", "crates/gob-check/src/applicability.rs"]
 
 [[links]]
 kind = "blocked-by"
