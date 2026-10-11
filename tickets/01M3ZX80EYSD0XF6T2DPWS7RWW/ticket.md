@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:39Z"
-updated = "2026-10-03T03:34:39Z"
+updated = "2026-10-11T14:46:57Z"
 idempotency_key = "m2-sec-pack-names"
 labels = ["milestone:2", "area:security", "good-first"]
 scope = ["crates/gob-packs/src/names.rs"]
@@ -29,3 +29,6 @@ bound = false
 Implements security.md section 2.8 (SEC-30, SEC-32).
 
 Names starting with std, grimble, frob, crunk, core or gob are reserved for built-in packs (PACK005 elsewhere); a pack's config_tables may declare only [packs.NAME]; provenance is shown with builtin:, repo:packs/NAME or ext:HOST/NAME.
+
+## Start here
+Code: `crates/gob-packs/src/names.rs` (this ticket's whole scope; it is blocked by ~535DAVZ, the pack.toml manifest model, which defines the pack name and config table types this check reads). The two acceptance cases are the tests to write first: a pack named `grimble-extras` and a pack declaring `[grimble.x]` must each produce PACK005. Design: security.md section 2.8 (SEC-30, SEC-32).

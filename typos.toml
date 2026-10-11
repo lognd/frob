@@ -28,6 +28,7 @@ fo = "fo"          # short identifier in the grimble fold code
 caf = "caf"        # short identifier and cafe-style fixture word in tests
 ket = "ket"        # fragment of an identifier/hash literal in tests and docs
 wya = "wya"        # fragment of a hash literal in release code
+wheres = "wheres"  # plural of a GRL `where` clause in the lowering code (gob-plan), not 'whereas'
 ot = "ot"          # fragment in the TypeScript fold test data
 rela = "rela"      # fragment of the relative-path status parser in gob-git
 abl = "abl"        # fragment in the mirror model notes
