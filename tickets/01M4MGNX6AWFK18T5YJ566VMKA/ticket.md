@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:39:06Z"
-updated = "2026-10-11T04:56:27Z"
+updated = "2026-10-11T17:06:02Z"
 scope = ["crates/frob-ticket/**", "crates/frob-lease/**", "crates/frob-ledger/**", "crates/frob/**", "docs/**"]
 
 [[acceptance]]
