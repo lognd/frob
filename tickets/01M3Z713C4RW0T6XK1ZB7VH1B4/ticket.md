@@ -8,7 +8,7 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-11T00:51:30Z"
+updated = "2026-10-11T00:52:01Z"
 idempotency_key = "m2-excuntil"
 labels = ["milestone:2", "creates:changelog.d/*.md"]
 scope = ["crates/frob-obligations/**", "crates/gob-rules/**", "crates/frob-check/src/snapshot.rs", "crates/frob-check/src/product.rs", "docs/design/exceptions.md", "docs/reference/rules/EXC0*.md", "docs/reference/rules/README.md", "changelog.d/*.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "EXC014, EXC016 and EXC017 each have a rule page under docs/reference/rules, a fire and a clean mdtest case, and a changelog fragment"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a defer whose until day is today or later, or a metric target, when check runs, then the finding stays suppressed and no EXC014 is raised"
