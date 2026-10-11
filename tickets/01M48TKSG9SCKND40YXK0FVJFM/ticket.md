@@ -8,12 +8,12 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-06T14:41:49Z"
-updated = "2026-10-11T02:00:16Z"
+updated = "2026-10-11T02:07:32Z"
 scope = ["crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
 text = "a where clause after an unfiltered find parses as a clause, and a filter needs explicit syntax, in both the spec and the parser"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "reaches..via inside any {} parses each item separately"
