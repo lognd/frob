@@ -2,7 +2,7 @@
 id = "01M3ZX86W1P62F80ZNR17Q0SQ9"
 title = "TICK008 move-outside-reindex"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
