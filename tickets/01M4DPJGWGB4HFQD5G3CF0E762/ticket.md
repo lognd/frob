@@ -2,7 +2,8 @@
 id = "01M4DPJGWGB4HFQD5G3CF0E762"
 title = "cycle velocity: done_facts reads events with events_many, not one call per ticket"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
