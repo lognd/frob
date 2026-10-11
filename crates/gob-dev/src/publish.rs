@@ -983,6 +983,39 @@ mod tests {
         }
     }
 
+    // frob:ticket 01M4CTE3SNV3X0PD1DA6995F8R
+    #[test]
+    fn crates_with_no_consumer_are_skipped_and_no_published_crate_needs_a_skipped_one() {
+        let root = crate::workspace_root().unwrap();
+        let json = read_metadata(&root).unwrap();
+        let order = plan(&json).unwrap();
+        let planned: BTreeSet<&str> = order.iter().map(|c| c.name.as_str()).collect();
+        for skipped in ["gob-frameworks", "gob-trust", "gob-packs", "frob-gh"] {
+            assert!(!planned.contains(skipped), "{skipped} must not publish");
+        }
+        let meta: serde_json::Value = serde_json::from_str(&json).unwrap();
+        let pkgs = meta["packages"].as_array().unwrap();
+        let unpublished: BTreeSet<&str> = pkgs
+            .iter()
+            .filter(|p| p["publish"].as_array().is_some_and(|l| l.is_empty()))
+            .map(|p| p["name"].as_str().unwrap())
+            .collect();
+        for p in pkgs
+            .iter()
+            .filter(|p| planned.contains(p["name"].as_str().unwrap()))
+        {
+            for d in p["dependencies"].as_array().unwrap() {
+                let (n, kind) = (d["name"].as_str().unwrap(), &d["kind"]);
+                let normal = kind.is_null() || kind == "build";
+                assert!(
+                    !(normal && unpublished.contains(n)),
+                    "{} depends on unpublished {n}",
+                    p["name"]
+                );
+            }
+        }
+    }
+
     #[test]
     fn unreadable_metadata_is_an_error() {
         assert!(matches!(plan("nope"), Err(PublishError::Metadata(_))));
