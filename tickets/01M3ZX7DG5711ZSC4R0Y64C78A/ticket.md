@@ -2,7 +2,8 @@
 id = "01M3ZX7DG5711ZSC4R0Y64C78A"
 title = "GRL canonical formatter (rule fmt engine)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
