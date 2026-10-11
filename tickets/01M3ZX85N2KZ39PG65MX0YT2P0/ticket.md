@@ -2,7 +2,8 @@
 id = "01M3ZX85N2KZ39PG65MX0YT2P0"
 title = "Generator framework: Write and Check modes, three-layer marker, capped diff, cross-checks"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
