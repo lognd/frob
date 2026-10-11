@@ -150,6 +150,27 @@ pub struct Doc002;
 )]
 pub struct Ref001;
 
+/// Hand-written text links to a ticket-branch path instead of the ticket's ULID.
+///
+/// A ticket file's path (`<epic>/<slug>.md`) changes when the ticket is retitled or reparented, so a link to
+/// it rots. This covers a bare path that is a ticket file, a blob or tree URL on the ticket branch, and the
+/// old `tickets/<ULID>/ticket.md` form. `frob check --fix` rewrites the link to the ULID. Generated pages
+/// (first line carries the generated marker) use relative paths on purpose and are skipped.
+// frob:ticket 01M3ZX86MA30ABW915Z943BQYB
+#[derive(Debug, Clone, Copy, Default, Rule)]
+#[rule(
+    id = "TICK006",
+    slug = "ledger-path-reference",
+    family = "TICK",
+    severity = Error,
+    tier = Universal,
+    scope = File,
+    fix = Deterministic,
+    polarity = Pplus,
+    version = 1
+)]
+pub struct Tick006;
+
 /// An invariants document has no `frob:invariant` directive in code.
 ///
 /// Each `invariants/<slug>.md` file must be upheld somewhere: a

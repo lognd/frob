@@ -94,12 +94,14 @@ pub(crate) fn link_target_digest(ctx: &SharedCtx<'_, Frob>, path: &str, text: &s
 }
 
 impl FileCheck<Frob> for ObligationFileCheck {
+    // frob:ticket 01M3ZX86MA30ABW915Z943BQYB
     fn rules(&self) -> Vec<&'static RuleMeta> {
         vec![
             Todo001.meta(),
             frob_obligations::Doc001.meta(),
             frob_obligations::Doc002.meta(),
             frob_obligations::Ref001.meta(),
+            frob_obligations::Tick006.meta(),
         ]
     }
 
@@ -123,7 +125,7 @@ impl FileCheck<Frob> for ObligationFileCheck {
         text: &str,
     ) -> String {
         match rule.id {
-            "REF001" => ctx.product.ledger_tip.clone(),
+            "REF001" | "TICK006" => ctx.product.ledger_tip.clone(),
             "DOC002" if is_markdown(path) => link_target_digest(ctx, path, text),
             _ => String::new(),
         }

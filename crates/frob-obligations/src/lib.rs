@@ -29,7 +29,7 @@
 //! # Per-file versus repo-level
 //!
 //! [`evaluate_file`] runs the per-file rules (`TODO001`, `DOC001`, `DOC002`,
-//! `REF001`) over one file's text; their result depends on that file alone
+//! `REF001`, `TICK006`) over one file's text; their result depends on that file alone
 //! except where noted, so `frob check` may cache it by file digest.
 //! `REF001` reads the ledger and `DOC002` reads the link targets on disk, so
 //! those two must also fold the ledger tip and the target digests into the
@@ -71,6 +71,7 @@ mod native;
 mod refs;
 mod rules;
 mod sibling;
+mod tick_paths;
 mod tickets;
 mod todo;
 mod util;
@@ -92,7 +93,7 @@ pub use gob_rules::Resolved;
 pub use native::tool_bound_ids;
 pub use rules::{
     Cov001, Cov003, Doc001, Doc002, Exc001, Exc003, Exc005, Exc007, Exc014, Exc016, Exc017, Inv001,
-    Inv002, Ref001, Todo001, Todo002,
+    Inv002, Ref001, Tick006, Todo001, Todo002,
 };
 pub use sibling::{SiblingException, sibling_exception_findings};
 
@@ -169,12 +170,21 @@ fn file_rules(
     out.extend(doc::doc001(inputs.graph, file, path, text));
     out.extend(doc::doc002(inputs.root, file, path, text));
     out.extend(refs::ref001(directives, tickets));
+    // frob:ticket 01M3ZX86MA30ABW915Z943BQYB
+    out.extend(tick_paths::tick006(file, path, text, inputs.ledger));
     out
 }
 
 /// The per-file rule metadata, in evaluation order.
-fn file_rule_metas() -> [&'static RuleMeta; 4] {
-    [Todo001.meta(), Doc001.meta(), Doc002.meta(), Ref001.meta()]
+// frob:ticket 01M3ZX86MA30ABW915Z943BQYB
+fn file_rule_metas() -> [&'static RuleMeta; 5] {
+    [
+        Todo001.meta(),
+        Doc001.meta(),
+        Doc002.meta(),
+        Ref001.meta(),
+        Tick006.meta(),
+    ]
 }
 
 /// Keep the findings whose rule may examine `path`; add Unresolved ones for the rest.

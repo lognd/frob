@@ -209,9 +209,10 @@ const REACH: Applies = Applies::Universal {
 // the table is a project rule and is always examined.
 /// The declared applicability of `meta` (TEMPORARY table, see the module docs).
 pub fn temporary_applies(meta: &RuleMeta) -> Applies {
+    // frob:ticket 01M3ZX86MA30ABW915Z943BQYB
     match meta.id {
-        "TODO001" | "REF001" | "TEST001" | "INV001" | "DRIFT001" | "DRIFT002" | "DRIFT003"
-        | "DRIFT004" => TEXT,
+        "TODO001" | "REF001" | "TICK006" | "TEST001" | "INV001" | "DRIFT001" | "DRIFT002"
+        | "DRIFT003" | "DRIFT004" => TEXT,
         "DOC001" | "INV002" => SYMBOLS,
         "DOC002" => MARKUP,
         "COV001" | "AFFECT001" => REACH,

@@ -8,6 +8,7 @@
 
 use crate::error::{LedgerError, Result};
 use crate::id::TicketId;
+use crate::layout::Layout;
 use crate::ledger::Ledger;
 
 /// Directory of map shards on the ticket branch, one `<ULID>.toml` per mirrored ticket.
@@ -53,6 +54,30 @@ impl Ledger {
             Some(tip) => self.ticket_file_at(&tip.to_string(), id, None),
             None => Ok(None),
         }
+    }
+
+    /// The ticket whose file sits at `path` (ticket-branch relative) at the ledger tip.
+    ///
+    /// `None` in the legacy layout, on an empty ledger, or when no ticket file is at `path`.
+    ///
+    /// # Errors
+    ///
+    /// Store or git failures.
+    // frob:ticket 01M3ZX86MA30ABW915Z943BQYB
+    pub fn ticket_at_path(&self, path: &str) -> Result<Option<TicketId>> {
+        if self.layout() != Layout::Branch {
+            return Ok(None);
+        }
+        let s = self.synced()?;
+        let Some(tip) = s.tip else {
+            return Ok(None);
+        };
+        let scan = self.branch_scan_at(&tip.to_string())?;
+        Ok(scan
+            .files
+            .iter()
+            .find(|(_, p)| p.as_str() == path)
+            .map(|(id, _)| *id))
     }
 
     /// The tracker issue number ticket `id` is mirrored to, `None` when it has no map shard.

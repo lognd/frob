@@ -207,6 +207,7 @@
 | [TICK003](TICK003.md) | dangling-link | error | manual | P+ | false | A link or parent names a ticket that does not exist. |
 | [TICK004](TICK004.md) | absolute-home-path | error | deterministic | P+ | false | A committed ledger file holds an absolute home path. |
 | [TICK005](TICK005.md) | private-term | error | deterministic | P+ | false | A committed ledger file or changelog fragment holds a private term. |
+| [TICK006](TICK006.md) | ledger-path-reference | error | deterministic | P+ | false | Hand-written text links to a ticket-branch path instead of the ticket's ULID. |
 
 ## TODO
 
