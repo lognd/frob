@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:45Z"
-updated = "2026-10-11T19:00:29Z"
+updated = "2026-10-11T19:01:07Z"
 idempotency_key = "m2-nav-tick004"
 labels = ["milestone:2", "area:navigation", "creates:crates/frob-obligations/src/tick_paths.rs"]
 scope = ["crates/frob-obligations/src/tick_paths.rs", "crates/frob-ledger/src/mirror_map.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/rules.rs", "crates/frob-obligations/tests/mdtest/tick006.md", "crates/frob-check/src/filecheck.rs", "crates/gob-check/src/applicability.rs", "crates/frob/tests/ticket_path_refs.rs", "docs/reference/rules/**"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given generated pages that use relative paths, when check runs, then TICK006 does not fire"
-bound = false
+bound = true
 +++
 
 Implements navigation.md sections 1 and 6.
