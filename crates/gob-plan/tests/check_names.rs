@@ -1,6 +1,6 @@
 //! Behaviour of the name and type checks beyond the goldens (grl-spec.md sections 7.1 and 10).
 
-use gob_plan::check::{Code, Diagnostic, check_file};
+use gob_plan::check::{Code, Diagnostic, Tier, check_file, check_file_as};
 use gob_plan::grl::parse;
 use gob_text::FileInterner;
 
@@ -79,7 +79,10 @@ fn the_fixture_rules_of_the_spec_check_clean() {
             let src = std::fs::read_to_string(&path).expect("read");
             // The spec's abbreviated rules omit the universal third example (GRL011); every
             // other code must stay silent.
-            let found: Vec<_> = diags(&src)
+            // They are std rules, so host fixes are allowed.
+            let parsed = parse(FileInterner::new().intern("t.grl"), &src);
+            assert!(parsed.is_ok(), "{:?}", parsed.errors);
+            let found: Vec<_> = check_file_as(&parsed.file, None, Tier::Std)
                 .into_iter()
                 .filter(|d| !(d.code == Some(Code::Grl011) && d.message.contains("notapplicable")))
                 .collect();

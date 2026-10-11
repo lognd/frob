@@ -18,6 +18,7 @@
 //! | GRL012 | an `explain` text without a `## Remedy` section |
 //! | GRL013 | (warning) a `find` variable never used |
 //! | GRL014 | a side relation read but not listed in `needs` |
+//! | GRL015 | a fix without applicability, a plugin fix outside the finding's span, or a plugin `fix host` |
 //! | GRL017 | `certainly` or `possibly` in a negative position |
 //! | GRL018 | a word no language of the rule's `lang` answers |
 //!
@@ -26,6 +27,7 @@
 //! positions, and that `NotApplicable` is a static property of a (rule, language) pair, so a rule
 //! naming a word none of its languages answers is a compile error, not a runtime value.
 
+mod fixes;
 mod names;
 mod render;
 mod structure;
@@ -70,6 +72,8 @@ pub enum Code {
     Grl013,
     /// Side relation used but not in `needs`.
     Grl014,
+    /// Fix without applicability, plugin fix outside its span, or plugin host fix.
+    Grl015,
     /// `certainly` or `possibly` in a negative position.
     Grl017,
     /// A word no language of the rule answers.
@@ -90,6 +94,7 @@ impl Code {
             Self::Grl012 => "GRL012",
             Self::Grl013 => "GRL013",
             Self::Grl014 => "GRL014",
+            Self::Grl015 => "GRL015",
             Self::Grl017 => "GRL017",
             Self::Grl018 => "GRL018",
         }
@@ -199,21 +204,41 @@ impl Diagnostic {
     }
 }
 
+/// Who wrote the rule: the standard library (compiled in) or a plugin pack.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Tier {
+    /// A std rule: may use host fixes and edit outside the finding.
+    Std,
+    /// A plugin rule: fixes stay inside the finding's primary span and host fixes are refused.
+    Plugin,
+}
+
 // frob:ticket 01M3ZX7DYR7PR1PBCZ7E8Q56WW
-/// Check every rule of a parsed file; diagnostics come in source order.
+/// Check every rule of a parsed file as plugin rules; diagnostics come in source order.
 pub fn check_file(file: &grl::ast::File) -> Vec<Diagnostic> {
     check_file_with(file, None)
 }
 
 // frob:ticket 01M3ZX7DMYNTWB3AP04CDMAECH
-/// Check every rule of a parsed file, typing `config.<table>` paths and rows from `config`.
+/// Check every rule of a parsed file as plugin rules, typing `config.<table>` paths and rows from `config`.
 pub fn check_file_with(file: &grl::ast::File, config: Option<&ConfigSchema>) -> Vec<Diagnostic> {
+    check_file_as(file, config, Tier::Plugin)
+}
+
+// frob:ticket 01M3ZX7ECR0R91Q5R2T16R03NG
+/// Check every rule of a parsed file written at `tier`; `Std` allows host fixes and wide fixes.
+pub fn check_file_as(
+    file: &grl::ast::File,
+    config: Option<&ConfigSchema>,
+    tier: Tier,
+) -> Vec<Diagnostic> {
     let mut out: Vec<Diagnostic> = file
         .rules
         .iter()
         .flat_map(|r| {
             let mut d = names::check_rule(r, config);
             d.extend(structure::check_rule(r));
+            d.extend(fixes::check_rule(r, tier));
             d
         })
         .collect();
