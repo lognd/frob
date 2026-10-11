@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-11T01:21:37Z"
+updated = "2026-10-11T01:25:48Z"
 idempotency_key = "m2-grl-examples"
 labels = ["milestone:2", "area:grl", "creates:crates/gob-plan/tests/example_runner.rs"]
 scope = ["crates/gob-plan/src/examples/**", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/example_runner.rs"]
@@ -23,7 +23,7 @@ target = "01M3ZX7F1SGDAFM6ZQ8BP7TEN3"
 
 [[acceptance]]
 text = "Given an example with `//~ warn` on line 3 of a Rust input, when run, then it passes iff exactly one warn finding is reported on line 3"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a known-gap example that starts firing, when run, then it fails with GRL016 and a diff, and a mismatching fire example prints the expected and actual findings"
