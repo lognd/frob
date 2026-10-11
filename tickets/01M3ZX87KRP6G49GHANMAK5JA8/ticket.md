@@ -2,7 +2,8 @@
 id = "01M3ZX87KRP6G49GHANMAK5JA8"
 title = "PM031 good-first-incomplete and the frob-pm crate"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
