@@ -2,16 +2,17 @@
 id = "01M3ZX85N2KZ39PG65MX0YT2P0"
 title = "Generator framework: Write and Check modes, three-layer marker, capped diff, cross-checks"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-11T01:59:42Z"
+updated = "2026-10-11T02:01:49Z"
 idempotency_key = "m2-nav-gen-framework"
 labels = ["milestone:2", "area:navigation"]
-scope = ["crates/gob-dev/src/**"]
+scope = ["crates/gob-dev/src/**", "crates/gob-dev/tests/generate.rs"]
 
 [[acceptance]]
 text = "Given a generated page edited by hand, when `--check` runs, then GEN001 prints a capped unified diff and exits 1"
