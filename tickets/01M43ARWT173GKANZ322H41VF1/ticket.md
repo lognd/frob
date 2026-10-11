@@ -8,7 +8,7 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:47Z"
-updated = "2026-10-11T00:07:06Z"
+updated = "2026-10-11T00:49:16Z"
 idempotency_key = "crunk-plan-ci"
 labels = ["area:crunk"]
 scope = [".github/workflows/ci.yml", "docs/crunk/ci.md", ".github/scripts/plan-jobs.py", "crates/gob-dev/tests/ci_plan.rs", "crates/gob-dev/tests/ci_parity.rs", "docs/crunk/README.md", "crates/frob-release/tests/dev_workflow.rs", "crates/frob-release/tests/ci_pins.rs"]
@@ -19,7 +19,7 @@ target = "01M43ARWCVRCE25KDZC8CRC1ZH"
 
 [[acceptance]]
 text = "Given a change only under crates/crunk-values, when CI plans jobs, then crunk tests run and frob and grimble tests do not"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a change under crates/gob-fix, when CI plans jobs, then all three products' tests run"
