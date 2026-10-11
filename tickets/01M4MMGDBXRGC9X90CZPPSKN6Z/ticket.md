@@ -8,7 +8,7 @@ points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T04:46:00Z"
-updated = "2026-10-11T14:17:33Z"
+updated = "2026-10-11T14:17:50Z"
 scope = ["typos.toml", "docs/crunk/rules/README.md", "crates/frob/src/profile_cmd.rs", "crates/frob/tests/profile.rs", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
