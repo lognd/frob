@@ -2,7 +2,8 @@
 id = "01M3ZX86R5V67MT726K3X7KVWM"
 title = "TICK007 reindex-not-pure: replay check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
