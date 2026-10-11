@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T05:00:53Z"
-updated = "2026-10-11T16:27:59Z"
+updated = "2026-10-11T16:28:46Z"
 scope = ["crates/frob-worktree/src/work.rs", "crates/frob-land/src/ratchet.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/tests/work.rs"]
 
 [[acceptance]]
