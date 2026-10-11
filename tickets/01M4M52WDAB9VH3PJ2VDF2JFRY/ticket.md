@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CTE0GYDX0XW64JRNF2ZMQG"
 reporter = "lognd"
 created = "2026-10-11T00:16:28Z"
-updated = "2026-10-11T01:16:14Z"
+updated = "2026-10-11T01:22:20Z"
 scope = ["crates/gob-caps/**", "crates/gob-lock/**", "crates/gob-ir/**", "crates/gob-symbols/**", "crates/grimble-check/**"]
 
 [[acceptance]]
