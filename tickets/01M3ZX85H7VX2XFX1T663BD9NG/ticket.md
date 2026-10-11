@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-11T00:59:18Z"
+updated = "2026-10-11T01:02:35Z"
 idempotency_key = "m2-nav-e-ticket-path"
 labels = ["milestone:2", "area:navigation", "good-first"]
 scope = ["crates/frob/src/ticket/read.rs", "crates/gob-cli/src/error.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/ticket.rs"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a valid handle, ULID or alias, when run, then behaviour is unchanged"
-bound = false
+bound = true
 +++
 
 Implements navigation.md sections 1 and 6.
