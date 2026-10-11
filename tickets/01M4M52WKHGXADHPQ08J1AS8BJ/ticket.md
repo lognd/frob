@@ -2,7 +2,8 @@
 id = "01M4M52WKHGXADHPQ08J1AS8BJ"
 title = "gob-cache stops depending on gob-exec: canonical and git_common_dir move to gob-fs (audit M8 slice)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CTE0GYDX0XW64JRNF2ZMQG"
