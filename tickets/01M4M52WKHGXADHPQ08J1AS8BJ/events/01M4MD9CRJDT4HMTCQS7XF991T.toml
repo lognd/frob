@@ -1,0 +1,50 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T02:39:40Z"
+digest = "1ccc408803b657cf3b720277f27ab55b49a1d186b1e3f09134fc33207c21244d"
+exit_code = 0
+inline = '''
+   Compiling syn v2.0.119
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling libc v0.2.189
+   Compiling regex-syntax v0.8.11
+   Compiling schemars v1.2.2
+   Compiling getrandom v0.4.3
+   Compiling is-terminal v0.4.17
+   Compiling tinytemplate v1.2.1
+   Compiling regex-automata v0.4.18
+   Compiling tempfile v3.27.0
+   Compiling regex v1.13.1
+   Compiling zerocopy-derive v0.8.59
+   Compiling tracing-attributes v0.1.31
+   Compiling tracing v0.1.44
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling zerocopy v0.8.59
+   Compiling ahash v0.8.12
+   Compiling half v2.7.1
+   Compiling hashbrown v0.14.5
+   Compiling ciborium-ll v0.2.2
+   Compiling ciborium v0.2.2
+   Compiling hashlink v0.9.1
+   Compiling criterion v0.5.1
+   Compiling rusqlite v0.32.1
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+    Finished `test` profile [unoptimized] target(s) in 9.57s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3340c7c8-600b-4c8a-8734-40c5cd324bfb with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.008s] gob-cache::shared gob_cache_does_not_depend_on_gob_exec
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-cache --test shared -E 'test(=gob_cache_does_not_depend_on_gob_exec)'"
+size = 1443
+status = "measured"
+tests = ["gob_cache_does_not_depend_on_gob_exec"]
+at = "2026-10-11T02:39:40Z"
+actor = "lognd"
+rev = 1

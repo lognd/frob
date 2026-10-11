@@ -129,6 +129,7 @@
 | [PM011](PM011.md) | cycle-without-goal | warn | manual | P+ | false | An open or planned cycle states no goal. |
 | [PM012](PM012.md) | cycle-member-not-ready | advisory | manual | P+ | false | A not-yet-started member of an open or planned cycle fails the definition of ready. |
 | [PM013](PM013.md) | wip-limit-exceeded | warn | manual | P+ | false | The repository has more tickets in progress than `[pm.wip] in_progress` allows. |
+| [PM031](PM031.md) | good-first-incomplete | error | manual | P+ | false | A ticket labelled `good-first` is missing something a newcomer needs. |
 | [PM033](PM033.md) | ready-queue-low | advisory | manual | P+ | false | The ready queue holds fewer doable tickets than `[pm] ready_min`. |
 | [PM034](PM034.md) | milestone-member-outside-epics | warn | manual | P+ | false | A ticket claims a milestone that its epic ancestry does not reach. |
 | [PM036](PM036.md) | cycle-overdue | warn | manual | P+ | false | An active cycle is past its end date and has not been closed. |

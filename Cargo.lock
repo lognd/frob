@@ -2328,7 +2328,7 @@ version = "0.532.0"
 dependencies = [
  "blake3",
  "criterion",
- "gob-exec",
+ "gob-fs",
  "gob-time",
  "rusqlite",
  "tempfile",
@@ -2493,6 +2493,7 @@ dependencies = [
 name = "gob-exec"
 version = "0.532.0"
 dependencies = [
+ "gob-fs",
  "gob-log",
  "nix",
  "proptest",
@@ -2519,6 +2520,7 @@ dependencies = [
 name = "gob-fs"
 version = "0.532.0"
 dependencies = [
+ "proptest",
  "tempfile",
  "tracing",
 ]
@@ -2841,6 +2843,16 @@ dependencies = [
  "serde_json",
  "tempfile",
  "toml",
+ "tracing",
+]
+
+[[package]]
+name = "grimble-lints"
+version = "0.532.0"
+dependencies = [
+ "gob-languages",
+ "gob-text",
+ "thiserror",
  "tracing",
 ]
 
