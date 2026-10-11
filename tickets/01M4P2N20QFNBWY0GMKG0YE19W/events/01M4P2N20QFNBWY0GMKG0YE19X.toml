@@ -1,0 +1,12 @@
+kind = "create"
+title = "agent: token-savings telemetry for guards and docs"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
+scope = ["docs/**"]
+acceptance = ["each guard logs bytes avoided to .frob/telemetry.jsonl", "docs describe install, uninstall, ownership markers, hooks and the heavy profile"]
+at = "2026-10-11T18:12:27Z"
+actor = "lognd"
+rev = 1
