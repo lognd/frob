@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:46Z"
-updated = "2026-10-11T02:51:25Z"
+updated = "2026-10-11T02:51:57Z"
 idempotency_key = "m2-nav-pm031"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-pm/**", "crates/frob-check/src/product.rs", "crates/frob/src/config.rs", "docs/reference/**", "docs/schemas/**", "crates/frob/tests/snapshots/**", "crates/frob-check/tests/**"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a complete good-first ticket, when check runs, then no PM031 is emitted"
-bound = false
+bound = true
 +++
 
 Implements navigation.md section 4.2; pm-enforcement.md; boundaries.md (frob-pm).
