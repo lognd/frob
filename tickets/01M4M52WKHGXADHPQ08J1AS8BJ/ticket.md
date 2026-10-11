@@ -2,12 +2,12 @@
 id = "01M4M52WKHGXADHPQ08J1AS8BJ"
 title = "gob-cache stops depending on gob-exec: canonical and git_common_dir move to gob-fs (audit M8 slice)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 parent = "01M4CTE0GYDX0XW64JRNF2ZMQG"
 reporter = "lognd"
 created = "2026-10-11T00:16:28Z"
-updated = "2026-10-11T01:16:10Z"
+updated = "2026-10-11T01:24:58Z"
 scope = ["crates/gob-fs/**", "crates/gob-cache/**", "crates/gob-exec/**", "changelog.d/**"]
 +++
 
