@@ -2,7 +2,8 @@
 id = "01M3ZX86CE8WDE9PJHNS90ZNMR"
 title = "Generated GLOSSARY.md from this repository's effective configuration"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
