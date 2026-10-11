@@ -7,7 +7,7 @@ use frob_ledger::index::Summary;
 
 use crate::error::LeaseError;
 use crate::model::Lease;
-use crate::overlap::scopes_overlap;
+use crate::overlap::{effective_overlap, effective_scope};
 use crate::store::LeaseStore;
 
 /// A snapshot of the live leases that answers `is_free` for candidate tickets.
@@ -15,6 +15,9 @@ use crate::store::LeaseStore;
 pub struct LeaseGuard {
     store: LeaseStore,
     live: Vec<Lease>,
+    /// Each live lease's exemption-reduced scope, computed once for every candidate.
+    // frob:ticket 01M4MGNX6AWFK18T5YJ566VMKA
+    held: Vec<Vec<String>>,
 }
 
 impl LeaseGuard {
@@ -26,7 +29,11 @@ impl LeaseGuard {
     pub fn new(store: LeaseStore) -> Result<Self, LeaseError> {
         let live = store.live_snapshot()?;
         tracing::debug!(live = live.len(), "lease guard snapshot taken");
-        Ok(Self { store, live })
+        let held = live
+            .iter()
+            .map(|l| effective_scope(&l.scope, store.shared(), l.ticket))
+            .collect();
+        Ok(Self { store, live, held })
     }
 
     /// Open the repository containing `cwd` with the caller's `cfg` and snapshot.
@@ -45,10 +52,15 @@ impl LeaseGuard {
 
 impl LeaseCheck for LeaseGuard {
     fn is_free(&self, ticket: &Summary, scope: &[String]) -> bool {
-        for lease in self.live.iter().filter(|l| l.ticket != ticket.id) {
-            match scopes_overlap(
-                (scope, ticket.id),
-                (&lease.scope, lease.ticket),
+        // frob:ticket 01M4MGNX6AWFK18T5YJ566VMKA
+        let mine = effective_scope(scope, self.store.shared(), ticket.id);
+        for (lease, held) in self.live.iter().zip(&self.held) {
+            if lease.ticket == ticket.id {
+                continue;
+            }
+            match effective_overlap(
+                (&mine, ticket.id),
+                (held, lease.ticket),
                 self.store.shared(),
                 self.store.resolver(),
             ) {
