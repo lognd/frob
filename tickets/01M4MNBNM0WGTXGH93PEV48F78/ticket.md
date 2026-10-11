@@ -7,8 +7,8 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T05:00:53Z"
-updated = "2026-10-11T16:24:47Z"
-scope = ["crates/frob-worktree/src/work.rs", "crates/frob-land/src/ratchet.rs"]
+updated = "2026-10-11T16:27:59Z"
+scope = ["crates/frob-worktree/src/work.rs", "crates/frob-land/src/ratchet.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/tests/work.rs"]
 
 [[acceptance]]
 text = "a worktree created after the tip commit leaves unchanged tracked files with mtime <= the tip commit time (so cargo sees them fresh against any build of that tip), covered by a test"
