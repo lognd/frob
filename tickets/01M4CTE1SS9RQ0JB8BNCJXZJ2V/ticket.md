@@ -2,7 +2,8 @@
 id = "01M4CTE1SS9RQ0JB8BNCJXZJ2V"
 title = "Layering test over cargo metadata with the boundaries.md layer table (audit M9)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
