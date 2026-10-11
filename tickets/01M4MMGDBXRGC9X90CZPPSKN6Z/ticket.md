@@ -2,13 +2,13 @@
 id = "01M4MMGDBXRGC9X90CZPPSKN6Z"
 title = "typos: the docs spelling job fails on 'wheres' (plural of a GRL where clause) in gob-plan lowering"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T04:46:00Z"
-updated = "2026-10-11T04:46:00Z"
+updated = "2026-10-11T04:46:06Z"
 scope = ["typos.toml"]
 
 [[acceptance]]
