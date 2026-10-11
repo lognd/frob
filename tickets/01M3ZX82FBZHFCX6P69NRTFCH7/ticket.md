@@ -2,7 +2,8 @@
 id = "01M3ZX82FBZHFCX6P69NRTFCH7"
 title = "Ticket slug function"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
