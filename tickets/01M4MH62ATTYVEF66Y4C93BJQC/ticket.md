@@ -2,7 +2,8 @@
 id = "01M4MH62ATTYVEF66Y4C93BJQC"
 title = "Affected-only clippy and fmt: scope the {packages} placeholder to the touched crates plus their direct reverse dependencies from cargo metadata, not the transitive closure"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
