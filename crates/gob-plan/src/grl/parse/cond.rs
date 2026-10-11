@@ -8,6 +8,7 @@ use crate::grl::ast::{
     Term, TermKind, Word,
 };
 use crate::grl::token::{Token, TokenKind};
+use gob_text::Span;
 
 /// Words that begin a relation after a subject (besides verbs).
 const REL_WORDS: &[&str] = &[
@@ -41,7 +42,8 @@ impl Parser<'_> {
             end = rel.span;
             rels.push(rel);
         }
-        let filter = if self.eat_word("where").is_some() {
+        // The filter's `where` stays on the binding's line: one that starts a line is a clause.
+        let filter = if !self.starts_line() && self.eat_word("where").is_some() {
             let cond = self.cond()?;
             end = cond.span;
             Some(cond)
@@ -208,7 +210,10 @@ impl Parser<'_> {
         if self.is(&TokenKind::LParen) {
             let open = self.here();
             self.bump();
-            let inner = self.cond()?;
+            let outer = std::mem::replace(&mut self.in_any, false);
+            let inner = self.cond();
+            self.in_any = outer;
+            let inner = inner?;
             let close = self.expect(&TokenKind::RParen, "`)` to close the condition")?;
             return Ok(Spanned {
                 node: inner.node,
@@ -230,12 +235,18 @@ impl Parser<'_> {
             let close = self.here();
             self.error(ParseErrorKind::EmptyAny, cover(start, close));
         } else {
-            loop {
-                parts.push(self.cond()?);
-                if self.eat(&TokenKind::Comma).is_none() {
-                    break;
+            let outer = std::mem::replace(&mut self.in_any, true);
+            let items = loop {
+                match self.cond() {
+                    Ok(c) => parts.push(c),
+                    Err(e) => break Err(e),
                 }
-            }
+                if self.eat(&TokenKind::Comma).is_none() {
+                    break Ok(());
+                }
+            };
+            self.in_any = outer;
+            items?;
         }
         let close = self.expect(&TokenKind::RBrace, "`,` or `}` in `any { ... }`")?;
         Ok(Spanned {
@@ -544,11 +555,7 @@ impl Parser<'_> {
             "via",
             "`via` and the verbs to follow, as in `reaches f via calls within 6`",
         )?;
-        let mut via = vec![self.verb("a verb after `via`")?];
-        while self.eat(&TokenKind::Comma).is_some() {
-            via.push(self.verb("a verb after `,`")?);
-        }
-        let mut end = via[via.len() - 1].span;
+        let (via, mut end) = self.via_list()?;
         let within = if self.eat_word("within").is_some() {
             let term = self.term()?;
             end = term.span;
@@ -564,6 +571,24 @@ impl Parser<'_> {
                 within,
             },
         })
+    }
+
+    /// `VERB`, `VERB, VERB` (not inside `any { }`, where a comma separates items) or `(VERB, VERB)`.
+    fn via_list(&mut self) -> PResult<(Vec<Word>, Span)> {
+        if let Some(open) = self.eat(&TokenKind::LParen) {
+            let mut via = vec![self.verb("a verb after `(`")?];
+            while self.eat(&TokenKind::Comma).is_some() {
+                via.push(self.verb("a verb after `,`")?);
+            }
+            let close = self.expect(&TokenKind::RParen, "`)` to close the verb list")?;
+            return Ok((via, cover(open, close)));
+        }
+        let mut via = vec![self.verb("a verb after `via`")?];
+        while !self.in_any && self.eat(&TokenKind::Comma).is_some() {
+            via.push(self.verb("a verb after `,`")?);
+        }
+        let end = via[via.len() - 1].span;
+        Ok((via, end))
     }
 
     /// The object of a relation: an anonymous shape or a term.
@@ -676,7 +701,10 @@ impl Parser<'_> {
         if w == "count" && self.is_nth(1, &TokenKind::LParen) {
             self.bump();
             self.bump();
-            let binding = self.binding("count(")?;
+            let outer = std::mem::replace(&mut self.in_any, false);
+            let binding = self.binding("count(");
+            self.in_any = outer;
+            let binding = binding?;
             let close = self.expect(&TokenKind::RParen, "`)` to close `count(...)`")?;
             return Ok(Spanned {
                 span: cover(tok.span, close),
