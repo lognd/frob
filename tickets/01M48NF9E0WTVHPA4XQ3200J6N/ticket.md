@@ -2,12 +2,12 @@
 id = "01M48NF9E0WTVHPA4XQ3200J6N"
 title = "crunk-values: CSS Color 4 (oklch, oklab, color(), lab, lch) parsing and OKLab perceptual distance; COLOR001 reports unreadable colours as Unresolved"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-06T13:11:55Z"
-updated = "2026-10-06T13:11:55Z"
+updated = "2026-10-11T00:58:43Z"
 scope = ["crates/crunk-values/**", "crates/crunk-check/src/rules/**"]
 
 [[acceptance]]
