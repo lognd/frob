@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-06T14:41:49Z"
-updated = "2026-10-11T02:09:09Z"
+updated = "2026-10-11T02:09:20Z"
 scope = ["crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "the printer's parenthesis workarounds are removed and the generator covers both shapes"
-bound = false
+bound = true
 +++
 
 Found by ~NH92W1H's proptest generator: (1) a where at the start of a line is consumed as the filter of a still-open some/no binding, so a where clause directly after an unfiltered find/some/no cannot be expressed; (2) reaches X via a, b without within, followed by a comma inside any { }, swallows the next item as another verb. The printer parenthesises around both; fix the grammar (grl-spec.md section 5) so each source has one parse, document the rule, and remove the printer's workarounds.
