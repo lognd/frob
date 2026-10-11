@@ -15,6 +15,8 @@ pub mod read;
 pub mod reindex_cmd;
 pub mod terminal_lease;
 pub mod triage_cmd;
+// frob:ticket 01M3ZX88FHDWF9C082QZR1PXXA
+pub mod url_cmd;
 pub mod write;
 
 use frob_ledger::model::{Category, Class, Outcome, Priority, TicketType};
@@ -237,6 +239,8 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<branch_cmd::BranchInit>()
         .register::<migrate_cmd::Migrate>()
         .register::<reindex_cmd::Reindex>()
+        // frob:ticket 01M3ZX88FHDWF9C082QZR1PXXA
+        .register::<url_cmd::Url>()
         .register::<doctor_cmd::TicketDoctor>()
         .register::<merge_cmd::MergeDriver>()
 }

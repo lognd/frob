@@ -59,6 +59,12 @@ The worktree is built from the code base branch, so it holds code and
 `frob.toml`; the ticket file is at `_unfiled/<slug>.md` (or under its epic's
 directory) on `frob-tickets`, its events under `.events/<ULID>/`.
 
+To get a link you can paste, run `frob ticket url ~Q5FEE2P`. It prints the
+blob URL of the ticket file at its current path on `frob-tickets` (built
+from the `origin` remote) and, when the ticket is mirrored, the URL of its
+issue. The path changes when a ticket moves to another epic, so print the
+URL again instead of keeping an old one.
+
 ## Push, clone and CI
 
 Push the ledger with the code: `git push origin main frob-tickets`. A fresh
