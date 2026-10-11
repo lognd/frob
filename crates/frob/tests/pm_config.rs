@@ -8,7 +8,7 @@ use std::process::Output;
 
 use serde_json::Value;
 
-// frob:ticket 01M4CTGGZKTQ1HE1KVMGZEGY0K
+// frob:ticket 01M4D6NRS8BHPBDVD2CEGY0KCD
 const PM_KEYS: [&str; 13] = [
     "pm.strict",
     "pm.pull",
@@ -185,7 +185,7 @@ fn pm_keys_in_order(text: &str) -> Vec<String> {
     keys
 }
 
-// frob:ticket 01M4CTGGZKTQ1HE1KVMGZEGY0K
+// frob:ticket 01M4D6NRS8BHPBDVD2CEGY0KCD
 #[test]
 fn pm_knob_order_is_one_across_init_the_sync_list_and_the_repo_frob_toml() {
     let dir = repo();
