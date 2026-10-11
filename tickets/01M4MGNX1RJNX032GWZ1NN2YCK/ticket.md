@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:39:06Z"
-updated = "2026-10-11T04:25:31Z"
+updated = "2026-10-11T04:34:36Z"
 scope = ["crates/gob-cache/**", "crates/frob-obligations/src/tickets.rs", "crates/frob-obligations/src/lib.rs"]
 
 [[acceptance]]
