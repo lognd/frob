@@ -1,5 +1,7 @@
 //! Typed parse errors for colors and lengths.
 
+// frob:ticket 01M48NF9E0WTVHPA4XQ3200J6N
+
 /// Why a CSS color literal was rejected by [`crate::Color::parse`].
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum ColorError {
@@ -18,6 +20,10 @@ pub enum ColorError {
     /// An `hsl()`/`hsla()` literal was malformed.
     #[error("malformed hsl()/hsla() color")]
     BadHsl,
+    /// An `oklch()`, `oklab()`, `lab()`, `lch()`, `hwb()` or `color()` literal was malformed or
+    /// uses an unsupported form (relative colors, unknown `color()` space).
+    #[error("malformed or unsupported {0}() color")]
+    BadColorFunction(String),
     /// The text is not a hex, rgb, hsl or named color (`var()`, gradients, `currentcolor`, ...).
     #[error("unrecognized color `{0}`")]
     Unrecognized(String),

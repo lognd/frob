@@ -2,6 +2,7 @@
 //! its own span. Judgment-free; rules decide what they mean.
 
 // frob:ticket 01M43ARY91XZ35DN9SCHRHS033
+// frob:ticket 01M48NF9E0WTVHPA4XQ3200J6N
 
 use crunk_values::{Color, Length};
 
@@ -17,6 +18,9 @@ pub struct ValueFacts {
     pub lengths: Vec<LocatedLength>,
     /// `var()` references found.
     pub var_refs: Vec<LocatedVarRef>,
+    /// Spans of colour-looking literals that could not be read (an unsupported function form, a
+    /// malformed hex run); a rule must report these as unresolved, never as clean.
+    pub unreadable_colors: Vec<Span>,
 }
 
 /// The first identifier among the top-level arguments of the `var(` function token `tok`.
@@ -46,6 +50,33 @@ fn nested_var_refs(src: &str, tok: &Tok, out: &mut Vec<LocatedVarRef>) {
     }
 }
 
+/// Colour function names whose literals must be readable or reported.
+const COLOR_FUNCTIONS: &[&str] = &[
+    "rgb",
+    "rgba",
+    "hsl",
+    "hsla",
+    "hwb",
+    "lab",
+    "lch",
+    "oklab",
+    "oklch",
+    "color",
+    "color-mix",
+];
+
+/// True when `text` is a colour literal by shape (a colour function, or a `#` hex run) so a parse
+/// failure means "could not read it" rather than "not a colour".
+fn looks_like_color(kind: Kind, text: &str) -> bool {
+    match kind {
+        Kind::Function => text.split_once('(').is_some_and(|(name, _)| {
+            COLOR_FUNCTIONS.contains(&name.trim().to_ascii_lowercase().as_str())
+        }),
+        Kind::Hash => text.len() > 1 && text[1..].bytes().all(|b| b.is_ascii_hexdigit()),
+        _ => false,
+    }
+}
+
 fn is_var(src: &str, tok: &Tok) -> bool {
     tok.kind == Kind::Function
         && src
@@ -72,14 +103,22 @@ pub fn value_facts(src: &str, base: usize, root_font_size: f64) -> ValueFacts {
             }
             continue;
         }
-        if matches!(tok.kind, Kind::Hash | Kind::Function | Kind::Ident)
-            && let Ok(color) = Color::parse(tok.text(src))
-        {
-            facts.colors.push(LocatedColor {
-                color,
-                span: shift(&tok),
-            });
-            continue;
+        if matches!(tok.kind, Kind::Hash | Kind::Function | Kind::Ident) {
+            match Color::parse(tok.text(src)) {
+                Ok(color) => {
+                    facts.colors.push(LocatedColor {
+                        color,
+                        span: shift(&tok),
+                    });
+                    continue;
+                }
+                Err(error) if looks_like_color(tok.kind, tok.text(src)) => {
+                    tracing::debug!(%error, "value facts: unreadable colour literal");
+                    // Falls through: a `var()` nested in the literal is still a reference.
+                    facts.unreadable_colors.push(shift(&tok));
+                }
+                Err(_) => {}
+            }
         }
         if tok.kind == Kind::Function {
             let mut nested = Vec::new();
