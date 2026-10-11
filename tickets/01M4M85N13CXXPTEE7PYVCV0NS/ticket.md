@@ -2,13 +2,13 @@
 id = "01M4M85N13CXXPTEE7PYVCV0NS"
 title = "Mirror issue binding store and ticket branch path lookup"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-11T01:10:25Z"
-updated = "2026-10-11T02:01:36Z"
+updated = "2026-10-11T03:45:27Z"
 
 [[acceptance]]
 text = "Given a ticket on the branch, when its path is asked of the ledger, then it returns the current branch path"
