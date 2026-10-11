@@ -2,7 +2,8 @@
 id = "01M3ZX86MA30ABW915Z943BQYB"
 title = "TICK006 ledger-path-reference with machine fix"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
