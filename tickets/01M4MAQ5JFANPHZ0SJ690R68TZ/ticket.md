@@ -8,7 +8,9 @@ points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-11T01:54:56Z"
-updated = "2026-10-11T16:00:22Z"
+updated = "2026-10-11T16:02:40Z"
+labels = ["creates:.gitattributes"]
+scope = ["crates/gob-dev/**", "docs/reference/**", "docs/schemas/**", ".gitattributes"]
 
 [[links]]
 kind = "discovered-from"
