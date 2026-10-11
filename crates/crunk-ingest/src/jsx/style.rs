@@ -6,6 +6,7 @@
 //! bare number is a declaration; anything computed is exempt, as `var()` values are in CSS.
 
 // frob:ticket 01M43ARYFVG86PAGGM78JGRZY3
+// frob:ticket 01M48NF9E0WTVHPA4XQ3200J6N
 
 use crunk_values::{Length, LengthKind};
 use gob_ir::style;
@@ -148,6 +149,7 @@ pub(super) fn declarations(cx: &Cx<'_>, root_font_size: f64) -> Vec<Declaration>
                     colors: facts.colors,
                     lengths: facts.lengths,
                     var_refs: facts.var_refs,
+                    unreadable_colors: facts.unreadable_colors,
                 }
             }
         };
@@ -185,6 +187,7 @@ fn number(property: &str, text: &str, at: usize, cx: &Cx<'_>) -> Declaration {
         colors: Vec::new(),
         lengths,
         var_refs: Vec::new(),
+        unreadable_colors: Vec::new(),
     }
 }
 

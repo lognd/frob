@@ -1,0 +1,1 @@
+Added the GRL example judge in gob-plan: marker and expect-line parsing per language, fire/clean/unresolved/notapplicable/known-gap verdicts with GRL016 diffs, and fixed-output checks; running a rule over an example is not wired yet.

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T01:54:50Z"
+digest = "e53fe9bd6b119f6d869c70b9a44a114254428024c68cd19dd2e1736fa23ed569"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fd43a96e-e593-4a44-8bb0-c0d02c48abcb with nextest profile: default
+    Starting 1 test across 14 binaries (175 tests skipped)
+        PASS [   0.009s] gob-plan::lower the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 175 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans)'"
+size = 569
+status = "measured"
+tests = ["the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans"]
+at = "2026-10-11T01:54:50Z"
+actor = "lognd"
+rev = 1

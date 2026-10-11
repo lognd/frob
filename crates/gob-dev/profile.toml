@@ -412,3 +412,8 @@ skip = "a long-running stdio MCP server that blocks on stdin; there is no run to
 
 [scenario."crunk serve"]
 skip = "a long-running stdio MCP server that blocks on stdin; there is no run to time (per-tool costs are the underlying read verbs)"
+
+[scenario."frob profile"]
+args = ["profile"]
+exit = [0, 2, 3]
+budget_ms = 500

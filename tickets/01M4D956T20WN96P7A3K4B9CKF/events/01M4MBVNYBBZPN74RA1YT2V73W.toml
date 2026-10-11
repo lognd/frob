@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-11T02:14:51Z"
+digest = "95a93bc27d97c775e3fed77eabcb46f2112dbe078941883c8159eb2cf0044d29"
+exit_code = 0
+inline = '''
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+    Finished `test` profile [unoptimized] target(s) in 1.02s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 937118d4-c5f8-44f0-a010-3820e540004b with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.011s] grimble-lints err::tests::a_discarded_result_is_certain_when_known_and_unknown_otherwise
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints -E 'test(=err::tests::a_discarded_result_is_certain_when_known_and_unknown_otherwise)'"
+size = 703
+status = "measured"
+tests = ["err::tests::a_discarded_result_is_certain_when_known_and_unknown_otherwise"]
+at = "2026-10-11T02:14:51Z"
+actor = "lognd"
+rev = 1

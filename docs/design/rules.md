@@ -368,6 +368,15 @@ section, never dropped.
   fingerprint: (rule id, symref or file path, hash of the normalized
   message), never a line number, so an edit above a baselined finding
   does not make it new.
+- Rule precision ledger (~B2ZBRER). `gob_rules::PrecisionLedger` counts, per
+  rule, findings accepted, waived (`defer`, `hotfix`), dismissed, fixed and
+  still open. The not-useful rate is `(accepted + dismissed)` over every
+  decided finding, in whole percent, and is absent below `MIN_DECIDED` (5)
+  decided findings. `frob check --json` reports the run's rows as
+  `data.precision`; `demotions(ceiling)` names the rules over a ceiling with
+  their numbers. A rule that ships Warn by default needs a measured rate.
+  Recording fixes and dismissals across runs, and the `frob doctor`
+  recommendation, build on this type in later tickets.
 - `--delta` uses a per-checkout `.frob/baseline` of finding fingerprints
   (advisory, untracked), same as v1.
 - `frob land` applies the same fingerprints as a ratchet on the base tip

@@ -4,6 +4,7 @@
 //! `&source[start..end]` is the exact original text at that span.
 
 // frob:ticket 01M43ARY91XZ35DN9SCHRHS033
+// frob:ticket 01M48NF9E0WTVHPA4XQ3200J6N
 
 use std::path::PathBuf;
 
@@ -171,6 +172,9 @@ pub struct Declaration {
     pub lengths: Vec<LocatedLength>,
     /// `var()` references found in the value.
     pub var_refs: Vec<LocatedVarRef>,
+    /// Spans of colour-looking literals in the value that could not be read.
+    #[serde(default)]
+    pub unreadable_colors: Vec<Span>,
 }
 
 /// A file that failed to read or parse; the walk survives and records this.

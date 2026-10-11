@@ -6,6 +6,7 @@
 //! spans. Waivers come from the shared directive scanner.
 
 // frob:ticket 01M43ARY91XZ35DN9SCHRHS033
+// frob:ticket 01M48NF9E0WTVHPA4XQ3200J6N
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -244,6 +245,7 @@ impl Walker<'_> {
             colors: facts.colors,
             lengths: facts.lengths,
             var_refs: facts.var_refs,
+            unreadable_colors: facts.unreadable_colors,
         });
     }
 }
