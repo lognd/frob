@@ -982,6 +982,22 @@ pub fn build_record(
         Stored::Inline(t) => (None, Some(t)),
         Stored::Uri(u) => (Some(u), None),
     };
+    // frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+    // The full name list lives only in the artifact file; the event keeps the count and the list's digest.
+    let (tests, test_count, tests_digest) = if capture.tests.is_empty() {
+        (Vec::new(), None, None)
+    } else {
+        let joined = escape_non_ascii(&scrub.apply(&capture.tests.join("\n")));
+        let count = capture.tests.len() as u64;
+        match store.put_artifact(&joined)? {
+            Some(_) => (Vec::new(), Some(count), Some(digest_hex(joined.as_bytes()))),
+            None => (
+                joined.lines().map(str::to_owned).collect(),
+                Some(count),
+                None,
+            ),
+        }
+    };
     Ok(EvidenceRecord {
         provider,
         reference: scrub.apply(reference),
@@ -996,7 +1012,9 @@ pub fn build_record(
         accepts: accepts.to_vec(),
         passed: capture.measured.then_some(capture.passed),
         exit_code: capture.exit_code,
-        tests: capture.tests.clone(),
+        tests,
+        test_count,
+        tests_digest,
         failed_tests: capture.failed_tests.clone(),
         inline,
         size: redacted.len() as u64,
@@ -1024,6 +1042,8 @@ pub fn hash_file(root: &Path, path: &str, accepts: &[usize], at: Stamp) -> Resul
         passed: None,
         exit_code: None,
         tests: Vec::new(),
+        test_count: None,
+        tests_digest: None,
         failed_tests: Vec::new(),
         inline: None,
         size: bytes.len() as u64,
