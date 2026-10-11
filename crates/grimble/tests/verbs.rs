@@ -335,7 +335,12 @@ fn compile_fails_on_an_unknown_kind() {
         err.contains("GRL001"),
         "text mode prints the diagnostic: {err}"
     );
+}
 
+// frob:ticket 01M4M5CQ9529KH526299QXXFVF
+// frob:tests crates/grimble/src/compile_cmd.rs::Compile
+#[test]
+fn compile_passes_a_valid_file_silently() {
     let dir = repo();
     write(
         dir.path(),
