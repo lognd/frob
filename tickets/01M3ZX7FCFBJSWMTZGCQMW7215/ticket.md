@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-11T21:04:00Z"
+updated = "2026-10-11T21:05:08Z"
 idempotency_key = "m2-grl-verbs"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/verbs/**", "crates/frob/src/rule_cmd.rs", "crates/grimble/src/rule_cmd.rs"]
+scope = ["crates/gob-plan/src/verbs/**", "crates/frob/src/rule_cmd.rs", "crates/grimble/src/rule_cmd.rs", "crates/gob-plan/src/examples/judge.rs"]
 
 [[links]]
 kind = "blocked-by"
