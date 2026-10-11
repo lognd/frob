@@ -2,7 +2,8 @@
 id = "01M3Z713C4RW0T6XK1ZB7VH1B4"
 title = "Exceptions: evaluate until= and add EXC016 and EXC017"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
