@@ -2,13 +2,13 @@
 id = "01M3ZX7EQ5NARR4Z2SAY4H23AQ"
 title = "Plan cost class and node-kind prefilter computation"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-03T03:34:21Z"
+updated = "2026-10-11T15:56:24Z"
 idempotency_key = "m2-plan-cost"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/plan/cost.rs", "crates/gob-plan/src/lower/prefilter.rs"]

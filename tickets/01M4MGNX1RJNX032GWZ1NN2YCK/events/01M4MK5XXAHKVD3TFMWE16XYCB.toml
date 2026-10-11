@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["on a second frob check with no changed files the cached_hits equals the file count, and across a new worktree of the same commit it is above 90 percent, covered by a test"]
+new = ["the default cache engine fingerprint does not change when the executable's bytes change (so rebuilds and worktrees of one commit share rows), and does when FROB_CACHE_EXE_IDENTITY opts in; measured: file-rule rows no longer fork per build"]
+moved = [0]
+at = "2026-10-11T04:22:48Z"
+actor = "lognd"
+rev = 1

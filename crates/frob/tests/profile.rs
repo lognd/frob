@@ -124,3 +124,18 @@ fn third_closed_ticket_suggests_switching_once() {
     assert_eq!(again["data"]["suggested"], false, "{again}");
     assert_eq!(again["data"]["profile"], "newcomer");
 }
+
+// frob:ticket 01M4MMGDBXRGC9X90CZPPSKN6Z
+#[test]
+fn the_closed_count_stops_at_the_suggestion_threshold() {
+    let repo = Repo::new();
+    for t in ["a", "b", "c", "d", "e"] {
+        repo.close_one(t);
+    }
+    let first = repo.ok(&["profile"]);
+    assert_eq!(first["data"]["suggested"], true, "{first}");
+    assert_eq!(
+        first["data"]["closed_by_actor"], 3,
+        "the scan must stop at SUGGEST_AFTER instead of reading every done ticket: {first}"
+    );
+}
