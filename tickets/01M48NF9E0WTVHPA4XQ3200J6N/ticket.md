@@ -2,7 +2,8 @@
 id = "01M48NF9E0WTVHPA4XQ3200J6N"
 title = "crunk-values: CSS Color 4 (oklch, oklab, color(), lab, lch) parsing and OKLab perceptual distance; COLOR001 reports unreadable colours as Unresolved"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
