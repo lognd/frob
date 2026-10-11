@@ -2,13 +2,13 @@
 id = "01M3ZX7DG5711ZSC4R0Y64C78A"
 title = "GRL canonical formatter (rule fmt engine)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:19Z"
-updated = "2026-10-03T03:34:19Z"
+updated = "2026-10-11T00:22:03Z"
 idempotency_key = "m2-grl-fmt"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/grl/fmt.rs"]
