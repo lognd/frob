@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-11T01:54:56Z"
-updated = "2026-10-11T16:02:40Z"
+updated = "2026-10-11T16:28:10Z"
 labels = ["creates:.gitattributes"]
 scope = ["crates/gob-dev/**", "docs/reference/**", "docs/schemas/**", ".gitattributes"]
 
@@ -18,7 +18,7 @@ target = "01M3ZX85N2KZ39PG65MX0YT2P0"
 
 [[acceptance]]
 text = "Given a generated page, when checked, then its first line matches the three-field marker and a visible line follows the title"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a generated file whose marker version differs from the generator, when checked, then GEN001 warns"
