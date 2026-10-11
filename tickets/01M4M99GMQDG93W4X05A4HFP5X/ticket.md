@@ -2,7 +2,8 @@
 id = "01M4M99GMQDG93W4X05A4HFP5X"
 title = "Run GRL examples through the executor: build the example model and feed the example judge"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
