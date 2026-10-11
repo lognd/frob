@@ -15,7 +15,7 @@ use frob_ledger::model::{Category, Outcome, TicketType};
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig, TicketId};
 use frob_pm::rules::{
-    cycle, cycle_plan, good_first, membership::evaluate, milestone, replenish, wip,
+    cycle, cycle_plan, good_first, membership::evaluate, milestone, pm032, replenish, wip,
 };
 use frob_pm::{NewObject, ObjectKind, PmStore, State, event::Op};
 use gob_git::{CommitOptions, RelPath, Repo};
@@ -171,6 +171,7 @@ fn new_ticket(
 }
 
 /// Build the ledger a block describes and evaluate the block's rule (`PM034`, `PM001`, `PM002`, `PM010`-`PM013`, `PM033` or `PM036`) over it.
+#[allow(clippy::too_many_lines)] // a flat per-rule dispatch table
 fn runner(case: &Case) -> Vec<Finding> {
     // frob:tests crates/frob-pm/src/rules/membership.rs::pm034
     // frob:tests crates/frob-pm/src/rules/membership.rs::evaluate
@@ -180,6 +181,7 @@ fn runner(case: &Case) -> Vec<Finding> {
     let mut keys: BTreeMap<String, TicketId> = BTreeMap::new();
     let mut limit = 0_u32;
     let mut ready_min = 0_u32;
+    let mut good_first_min = pm032::DEFAULT_MIN;
     let mut good_first_max = good_first::DEFAULT_MAX_POINTS;
     let mut expedite_max = 1_u32;
     let mut live: BTreeSet<TicketId> = BTreeSet::new();
@@ -208,6 +210,7 @@ fn runner(case: &Case) -> Vec<Finding> {
             }
             "limit" => limit = w[1].parse().expect("limit"),
             "good_first_max" => good_first_max = w[1].parse().expect("good_first_max"),
+            "good_first_min" => good_first_min = w[1].parse().expect("good_first_min"),
             "ready_min" => ready_min = w[1].parse().expect("ready_min"),
             "expedite_max" => expedite_max = w[1].parse().expect("expedite_max"),
             "ready_requires" => {
@@ -273,6 +276,14 @@ fn runner(case: &Case) -> Vec<Finding> {
             .expect("evaluate")
             .findings;
     }
+    if case.rule.to_string() == "PM032" {
+        // frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
+        // frob:tests crates/frob-pm/src/rules/pm032.rs::pm032
+        // frob:tests crates/frob-pm/src/rules/pm032.rs::evaluate
+        return pm032::evaluate(&ledger, &NoLeases, good_first_min)
+            .expect("evaluate")
+            .findings;
+    }
     if case.rule.to_string() == "PM033" {
         // frob:tests crates/frob-pm/src/rules/replenish.rs::pm033
         // frob:tests crates/frob-pm/src/rules/replenish.rs::evaluate
@@ -321,6 +332,7 @@ corpus_file!(pm011, "pm011.md");
 corpus_file!(pm012, "pm012.md");
 corpus_file!(pm013, "pm013.md");
 corpus_file!(pm031, "pm031.md");
+corpus_file!(pm032, "pm032.md");
 corpus_file!(pm033, "pm033.md");
 corpus_file!(pm034, "pm034.md");
 corpus_file!(pm036, "pm036.md");
@@ -340,7 +352,7 @@ fn every_corpus_file_has_a_test() {
         files,
         [
             "pm001.md", "pm002.md", "pm010.md", "pm011.md", "pm012.md", "pm013.md", "pm031.md",
-            "pm033.md", "pm034.md", "pm036.md"
+            "pm032.md", "pm033.md", "pm034.md", "pm036.md"
         ],
         "corpus files and corpus_file! lines must match"
     );
@@ -368,4 +380,45 @@ fn pm031_message_names_every_missing_part() {
     assert!(m.contains("5 points exceed the maximum of 2"), "{m}");
     assert!(m.contains("no `## Start here` section"), "{m}");
     assert!(!m.contains("no scope"), "{m}");
+}
+
+/// A ledger with `n` ready good-first tickets.
+// frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
+fn pm032_ledger(dir: &std::path::Path, n: usize) -> Ledger {
+    let ledger = ledger(dir);
+    for i in 0..n {
+        let key = format!("t{i}");
+        let w = ["task", key.as_str()];
+        let t = new_ticket(&w, &opts(&["labels=good-first"]), &BTreeMap::new());
+        ledger.new_ticket(t).expect("ticket");
+    }
+    ledger
+}
+
+// frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
+/// Two ready good-first tickets against the default minimum 3 warn with both numbers.
+#[test]
+fn pm032_two_ready_warns_with_count_and_minimum() {
+    // frob:tests crates/frob-pm/src/rules/pm032.rs::evaluate
+    let dir = tempfile::tempdir().expect("tempdir");
+    let ledger = pm032_ledger(dir.path(), 2);
+    let found = pm032::evaluate(&ledger, &NoLeases, pm032::DEFAULT_MIN)
+        .expect("evaluate")
+        .findings;
+    assert_eq!(found.len(), 1);
+    let m = &found[0].message;
+    assert!(m.contains("2 ready") && m.contains("minimum of 3"), "{m}");
+}
+
+// frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
+/// Three ready good-first tickets meet the minimum and do not fire.
+#[test]
+fn pm032_three_ready_is_silent() {
+    // frob:tests crates/frob-pm/src/rules/pm032.rs::evaluate
+    let dir = tempfile::tempdir().expect("tempdir");
+    let ledger = pm032_ledger(dir.path(), 3);
+    let found = pm032::evaluate(&ledger, &NoLeases, pm032::DEFAULT_MIN)
+        .expect("evaluate")
+        .findings;
+    assert!(found.is_empty(), "{found:?}");
 }

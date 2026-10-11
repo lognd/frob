@@ -729,6 +729,13 @@
           "minimum": 0,
           "type": "integer"
         },
+        "good_first_min": {
+          "default": 3,
+          "description": "Fewest ready good-first tickets before PM032 warns; 0 turns the rule off (`navigation.md` section 4.2).",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
         "handle_min_len": {
           "default": 7,
           "description": "Shortest ticket handle shown (`~` plus this many id characters).",
