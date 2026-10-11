@@ -8,7 +8,11 @@ points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-11T01:54:56Z"
-updated = "2026-10-11T02:01:31Z"
+updated = "2026-10-11T02:01:32Z"
+
+[[links]]
+kind = "discovered-from"
+target = "01M3ZX85N2KZ39PG65MX0YT2P0"
 
 [[acceptance]]
 text = "Given a generated page, when checked, then its first line matches the three-field marker and a visible line follows the title"
