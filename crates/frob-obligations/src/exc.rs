@@ -311,3 +311,83 @@ pub(crate) fn resolve(
     }
     resolved
 }
+
+#[cfg(test)]
+mod tests {
+    use gob_text::{TextRange, TextSize};
+
+    use super::*;
+
+    fn bound(kind: ExceptionKind, files: &mut FileInterner) -> Bound {
+        let file = files.intern("a.rs");
+        Bound {
+            inner: BoundException {
+                exception: Exception {
+                    kind,
+                    rule: "COV001".parse().unwrap(),
+                    reason: "a reason long enough".into(),
+                    ticket: None,
+                    until: None,
+                },
+                path: "a.rs".into(),
+                range: None,
+            },
+            at: Span::new(file, TextRange::new(TextSize::new(0), TextSize::new(5))),
+            symref: Symref::file("a.rs"),
+        }
+    }
+
+    fn unresolved(files: &mut FileInterner) -> Finding {
+        let file = files.intern("a.rs");
+        let span = Span::new(file, TextRange::new(TextSize::new(10), TextSize::new(12)));
+        Finding::new(
+            "COV001".parse().unwrap(),
+            Severity::Unresolved,
+            Some(span),
+            "could not examine",
+            "a.rs",
+        )
+    }
+
+    // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+    #[test]
+    fn an_accept_cannot_park_an_unresolved_finding() {
+        let mut files = FileInterner::new();
+        let b = vec![bound(ExceptionKind::Accept, &mut files)];
+        let raw = vec![unresolved(&mut files)];
+        let ex = vec![b[0].inner.clone()];
+        let r = apply_in_force(raw, &ex, &files, &b);
+        assert!(r.suppressed.is_empty());
+        let ids: Vec<&str> = r.findings.iter().map(|f| f.rule.as_str()).collect();
+        assert_eq!(ids, vec!["EXC016", "COV001"]);
+    }
+
+    // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+    #[test]
+    fn a_defer_still_parks_an_unresolved_finding() {
+        let mut files = FileInterner::new();
+        let b = vec![bound(ExceptionKind::Defer, &mut files)];
+        let raw = vec![unresolved(&mut files)];
+        let ex = vec![b[0].inner.clone()];
+        let r = apply_in_force(raw, &ex, &files, &b);
+        assert!(r.findings.is_empty());
+        assert_eq!(r.suppressed.len(), 1);
+    }
+
+    // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+    #[test]
+    fn only_a_past_defer_day_lapses() {
+        let today: Day = "2026-10-10".parse().unwrap();
+        let mut files = FileInterner::new();
+        let mut b = bound(ExceptionKind::Defer, &mut files);
+        let mut check = |u: Option<&str>| {
+            b.inner.exception.until = u.map(str::to_owned);
+            lapse(&b.inner.exception, today)
+        };
+        assert_eq!(check(None), Lapse::Live);
+        assert_eq!(check(Some("2026-10-10")), Lapse::Live);
+        assert!(matches!(check(Some("2026-10-09")), Lapse::Expired(_)));
+        assert_eq!(check(Some("ticket-closed:x")), Lapse::Live);
+        assert_eq!(check(Some("soon")), Lapse::Malformed);
+    }
+}

@@ -390,7 +390,6 @@ pub(crate) fn collect(
         .clock
         .clone()
         .unwrap_or_else(|| Arc::new(gob_time::SystemClock::pin()));
-    // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
     let today = clock.today();
     let configured = tickets_configured(root);
     let (ledger, ledger_error, ledger_missing) =

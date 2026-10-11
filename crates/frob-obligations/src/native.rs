@@ -164,7 +164,11 @@ pub(crate) fn exc017(
         .collect();
     let mut out = Vec::new();
     for path in paths {
-        if Language::detect(&path).is_none() || path.ends_with(".md") {
+        if Language::detect(&path).is_none()
+            || Path::new(&path)
+                .extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("md"))
+        {
             continue;
         }
         let full = root.join(&path);
