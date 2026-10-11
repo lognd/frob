@@ -3,11 +3,13 @@
 //!
 //! This layer is pure: it reads marker comments and `expect` lines, takes the findings a run
 //! produced as plain [`Actual`] values and says pass or GRL016 with the expected-versus-actual
-//! diff. Producing those findings (lowering the rule, building the example's model, running the
-//! executor) is the caller's job.
+//! diff. [`runner`] produces those findings: it lowers the rule, builds the example's model, runs
+//! the executor and hands the result to the judge.
 
 pub mod judge;
 pub mod markers;
+pub mod runner;
 
 pub use judge::{ExampleResult, GRL016, judge, judge_fixed};
 pub use markers::{Actual, Expected, Level, Mark, expect_line, parse_markers};
+pub use runner::{RunError, run_example};
