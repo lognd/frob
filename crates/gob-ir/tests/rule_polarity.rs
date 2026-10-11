@@ -6,7 +6,6 @@
 //! part is enumerated: each `Violation` and each certified `Clean` must hold in every completion
 //! (soundness, including the downgrade of a careless `Exact` answer computed through poison), and
 //! a structure with no opaque cone must never produce an `Unresolved` verdict (exactness).
-// frob:ticket 01M4D6NVK70SB76M5EQ3RECX85
 #![allow(
     clippy::redundant_closure_for_method_calls,
     reason = "a method path is not higher-ranked over the context lifetime"
@@ -24,6 +23,7 @@ use gob_rules::RuleId;
 use proptest::prelude::*;
 use support::B;
 
+// frob:ticket 01M4D6NVK70SB76M5EQ3RECX85
 const MAX_SUBJECTS: usize = 4;
 
 /// One generated function: whether it calls the target and whether it holds an opaque cone.
