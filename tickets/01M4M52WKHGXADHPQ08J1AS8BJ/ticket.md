@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTE0GYDX0XW64JRNF2ZMQG"
 reporter = "lognd"
 created = "2026-10-11T00:16:28Z"
-updated = "2026-10-11T02:39:40Z"
+updated = "2026-10-11T02:43:16Z"
 scope = ["crates/gob-fs/**", "crates/gob-cache/**", "crates/gob-exec/**", "clippy.toml"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given gob-fs, when git_common_dir is called on a primary checkout, a linked worktree and a plain directory, then it returns the canonical shared .git dir for the first two and None for the last (test a_linked_worktree_and_its_primary_share_one_common_dir_and_a_plain_dir_has_none)"
-bound = false
+bound = true
 +++
 
 Split from ~NF2ZMQG. gob-cache uses gob_exec::canonical and re-implements git common-dir discovery (lib.rs 222-244). Move both to gob-fs and re-export from gob-exec. Acceptance: no gob-cache -> gob-exec edge in cargo metadata.
