@@ -997,7 +997,7 @@ mod tests {
         let pkgs = meta["packages"].as_array().unwrap();
         let unpublished: BTreeSet<&str> = pkgs
             .iter()
-            .filter(|p| p["publish"].as_array().is_some_and(|l| l.is_empty()))
+            .filter(|p| p["publish"].as_array().is_some_and(Vec::is_empty))
             .map(|p| p["name"].as_str().unwrap())
             .collect();
         for p in pkgs
