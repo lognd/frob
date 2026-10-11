@@ -14,8 +14,9 @@ const OLDEST_VERSION: u32 = 1;
 /// The digest scheme a version-1 file is taken to use when it does not say (code-model.md 2).
 const LEGACY_SCHEME: u32 = 1;
 
-/// The digest scheme this build computes and expects in a current lock (the gob-ir scheme).
-pub const DIGEST_SCHEME: u32 = gob_ir::DIGEST_SCHEME;
+// frob:ticket 01M4M52WDAB9VH3PJ2VDF2JFRY
+/// The digest scheme this build computes and expects in a current lock (the gob-caps scheme).
+pub const DIGEST_SCHEME: u32 = gob_caps::DIGEST_SCHEME;
 
 /// The lock file name of `product` (`frob` gives `frob.lock`).
 pub fn file_name(product: &str) -> String {

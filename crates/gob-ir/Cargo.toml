@@ -10,6 +10,7 @@ authors.workspace = true
 
 [dependencies]
 blake3 = "1"
+gob-caps = { version = "0.532.0", path = "../gob-caps" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
