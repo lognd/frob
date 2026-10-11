@@ -2,13 +2,13 @@
 id = "01M3ZEH464EFCFAZ4XDKE89D5Z"
 title = "gob-languages: add Language::Grmb with wildcard arms in the two comment scanners"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T23:17:29Z"
-updated = "2026-10-02T23:17:29Z"
+updated = "2026-10-11T16:57:18Z"
 idempotency_key = "m2-language-grmb"
 labels = ["milestone:2"]
 scope = ["crates/gob-languages/**", "crates/gob-directives/src/comments.rs", "crates/frob-obligations/src/comments.rs"]
