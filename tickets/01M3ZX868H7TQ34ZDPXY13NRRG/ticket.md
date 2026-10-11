@@ -8,10 +8,10 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:45Z"
-updated = "2026-10-11T20:56:41Z"
+updated = "2026-10-11T20:56:42Z"
 idempotency_key = "m2-nav-gen-by-id"
 labels = ["milestone:2", "area:navigation"]
-scope = ["crates/frob-ledger/src/gen/by_id.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/reindex.rs"]
+scope = ["crates/frob-ledger/src/gen/by_id.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/reindex.rs", "crates/frob-ledger/src/ops.rs"]
 
 [[links]]
 kind = "blocked-by"
