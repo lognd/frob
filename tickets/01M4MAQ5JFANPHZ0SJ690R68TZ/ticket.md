@@ -2,7 +2,8 @@
 id = "01M4MAQ5JFANPHZ0SJ690R68TZ"
 title = "Generator framework remainder: versioned marker, visible line, linguist-generated, stale-version warning"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
