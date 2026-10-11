@@ -2,12 +2,12 @@
 id = "01M4MNBNM0WGTXGH93PEV48F78"
 title = "Normalize source mtimes on worktree and land-checkout creation so shared-target builds compile zero workspace crates"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T05:00:53Z"
-updated = "2026-10-11T05:00:53Z"
+updated = "2026-10-11T15:56:22Z"
 scope = ["crates/frob-worktree/src/work.rs", "crates/frob-land/src/ratchet.rs"]
 
 [[acceptance]]
