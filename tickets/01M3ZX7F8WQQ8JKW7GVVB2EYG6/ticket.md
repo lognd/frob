@@ -2,7 +2,8 @@
 id = "01M3ZX7F8WQQ8JKW7GVVB2EYG6"
 title = "Example runner: fire, clean, unresolved, notapplicable, known-gap, fixed"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
