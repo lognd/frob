@@ -331,3 +331,35 @@ Three binaries, 24 substrate crates (gob-dev included), 16 frob crates,
   crate spawn through it.
 - Only `gob-serve`, `frob-serve`, `grimble-serve` and `frob-gh` use
   tokio.
+
+<!-- frob:ticket 01M4CTE1SS9RQ0JB8BNCJXZJ2V -->
+### 6.1 Layer table
+
+`crates/gob-dev/tests/layering.rs` reads this table and walks the
+normal and build dependencies from `cargo metadata`. A crate may depend
+only on crates in a strictly lower layer, and on its own product or
+`gob-*` (a `gob-*` crate on `gob-*` only). A new edge that breaks either
+rule fails the test and names both crates and their layers. The few
+edges that break the table today are listed in the test with the ticket
+that removes each; fixing one makes its row stale, and the stale row
+fails the test. Every workspace crate must appear here exactly once.
+
+| Layer | Name | Crates |
+|---|---|---|
+| 0 | base | crunk-values, gob-caps, gob-fs, gob-log, gob-macros, gob-packs, gob-text, gob-time |
+| 1 | io | gob-cache, gob-exec, gob-languages, gob-lock, gob-walk |
+| 2 | repo | gob-git, gob-trust |
+| 3 | model | gob-ir |
+| 4 | rules | gob-rules, gob-symbols |
+| 5 | config | gob-config, gob-diagnostics, gob-frameworks, gob-plan |
+| 6 | pipeline | gob-check, gob-cli, gob-directives, gob-mdtest, gob-testsupport |
+| 7 | product base | crunk-spec, crunk-tailwind, frob-ack, frob-ledger, gob-product, grimble-lints, grimble-model |
+| 8 | product core | crunk-ingest, crunk-tokens, frob-lease, frob-pm, grimble-bind |
+| 9 | product mid | crunk-rules, frob-release, frob-worktree, grimble-check |
+| 10 | product upper | crunk-check, frob-evidence, frob-gh, grimble |
+| 11 | product top | crunk, frob-tests |
+| 12 | obligations | frob-obligations |
+| 13 | check | frob-check |
+| 14 | land | frob-land |
+| 15 | binary | frob-cli |
+| 16 | tool | gob-dev |
