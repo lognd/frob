@@ -382,6 +382,50 @@ fn guard_hides_overlapping_tickets() {
     );
 }
 
+// frob:ticket 01M4MGNX6AWFK18T5YJ566VMKA
+// frob:tests crates/frob-lease/src/guard.rs::LeaseGuard
+/// `ticket doable` asks the guard once per candidate: 2,000 candidates against 8 live leases
+/// must stay interactive (a debug build took about 9 s before compiled globs were reused).
+#[test]
+fn guard_answers_two_thousand_candidates_quickly() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    for c in 0..40 {
+        for f in 0..5 {
+            write(dir.path(), &format!("crates/c{c}/src/f{f}.rs"));
+        }
+    }
+    let store = store_in(dir.path(), LeaseConfig::default());
+    for held in 0..8 {
+        store
+            .acquire(
+                TicketId::mint(),
+                &holder(&format!("h{held}")),
+                &scope(&[&format!("crates/c{held}/**")]),
+            )
+            .expect("lease");
+    }
+    let guard = LeaseGuard::new(store).expect("guard");
+    let started = std::time::Instant::now();
+    let mut free = 0;
+    for n in 0..2000 {
+        let c = n % 40;
+        let globs = [
+            format!("crates/c{c}/**"),
+            format!("crates/c{c}/src/f{}.rs", n % 5),
+            format!("docs/page{}.md", n % 7),
+        ];
+        if guard.is_free(&summary(TicketId::mint()), &globs) {
+            free += 1;
+        }
+    }
+    let took = started.elapsed();
+    assert_eq!(free, 2000 / 40 * 32, "tickets in crates c0..c7 are hidden");
+    assert!(
+        took < std::time::Duration::from_secs(1),
+        "2,000 candidates took {took:?}"
+    );
+}
+
 #[test]
 fn scope001_flags_outside_paths_only() {
     let dir = tempfile::tempdir().expect("tempdir");
