@@ -7,7 +7,7 @@ use frob_ack::{Affect001, Drift001, Drift002, Drift003};
 use frob_lease::{LeaseConfig, LeaseStore};
 use frob_ledger::TicketId;
 use frob_ledger::guards::{LeaseCheck, NoLeases};
-use frob_ledger::rules::{Tick001, Tick003, Tick004, Tick005};
+use frob_ledger::rules::{Tick001, Tick003, Tick004, Tick005, Tick007};
 use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
@@ -153,7 +153,7 @@ fn ledger_of<'a>(
 /// `TICK001` and `TICK003` from the ledger doctor and `TICK004` from the home-path scan (read-only); empty without a ledger.
 // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
 fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
-    const ALL: &[&str] = &["TICK001", "TICK003", "TICK004", "TICK005"];
+    const ALL: &[&str] = &["TICK001", "TICK003", "TICK004", "TICK005", "TICK007"];
     // frob:ticket 01M44VQ57WQW4G5JTZDDYEVJPW
     if let Some(why) = &inputs.ledger_missing {
         // One finding for the whole absent ledger, carried by the ledger doctor's first rule.
@@ -175,6 +175,11 @@ fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
             .home_path_findings()
             .map_err(|e| failed(&["TICK004"], e)),
         private_term_findings(inputs, state),
+        // frob:ticket 01M3ZX86R5V67MT726K3X7KVWM
+        state
+            .ledger
+            .reindex_replay_findings()
+            .map_err(|e| failed(&["TICK007"], e)),
     ])
 }
 
@@ -534,6 +539,7 @@ impl Product for Frob {
                     Tick003.meta(),
                     Tick004.meta(),
                     Tick005.meta(),
+                    Tick007.meta(),
                 ],
                 |s: &Snapshot<Self>, _| ledger_findings(&s.inputs),
             ),

@@ -208,6 +208,7 @@
 | [TICK004](TICK004.md) | absolute-home-path | error | deterministic | P+ | false | A committed ledger file holds an absolute home path. |
 | [TICK005](TICK005.md) | private-term | error | deterministic | P+ | false | A committed ledger file or changelog fragment holds a private term. |
 | [TICK006](TICK006.md) | ledger-path-reference | error | deterministic | P+ | false | Hand-written text links to a ticket-branch path instead of the ticket's ULID. |
+| [TICK007](TICK007.md) | reindex-not-pure | error | manual | P+ | false | A reindex commit is not what the pure reindex of its parent tree produces. |
 
 ## TODO
 

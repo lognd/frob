@@ -129,6 +129,11 @@ ticket = "~C5DQ4WJ"
 
 [[gap]]
 product = "frob"
+rule = "TICK007"
+ticket = "~C5DQ4WJ"
+
+[[gap]]
+product = "frob"
 rule = "TOOL001"
 ticket = "~C5DQ4WJ"
 

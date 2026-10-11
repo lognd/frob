@@ -27,7 +27,7 @@ pub use read::{Head, Repo, WorktreeInfo};
 pub use relpath::RelPath;
 pub use spawn::SpawnClass;
 pub use status::{ChangeKind, ChangedPath, StatusEntry, StatusKind, StatusOptions, TreeRef};
-pub use tag::TagInfo;
+pub use tag::{CommitInfo, TagInfo};
 
 /// A git object id (SHA-1 today); re-exported from gix.
 pub use gix::ObjectId as Oid;

@@ -7,6 +7,20 @@ use tracing::{debug, info};
 use crate::read::odb_err;
 use crate::{GitError, Oid, Repo};
 
+/// A commit read for history checks: its parents, tree and full message.
+// frob:ticket 01M3ZX86R5V67MT726K3X7KVWM
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommitInfo {
+    /// The commit id.
+    pub id: Oid,
+    /// Parent ids in order.
+    pub parents: Vec<Oid>,
+    /// The root tree id.
+    pub tree: Oid,
+    /// The full commit message.
+    pub message: String,
+}
+
 /// An existing tag: the ref's own object and the commit it ends at.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TagInfo {
@@ -143,6 +157,39 @@ impl Repo {
             out.push((info.id, subject));
         }
         debug!(rev, count = out.len(), "first-parent subjects read");
+        Ok(out)
+    }
+
+    /// The newest `limit` first-parent commits of `rev` with their parents, tree and full message.
+    ///
+    /// # Errors
+    ///
+    /// [`GitError`] when `rev` does not resolve or an object cannot be read.
+    // frob:ticket 01M3ZX86R5V67MT726K3X7KVWM
+    pub fn first_parent_commits(
+        &self,
+        rev: &str,
+        limit: usize,
+    ) -> Result<Vec<CommitInfo>, GitError> {
+        let tip = self.rev_parse(rev)?;
+        let walk = self
+            .gix
+            .rev_walk([tip])
+            .first_parent_only()
+            .all()
+            .map_err(odb_err)?;
+        let mut out = Vec::new();
+        for info in walk.take(limit) {
+            let info = info.map_err(odb_err)?;
+            let commit = self.gix.find_commit(info.id).map_err(odb_err)?;
+            out.push(CommitInfo {
+                id: info.id,
+                parents: commit.parent_ids().map(gix::Id::detach).collect(),
+                tree: commit.tree_id().map_err(odb_err)?.detach(),
+                message: commit.message_raw_sloppy().to_str_lossy().into_owned(),
+            });
+        }
+        debug!(rev, count = out.len(), "first-parent commits read");
         Ok(out)
     }
 }

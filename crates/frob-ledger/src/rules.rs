@@ -103,6 +103,25 @@ pub struct Tick004;
 )]
 pub struct Tick005;
 
+/// A reindex commit is not what the pure reindex of its parent tree produces.
+///
+/// Replaying the reindex in memory on the parent commit's tree with the frob version named in the commit's
+/// `Frob-Reindex` trailer must give the commit's own tree; a difference means a hand edit rode in on a reindex
+/// commit. When that version is not the one running, the result is Unresolved with reason `generator-version`.
+// frob:ticket 01M3ZX86R5V67MT726K3X7KVWM
+#[derive(Debug, Clone, Copy, Default, Rule)]
+#[rule(
+    id = "TICK007",
+    slug = "reindex-not-pure",
+    family = "TICK",
+    severity = Error,
+    tier = Universal,
+    scope = Repo,
+    fix = Manual,
+    version = 1
+)]
+pub struct Tick007;
+
 pub(crate) fn id_of<R: Rule>(rule: &R) -> RuleId {
     rule.meta()
         .rule_id()
