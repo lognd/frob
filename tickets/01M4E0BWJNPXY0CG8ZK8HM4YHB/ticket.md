@@ -2,13 +2,14 @@
 id = "01M4E0BWJNPXY0CG8ZK8HM4YHB"
 title = "soundness proptest: model within N as a budget (truncation is Unknown), not as a path of at most N steps"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T14:58:34Z"
-updated = "2026-10-11T17:23:33Z"
+updated = "2026-10-11T17:24:28Z"
 scope = ["changelog.d/**", "crates/gob-ir/tests/**"]
 
 [[acceptance]]
