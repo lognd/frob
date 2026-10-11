@@ -2,13 +2,13 @@
 id = "01M4M2JEYVCFSJ86PJ74VTM1FH"
 title = "CI uploads the nextest junit report as an artifact when the nextest step fails, so failing tests can be read without log access"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-10T23:32:33Z"
-updated = "2026-10-10T23:32:33Z"
+updated = "2026-10-11T03:19:08Z"
 scope = [".github/workflows/ci.yml"]
 
 [[acceptance]]
