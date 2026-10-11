@@ -8,11 +8,11 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T12:07:32Z"
-updated = "2026-10-08T12:07:32Z"
+updated = "2026-10-11T15:56:41Z"
 scope = ["changelog.d/**", "crates/gob-symbols/**", "crates/crunk-ingest/**"]
 
 [[acceptance]]
-text = "Given const y = ;, when parsed, then a parse-error hole exists and crunk reports the JSX syntax error"
+text = "Given a numeric style value, when crunk-ingest lowers it, then it uses gob_symbols::numeric_raw and the single gob_symbols unitless list (no duplicate list in crunk-ingest)"
 bound = false
 +++
 
