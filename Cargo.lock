@@ -2851,6 +2851,7 @@ dependencies = [
  "gob-text",
  "thiserror",
  "tracing",
+ "tree-sitter",
 ]
 
 [[package]]
