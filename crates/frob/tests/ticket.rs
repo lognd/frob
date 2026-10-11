@@ -760,3 +760,35 @@ fn list_full_emits_every_ticket_with_its_events_and_aliases_in_one_call() {
     assert!(kinds(&a).contains(&"comment".to_owned()), "{:?}", kinds(&a));
     assert!(!kinds(&b).contains(&"comment".to_owned()));
 }
+
+// frob:ticket 01M3ZX85H7VX2XFX1T663BD9NG
+#[test]
+fn ticket_file_path_is_refused_with_the_handle_it_names() {
+    let repo = Repo::new(false);
+    let id = repo.id_of(&["ticket", "new", "--title", "pathy"]);
+    let handle = repo.ok(&["ticket", "show", &id])["data"]["summary"]["handle"]
+        .as_str()
+        .expect("handle")
+        .to_owned();
+    let path = format!("tickets/{id}/ticket.md");
+    let out = repo.frob(&["ticket", "show", &path]);
+    assert_eq!(code(&out), 2);
+    let v = json(&out);
+    assert_eq!(v["error"]["code"], "E-TICKET-PATH");
+    let msg = v["error"]["message"].as_str().expect("message");
+    assert_eq!(msg, format!("that file is {handle}; pass the id"));
+}
+
+// frob:ticket 01M3ZX85H7VX2XFX1T663BD9NG
+#[test]
+fn handle_ulid_and_alias_still_resolve() {
+    let repo = Repo::new(false);
+    let id = repo.id_of(&["ticket", "new", "--title", "plain", "--alias", "T-0007"]);
+    let handle = repo.ok(&["ticket", "show", &id])["data"]["summary"]["handle"]
+        .as_str()
+        .expect("handle")
+        .to_owned();
+    for arg in [id.as_str(), handle.as_str(), "T-0007"] {
+        assert_eq!(code(&repo.frob(&["ticket", "show", arg])), 0, "{arg}");
+    }
+}

@@ -2,13 +2,14 @@
 id = "01M3Z713C4RW0T6XK1ZB7VH1B4"
 title = "Exceptions: evaluate until= and add EXC016 and EXC017"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-11T00:52:01Z"
+updated = "2026-10-11T01:04:11Z"
 idempotency_key = "m2-excuntil"
 labels = ["milestone:2", "creates:changelog.d/*.md"]
 scope = ["crates/frob-obligations/**", "crates/gob-rules/**", "crates/frob-check/src/snapshot.rs", "crates/frob-check/src/product.rs", "docs/design/exceptions.md", "docs/reference/rules/EXC0*.md", "docs/reference/rules/README.md", "changelog.d/*.md"]

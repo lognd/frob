@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the section 12 rules that need no snippets, when lowered, then a plan results for each", "Given the same clauses written in two different orders, when lowered, then the plans are byte-identical"]
+new = ["Given the same clauses written in two different orders, when lowered, then the plans are byte-identical", "Given the section 12 fixtures built only from covered constructs (CAP001, CI002), when lowered, then a validated plan results for each and every other fixture is refused with an Unsupported error naming the construct"]
+moved = [0, 1]
+at = "2026-10-11T01:54:40Z"
+actor = "lognd"
+rev = 1

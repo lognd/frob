@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T02:09:09Z"
+digest = "c0f55dc2a4d05890d594c3a0e9d2d7bd2dfb9afaf31026a1f4339304bd44365f"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d28766f7-a788-4fbd-947e-b077c2d6f854 with nextest profile: default
+    Starting 1 test across 15 binaries (178 tests skipped)
+        PASS [   0.006s] gob-plan::grammar_ambiguity reaches_via_inside_any_parses_each_item_separately
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 178 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=reaches_via_inside_any_parses_each_item_separately)'"
+size = 560
+status = "measured"
+tests = ["reaches_via_inside_any_parses_each_item_separately"]
+at = "2026-10-11T02:09:09Z"
+actor = "lognd"
+rev = 1

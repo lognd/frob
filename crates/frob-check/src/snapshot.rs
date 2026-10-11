@@ -88,6 +88,12 @@ pub struct FrobInputs {
     pub(crate) tickets_configured: bool,
     /// True when the caller declared the checked ticket exempt from the changelog fragment.
     pub(crate) changelog_exempt: bool,
+    // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+    /// Tool ids bound to frob rules by the `[[check.tool]]` `id_map`s (EXC017).
+    pub(crate) tool_ids: std::collections::BTreeMap<String, gob_rules::RuleId>,
+    // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+    /// The UTC day `until=` dates are compared with, from the pass's one clock.
+    pub(crate) today: gob_time::Day,
 }
 
 impl FrobInputs {
@@ -101,6 +107,8 @@ impl FrobInputs {
             ledger: self.ledger.as_ref().map(|l| &l.ledger),
             files: &self.ack.files,
             config: &self.invariants,
+            today: self.today,
+            tool_ids: &self.tool_ids,
         }
     }
 }
@@ -384,7 +392,7 @@ pub(crate) fn collect(
         .unwrap_or_else(|| Arc::new(gob_time::SystemClock::pin()));
     let configured = tickets_configured(root);
     let (ledger, ledger_error, ledger_missing) =
-        open_ledger(root, ledger_cfg, clock, configured).split();
+        open_ledger(root, ledger_cfg, clock.clone(), configured).split();
     cx.timing.push("ledger", started.elapsed(), true);
     let invariants = InvariantsConfig::load(root)?;
 
@@ -432,6 +440,8 @@ pub(crate) fn collect(
             invariants,
             tickets_configured: configured,
             changelog_exempt: opts.changelog_exempt,
+            tool_ids: frob_obligations::tool_bound_ids(root),
+            today: clock.today(),
         },
         findings: scan_findings,
     })
