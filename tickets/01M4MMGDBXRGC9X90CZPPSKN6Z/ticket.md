@@ -2,13 +2,13 @@
 id = "01M4MMGDBXRGC9X90CZPPSKN6Z"
 title = "CI repair: spelling (wheres), stale crunk rules page, frob profile over its time budget"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T04:46:00Z"
-updated = "2026-10-11T14:17:32Z"
+updated = "2026-10-11T14:17:33Z"
 scope = ["typos.toml", "docs/crunk/rules/README.md", "crates/frob/src/profile_cmd.rs", "crates/frob/tests/profile.rs", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
