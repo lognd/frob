@@ -8,12 +8,12 @@ points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T07:29:37Z"
-updated = "2026-10-11T17:47:57Z"
+updated = "2026-10-11T17:51:07Z"
 scope = ["changelog.d/**", "crates/gob-ir/**"]
 
 [[acceptance]]
 text = "Given a stratum with one poisoned node, when a check reads an unrelated subject, then that subject's verdict is definite"
-bound = false
+bound = true
 +++
 
 Follow-up from ~NZMJSTK.
