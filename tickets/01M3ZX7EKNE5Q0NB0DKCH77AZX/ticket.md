@@ -2,16 +2,16 @@
 id = "01M3ZX7EKNE5Q0NB0DKCH77AZX"
 title = "Lower a checked rule to a plan with a clause-ordering planner"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-03T03:34:21Z"
+updated = "2026-10-11T01:54:50Z"
 idempotency_key = "m2-grl-lower"
-labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/lower/**"]
+labels = ["milestone:2", "area:grl", "creates:crates/gob-plan/tests/lower.rs"]
+scope = ["crates/gob-plan/src/lower/**", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/lower.rs"]
 
 [[links]]
 kind = "blocked-by"
@@ -26,12 +26,12 @@ kind = "blocked-by"
 target = "01M3ZX7EG6S2V48F43HP1GM2NQ"
 
 [[acceptance]]
-text = "Given the section 12 rules that need no snippets, when lowered, then a plan results for each"
-bound = false
+text = "Given the same clauses written in two different orders, when lowered, then the plans are byte-identical"
+bound = true
 
 [[acceptance]]
-text = "Given the same clauses written in two different orders, when lowered, then the plans are byte-identical"
-bound = false
+text = "Given the section 12 fixtures built only from covered constructs (CAP001, CI002), when lowered, then a validated plan results for each and every other fixture is refused with an Unsupported error naming the construct"
+bound = true
 +++
 
 Implements grl-spec.md sections 7.1 and 7.4.

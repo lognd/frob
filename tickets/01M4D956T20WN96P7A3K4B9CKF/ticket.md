@@ -2,21 +2,26 @@
 id = "01M4D956T20WN96P7A3K4B9CKF"
 title = "ERR001-ERR003: empty error handler, discarded fallible result, catch-all that neither rethrows nor logs"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:12:57Z"
-updated = "2026-10-08T08:12:57Z"
-scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**"]
+updated = "2026-10-11T01:46:06Z"
+labels = ["creates:crates/grimble-lints/**"]
+scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**", "Cargo.lock"]
 
 [[acceptance]]
-text = "Given Rust, Python, TS and C# fixtures with an empty catch, let _ = on a Result, except: pass and an empty catch of Exception, when grimble check runs, then each fires once"
+text = "Given Rust, Python, TS and C# fixtures with an empty handler (Err(_) => {}, except: pass, catch {}, catch (Exception) {}) and a Rust let _ = of a known-fallible call, when grimble_lints::err::scan runs, then each yields exactly one site of the right kind (ERR001 or ERR002)"
 bound = false
 
 [[acceptance]]
-text = "Given a handler that logs or rethrows, when checked, then clean; given a callee whose fallibility is Unknown, then ERR002 is Unresolved, never Warn"
+text = "Given a catch-all handler in Python, TS and C# whose body is non-empty and neither rethrows nor logs, when scanned, then one ERR003 site; given one that logs or rethrows, then no site"
+bound = false
+
+[[acceptance]]
+text = "Given a Rust let _ = of a callee whose fallibility the file does not show, when scanned, then the ERR002 site is Certainty::Unknown, never Certain"
 bound = false
 +++
 

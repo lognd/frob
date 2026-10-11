@@ -2,13 +2,14 @@
 id = "01M3ZX87FNRDNXXC2VTYPHN173"
 title = "frob profile newcomer|experienced and .frob/profile.toml"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:46Z"
-updated = "2026-10-11T01:25:55Z"
+updated = "2026-10-11T01:50:27Z"
 idempotency_key = "m2-nav-profile-store"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob/src/profile_cmd.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/tests/profile.rs", "crates/gob-dev/profile.toml", "docs/reference/**", "docs/schemas/**"]
