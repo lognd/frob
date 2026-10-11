@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-11T20:29:05Z"
+updated = "2026-10-11T20:31:53Z"
 idempotency_key = "m2-grl-check-fixes"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/check/fixes.rs", "crates/gob-plan/src/check/mod.rs", "crates/gob-plan/tests/grl_errors/main.rs", "crates/gob-plan/tests/fixes.rs", "docs/reference"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a plugin-pack rule using `fix host add_grant(...)`, when compiled, then GRL015 rejects it because host fixes are std only"
-bound = false
+bound = true
 +++
 
 Implements grl-spec.md section 8; security.md section 2.10.
