@@ -68,4 +68,5 @@
 | `ticket triage snooze` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Snooze tickets: hide them from the inbox until a date. |
 | `ticket unlink` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove a typed link between two tickets; removing a missing link is a no-op. |
 | `ticket update` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Patch fields of a ticket: `--set key=value`, dedicated flags, label, scope and acceptance edits. |
+| `ticket url` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print the current blob URL of the ticket file on the ticket branch, and the mirrored issue URL when one exists. |
 | `work` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Lease a ticket, create its worktree and branch, and move it to in-progress; `--here` leases it for this checkout instead. |
