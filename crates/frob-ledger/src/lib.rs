@@ -71,6 +71,7 @@ pub mod ledger;
 pub mod links;
 pub mod merge;
 pub mod migrate;
+pub mod mirror_map; // frob:ticket 01M4M85N13CXXPTEE7PYVCV0NS
 pub mod model;
 pub mod objects;
 pub mod ops;

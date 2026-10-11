@@ -472,7 +472,7 @@ impl Ledger {
     /// The legacy layout derives it from the id. The ticket-branch layout never trusts a path
     /// as identity: it tries `hint` (the computed path) and falls back to the ULID in each
     /// candidate file's frontmatter.
-    fn ticket_file_at(
+    pub(crate) fn ticket_file_at(
         &self,
         tip: &str,
         id: TicketId,

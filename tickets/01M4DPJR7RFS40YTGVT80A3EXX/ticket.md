@@ -8,16 +8,16 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T12:07:33Z"
-updated = "2026-10-11T03:50:38Z"
+updated = "2026-10-11T04:15:53Z"
 scope = ["changelog.d/**", "crates/gob-walk/**", "crates/crunk-ingest/**"]
 
 [[acceptance]]
 text = "Given the ungoverned scan, when run, then no file is hashed or read through the content source (gob_walk::walk_paths lists paths and sizes only)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given many CSS files, when ingested, then they are parsed in parallel and sheets, diagnostics and stats are identical to the sequential order"
-bound = false
+bound = true
 +++
 
 Follow-ups from ~HRHS033.

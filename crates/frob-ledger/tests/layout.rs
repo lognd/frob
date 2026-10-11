@@ -278,3 +278,59 @@ fn the_merge_driver_finds_a_branch_ticket_by_its_frontmatter_id_and_unions_event
     assert_eq!((layout, got), (Layout::Dir, real));
     assert!(frob_ledger::merge::locate("a/b.md", &["no id here"]).is_err());
 }
+
+// frob:ticket 01M4M85N13CXXPTEE7PYVCV0NS
+#[test]
+fn the_ledger_reports_the_current_branch_path_of_a_ticket() {
+    let (_dir, ledger) = fixture();
+    let epic = ledger
+        .new_ticket(NewTicket::new("Parser Rewrite!", TicketType::Epic))
+        .expect("epic");
+    let mut req = NewTicket::new("Lex the input", TicketType::Task);
+    req.parent = Some(epic.ticket.front.id);
+    let child = ledger.new_ticket(req).expect("child").ticket.front.id;
+    assert_eq!(
+        ledger.ticket_path(child).expect("path").as_deref(),
+        Some("parser-rewrite/lex-the-input.md")
+    );
+    assert_eq!(
+        ledger
+            .ticket_path(epic.ticket.front.id)
+            .expect("path")
+            .as_deref(),
+        Some("parser-rewrite/EPIC.md")
+    );
+}
+
+// frob:ticket 01M4M85N13CXXPTEE7PYVCV0NS
+#[test]
+fn a_mirrored_ticket_reports_its_issue_number_and_an_unmirrored_one_none() {
+    let (_dir, ledger) = fixture();
+    let mirrored = ledger
+        .new_ticket(NewTicket::new("Mirrored", TicketType::Task))
+        .expect("t")
+        .ticket
+        .front
+        .id;
+    let plain = ledger
+        .new_ticket(NewTicket::new("Plain", TicketType::Task))
+        .expect("t")
+        .ticket
+        .front
+        .id;
+    assert_eq!(ledger.mirror_issue(mirrored).expect("read"), None);
+    ledger
+        .repo()
+        .commit_paths(
+            &format!("refs/heads/{BRANCH}"),
+            &[(
+                gob_git::RelPath::new(frob_ledger::mirror_map::shard_path(mirrored)).expect("path"),
+                Some(b"issue = 17\n".to_vec()),
+            )],
+            "mirror: bind issue",
+            &gob_git::CommitOptions::default(),
+        )
+        .expect("commit shard");
+    assert_eq!(ledger.mirror_issue(mirrored).expect("read"), Some(17));
+    assert_eq!(ledger.mirror_issue(plain).expect("read"), None);
+}
