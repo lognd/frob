@@ -1,0 +1,13 @@
+kind = "create"
+title = "frob check file-rules cache hit rate is 23 percent (3157 of 13557 files) in the telemetry; find why the cache misses and make worktrees and unchanged files hit"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
+scope = ["crates/gob-cache/**"]
+acceptance = ["on a second frob check with no changed files the cached_hits equals the file count, and across a new worktree of the same commit it is above 90 percent, covered by a test"]
+body = "measured from .frob/telemetry.jsonl: last run files 13557 cached_hits 3157. Suspect the cache key includes the worktree path or the cache dir is per worktree."
+at = "2026-10-11T03:39:06Z"
+actor = "lognd"
+rev = 1

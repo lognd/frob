@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T03:42:03Z"
+digest = "22615d702d3e1e41f5156560137668ccd4eee671fadf93cb9f992a70df6acd67"
+exit_code = 0
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized] target(s) in 9.37s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 049bb084-a123-4c08-969f-04bee426e28d with nextest profile: ci
+    Starting 1 test across 9 binaries (125 tests skipped)
+        PASS [   0.006s] frob-ledger path_fn::tests::sub_epic_tickets_sit_in_the_top_epic_directory
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 125 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(=path_fn::tests::sub_epic_tickets_sit_in_the_top_epic_directory)'"
+size = 934
+status = "measured"
+tests = ["path_fn::tests::sub_epic_tickets_sit_in_the_top_epic_directory"]
+at = "2026-10-11T03:42:03Z"
+actor = "lognd"
+rev = 1
