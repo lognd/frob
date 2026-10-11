@@ -8,12 +8,12 @@ points = 1
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T12:07:25Z"
-updated = "2026-10-11T16:29:52Z"
+updated = "2026-10-11T16:32:43Z"
 scope = ["changelog.d/**", "crates/frob-pm/**"]
 
 [[acceptance]]
 text = "Given cycle velocity, when traced, then events are read in one batch"
-bound = false
+bound = true
 +++
 
 Follow-up from ~VXFAY3P (769 calls).
