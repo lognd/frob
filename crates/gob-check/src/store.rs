@@ -1,6 +1,6 @@
 //! Cache payloads: findings as JSON free of interner ids (paths instead).
 
-use gob_rules::{Finding, Fix, FixKind, RuleId, Severity, TextEdit};
+use gob_rules::{Applicability, Finding, Fix, FixKind, RuleId, Severity, TextEdit};
 use gob_text::{FileId, FileInterner, Span, TextRange, TextSize};
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +17,8 @@ struct StoredEdit {
 #[derive(Serialize, Deserialize)]
 struct StoredFix {
     kind: FixKind,
+    // frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+    applicability: Applicability,
     title: String,
     edits: Vec<StoredEdit>,
 }
@@ -54,6 +56,8 @@ pub(crate) fn encode(findings: &[Finding], files: &FileInterner) -> Vec<u8> {
             message: f.message.clone(),
             fix: f.fix.as_ref().map(|fix| StoredFix {
                 kind: fix.kind,
+                // frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+                applicability: fix.applicability,
                 title: fix.title.clone(),
                 edits: fix
                     .edits
@@ -109,6 +113,8 @@ pub(crate) fn decode(
             }
             finding = finding.with_fix(Fix {
                 kind: fix.kind,
+                // frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+                applicability: fix.applicability,
                 title: fix.title,
                 edits,
             });

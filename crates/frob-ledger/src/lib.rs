@@ -63,6 +63,8 @@ pub mod doctor;
 pub mod error;
 pub mod event;
 pub mod fold;
+// frob:ticket 01M3ZX868H7TQ34ZDPXY13NRRG
+pub mod r#gen;
 pub mod guards;
 pub mod id;
 pub mod index;

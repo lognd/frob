@@ -1590,6 +1590,63 @@ fn two_lands_back_to_back_from_one_primary_both_succeed_without_failure_warnings
     );
 }
 
+/// Create, pack and delete scratch branches until `stop` is set: the multi-process ref churn a busy primary sees.
+fn churn_refs(root: &Path, stop: &std::sync::atomic::AtomicBool) {
+    let run = |args: &[&str]| {
+        let _ = std::process::Command::new("git")
+            .args(args)
+            .current_dir(root)
+            .env("GIT_CONFIG_GLOBAL", "/dev/null")
+            .env("GIT_CONFIG_SYSTEM", "/dev/null")
+            .output();
+    };
+    let mut n = 0_u32;
+    while !stop.load(std::sync::atomic::Ordering::Relaxed) {
+        let name = format!("churn-{n}");
+        run(&["branch", &name, "main"]);
+        run(&["pack-refs", "--all"]);
+        run(&["branch", "-D", &name]);
+        n += 1;
+    }
+}
+
+// frob:ticket 01M4CXTQ7DM4XEG3F1EAVNARNQ
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn concurrent_lands_under_branch_delete_and_pack_refs_churn_succeed_or_refuse_cleanly() {
+    if !git_available() {
+        return;
+    }
+    for round in 0..20 {
+        let fx = Fixture::new();
+        let a = fx.start("Add a", &["src/a/**"]);
+        let b = fx.start("Add b", &["src/b/**"]);
+        Fixture::commit_in(&a.wt, "src/a/a.rs", "fn a() {}\n");
+        Fixture::evidence(&a, "src/a/a.rs");
+        Fixture::commit_in(&b.wt, "src/b/b.rs", "fn b() {}\n");
+        Fixture::evidence(&b, "src/b/b.rs");
+        let stop = std::sync::atomic::AtomicBool::new(false);
+        let results = std::thread::scope(|scope| {
+            let churn = scope.spawn(|| churn_refs(&fx.root, &stop));
+            let la = scope.spawn(|| land_now(&fx, &a));
+            let lb = scope.spawn(|| land_now(&fx, &b));
+            let out = (la.join().expect("land a"), lb.join().expect("land b"));
+            stop.store(true, std::sync::atomic::Ordering::Relaxed);
+            churn.join().expect("churn");
+            out
+        });
+        for (name, result) in [("a", results.0), ("b", results.1)] {
+            match result {
+                Ok(out) => assert!(out.closed, "round {round} land {name}: {out:?}"),
+                Err(e) => assert!(
+                    e.refusal().is_some(),
+                    "round {round} land {name} failed uncleanly: {e}"
+                ),
+            }
+        }
+    }
+}
+
 // frob:ticket 01M4BMRY81T9B3T7SC3BWMVSPZ
 // frob:tests crates/frob-land/src/land.rs::land
 #[test]
@@ -2046,4 +2103,31 @@ fn land_reuses_a_recorded_tool_pass_for_an_unchanged_tree_and_reruns_after_an_in
         1,
         "a changed input misses and runs the tool"
     );
+}
+
+// frob:ticket 01M4CXTP6NCCZ7YNQCER0RXNYF
+#[test]
+fn retrying_the_land_record_after_a_failed_close_leaves_exactly_one_land_event() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Retry record", &["src/**"]);
+    let ledger = fx.ledger();
+    let body = frob_land::events::LandEvent {
+        base_ref: MAIN,
+        commit: "0123456789abcdef0123456789abcdef01234567",
+        branch: "ticket/retry",
+        pushed: false,
+    };
+    // First attempt records the land, then the close "fails" (never runs); the retry records again.
+    frob_land::events::append_land(&ledger, s.id, &body).expect("first");
+    frob_land::events::append_land(&ledger, s.id, &body).expect("retry");
+    let lands = ledger
+        .events(s.id)
+        .expect("events")
+        .iter()
+        .filter(|e| matches!(e.body, frob_ledger::event::EventBody::Land(_)))
+        .count();
+    assert_eq!(lands, 1, "a retry must not duplicate the land event");
 }

@@ -27,10 +27,22 @@ pub struct LandEvent<'a> {
 
 /// Append a `land` event to ticket `id` and commit it on the ledger ref; returns the ledger commit.
 ///
+/// Idempotent: an identical earlier `land` event (same ref, commit and branch) is kept and the ledger tip returned.
+///
 /// # Errors
 ///
 /// Ledger lookup, fold, git or format failures.
 pub fn append_land(ledger: &Ledger, id: TicketId, body: &LandEvent<'_>) -> Result<Oid, LandError> {
+    // frob:ticket 01M4CXTP6NCCZ7YNQCER0RXNYF
+    // A retry after a failed close must not record the same land twice.
+    let recorded = ledger.events(id)?.iter().any(|e| {
+        matches!(&e.body, EventBody::Land(d)
+            if d.base_ref == body.base_ref && d.commit == body.commit && d.branch == body.branch)
+    });
+    if recorded {
+        tracing::info!(ticket = %id, commit = body.commit, "land event already recorded; not appending again");
+        return Ok(ledger.repo().rev_parse(&ledger.ledger_ref()?)?);
+    }
     let applied = ledger.append(
         id,
         EventBody::Land(LandData {

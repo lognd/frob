@@ -1,0 +1,5 @@
+error[E0063]: missing field `applicability` in initializer of `Fix`
+ --> tests/ui/fix_missing_applicability.rs:5:13
+  |
+5 |     let _ = Fix {
+  |             ^^^ missing `applicability`

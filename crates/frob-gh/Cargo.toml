@@ -7,6 +7,7 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 authors.workspace = true
+publish = false
 
 [dependencies]
 # HTTP stack (docs/design/git-io.md section 4: a thin reqwest client). tokio lives only in the

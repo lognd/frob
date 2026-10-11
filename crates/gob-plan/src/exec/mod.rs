@@ -6,6 +6,7 @@
 
 mod core;
 pub mod outcome;
+pub mod prefilter;
 pub mod relations;
 
 pub use self::core::{

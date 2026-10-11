@@ -18,7 +18,7 @@ pub use envelope::{Envelope, EnvelopeError, SCHEMA_VERSION, envelope_schema, ren
 pub use escape::{escape_line, escape_non_ascii, escape_text, is_dangerous};
 pub use exit::{ExitCode, fail_on};
 pub use gob_rules::RequiredReason;
-pub use record::FindingRecord;
+pub use record::{EditRecord, FindingRecord, FixRecord};
 pub use refusal::{Refusal, RefusalClass};
 pub use required::UnresolvedPolicy;
 pub use source::{MemorySources, SourceProvider};

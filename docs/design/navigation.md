@@ -260,7 +260,8 @@ repositories) is a good-first label; frob makes it trustworthy:
   points (default 2), a scope, Given/When/Then acceptance, and a
   `## Start here` section naming the files to read first, the test
   command and who to ask. `frob ticket new --good-first` scaffolds the
-  section.
+  section with `<TODO: ...>` placeholders, and PM031 reports a section
+  that still contains one.
 - **PM032 good-first-pool-low** (Warning): fewer than
   `[tickets] good_first_min` ready good-first tickets (default 3), so
   maintainers see when newcomers have nothing to pick.

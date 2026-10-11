@@ -78,6 +78,11 @@ impl Product for FrobProduct {
         let cli = crate::cycle_cmd::register(cli);
         let cli = crate::profile_cmd::register(cli);
         let cli = crate::release_cmd::register(cli);
+        let cli = cli
+            .register::<crate::rule_cmd::RuleTest>()
+            .register::<crate::rule_cmd::RuleCheck>()
+            .register::<crate::rule_cmd::RuleCatalog>()
+            .register::<crate::rule_cmd::RuleFmt>();
         let cli = frob_lease::register(cli);
         let cli = frob_worktree::register(cli);
         let cli = frob_evidence::register(cli);

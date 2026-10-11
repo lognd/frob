@@ -932,7 +932,8 @@ impl Ledger {
         let opts = ReindexOptions {
             version: env!("CARGO_PKG_VERSION"),
             handle_min_len: self.config().handle_min_len,
-            generators: &[],
+            // frob:ticket 01M3ZX868H7TQ34ZDPXY13NRRG
+            generators: crate::r#gen::GENERATORS,
         };
         let out = reindex(&before, &opts)?;
         let mut changes: Vec<(String, Option<Vec<u8>>)> = Vec::new();

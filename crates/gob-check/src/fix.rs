@@ -298,7 +298,7 @@ fn write_all(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gob_rules::{Fix, Severity, TextEdit};
+    use gob_rules::{Applicability, Fix, Severity, TextEdit};
     use gob_text::{FileId, TextRange, TextSize};
 
     struct Fx {
@@ -350,6 +350,8 @@ mod tests {
             )
             .with_fix(Fix {
                 kind: FixKind::Deterministic,
+                // frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+                applicability: Applicability::Machine,
                 title: "fix".to_owned(),
                 edits,
             })

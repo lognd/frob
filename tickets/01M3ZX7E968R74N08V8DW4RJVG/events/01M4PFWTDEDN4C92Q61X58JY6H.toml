@@ -1,0 +1,45 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T22:03:47Z"
+digest = "5b5b93e09b958a3f53739b1510dc3c6ede8d55fc585f8477e22abe2e1ff82762"
+exit_code = 0
+inline = '''
+   Compiling serde_core v1.0.229
+   Compiling getrandom v0.3.4
+   Compiling rustix v1.1.5
+   Compiling getrandom v0.4.3
+   Compiling rand_core v0.9.5
+   Compiling ref-cast v1.0.27
+   Compiling blake3 v1.8.7
+   Compiling tracing v0.1.44
+   Compiling thiserror v2.0.21
+   Compiling num-traits v0.2.19
+   Compiling rand_chacha v0.9.0
+   Compiling rand v0.9.5
+   Compiling rand_xorshift v0.4.0
+   Compiling tempfile v3.27.0
+   Compiling rusty-fork v0.3.1
+   Compiling insta v1.48.0
+   Compiling proptest v1.11.0
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling schemars v1.2.2
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+    Finished `test` profile [unoptimized] target(s) in 5.41s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a562a2d5-420e-4da7-979e-fb32a9f5259c with nextest profile: default
+    Starting 1 test across 3 binaries (26 tests skipped)
+        PASS [   0.008s] gob-diagnostics::contract deterministic_fix_serializes_machine_applicability_and_exact_edits
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 26 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-diagnostics -E 'test(=deterministic_fix_serializes_machine_applicability_and_exact_edits)'"
+size = 1305
+status = "measured"
+tests = ["deterministic_fix_serializes_machine_applicability_and_exact_edits"]
+at = "2026-10-11T22:03:47Z"
+actor = "lognd"
+rev = 1

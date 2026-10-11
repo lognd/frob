@@ -15,6 +15,7 @@ pub mod doctor;
 pub mod exceptions;
 pub mod fmt_cmd;
 pub mod init;
+pub mod rule_cmd;
 mod workspace;
 
 use std::path::Path;
@@ -78,6 +79,10 @@ impl Product for GrimbleProduct {
             .register::<fmt_cmd::Fmt>()
             .register::<compile_cmd::Compile>()
             .register::<exceptions::ExceptionsList>()
+            .register::<rule_cmd::RuleTest>()
+            .register::<rule_cmd::RuleCheck>()
+            .register::<rule_cmd::RuleCatalog>()
+            .register::<rule_cmd::RuleFmt>()
     }
 }
 
