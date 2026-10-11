@@ -2,7 +2,8 @@
 id = "01M3ZX82K7HX9D2VKT25KS4MV2"
 title = "Ticket path function: top-epic directory, EPIC.md, _unfiled, collisions"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
