@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T16:54:34Z"
+digest = "b27c7dfbb1f044cbabc72747e7831e99d849bc2833d1c7e91caa01524583ba93"
+exit_code = 0
+inline = '''
+   Compiling syn v2.0.119
+   Compiling regex-automata v0.4.18
+   Compiling serde_json v1.0.151
+   Compiling matchers v0.2.0
+   Compiling regex v1.13.1
+   Compiling tracing-attributes v0.1.31
+   Compiling tracing v0.1.44
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+    Finished `test` profile [unoptimized] target(s) in 7.69s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 292093db-3450-4d8e-86a3-6f8da0be3424 with nextest profile: default
+    Starting 1 test across 6 binaries (41 tests skipped)
+        PASS [   0.026s] gob-exec::runner a_secret_looking_stdout_payload_is_intact_while_the_transcript_stdout_and_stderr_are_redacted
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.027s] 1 test run: 1 passed, 41 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-exec -E 'test(=a_secret_looking_stdout_payload_is_intact_while_the_transcript_stdout_and_stderr_are_redacted)'"
+size = 1023
+status = "measured"
+tests = ["a_secret_looking_stdout_payload_is_intact_while_the_transcript_stdout_and_stderr_are_redacted"]
+at = "2026-10-11T16:54:34Z"
+actor = "lognd"
+rev = 1
