@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-11T00:27:06Z"
+updated = "2026-10-11T00:27:08Z"
 idempotency_key = "m2-nav-slug"
 labels = ["milestone:2", "area:navigation", "good-first"]
 scope = ["crates/frob-ledger/src/slug.rs", "crates/frob-ledger/src/layout.rs", "crates/frob-ledger/src/lib.rs"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a title of only symbols or a 90-character title, when slugged, then the first yields the handle without the tilde and the second is cut at a word boundary within 60 characters"
-bound = false
+bound = true
 +++
 
 Implements navigation.md section 2.1 (slug rules).
