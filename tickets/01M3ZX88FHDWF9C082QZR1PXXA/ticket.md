@@ -2,7 +2,8 @@
 id = "01M3ZX88FHDWF9C082QZR1PXXA"
 title = "frob ticket url <id>"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
