@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:47:55Z"
-updated = "2026-10-11T03:52:47Z"
-scope = ["crates/frob-check/**"]
+updated = "2026-10-11T03:53:59Z"
+scope = ["crates/frob-check/**", "crates/gob-check/**", "docs/**"]
 
 [[acceptance]]
 text = "for a change confined to one leaf crate the clippy stage names only that crate and its direct dependents, and for a core crate it names the transitive closure only when the public API changed, covered by a test over a fixture workspace"
