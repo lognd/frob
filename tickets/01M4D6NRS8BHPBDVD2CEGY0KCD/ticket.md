@@ -2,7 +2,8 @@
 id = "01M4D6NRS8BHPBDVD2CEGY0KCD"
 title = "One key order for materialized [pm] knobs across frob.toml, the init snapshot and the config sync list"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
