@@ -287,3 +287,68 @@ fn the_binary_prints_exactly_one_envelope_line_on_stdout() {
     let env: Value = serde_json::from_str(&stdout).unwrap();
     assert_valid_sibling(&env);
 }
+
+// frob:ticket 01M4M5CQ9529KH526299QXXFVF
+const GRL_RULE: &str = "rule NOPE001 \"no-dbg\" {
+  lang rust
+
+  find d: `dbg!($$$ARGS)`
+  where not d inside KIND
+  report d \"remove dbg! before committing\"
+
+  example fire \"\"\"
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+  \"\"\"
+  example clean \"\"\"
+    fn f(x: u32) -> u32 { x }
+  \"\"\"
+
+  explain \"\"\"
+    `dbg!` prints to stderr and is meant for local debugging only.
+
+    ## Remedy
+    Delete the call, or log through `tracing` if the value matters.
+  \"\"\"
+}
+";
+
+// frob:ticket 01M4M5CQ9529KH526299QXXFVF
+// frob:tests crates/grimble/src/compile_cmd.rs::Compile
+#[test]
+fn compile_fails_on_an_unknown_kind() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "rules/bad.grl",
+        &GRL_RULE.replace("KIND", "tset"),
+    );
+    let (code, env, err) = grimble(dir.path(), &["compile", "rules/bad.grl", "--json"]);
+    assert_eq!(code, 1, "{env} {err}");
+    let report = env["data"]["files"][0]["report"].as_str().unwrap_or("");
+    assert!(
+        report.contains("error[GRL001]: unknown kind `tset`"),
+        "{report}"
+    );
+    let (code, _, err) = grimble(dir.path(), &["compile", "--text"]);
+    assert_eq!(code, 1);
+    assert!(
+        err.contains("GRL001"),
+        "text mode prints the diagnostic: {err}"
+    );
+}
+
+// frob:ticket 01M4M5CQ9529KH526299QXXFVF
+// frob:tests crates/grimble/src/compile_cmd.rs::Compile
+#[test]
+fn compile_passes_a_valid_file_silently() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "rules/ok.grl",
+        &GRL_RULE.replace("KIND", "test"),
+    );
+    let (code, env, err) = grimble(dir.path(), &["compile", "--json"]);
+    assert_eq!(code, 0, "{env} {err}");
+    assert_eq!(env["data"]["files"][0]["errors"], 0);
+    assert_eq!(env["data"]["files"][0]["report"], "");
+}
