@@ -2,7 +2,8 @@
 id = "01M4M5CQ9529KH526299QXXFVF"
 title = "grimble: GRL compile verb that checks rule files and prints compile_report"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
