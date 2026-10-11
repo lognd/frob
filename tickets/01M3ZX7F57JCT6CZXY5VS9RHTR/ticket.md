@@ -2,7 +2,8 @@
 id = "01M3ZX7F57JCT6CZXY5VS9RHTR"
 title = "Executor skips files and subtrees lacking the plan's prefilter kinds"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
