@@ -580,6 +580,7 @@ dependencies = [
  "gob-symbols",
  "gob-walk",
  "indexmap",
+ "rayon",
  "serde",
  "serde_json",
  "tempfile",

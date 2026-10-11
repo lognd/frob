@@ -24,6 +24,7 @@ gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
+rayon = "1"
 indexmap = { version = "2", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
