@@ -8,8 +8,8 @@ points = 2
 parent = "01M4CTE0GYDX0XW64JRNF2ZMQG"
 reporter = "lognd"
 created = "2026-10-11T00:16:28Z"
-updated = "2026-10-11T01:14:50Z"
-scope = ["crates/gob-caps/**,crates/gob-lock/**,crates/gob-ir/**,crates/gob-symbols/**,crates/grimble-check/**,changelog.d/**"]
+updated = "2026-10-11T01:16:14Z"
+scope = ["crates/gob-caps/**", "crates/gob-lock/**", "crates/gob-ir/**", "crates/gob-symbols/**", "crates/grimble-check/**"]
 
 [[acceptance]]
 text = "Given the gob-lock manifest, when its dependency tables are read, then gob-ir is in none of them and gob_lock::DIGEST_SCHEME equals gob_caps::DIGEST_SCHEME (test gob_lock_does_not_depend_on_gob_ir)"
