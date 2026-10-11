@@ -2,7 +2,8 @@
 id = "01M3ZEH464EFCFAZ4XDKE89D5Z"
 title = "gob-languages: add Language::Grmb with wildcard arms in the two comment scanners"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
