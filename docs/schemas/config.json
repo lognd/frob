@@ -722,6 +722,13 @@
           "description": "Directory of ticket files, relative to the repository root.",
           "type": "string"
         },
+        "good_first_max_points": {
+          "default": 2,
+          "description": "Most points a ticket labelled `good-first` may carry before PM031 fires (`navigation.md` section 4.2).",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
         "handle_min_len": {
           "default": 7,
           "description": "Shortest ticket handle shown (`~` plus this many id characters).",
