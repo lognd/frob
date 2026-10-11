@@ -10,6 +10,7 @@
 // frob:ticket 01M47QSGHYD2EQ4552V1B4EEQZ
 
 pub mod ack;
+pub mod compile_cmd;
 pub mod doctor;
 pub mod exceptions;
 pub mod fmt_cmd;
@@ -75,6 +76,7 @@ impl Product for GrimbleProduct {
         cli.register::<ack::Ack>()
             .register::<init::Init>()
             .register::<fmt_cmd::Fmt>()
+            .register::<compile_cmd::Compile>()
             .register::<exceptions::ExceptionsList>()
     }
 }

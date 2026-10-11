@@ -227,13 +227,19 @@ pub fn check_file_with(file: &grl::ast::File, config: Option<&ConfigSchema>) -> 
 }
 
 // frob:ticket 01M3ZX7DYR7PR1PBCZ7E8Q56WW
-/// Parse, check and render one rule file: the exact text the compiler prints for it.
-pub fn compile_report(path: &str, source: &str) -> String {
+// frob:ticket 01M4M5CQ9529KH526299QXXFVF
+/// Parse and check one rule file: syntax errors when it does not parse, else the checker's diagnostics.
+pub fn compile_diagnostics(path: &str, source: &str) -> Vec<Diagnostic> {
     let parsed = grl::parse(FileInterner::new().intern(path), source);
-    let diagnostics: Vec<Diagnostic> = if parsed.is_ok() {
+    if parsed.is_ok() {
         check_file(&parsed.file)
     } else {
         parsed.errors.iter().map(Diagnostic::syntax).collect()
-    };
-    render(path, source, &diagnostics)
+    }
+}
+
+// frob:ticket 01M3ZX7DYR7PR1PBCZ7E8Q56WW
+/// Parse, check and render one rule file: the exact text the compiler prints for it.
+pub fn compile_report(path: &str, source: &str) -> String {
+    render(path, source, &compile_diagnostics(path, source))
 }
