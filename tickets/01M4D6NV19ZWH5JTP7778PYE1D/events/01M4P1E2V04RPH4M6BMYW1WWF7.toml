@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T17:51:07Z"
+digest = "20aeda4e6fe16efeab9d5ce83cbc316f647df11d2f4c2f6231206e11c721163a"
+exit_code = 0
+inline = '''
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+    Finished `test` profile [unoptimized] target(s) in 1.79s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f656c1b8-d3ca-4268-951e-9e49957028c1 with nextest profile: default
+    Starting 1 test across 1 binary (28 tests skipped)
+        PASS [   0.007s] gob-ir::eval a_poisoned_stratum_node_taints_only_the_subjects_that_read_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 28 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-ir --test eval -E 'test(=a_poisoned_stratum_node_taints_only_the_subjects_that_read_it)'"
+size = 607
+status = "measured"
+tests = ["a_poisoned_stratum_node_taints_only_the_subjects_that_read_it"]
+at = "2026-10-11T17:51:07Z"
+actor = "lognd"
+rev = 1
