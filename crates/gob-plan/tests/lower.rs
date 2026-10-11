@@ -127,3 +127,18 @@ fn constructs_outside_the_ir_are_refused_by_name_not_mislowered() {
         Err(LowerError::UnknownVar { .. })
     ));
 }
+
+// frob:ticket 01M3ZX7EQ5NARR4Z2SAY4H23AQ
+#[test]
+fn the_prefilter_lists_exactly_the_found_kinds_and_not_negated_ones() {
+    let plan = lower(&rule(&[
+        "find d: directive",
+        "find c: comment where c inside d or d inside c",
+        "no t: test where c inside t",
+        "report c \"x\"",
+    ]))
+    .expect("lowers");
+    let mut kinds: Vec<&str> = plan.prefilter_kinds().collect();
+    kinds.sort_unstable();
+    assert_eq!(kinds, ["comment", "directive"]);
+}

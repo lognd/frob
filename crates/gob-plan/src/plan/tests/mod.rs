@@ -578,3 +578,22 @@ fn the_p_minus_split_and_unresolved_clauses_are_checked() {
     p.unresolved.clear();
     assert_eq!(err(p), PlanError::OrphanOp { op: 12 });
 }
+
+// frob:ticket 01M3ZX7EQ5NARR4Z2SAY4H23AQ
+#[test]
+fn cost_class_reads_the_deepest_reaches_else_the_scope() {
+    let reaches = |within| Op::Reaches {
+        from: 0,
+        to: 1,
+        via: 3,
+        within,
+        certainty: Certainty::Default,
+    };
+    assert_eq!(
+        cost_class(&[reaches(2), reaches(6), reaches(4)], false),
+        CostClass::Closure(6)
+    );
+    assert_eq!(cost_class(&[reaches(6)], true), CostClass::Closure(6));
+    assert_eq!(cost_class(&[], true), CostClass::PerRepo);
+    assert_eq!(cost_class(&[], false), CostClass::PerFile);
+}

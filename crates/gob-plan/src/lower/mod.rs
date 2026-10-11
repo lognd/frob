@@ -17,8 +17,10 @@
 mod convert;
 mod emit;
 mod error;
+mod prefilter;
 
 pub use error::LowerError;
+pub use prefilter::prefilter_kinds;
 
 use crate::grl::ast::Rule;
 use crate::plan::{Plan, Provenance};
