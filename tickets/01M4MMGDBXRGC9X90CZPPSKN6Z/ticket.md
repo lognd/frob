@@ -8,7 +8,7 @@ points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T04:46:00Z"
-updated = "2026-10-11T13:44:32Z"
+updated = "2026-10-11T13:52:40Z"
 scope = ["typos.toml", "docs/crunk/rules/README.md", "crates/frob/src/profile_cmd.rs", "crates/frob/tests/profile.rs", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "the committed docs/crunk/rules/README.md equals the generated registry page (crunk-check waive001 the_committed_registry_page_is_fresh passes)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "frob profile completes within its 500 ms budget on a large ledger because the closed-ticket count stops at the suggestion threshold (frob profile test the_closed_count_stops_at_the_suggestion_threshold)"
