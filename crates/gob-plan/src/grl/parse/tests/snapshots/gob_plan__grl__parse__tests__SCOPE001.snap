@@ -1,5 +1,6 @@
 ---
 source: crates/gob-plan/src/grl/parse/tests/mod.rs
+assertion_line: 143
 expression: dump(&p.file)
 ---
 File {
@@ -76,107 +77,111 @@ File {
                 }
               ),
               rels: [],
-            filter: Some(
-              Spanned {
-                 node: And(
-                  [
-                    Spanned {
-                       node: Not(
-                        Spanned {
-                           node: GlobMatch {
-                             lhs: Spanned {
-                               node: Path(
-                                Path {
-                                   segments: [
-                                    Word {
-                                       text: "p",
-                                      span: @139..140 
-                                    }
-                                  ],
-                                  span: @139..140 
-                                }
-                              ),
-                              span: @139..140 
-                            },
-                            rhs: Spanned {
-                               node: Path(
-                                Path {
-                                   segments: [
-                                    Word {
-                                       text: "lease",
-                                      span: @149..154 
-                                    },
-                                    Word {
-                                       text: "globs",
-                                      span: @155..160 
-                                    }
-                                  ],
-                                  span: @149..160 
-                                }
-                              ),
-                              span: @149..160 
-                            } 
-                          },
-                          span: @139..160 
-                        }
-                      ),
-                      span: @135..160 
-                    },
-                    Spanned {
-                       node: Not(
-                        Spanned {
-                           node: GlobMatch {
-                             lhs: Spanned {
-                               node: Path(
-                                Path {
-                                   segments: [
-                                    Word {
-                                       text: "p",
-                                      span: @169..170 
-                                    }
-                                  ],
-                                  span: @169..170 
-                                }
-                              ),
-                              span: @169..170 
-                            },
-                            rhs: Spanned {
-                               node: Path(
-                                Path {
-                                   segments: [
-                                    Word {
-                                       text: "config",
-                                      span: @179..185 
-                                    },
-                                    Word {
-                                       text: "lease",
-                                      span: @186..191 
-                                    },
-                                    Word {
-                                       text: "shared_files",
-                                      span: @192..204 
-                                    }
-                                  ],
-                                  span: @179..204 
-                                }
-                              ),
-                              span: @179..204 
-                            } 
-                          },
-                          span: @169..204 
-                        }
-                      ),
-                      span: @165..204 
-                    }
-                  ]
-                ),
-                span: @135..204 
-              }
-            ),
-            span: @111..204 
+            filter: None,
+            span: @111..126 
           }
         ),
-        span: @106..204 
+        span: @106..126 
+      },
+      Spanned {
+         node: Where(
+          Spanned {
+             node: And(
+              [
+                Spanned {
+                   node: Not(
+                    Spanned {
+                       node: GlobMatch {
+                         lhs: Spanned {
+                           node: Path(
+                            Path {
+                               segments: [
+                                Word {
+                                   text: "p",
+                                  span: @139..140 
+                                }
+                              ],
+                              span: @139..140 
+                            }
+                          ),
+                          span: @139..140 
+                        },
+                        rhs: Spanned {
+                           node: Path(
+                            Path {
+                               segments: [
+                                Word {
+                                   text: "lease",
+                                  span: @149..154 
+                                },
+                                Word {
+                                   text: "globs",
+                                  span: @155..160 
+                                }
+                              ],
+                              span: @149..160 
+                            }
+                          ),
+                          span: @149..160 
+                        } 
+                      },
+                      span: @139..160 
+                    }
+                  ),
+                  span: @135..160 
+                },
+                Spanned {
+                   node: Not(
+                    Spanned {
+                       node: GlobMatch {
+                         lhs: Spanned {
+                           node: Path(
+                            Path {
+                               segments: [
+                                Word {
+                                   text: "p",
+                                  span: @169..170 
+                                }
+                              ],
+                              span: @169..170 
+                            }
+                          ),
+                          span: @169..170 
+                        },
+                        rhs: Spanned {
+                           node: Path(
+                            Path {
+                               segments: [
+                                Word {
+                                   text: "config",
+                                  span: @179..185 
+                                },
+                                Word {
+                                   text: "lease",
+                                  span: @186..191 
+                                },
+                                Word {
+                                   text: "shared_files",
+                                  span: @192..204 
+                                }
+                              ],
+                              span: @179..204 
+                            }
+                          ),
+                          span: @179..204 
+                        } 
+                      },
+                      span: @169..204 
+                    }
+                  ),
+                  span: @165..204 
+                }
+              ]
+            ),
+            span: @135..204 
+          }
+        ),
+        span: @129..204 
       },
       Spanned {
          node: Report(

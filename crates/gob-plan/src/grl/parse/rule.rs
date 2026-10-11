@@ -199,7 +199,7 @@ impl Parser<'_> {
     }
 
     /// True when only whitespace including a line break separates the cursor from the previous token.
-    fn starts_line(&self) -> bool {
+    pub(super) fn starts_line(&self) -> bool {
         let Some(tok) = self.peek() else { return false };
         let Some(prev) = self.pos.checked_sub(1).and_then(|i| self.token_at(i)) else {
             return true;
