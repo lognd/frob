@@ -2,13 +2,13 @@
 id = "01M4D6NRS8BHPBDVD2CEGY0KCD"
 title = "One key order for materialized [pm] knobs across frob.toml, the init snapshot and the config sync list"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T07:29:34Z"
-updated = "2026-10-08T07:29:34Z"
+updated = "2026-10-11T23:18:56Z"
 scope = ["changelog.d/**", "crates/frob/**", "crates/gob-config/**", "frob.toml"]
 
 [[acceptance]]
