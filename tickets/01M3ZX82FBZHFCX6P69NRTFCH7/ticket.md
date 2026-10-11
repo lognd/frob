@@ -2,24 +2,25 @@
 id = "01M3ZX82FBZHFCX6P69NRTFCH7"
 title = "Ticket slug function"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-10T23:27:40Z"
+updated = "2026-10-11T00:32:34Z"
 idempotency_key = "m2-nav-slug"
 labels = ["milestone:2", "area:navigation", "good-first"]
-scope = ["crates/frob-ledger/src/slug.rs"]
+scope = ["crates/frob-ledger/src/slug.rs", "crates/frob-ledger/src/layout.rs", "crates/frob-ledger/src/lib.rs"]
 
 [[acceptance]]
 text = "Given the title `Parser rewrite: faster, safer (v2)!`, when slugged, then the result is `parser-rewrite-faster-safer-v2`"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a title of only symbols or a 90-character title, when slugged, then the first yields the handle without the tilde and the second is cut at a word boundary within 60 characters"
-bound = false
+bound = true
 +++
 
 Implements navigation.md section 2.1 (slug rules).
