@@ -613,8 +613,14 @@ impl Product for Frob {
         scope_files: Option<&std::collections::BTreeSet<String>>,
     ) {
         let base = self.opts.base.clone().unwrap_or_else(|| table.base.clone());
-        self.siblings
-            .start(&snap.core.root, table, &base, scope_files, &self.opts);
+        self.siblings.start(
+            &snap.core.root,
+            table,
+            &base,
+            scope_files,
+            &snap.core.index.digests,
+            &self.opts,
+        );
     }
 
     fn join_external(

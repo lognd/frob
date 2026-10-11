@@ -107,6 +107,8 @@ pub(super) struct Run {
     pub compute_digest: Option<String>,
     /// `[check] output_cap_bytes`: the runner kills a sibling that prints more.
     pub output_cap: usize,
+    /// Digest of everything the document depends on (frob's walk digests, base, day, knobs); `None` disables the result cache.
+    pub tree_key: Option<String>,
 }
 
 /// A finished run: wall time and the validated document or the failure.
@@ -115,6 +117,32 @@ pub(super) struct Spawned {
     pub elapsed: Duration,
     /// The document, or why there is none.
     pub result: Result<Doc, Failure>,
+}
+
+/// The cache key of `run`'s document: the host's tree digest, the argv, the compute digest and the sibling binary's content.
+///
+/// `None` when any part is unknown (no tree key, an unlocated binary), so an unprovable run is never reused
+/// (frob:ticket 01M4MGNWX3MF5KM98EPQZJGVGZ).
+fn cache_key(run: &Run) -> Option<gob_cache::ArtifactKey> {
+    let tree = run.tree_key.as_deref()?;
+    let Program::Hook { path } = &run.program else {
+        return None;
+    };
+    let binary = blake3::hash(&std::fs::read(path).ok()?)
+        .to_hex()
+        .to_string();
+    let mut h = blake3::Hasher::new();
+    h.update(tree.as_bytes());
+    h.update(run.product.as_bytes());
+    for a in args(run) {
+        h.update(a.as_bytes());
+        h.update(&[0]);
+    }
+    h.update(run.compute_digest.as_deref().unwrap_or("-").as_bytes());
+    Some(gob_cache::ArtifactKey {
+        content_digest: h.finalize().to_hex().to_string(),
+        producer_identity: format!("sibling-document/1:{binary}"),
+    })
 }
 
 /// The argv of section 2.
@@ -147,6 +175,18 @@ fn exec(run: &Run) -> Result<Doc, Failure> {
         .allow_tools([run.product.to_owned()])
         .output_cap(run.output_cap);
     probe(&runner, run)?;
+    let cache = cache_key(run).map(|key| (gob_cache::Cache::open_shared(&run.root, ".frob"), key));
+    if let Some((cache, key)) = &cache
+        && let Some(bytes) = cache.get_artifact(key)
+        && let Ok(stdout) = String::from_utf8(bytes)
+        && let Ok(doc) = parse(run.product, run.compute_digest.as_deref(), &stdout)
+    {
+        tracing::info!(
+            product = run.product,
+            "sibling document reused from the content-addressed cache"
+        );
+        return Ok(doc);
+    }
     let spec = Spec {
         program: run.program.clone(),
         args: args(run),
@@ -189,7 +229,11 @@ fn exec(run: &Run) -> Result<Doc, Failure> {
                 bytes = output.stdout.len(),
                 "sibling exited; reading document"
             );
-            parse(run.product, run.compute_digest.as_deref(), &output.stdout)
+            let doc = parse(run.product, run.compute_digest.as_deref(), &output.stdout)?;
+            if let Some((cache, key)) = &cache {
+                cache.put_artifact(key, output.stdout.as_bytes());
+            }
+            Ok(doc)
         }
         Outcome::Exited(code) => {
             let mut failure = Failure::new(
