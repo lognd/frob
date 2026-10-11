@@ -2,7 +2,8 @@
 id = "01M4DYPFE1Z7MXVNG8MJ7N30N5"
 title = "gob-exec: redact secrets only in transcripts and stderr, never in the parsed payload a tool returns"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
