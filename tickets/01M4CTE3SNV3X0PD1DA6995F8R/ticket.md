@@ -8,12 +8,12 @@ points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:41Z"
-updated = "2026-10-11T19:58:13Z"
+updated = "2026-10-11T20:06:35Z"
 scope = ["changelog.d/**", "crates/*/Cargo.toml", "crates/gob-dev/**"]
 
 [[acceptance]]
 text = "Given the publish plan of this workspace, when it is computed, then gob-frameworks, gob-trust, gob-packs and frob-gh are absent and no planned crate has a normal or build dependency on a publish = false crate"
-bound = false
+bound = true
 +++
 
 notes/review/audit-2026-10-07.md M11 and L3 (workspace.dependencies). frob-gh gains a consumer through the land CI gate ticket; then it publishes again.
