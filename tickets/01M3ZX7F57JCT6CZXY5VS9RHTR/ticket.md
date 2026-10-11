@@ -2,16 +2,16 @@
 id = "01M3ZX7F57JCT6CZXY5VS9RHTR"
 title = "Executor skips files and subtrees lacking the plan's prefilter kinds"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-03T03:34:21Z"
+updated = "2026-10-11T20:35:27Z"
 idempotency_key = "m2-exec-prefilter"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/exec/prefilter.rs"]
+scope = ["crates/gob-plan/src/exec/prefilter.rs", "crates/gob-plan/src/exec/core/mod.rs", "crates/gob-plan/src/exec/mod.rs", "crates/gob-plan/tests/exec_prefilter.rs"]
 
 [[links]]
 kind = "blocked-by"

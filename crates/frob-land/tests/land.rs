@@ -2047,3 +2047,30 @@ fn land_reuses_a_recorded_tool_pass_for_an_unchanged_tree_and_reruns_after_an_in
         "a changed input misses and runs the tool"
     );
 }
+
+// frob:ticket 01M4CXTP6NCCZ7YNQCER0RXNYF
+#[test]
+fn retrying_the_land_record_after_a_failed_close_leaves_exactly_one_land_event() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Retry record", &["src/**"]);
+    let ledger = fx.ledger();
+    let body = frob_land::events::LandEvent {
+        base_ref: MAIN,
+        commit: "0123456789abcdef0123456789abcdef01234567",
+        branch: "ticket/retry",
+        pushed: false,
+    };
+    // First attempt records the land, then the close "fails" (never runs); the retry records again.
+    frob_land::events::append_land(&ledger, s.id, &body).expect("first");
+    frob_land::events::append_land(&ledger, s.id, &body).expect("retry");
+    let lands = ledger
+        .events(s.id)
+        .expect("events")
+        .iter()
+        .filter(|e| matches!(e.body, frob_ledger::event::EventBody::Land(_)))
+        .count();
+    assert_eq!(lands, 1, "a retry must not duplicate the land event");
+}

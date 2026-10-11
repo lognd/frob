@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T20:31:53Z"
+digest = "c47f4b493855d14df5bfae0df501cb0bfa6175b3198449d52cd6b764b4450bcc"
+exit_code = 0
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized] target(s) in 5.80s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 84b51785-1a32-4d86-9b3e-e06f6cb2d63c with nextest profile: default
+    Starting 1 test across 17 binaries (186 tests skipped)
+        PASS [   0.015s] gob-plan::fixes a_host_fix_is_std_only
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 1 test run: 1 passed, 186 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=a_host_fix_is_std_only)'"
+size = 580
+status = "measured"
+tests = ["a_host_fix_is_std_only"]
+at = "2026-10-11T20:31:53Z"
+actor = "lognd"
+rev = 1
