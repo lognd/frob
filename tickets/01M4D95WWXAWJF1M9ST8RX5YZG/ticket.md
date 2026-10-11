@@ -2,13 +2,13 @@
 id = "01M4D95WWXAWJF1M9ST8RX5YZG"
 title = "GX catalogue additions: volume channels, haptics toggle, time limits to 10x, subtitle 2 lines and 38-40 characters, text in images, Unicode glyph icons"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "low"
 points = 2
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-08T08:13:20Z"
-updated = "2026-10-11T15:57:36Z"
+updated = "2026-10-11T15:58:11Z"
 scope = ["changelog.d/**", "crates/crunk-spec/**", "crates/crunk-check/**"]
 
 [[acceptance]]
