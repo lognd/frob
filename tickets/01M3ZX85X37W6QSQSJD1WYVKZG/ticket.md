@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-11T18:12:45Z"
+updated = "2026-10-11T18:36:16Z"
 idempotency_key = "m2-nav-reindex-verb"
 labels = ["milestone:2", "area:navigation", "creates:crates/frob/src/ticket/reindex_cmd.rs", "creates:crates/frob/tests/ticket_reindex.rs"]
 scope = ["crates/frob/src/ticket/reindex_cmd.rs", "crates/frob-ledger/src/ops.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/write.rs", "crates/frob/src/config.rs", "crates/gob-dev/profile.toml", "docs/reference/**", "docs/design/navigation.md", "frob.toml", "crates/frob/tests/ticket_reindex.rs"]
@@ -19,7 +19,7 @@ target = "01M3ZX85S7ASFGT31GDYMRB5JX"
 
 [[acceptance]]
 text = "Given `ticket update --parent`, when run, then two commits result and the second carries the Frob-Reindex trailer"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given `ticket reindex --check`, when the tree is current, then it exits 0 and prints nothing; when stale it prints the diff and exits 1"
