@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-06T13:11:55Z"
-updated = "2026-10-11T02:05:15Z"
+updated = "2026-10-11T02:07:07Z"
 scope = ["crates/crunk-values/**", "crates/crunk-check/src/rules/**", "crates/crunk-ingest/**", "crates/crunk-rules/**", "crates/crunk-check/tests/**", "docs/crunk/**"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "an unreadable colour literal is reported Unresolved by COLOR001, not clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "contrast results are unchanged (WCAG 2 luminance)"
