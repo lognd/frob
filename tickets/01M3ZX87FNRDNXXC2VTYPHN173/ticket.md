@@ -2,7 +2,8 @@
 id = "01M3ZX87FNRDNXXC2VTYPHN173"
 title = "frob profile newcomer|experienced and .frob/profile.toml"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
