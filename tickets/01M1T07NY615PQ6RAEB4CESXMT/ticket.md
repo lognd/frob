@@ -2,7 +2,8 @@
 id = "01M1T07NY615PQ6RAEB4CESXMT"
 title = "unpaired resource acquisition: known acquire/release API table"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
