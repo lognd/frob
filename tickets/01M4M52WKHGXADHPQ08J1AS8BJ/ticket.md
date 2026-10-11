@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTE0GYDX0XW64JRNF2ZMQG"
 reporter = "lognd"
 created = "2026-10-11T00:16:28Z"
-updated = "2026-10-11T02:43:16Z"
+updated = "2026-10-11T03:17:09Z"
 scope = ["crates/gob-fs/**", "crates/gob-cache/**", "crates/gob-exec/**", "clippy.toml"]
 
 [[acceptance]]
