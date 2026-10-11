@@ -8,12 +8,12 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:39:06Z"
-updated = "2026-10-11T04:22:48Z"
+updated = "2026-10-11T04:25:31Z"
 scope = ["crates/gob-cache/**", "crates/frob-obligations/src/tickets.rs", "crates/frob-obligations/src/lib.rs"]
 
 [[acceptance]]
 text = "the default cache engine fingerprint does not change when the executable's bytes change (so rebuilds and worktrees of one commit share rows), and does when FROB_CACHE_EXE_IDENTITY opts in; measured: file-rule rows no longer fork per build"
-bound = false
+bound = true
 +++
 
 measured from .frob/telemetry.jsonl: last run files 13557 cached_hits 3157. Suspect the cache key includes the worktree path or the cache dir is per worktree.
