@@ -16,7 +16,6 @@ version = "0.532.0"
 #   gob-dev     the `cargo dev` task runner
 #   gob-mdtest  the markdown corpus test harness
 #   gob-testsupport  test-only helper binaries (fake-sibling) and their locator
-#   gob-frameworks, gob-trust, gob-packs, frob-gh  no consumer yet (audit M11)
 
 [workspace.lints.rust]
 missing_docs = "deny"
