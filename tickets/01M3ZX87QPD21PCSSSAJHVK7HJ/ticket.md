@@ -2,13 +2,13 @@
 id = "01M3ZX87QPD21PCSSSAJHVK7HJ"
 title = "ticket doable --newcomer and indexes/good-first.md"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:46Z"
-updated = "2026-10-03T03:34:46Z"
+updated = "2026-10-11T23:06:12Z"
 idempotency_key = "m2-nav-doable-newcomer"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob/src/ticket/read.rs", "crates/frob-ledger/src/gen/good_first.rs"]
