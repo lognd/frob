@@ -8,7 +8,7 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-11T03:56:28Z"
+updated = "2026-10-11T04:00:57Z"
 aliases = ["T-4038"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["crates/grimble-lints/**", "Cargo.lock"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the table rows for addEventListener, setInterval, URL.createObjectURL and new AbortController, when scanned without and with the paired release, then a site and no site; adding a row is a data change to the PAIRS table"
-bound = false
+bound = true
 +++
 
 Item 2, the highest-value new rule kind in this list. VERIFIED: src/frob/gates/_protocol_summary.py already implements a related but DIFFERENT mechanism -- a manually-annotated frob:acquire/release-postdominance check requiring an explicit frob:acquire directive on the resource. This item needs NO annotation: it is a fixed known-API table of acquire/release pairs (performance.mark/performance.clearMarks, Map.set/Map.delete, setTimeout/clearTimeout) recognized structurally, with no directive required. Confirm during design whether the existing release-postdominance logic in _protocol_summary.py is reusable machinery for the "does a release call exist on all exit paths" half of this check, even though the pairing itself is looked up in a table rather than declared.
