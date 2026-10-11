@@ -2,7 +2,8 @@
 id = "01M3ZX868H7TQ34ZDPXY13NRRG"
 title = "indexes/by-id lookup pages"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
