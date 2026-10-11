@@ -121,6 +121,24 @@ pub struct Tick005;
 )]
 pub struct Tick008;
 
+/// A ticket file on the tip of the ticket branch is not at its computed path.
+///
+/// Every ticket file sits at `<top-epic-slug>/<slug>.md` (or `_unfiled/`). A parent or title change that was left
+/// to CI, a hand rename or a stale checkout leaves files elsewhere. Run `frob ticket reindex` to move them.
+// frob:ticket 01M3ZX86ZX0SCN2FHTDBQF97FD
+#[derive(Debug, Clone, Copy, Default, Rule)]
+#[rule(
+    id = "TICK009",
+    slug = "misfiled-ticket",
+    family = "TICK",
+    severity = Error,
+    tier = Universal,
+    scope = Repo,
+    fix = Manual,
+    version = 1
+)]
+pub struct Tick009;
+
 /// A reindex commit is not what the pure reindex of its parent tree produces.
 ///
 /// Replaying the reindex in memory on the parent commit's tree with the frob version named in the commit's

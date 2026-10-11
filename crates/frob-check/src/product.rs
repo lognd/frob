@@ -7,7 +7,7 @@ use frob_ack::{Affect001, Drift001, Drift002, Drift003};
 use frob_lease::{LeaseConfig, LeaseStore};
 use frob_ledger::TicketId;
 use frob_ledger::guards::{LeaseCheck, NoLeases};
-use frob_ledger::rules::{Tick001, Tick003, Tick004, Tick005, Tick007, Tick008};
+use frob_ledger::rules::{Tick001, Tick003, Tick004, Tick005, Tick007, Tick008, Tick009};
 use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
@@ -150,6 +150,20 @@ fn ledger_of<'a>(
     }
 }
 
+/// The metas of the `TICK` rules that `ledger_findings` evaluates.
+// frob:ticket 01M3ZX86ZX0SCN2FHTDBQF97FD
+fn ledger_rule_metas() -> Vec<&'static gob_rules::RuleMeta> {
+    vec![
+        Tick001.meta(),
+        Tick003.meta(),
+        Tick004.meta(),
+        Tick005.meta(),
+        Tick007.meta(),
+        Tick008.meta(),
+        Tick009.meta(),
+    ]
+}
+
 /// `TICK001` and `TICK003` from the ledger doctor and `TICK004` from the home-path scan (read-only); empty without a ledger.
 // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
 fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
@@ -187,6 +201,11 @@ fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
             .ledger
             .move_outside_reindex_findings()
             .map_err(|e| failed(&["TICK008"], e)),
+        // frob:ticket 01M3ZX86ZX0SCN2FHTDBQF97FD
+        state
+            .ledger
+            .misfiled_ticket_findings()
+            .map_err(|e| failed(&["TICK009"], e)),
     ])
 }
 
@@ -541,14 +560,7 @@ impl Product for Frob {
             ),
             RepoGroup::new(
                 "repo:ledger",
-                vec![
-                    Tick001.meta(),
-                    Tick003.meta(),
-                    Tick004.meta(),
-                    Tick005.meta(),
-                    Tick007.meta(),
-                    Tick008.meta(),
-                ],
+                ledger_rule_metas(),
                 |s: &Snapshot<Self>, _| ledger_findings(&s.inputs),
             ),
         ]

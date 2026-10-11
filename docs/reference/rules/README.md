@@ -210,6 +210,7 @@
 | [TICK006](TICK006.md) | ledger-path-reference | error | deterministic | P+ | false | Hand-written text links to a ticket-branch path instead of the ticket's ULID. |
 | [TICK007](TICK007.md) | reindex-not-pure | error | manual | P+ | false | A reindex commit is not what the pure reindex of its parent tree produces. |
 | [TICK008](TICK008.md) | move-outside-reindex | error | manual | P+ | false | A ledger commit without the reindex trailer renamed or deleted a ticket file, or touched an event file it did not add. |
+| [TICK009](TICK009.md) | misfiled-ticket | error | manual | P+ | false | A ticket file on the tip of the ticket branch is not at its computed path. |
 
 ## TODO
 
