@@ -29,6 +29,8 @@ pub struct GenInput<'a> {
     pub tree: &'a Tree,
     /// The frob version the output is rendered for.
     pub version: &'a str,
+    /// `[tickets] handle_min_len`, for pages that print handles.
+    pub handle_min_len: usize,
     /// Newest event ULID in the tree (the "as of" line), `None` for an empty ledger.
     pub as_of: Option<&'a str>,
     /// Every ticket with the path it now lives at.
@@ -167,6 +169,7 @@ pub fn reindex(tree: &Tree, opts: &ReindexOptions<'_>) -> Result<Reindexed> {
     let input = GenInput {
         tree: &out.clone(),
         version: opts.version,
+        handle_min_len: opts.handle_min_len,
         as_of: as_of.as_deref(),
         paths: &paths,
     };
