@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given many CSS files plus an unreadable one, when ingested via the parallel load-then-place path, then sheets and diagnostics keep path order and stats are exact (ordering and determinism only; parallel speed-up is not asserted)"
-bound = false
+bound = true
 +++
 
 Follow-ups from ~HRHS033.
