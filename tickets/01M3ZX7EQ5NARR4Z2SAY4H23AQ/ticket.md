@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-11T16:22:08Z"
+updated = "2026-10-11T16:22:09Z"
 idempotency_key = "m2-plan-cost"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/plan/cost.rs", "crates/gob-plan/src/lower/prefilter.rs", "crates/gob-plan/src/lower/emit.rs", "crates/gob-plan/src/lower/mod.rs"]
+scope = ["crates/gob-plan/src/plan/cost.rs", "crates/gob-plan/src/lower/prefilter.rs", "crates/gob-plan/src/lower/emit.rs", "crates/gob-plan/src/lower/mod.rs", "crates/gob-plan/src/plan/mod.rs"]
 
 [[links]]
 kind = "blocked-by"
