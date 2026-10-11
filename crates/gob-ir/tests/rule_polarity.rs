@@ -21,6 +21,7 @@ use gob_ir::{
 };
 use gob_rules::RuleId;
 use proptest::prelude::*;
+use proptest::test_runner::TestRunner;
 use support::B;
 
 // frob:ticket 01M4D6NVK70SB76M5EQ3RECX85
@@ -298,17 +299,25 @@ fn verify(
     Ok(())
 }
 
-proptest! {
-    #[test]
-    // frob:tests crates/gob-ir/src/eval/program.rs::RuleProgram
-    fn every_finding_and_certified_clean_holds_in_every_completion(
-        specs in prop::collection::vec(spec_strategy(), 1..=MAX_SUBJECTS),
-        polarity in polarity_strategy(),
-        careless in any::<bool>(),
-        threshold in threshold_strategy(),
-    ) {
-        verify(&specs, polarity, careless, threshold)?;
-    }
+#[test]
+// frob:tests crates/gob-ir/src/eval/program.rs::RuleProgram
+fn every_finding_and_certified_clean_holds_in_every_completion() {
+    let strategy = (
+        prop::collection::vec(spec_strategy(), 1..=MAX_SUBJECTS),
+        polarity_strategy(),
+        any::<bool>(),
+        threshold_strategy(),
+    );
+    // No regression file: the shrunk case is printed and the structure space is tiny.
+    let mut runner = TestRunner::new(ProptestConfig {
+        failure_persistence: None,
+        ..ProptestConfig::default()
+    });
+    runner
+        .run(&strategy, |(specs, polarity, careless, threshold)| {
+            verify(&specs, polarity, careless, threshold)
+        })
+        .expect("every verdict holds in every completion");
 }
 
 #[test]
