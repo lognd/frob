@@ -271,7 +271,7 @@ rel        = [ "directly" ] ( "inside" | "has" ) object
            | "under" term                           (* module or path segments, not characters *)
            | ( "before" | "after" | "adjoins" ) object
            | VERB object
-           | "reaches" object "via" VERB_LIST [ "within" term ]
+           | "reaches" object "via" ( VERB { "," VERB } | "(" VERB { "," VERB } ")" ) [ "within" term ]
            | [ "certainly" | "possibly" ] VERB object ;
 object     = term | shape ;                         (* a bound variable, or an anonymous shape *)
 term       = NAME { "." NAME } | literal | "knob" "." NAME | count | term ARITH term ;
@@ -298,6 +298,17 @@ APPLICABILITY = "machine" | "maybe-incorrect" | "has-placeholders" ;
 CMP        = "==" | "!=" | "<" | "<=" | ">" | ">=" ;
 ARITH      = "+" | "-" | "*" ;
 ```
+
+Two rules keep every source to one parse:
+
+- **A binding's `where` filter stays on the binding's line.** A `where` that starts a
+  line is always a clause of the rule, even straight after an unfiltered `find`, `some`
+  or `no` (`find f: function` then `where f.public` on the next line is two clauses; for
+  a P+ rule that equals the filter, for a P- rule the clause belongs to the good thing,
+  not the subjects).
+- **Inside `any { }` a comma ends the item.** A bare `via a, b` list therefore ends
+  at the first verb there; write several verbs as `via (a, b)`, which is accepted
+  everywhere and is how the formatter prints every multi-verb list.
 
 `VERB`, `KIND` and the field names come from the relation catalog
 (section 6), so the grammar is closed but the vocabulary is generated

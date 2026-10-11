@@ -1,0 +1,1 @@
+GRL grammar: a where that starts a line is now a clause (a binding's filter stays on its line), and reaches..via lists inside any { } end at the comma, with via (a, b) for several verbs; the printer's parenthesis workarounds are gone.

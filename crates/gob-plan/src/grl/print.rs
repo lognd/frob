@@ -13,12 +13,12 @@
 //! - `lang "*"`, accepted with a warning, prints as `lang *`;
 //! - parentheses appear only where precedence needs them (`or` below `and` below `not`), and a
 //!   quantifier nested in a connective is always parenthesised because its `where` runs to the end;
+//! - a binding's `where` filter stays on the binding's line and a `where` that starts a line is a
+//!   clause; a `via` list of several verbs is parenthesised;
 //! - comments are not part of the tree and are not printed (the parser drops them).
 //!
 //! Preconditions the parser itself guarantees and the printer relies on: terms carry no grouping
-//! (a `Binary` right operand is never another `Binary`, a `Mul` left operand is never an `Add`),
-//! and a `where` clause never directly follows a `find`, `some` or `no` clause that has no
-//! filter (the parser would read it as that clause's filter).
+//! (a `Binary` right operand is never another `Binary`, a `Mul` left operand is never an `Add`).
 
 use std::fmt::Write as _;
 
@@ -80,19 +80,9 @@ fn rule_text(out: &mut String, rule: &Rule) {
     out.push_str("}\n");
 }
 
-/// The clauses, one per line; a clause that a following `where` line would be read into is guarded.
+/// The clauses, one per line.
 fn clauses_text(clauses: &[Clause]) -> String {
-    let followed_by_where = |i: usize| {
-        clauses
-            .get(i + 1)
-            .is_some_and(|n| matches!(n.node, ClauseKind::Where(_)))
-    };
-    lines(
-        clauses
-            .iter()
-            .enumerate()
-            .map(|(i, c)| clause(c, followed_by_where(i))),
-    )
+    lines(clauses.iter().map(clause))
 }
 
 /// Each item indented one step on its own line.
@@ -176,19 +166,19 @@ fn type_ref(t: &TypeRef) -> String {
 
 // ---- clauses ----
 
-/// One clause's text; `guard` is set when a `where` clause follows it on the next line.
-fn clause(c: &Clause, guard: bool) -> String {
+/// One clause's text.
+fn clause(c: &Clause) -> String {
     match &c.node {
-        ClauseKind::Find(b) => format!("find {}", binding(b, guard)),
-        ClauseKind::Where(cd) => format!("where {}", tail_cond(cd, guard)),
+        ClauseKind::Find(b) => format!("find {}", binding(b)),
+        ClauseKind::Where(cd) => format!("where {}", cond(cd, 0)),
         ClauseKind::Quant { quant, binding: b } => {
-            format!("{} {}", quant_word(*quant), binding(b, guard))
+            format!("{} {}", quant_word(*quant), binding(b))
         }
-        ClauseKind::Def(d) => def(d, guard),
+        ClauseKind::Def(d) => def(d),
         ClauseKind::Report(r) => {
             let mut s = format!("report {} {}", r.target.text, message(&r.message));
             if let Some(when) = &r.when {
-                let _ = write!(s, " when {}", tail_cond(when, guard));
+                let _ = write!(s, " when {}", cond(when, 0));
             }
             s
         }
@@ -202,12 +192,12 @@ fn clause(c: &Clause, guard: bool) -> String {
     }
 }
 
-fn def(d: &Def, guard: bool) -> String {
+fn def(d: &Def) -> String {
     format!(
         "def {}({}) = {}",
         d.name.text,
         words(&d.params),
-        tail_cond(&d.body, guard)
+        cond(&d.body, 0)
     )
 }
 
@@ -253,14 +243,14 @@ fn applicability(a: &Applicability) -> &'static str {
 
 // ---- bindings, sources, shapes ----
 
-/// A binding; `guard` parenthesises a filter that would otherwise read a following `where` line.
-fn binding(b: &Binding, guard: bool) -> String {
+/// A binding; its `where` filter stays on the binding's line (a `where` that starts a line is a clause).
+fn binding(b: &Binding) -> String {
     let mut s = format!("{}: {}", b.name.text, source(&b.source));
     for r in &b.rels {
         let _ = write!(s, " {}", rel(r));
     }
     if let Some(f) = &b.filter {
-        let _ = write!(s, " where {}", tail_cond(f, guard));
+        let _ = write!(s, " where {}", cond(f, 0));
     }
     s
 }
@@ -363,7 +353,7 @@ fn rel(r: &Rel) -> String {
             via,
             within,
         } => {
-            let mut s = format!("reaches {} via {}", object(target), words(via));
+            let mut s = format!("reaches {} via {}", object(target), via_list(via));
             if let Some(w) = within {
                 let _ = write!(s, " within {}", term(w));
             }
@@ -388,20 +378,12 @@ fn cond(c: &Cond, level: u8) -> String {
         CondKind::And(parts) => wrap(level > 1, &sep(parts, " and ", 2)),
         CondKind::Not(inner) => format!("not {}", cond(inner, 2)),
         CondKind::Any(parts) => {
-            // A non-last item ending in a bare `via` verb list would swallow the comma that
-            // separates it from the next item, so it is parenthesised.
-            let last = parts.len().saturating_sub(1);
-            let items: Vec<String> = parts
-                .iter()
-                .enumerate()
-                .map(|(i, p)| wrap(i < last && ends_in_via_list(p), &cond(p, 0)))
-                .collect();
+            let items: Vec<String> = parts.iter().map(|p| cond(p, 0)).collect();
             format!("any {{ {} }}", items.join(", "))
         }
-        CondKind::Quant { quant, binding: b } => wrap(
-            level > 0,
-            &format!("{} {}", quant_word(*quant), binding(b, false)),
-        ),
+        CondKind::Quant { quant, binding: b } => {
+            wrap(level > 0, &format!("{} {}", quant_word(*quant), binding(b)))
+        }
         CondKind::Rel { subject, rel: r } => format!("{} {}", term(subject), rel(r)),
         CondKind::Cmp { op, lhs, rhs } => {
             format!("{} {} {}", term(lhs), cmp_op(*op), term(rhs))
@@ -427,36 +409,12 @@ fn cond(c: &Cond, level: u8) -> String {
     }
 }
 
-/// True when the condition's text ends in `reaches ... via VERBS` with no `within` after it.
-fn ends_in_via_list(c: &Cond) -> bool {
-    let rel_open = |r: &Rel| matches!(&r.node, RelKind::Reaches { within: None, .. });
-    match &c.node {
-        CondKind::Rel { rel, .. } => rel_open(rel),
-        CondKind::Quant { binding: b, .. } => match &b.filter {
-            Some(f) => ends_in_via_list(f),
-            None => b.rels.last().is_some_and(rel_open),
-        },
-        CondKind::Or(parts) | CondKind::And(parts) => parts.last().is_some_and(ends_in_via_list),
-        CondKind::Not(inner) => ends_in_via_list(inner),
-        _ => false,
-    }
-}
-
-/// A condition that ends a clause: parenthesised when `guard` is set and it ends in a binding
-/// without a filter, whose `where` would otherwise read the next clause's `where` as its own.
-fn tail_cond(c: &Cond, guard: bool) -> String {
-    wrap(guard && ends_in_open_binding(c), &cond(c, 0))
-}
-
-/// True when the condition's text ends in a `some`/`no` binding that could still take a `where`.
-fn ends_in_open_binding(c: &Cond) -> bool {
-    match &c.node {
-        CondKind::Quant { binding: b, .. } => b.filter.as_ref().is_none_or(ends_in_open_binding),
-        CondKind::Or(parts) | CondKind::And(parts) => {
-            parts.last().is_some_and(ends_in_open_binding)
-        }
-        CondKind::Not(inner) => ends_in_open_binding(inner),
-        _ => false,
+/// One verb bare; several in parentheses, so a verb list never runs into a following `,`.
+fn via_list(via: &[Word]) -> String {
+    if via.len() == 1 {
+        words(via)
+    } else {
+        format!("({})", words(via))
     }
 }
 
@@ -498,7 +456,7 @@ fn term(t: &Term) -> String {
         TermKind::Path(p) => path(p),
         TermKind::Literal(l) => literal(l),
         TermKind::Knob(w) => format!("knob.{}", w.text),
-        TermKind::Count(b) => format!("count({})", binding(b, false)),
+        TermKind::Count(b) => format!("count({})", binding(b)),
         TermKind::Call(c) => call_text(c),
         TermKind::Binary { op, lhs, rhs } => {
             let op = match op {

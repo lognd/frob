@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-11T02:09:55Z"
+digest = "d62ce1b1b04b00079f9dd84d42ea58bd3cda00d2b8f9c8a37781b5af1e2cc19d"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2e0a0fa1-cc58-413b-9c30-4cb64a3b5bd8 with nextest profile: default
+    Starting 1 test across 15 binaries (178 tests skipped)
+        PASS [   0.246s] gob-plan::print_stability generated_trees_round_trip_and_print_to_a_fixed_point
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.247s] 1 test run: 1 passed, 178 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=generated_trees_round_trip_and_print_to_a_fixed_point)'"
+size = 561
+status = "measured"
+tests = ["generated_trees_round_trip_and_print_to_a_fixed_point"]
+at = "2026-10-11T02:09:55Z"
+actor = "lognd"
+rev = 1

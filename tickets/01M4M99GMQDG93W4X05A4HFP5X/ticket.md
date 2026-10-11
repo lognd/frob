@@ -8,12 +8,16 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-11T01:30:00Z"
-updated = "2026-10-11T01:30:00Z"
+updated = "2026-10-11T02:19:31Z"
 scope = ["crates/gob-plan/src/examples/**", "crates/gob-plan/tests/**"]
 
 [[links]]
 kind = "blocked-by"
 target = "01M3ZX7EKNE5Q0NB0DKCH77AZX"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4MC43CFCTQ7TQCHCF0C0YRR"
 
 [[acceptance]]
 text = "Given a rule and a fire example whose source has one violation on line 3, when the runner executes it, then it passes and a clean variant fails with GRL016"
