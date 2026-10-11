@@ -2,7 +2,8 @@
 id = "01M43ARWT173GKANZ322H41VF1"
 title = "CI: path-filtered crunk jobs and an optional node and playwright job"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
