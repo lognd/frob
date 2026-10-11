@@ -2,7 +2,8 @@
 id = "01M4MMGDBXRGC9X90CZPPSKN6Z"
 title = "CI repair: spelling (wheres), stale crunk rules page, frob profile over its time budget"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
