@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T01:31:29Z"
+digest = "42ff68aaf08fb7e49f12a85fc19dd39c9e30cada18586621e3c372d1985e9e3c"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1edc8bd9-d580-4207-91f7-1244367934ce with nextest profile: default
+    Starting 1 test across 5 binaries (37 tests skipped)
+        PASS [   0.006s] gob-rules precision::tests::only_rules_over_the_ceiling_with_enough_samples_are_demoted
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 37 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(=precision::tests::only_rules_over_the_ceiling_with_enough_samples_are_demoted)'"
+size = 566
+status = "measured"
+tests = ["precision::tests::only_rules_over_the_ceiling_with_enough_samples_are_demoted"]
+at = "2026-10-11T01:31:29Z"
+actor = "lognd"
+rev = 1
