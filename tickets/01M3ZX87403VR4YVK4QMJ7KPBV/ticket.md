@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:46Z"
 updated = "2026-10-11T22:36:12Z"
 idempotency_key = "m2-nav-code-readme"
 labels = ["milestone:2", "area:navigation"]
-scope = ["crates/frob-ledger/src/gen/code_readme.rs", "README.md", "crates/frob/src/ticket/reindex_cmd.rs", "crates/frob/src/ticket/url_cmd.rs", "crates/frob-ledger/src/gen/mod.rs", "crates/frob-ledger/tests/gen_code_readme.rs", "crates/frob/tests/ticket_code_readme.rs", "docs/guides/ticket-branch.md"]
+scope = ["crates/frob-ledger/src/gen/code_readme.rs", "README.md", "crates/frob/src/ticket/reindex_cmd.rs", "crates/frob/src/ticket/url_cmd.rs", "crates/frob-ledger/src/gen/mod.rs", "crates/frob-ledger/tests/gen_code_readme.rs", "crates/frob/tests/ticket_code_readme.rs", "docs/guides/ticket-branch.md", "docs/reference/cli/frob.md"]
 
 [[links]]
 kind = "blocked-by"
