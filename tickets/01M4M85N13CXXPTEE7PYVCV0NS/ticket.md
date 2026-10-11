@@ -8,8 +8,8 @@ points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-11T01:10:25Z"
-updated = "2026-10-11T03:46:13Z"
-scope = ["crates/frob-ledger/src/lib.rs"]
+updated = "2026-10-11T03:46:14Z"
+scope = ["crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/ledger.rs"]
 
 [[acceptance]]
 text = "Given a ticket on the branch, when its path is asked of the ledger, then it returns the current branch path"
