@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:36Z"
-updated = "2026-10-11T02:50:45Z"
+updated = "2026-10-11T03:06:07Z"
 idempotency_key = "crunk-plan-chk"
 labels = ["area:crunk"]
 scope = ["crates/crunk-check/**", "crates/crunk/src/check.rs", "crates/crunk/tests/check*.rs", "crates/crunk-check/tests/**"]
@@ -35,7 +35,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an error-severity violation, when crunk check --json runs, then the exit is 1; given a clean project, then 0"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an unreadable crunk.toml, when check runs, then it is refused with E-CONFIG (exit 3, the shared refusal code), and a bad flag exits 2"
