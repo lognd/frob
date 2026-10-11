@@ -376,6 +376,46 @@ mod tests {
 
     // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
     #[test]
+    fn an_expired_defer_no_longer_suppresses_but_a_live_one_does() {
+        let today: Day = "2026-10-10".parse().unwrap();
+        let mut files = FileInterner::new();
+        let mut b = bound(ExceptionKind::Defer, &mut files);
+        let finding = |files: &mut FileInterner| {
+            let file = files.intern("a.rs");
+            let span = Span::new(file, TextRange::new(TextSize::new(10), TextSize::new(12)));
+            Finding::new(
+                "COV001".parse().unwrap(),
+                Severity::Warn,
+                Some(span),
+                "m",
+                "a.rs",
+            )
+        };
+        b.inner.exception.until = Some("2026-10-09".into());
+        let bs = vec![b];
+        let r = apply_in_force(
+            vec![finding(&mut files)],
+            &in_force(&bs, today),
+            &files,
+            &bs,
+        );
+        assert_eq!(r.findings.len(), 1, "the deferred finding returns");
+        assert!(r.suppressed.is_empty());
+        assert!(expiry(&bs[0], today).is_some_and(|f| f.rule.as_str() == "EXC014"));
+        let mut live = bs;
+        live[0].inner.exception.until = Some("2026-10-10".into());
+        let r = apply_in_force(
+            vec![finding(&mut files)],
+            &in_force(&live, today),
+            &files,
+            &live,
+        );
+        assert!(r.findings.is_empty());
+        assert!(expiry(&live[0], today).is_none());
+    }
+
+    // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+    #[test]
     fn only_a_past_defer_day_lapses() {
         let today: Day = "2026-10-10".parse().unwrap();
         let mut files = FileInterner::new();
