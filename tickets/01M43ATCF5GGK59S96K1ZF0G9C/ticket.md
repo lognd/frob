@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:36Z"
-updated = "2026-10-11T02:39:45Z"
+updated = "2026-10-11T02:43:21Z"
 idempotency_key = "crunk-plan-chk"
 labels = ["area:crunk"]
 scope = ["crates/crunk-check/**", "crates/crunk/src/check.rs", "crates/crunk/tests/check*.rs", "crates/crunk-check/tests/**"]
@@ -31,7 +31,7 @@ target = "01M43ATB4X0B56W8T0G8MQFYVM"
 
 [[acceptance]]
 text = "Given a warm cache, when check runs twice, then the second run reuses cached ingest and reports the same findings"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an error-severity violation, when crunk check --json runs, then the exit is 1; given a clean project, then 0"
