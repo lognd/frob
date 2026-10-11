@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:19Z"
-updated = "2026-10-11T00:48:03Z"
+updated = "2026-10-11T00:48:46Z"
 idempotency_key = "m2-grl-fmt"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/grl/fmt.rs"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given already formatted source, when formatted again, then the bytes are identical"
-bound = false
+bound = true
 +++
 
 Implements grl-spec.md section 11 (rule fmt).
