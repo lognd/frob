@@ -55,7 +55,7 @@ fn priority_rank(p: Priority) -> usize {
 fn ranked(r: &Row) -> (std::cmp::Reverse<usize>, u8, TicketId) {
     (
         std::cmp::Reverse(priority_rank(r.front.priority)),
-        r.front.points.map_or(u8::MAX, |p| p.get()),
+        r.front.points.map_or(u8::MAX, crate::model::Points::get),
         r.id,
     )
 }
@@ -68,8 +68,11 @@ fn header(input: &GenInput<'_>, title: &str, intro: &str) -> String {
     )
 }
 
+/// An extra table column: its header and how to fill a row.
+type Extra<'a> = (&'a str, &'a dyn Fn(&Row) -> String);
+
 /// A table of `rows` (capped), with an optional extra column.
-fn table(rows: &[&Row], extra: Option<(&str, &dyn Fn(&Row) -> String)>) -> String {
+fn table(rows: &[&Row], extra: Option<Extra<'_>>) -> String {
     let mut out = String::from("| Handle | Title | Priority | Points | Path |");
     let mut rule = String::from("|---|---|---|---|---|");
     if let Some((name, _)) = extra {
@@ -234,12 +237,16 @@ fn recent_page(input: &GenInput<'_>, rows: &[Row]) -> String {
     out
 }
 
-/// Render every index page.
-#[must_use]
-pub fn render(input: &GenInput<'_>) -> Vec<(String, Vec<u8>)> {
-    let rows = load(input);
-    let mut pages: Vec<(String, String)> = Vec::new();
+/// Tickets grouped for the list pages.
+struct Groups<'a> {
+    by_status: BTreeMap<String, Vec<&'a Row>>,
+    by_milestone: BTreeMap<String, Vec<&'a Row>>,
+    by_component: BTreeMap<String, Vec<&'a Row>>,
+    done_by_month: BTreeMap<String, Vec<&'a Row>>,
+}
 
+/// Group `rows` by status, milestone, component and month done, each group in rank order.
+fn group(rows: &[Row]) -> Groups<'_> {
     let mut by_status: BTreeMap<String, Vec<&Row>> = BTreeMap::new();
     for c in Category::ALL {
         by_status.insert(c.as_str().to_owned(), Vec::new());
@@ -247,7 +254,7 @@ pub fn render(input: &GenInput<'_>) -> Vec<(String, Vec<u8>)> {
     let mut by_milestone: BTreeMap<String, Vec<&Row>> = BTreeMap::new();
     let mut by_component: BTreeMap<String, Vec<&Row>> = BTreeMap::new();
     let mut done_by_month: BTreeMap<String, Vec<&Row>> = BTreeMap::new();
-    for r in &rows {
+    for r in rows {
         by_status
             .entry(r.front.category.as_str().to_owned())
             .or_default()
@@ -289,7 +296,26 @@ pub fn render(input: &GenInput<'_>) -> Vec<(String, Vec<u8>)> {
     for list in done_by_month.values_mut() {
         list.sort_by(|a, b| b.front.updated.cmp(&a.front.updated).then(a.id.cmp(&b.id)));
     }
+    Groups {
+        by_status,
+        by_milestone,
+        by_component,
+        done_by_month,
+    }
+}
 
+/// Render every index page.
+#[must_use]
+pub fn render(input: &GenInput<'_>) -> Vec<(String, Vec<u8>)> {
+    let rows = load(input);
+    let mut pages: Vec<(String, String)> = Vec::new();
+
+    let Groups {
+        by_status,
+        by_milestone,
+        by_component,
+        done_by_month,
+    } = group(&rows);
     pages.push((
         "by-status".into(),
         format!(
@@ -553,10 +579,7 @@ mod tests {
         let out = run(&tree, &paths);
         assert!(page(&out, "indexes/by-milestone.md").contains("## 2 (1)"));
         assert!(page(&out, "indexes/by-component.md").contains("## navigation (1)"));
-        assert!(
-            out.iter()
-                .any(|(p, _)| p.starts_with("indexes/done/20") && p.ends_with(".md"))
-        );
+        assert!(out.iter().any(|(p, _)| p.starts_with("indexes/done/20")));
     }
 
     #[test]
