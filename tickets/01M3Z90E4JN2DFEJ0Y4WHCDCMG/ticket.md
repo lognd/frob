@@ -2,13 +2,14 @@
 id = "01M3Z90E4JN2DFEJ0Y4WHCDCMG"
 title = "gob-languages and gob-directives: YAML comment scanning and key binding so directives and exceptions work in workflow files (tree-sitter F2 split to ~KC4NSBJ)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:40:59Z"
-updated = "2026-10-11T02:45:31Z"
+updated = "2026-10-11T03:06:41Z"
 idempotency_key = "m2-yaml-directives"
 labels = ["milestone:2"]
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/gob-directives/**"]
