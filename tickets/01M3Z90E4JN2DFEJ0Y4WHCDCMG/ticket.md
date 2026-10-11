@@ -1,6 +1,6 @@
 +++
 id = "01M3Z90E4JN2DFEJ0Y4WHCDCMG"
-title = "gob-languages and gob-directives: YAML adapter so directives and exceptions work in workflow files"
+title = "gob-languages and gob-directives: YAML comment scanning and key binding so directives and exceptions work in workflow files (tree-sitter F2 split to ~KC4NSBJ)"
 type = "task"
 category = "in-progress"
 priority = "medium"
@@ -8,7 +8,7 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:40:59Z"
-updated = "2026-10-11T02:43:22Z"
+updated = "2026-10-11T02:44:11Z"
 idempotency_key = "m2-yaml-directives"
 labels = ["milestone:2"]
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/gob-directives/**"]
@@ -18,7 +18,7 @@ kind = "blocked-by"
 target = "01M3Z713F6VY15YSMS15033RN1"
 
 [[acceptance]]
-text = "Given a frob:accept CI001 directive above a uses line in a workflow, when frob check runs with the zizmor stage, then the CI001 finding is suppressed and listed as suppressed"
+text = "Given a frob:accept CI001 directive above a YAML key in a workflow, when frob check runs with the zizmor stage, then the CI001 finding inside that key is suppressed and listed as suppressed, and a directive above a different key does not suppress it"
 bound = false
 +++
 
