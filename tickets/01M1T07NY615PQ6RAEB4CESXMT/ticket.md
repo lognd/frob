@@ -4,24 +4,29 @@ title = "unpaired resource acquisition: known acquire/release API table"
 type = "security"
 category = "in-progress"
 priority = "medium"
+points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-11T03:08:50Z"
+updated = "2026-10-11T03:10:18Z"
 aliases = ["T-4038"]
 labels = ["v1-cluster:B4", "triage:accepted"]
-scope = ["src/frob/gates/_protocol_summary.py"]
+scope = ["crates/grimble-lints/**", "Cargo.lock"]
 
 [[acceptance]]
-text = "given a design note settling the acquire/release pair table shape and whether the existing release-postdominance logic in _protocol_summary.py is reused, when this ticket's design step completes, then the note is attached before implementation"
+text = "Given the design note comment on this ticket settling the acquire/release pair table shape (and that the v1 _protocol_summary.py logic is not reusable: it no longer exists in this tree), when implementation starts, then the note is attached to the ticket"
 bound = false
 
 [[acceptance]]
-text = "given a scope containing performance.mark(), Map.set(), or setTimeout() with no reachable paired release call in the same scope, when frob check runs, then the new rule fires"
+text = "Given TypeScript or JavaScript source with performance.mark(), a Map.set() on a receiver built by new Map, or a bound setTimeout() and no paired release in the scope, when grimble_lints::res::scan runs, then one site per acquire with the pair id and Certainty::Certain"
 bound = false
 
 [[acceptance]]
-text = "given a properly paired acquire/release call, when frob check runs, then the rule stays quiet"
+text = "Given the same acquires with the paired release (clearMarks, delete, clearTimeout) in scope, when scanned, then no site"
+bound = false
+
+[[acceptance]]
+text = "Given the table rows for addEventListener, setInterval, URL.createObjectURL and new AbortController, when scanned without and with the paired release, then a site and no site; adding a row is a data change to the PAIRS table"
 bound = false
 +++
 
