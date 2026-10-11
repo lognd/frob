@@ -2,7 +2,8 @@
 id = "01M3ZX864QGR220FTRGCDPXYZD"
 title = "Generated indexes: status, milestone, component, ready, blocked, recent, done by month"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
