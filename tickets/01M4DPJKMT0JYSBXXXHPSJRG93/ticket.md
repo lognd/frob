@@ -2,7 +2,8 @@
 id = "01M4DPJKMT0JYSBXXXHPSJRG93"
 title = "frob test in a ticket worktree says 'not in a lease-holding worktree; no evidence recorded'"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
