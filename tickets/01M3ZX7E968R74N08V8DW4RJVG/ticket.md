@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:20Z"
 updated = "2026-10-11T21:57:54Z"
 idempotency_key = "m2-diag-applicability"
 labels = ["milestone:2", "area:diagnostics"]
-scope = ["crates/gob-rules/src/finding.rs", "crates/gob-rules/src/meta.rs", "crates/gob-diagnostics/src/record.rs", "crates/gob-rules/tests/ui.rs", "crates/gob-rules/tests/ui/fix_missing_applicability.rs"]
+scope = ["crates/gob-rules/src/finding.rs", "crates/gob-rules/src/meta.rs", "crates/gob-diagnostics/src/record.rs", "crates/gob-rules/tests/ui.rs", "crates/gob-rules/tests/ui/fix_missing_applicability.rs", "crates/gob-rules/Cargo.toml"]
 
 [[acceptance]]
 text = "Given a finding with a Deterministic fix, when serialized to JSON, then its fixes entry has applicability machine and the exact edits"
