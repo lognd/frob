@@ -2,13 +2,13 @@
 id = "01M4DPJGWGB4HFQD5G3CF0E762"
 title = "cycle velocity: done_facts reads events with events_many, not one call per ticket"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T12:07:25Z"
-updated = "2026-10-08T12:07:25Z"
+updated = "2026-10-11T16:29:52Z"
 scope = ["changelog.d/**", "crates/frob-pm/**"]
 
 [[acceptance]]
