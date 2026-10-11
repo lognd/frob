@@ -8,12 +8,12 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-06T13:11:55Z"
-updated = "2026-10-11T01:00:09Z"
+updated = "2026-10-11T02:05:06Z"
 scope = ["crates/crunk-values/**", "crates/crunk-check/src/rules/**", "crates/crunk-ingest/**", "crates/crunk-rules/**", "crates/crunk-check/tests/**", "docs/crunk/**"]
 
 [[acceptance]]
 text = "oklch(), oklab(), lab(), lch(), color() and hwb() parse to the same value a reference implementation gives (test vectors from the CSS Color 4 spec)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "nearest-token suggestions use deltaE_OK and rank a known redmean misordering correctly"
