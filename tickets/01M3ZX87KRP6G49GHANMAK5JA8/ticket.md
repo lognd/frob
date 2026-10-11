@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:46Z"
-updated = "2026-10-11T02:09:31Z"
+updated = "2026-10-11T02:09:32Z"
 idempotency_key = "m2-nav-pm031"
 labels = ["milestone:2", "area:navigation"]
-scope = ["crates/frob-pm/**", "crates/frob-check/src/product.rs", "crates/frob/src/config.rs", "docs/reference/**"]
+scope = ["crates/frob-pm/**", "crates/frob-check/src/product.rs", "crates/frob/src/config.rs", "docs/reference/**", "docs/schemas/**"]
 
 [[acceptance]]
 text = "Given a good-first ticket of 5 points or without a Start here section, when check runs, then PM031 fires naming the missing part"
