@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-11T20:54:19Z"
+updated = "2026-10-11T20:55:31Z"
 idempotency_key = "m2-exec-prefilter"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/exec/prefilter.rs", "crates/gob-plan/src/exec/core/mod.rs", "crates/gob-plan/src/exec/mod.rs", "crates/gob-plan/tests/exec_prefilter.rs"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a file containing the kind, when executed, then results equal those of an unfiltered run"
-bound = false
+bound = true
 +++
 
 Implements plugins.md section 6.2.
