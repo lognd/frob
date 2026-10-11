@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T17:15:30Z"
-updated = "2026-10-11T17:27:24Z"
+updated = "2026-10-11T17:27:40Z"
 scope = ["crates/frob-evidence/**", "crates/frob-ledger/**", "docs/**", "changelog.d/**"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an evidence ref matching more than 50 tests, when evidence add runs, then a warning names the count and suggests exact-name refs"
-bound = false
+bound = true
 +++
 
 Evidence events (kind=evidence) carry the full tests = [...] name list, up to 70 KB per event. In the last 24 h evidence events were 4.2 MB of the 4.4 MB of new ledger bytes (95%), about 20x the code added. They cost clone, checkout, fold and CI time and any agent that reads them. Keep a test count and the digest in the event; keep the full list only in the artifact file under .git/frob/artifacts/<digest>. Also warn (not refuse) from 'evidence add' when a ref matches more than 50 tests, pointing at exact-name refs.
