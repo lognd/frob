@@ -676,6 +676,39 @@ fn doable_lists_expedite_first_then_fixed_date_by_due() {
     );
 }
 
+// frob:ticket 01M3ZX87QPD21PCSSSAJHVK7HJ
+#[test]
+fn doable_newcomer_lists_good_first_smallest_first_with_start_notes() {
+    let repo = Repo::new(false);
+    let mk = |title: &str, points: &str| {
+        repo.id_of(&[
+            "ticket",
+            "new",
+            "--title",
+            title,
+            "--good-first",
+            "--points",
+            points,
+        ])
+    };
+    let two_a = mk("two a", "2");
+    let one = mk("one", "1");
+    let two_b = mk("two b", "2");
+    repo.id_of(&["ticket", "new", "--title", "plain", "--points", "1"]);
+    let out = repo.ok(&["ticket", "doable", "--newcomer"]);
+    let rows = out["data"]["tickets"].as_array().expect("tickets");
+    let ids: Vec<&str> = rows.iter().map(|r| r["id"].as_str().expect("id")).collect();
+    let (first, second) = if two_a < two_b {
+        (&two_a, &two_b)
+    } else {
+        (&two_b, &two_a)
+    };
+    assert_eq!(ids, [one.as_str(), first.as_str(), second.as_str()]);
+    let notes = rows[0]["start_here"].as_str().expect("start notes");
+    assert!(notes.contains("Files to read first"), "{notes}");
+    assert_eq!(out["data"]["count"], 3);
+}
+
 /// The warnings of an envelope as one string.
 fn warnings_of(v: &Value) -> String {
     v["warnings"].to_string()

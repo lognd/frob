@@ -32,17 +32,18 @@ const MILESTONE_PREFIX: &str = "milestone:";
 const COMPONENT_PREFIX: &str = "area:";
 
 /// One ticket as the index pages see it.
-struct Row {
-    id: TicketId,
-    handle: String,
-    front: Frontmatter,
-    path: String,
+pub(super) struct Row {
+    pub(super) id: TicketId,
+    pub(super) handle: String,
+    pub(super) front: Frontmatter,
+    pub(super) body: String,
+    pub(super) path: String,
     /// Open tickets that block this one.
-    blockers: Vec<TicketId>,
+    pub(super) blockers: Vec<TicketId>,
 }
 
 /// Escape `text` for one table cell.
-fn cell(text: &str) -> String {
+pub(super) fn cell(text: &str) -> String {
     text.replace('|', "\\|").replace(['\n', '\r'], " ")
 }
 
@@ -60,7 +61,7 @@ fn ranked(r: &Row) -> (std::cmp::Reverse<usize>, u8, TicketId) {
     )
 }
 
-fn header(input: &GenInput<'_>, title: &str, intro: &str) -> String {
+pub(super) fn header(input: &GenInput<'_>, title: &str, intro: &str) -> String {
     format!(
         "{GENERATED_MARKER_PREFIX} v{}: DO NOT EDIT -->\n# {title}\n\nAs of event {}. {intro}\n\n",
         input.version,
@@ -117,10 +118,11 @@ fn grouped(groups: &BTreeMap<String, Vec<&Row>>) -> String {
     out
 }
 
-fn load(input: &GenInput<'_>) -> Vec<Row> {
+pub(super) fn load(input: &GenInput<'_>) -> Vec<Row> {
     let ids: Vec<TicketId> = input.paths.keys().copied().collect();
     let handles = compute_handles(&ids, input.handle_min_len);
     let mut fronts: BTreeMap<TicketId, Frontmatter> = BTreeMap::new();
+    let mut bodies: BTreeMap<TicketId, String> = BTreeMap::new();
     for (id, path) in input.paths {
         let parsed = input
             .tree
@@ -128,6 +130,7 @@ fn load(input: &GenInput<'_>) -> Vec<Row> {
             .and_then(|b| std::str::from_utf8(b).ok())
             .and_then(|t| doc::parse(path, t).ok());
         if let Some(t) = parsed {
+            bodies.insert(*id, t.body);
             fronts.insert(*id, t.front);
         }
     }
@@ -157,6 +160,7 @@ fn load(input: &GenInput<'_>) -> Vec<Row> {
                 id,
                 handle: handle_of[&id].clone(),
                 path: input.paths[&id].clone(),
+                body: bodies.remove(&id).unwrap_or_default(),
                 front,
                 blockers: b,
             }
