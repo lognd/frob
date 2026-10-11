@@ -2,13 +2,13 @@
 id = "01M4MH61ZJD4VYYXPANZ8132AR"
 title = "frob land: skip the re-check when the merged tree's per-stage input hashes equal a recorded passing check (content-addressed check results)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:47:55Z"
-updated = "2026-10-11T03:47:55Z"
+updated = "2026-10-11T16:40:18Z"
 scope = ["crates/frob-land/**"]
 
 [[acceptance]]
