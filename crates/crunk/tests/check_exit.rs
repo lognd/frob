@@ -1,7 +1,6 @@
 //! `crunk check` exit codes end to end: findings, refused configs and usage errors.
 
 // frob:ticket 01M43ATCF5GGK59S96K1ZF0G9C
-// frob:tests crates/gob-product/src/check.rs::Check
 
 use std::path::Path;
 
@@ -29,6 +28,7 @@ fn project(css: &str) -> tempfile::TempDir {
     dir
 }
 
+// frob:tests crates/gob-product/src/check.rs::Check
 #[test]
 fn an_error_severity_violation_exits_one() {
     let dir = project(".a { color: #ff0000; }\n");
@@ -41,6 +41,7 @@ fn an_error_severity_violation_exits_one() {
     );
 }
 
+// frob:tests crates/gob-product/src/check.rs::Check
 #[test]
 fn a_clean_project_exits_zero() {
     let dir = project(".a { margin: 0; }\n");
@@ -48,6 +49,7 @@ fn a_clean_project_exits_zero() {
     assert_eq!(code, 0, "{env}");
 }
 
+// frob:tests crates/gob-product/src/check.rs::Check
 #[test]
 fn an_unreadable_config_is_refused_with_e_config_not_passed() {
     let dir = project(".a { margin: 0; }\n");
@@ -57,6 +59,7 @@ fn an_unreadable_config_is_refused_with_e_config_not_passed() {
     assert_eq!(env["error"]["code"], "E-CONFIG", "{env}");
 }
 
+// frob:tests crates/gob-product/src/check.rs::Check
 #[test]
 fn a_usage_error_exits_two() {
     let dir = project(".a { margin: 0; }\n");

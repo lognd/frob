@@ -1,7 +1,6 @@
 //! A warm cache: the second `crunk check` reuses the cached ingest and reports the same findings.
 
 // frob:ticket 01M43ATCF5GGK59S96K1ZF0G9C
-// frob:tests crates/crunk-check/src/product.rs::Crunk
 
 use std::path::Path;
 
@@ -14,6 +13,7 @@ fn write(root: &Path, rel: &str, text: &str) {
     std::fs::write(path, text).expect("write");
 }
 
+// frob:tests crates/crunk-check/src/product.rs::Crunk
 #[test]
 fn the_second_run_reuses_cached_ingest_and_reports_the_same_findings() {
     let dir = tempfile::tempdir().expect("tempdir");
