@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:47Z"
 updated = "2026-10-11T20:32:04Z"
 idempotency_key = "m2-nav-ticket-url"
 labels = ["milestone:2", "area:navigation"]
-scope = ["crates/frob/src/ticket/url_cmd.rs", "crates/frob/src/ticket/mod.rs"]
+scope = ["crates/frob/src/ticket/url_cmd.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/ticket_url.rs"]
 
 [[links]]
 kind = "blocked-by"
