@@ -8,7 +8,7 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-11T03:53:13Z"
+updated = "2026-10-11T03:56:28Z"
 aliases = ["T-4038"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["crates/grimble-lints/**", "Cargo.lock"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the same acquires with the paired release (clearMarks, delete, clearTimeout) in scope, when scanned, then no site"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the table rows for addEventListener, setInterval, URL.createObjectURL and new AbortController, when scanned without and with the paired release, then a site and no site; adding a row is a data change to the PAIRS table"
