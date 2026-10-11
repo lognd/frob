@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:19Z"
-updated = "2026-10-11T00:41:06Z"
+updated = "2026-10-11T00:48:03Z"
 idempotency_key = "m2-grl-fmt"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/grl/fmt.rs"]
@@ -19,7 +19,7 @@ target = "01M3ZX7DCQGFR0761QHY8NPAQE"
 
 [[acceptance]]
 text = "Given any rule of grl-spec section 12, when formatted, then each clause is on its own line, examples come last and re-parsing the output yields the same AST"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given already formatted source, when formatted again, then the bytes are identical"
