@@ -2,7 +2,8 @@
 id = "01M43ATCF5GGK59S96K1ZF0G9C"
 title = "crunk check end to end: pipeline, reports, cache, exit codes"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
