@@ -320,6 +320,8 @@ pub fn attest(ws: &Workspace, presence: &Presence, req: &Request) -> Result<Evid
         passed: Some(true),
         exit_code: None,
         tests: Vec::new(),
+        test_count: None,
+        tests_digest: None,
         failed_tests: Vec::new(),
         inline: None,
         size: req.statement.len() as u64,
