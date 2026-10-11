@@ -1,6 +1,6 @@
 +++
 id = "01M3ZX86W1P62F80ZNR17Q0SQ9"
-title = "TICK006 move-outside-reindex"
+title = "TICK008 move-outside-reindex"
 type = "task"
 category = "todo"
 priority = "high"
@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:45Z"
-updated = "2026-10-03T03:34:45Z"
+updated = "2026-10-11T17:17:44Z"
 idempotency_key = "m2-nav-tick006"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-obligations/src/tick_moves.rs"]
