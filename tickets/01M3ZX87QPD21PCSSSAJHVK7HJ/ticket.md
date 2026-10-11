@@ -2,7 +2,8 @@
 id = "01M3ZX87QPD21PCSSSAJHVK7HJ"
 title = "ticket doable --newcomer and indexes/good-first.md"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
