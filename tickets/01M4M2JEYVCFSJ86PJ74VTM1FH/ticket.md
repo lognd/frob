@@ -2,7 +2,8 @@
 id = "01M4M2JEYVCFSJ86PJ74VTM1FH"
 title = "CI uploads the nextest junit report as an artifact when the nextest step fails, so failing tests can be read without log access"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
