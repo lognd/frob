@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:19Z"
-updated = "2026-10-11T00:22:03Z"
+updated = "2026-10-11T01:03:13Z"
 idempotency_key = "m2-grl-fmt"
-labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/grl/fmt.rs"]
+labels = ["milestone:2", "area:grl", "creates:crates/gob-plan/tests/fmt_source.rs"]
+scope = ["crates/gob-plan/src/grl/fmt.rs", "crates/gob-plan/src/grl/mod.rs", "crates/gob-plan/tests/fmt_source.rs"]
 
 [[links]]
 kind = "blocked-by"
@@ -19,11 +19,11 @@ target = "01M3ZX7DCQGFR0761QHY8NPAQE"
 
 [[acceptance]]
 text = "Given any rule of grl-spec section 12, when formatted, then each clause is on its own line, examples come last and re-parsing the output yields the same AST"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given already formatted source, when formatted again, then the bytes are identical"
-bound = false
+bound = true
 +++
 
 Implements grl-spec.md section 11 (rule fmt).

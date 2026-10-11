@@ -9,20 +9,35 @@ use gob_rules::Finding;
 /// Files every case tree gets, so links and imports have something to resolve to.
 const SIDE_FILES: &[(&str, &str)] = &[("exists.md", "# Present heading\n")];
 
-/// Evaluate one corpus block in a fresh tree with the shared ledger; `{{OPEN}}` and `{{DONE}}` become live ticket ids.
+// frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+/// The tool stage `EXC017` blocks run against: three tool ids bound to frob rules.
+const TOOL_STAGE: &str = "\n[[check.tool]]\nname = \"lint\"\ncommand = \"lint\"\nid_map = { \"clippy::unwrap_used\" = \"COV001\", \"unpinned-uses\" = \"CI001\" }\n";
+
+/// Evaluate one corpus block in a fresh tree with the shared ledger; `{{OPEN}}` and `{{DONE}}` become live ticket ids, `{{PAST}}`, `{{TODAY}}` and `{{FUTURE}}` days relative to today.
 fn runner(case: &Case) -> Vec<Finding> {
     let dir = tempfile::tempdir().expect("tempdir");
     let fixture = common::shared_tickets();
+    let today = gob_time::Clock::today(&gob_time::SystemClock::pin());
+    let day = |n: i64| today.plus_days(n).expect("in range").to_string();
     let text = case
         .text
         .replace("{{OPEN}}", &fixture.open)
-        .replace("{{DONE}}", &fixture.done);
+        .replace("{{DONE}}", &fixture.done)
+        .replace("{{PAST}}", &day(-1))
+        .replace("{{TODAY}}", &day(0))
+        .replace("{{FUTURE}}", &day(1));
     common::write_tree(dir.path(), SIDE_FILES);
     common::write_tree(dir.path(), &[(case.file_name.as_str(), text.as_str())]);
-    if let Some(cfg) = &case.config {
+    let tools = if case.rule.as_str() == "EXC017" {
+        TOOL_STAGE
+    } else {
+        ""
+    };
+    if case.config.is_some() || !tools.is_empty() {
+        let cfg = case.config.as_deref().unwrap_or_default();
         common::write_tree(
             dir.path(),
-            &[("frob.toml", &format!("[invariants]\n{cfg}\n"))],
+            &[("frob.toml", &format!("[invariants]\n{cfg}\n{tools}"))],
         );
     }
     let config = InvariantsConfig::load(dir.path()).expect("config");
