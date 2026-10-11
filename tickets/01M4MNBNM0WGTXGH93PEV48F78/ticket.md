@@ -2,7 +2,8 @@
 id = "01M4MNBNM0WGTXGH93PEV48F78"
 title = "Normalize source mtimes on worktree and land-checkout creation so shared-target builds compile zero workspace crates"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
