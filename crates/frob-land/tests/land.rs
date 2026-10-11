@@ -1940,3 +1940,47 @@ fn a_red_base_files_one_blocking_fix_ticket_and_later_lands_wait_for_it() {
     );
     assert_eq!(blockers(&fx), 1, "no second fix ticket");
 }
+
+// frob:ticket 01M4CTDWJRKBC64EBQPGHMWDGG
+// frob:tests crates/frob-land/src/base_ci.rs::gate
+#[test]
+fn the_base_ci_gate_asks_about_the_remote_tracking_tip_when_there_is_one() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let pushed = fx.main_tip();
+    // The remote-tracking ref is what GitHub ran CI for; local main has moved on since.
+    let remote = fx.root.join(".git/refs/remotes/origin");
+    std::fs::create_dir_all(&remote).expect("remote dir");
+    std::fs::write(remote.join("main"), format!("{pushed}\n")).expect("remote ref");
+    commit_on_main(&fx, "unpushed.txt", "local only\n");
+    assert_ne!(fx.main_tip(), pushed, "local main is ahead of the remote");
+    let ci = CannedCi::new(failing("rust (linux)"));
+    let (_, out) = ci_land(&fx, ci.clone(), |_| {});
+    assert_eq!(refusal(&out.expect_err("red")).code, "E-LAND-BASE-RED");
+    assert_eq!(
+        ci.asked.lock().expect("lock")[0],
+        pushed,
+        "the pushed tip, not the local one"
+    );
+}
+
+// frob:ticket 01M4CTDWJRKBC64EBQPGHMWDGG
+// frob:tests crates/frob-land/src/base_ci.rs::gate
+#[test]
+fn the_base_ci_gate_falls_back_to_the_local_tip_without_a_remote_tracking_ref() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    assert!(
+        !fx.root.join(".git/refs/remotes/origin/main").exists(),
+        "no remote-tracking ref in the fixture"
+    );
+    commit_on_main(&fx, "unpushed.txt", "local only\n");
+    let ci = CannedCi::new(failing("rust (linux)"));
+    let (_, out) = ci_land(&fx, ci.clone(), |_| {});
+    assert_eq!(refusal(&out.expect_err("red")).code, "E-LAND-BASE-RED");
+    assert_eq!(ci.asked.lock().expect("lock")[0], fx.main_tip());
+}
