@@ -8,14 +8,14 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-11T00:41:20Z"
+updated = "2026-10-11T00:59:18Z"
 idempotency_key = "m2-nav-e-ticket-path"
 labels = ["milestone:2", "area:navigation", "good-first"]
 scope = ["crates/frob/src/ticket/read.rs", "crates/gob-cli/src/error.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/ticket.rs"]
 
 [[acceptance]]
 text = "Given `frob ticket show tickets/01M3.../ticket.md`, when run, then it exits 2 with E-TICKET-PATH naming the handle of that ticket"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a valid handle, ULID or alias, when run, then behaviour is unchanged"
