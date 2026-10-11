@@ -2,7 +2,8 @@
 id = "01M4MGEZH4541JT6XPYPQKH86R"
 title = "Repo-level strip = symbols for the dev and test profiles so developer and CI test builds are smaller without a user cargo config"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
