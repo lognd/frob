@@ -2,7 +2,8 @@
 id = "01M4D6NH5VT2E2ZRRVYMD4XAA7"
 title = "frob-ack: open the repository-shared cache instead of its own .frob/cache.sqlite"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
