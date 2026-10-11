@@ -449,8 +449,10 @@ Master Green at Scale", EuroSys 2019).
    touched files plus their dependency cone: for frob rules the reverse
    closure over the obligation graph, with `Unknown` and `May` edges
    included (an edge that cannot be resolved widens the cone, never
-   narrows it). Cargo stages run over the affected crates and their
-   reverse dependencies; a stage that declares input paths in
+   narrows it). Cargo stages run over the crates the branch changed and their
+   direct reverse dependencies, widening to the transitive closure only
+   for a crate whose public API changed (a manifest, an added or removed
+   Rust file, or a differing `pub` signature against the merge base); a stage that declares input paths in
    `frob.toml` (`dev gen --check` declares the generator inputs) is not
    run or gated when the ticket touches none of them.
 2. **Moving base.** New base commits that touch nothing in the ticket's

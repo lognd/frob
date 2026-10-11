@@ -16,7 +16,7 @@ use crate::filecheck::{opaque_binary, run_file_checks};
 use crate::fix;
 use crate::options::RunOptions;
 use crate::packages::{Affected, Workspace};
-use crate::product::{CollectCx, Collected, Product, ScopeView, Snapshot};
+use crate::product::{BranchChanges, CollectCx, Collected, Product, ScopeView, Snapshot};
 use crate::repo::run_repo_rules;
 use crate::report::{CheckReport, Counts, FixOutcome, Tally, Timing};
 use crate::required::{mark_annotations, zero_subjects};
@@ -118,8 +118,13 @@ fn affected_packages(
     root: &Path,
     manifests: &[String],
     files: &std::collections::BTreeSet<String>,
+    changes: Option<&BranchChanges>,
 ) -> Affected {
-    Workspace::load(root, manifests).affected(files)
+    // The branch's own changes narrow the packages; without them the scope files stand for both.
+    match changes.filter(|c| !c.files.is_empty()) {
+        Some(c) => Workspace::load(root, manifests).affected(&c.files, &c.api),
+        None => Workspace::load(root, manifests).affected(files, files),
+    }
 }
 
 /// Start the `[[check.tool]]` stages in the background unless skipped or filtered out by `--only`.
@@ -131,6 +136,7 @@ fn begin_tools(
     table: &CheckTable,
     only: &[String],
     scope_files: Option<&std::collections::BTreeSet<String>>,
+    changes: Option<&BranchChanges>,
     manifests: &[String],
 ) -> Option<ToolRun> {
     let wanted = only.is_empty()
@@ -147,7 +153,7 @@ fn begin_tools(
                 .iter()
                 .any(|t| t.args.iter().any(|a| a == "{packages}"))
         })
-        .map(|files| affected_packages(root, manifests, files));
+        .map(|files| affected_packages(root, manifests, files, changes));
     start_tools(
         root,
         &applicable_stages(&table.tool, scope_files, affected.as_ref()),
@@ -372,7 +378,15 @@ fn pass<P: Product>(
         .filter(|e| e.path == "Cargo.toml" || e.path.ends_with("/Cargo.toml"))
         .map(|e| e.path.clone())
         .collect();
-    let tools = begin_tools(root, opts, table, only, scope_files, &manifests);
+    let tools = begin_tools(
+        root,
+        opts,
+        table,
+        only,
+        scope_files,
+        scope.as_ref().and_then(ScopeView::changes),
+        &manifests,
+    );
     product.start_external(&snap, table, scope_files);
 
     let wanted = |m: &RuleMeta| matches_only(only, m.family, m.id);

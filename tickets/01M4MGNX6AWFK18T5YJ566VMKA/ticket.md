@@ -3,12 +3,12 @@ id = "01M4MGNX6AWFK18T5YJ566VMKA"
 title = "frob ticket doable takes 7.6 s on 1,787 tickets while ticket list takes 0.09 s; compute from the SQLite index and cache the result per ledger tip"
 type = "task"
 category = "todo"
-priority = "medium"
+priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:39:06Z"
-updated = "2026-10-11T03:39:06Z"
+updated = "2026-10-11T03:52:10Z"
 scope = ["crates/frob-ticket/**"]
 
 [[acceptance]]

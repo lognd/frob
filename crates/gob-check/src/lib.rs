@@ -81,10 +81,11 @@ pub use gob_cache::ArtifactKey;
 #[doc(hidden)]
 pub use gob_rules as __rules;
 pub use options::RunOptions;
+pub use packages::public_surface_differs;
 pub use pipeline::run;
 pub use product::{
-    CollectCx, Collected, CountFn, External, NoScope, Product, RepoGroup, RunFn, ScopeView,
-    ScopedFindings, Snapshot,
+    BranchChanges, CollectCx, Collected, CountFn, External, NoScope, Product, RepoGroup, RunFn,
+    ScopeView, ScopedFindings, Snapshot,
 };
 pub use report::{AppliedFix, CheckReport, Counts, FixOutcome, StageTime, Stats, Timing};
 pub use rule_set::RuleSet;
