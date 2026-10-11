@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-11T15:56:24Z"
+updated = "2026-10-11T16:19:21Z"
 idempotency_key = "m2-plan-cost"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/plan/cost.rs", "crates/gob-plan/src/lower/prefilter.rs"]
@@ -19,7 +19,7 @@ target = "01M3ZX7EKNE5Q0NB0DKCH77AZX"
 
 [[acceptance]]
 text = "Given a plan using `reaches ... within 6`, when costed, then the class reads closure depth 6"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a rule over comment and directive kinds, when lowered, then the prefilter lists exactly those kinds"
