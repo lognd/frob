@@ -2,7 +2,8 @@
 id = "01M4MGNX1RJNX032GWZ1NN2YCK"
 title = "frob check file-rules cache hit rate is 23 percent (3157 of 13557 files) in the telemetry; find why the cache misses and make worktrees and unchanged files hit"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
