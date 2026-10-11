@@ -55,8 +55,12 @@ Milestone 1 (D36) implements `accept` and `defer` only, with EXC001,
 EXC003, EXC005 and EXC007 (section 6 gives their meaning as built);
 `hotfix`, `baseline`, budgets, the audit and `convert` are Milestone 2
 or later (D36). A flagged exception still suppresses its finding; the
-EXC finding is what fails the gate. The optional `until=` is parsed but
-not evaluated yet.
+EXC finding is what fails the gate, with two exceptions. A `defer` whose
+`until=YYYY-MM-DD` day (UTC, inclusive) has passed no longer suppresses and
+raises EXC014; an `until` holding a `:` is a metric target that only the
+product knowing the metric evaluates. An `accept` on an Unresolved finding
+does not suppress it and raises EXC016. EXC017 reads the tool ids that a
+`[[check.tool]]` `id_map` binds (a parser's built-in map is not read yet).
 
 ## 2. Syntax
 

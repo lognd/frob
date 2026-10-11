@@ -1,11 +1,13 @@
 //! Standalone input collection: graph and lock through `frob-ack`, plus every directive.
 
+use std::collections::BTreeMap;
 use std::path::Path;
 
 use frob_ack::{AckError, Inputs};
 use gob_directives::{DirectiveRecord, ScanConfig, Scanner};
 use gob_languages::Language;
 use gob_lock::LockFile;
+use gob_rules::RuleId;
 use gob_symbols::{SymbolGraph, extract_file};
 use gob_text::FileInterner;
 use gob_walk::{Roles, WalkConfig, walk};
@@ -34,6 +36,10 @@ pub struct Collected {
     pub directives: Vec<DirectiveRecord>,
     /// Resolves the `FileId`s inside the directive spans.
     pub files: FileInterner,
+    /// Tool ids bound to frob rules by the repository's `[[check.tool]]` stages.
+    pub tool_ids: BTreeMap<String, RuleId>,
+    /// The UTC day `until=` dates are compared with, read once when collecting.
+    pub today: gob_time::Day,
 }
 
 impl Collected {
@@ -52,6 +58,8 @@ impl Collected {
             ledger,
             files: &self.files,
             config,
+            today: self.today,
+            tool_ids: &self.tool_ids,
         }
     }
 }
@@ -107,5 +115,7 @@ pub fn collect(root: &Path) -> Result<Collected, CollectError> {
         lock,
         directives,
         files,
+        tool_ids: crate::tool_bound_ids(root),
+        today: gob_time::Clock::today(&gob_time::SystemClock::pin()),
     })
 }

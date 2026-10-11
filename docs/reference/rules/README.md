@@ -70,6 +70,9 @@
 | [EXC003](EXC003.md) | defer-ticket-terminal | error | manual | P+ | false | A defer directive names a ticket that is done or dropped. |
 | [EXC005](EXC005.md) | accept-not-attested | warn | manual | P+ | false | An accept directive's bound symbol changed since it was attested. |
 | [EXC007](EXC007.md) | defer-ticket-missing | error | manual | P+ | false | A defer directive names a ticket that does not exist. |
+| [EXC014](EXC014.md) | defer-expired | error | manual | P+ | false | A defer directive's `until` date has passed. |
+| [EXC016](EXC016.md) | accept-on-unresolved | error | manual | P+ | false | An accept directive names a rule at a site where the finding is Unresolved. |
+| [EXC017](EXC017.md) | native-suppression-without-exception | warn | manual | P+ | false | A native suppression of a rule bound through a tool stage has no frob exception. |
 
 ## INV
 

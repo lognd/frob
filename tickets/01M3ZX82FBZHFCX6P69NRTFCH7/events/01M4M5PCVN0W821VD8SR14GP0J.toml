@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T00:27:06Z"
+digest = "b390195a97cc9ffcbc3fe7b980d47ee1d07376ff1fc0f247921b749241c4c84d"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ac9f4894-bd2d-4d6d-a6f5-b27a2eaad21d with nextest profile: default
+    Starting 1 test across 9 binaries (120 tests skipped)
+        PASS [   0.007s] frob-ledger slug::tests::punctuation_title_slugs_to_dashed_words
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 120 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(=slug::tests::punctuation_title_slugs_to_dashed_words)'"
+size = 545
+status = "measured"
+tests = ["slug::tests::punctuation_title_slugs_to_dashed_words"]
+at = "2026-10-11T00:27:06Z"
+actor = "lognd"
+rev = 1

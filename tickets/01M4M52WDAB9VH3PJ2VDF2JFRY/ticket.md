@@ -8,15 +8,15 @@ points = 2
 parent = "01M4CTE0GYDX0XW64JRNF2ZMQG"
 reporter = "lognd"
 created = "2026-10-11T00:16:28Z"
-updated = "2026-10-11T00:17:42Z"
+updated = "2026-10-11T00:23:41Z"
 scope = ["crates/gob-caps/**,crates/gob-lock/**,crates/gob-ir/**,crates/gob-symbols/**,crates/grimble-check/**,changelog.d/**"]
 
 [[acceptance]]
-text = "Given cargo metadata, when the gob-lock package's normal dependencies are listed, then gob-ir is not among them (test gob_lock_does_not_depend_on_gob_ir)"
+text = "Given the gob-lock manifest, when its dependency tables are read, then gob-ir is in none of them and gob_lock::DIGEST_SCHEME equals gob_caps::DIGEST_SCHEME (test gob_lock_does_not_depend_on_gob_ir)"
 bound = false
 
 [[acceptance]]
-text = "Given the gob-caps constant, when compared with gob_ir::DIGEST_SCHEME and gob_lock::DIGEST_SCHEME, then all three are the same value (test digest_scheme_is_one_constant)"
+text = "Given gob-ir, when its DIGEST_SCHEME is compared with gob-caps, then they are the same constant (test digest_scheme_is_one_constant)"
 bound = false
 +++
 
