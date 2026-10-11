@@ -2,13 +2,13 @@
 id = "01M4D956T20WN96P7A3K4B9CKF"
 title = "ERR001-ERR003: empty error handler, discarded fallible result, catch-all that neither rethrows nor logs"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:12:57Z"
-updated = "2026-10-08T08:12:57Z"
+updated = "2026-10-11T01:44:47Z"
 scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**"]
 
 [[acceptance]]
