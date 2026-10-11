@@ -56,7 +56,7 @@ pub struct TicketsTable {
     #[config(default = String::new())]
     pub actor: String,
     /// Most points a ticket labelled `good-first` may carry before PM031 fires (`navigation.md` section 4.2).
-    // frob:ticket 01M3ZX87KR1Q9BCWKXAAMAK5JA8
+    // frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
     #[config(default = 2)]
     pub good_first_max_points: u32,
 }

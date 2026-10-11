@@ -6,7 +6,7 @@
 // frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
 // frob:ticket 01M4CSZFC0QF9PH544ARF60RCZ
 // frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
-// frob:ticket 01M3ZX87KR1Q9BCWKXAAMAK5JA8
+// frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -346,7 +346,7 @@ fn every_corpus_file_has_a_test() {
     );
 }
 
-// frob:ticket 01M3ZX87KR1Q9BCWKXAAMAK5JA8
+// frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
 /// A 5-point good-first ticket with no Start here section is reported with both parts named.
 #[test]
 fn pm031_message_names_every_missing_part() {

@@ -4,7 +4,7 @@
 //! Given/When/Then acceptance and a `## Start here` section (navigation.md section 4.2).
 //! The pure core [`missing_parts`] takes one ticket; [`evaluate`] walks the labelled tickets.
 
-// frob:ticket 01M3ZX87KR1Q9BCWKXAAMAK5JA8
+// frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
 
 use frob_ledger::index::ListFilter;
 use frob_ledger::model::{Category, Ticket};

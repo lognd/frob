@@ -314,7 +314,7 @@ fn wip_evaluated(inputs: &FrobInputs, state: &snapshot::LedgerState) -> Evaluate
 }
 
 /// `PM031` findings for the `repo:good-first` group; empty without a ledger, limit from `[tickets] good_first_max_points`.
-// frob:ticket 01M3ZX87KR1Q9BCWKXAAMAK5JA8
+// frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
 fn good_first_findings(inputs: &FrobInputs) -> Vec<Finding> {
     const ALL: &[&str] = &["PM031"];
     let state = match ledger_of(inputs, ALL) {
@@ -458,7 +458,7 @@ impl Product for Frob {
                 |s: &Snapshot<Self>, _| strict_pm(&s.inputs, cycle_plan_findings(&s.inputs)),
             )
             .full_only(),
-            // frob:ticket 01M3ZX87KR1Q9BCWKXAAMAK5JA8
+            // frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
             RepoGroup::new(
                 "repo:good-first",
                 vec![Pm031.meta()],
