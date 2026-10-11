@@ -2,13 +2,13 @@
 id = "01M3ZX82K7HX9D2VKT25KS4MV2"
 title = "Ticket path function: top-epic directory, EPIC.md, _unfiled, collisions"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-07T02:01:31Z"
+updated = "2026-10-11T03:23:43Z"
 idempotency_key = "m2-nav-path"
 labels = ["milestone:2", "area:navigation", "good-first"]
 scope = ["crates/frob-ledger/src/path_fn.rs"]
