@@ -8,11 +8,11 @@ points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:41Z"
-updated = "2026-10-11T19:57:36Z"
+updated = "2026-10-11T19:58:13Z"
 scope = ["changelog.d/**", "crates/*/Cargo.toml", "crates/gob-dev/**"]
 
 [[acceptance]]
-text = "Given cargo dev publish --dry-run, when it runs, then the unconsumed crates are skipped and the rest publish in order"
+text = "Given the publish plan of this workspace, when it is computed, then gob-frameworks, gob-trust, gob-packs and frob-gh are absent and no planned crate has a normal or build dependency on a publish = false crate"
 bound = false
 +++
 
