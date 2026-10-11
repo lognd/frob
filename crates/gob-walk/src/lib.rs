@@ -166,7 +166,7 @@ pub struct WalkResult {
 
 enum Item {
     /// Under the cap; read and hashed after the walk through the content source.
-    Pending(String),
+    Pending(String, u64),
     Big(Oversized),
 }
 
@@ -193,15 +193,9 @@ fn is_state_entry(e: &ignore::DirEntry) -> bool {
 /// Files read per filter pipeline (building one loads the index and attributes).
 const READ_CHUNK: usize = 256;
 
-/// Walks `root` in parallel honoring ignore files and `config.exclude`.
-///
-/// The state directories [`STATE_DIRS`] (`.git/`, `.frob/`, `.grimble/`) are always
-/// skipped, with or without an exclude entry, so no product reports another's cache.
-///
-/// # Errors
-/// Returns [`WalkError::BadGlob`] when an exclude glob does not compile.
-/// Unreadable files are logged at warn and skipped.
-pub fn walk(root: &Path, config: &WalkConfig) -> Result<WalkResult, WalkError> {
+// frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+/// Lists the files under the cap (path, size) and the oversized ones; reads no content.
+fn list(root: &Path, config: &WalkConfig) -> Result<(Vec<(String, u64)>, WalkResult), WalkError> {
     let mut ob = OverrideBuilder::new(root);
     for glob in &config.exclude {
         ob.add(&format!("!{glob}"))
@@ -250,7 +244,7 @@ pub fn walk(root: &Path, config: &WalkConfig) -> Result<WalkResult, WalkError> {
                 tracing::debug!(path, size, cap, "oversized file");
                 Item::Big(Oversized { path, size })
             } else {
-                Item::Pending(path)
+                Item::Pending(path, size)
             };
             items
                 .lock()
@@ -267,10 +261,71 @@ pub fn walk(root: &Path, config: &WalkConfig) -> Result<WalkResult, WalkError> {
         .unwrap_or_else(std::sync::PoisonError::into_inner)
     {
         match item {
-            Item::Pending(p) => pending.push(p),
+            Item::Pending(p, size) => pending.push((p, size)),
             Item::Big(b) => out.oversized.push(b),
         }
     }
+    Ok((pending, out))
+}
+
+// frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+/// One file of a path-only walk.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct PathEntry {
+    /// Path relative to the root, forward-slash separated.
+    pub path: String,
+    /// Size in bytes on disk (not the git-normalized size).
+    pub size: u64,
+}
+
+// frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+/// Result of [`walk_paths`]; both lists are sorted by path.
+#[derive(Clone, Default, PartialEq, Eq, Debug)]
+pub struct PathWalkResult {
+    /// Files under the size cap, listed but never read.
+    pub files: Vec<PathEntry>,
+    /// Files above the size cap.
+    pub oversized: Vec<Oversized>,
+}
+
+// frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+/// Like [`walk`] but lists paths and on-disk sizes only: no file is read, filtered or hashed.
+///
+/// Use it when the caller reads the files itself or needs only their names.
+///
+/// # Errors
+/// Returns [`WalkError::BadGlob`] when an exclude glob does not compile.
+pub fn walk_paths(root: &Path, config: &WalkConfig) -> Result<PathWalkResult, WalkError> {
+    let (listing, mut out) = list(root, config)?;
+    let mut files: Vec<PathEntry> = listing
+        .into_iter()
+        .map(|(path, size)| PathEntry { path, size })
+        .collect();
+    files.sort_by(|a, b| a.path.cmp(&b.path));
+    out.oversized.sort_by(|a, b| a.path.cmp(&b.path));
+    tracing::info!(
+        files = files.len(),
+        oversized = out.oversized.len(),
+        "path walk complete"
+    );
+    Ok(PathWalkResult {
+        files,
+        oversized: out.oversized,
+    })
+}
+
+/// Walks `root` in parallel honoring ignore files and `config.exclude`.
+///
+/// The state directories [`STATE_DIRS`] (`.git/`, `.frob/`, `.grimble/`) are always
+/// skipped, with or without an exclude entry, so no product reports another's cache.
+///
+/// # Errors
+/// Returns [`WalkError::BadGlob`] when an exclude glob does not compile.
+/// Unreadable files are logged at warn and skipped.
+pub fn walk(root: &Path, config: &WalkConfig) -> Result<WalkResult, WalkError> {
+    // frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+    let (listing, mut out) = list(root, config)?;
+    let pending: Vec<String> = listing.into_iter().map(|(path, _)| path).collect();
     // Digests are over the content as git would store it (clean filters applied),
     // so a CRLF checkout under core.autocrlf hashes like its LF twin.
     let source = ContentSource::locate(root);
@@ -407,5 +462,47 @@ mod tests {
             LanguageHint::from_path("x.PY"),
             LanguageHint::Other("py".into())
         );
+    }
+    // frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+    #[test]
+    fn walk_paths_lists_without_reading_any_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        let marker = root.join("clean-ran");
+        gob_git::Repo::init(root).unwrap();
+        // A clean filter that leaves a marker proves the file went through the content source.
+        let config = root.join(".git/config");
+        let mut text = fs::read_to_string(&config).unwrap();
+        text = format!(
+            "{text}[filter \"spy\"]\n\tclean = touch {}; cat\n",
+            marker.display()
+        );
+        fs::write(&config, text).unwrap();
+        write(root, ".gitattributes", "*.css filter=spy\n");
+        write(root, "a.css", "a{}");
+        write(root, "big.css", "0123456789");
+        let cfg = WalkConfig {
+            size_cap: 5,
+            ..WalkConfig::default()
+        };
+
+        let listed = walk_paths(root, &cfg).unwrap();
+        assert!(!marker.exists(), "walk_paths must not read or filter files");
+        let names: Vec<&str> = listed.files.iter().map(|f| f.path.as_str()).collect();
+        assert!(names.contains(&"a.css"));
+        assert_eq!(
+            listed
+                .files
+                .iter()
+                .find(|f| f.path == "a.css")
+                .unwrap()
+                .size,
+            3
+        );
+        assert!(listed.oversized.iter().any(|o| o.path == "big.css"));
+
+        let hashed = walk(root, &cfg).unwrap();
+        assert!(marker.exists(), "walk hashes through the clean filter");
+        assert!(paths(&hashed).contains(&"a.css"));
     }
 }

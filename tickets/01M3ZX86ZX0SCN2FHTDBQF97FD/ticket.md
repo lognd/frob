@@ -1,6 +1,6 @@
 +++
 id = "01M3ZX86ZX0SCN2FHTDBQF97FD"
-title = "TICK007 misfiled-ticket with machine fix"
+title = "TICK009 misfiled-ticket with machine fix"
 type = "task"
 category = "todo"
 priority = "high"
@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:46Z"
-updated = "2026-10-03T03:34:46Z"
+updated = "2026-10-11T17:17:44Z"
 idempotency_key = "m2-nav-tick007"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-obligations/src/tick_misfiled.rs"]

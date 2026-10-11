@@ -44,7 +44,7 @@ pub(crate) const fn pin(language: Language) -> Option<(&'static str, &'static st
         Language::Rust => Some(("tree-sitter-rust", "0.24.2")),
         Language::Markdown => Some(("tree-sitter-md", "0.5.3")),
         Language::Toml => Some(("tree-sitter-toml-ng", "0.7.0")),
-        Language::Yaml => None,
+        Language::Yaml | Language::Grmb => None,
         Language::Python => Some(("tree-sitter-python", "0.25.0")),
         Language::CSharp => Some(("tree-sitter-c-sharp", "0.23.5")),
         Language::TypeScript | Language::Tsx => Some(("tree-sitter-typescript", "0.23.2")),
@@ -61,6 +61,10 @@ pub(crate) const fn pin(language: Language) -> Option<(&'static str, &'static st
 /// version and the tree-sitter core version, so any grammar or core change
 /// invalidates caches. A disabled feature yields an `unavailable` identity.
 pub fn grammar_identity(language: Language) -> String {
+    // frob:ticket 01M3ZEH464EFCFAZ4XDKE89D5Z
+    if language == Language::Grmb {
+        return crate::grmb::grammar_identity();
+    }
     let Some((krate, version)) = pin(language) else {
         return format!("{}:line-scanner", language.name());
     };
@@ -86,6 +90,15 @@ mod tests {
         assert_ne!(
             grammar_identity(Language::Rust),
             grammar_identity(Language::Toml)
+        );
+    }
+
+    // frob:ticket 01M3ZEH464EFCFAZ4XDKE89D5Z
+    #[test]
+    fn grmb_identity_comes_from_the_grmb_module() {
+        assert_eq!(
+            grammar_identity(Language::Grmb),
+            crate::grmb::grammar_identity()
         );
     }
 

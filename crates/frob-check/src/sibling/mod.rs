@@ -150,6 +150,26 @@ fn wanted(only: &[String]) -> bool {
         })
 }
 
+/// A digest of the walk (every path with its content digest), the base ref and the UTC day.
+///
+/// The day is in the key because exceptions expire by date. A changed, added or removed walked
+/// file changes the key, so a stored document is only ever reused for an identical tree
+/// (frob:ticket 01M4MGNWX3MF5KM98EPQZJGVGZ).
+fn tree_key(digests: &std::collections::HashMap<String, String>, base: &str, day: &str) -> String {
+    let mut rows: Vec<(&String, &String)> = digests.iter().collect();
+    rows.sort();
+    let mut h = blake3::Hasher::new();
+    for (path, digest) in rows {
+        h.update(path.as_bytes());
+        h.update(&[0]);
+        h.update(digest.as_bytes());
+        h.update(&[0]);
+    }
+    h.update(base.as_bytes());
+    h.update(day.as_bytes());
+    h.finalize().to_hex().to_string()
+}
+
 impl Siblings {
     /// Spawn every configured sibling; `scope` is the ticket scope's paths, passed through.
     pub(crate) fn start(
@@ -158,8 +178,14 @@ impl Siblings {
         table: &CheckTable,
         base: &str,
         scope: Option<&BTreeSet<String>>,
+        digests: &std::collections::HashMap<String, String>,
         opts: &CheckOptions,
     ) {
+        let clock = opts
+            .clock
+            .clone()
+            .unwrap_or_else(|| std::sync::Arc::new(gob_time::SystemClock::pin()));
+        let tree_key = tree_key(digests, base, &clock.today().to_string());
         let mut pending = self
             .pending
             .lock()
@@ -222,6 +248,7 @@ impl Siblings {
                 timeout: Duration::from_secs(table.sibling_timeout_secs),
                 compute_digest,
                 output_cap: usize::try_from(table.output_cap_bytes).unwrap_or(usize::MAX),
+                tree_key: Some(tree_key.clone()),
             };
             tracing::info!(
                 product,
@@ -352,6 +379,25 @@ mod tests {
 
     fn scope(paths: &[&str]) -> BTreeSet<String> {
         paths.iter().map(|p| (*p).to_owned()).collect()
+    }
+
+    // frob:ticket 01M4HDRT4RSDZN3PRJ4CV286BH
+    // frob:tests crates/frob-check/src/sibling/mod.rs::skip_reason
+    // frob:ticket 01M4MGNWX3MF5KM98EPQZJGVGZ
+    // frob:tests crates/frob-check/src/sibling/mod.rs::tree_key
+    #[test]
+    fn the_tree_key_changes_with_any_file_digest_path_or_base() {
+        let mut d: std::collections::HashMap<String, String> =
+            [("a.rs".to_owned(), "1".to_owned())].into();
+        let first = tree_key(&d, "main", "d1");
+        assert_ne!(first, tree_key(&d, "main", "d2"));
+        assert_eq!(first, tree_key(&d, "main", "d1"));
+        assert_ne!(first, tree_key(&d, "other", "d1"));
+        d.insert("a.rs".to_owned(), "2".to_owned());
+        assert_ne!(first, tree_key(&d, "main", "d1"));
+        d.insert("a.rs".to_owned(), "1".to_owned());
+        d.insert("b.rs".to_owned(), "1".to_owned());
+        assert_ne!(first, tree_key(&d, "main", "d1"));
     }
 
     // frob:ticket 01M4HDRT4RSDZN3PRJ4CV286BH

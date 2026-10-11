@@ -389,7 +389,9 @@ impl RuleProgram {
             _ => {}
         }
         ctx.clear_poison();
+        ctx.set_subject(Some(s));
         let obs = check(ctx, s);
+        ctx.set_subject(None);
         let poison = ctx.poison();
         let reason = poison
             .first()

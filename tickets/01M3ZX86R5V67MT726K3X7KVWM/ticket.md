@@ -1,6 +1,6 @@
 +++
 id = "01M3ZX86R5V67MT726K3X7KVWM"
-title = "TICK005 reindex-not-pure: replay check"
+title = "TICK007 reindex-not-pure: replay check"
 type = "task"
 category = "todo"
 priority = "high"
@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:45Z"
-updated = "2026-10-03T03:34:45Z"
+updated = "2026-10-11T17:17:44Z"
 idempotency_key = "m2-nav-tick005"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-obligations/src/tick_reindex.rs"]

@@ -31,11 +31,13 @@ pub enum Language {
     Css,
     /// HTML documents (`.html`, `.htm`).
     Html,
+    /// `.grmb` design models (`.grmb`); hand-written parser, no tree-sitter grammar.
+    Grmb,
 }
 
 impl Language {
     /// Every variant, regardless of enabled features.
-    pub const ALL: [Language; 12] = [
+    pub const ALL: [Language; 13] = [
         Language::Rust,
         Language::Markdown,
         Language::Toml,
@@ -48,6 +50,7 @@ impl Language {
         Language::Jsx,
         Language::Css,
         Language::Html,
+        Language::Grmb,
     ];
 
     /// Detects the language from the file extension (case-insensitive).
@@ -66,6 +69,7 @@ impl Language {
             "jsx" => Some(Language::Jsx),
             "css" => Some(Language::Css),
             "html" | "htm" => Some(Language::Html),
+            "grmb" => Some(Language::Grmb),
             _ => None,
         };
         tracing::trace!(path = %path.as_ref().display(), ?found, "language detect");
@@ -87,6 +91,7 @@ impl Language {
             Language::Jsx => "jsx",
             Language::Css => "css",
             Language::Html => "html",
+            Language::Grmb => crate::grmb::NAME,
         }
     }
 }
@@ -114,6 +119,9 @@ mod tests {
         assert_eq!(Language::detect("site.css"), Some(Language::Css));
         assert_eq!(Language::detect("index.HTML"), Some(Language::Html));
         assert_eq!(Language::detect("a.htm"), Some(Language::Html));
+        assert_eq!(Language::detect("design/frob.grmb"), Some(Language::Grmb));
+        assert_eq!(Language::detect("X.GRMB"), Some(Language::Grmb));
+        assert_eq!(Language::Grmb.name(), "grmb");
         assert_eq!(Language::detect("a.scss"), None);
         assert_eq!(Language::detect("a.pyc"), None);
         assert_eq!(Language::detect("Makefile"), None);

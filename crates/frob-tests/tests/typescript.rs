@@ -193,8 +193,16 @@ fn test_verb_runs_vitest_and_jest_per_member_and_appends_per_test_evidence() {
     let stored = events::list(&ledger, id).expect("evidence");
     let providers: Vec<_> = stored.iter().map(|e| e.record.provider).collect();
     assert_eq!(providers, [Provider::Vitest, Provider::Jest]);
-    assert_eq!(stored[0].record.tests, [VITEST_ID]);
-    assert_eq!(stored[1].record.tests, [JEST_ID]);
+    let ws =
+        frob_evidence::Workspace::open(p, std::sync::Arc::new(gob_time::SystemClock)).expect("ws");
+    assert_eq!(
+        stored[0].record.test_names(&ws.store),
+        Some(vec![VITEST_ID.to_owned()])
+    );
+    assert_eq!(
+        stored[1].record.test_names(&ws.store),
+        Some(vec![JEST_ID.to_owned()])
+    );
     assert_eq!(stored[1].record.reference, "legacy/src/sum.test.ts");
     assert!(stored.iter().all(|e| e.record.passed == Some(true)));
 }

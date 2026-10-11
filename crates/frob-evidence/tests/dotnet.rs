@@ -170,12 +170,19 @@ fn a_c_sharp_test_id_records_a_measured_run_with_per_test_results() {
     assert_eq!(rec["passed"], false, "{out}");
     assert_eq!(rec["exit_code"], 1, "{out}");
     assert_eq!(
-        rec["tests"],
-        serde_json::json!([
+        std::fs::read_to_string(
+            dir.path()
+                .join(".git/frob/artifacts")
+                .join(rec["tests_digest"].as_str().expect("tests_digest"))
+        )
+        .expect("tests artifact")
+        .lines()
+        .collect::<Vec<_>>(),
+        [
             "Hb.Core.Tests.MathTests.Adds",
             "Hb.Core.Tests.MathTests.Breaks",
             "Hb.Core.Tests.Outer.Inner.Case"
-        ]),
+        ],
         "{out}"
     );
     assert_eq!(

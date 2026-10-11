@@ -263,12 +263,15 @@ fn test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree() {
     let stored = events::list(&ledger, id).expect("evidence");
     assert_eq!(stored.len(), 1);
     assert_eq!(stored[0].record.passed, Some(true));
-    assert!(
-        stored[0]
-            .record
-            .tests
-            .contains(&"tests::doubles".to_owned())
-    );
+    let names = stored[0]
+        .record
+        .test_names(
+            &frob_evidence::Workspace::open(p, std::sync::Arc::new(gob_time::SystemClock))
+                .expect("ws")
+                .store,
+        )
+        .expect("names");
+    assert!(names.contains(&"tests::doubles".to_owned()), "{names:?}");
 
     // The recorded run now satisfies the close guard.
     let store = frob_evidence::Workspace::open(p, std::sync::Arc::new(gob_time::SystemClock))

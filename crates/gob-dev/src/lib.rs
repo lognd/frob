@@ -113,6 +113,14 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError>
             gob_config::ArtifactFamily::Schemas,
         ));
     }
+    for f in &mut files {
+        if std::path::Path::new(&f.path)
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("md"))
+        {
+            f.content = render::with_visible_line(std::mem::take(&mut f.content));
+        }
+    }
     files.sort_by(|a, b| a.path.cmp(&b.path));
     tracing::info!(?kind, files = files.len(), "generated");
     Ok(files)

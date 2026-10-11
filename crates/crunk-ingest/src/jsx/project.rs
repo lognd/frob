@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use crunk_spec::DesignSpec;
 use gob_cache::{ArtifactKey, Cache};
 use gob_symbols::{ConstProject, Folded, SymbolGraph, fold_file, is_typescript_path};
-use gob_walk::{Digest, FileEntry, LanguageHint, WalkConfig, walk};
+use gob_walk::{Digest, FileEntry, LanguageHint, WalkConfig, walk_paths};
 use serde::{Deserialize, Serialize};
 
 use super::{ParsedJsx, parse_in_project};
@@ -75,7 +75,9 @@ fn read_sources(
     let root = spec.root.as_path();
     let mut exclude: Vec<String> = NOISE_DIRS.iter().map(|d| format!("{d}/")).collect();
     exclude.push(".*/".to_owned());
-    let walked = walk(
+    // frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+    // Path-only: the sources are read and hashed as bytes below, not through the content source.
+    let walked = walk_paths(
         root,
         &WalkConfig {
             exclude,

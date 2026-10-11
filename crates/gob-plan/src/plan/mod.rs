@@ -18,6 +18,7 @@
 //! referrer, so a plan is a bounded tree that cannot cycle. See [`Op`] and [`PlanParts`].
 
 mod codec;
+mod cost;
 mod error;
 mod ir;
 mod limits;
@@ -26,6 +27,7 @@ mod validate;
 #[cfg(test)]
 mod tests;
 
+pub use cost::cost_class;
 pub use error::PlanError;
 pub use ir::{
     Certainty, CmpOp, CostClass, Def, Langs, Limit, Need, NeedSet, Op, OpId, Operand, PlanParts,
