@@ -8,12 +8,12 @@ points = 3
 parent = "01M4CTE0GYDX0XW64JRNF2ZMQG"
 reporter = "lognd"
 created = "2026-10-11T00:16:28Z"
-updated = "2026-10-11T02:35:28Z"
+updated = "2026-10-11T02:39:40Z"
 scope = ["crates/gob-fs/**", "crates/gob-cache/**", "crates/gob-exec/**", "clippy.toml"]
 
 [[acceptance]]
 text = "Given the gob-cache manifest, when its dependencies are read, then gob-exec is not among them, and git_common_dir resolves a primary checkout and a linked worktree to the same directory (test gob_cache_does_not_depend_on_gob_exec)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given gob-fs, when git_common_dir is called on a primary checkout, a linked worktree and a plain directory, then it returns the canonical shared .git dir for the first two and None for the last (test a_linked_worktree_and_its_primary_share_one_common_dir_and_a_plain_dir_has_none)"
