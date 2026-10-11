@@ -2,13 +2,13 @@
 id = "01M3ZX85H7VX2XFX1T663BD9NG"
 title = "E-TICKET-PATH: refuse a file path where a ticket id is expected"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-03T03:34:44Z"
+updated = "2026-10-11T00:40:48Z"
 idempotency_key = "m2-nav-e-ticket-path"
 labels = ["milestone:2", "area:navigation", "good-first"]
 scope = ["crates/frob/src/ticket/read.rs", "crates/gob-cli/src/error.rs"]
