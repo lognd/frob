@@ -2,13 +2,13 @@
 id = "01M4MAQ5JFANPHZ0SJ690R68TZ"
 title = "Generator framework remainder: versioned marker, visible line, linguist-generated, stale-version warning"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-11T01:54:56Z"
-updated = "2026-10-11T16:28:19Z"
+updated = "2026-10-11T16:30:44Z"
 labels = ["creates:.gitattributes"]
 scope = ["crates/gob-dev/**", "docs/reference/**", "docs/schemas/**", ".gitattributes"]
 
