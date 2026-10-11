@@ -2,7 +2,8 @@
 id = "01M3ZX7ECR0R91Q5R2T16R03NG"
 title = "GRL015: fix applicability required and plugin fixes confined to the primary span"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
