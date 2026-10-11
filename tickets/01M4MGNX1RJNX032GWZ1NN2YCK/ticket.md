@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:39:06Z"
-updated = "2026-10-11T04:22:27Z"
-scope = ["crates/gob-cache/**", "crates/frob-obligations/src/tickets.rs"]
+updated = "2026-10-11T04:22:28Z"
+scope = ["crates/gob-cache/**", "crates/frob-obligations/src/tickets.rs", "crates/frob-obligations/src/lib.rs"]
 
 [[acceptance]]
 text = "on a second frob check with no changed files the cached_hits equals the file count, and across a new worktree of the same commit it is above 90 percent, covered by a test"
