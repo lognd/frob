@@ -2,7 +2,8 @@
 id = "01M4NZCSJWT2XSEZQBVPNMA6HM"
 title = "Evidence events store a test count and digest, not the full test-name list"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
