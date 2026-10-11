@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:46Z"
-updated = "2026-10-11T17:17:44Z"
+updated = "2026-10-11T19:38:31Z"
 idempotency_key = "m2-nav-tick007"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-obligations/src/tick_misfiled.rs"]
@@ -18,11 +18,11 @@ kind = "blocked-by"
 target = "01M3ZX85S7ASFGT31GDYMRB5JX"
 
 [[acceptance]]
-text = "Given a ticket file at a stale path, when checked, then TICK007 fires and the fix is `frob ticket reindex`"
+text = "Given all files at computed paths, when checked, then it does not fire"
 bound = false
 
 [[acceptance]]
-text = "Given all files at computed paths, when checked, then it does not fire"
+text = "Given a ticket file at a stale path, when checked, then TICK009 fires and the fix is `frob ticket reindex`"
 bound = false
 +++
 
