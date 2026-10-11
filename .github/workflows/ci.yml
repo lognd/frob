@@ -183,6 +183,16 @@ jobs:
         run: cargo dev ci --step snapshots
       - name: nextest
         run: cargo $DEV ci --step nextest
+      # ~4VTM1FH (frob:ticket 01M4M2JEYVCFSJ86PJ74VTM1FH): job logs are unreachable from agent sessions, so a
+      # failed run leaves its failing test names in the junit report as an artifact.
+      - name: Upload the nextest junit report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nextest-junit-${{ matrix.os }}
+          path: target/nextest/ci/junit.xml
+          if-no-files-found: warn
+          retention-days: 7
       - name: Generated files are current (GEN001)
         run: cargo $DEV ci --step gen
       - name: Make the ledger ref resolvable
