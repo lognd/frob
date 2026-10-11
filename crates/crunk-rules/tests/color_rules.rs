@@ -210,3 +210,53 @@ fn the_tokens_sheet_is_not_an_examined_sheet() {
         host.styles.sheets.len() - 1
     );
 }
+
+// frob:ticket 01M48NF9E0WTVHPA4XQ3200J6N
+// frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
+#[test]
+fn an_unreadable_colour_literal_is_unresolved_never_clean() {
+    for literal in [
+        "color(no-such-space 1 1 1)",
+        "oklch(from #ff0000 l c h)",
+        "oklch(0.5 0.1)",
+        "#12345",
+    ] {
+        let found = support::run::<Color001>(&css(&format!(".a {{ color: {literal}; }}\n")));
+        assert_eq!(found.len(), 1, "{literal}: {found:?}");
+        assert_eq!(found[0].severity, Severity::Unresolved, "{literal}");
+        assert!(
+            found[0].message.contains("could not be read"),
+            "{}",
+            found[0].message
+        );
+    }
+}
+
+// frob:ticket 01M48NF9E0WTVHPA4XQ3200J6N
+// frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
+#[test]
+fn a_readable_oklch_literal_is_checked_against_the_palette() {
+    let found = support::run::<Color001>(&css(".a { color: oklch(0.25 0.01 90); }\n"));
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(found[0].severity, Severity::Error);
+    assert!(
+        found[0].message.contains("nearest is --color-ink"),
+        "{}",
+        found[0].message
+    );
+}
+
+// frob:ticket 01M48NF9E0WTVHPA4XQ3200J6N
+// frob:tests crates/crunk-rules/src/color/mod.rs::Palette
+#[test]
+fn nearest_ranks_by_delta_e_ok_where_redmean_ranks_wrong() {
+    let rgb = |r: f64, g: f64, b: f64| Color::new(r / 255.0, g / 255.0, b / 255.0, 1.0);
+    let target = rgb(8.0, 252.0, 164.0);
+    let teal = rgb(40.0, 172.0, 169.0);
+    let lime = rgb(169.0, 229.0, 12.0);
+    assert!(target.distance(teal) < target.distance(lime), "redmean");
+    let palette = Palette::new(vec![("teal", teal), ("lime", lime)]);
+    let (name, distance) = palette.nearest(target).expect("entry");
+    assert_eq!(name, "lime");
+    assert!((distance - target.delta_e_ok(lime) * 100.0).abs() < 1e-9);
+}

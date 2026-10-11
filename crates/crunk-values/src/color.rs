@@ -1,8 +1,11 @@
 //! Color parsing and the contrast/distance math built on it.
 
+// frob:ticket 01M48NF9E0WTVHPA4XQ3200J6N
+
 use crate::error::ColorError;
 use crate::named::named_color;
 use crate::num::parse_number;
+use crate::wide::parse_wide;
 
 /// A parsed color in 0-1 sRGB channels, with the contrast/distance math on it.
 ///
@@ -205,7 +208,8 @@ impl Color {
         Self { r, g, b, a }
     }
 
-    /// Parses hex, `rgb()`/`rgba()`, `hsl()`/`hsla()` or CSS named-color syntax.
+    /// Parses hex, `rgb()`/`rgba()`, `hsl()`/`hsla()`, CSS Color 4 (`oklch()`, `oklab()`, `lab()`,
+    /// `lch()`, `hwb()`, `color()`) or CSS named-color syntax. Wide-gamut input is gamut mapped to sRGB.
     ///
     /// Channels are clamped to `[0, 1]`. Anything else (`var()`, gradients, `currentcolor`)
     /// is an error, never a panic.
@@ -232,6 +236,9 @@ impl Color {
         if lowered.starts_with("hsl") {
             return parse_hsl(&lowered);
         }
+        if let Some(wide) = parse_wide(&lowered) {
+            return wide;
+        }
         if let Some([r, g, b, a]) = named_color(&lowered) {
             let ch = |v: u8| f64::from(v) / 255.0;
             return Ok(Self::new(ch(r), ch(g), ch(b), ch(a)));
@@ -240,7 +247,8 @@ impl Color {
         Err(ColorError::Unrecognized(candidate.to_owned()))
     }
 
-    /// Redmean-weighted sRGB distance: the stand-in for perceptual distance (alpha ignored).
+    /// Redmean-weighted sRGB distance, kept for Python parity (alpha ignored); perceptual
+    /// comparisons use [`Color::delta_e_ok`].
     pub fn distance(self, other: Self) -> f64 {
         let (r1, g1, b1) = (self.r * 255.0, self.g * 255.0, self.b * 255.0);
         let (r2, g2, b2) = (other.r * 255.0, other.g * 255.0, other.b * 255.0);
