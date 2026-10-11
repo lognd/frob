@@ -8,10 +8,10 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:47Z"
-updated = "2026-10-11T20:32:05Z"
+updated = "2026-10-11T20:32:06Z"
 idempotency_key = "m2-nav-ticket-url"
 labels = ["milestone:2", "area:navigation"]
-scope = ["crates/frob/src/ticket/url_cmd.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/ticket_url.rs", "crates/gob-dev/profile.toml", "docs/guides/ticket-branch.md"]
+scope = ["crates/frob/src/ticket/url_cmd.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/ticket_url.rs", "crates/gob-dev/profile.toml", "docs/guides/ticket-branch.md", "docs/reference/cli/frob.md"]
 
 [[links]]
 kind = "blocked-by"
