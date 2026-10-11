@@ -8,10 +8,10 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:36Z"
-updated = "2026-10-11T02:34:37Z"
+updated = "2026-10-11T02:34:44Z"
 idempotency_key = "crunk-plan-chk"
 labels = ["area:crunk"]
-scope = ["crates/crunk-check/**", "crates/crunk/src/check.rs", "crates/crunk/tests/check*.rs"]
+scope = ["crates/crunk-check/**", "crates/crunk/src/check.rs", "crates/crunk/tests/check*.rs", "crates/crunk-check/tests/**"]
 
 [[links]]
 kind = "blocked-by"
