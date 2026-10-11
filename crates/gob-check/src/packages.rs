@@ -113,8 +113,12 @@ impl Workspace {
             .max_by_key(|p| p.dir.len())
     }
 
-    /// The packages `files` touch plus every package that depends on them, transitively.
-    pub(crate) fn affected(&self, files: &BTreeSet<String>) -> Affected {
+    /// The packages `files` touch plus their direct dependents, and the transitive dependents of
+    /// every package that owns a file in `api` (a change that can break callers further out).
+    ///
+    /// Callers that cannot tell what changed pass `files` as `api`, which keeps the full closure
+    /// (frob:ticket 01M4MH62ATTYVEF66Y4C93BJQC).
+    pub(crate) fn affected(&self, files: &BTreeSet<String>, api: &BTreeSet<String>) -> Affected {
         if self.packages.is_empty() {
             return Affected::Everything;
         }
@@ -136,10 +140,22 @@ impl Workspace {
                 rdeps.entry(d.as_str()).or_default().push(p.name.as_str());
             }
         }
-        let mut queue: Vec<&str> = hit.iter().copied().collect();
+        let api_owners: BTreeSet<&str> = api
+            .iter()
+            .filter_map(|f| self.owner(f))
+            .map(|p| p.name.as_str())
+            .collect();
+        let direct: Vec<&str> = hit
+            .iter()
+            .flat_map(|n| rdeps.get(n).into_iter().flatten().copied())
+            .collect();
+        hit.extend(direct);
+        let mut queue: Vec<&str> = api_owners.into_iter().collect();
+        let mut seen: BTreeSet<&str> = queue.iter().copied().collect();
         while let Some(n) = queue.pop() {
             for r in rdeps.get(n).into_iter().flatten() {
-                if hit.insert(r) {
+                hit.insert(r);
+                if seen.insert(r) {
                     queue.push(r);
                 }
             }
@@ -147,6 +163,87 @@ impl Workspace {
         tracing::info!(packages = hit.len(), "affected cargo packages computed");
         Affected::Packages(hit.into_iter().map(str::to_owned).collect())
     }
+}
+
+/// Whether the public surface of Rust source `base` differs from `now`.
+///
+/// The surface is every `pub` item signature (through its first `{` or `;`), the bodies of
+/// `pub enum`, `pub trait` and `macro_rules!` items, and bodiless trait items; comments and
+/// private code are ignored, so a body-only edit compares equal. Restricted `pub(crate)` items
+/// do not count.
+pub fn public_surface_differs(base: &str, now: &str) -> bool {
+    surface(base) != surface(now)
+}
+
+/// Opening minus closing braces on `line`.
+fn brace_delta(line: &str) -> i32 {
+    line.chars().fold(0, |d, c| match c {
+        '{' => d + 1,
+        '}' => d - 1,
+        _ => d,
+    })
+}
+
+/// The sorted public-surface fragments of `src`, whitespace-normalised.
+fn surface(src: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let lines: Vec<&str> = src.lines().map(str::trim).collect();
+    let mut i = 0;
+    while i < lines.len() {
+        let line = lines[i];
+        let restricted = ["pub(crate)", "pub(super)", "pub(self)", "pub(in"]
+            .iter()
+            .any(|r| line.starts_with(r));
+        let whole_body = !restricted
+            && (line.starts_with("pub enum")
+                || line.starts_with("pub trait")
+                || line.starts_with("pub unsafe trait")
+                || line.starts_with("macro_rules!"));
+        let public = !restricted && line.starts_with("pub");
+        let bodiless =
+            (line.starts_with("fn ") || line.starts_with("type ") || line.starts_with("const "))
+                && line.ends_with(';');
+        if whole_body {
+            let mut depth: i32 = 0;
+            let mut text = String::new();
+            while i < lines.len() {
+                let l = lines[i];
+                i += 1;
+                if l.starts_with("//") {
+                    continue;
+                }
+                text.push_str(l);
+                text.push(' ');
+                depth += brace_delta(l);
+                if depth <= 0 && (l.contains('{') || l.ends_with(';') || text.contains('}')) {
+                    break;
+                }
+            }
+            out.push(text.split_whitespace().collect::<Vec<_>>().join(" "));
+            continue;
+        }
+        if public {
+            let mut text = String::new();
+            while i < lines.len() {
+                let l = lines[i];
+                i += 1;
+                let cut = l.find(['{', ';']).map_or(l.len(), |p| p + 1);
+                text.push_str(&l[..cut]);
+                text.push(' ');
+                if cut < l.len() || l.contains('{') || l.ends_with(';') || l.ends_with(',') {
+                    break;
+                }
+            }
+            out.push(text.split_whitespace().collect::<Vec<_>>().join(" "));
+            continue;
+        }
+        if bodiless || line.starts_with("#[macro_export") {
+            out.push(line.to_owned());
+        }
+        i += 1;
+    }
+    out.sort();
+    out
 }
 
 #[cfg(test)]
@@ -181,11 +278,17 @@ mod tests {
             ("d", "crates/d", &[]),
         ]);
         assert_eq!(
-            w.affected(&files(&["crates/b/src/lib.rs"])),
+            w.affected(
+                &files(&["crates/b/src/lib.rs"]),
+                &files(&["crates/b/src/lib.rs"])
+            ),
             Affected::Packages(vec!["b".to_owned(), "c".to_owned()])
         );
         assert_eq!(
-            w.affected(&files(&["crates/a/src/x.rs", "docs/x.md"])),
+            w.affected(
+                &files(&["crates/a/src/x.rs", "docs/x.md"]),
+                &files(&["crates/a/src/x.rs"])
+            ),
             Affected::Packages(vec!["a".to_owned(), "b".to_owned(), "c".to_owned()])
         );
     }
@@ -195,18 +298,79 @@ mod tests {
     #[test]
     fn a_workspace_level_file_or_no_packages_means_everything() {
         let w = ws(&[("a", "crates/a", &[])]);
-        assert_eq!(w.affected(&files(&["Cargo.lock"])), Affected::Everything);
         assert_eq!(
-            w.affected(&files(&[".cargo/config.toml"])),
+            w.affected(&files(&["Cargo.lock"]), &files(&[])),
             Affected::Everything
         );
         assert_eq!(
-            Workspace::default().affected(&files(&["crates/a/x.rs"])),
+            w.affected(&files(&[".cargo/config.toml"]), &files(&[])),
             Affected::Everything
         );
         assert_eq!(
-            w.affected(&files(&["README.md"])),
+            Workspace::default().affected(&files(&["crates/a/x.rs"]), &files(&[])),
+            Affected::Everything
+        );
+        assert_eq!(
+            w.affected(&files(&["README.md"]), &files(&[])),
             Affected::Packages(Vec::new())
         );
+    }
+
+    // frob:ticket 01M4MH62ATTYVEF66Y4C93BJQC
+    // frob:tests crates/gob-check/src/packages.rs::affected
+    #[test]
+    fn a_body_only_change_names_direct_dependents_and_an_api_change_the_closure() {
+        let w = ws(&[
+            ("core", "crates/core", &[]),
+            ("mid", "crates/mid", &["core"]),
+            ("top", "crates/top", &["mid"]),
+            ("leaf", "crates/leaf", &[]),
+        ]);
+        let touched = files(&["crates/core/src/lib.rs"]);
+        let names = |a: Affected| match a {
+            Affected::Packages(p) => p,
+            Affected::Everything => panic!("narrowed"),
+        };
+        assert_eq!(names(w.affected(&touched, &files(&[]))), ["core", "mid"]);
+        assert_eq!(
+            names(w.affected(&touched, &touched)),
+            ["core", "mid", "top"]
+        );
+        assert_eq!(
+            names(w.affected(&files(&["crates/leaf/src/lib.rs"]), &files(&[]))),
+            ["leaf"]
+        );
+    }
+
+    // frob:ticket 01M4MH62ATTYVEF66Y4C93BJQC
+    // frob:tests crates/gob-check/src/packages.rs::public_surface_differs
+    #[test]
+    fn the_public_surface_ignores_bodies_and_sees_signatures_and_variants() {
+        let base =
+            "pub fn f(a: u32) -> u32 {\n    a + 1\n}\nfn private() {}\npub enum E {\n    A,\n}\n";
+        assert!(!public_surface_differs(
+            base,
+            &base.replace("a + 1", "a + 2")
+        ));
+        assert!(!public_surface_differs(
+            base,
+            &base.replace("fn private() {}", "fn other() {}")
+        ));
+        assert!(public_surface_differs(
+            base,
+            &base.replace("a: u32", "a: u64")
+        ));
+        assert!(public_surface_differs(
+            base,
+            &base.replace("    A,", "    A,\n    B,")
+        ));
+        assert!(public_surface_differs(
+            base,
+            &format!("{base}pub struct S;\n")
+        ));
+        assert!(!public_surface_differs(
+            base,
+            &format!("{base}pub(crate) struct S;\n")
+        ));
     }
 }

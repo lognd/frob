@@ -530,7 +530,7 @@ impl Product for Frob {
             Some(c) => c.clone(),
             None => LeaseConfig::load(&snap.core.root)?,
         };
-        scope::resolve(snap, reference, table.ticket_hops, lease_cfg)
+        scope::resolve(snap, reference, table.ticket_hops, &table.base, lease_cfg)
     }
 
     fn scoped_rules(
