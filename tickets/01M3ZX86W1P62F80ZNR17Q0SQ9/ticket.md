@@ -10,8 +10,8 @@ reporter = "lognd"
 created = "2026-10-03T03:34:45Z"
 updated = "2026-10-11T19:24:48Z"
 idempotency_key = "m2-nav-tick006"
-labels = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/moves.rs", "creates:crates/frob/tests/ticket_moves.rs", "creates:crates/gob-mdtest/coverage-allowlist.toml", "creates:crates/frob-ledger/src/rules.rs", "creates:crates/frob-ledger/src/lib.rs"]
-scope = ["crates/frob-obligations/src/tick_moves.rs", "crates/frob-ledger/src/moves.rs", "crates/frob/tests/ticket_moves.rs", "crates/gob-mdtest/coverage-allowlist.toml", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/lib.rs"]
+labels = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/moves.rs", "creates:crates/frob/tests/ticket_moves.rs", "creates:crates/gob-mdtest/coverage-allowlist.toml", "creates:crates/frob-ledger/src/rules.rs", "creates:crates/frob-ledger/src/lib.rs", "creates:crates/frob-check/src/product.rs"]
+scope = ["crates/frob-obligations/src/tick_moves.rs", "crates/frob-ledger/src/moves.rs", "crates/frob/tests/ticket_moves.rs", "crates/gob-mdtest/coverage-allowlist.toml", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-check/src/product.rs"]
 
 [[links]]
 kind = "blocked-by"
