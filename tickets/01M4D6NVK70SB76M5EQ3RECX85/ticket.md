@@ -2,7 +2,8 @@
 id = "01M4D6NVK70SB76M5EQ3RECX85"
 title = "Property test for rule polarity mapping (Pc, P+, P-) against K3 verdicts once the GRL executor exists"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
