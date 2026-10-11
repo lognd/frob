@@ -4,7 +4,7 @@
 //! `std::process`; the [`proc001`] scan enforces that. Every spawn goes
 //! through a [`Runner`], which bounds concurrency with a semaphore, logs
 //! the argv, duration and exit under an `exec.spawn` span, kills the whole
-//! process group on timeout, caps and redacts captured output with
+//! process group on timeout, caps captured output, redacts stdout and stderr (stdout also raw, for payload parsing) with
 //! [`gob_log::redact`], and counts spawns (see [`SpawnCount`]). A caller that needs only
 //! specific variables passes an [`EnvPolicy::Scrub`] allowlist to [`Runner::run_with_env`]; a
 //! secret-shaped name is never inherited, only added explicitly per spawn.
