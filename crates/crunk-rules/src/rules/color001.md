@@ -7,8 +7,12 @@ Each block below is one source file in a project whose `crunk.toml` is the defau
 
 ## What it does
 
-Flags a colour literal (hex, `rgb()`, `hsl()` or a named colour) that is not a palette colour, and
-names the nearest palette token with its distance. A translucent variant of an opaque palette colour
+Flags a colour literal (hex, `rgb()`, `hsl()`, a named colour or a CSS Color 4 function: `oklch()`,
+`oklab()`, `lab()`, `lch()`, `hwb()`, `color()`) that is not a palette colour, and names the nearest
+palette token with its distance. Distance is deltaE_OK (Euclidean distance in OKLab) times 100, so
+about 2 is one just-noticeable difference; wide-gamut colours are gamut mapped to sRGB first. A
+colour-looking literal that cannot be read (an unsupported `color()` space, a relative colour, a
+malformed hex run) is Unresolved, never clean. A translucent variant of an opaque palette colour
 is not a new colour and is clean; a translucent palette entry needs the exact rgba match. The
 generated tokens sheet is skipped because the palette literals live there. The rule runs once per
 declared mode. A project with no stylesheet to judge is Unresolved, never clean.

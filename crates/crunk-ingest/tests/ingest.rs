@@ -251,3 +251,16 @@ fn bucket_names_round_trip() {
     }
     assert_eq!(Bucket::from_name("nope"), None);
 }
+
+// frob:ticket 01M48NF9E0WTVHPA4XQ3200J6N
+#[test]
+fn colour_looking_literals_that_cannot_be_read_are_recorded_not_dropped() {
+    use crunk_ingest::value_facts;
+    let facts = value_facts(
+        "oklch(0.5 0.1 200) color(nope 1 1 1) #12345 inherit",
+        0,
+        16.0,
+    );
+    assert_eq!(facts.colors.len(), 1, "{facts:?}");
+    assert_eq!(facts.unreadable_colors.len(), 2, "{facts:?}");
+}

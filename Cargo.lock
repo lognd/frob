@@ -2844,6 +2844,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "grimble-lints"
+version = "0.532.0"
+dependencies = [
+ "gob-languages",
+ "gob-text",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "grimble-model"
 version = "0.532.0"
 dependencies = [

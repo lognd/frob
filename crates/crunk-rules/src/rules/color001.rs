@@ -9,8 +9,10 @@
 //! Divergences from the Python rule: the finding is located at the colour token, not at the
 //! declaration line; the fix payload is not attached here (the autofix ticket owns it), so
 //! `fix = Manual`, and the message says when the nearest entry is beyond `color_tolerance`; an
-//! unparseable literal (`inherit`, `transparent`, a `calc()`) is not a colour and is skipped by
-//! ingest; waivers are the pipeline's exceptions, not an in-rule lookup.
+//! a literal that is not
+//! a colour (`inherit`, `calc()`) is skipped by ingest, but a colour-looking one that cannot be read
+//! (an unsupported `color()` space, a relative colour, a malformed hex run) is an Unresolved
+//! finding, never silently clean; waivers are the pipeline's exceptions, not an in-rule lookup.
 
 // frob:ticket 01M43ATB4X0B56W8T0G8MQFYVM
 // frob:ticket 01M48R0538K77RY0W3W6AN9XJY
@@ -49,6 +51,17 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Color001 {
             let palette = Palette::new(mode.palette(spec));
             for sheet in styles.sheets.iter().filter(|s| !is_tokens_sheet(s)) {
                 let path = site_path(spec, &sheet.path);
+                for span in sheet.declarations.iter().flat_map(|d| &d.unreadable_colors) {
+                    tracing::debug!(%path, mode = mode.name, "COLOR001: unreadable colour literal");
+                    out.unresolved_in(
+                        &path,
+                        span.0,
+                        format!(
+                            "this colour literal could not be read, so it was not checked against the palette{}",
+                            mode.suffix()
+                        ),
+                    );
+                }
                 for located in sheet.declarations.iter().flat_map(|d| &d.colors) {
                     if palette.conforms(located.color) {
                         continue;

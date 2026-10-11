@@ -56,6 +56,8 @@ pub(super) struct Parser<'a> {
     /// Open brackets consumed since the current item began (for recovery).
     pub(super) bal: i32,
     depth: usize,
+    /// Inside the items of an `any { }`, where a comma separates items.
+    pub(super) in_any: bool,
     errors: Vec<ParseError>,
     warnings: Vec<ParseWarning>,
 }
@@ -69,6 +71,7 @@ impl<'a> Parser<'a> {
             pos: 0,
             bal: 0,
             depth: 0,
+            in_any: false,
             errors: Vec::new(),
             warnings: Vec::new(),
         }

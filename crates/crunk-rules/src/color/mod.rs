@@ -6,12 +6,16 @@
 //! colour is not a new colour).
 
 // frob:ticket 01M43ATB4X0B56W8T0G8MQFYVM
+// frob:ticket 01M48NF9E0WTVHPA4XQ3200J6N
 
 use std::collections::BTreeSet;
 
 use crunk_values::Color;
 
 pub mod defs;
+
+/// `deltaE_OK` is 0-1; messages and `[lint] color_tolerance` read it times this scale.
+pub const DELTA_SCALE: f64 = 100.0;
 
 /// A mode's palette with the hex sets conformance needs, kept with the entries for nearest lookups.
 #[derive(Debug)]
@@ -41,12 +45,12 @@ impl<'a> Palette<'a> {
             || (!color.is_opaque() && self.opaque_rgb.contains(&color.rgb_hex()))
     }
 
-    /// The closest palette entry by [`Color::distance`] and that distance, first on ties; `None`
-    /// for an empty palette.
+    /// The closest palette entry by `deltaE_OK` and that distance (scaled by 100, so 2 is about one
+    /// just-noticeable difference), first on ties; `None` for an empty palette.
     pub fn nearest(&self, color: Color) -> Option<(&'a str, f64)> {
         self.entries
             .iter()
-            .map(|(n, c)| (*n, color.distance(*c)))
+            .map(|(n, c)| (*n, color.delta_e_ok(*c) * DELTA_SCALE))
             .fold(None, |best: Option<(&str, f64)>, cur| match best {
                 Some(b) if b.1 <= cur.1 => Some(b),
                 _ => Some(cur),
