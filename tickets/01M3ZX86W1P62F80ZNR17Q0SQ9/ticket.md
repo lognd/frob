@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:45Z"
-updated = "2026-10-11T19:24:46Z"
+updated = "2026-10-11T19:24:47Z"
 idempotency_key = "m2-nav-tick006"
-labels = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/moves.rs"]
-scope = ["crates/frob-obligations/src/tick_moves.rs", "crates/frob-ledger/src/moves.rs"]
+labels = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/moves.rs", "creates:crates/frob/tests/ticket_moves.rs"]
+scope = ["crates/frob-obligations/src/tick_moves.rs", "crates/frob-ledger/src/moves.rs", "crates/frob/tests/ticket_moves.rs"]
 
 [[links]]
 kind = "blocked-by"
