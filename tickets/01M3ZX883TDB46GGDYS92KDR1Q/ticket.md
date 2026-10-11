@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:47Z"
-updated = "2026-10-11T21:21:52Z"
+updated = "2026-10-11T21:25:15Z"
 idempotency_key = "m2-nav-good-first-flag"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob/src/ticket/write.rs", "crates/frob-pm/src/rules/good_first.rs", "crates/frob-pm/tests/mdtest/pm031.md", "crates/frob-pm/tests/corpus.rs", "docs/design/navigation.md", "docs/reference/rules/PM031.md"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the scaffold left unfilled, when check runs, then PM031 reports the placeholders"
-bound = false
+bound = true
 +++
 
 Implements navigation.md section 4.2.
