@@ -8,11 +8,11 @@ points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:35:19Z"
-updated = "2026-10-11T04:37:54Z"
+updated = "2026-10-11T04:52:33Z"
 scope = ["Cargo.toml"]
 
 [[acceptance]]
-text = "cargo build --profile dev with the repo profile produces test executables at most a tenth of today's size, and the existing profile_coverage and release builds are unchanged"
+text = "Cargo.toml sets strip = symbols for the dev and test profiles and leaves release, dist and profiling unstripped (measured: gob-cache shared test executable 26.7 MB to 3.6 MB with default debug, 4.8 MB to 3.5 MB with debug = 0), and the profile_coverage test passes"
 bound = false
 +++
 
