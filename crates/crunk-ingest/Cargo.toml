@@ -33,4 +33,5 @@ tree-sitter = "=0.27.0"
 tracing = "0.1"
 
 [dev-dependencies]
+gob-git = { version = "0.532.0", path = "../gob-git" }
 tempfile = "3"

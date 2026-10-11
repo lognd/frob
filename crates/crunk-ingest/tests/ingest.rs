@@ -272,23 +272,15 @@ fn the_ungoverned_scan_hashes_no_file() {
     let (dir, spec) = synthetic(&[("styles/base/a.css", CSS), ("other/x.css", CSS)]);
     let root = dir.path();
     let marker = root.join("clean-ran");
-    let git = |args: &[&str]| {
-        let st = std::process::Command::new("git")
-            .args(args)
-            .current_dir(root)
-            .env("GIT_CONFIG_GLOBAL", "/dev/null")
-            .env("GIT_CONFIG_SYSTEM", "/dev/null")
-            .status()
-            .unwrap();
-        assert!(st.success());
-    };
-    git(&["init", "-q"]);
+    gob_git::Repo::init(root).unwrap();
     // A clean filter leaves a marker if, and only if, a file goes through the content source.
-    git(&[
-        "config",
-        "filter.spy.clean",
-        &format!("touch {}; cat", marker.display()),
-    ]);
+    let config = root.join(".git/config");
+    let mut text = std::fs::read_to_string(&config).unwrap();
+    text.push_str(&format!(
+        "[filter \"spy\"]\n\tclean = touch {}; cat\n",
+        marker.display()
+    ));
+    std::fs::write(&config, text).unwrap();
     write(root, ".gitattributes", "*.css filter=spy\n");
     let got = ingest_tree(&spec, &Cache::null()).unwrap();
     assert_eq!(got.styles.ungoverned, [root.join("other/x.css")]);

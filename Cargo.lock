@@ -575,6 +575,7 @@ dependencies = [
  "gob-cache",
  "gob-directives",
  "gob-exec",
+ "gob-git",
  "gob-ir",
  "gob-languages",
  "gob-symbols",

@@ -365,7 +365,6 @@ pub fn walk(root: &Path, config: &WalkConfig) -> Result<WalkResult, WalkError> {
 mod tests {
     use super::*;
     use std::fs;
-    use std::process::Command;
 
     fn write(root: &Path, rel: &str, body: &str) {
         let p = root.join(rel);
@@ -470,23 +469,15 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path();
         let marker = root.join("clean-ran");
-        let git = |args: &[&str]| {
-            let st = Command::new("git")
-                .args(args)
-                .current_dir(root)
-                .env("GIT_CONFIG_GLOBAL", "/dev/null")
-                .env("GIT_CONFIG_SYSTEM", "/dev/null")
-                .status()
-                .unwrap();
-            assert!(st.success());
-        };
-        git(&["init", "-q"]);
+        gob_git::Repo::init(root).unwrap();
         // A clean filter that leaves a marker proves the file went through the content source.
-        git(&[
-            "config",
-            "filter.spy.clean",
-            &format!("touch {}; cat", marker.display()),
-        ]);
+        let config = root.join(".git/config");
+        let mut text = fs::read_to_string(&config).unwrap();
+        text.push_str(&format!(
+            "[filter \"spy\"]\n\tclean = touch {}; cat\n",
+            marker.display()
+        ));
+        fs::write(&config, text).unwrap();
         write(root, ".gitattributes", "*.css filter=spy\n");
         write(root, "a.css", "a{}");
         write(root, "big.css", "0123456789");
