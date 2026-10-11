@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T17:46:12Z"
+digest = "2e0dc92345f1672a08774b88eb62d3f2e9327199c452a3367b54741bb8ef6b56"
+exit_code = 0
+inline = '''
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+    Finished `test` profile [unoptimized] target(s) in 1.66s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3f2bb713-9aa7-4b16-a728-ec7ed952ba2a with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.025s] gob-ir::rule_polarity every_finding_and_certified_clean_holds_in_every_completion
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.026s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-ir --test rule_polarity -E 'test(=every_finding_and_certified_clean_holds_in_every_completion)'"
+size = 611
+status = "measured"
+tests = ["every_finding_and_certified_clean_holds_in_every_completion"]
+at = "2026-10-11T17:46:12Z"
+actor = "lognd"
+rev = 1

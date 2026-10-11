@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T17:15:30Z"
-updated = "2026-10-11T17:27:40Z"
-scope = ["crates/frob-evidence/**", "crates/frob-ledger/**", "docs/**", "changelog.d/**"]
+updated = "2026-10-11T17:55:12Z"
+scope = ["crates/frob-evidence/**", "crates/frob-ledger/**", "changelog.d/**", "crates/frob-tests/tests/selection.rs", "crates/frob-tests/tests/typescript.rs", "docs/design/tickets.md", "crates/gob-dev/src/import_v1.rs"]
 
 [[acceptance]]
 text = "Given an evidence run that matches 500 tests, when the event is written, then the event file holds the count and digest but not the 500 names and its size is under 2 KB"
