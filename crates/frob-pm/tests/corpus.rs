@@ -156,7 +156,9 @@ fn new_ticket(
         .map_or(0, |n| n.parse().expect("criteria")))
         .map(|i| format!("Given a, when b, then criterion {i}"))
         .collect();
-    if o.get("start_here") != Some(&"none") {
+    if o.get("start_here") == Some(&"scaffold") {
+        good_first::START_HERE_SCAFFOLD.clone_into(&mut t.body);
+    } else if o.get("start_here") != Some(&"none") {
         "## Start here\nRead the scope first.".clone_into(&mut t.body);
     }
     if ty == TicketType::Story && o.get("value") != Some(&"none") {
@@ -421,4 +423,28 @@ fn pm032_three_ready_is_silent() {
         .expect("evaluate")
         .findings;
     assert!(found.is_empty(), "{found:?}");
+}
+
+// frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
+/// A good-first ticket whose Start here scaffold is unfilled is reported with the placeholders named.
+#[test]
+fn pm031_reports_the_unfilled_scaffold() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let ledger = ledger(dir.path());
+    let o = opts(&[
+        "points=2",
+        "labels=good-first",
+        "start_here=scaffold",
+        "scope=x",
+    ]);
+    let mut t = new_ticket(&["task", "a"], &o, &BTreeMap::new());
+    t.acceptance = vec!["Given a, when b, then c".to_owned()];
+    ledger.new_ticket(t).expect("ticket");
+    let found = good_first::evaluate(&ledger, 2).expect("evaluate").findings;
+    assert_eq!(found.len(), 1);
+    let m = &found[0].message;
+    assert!(
+        m.contains("`## Start here` has unfilled placeholders"),
+        "{m}"
+    );
 }
