@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-11T21:39:19Z"
+updated = "2026-10-11T21:40:10Z"
 idempotency_key = "m2-grl-verbs"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/verbs/**", "crates/frob/src/rule_cmd.rs", "crates/grimble/src/rule_cmd.rs", "crates/gob-plan/src/examples/judge.rs", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/verbs.rs", "crates/frob/Cargo.toml", "Cargo.lock", "crates/frob/src/lib.rs", "crates/grimble/src/lib.rs", "crates/gob-dev/profile.toml", "crates/grimble/tests", "crates/frob/tests", "crates/gob-plan/Cargo.toml", "crates/gob-plan/src/check/vocab.rs", "docs/reference/cli/frob.md"]
@@ -35,7 +35,7 @@ bound = true
 
 [[acceptance]]
 text = "Given `rule check`, `rule catalog tset` and `rule fmt`, when run with --json, then each returns its documented envelope (compile errors with codes, the catalog entry or did-you-mean, the rewritten paths)"
-bound = false
+bound = true
 +++
 
 Implements grl-spec.md section 11.
