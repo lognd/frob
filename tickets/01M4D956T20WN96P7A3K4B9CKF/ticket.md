@@ -2,7 +2,8 @@
 id = "01M4D956T20WN96P7A3K4B9CKF"
 title = "ERR001-ERR003: empty error handler, discarded fallible result, catch-all that neither rethrows nor logs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
