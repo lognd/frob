@@ -295,10 +295,12 @@ fn generate_files(kind: Kind, check: bool, root: Option<PathBuf>) -> Result<(), 
         }
     };
     match apply(&root, &files, mode) {
-        Ok(applied) if mode == Mode::Check && applied.differing > 0 => {
+        Ok(applied)
+            if mode == Mode::Check && (applied.differing > 0 || applied.marker_problems > 0) =>
+        {
             emit(&format!(
-                "GEN001: {} of {} generated files are stale; run `cargo dev gen all`",
-                applied.differing, applied.total
+                "GEN001: {} of {} generated files are stale and {} marker problems; run `cargo dev gen all`",
+                applied.differing, applied.total, applied.marker_problems
             ));
             Err(Failed("check failed".to_owned()))
         }
