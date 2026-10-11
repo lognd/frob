@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-11T01:56:19Z"
+updated = "2026-10-11T01:59:42Z"
 idempotency_key = "m2-nav-gen-framework"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/gob-dev/src/**"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a generated file with no marker or a marker naming a missing command, when checked, then GEN001 reports each"
-bound = false
+bound = true
 +++
 
 Implements navigation.md section 3.3; documentation.md section 3.
