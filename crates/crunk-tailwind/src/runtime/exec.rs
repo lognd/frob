@@ -88,7 +88,7 @@ impl Exec {
             }
             Outcome::Exited(_) => {}
         }
-        // frob:ticket 01M4DYPFE1Z7MXVNG8MJ7N30N5: parse the raw payload, not the redacted transcript copy
+        // Parse the raw payload, not the redacted transcript copy (frob:ticket 01M4DYPFE1Z7MXVNG8MJ7N30N5).
         serde_json::from_str::<Response>(output.stdout_raw.trim()).map_err(|e| {
             tracing::warn!(error = %e, stderr = %excerpt(&output.stderr), "unparseable helper output");
             RuntimeError::Crashed {
