@@ -2,13 +2,13 @@
 id = "01M40M7QE5VN76P1HTDY06BXB6"
 title = "nextest evidence inherits NEXTEST_PROFILE from the calling environment"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T10:16:27Z"
-updated = "2026-10-03T10:16:27Z"
+updated = "2026-10-11T18:04:45Z"
 idempotency_key = "m2-nextest-profile-leak"
 labels = ["milestone:2"]
 scope = ["crates/frob-evidence/**"]
