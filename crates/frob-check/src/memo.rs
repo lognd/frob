@@ -23,7 +23,9 @@ impl FileToolMemo {
     /// The shared store of the repository containing `root`; `None` outside a repository.
     pub fn for_repo(root: &Path) -> Option<Self> {
         let repo = gob_git::Repo::discover(root).ok()?;
-        Some(Self::at(repo.common_dir().join("frob").join("check-results")))
+        Some(Self::at(
+            repo.common_dir().join("frob").join("check-results"),
+        ))
     }
 
     fn path(&self, key: &str) -> Option<PathBuf> {
@@ -41,9 +43,7 @@ impl ToolMemo for FileToolMemo {
 
     fn store(&self, key: &str, payload: &str) {
         let Some(path) = self.path(key) else { return };
-        let tmp = self
-            .dir
-            .join(format!("{key}.{}.tmp", std::process::id()));
+        let tmp = self.dir.join(format!("{key}.{}.tmp", std::process::id()));
         let written = std::fs::create_dir_all(&self.dir)
             .and_then(|()| std::fs::write(&tmp, payload))
             .and_then(|()| std::fs::rename(&tmp, &path));

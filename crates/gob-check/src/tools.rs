@@ -34,6 +34,13 @@ pub trait ToolMemo: std::fmt::Debug + Send + Sync {
 /// Bumped when the key recipe or the payload shape changes, so old records never match.
 const MEMO_VERSION: &str = "tool-memo-v1";
 
+/// Feed one tagged, length-prefixed field to `h` so adjacent values cannot run together.
+fn field(h: &mut blake3::Hasher, tag: &str, value: &[u8]) {
+    h.update(tag.as_bytes());
+    h.update(&(value.len() as u64).to_le_bytes());
+    h.update(value);
+}
+
 /// The memo key of `stage`: its command line and version window plus the content of every file its `inputs` match.
 ///
 /// `None` when the stage declares no inputs (what it reads is unknown) or a glob does not parse.
@@ -48,25 +55,28 @@ fn memo_key(stage: &ToolStage, files: &[gob_walk::FileEntry]) -> Option<String> 
     }
     let set = builder.build().ok()?;
     let mut h = blake3::Hasher::new();
-    let mut field = |tag: &str, value: &str| {
-        h.update(tag.as_bytes());
-        h.update(&(value.len() as u64).to_le_bytes());
-        h.update(value.as_bytes());
-    };
-    field("v", MEMO_VERSION);
-    field("command", &stage.command);
-    field("parser", &format!("{:?}", stage.parser));
+    field(&mut h, "v", MEMO_VERSION.as_bytes());
+    field(&mut h, "command", stage.command.as_bytes());
+    field(&mut h, "parser", format!("{:?}", stage.parser).as_bytes());
     for a in &stage.args {
-        field("arg", a);
+        field(&mut h, "arg", a.as_bytes());
     }
     for a in stage.version_args.iter().flatten() {
-        field("varg", a);
+        field(&mut h, "varg", a.as_bytes());
     }
-    field("min", stage.min_version.as_deref().unwrap_or(""));
-    field("max", stage.max_version.as_deref().unwrap_or(""));
+    field(
+        &mut h,
+        "min",
+        stage.min_version.as_deref().unwrap_or("").as_bytes(),
+    );
+    field(
+        &mut h,
+        "max",
+        stage.max_version.as_deref().unwrap_or("").as_bytes(),
+    );
     for f in files.iter().filter(|f| set.is_match(&f.path)) {
-        field("file", &f.path);
-        field("digest", &f.digest.as_bytes().iter().map(|b| format!("{b:02x}")).collect::<String>());
+        field(&mut h, "file", f.path.as_bytes());
+        field(&mut h, "digest", f.digest.as_bytes());
     }
     Some(h.finalize().to_hex().to_string())
 }

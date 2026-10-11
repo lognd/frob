@@ -126,8 +126,8 @@ pub fn run_with_cone(
     let product = Frob::new(opts.clone());
     let mut run_opts = opts.run_options();
     if run_opts.tool_memo.is_none() {
-        run_opts.tool_memo = FileToolMemo::for_repo(root)
-            .map(|m| Arc::new(m) as Arc<dyn gob_check::ToolMemo>);
+        run_opts.tool_memo =
+            FileToolMemo::for_repo(root).map(|m| Arc::new(m) as Arc<dyn gob_check::ToolMemo>);
     }
     let report = gob_check::run(&product, root, &run_opts)?;
     Ok((report, product.diff_paths(), product.cone_paths()))

@@ -83,7 +83,6 @@ pub use gob_rules as __rules;
 pub use options::RunOptions;
 pub use packages::public_surface_differs;
 pub use pipeline::run;
-pub use tools::ToolMemo;
 pub use product::{
     BranchChanges, CollectCx, Collected, CountFn, External, NoScope, Product, RepoGroup, RunFn,
     ScopeView, ScopedFindings, Snapshot,
@@ -98,3 +97,4 @@ pub use status::{
     SubjectStatus, hole_caveat, is_binary, locate_hole, opaque_finding, subject_status,
     subject_status_for, unreadable_finding, unresolved_finding, unresolved_finding_at,
 };
+pub use tools::ToolMemo;
