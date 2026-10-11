@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:46Z"
-updated = "2026-10-11T01:21:37Z"
+updated = "2026-10-11T01:25:55Z"
 idempotency_key = "m2-nav-profile-store"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob/src/profile_cmd.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/tests/profile.rs", "crates/gob-dev/profile.toml", "docs/reference/**", "docs/schemas/**"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the third closed ticket by this actor, when the verb finishes, then a one-time note suggests switching and is not repeated"
-bound = false
+bound = true
 +++
 
 Implements navigation.md section 4.1.
