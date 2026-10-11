@@ -2,13 +2,13 @@
 id = "01M4D6NH5VT2E2ZRRVYMD4XAA7"
 title = "frob-ack: open the repository-shared cache instead of its own .frob/cache.sqlite"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:27Z"
-updated = "2026-10-08T07:29:27Z"
+updated = "2026-10-11T16:38:15Z"
 scope = ["changelog.d/**", "crates/frob-ack/**"]
 
 [[acceptance]]
