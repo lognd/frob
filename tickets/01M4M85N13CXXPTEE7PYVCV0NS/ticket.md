@@ -2,7 +2,8 @@
 id = "01M4M85N13CXXPTEE7PYVCV0NS"
 title = "Mirror issue binding store and ticket branch path lookup"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
