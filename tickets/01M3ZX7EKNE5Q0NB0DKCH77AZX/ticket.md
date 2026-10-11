@@ -2,13 +2,13 @@
 id = "01M3ZX7EKNE5Q0NB0DKCH77AZX"
 title = "Lower a checked rule to a plan with a clause-ordering planner"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-03T03:34:21Z"
+updated = "2026-10-11T01:39:19Z"
 idempotency_key = "m2-grl-lower"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/lower/**"]

@@ -7,8 +7,8 @@ priority = "medium"
 parent = "01M4CTE0GYDX0XW64JRNF2ZMQG"
 reporter = "lognd"
 created = "2026-10-11T00:16:29Z"
-updated = "2026-10-11T00:16:29Z"
-scope = ["crates/gob-walk/**,crates/frob-check/**,crates/frob-ack/**,crates/frob-lease/**,crates/frob-obligations/**,changelog.d/**"]
+updated = "2026-10-11T01:16:10Z"
+scope = ["crates/gob-walk/**", "crates/frob-check/**", "crates/frob-ack/**", "crates/frob-lease/**", "crates/frob-obligations/**", "changelog.d/**"]
 +++
 
 Split from ~NF2ZMQG. gob-walk role.rs reads frob.toml [tickets] dir with a silent default. Make Roles::for_root take the dir; frob callers pass it. Acceptance: a gob-walk test showing no frob.toml read.

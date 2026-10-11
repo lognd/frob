@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T01:14:46Z"
+digest = "dcd481c160062b7c2f5a9753e6b18b6bcb509c32627854d7e83c9a14eaea98b8"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling libc v0.2.189
+   Compiling serde v1.0.229
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling getrandom v0.4.3
+   Compiling tempfile v3.27.0
+    Finished `test` profile [unoptimized] target(s) in 2.61s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6d53b01f-9058-4872-860e-a6947c52868b with nextest profile: default
+    Starting 1 test across 1 binary (14 tests skipped)
+        PASS [   0.007s] gob-lock::lock gob_lock_does_not_depend_on_gob_ir
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 14 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-lock --test lock -E 'test(=gob_lock_does_not_depend_on_gob_ir)'"
+size = 923
+status = "measured"
+tests = ["gob_lock_does_not_depend_on_gob_ir"]
+at = "2026-10-11T01:14:46Z"
+actor = "lognd"
+rev = 1
