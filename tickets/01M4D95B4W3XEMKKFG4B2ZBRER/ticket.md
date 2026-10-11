@@ -2,7 +2,8 @@
 id = "01M4D95B4W3XEMKKFG4B2ZBRER"
 title = "Rule precision ledger: per-rule accept, waive, dismiss and fix counts and a not-useful rate; Warn by default needs measured precision"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
