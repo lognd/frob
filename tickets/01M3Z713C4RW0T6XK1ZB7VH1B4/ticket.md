@@ -8,7 +8,7 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-11T00:48:10Z"
+updated = "2026-10-11T00:48:58Z"
 idempotency_key = "m2-excuntil"
 labels = ["milestone:2", "creates:changelog.d/*.md"]
 scope = ["crates/frob-obligations/**", "crates/gob-rules/**", "crates/frob-check/src/snapshot.rs", "crates/frob-check/src/product.rs", "docs/design/exceptions.md", "docs/reference/rules/EXC0*.md", "docs/reference/rules/README.md", "changelog.d/*.md"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an accept covering an Unresolved finding, when check runs, then the Unresolved finding stands and EXC016 is raised at the accept; a defer of it stays suppressed"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a native suppression of a tool-bound rule (zizmor ignore, allow or eslint-disable of an id_map id) with no frob accept or defer of the mapped rule at that site, when check runs, then EXC017 is raised; with the exception present it is clean"
