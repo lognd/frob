@@ -2,13 +2,13 @@
 id = "01M4M5CQ9529KH526299QXXFVF"
 title = "grimble: GRL compile verb that checks rule files and prints compile_report"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-11T00:21:50Z"
-updated = "2026-10-11T00:21:50Z"
+updated = "2026-10-11T02:34:08Z"
 scope = ["crates/grimble/**", "crates/gob-plan/**", "changelog.d/**", "docs/**"]
 
 [[acceptance]]
