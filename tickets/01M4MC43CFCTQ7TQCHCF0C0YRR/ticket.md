@@ -2,7 +2,8 @@
 id = "01M4MC43CFCTQ7TQCHCF0C0YRR"
 title = "Library entry point: build a gob-ir Model from one example source text and language"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
