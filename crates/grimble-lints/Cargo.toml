@@ -1,0 +1,18 @@
+[package]
+name = "grimble-lints"
+version.workspace = true
+description = "Syntactic detectors behind grimble's universal lint rules: swallowed errors (ERR001-ERR003) for Rust, Python, TypeScript and C#."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+gob-languages = { version = "0.532.0", path = "../gob-languages" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
+thiserror = "2"
+tracing = "0.1"
