@@ -2,7 +2,7 @@
 id = "01M48TKSG9SCKND40YXK0FVJFM"
 title = "GRL grammar ambiguities found by the printer's generator: leading where after an open binding, reaches..via list inside any {}"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
