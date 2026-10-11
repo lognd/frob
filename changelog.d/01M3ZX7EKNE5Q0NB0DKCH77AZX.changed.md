@@ -1,0 +1,1 @@
+Added GRL lowering (lower_rule) in gob-plan: a checked rule becomes a validated plan with a clause-ordering planner, so clause order never changes the plan; constructs the plan IR lacks are refused by name.
