@@ -2,13 +2,13 @@
 id = "01M3ZX87403VR4YVK4QMJ7KPBV"
 title = "Generated README region for the ticket pointer in the code repository"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:46Z"
-updated = "2026-10-03T03:34:46Z"
+updated = "2026-10-11T22:33:54Z"
 idempotency_key = "m2-nav-code-readme"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-ledger/src/gen/code_readme.rs", "README.md"]
