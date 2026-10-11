@@ -8,12 +8,12 @@ points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T07:29:39Z"
-updated = "2026-10-11T16:34:56Z"
+updated = "2026-10-11T16:36:28Z"
 scope = ["changelog.d/**", "crates/frob-land/**"]
 
 [[acceptance]]
 text = "Given a stub gh and both ref states, when the gate runs, then it queries the expected commit"
-bound = false
+bound = true
 +++
 
 Follow-up from ~GHMWDGG.
