@@ -2,13 +2,13 @@
 id = "01M3Z90E4JN2DFEJ0Y4WHCDCMG"
 title = "gob-languages and gob-directives: YAML adapter so directives and exceptions work in workflow files"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:40:59Z"
-updated = "2026-10-02T21:40:59Z"
+updated = "2026-10-11T02:43:22Z"
 idempotency_key = "m2-yaml-directives"
 labels = ["milestone:2"]
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/gob-directives/**"]
