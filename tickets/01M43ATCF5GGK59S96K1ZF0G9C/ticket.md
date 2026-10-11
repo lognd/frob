@@ -2,13 +2,13 @@
 id = "01M43ATCF5GGK59S96K1ZF0G9C"
 title = "crunk check end to end: pipeline, reports, cache, exit codes"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:36Z"
-updated = "2026-10-04T11:29:36Z"
+updated = "2026-10-11T02:34:37Z"
 idempotency_key = "crunk-plan-chk"
 labels = ["area:crunk"]
 scope = ["crates/crunk-check/**", "crates/crunk/src/check.rs", "crates/crunk/tests/check*.rs"]
