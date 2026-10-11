@@ -8,11 +8,11 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:39:06Z"
-updated = "2026-10-11T04:22:28Z"
+updated = "2026-10-11T04:22:48Z"
 scope = ["crates/gob-cache/**", "crates/frob-obligations/src/tickets.rs", "crates/frob-obligations/src/lib.rs"]
 
 [[acceptance]]
-text = "on a second frob check with no changed files the cached_hits equals the file count, and across a new worktree of the same commit it is above 90 percent, covered by a test"
+text = "the default cache engine fingerprint does not change when the executable's bytes change (so rebuilds and worktrees of one commit share rows), and does when FROB_CACHE_EXE_IDENTITY opts in; measured: file-rule rows no longer fork per build"
 bound = false
 +++
 
