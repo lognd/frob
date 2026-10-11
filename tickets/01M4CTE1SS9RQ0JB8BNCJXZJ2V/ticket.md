@@ -8,12 +8,12 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:39Z"
-updated = "2026-10-11T23:18:58Z"
+updated = "2026-10-11T23:52:21Z"
 scope = ["changelog.d/**", "crates/gob-dev/**", "docs/design/boundaries.md"]
 
 [[acceptance]]
 text = "Given a new dependency edge that goes up a layer, when the test runs, then it fails naming both crates and their layers"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the allow list, when a listed violation is fixed, then the stale row fails the test"
