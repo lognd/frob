@@ -2,7 +2,7 @@
 id = "01M4M52WDAB9VH3PJ2VDF2JFRY"
 title = "Move DIGEST_SCHEME into gob-caps and drop gob-lock -> gob-ir (audit M8 slice)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4CTE0GYDX0XW64JRNF2ZMQG"
