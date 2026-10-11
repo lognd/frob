@@ -394,12 +394,11 @@ pub fn comment_spans(
 ) -> Vec<Range<usize>> {
     let found = match (language, tree) {
         (Language::Rust, Some(t)) => node_spans(t, &["line_comment", "block_comment"]),
-        (Language::Rust, None) => rust_plain(text),
+        // frob:ticket 01M3ZEH464EFCFAZ4XDKE89D5Z
+        (Language::Rust, None) | (Language::Grmb, _) => rust_plain(text),
         (Language::Markdown, t) => markdown_spans(text, t),
         (Language::Toml, _) | (Language::Python, None) => hash_spans(text, false),
         (Language::Yaml, _) => hash_spans(text, true),
-        // frob:ticket 01M3ZEH464EFCFAZ4XDKE89D5Z
-        (Language::Grmb, _) => rust_plain(text),
         (Language::CSharp, None) => csharp_plain(text),
         (
             Language::Python
