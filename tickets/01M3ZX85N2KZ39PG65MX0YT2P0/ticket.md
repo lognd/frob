@@ -2,13 +2,13 @@
 id = "01M3ZX85N2KZ39PG65MX0YT2P0"
 title = "Generator framework: Write and Check modes, three-layer marker, capped diff, cross-checks"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-03T03:34:44Z"
+updated = "2026-10-11T01:52:04Z"
 idempotency_key = "m2-nav-gen-framework"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/gob-dev/src/**"]
