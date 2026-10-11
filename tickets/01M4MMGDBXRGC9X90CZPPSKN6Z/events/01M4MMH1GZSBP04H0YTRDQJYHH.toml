@@ -1,0 +1,20 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T04:46:20Z"
+digest = "d0cc672867715831da900401d3cc37a5db8e73644dee472d5bba7c0ee9f408cc"
+exit_code = 0
+inline = """
+error: `recieve` should be `receive`
+ --> /tmp/tmptutbawe1/a.md:1:4
+  |
+1 | we recieve it
+  |    ^^^^^^^
+"""
+passed = true
+provider = "command"
+ref = 'python3 -c "import shutil,subprocess,sys,tempfile,os; t=shutil.which(\"typos\"); ok=subprocess.call([t]); d=tempfile.mkdtemp(); open(os.path.join(d,\"a.md\"),\"w\").write(\"we recieve it\\n\"); bad=subprocess.call([t,\"--config\",\"typos.toml\",d]); sys.exit(0 if (ok==0 and bad!=0) else 1)"'
+size = 105
+status = "measured"
+at = "2026-10-11T04:46:20Z"
+actor = "lognd"
+rev = 1

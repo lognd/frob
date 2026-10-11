@@ -8,8 +8,12 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:47:56Z"
-updated = "2026-10-11T03:52:10Z"
+updated = "2026-10-11T05:01:24Z"
 scope = ["frob.toml"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M4MNBNM0WGTXGH93PEV48F78"
 
 [[acceptance]]
 text = "the second ticket worktree built on the same commit compiles zero workspace crates, measured from cargo build timings, and the land checkout reuses the same cache"

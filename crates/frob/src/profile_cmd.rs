@@ -21,6 +21,9 @@ use crate::workspace::Located;
 /// Closed tickets by this actor after which the one-time note suggests switching.
 pub const SUGGEST_AFTER: usize = 3;
 
+/// How many of the most recently finished tickets the closed count looks at (it is a lower bound).
+const RECENT_DONE: usize = 256;
+
 /// The stored form of `.frob/profile.toml`.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 struct Stored {
@@ -77,27 +80,47 @@ fn save(path: &Path, stored: &Stored) -> Result<(), CliError> {
     std::fs::write(path, text).map_err(CliError::internal)
 }
 
-/// Distinct tickets `actor` moved to done with the outcome done.
-fn closed_by(ledger: &Ledger, actor: &str) -> Result<usize, frob_ledger::LedgerError> {
+// frob:ticket 01M4MMGDBXRGC9X90CZPPSKN6Z
+/// Distinct tickets `actor` moved to done with the outcome done among the [`RECENT_DONE`] most recently
+/// finished tickets, counted up to `limit` and no further: a lower bound, which is all the nudge needs,
+/// and a cost that does not grow with the ledger.
+///
+/// Events are read in bulk chunks (`events_many`: one sync and one tree walk per chunk): reading
+/// them ticket by ticket re-synced the ledger for each of about 900 done tickets and took seconds.
+fn closed_by(
+    ledger: &Ledger,
+    actor: &str,
+    limit: usize,
+) -> Result<usize, frob_ledger::LedgerError> {
+    const CHUNK: usize = 64;
     let filter = ListFilter {
         category: Some(Category::Done),
         ..ListFilter::default()
     };
+    let mut done = ledger.list(&filter)?;
+    done.sort_by_key(|s| std::cmp::Reverse(s.updated));
+    let ids: Vec<_> = done.into_iter().take(RECENT_DONE).map(|s| s.id).collect();
     let mut mine = BTreeSet::new();
-    for summary in ledger.list(&filter)? {
-        let closed = ledger.events(summary.id)?.iter().any(|e| {
-            e.actor == actor
-                && matches!(
-                    &e.body,
-                    EventBody::Transition(t)
-                        if t.to == Category::Done && t.outcome == Some(TicketOutcome::Done)
-                )
-        });
-        if closed {
-            mine.insert(summary.id);
+    for chunk in ids.chunks(CHUNK) {
+        let want: BTreeSet<_> = chunk.iter().copied().collect();
+        for (id, events) in ledger.events_many(&want)? {
+            let closed = events.iter().any(|e| {
+                e.actor == actor
+                    && matches!(
+                        &e.body,
+                        EventBody::Transition(t)
+                            if t.to == Category::Done && t.outcome == Some(TicketOutcome::Done)
+                    )
+            });
+            if closed {
+                mine.insert(id);
+            }
+        }
+        if mine.len() >= limit {
+            break;
         }
     }
-    Ok(mine.len())
+    Ok(mine.len().min(limit))
 }
 
 impl Command for ProfileVerb {
@@ -142,7 +165,7 @@ impl Command for ProfileVerb {
                 stored.suggested = true;
                 save(&path, &stored)?;
                 note = Some(format!(
-                    "you have closed {} tickets here; `frob profile experienced` drops the newcomer hints",
+                    "you have closed at least {} tickets here; `frob profile experienced` drops the newcomer hints",
                     closed.unwrap_or_default()
                 ));
             }
@@ -168,7 +191,7 @@ impl Command for ProfileVerb {
 fn count_closed(ctx: &Context) -> Option<usize> {
     let ledger = crate::ticket::open(ctx).ok()?;
     let actor = ledger.actor().ok()?;
-    match closed_by(&ledger, &actor) {
+    match closed_by(&ledger, &actor, SUGGEST_AFTER) {
         Ok(n) => Some(n),
         Err(e) => {
             tracing::debug!(error = %e, "closed tickets not counted");
