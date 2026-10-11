@@ -21,6 +21,7 @@ pub mod milestone_evidence_cmd;
 mod product;
 pub mod profile_cmd;
 pub mod release_cmd;
+pub mod rule_cmd;
 pub mod ticket;
 mod workspace;
 

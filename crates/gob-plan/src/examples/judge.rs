@@ -20,6 +20,8 @@ pub struct ExampleResult {
     pub message: String,
     /// The expected-versus-actual diff; empty on a pass.
     pub diff: String,
+    /// The findings the run reported, sorted; empty for a `fixed` block.
+    pub found: Vec<Actual>,
 }
 
 impl ExampleResult {
@@ -29,6 +31,7 @@ impl ExampleResult {
             code: None,
             message: String::new(),
             diff: String::new(),
+            found: Vec::new(),
         }
     }
 
@@ -38,6 +41,7 @@ impl ExampleResult {
             code: Some(GRL016),
             message: message.to_owned(),
             diff,
+            found: Vec::new(),
         }
     }
 }
@@ -107,7 +111,10 @@ pub fn judge(
         _ => ExampleResult::pass(),
     };
     tracing::debug!(passed = verdict.passed, ?kind, "judged example");
-    verdict
+    ExampleResult {
+        found: act,
+        ..verdict
+    }
 }
 
 /// Judge a `fixed` block: the rule's fix output must equal it byte for byte.
