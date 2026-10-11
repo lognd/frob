@@ -2,7 +2,8 @@
 id = "01M4CXTP6NCCZ7YNQCER0RXNYF"
 title = "land ledger_step idempotent after a partial failure (append_land succeeded, close failed): no duplicate land event on retry"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
