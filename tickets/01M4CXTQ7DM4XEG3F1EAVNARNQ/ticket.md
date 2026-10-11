@@ -2,7 +2,8 @@
 id = "01M4CXTQ7DM4XEG3F1EAVNARNQ"
 title = "Concurrent land stress test with branch -D and pack-refs churn"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
