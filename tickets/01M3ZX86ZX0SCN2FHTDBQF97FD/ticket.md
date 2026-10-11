@@ -8,10 +8,10 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:46Z"
-updated = "2026-10-11T19:38:31Z"
+updated = "2026-10-11T19:38:56Z"
 idempotency_key = "m2-nav-tick007"
-labels = ["milestone:2", "area:navigation"]
-scope = ["crates/frob-obligations/src/tick_misfiled.rs"]
+labels = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/misfiled.rs"]
+scope = ["crates/frob-obligations/src/tick_misfiled.rs", "crates/frob-ledger/src/misfiled.rs"]
 
 [[links]]
 kind = "blocked-by"
