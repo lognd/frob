@@ -860,3 +860,47 @@ fn relation_frontier_reads_unknown_and_propagates_through_closure_and_compose() 
     assert!(!s.compose(&r).is_unknown_out(c));
     assert!(r.union(&s).is_unknown_out(b));
 }
+
+// frob:ticket 01M4D6NV19ZWH5JTP7778PYE1D
+#[test]
+fn a_poisoned_stratum_node_taints_only_the_subjects_that_read_it() {
+    // `y` calls `z` (certain); `x` calls something that is not a name (unclassified, so the
+    // `calls` stratum is poisoned at `x`); `z` calls nothing.
+    let mut b = B::new("c.rs", "rust");
+    let z = b.unit("function", "z", &[], &[]);
+    let cy = b.call("z", &[]);
+    let y = b.unit("function", "y", &[], &[cy]);
+    let head = b.lit("dynamic");
+    let cx = b.node(Operator::apply("call"), &[head]);
+    let x = b.unit("function", "x", &[], &[cx]);
+    let root = b.file_unit(&[z, y, x]);
+    let m = Model::lexical(b.finish(root));
+    let p = RuleProgram::new(rule("CALL001"), Polarity::Pplus)
+        .message("calls z")
+        .stratum("calls", |ctx| ctx.rel_calls())
+        .subjects(fn_units)
+        .check(move |ctx, s| {
+            // A careless check: it claims the certain callees are all of them.
+            let calls = ctx.derived("calls").expect("earlier stratum");
+            Observation::Set(Answer::Exact(
+                calls
+                    .image(s)
+                    .into_iter()
+                    .filter(|(_, t)| *t == Truth::Yes)
+                    .map(|(n, _)| n)
+                    .collect(),
+            ))
+        });
+    let out = run(&m, &p);
+    // The unrelated subjects stay definite: `y` fires, `z` is certified clean.
+    assert!(matches!(
+        &named(&out, &m, "y")[..],
+        [Verdict::Violation { .. }]
+    ));
+    assert_eq!(named(&out, &m, "z"), [Verdict::Clean]);
+    // The subject on the poisoned frontier still cannot be certified.
+    assert!(matches!(
+        &named(&out, &m, "x")[..],
+        [Verdict::Unresolved { .. }]
+    ));
+}

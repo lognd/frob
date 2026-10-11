@@ -5,8 +5,8 @@
 //! subject's check: an `Exact` answer computed through poisoned atoms is
 //! downgraded to `Unknown` (universal-model.md 4.3, soundness under Kleene logic).
 
-use std::cell::RefCell;
-use std::collections::BTreeMap;
+use std::cell::{Cell, RefCell};
+use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 
 use gob_rules::UnresolvedReason;
@@ -67,7 +67,18 @@ pub struct Ctx<'m> {
     model: &'m Model,
     poison: RefCell<Vec<Poison>>,
     derived: RefCell<BTreeMap<String, Rc<Relation>>>,
-    derived_poison: RefCell<BTreeMap<String, Vec<Poison>>>,
+    // frob:ticket 01M4D6NV19ZWH5JTP7778PYE1D
+    /// Per stratum: the poison its derivation hit and the nodes it affects (the relation's frontier).
+    derived_poison: RefCell<BTreeMap<String, DerivedPoison>>,
+    /// The subject whose check is running, so a derived relation taints only readers it affects.
+    subject: Cell<Option<NodeId>>,
+}
+
+/// The poison one stratum's derivation hit and the nodes whose rows it affects.
+#[derive(Debug, Default)]
+struct DerivedPoison {
+    poison: Vec<Poison>,
+    affected: BTreeSet<NodeId>,
 }
 
 impl<'m> Ctx<'m> {
@@ -78,6 +89,7 @@ impl<'m> Ctx<'m> {
             poison: RefCell::default(),
             derived: RefCell::default(),
             derived_poison: RefCell::default(),
+            subject: Cell::new(None),
         }
     }
 
@@ -325,21 +337,46 @@ impl<'m> Ctx<'m> {
         r
     }
 
-    /// A relation derived by an earlier stratum; reading it re-records the poison its derivation hit.
+    /// A relation derived by an earlier stratum.
+    ///
+    /// Reading it re-records the poison its derivation hit, but only for a subject the poison
+    /// affects: one on the relation's Unknown frontier, with an Unknown pair in its row, or
+    /// enclosing a poisoned atom. Any other subject stays definite; rows of other nodes are read
+    /// through [`Ctx::holds`], which records what it meets. Outside a subject's check every
+    /// stratum's poison is re-recorded.
+    // frob:ticket 01M4D6NV19ZWH5JTP7778PYE1D
     pub fn derived(&self, name: &str) -> Option<Rc<Relation>> {
         let rel = self.derived.borrow().get(name).cloned()?;
-        if let Some(p) = self.derived_poison.borrow().get(name) {
-            self.poison.borrow_mut().extend(p.iter().cloned());
+        if let Some(d) = self.derived_poison.borrow().get(name)
+            && self.subject.get().is_none_or(|s| d.affected.contains(&s))
+        {
+            self.poison.borrow_mut().extend(d.poison.iter().cloned());
         }
         Some(rel)
     }
 
+    /// Name the subject whose check runs next (`None` outside a check).
+    pub(crate) fn set_subject(&self, subject: Option<NodeId>) {
+        self.subject.set(subject);
+    }
+
     pub(crate) fn set_derived(&self, name: &str, rel: Relation, poison: Vec<Poison>) {
+        // The nodes a poisoned atom sits in (it and every enclosing node) are affected too.
+        let affected = poison
+            .iter()
+            .flat_map(|p| std::iter::once(p.node).chain(self.term().ancestors(p.node)))
+            .chain(rel.unknown_out())
+            .chain(
+                rel.iter()
+                    .filter(|(_, _, t)| *t == Truth::Unknown)
+                    .map(|(a, _, _)| a),
+            )
+            .collect();
         self.derived
             .borrow_mut()
             .insert(name.to_owned(), Rc::new(rel));
         self.derived_poison
             .borrow_mut()
-            .insert(name.to_owned(), poison);
+            .insert(name.to_owned(), DerivedPoison { poison, affected });
     }
 }
