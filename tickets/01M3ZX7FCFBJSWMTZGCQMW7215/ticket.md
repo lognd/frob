@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:21Z"
 updated = "2026-10-11T21:42:40Z"
 idempotency_key = "m2-grl-verbs"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/verbs/**", "crates/frob/src/rule_cmd.rs", "crates/grimble/src/rule_cmd.rs", "crates/gob-plan/src/examples/judge.rs", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/verbs.rs", "crates/frob/Cargo.toml", "Cargo.lock", "crates/frob/src/lib.rs", "crates/grimble/src/lib.rs", "crates/gob-dev/profile.toml", "crates/grimble/tests", "crates/frob/tests", "crates/gob-plan/Cargo.toml", "crates/gob-plan/src/check/vocab.rs", "docs/reference/cli/frob.md", "crates/frob/src/product.rs"]
+scope = ["crates/gob-plan/src/verbs/**", "crates/frob/src/rule_cmd.rs", "crates/grimble/src/rule_cmd.rs", "crates/gob-plan/src/examples/judge.rs", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/verbs.rs", "crates/frob/Cargo.toml", "Cargo.lock", "crates/frob/src/lib.rs", "crates/grimble/src/lib.rs", "crates/gob-dev/profile.toml", "crates/grimble/tests", "crates/frob/tests", "crates/gob-plan/Cargo.toml", "crates/gob-plan/src/check/vocab.rs", "docs/reference/cli/frob.md", "crates/frob/src/product.rs", "crates/grimble/tests/rule_verbs.rs"]
 
 [[links]]
 kind = "blocked-by"
