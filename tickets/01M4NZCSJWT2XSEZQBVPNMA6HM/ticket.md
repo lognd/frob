@@ -8,12 +8,12 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T17:15:30Z"
-updated = "2026-10-11T17:15:51Z"
+updated = "2026-10-11T17:26:47Z"
 scope = ["crates/frob-evidence/**", "crates/frob-ledger/**", "docs/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given an evidence run that matches 500 tests, when the event is written, then the event file holds the count and digest but not the 500 names and its size is under 2 KB"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the artifact for that run, when read by digest, then the full test-name list is still there"
