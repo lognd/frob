@@ -8,12 +8,12 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T04:54:58Z"
-updated = "2026-10-11T20:35:47Z"
+updated = "2026-10-11T20:37:25Z"
 scope = ["changelog.d/**", "crates/frob-land/**"]
 
 [[acceptance]]
 text = "Given a land whose close failed after append_land, when the close is retried, then exactly one land event exists"
-bound = false
+bound = true
 +++
 
 Follow-up from ~BWMVSPZ.
