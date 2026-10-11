@@ -2029,7 +2029,7 @@ fn land_reuses_a_recorded_tool_pass_for_an_unchanged_tree_and_reruns_after_an_in
     let s = fx.start("Add a", &["src/**"]);
     Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
     Fixture::evidence(&s, "src/a.rs");
-    let s_wt = s.wt.canonicalize().expect("worktree");
+    let s_wt = gob_exec::canonical(&s.wt).expect("worktree");
     check(&s);
     assert_eq!(spawned_in(&s_wt), 1, "the check ran the tool once");
     land(&fx.root, &Fixture::opts(&s), &clock()).expect("land");
@@ -2039,7 +2039,7 @@ fn land_reuses_a_recorded_tool_pass_for_an_unchanged_tree_and_reruns_after_an_in
     let t = fx.start("Add b", &["src/**"]);
     Fixture::commit_in(&t.wt, "src/b.rs", "fn b() {}\n");
     Fixture::evidence(&t, "src/b.rs");
-    let t_wt = t.wt.canonicalize().expect("worktree");
+    let t_wt = gob_exec::canonical(&t.wt).expect("worktree");
     land(&fx.root, &Fixture::opts(&t), &clock()).expect("land b");
     assert_eq!(
         spawned_in(&t_wt),
