@@ -276,10 +276,10 @@ fn the_ungoverned_scan_hashes_no_file() {
     // A clean filter leaves a marker if, and only if, a file goes through the content source.
     let config = root.join(".git/config");
     let mut text = std::fs::read_to_string(&config).unwrap();
-    text.push_str(&format!(
-        "[filter \"spy\"]\n\tclean = touch {}; cat\n",
+    text = format!(
+        "{text}[filter \"spy\"]\n\tclean = touch {}; cat\n",
         marker.display()
-    ));
+    );
     std::fs::write(&config, text).unwrap();
     write(root, ".gitattributes", "*.css filter=spy\n");
     let got = ingest_tree(&spec, &Cache::null()).unwrap();
