@@ -8,7 +8,7 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-11T03:10:19Z"
+updated = "2026-10-11T03:53:13Z"
 aliases = ["T-4038"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["crates/grimble-lints/**", "Cargo.lock"]
@@ -19,7 +19,7 @@ bound = false
 
 [[acceptance]]
 text = "Given TypeScript or JavaScript source with performance.mark(), a Map.set() on a receiver built by new Map, or a bound setTimeout() and no paired release in the scope, when grimble_lints::res::scan runs, then one site per acquire with the pair id and Certainty::Certain"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the same acquires with the paired release (clearMarks, delete, clearTimeout) in scope, when scanned, then no site"
