@@ -6,7 +6,9 @@
 //! Both evaluate random formulas (atoms, not/and/or, some/no, count against k, bounded and
 //! unbounded reach) in Kleene logic and compare every definite answer with the classical answer
 //! in every sampled completion (soundness); structures with no May or Unknown part must never
-//! yield Unknown (exactness). Formal review 2026-10-08 section 4 item 8.
+//! yield Unknown (exactness). `within N` is a budget (grl-spec 7.0.3, ~8HM4YHB): when no path of at
+//! most N steps exists but a longer one may, the truncated answer is Unknown, in the evaluator and
+//! in the reference model alike, so exactness is only demanded of formulas without `within`. Formal review 2026-10-08 section 4 item 8.
 #![allow(clippy::many_single_char_names, reason = "terse generators")]
 
 mod support;
@@ -106,7 +108,15 @@ impl K3 {
         match f {
             F::Edge(a, b) => self.edge.get(v(env, *a), v(env, *b)),
             F::Reach(a, b) => self.reach.get(v(env, *a), v(env, *b)),
-            F::Within(k, a, b) => self.within[k - 1].get(v(env, *a), v(env, *b)),
+            // frob:ticket 01M4E0BWJNPXY0CG8ZK8HM4YHB
+            F::Within(k, a, b) => {
+                let (x, y) = (v(env, *a), v(env, *b));
+                match self.within[k - 1].get(x, y) {
+                    // The budget ran out before a path that may exist: truncation is Unknown.
+                    Truth::No if self.reach.get(x, y) != Truth::No => Truth::Unknown,
+                    t => t,
+                }
+            }
             F::Not(g) => !self.eval(g, env),
             F::And(a, b) => self.eval(a, env) & self.eval(b, env),
             F::Or(a, b) => self.eval(a, env) | self.eval(b, env),
@@ -185,36 +195,59 @@ impl Classical {
         }
     }
 
-    fn eval(&self, f: &F, env: &mut Vec<usize>) -> bool {
+    // frob:ticket 01M4E0BWJNPXY0CG8ZK8HM4YHB
+    /// The reference answer in this completion; `within N` is Unknown when only a longer path exists.
+    fn eval(&self, f: &F, env: &mut Vec<usize>) -> Truth {
         let v = |env: &[usize], i: usize| env[i % env.len()];
+        let tv = |b: bool| if b { Truth::Yes } else { Truth::No };
         match f {
-            F::Edge(a, b) => self.adj[v(env, *a)][v(env, *b)],
-            F::Reach(a, b) => self.reach[v(env, *a)][v(env, *b)],
-            F::Within(k, a, b) => self.within[k - 1][v(env, *a)][v(env, *b)],
+            F::Edge(a, b) => tv(self.adj[v(env, *a)][v(env, *b)]),
+            F::Reach(a, b) => tv(self.reach[v(env, *a)][v(env, *b)]),
+            F::Within(k, a, b) => {
+                let (x, y) = (v(env, *a), v(env, *b));
+                if self.within[k - 1][x][y] {
+                    Truth::Yes
+                } else if self.reach[x][y] {
+                    Truth::Unknown
+                } else {
+                    Truth::No
+                }
+            }
             F::Not(g) => !self.eval(g, env),
-            F::And(a, b) => self.eval(a, env) && self.eval(b, env),
-            F::Or(a, b) => self.eval(a, env) || self.eval(b, env),
+            F::And(a, b) => self.eval(a, env) & self.eval(b, env),
+            F::Or(a, b) => self.eval(a, env) | self.eval(b, env),
             F::Some(g) => self.quantify(g, env),
             F::No(g) => !self.quantify(g, env),
             F::Count(x, c, k) => {
                 let xn = v(env, *x);
                 let cnt = self.adj[xn].iter().filter(|b| **b).count();
-                match c {
+                tv(match c {
                     Cmp::Eq => cnt == *k,
                     Cmp::Ge => cnt >= *k,
                     Cmp::Le => cnt <= *k,
-                }
+                })
             }
         }
     }
 
-    fn quantify(&self, g: &F, env: &mut Vec<usize>) -> bool {
-        (0..self.n).any(|i| {
+    fn quantify(&self, g: &F, env: &mut Vec<usize>) -> Truth {
+        let mut out = Truth::No;
+        for i in 0..self.n {
             env.push(i);
-            let r = self.eval(g, env);
+            out = out | self.eval(g, env);
             env.pop();
-            r
-        })
+        }
+        out
+    }
+}
+
+/// True when the formula reads a `within N` atom (a budget, so it may answer Unknown on closed input).
+fn has_within(f: &F) -> bool {
+    match f {
+        F::Within(..) => true,
+        F::Edge(..) | F::Reach(..) | F::Count(..) => false,
+        F::Not(g) | F::Some(g) | F::No(g) => has_within(g),
+        F::And(a, b) | F::Or(a, b) => has_within(a) || has_within(b),
     }
 }
 
@@ -227,7 +260,7 @@ fn check(
     closed: bool,
 ) -> Result<(), TestCaseError> {
     let t = k3.eval(f, &mut free.to_vec());
-    if closed {
+    if closed && !has_within(f) {
         prop_assert_ne!(
             t,
             Truth::Unknown,
@@ -238,8 +271,8 @@ fn check(
     for c in completions {
         let b = c.eval(f, &mut free.to_vec());
         match t {
-            Truth::Yes => prop_assert!(b, "Yes but a completion says No: {:?}", f),
-            Truth::No => prop_assert!(!b, "No but a completion says Yes: {:?}", f),
+            Truth::Yes => prop_assert!(b != Truth::No, "Yes but a completion says No: {:?}", f),
+            Truth::No => prop_assert!(b != Truth::Yes, "No but a completion says Yes: {:?}", f),
             Truth::Unknown => {}
         }
     }
@@ -515,4 +548,29 @@ proptest! {
     ) {
         run_b(&s, &[vec![false; 64]], &f, &free, true)?;
     }
+}
+
+// frob:ticket 01M4E0BWJNPXY0CG8ZK8HM4YHB
+#[test]
+fn within_is_unknown_when_the_shortest_path_exceeds_the_budget() {
+    // A chain of Must edges 0 -> 1 -> 2 -> 3 -> 4: the shortest path 0 to 4 takes 4 steps.
+    let ids = lit_ids();
+    let mut rel = Relation::new();
+    let mut adj = vec![vec![false; MAX_N]; MAX_N];
+    for i in 0..MAX_N - 1 {
+        rel.insert(ids[i], ids[i + 1], Truth::Yes);
+        adj[i][i + 1] = true;
+    }
+    let (k3, classical) = (K3::new(ids, rel), Classical::new(adj));
+    let over = F::Within(WITHIN, 0, 1);
+    let reached = F::Within(WITHIN, 0, 2);
+    let env = vec![0, MAX_N - 1, 3];
+    assert_eq!(k3.eval(&over, &mut env.clone()), Truth::Unknown);
+    assert_eq!(classical.eval(&over, &mut env.clone()), Truth::Unknown);
+    assert_eq!(k3.eval(&reached, &mut env.clone()), Truth::Yes);
+    assert_eq!(classical.eval(&reached, &mut env.clone()), Truth::Yes);
+    // No path at all stays a definite No, in the reference model and the evaluator.
+    let none = F::Within(WITHIN, 1, 0);
+    assert_eq!(k3.eval(&none, &mut env.clone()), Truth::No);
+    assert_eq!(classical.eval(&none, &mut env.clone()), Truth::No);
 }
