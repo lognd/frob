@@ -2,7 +2,8 @@
 id = "01M4D6NX7WQRR2MHTXVXYC3YJY"
 title = "Stub-gh test for the land CI tip selection (remote-tracking ref first, local tip fallback)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
