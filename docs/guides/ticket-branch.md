@@ -70,6 +70,11 @@ URL again instead of keeping an old one.
 exactly one page, with its ULID, handle, title and current path, so an id
 can always be found even after its file moves.
 
+It also writes `GLOSSARY.md`, the fields, states, links and handle rules of this
+repository, rendered from its effective configuration (for example
+`[tickets] handle_min_len`) and the ticket schema, never from the defaults.
+<!-- frob:ticket 01M3ZX86CE8WDE9PJHNS90ZNMR -->
+
 ## Push, clone and CI
 
 Push the ledger with the code: `git push origin main frob-tickets`. A fresh
