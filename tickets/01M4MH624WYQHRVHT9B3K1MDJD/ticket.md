@@ -2,7 +2,8 @@
 id = "01M4MH624WYQHRVHT9B3K1MDJD"
 title = "Speculative check: run clippy and fmt for the touched packages in the background on each commit in a ticket worktree, so check --ticket and land find the result ready"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
