@@ -4,8 +4,9 @@
 pub mod by_id;
 pub mod code_readme; // frob:ticket 01M3ZX87403VR4YVK4QMJ7KPBV
 pub mod glossary; // frob:ticket 01M3ZX86CE8WDE9PJHNS90ZNMR
+pub mod indexes; // frob:ticket 01M3ZX864QGR220FTRGCDPXYZD
 
 use crate::reindex::Generator;
 
 /// Every renderer `ticket reindex` and the TICK007 replay run, in order.
-pub const GENERATORS: &[Generator] = &[by_id::render, glossary::render];
+pub const GENERATORS: &[Generator] = &[by_id::render, glossary::render, indexes::render];
