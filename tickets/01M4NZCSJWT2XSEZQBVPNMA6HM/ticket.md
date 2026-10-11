@@ -2,13 +2,13 @@
 id = "01M4NZCSJWT2XSEZQBVPNMA6HM"
 title = "Evidence events store a test count and digest, not the full test-name list"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T17:15:30Z"
-updated = "2026-10-11T17:15:30Z"
+updated = "2026-10-11T17:15:51Z"
 scope = ["crates/frob-evidence/**", "crates/frob-ledger/**", "docs/**", "changelog.d/**"]
 
 [[acceptance]]
