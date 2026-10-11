@@ -8,4 +8,5 @@ pub mod check;
 pub mod examples;
 pub mod exec;
 pub mod grl;
+pub mod lower;
 pub mod plan;
