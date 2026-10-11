@@ -79,6 +79,7 @@ pub mod redact;
 pub mod rules;
 pub mod schema;
 pub mod scrub;
+pub mod slug; // frob:ticket 01M3ZX82FBZHFCX6P69NRTFCH7
 pub mod triage;
 
 pub use error::{Candidate, LedgerError, Result};

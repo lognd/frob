@@ -18,7 +18,7 @@ pub const EPIC_FILE: &str = "EPIC.md";
 /// The `.gitattributes` attribute that routes a ledger document to the frob merge driver.
 pub const MERGE_DRIVER_ATTR: &str = "merge=frob-ledger";
 /// Longest ticket slug, cut on a word boundary.
-pub const SLUG_MAX: usize = 60;
+pub const SLUG_MAX: usize = crate::slug::SLUG_MAX_LEN;
 
 /// Which storage layout a ledger reads and writes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -32,35 +32,11 @@ pub enum Layout {
 
 /// The slug of `title` per `navigation.md` 2.1; an empty result becomes the handle without `~`.
 ///
-/// ASCII letters and digits are kept lowercased, every other run becomes one `-`, the ends are
-/// trimmed and the result is cut at [`SLUG_MAX`] on a word boundary.
+/// Delegates to [`crate::slug::slugify`], the single implementation of the slug rules.
+// frob:ticket 01M3ZX82FBZHFCX6P69NRTFCH7
 #[must_use]
 pub fn title_slug(title: &str, handle_fallback: &str) -> String {
-    let mut slug = String::new();
-    for c in title.chars() {
-        if c.is_ascii_alphanumeric() {
-            slug.push(c.to_ascii_lowercase());
-        } else if !slug.ends_with('-') {
-            slug.push('-');
-        }
-    }
-    let slug = slug.trim_matches('-');
-    let slug = if slug.len() > SLUG_MAX {
-        // Cut on a word boundary when one exists inside the limit, else hard.
-        let cut = if slug.as_bytes()[SLUG_MAX] == b'-' {
-            SLUG_MAX
-        } else {
-            slug[..SLUG_MAX].rfind('-').unwrap_or(SLUG_MAX)
-        };
-        slug[..cut].trim_matches('-')
-    } else {
-        slug
-    };
-    if slug.is_empty() {
-        handle_fallback.to_owned()
-    } else {
-        slug.to_owned()
-    }
+    crate::slug::slugify(title, handle_fallback)
 }
 
 /// Ticket-branch path of a ticket from its type, slug and the slug of its top epic.

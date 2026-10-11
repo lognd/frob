@@ -132,7 +132,11 @@ fn ci_installs_no_unpinned_cargo_tools_beyond_nextest() {
         .lines()
         .filter_map(|l| l.trim().strip_prefix("tool:").map(|v| v.trim().to_owned()))
         .collect();
-    assert_eq!(tools, vec!["nextest".to_owned()]);
+    // One install per job that runs tests (rust, crunk, crunk-node).
+    assert!(
+        !tools.is_empty() && tools.iter().all(|t| t == "nextest"),
+        "{tools:?}"
+    );
 }
 
 // frob:tests crates/frob-release/tests/ci_pins.rs::dist_pin_matches_dist_workspace

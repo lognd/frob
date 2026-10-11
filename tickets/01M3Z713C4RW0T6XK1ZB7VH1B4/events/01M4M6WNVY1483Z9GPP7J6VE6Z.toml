@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T00:48:01Z"
+digest = "3fb1ae99f635a66f7ee1f7747842f4898e70d07f173f72e5f2705e9ab2f0ea59"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8bca86fc-e85b-459b-8b5f-567387c51020 with nextest profile: default
+    Starting 1 test across 4 binaries (41 tests skipped)
+        PASS [   0.006s] frob-obligations exc::tests::an_expired_defer_no_longer_suppresses_but_a_live_one_does
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 41 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E 'test(=exc::tests::an_expired_defer_no_longer_suppresses_but_a_live_one_does)'"
+size = 565
+status = "measured"
+tests = ["exc::tests::an_expired_defer_no_longer_suppresses_but_a_live_one_does"]
+at = "2026-10-11T00:48:01Z"
+actor = "lognd"
+rev = 1
