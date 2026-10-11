@@ -2,7 +2,8 @@
 id = "01M3ZX883TDB46GGDYS92KDR1Q"
 title = "ticket new --good-first scaffolds the Start here section"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
