@@ -129,21 +129,46 @@ impl BlobStore {
                 );
                 Ok(Stored::Inline(text.to_owned()))
             }
-            Target::Dir { rel } => {
-                let hex = digest_hex(text.as_bytes());
-                let dir = self.resolve(rel);
-                let path = dir.join(&hex);
-                if path.is_file() {
-                    tracing::debug!(path = %path.display(), "blob already stored");
-                } else {
-                    std::fs::create_dir_all(&dir).map_err(|e| EvidenceError::io(&dir, e))?;
-                    gob_fs::write_atomic(&path, text.as_bytes())
-                        .map_err(|e| EvidenceError::io(&path, e))?;
-                    tracing::info!(path = %path.display(), bytes = text.len(), "blob stored");
-                }
-                Ok(Stored::Uri(format!("dir:{rel}/{hex}")))
-            }
+            Target::Dir { rel } => Ok(Stored::Uri(self.write_dir(rel, text)?)),
         }
+    }
+
+    // frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+    /// Store `text` in the `dir:` store whatever its size; `None` for an `https://` store (record-only).
+    ///
+    /// # Errors
+    ///
+    /// [`EvidenceError::Io`] when the `dir:` store cannot be written.
+    pub fn put_artifact(&self, text: &str) -> Result<Option<String>> {
+        match &self.target {
+            Target::Dir { rel } => self.write_dir(rel, text).map(Some),
+            Target::Https { .. } => Ok(None),
+        }
+    }
+
+    // frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+    /// The `dir:` URI of the artifact with `digest`; `None` for an `https://` store.
+    pub fn artifact_uri(&self, digest: &str) -> Option<String> {
+        match &self.target {
+            Target::Dir { rel } => Some(format!("dir:{rel}/{digest}")),
+            Target::Https { .. } => None,
+        }
+    }
+
+    /// Write `text` under its digest in the `dir:` store and return its `dir:` URI.
+    fn write_dir(&self, rel: &str, text: &str) -> Result<String> {
+        let hex = digest_hex(text.as_bytes());
+        let dir = self.resolve(rel);
+        let path = dir.join(&hex);
+        if path.is_file() {
+            tracing::debug!(path = %path.display(), "blob already stored");
+        } else {
+            std::fs::create_dir_all(&dir).map_err(|e| EvidenceError::io(&dir, e))?;
+            gob_fs::write_atomic(&path, text.as_bytes())
+                .map_err(|e| EvidenceError::io(&path, e))?;
+            tracing::info!(path = %path.display(), bytes = text.len(), "blob stored");
+        }
+        Ok(format!("dir:{rel}/{hex}"))
     }
 
     /// Fetch the blob at `uri`; a missing blob (or an https URI) is `Unmeasured`, never an error.

@@ -76,8 +76,13 @@ pub enum Outcome {
 pub struct Output {
     /// How the child ended.
     pub status: Outcome,
-    /// Captured stdout, redacted; empty when not captured.
+    /// Captured stdout with secrets redacted, for transcripts and messages; empty when not captured.
     pub stdout: String,
+    /// Captured stdout exactly as the child wrote it (lossy UTF-8), for parsing a tool's payload; empty when not captured.
+    ///
+    /// Not redacted, so a payload that merely looks like a secret (CSS with `secret=`) stays intact.
+    /// Never log or store it; use [`Output::stdout`] for that.
+    pub stdout_raw: String,
     /// Captured stderr, redacted; empty when not captured.
     pub stderr: String,
     /// When the child was spawned (after a pool slot was acquired).
@@ -196,12 +201,16 @@ impl Runner {
         }
         let duration = started.elapsed();
         let join_deadline = Instant::now() + JOIN_GRACE;
-        let stdout = out_t.map(|d| collect(d, join_deadline)).unwrap_or_default();
-        let stderr = err_t.map(|d| collect(d, join_deadline)).unwrap_or_default();
+        // frob:ticket 01M4DYPFE1Z7MXVNG8MJ7N30N5
+        let stdout_raw = out_t.map(|d| collect(d, join_deadline)).unwrap_or_default();
+        let stdout = gob_log::redact(&stdout_raw).into_owned();
+        let stderr = gob_log::redact(&err_t.map(|d| collect(d, join_deadline)).unwrap_or_default())
+            .into_owned();
         info!(program = %label, ?status, ?duration, "exec finished");
         Ok(Output {
             status,
             stdout,
+            stdout_raw,
             stderr,
             started,
             duration,
@@ -248,7 +257,7 @@ fn drain(mut r: impl Read + Send + 'static, cap: usize, exceeded: &Arc<AtomicBoo
     Drain { handle, buf }
 }
 
-/// Wait for a reader until `deadline`, then return what it read as redacted lossy UTF-8.
+/// Wait for a reader until `deadline`, then return what it read as lossy UTF-8 (redaction is the caller's choice).
 ///
 /// A reader still blocked at the deadline (a grandchild holds the pipe open) is detached.
 fn collect(d: Drain, deadline: Instant) -> String {
@@ -266,7 +275,7 @@ fn collect(d: Drain, deadline: Instant) -> String {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner),
     );
-    gob_log::redact(&String::from_utf8_lossy(&bytes)).into_owned()
+    String::from_utf8_lossy(&bytes).into_owned()
 }
 
 /// Poll the child until exit, `timeout` or an exceeded output cap, killing the group on timeout.

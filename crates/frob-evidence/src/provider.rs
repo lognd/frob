@@ -223,37 +223,12 @@ fn exit_of(status: Outcome) -> (Option<i32>, bool) {
     }
 }
 
-// frob:ticket 01M4M0ABX9R9J96C1CF1PSGNZP
-/// `"default"` when no profile is configured and the inherited `NEXTEST_PROFILE` names one that
-/// the nextest config around `cwd` does not define (an outer `cargo nextest run --profile ci`
-/// exports it to every test process, and a nested crate need not have that profile); else `None`.
-fn inherited_profile_fallback(
-    cwd: &Path,
-    configured: &str,
-    inherited: Option<&str>,
-) -> Option<String> {
-    if !configured.is_empty() {
-        return None;
-    }
-    let inherited = inherited?.trim();
-    if inherited.is_empty() || inherited == "default" || inherited.starts_with("default-") {
-        return None;
-    }
-    let defined = cwd.ancestors().find_map(|dir| {
-        let text = std::fs::read_to_string(dir.join(".config").join("nextest.toml")).ok()?;
-        let doc: toml::Table = text.parse().ok()?;
-        Some(
-            doc.get("profile")
-                .and_then(toml::Value::as_table)
-                .is_some_and(|profiles| profiles.contains_key(inherited)),
-        )
-    });
-    (!defined.unwrap_or(false)).then(|| "default".to_owned())
-}
-
+// frob:ticket 01M40M7QE5VN76P1HTDY06BXB6
 /// Run `cargo nextest run [--profile <profile>] <filter_args>` in `cwd` and capture the verdict and executed tests.
 ///
-/// An empty `profile` passes no `--profile`.
+/// An empty `profile` means nextest's `default`. The profile is always passed as `--profile` and
+/// exported as `NEXTEST_PROFILE`, so a `NEXTEST_PROFILE` inherited from an outer nextest run or
+/// shell (which the target project may not define) never selects the profile.
 ///
 /// First tries `--message-format libtest-json`; if nextest rejects it (older
 /// versions) or prints no events, the human `PASS`/`FAIL` lines are parsed.
@@ -268,20 +243,38 @@ pub fn run_nextest(
     profile: &str,
     timeout: Duration,
 ) -> Result<Capture> {
+    run_nextest_with_env(runner, cwd, filter_args, profile, &[], timeout)
+}
+
+// frob:ticket 01M40M7QE5VN76P1HTDY06BXB6
+/// [`run_nextest`] with extra child environment (applied before the profile pin; used to inject a hostile `NEXTEST_PROFILE` in tests).
+///
+/// # Errors
+///
+/// [`EvidenceError::Exec`] when cargo cannot be started.
+pub fn run_nextest_with_env(
+    runner: &Runner,
+    cwd: &Path,
+    filter_args: &[String],
+    profile: &str,
+    extra_env: &[(String, String)],
+    timeout: Duration,
+) -> Result<Capture> {
     let mut args = vec!["nextest".to_owned(), "run".to_owned()];
-    let inherited = inherited_profile_fallback(
-        cwd,
-        profile,
-        std::env::var("NEXTEST_PROFILE").ok().as_deref(),
-    );
-    let profile = inherited.as_deref().unwrap_or(profile);
-    if !profile.is_empty() {
-        args.extend(["--profile".to_owned(), profile.to_owned()]);
-    }
+    let profile = if profile.is_empty() {
+        "default"
+    } else {
+        profile
+    };
+    args.extend(["--profile".to_owned(), profile.to_owned()]);
     args.extend(filter_args.iter().cloned());
     let mut json_args = args.clone();
     json_args.extend(["--message-format".to_owned(), "libtest-json".to_owned()]);
     let mut json_spec = spec(Program::Cargo, json_args, cwd, timeout);
+    json_spec.env.extend(extra_env.iter().cloned());
+    json_spec
+        .env
+        .push(("NEXTEST_PROFILE".to_owned(), profile.to_owned()));
     json_spec.env.push((
         "NEXTEST_EXPERIMENTAL_LIBTEST_JSON".to_owned(),
         "1".to_owned(),
@@ -294,7 +287,12 @@ pub fn run_nextest(
         && (out.stderr.contains("libtest-json") || out.stderr.contains("message-format"))
     {
         tracing::info!("nextest rejected libtest-json; retrying with the human reporter");
-        out = runner.run(&spec(Program::Cargo, args, cwd, timeout))?;
+        let mut human = spec(Program::Cargo, args, cwd, timeout);
+        human.env.extend(extra_env.iter().cloned());
+        human
+            .env
+            .push(("NEXTEST_PROFILE".to_owned(), profile.to_owned()));
+        out = runner.run(&human)?;
         json = false;
     }
     let mut transcript = out.stderr.clone();
@@ -982,6 +980,22 @@ pub fn build_record(
         Stored::Inline(t) => (None, Some(t)),
         Stored::Uri(u) => (Some(u), None),
     };
+    // frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+    // The full name list lives only in the artifact file; the event keeps the count and the list's digest.
+    let (tests, test_count, tests_digest) = if capture.tests.is_empty() {
+        (Vec::new(), None, None)
+    } else {
+        let joined = escape_non_ascii(&scrub.apply(&capture.tests.join("\n")));
+        let count = capture.tests.len() as u64;
+        match store.put_artifact(&joined)? {
+            Some(_) => (Vec::new(), Some(count), Some(digest_hex(joined.as_bytes()))),
+            None => (
+                joined.lines().map(str::to_owned).collect(),
+                Some(count),
+                None,
+            ),
+        }
+    };
     Ok(EvidenceRecord {
         provider,
         reference: scrub.apply(reference),
@@ -996,7 +1010,9 @@ pub fn build_record(
         accepts: accepts.to_vec(),
         passed: capture.measured.then_some(capture.passed),
         exit_code: capture.exit_code,
-        tests: capture.tests.clone(),
+        tests,
+        test_count,
+        tests_digest,
         failed_tests: capture.failed_tests.clone(),
         inline,
         size: redacted.len() as u64,
@@ -1024,6 +1040,8 @@ pub fn hash_file(root: &Path, path: &str, accepts: &[usize], at: Stamp) -> Resul
         passed: None,
         exit_code: None,
         tests: Vec::new(),
+        test_count: None,
+        tests_digest: None,
         failed_tests: Vec::new(),
         inline: None,
         size: bytes.len() as u64,
@@ -1652,30 +1670,6 @@ fn refuse_empty(empty: bool, what: &str, reference: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // frob:ticket 01M4M0ABX9R9J96C1CF1PSGNZP
-    #[test]
-    fn an_inherited_profile_the_project_lacks_falls_back_to_default() {
-        let dir = tempfile::tempdir().unwrap();
-        let cfg = dir.path().join(".config");
-        std::fs::create_dir_all(&cfg).unwrap();
-        std::fs::write(cfg.join("nextest.toml"), "[profile.ci]\nretries = 0\n").unwrap();
-        let fallback =
-            |cwd: &Path, conf: &str, env: Option<&str>| inherited_profile_fallback(cwd, conf, env);
-        assert_eq!(fallback(dir.path(), "", Some("ci")), None, "defined here");
-        assert_eq!(
-            fallback(dir.path(), "", Some("nope")).as_deref(),
-            Some("default")
-        );
-        assert_eq!(fallback(dir.path(), "x", Some("nope")), None, "configured");
-        assert_eq!(fallback(dir.path(), "", Some("default")), None);
-        assert_eq!(fallback(dir.path(), "", None), None);
-        let bare = tempfile::tempdir().unwrap();
-        assert_eq!(
-            fallback(bare.path(), "", Some("ci")).as_deref(),
-            Some("default")
-        );
-    }
 
     #[test]
     fn split_args_honours_quotes() {

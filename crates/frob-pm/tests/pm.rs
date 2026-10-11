@@ -630,3 +630,64 @@ fn a_genuinely_wrong_from_is_still_a_conflict() {
         1
     );
 }
+
+/// Counts tracing events whose message is `events walked once`, the one-batch read of `events_many`.
+struct BatchCounter(std::sync::Arc<std::sync::atomic::AtomicUsize>);
+
+struct MessageProbe(bool);
+
+impl tracing::field::Visit for MessageProbe {
+    fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
+        if field.name() == "message" && format!("{value:?}") == "events walked once" {
+            self.0 = true;
+        }
+    }
+}
+
+impl tracing::Subscriber for BatchCounter {
+    fn enabled(&self, _: &tracing::Metadata<'_>) -> bool {
+        true
+    }
+    fn new_span(&self, _: &tracing::span::Attributes<'_>) -> tracing::span::Id {
+        tracing::span::Id::from_u64(1)
+    }
+    fn record(&self, _: &tracing::span::Id, _: &tracing::span::Record<'_>) {}
+    fn record_follows_from(&self, _: &tracing::span::Id, _: &tracing::span::Id) {}
+    fn event(&self, event: &tracing::Event<'_>) {
+        let mut probe = MessageProbe(false);
+        event.record(&mut probe);
+        if probe.0 {
+            self.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        }
+    }
+    fn enter(&self, _: &tracing::span::Id) {}
+    fn exit(&self, _: &tracing::span::Id) {}
+}
+
+// frob:ticket 01M4D6NB00MBEV0PRHN15CXZP8
+// frob:tests crates/frob-pm/src/cycle/velocity.rs::done_facts
+#[test]
+fn done_facts_reads_every_tickets_events_in_one_batch() {
+    let (_dir, ledger) = fixture();
+    for n in 0..4 {
+        let id = ticket(&ledger, &format!("done {n}"));
+        ledger
+            .transition(
+                id,
+                frob_ledger::model::Category::Done,
+                Some(frob_ledger::model::Outcome::Fixed),
+                Some("test".to_owned()),
+            )
+            .expect("done");
+    }
+    let walks = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let facts = tracing::subscriber::with_default(BatchCounter(walks.clone()), || {
+        frob_pm::cycle::velocity::done_facts(&ledger).expect("facts")
+    });
+    assert_eq!(facts.len(), 4);
+    assert_eq!(
+        walks.load(std::sync::atomic::Ordering::SeqCst),
+        1,
+        "one batched events walk for four tickets"
+    );
+}

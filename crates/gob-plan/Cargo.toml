@@ -12,6 +12,7 @@ authors.workspace = true
 gob-caps = { version = "0.532.0", path = "../gob-caps" }
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
 globset = "0.4"
 regex = "1"

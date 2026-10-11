@@ -59,6 +59,10 @@ pub struct TicketsTable {
     // frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
     #[config(default = 2)]
     pub good_first_max_points: u32,
+    /// Fewest ready good-first tickets before PM032 warns; 0 turns the rule off (`navigation.md` section 4.2).
+    // frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
+    #[config(default = 3)]
+    pub good_first_min: u32,
 }
 
 /// Settings of the per-worktree cache.

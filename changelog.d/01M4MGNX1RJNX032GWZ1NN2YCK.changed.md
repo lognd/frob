@@ -1,0 +1,1 @@
+The check cache is no longer discarded on every rebuild of frob: rows are scoped by crate version and extractor version, not by the executable's bytes (set FROB_CACHE_EXE_IDENTITY=1 to restore per-build scoping while editing rules).

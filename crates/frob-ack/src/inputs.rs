@@ -173,7 +173,8 @@ impl Inputs {
             ..WalkConfig::default()
         };
         let walked = walk(root, &config)?;
-        let cache = Cache::open(&root.join(".frob"));
+        // frob:ticket 01M4D6NH5VT2E2ZRRVYMD4XAA7
+        let cache = Cache::open_shared(root, ".frob");
         let graph = build_graph(root, &walked.files, &cache);
         let scanner = Scanner::new(&ScanConfig::default());
         let mut files = FileInterner::new();

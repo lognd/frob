@@ -6,8 +6,8 @@ use std::collections::BTreeSet;
 use super::LowerError;
 use super::convert::{Cond, FindItem, LangNames, Lowered, Opd, Src};
 use crate::plan::{
-    CostClass, Langs, Need, NeedSet, Op, OpId, Operand, Plan, PlanParts, Polarity, Provenance,
-    Report, StrId, Unresolved, VarId,
+    Langs, Need, NeedSet, Op, OpId, Operand, Plan, PlanParts, Polarity, Provenance, Report, StrId,
+    Unresolved, VarId, cost_class,
 };
 
 /// The sort key of a condition: its structure, so equal clauses sort alike in any source order.
@@ -253,7 +253,6 @@ pub(super) fn emit(l: &Lowered, provenance: Provenance) -> Result<Plan, LowerErr
         env: Vec::new(),
     };
     let mut clauses = Vec::new();
-    let mut kinds: Vec<StrId> = Vec::new();
     for (slot, &fi) in order.iter().enumerate() {
         let f = &l.finds[fi];
         let var = b.fresh();
@@ -261,7 +260,6 @@ pub(super) fn emit(l: &Lowered, provenance: Provenance) -> Result<Plan, LowerErr
         let op = match &f.src {
             Src::Kind(k) => {
                 let kind = b.intern(k);
-                kinds.push(kind);
                 Op::Find { var, kind }
             }
             Src::Side(need, table) => Op::FindSide {
@@ -306,8 +304,8 @@ pub(super) fn emit(l: &Lowered, provenance: Provenance) -> Result<Plan, LowerErr
     }
 
     let langs = langs_of(&mut b, &l.langs);
-    kinds.sort_unstable();
-    kinds.dedup();
+    // frob:ticket 01M3ZX7EQ5NARR4Z2SAY4H23AQ
+    let kinds = super::prefilter_kinds(&b.ops, &clauses);
     let needs: Vec<Need> = l.needs.clone();
     let parts = PlanParts {
         rule: l.id.clone(),
@@ -316,11 +314,8 @@ pub(super) fn emit(l: &Lowered, provenance: Provenance) -> Result<Plan, LowerErr
         langs,
         needs: NeedSet::of(&needs),
         prefilter: kinds,
-        cost: if l.repo_scope {
-            CostClass::PerRepo
-        } else {
-            CostClass::PerFile
-        },
+        // frob:ticket 01M3ZX7EQ5NARR4Z2SAY4H23AQ
+        cost: cost_class(&b.ops, l.repo_scope),
         vars: b.next_var,
         strings: b.strings,
         ops: b.ops,

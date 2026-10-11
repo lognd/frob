@@ -457,6 +457,21 @@ fn a_filter_matching_no_test_refuses_and_records_nothing() {
 
 /// Run `evidence add --provider nextest --ref <reference>` against a fresh cargo repo; returns (code, stdout, stderr, list count).
 fn add_nextest(reference: &str) -> (i32, String, String, u64) {
+    add_nextest_in(reference).1
+}
+
+// frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+/// The test names an evidence record's `tests_digest` artifact lists, read from the repo at `dir`.
+fn artifact_names(dir: &Path, rec: &serde_json::Value) -> Vec<String> {
+    let digest = rec["tests_digest"].as_str().expect("tests_digest");
+    std::fs::read_to_string(dir.join(".git/frob/artifacts").join(digest))
+        .expect("tests artifact")
+        .lines()
+        .map(str::to_owned)
+        .collect()
+}
+
+fn add_nextest_in(reference: &str) -> (tempfile::TempDir, (i32, String, String, u64)) {
     let dir = cargo_repo();
     let ledger = ledger(dir.path());
     let (_, handle) = ticket(&ledger, TicketType::Task);
@@ -478,20 +493,21 @@ fn add_nextest(reference: &str) -> (i32, String, String, u64) {
     ]);
     let (_, listed, _) = run(&["--json", "ticket", "evidence", "list", &handle]);
     let count = json(&listed)["data"]["count"].as_u64().expect("count");
-    (code, out, err, count)
+    (dir, (code, out, err, count))
 }
 
 // frob:ticket 01M40P6CWYKN4V9HEBRXR3342F
 #[test]
 fn a_union_filter_expression_runs_both_tests_and_records_a_measured_pass() {
     // frob:tests crates/frob-evidence/src/provider.rs::split_args
-    let (code, out, err, count) = add_nextest("-p probe -E 'test(=alpha) | test(=beta)'");
+    let (dir, (code, out, err, count)) = add_nextest_in("-p probe -E 'test(=alpha) | test(=beta)'");
     assert_eq!(code, 0, "{out}{err}");
     assert_eq!(count, 1);
     let v = json(&out);
     let rec = &v["data"]["record"];
-    let tests = rec["tests"].as_array().expect("tests");
-    let names: Vec<&str> = tests.iter().filter_map(|t| t.as_str()).collect();
+    assert_eq!(rec["test_count"], 2, "{out}");
+    let listed = artifact_names(dir.path(), rec);
+    let names: Vec<&str> = listed.iter().map(String::as_str).collect();
     assert_eq!(names.len(), 2, "{out}");
     assert!(names.iter().any(|n| n.ends_with("alpha")), "{out}");
     assert!(names.iter().any(|n| n.ends_with("beta")), "{out}");
@@ -506,13 +522,7 @@ fn a_quoted_argument_with_spaces_survives_tokenization() {
     // The expression has spaces and a `|`; if it were split, nextest would reject it as a usage error.
     let (code, out, err, _) = add_nextest(r#"-E "test(=alpha)   |   test(=gamma)""#);
     assert_eq!(code, 0, "{out}{err}");
-    assert_eq!(
-        json(&out)["data"]["record"]["tests"]
-            .as_array()
-            .expect("tests")
-            .len(),
-        2
-    );
+    assert_eq!(json(&out)["data"]["record"]["test_count"], 2, "{out}");
 }
 
 // frob:ticket 01M40P6CWYKN4V9HEBRXR3342F
@@ -768,8 +778,15 @@ fn pytest_evidence_records_per_test_results_as_a_measured_record() {
             .filter_map(|t| t.as_str().map(str::to_owned))
             .collect()
     };
+    assert_eq!(rec["test_count"], 2, "{out}");
+    let listed = std::fs::read_to_string(
+        dir.path()
+            .join(".git/frob/artifacts")
+            .join(rec["tests_digest"].as_str().expect("tests_digest")),
+    )
+    .expect("tests artifact");
     assert_eq!(
-        names("tests"),
+        listed.lines().collect::<Vec<_>>(),
         [
             "tests/test_probe.py::test_ok",
             "tests/test_probe.py::TestK::test_bad"
@@ -803,11 +820,11 @@ fn a_pytest_node_id_runs_just_that_test() {
     assert_eq!(code, 0, "{out}{err}");
     let rec = &json(&out)["data"]["record"];
     assert_eq!(rec["passed"], true, "{out}");
-    assert_eq!(rec["tests"], json_array(&["tests/test_probe.py::test_ok"]));
-}
-
-fn json_array(items: &[&str]) -> serde_json::Value {
-    serde_json::Value::Array(items.iter().map(|s| serde_json::Value::from(*s)).collect())
+    assert_eq!(rec["test_count"], 1, "{out}");
+    assert_eq!(
+        artifact_names(dir.path(), rec),
+        ["tests/test_probe.py::test_ok"]
+    );
 }
 
 // frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
@@ -860,4 +877,127 @@ fn pytest_outside_the_allowlist_is_refused_without_running_anything() {
     assert_eq!(e["code"], "E-EVIDENCE-TOOL");
     assert!(e["remedy"].as_str().expect("remedy").contains("pytest"));
     assert_eq!(count, 0);
+}
+
+// frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+fn wide_capture(n: usize) -> provider::Capture {
+    provider::Capture {
+        exit_code: Some(0),
+        passed: true,
+        measured: true,
+        tests: (0..n).map(|i| format!("pkg::suite::case_{i:04}")).collect(),
+        failed_tests: vec![],
+        transcript: "ok".to_owned(),
+    }
+}
+
+// frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+fn wide_record(st: &BlobStore, n: usize) -> frob_evidence::record::EvidenceRecord {
+    build_record(
+        st,
+        &PathScrub::default(),
+        Provider::Nextest,
+        "-p pkg",
+        &wide_capture(n),
+        &[1],
+        frob_ledger::model::Stamp::from_unix(1_800_000_000),
+    )
+    .expect("record")
+}
+
+// frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+#[test]
+fn a_500_test_event_holds_count_and_digest_not_the_names() {
+    let dir = repo("base");
+    let st = store(dir.path(), 16_384);
+    let rec = wide_record(&st, 500);
+    let data = frob_evidence::events::to_data(&rec).expect("data");
+    let text = toml::to_string(&data.record).expect("toml");
+    assert!(text.len() < 2048, "{} bytes: {text}", text.len());
+    assert!(!text.contains("case_0007"), "{text}");
+    assert_eq!(rec.test_count, Some(500));
+    assert!(rec.tests_digest.is_some());
+    assert_eq!(rec.tests_executed(), 500);
+}
+
+// frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+#[test]
+fn the_artifact_named_by_the_tests_digest_lists_every_name() {
+    let dir = repo("base");
+    let st = store(dir.path(), 16_384);
+    let rec = wide_record(&st, 500);
+    let digest = rec.tests_digest.clone().expect("digest");
+    let on_disk = std::fs::read_to_string(dir.path().join(".git/frob/artifacts").join(&digest))
+        .expect("artifact file");
+    assert_eq!(on_disk.lines().count(), 500);
+    let names = rec.test_names(&st).expect("names");
+    assert_eq!(names, wide_capture(500).tests);
+}
+
+// frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+#[test]
+fn an_old_event_with_an_inline_tests_list_still_folds_and_counts() {
+    let dir = repo("base");
+    let st = store(dir.path(), 16_384);
+    let mut record = toml::Table::new();
+    record.insert("provider".into(), "nextest".into());
+    record.insert("ref".into(), "-p pkg".into());
+    record.insert("digest".into(), "ab".into());
+    record.insert("status".into(), "measured".into());
+    record.insert("captured_at".into(), "2026-01-01T00:00:00Z".into());
+    record.insert("size".into(), toml::Value::Integer(2));
+    record.insert(
+        "tests".into(),
+        toml::Value::Array(vec!["a::one".into(), "a::two".into()]),
+    );
+    let data = frob_ledger::event::EvidenceData {
+        accepts: vec![1],
+        record,
+    };
+    let rec = frob_evidence::events::record_from_data("e", &data).expect("old event folds");
+    assert_eq!(rec.tests_executed(), 2);
+    assert_eq!(rec.test_names(&st).expect("names"), ["a::one", "a::two"]);
+}
+
+// frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+#[test]
+fn a_ref_matching_over_50_tests_warns_with_the_count_and_exact_name_advice() {
+    let dir = repo("base");
+    let st = store(dir.path(), 16_384);
+    let wide = frob_evidence::verbs::with_record_warnings(
+        gob_cli::Payload::new(()),
+        &wide_record(&st, 51),
+    );
+    let warned = wide
+        .warnings
+        .iter()
+        .any(|w| w.contains("matched 51 tests") && w.contains("exact test name"));
+    assert!(warned, "{:?}", wide.warnings);
+    let narrow = frob_evidence::verbs::with_record_warnings(
+        gob_cli::Payload::new(()),
+        &wide_record(&st, 50),
+    );
+    assert!(narrow.warnings.is_empty(), "{:?}", narrow.warnings);
+}
+
+// frob:ticket 01M40M7QE5VN76P1HTDY06BXB6
+#[test]
+fn an_inherited_nextest_profile_the_project_lacks_does_not_select_the_profile() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let p = dir.path();
+    std::fs::write(
+        p.join("Cargo.toml"),
+        "[package]\nname = \"profile_pin_probe\"\nversion = \"0.0.0\"\nedition = \"2021\"\n\n[workspace]\n",
+    )
+    .expect("manifest");
+    std::fs::create_dir_all(p.join("src")).expect("src");
+    std::fs::write(p.join("src/lib.rs"), "#[test]\nfn present() {}\n").expect("lib");
+    let runner = Runner::new(Limits { jobs: 1 });
+    let filter = vec!["-E".to_owned(), "test(=present)".to_owned()];
+    let hostile = [("NEXTEST_PROFILE".to_owned(), "ci".to_owned())];
+    let cap =
+        provider::run_nextest_with_env(&runner, p, &filter, "", &hostile, Duration::from_secs(600))
+            .expect("capture");
+    assert!(cap.measured && cap.passed, "{}", cap.transcript);
+    assert_eq!(cap.tests.len(), 1, "{:?}", cap.tests);
 }

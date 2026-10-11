@@ -75,6 +75,9 @@ impl EvidenceAdd {
     }
 }
 
+/// A ref matching more tests than this draws a warning from `evidence add`.
+pub const WIDE_REF_TESTS: u64 = 50;
+
 /// Attach the warnings a non-binding `record` deserves, for any evidence target.
 pub fn with_record_warnings<T>(mut payload: Payload<T>, record: &EvidenceRecord) -> Payload<T> {
     if record.passed == Some(false) {
@@ -85,6 +88,13 @@ pub fn with_record_warnings<T>(mut payload: Payload<T>, record: &EvidenceRecord)
     if let Some(label) = record.attestation_label() {
         payload = payload.with_warning(format!(
             "this is an attestation, not a tool measurement: {label}"
+        ));
+    }
+    // frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+    if record.tests_executed() > WIDE_REF_TESTS {
+        payload = payload.with_warning(format!(
+            "this ref matched {} tests (more than {WIDE_REF_TESTS}); bind the criterion to an exact test name, e.g. -E 'test(=EXACT_TEST_NAME)'",
+            record.tests_executed()
         ));
     }
     if record.status == Status::Unmeasured {
