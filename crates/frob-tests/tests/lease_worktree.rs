@@ -23,7 +23,14 @@ fn a_linked_worktree_finds_the_lease_it_holds() {
     let linked = dir.path().join("wt");
     git(
         &primary,
-        &["worktree", "add", "-q", "-b", "ticket/X", linked.to_str().expect("utf8")],
+        &[
+            "worktree",
+            "add",
+            "-q",
+            "-b",
+            "ticket/X",
+            linked.to_str().expect("utf8"),
+        ],
     );
     let leases = primary.join(".git/frob/leases");
     std::fs::create_dir_all(&leases).expect("leases dir");
