@@ -2,7 +2,8 @@
 id = "01M3ZWN5CJ3BQVBGBRG62ZYZ2M"
 title = "gob-symbols: a Rust file outside any Cargo package gets only its own crate's candidates"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
