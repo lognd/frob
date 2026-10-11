@@ -8,8 +8,8 @@ points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T04:46:00Z"
-updated = "2026-10-11T04:46:20Z"
-scope = ["typos.toml"]
+updated = "2026-10-11T13:42:52Z"
+scope = ["typos.toml", "docs/crunk/rules/README.md", "crates/frob/src/profile_cmd.rs", "crates/frob/tests/profile.rs", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
 text = "the pinned typos 1.50.3 run over the repository exits 0, while a genuine misspelling still fails"
