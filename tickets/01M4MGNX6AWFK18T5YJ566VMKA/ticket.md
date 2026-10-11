@@ -2,7 +2,8 @@
 id = "01M4MGNX6AWFK18T5YJ566VMKA"
 title = "frob ticket doable takes 7.6 s on 1,787 tickets while ticket list takes 0.09 s; compute from the SQLite index and cache the result per ledger tip"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
