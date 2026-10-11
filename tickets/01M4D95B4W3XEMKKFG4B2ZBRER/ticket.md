@@ -2,13 +2,13 @@
 id = "01M4D95B4W3XEMKKFG4B2ZBRER"
 title = "Rule precision ledger: per-rule accept, waive, dismiss and fix counts and a not-useful rate; Warn by default needs measured precision"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:13:02Z"
-updated = "2026-10-08T08:13:02Z"
+updated = "2026-10-11T01:06:28Z"
 scope = ["changelog.d/**", "crates/gob-rules/**", "crates/gob-check/**"]
 
 [[acceptance]]
