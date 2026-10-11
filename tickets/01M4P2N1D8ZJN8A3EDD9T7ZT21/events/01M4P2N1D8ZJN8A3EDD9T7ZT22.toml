@@ -1,0 +1,12 @@
+kind = "create"
+title = "agent: frob agent hook handlers (pre-bash, pre-read, session-start, pre-compact, user-prompt, stop)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 8
+parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
+scope = ["crates/frob-cli/**"]
+acceptance = ["frob agent hook <event> reads Claude Code hook JSON on stdin and writes the decision JSON on stdout", "pre-read denies whole-file reads of files over a configured size with an offset/limit hint", "pre-bash redirects or bounds unbounded output and routes heavy commands through frob agent heavy", "malformed stdin fails open with a warning, never blocks the agent"]
+at = "2026-10-11T18:12:26Z"
+actor = "lognd"
+rev = 1
