@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T00:27:08Z"
+digest = "cfdb9be83bc0e464ed841da0460dcecc273ebdad39387f42d4e738e19b6b10e6"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9bb2faf0-40d8-47c7-b78f-8347fc4c4e13 with nextest profile: default
+    Starting 1 test across 9 binaries (120 tests skipped)
+        PASS [   0.008s] frob-ledger slug::tests::symbol_only_title_yields_handle_without_tilde
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 120 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(=slug::tests::symbol_only_title_yields_handle_without_tilde)'"
+size = 551
+status = "measured"
+tests = ["slug::tests::symbol_only_title_yields_handle_without_tilde"]
+at = "2026-10-11T00:27:08Z"
+actor = "lognd"
+rev = 1

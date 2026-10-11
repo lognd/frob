@@ -2433,6 +2433,7 @@ dependencies = [
  "gob-git",
  "gob-log",
  "gob-mdtest",
+ "gob-plan",
  "gob-rules",
  "gob-time",
  "grimble",
