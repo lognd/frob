@@ -50,6 +50,16 @@ inherits = "release"
 lto = false
 debug = "line-tables-only"
 
+# frob:ticket 01M4MGEZH4541JT6XPYPQKH86R
+# Dev and test executables are linked without symbol tables: with debug = 0 there is nothing a
+# debugger could use them for, and it cuts every linked test executable several-fold (the disk
+# and link time of a ticket worktree's test run). Release, dist and profiling set their own.
+[profile.dev]
+strip = "symbols"
+
+[profile.test]
+strip = "symbols"
+
 # Hot crates run optimised in dev and test builds (docs/design/build-test-ci.md 5). Only gob-ir
 # is adopted: its million-level deep test is pure gob-ir work and drops from about 70 s to 8 s,
 # for a few seconds of clean compile. `package."*"` at 2 and gob-symbols, frob-check and frob-cli

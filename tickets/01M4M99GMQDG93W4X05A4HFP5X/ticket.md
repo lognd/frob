@@ -2,13 +2,14 @@
 id = "01M4M99GMQDG93W4X05A4HFP5X"
 title = "Run GRL examples through the executor: build the example model and feed the example judge"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-11T01:30:00Z"
-updated = "2026-10-11T04:45:14Z"
+updated = "2026-10-11T16:14:27Z"
 scope = ["crates/gob-plan/src/examples/**", "crates/gob-plan/tests/**", "crates/gob-plan/Cargo.toml", "Cargo.lock"]
 
 [[links]]
