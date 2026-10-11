@@ -2646,6 +2646,7 @@ dependencies = [
  "gob-caps",
  "gob-ir",
  "gob-rules",
+ "gob-symbols",
  "gob-text",
  "insta",
  "proptest",

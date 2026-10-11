@@ -2,14 +2,14 @@
 id = "01M4DYPFE1Z7MXVNG8MJ7N30N5"
 title = "gob-exec: redact secrets only in transcripts and stderr, never in the parsed payload a tool returns"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T14:29:23Z"
-updated = "2026-10-08T14:29:23Z"
-scope = ["changelog.d/**", "crates/gob-exec/**"]
+updated = "2026-10-11T16:44:43Z"
+scope = ["changelog.d/**", "crates/gob-exec/**", "crates/crunk-tailwind/src/runtime/exec.rs"]
 
 [[acceptance]]
 text = "Given a tool whose stdout payload contains a secret-looking string, when parsed, then the payload is intact and the transcript is redacted"

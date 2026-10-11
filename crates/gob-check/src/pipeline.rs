@@ -157,6 +157,7 @@ fn begin_tools(
     start_tools(
         root,
         &applicable_stages(&table.tool, scope_files, affected.as_ref()),
+        opts.tool_memo.as_ref(),
     )
 }
 

@@ -1,0 +1,12 @@
+kind = "create"
+title = "TS adapter keeps a parse-error hole for MISSING nodes (const y = ;) so crunk reports the JSX syntax error"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+scope = ["changelog.d/**", "crates/gob-symbols/**", "crates/crunk-ingest/**"]
+body = "Split from ~JZPBV6H (its title/body covered sharing numeric_raw; this acceptance was the other follow-up from ~8JGRZY3)."
+at = "2026-10-11T15:56:41Z"
+actor = "lognd"
+rev = 1

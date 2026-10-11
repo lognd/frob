@@ -7,12 +7,12 @@ use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
 use gob_rules::{RuleId, Severity};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::config::{ToolParser, ToolStage};
 
 /// Where a tool placed a finding, in the tool's own terms.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) enum RawRange {
     /// No usable location.
     None,
@@ -23,7 +23,7 @@ pub(crate) enum RawRange {
 }
 
 /// One tool finding before it becomes a frob [`gob_rules::Finding`].
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct RawFinding {
     /// Path as the tool printed it (not yet normalized).
     pub path: String,
