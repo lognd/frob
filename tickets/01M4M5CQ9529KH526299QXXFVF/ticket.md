@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-11T00:21:50Z"
-updated = "2026-10-11T03:14:36Z"
+updated = "2026-10-11T03:24:39Z"
 scope = ["crates/grimble/**", "crates/gob-plan/**", "changelog.d/**", "docs/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a valid .grl file, when the verb runs, then it exits 0 with no diagnostics"
-bound = false
+bound = true
 +++
 
 No shipped binary compiles GRL; check_file_with and compile_report have no caller. Add a grimble verb that reads .grl files and prints gob_plan::check::compile_report.

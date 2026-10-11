@@ -275,6 +275,7 @@ Materialized: yes.
 | `actor` | `String` | `""` | no | Actor recorded on events; empty means git `user.name`. |
 | `branch` | `String` | `"frob-tickets"` | yes | Name of the orphan branch `frob ticket branch init` creates for the ledger (`mirror.md` section 1). |
 | `dir` | `String` | `"tickets"` | no | Directory of ticket files, relative to the repository root. |
+| `good_first_max_points` | `u32` | `2` | no | Most points a ticket labelled `good-first` may carry before PM031 fires (`navigation.md` section 4.2). |
 | `handle_min_len` | `u32` | `7` | no | Shortest ticket handle shown (`~` plus this many id characters). |
 | `ref` | `String` | `"refs/heads/main"` | yes | Ref holding the ledger; the ledger merge driver and `doctor` resolve it. |
 | `ref_mode` | `RefModeKnob` | `"trunk"` | yes | `trunk` commits to `ref`; `branch` commits to the checked-out branch; `orphan` commits to the ticket branch `branch` in the ticket-branch layout and keeps `ref` as the code base. |
