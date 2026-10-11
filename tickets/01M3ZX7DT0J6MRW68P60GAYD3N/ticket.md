@@ -2,7 +2,8 @@
 id = "01M3ZX7DT0J6MRW68P60GAYD3N"
 title = "Generate docs/reference/grl/catalog.md and embed the catalog in the binary"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
