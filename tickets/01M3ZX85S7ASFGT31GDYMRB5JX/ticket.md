@@ -2,7 +2,8 @@
 id = "01M3ZX85S7ASFGT31GDYMRB5JX"
 title = "Reindex function: move files to computed paths and render the generated set in memory"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
