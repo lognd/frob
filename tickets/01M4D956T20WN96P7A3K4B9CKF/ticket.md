@@ -8,7 +8,7 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:12:57Z"
-updated = "2026-10-11T02:11:56Z"
+updated = "2026-10-11T02:12:50Z"
 labels = ["creates:crates/grimble-lints/**"]
 scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**", "Cargo.lock"]
 
