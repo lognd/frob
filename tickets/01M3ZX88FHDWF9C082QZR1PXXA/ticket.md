@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:47Z"
-updated = "2026-10-11T20:26:42Z"
+updated = "2026-10-11T20:28:34Z"
 idempotency_key = "m2-nav-ticket-url"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob/src/ticket/url_cmd.rs"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a mirrored ticket, when run, then the issue URL is printed as well"
-bound = false
+bound = true
 +++
 
 Implements navigation.md section 1 (last bullet).
