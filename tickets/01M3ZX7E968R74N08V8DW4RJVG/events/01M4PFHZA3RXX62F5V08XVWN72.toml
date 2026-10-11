@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-rules/src/finding.rs", "crates/gob-rules/src/meta.rs", "crates/gob-diagnostics/src/record.rs", "crates/gob-rules/tests/ui.rs", "crates/gob-rules/tests/ui/fix_missing_applicability.rs", "crates/gob-rules/Cargo.toml", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/tests/contract.rs", "crates/frob-check/tests/check.rs", "crates/frob-obligations/src/tick_paths.rs", "crates/gob-directives/src/compat.rs", "crates/gob-check/src/fix.rs"]
+new = ["crates/gob-rules/src/finding.rs", "crates/gob-rules/src/meta.rs", "crates/gob-diagnostics/src/record.rs", "crates/gob-rules/tests/ui.rs", "crates/gob-rules/tests/ui/fix_missing_applicability.rs", "crates/gob-rules/Cargo.toml", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/tests/contract.rs", "crates/frob-check/tests/check.rs", "crates/frob-obligations/src/tick_paths.rs", "crates/gob-directives/src/compat.rs", "crates/gob-check/src/fix.rs", "crates/gob-check/src/store.rs"]
+at = "2026-10-11T21:57:57Z"
+actor = "lognd"
+rev = 1
