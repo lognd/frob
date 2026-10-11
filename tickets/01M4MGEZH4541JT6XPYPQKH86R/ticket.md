@@ -3,12 +3,12 @@ id = "01M4MGEZH4541JT6XPYPQKH86R"
 title = "Repo-level strip = symbols for the dev and test profiles so developer and CI test builds are smaller without a user cargo config"
 type = "task"
 category = "todo"
-priority = "medium"
+priority = "high"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:35:19Z"
-updated = "2026-10-11T03:35:19Z"
+updated = "2026-10-11T03:52:10Z"
 scope = ["Cargo.toml"]
 
 [[acceptance]]

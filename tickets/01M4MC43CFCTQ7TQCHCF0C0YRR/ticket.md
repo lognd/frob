@@ -8,12 +8,12 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-11T02:19:28Z"
-updated = "2026-10-11T03:41:44Z"
+updated = "2026-10-11T04:08:06Z"
 scope = ["crates/gob-ir/**", "crates/gob-languages/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
 text = "Given a Rust source with a function and a call on line 3, when the entry point builds its Model, then the Model has a function node and a call node whose line is 3"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given source with a syntax error, when the entry point builds its Model, then it returns a Model with an unread node instead of failing"
