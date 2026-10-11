@@ -2,13 +2,13 @@
 id = "01M4CTE1SS9RQ0JB8BNCJXZJ2V"
 title = "Layering test over cargo metadata with the boundaries.md layer table (audit M9)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:39Z"
-updated = "2026-10-08T03:55:39Z"
+updated = "2026-10-11T23:18:58Z"
 scope = ["changelog.d/**", "crates/gob-dev/**", "docs/design/boundaries.md"]
 
 [[acceptance]]
