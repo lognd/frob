@@ -2,13 +2,13 @@
 id = "01M3Z714QT3QXEAJAK9JDDEB70"
 title = "G17: gob-pattern and GPOL rules (ast-grep Doc over U spike first)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-03T03:34:59Z"
+updated = "2026-10-11T23:57:13Z"
 idempotency_key = "m2-pattern"
 labels = ["milestone:2"]
 scope = ["crates/gob-pattern/**", "crates/grimble-lints/**"]
