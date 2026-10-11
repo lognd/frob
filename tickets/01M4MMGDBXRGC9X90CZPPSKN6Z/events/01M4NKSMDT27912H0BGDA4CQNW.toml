@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-11T13:52:42Z"
+digest = "d1a9de76eed2182b0e7a148140eb3f24cc59b092e9473a42409fca657ca7aafa"
+exit_code = 0
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized] target(s) in 4.97s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2bbee5ce-048d-4a68-9f8c-f2d25ee31b66 with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.674s] frob-cli::profile the_closed_count_stops_at_the_suggestion_threshold
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.674s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test profile -E 'test(=the_closed_count_stops_at_the_suggestion_threshold)'"
+size = 599
+status = "measured"
+tests = ["the_closed_count_stops_at_the_suggestion_threshold"]
+at = "2026-10-11T13:52:42Z"
+actor = "lognd"
+rev = 1
