@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-11T01:54:56Z"
-updated = "2026-10-11T17:51:38Z"
+updated = "2026-10-11T17:54:31Z"
 labels = ["creates:.gitattributes"]
 scope = ["crates/gob-dev/**", "docs/reference/**", "docs/schemas/**", ".gitattributes", "docs/crunk/config.md"]
 
