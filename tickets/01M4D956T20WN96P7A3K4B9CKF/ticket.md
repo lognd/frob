@@ -8,7 +8,7 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:12:57Z"
-updated = "2026-10-11T02:12:50Z"
+updated = "2026-10-11T02:14:51Z"
 labels = ["creates:crates/grimble-lints/**"]
 scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**", "Cargo.lock"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a Rust let _ = of a callee whose fallibility the file does not show, when scanned, then the ERR002 site is Certainty::Unknown, never Certain"
-bound = false
+bound = true
 +++
 
 notes/research/lint-catalogue-2026-10-08.md row K01 (4.2 N10): notes/research/mining-report-2026-10-08.md C30 2.5 percent of human review comments, 29 percent blocking, F-ERROR-HANDLING in fix commits, AI-PR ratio 1.6 (notes/research/mining-report-2026-10-08.md 4.2); notes/research/creators-systems-2026-10-08.md ADV015, ADV049 and the only data-backed family in that corpus (Yuan et al. OSDI 2014 via Luu: 92 percent of catastrophic failures from mishandled non-fatal errors). v2 rule for the shape in ~0FPQXHD.
