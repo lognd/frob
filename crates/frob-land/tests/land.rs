@@ -79,6 +79,11 @@ impl Fixture {
 
     /// A fixture whose `[pm] done_requires` is exactly `requirement`.
     fn requiring(requirement: &str) -> Self {
+        Self::configured(requirement, "")
+    }
+
+    /// A fixture whose `frob.toml` is the `[pm]` requirement followed by `extra` TOML.
+    fn configured(requirement: &str, extra: &str) -> Self {
         let tmp = tempfile::tempdir().expect("tempdir");
         let root = tmp.path().join("repo");
         std::fs::create_dir(&root).expect("mkdir");
@@ -103,7 +108,9 @@ impl Fixture {
                 ),
                 (
                     RelPath::new("frob.toml").expect("path"),
-                    Some(format!("[pm]\ndone_requires = [\"{requirement}\"]\n").into_bytes()),
+                    Some(
+                        format!("[pm]\ndone_requires = [\"{requirement}\"]\n{extra}").into_bytes(),
+                    ),
                 ),
                 (
                     RelPath::new(".gitignore").expect("path"),
@@ -1983,4 +1990,60 @@ fn the_base_ci_gate_falls_back_to_the_local_tip_without_a_remote_tracking_ref() 
     let (_, out) = ci_land(&fx, ci.clone(), |_| {});
     assert_eq!(refusal(&out.expect_err("red")).code, "E-LAND-BASE-RED");
     assert_eq!(ci.asked.lock().expect("lock")[0], fx.main_tip());
+}
+
+// frob:ticket 01M4MH61ZJD4VYYXPANZ8132AR
+// frob:tests crates/frob-land/src/land.rs::verify_check
+#[test]
+fn land_reuses_a_recorded_tool_pass_for_an_unchanged_tree_and_reruns_after_an_input_changes() {
+    if !git_available() {
+        return;
+    }
+    let spawns_dir = tempfile::tempdir().expect("tempdir");
+    let log = spawns_dir.path().join("spawns.log");
+    let extra = format!(
+        "[[check.tool]]\nname = \"probe\"\ncommand = \"sh\"\nargs = [\"-c\", \"pwd >> '{}'\"]\ninputs = [\"src/**\"]\n",
+        log.display()
+    );
+    // The probe logs its working directory, so spawns in a ticket worktree are told apart from
+    // the one land's base-set run makes in the persistent base checkout.
+    let spawned_in = |wt: &Path| {
+        std::fs::read_to_string(&log)
+            .unwrap_or_default()
+            .lines()
+            .filter(|l| Path::new(l) == wt)
+            .count()
+    };
+    let clock = || Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
+    let check = |s: &Started| {
+        let opts = frob_check::CheckOptions {
+            ticket: Some(s.handle.clone()),
+            skip_telemetry: true,
+            ..frob_check::CheckOptions::default()
+        };
+        frob_check::run(&s.wt, &opts).expect("check");
+    };
+
+    // Same tree checked, then landed: the land runs no tool process.
+    let fx = Fixture::configured("criteria_evidenced", &extra);
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+    let s_wt = s.wt.canonicalize().expect("worktree");
+    check(&s);
+    assert_eq!(spawned_in(&s_wt), 1, "the check ran the tool once");
+    land(&fx.root, &Fixture::opts(&s), &clock()).expect("land");
+    assert_eq!(spawned_in(&s_wt), 1, "land reused the recorded pass");
+
+    // A tree whose input differs from every recorded pass runs the tool again.
+    let t = fx.start("Add b", &["src/**"]);
+    Fixture::commit_in(&t.wt, "src/b.rs", "fn b() {}\n");
+    Fixture::evidence(&t, "src/b.rs");
+    let t_wt = t.wt.canonicalize().expect("worktree");
+    land(&fx.root, &Fixture::opts(&t), &clock()).expect("land b");
+    assert_eq!(
+        spawned_in(&t_wt),
+        1,
+        "a changed input misses and runs the tool"
+    );
 }
