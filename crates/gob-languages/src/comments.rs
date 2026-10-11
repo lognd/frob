@@ -398,6 +398,8 @@ pub fn comment_spans(
         (Language::Markdown, t) => markdown_spans(text, t),
         (Language::Toml, _) | (Language::Python, None) => hash_spans(text, false),
         (Language::Yaml, _) => hash_spans(text, true),
+        // frob:ticket 01M3ZEH464EFCFAZ4XDKE89D5Z
+        (Language::Grmb, _) => rust_plain(text),
         (Language::CSharp, None) => csharp_plain(text),
         (
             Language::Python
@@ -429,7 +431,7 @@ pub fn comment_spans(
 /// TOML and YAML are text-scanned and never parsed; an unparsable file uses the text fallback.
 pub fn parse_comment_spans(language: Language, text: &str) -> Vec<Range<usize>> {
     let tree = match language {
-        Language::Toml | Language::Yaml => None,
+        Language::Toml | Language::Yaml | Language::Grmb => None,
         _ => match parse(language, text, &ParseLimits::default()) {
             ParseResult::Parsed(t) => Some(t),
             ParseResult::Unresolved(u) => {
@@ -510,6 +512,17 @@ mod tests {
                 assert_eq!(&got, want, "{language:?}");
             }
         }
+    }
+
+    // frob:ticket 01M3ZEH464EFCFAZ4XDKE89D5Z
+    #[test]
+    fn grmb_spans_are_slash_comments_outside_strings() {
+        let src = "// a\nshape \"// no\" /* b */\n";
+        let got: Vec<&str> = parse_comment_spans(Language::Grmb, src)
+            .into_iter()
+            .map(|r| &src[r])
+            .collect();
+        assert_eq!(got, ["// a", "/* b */"]);
     }
 
     #[test]
