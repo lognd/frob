@@ -2,20 +2,21 @@
 id = "01M1T07NY615PQ6RAEB4CESXMT"
 title = "unpaired resource acquisition: known acquire/release API table"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-11T04:00:57Z"
+updated = "2026-10-11T04:04:51Z"
 aliases = ["T-4038"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["crates/grimble-lints/**", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given the design note comment on this ticket settling the acquire/release pair table shape (and that the v1 _protocol_summary.py logic is not reusable: it no longer exists in this tree), when implementation starts, then the note is attached to the ticket"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given TypeScript or JavaScript source with performance.mark(), a Map.set() on a receiver built by new Map, or a bound setTimeout() and no paired release in the scope, when grimble_lints::res::scan runs, then one site per acquire with the pair id and Certainty::Certain"

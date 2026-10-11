@@ -28,6 +28,20 @@ pub trait ScopeView {
     fn label(&self) -> &str;
     /// Repo-relative files per-file rules and located findings are limited to.
     fn files(&self) -> &BTreeSet<String>;
+    /// What this branch changed since its base, when the scope can tell; tool stages scoped to
+    /// cargo packages narrow to it (frob:ticket 01M4MH62ATTYVEF66Y4C93BJQC).
+    fn changes(&self) -> Option<&BranchChanges> {
+        None
+    }
+}
+
+/// The files a branch changed since its base, and which of them may alter a crate's public API.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct BranchChanges {
+    /// Every repo-relative file changed.
+    pub files: BTreeSet<String>,
+    /// The subset that can change a package's public API: manifests, added or removed Rust files, and Rust files whose public surface differs.
+    pub api: BTreeSet<String>,
 }
 
 /// The scope type of a product without scopes; never constructed.

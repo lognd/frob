@@ -1,0 +1,1 @@
+grimble-lints gains res::scan, a table-driven detector for TypeScript and JavaScript acquires (performance.mark, Map.set, setTimeout, addEventListener, createObjectURL, AbortController) with no paired release in scope; the RES001 rule declaration follows in ~CPBVHQF.
