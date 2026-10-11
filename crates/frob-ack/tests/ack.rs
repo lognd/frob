@@ -552,3 +552,29 @@ fn crlf_checkout_under_autocrlf_is_not_drift_but_a_real_edit_still_is() {
     assert_eq!(ids(&found), ["DRIFT001"], "{found:?}");
     assert!(messages(&found, "DRIFT001")[0].contains("body facet"));
 }
+
+// frob:ticket 01M4D6NH5VT2E2ZRRVYMD4XAA7
+// frob:tests crates/frob-ack/src/inputs.rs::collect
+#[test]
+fn a_fresh_worktree_shares_the_primary_checkouts_cache_not_its_own() {
+    let fx = Fixture::new();
+    let _ = fx.findings();
+    let _ = evaluate(fx.root(), &Inputs::collect(fx.root()).expect("collect"));
+    let shared = fx.root().join(".git/frob/cache/frob/cache.sqlite");
+    assert!(shared.exists(), "the primary run fills the shared cache");
+    assert!(
+        !fx.root().join(".frob/cache.sqlite").exists(),
+        "no per-checkout cache"
+    );
+    let wt = fx.root().join("wt");
+    git(
+        fx.root(),
+        &["worktree", "add", "-q", "-b", "side", wt.to_str().unwrap()],
+    );
+    let inputs = Inputs::collect(&wt).expect("collect in the worktree");
+    let _ = evaluate(&wt, &inputs);
+    assert!(
+        !wt.join(".frob/cache.sqlite").exists(),
+        "the worktree opens the shared cache instead of creating its own"
+    );
+}

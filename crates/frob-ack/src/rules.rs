@@ -450,7 +450,8 @@ pub(crate) fn raw_all(inputs: &Inputs) -> Vec<Raw> {
 /// Every finding of every rule for the repo at `root`, served from the gob-cache `repo_rule`
 /// table when the inputs digest and rule version match.
 pub fn evaluate(root: &Path, inputs: &Inputs) -> Vec<Finding> {
-    let cache = Cache::open(&root.join(".frob"));
+    // frob:ticket 01M4D6NH5VT2E2ZRRVYMD4XAA7
+    let cache = Cache::open_shared(root, ".frob");
     let digest = inputs.digest();
     let mut files: FileInterner = inputs.files.clone();
     let mut out = Vec::new();
