@@ -390,10 +390,9 @@ pub(crate) fn collect(
         .clock
         .clone()
         .unwrap_or_else(|| Arc::new(gob_time::SystemClock::pin()));
-    let today = clock.today();
     let configured = tickets_configured(root);
     let (ledger, ledger_error, ledger_missing) =
-        open_ledger(root, ledger_cfg, clock, configured).split();
+        open_ledger(root, ledger_cfg, clock.clone(), configured).split();
     cx.timing.push("ledger", started.elapsed(), true);
     let invariants = InvariantsConfig::load(root)?;
 
@@ -442,7 +441,7 @@ pub(crate) fn collect(
             tickets_configured: configured,
             changelog_exempt: opts.changelog_exempt,
             tool_ids: frob_obligations::tool_bound_ids(root),
-            today,
+            today: clock.today(),
         },
         findings: scan_findings,
     })
