@@ -1,1 +1,1 @@
-the spelling check accepts 'wheres', the plural of a GRL where clause
+ci: the spelling check accepts wheres (a GRL where clause), the crunk rules page is regenerated for the Color 4 COLOR001 text, and frob profile scans only the 256 most recent done tickets and stops at the nudge threshold, so it no longer reads every ticket's events.
