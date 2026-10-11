@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-11T17:58:23Z"
+updated = "2026-10-11T18:04:59Z"
 idempotency_key = "m2-nav-reindex-fn"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-ledger/src/reindex.rs", "crates/frob-ledger/src/lib.rs"]
@@ -27,7 +27,7 @@ target = "01M3ZX85N2KZ39PG65MX0YT2P0"
 
 [[acceptance]]
 text = "Given a ticket whose title changed, when reindexed, then its file is renamed to the new slug with an identical blob id and nothing else moves"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the same tree and version, when reindexed twice, then the output tree ids are equal"
