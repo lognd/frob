@@ -22,6 +22,7 @@ mod id;
 mod index;
 pub mod indexgen;
 mod meta;
+mod precision;
 mod reason;
 mod registry;
 mod required;
@@ -43,6 +44,7 @@ pub use index::{
 };
 pub use inventory;
 pub use meta::{FixKind, Polarity, RuleEntry, RuleMeta, Scope, Severity, Tier};
+pub use precision::{Demotion, MIN_DECIDED, PrecisionLedger, PrecisionRow, RuleTally};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
 pub use registry::{Registry, RegistryError};
 pub use required::RequiredReason;
