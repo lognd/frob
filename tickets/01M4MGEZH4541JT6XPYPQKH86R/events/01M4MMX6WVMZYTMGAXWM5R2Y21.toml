@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T04:52:53Z"
+digest = "ec27231442a49209b2c4819512ded41fd666b3cc2548651add19fec6f1d0fa22"
+exit_code = 0
+inline = '''
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized] target(s) in 5.48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ff60e855-2aba-4aed-b3cd-a566155061e3 with nextest profile: default
+    Starting 1 test across 8 binaries (141 tests skipped)
+        PASS [   0.012s] gob-dev::profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 1 test run: 1 passed, 141 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(=every_leaf_command_has_a_scenario_or_a_skip_reason)'"
+size = 615
+status = "measured"
+tests = ["every_leaf_command_has_a_scenario_or_a_skip_reason"]
+at = "2026-10-11T04:52:53Z"
+actor = "lognd"
+rev = 1
