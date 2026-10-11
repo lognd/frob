@@ -2,7 +2,8 @@
 id = "01M3ZX85H7VX2XFX1T663BD9NG"
 title = "E-TICKET-PATH: refuse a file path where a ticket id is expected"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
