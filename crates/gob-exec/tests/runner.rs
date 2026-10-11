@@ -291,3 +291,25 @@ fn normal_exit_does_not_block_on_pipe_held_by_background_child() {
         let _ = std::process::Command::new("kill").arg(pid).status();
     }
 }
+
+// frob:ticket 01M4DYPFE1Z7MXVNG8MJ7N30N5
+// frob:tests crates/gob-exec/src/runner.rs::Runner.run_with_env
+#[test]
+fn a_secret_looking_stdout_payload_is_intact_while_the_transcript_stdout_and_stderr_are_redacted() {
+    let runner = Runner::new(Limits { jobs: 1 });
+    let spec = Spec {
+        program: Program::Tool { name: "sh".into() },
+        args: vec![
+            "-c".into(),
+            "echo 'a { --secret=hunter2abc; }'; echo 'password=hunter2abc' >&2".into(),
+        ],
+        cwd: None,
+        env: vec![],
+        timeout: Duration::from_secs(5),
+        capture: true,
+    };
+    let out = runner.run(&spec).unwrap();
+    assert_eq!(out.stdout_raw.trim(), "a { --secret=hunter2abc; }");
+    assert!(!out.stdout.contains("hunter2abc"), "{}", out.stdout);
+    assert!(!out.stderr.contains("hunter2abc"), "{}", out.stderr);
+}

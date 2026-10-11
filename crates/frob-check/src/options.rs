@@ -56,6 +56,7 @@ impl CheckOptions {
             skip_tools: self.skip_tools,
             skip_telemetry: self.skip_telemetry,
             clock: self.clock.clone(),
+            tool_memo: None,
         }
     }
 }

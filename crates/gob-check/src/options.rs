@@ -19,4 +19,6 @@ pub struct RunOptions {
     pub skip_telemetry: bool,
     /// The command's clock; when absent the run pins the system clock once at its start.
     pub clock: Option<std::sync::Arc<dyn gob_time::Clock>>,
+    /// Store that lets a tool stage reuse a recorded pass for byte-identical inputs; absent runs every stage.
+    pub tool_memo: Option<std::sync::Arc<dyn crate::tools::ToolMemo>>,
 }

@@ -280,7 +280,9 @@ fn checkout_base(wt: &Repo, wt_path: &Path, dir: &Path, oid: &str) -> Result<(),
             add.text
         )));
     }
-    tracing::info!(oid, dir = %dir.display(), "land base checkout created");
+    // frob:ticket 01M4MNBNM0WGTXGH93PEV48F78
+    let aged = frob_worktree::normalize_mtimes(wt, dir);
+    tracing::info!(oid, dir = %dir.display(), aged, "land base checkout created");
     Ok(())
 }
 
