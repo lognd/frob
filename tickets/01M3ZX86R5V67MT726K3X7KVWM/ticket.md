@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:45Z"
-updated = "2026-10-11T19:14:17Z"
+updated = "2026-10-11T19:15:55Z"
 idempotency_key = "m2-nav-tick005"
 labels = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/replay.rs", "creates:crates/frob/tests/ticket_replay.rs", "creates:crates/gob-mdtest/coverage-allowlist.toml", "creates:crates/gob-git/src/tag.rs", "creates:crates/gob-git/src/lib.rs", "creates:crates/frob-ledger/src/rules.rs", "creates:crates/frob-ledger/src/lib.rs", "creates:crates/frob-ledger/src/reindex.rs", "creates:crates/frob-check/src/product.rs", "creates:docs/reference/rules/TICK007.md", "creates:docs/reference/rules/README.md"]
 scope = ["crates/frob-obligations/src/tick_reindex.rs", "crates/frob-ledger/src/replay.rs", "crates/frob/tests/ticket_replay.rs", "crates/gob-mdtest/coverage-allowlist.toml", "crates/gob-git/src/tag.rs", "crates/gob-git/src/lib.rs", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/reindex.rs", "crates/frob-check/src/product.rs", "docs/reference/rules/TICK007.md", "docs/reference/rules/README.md"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a reindex commit with one hand-edited ticket body, when checked, then TICK007 fires"
-bound = false
+bound = true
 +++
 
 Implements navigation.md section 2.2.
