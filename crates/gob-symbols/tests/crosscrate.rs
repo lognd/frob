@@ -325,3 +325,25 @@ fn unknown_receiver_call_poisons_same_named_methods_in_dependency_crates() {
     let own = calls_of(&g2, "crates/a/src/lib.rs::lone");
     assert_eq!(own.len(), 1, "{own:?}");
 }
+
+// frob:ticket 01M3ZWN5CJ3BQVBGBRG62ZYZ2M
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.from_files_with_deps
+#[test]
+fn unknown_receiver_call_in_file_outside_any_package_reaches_every_crates_methods() {
+    let dir = tmp();
+    let a = (
+        "crates/a/src/lib.rs",
+        "pub struct A;\nimpl A {\n    pub fn m(&self) {}\n}\n",
+    );
+    let b = (
+        "crates/b/src/lib.rs",
+        "pub struct B;\nimpl B {\n    pub fn m(&self) {}\n}\n",
+    );
+    let loose = ("scripts/loose.rs", "pub fn go() { make().m(); }\n");
+    let g = graph_in(dir.path(), &[A_TOML, B_TOML, a, b, loose]);
+    let calls = calls_of(&g, "scripts/loose.rs::go");
+    assert_eq!(calls.len(), 2, "{calls:?}");
+    assert!(calls.iter().any(|(t, _)| t.ends_with("a/src/lib.rs::A.m")));
+    assert!(calls.iter().any(|(t, _)| t.ends_with("b/src/lib.rs::B.m")));
+    assert!(calls.iter().all(|(_, s)| *s == Status::May), "{calls:?}");
+}

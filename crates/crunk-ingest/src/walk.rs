@@ -12,7 +12,8 @@ use std::path::{Component, Path, PathBuf};
 use crunk_spec::DesignSpec;
 use gob_cache::{ArtifactKey, Cache};
 use gob_symbols::{Adapter, is_css_path};
-use gob_walk::{Digest, FileEntry, LanguageHint, WalkConfig, walk};
+use gob_walk::{Digest, FileEntry, LanguageHint, WalkConfig, walk_paths};
+use rayon::prelude::*;
 
 use crate::error::IngestError;
 use crate::glob::glob_match;
@@ -122,6 +123,24 @@ fn producer_identity(root_font_size: f64) -> String {
     )
 }
 
+/// What loading one file produced, before it is placed.
+enum Loaded {
+    /// The file sits outside `css_root`.
+    Outside,
+    /// Unreadable, not UTF-8 or unparsable; the message becomes a diagnostic.
+    Failed(String),
+    /// Parsed or loaded from the cache.
+    Parsed(Box<LoadedSheet>),
+}
+
+struct LoadedSheet {
+    canon: PathBuf,
+    relative: PathBuf,
+    source: String,
+    parsed: ParsedCss,
+    was_cached: bool,
+}
+
 struct Ingest<'a> {
     spec: &'a DesignSpec,
     cache: &'a Cache,
@@ -165,28 +184,22 @@ impl<'a> Ingest<'a> {
         });
     }
 
-    /// Parse (or load from the cache) one file and record its sheet, stray and diagnostic.
-    fn file(&mut self, path: &Path) {
+    /// Read and parse (or load from the cache) one file; touches no shared state.
+    ///
+    /// frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+    fn load(&self, path: &Path) -> Loaded {
         let canon = canonical(path);
         let Ok(relative) = canon.strip_prefix(&self.css_root) else {
-            self.stats.outside_css_root += 1;
-            tracing::info!(path = %path.display(), "ingest: file outside css_root skipped");
-            return;
+            return Loaded::Outside;
         };
         let relative = relative.to_path_buf();
         let bytes = match std::fs::read(path) {
             Ok(b) => b,
-            Err(err) => {
-                self.diagnostic(path, err.to_string());
-                return;
-            }
+            Err(err) => return Loaded::Failed(err.to_string()),
         };
         let source = match String::from_utf8(bytes) {
             Ok(s) => s,
-            Err(err) => {
-                self.diagnostic(path, err.to_string());
-                return;
-            }
+            Err(err) => return Loaded::Failed(err.to_string()),
         };
         // Hash the bytes as read, not the walk's git-filtered digest: spans are byte offsets
         // into this exact text, so a CRLF checkout must not share a cache entry with its LF twin.
@@ -205,25 +218,65 @@ impl<'a> Ingest<'a> {
             .cache
             .get_artifact(&key)
             .and_then(|b| serde_json::from_slice::<ParsedCss>(&b).ok());
-        let parsed = if let Some(hit) = cached {
-            self.stats.cached += 1;
+        let (parsed, was_cached) = if let Some(hit) = cached {
             tracing::debug!(path = %path.display(), "ingest: parse cache hit");
-            hit
+            (hit, true)
         } else {
             match parse_css_source(&entry, &source, self.spec.project.root_font_size) {
                 Ok(p) => {
                     if let Ok(bytes) = serde_json::to_vec(&p) {
                         self.cache.put_artifact(&key, &bytes);
                     }
-                    self.stats.parsed += 1;
-                    p
+                    (p, false)
                 }
-                Err(err) => {
-                    self.diagnostic(path, err.to_string());
-                    return;
-                }
+                Err(err) => return Loaded::Failed(err.to_string()),
             }
         };
+        Loaded::Parsed(Box::new(LoadedSheet {
+            canon,
+            relative,
+            source,
+            parsed,
+            was_cached,
+        }))
+    }
+
+    /// Parse `paths` in parallel, then place the results in input order.
+    ///
+    /// frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+    fn files(&mut self, paths: &[PathBuf]) {
+        let loaded: Vec<Loaded> = paths.par_iter().map(|p| self.load(p)).collect();
+        for (path, loaded) in paths.iter().zip(loaded) {
+            self.place(path, loaded);
+        }
+    }
+
+    /// Record one loaded file's sheet, stray and diagnostic.
+    fn place(&mut self, path: &Path, loaded: Loaded) {
+        let sheet = match loaded {
+            Loaded::Outside => {
+                self.stats.outside_css_root += 1;
+                tracing::info!(path = %path.display(), "ingest: file outside css_root skipped");
+                return;
+            }
+            Loaded::Failed(message) => {
+                self.diagnostic(path, message);
+                return;
+            }
+            Loaded::Parsed(sheet) => *sheet,
+        };
+        let LoadedSheet {
+            canon,
+            relative,
+            source,
+            parsed,
+            was_cached,
+        } = sheet;
+        if was_cached {
+            self.stats.cached += 1;
+        } else {
+            self.stats.parsed += 1;
+        }
         self.stats.files += 1;
         let (bucket, component) = bucket_for(&relative, canon == self.tokens_path, self.spec);
         if !parsed.errors.is_empty() {
@@ -283,7 +336,8 @@ impl<'a> Ingest<'a> {
 
 /// The `.css` files under `dir` (ignore files honored) as absolute paths, in component order.
 fn css_files_under(dir: &Path) -> Result<Vec<PathBuf>, IngestError> {
-    let walked = walk(dir, &WalkConfig::default()).map_err(|source| IngestError::Walk {
+    // frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+    let walked = walk_paths(dir, &WalkConfig::default()).map_err(|source| IngestError::Walk {
         path: dir.to_path_buf(),
         source,
     })?;
@@ -305,7 +359,9 @@ fn find_ungoverned(spec: &DesignSpec, css_root: &Path) -> Result<Vec<PathBuf>, I
     }
     let mut exclude: Vec<String> = NOISE_DIRS.iter().map(|d| format!("{d}/")).collect();
     exclude.push(".*/".to_owned());
-    let walked = walk(
+    // frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+    // Path-only: nothing here needs a digest, so no file is read.
+    let walked = walk_paths(
         root,
         &WalkConfig {
             exclude,
@@ -364,9 +420,7 @@ pub fn ingest_tree(spec: &DesignSpec, cache: &Cache) -> Result<Ingested, IngestE
         Vec::new()
     };
     ingest.styles.ungoverned = find_ungoverned(spec, &css_root)?;
-    for path in files {
-        ingest.file(&path);
-    }
+    ingest.files(&files);
     ingest.jsx(None)?;
     Ok(ingest.finish())
 }
@@ -400,9 +454,7 @@ pub fn ingest_paths(
         }
     }
     named.sort_by(|a, b| component_key(a).cmp(&component_key(b)));
-    for path in named {
-        ingest.file(&path);
-    }
+    ingest.files(&named);
     ingest.jsx(Some(paths))?;
     Ok(ingest.finish())
 }

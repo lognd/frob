@@ -1211,3 +1211,69 @@ fn the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it() {
         .collect();
     assert_eq!(reasons, ["customer escalation"]);
 }
+
+// frob:ticket 01M4MNBNM0WGTXGH93PEV48F78
+// frob:tests crates/frob-worktree/src/work.rs::normalize_mtimes
+#[test]
+fn a_new_worktree_keeps_unchanged_sources_no_newer_than_the_tip_commit() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    // The checkout is made after the tip commit's second has passed, as a worktree made after a build is.
+    std::thread::sleep(Duration::from_millis(1200));
+    let ledger = fx.ledger(None);
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let id = Fixture::ticket(&ledger, "Age it", TicketType::Task, &["crates/x/**"]);
+    let started = ws
+        .work(&id.to_string(), &WorkOptions::default())
+        .expect("work");
+    let repo = Repo::discover(&fx.root).expect("repo");
+    let spec = Spec {
+        program: Program::Git,
+        args: vec![
+            "log".into(),
+            "-1".into(),
+            "--format=%ct".into(),
+            "HEAD".into(),
+        ],
+        cwd: Some(started.path.clone()),
+        env: Vec::new(),
+        timeout: Duration::from_secs(10),
+        capture: true,
+    };
+    let secs = repo
+        .runner()
+        .run(&spec)
+        .expect("log")
+        .stdout
+        .trim()
+        .parse::<u64>()
+        .expect("secs");
+    let tip = std::time::UNIX_EPOCH + Duration::from_secs(secs);
+    let readme = started.path.join("README.md");
+    let before = std::fs::metadata(&readme)
+        .expect("meta")
+        .modified()
+        .expect("mtime");
+    assert!(
+        before <= tip,
+        "unchanged file must not be newer than the tip: {before:?} > {tip:?}"
+    );
+    // An edit made afterwards is newer than the tip, so cargo rebuilds it.
+    std::fs::write(&readme, "edited\n").expect("edit");
+    let after = std::fs::metadata(&readme)
+        .expect("meta")
+        .modified()
+        .expect("mtime");
+    assert!(
+        after > tip,
+        "an edited file must be newer than the tip: {after:?} <= {tip:?}"
+    );
+}

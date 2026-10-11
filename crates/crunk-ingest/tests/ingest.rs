@@ -264,3 +264,65 @@ fn colour_looking_literals_that_cannot_be_read_are_recorded_not_dropped() {
     assert_eq!(facts.colors.len(), 1, "{facts:?}");
     assert_eq!(facts.unreadable_colors.len(), 2, "{facts:?}");
 }
+
+// frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+// frob:tests crates/crunk-ingest/src/walk.rs::ingest_tree
+#[test]
+fn the_ungoverned_scan_hashes_no_file() {
+    let (dir, spec) = synthetic(&[("styles/base/a.css", CSS), ("other/x.css", CSS)]);
+    let root = dir.path();
+    let marker = root.join("clean-ran");
+    gob_git::Repo::init(root).unwrap();
+    // A clean filter leaves a marker if, and only if, a file goes through the content source.
+    let config = root.join(".git/config");
+    let mut text = std::fs::read_to_string(&config).unwrap();
+    text = format!(
+        "{text}[filter \"spy\"]\n\tclean = touch {}; cat\n",
+        marker.display()
+    );
+    std::fs::write(&config, text).unwrap();
+    write(root, ".gitattributes", "*.css filter=spy\n");
+    let got = ingest_tree(&spec, &Cache::null()).unwrap();
+    assert_eq!(got.styles.ungoverned, [root.join("other/x.css")]);
+    assert!(!marker.exists(), "no file may be hashed by ingest");
+}
+
+// frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+// frob:tests crates/crunk-ingest/src/walk.rs::ingest_tree
+#[test]
+fn many_files_parse_in_parallel_but_place_in_path_order() {
+    let mut files: Vec<(String, String)> = (0..60)
+        .map(|i| (format!("styles/base/f{i:02}.css"), CSS.to_owned()))
+        .collect();
+    files.push(("styles/base/f10.css".into(), "a { color: red".into()));
+    let refs: Vec<(&str, &str)> = files
+        .iter()
+        .map(|(a, b)| (a.as_str(), b.as_str()))
+        .collect();
+    let (dir, spec) = synthetic(&refs);
+    std::fs::write(dir.path().join("styles/base/f20.css"), [0xff, 0xfe]).unwrap();
+    let got = ingest_tree(&spec, &Cache::null()).unwrap();
+    let names: Vec<String> = got
+        .styles
+        .sheets
+        .iter()
+        .map(|s| s.path.file_name().unwrap().to_string_lossy().into_owned())
+        .collect();
+    let mut sorted = names.clone();
+    sorted.sort();
+    assert_eq!(names, sorted, "sheets keep path order");
+    assert_eq!(
+        names.len(),
+        59,
+        "the non-UTF-8 file is a diagnostic, not a sheet"
+    );
+    assert_eq!(got.stats.parsed, 59);
+    assert!(
+        got.styles
+            .diagnostics
+            .iter()
+            .any(|d| d.path.ends_with("f20.css")),
+        "{:?}",
+        got.styles.diagnostics
+    );
+}
