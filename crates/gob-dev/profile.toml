@@ -366,6 +366,12 @@ readonly = true
 exit = [0, 1]
 budget_ms = 1600
 
+[scenario."grimble compile"]
+args = ["compile"]
+readonly = true
+exit = [0, 1]
+budget_ms = 500
+
 [scenario."grimble ack"]
 args = ["ack"]
 fixture = "tmp"

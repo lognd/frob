@@ -2,16 +2,16 @@
 id = "01M3ZX82K7HX9D2VKT25KS4MV2"
 title = "Ticket path function: top-epic directory, EPIC.md, _unfiled, collisions"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-07T02:01:31Z"
+updated = "2026-10-11T03:42:14Z"
 idempotency_key = "m2-nav-path"
 labels = ["milestone:2", "area:navigation", "good-first"]
-scope = ["crates/frob-ledger/src/path_fn.rs"]
+scope = ["crates/frob-ledger/src/path_fn.rs", "crates/frob-ledger/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
@@ -19,11 +19,11 @@ target = "01M3ZX82FBZHFCX6P69NRTFCH7"
 
 [[acceptance]]
 text = "Given a ticket under a sub-epic of epic `parser-rewrite`, when pathed, then it is `parser-rewrite/<slug>.md` with no sub-epic directory"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given two tickets in one directory with the same slug, when pathed in either creation order, then both get -<handle> and the paths are identical across orders"
-bound = false
+bound = true
 +++
 
 Implements navigation.md section 2.1.
