@@ -2,20 +2,20 @@
 id = "01M404FZ6EM3SYJ3JWDB0HGQGZ"
 title = "Document the grimble binding cache in rules.md (warm path)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T05:41:20Z"
-updated = "2026-10-11T14:46:47Z"
+updated = "2026-10-12T02:16:39Z"
 idempotency_key = "m2-doc-binding-cache"
 labels = ["milestone:2", "good-first"]
 scope = ["docs/design/rules.md"]
 
 [[acceptance]]
 text = "Given rules.md, when read, then the binding cache key and scope are described"
-bound = false
+bound = true
 +++
 
 Follow-up of ~RS10WX7.
