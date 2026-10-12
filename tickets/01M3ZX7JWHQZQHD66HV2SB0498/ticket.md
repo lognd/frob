@@ -2,13 +2,13 @@
 id = "01M3ZX7JWHQZQHD66HV2SB0498"
 title = "Path-scoped activation: [[packs.enable]] with paths and required"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-03T03:34:25Z"
+updated = "2026-10-12T20:36:41Z"
 idempotency_key = "m2-packs-activation"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/gob-packs/src/activation.rs"]
