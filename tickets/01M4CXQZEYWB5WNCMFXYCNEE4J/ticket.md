@@ -2,7 +2,8 @@
 id = "01M4CXQZEYWB5WNCMFXYCNEE4J"
 title = "crunk export uss and csharp: USS custom properties and an engine-free C# token class"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
