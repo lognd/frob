@@ -653,6 +653,50 @@ fn atom_registered(atom: &str) -> bool {
     gob_ir::registry::atom(atom).is_some()
 }
 
+/// One Unresolved per node, pack atom and language for a granted pack atom that no enabled pack
+/// has a detector for, in the languages of the node's files within the grant's scope.
+fn report_no_detector(
+    cx: &Cx<'_>,
+    e: &crate::model::Entity,
+    atoms: &[String],
+    in_scope: &dyn Fn(&str) -> bool,
+    files: &BTreeSet<&str>,
+    reported: &mut BTreeSet<(String, String)>,
+    site: Option<(&str, (usize, usize))>,
+    out: &mut Output,
+) {
+    for a in atoms
+        .iter()
+        .filter(|a| is_pack_atom(cx.packs, a) && !is_pack_parent(cx.packs, a))
+    {
+        let mut no_detector: BTreeSet<&str> = BTreeSet::new();
+        for f in files.iter().filter(|f| in_scope(f)) {
+            let Some(lang) = cx.code.file(f).map(|c| c.language.as_str()) else {
+                continue;
+            };
+            if lang != crate::code::OPAQUE && pack_answer(cx.packs, a, lang).is_none() {
+                no_detector.insert(lang);
+            }
+        }
+        for lang in no_detector {
+            if !reported.insert((a.clone(), lang.to_owned())) {
+                continue;
+            }
+            tracing::warn!(node = %e.anchor, atom = %a, lang, "pack atom has no detector for the language; not enforced");
+            out.unresolved(
+                "CAP002",
+                Reason::Fidelity,
+                &format!(
+                    "`{a}` is granted to `{}` but no pack detector covers it in {lang} (no-detector); its use in {lang} code is not enforced",
+                    e.anchor
+                ),
+                &format!("cap/{}/{a}/{lang}/no-detector", e.anchor),
+                site,
+            );
+        }
+    }
+}
+
 fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
     for e in cx
         .model
@@ -683,7 +727,7 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
             .iter()
             .filter_map(|f| cx.code.file(f))
             .any(CodeFile::has_unseen);
-        let mut reported: BTreeSet<(String, &str)> = BTreeSet::new();
+        let mut reported: BTreeSet<(String, String)> = BTreeSet::new();
         for g in &e.grants {
             out.count("CAP002", 1);
             let site = Some((g.file.as_str(), (g.span.start, g.span.end)));
@@ -699,36 +743,16 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
                 g.at.as_ref()
                     .is_none_or(|sel| select_files(sel, &cx.code.walk).iter().any(|m| m.path == f))
             };
-            for a in atoms
-                .iter()
-                .filter(|a| is_pack_atom(cx.packs, a) && !is_pack_parent(cx.packs, a))
-            {
-                let mut no_detector: BTreeSet<&str> = BTreeSet::new();
-                for f in files.iter().filter(|f| in_scope(f)) {
-                    let Some(lang) = cx.code.file(f).map(|c| c.language.as_str()) else {
-                        continue;
-                    };
-                    if lang != crate::code::OPAQUE && pack_answer(cx.packs, a, lang).is_none() {
-                        no_detector.insert(lang);
-                    }
-                }
-                for lang in no_detector {
-                    if !reported.insert((a.clone(), lang)) {
-                        continue;
-                    }
-                    tracing::warn!(node = %e.anchor, atom = %a, lang, "pack atom has no detector for the language; not enforced");
-                    out.unresolved(
-                        "CAP002",
-                        Reason::Fidelity,
-                        &format!(
-                            "`{a}` is granted to `{}` but no pack detector covers it in {lang} (no-detector); its use in {lang} code is not enforced",
-                            e.anchor
-                        ),
-                        &format!("cap/{}/{a}/{lang}/no-detector", e.anchor),
-                        site,
-                    );
-                }
-            }
+            report_no_detector(
+                cx,
+                e,
+                &atoms,
+                &|f| in_scope(f),
+                &files,
+                &mut reported,
+                site,
+                out,
+            );
             let observed = [&uses.lo, &uses.hi].iter().any(|by_node| {
                 by_node.get(&e.anchor).is_some_and(|us| {
                     us.iter()
