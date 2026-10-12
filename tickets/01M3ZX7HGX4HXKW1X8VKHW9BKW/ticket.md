@@ -2,7 +2,8 @@
 id = "01M3ZX7HGX4HXKW1X8VKHW9BKW"
 title = "GRL to Rust codegen against the executor operator library"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
