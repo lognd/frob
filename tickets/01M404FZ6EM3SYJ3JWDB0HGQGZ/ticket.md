@@ -2,7 +2,8 @@
 id = "01M404FZ6EM3SYJ3JWDB0HGQGZ"
 title = "Document the grimble binding cache in rules.md (warm path)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
