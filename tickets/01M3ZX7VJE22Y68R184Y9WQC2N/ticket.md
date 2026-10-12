@@ -2,7 +2,8 @@
 id = "01M3ZX7VJE22Y68R184Y9WQC2N"
 title = "Tool stages as argv templates with typed placeholders"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
