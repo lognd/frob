@@ -2,7 +2,8 @@
 id = "01M4D8ZB43MC04DGAQDNGM7KVQ"
 title = "gob-check: cargo JSON diagnostics parser for rustc and clippy with the Rust id map"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
