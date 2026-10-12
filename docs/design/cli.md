@@ -79,6 +79,12 @@ Every verb, every time:
 | 3 | guard, needs action | false | a guard that needs the caller to change something; `remedy` is the exact command | `ticket close` with missing evidence (`E-CLOSE-EVIDENCE`), dirty root, `E-STATE-TRACKED` (git tracks a state or cache directory), empty scope, `cycle assign` over capacity (remedy `--over-commit --reason`), `land` whose check failed (`E-LAND-CHECK`), stale plan token (`E-PLAN-STALE`), a file changed between `check` and `check --fix` (`E-FIX-STALE`, remedy rerun `frob check` then `--fix`) |
 | 4 | internal error | false | a bug, with a report path in the envelope | `E-INTERNAL` |
 
+- `E-NO-CONFIG` (exit 3, guard that needs action) is what a verb that
+  reads `frob.toml` gets when the file is absent. The remedy is `frob
+  init` inside a git work tree, or `git init` first when the directory
+  is not in one. The verbs that work without `frob.toml` are `doctor`,
+  `init`, `schema`, `config show`, `config sync` and `merge-driver`, plus
+  `--help` and `--schema` on any verb.
 - There is no "job failed" class in milestone 1: `land` is synchronous
   (D25), so a failed check inside `land` is a guard that needs action.
 - The environment never changes the exit contract. The earlier CI
