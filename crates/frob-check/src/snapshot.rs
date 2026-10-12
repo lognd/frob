@@ -55,6 +55,8 @@ impl LedgerState {
 pub struct FrobShared {
     /// Ledger tip commit (hex), or the empty string without a ledger.
     pub ledger_tip: String,
+    /// Per file, the sorted ticket references that resolve to neither an open nor a terminal ticket: the whole ledger input of `REF001`.
+    pub ref_unsettled: std::collections::BTreeMap<String, String>,
     /// Files the obligation rules evaluate: graph file nodes plus files holding a directive.
     pub obligation_paths: BTreeSet<String>,
     /// True when a ledger is open (the ledger-reading rules can run).
@@ -334,9 +336,32 @@ fn tickets_configured(root: &Path) -> bool {
         .is_some_and(|t| t.get("tickets").is_some_and(toml::Value::is_table))
 }
 
+/// Per file path, its unsettled ticket references joined by newlines (`REF001`'s per-file side input).
+fn unsettled_by_path(
+    directives: &[DirectiveRecord],
+    files: &FileInterner,
+    ledger: Option<&LedgerState>,
+) -> std::collections::BTreeMap<String, String> {
+    let mut out: std::collections::BTreeMap<String, Vec<String>> =
+        std::collections::BTreeMap::new();
+    for (file, id) in frob_obligations::unsettled_ticket_refs(directives, ledger.map(|l| &l.ledger))
+    {
+        if let Some(path) = files.path(file) {
+            out.entry(path.to_owned()).or_default().push(id);
+        }
+    }
+    out.into_iter()
+        .map(|(p, ids)| (p, ids.join("\n")))
+        .collect()
+}
+
 /// Collect frob's inputs of one run on top of the walk in `cx`.
 ///
 /// Stage times go to `cx.timing`; graph cache counters to `cx.stats`.
+#[allow(
+    clippy::too_many_lines,
+    reason = "one linear collection pass; each stage is timed and logged in place"
+)]
 pub(crate) fn collect(
     cx: &mut CollectCx<'_>,
     opts: &CheckOptions,
@@ -412,7 +437,9 @@ pub(crate) fn collect(
         directives = directives.len(),
         "inputs collected"
     );
+    let ref_unsettled = unsettled_by_path(&directives, files, ledger.as_ref());
     let shared = FrobShared {
+        ref_unsettled,
         ledger_tip: ledger.as_ref().map_or_else(String::new, |l| l.tip.clone()),
         obligation_paths,
         has_ledger: ledger.is_some(),

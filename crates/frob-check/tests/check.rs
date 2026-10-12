@@ -1320,3 +1320,66 @@ fn a_leftover_v1_lock_aborts_the_check_naming_file_version_and_remedy() {
     assert!(msg.contains("v1"), "{msg}");
     assert!(msg.contains("frob ack"), "{msg}");
 }
+
+/// Opens the ledger of a [`ticket_fixture`] repository.
+fn open_fixture_ledger(dir: &Path) -> Ledger {
+    let repo = Repo::discover(dir).expect("discover");
+    Ledger::open(
+        repo,
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    )
+}
+
+// frob:ticket 01M4MK5SXY0VMZ0PGV4BE4PRM2
+// frob:tests crates/frob-check/src/filecheck.rs::ObligationFileCheck
+#[test]
+fn an_unrelated_ledger_event_does_not_miss_any_file() {
+    let (dir, id) = ticket_fixture();
+    write(
+        dir.path(),
+        "src/a.rs",
+        &format!("// frob:ticket {id}\n//! Doc.\n\n/// Documented.\npub fn a() {{}}\n"),
+    );
+    write(dir.path(), "src/b.rs", "/// Documented.\npub fn b() {}\n");
+    write(dir.path(), "NOTES.md", "# Notes\n\nplain\n");
+    let first = run(dir.path(), &quiet()).expect("first run");
+    assert!(first.stats.file_misses > 0);
+    open_fixture_ledger(dir.path())
+        .new_ticket(NewTicket::new("Unrelated", TicketType::Task))
+        .expect("unrelated ticket");
+    let second = run(dir.path(), &quiet()).expect("second run");
+    assert_eq!(second.stats.file_misses, 0, "no per-file recompute");
+    assert_eq!(second.stats.file_hits, first.stats.file_misses);
+}
+
+// frob:ticket 01M4MK5SXY0VMZ0PGV4BE4PRM2
+// frob:tests crates/frob-check/src/filecheck.rs::ObligationFileCheck
+#[test]
+fn creating_a_ticket_a_file_references_misses_only_that_file() {
+    let (dir, _id) = ticket_fixture();
+    write(
+        dir.path(),
+        "src/a.rs",
+        "// frob:ticket T-9001\n/// Documented.\npub fn a() {}\n",
+    );
+    write(dir.path(), "src/b.rs", "/// Documented.\npub fn b() {}\n");
+    let first = run(dir.path(), &quiet()).expect("first run");
+    assert!(
+        rules_of(&first.findings).contains(&"REF001".to_owned()),
+        "{:?}",
+        rules_of(&first.findings)
+    );
+    let mut new = NewTicket::new("Referenced", TicketType::Task);
+    new.aliases = vec!["T-9001".to_owned()];
+    open_fixture_ledger(dir.path())
+        .new_ticket(new)
+        .expect("referenced ticket");
+    let second = run(dir.path(), &quiet()).expect("second run");
+    assert!(
+        !rules_of(&second.findings).contains(&"REF001".to_owned()),
+        "the reference now resolves"
+    );
+    assert!(second.stats.file_misses > 0, "the referencing file misses");
+    assert!(second.stats.file_hits > 0, "an unrelated file still hits");
+}

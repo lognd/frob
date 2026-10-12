@@ -475,7 +475,8 @@ mod tests {
         let mut text = fs::read_to_string(&config).unwrap();
         text = format!(
             "{text}[filter \"spy\"]\n\tclean = touch {}; cat\n",
-            marker.display()
+            // Forward slashes: git runs the filter through sh, which eats Windows backslashes.
+            marker.display().to_string().replace('\\', "/")
         );
         fs::write(&config, text).unwrap();
         write(root, ".gitattributes", "*.css filter=spy\n");

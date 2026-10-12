@@ -43,13 +43,10 @@ impl ToolMemo for FileToolMemo {
 
     fn store(&self, key: &str, payload: &str) {
         let Some(path) = self.path(key) else { return };
-        let tmp = self.dir.join(format!("{key}.{}.tmp", std::process::id()));
         let written = std::fs::create_dir_all(&self.dir)
-            .and_then(|()| std::fs::write(&tmp, payload))
-            .and_then(|()| std::fs::rename(&tmp, &path));
+            .and_then(|()| gob_fs::write_atomic(&path, payload.as_bytes()));
         if let Err(e) = written {
             tracing::warn!(error = %e, "tool result not recorded");
-            let _ = std::fs::remove_file(&tmp);
         }
     }
 }

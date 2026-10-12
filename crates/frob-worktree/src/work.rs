@@ -665,7 +665,12 @@ pub fn normalize_mtimes(repo: &Repo, root: &Path) -> usize {
         if !meta.is_file() || meta.modified().is_ok_and(|m| m <= when) {
             continue;
         }
-        if std::fs::File::open(&file)
+        // Windows needs write access to set times (a read-only handle is refused); Unix does not, so a
+        // read-only file falls back to the plain open.
+        if std::fs::OpenOptions::new()
+            .write(true)
+            .open(&file)
+            .or_else(|_| std::fs::File::open(&file))
             .and_then(|f| f.set_modified(when))
             .is_ok()
         {

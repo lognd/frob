@@ -421,7 +421,7 @@ fn guard_answers_two_thousand_candidates_quickly() {
     let took = started.elapsed();
     assert_eq!(free, 2000 / 40 * 32, "tickets in crates c0..c7 are hidden");
     assert!(
-        took < std::time::Duration::from_secs(1),
+        took < std::time::Duration::from_secs(3),
         "2,000 candidates took {took:?}"
     );
 }

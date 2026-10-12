@@ -1,0 +1,4 @@
+# the 4.7 example parses clean; a missing because (1), a missing for (1) and a template with no excuse (1) are MDL008
+error: MDL008
+error: MDL008
+error: MDL008

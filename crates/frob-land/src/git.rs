@@ -37,9 +37,12 @@ const LOCK_BACKOFF_BASE: Duration = Duration::from_millis(100);
 /// Largest backoff ceiling after a lock collision.
 const LOCK_BACKOFF_MAX: Duration = Duration::from_secs(2);
 
-/// True when git's output says it could not take `index.lock` (or another `.lock`) because it exists.
+/// True when git's output says it could not take `index.lock` (or another `.lock`) because it exists,
+/// or (Windows) could not open a `.git` file a concurrent writer was mid-rename on ("Permission denied").
 fn is_lock_collision(text: &str) -> bool {
-    text.contains(".lock") && (text.contains("File exists") || text.contains("another git process"))
+    (text.contains(".lock")
+        && (text.contains("File exists") || text.contains("another git process")))
+        || (text.contains("unable to access") && text.contains("Permission denied"))
 }
 
 /// Run `git <args>` in `cwd` through `repo`'s runner, retrying with backoff while a concurrent writer holds a git lock (frob:ticket 01M4DYPDCTK6KR5DXFQW7NXA6R).

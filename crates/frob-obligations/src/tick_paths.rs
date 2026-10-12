@@ -75,6 +75,11 @@ fn classify(word: &str, ledger: Option<&Ledger>) -> Option<Target> {
     lookup(path).map(|id| Target::Fixable(id.to_string()))
 }
 
+/// True when TICK006 can read the ledger for `text`: only a non-generated text mentioning `.md` is classified against it.
+pub fn tick006_reads_ledger(text: &str) -> bool {
+    !text.starts_with(GENERATED_MARKER_PREFIX) && text.contains(".md")
+}
+
 /// TICK006 over one file's text. Generated pages (first line carries the generated marker) are skipped.
 pub(crate) fn tick006(
     file: FileId,
@@ -82,7 +87,7 @@ pub(crate) fn tick006(
     text: &str,
     ledger: Option<&Ledger>,
 ) -> Vec<Finding> {
-    if text.starts_with(GENERATED_MARKER_PREFIX) || !text.contains(".md") {
+    if !tick006_reads_ledger(text) {
         return Vec::new();
     }
     let mut out = Vec::new();
