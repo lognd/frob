@@ -14,7 +14,7 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | `args` | `[]` | Arguments, no shell. |
 | `timeout_secs` | `300` | Kill limit. |
 | `fail_on_nonzero` | `true` | A failing stage is `TOOL001` (Error); a missing binary is `TOOL001` Unresolved and required. |
-| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif` or `cargo-json`: turn stdout into findings. |
+| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json` or `ruff-json`: turn stdout into findings. |
 | `labels` | `[]` | actionlint runner labels the repository defines. |
 | `id_map` | `{}` | Tool finding id to rule id, merged over the parser default. |
 | `min_version`, `max_version` | unset | Inclusive dotted-number range of trusted tool versions. |
@@ -23,7 +23,7 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 
 ## Parsed stages
 
-With a `parser` the stage exit status no longer decides: tools exit nonzero when they have findings, so only a signal, a timeout or unparseable stdout is a stage failure (`TOOL001`). Findings carry the file and span the tool printed (zizmor and cargo byte offsets, actionlint and stylelint line and column, SARIF regions), so `frob:accept` applies to them like native findings (a file whose language frob scans for directives; YAML is not yet one).
+With a `parser` the stage exit status no longer decides: tools exit nonzero when they have findings, so only a signal, a timeout or unparseable stdout is a stage failure (`TOOL001`). Findings carry the file and span the tool printed (zizmor and cargo byte offsets, actionlint, stylelint and ruff line and column, SARIF regions), so `frob:accept` applies to them like native findings (a file whose language frob scans for directives; YAML is not yet one).
 
 | Parser | Tool id | Rule | Severity |
 |---|---|---|---|
@@ -43,8 +43,20 @@ With a `parser` the stage exit status no longer decides: tools exit nonzero when
 | cargo-json | `too_many_arguments` | `NEAT002` | rustc level |
 | cargo-json | clippy correctness lint (deny-by-default) | `LOGIC001` | rustc level |
 | cargo-json | any other lint, or a code-less rustc error | `LINT001` | rustc level |
+| ruff-json | `F401`, `F841`, `ARG*` | `DEAD001` | Warn |
+| ruff-json | `S110` | `ERR001` | Warn |
+| ruff-json | `BLE001`, `E722` | `ERR003` | Warn |
+| ruff-json | `ASYNC*` | `CONC001` | Warn |
+| ruff-json | `PT*` | `TESTQ001` | Warn |
+| ruff-json | `B` plus digits (bugbear) | `LOGIC001` | Warn |
+| ruff-json | `PLR2004` | off (dropped) | none |
+| ruff-json | any other code | `LINT001` | Advisory |
 
 The cargo-json severity is the rustc level: `error` is Error, `warning` is Warn. Summary lines (`aborting due to`, `warnings emitted`) are not findings; build artifacts and other non-diagnostic lines are skipped. A diagnostic repeated for each cargo target is reported once per site.
+
+ruff-json reads `ruff check --output-format=json`. A diagnostic without a rule code (a syntax error) is dropped and is not a finding; only unparseable stdout fails the stage (`TOOL001`). An `id_map` entry for a ruff code wins over the table above.
+
+`frob init` in a repository with a `pyproject.toml` adds a pinned `ruff` stage: `uvx ruff@0.14.1 check --output-format=json --no-cache .`, parser `ruff-json`, with the range 0.14.0..0.14.99 and `inputs` covering Python sources and the ruff config files.
 
 stylelint runs as `stylelint --formatter json` (exit 2 for lint errors is a normal exit; the stage exit status does not decide). `crunk check` reads `[[check.tool]]` from `crunk.toml`, so the same stage binds under the crunk ids.
 
