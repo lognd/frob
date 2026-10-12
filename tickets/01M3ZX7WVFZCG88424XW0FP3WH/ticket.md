@@ -2,7 +2,8 @@
 id = "01M3ZX7WVFZCG88424XW0FP3WH"
 title = "Resource caps for plans and findings: budget Unresolved on breach"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
