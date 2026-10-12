@@ -2,13 +2,13 @@
 id = "01M4DYPH29YAN8DBKAKKCDWQGX"
 title = "crunk: must_measure design note (spec-only project gets a required Unresolved from COLOR001), multi-file mdtest projects, stale crunk:waive directive docs"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T14:29:25Z"
-updated = "2026-10-08T14:29:25Z"
+updated = "2026-10-12T02:29:57Z"
 scope = ["changelog.d/**", "crates/crunk-rules/**", "crates/crunk-check/**", "docs/design/crunk.md", "docs/reference/directives.md", "docs/schemas/directives.json"]
 
 [[acceptance]]
