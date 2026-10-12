@@ -2,7 +2,8 @@
 id = "01M4MK5SXY0VMZ0PGV4BE4PRM2"
 title = "REF001 per-file cache key uses the ledger tip, so every ticket event misses all 14k files"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
