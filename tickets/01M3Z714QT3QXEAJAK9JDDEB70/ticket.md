@@ -8,7 +8,7 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-12T00:03:59Z"
+updated = "2026-10-12T00:04:40Z"
 idempotency_key = "m2-pattern"
 labels = ["milestone:2"]
 scope = ["crates/gob-pattern/**", "crates/grimble-lints/**"]
@@ -35,7 +35,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a rule file with a bad id, an unknown key, a grammar-level pattern or an empty rule table, when parsed, then a typed PatternError names the cause"
-bound = false
+bound = true
 +++
 
 rules.md section 3: the spike that implements ast-grep-core's Doc trait over U terms or decides on the in-house matcher; then declarative rules/*.grl.toml with pattern, metavariables, all/any/not/inside/has, fix; language-specific and IR-level with language=*; GPOL id generation.
