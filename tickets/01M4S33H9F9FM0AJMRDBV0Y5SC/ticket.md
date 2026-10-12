@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given frob-mirror, when the layering test runs, then it passes"
-bound = false
+bound = true
 +++
 
 Three tests went stale after the tool-stage argv-template change (args now required) and the message_origin field landing.
