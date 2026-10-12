@@ -1,14 +1,14 @@
 +++
 id = "01M3Z714QT3QXEAJAK9JDDEB70"
-title = "G17: gob-pattern and GPOL rules (ast-grep Doc over U spike first)"
+title = "G17a: gob-pattern U-level rules (kind, role, callee, all/any/not/inside/has) and the Doc spike decision"
 type = "task"
 category = "in-progress"
 priority = "medium"
-points = 13
+points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-11T23:57:13Z"
+updated = "2026-10-12T00:03:52Z"
 idempotency_key = "m2-pattern"
 labels = ["milestone:2"]
 scope = ["crates/gob-pattern/**", "crates/grimble-lints/**"]
@@ -30,7 +30,11 @@ kind = "blocked-by"
 target = "01M3ZX7DMYNTWB3AP04CDMAECH"
 
 [[acceptance]]
-text = "Given the no-print-in-lib example rule from rules.md, when run over a Rust and a Python fixture, then it fires in both from one rule file"
+text = 'Given a language="*" rule file using kind, callee, not and inside, when run over a Rust and a Python U fixture, then it fires in both from the one file'
+bound = false
+
+[[acceptance]]
+text = "Given a rule file with a bad id, an unknown key, a grammar-level pattern or an empty rule table, when parsed, then a typed PatternError names the cause"
 bound = false
 +++
 
