@@ -8,7 +8,7 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-12T00:03:52Z"
+updated = "2026-10-12T00:03:59Z"
 idempotency_key = "m2-pattern"
 labels = ["milestone:2"]
 scope = ["crates/gob-pattern/**", "crates/grimble-lints/**"]
@@ -31,7 +31,7 @@ target = "01M3ZX7DMYNTWB3AP04CDMAECH"
 
 [[acceptance]]
 text = 'Given a language="*" rule file using kind, callee, not and inside, when run over a Rust and a Python U fixture, then it fires in both from the one file'
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a rule file with a bad id, an unknown key, a grammar-level pattern or an empty rule table, when parsed, then a typed PatternError names the cause"
