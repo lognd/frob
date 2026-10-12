@@ -12,7 +12,7 @@ use gob_exec::{ExecError, Limits, Outcome, Output, Program, Runner, Spec};
 use gob_rules::{Finding, RequiredReason, Rule, RuleId, Severity};
 use gob_text::{FileInterner, LineCol, LineIndex, Span, TextRange, TextSize};
 
-use crate::config::{ToolParser, ToolStage};
+use crate::config::{FILE_TOKEN, ToolParser, ToolStage};
 use crate::packages::Affected;
 use crate::report::Timing;
 use crate::rules::Tool001;
@@ -590,6 +590,48 @@ fn expand_packages(stage: &ToolStage, affected: Option<&Affected>) -> Option<Too
     Some(out)
 }
 
+/// `stage` with each `{file}` token replaced by `./<path>`, or the refusal when `path` is not tracked.
+///
+/// The `./` prefix keeps a file named `-rf` from being read as an option (security.md section 2.4).
+///
+/// # Errors
+///
+/// A message naming the stage and the path when `path` is outside `tracked`.
+// frob:ticket 01M3ZX7VJE22Y68R184Y9WQC2N
+#[allow(
+    dead_code,
+    reason = "no stage runs per file yet; the typed expander lands first"
+)]
+pub(crate) fn expand_file(
+    stage: &ToolStage,
+    path: &str,
+    tracked: &std::collections::BTreeSet<String>,
+) -> Result<ToolStage, String> {
+    if !stage.args.iter().any(|a| a == FILE_TOKEN) {
+        return Ok(stage.clone());
+    }
+    if !tracked.contains(path) {
+        tracing::warn!(stage = %stage.name, path, "tool stage refused: path not tracked");
+        return Err(format!(
+            "tool stage `{}` refused: `{path}` is not a tracked path",
+            stage.name
+        ));
+    }
+    let mut out = stage.clone();
+    out.args = stage
+        .args
+        .iter()
+        .map(|a| {
+            if a == FILE_TOKEN {
+                format!("./{path}")
+            } else {
+                a.clone()
+            }
+        })
+        .collect();
+    Ok(out)
+}
+
 /// The stages a run executes: all of them unscoped, else those whose declared inputs the scope touches, with `{packages}` expanded.
 pub(crate) fn applicable_stages(
     stages: &[ToolStage],
@@ -846,6 +888,39 @@ mod tests {
     use super::*;
 
     // frob:tests crates/gob-check/src/tools.rs::normalize
+    // frob:ticket 01M3ZX7VJE22Y68R184Y9WQC2N
+    #[test]
+    fn a_file_placeholder_renders_tracked_paths_and_refuses_others() {
+        let mut stage = sh_stage("t", ToolParser::None, "", "");
+        stage.args = vec!["--".to_owned(), FILE_TOKEN.to_owned()];
+        let tracked: std::collections::BTreeSet<String> = ["a.rs".to_owned()].into();
+        let ok = expand_file(&stage, "a.rs", &tracked).expect("tracked");
+        assert_eq!(ok.args, ["--", "./a.rs"]);
+        let err = expand_file(&stage, "../etc/passwd", &tracked).expect_err("outside");
+        assert!(
+            err.contains("`t`") && err.contains("not a tracked path"),
+            "{err}"
+        );
+    }
+
+    // frob:ticket 01M3ZX7VJE22Y68R184Y9WQC2N
+    #[test]
+    fn shell_strings_and_missing_templates_are_cfg_errors_naming_the_stage() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let load = |toml: &str| {
+            std::fs::write(dir.path().join("frob.toml"), toml).expect("write");
+            crate::config::CheckTable::load(dir.path(), "frob")
+        };
+        for toml in [
+            "[[check.tool]]\nname = \"s1\"\ncommand = \"cargo fmt && ls\"\nargs = []\n",
+            "[[check.tool]]\nname = \"s1\"\ncommand = \"cargo\"\n",
+        ] {
+            let e = load(toml).expect_err("refused").to_string();
+            assert!(e.contains("stage `s1`"), "{e}");
+        }
+        assert!(load("[[check.tool]]\nname = \"ok\"\ncommand = \"cargo\"\nargs = []\n").is_ok());
+    }
+
     #[test]
     fn printed_paths_become_repo_relative() {
         let root = Path::new("/r/repo");

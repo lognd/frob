@@ -301,7 +301,7 @@ fn a_failing_tool_stage_yields_tool001_outside_the_budget() {
     write(
         dir.path(),
         "frob.toml",
-        "[[check.tool]]\nname = \"always-fails\"\ncommand = \"false\"\n\n[[check.tool]]\nname = \"advisory\"\ncommand = \"false\"\nfail_on_nonzero = false\n",
+        "[[check.tool]]\nname = \"always-fails\"\ncommand = \"false\"\nargs = []\n\n[[check.tool]]\nname = \"advisory\"\ncommand = \"false\"\nargs = []\nfail_on_nonzero = false\n",
     );
     let report = run(
         dir.path(),
@@ -510,7 +510,8 @@ fn tool_options() -> CheckOptions {
     }
 }
 
-const MISSING_TOOL: &str = "[[check.tool]]\nname = \"ghost\"\ncommand = \"frob-no-such-binary\"\n";
+const MISSING_TOOL: &str =
+    "[[check.tool]]\nname = \"ghost\"\ncommand = \"frob-no-such-binary\"\nargs = []\n";
 
 const FAILING_ACTIONLINT: &str = "[[check.tool]]\nname = \"lint\"\ncommand = \"sh\"\nargs = [\"-c\", \"echo unsatisfiable pin >&2; exit 2\"]\nparser = \"actionlint-json\"\nversion_args = [\"-c\", \"echo 1.7.12\"]\n";
 

@@ -81,10 +81,11 @@ pub enum ToolParser {
 pub struct ToolStage {
     /// Stage name shown in findings and timing; also the allowlisted program name.
     pub name: String,
-    /// The program, found on `PATH` (no path separators).
+    /// The program, found on `PATH`: one fixed name, no path separators, whitespace or shell syntax.
     pub command: String,
-    /// Arguments passed without shell interpretation.
-    #[serde(default)]
+    /// The argv template: fixed flags and typed placeholders (`{packages}`, `{file}`), passed without shell interpretation; required, `[]` when the program takes none.
+    // frob:ticket 01M3ZX7VJE22Y68R184Y9WQC2N
+    #[serde(default = "missing_template")]
     pub args: Vec<String>,
     /// Wall-clock limit in seconds before the tool is killed.
     #[serde(default = "default_tool_timeout")]
@@ -119,6 +120,49 @@ pub struct ToolStage {
     /// What the `{packages}` argument token expands to outside a `--ticket` run (default `--workspace`); in a `--ticket` run it becomes `-p <name>` for each affected cargo package.
     #[serde(default = "default_unscoped_packages")]
     pub unscoped_packages: Vec<String>,
+}
+
+/// Sentinel `args` of a stage that declared no template; [`ToolStage::validate`] refuses it by name.
+pub(crate) const MISSING_TEMPLATE: &str = "\u{0}missing-argv-template";
+
+fn missing_template() -> Vec<String> {
+    vec![MISSING_TEMPLATE.to_owned()]
+}
+
+/// The argument token a stage uses to ask for one tracked file, rendered as `./path`.
+pub(crate) const FILE_TOKEN: &str = "{file}";
+
+impl ToolStage {
+    /// Refuse a stage that is not an argv template: a shell string or odd program name, or no declared `args`.
+    ///
+    /// # Errors
+    ///
+    /// [`ConfigError::Invalid`] for `[check.tool]` naming the stage and the defect.
+    // frob:ticket 01M3ZX7VJE22Y68R184Y9WQC2N
+    pub fn validate(&self) -> Result<(), ConfigError> {
+        let bad = |why: &str| {
+            tracing::warn!(stage = %self.name, why, "CFG tool stage refused");
+            Err(ConfigError::Invalid {
+                table: "check.tool".to_owned(),
+                message: format!("stage `{}`: {why}", self.name),
+            })
+        };
+        let c = &self.command;
+        if c.is_empty() {
+            return bad("`command` is empty");
+        }
+        if c.chars().any(|ch| {
+            ch.is_whitespace() || "/\\;|&$<>(){}*?`\"'!~=".contains(ch) || ch.is_control()
+        }) {
+            return bad(
+                "`command` must be one program name, not a shell string or path; put flags in `args`",
+            );
+        }
+        if self.args.iter().any(|a| a == MISSING_TEMPLATE) {
+            return bad("no `args` argv template declared (use `args = []` for none)");
+        }
+        Ok(())
+    }
 }
 
 fn default_unscoped_packages() -> Vec<String> {
@@ -197,7 +241,9 @@ impl CheckTable {
     ///
     /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
     pub fn load(root: &Path, product: &str) -> Result<Self, ConfigError> {
-        Ok(gob_config::load::<Self>(root, product)?.value)
+        let table = gob_config::load::<Self>(root, product)?.value;
+        table.tool.iter().try_for_each(ToolStage::validate)?;
+        Ok(table)
     }
 }
 
