@@ -547,6 +547,53 @@ impl TokenSet {
         Ok(Self { tokens: b.tokens })
     }
 
+    /// Build a set from already-formed tokens, rejecting a repeated name.
+    ///
+    /// # Errors
+    ///
+    /// [`TokenError::Collision`] naming both origins when two tokens share a name.
+    pub fn from_tokens(tokens: impl IntoIterator<Item = Token>) -> Result<Self, TokenError> {
+        let mut b = Builder {
+            tokens: IndexMap::new(),
+        };
+        for token in tokens {
+            b.push(token)?;
+        }
+        tracing::debug!(count = b.tokens.len(), "token set built from tokens");
+        Ok(Self { tokens: b.tokens })
+    }
+
+    /// Every mode name any token overrides, in first-seen order.
+    pub fn mode_names(&self) -> Vec<&str> {
+        let mut names: Vec<&str> = Vec::new();
+        for token in self.tokens.values() {
+            for mode in token.modes.keys() {
+                if !names.contains(&mode.as_str()) {
+                    names.push(mode);
+                }
+            }
+        }
+        names
+    }
+
+    /// The value of `name` in `mode` (`None` for the default), following aliases; `None` when the
+    /// token is unknown or an alias chain is broken or cyclic.
+    pub fn resolve(&self, name: &str, mode: Option<&str>) -> Option<&TokenValue> {
+        let mut current = name;
+        for _ in 0..=self.tokens.len() {
+            let token = self.tokens.get(current)?;
+            let value = mode
+                .and_then(|m| token.modes.get(m))
+                .unwrap_or(&token.value);
+            match value {
+                TokenValue::Alias(target) => current = target,
+                other => return Some(other),
+            }
+        }
+        tracing::debug!(name, "alias cycle while resolving");
+        None
+    }
+
     /// The number of tokens.
     pub fn len(&self) -> usize {
         self.tokens.len()
