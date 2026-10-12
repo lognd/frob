@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-12T01:13:14Z"
+digest = "c1590ec9264ced7479298098fc4093c39855a16e2302f89465b29503fd46bfb4"
+exit_code = 0
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized] target(s) in 9.84s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 103c3f91-3518-4fd0-bba7-2978d6b6f815 with nextest profile: default
+    Starting 1 test across 23 binaries (207 tests skipped)
+        PASS [   0.033s] gob-plan::codegen generation_is_byte_identical_and_matches_the_checked_in_module
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.036s] 1 test run: 1 passed, 207 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=generation_is_byte_identical_and_matches_the_checked_in_module)'"
+size = 622
+status = "measured"
+tests = ["generation_is_byte_identical_and_matches_the_checked_in_module"]
+at = "2026-10-12T01:13:14Z"
+actor = "lognd"
+rev = 1

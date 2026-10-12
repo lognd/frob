@@ -5,6 +5,8 @@
 
 pub mod catalog;
 pub mod check;
+// frob:ticket 01M3ZX7HGX4HXKW1X8VKHW9BKW
+pub mod codegen;
 pub mod examples;
 pub mod exec;
 pub mod grl;
