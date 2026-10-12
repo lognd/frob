@@ -2,13 +2,13 @@
 id = "01M4D90ZDHTSR1JX06Z17FNR3C"
 title = "Python profile: ruff JSON parser, id map and frob init stage template"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:10:39Z"
-updated = "2026-10-08T08:10:39Z"
+updated = "2026-10-12T17:48:35Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**"]
 
 [[acceptance]]
