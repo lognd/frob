@@ -2,7 +2,8 @@
 id = "01M4DPJNTFFE5HSKBKX764TEH2"
 title = "crunk docs: [layers] in config.md (generator skips it), crunk-tokens and crunk-ingest pages, rule pages rendered from #[rule]"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
