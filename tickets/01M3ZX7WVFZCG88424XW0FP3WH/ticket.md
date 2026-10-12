@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:35Z"
-updated = "2026-10-12T21:42:54Z"
+updated = "2026-10-12T21:45:51Z"
 idempotency_key = "m2-sec-plan-caps"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-plan/src/limits.rs", "crates/gob-plan/src/lib.rs"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a regex over the size limit, when a pack is loaded, then it is rejected at load with a located error"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.5 (resource caps).

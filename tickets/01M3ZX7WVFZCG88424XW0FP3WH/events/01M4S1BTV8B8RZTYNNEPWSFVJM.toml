@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-12T21:45:51Z"
+digest = "18b8119f328945f91c2bd05f97aa52ad7997061ac7b4027576663c2be6c7bc7b"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 51408ef7-69ec-46ef-bcb4-babda8fa4df2 with nextest profile: default
+    Starting 1 test across 337 binaries (2961 tests skipped)
+        PASS [   0.032s] gob-plan limits::tests::oversized_regex_is_rejected_with_location
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.170s] 1 test run: 1 passed, 2961 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "oversized_regex_is_rejected_with_location"
+size = 899
+status = "measured"
+test_count = 1
+tests_digest = "794bf64c53ec01e8a7539d965b51c2d2d9c8cc599da655c3f72ff993be18939d"
+at = "2026-10-12T21:45:51Z"
+actor = "lognd"
+rev = 1
