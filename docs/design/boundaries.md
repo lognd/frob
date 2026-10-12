@@ -74,6 +74,7 @@ Every capability named in the other design files and the v1 inventories.
 | gob-serve | MCP and HTTP transport plumbing on tokio (rmcp setup, JSON envelope over HTTP, SSE, token and Origin checks) | tools and routes stay per product |
 | gob-mdtest | markdown corpus harness over datatest-stable | rule tests in every product |
 | gob-check | the product-neutral check pipeline: snapshot core, file and repo rule caches, `--only` with known sibling families, exception application, render (milestone 2, ticket G06; grimble-model.md 9.7) | `frob check` and `grimble check` run one pipeline |
+| gob-plan | the GRL lexer, parser and printer, catalog checks, the plan format (IR, codec, validator), the plan executor and codegen (plugins.md section 10, grl-spec.md) | frob, grimble and crunk run one rule language |
 | gob-pattern | the pattern engine for declarative rules: ast-grep shape at grammar level and over U roles (milestone 2, ticket G17, blocked by the `Doc`-over-U spike of rules.md section 3) | GPOL and NEAT-style rule files in every product |
 | gob-dev | the `cargo dev` binary (never shipped): `cargo dev gen` for every product (rule docs, CLI docs, schemas, config docs, TS types; it calls frob-release for the changelog), repo-internal rules (PROC, dependency layering) | one generator |
 

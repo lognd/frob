@@ -166,7 +166,7 @@ That is the whole loop: paste, read, test, refine, run, ask why. Section
   `[A-Z]+[0-9]{3}`; kinds and relations are lowercase words from the
   catalog (section 6), multi-word relations are written with spaces
   (`resolves to`, `owned by`).
-- Strings: `"..."` with `\"`, `\\` and `\n`. Interpolation `{expr}`
+- Strings: `"..."` with `\"`, `\\`, `\n`, `\{` and `\}`. Interpolation `{expr}`
   exists only in message positions: `report` and `note` text, `fix`
   replacement text, `unresolved ... because` reasons and `explain`. There
   `\{` and `\}` write literal braces. In every other position (globs,
@@ -194,6 +194,10 @@ That is the whole loop: paste, read, test, refine, run, ask why. Section
   the quotes.
 - Numbers: integers, decimals for knobs and ratios.
 - Regex: `/.../` with flags `i`, `m`; Rust regex syntax, size-limited.
+  A regex literal is ASCII-only (write other characters as `\uXXXX`
+  escapes) and cannot span lines. A generic type argument list directly
+  followed by an equals sign needs a space before it: write `list<T> =`,
+  never `list<T>=`.
 
 ## 4. The twenty constructs
 
