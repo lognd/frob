@@ -2,13 +2,13 @@
 id = "01M3ZX7E5VPTH8J16D5APQDEAP"
 title = "GRL snippets over gob-pattern: GRL002, as KIND, as roles, GRL006-GRL008"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-12T00:09:14Z"
+updated = "2026-10-12T00:09:19Z"
 idempotency_key = "m2-grl-snippets"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/check/snippets.rs", "crates/gob-plan/src/grl/snippet.rs", "crates/gob-plan/src/check/mod.rs", "crates/gob-plan/tests/grl_errors/main.rs", "crates/gob-plan/src/check/render.rs", "docs/design/grl-spec.md"]
