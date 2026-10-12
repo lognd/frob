@@ -2,7 +2,8 @@
 id = "01M4D90ZDHTSR1JX06Z17FNR3C"
 title = "Python profile: ruff JSON parser, id map and frob init stage template"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
