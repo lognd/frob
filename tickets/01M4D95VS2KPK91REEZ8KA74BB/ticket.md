@@ -8,8 +8,8 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T08:13:19Z"
-updated = "2026-10-12T00:44:03Z"
-scope = ["changelog.d/**", "crates/gob-check/**", "crates/crunk-check/**"]
+updated = "2026-10-12T00:47:34Z"
+scope = ["changelog.d/**", "crates/gob-check/**", "crates/crunk-check/**", "docs/reference/tool-stages.md", "docs/schemas/**"]
 
 [[acceptance]]
 text = "Given stylelint --formatter json output, when crunk check runs the stage, then findings carry crunk ids and declaration-no-important is Advisory"
