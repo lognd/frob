@@ -2,11 +2,12 @@
 id = "01M4R2ZJWN3YZ4PFW5D2KE6PZP"
 title = "docs: tool-stages.md documents parser = cargo-json and sarif"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-12T12:56:41Z"
-updated = "2026-10-12T18:13:20Z"
+updated = "2026-10-12T18:17:25Z"
 scope = ["docs/reference/tool-stages.md"]
 +++
 

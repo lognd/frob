@@ -1,0 +1,10 @@
+kind = "evidence"
+captured_at = "2026-10-12T18:22:19Z"
+digest = "737e2a424145adabf22233af87b9be7b2bff4bdd5146f23d397084c49698985c"
+provider = "file"
+ref = "docs/reference/tool-stages.md"
+size = 5198
+status = "measured"
+at = "2026-10-12T18:22:19Z"
+actor = "lognd"
+rev = 1
