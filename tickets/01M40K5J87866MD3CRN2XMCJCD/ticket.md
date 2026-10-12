@@ -8,14 +8,14 @@ points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T09:57:47Z"
-updated = "2026-10-12T02:19:33Z"
+updated = "2026-10-12T02:19:55Z"
 idempotency_key = "m2-cli-no-config-doc"
 labels = ["milestone:2", "good-first"]
 scope = ["docs/design/cli.md"]
 
 [[acceptance]]
 text = "Given cli.md, when read, then E-NO-CONFIG and the config-free verbs are listed"
-bound = false
+bound = true
 +++
 
 Follow-up of ~ANDZXZ4.
