@@ -2,7 +2,8 @@
 id = "01M4D6NSC2DP2P09F4QTR723S3"
 title = "frob lease release: give up a finished-but-unlanded ticket's lease without requeue"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
