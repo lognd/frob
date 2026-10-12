@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-12T21:16:24Z"
+updated = "2026-10-12T21:16:25Z"
 idempotency_key = "m2-mirror2-job"
 labels = ["milestone:2", "area:mirror"]
 scope = [".github/workflows/mirror.yml"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the workflow's triggers, when inspected by a test, then they are exactly schedule, workflow_dispatch and repository_dispatch"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a run from a ref other than the default branch, when the guard step runs, then it fails before the environment is requested"
