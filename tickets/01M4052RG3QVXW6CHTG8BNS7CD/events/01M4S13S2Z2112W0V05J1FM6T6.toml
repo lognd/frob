@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-12T21:43:12Z"
+digest = "a7bae490a4ebca211af7012deddfcfd85a6700195b3eb693ff91e4e73620a71a"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.68s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 385cb390-a677-4b5e-9449-26c58fb04856 with nextest profile: default
+    Starting 1 test across 338 binaries (2962 tests skipped)
+        PASS [   0.009s] frob-mirror keyring::tests::rotation_is_budgeted_across_runs
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.026s] 1 test run: 1 passed, 2962 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "rotation_is_budgeted"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "fc57bffc3f1c00a4f5db9638edf53cb0a00848e10733935f275204a2febc74ae"
+at = "2026-10-12T21:43:12Z"
+actor = "lognd"
+rev = 1
