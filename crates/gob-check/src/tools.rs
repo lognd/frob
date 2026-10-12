@@ -333,6 +333,8 @@ fn normal_exits(parser: ToolParser) -> &'static [i32] {
         ToolParser::None => &[0],
         ToolParser::ZizmorJsonV1 => &[0, 10, 11, 12, 13, 14],
         ToolParser::ActionlintJson => &[0, 1],
+        // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
+        ToolParser::StylelintJson => &[0, 2],
     }
 }
 
