@@ -14,7 +14,7 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | `args` | `[]` | Arguments, no shell. |
 | `timeout_secs` | `300` | Kill limit. |
 | `fail_on_nonzero` | `true` | A failing stage is `TOOL001` (Error); a missing binary is `TOOL001` Unresolved and required. |
-| `parser` | `none` | `zizmor-json-v1`, `actionlint-json` or `stylelint-json`: turn stdout into findings. |
+| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif` or `cargo-json`: turn stdout into findings. |
 | `labels` | `[]` | actionlint runner labels the repository defines. |
 | `id_map` | `{}` | Tool finding id to rule id, merged over the parser default. |
 | `min_version`, `max_version` | unset | Inclusive dotted-number range of trusted tool versions. |
@@ -23,7 +23,7 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 
 ## Parsed stages
 
-With a `parser` the stage exit status no longer decides: tools exit nonzero when they have findings, so only a signal, a timeout or unparseable stdout is a stage failure (`TOOL001`). Findings carry the file and span the tool printed (zizmor byte offsets, actionlint and stylelint line and column), so `frob:accept` applies to them like native findings (a file whose language frob scans for directives; YAML is not yet one).
+With a `parser` the stage exit status no longer decides: tools exit nonzero when they have findings, so only a signal, a timeout or unparseable stdout is a stage failure (`TOOL001`). Findings carry the file and span the tool printed (zizmor and cargo byte offsets, actionlint and stylelint line and column, SARIF regions), so `frob:accept` applies to them like native findings (a file whose language frob scans for directives; YAML is not yet one).
 
 | Parser | Tool id | Rule | Severity |
 |---|---|---|---|
@@ -38,6 +38,13 @@ With a `parser` the stage exit status no longer decides: tools exit nonzero when
 | stylelint | `selector-max-id` | `WCSS002` | Advisory |
 | stylelint | `declaration-no-important` | `WCSS003` | Advisory |
 | stylelint | any other id | `TOOL002` | Advisory |
+| sarif | any id (the stage `id_map` names the rule) | `TOOL002` | Advisory |
+| cargo-json | `unused_*`, `dead_code` | `DEAD001` | rustc level |
+| cargo-json | `too_many_arguments` | `NEAT002` | rustc level |
+| cargo-json | clippy correctness lint (deny-by-default) | `LOGIC001` | rustc level |
+| cargo-json | any other lint, or a code-less rustc error | `LINT001` | rustc level |
+
+The cargo-json severity is the rustc level: `error` is Error, `warning` is Warn. Summary lines (`aborting due to`, `warnings emitted`) are not findings; build artifacts and other non-diagnostic lines are skipped. A diagnostic repeated for each cargo target is reported once per site.
 
 stylelint runs as `stylelint --formatter json` (exit 2 for lint errors is a normal exit; the stage exit status does not decide). `crunk check` reads `[[check.tool]]` from `crunk.toml`, so the same stage binds under the crunk ids.
 
