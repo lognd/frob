@@ -2,11 +2,11 @@
 id = "01M4RN89XGXSXMSF2HV2FPSG41"
 title = "crunk binary installs the gob-git content backend at startup (follow-up of NF2ZMQG)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-12T18:16:01Z"
-updated = "2026-10-12T18:16:01Z"
+updated = "2026-10-12T20:36:32Z"
 scope = ["crates/crunk/Cargo.toml", "crates/crunk/src/main.rs"]
 +++
 
