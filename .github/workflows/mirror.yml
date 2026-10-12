@@ -1,0 +1,58 @@
+name: mirror
+
+# Tracker mirror job (docs/design/mirror.md section 3.1, security.md 2.11). Defined only on the
+# default branch. schedule, workflow_dispatch and repository_dispatch always run the default
+# branch's copy of this file; a push or ticket-branch trigger would run the copy a ledger writer
+# can edit, so none is allowed here. The credentials live in the `mirror` environment, whose
+# deployment branches are restricted to the default branch.
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [ledger-changed]
+
+permissions: {}
+
+# One writer: runs queue and are never cancelled mid-push.
+concurrency:
+  group: mirror
+  cancel-in-progress: false
+
+jobs:
+  # Fails a run from any ref but the default branch BEFORE the environment (and its credentials)
+  # is requested: the environment is a property of the `mirror` job, which needs this one.
+  guard:
+    name: guard (default branch only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Require the default branch
+        shell: bash
+        env:
+          REF: ${{ github.ref }}
+          DEFAULT_REF: refs/heads/${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$REF" != "$DEFAULT_REF" ]; then
+            echo "refusing to run from $REF; the mirror runs only from $DEFAULT_REF" >&2
+            exit 1
+          fi
+
+  mirror:
+    name: mirror
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: mirror
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      # The push step (`frob mirror push`) lands with its own ticket (~D08W4A6).
+      - name: Placeholder until frob mirror push exists
+        shell: bash
+        run: echo "mirror job reached from the default branch"
