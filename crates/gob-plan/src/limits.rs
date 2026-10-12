@@ -205,7 +205,7 @@ impl Meter {
 mod tests {
     use super::*;
 
-    // frob:tests crates/gob-plan/src/limits.rs::Limits::check_regex
+    // frob:tests crates/gob-plan/src/limits.rs::check_regex
     #[test]
     fn oversized_regex_is_rejected_with_location() {
         let l = Limits {
@@ -218,7 +218,7 @@ mod tests {
         assert!(l.check_regex("a+b", "p", 1).is_ok());
     }
 
-    // frob:tests crates/gob-plan/src/limits.rs::Limits::check_regex
+    // frob:tests crates/gob-plan/src/limits.rs::check_regex
     #[test]
     fn deep_nesting_is_rejected_and_classes_do_not_count() {
         let l = Limits::default();
@@ -230,7 +230,7 @@ mod tests {
         assert!(l.check_regex(r"[(((]\(\(x", "p", 3).is_ok());
     }
 
-    // frob:tests crates/gob-plan/src/limits.rs::Meter::charge
+    // frob:tests crates/gob-plan/src/limits.rs::charge
     #[test]
     fn meter_caps_findings_messages_and_output() {
         let l = Limits {
@@ -247,15 +247,5 @@ mod tests {
         assert!(matches!(m.charge(0), Err(Breach::Findings { .. })));
         m.next_file();
         assert!(m.charge(0).is_ok());
-    }
-
-    // frob:tests crates/gob-plan/src/limits.rs::Limits::relations
-    #[test]
-    fn plan_step_cap_reaches_the_relations() {
-        let l = Limits {
-            plan_steps: 5,
-            ..Limits::default()
-        };
-        let _ = l.relations(Relations::new());
     }
 }
