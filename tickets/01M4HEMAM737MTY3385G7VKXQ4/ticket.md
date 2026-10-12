@@ -2,7 +2,8 @@
 id = "01M4HEMAM737MTY3385G7VKXQ4"
 title = "Repo packs declare detectors (callee vocabularies per language) so CAP001/CAP002 enforce pack atoms; an atom with no detector for a language is reported Unresolved once per node, never silently unenforced"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
