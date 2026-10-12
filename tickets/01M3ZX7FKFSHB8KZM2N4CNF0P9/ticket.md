@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:22Z"
-updated = "2026-10-12T20:38:55Z"
+updated = "2026-10-12T20:44:32Z"
 idempotency_key = "m2-packs-registry-provenance"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/gob-rules/src/registry.rs", "crates/gob-rules/src/meta.rs"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given `[rules]` severity and disable settings, when applied, then a std rule and a plugin rule obey them identically"
-bound = false
+bound = true
 +++
 
 Implements plugins.md sections 6.1 and 10.
