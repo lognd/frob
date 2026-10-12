@@ -8,8 +8,8 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T12:07:30Z"
-updated = "2026-10-12T01:05:00Z"
-scope = ["changelog.d/**", "crates/gob-dev/**", "docs/crunk/**"]
+updated = "2026-10-12T01:07:09Z"
+scope = ["changelog.d/**", "crates/gob-dev/**", "docs/crunk/**", "crates/crunk-spec/**", "crates/crunk-rules/**", "crates/crunk-check/**"]
 
 [[acceptance]]
 text = "Given cargo dev gen, when run, then config.md lists [layers] and docs/crunk/rules pages are generated (GEN001)"
