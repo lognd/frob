@@ -2,7 +2,8 @@
 id = "01M4D8Y28W7XK0H2F3EWAZA1EH"
 title = "gob-check: SARIF 2.1.0 tool parser with a per-tool id map and source_rule"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
