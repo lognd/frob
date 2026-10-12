@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:23Z"
-updated = "2026-10-12T00:32:40Z"
+updated = "2026-10-12T00:34:22Z"
 idempotency_key = "m2-grl-why"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/why/**", "crates/gob-plan/src/verbs/why.rs"]
+scope = ["crates/gob-plan/src/why/**", "crates/gob-plan/src/verbs/why.rs", "crates/gob-plan/src/lib.rs", "crates/gob-plan/src/verbs/mod.rs", "crates/gob-plan/tests/why.rs", "docs/design/grl-spec.md"]
 
 [[links]]
 kind = "blocked-by"
