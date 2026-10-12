@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-12T01:07:24Z"
+updated = "2026-10-12T01:07:37Z"
 idempotency_key = "m2-codegen-core"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/codegen/**"]
+scope = ["crates/gob-plan/src/codegen/**", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/codegen.rs", "crates/gob-plan/tests/codegen/**"]
 
 [[links]]
 kind = "blocked-by"
