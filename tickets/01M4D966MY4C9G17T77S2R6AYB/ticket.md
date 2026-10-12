@@ -2,13 +2,13 @@
 id = "01M4D966MY4C9G17T77S2R6AYB"
 title = "Apply the lint-catalogue-2026-10-08 design changes to rules, boundaries, neatness, cohesion, crunk, dotnet-unity, universal-model, plugins, rule-authoring and lint-requirements"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M4CXTDZGE80G5TWDCWY08EWT"
 reporter = "lognd"
 created = "2026-10-08T08:13:21Z"
-updated = "2026-10-08T08:13:21Z"
+updated = "2026-10-12T18:12:28Z"
 scope = ["changelog.d/**", "docs/design/**", "notes/research/**"]
 
 [[acceptance]]
