@@ -659,8 +659,7 @@ fn report_no_detector(
     cx: &Cx<'_>,
     e: &crate::model::Entity,
     atoms: &[String],
-    in_scope: &dyn Fn(&str) -> bool,
-    files: &BTreeSet<&str>,
+    files: &[&str],
     reported: &mut BTreeSet<(String, String)>,
     site: Option<(&str, (usize, usize))>,
     out: &mut Output,
@@ -670,7 +669,7 @@ fn report_no_detector(
         .filter(|a| is_pack_atom(cx.packs, a) && !is_pack_parent(cx.packs, a))
     {
         let mut no_detector: BTreeSet<&str> = BTreeSet::new();
-        for f in files.iter().filter(|f| in_scope(f)) {
+        for f in files {
             let Some(lang) = cx.code.file(f).map(|c| c.language.as_str()) else {
                 continue;
             };
@@ -743,16 +742,8 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
                 g.at.as_ref()
                     .is_none_or(|sel| select_files(sel, &cx.code.walk).iter().any(|m| m.path == f))
             };
-            report_no_detector(
-                cx,
-                e,
-                &atoms,
-                &|f| in_scope(f),
-                &files,
-                &mut reported,
-                site,
-                out,
-            );
+            let scoped: Vec<&str> = files.iter().copied().filter(|f| in_scope(f)).collect();
+            report_no_detector(cx, e, &atoms, &scoped, &mut reported, site, out);
             let observed = [&uses.lo, &uses.hi].iter().any(|by_node| {
                 by_node.get(&e.anchor).is_some_and(|us| {
                     us.iter()
