@@ -2,13 +2,13 @@
 id = "01M4CXTM00NW239ZXVZJ9V1JDE"
 title = "Synthesis: evidence-weighted lint catalogue and new rule tickets from the study"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4CXTDZGE80G5TWDCWY08EWT"
 reporter = "lognd"
 created = "2026-10-08T04:54:56Z"
-updated = "2026-10-08T04:54:56Z"
+updated = "2026-10-12T21:58:51Z"
 scope = ["changelog.d/**", "notes/research/**", "docs/design/rules.md"]
 
 [[acceptance]]
