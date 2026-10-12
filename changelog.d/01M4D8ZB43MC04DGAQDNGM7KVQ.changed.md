@@ -1,0 +1,1 @@
+frob: `[[check.tool]]` stages accept `parser = "cargo-json"`: rustc and clippy diagnostics from `--message-format=json` become findings (`unused_*` to `DEAD001`, `too_many_arguments` to `NEAT002`, deny-by-default clippy lints to `LOGIC001`, the rest `LINT001`), each keeping its lint name as `source_rule`; the repository clippy stage now uses it.

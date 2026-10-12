@@ -8,7 +8,7 @@
 
 use serde::Deserialize;
 
-use crate::tool_parse::{ParseError, RawFinding, RawRange, RawSuppression};
+use crate::tool_parse::{ParseError, RawFinding, RawMeta, RawRange, RawSuppression};
 
 #[derive(Deserialize)]
 struct Log {
@@ -227,6 +227,7 @@ pub(crate) fn parse_sarif(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
                 tool_id,
                 message: r.message.text.or(r.message.markdown).unwrap_or_default(),
                 suppressed: suppression_of(&r.suppressions),
+                meta: RawMeta::default(),
             });
         }
     }

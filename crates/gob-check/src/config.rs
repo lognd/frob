@@ -62,6 +62,9 @@ pub enum ToolParser {
     /// SARIF 2.1.0 on stdout (oxlint, Biome, golangci-lint, Roslyn, the eslint SARIF formatter); ids come from the stage `id_map`.
     #[serde(rename = "sarif")]
     Sarif,
+    /// `cargo ... --message-format=json`: rustc and clippy diagnostics with byte spans; lint names map to `DEAD001`, `NEAT002`, `LOGIC001` or `LINT001`.
+    #[serde(rename = "cargo-json")]
+    CargoJson,
     /// stylelint `--formatter json`: an array of files with line and column warnings.
     // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
     #[serde(rename = "stylelint-json")]

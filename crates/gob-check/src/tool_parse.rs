@@ -38,6 +38,17 @@ pub(crate) struct RawSuppression {
     pub justification: String,
 }
 
+/// Parser-specific facts that steer the rule id and severity of a [`RawFinding`].
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct RawMeta {
+    /// The lint group the tool reports for the finding (`correctness` for deny-by-default clippy lints).
+    #[serde(default)]
+    pub group: Option<String>,
+    /// The tool's own level (`warning`, `error`).
+    #[serde(default)]
+    pub level: Option<String>,
+}
+
 /// One tool finding before it becomes a frob [`gob_rules::Finding`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct RawFinding {
@@ -51,6 +62,9 @@ pub(crate) struct RawFinding {
     pub message: String,
     /// Set when the tool reported the result as suppressed; such a result is not a finding (EXC017 reads it).
     pub suppressed: Option<RawSuppression>,
+    /// Extra facts a parser hands to `classify` (cargo diagnostics: clippy group and level).
+    #[serde(default)]
+    pub meta: RawMeta,
 }
 
 /// Why a tool's output could not be read.
@@ -165,6 +179,7 @@ pub(crate) fn parse(parser: ToolParser, stdout: &str) -> Result<Vec<RawFinding>,
         ToolParser::ZizmorJsonV1 => parse_zizmor(stdout),
         ToolParser::ActionlintJson => parse_actionlint(stdout),
         ToolParser::Sarif => crate::sarif::parse_sarif(stdout),
+        ToolParser::CargoJson => crate::cargo_json::parse_cargo_json(stdout),
         ToolParser::StylelintJson => parse_stylelint(stdout),
     }
 }
@@ -211,6 +226,7 @@ fn parse_zizmor(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
             tool_id: f.ident,
             message,
             suppressed: None,
+            meta: RawMeta::default(),
         });
     }
     Ok(out)
@@ -239,6 +255,7 @@ fn parse_actionlint(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
             tool_id: f.kind,
             message: f.message,
             suppressed: None,
+            meta: RawMeta::default(),
         })
         .collect())
 }
@@ -274,6 +291,7 @@ fn parse_stylelint(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
                 tool_id: w.rule,
                 message: w.text,
                 suppressed: None,
+                meta: RawMeta::default(),
             });
         }
     }
@@ -299,7 +317,10 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
             ("selector-max-id", "WCSS002"),
             ("declaration-no-important", "WCSS003"),
         ]),
-        ToolParser::ActionlintJson | ToolParser::Sarif | ToolParser::None => BTreeMap::new(),
+        ToolParser::ActionlintJson
+        | ToolParser::Sarif
+        | ToolParser::CargoJson
+        | ToolParser::None => BTreeMap::new(),
     }
 }
 
@@ -307,7 +328,26 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
 fn fallback(parser: ToolParser) -> &'static str {
     match parser {
         ToolParser::ActionlintJson => "CI014",
+        ToolParser::CargoJson => "LINT001",
         _ => "TOOL002",
+    }
+}
+
+/// The built-in rule for a cargo diagnostic the id map does not name, by lint shape.
+///
+/// `unused_*` and `dead_code` are dead code, `too_many_arguments` is the
+/// parameter-count rule and a deny-by-default clippy lint (the correctness
+/// group) is a logic finding; anything else stays a generic lint.
+fn cargo_target(raw: &RawFinding) -> Option<&'static str> {
+    let name = raw.tool_id.rsplit("::").next().unwrap_or(&raw.tool_id);
+    if raw.meta.group.as_deref() == Some("correctness") {
+        Some("LOGIC001")
+    } else if name.starts_with("unused") || name == "dead_code" {
+        Some("DEAD001")
+    } else if name == "too_many_arguments" {
+        Some("NEAT002")
+    } else {
+        None
     }
 }
 
@@ -346,6 +386,11 @@ pub(crate) fn classify(stage: &ToolStage, raw: &RawFinding) -> Option<(RuleId, S
         .get(&raw.tool_id)
         .map(String::as_str)
         .or_else(|| defaults.get(raw.tool_id.as_str()).copied())
+        .or_else(|| {
+            (stage.parser == ToolParser::CargoJson)
+                .then(|| cargo_target(raw))
+                .flatten()
+        })
         .unwrap_or_else(|| fallback(stage.parser));
     let id = target.parse::<RuleId>().unwrap_or_else(|err| {
         tracing::warn!(stage = %stage.name, tool_id = %raw.tool_id, %err, "bad id_map target; using the fallback");
@@ -353,6 +398,13 @@ pub(crate) fn classify(stage: &ToolStage, raw: &RawFinding) -> Option<(RuleId, S
             .parse()
             .unwrap_or_else(|e| unreachable!("fallback ids are valid: {e}"))
     });
+    if stage.parser == ToolParser::CargoJson {
+        // rustc's level is the lint's configured severity (`-D warnings` makes it an error).
+        severity_override = Some(match raw.meta.level.as_deref() {
+            Some("error") => Severity::Error,
+            _ => Severity::Warn,
+        });
+    }
     let severity = severity_override.unwrap_or_else(|| default_severity(id.as_str()));
     Some((id, severity))
 }
@@ -449,7 +501,7 @@ pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
     match parser {
         ToolParser::ZizmorJsonV1 | ToolParser::StylelintJson => Some(vec!["--version".to_owned()]),
         ToolParser::ActionlintJson => Some(vec!["-version".to_owned()]),
-        ToolParser::Sarif | ToolParser::None => None,
+        ToolParser::Sarif | ToolParser::CargoJson | ToolParser::None => None,
     }
 }
 
@@ -673,6 +725,41 @@ mod tests {
         assert_eq!(
             classify(&mapped, &found[2]).map(|c| c.0.to_string()),
             Some("WCSS009".to_owned()),
+            "a configured id_map entry wins"
+        );
+    }
+
+    // frob:tests crates/gob-check/src/tool_parse.rs::classify
+    #[test]
+    fn cargo_lints_map_to_dead_neat_logic_and_lint_with_the_level_as_severity() {
+        let st = stage(ToolParser::CargoJson);
+        let found = parse(
+            ToolParser::CargoJson,
+            include_str!("../tests/fixtures/cargo-clippy.jsonl"),
+        )
+        .expect("parse");
+        let got: Vec<(String, Severity)> = found
+            .iter()
+            .filter_map(|f| classify(&st, f))
+            .map(|(id, sev)| (id.to_string(), sev))
+            .collect();
+        assert_eq!(
+            got,
+            [
+                ("DEAD001".to_owned(), Severity::Warn),
+                ("NEAT002".to_owned(), Severity::Error),
+                ("LOGIC001".to_owned(), Severity::Error),
+                ("LINT001".to_owned(), Severity::Error),
+                ("LINT001".to_owned(), Severity::Error),
+            ]
+        );
+        let mut mapped = stage(ToolParser::CargoJson);
+        mapped
+            .id_map
+            .insert("clippy::needless_return".to_owned(), "NEAT013".to_owned());
+        assert_eq!(
+            classify(&mapped, &found[3]).map(|c| c.0.to_string()),
+            Some("NEAT013".to_owned()),
             "a configured id_map entry wins"
         );
     }
