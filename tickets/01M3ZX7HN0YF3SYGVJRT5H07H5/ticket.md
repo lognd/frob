@@ -2,13 +2,13 @@
 id = "01M3ZX7HN0YF3SYGVJRT5H07H5"
 title = "cargo dev gen rules: std GRL to generated Rust, GEN001, no ambient effects"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-06T13:56:21Z"
+updated = "2026-10-12T01:17:20Z"
 idempotency_key = "m2-codegen-gen"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-dev/src/**", "packs/std/**"]
