@@ -8,12 +8,12 @@ points = 2
 parent = "01M4CXTDZGE80G5TWDCWY08EWT"
 reporter = "lognd"
 created = "2026-10-08T08:13:21Z"
-updated = "2026-10-12T18:17:17Z"
+updated = "2026-10-12T18:17:22Z"
 scope = ["changelog.d/**", "docs/design/**", "notes/research/**"]
 
 [[acceptance]]
 text = "Given the change list, when the docs are updated, then each listed section carries the change and frob check reports no DRIFT or SYNC finding"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given boundaries.md 2.5, when read, then every new family has an owner and a crate"
