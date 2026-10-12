@@ -2,11 +2,11 @@
 id = "01M4S28S5N358QCYR9A4XM1NC0"
 title = "frob work links a new ticket worktree's target/ to the shared land-target so a second worktree on the same commit compiles zero workspace crates"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-12T22:03:28Z"
-updated = "2026-10-12T22:03:28Z"
+updated = "2026-10-12T23:39:38Z"
 scope = ["crates/frob-worktree/src/work.rs", "crates/frob-land/src/ratchet.rs"]
 +++
 
