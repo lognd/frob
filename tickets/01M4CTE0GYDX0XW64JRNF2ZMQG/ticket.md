@@ -8,16 +8,16 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:37Z"
-updated = "2026-10-12T18:15:52Z"
+updated = "2026-10-12T18:18:02Z"
 scope = ["changelog.d/**", "crates/gob-walk/**", "crates/gob-git/**", "crates/gob-lock/**", "crates/gob-cache/**", "crates/gob-ir/**", "crates/gob-exec/**", "Cargo.lock", "crates/frob/src/main.rs", "crates/gob-dev/src/main.rs", "crates/gob-dev/tests/layering.rs", "crates/grimble/src/main.rs"]
 
 [[acceptance]]
 text = "Given cargo tree -p gob-walk, gob-ir, gob-symbols and grimble-model, when inspected, then no gix crate appears (test over cargo metadata)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the workspace, when the full suite runs, then it passes"
-bound = false
+bound = true
 +++
 
 notes/review/audit-2026-10-07.md M8. gix (54 crates) sits under gob-ir, gob-symbols, grimble-model and crunk-check and on the critical path of every binary. Also stop gob-walk reading frob.toml (M9 list). Merge with the canonical/common-dir move named in the audit if ~ARHP82G is not started.
