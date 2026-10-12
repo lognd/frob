@@ -26,6 +26,14 @@ The `[jsx]` table: sources to ingest for style props and `className` strings.
 |---|---|---|---|---|
 | `globs` | array of string | no | `[]` | Root-relative globs of `.tsx` and `.jsx` sources; empty means JSX ingest is off. |
 
+## `[layers]`
+
+Named z-index layers (`name = <integer>`); optional, absent means LAYER001 is silent.
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| any other key | integer | no | - | user-named entry |
+
 ## `[lint]`
 
 Per-rule severities (`RULE001 = "error" | "warn" | "off"`), `fix_tolerance` and
@@ -98,6 +106,14 @@ Named colors (`name = "<css color>"`), plus the `[palette.roles]` subtable. Requ
 | `roles` | table | no | `-` | Role name to a `[foreground, background]` palette-name pair, or a `{ pair = [fg, bg], floor = <n> }` table overriding the contrast floor (default 4.5). |
 | any other key | string | no | - | A CSS color literal: hex, rgb(), hsl() or a named color. |
 
+## `[palette.roles]`
+
+Role name to a `[foreground, background]` palette-name pair, or a `{ pair = [fg, bg], floor = <n> }` table overriding the contrast floor (default 4.5).
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| any other key | see schema | no | - | user-named entry |
+
 ## `[[platform]]`
 
 One `[[platform]]` entry: an id, a renderer and that renderer's parameters.
@@ -125,6 +141,14 @@ is rejected at load. Parameters are flat in the entry, not nested.
 | `settle_ms` | integer | no | `-` | web: platform-level settle delay in ms added to the readiness wait (default 500). |
 | `tags` | array of string | no | `[]` | Tags a screen's `applies_to` may reference as `tag:<name>`. |
 | `viewport` | table | no | `-` | A `[[platform]]` web viewport size in CSS pixels. |
+
+## `[platform.env]`
+
+command: extra environment variables.
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| any other key | string | no | - | user-named entry |
 
 ## `[platform.media]`
 
@@ -285,3 +309,12 @@ Allowed font families and weights. Required.
 | `families` | array of string | yes | `-` | Allowed font family names, at least one. |
 | `stacks` | table | no | `{}` | Named font stacks: name to an ordered list of members, each of which must be one of `families` (compared case-insensitively). |
 | `weights` | array of integer | yes | `-` | Allowed font weights, at least one. |
+
+## `[typography.stacks]`
+
+Named font stacks: name to an ordered list of members, each of which must be one of
+`families` (compared case-insensitively).
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| any other key | array of string | no | - | user-named entry |

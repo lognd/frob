@@ -13,3 +13,14 @@ gob_check::product_rules! {
     host = dyn CrunkHost;
     crates = [crunk_rules];
 }
+
+// frob:ticket 01M43ANVJYA7GHN0Y8GX0SN72M
+gob_config::inventory::submit! {
+    gob_config::ArtifactEntry {
+        path: "docs/crunk/rules/README.md",
+        family: gob_config::ArtifactFamily::Config,
+        render: || gob_config::ArtifactBody::Markdown(
+            crunk_rules::registry::render_markdown(RULE_INDEXES),
+        ),
+    }
+}
