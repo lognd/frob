@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:45Z"
-updated = "2026-10-12T01:28:31Z"
+updated = "2026-10-12T01:28:37Z"
 idempotency_key = "m2-nav-gen-front-door"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-ledger/src/gen/readme.rs", "crates/frob-ledger/src/gen/epic.rs", "crates/frob-ledger/src/gen/indexes.rs", "crates/frob-ledger/src/gen/mod.rs", "crates/frob-ledger/tests/gen_epic.rs"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a ticket missing from every epic page, when the cross-check runs, then GEN001 reports it"
-bound = false
+bound = true
 +++
 
 Implements navigation.md sections 3.1 and 3.3.
