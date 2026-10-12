@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-12T21:45:59Z"
+updated = "2026-10-12T21:46:00Z"
 idempotency_key = "m2-mirror2-gh-error-policy"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-gh/src/policy.rs", "crates/frob-gh/src/graphql.rs", "crates/frob-gh/src/lib.rs"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a rate-limited response with no remaining budget, when handled, then the client stops without sleeping and reports the reset time"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given repeated 5xx with budget left and a fake clock, when retried, then waits are 60 s then doubling and the client stops after three retries"
