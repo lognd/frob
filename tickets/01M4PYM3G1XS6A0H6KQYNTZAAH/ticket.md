@@ -12,5 +12,5 @@ scope = ["docs/design/cli.md", "docs/design/universal-model.md", "docs/design/si
 
 [[acceptance]]
 text = "Given the docs that count the required Unresolved cases, when read, then they name five including evaluation_failed"
-bound = false
+bound = true
 +++
