@@ -1,0 +1,149 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-12T12:35:18Z"
+digest = "e2a32640ec310164289691032c6f2cc892377205a12591128ea7279dc6284cba"
+exit_code = 0
+inline = '''
+goway: warning: CROSS-OS: `cargo` is portable, but this run stays on linux hosts
+goway: note:   other-OS hosts that could take it: nova-windows
+goway: note:   allow every OS for this run:      goway run --any-os -- ...
+goway: note:   allow it for this project:        cross_os = true in goway.toml
+goway: note:   silence this hint:                cross_os = false in goway.toml
+goway: note: no helper has disk room for this repository's recorded footprint (about 211.2 GiB; the roomiest, quasar, can free 198.4 GiB); running there anyway. The record may be stale: `goway gc --repo 34f5a9e78cc30b56` forgets it, `--ignore-footprint` skips the check
+goway: note: picked quasar (load 1.81 on 12 cores, 0 goway jobs)
+goway: note: tool versions differ across your hosts: clang 21.1.8 here (major: 10 vs 21) (cached by goway doctor 8h ago; builds may behave differently here)
+goway: note: synced 16412 files (5 sent, 18192674 bytes, 2 deleted)
+goway: note: quasar has 6.9 GiB free: running with 1 of 12 jobs (CARGO_BUILD_JOBS=1, NEXTEST_TEST_THREADS=1, MOLD_JOBS=1, GOWAY_LINK_THREADS=1, estimated peak 3.7 GiB)
+goway: info: running on quasar (x86_64, Quasar) at 100.78.103.214 [cores>=8 (12 cores)]: cargo nextest run --profile ci -p gob-check -p crunk-check
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 40b1d3e1-6a58-43ab-b5a7-ad98254ccc84 with nextest profile: ci
+    Starting 116 tests across 15 binaries
+        PASS [   0.049s] (  1/116) crunk-check::color001 a_failing_role_pair_is_reported_at_the_spec
+        PASS [   0.043s] (  2/116) crunk-check::color001 a_jsx_style_prop_is_ingested_when_jsx_globs_are_set
+        PASS [   0.043s] (  3/116) crunk-check::color001 a_spec_only_project_gets_a_required_unresolved_from_color001
+        PASS [   0.071s] (  4/116) crunk-check::color001 an_undefined_token_with_the_generated_sheet_present_fires_and_without_it_is_unresolved
+        PASS [   0.032s] (  5/116) crunk-check::color001 an_unusable_spec_refuses_the_run_instead_of_passing_it
+        PASS [   0.042s] (  6/116) crunk-check::color001 off_in_lint_silences_the_rule
+        PASS [   0.089s] (  7/116) crunk-check::color001 the_finding_is_located_at_the_literal_and_a_waiver_silences_it
+        PASS [   0.054s] (  8/116) crunk-check::color001 the_message_names_the_nearest_palette_token_and_the_distance
+        PASS [   0.013s] (  9/116) crunk-check::rule_coverage every_crunk_rule_has_a_corpus
+        PASS [   0.035s] ( 10/116) crunk-check::spec_errors a_repository_without_crunk_toml_still_runs
+        PASS [   0.034s] ( 11/116) crunk-check::spec_errors an_unknown_key_in_a_known_table_fails_naming_table_and_key
+        PASS [   0.032s] ( 12/116) crunk-check::spec_errors an_unknown_table_fails_the_load_naming_it
+        PASS [   0.005s] ( 13/116) crunk-check::spec_errors malformed_toml_fails_the_load
+        PASS [   0.036s] ( 14/116) crunk-check::spec_errors v1_shaped_layers_content_fails_the_load
+        PASS [   0.067s] ( 15/116) crunk-check::stylelint a_stylelint_stage_yields_advisory_findings_under_crunk_ids
+        PASS [   0.040s] ( 16/116) crunk-check::telemetry a_crunk_check_leaves_no_state_directory_in_the_worktree
+        PASS [   0.085s] ( 17/116) crunk-check::tokens001 a_stale_tokens_file_is_a_finding_that_lint_can_silence
+        PASS [   0.055s] ( 18/116) crunk-check::tokens001 utilities_are_judged_over_the_collected_tailwind_facts
+        PASS [   0.060s] ( 19/116) crunk-check::waive001 a_leading_waiver_suppresses_the_next_declaration
+        PASS [   0.046s] ( 20/116) crunk-check::waive001 a_waiver_with_a_reason_suppresses_its_rule_only
+        PASS [   0.045s] ( 21/116) crunk-check::waive001 a_waiver_without_a_reason_fires_waive001_and_does_not_suppress
+        PASS [   0.046s] ( 22/116) crunk-check::waive001 findings_from_several_files_are_ordered_by_path_line_rule
+        PASS [   0.090s] ( 23/116) crunk-check::waive001 lint_warn_changes_the_severity_and_off_drops_the_finding
+        PASS [   0.005s] ( 24/116) crunk-check::waive001 the_committed_registry_page_is_fresh
+        PASS [   0.081s] ( 25/116) crunk-check::warm_cache the_second_run_reuses_cached_ingest_and_reports_the_same_findings
+        PASS [   0.004s] ( 26/116) gob-check applicability::tests::languages_outside_the_set_are_not_applicable_with_a_reason
+        PASS [   0.004s] ( 27/116) gob-check applicability::tests::opaque_rows_keep_todays_answers_and_reasons
+        PASS [   0.004s] ( 28/116) gob-check applicability::tests::project_rules_always_examine
+        PASS [   0.003s] ( 29/116) gob-check applicability::tests::symbol_subjects_derive_from_needs
+        PASS [   0.024s] ( 30/116) gob-check fix::tests::a_failed_second_write_restores_the_first_file
+        PASS [   0.012s] ( 31/116) gob-check fix::tests::a_fix_that_breaks_syntax_is_rolled_back_and_not_applied
+        PASS [   0.005s] ( 32/116) gob-check fix::tests::a_line_ending_only_edit_since_the_check_is_refused
+        PASS [   0.012s] ( 33/116) gob-check fix::tests::applies_a_fix_atomically_to_a_fresh_file
+        PASS [   0.004s] ( 34/116) gob-check fix::tests::one_out_of_range_edit_skips_the_whole_fix
+        PASS [   0.005s] ( 35/116) gob-check fix::tests::refuses_a_file_edited_since_the_check_and_writes_nothing
+        PASS [   0.004s] ( 36/116) gob-check packages::tests::a_body_only_change_names_direct_dependents_and_an_api_change_the_closure
+        PASS [   0.004s] ( 37/116) gob-check packages::tests::a_crate_file_affects_its_package_and_reverse_dependencies_only
+        PASS [   0.004s] ( 38/116) gob-check packages::tests::a_workspace_level_file_or_no_packages_means_everything
+        PASS [   0.004s] ( 39/116) gob-check packages::tests::the_public_surface_ignores_bodies_and_sees_signatures_and_variants
+        PASS [   0.029s] ( 40/116) gob-check repo::tests::a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh
+        PASS [   0.051s] ( 41/116) gob-check repo::tests::engines_never_share_a_cached_repo_group
+        PASS [   0.004s] ( 42/116) gob-check required::tests::a_reason_carried_by_the_finding_is_marked
+        PASS [   0.004s] ( 43/116) gob-check required::tests::a_typed_annotation_reason_maps_to_a_required_mark_without_reading_the_message
+        PASS [   0.004s] ( 44/116) gob-check required::tests::a_zero_subject_finding_is_typed_vacuous
+        PASS [   0.004s] ( 45/116) gob-check required::tests::an_annotation_prefix_in_the_message_alone_marks_nothing
+        PASS [   0.004s] ( 46/116) gob-check required::tests::only_an_applicable_rule_with_zero_subjects_is_flagged
+        PASS [   0.004s] ( 47/116) gob-check required::tests::unrelated_unresolved_is_not_marked
+        PASS [   0.004s] ( 48/116) gob-check sarif::tests::biome_and_golangci_logs_parse
+        PASS [   0.004s] ( 49/116) gob-check sarif::tests::eslint_in_source_suppression_is_kept_and_flagged
+        PASS [   0.003s] ( 50/116) gob-check sarif::tests::oxlint_log_parses_with_its_prefixed_id_and_character_columns
+        PASS [   0.004s] ( 51/116) gob-check sarif::tests::roslyn_log_decodes_uris_and_honours_suppression_status
+        PASS [   0.004s] ( 52/116) gob-check sarif::tests::rule_id_falls_back_to_rule_ref_then_descriptor_index
+        PASS [   0.004s] ( 53/116) gob-check sarif::tests::unreadable_logs_are_errors
+        PASS [   0.004s] ( 54/116) gob-check sarif::tests::uris_decode_percent_escapes_and_drive_letters
+        PASS [   0.005s] ( 55/116) gob-check status::tests::a_single_opaque_notice_is_left_untouched
+        PASS [   0.005s] ( 56/116) gob-check status::tests::binary_detection
+        PASS [   0.005s] ( 57/116) gob-check status::tests::inapplicable_reasons_are_kept_once_and_printed
+        PASS [   0.004s] ( 58/116) gob-check status::tests::locate_hole_points_at_the_table_row_with_the_pipe_in_a_code_span
+        PASS [   0.004s] ( 59/116) gob-check status::tests::low_fidelity_is_unresolved
+        PASS [   0.005s] ( 60/116) gob-check status::tests::not_applicable_reasons_are_kept_once_and_printed
+        PASS [   0.004s] ( 61/116) gob-check status::tests::opaque_files_split_by_need_and_binariness
+        PASS [   0.004s] ( 62/116) gob-check status::tests::opaque_notices_of_many_rules_merge_into_one_naming_count_and_rules
+        PASS [   0.005s] ( 63/116) gob-check status::tests::partial_files_are_examined_with_a_caveat
+        PASS [   0.004s] ( 64/116) gob-check status::tests::scanned_opaque_text_is_examined
+        PASS [   0.004s] ( 65/116) gob-check status::tests::unknown_rules_are_always_examined
+        PASS [   0.004s] ( 66/116) gob-check tool_parse::tests::actionlint_output_parses_with_line_and_column
+        PASS [   0.004s] ( 67/116) gob-check tool_parse::tests::actionlint_runner_labels_follow_the_labels_knob
+        PASS [   0.004s] ( 68/116) gob-check tool_parse::tests::id_map_overrides_and_bad_targets_fall_back
+        PASS [   0.004s] ( 69/116) gob-check tool_parse::tests::stylelint_findings_carry_crunk_ids_and_are_advisory
+        PASS [   0.004s] ( 70/116) gob-check tool_parse::tests::stylelint_output_parses_with_line_and_column
+        PASS [   0.004s] ( 71/116) gob-check tool_parse::tests::version_range_is_inclusive_and_numeric
+        PASS [   0.004s] ( 72/116) gob-check tool_parse::tests::versions_are_found_in_banner_text
+        PASS [   0.004s] ( 73/116) gob-check tool_parse::tests::zizmor_ids_map_to_ci_ids_and_the_rest_is_tool002
+        PASS [   0.004s] ( 74/116) gob-check tool_parse::tests::zizmor_output_parses_with_byte_spans
+        PASS [   0.058s] ( 75/116) gob-check tools::tests::a_clean_run_yields_no_finding
+        PASS [   0.031s] ( 76/116) gob-check tools::tests::a_failing_tool_with_info_noise_quotes_its_error_line_in_tool001
+        PASS [   0.031s] ( 77/116) gob-check tools::tests::a_findings_exit_with_no_output_is_a_failure
+        PASS [   0.004s] ( 78/116) gob-check tools::tests::a_missing_binary_is_a_required_tool_failed
+        PASS [   0.049s] ( 79/116) gob-check tools::tests::a_recorded_pass_is_reused_until_one_input_changes
+        PASS [   0.006s] ( 80/116) gob-check tools::tests::a_stage_is_skipped_only_when_it_declares_inputs_the_scope_misses
+        PASS [   0.030s] ( 81/116) gob-check tools::tests::an_undeclared_exit_with_empty_output_names_status_and_stderr
+        PASS [   0.024s] ( 82/116) gob-check tools::tests::an_unresolvable_pin_fails_the_version_probe_loudly
+        PASS [   0.004s] ( 83/116) gob-check tools::tests::cargo_stages_share_one_group_and_others_get_their_own
+        PASS [   0.004s] ( 84/116) gob-check tools::tests::character_columns_become_byte_offsets
+        PASS [   1.028s] ( 85/116) gob-check tools::tests::independent_stages_overlap_and_keep_their_order_and_timing
+        PASS [   0.004s] ( 86/116) gob-check tools::tests::printed_paths_become_repo_relative
+        PASS [   0.026s] ( 87/116) gob-check tools::tests::sarif_results_map_keep_source_rule_and_set_suppressed_aside
+        PASS [   0.030s] ( 88/116) gob-check tools::tests::stderr_is_escaped_and_capped
+        PASS [   0.004s] ( 89/116) gob-check tools::tests::the_excerpt_shows_error_lines_and_the_tail_not_leading_info_noise
+        PASS [   0.004s] ( 90/116) gob-check tools::tests::the_packages_token_expands_to_the_affected_set_or_the_unscoped_default
+        PASS [   0.030s] ( 91/116) gob-check tools::tests::unparseable_output_is_a_failure
+        PASS [   0.046s] ( 92/116) gob-check tools::tests::unreadable_sarif_is_a_required_tool_failed
+        PASS [   0.004s] ( 93/116) gob-check::boundary no_frob_crate_is_a_direct_or_transitive_dependency
+        PASS [   0.050s] ( 94/116) gob-check::pipeline a_foreign_product_gets_findings_caches_and_subject_counts
+        PASS [   0.035s] ( 95/116) gob-check::pipeline a_must_measure_rule_with_zero_subjects_is_a_required_unresolved
+        PASS [   0.050s] ( 96/116) gob-check::pipeline a_scoped_run_skips_full_only_groups_with_a_reason_and_a_full_run_keeps_them
+        PASS [   0.031s] ( 97/116) gob-check::pipeline only_accepts_this_products_rules_and_rejects_the_others
+        PASS [   0.036s] ( 98/116) gob-check::pipeline zero_subjects_pass_when_the_rule_is_not_applicable_or_was_filtered_out
+        PASS [   0.003s] ( 99/116) gob-check::product_rules a_clean_host_and_text_fire_nothing
+        PASS [   0.003s] (100/116) gob-check::product_rules alpha_rules::freshness::rules_index_is_fresh
+        PASS [   0.003s] (101/116) gob-check::product_rules beta_rules::freshness::rules_index_is_fresh
+        PASS [   0.003s] (102/116) gob-check::product_rules fixture_indexes_are_fresh
+        PASS [   0.004s] (103/116) gob-check::product_rules rules_binds_every_listed_rule_and_runs_it
+        PASS [   0.003s] (104/116) gob-check::product_rules the_list_names_every_listed_crates_rules
+        PASS [   0.040s] (105/116) gob-check::rule_defs a_clean_toy_fires_nothing
+        PASS [   0.042s] (106/116) gob-check::rule_defs a_toy_product_runs_its_listed_file_and_repo_rules_with_no_group_wiring
+        PASS [   0.004s] (107/116) gob-check::rule_defs alpha_rules::freshness::rules_index_is_fresh
+        PASS [   0.037s] (108/116) gob-check::rule_defs an_inapplicable_rule_is_skipped_and_its_reason_reported_once_in_json_and_text
+        PASS [   0.004s] (109/116) gob-check::rule_defs beta_rules::freshness::rules_index_is_fresh
+        PASS [   0.004s] (110/116) gob-check::rule_defs fixture_indexes_are_fresh
+        PASS [   0.004s] (111/116) gob-check::rule_defs gamma_rules::freshness::rules_index_is_fresh
+        PASS [   0.051s] (112/116) gob-check::rule_defs only_selects_declared_rules_by_id_and_family_and_skips_the_rest
+        PASS [   0.030s] (113/116) gob-check::rule_defs the_resolver_decides_per_file_for_declared_rules
+        PASS [   0.033s] (114/116) gob-check::rule_defs the_zero_subject_unresolved_is_typed_vacuous_and_the_counters_convert_to_a_rule_report
+        PASS [   0.031s] (115/116) gob-check::rule_defs zero_subjects_for_a_must_measure_rule_is_the_required_unresolved
+        PASS [   0.781s] (116/116) gob-check::ui_product ui_product
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   4.212s] 116 tests run: 116 passed, 0 skipped
+goway: done: exit 0 on quasar in 14.9s
+'''
+passed = true
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --wait 60m -- cargo nextest run --profile ci -p gob-check -p crunk-check"
+size = 14341
+status = "measured"
+at = "2026-10-12T12:35:18Z"
+actor = "lognd"
+rev = 1

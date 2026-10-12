@@ -20,6 +20,22 @@ pub(crate) enum RawRange {
     Bytes { start: u32, end: u32 },
     /// 1-based line and byte column, end column exclusive (actionlint).
     LineCol { line: u32, col: u32, end_col: u32 },
+    /// 1-based line and character column of start and end, end exclusive (SARIF regions).
+    CharRange {
+        line: u32,
+        col: u32,
+        end_line: u32,
+        end_col: u32,
+    },
+}
+
+/// A native suppression the tool applied to a result it still reported (SARIF `suppressions`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct RawSuppression {
+    /// SARIF suppression kind: `inSource` or `external`.
+    pub kind: String,
+    /// The author's justification, possibly empty.
+    pub justification: String,
 }
 
 /// One tool finding before it becomes a frob [`gob_rules::Finding`].
@@ -33,6 +49,8 @@ pub(crate) struct RawFinding {
     pub tool_id: String,
     /// The tool's message.
     pub message: String,
+    /// Set when the tool reported the result as suppressed; such a result is not a finding (EXC017 reads it).
+    pub suppressed: Option<RawSuppression>,
 }
 
 /// Why a tool's output could not be read.
@@ -46,6 +64,9 @@ pub(crate) enum ParseError {
         /// The underlying error.
         source: serde_json::Error,
     },
+    /// The JSON is not a SARIF 2.1.0 log.
+    #[error("output is not a SARIF 2.1.0 log: {0}")]
+    Sarif(String),
 }
 
 #[derive(Deserialize)]
@@ -143,6 +164,7 @@ pub(crate) fn parse(parser: ToolParser, stdout: &str) -> Result<Vec<RawFinding>,
         ToolParser::None => Ok(Vec::new()),
         ToolParser::ZizmorJsonV1 => parse_zizmor(stdout),
         ToolParser::ActionlintJson => parse_actionlint(stdout),
+        ToolParser::Sarif => crate::sarif::parse_sarif(stdout),
         ToolParser::StylelintJson => parse_stylelint(stdout),
     }
 }
@@ -188,6 +210,7 @@ fn parse_zizmor(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
             range,
             tool_id: f.ident,
             message,
+            suppressed: None,
         });
     }
     Ok(out)
@@ -215,6 +238,7 @@ fn parse_actionlint(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
             },
             tool_id: f.kind,
             message: f.message,
+            suppressed: None,
         })
         .collect())
 }
@@ -249,6 +273,7 @@ fn parse_stylelint(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
                 },
                 tool_id: w.rule,
                 message: w.text,
+                suppressed: None,
             });
         }
     }
@@ -274,7 +299,7 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
             ("selector-max-id", "WCSS002"),
             ("declaration-no-important", "WCSS003"),
         ]),
-        ToolParser::ActionlintJson | ToolParser::None => BTreeMap::new(),
+        ToolParser::ActionlintJson | ToolParser::Sarif | ToolParser::None => BTreeMap::new(),
     }
 }
 
@@ -424,7 +449,7 @@ pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
     match parser {
         ToolParser::ZizmorJsonV1 | ToolParser::StylelintJson => Some(vec!["--version".to_owned()]),
         ToolParser::ActionlintJson => Some(vec!["-version".to_owned()]),
-        ToolParser::None => None,
+        ToolParser::Sarif | ToolParser::None => None,
     }
 }
 
