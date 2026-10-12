@@ -98,8 +98,10 @@ impl Ledger {
             .chain(got.keys())
             .filter(|k| want.get(*k) != got.get(*k))
             .collect();
-        diff.sort();
+        // Paths the commit itself carries (a hand edit) come before pages it lacks.
+        diff.sort_by_key(|k| (!got.contains_key(*k), *k));
         diff.dedup();
+        // frob:ticket 01M3ZX86G8HFRDA78PBVFSTJNW
         let names: Vec<&str> = diff.iter().take(3).map(|s| s.as_str()).collect();
         let msg = format!(
             "{at} is not the pure reindex of its parent: {} path(s) differ (first: {}); \
