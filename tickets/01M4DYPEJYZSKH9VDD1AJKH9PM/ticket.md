@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T14:29:23Z"
-updated = "2026-10-12T12:44:25Z"
-scope = ["changelog.d/**", "crates/frob-check/**", "crates/frob-land/**", "crates/gob-dev/**", "frob.toml"]
+updated = "2026-10-12T12:48:13Z"
+scope = ["changelog.d/**", "crates/frob-check/**", "crates/frob-land/**", "crates/gob-dev/**", "frob.toml", "crates/gob-check/src/tools.rs"]
 
 [[acceptance]]
 text = "Given a ticket whose public docs link a private item, when frob check --ticket or land runs, then it fails naming the rustdoc error"
