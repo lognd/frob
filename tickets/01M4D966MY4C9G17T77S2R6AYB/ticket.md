@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CXTDZGE80G5TWDCWY08EWT"
 reporter = "lognd"
 created = "2026-10-08T08:13:21Z"
-updated = "2026-10-12T18:17:22Z"
+updated = "2026-10-12T18:17:23Z"
 scope = ["changelog.d/**", "docs/design/**", "notes/research/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given boundaries.md 2.5, when read, then every new family has an owner and a crate"
-bound = false
+bound = true
 +++
 
 notes/research/lint-catalogue-2026-10-08.md section 5 (eleven changes: bind-before-own policy, parser ownership in gob-check, new families ERR, TESTQ, PAIR, TYPING, VIS, FMT, SPELL, NAME, LINT, REACT and UNITY ranges, hot and teardown capabilities, NEAT026 numbering fix, COH Advisory until measured, crunk build order).
