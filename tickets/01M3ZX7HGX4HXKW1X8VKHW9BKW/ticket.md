@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-12T01:07:37Z"
+updated = "2026-10-12T01:13:14Z"
 idempotency_key = "m2-codegen-core"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/codegen/**", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/codegen.rs", "crates/gob-plan/tests/codegen/**"]
@@ -23,7 +23,7 @@ target = "01M3ZX7F1SGDAFM6ZQ8BP7TEN3"
 
 [[acceptance]]
 text = "Given a lowered std rule, when generated twice, then the Rust output is byte-identical and compiles with unsafe_code forbidden"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a generated rule and its plan on the same fixture, when both run, then findings are equal"
