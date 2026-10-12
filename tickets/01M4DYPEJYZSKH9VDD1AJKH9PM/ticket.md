@@ -2,13 +2,13 @@
 id = "01M4DYPEJYZSKH9VDD1AJKH9PM"
 title = "Land gate covers CI-only steps: rustdoc -D warnings and the generated-files check run as tool stages or required evidence"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T14:29:23Z"
-updated = "2026-10-08T14:29:23Z"
+updated = "2026-10-12T12:30:00Z"
 scope = ["changelog.d/**", "crates/frob-check/**", "crates/frob-land/**", "crates/gob-dev/**", "frob.toml"]
 
 [[acceptance]]

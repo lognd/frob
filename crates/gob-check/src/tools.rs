@@ -462,7 +462,10 @@ fn execute(runner: &Runner, root: &Path, stage: &ToolStage) -> StageResult {
         Err(err @ ExecError::NotFound { .. }) => {
             return StageResult::Missing(format!("could not run: {err}"));
         }
-        Err(err) if parsed => {
+        // Any other run error (spawn or write I/O such as ENOSPC) means the gate never ran:
+        // it is required evidence missing, never a pass (frob:ticket 01M4M27E8E0DK7XAQ2D7T0Q8TR).
+        Err(err) => {
+            tracing::error!(stage = %stage.name, %err, "tool stage could not run");
             return StageResult::Failed(failure(
                 stage,
                 &stage.args,
@@ -471,7 +474,6 @@ fn execute(runner: &Runner, root: &Path, stage: &ToolStage) -> StageResult {
                 "",
             ));
         }
-        Err(err) => return StageResult::Problem(format!("could not run: {err}")),
     };
     if !parsed {
         return abnormal(&output, stage)
@@ -982,6 +984,23 @@ mod tests {
     }
 
     const VERSION_OK: &str = "echo actionlint 1.7.12";
+
+    // frob:ticket 01M4M27E8E0DK7XAQ2D7T0Q8TR
+    // frob:tests crates/gob-check/src/tools.rs::execute
+    #[test]
+    fn a_spawn_io_failure_is_a_required_tool_failed_even_when_not_gating() {
+        {
+            let mut stage = sh_stage("lint", ToolParser::None, "true", VERSION_OK);
+            stage.fail_on_nonzero = false;
+            let runner = Runner::new(Limits::default()).allow_tools(["sh".to_owned()]);
+            // A working directory that does not exist makes the OS refuse the spawn.
+            let result = execute(&runner, Path::new("/frob-no-such-dir/x"), &stage);
+            let mut files = FileInterner::default();
+            let id: RuleId = Tool001.meta().rule_id().expect("id");
+            let found = stage_findings(Path::new("."), &id, &stage, result, &mut files);
+            assert_tool_failed(&found, &["could not run", "failed to spawn"]);
+        }
+    }
 
     // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
