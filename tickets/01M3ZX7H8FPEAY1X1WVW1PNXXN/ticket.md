@@ -2,13 +2,13 @@
 id = "01M3ZX7H8FPEAY1X1WVW1PNXXN"
 title = "rule why: per-clause trace for one location"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:23Z"
-updated = "2026-10-03T03:34:23Z"
+updated = "2026-10-12T00:32:40Z"
 idempotency_key = "m2-grl-why"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/why/**", "crates/gob-plan/src/verbs/why.rs"]
