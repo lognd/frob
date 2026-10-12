@@ -100,8 +100,8 @@ Every verb, every time:
   marked `required` fails the gate with exit 1 (a negative domain
   answer), never exit 3, which stays reserved for refusals; `"all"`
   fails on any Unresolved and `"never"` on none. The required
-  Unresolved findings are four (`sibling_missing`, `annotation_required`,
-  `zero_subjects` and `tool_failed`): (a) a configured sibling
+  Unresolved findings are five (`sibling_missing`, `annotation_required`,
+  `zero_subjects`, `evaluation_failed` and `tool_failed`): (a) a configured sibling
   product that is unusable, in any of five reasons, all required:
   `absent` (not installed), `incompatible` (`--json` with another
   `schema_version` or a different `[compute]` digest), `failed` (exit 2,
@@ -113,8 +113,10 @@ Every verb, every time:
   sibling required; (b) an `annotation-required` opaque on the public
   surface when `[compute]` requires the declaration (universal-model.md
   4.6); (c) a rule flagged `must_measure` that examined zero subjects;
-  (d) `tool_failed`: a configured tool stage that could not run, exited abnormally, or printed output its parser
-  cannot read.
+  (d) `evaluation_failed`: a rule that could not be evaluated (an unreadable
+  ledger, config or milestones), so its silence is not a pass; (e) `tool_failed`:
+  a configured tool stage that could not run, exited abnormally, or printed
+  output its parser cannot read.
   Every other Unresolved is reported, counted in the summary, and does
   not fail under `"required"`. The `required` mark travels on the
   finding record and in sibling JSON, so frob applies it to a sibling's

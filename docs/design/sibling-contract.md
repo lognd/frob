@@ -18,7 +18,7 @@ Inputs: grimble-model.md 9.3, 9.5, 9.6, 9.7; binding.md (SYS001-SYS012,
 the polarity and Unresolved conditions of 6.13, the capability matrix of
 section 7); grmb-spec.md (entities, anchors in 9.1, MDL001-018);
 cli.md section 2 (the single Unresolved gate, `fail_on_unresolved`, the
-three required reasons); universal-model.md 3.3 and 4 (fidelity, answer
+five required cases); universal-model.md 3.3 and 4 (fidelity, answer
 lattice, polarity); exceptions.md (kinds, opaque `ticket=`, the
 evaluation boundary of D28); notes/review/grimble-review.md H3;
 docs/schemas/envelope.json and the landed `gob-diagnostics` types
@@ -188,7 +188,7 @@ shared part has one definition. Every field is always present.
 | `subjects_examined` | integer | subjects the rule examined in the scope this finding rolls up (universal-model.md 4.2); zero only on a vacuous Unresolved |
 | `reason` | string or null | the Unresolved reason code, a kebab-case word: the conditions of binding.md 6.13 (`unseen-remainder`, `may-only-owner`, `fidelity`, `opaque-cone`, `no-detector`, `index-stale`, `inference-unavailable`, `vacuous`), `annotation-required` and `pack-unavailable` (an enabled data pack could not be loaded, PACK006, packs.md section 9); the codes frob itself uses for a missing sibling (section 6). Null unless `severity` is `unresolved`; the schema enforces both directions |
 | `maybe` | array of strings | for an Unresolved on a P+ rule, the maybe-set `hi` minus `lo` as anchors or symrefs; empty otherwise |
-| `required` | RequiredReason or null | the landed `RequiredReason` (`sibling_missing`, `annotation_required`, `zero_subjects`, `tool_failed`), verbatim; set only on an Unresolved finding. This is the mark of cli.md section 2; the key is mandatory even when null |
+| `required` | RequiredReason or null | the landed `RequiredReason` (`sibling_missing`, `annotation_required`, `zero_subjects`, `evaluation_failed`, `tool_failed`), verbatim; set only on an Unresolved finding. This is the mark of cli.md section 2; the key is mandatory even when null |
 | `file`, `line`, `column` | string or null, integer or null | the landed location: repository-relative path with `/` separators, 1-based line and column; null for a finding with only a logical location |
 | `range` | `{start, end}` or null | byte range of the span in `file` (half-open); frob re-renders spans from it and the file |
 | `anchor` | string or null | logical location, `kind/full-name` or `kind/full-name/clause[i]` (grmb-spec 9.1), for example `node/cli/owns[0]` |

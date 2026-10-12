@@ -293,11 +293,12 @@ its Unresolved sites.
 
 The gate. Unresolved is a finding severity orthogonal to the
 Error/Warn/Advisory threshold; the one mechanism by which it can fail
-a run (`[check] fail_on_unresolved`, the four `required` cases, exit 1)
+a run (`[check] fail_on_unresolved`, the five `required` cases, exit 1)
 is defined in cli.md section 2 and is not restated here. A rule flagged
 `must_measure` in its derive that examined zero subjects is the
-`zero_subjects` case. The four are `sibling_missing`,
-`annotation_required`, `zero_subjects` and `tool_failed`; `tool_failed`
+`zero_subjects` case. The five are `sibling_missing`,
+`annotation_required`, `zero_subjects`, `evaluation_failed` and `tool_failed`;
+`evaluation_failed` is a rule that could not be evaluated; `tool_failed`
 is a configured tool stage that could not run, exited abnormally, or
 printed output its parser cannot read.
 
