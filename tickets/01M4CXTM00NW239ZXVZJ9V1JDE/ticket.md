@@ -8,12 +8,12 @@ points = 3
 parent = "01M4CXTDZGE80G5TWDCWY08EWT"
 reporter = "lognd"
 created = "2026-10-08T04:54:56Z"
-updated = "2026-10-12T21:59:48Z"
+updated = "2026-10-12T22:03:31Z"
 scope = ["changelog.d/**", "notes/research/**", "docs/design/rules.md"]
 
 [[acceptance]]
 text = "Given the spike reports, when synthesised, then the catalogue ranks candidates and each new candidate has a ticket with its evidence"
-bound = false
+bound = true
 +++
 
 Coordinator synthesis after the spikes.
