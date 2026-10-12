@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:47Z"
-updated = "2026-10-12T01:43:01Z"
+updated = "2026-10-12T01:48:22Z"
 idempotency_key = "m2-nav-tour-templates"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-ledger/src/gen/tour.rs", "crates/frob-ledger/templates/tour/**", "crates/frob-ledger/src/gen/mod.rs", "crates/frob-ledger/tests/gen_tour.rs"]
@@ -23,7 +23,7 @@ target = "01M3ZX87KRP6G49GHANMAK5JA8"
 
 [[acceptance]]
 text = "Given a ledger with done tickets, an epic and a good-first ticket, when generated, then TOUR.md has the five stops and pins the most recently closed ticket with evidence and a land, the largest epic and the first good-first ticket by ULID"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a pinned ticket later dropped, when reindexed, then it is replaced and a note reports the replacement"
