@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-12T22:18:04Z"
-updated = "2026-10-12T22:22:20Z"
+updated = "2026-10-12T22:24:56Z"
 scope = ["crates/frob-check/tests/tool_bind.rs", "crates/frob-obligations/tests/corpus.rs"]
 
 [[acceptance]]
@@ -15,7 +15,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the exc017 corpus, when mdtest_corpus runs, then it passes"
-bound = false
+bound = true
 +++
 
 Three tests went stale after the tool-stage argv-template change (args now required) and the message_origin field landing.
