@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-12T21:57:56Z"
-updated = "2026-10-12T23:55:05Z"
-scope = ["crates/gob-cli/src/render.rs", "crates/gob-diagnostics/src/envelope.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/src/refusal.rs"]
+updated = "2026-10-12T23:55:10Z"
+scope = ["crates/gob-cli/src/render.rs", "crates/gob-diagnostics/src/envelope.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/src/refusal.rs", "crates/gob-diagnostics/tests/contract.rs"]
 +++
 
 ~Q85F72V added FindingRecord.message_origin (TextOrigin) but left EnvelopeError without an origin and did not re-export TextOrigin from lib.rs; the struct literals in gob-cli render.rs and refusal.rs are affected. Acceptance: EnvelopeError carries an origin serialized like findings, TextOrigin is re-exported, schema envelope.json updated, nextest tests bound.
