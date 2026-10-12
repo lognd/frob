@@ -2,7 +2,8 @@
 id = "01M4CXTM00NW239ZXVZJ9V1JDE"
 title = "Synthesis: evidence-weighted lint catalogue and new rule tickets from the study"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CXTDZGE80G5TWDCWY08EWT"
