@@ -2,13 +2,13 @@
 id = "01M4NTWET2QT576F2CHN60YHK6"
 title = "TS adapter keeps a parse-error hole for MISSING nodes (const y = ;) so crunk reports the JSX syntax error"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-11T15:56:41Z"
-updated = "2026-10-11T15:56:41Z"
+updated = "2026-10-12T02:21:47Z"
 scope = ["changelog.d/**", "crates/gob-symbols/**", "crates/crunk-ingest/**"]
 +++
 
