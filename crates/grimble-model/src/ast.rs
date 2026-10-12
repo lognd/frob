@@ -150,6 +150,19 @@ pub struct Excuses {
     pub attrs: Vec<KeyVal>,
 }
 
+/// An `excuse ATOM for SEL because="..."` clause of a template (grmb-spec 4.7).
+///
+/// `selector` and `because` are optional in the tree so a missing one is MDL008, not a syntax error.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct TemplateExcuse {
+    /// The excused atom.
+    pub atom: Atom,
+    /// The `for` selector of the units the excuse covers, when written.
+    pub selector: Option<Sel>,
+    /// The `because` pairs (`because` is required).
+    pub attrs: Vec<KeyVal>,
+}
+
 /// The three exception clause kinds (grmb-spec 7).
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum ExcKind {
@@ -325,6 +338,8 @@ pub enum ClauseKind {
     May(May),
     /// `excuses ...;`
     Excuses(Excuses),
+    /// `excuse ATOM for SEL because="...";` (template only).
+    Excuse(TemplateExcuse),
     /// `label L;`
     Label(Ident),
     /// `rate|age|size Q;`
@@ -382,7 +397,7 @@ pub struct Clause {
     pub span: Span,
 }
 
-/// The seven entity kinds (grmb-spec 4).
+/// The eight entity kinds (grmb-spec 4).
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub enum EntityKind {
     /// `node`
@@ -399,11 +414,13 @@ pub enum EntityKind {
     Boundary,
     /// `pack`
     Pack,
+    /// `template`
+    Template,
 }
 
 impl EntityKind {
     /// Every kind in canonical order (grmb-spec 9.3: node, flow, contract, claim, vmodel, boundary; pack first in files).
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 8] = [
         Self::Node,
         Self::Flow,
         Self::Contract,
@@ -411,6 +428,7 @@ impl EntityKind {
         Self::Vmodel,
         Self::Boundary,
         Self::Pack,
+        Self::Template,
     ];
 
     /// The keyword and the U unit kind.
@@ -423,6 +441,7 @@ impl EntityKind {
             Self::Vmodel => "vmodel",
             Self::Boundary => "boundary",
             Self::Pack => "pack",
+            Self::Template => "template",
         }
     }
 

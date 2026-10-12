@@ -733,6 +733,14 @@ impl Folder<'_> {
                 kids.extend(x.attrs.iter().map(kv_attr));
                 (attr("excuses", sp, kids), Place::Body)
             }
+            ClauseKind::Excuse(x) => {
+                let mut kids = vec![reference(&x.atom.written(), x.atom.span)];
+                if let Some(sel) = &x.selector {
+                    kids.push(select_t(sel));
+                }
+                kids.extend(x.attrs.iter().map(kv_attr));
+                (attr("excuse", sp, kids), Place::Body)
+            }
             ClauseKind::Label(i) => (
                 attr("label", sp, vec![reference(&i.text, i.span)]),
                 Place::Sig,

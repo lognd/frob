@@ -235,6 +235,7 @@ fn allowed(kind: EntityKind, key: &str) -> bool {
         }
         EntityKind::Boundary => false,
         EntityKind::Pack => matches!(key, "ref" | "version" | "digest"),
+        EntityKind::Template => key == "excuse",
     }
 }
 
@@ -245,6 +246,7 @@ fn is_list(key: &str) -> bool {
         "owns"
             | "may"
             | "excuses"
+            | "excuse"
             | "surface"
             | "producer"
             | "consumer"
@@ -764,6 +766,7 @@ impl<'a> Checker<'a> {
             EntityKind::Claim => &[("what", &["noflow", "reach", "bound"])],
             EntityKind::Vmodel => &[("kind", &["kind"]), ("level", &["level"])],
             EntityKind::Pack => &[("ref", &["ref"]), ("version", &["version"])],
+            EntityKind::Template => &[("excuse", &["excuse"])],
             _ => &[],
         };
         for (name, keys) in need {
@@ -891,6 +894,35 @@ impl<'a> Checker<'a> {
                         rec.file,
                         c.span,
                         format!("`excuses {}` requires `because=\"...\"`", x.atom.written()),
+                        anchor,
+                    );
+                }
+            }
+            ClauseKind::Excuse(x) => {
+                self.atom(rec, &x.atom, false, anchor);
+                match &x.selector {
+                    Some(sel) => self.selector(rec, sel, anchor),
+                    None => self.emit(
+                        "MDL008",
+                        None,
+                        rec.file,
+                        c.span,
+                        format!("`excuse {}` requires `for SELECTOR`", x.atom.written()),
+                        anchor,
+                    ),
+                }
+                let because = x.attrs.iter().find(|a| a.key.text == "because");
+                let ok = matches!(because, Some(KeyVal { value, .. }) if matches!(&value.value, Value::Str(s) if !s.trim().is_empty()));
+                if !ok {
+                    self.emit(
+                        "MDL008",
+                        None,
+                        rec.file,
+                        c.span,
+                        format!(
+                            "`excuse {}` requires a non-empty `because=\"...\"`",
+                            x.atom.written()
+                        ),
                         anchor,
                     );
                 }

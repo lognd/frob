@@ -1419,6 +1419,16 @@
           },
           "type": "array"
         },
+        "template_excuses": {
+          "description": "Matrix-build template excuses in force (grmb-spec 4.7), sorted by `(template, atom)`; omitted by products without templates.",
+          "items": {
+            "$ref": "#/$defs/TemplateExcuseRow"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "timing": {
           "$ref": "#/$defs/Timing",
           "description": "Run timing."
@@ -1458,6 +1468,40 @@
       "required": [
         "finding",
         "exception"
+      ],
+      "type": "object"
+    },
+    "TemplateExcuseRow": {
+      "additionalProperties": false,
+      "description": "One entry of `template_excuses`.",
+      "properties": {
+        "atom": {
+          "description": "The excused atom as written.",
+          "type": "string"
+        },
+        "because": {
+          "description": "The reason, verbatim.",
+          "type": "string"
+        },
+        "selector": {
+          "description": "The `for` selector as written.",
+          "type": "string"
+        },
+        "source": {
+          "description": "`pack:NAME@VERSION` or `model:TEMPLATE`.",
+          "type": "string"
+        },
+        "template": {
+          "description": "Template name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "template",
+        "atom",
+        "selector",
+        "because",
+        "source"
       ],
       "type": "object"
     },

@@ -16,7 +16,7 @@ use crate::ast::{
     Atom, Attachments, ClaimWhat, Clause, ClauseKind, Direction, Entity, EntityKind, Evidence,
     ExcKind, Exception, Excuses, FileStatus, Header, Ident, Include, Item, KeyVal, Link, LinkKind,
     May, ModuleDecl, ModuleKind, Namespace, ParsedFile, QuantKey, Quantity, RefPath, Sel, Spanned,
-    TopException, Value, VersionHeader, Versioning,
+    TemplateExcuse, TopException, Value, VersionHeader, Versioning,
 };
 use crate::keywords::is_keyword;
 use crate::lex::{Comment, CommentKind, Punct, Tok, Token, lex};
@@ -409,6 +409,11 @@ impl Parser<'_> {
 
     /// Slices a selector from the token stream (up to the `;` at depth 0) and parses it.
     fn selector(&mut self) -> PResult<Sel> {
+        self.selector_to(false)
+    }
+
+    /// Like [`Self::selector`]; with `stop_at_because` a depth-0 `because` ends the slice (template excuses).
+    fn selector_to(&mut self, stop_at_because: bool) -> PResult<Sel> {
         let first = self.peek().clone();
         if matches!(first.tok, Tok::P(Punct::Semi | Punct::RBrace) | Tok::Eof) {
             return fail(first.span, "expected a selector");
@@ -420,6 +425,7 @@ impl Parser<'_> {
             match &t.tok {
                 Tok::Eof | Tok::P(Punct::RBrace | Punct::LBrace) => break,
                 Tok::P(Punct::Semi) if depth == 0 => break,
+                Tok::Ident(w) if depth == 0 && stop_at_because && w == "because" => break,
                 Tok::P(Punct::LParen) => depth += 1,
                 Tok::P(Punct::RParen) => depth = depth.saturating_sub(1),
                 _ => {}
@@ -970,6 +976,20 @@ impl Parser<'_> {
                 let atom = self.atom()?;
                 let attrs = self.key_vals()?;
                 ClauseKind::Excuses(Excuses { atom, attrs })
+            }
+            "excuse" => {
+                let atom = self.atom()?;
+                let selector = if self.eat_kw("for") {
+                    Some(self.selector_to(true)?)
+                } else {
+                    None
+                };
+                let attrs = self.key_vals()?;
+                ClauseKind::Excuse(TemplateExcuse {
+                    atom,
+                    selector,
+                    attrs,
+                })
             }
             "label" => ClauseKind::Label(self.any_ident("a label")?),
             "rate" => ClauseKind::Quantity(QuantKey::Rate, self.quantity()?),

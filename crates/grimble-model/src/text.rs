@@ -162,6 +162,7 @@ pub fn clause_key(k: &ClauseKind) -> &'static str {
         ClauseKind::Surface(_) => "surface",
         ClauseKind::May(_) => "may",
         ClauseKind::Excuses(_) => "excuses",
+        ClauseKind::Excuse(_) => "excuse",
         ClauseKind::Label(_) => "label",
         ClauseKind::Quantity(k, _) => k.keyword(),
         ClauseKind::Fanout(_) => "fanout",
@@ -196,7 +197,7 @@ pub fn clause_rank(k: &ClauseKind) -> u8 {
         ClauseKind::Clearance(_) => 1,
         ClauseKind::Owns(_) => 2,
         ClauseKind::May(_) => 3,
-        ClauseKind::Excuses(_) => 4,
+        ClauseKind::Excuses(_) | ClauseKind::Excuse(_) => 4,
         ClauseKind::Surface(_) => 5,
         ClauseKind::Producer(_) => 6,
         ClauseKind::Consumer(_) => 7,
@@ -256,6 +257,17 @@ pub fn clause_text(k: &ClauseKind) -> String {
             format!("excuses {} {}", e.atom.written(), key_vals_text(&e.attrs))
                 .trim_end()
                 .to_owned()
+        }
+        ClauseKind::Excuse(e) => {
+            let mut out = format!("excuse {}", e.atom.written());
+            if let Some(sel) = &e.selector {
+                let _ = write!(out, " for {}", selector_text(sel));
+            }
+            let attrs = key_vals_text(&e.attrs);
+            if !attrs.is_empty() {
+                let _ = write!(out, " {attrs}");
+            }
+            out
         }
         ClauseKind::Label(i) => format!("label {}", i.text),
         ClauseKind::Quantity(key, q) => format!("{} {}", key.keyword(), quantity_text(q)),
