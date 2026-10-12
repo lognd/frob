@@ -240,6 +240,20 @@ Every query returns one of:
 Predicates use Kleene's strong three-valued logic over Yes/No/Unknown.
 Resolution returns Must(x) | May({x1..xn}) | Unknown.
 
+Formally an answer about a set-valued relation is an interval
+[lo, hi] in the powerset lattice: `Exact(v)` is [v, v], `Bounds` is
+[lo, hi] with lo <= hi, `Unknown` is [empty, top]. The knowledge order
+is interval narrowing: [l1, h1] is below [l2, h2] when l1 <= l2 and
+h2 <= h1, so Unknown is least and Exact values are maximal. Predicates
+map into Kleene K3 with Yes when the atom holds for the whole interval,
+No when it fails for the whole interval, Unknown otherwise.
+
+Sources are combined by knowledge-order join. When two sources disagree
+(a Belnap "Both": directives versus resolution, `SymbolGraph` versus U,
+D119 annotation versus inference) the join is collapsed to Unknown with
+reason `conflict` and the sources are listed; conflict is a reason
+attached to Unknown, never a fifth answer value.
+
 Glossary (one meaning per word across the design set): Unknown is a
 query answer; Unresolved is a finding severity (orthogonal to the
 Error/Warn/Advisory threshold, see 4.2 and cli.md section 2);
@@ -314,24 +328,57 @@ section 3).
 Let the structural relations of a U term be: operator and sort of each
 node, parent, child order, attachment (attr, comment), the scope graph
 with edge status, location order and containment, and the facet digests.
-Then every rule predicate expressible in first-order logic with least
-fixpoints (equivalently stratified Datalog) over these relations is
-decidable, total, and evaluable in time polynomial in the term; its
-three-valued answer is sound (never a wrong Yes or No about the source
-structure); and on the closed fragment (no `opaque`, no `hole`, no May
-or Unknown edges in the rule's dependency cone) it is exact: preserved
-and reflected by T_L.
+For each relation R the adapter supplies a pair (R_lo, R_hi) of finite
+relations, and the adapter hypothesis is
 
-Proof sketch. The relations are finite and computed by structural
-recursion (Theorem 1). Stratified Datalog over finite relations has
-polynomial data complexity (Immerman, Vardi). Soundness: evaluate under
-Kleene logic where an atom that touches an `opaque`, `hole` or
-non-Must edge is Unknown; by induction on the formula a Yes or No is
-derived only from atoms whose truth is fixed by the syntax, which T_L
-preserves because rho_L is a morphism and bind_L is total. Exactness on
-the closed fragment: every atom is then Exact and the evaluation is
-classical. Alpha-invariance follows because all relations are defined
-on the alpha-normal form. QED.
+    R_lo <= R_true <= R_hi
+
+where R_true is the relation on the source structure the term denotes
+(Must edges populate lo, Must and May edges populate hi, an `opaque`,
+`hole` or Unknown edge widens hi to the frontier). This is the same
+contract as the soundness contract of 4.4; the theorem is conditional
+on it and does not prove any particular bind_L correct.
+
+Rules are stratified Datalog with aggregation over (R_lo, R_hi):
+negation and aggregation only across strata, recursion only positive
+and only inside catalog closures (transitive closure of an edge
+relation such as calls, contains or resolves). Full first-order logic
+with least fixpoints is not claimed: it is strictly more expressive
+than stratified Datalog (Kolaitis 1991), so the earlier phrase "FO+LFP,
+equivalently stratified Datalog" was wrong and is withdrawn.
+
+Evaluation is the two-pass (well-founded style) fixpoint per stratum:
+the lo pass evaluates positive atoms on R_lo and negated atoms against
+the hi of the lower stratum; the hi pass evaluates positive atoms on
+R_hi and negated atoms against the lo of the lower stratum. Theorem 2:
+every such rule is decidable, total, and evaluable in time polynomial
+in the term (stratified Datalog over finite relations has polynomial
+data complexity; Immerman, Vardi); its answer interval [P_lo, P_hi]
+contains the true extension of the predicate, so a Yes or No is never
+wrong about the source structure; and on the closed fragment (no
+`opaque`, no `hole`, no May or Unknown edges in the rule's dependency
+cone, so R_lo = R_hi = R_true) it is exact: preserved and reflected by
+T_L, and the two-pass fixpoint equals the well-founded model, which on
+a stratified program is the unique perfect model.
+
+Proof sketch. Relations are finite and computed by structural recursion
+(Theorem 1), so each stratum's fixpoint is reached in polynomially many
+rounds. Soundness, by induction on strata (the model is the embedding
+theorem for three-valued structures of Sagiv, Reps and Wilhelm, TVLA):
+for stratum 0 no negation reaches a lower stratum, every rule body is
+monotone in the information order, so lo-pass facts hold in R_true and
+hi-pass non-facts fail in R_true by monotonicity of the immediate
+consequence operator and R_lo <= R_true <= R_hi. For stratum k+1 the
+lower strata have by hypothesis lo <= true <= hi, and a negated atom is
+read from the opposite bound, so the inequality is preserved; aggregates
+over a lo or hi relation are monotone bounds on the true aggregate and
+comparisons use interval comparison. Within a stratum, positive
+recursion is monotone, so the least fixpoints on lo and hi bracket the
+least fixpoint on R_true (Knaster-Tarski, induction on iteration
+count). Exactness: on the closed fragment lo = hi = true at every
+stratum, the two passes coincide and evaluation is classical.
+Alpha-invariance follows because all relations are defined on the
+alpha-normal form. QED.
 
 The syntactic queries this covers are the ones the landed crates already
 compute for Rust and markdown, restated over U: units and symrefs,
@@ -367,8 +414,10 @@ ask of any new language.
 
 ### 4.5 Theorem 3 (honesty)
 
-(a) No total computable query on U decides a non-trivial property of
-the behaviour of the programs its terms denote (Rice 1953). Exact call
+(a) No total computable query on L-programs decides a non-trivial
+property of the behaviour of the programs a source language L denotes
+(Rice 1953); the statement is about L, not about U, whose terms are
+finite syntax and whose structural queries are decidable (Theorem 2). Exact call
 targets under first-class values, termination, reachability of runtime
 states, macro expansion termination, type inference for System F (Wells
 1999) and type checking for dependent types with general recursion are
@@ -379,8 +428,8 @@ sound: it never emits an Error or Warn whose premise is false, and the
 only cost of undecidability is Unresolved findings and widened bounds.
 
 Proof. (a) Rice's theorem applied to any Turing-complete source
-language, which includes U itself (2.1). (b) Induction on the rule
-formula under Kleene logic, as in Theorem 2, with capability answers
+language L. (b) Induction on strata over (lo, hi) relations, as in
+Theorem 2, with capability answers
 treated as atoms whose soundness is the adapter's contract. QED.
 
 What "computable" buys: where the source language's own type system
@@ -702,7 +751,7 @@ here.
 
 - gob-ir: Tm(Sigma_U + Sigma_L), the scope graph with edge status, the
   alpha-normal printer and canonical facet stream (7.1), the query
-  interface of section 5, the FO+LFP evaluator with Kleene semantics
+  interface of section 5, the stratified-Datalog evaluator (two-pass lo/hi fixpoints) with Kleene semantics
   and polarity, the answer lattice types, the atom registry and the
   callee vocabularies (grimble-model.md 9.6). Depends on gob-text and
   gob-languages only.
