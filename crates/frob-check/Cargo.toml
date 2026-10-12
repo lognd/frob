@@ -22,6 +22,7 @@ gob-check = { version = "0.532.0", path = "../gob-check" }
 gob-cache = { version = "0.532.0", path = "../gob-cache" }
 gob-cli = { version = "0.532.0", path = "../gob-cli" }
 gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
+gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-directives = { version = "0.532.0", path = "../gob-directives" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
