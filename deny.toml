@@ -4,7 +4,10 @@ all-features = true
 [advisories]
 yanked = "deny"
 # Every ignore carries a reason (build-test-ci.md section 4).
-ignore = []
+ignore = [
+    # unsafe-libyaml (via serde_yaml_ng) was archived upstream; no safe upgrade exists. Replacement tracked in a ticket.
+    { id = "RUSTSEC-2024-0449", reason = "unmaintained, no known vulnerability; serde_yaml_ng replacement ticketed" },
+]
 
 [licenses]
 confidence-threshold = 0.9
