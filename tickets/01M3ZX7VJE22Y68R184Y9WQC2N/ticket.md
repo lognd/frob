@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-12T21:36:02Z"
+updated = "2026-10-12T21:54:42Z"
 idempotency_key = "m2-sec-argv-templates"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-check/src/tools.rs", "crates/gob-check/src/config.rs"]
+scope = ["crates/gob-check/src/tools.rs", "crates/gob-check/src/config.rs", "crates/frob-check/tests/check.rs"]
 
 [[links]]
 kind = "blocked-by"
