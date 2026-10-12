@@ -167,6 +167,7 @@ impl std::fmt::Debug for Failed {
 
 // Returning Err from main exits 1 without std::process (PROC001 keeps it out of this crate).
 fn main() -> Result<std::process::ExitCode, Failed> {
+    gob_git::install_content_backend();
     let cli = Cli::parse();
     if let Err(e) = gob_log::init("dev", 0, false) {
         emit(&format!("warning: logging not initialised: {e}"));
