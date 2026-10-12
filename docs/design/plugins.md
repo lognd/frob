@@ -178,6 +178,11 @@ written in GRL whenever they can be, so the std library is mostly the
 same source a third party can write, then compiled into the binary
 (section 6.1).
 
+Tool id maps and default configurations are pack content: a vocabulary
+pack carries the map from a linter's rule ids to frob ids and the default
+`[[check.tool]]` configuration, so a third party can bind a new linter
+without a frob release (rules.md section 1, bind before own).
+
 ## 5. Hooks: the plugin contract
 
 Taken from pluggy: a small, typed, versioned set of hook specifications
@@ -345,6 +350,8 @@ full model is security.md (D82). In short:
   capability matrix (G14) and NEAT; G10 and the first NEAT rules are
   written as tier-2 std rules; G14 consumes atoms and templates from
   packs; gob-wasm and tier 4 follow once tier 2 is proven.
+- Tool id maps and default tool configurations are pack content, not
+  compiled in (section 4); the parsers stay in gob-check.
 - frob's own rules stay tier 0 for milestone 2 and may move to std packs
   later; the mechanism is product-neutral from the start.
 

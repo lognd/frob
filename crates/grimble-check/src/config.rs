@@ -106,5 +106,5 @@ impl GrimbleTable {
 /// Read straight from the shared file (grimble links no frob crate); a missing or unreadable
 /// file, table or key, or a non-string value, gives [`grimble_bind::frob_owned::DEFAULT_LEDGER_DIR`].
 pub fn ledger_dir(root: &Path) -> String {
-    gob_walk::ledger_dir(root)
+    gob_config::ledger_dir(root)
 }

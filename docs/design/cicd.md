@@ -162,7 +162,7 @@ the sibling contract (grimble-model.md 9.5) and through `[[check.tool]]`
 stages. The adapters are milestone-2 tickets after gob-ir (build-test-ci.md,
 Milestone 2 item 7); this repository adopts zizmor and actionlint
 through frob's `[[check.tool]]` stage first, before the adapters exist,
-with their JSON parsers and id maps in frob-check.
+with their JSON parsers in gob-check (`tool_parse.rs`) and id maps in frob-check.
 
 ## 7. Open questions for the owner
 

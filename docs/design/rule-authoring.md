@@ -54,6 +54,11 @@ impl RepoRule for Cov001 { /* evaluation on the same type */ }
 - Evaluation is a trait on the same type: `FileRule` or `RepoRule` (chosen by
   `scope`), `Measured` when `must_measure`, and a `stage(..)` body for rules a
   pipeline stage emits (tool parsers, the grimble model check).
+- `evidence` is required (or an Evidence section in the rule page): it
+  names the lint-catalogue row and its E_det. A rule whose row is
+  contested (C = 0.5) must declare `default = off` or `default = advisory`,
+  and no new rule defaults to Warn before the precision ledger (N16)
+  supports it (rules.md section 1).
 - Product-fact applicability is a method on the rule (`inapplicable`), whose
   reason is counted and printed.
 

@@ -9,6 +9,7 @@
 //! so the spawn counter sees them: `worktree add`, `merge`, `push`; see
 //! [`SpawnClass`]. Design: `git-io.md` sections 1 to 3, decision D23.
 
+mod backend;
 mod content;
 mod error;
 mod fallback;
@@ -19,6 +20,7 @@ mod spawn;
 mod status;
 mod tag;
 
+pub use backend::{GitContentBackend, install_content_backend};
 pub use content::{WorktreeReader, WorktreeSource};
 pub use error::GitError;
 pub use fallback::MergeOutcome;

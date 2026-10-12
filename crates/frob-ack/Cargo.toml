@@ -12,6 +12,7 @@ authors.workspace = true
 gob-time = { version = "0.532.0", path = "../gob-time" }
 blake3 = "1"
 gob-cache = { version = "0.532.0", path = "../gob-cache" }
+gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-cli = { version = "0.532.0", path = "../gob-cli" }
 gob-directives = { version = "0.532.0", path = "../gob-directives" }
 gob-git = { version = "0.532.0", path = "../gob-git" }

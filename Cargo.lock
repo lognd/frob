@@ -535,6 +535,7 @@ dependencies = [
  "gob-check",
  "gob-cli",
  "gob-config",
+ "gob-git",
  "gob-product",
  "jsonschema",
  "schemars",
@@ -1014,6 +1015,7 @@ dependencies = [
  "blake3",
  "gob-cache",
  "gob-cli",
+ "gob-config",
  "gob-directives",
  "gob-exec",
  "gob-git",
@@ -2535,6 +2537,7 @@ version = "0.532.0"
 dependencies = [
  "gix",
  "gob-exec",
+ "gob-walk",
  "tempfile",
  "thiserror",
  "tracing",
@@ -2634,6 +2637,7 @@ dependencies = [
 name = "gob-packs"
 version = "0.532.0"
 dependencies = [
+ "globset",
  "proptest",
  "serde",
  "tempfile",
@@ -2780,13 +2784,11 @@ version = "0.532.0"
 dependencies = [
  "blake3",
  "criterion",
- "gob-git",
  "ignore",
  "proptest",
  "rayon",
  "tempfile",
  "thiserror",
- "toml",
  "tracing",
 ]
 

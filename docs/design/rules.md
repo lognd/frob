@@ -40,6 +40,17 @@ ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
   `[check] fail_on_unresolved`, the one mechanism in cli.md section 2);
   "unmeasured is not zero" kept (a rule that could not evaluate reports
   Unresolved and that is visible).
+- Bind before own (lint-catalogue-2026-10-08 section 3.2). When a
+  maintained tool has a documented rule for the shape, a `[[check.tool]]`
+  stage with an id map binds it, and frob owns a rule only when (a) it is
+  the cross-file or universal version the model sees better, (b) the
+  language has no such tool, or (c) it needs frob context (tickets,
+  leases, the grimble model, hot roots). Type-aware linters (typescript-eslint
+  with type information, pyright, `dotnet build` analyzers) run as a separate
+  stage outside the 2 s budget and are timed separately.
+- Precision before Warn. A new rule ships Advisory (or `default = off` when
+  its evidence row is contested) until the precision ledger (N16) shows its
+  not-useful rate under the ceiling; only then may its default rise to Warn.
 - Exceptions (exceptions.md), ratchet pools and fix tiers A/B/C are
   kept; quarantine is Milestone 2 or later (D36). Profiles collapse to
   two knobs (section 7).
@@ -149,6 +160,15 @@ scope and content.
 | CI, DK | ci | CI001-CI015 over GitHub Actions and DK001-DK004 over Dockerfiles (cicd.md); owner grimble, crate grimble-ci; tool-bound findings arrive through `[[check.tool]]` stages |
 | POL, GPOL | config | user-declared policy rules: `POL` over tickets and docs from `[[policy]]` in `frob.toml`, `GPOL` over code from `rules/*.grl.toml` next to `grimble.toml` |
 | PATH | code | host-path portability (section 3.1): PATH001 absolute host path literal, PATH002 separator literal applied to a path turned into a string, PATH003 host path pasted into a command-line string; owner grimble, crate grimble-lints; universal over U |
+| ERR | code | error handling: ERR001 empty error handler, ERR002 discarded fallible result (Unresolved when the callee's fallibility is Unknown), ERR003 catch-all that neither rethrows nor logs; owner grimble, crate grimble-lints; universal over U; bound ruff BLE001/E722/S110/TRY and Roslyn CA1031 map here |
+| TESTQ | code | test-body hygiene: TESTQ001 test without assertion, TESTQ002 sleep, wall clock or unseeded rng in a test, TESTQ003 control flow in a test body (off by default); owner grimble, crate grimble-lints; Advisory until measured |
+| PAIR | code | acquire without release on the teardown path (resources, subscriptions, timers, handles): PAIR001 with per-language vocabulary packs (Rust Drop, C# using/Dispose, Unity OnEnable/OnDisable, React effect cleanup, Go defer); owner grimble, crate grimble-lints; relates to PROTO (lint-requirements R20) |
+| TYPING | code | type strictness and boundary casts: TYPING001 strict checking disabled in project configuration, TYPING004 unvalidated cast of network or file data; bound `any`/unsafe-cast lints map here; owner grimble, crate grimble-lints (TYPE is crunk's typography family and is not reused) |
+| VIS | repo | visibility wider than its uses: VIS001 (Advisory), binds rustc `unreachable_pub` where present; owner grimble, crate grimble-arch |
+| FMT, SPELL | tool | bound only: FMT001 formatter check mode (fix tier A, only inside the ticket scope), SPELL001 typos (Advisory, honours typos.toml); owner frob, registered in the frob-check registry. v1 FMT001/FMT002 were directive-format ids folded into PARSE, so `docs/migration/rule-ids.md` must not alias them to the new FMT001 |
+| NAME, LINT | tool | bound only, grimble namespace: NAME naming conventions (ruff N8xx, IDE1006, naming-convention); LINT ranges 0xx idiom, 1xx perf idiom (bound perf is LINT1xx because PERF001 is engine timing), 2xx correctness, 3xx concurrency, 5xx leftover debug |
+| REACT | tool | bound only, grimble web pack: react-hooks and eslint-plugin-react findings |
+| UNITY | code+tool | UNITY0xx stays .meta/GUID, UNITY1xx bound Microsoft.Unity.Analyzers, UNITY2xx own hot-context rules (Advisory), UNITY3xx own input and physics rules; unity pack (dotnet-unity.md) |
 | TIME | code | time and zone discipline (section 3.2): TIME001 local or naive current-time read whose value is stored, compared or sent, TIME002 naive and aware datetime mixed, TIME003 test date literal against code that reads the wall clock; owner grimble, crate grimble-lints; universal over U |
 
 ### 3.1 PATH: host-path portability (D86)
@@ -334,8 +354,15 @@ reconsidered, not before.
 Tool stages (ruff, ty, clippy, tsc...) remain opt-in through
 `[[check.tool]]` entries and run concurrently with rules through the
 `gob-exec` bounded job pool; frob parses
-their output into findings (the parsers are owned by frob-check) so one
-report covers everything. A tool stage declares a `parser` and an id
+their output into findings (the parsers live in
+`crates/gob-check/src/tool_parse.rs`, owned by gob-check, so both products
+share them; frob-check supplies the stage configuration) so one
+report covers everything. The parser list: SARIF 2.1.0, cargo JSON
+diagnostics (rustc and clippy), ruff JSON, ESLint JSON, typos JSON,
+formatter check mode (rustfmt, ruff format, prettier, dotnet format, gofmt,
+clang-format; one finding per file) and stylelint JSON, alongside the
+zizmor and actionlint parsers that exist today. Type-aware linters are a
+separate stage outside the 2 s budget (section 4 targets). A tool stage declares a `parser` and an id
 map from the tool's rule ids to frob ids (for example zizmor
 `unpinned-uses` to CI001, clippy `too_many_arguments` to NEAT002); the
 finding carries the frob id plus `source_rule` (the tool's own id), so

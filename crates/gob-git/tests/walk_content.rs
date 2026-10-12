@@ -6,6 +6,7 @@ use gob_walk::{ContentSource, Digest, WalkConfig, walk};
 
 /// A git repository in `dir` with `core.autocrlf=true`.
 fn autocrlf_repo(dir: &std::path::Path) {
+    gob_git::install_content_backend();
     gob_git::Repo::init(dir).expect("git init");
     let cfg = dir.join(".git/config");
     let mut text = std::fs::read_to_string(&cfg).expect("config");

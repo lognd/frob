@@ -27,6 +27,8 @@ crunk-tokens = { version = "0.532.0", path = "../crunk-tokens" }
 gob-check = { version = "0.532.0", path = "../gob-check" }
 gob-cli = { version = "0.532.0", path = "../gob-cli" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
+# frob:ticket 01M4RN89XGXSXMSF2HV2FPSG41
+gob-git = { version = "0.532.0", path = "../gob-git" }
 gob-product = { version = "0.532.0", path = "../gob-product" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }

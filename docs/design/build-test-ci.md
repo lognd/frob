@@ -77,7 +77,7 @@ grimble-model.md 9.7, cicd.md section 6 and migration.md point here.
    `[neat] require_effects` for this repository's public surface.
 7. The GitHub Actions and Dockerfile adapters and the CI and DK rules in
    grimble-ci (cicd.md); the zizmor and actionlint `[[check.tool]]`
-   stages with parsers and id maps in frob-check land earlier and are
+   stages with parsers in gob-check and id maps in frob-check land earlier and are
    adopted by this repository first.
 8. PM enforcement (PM026 included) and the remaining D36 deferrals
    (grimble-vet, packs, SARIF, salsa, GUI, daemon, jobs, crunk).

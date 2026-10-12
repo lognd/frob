@@ -12,6 +12,7 @@ publish = false
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
+globset = "0.4"
 toml = "1"
 tracing = "0.1"
 

@@ -179,7 +179,7 @@ impl Inputs {
         let scanner = Scanner::new(&ScanConfig::default());
         let mut files = FileInterner::new();
         let mut docs = Vec::new();
-        let roles = Roles::for_root(root);
+        let roles = Roles::new(&gob_config::ledger_dir(root));
         let source = ContentSource::locate(root);
         source.with_reader(|reader| {
             for entry in &walked.files {

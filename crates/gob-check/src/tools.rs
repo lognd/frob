@@ -1123,8 +1123,14 @@ mod tests {
             "debugger;\nvar s = '\u{e9}\u{e9}'; if (s == 1) {}\n",
         )
         .expect("write");
-        let log =
-            ESLINT_SARIF.replace("/work/repo/a.js", &format!("{}/a.js", dir.path().display()));
+        let log = ESLINT_SARIF.replace(
+            "/work/repo/a.js",
+            &dir.path()
+                .join("a.js")
+                .display()
+                .to_string()
+                .replace('\\', "/"),
+        );
         std::fs::write(dir.path().join("out.sarif"), log).expect("write");
         let run = run_full(&sarif_stage("cat out.sarif; exit 1"), dir.path());
         let got: Vec<_> = run

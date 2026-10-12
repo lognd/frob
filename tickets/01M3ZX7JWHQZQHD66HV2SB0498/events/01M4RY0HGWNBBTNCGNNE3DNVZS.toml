@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-12T20:47:43Z"
+digest = "115bb52b69341373e572356cc57da64079b07844d6496c7721d29c7a197e55de"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8a332799-86b5-4ad2-98e0-598498b5a374 with nextest profile: default
+    Starting 1 test across 337 binaries (2956 tests skipped)
+        PASS [   0.019s] gob-packs activation::tests::activation_ignores_nested_pack_toml
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.043s] 1 test run: 1 passed, 2956 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "activation_ignores_nested"
+size = 616
+status = "measured"
+test_count = 1
+tests_digest = "ab261e670dfe7869c9d252af5a01565bcbe0dcbd0013cdb346acac6f983c3be7"
+at = "2026-10-12T20:47:43Z"
+actor = "lognd"
+rev = 1
