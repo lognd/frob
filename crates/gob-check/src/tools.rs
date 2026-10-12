@@ -425,10 +425,9 @@ fn normal_exits(parser: ToolParser) -> &'static [i32] {
     match parser {
         ToolParser::None => &[0],
         ToolParser::ZizmorJsonV1 => &[0, 10, 11, 12, 13, 14],
-        ToolParser::ActionlintJson | ToolParser::Sarif => &[0, 1],
         // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
         // ruff exits 1 when it reports violations and 2 on abnormal termination.
-        ToolParser::RuffJson => &[0, 1],
+        ToolParser::ActionlintJson | ToolParser::Sarif | ToolParser::RuffJson => &[0, 1],
         // Lints under `-D warnings` and compile errors both exit 101; the diagnostics decide.
         ToolParser::CargoJson => &[0, 101],
         // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB

@@ -409,14 +409,21 @@ fn cargo_target(raw: &RawFinding) -> Option<&'static str> {
     }
 }
 
+/// What the ruff code table says about one code.
+enum RuffRule {
+    /// The rule is switched off (`PLR2004` magic values; the lint catalogue keeps it off).
+    Off,
+    /// The code belongs to this frob rule.
+    Maps(&'static str),
+    /// No family claims the code; it falls through to `LINT001`.
+    Unmapped,
+}
+
 // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
 /// The built-in rule for a ruff code the id map does not name, by code family.
-///
-/// `Some(None)` means ruff's rule is switched off (`PLR2004` magic values:
-/// the lint catalogue keeps it off); `None` falls through to `LINT001`.
-fn ruff_target(code: &str) -> Option<Option<&'static str>> {
+fn ruff_target(code: &str) -> RuffRule {
     let target = match code {
-        "PLR2004" => return Some(None),
+        "PLR2004" => return RuffRule::Off,
         "S110" => "ERR001",
         "BLE001" | "E722" => "ERR003",
         _ if code.starts_with("F401") || code.starts_with("F841") || code.starts_with("ARG") => {
@@ -425,17 +432,18 @@ fn ruff_target(code: &str) -> Option<Option<&'static str>> {
         _ if code.starts_with("ASYNC") => "CONC001",
         _ if code.starts_with("PT") => "TESTQ001",
         _ if code.starts_with('B') && code[1..].bytes().all(|b| b.is_ascii_digit()) => "LOGIC001",
-        _ => return None,
+        _ => return RuffRule::Unmapped,
     };
-    Some(Some(target))
+    RuffRule::Maps(target)
 }
 
 /// Default severity of a rule this module can produce.
 fn default_severity(rule: &str) -> Severity {
     match rule {
-        "DEAD001" | "ERR001" | "ERR003" | "CONC001" | "TESTQ001" | "LOGIC001" => Severity::Warn,
         "CI006" | "CI007" => Severity::Error,
-        "CI001" | "CI003" | "CI014" => Severity::Warn,
+        // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
+        "CI001" | "CI003" | "CI014" | "DEAD001" | "ERR001" | "ERR003" | "CONC001" | "TESTQ001"
+        | "LOGIC001" => Severity::Warn,
         _ => Severity::Advisory,
     }
 }
@@ -461,10 +469,12 @@ pub(crate) fn classify(stage: &ToolStage, raw: &RawFinding) -> Option<(RuleId, S
         }
     }
     let defaults = default_id_map(stage.parser);
-    let ruff = (stage.parser == ToolParser::RuffJson && !stage.id_map.contains_key(&raw.tool_id))
-        .then(|| ruff_target(&raw.tool_id))
-        .flatten();
-    if ruff == Some(None) {
+    let ruff = if stage.parser == ToolParser::RuffJson && !stage.id_map.contains_key(&raw.tool_id) {
+        ruff_target(&raw.tool_id)
+    } else {
+        RuffRule::Unmapped
+    };
+    if matches!(ruff, RuffRule::Off) {
         tracing::debug!(stage = %stage.name, code = %raw.tool_id, "ruff rule is off; dropped");
         return None;
     }
@@ -473,7 +483,10 @@ pub(crate) fn classify(stage: &ToolStage, raw: &RawFinding) -> Option<(RuleId, S
         .get(&raw.tool_id)
         .map(String::as_str)
         .or_else(|| defaults.get(raw.tool_id.as_str()).copied())
-        .or(ruff.flatten())
+        .or(match ruff {
+            RuffRule::Maps(id) => Some(id),
+            _ => None,
+        })
         .or_else(|| {
             (stage.parser == ToolParser::CargoJson)
                 .then(|| cargo_target(raw))
