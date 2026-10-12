@@ -2,13 +2,13 @@
 id = "01M3ZX860YGPCJE6ETPJADMNFE"
 title = "Generated front door: ticket-branch README and epic pages"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:45Z"
-updated = "2026-10-03T03:34:45Z"
+updated = "2026-10-12T01:22:18Z"
 idempotency_key = "m2-nav-gen-front-door"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-ledger/src/gen/readme.rs", "crates/frob-ledger/src/gen/epic.rs"]
