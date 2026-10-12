@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-12T21:57:56Z"
-updated = "2026-10-12T23:55:47Z"
+updated = "2026-10-12T23:55:55Z"
 scope = ["crates/gob-cli/src/render.rs", "crates/gob-diagnostics/src/envelope.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/src/refusal.rs", "crates/gob-diagnostics/tests/contract.rs", "crates/gob-diagnostics/tests/snapshots/contract__json_refusal_snapshot.snap", "docs/schemas/envelope.json"]
 
 [[acceptance]]
 text = "EnvelopeError carries message_origin serialized like findings"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "TextOrigin is re-exported from gob-diagnostics lib.rs"
