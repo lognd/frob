@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:47Z"
-updated = "2026-10-12T01:48:22Z"
+updated = "2026-10-12T01:49:12Z"
 idempotency_key = "m2-nav-tour-templates"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-ledger/src/gen/tour.rs", "crates/frob-ledger/templates/tour/**", "crates/frob-ledger/src/gen/mod.rs", "crates/frob-ledger/tests/gen_tour.rs"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a pinned ticket later dropped, when reindexed, then it is replaced and a note reports the replacement"
-bound = false
+bound = true
 +++
 
 Implements navigation.md section 5.
