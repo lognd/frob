@@ -2,7 +2,8 @@
 id = "01M3ZX7FKFSHB8KZM2N4CNF0P9"
 title = "Registry merges inventory and loaded packs with provenance per rule"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
