@@ -26,11 +26,13 @@
 //! assert!(m.effects.is_empty());
 //! ```
 
+mod activation;
 mod error;
 mod limits;
 mod manifest;
 mod validate;
 
+pub use activation::{Activation, Active, Enable};
 pub use error::{PackCode, PackError};
 pub use limits::{MAX_MANIFEST_BYTES, Owner};
 pub use manifest::{Manifest, PackTable, Provides, check_unique, load};
