@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:37Z"
-updated = "2026-10-12T18:24:35Z"
-scope = ["changelog.d/**", "crates/gob-walk/**", "crates/gob-git/**", "crates/gob-lock/**", "crates/gob-cache/**", "crates/gob-ir/**", "crates/gob-exec/**", "Cargo.lock", "crates/frob/src/main.rs", "crates/gob-dev/src/main.rs", "crates/gob-dev/tests/layering.rs", "crates/grimble/src/main.rs", "crates/frob-check/**", "crates/frob-ack/**", "crates/frob-lease/**", "crates/frob-obligations/**", "crates/grimble-check/**"]
+updated = "2026-10-12T18:28:25Z"
+scope = ["changelog.d/**", "crates/gob-walk/**", "crates/gob-git/**", "crates/gob-lock/**", "crates/gob-cache/**", "crates/gob-ir/**", "crates/gob-exec/**", "Cargo.lock", "crates/frob/src/main.rs", "crates/gob-dev/src/main.rs", "crates/gob-dev/tests/layering.rs", "crates/grimble/src/main.rs", "crates/frob-check/**", "crates/frob-ack/**", "crates/frob-lease/**", "crates/frob-obligations/**", "crates/grimble-check/**", "crates/gob-config/**"]
 
 [[acceptance]]
 text = "Given cargo tree -p gob-walk, gob-ir, gob-symbols and grimble-model, when inspected, then no gix crate appears (test over cargo metadata)"
