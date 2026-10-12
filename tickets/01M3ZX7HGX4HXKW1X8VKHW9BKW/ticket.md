@@ -2,13 +2,13 @@
 id = "01M3ZX7HGX4HXKW1X8VKHW9BKW"
 title = "GRL to Rust codegen against the executor operator library"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-03T03:34:24Z"
+updated = "2026-10-12T01:07:24Z"
 idempotency_key = "m2-codegen-core"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/codegen/**"]
