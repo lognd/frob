@@ -1242,6 +1242,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "frob-mirror"
+version = "0.532.0"
+dependencies = [
+ "gob-trust",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "frob-obligations"
 version = "0.532.0"
 dependencies = [

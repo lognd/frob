@@ -1,0 +1,18 @@
+[package]
+name = "frob-mirror"
+version.workspace = true
+description = "Tracker mirror for frob: marker keyring, identity and sync."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+gob-trust = { version = "0.532.0", path = "../gob-trust" }
+thiserror = "2"
+tracing = "0.1"
+
+[lints]
+workspace = true
