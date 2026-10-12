@@ -8,8 +8,12 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-11T15:56:41Z"
-updated = "2026-10-12T02:21:47Z"
+updated = "2026-10-12T02:26:13Z"
 scope = ["changelog.d/**", "crates/gob-symbols/**", "crates/crunk-ingest/**"]
+
+[[acceptance]]
+text = "Given `const y = ;` in a .ts file, when crunk ingests it, then a 'jsx syntax error at line 1' error is reported"
+bound = false
 +++
 
 Split from ~JZPBV6H (its title/body covered sharing numeric_raw; this acceptance was the other follow-up from ~8JGRZY3).
