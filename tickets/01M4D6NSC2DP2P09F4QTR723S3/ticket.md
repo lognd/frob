@@ -8,12 +8,12 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T07:29:35Z"
-updated = "2026-10-12T21:59:07Z"
+updated = "2026-10-12T22:03:23Z"
 scope = ["changelog.d/**", "crates/frob-lease/**", "crates/frob/**"]
 
 [[acceptance]]
 text = "Given a committed ticket with evidence, when lease release runs, then the lease is freed and a later land re-takes it"
-bound = false
+bound = true
 +++
 
 Follow-up from ~RF60RCZ/~57FX1J2: overlapping scopes forced requeue and re-lease dances before landing.
