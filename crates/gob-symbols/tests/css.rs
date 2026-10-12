@@ -216,3 +216,30 @@ fn the_cached_payload_round_trips() {
         ]
     );
 }
+
+// frob:ticket 01M4DPJPDQB79QVGVDVF4PDQKP
+#[test]
+// frob:tests crates/gob-symbols/src/css/mod.rs::declaration
+fn spaced_and_uppercase_important_and_an_empty_custom_property_are_facts_not_errors() {
+    let src = "a { color: red ! important; margin: 0 !IMPORTANT; --x:; --y: ; }\n";
+    let f = extract_file(&entry("site.css", src), src);
+    assert_eq!(
+        f.parse_status,
+        ParseStatus::Complete,
+        "{:?}",
+        f.parse_status
+    );
+    let model = model_of(src);
+    let decls = style::declarations(&model);
+    let got: Vec<(&str, &str, bool)> = decls
+        .iter()
+        .map(|d| (d.property.as_str(), d.raw.as_str(), d.important))
+        .collect();
+    assert_eq!(got, [("color", "red", true), ("margin", "0", true)]);
+    let customs = style::custom_properties(&model);
+    let names: Vec<(&str, &str)> = customs
+        .iter()
+        .map(|c| (c.name.as_str(), c.raw.as_str()))
+        .collect();
+    assert_eq!(names, [("--x", ""), ("--y", "")]);
+}
