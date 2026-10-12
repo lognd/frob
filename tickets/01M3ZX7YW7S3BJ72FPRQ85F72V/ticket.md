@@ -2,7 +2,8 @@
 id = "01M3ZX7YW7S3BJ72FPRQ85F72V"
 title = "Origin on every text field: host, std, pack:NAME, source, tracker, ledger"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
