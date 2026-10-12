@@ -9,6 +9,7 @@ pub mod good_first; // frob:ticket 01M3ZX87QPD21PCSSSAJHVK7HJ
 pub mod guide; // frob:ticket 01M3ZX86G8HFRDA78PBVFSTJNW
 pub mod indexes; // frob:ticket 01M3ZX864QGR220FTRGCDPXYZD
 pub mod readme; // frob:ticket 01M3ZX860YGPCJE6ETPJADMNFE
+pub mod tour; // frob:ticket 01M3ZX887RZB82G8HR5JKQ2FER
 
 use crate::reindex::Generator;
 
@@ -21,4 +22,5 @@ pub const GENERATORS: &[Generator] = &[
     indexes::render,
     guide::render,
     good_first::render,
+    tour::render,
 ];
