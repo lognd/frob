@@ -2,7 +2,8 @@
 id = "01M3ZX7HCQYMTNB9S8ANCZA04W"
 title = "rule new: scaffold a rule from FILE:LINE"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
