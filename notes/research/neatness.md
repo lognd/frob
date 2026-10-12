@@ -924,7 +924,7 @@ Predicate: unit whose name matches a validation vocabulary (validate, check, ens
 and taking a value that its callers then keep using unrefined (callers: Q29 referrers; the call's value is discarded or used only in an if). Class S heuristic.
 FP: validators that legitimately return bool for search/filter use; this is the weakest rule here and is included so the owner can choose. NATIVE.
 
-NEAT026 must-use-missing (P-, Advisory). Source: PF-1, Rust `#[must_use]`, C++ `[[nodiscard]]`. Predicate: a unit with effects `none`/`honest` that
+NEAT026 must-use-missing (P-, Advisory). [Numbering superseded: docs/design/neatness.md section 4 is authoritative and keeps NEAT026 as exhaustive-match; this rule maps to its NEAT032-037 must-use row.] Source: PF-1, Rust `#[must_use]`, C++ `[[nodiscard]]`. Predicate: a unit with effects `none`/`honest` that
 returns non-unit and lacks a must-use attribute (Q08). P- (absence of a required attribute): fires only if hi lacks it, clean if lo has it. Class C+S. Tools (BIND):
 rust must_use_candidate (pedantic), must_use_unit, double_must_use; c++ modernize-use-nodiscard (v); py/ts/go: none.
 
@@ -954,7 +954,7 @@ NEAT040 minimal-unsafe-region (P+, Advisory). Source: SO-5. Predicate: `region(k
 `unsafe fn` containing unsafe operations outside a nested region. Class S. Tools (BIND): rustc unsafe_op_in_unsafe_fn, clippy multiple_unsafe_ops_per_block,
 undocumented_unsafe_blocks (restriction) (v). Other languages (C#, Swift, Go): NotApplicable unless the adapter maps `region(unsafe)`.
 
-NEAT041 enum-glob-in-match (P+, Advisory, Rust). Source: SO-2. BIND clippy enum_glob_use (pedantic), wildcard_enum_match_arm (restriction) (v). Tree-sitter query
+NEAT041 enum-glob-in-match (P+, Advisory, Rust). [Numbering superseded: design numbering has no NEAT041; bound clippy enum_glob_use maps under NEAT026.] Source: SO-2. BIND clippy enum_glob_use (pedantic), wildcard_enum_match_arm (restriction) (v). Tree-sitter query
 if clippy is absent.
 
 NEAT042 powerful-cast (P+, Advisory, C/C++/Rust). Source: CC-1..CC-4. Predicate: a C-style cast; reinterpret_cast/const_cast outside an allowlist; Rust `as` between numeric types

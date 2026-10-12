@@ -73,7 +73,7 @@ Every capability named in the other design files and the v1 inventories.
 | gob-log | tracing subscriber setup, telemetry record, redaction, `--timing` span tree | one observability story |
 | gob-serve | MCP and HTTP transport plumbing on tokio (rmcp setup, JSON envelope over HTTP, SSE, token and Origin checks) | tools and routes stay per product |
 | gob-mdtest | markdown corpus harness over datatest-stable | rule tests in every product |
-| gob-check | the product-neutral check pipeline: snapshot core, file and repo rule caches, `--only` with known sibling families, exception application, render (milestone 2, ticket G06; grimble-model.md 9.7) | `frob check` and `grimble check` run one pipeline |
+| gob-check | the product-neutral check pipeline: tool-output parsers (`tool_parse.rs`: SARIF, cargo, ruff, ESLint, typos, formatter check mode, stylelint, zizmor, actionlint), snapshot core, file and repo rule caches, `--only` with known sibling families, exception application, render (milestone 2, ticket G06; grimble-model.md 9.7) | `frob check` and `grimble check` run one pipeline |
 | gob-plan | the GRL lexer, parser and printer, catalog checks, the plan format (IR, codec, validator), the plan executor and codegen (plugins.md section 10, grl-spec.md) | frob, grimble and crunk run one rule language |
 | gob-pattern | the pattern engine for declarative rules: ast-grep shape at grammar level and over U roles (milestone 2, ticket G17, blocked by the `Doc`-over-U spike of rules.md section 3) | GPOL and NEAT-style rule files in every product |
 | gob-dev | the `cargo dev` binary (never shipped): `cargo dev gen` for every product (rule docs, CLI docs, schemas, config docs, TS types; it calls frob-release for the changelog), repo-internal rules (PROC, dependency layering) | one generator |
@@ -94,7 +94,7 @@ Every capability named in the other design files and the v1 inventories.
 | frob-release | release objects, version authority, changelog fragments and `frob release changelog` compilation, semver from the gob-symbols public-API graph, stamp, publish |
 | frob-fleet | fleet manifest, cross-repo status and routing; Milestone 2 or later (D36) |
 | frob-explore | outline, map, xref, docs search, graph query (thin views over gob-symbols; also exposed by grimble, see 3.3) |
-| frob-check | orchestration of frob's families plus sibling products over gob-check, selection, `--ticket` scoping, tool-output parsers and id maps for `[[check.tool]]`, `status` |
+| frob-check | orchestration of frob's families plus sibling products over gob-check, selection, `--ticket` scoping, id maps for `[[check.tool]]` (the tool-output parsers live in gob-check `tool_parse.rs`), `status` |
 | frob-gh | GitHub over HTTPS: PR for a land, CI status, releases, issue import (Milestone 2 or later (D36)) |
 | frob-hook | `frob hook <event>` guards for agent harnesses; `pre-tool` invokes `grimble vet --hook` as a sibling spawn |
 | frob-serve | MCP tools and the HTTP API on `gob-serve`; embeds the GUI SPA (gui.md); Milestone 2 or later (D36) |
@@ -167,6 +167,12 @@ namespaces families by product so a foreign family is never unknown.
 | GPOL | grimble | grimble-lints | user policy over code; `rules/*.grl.toml` next to grimble.toml and `[[policy]]` in grimble.toml |
 | PATH | grimble | grimble-lints | host-path portability, PATH001-PATH003 (rules.md section 3.1, D86); GRL rules in the standard pack; knobs in `grimble.toml` `[path]` |
 | TIME | grimble | grimble-lints | time and zone discipline, TIME001-TIME003 (rules.md section 3.2, D93); GRL rules in the standard pack; knobs in `grimble.toml` `[time]` |
+| ERR, TESTQ, PAIR, TYPING | grimble | grimble-lints | ERR001-ERR003, TESTQ001-TESTQ003, PAIR001, TYPING001 and TYPING004 (rules.md section 3); universal over U; TYPING is not TYPE (crunk typography) |
+| VIS | grimble | grimble-arch | VIS001 visibility wider than its uses |
+| FMT, SPELL | frob | frob-check (registry), parsers in gob-check | bound only: formatter check mode and typos through `[[check.tool]]`; the v1 FMT001/FMT002 ids were folded into PARSE and must not alias the new FMT001 |
+| NAME, LINT | grimble | grimble-lints (registry), parsers in gob-check | bound only: LINT 0xx idiom, 1xx perf idiom, 2xx correctness, 3xx concurrency, 5xx leftover debug; bound perf is LINT1xx because PERF001 is engine timing |
+| REACT | grimble | grimble web pack (id map is pack content) | bound only: react-hooks and eslint-plugin-react |
+| UNITY | grimble | unity pack; own rules in grimble-lints | UNITY0xx .meta/GUID, UNITY1xx bound Unity analyzers, UNITY2xx hot-context, UNITY3xx input and physics (dotnet-unity.md) |
 | COLOR, SPACE, TYPE, RADIUS, SIZE, LAYER, CONTRAST, ORG, TW, BP | crunk | crunk-rules | notes/crunk.md section 4 |
 | A11Y, SEO, LAUNCH, WEBPERF (markup and assets) | crunk | crunk pack crunk-web | D88/D89: front-end web lint moved from v1 frob; v1 catalog in notes/v1/gates-and-rules.md section 11 |
 | WEBSEC (into SEC), SQL, COMPLY (with PII), ROUTE, WEBPERF (server); STORE, SYSDESIGN, GRAMMAR | grimble | grimble packs grimble-websec and grimble-sysdesign | D89: code, data and system-design lint moved from v1 frob; v1 catalog section 11 and v1 backlog clusters B1-B2 |

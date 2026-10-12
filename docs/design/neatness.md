@@ -96,38 +96,52 @@ the honesty boundary applied to honesty itself.
 
 ## 4. The catalogue (37 rules; the first ten ship first)
 
+The first ten are ordered by evidence (lint-catalogue-2026-10-08: C is
+the practitioner consensus factor, E_det the evidence a mechanical rule
+can act on): NEAT004, NEAT003, NEAT012, NEAT031 and NEAT030 come before
+NEAT006 and NEAT007, which have the weakest support. NEAT001, NEAT006 and
+NEAT009 are contested or low-evidence: Advisory, and bound-tool only
+where a tool exists.
+
+Numbering: this table is authoritative. notes/research/neatness.md
+section 6 used NEAT026 for must-use-missing and NEAT041 for
+enum-glob-in-match; the design numbering keeps NEAT026 as exhaustive-match
+(the merge request used the design numbering), and those two research
+rules map to the language-level must-use row (NEAT032-037) and to the
+bound clippy `enum_glob_use` under NEAT026; research ids are superseded.
+
 Full table with predicates, knobs and per-language tool coverage in the
 research note section 7. Severity defaults are Warn or Advisory; every
 threshold is a materialized knob under `[neat]`.
 
-| Id | Rule | Polarity | Needs | First ten |
-|---|---|---|---|---|
-| NEAT001 | function-too-long (lines or statements) | Pn | syntax | bound tool only |
-| NEAT002 | parameter-count over `max_params` (default 5) | Pn | syntax | 1 |
-| NEAT003 | boolean-flag-parameter (positional bool) | P+ | syntax, types where available | 2 |
-| NEAT004 | nesting-depth over `max_depth` (default 3) | Pn | syntax | 3 |
-| NEAT005 | cognitive-complexity (Sonar definition) | Pn | syntax | bound tool only |
-| NEAT006 | raw-loop: a loop whose body exceeds `raw_loop_statements` and is not a named unit | Pn | syntax | 5 |
-| NEAT007 | section-comment: comments that label phases inside one body | P+ | syntax | 4 |
-| NEAT008 | parameter-object-candidate: the same N parameters repeated across units | Pn | syntax | later |
-| NEAT009 | magic-value | P+ | syntax | bound tool only |
-| NEAT010 | effect-ceiling-exceeded: a unit marked core or honest whose lo exceeds its claim | P+ | effects capability | 8 |
-| NEAT011 | effects-undeclared: public unit without a claim where `[neat] require_effects` is on | P- | syntax | 8 |
-| NEAT012 | hidden-state-read: read or write of a mutable global from a unit not marked shell | P+ | scope graph | 6 |
-| NEAT013 | ambient-source-call: clock, rng, env, fs, net, stdio, exit called from a unit not marked shell | P+ | callee vocabulary | 7 |
-| NEAT014-018 | shell-depth, core-calls-shell, io-in-leaf, injected-dependency-missing, materialize-instead-of-visit | mixed | effects, scope graph | later |
-| NEAT019 | command-query-separation | P+ | effects | off by default |
-| NEAT020-026 | type rules: weakest-type-parameter, newtype-candidate, precondition-in-type, receipt-type, strong-id, parse-dont-validate, exhaustive-match | mixed | types capability | later |
-| NEAT027-029 | boundary rules: ad-hoc-data-structure, incidental-structure, duplicate-shape | Pn | syntax, digests | later |
-| NEAT030 | thin-hook: a unit marked hook (or matched by the framework vocabulary) with more than `hook_statements` statements of logic | Pn | syntax | 9 |
-| NEAT031 | dispatch-site-owns-logic (the ruff PR pattern) | P+ | syntax | 10 |
-| NEAT032-037 | language-level: const-fn-candidate, must-use, nodiscard, unnecessary-mutation, global-init, effect-row-widening | mixed | per language | bound tools |
+| Id | Rule | Polarity | Needs | Evidence (catalogue C, E_det) | First ten |
+|---|---|---|---|---|---|
+| NEAT001 | function-too-long (lines or statements) | Pn | syntax | contested; K36 C 0.5, E_det 0.23 | bound tool only, Advisory, off |
+| NEAT002 | parameter-count over `max_params` (default 5) | Pn | syntax | K35 C 1.77, E_det 0.48 | 1 |
+| NEAT003 | boolean-flag-parameter (positional bool) | P+ | syntax, types where available | K35 C 1.77, E_det 0.48 | 3 |
+| NEAT004 | nesting-depth over `max_depth` (default 3) | Pn | syntax | K04 C 1.78, E_det 2.8 (highest) | 2 |
+| NEAT005 | cognitive-complexity (Sonar definition) | Pn | syntax | K04 C 1.78, bound | bound tool only |
+| NEAT006 | raw-loop: a loop whose body exceeds `raw_loop_statements` and is not a named unit | Pn | syntax | contested (ADV007), weakest | 9, Advisory, bound only |
+| NEAT007 | section-comment: comments that label phases inside one body | P+ | syntax | no source beyond one voice, weak | 10 |
+| NEAT008 | parameter-object-candidate: the same N parameters repeated across units | Pn | syntax | unmeasured in the catalogue | later |
+| NEAT009 | magic-value | P+ | syntax | K25 E_det 0.63, low | bound tool only, Advisory, off |
+| NEAT010 | effect-ceiling-exceeded: a unit marked core or honest whose lo exceeds its claim | P+ | effects capability | unmeasured in the catalogue | 8 |
+| NEAT011 | effects-undeclared: public unit without a claim where `[neat] require_effects` is on | P- | syntax | unmeasured in the catalogue | 8 |
+| NEAT012 | hidden-state-read: read or write of a mutable global from a unit not marked shell | P+ | scope graph | K12 C 2.25 (consensus high, mined low), E_det 0.63 | 4 |
+| NEAT013 | ambient-source-call: clock, rng, env, fs, net, stdio, exit called from a unit not marked shell | P+ | callee vocabulary | K13 C 1.23, E_det 0.2 | 7 |
+| NEAT014-018 | shell-depth, core-calls-shell, io-in-leaf, injected-dependency-missing, materialize-instead-of-visit | mixed | effects, scope graph | unmeasured in the catalogue | later |
+| NEAT019 | command-query-separation | P+ | effects | unmeasured in the catalogue | off by default |
+| NEAT020-026 | type rules: weakest-type-parameter, newtype-candidate, precondition-in-type, receipt-type, strong-id, parse-dont-validate, exhaustive-match (NEAT026; bound clippy wildcard_enum_match_arm, ts-eslint switch-exhaustiveness-check, IDE0010/0072) | mixed | types capability | unmeasured in the catalogue | later |
+| NEAT027-029 | boundary rules: ad-hoc-data-structure, incidental-structure, duplicate-shape | Pn | syntax, digests | unmeasured in the catalogue | later |
+| NEAT030 | thin-hook: a unit marked hook (or matched by the framework vocabulary) with more than `hook_statements` statements of logic | Pn | syntax | consensus-led, ranked after NEAT031 | 6 |
+| NEAT031 | dispatch-site-owns-logic (the ruff PR pattern) | P+ | syntax | consensus-led (ruff PR pattern) | 5 |
+| NEAT032-037 | language-level: const-fn-candidate, must-use, nodiscard, unnecessary-mutation, global-init, effect-row-widening | mixed | per language | unmeasured in the catalogue | bound tools |
 
 Where an existing linter implements a rule better per language (clippy
 too_many_arguments and cognitive_complexity, ruff PLR0913 and C901,
 eslint max-params and complexity, golangci gocognit and funlen), frob's
 `[[check.tool]]` stage binds that tool's finding under the NEAT id
-(parser and id map owned by frob-check, `source_rule` kept on the
+(parser owned by gob-check, id map by frob-check, `source_rule` kept on the
 finding; rules.md section 4) rather than re-implementing it; the universal implementation is for languages
 without such a tool. Rule pages say which applies.
 

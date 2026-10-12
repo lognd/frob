@@ -249,11 +249,11 @@ them (D76).
 | TYPE, SPACE, RADIUS, SIZE, LAYER, ORG | scale steps, type ramp, z-index layers, organisation (the Python families, ported) | T0 |
 | LAYOUT, RESP | overflow, overlap, clipping, safe area, target size per profile and standard (WCAG 2.2 AA 24x24 CSS px, Apple 44x44 pt, Android 48x48 dp with 8 dp spacing), breakpoint coverage | T1 |
 | COMP, STATE | every variant combination renders, required states present, props bound to tokens, code mapping exists and matches the exported props | T0, T1 |
-| A11Y | names, roles, landmarks, heading order, focus order and visibility, keyboard map, target size, reduced-motion twin | T0, T1, T3 |
+| A11Y | names, roles, landmarks, heading order, focus order and visibility, keyboard map, target size, reduced-motion twin. JSX/TSX goes through bound eslint-plugin-jsx-a11y; own GRL rules cover HTML, Vue, USS and cross-file checks | T0, T1, T3 |
 | MOTION | durations and easings from tokens, reduced-motion alternative, flash threshold | T0, T2 |
 | CONTENT, I18N | literal copy in scenes, length budgets, pseudo-locale expansion fits, RTL mirroring | T0, T1 |
 | VIS, THEME, EXPORT | visual regression thresholds, theme completeness, export parity across targets (Tailwind against USS against C#) | T0, T2 |
-| GX | gamepad focus graph complete (every focusable reachable, no traps, default selection), glyph per device family, remap conflicts, HUD in safe area at every profile, minimum text body height measured on the glyph, not the CSS size (Xbox Accessibility Guidelines: console 26 px at 1080p, 52 at 4K; PC 18 px at 1080p; scalable to 200 percent), text contrast 4.5:1 (3:1 large or inactive, 7:1 high-contrast mode), flash limits, colour-blind mode coverage, subtitle size, hold alternatives | T0, T1 |
+| GX | gamepad focus graph complete (every focusable reachable, no traps, default selection), glyph per device family, remap conflicts, HUD in safe area at every profile, minimum text body height measured on the glyph, not the CSS size (Xbox Accessibility Guidelines: console 26 px at 1080p, 52 at 4K; PC 18 px at 1080p; scalable to 200 percent), text contrast 4.5:1 (3:1 large or inactive, 7:1 high-contrast mode), flash limits, colour-blind mode coverage, subtitle size, hold alternatives; plus the N24 items of lint-catalogue-2026-10-08 | T0, T1 |
 | UX, PROC | design-cycle traceability (section 8), ready gate, flows without dead ends or missing error paths | T0 |
 | web pack (D88/D89) | A11Y, SEO, LAUNCH, WEBPERF over markup and assets (crunk-web, existing tickets) | T0 |
 
@@ -327,7 +327,10 @@ CI today; its game shares a palette with the web that has drifted).
    --patch`, `rename`, `extract-token`, the serve patch tool; COMP, STATE,
    CONTENT lints at T0.
 4. Scenes and the T1 solver (taffy plus the text spike), layout-solve
-   JSON and baselines; LAYOUT, RESP, A11Y-T1, GX focus graph.
+   JSON and baselines; LAYOUT, RESP, VIS, A11Y-T1, GX focus graph.
+   T1 LAYOUT/RESP and VIS come ahead of SLOP (F-UI-RENDER evidence,
+   lint-catalogue-2026-10-08); SLOP stays Advisory, as the deslop
+   research already says.
 5. Render and gallery (Playwright), T2/T3 lints, the solver-browser
    parity test, visual regression.
 6. GX pack and Unity UI Toolkit (USS/UXML in gob), uGUI audit; design

@@ -76,6 +76,21 @@ dead in player builds or the reverse.
 - Asset hygiene: every tracked file under `Assets/` and `Packages/` has
   its `.meta`, and no `.meta` is orphaned; a duplicate GUID is an error.
   This is a small UNITY rule family in the pack.
+- Hot context: the `hot(region)` capability (universal-model.md 4.4)
+  takes `Update`, `FixedUpdate`, `LateUpdate` and `OnGUI` as hot roots;
+  UNITY2xx rules fire only in code reachable from them.
+- Version gate: the engine version is read from
+  `ProjectSettings/ProjectVersion.txt`; `Find*` lookups and `foreach`
+  allocation behaviour changed across versions, so rules that depend on
+  them are gated by version.
+- Rule ranges (family UNITY): UNITY0xx `.meta` and GUID hygiene; UNITY1xx
+  bound Microsoft.Unity.Analyzers findings (UNT rules, `source_rule` kept);
+  UNITY2xx own hot-context rules (GetComponent, Find*, Camera.main and
+  managed allocation in hot code), Advisory; UNITY3xx own input and
+  physics rules (legacy Input in an Input System project, Rigidbody forces
+  or moves in Update). PAIR001 carries the Unity vocabulary (`+=` in
+  `OnEnable` without `-=` in `OnDisable` or `OnDestroy`, Addressables
+  Load/Release).
 - Out of scope at first: scene and prefab YAML contents beyond GUID
   references, ShaderLab and HLSL (opaque F0 files, as today).
 
@@ -102,6 +117,10 @@ ids through the same reach graph as Rust and Python.
 2. `dotnet` evidence provider and C# test selection.
 3. The `unity` vocabulary pack (entry points, serialized fields,
    dynamic calls, `.meta` hygiene).
+   3b. Before any own Unity rule, bind Roslyn and
+   Microsoft.Unity.Analyzers through `dotnet build` SARIF with the USP
+   suppressor set on, so stock IDE rules stop firing on engine-called
+   messages and serialized fields; the findings map to UNITY1xx.
 4. The `unity` evidence provider (needs a Unity editor; proven on the
    owner's Windows side through goway, one run at a time).
 5. Migrate project-hullbreach `game` and `platform` from frob v1 to v2

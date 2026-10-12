@@ -76,3 +76,30 @@ New candidates become tickets with their evidence attached.
   module logger, TODO.md for todos, .gitignore with data/).
 - Budget the GitHub API (5000 points per hour): resumable, cached, back off on secondary limits.
 - Publishable outputs avoid personal data: no usernames or emails; link PRs, aggregate counts.
+
+## Synthesis method as used (appended 2026-10-12, from lint-catalogue-2026-10-08 section 1)
+
+Recorded so a rerun with new mining data is mechanical.
+
+- Score per row: E = M x s x C x A; E_det = E x delta; build rank = E_det x P / cost.
+- M (mined score, Strand A): M = r x (1 + 2B - N) + 0.5 f + 0.25 m, with r the post-stratified
+  percent share of human thread-opening comments on non-AI PRs, B and N the blocking and nit
+  shares of those comments, f the share of fix commits mapping to the candidate (denominator 600)
+  and m the share of genuine refactorings mapping to it (denominator 491). Correction applied:
+  a quarter of R-DESIGN-STRUCTURE goes to C23.
+- s: share of a mined candidate used by a row when one candidate feeds several rows [J].
+- C (consensus, Strand B) in [0.25, 2.5]: q = min(1, w / w_ref) with w = flag + 0.5 cond - 1.5
+  oppose, voices weighted PASS 1.0, PASS-W 0.5, organisations 1.0, unvetted 0, and w_ref = 15
+  (CS), 5 (CG), 8 (CW). C = 1 + q, plus 0.25 per further corpus with q >= 0.3 (cap +0.5), plus
+  0.25 when a cited source carries measured data. No coverage: C = 1.0. Contested: C = 0.5
+  (Advisory or off only). Opposed-dominant: C = 0.25.
+- A (agentic modifier): 1.1 when the category's share on AI-authored PRs is at least 1.4 times
+  its human share, else 1.0.
+- delta (detectable fraction), P (precision prior: 0.95-1.0 compiler or formatter facts, 0.8-0.9
+  bound linters and declared structure, 0.6-0.7 heuristics with Bounds, 0.3-0.5 noisy shapes)
+  and cost (story points) are judgement [J]; P enters the rank only.
+- Discounts: AI-reviewer comments and human comments on AI PRs carry weight 0 in M (the latter
+  enter only through A); practitioner opinion cannot create a signal (C multiplies M); domain
+  packs use the parent category's stratum share times a specificity share [J].
+- Rerun: change inputs (MR, CS, CG, CW tables or a [J] value), recompute the table, and
+  reorder; the top three rows should be stable under halving any one [J] value.

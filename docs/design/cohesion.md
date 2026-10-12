@@ -27,7 +27,11 @@ Method could not be fetched and is related work only.
 decides it. It is decomposed into four signals, each a computable
 question over U with Bounds, each its own rule so a finding says which
 kind of mixing it saw. All are P+ (fire only on proof), report
-Unresolved between their bounds, and are Warn by default.
+Unresolved between their bounds. COH001-COH003 are Advisory until
+measured precision (the precision ledger, N16) clears the ceiling: the
+evidence is weak (five voices, no data; C21 is 0.5 percent and C23 0.4
+percent of mined review comments), so Warn is earned, not defaulted. The
+Bounds design is unchanged.
 
 | Id | Mixing | Question over U | Needs |
 |---|---|---|---|
