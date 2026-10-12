@@ -46,6 +46,7 @@
 | `rule catalog` | yes | no | 0 ok, 1 negative, 2 usage, 4 internal | Print a catalog word (kind, verb or flag), or list them all; an unknown word gets a suggestion. |
 | `rule check` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Compile rule files and print each rule's cost class and prefilter; exits 1 on a compile error. |
 | `rule fmt` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Rewrite rule files to the canonical layout; `--check` only reports and exits 1 on a difference. |
+| `rule new` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Scaffold `rules/ID.grl` from the code at `FILE:LINE`; `--print` shows it without writing. |
 | `rule test` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run the examples of rule files; exits 1 when any example fails. |
 | `test` | no | yes | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run only the tests that reach the files changed against a base, and record the evidence. |
 | `ticket branch init` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create the orphan `[tickets] branch` with a README placeholder through gob-git compare-and-swap, leaving the code checkout alone. |

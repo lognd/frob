@@ -117,3 +117,43 @@ fn rule_fmt_check_fails_on_a_messy_file_and_fmt_rewrites_it() {
     let (code, _, _) = grimble(dir.path(), &["rule", "fmt", "--check", "--json"]);
     assert_eq!(code, 0);
 }
+
+// frob:ticket 01M3ZX7HCQYMTNB9S8ANCZA04W
+// frob:tests crates/grimble/src/rule_cmd.rs::RuleNew
+#[test]
+fn rule_new_writes_a_scaffold_whose_only_check_error_is_the_missing_clean_example() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "src/parse.rs",
+        "fn p() {\n    dbg!(tokens.len());\n}\n",
+    );
+    let args = [
+        "rule",
+        "new",
+        "NOPE001",
+        "--from",
+        "src/parse.rs:2",
+        "--json",
+    ];
+    let (code, env, err) = grimble(dir.path(), &args);
+    assert_eq!(code, 0, "{env} {err}");
+    let text = std::fs::read_to_string(dir.path().join("rules/NOPE001.grl")).unwrap();
+    assert!(text.contains("find d: `dbg!($$$ARGS)`"), "{text}");
+    assert!(
+        text.contains("example fire") && text.contains("## Remedy"),
+        "{text}"
+    );
+    let (code, env, _) = grimble(dir.path(), &["rule", "check", "--json"]);
+    assert_eq!(code, 1, "{env}");
+    let errors: Vec<&str> = env["data"]["files"][0]["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|d| d["severity"] == "error")
+        .map(|d| d["code"].as_str().unwrap())
+        .collect();
+    assert_eq!(errors, ["GRL011"], "{env}");
+    let (code, _, err) = grimble(dir.path(), &args);
+    assert_eq!(code, 2, "a second run must refuse to overwrite: {err}");
+}

@@ -1,4 +1,4 @@
-//! `rule test`, `rule check`, `rule catalog` and `rule fmt`: thin verbs over `gob_plan::verbs`.
+//! `rule test`, `rule check`, `rule catalog`, `rule fmt` and `rule new`: thin verbs over `gob_plan::verbs`.
 
 // frob:ticket 01M3ZX7FCFBJSWMTZGCQMW7215
 
@@ -341,5 +341,100 @@ impl Command for RuleFmt {
         let mut payload = Payload::new(data).with_already(already);
         payload.warnings = skipped;
         Ok(payload)
+    }
+}
+
+// frob:ticket 01M3ZX7HCQYMTNB9S8ANCZA04W
+
+/// Scaffold `rules/ID.grl` from the code at `FILE:LINE`; `--print` shows it without writing.
+#[derive(Debug, Clone, Default, gob_cli::Command)]
+#[command(
+    verb = "rule new",
+    product = "grimble",
+    exits(ok, refused, usage, internal)
+)]
+pub struct RuleNew {
+    id: String,
+    location: String,
+    print: bool,
+}
+
+/// Output of `rule new`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct RuleNewData {
+    /// Where the rule file is (or would be, under `--print`), relative to the workspace root.
+    pub path: String,
+    /// True when the file was written.
+    pub written: bool,
+    /// The code line the rule was built from.
+    pub from: String,
+    /// The snippet the rule looks for.
+    pub snippet: String,
+    /// The scaffolded text.
+    pub text: String,
+}
+
+impl Command for RuleNew {
+    type Data = RuleNewData;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        cmd.arg(
+            Arg::new("id")
+                .required(true)
+                .value_name("ID")
+                .help("Rule id, such as NOPE001"),
+        )
+        .arg(
+            Arg::new("location")
+                .long("from")
+                .required(true)
+                .value_name("FILE:LINE")
+                .help("The code to build the rule from"),
+        )
+        .arg(
+            Arg::new("print")
+                .long("print")
+                .action(ArgAction::SetTrue)
+                .help("Show the scaffold without writing rules/ID.grl"),
+        )
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let get = |k: &str| m.get_one::<String>(k).cloned().unwrap_or_default();
+        Ok(Self {
+            id: get("id"),
+            location: get("location"),
+            print: m.get_flag("print"),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<RuleNewData> {
+        let usage = |e: gob_plan::verbs::new::NewError| CliError::Usage(e.to_string());
+        let (file, line) = gob_plan::verbs::new::parse_location(&self.location).map_err(usage)?;
+        let source = std::fs::read_to_string(ctx.cwd.join(file))
+            .map_err(|e| CliError::Usage(format!("cannot read {file}: {e}")))?;
+        let rule = gob_plan::verbs::new::scaffold(&self.id, file, line, &source).map_err(usage)?;
+        let root = gob_product::workspace::locate_root(crate::PRODUCT, &ctx.cwd);
+        let target = root.join(&rule.path);
+        if !self.print {
+            if target.exists() {
+                return Err(CliError::Usage(format!("{} already exists", rule.path)));
+            }
+            if let Some(dir) = target.parent() {
+                std::fs::create_dir_all(dir).map_err(|e| {
+                    CliError::internal(format!("cannot create {}: {e}", dir.display()))
+                })?;
+            }
+            std::fs::write(&target, &rule.text)
+                .map_err(|e| CliError::internal(format!("cannot write {}: {e}", rule.path)))?;
+            tracing::info!(path = %rule.path, "rule scaffolded");
+        }
+        Ok(Payload::new(RuleNewData {
+            path: rule.path,
+            written: !self.print,
+            from: rule.from,
+            snippet: rule.snippet,
+            text: rule.text,
+        }))
     }
 }

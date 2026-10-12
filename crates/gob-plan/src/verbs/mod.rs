@@ -9,6 +9,8 @@
 pub mod catalog;
 pub mod check;
 pub mod fmt;
+// frob:ticket 01M3ZX7HCQYMTNB9S8ANCZA04W
+pub mod new;
 pub mod test;
 
 use std::path::Path;
