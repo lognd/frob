@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:37Z"
-updated = "2026-10-12T21:41:44Z"
+updated = "2026-10-12T21:52:48Z"
 idempotency_key = "m2-sec-text-origin"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-diagnostics/src/record.rs", "crates/gob-diagnostics/src/envelope.rs", "docs/schemas/**"]
+scope = ["crates/gob-diagnostics/src/record.rs", "crates/gob-diagnostics/src/envelope.rs", "docs/schemas/**", "crates/gob-diagnostics/tests/snapshots/**"]
 
 [[acceptance]]
 text = "Given a finding from a plugin pack, when rendered as JSON, then its message carries origin pack:NAME"
