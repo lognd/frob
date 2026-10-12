@@ -512,3 +512,19 @@ Counts by parent: EB (new epic) 7 (N01-N04, N06-N08); ~GJVPDC0 5 (N05, N17-N20);
     own perf rules need hot context.
 11. lint-evidence-study.md: append the method of section 1 as the synthesis method actually used
     (formula, weights, discounts) so a rerun with new mining data is mechanical.
+
+## 6. Filed tickets (section 4.2 id to ledger handle)
+
+Every new candidate in 4.2 has a ledger ticket (checked 2026-10-12 against the ledger titles).
+
+| Proposal | Handle | Proposal | Handle | Proposal | Handle |
+|---|---|---|---|---|---|
+| EB epic | ~224NQP4 | N09 | ~8KA74BB | N18 | ~CC940D3 |
+| N01 | ~WAZA1EH | N10 | ~K4B9CKF | N19 | ~3XRQ6RM |
+| N02 | ~NGM7KVQ | N11 | ~DJ4K8YD | N20 | ~D49JJ4V |
+| N03 | ~17FNR3C | N12 | ~MAWDT22 | N21 | ~7ASNXV3 |
+| N04 | ~V4KM7K8 | N13 | ~KRWYGNW | N22 | ~Z80TDP9 |
+| N05 | ~DTW2X7C | N14 | ~S82E1JG | N23 | ~F9HC26C |
+| N06 | ~3KGFTNE | N15 | ~BMAZEDQ | N24 | ~8RX5YZG |
+| N07 | ~H36992B | N16 | ~B2ZBRER | N25 | ~S2R6AYB |
+| N08 | ~BVDP7MK | N17 | ~F0RDFDA | | |

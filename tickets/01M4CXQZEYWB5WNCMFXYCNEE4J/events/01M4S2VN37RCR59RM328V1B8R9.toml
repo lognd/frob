@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-12T22:11:21Z"
+digest = "7f90533e47470dea14c44a1475b5baade81d6fc0df923d1e64b4ba034ff23a72"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 07s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 646989c9-e267-4182-8755-2a870df04636 with nextest profile: default
+    Starting 1 test across 339 binaries (2977 tests skipped)
+        PASS [   0.018s] crunk-tokens::modes_export two_modes_export_to_uss_and_csharp_deterministically
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.049s] 1 test run: 1 passed, 2977 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "two_modes_export_to_uss_and_csharp_deterministically"
+size = 1065
+status = "measured"
+test_count = 1
+tests_digest = "083d060b244c2cbe5e091a85d12fb533b848628f73d893223ebde2909a993dc0"
+at = "2026-10-12T22:11:21Z"
+actor = "lognd"
+rev = 1

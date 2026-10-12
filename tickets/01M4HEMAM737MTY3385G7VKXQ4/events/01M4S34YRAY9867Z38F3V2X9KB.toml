@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-12T22:18:50Z"
+digest = "97a24ff818c88ead510f3e571ab6b4bc982ab3d79511691d851dec6e5495cb3e"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ddfc037a-fca6-4f8b-bf5e-877bc28e01b8 with nextest profile: default
+    Starting 4 tests across 5 binaries (24 tests skipped)
+        PASS [   0.177s] grimble-check::packs an_unused_pack_atom_grant_is_cap002
+        PASS [   0.182s] grimble-check::packs a_granted_pack_atom_use_is_clean
+        PASS [   0.200s] grimble-check::packs a_pack_atom_use_without_a_grant_is_cap001
+        PASS [   0.201s] grimble-check::packs a_granted_pack_atom_with_no_detector_for_a_language_is_unresolved_once_per_node
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.202s] 4 tests run: 4 passed, 24 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check pack_atom"
+size = 842
+status = "measured"
+test_count = 4
+tests_digest = "7e97d3f0eda2cbe6c22574300a1e0aa9653698614a0837b5b627123753d611ea"
+at = "2026-10-12T22:18:50Z"
+actor = "lognd"
+rev = 1
