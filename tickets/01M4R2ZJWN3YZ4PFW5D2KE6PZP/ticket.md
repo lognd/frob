@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-12T12:56:41Z"
-updated = "2026-10-12T18:12:17Z"
+updated = "2026-10-12T18:13:20Z"
 scope = ["docs/reference/tool-stages.md"]
 +++
 
