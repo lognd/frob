@@ -8,7 +8,7 @@ points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:09:45Z"
-updated = "2026-10-12T12:57:14Z"
+updated = "2026-10-12T12:58:43Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "frob.toml"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given this repository, when frob check runs, then the clippy finding count equals cargo clippy's"
-bound = false
+bound = true
 +++
 
 notes/research/lint-catalogue-2026-10-08.md rows K02, K05, K08, K14, K23, K30, K39 (4.2 N02); notes/research/mining-report-2026-10-08.md 3.6 C02, C16, C17. The cargo clippy stage in frob.toml is pass/fail only today.
