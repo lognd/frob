@@ -2,13 +2,13 @@
 id = "01M3ZX88BP9P0ZWPMJ5J5SBSMN"
 title = "frob tour: the stops one at a time with next and previous"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:47Z"
-updated = "2026-10-03T03:34:47Z"
+updated = "2026-10-12T01:53:55Z"
 idempotency_key = "m2-nav-tour-verb"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob/src/tour_cmd.rs"]
