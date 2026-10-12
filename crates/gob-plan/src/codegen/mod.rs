@@ -5,7 +5,7 @@
 //! It forbids `unsafe`, performs no I/O and names no ambient capability. The output is a pure
 //! function of the plan: generating twice is byte-identical.
 
-// frob:ticket 01M3ZX7H8FPEAY1X1WVWKHW9BKW
+// frob:ticket 01M3ZX7HGX4HXKW1X8VKHW9BKW
 
 use std::fmt::Write as _;
 

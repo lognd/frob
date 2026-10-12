@@ -1,7 +1,7 @@
 //! Generated rule modules: byte-identical output, forbidden `unsafe`, and the same findings as
 //! the plan run directly.
 
-// frob:ticket 01M3ZX7H8FPEAY1X1WVWKHW9BKW
+// frob:ticket 01M3ZX7HGX4HXKW1X8VKHW9BKW
 
 use gob_plan::codegen::generate;
 use gob_plan::exec::Input;
