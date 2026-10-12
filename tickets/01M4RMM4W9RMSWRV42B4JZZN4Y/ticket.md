@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-12T18:05:00Z"
-updated = "2026-10-12T18:27:22Z"
+updated = "2026-10-12T21:11:33Z"
 scope = ["docs/reference/tool-stages.md"]
 
 [[acceptance]]
