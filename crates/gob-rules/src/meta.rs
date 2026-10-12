@@ -174,6 +174,28 @@ impl RuleMeta {
     }
 }
 
+/// Where a rule came from: the compiled-in standard library or a named pack.
+///
+/// frob:ticket 01M3ZX7FKFSHB8KZM2N4CNF0P9
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub enum Provenance {
+    /// Compiled in (the inventory); listed as `std`.
+    Std,
+    /// Loaded from the pack with this name.
+    Pack(String),
+}
+
+impl Provenance {
+    /// The label shown in `rules list`: `std` or the pack name.
+    #[must_use]
+    pub fn label(&self) -> &str {
+        match self {
+            Self::Std => "std",
+            Self::Pack(name) => name,
+        }
+    }
+}
+
 /// An inventory item pointing at a rule's static metadata.
 #[derive(Debug)]
 pub struct RuleEntry {

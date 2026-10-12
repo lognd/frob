@@ -43,10 +43,12 @@ pub use index::{
     Body, BoundRule, FileFn, InapplicableFn, RepoFn, RuleIndex, SubjectsFn, assert_unique,
 };
 pub use inventory;
-pub use meta::{Applicability, FixKind, Polarity, RuleEntry, RuleMeta, Scope, Severity, Tier};
+pub use meta::{
+    Applicability, FixKind, Polarity, Provenance, RuleEntry, RuleMeta, Scope, Severity, Tier,
+};
 pub use precision::{Demotion, MIN_DECIDED, PrecisionLedger, PrecisionRow, RuleTally};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
-pub use registry::{Registry, RegistryError};
+pub use registry::{Registry, RegistryError, RuleRow, RuleSettings};
 pub use required::RequiredReason;
 pub use unresolved::{RuleReport, UnresolvedReason};
 
