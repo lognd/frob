@@ -2,12 +2,12 @@
 id = "01M4M27E8E0DK7XAQ2D7T0Q8TR"
 title = "A tool stage that dies on an I/O error (ENOSPC, full disk) is recorded as resolved, so the land gate passes without running the lint"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-10T23:26:32Z"
-updated = "2026-10-10T23:26:32Z"
+updated = "2026-10-12T08:02:03Z"
 scope = ["crates/gob-check/src/tools.rs"]
 
 [[acceptance]]
