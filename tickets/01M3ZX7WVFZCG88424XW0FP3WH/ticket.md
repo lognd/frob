@@ -2,13 +2,13 @@
 id = "01M3ZX7WVFZCG88424XW0FP3WH"
 title = "Resource caps for plans and findings: budget Unresolved on breach"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:35Z"
-updated = "2026-10-03T03:34:35Z"
+updated = "2026-10-12T21:15:23Z"
 idempotency_key = "m2-sec-plan-caps"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-plan/src/limits.rs"]
