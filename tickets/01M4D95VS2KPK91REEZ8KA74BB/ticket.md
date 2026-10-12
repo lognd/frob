@@ -2,7 +2,8 @@
 id = "01M4D95VS2KPK91REEZ8KA74BB"
 title = "stylelint JSON parser and crunk id map for generic CSS hygiene (Advisory)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
