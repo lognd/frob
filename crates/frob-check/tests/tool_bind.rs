@@ -262,7 +262,7 @@ fn an_optional_missing_tool_is_unresolved_but_not_required() {
     write(
         dir.path(),
         "frob.toml",
-        "[[check.tool]]\nname = \"ghost\"\ncommand = \"frob-no-such-binary\"\nparser = \"zizmor-json-v1\"\noptional = true\n",
+        "[[check.tool]]\nname = \"ghost\"\ncommand = \"frob-no-such-binary\"\nargs = []\nparser = \"zizmor-json-v1\"\noptional = true\n",
     );
     let report = run(dir.path(), &options()).expect("run");
     assert_eq!(rules(&report), ["TOOL001"]);
@@ -273,7 +273,7 @@ fn an_optional_missing_tool_is_unresolved_but_not_required() {
     write(
         dir.path(),
         "frob.toml",
-        "[[check.tool]]\nname = \"ghost\"\ncommand = \"frob-no-such-binary\"\nparser = \"zizmor-json-v1\"\n",
+        "[[check.tool]]\nname = \"ghost\"\ncommand = \"frob-no-such-binary\"\nargs = []\nparser = \"zizmor-json-v1\"\n",
     );
     let required = run(dir.path(), &options()).expect("run");
     assert_eq!(

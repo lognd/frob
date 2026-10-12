@@ -11,7 +11,7 @@ const SIDE_FILES: &[(&str, &str)] = &[("exists.md", "# Present heading\n")];
 
 // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
 /// The tool stage `EXC017` blocks run against: three tool ids bound to frob rules.
-const TOOL_STAGE: &str = "\n[[check.tool]]\nname = \"lint\"\ncommand = \"lint\"\nid_map = { \"clippy::unwrap_used\" = \"COV001\", \"unpinned-uses\" = \"CI001\" }\n";
+const TOOL_STAGE: &str = "\n[[check.tool]]\nname = \"lint\"\ncommand = \"lint\"\nargs = []\nid_map = { \"clippy::unwrap_used\" = \"COV001\", \"unpinned-uses\" = \"CI001\" }\n";
 
 /// Evaluate one corpus block in a fresh tree with the shared ledger; `{{OPEN}}` and `{{DONE}}` become live ticket ids, `{{PAST}}`, `{{TODAY}}` and `{{FUTURE}}` days relative to today.
 fn runner(case: &Case) -> Vec<Finding> {
