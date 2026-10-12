@@ -48,7 +48,7 @@ mod atoms;
 pub use adapter::GrmbAdapter;
 pub use fmt::{FmtError, format_file};
 pub use fold::{FoldedFile, fold_file};
-pub use model::{ModelFiles, PackPin};
+pub use model::{ModelFiles, PackDetector, PackDetectorKind, PackPin};
 pub use parse::parse_file;
 pub use rules::check_model;
 pub use span::{Diagnostic, Span};

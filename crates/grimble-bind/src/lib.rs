@@ -237,6 +237,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         strict: input.strict,
         graph: &graph,
         ledger_dir: input.ledger_dir,
+        packs: &input.model.packs,
     };
     let not_applicable = declare_not_applicable(&model, &rel, &graph, &lock);
     let mut out = rules::evaluate(&cx);

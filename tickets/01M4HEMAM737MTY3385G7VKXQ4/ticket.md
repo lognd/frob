@@ -2,13 +2,14 @@
 id = "01M4HEMAM737MTY3385G7VKXQ4"
 title = "Repo packs declare detectors (callee vocabularies per language) so CAP001/CAP002 enforce pack atoms; an atom with no detector for a language is reported Unresolved once per node, never silently unenforced"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T23:05:34Z"
-updated = "2026-10-12T22:20:56Z"
+updated = "2026-10-12T23:35:57Z"
 labels = ["grimble", "adoption:logand-app"]
 scope = ["crates/grimble-check/src/packs.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs", "changelog.d/**", "crates/grimble-model/src/model.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/rules.rs", "crates/grimble-bind/tests/**", "crates/grimble-check/tests/**", "crates/grimble-model/tests/corpus.rs", "docs/design/packs.md", "crates/grimble-model/src/lib.rs"]
 
