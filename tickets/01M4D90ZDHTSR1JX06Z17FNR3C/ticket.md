@@ -8,12 +8,12 @@ points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:10:39Z"
-updated = "2026-10-12T17:48:35Z"
+updated = "2026-10-12T18:00:45Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**"]
 
 [[acceptance]]
 text = "Given ruff check --output-format=json output, when parsed, then F401 maps to DEAD, BLE001, E722 and S110 to ERR, ASYNC to CONC, PT to TESTQ and PLR2004 is off"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given frob init in a pyproject repository, when it writes frob.toml, then the ruff stage has a pinned version range"
