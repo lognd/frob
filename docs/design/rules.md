@@ -27,6 +27,13 @@ ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
   side-input digest)`. Repo-wide rules (cycles, dead symbols, dup)
   declare `scope = Repo` and add a graph digest to the key. The cache is
   per worktree (architecture.md section 2), which is what "warm" means.
+  `grimble check` also caches its binding summary on the warm path: the
+  rows of B as document items, the SYS findings and the subject counts.
+  The key is the path and content digest of every walked file, the
+  `grimble.lock` bytes and the `[grimble]` knobs, and the entry is scoped
+  by the engine fingerprint, so another build never reuses it. Any change
+  to a walked file, the lock or a knob is a miss. `grimble ack` still
+  builds the full binding.
 - Severity enum `Error | Warn | Advisory | Unresolved` kept; the exit
   code follows the table in cli.md section 2 (findings alone never fail
   a run; `--fail-on` does, and a required Unresolved does under
