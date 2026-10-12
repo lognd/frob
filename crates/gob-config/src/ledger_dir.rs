@@ -16,7 +16,10 @@ pub fn ledger_dir(root: &Path) -> String {
         tracing::debug!(dir = %d, "ledger dir read from frob.toml [tickets]");
         d
     } else {
-        tracing::debug!(dir = DEFAULT_LEDGER_DIR, "no [tickets] dir; default ledger dir");
+        tracing::debug!(
+            dir = DEFAULT_LEDGER_DIR,
+            "no [tickets] dir; default ledger dir"
+        );
         DEFAULT_LEDGER_DIR.to_owned()
     }
 }
