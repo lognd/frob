@@ -423,6 +423,8 @@ impl Workspace<'_> {
             repo.worktree_add(path, branch, &base)?;
             // frob:ticket 01M4MNBNM0WGTXGH93PEV48F78
             let aged = normalize_mtimes(repo, path);
+            // frob:ticket 01M4S28S5N358QCYR9A4XM1NC0
+            share_build_dir(repo.common_dir(), path);
             tracing::info!(ticket = %id, handle, path = %path.display(), branch, base = %base, aged, "worktree created");
         }
         let (merge, conflicts) = if exists {
@@ -692,4 +694,81 @@ fn git_out(repo: &Repo, cwd: &Path, args: &[&str]) -> Option<String> {
     };
     let out = repo.runner().run(&spec).ok()?;
     (out.status == Outcome::Exited(0)).then_some(out.stdout)
+}
+
+/// Directory (under `<common>/frob/`) of the cargo target directory every land checkout and ticket worktree shares.
+pub const SHARED_TARGET_DIR: &str = "land-target";
+
+/// Point `checkout`'s `target/` at the repository-shared land target directory when it has none.
+///
+/// Every land checkout (the ticket worktree and the persistent base checkout) then reuses the
+/// registry dependency builds of every earlier land instead of compiling from an empty
+/// directory (measured: 45-200 s per cold pass, ~TSK0M4Y, ~8J3BE8W). An existing `target`
+/// (a real directory or a link) is left alone. Failures are logged and the checks run cold.
+// frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W
+// frob:ticket 01M4S28S5N358QCYR9A4XM1NC0
+// frob:ticket 01M4H8NECMX7XBS1J6FDWRJEZV
+pub fn share_build_dir(common: &Path, checkout: &Path) {
+    let link = checkout.join("target");
+    if let Ok(meta) = std::fs::symlink_metadata(&link) {
+        if meta.file_type().is_symlink() && std::fs::metadata(&link).is_err() {
+            tracing::warn!(link = %link.display(), "dangling build directory link; repairing");
+            if let Err(e) = std::fs::remove_file(&link) {
+                tracing::warn!(error = %e, "dangling link not removed; cargo stages run cold");
+                return;
+            }
+        } else {
+            tracing::debug!(link = %link.display(), "checkout already has a build directory");
+            return;
+        }
+    }
+    let shared = common.join("frob").join(SHARED_TARGET_DIR);
+    if let Err(e) = std::fs::create_dir_all(&shared) {
+        tracing::warn!(error = %e, dir = %shared.display(), "shared build directory not created; cargo stages run cold");
+        return;
+    }
+    // Canonical and absolute: `common` may be spelled through a worktree's git dir
+    // (`.git/worktrees/<T>/../..`), which dangles once that worktree is removed.
+    let shared = match gob_exec::canonical(&shared) {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::warn!(error = %e, dir = %shared.display(), "shared build directory not canonicalized; cargo stages run cold");
+            return;
+        }
+    };
+    exclude_target(common);
+    #[cfg(unix)]
+    match std::os::unix::fs::symlink(&shared, &link) {
+        Ok(()) => {
+            tracing::info!(shared = %shared.display(), checkout = %checkout.display(), "checkout shares the land build directory");
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "build directory not shared; cargo stages run cold");
+        }
+    }
+    #[cfg(not(unix))]
+    tracing::debug!(shared = %shared.display(), checkout = %checkout.display(), "build directory sharing is unix-only");
+}
+
+/// Make git ignore a `/target` entry of any kind: the `target/` pattern of a `.gitignore` matches
+/// directories only, so the shared-build symlink would show as an untracked file (and as a SCOPE001 target).
+fn exclude_target(common: &Path) {
+    let path = common.join("info").join("exclude");
+    let text = std::fs::read_to_string(&path).unwrap_or_default();
+    if text.lines().any(|l| l.trim() == "/target") {
+        return;
+    }
+    let mut next = text;
+    if !next.is_empty() && !next.ends_with('\n') {
+        next.push('\n');
+    }
+    next.push_str("/target\n");
+    let result =
+        std::fs::create_dir_all(common.join("info")).and_then(|()| std::fs::write(&path, next));
+    match result {
+        Ok(()) => {
+            tracing::info!(path = %path.display(), "excluded /target for the shared build link");
+        }
+        Err(e) => tracing::warn!(path = %path.display(), error = %e, "could not exclude /target"),
+    }
 }
