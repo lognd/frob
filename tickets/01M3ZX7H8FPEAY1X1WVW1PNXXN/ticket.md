@@ -2,7 +2,8 @@
 id = "01M3ZX7H8FPEAY1X1WVW1PNXXN"
 title = "rule why: per-clause trace for one location"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
