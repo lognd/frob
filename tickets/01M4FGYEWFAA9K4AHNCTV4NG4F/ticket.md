@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:34Z"
-updated = "2026-10-12T07:54:22Z"
+updated = "2026-10-12T07:54:25Z"
 idempotency_key = "logand-gaps-T4"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble*/**", "crates/gob-*/**", "changelog.d/**", "crates/crunk-check/src/sibling.rs", "docs/schemas/sibling.json"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a template, when check --json runs, then template_excuses lists it with source"
-bound = false
+bound = true
 +++
 
 Repro 04-template-entity-unparsed (~/projects/frob-v2-repros/logand-grimble-20261009/04-template-entity-unparsed): grmb-spec 4.7 and 14.1 item 7 make template the eighth entity kind and the only place an excuse can be written (MDL018 sends users there), but the parser rejects it at top level. Without it generated code cannot be excused.
