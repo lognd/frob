@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-12T00:16:42Z"
+updated = "2026-10-12T00:17:43Z"
 idempotency_key = "m2-grl-snippets"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/check/snippets.rs", "crates/gob-plan/src/grl/snippet.rs", "crates/gob-plan/src/check/mod.rs", "crates/gob-plan/tests/grl_errors/main.rs", "crates/gob-plan/src/check/render.rs", "docs/design/grl-spec.md"]
+scope = ["crates/gob-plan/src/check/snippets.rs", "crates/gob-plan/src/grl/snippet.rs", "crates/gob-plan/src/check/mod.rs", "crates/gob-plan/tests/grl_errors/main.rs", "crates/gob-plan/src/check/render.rs", "docs/design/grl-spec.md", "crates/gob-plan/tests/grl_errors/cases/GRL006.grl", "crates/gob-plan/tests/snippets.rs"]
 
 [[links]]
 kind = "blocked-by"
