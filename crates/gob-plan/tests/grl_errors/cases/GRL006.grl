@@ -10,6 +10,9 @@ rule UNIV001 "no-dbg-anywhere" {
   example clean """
     fn f(x: u32) -> u32 { x }
   """
+  example notapplicable python """
+    def f(x): return x
+  """
 
   explain """
     `dbg!` prints to stderr and is meant for local debugging only.

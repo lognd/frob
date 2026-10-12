@@ -12,6 +12,8 @@
 //! | GRL003 | a variable used only inside `not`, `no` or `unresolved when`, bound nowhere |
 //! | GRL004 | a variable bound twice |
 //! | GRL005 | a type mismatch |
+//! | GRL006 | a snippet not lifted with `as roles` in a `lang *` rule |
+//! | GRL008 | a fix metavariable bound by no snippet |
 //! | GRL009 | a def that calls itself or a def written after it |
 //! | GRL010 | a `reaches` closure without `within` |
 //! | GRL011 | a missing `fire`, `clean` or (universal rules) `notapplicable` example |
@@ -30,6 +32,7 @@
 mod fixes;
 mod names;
 mod render;
+mod snippets;
 mod structure;
 mod vocab;
 
@@ -60,6 +63,10 @@ pub enum Code {
     Grl004,
     /// Type mismatch.
     Grl005,
+    /// Plain snippet in a rule for every language.
+    Grl006,
+    /// Fix metavariable bound by no snippet.
+    Grl008,
     /// Def recursion or forward reference.
     Grl009,
     /// Closure without `within`.
@@ -88,6 +95,8 @@ impl Code {
             Self::Grl003 => "GRL003",
             Self::Grl004 => "GRL004",
             Self::Grl005 => "GRL005",
+            Self::Grl006 => "GRL006",
+            Self::Grl008 => "GRL008",
             Self::Grl009 => "GRL009",
             Self::Grl010 => "GRL010",
             Self::Grl011 => "GRL011",
@@ -238,6 +247,7 @@ pub fn check_file_as(
         .flat_map(|r| {
             let mut d = names::check_rule(r, config);
             d.extend(structure::check_rule(r));
+            d.extend(snippets::check_rule(r));
             d.extend(fixes::check_rule(r, tier));
             d
         })
