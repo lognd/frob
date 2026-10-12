@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-12T21:45:42Z"
+updated = "2026-10-12T21:45:52Z"
 idempotency_key = "m2-mirror2-gh-error-policy"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-gh/src/policy.rs", "crates/frob-gh/src/graphql.rs", "crates/frob-gh/src/lib.rs"]
@@ -19,7 +19,7 @@ target = "01M3ZX8182AHQF2XB4WYNC30Q8"
 
 [[acceptance]]
 text = "Given a 200 GraphQL response whose errors array reports rate limiting, when parsed, then it is a rate-limit failure carrying the reset time and no data is returned"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given partial data with a non-empty errors array, when parsed, then the whole query scope is failed"
