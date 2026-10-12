@@ -2,13 +2,13 @@
 id = "01M4D6NSC2DP2P09F4QTR723S3"
 title = "frob lease release: give up a finished-but-unlanded ticket's lease without requeue"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T07:29:35Z"
-updated = "2026-10-08T07:29:35Z"
+updated = "2026-10-12T21:59:07Z"
 scope = ["changelog.d/**", "crates/frob-lease/**", "crates/frob/**"]
 
 [[acceptance]]
