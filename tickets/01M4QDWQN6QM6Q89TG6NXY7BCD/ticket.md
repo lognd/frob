@@ -2,12 +2,12 @@
 id = "01M4QDWQN6QM6Q89TG6NXY7BCD"
 title = "Windows: land tool-pass reuse test spawns no tool (sh probe writes nothing on the runner)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-12T06:48:07Z"
-updated = "2026-10-12T06:48:07Z"
+updated = "2026-10-12T23:39:47Z"
 scope = ["crates/frob-land/tests/land.rs"]
 +++
 
