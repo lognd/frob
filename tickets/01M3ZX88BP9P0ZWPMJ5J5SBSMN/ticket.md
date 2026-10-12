@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:47Z"
-updated = "2026-10-12T02:01:54Z"
+updated = "2026-10-12T02:02:24Z"
 idempotency_key = "m2-nav-tour-verb"
 labels = ["milestone:2", "area:navigation", "creates:crates/frob/src/tour_cmd.rs", "creates:crates/frob/tests/tour.rs"]
 scope = ["crates/frob/src/tour_cmd.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/gob-dev/profile.toml", "docs/reference/**", "docs/schemas/**", "crates/frob/tests/tour.rs"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a non-TTY, when run, then all stops print in order"
-bound = false
+bound = true
 +++
 
 Implements navigation.md section 5 (last paragraph).
