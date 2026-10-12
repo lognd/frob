@@ -15,33 +15,6 @@ use super::cx::Cx;
 use crate::facts::value_facts;
 use crate::model::{Declaration, LocatedLength};
 
-/// Properties React leaves unitless when the value is a bare number; every other numeric style
-/// value is `px` (React's own list, which is a superset of the Python crunk's seven).
-const UNITLESS: [&str; 22] = [
-    "animation-iteration-count",
-    "aspect-ratio",
-    "column-count",
-    "flex",
-    "flex-grow",
-    "flex-shrink",
-    "flex-order",
-    "font-weight",
-    "grid-area",
-    "grid-column",
-    "grid-row",
-    "line-height",
-    "opacity",
-    "order",
-    "orphans",
-    "scale",
-    "tab-size",
-    "widows",
-    "z-index",
-    "zoom",
-    "fill-opacity",
-    "stroke-opacity",
-];
-
 /// What the value of an entry is, with its byte offset in the source.
 #[derive(Debug, PartialEq)]
 enum Value<'a> {
@@ -168,11 +141,16 @@ pub(super) fn declarations(cx: &Cx<'_>, root_font_size: f64) -> Vec<Declaration>
 fn number(property: &str, text: &str, at: usize, cx: &Cx<'_>) -> Declaration {
     let span = (at, at + text.len());
     let lengths = match parse_number(text) {
-        Some(px) if !UNITLESS.contains(&property) => vec![LocatedLength {
+        // frob:ticket 01M4DPJQ0TAE8FM53FEJZPBV6H
+        Some(px) if !gob_symbols::is_unitless(property) => vec![LocatedLength {
             length: Length {
-                raw: format!("{text}px"),
+                raw: gob_symbols::numeric_raw(property, text),
                 px: Some(px),
-                kind: LengthKind::Px,
+                kind: if px == 0.0 {
+                    LengthKind::Zero
+                } else {
+                    LengthKind::Px
+                },
             },
             span,
         }],

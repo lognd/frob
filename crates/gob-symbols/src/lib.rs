@@ -133,8 +133,8 @@ pub use source_model::model_of_source;
 pub use symref::{Symref, SymrefError, Target};
 pub use typescript::{
     ConstProject, Evaluated, JsxElement, JsxKind, Origin, TestItem, TestRole, TypeScriptAdapter,
-    Unresolved, is_typescript_path, is_typescript_test_file, is_typescript_test_fn, jsx_elements,
-    test_items, test_unit_name,
+    Unresolved, is_typescript_path, is_typescript_test_file, is_typescript_test_fn, is_unitless,
+    jsx_elements, numeric_raw, test_items, test_unit_name,
 };
 pub use unity_project::{
     Assembly as UnityAssembly, TestMode as UnityTestMode, UnityAssignment, UnityProjects,

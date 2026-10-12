@@ -65,6 +65,7 @@ mod style;
 pub use consteval::{ConstProject, Evaluated, Origin, Unresolved};
 use gob_ir::{Operator, Term, Universal};
 use gob_languages::{Language, ParseLimits, grammar_identity};
+pub use style::{is_unitless, numeric_raw};
 
 use crate::adapter::{
     Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
