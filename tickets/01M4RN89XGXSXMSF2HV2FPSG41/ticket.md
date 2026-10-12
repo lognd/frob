@@ -6,12 +6,12 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-12T18:16:01Z"
-updated = "2026-10-12T20:46:26Z"
+updated = "2026-10-12T20:51:23Z"
 scope = ["crates/crunk/Cargo.toml", "crates/crunk/src/main.rs"]
 
 [[acceptance]]
 text = "crunk binary calls gob_git::install_content_backend() before gob_product::main and depends on gob-git; crunk nextest suite passes"
-bound = false
+bound = true
 +++
 
 found while working ~NF2ZMQG: gob-walk now takes its git content backend by injection; frob, grimble and gob-dev call gob_git::install_content_backend() first in main, crunk must too (add gob-git dependency) or its digests lose git normalization.
