@@ -2,20 +2,20 @@
 id = "01M403H3KY8CXB9WQAR3N0HBHA"
 title = "Add gob-plan to the boundaries.md crate table and the lexer additions to grl-spec 3"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T05:24:28Z"
-updated = "2026-10-11T14:46:46Z"
+updated = "2026-10-12T02:12:29Z"
 idempotency_key = "m2-boundaries-gob-plan"
 labels = ["milestone:2", "area:grl", "good-first"]
 scope = ["docs/design/boundaries.md", "docs/design/grl-spec.md"]
 
 [[acceptance]]
 text = "Given boundaries.md and grl-spec.md 3, when read, then gob-plan is listed and the lexer additions are specified"
-bound = false
+bound = true
 +++
 
 Follow-up of ~DP3BZJZ.
