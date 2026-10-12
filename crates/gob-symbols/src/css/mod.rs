@@ -103,6 +103,8 @@ struct Css<'a> {
     cx: Cx<'a>,
     path: &'a str,
     holes: u32,
+    /// Byte spans of syntax errors that are valid CSS the grammar rejects (see `forgiven`).
+    forgiven: Vec<(usize, usize)>,
 }
 
 fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
@@ -110,9 +112,10 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         cx: Cx::new(input.path, "css", text),
         path: input.path,
         holes: 0,
+        forgiven: Vec::new(),
     };
     let mut kids = css.items(root)?;
-    if root.has_error() && css.holes == 0 {
+    if css.holes == 0 && css.has_unforgiven_error(root) {
         // An error the walk did not reach (inside a value or selector): the file is still a partial parse.
         kids.push(css.hole(root)?);
     }
@@ -169,7 +172,31 @@ fn is_at_rule(kind: &str) -> bool {
     kind == "at_rule" || kind.ends_with("_statement")
 }
 
+/// The `ERROR` and `MISSING` nodes under `n`, not descending into an error node.
+// frob:ticket 01M4DPJPDQB79QVGVDVF4PDQKP
+fn error_nodes(n: Node<'_>) -> Vec<Node<'_>> {
+    let mut out = Vec::new();
+    for c in children(n) {
+        if c.is_missing() || c.kind() == "ERROR" {
+            out.push(c);
+        } else if c.has_error() {
+            out.extend(error_nodes(c));
+        }
+    }
+    out
+}
+
 impl Css<'_> {
+    /// True when `n` holds a syntax error that no declaration forgave (`! important`, `!IMPORTANT`, `--x:;`).
+    // frob:ticket 01M4DPJPDQB79QVGVDVF4PDQKP
+    fn has_unforgiven_error(&self, n: Node<'_>) -> bool {
+        n.has_error()
+            && (n.kind() == "ERROR"
+                || error_nodes(n)
+                    .iter()
+                    .any(|e| !self.forgiven.contains(&(e.start_byte(), e.end_byte()))))
+    }
+
     fn hole(&mut self, n: Node<'_>) -> R<NodeId> {
         let kind = if n.is_missing() {
             view::HOLE_MISSING
@@ -310,12 +337,21 @@ impl Css<'_> {
                 Token::Var(name) => self.cx.op(Operator::reference(&name), n, &[])?,
             });
         }
-        for c in cs {
-            if c.is_missing() || c.kind() == "ERROR" {
-                kids.push(self.hole(c)?);
+        let custom = property.starts_with("--");
+        // frob:ticket 01M4DPJPDQB79QVGVDVF4PDQKP
+        let bang_at = value_start
+            + (self.cx.text[value_start..n.end_byte()].len()
+                - self.cx.text[value_start..n.end_byte()].trim_start().len())
+            + raw.len();
+        for e in error_nodes(n) {
+            if (important && e.start_byte() >= bang_at)
+                || (custom && raw.is_empty() && e.is_missing())
+            {
+                self.forgiven.push((e.start_byte(), e.end_byte()));
+            } else if e.parent().is_some_and(|p| p.id() == n.id()) {
+                kids.push(self.hole(e)?);
             }
         }
-        let custom = property.starts_with("--");
         tracing::trace!(path = self.path, property, custom, "css declaration");
         let loc = self.cx.node_loc(n);
         let spec = if custom {

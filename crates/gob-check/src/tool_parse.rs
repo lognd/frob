@@ -1,4 +1,4 @@
-//! Parsers for bound tool output (zizmor, actionlint), id maps and version ranges.
+//! Parsers for bound tool output (zizmor, actionlint, stylelint), id maps and version ranges.
 //!
 //! Pure functions: they turn a tool's stdout into [`RawFinding`]s and decide
 //! the rule id and severity; locating them in the repository is `tools.rs`.
@@ -111,6 +111,28 @@ struct AFinding {
     end_column: u32,
 }
 
+// frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
+#[derive(Deserialize)]
+struct SFile {
+    source: String,
+    #[serde(default)]
+    warnings: Vec<SWarning>,
+}
+
+// frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
+#[derive(Deserialize)]
+struct SWarning {
+    line: u32,
+    column: u32,
+    #[serde(rename = "endLine", default)]
+    end_line: u32,
+    #[serde(rename = "endColumn", default)]
+    end_column: u32,
+    rule: String,
+    text: String,
+}
+
+// frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
 /// Parse `stdout` of the stage's tool; `ToolParser::None` yields nothing.
 ///
 /// # Errors
@@ -121,6 +143,7 @@ pub(crate) fn parse(parser: ToolParser, stdout: &str) -> Result<Vec<RawFinding>,
         ToolParser::None => Ok(Vec::new()),
         ToolParser::ZizmorJsonV1 => parse_zizmor(stdout),
         ToolParser::ActionlintJson => parse_actionlint(stdout),
+        ToolParser::StylelintJson => parse_stylelint(stdout),
     }
 }
 
@@ -196,6 +219,42 @@ fn parse_actionlint(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
         .collect())
 }
 
+// frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
+/// stylelint `--formatter json`: one entry per file, each with its warnings (empty output is no finding).
+fn parse_stylelint(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
+    let text = stdout.trim();
+    let files: Vec<SFile> = if text.is_empty() {
+        Vec::new()
+    } else {
+        serde_json::from_str(text).map_err(|source| ParseError::Json {
+            format: "stylelint",
+            source,
+        })?
+    };
+    let mut out = Vec::new();
+    for file in files {
+        for w in file.warnings {
+            // The range type is one line wide: a warning that spans lines is underlined to its first column.
+            let end_col = if w.end_line == w.line && w.end_column > w.column {
+                w.end_column
+            } else {
+                w.column + 1
+            };
+            out.push(RawFinding {
+                path: file.source.clone(),
+                range: RawRange::LineCol {
+                    line: w.line,
+                    col: w.column,
+                    end_col,
+                },
+                tool_id: w.rule,
+                message: w.text,
+            });
+        }
+    }
+    Ok(out)
+}
+
 /// The built-in tool id to rule id map of `parser`.
 pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'static str> {
     match parser {
@@ -205,6 +264,15 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
             ("template-injection", "CI007"),
             ("artipacked", "CI010"),
             ("excessive-permissions", "CI003"),
+        ]),
+        // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
+        // The crunk web-CSS family: specificity wars, id selectors and `!important` (all Advisory).
+        ToolParser::StylelintJson => BTreeMap::from([
+            ("no-descending-specificity", "WCSS001"),
+            ("selector-max-compound-selectors", "WCSS001"),
+            ("selector-max-specificity", "WCSS001"),
+            ("selector-max-id", "WCSS002"),
+            ("declaration-no-important", "WCSS003"),
         ]),
         ToolParser::ActionlintJson | ToolParser::None => BTreeMap::new(),
     }
@@ -350,10 +418,11 @@ pub(crate) fn check_version(stage: &ToolStage, found: Option<&str>) -> VersionVe
     }
 }
 
+// frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
 /// The default arguments that print `parser`'s tool version.
 pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
     match parser {
-        ToolParser::ZizmorJsonV1 => Some(vec!["--version".to_owned()]),
+        ToolParser::ZizmorJsonV1 | ToolParser::StylelintJson => Some(vec!["--version".to_owned()]),
         ToolParser::ActionlintJson => Some(vec!["-version".to_owned()]),
         ToolParser::None => None,
     }
@@ -515,5 +584,71 @@ mod tests {
             Some("1.7.12")
         );
         assert_eq!(find_version("no digits"), None);
+    }
+
+    // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
+    const STYLELINT: &str = include_str!("../tests/fixtures/stylelint.json");
+
+    // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
+    // frob:tests crates/gob-check/src/tool_parse.rs::parse_stylelint
+    #[test]
+    fn stylelint_output_parses_with_line_and_column() {
+        let found = parse(ToolParser::StylelintJson, STYLELINT).expect("parse");
+        assert_eq!(found.len(), 3, "the clean file adds nothing");
+        assert_eq!(found[0].tool_id, "declaration-no-important");
+        assert_eq!(found[0].path, "/work/site/app.css");
+        assert_eq!(
+            found[0].range,
+            RawRange::LineCol {
+                line: 2,
+                col: 3,
+                end_col: 24
+            }
+        );
+        assert_eq!(
+            found[1].range,
+            RawRange::LineCol {
+                line: 5,
+                col: 1,
+                end_col: 2
+            },
+            "a warning that spans lines ends one column after its start"
+        );
+        assert!(
+            parse(ToolParser::StylelintJson, "")
+                .expect("empty")
+                .is_empty()
+        );
+        assert!(parse(ToolParser::StylelintJson, "not json").is_err());
+    }
+
+    // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
+    // frob:tests crates/gob-check/src/tool_parse.rs::classify
+    #[test]
+    fn stylelint_findings_carry_crunk_ids_and_are_advisory() {
+        let st = stage(ToolParser::StylelintJson);
+        let found = parse(ToolParser::StylelintJson, STYLELINT).expect("parse");
+        let got: Vec<(String, Severity)> = found
+            .iter()
+            .filter_map(|f| classify(&st, f))
+            .map(|(id, sev)| (id.to_string(), sev))
+            .collect();
+        assert_eq!(
+            got,
+            [
+                ("WCSS003".to_owned(), Severity::Advisory),
+                ("WCSS002".to_owned(), Severity::Advisory),
+                ("TOOL002".to_owned(), Severity::Advisory),
+            ]
+        );
+        let mut mapped = stage(ToolParser::StylelintJson);
+        mapped
+            .id_map
+            .insert("color-named".to_owned(), "WCSS009".to_owned());
+        assert_eq!(
+            classify(&mapped, &found[2]).map(|c| c.0.to_string()),
+            Some("WCSS009".to_owned()),
+            "a configured id_map entry wins"
+        );
     }
 }

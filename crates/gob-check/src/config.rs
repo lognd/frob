@@ -59,6 +59,10 @@ pub enum ToolParser {
     /// actionlint `-format '{{json .}}'`: an array of findings with line and column.
     #[serde(rename = "actionlint-json")]
     ActionlintJson,
+    /// stylelint `--formatter json`: an array of files with line and column warnings.
+    // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
+    #[serde(rename = "stylelint-json")]
+    StylelintJson,
 }
 
 /// One external tool stage: a command run after the built-in rules (`[[check.tool]]`).
