@@ -8,14 +8,14 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:37Z"
-updated = "2026-10-12T21:15:26Z"
+updated = "2026-10-12T21:32:27Z"
 idempotency_key = "m2-sec-text-origin"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-diagnostics/src/record.rs", "crates/gob-diagnostics/src/envelope.rs", "docs/schemas/**"]
 
 [[acceptance]]
 text = "Given a finding from a plugin pack, when rendered as JSON, then its message carries origin pack:NAME"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the generated schema, when read, then the origin enum and the data-not-instructions note are present"
