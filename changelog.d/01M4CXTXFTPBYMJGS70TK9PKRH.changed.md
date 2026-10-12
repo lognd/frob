@@ -1,0 +1,1 @@
+Restated universal-model.md Theorem 2 over lo/hi relation pairs (stratified Datalog with aggregation, two-pass fixpoints, explicit adapter hypothesis), Theorem 3(a) about the source language, and Belnap conflict as an Unknown reason.
