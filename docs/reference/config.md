@@ -114,7 +114,7 @@ Materialized: yes.
 | `interval_secs` | `u64` | `3600` | no | Minimum seconds between automatic passes (the stamp lives under the git common dir). |
 | `keep_binaries` | `Vec<String>` | `["frob", "grimble"]` | no | Binary names (without extension) whose build output is never collected. |
 | `keep_recent_secs` | `u64` | `3600` | no | Artifacts within this many seconds of the newest one belong to the latest build and are kept. |
-| `target_budget_gb` | `u64` | `30` | no | Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it. |
+| `target_budget_gb` | `u64` | `30` | no | Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it. `frob work` links each new worktree's `target/` to the shared `land-target` directory, so worktrees on one commit reuse one build. |
 | `time_limit_secs` | `u64` | `30` | no | Wall-clock bound in seconds of one pass; the rest waits for the next one. |
 | `worktrees` | `bool` | `true` | no | Remove worktrees of closed tickets and of expired leases with nothing unsaved. |
 

@@ -495,7 +495,7 @@ mod tests {
     use super::*;
     use frob_worktree::work::SHARED_TARGET_DIR;
 
-    // frob:tests crates/frob-land/src/ratchet.rs::share_build_dir
+    // frob:tests crates/frob-worktree/src/work.rs::share_build_dir
     #[test]
     fn a_checkout_without_a_target_shares_the_land_target_and_one_with_keeps_its_own() {
         let tmp = tempfile::tempdir().expect("tempdir");
@@ -525,7 +525,7 @@ mod tests {
         );
     }
 
-    // frob:tests crates/frob-land/src/ratchet.rs::share_build_dir
+    // frob:tests crates/frob-worktree/src/work.rs::share_build_dir
     #[test]
     fn the_link_is_canonical_and_a_dangling_link_is_repaired() {
         // frob:ticket 01M4H8NECMX7XBS1J6FDWRJEZV
