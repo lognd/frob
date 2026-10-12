@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CXTDZGE80G5TWDCWY08EWT"
 reporter = "lognd"
 created = "2026-10-08T08:13:21Z"
-updated = "2026-10-12T18:17:23Z"
+updated = "2026-10-12T18:17:25Z"
 scope = ["changelog.d/**", "docs/design/**", "notes/research/**"]
 
 [[acceptance]]
