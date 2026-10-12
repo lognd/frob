@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a run from a ref other than the default branch, when the guard step runs, then it fails before the environment is requested"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.1 (Who runs it); security.md 2.11.
