@@ -8,13 +8,13 @@ points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T23:05:34Z"
-updated = "2026-10-12T22:17:04Z"
+updated = "2026-10-12T22:18:50Z"
 labels = ["grimble", "adoption:logand-app"]
 scope = ["crates/grimble-check/src/packs.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs", "changelog.d/**", "crates/grimble-model/src/model.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/rules.rs", "crates/grimble-bind/tests/**", "crates/grimble-check/tests/**", "crates/grimble-model/tests/corpus.rs", "docs/design/packs.md", "crates/grimble-model/src/lib.rs"]
 
 [[acceptance]]
 text = "Given packs/logand-effects.toml declaring atom fetch_url with a Python callee vocabulary (httpx.get, requests.get, ...) and a TS vocabulary (fetch), when grimble check runs, then an ungranted use is CAP001, an unused grant is CAP002, and a granted atom with no detector for a node's language yields one Unresolved per node naming the atom and language (grimble-model.md 9.6)"
-bound = false
+bound = true
 +++
 
 logand.app-v2: 29 pack-atom grants (fetch_url, client_storage, html_render, ffi, eval, sql, net_mutate) are declared but never enforced because ~AMVHK82 loads atoms only. The detector row schema is in grimble-model.md 9.6; the full pack loader is ~CTGEA64.
