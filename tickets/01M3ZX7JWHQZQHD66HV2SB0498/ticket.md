@@ -2,7 +2,8 @@
 id = "01M3ZX7JWHQZQHD66HV2SB0498"
 title = "Path-scoped activation: [[packs.enable]] with paths and required"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
