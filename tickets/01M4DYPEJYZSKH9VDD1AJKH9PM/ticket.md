@@ -2,7 +2,8 @@
 id = "01M4DYPEJYZSKH9VDD1AJKH9PM"
 title = "Land gate covers CI-only steps: rustdoc -D warnings and the generated-files check run as tool stages or required evidence"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
