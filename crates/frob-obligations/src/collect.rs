@@ -87,7 +87,7 @@ pub fn collect(root: &Path) -> Result<Collected, CollectError> {
     };
     let walked = walk(root, &config)?;
     let scanner = Scanner::new(&ScanConfig::default());
-    let roles = Roles::for_root(root);
+    let roles = Roles::new(&gob_config::ledger_dir(root));
     let mut directives = Vec::new();
     for entry in &walked.files {
         // frob:ticket 01M43KP0RXKB1DJA8KGJTV288R

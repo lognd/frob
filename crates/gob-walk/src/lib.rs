@@ -32,7 +32,7 @@ pub use content::{
     install_backend,
 };
 pub use owner::{Candidate, EntityName, MatchStatus, Owner, Ownership};
-pub use role::{DEFAULT_LEDGER_DIR, FileRole, Roles, ledger_dir};
+pub use role::{DEFAULT_LEDGER_DIR, FileRole, Roles};
 pub use select::{PathMatch, owner_of_path, select_files, unseen_files};
 pub use selector::{Glob, Selector, wildcard_match};
 pub use specificity::Specificity;

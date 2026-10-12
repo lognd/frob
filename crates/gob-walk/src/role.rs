@@ -1,11 +1,9 @@
 //! File roles: the one structural classification of what a walked file is (D91).
 //!
-//! The ticket ledger tree (the configured `[tickets] dir`) is data written through the ledger
+//! The ticket ledger tree (the `[tickets] dir` the caller passes; gob-walk never reads `frob.toml`) is data written through the ledger
 //! write path. Text in it, such as a quoted `frob:waive`, is never a live directive. Directive and
 //! comment scanning asks [`Roles::role`] and skips [`FileRole::Ledger`] files; ledger-specific
 //! rules (`TICK*`, `PM*`, privacy) read the ledger directly and are unaffected.
-
-use std::path::Path;
 
 /// The ledger directory when `frob.toml` has no `[tickets] dir`.
 pub const DEFAULT_LEDGER_DIR: &str = "tickets";
@@ -42,12 +40,6 @@ impl Roles {
         }
     }
 
-    /// Roles for the repository at `root`, reading `[tickets] dir` from `frob.toml` leniently.
-    #[must_use]
-    pub fn for_root(root: &Path) -> Self {
-        Self::new(&ledger_dir(root))
-    }
-
     /// The role of `path` (repository-relative, `/` separated).
     ///
     /// A directory matches whole path components, so `tickets-old/x` is not ledger content.
@@ -66,25 +58,6 @@ impl Roles {
     }
 }
 
-/// The ledger directory of `<root>/frob.toml` (`[tickets] dir`); the default when absent or unreadable.
-#[must_use]
-pub fn ledger_dir(root: &Path) -> String {
-    let dir = std::fs::read_to_string(root.join("frob.toml"))
-        .ok()
-        .and_then(|text| text.parse::<toml::Table>().ok())
-        .and_then(|t| t.get("tickets")?.get("dir")?.as_str().map(str::to_owned));
-    if let Some(d) = dir {
-        tracing::debug!(dir = %d, "ledger dir read from frob.toml [tickets]");
-        d
-    } else {
-        tracing::debug!(
-            dir = DEFAULT_LEDGER_DIR,
-            "no [tickets] dir in frob.toml; default ledger dir"
-        );
-        DEFAULT_LEDGER_DIR.to_owned()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -100,13 +73,14 @@ mod tests {
         assert!(roles.role("src/lib.rs").scans_directives());
     }
 
+    // frob:ticket 01M4M52WVPN2J5P3W4GPNE5PK9
     #[test]
-    fn the_ledger_dir_is_configurable_and_defaults() {
+    fn the_ledger_dir_comes_from_the_caller_not_from_frob_toml() {
         let dir = tempfile::tempdir().unwrap();
-        assert_eq!(ledger_dir(dir.path()), "tickets");
         std::fs::write(dir.path().join("frob.toml"), "[tickets]\ndir = \"pm\"\n").unwrap();
-        let roles = Roles::for_root(dir.path());
-        assert_eq!(roles.role("pm/A/ticket.md"), FileRole::Ledger);
-        assert_eq!(roles.role("tickets/A/ticket.md"), FileRole::Source);
+        let roles = Roles::new(DEFAULT_LEDGER_DIR);
+        assert_eq!(roles.role("pm/A/ticket.md"), FileRole::Source);
+        assert_eq!(roles.role("tickets/A/ticket.md"), FileRole::Ledger);
+        assert_eq!(Roles::new("pm").role("pm/A/ticket.md"), FileRole::Ledger);
     }
 }

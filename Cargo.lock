@@ -1014,6 +1014,7 @@ dependencies = [
  "blake3",
  "gob-cache",
  "gob-cli",
+ "gob-config",
  "gob-directives",
  "gob-exec",
  "gob-git",
@@ -2786,7 +2787,6 @@ dependencies = [
  "rayon",
  "tempfile",
  "thiserror",
- "toml",
  "tracing",
 ]
 
