@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-12T18:04:44Z"
+digest = "db4284587c91034e43f67678261cdacc49fbe1c62dbea183032e8f8f16778e84"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.67s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c66eaf9b-857f-46a9-89e4-94ffda4b3821 with nextest profile: default
+    Starting 1 test across 335 binaries (2951 tests skipped)
+        PASS [   0.007s] frob-cli init::tests::a_pyproject_repository_gets_one_pinned_ruff_stage
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.019s] 1 test run: 1 passed, 2951 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_pyproject_repository_gets_one_pinned_ruff_stage"
+size = 568
+status = "measured"
+test_count = 1
+tests_digest = "c768b850737d8916b430abaf18b1984d56fb83ebe78b6699b3d4106a99ed0996"
+at = "2026-10-12T18:04:44Z"
+actor = "lognd"
+rev = 1
