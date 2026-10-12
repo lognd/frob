@@ -2,13 +2,13 @@
 id = "01M4CXQZEYWB5WNCMFXYCNEE4J"
 title = "crunk export uss and csharp: USS custom properties and an engine-free C# token class"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-08T04:53:30Z"
-updated = "2026-10-08T04:53:30Z"
+updated = "2026-10-12T21:58:47Z"
 scope = ["changelog.d/**", "crates/crunk-tokens/**"]
 
 [[acceptance]]
