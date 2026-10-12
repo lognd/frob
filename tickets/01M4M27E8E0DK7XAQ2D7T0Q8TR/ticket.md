@@ -2,7 +2,8 @@
 id = "01M4M27E8E0DK7XAQ2D7T0Q8TR"
 title = "A tool stage that dies on an I/O error (ENOSPC, full disk) is recorded as resolved, so the land gate passes without running the lint"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
