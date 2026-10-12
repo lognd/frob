@@ -26,11 +26,13 @@
 
 // frob:ticket 01M43ARZH9F9MCPJCKXM635E0X
 
+mod csharp;
 mod css;
 mod drift;
 mod flat;
 mod json;
 mod tailwind;
+mod uss;
 mod write;
 
 use std::fmt;
@@ -40,11 +42,13 @@ use crunk_spec::DesignSpec;
 
 use crate::model::{TokenError, TokenSet};
 
+pub use csharp::CsharpExporter;
 pub use css::{BANNER, CssExporter};
 pub use drift::{DriftReport, FileDrift, Rendered, Status, check, compare, render_managed};
 pub use flat::FlatJsonExporter;
 pub use json::Json;
 pub use tailwind::TailwindExporter;
+pub use uss::UssExporter;
 pub use write::{ExportError, WriteReport, WrittenFile, write_all};
 
 /// An export target: which generated artifact an [`Exporter`] produces.
@@ -57,11 +61,21 @@ pub enum Target {
     Json,
     /// The Tailwind `theme.extend` mapping (`[tailwind] tokens_file`).
     Tailwind,
+    /// Unity USS custom properties, one block per mode (no configured file path yet).
+    Uss,
+    /// An engine-free C# token class using plain floats (no configured file path yet).
+    Csharp,
 }
 
 impl Target {
     /// Every target, in the order the managed files are written and reported.
-    pub const ALL: [Target; 3] = [Target::Css, Target::Tailwind, Target::Json];
+    pub const ALL: [Target; 5] = [
+        Target::Css,
+        Target::Tailwind,
+        Target::Json,
+        Target::Uss,
+        Target::Csharp,
+    ];
 
     /// The `--target` / `--format` spelling (`css`, `json`, `tailwind`).
     pub fn name(self) -> &'static str {
@@ -69,6 +83,8 @@ impl Target {
             Self::Css => "css",
             Self::Json => "json",
             Self::Tailwind => "tailwind",
+            Self::Uss => "uss",
+            Self::Csharp => "csharp",
         }
     }
 
@@ -83,6 +99,8 @@ impl Target {
             Self::Css => &CssExporter,
             Self::Json => &FlatJsonExporter,
             Self::Tailwind => &TailwindExporter,
+            Self::Uss => &UssExporter,
+            Self::Csharp => &CsharpExporter,
         }
     }
 }
