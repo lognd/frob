@@ -8,10 +8,10 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-12T00:04:40Z"
+updated = "2026-10-12T00:07:23Z"
 idempotency_key = "m2-pattern"
 labels = ["milestone:2"]
-scope = ["crates/gob-pattern/**", "crates/grimble-lints/**"]
+scope = ["crates/gob-pattern/**", "crates/grimble-lints/**", "docs/design/rules.md"]
 
 [[links]]
 kind = "blocked-by"
