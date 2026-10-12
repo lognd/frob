@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T20:04:51Z"
+digest = "14246fbcb0f5ac73dc7f95b897390e8be19a6fc3da9c1ebd3a06499898dc19e3"
+exit_code = 0
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized] target(s) in 11.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0775f0f6-57a3-48a3-8641-a5b4ac2f1cee with nextest profile: default
+    Starting 1 test across 16 binaries (230 tests skipped)
+        PASS [   0.008s] gob-symbols::symbols a_plain_comment_between_a_doc_block_and_its_item_keeps_the_doc
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 230 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(=a_plain_comment_between_a_doc_block_and_its_item_keeps_the_doc)'"
+size = 632
+status = "measured"
+tests = ["a_plain_comment_between_a_doc_block_and_its_item_keeps_the_doc"]
+at = "2026-10-10T20:04:51Z"
+actor = "Claude"
+rev = 1

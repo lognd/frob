@@ -7,8 +7,9 @@
 //! the shared registry plus the verbs grmb-spec 8.2 adds.
 
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
+// frob:ticket 01M4GK42XB93XT5TFDQDRQ36JC
 
-use gob_directives::{all_directives, is_full_ulid, looks_like_ticket_ref};
+use gob_directives::{all_directives, is_full_ulid, is_v1_alias, looks_like_ticket_ref};
 
 use crate::lex::{Comment, CommentKind};
 use crate::span::Span;
@@ -125,7 +126,8 @@ fn check_args(ns: &str, verb: &str, args: &str) -> Option<(&'static str, String)
     match (ns, verb) {
         ("frob", "ticket" | "todo") => match first {
             None => Some(("PARSE001", format!("`{ns}:{verb}` needs a ticket id"))),
-            Some(t) if is_full_ulid(t) => None,
+            // frob:ticket 01M4GK42XB93XT5TFDQDRQ36JC
+            Some(t) if is_full_ulid(t) || is_v1_alias(t) => None,
             Some(t) if looks_like_ticket_ref(t) => Some((
                 "DSL002",
                 format!(
@@ -224,5 +226,18 @@ mod tests {
         assert_eq!(hits[0].problem.as_ref().map(|p| p.0), Some("MDL013"));
         assert_eq!(hits[1].problem.as_ref().map(|p| p.0), Some("DSL001"));
         assert_eq!(hits[2].problem.as_ref().map(|p| p.0), Some("PARSE001"));
+    }
+
+    #[test]
+    fn v1_ticket_aliases_are_accepted_but_abbreviations_are_not() {
+        let l = lex(
+            "// frob:ticket T-0042\n// frob:todo T-0042 later\n// frob:ticket ~3TXB8SR\n// frob:ticket T-\n",
+        );
+        let hits = scan(&l.comments);
+        assert_eq!(hits.len(), 4);
+        assert!(hits[0].problem.is_none(), "{:?}", hits[0].problem);
+        assert!(hits[1].problem.is_none(), "{:?}", hits[1].problem);
+        assert_eq!(hits[2].problem.as_ref().map(|p| p.0), Some("DSL002"));
+        assert!(hits[3].problem.is_some());
     }
 }

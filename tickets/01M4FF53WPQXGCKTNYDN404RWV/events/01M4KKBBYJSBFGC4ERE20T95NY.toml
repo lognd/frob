@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T19:06:31Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+inline = ""
+passed = true
+provider = "command"
+ref = '''python3 -c 'import re,sys;r=lambda f:open("docs/design/"+f).read();ok=not re.search(r"^\| .design/\*\.strata",r("migration.md"),re.M) and "v1 name: strata" not in r("grimble-model.md") and "migrate and serve" not in r("grimble-model.md") and not re.search(r"^\| .grimble migrate",r("cli.md"),re.M) and re.search(r"^\| D136 ",r("README.md"),re.M) is not None;sys.exit(0 if ok else 1)''''
+size = 0
+status = "measured"
+at = "2026-10-10T19:06:31Z"
+actor = "Claude"
+rev = 1

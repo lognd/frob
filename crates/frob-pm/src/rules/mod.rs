@@ -1,8 +1,11 @@
 //! The `PM` rule family: project-management rules over tickets and milestones.
 
 pub mod cycle;
+pub mod cycle_plan;
+pub mod good_first;
 pub mod membership;
 pub mod milestone;
+pub mod pm032;
 pub mod replenish;
 pub mod wip;
 

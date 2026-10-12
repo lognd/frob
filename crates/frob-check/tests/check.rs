@@ -10,7 +10,7 @@ use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig};
 use gob_diagnostics::{ExitCode, RequiredReason};
 use gob_git::{CommitOptions, RelPath, Repo};
-use gob_rules::{Finding, Fix, FixKind, Rule, RuleMeta, TextEdit};
+use gob_rules::{Applicability, Finding, Fix, FixKind, Rule, RuleMeta, TextEdit};
 use gob_text::{FileId, TextRange, TextSize};
 
 /// The upper-case work marker, assembled so this file does not carry one.
@@ -213,6 +213,8 @@ impl FileCheck<Frob> for Rewrite {
             )
             .with_fix(Fix {
                 kind: FixKind::Deterministic,
+                // frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+                applicability: Applicability::Machine,
                 title: "colour to color".to_owned(),
                 edits: vec![TextEdit {
                     file,
@@ -1256,4 +1258,128 @@ fn a_corrupt_ledger_index_is_required_unresolved_findings_and_fails_the_gate() {
         "{:?}",
         repaired.findings
     );
+}
+
+// frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH
+// frob:tests crates/frob-check/src/lib.rs::run_with_cone
+#[test]
+fn the_ticket_cone_includes_cross_crate_callers_and_leaves_unrelated_crates_out() {
+    let (dir, id) = ticket_fixture_scoped(&["crates/a/**"]);
+    for (krate, deps) in [("a", ""), ("b", "a = { path = \"../a\" }\n"), ("c", "")] {
+        write(
+            dir.path(),
+            &format!("crates/{krate}/Cargo.toml"),
+            &format!(
+                "[package]\nname = \"{krate}\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\n{deps}"
+            ),
+        );
+    }
+    write(
+        dir.path(),
+        "crates/a/src/lib.rs",
+        "/// Doc.\npub fn shared_helper() {}\n",
+    );
+    write(
+        dir.path(),
+        "crates/b/src/lib.rs",
+        "/// Doc.\npub fn user() { a::shared_helper(); }\n",
+    );
+    write(
+        dir.path(),
+        "crates/c/src/lib.rs",
+        "/// Doc.\npub fn alone() { other::unrelated(); }\n",
+    );
+    let opts = CheckOptions {
+        ticket: Some(id),
+        base: Some("main".to_owned()),
+        skip_tools: true,
+        ..CheckOptions::default()
+    };
+    let (_, _, cone) = frob_check::run_with_cone(dir.path(), &opts).expect("run");
+    let cone = cone.expect("a cone under --ticket");
+    assert!(cone.contains("crates/a/src/lib.rs"), "{cone:?}");
+    assert!(
+        cone.contains("crates/b/src/lib.rs"),
+        "cross-crate caller: {cone:?}"
+    );
+    assert!(!cone.contains("crates/c/src/lib.rs"), "{cone:?}");
+    let (_, _, none) =
+        frob_check::run_with_cone(dir.path(), &CheckOptions::default()).expect("unscoped");
+    assert!(none.is_none());
+}
+
+// frob:ticket 01M4GK4M8KKRE7X7JCP6YJ5K96
+#[test]
+fn a_leftover_v1_lock_aborts_the_check_naming_file_version_and_remedy() {
+    let dir = fixture();
+    write(dir.path(), "frob.lock", "{\"entries\": {}}\n");
+    let err = run(dir.path(), &quiet()).expect_err("v1 lock refuses");
+    let msg = err.to_string();
+    assert!(msg.starts_with("E-CHECK-LOCK"), "{msg}");
+    assert!(msg.contains("frob.lock"), "{msg}");
+    assert!(msg.contains("v1"), "{msg}");
+    assert!(msg.contains("frob ack"), "{msg}");
+}
+
+/// Opens the ledger of a [`ticket_fixture`] repository.
+fn open_fixture_ledger(dir: &Path) -> Ledger {
+    let repo = Repo::discover(dir).expect("discover");
+    Ledger::open(
+        repo,
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    )
+}
+
+// frob:ticket 01M4MK5SXY0VMZ0PGV4BE4PRM2
+// frob:tests crates/frob-check/src/filecheck.rs::ObligationFileCheck
+#[test]
+fn an_unrelated_ledger_event_does_not_miss_any_file() {
+    let (dir, id) = ticket_fixture();
+    write(
+        dir.path(),
+        "src/a.rs",
+        &format!("// frob:ticket {id}\n//! Doc.\n\n/// Documented.\npub fn a() {{}}\n"),
+    );
+    write(dir.path(), "src/b.rs", "/// Documented.\npub fn b() {}\n");
+    write(dir.path(), "NOTES.md", "# Notes\n\nplain\n");
+    let first = run(dir.path(), &quiet()).expect("first run");
+    assert!(first.stats.file_misses > 0);
+    open_fixture_ledger(dir.path())
+        .new_ticket(NewTicket::new("Unrelated", TicketType::Task))
+        .expect("unrelated ticket");
+    let second = run(dir.path(), &quiet()).expect("second run");
+    assert_eq!(second.stats.file_misses, 0, "no per-file recompute");
+    assert_eq!(second.stats.file_hits, first.stats.file_misses);
+}
+
+// frob:ticket 01M4MK5SXY0VMZ0PGV4BE4PRM2
+// frob:tests crates/frob-check/src/filecheck.rs::ObligationFileCheck
+#[test]
+fn creating_a_ticket_a_file_references_misses_only_that_file() {
+    let (dir, _id) = ticket_fixture();
+    write(
+        dir.path(),
+        "src/a.rs",
+        "// frob:ticket T-9001\n/// Documented.\npub fn a() {}\n",
+    );
+    write(dir.path(), "src/b.rs", "/// Documented.\npub fn b() {}\n");
+    let first = run(dir.path(), &quiet()).expect("first run");
+    assert!(
+        rules_of(&first.findings).contains(&"REF001".to_owned()),
+        "{:?}",
+        rules_of(&first.findings)
+    );
+    let mut new = NewTicket::new("Referenced", TicketType::Task);
+    new.aliases = vec!["T-9001".to_owned()];
+    open_fixture_ledger(dir.path())
+        .new_ticket(new)
+        .expect("referenced ticket");
+    let second = run(dir.path(), &quiet()).expect("second run");
+    assert!(
+        !rules_of(&second.findings).contains(&"REF001".to_owned()),
+        "the reference now resolves"
+    );
+    assert!(second.stats.file_misses > 0, "the referencing file misses");
+    assert!(second.stats.file_hits > 0, "an unrelated file still hits");
 }

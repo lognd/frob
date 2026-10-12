@@ -2,13 +2,14 @@
 id = "01M4DYPDCTK6KR5DXFQW7NXA6R"
 title = "land advance fails E-LAND-ADVANCE on a transient index.lock held by a concurrent ledger write; take the ledger lock around advance or retry with backoff"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T14:29:21Z"
-updated = "2026-10-10T01:05:25Z"
+updated = "2026-10-10T02:24:45Z"
 scope = ["changelog.d/**", "crates/frob-land/src/git.rs"]
 
 [[acceptance]]

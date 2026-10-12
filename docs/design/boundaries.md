@@ -1,6 +1,11 @@
 # Boundaries: what belongs to frob, grimble, crunk, and the shared substrate
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias).
+Status: current
+Owner: gob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias).
 Supersedes the crate list in architecture.md section 1 and refines
 products.md. Owner question 2026-10-02: where exactly do the boundaries
 sit, is grimble a standalone binary, should there be more splits, and
@@ -69,6 +74,7 @@ Every capability named in the other design files and the v1 inventories.
 | gob-serve | MCP and HTTP transport plumbing on tokio (rmcp setup, JSON envelope over HTTP, SSE, token and Origin checks) | tools and routes stay per product |
 | gob-mdtest | markdown corpus harness over datatest-stable | rule tests in every product |
 | gob-check | the product-neutral check pipeline: snapshot core, file and repo rule caches, `--only` with known sibling families, exception application, render (milestone 2, ticket G06; grimble-model.md 9.7) | `frob check` and `grimble check` run one pipeline |
+| gob-plan | the GRL lexer, parser and printer, catalog checks, the plan format (IR, codec, validator), the plan executor and codegen (plugins.md section 10, grl-spec.md) | frob, grimble and crunk run one rule language |
 | gob-pattern | the pattern engine for declarative rules: ast-grep shape at grammar level and over U roles (milestone 2, ticket G17, blocked by the `Doc`-over-U spike of rules.md section 3) | GPOL and NEAT-style rule files in every product |
 | gob-dev | the `cargo dev` binary (never shipped): `cargo dev gen` for every product (rule docs, CLI docs, schemas, config docs, TS types; it calls frob-release for the changelog), repo-internal rules (PROC, dependency layering) | one generator |
 
@@ -100,7 +106,7 @@ Every grimble crate is Milestone 2 or later (D36).
 
 | Crate | Capabilities |
 |---|---|
-| grimble-model | `.grmb` parser with spans, multi-file modules, typed attrs, selectors (`owns`, `surface`, `at`), flows with producer/consumer/contract, boundaries, claims, V-model, exceptions (the four kinds), JSON export, v1 strata import (`grimble migrate`) |
+| grimble-model | `.grmb` parser with spans, multi-file modules, typed attrs, selectors (`owns`, `surface`, `at`), flows with producer/consumer/contract, boundaries, claims, V-model, exceptions (the four kinds), JSON export |
 | grimble-kernel | label closure, SCC longest-path age, demand and capacity, V-model closure, claim verdicts with witnesses, assumes with expiry |
 | grimble-bind | model-to-symbol resolution, ambiguity, FOREIGN, the `binds` cross-language edge with per-`via` signature comparison, contract fingerprints, drift findings (SYS family), shrink, `grimble ack` on gob-lock |
 | grimble-capabilities | capability atoms (`Capability` derive documenting entries of the gob-ir registry), per-language detectors over U, the node x capability matrix (cells per grimble-model.md 9.6) with matrix-build template excuses, CAP family: CAP001, CAP002, CAP004 (CAP003 retired, D75) and the matrix-build rule SYS012 (binding.md 6.12) |
@@ -326,3 +332,35 @@ Three binaries, 24 substrate crates (gob-dev included), 16 frob crates,
   crate spawn through it.
 - Only `gob-serve`, `frob-serve`, `grimble-serve` and `frob-gh` use
   tokio.
+
+<!-- frob:ticket 01M4CTE1SS9RQ0JB8BNCJXZJ2V -->
+### 6.1 Layer table
+
+`crates/gob-dev/tests/layering.rs` reads this table and walks the
+normal and build dependencies from `cargo metadata`. A crate may depend
+only on crates in a strictly lower layer, and on its own product or
+`gob-*` (a `gob-*` crate on `gob-*` only). A new edge that breaks either
+rule fails the test and names both crates and their layers. The few
+edges that break the table today are listed in the test with the ticket
+that removes each; fixing one makes its row stale, and the stale row
+fails the test. Every workspace crate must appear here exactly once.
+
+| Layer | Name | Crates |
+|---|---|---|
+| 0 | base | crunk-values, gob-caps, gob-fs, gob-log, gob-macros, gob-packs, gob-text, gob-time |
+| 1 | io | gob-cache, gob-exec, gob-languages, gob-lock, gob-walk |
+| 2 | repo | gob-git, gob-trust |
+| 3 | model | gob-ir |
+| 4 | rules | gob-pattern, gob-rules, gob-symbols |
+| 5 | config | gob-config, gob-diagnostics, gob-frameworks, gob-plan |
+| 6 | pipeline | gob-check, gob-cli, gob-directives, gob-mdtest, gob-testsupport |
+| 7 | product base | crunk-spec, crunk-tailwind, frob-ack, frob-ledger, gob-product, grimble-lints, grimble-model |
+| 8 | product core | crunk-ingest, crunk-tokens, frob-lease, frob-pm, grimble-bind |
+| 9 | product mid | crunk-rules, frob-release, frob-worktree, grimble-check |
+| 10 | product upper | crunk-check, frob-evidence, frob-gh, grimble |
+| 11 | product top | crunk, frob-tests |
+| 12 | obligations | frob-obligations |
+| 13 | check | frob-check |
+| 14 | land | frob-land |
+| 15 | binary | frob-cli |
+| 16 | tool | gob-dev |

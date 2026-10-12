@@ -790,6 +790,43 @@ fn cli_work_past_the_repository_limit_exits_3_with_the_wip_code() {
     assert!(err.contains("`start` is deprecated"), "{err}");
 }
 
+/// Commit `text` as `frob.toml` on the ledger ref, leaving the work tree file alone.
+fn commit_base_config(fx: &Fixture, text: &str) {
+    let repo = Repo::discover(&fx.root).expect("repo");
+    repo.commit_paths(
+        MAIN,
+        &[(
+            RelPath::new("frob.toml").expect("path"),
+            Some(text.as_bytes().to_vec()),
+        )],
+        "raise the cap",
+        &CommitOptions::default(),
+    )
+    .expect("commit config");
+}
+
+// frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
+// frob:tests crates/frob-worktree/src/verbs.rs::Work
+#[test]
+fn work_takes_the_repository_wip_limit_from_the_base_ref_not_the_worktree_copy() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    // The worktree copy is stale (cap 1); the base ref raised it to 3.
+    commit_base_config(&fx, "[pm.wip]\nin_progress = 3\n");
+    std::fs::write(fx.root.join("frob.toml"), "[pm.wip]\nin_progress = 1\n").expect("stale");
+    let ledger = fx.ledger(None);
+    let a = Fixture::ticket(&ledger, "First", TicketType::Task, &["a/**"]);
+    let b = Fixture::ticket(&ledger, "Second", TicketType::Task, &["b/**"]);
+    drop(ledger);
+    let cli = frob_worktree::register(gob_cli::Cli::new("frob", "0.0.0"));
+    for t in [a, b] {
+        let (code, out, err) = gob_cli::run_for_test(&cli, &["work", &t.to_string()], &fx.root);
+        assert_eq!(code, 0, "base cap 3 admits both: {out}{err}");
+    }
+}
+
 fn classed_ticket(ledger: &Ledger, title: &str, class: Class, scope: &str) -> TicketId {
     let mut req = NewTicket::new(title, TicketType::Task);
     req.class = class;
@@ -1173,4 +1210,70 @@ fn the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it() {
         })
         .collect();
     assert_eq!(reasons, ["customer escalation"]);
+}
+
+// frob:ticket 01M4MNBNM0WGTXGH93PEV48F78
+// frob:tests crates/frob-worktree/src/work.rs::normalize_mtimes
+#[test]
+fn a_new_worktree_keeps_unchanged_sources_no_newer_than_the_tip_commit() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    // The checkout is made after the tip commit's second has passed, as a worktree made after a build is.
+    std::thread::sleep(Duration::from_millis(1200));
+    let ledger = fx.ledger(None);
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let id = Fixture::ticket(&ledger, "Age it", TicketType::Task, &["crates/x/**"]);
+    let started = ws
+        .work(&id.to_string(), &WorkOptions::default())
+        .expect("work");
+    let repo = Repo::discover(&fx.root).expect("repo");
+    let spec = Spec {
+        program: Program::Git,
+        args: vec![
+            "log".into(),
+            "-1".into(),
+            "--format=%ct".into(),
+            "HEAD".into(),
+        ],
+        cwd: Some(started.path.clone()),
+        env: Vec::new(),
+        timeout: Duration::from_secs(10),
+        capture: true,
+    };
+    let secs = repo
+        .runner()
+        .run(&spec)
+        .expect("log")
+        .stdout
+        .trim()
+        .parse::<u64>()
+        .expect("secs");
+    let tip = std::time::UNIX_EPOCH + Duration::from_secs(secs);
+    let readme = started.path.join("README.md");
+    let before = std::fs::metadata(&readme)
+        .expect("meta")
+        .modified()
+        .expect("mtime");
+    assert!(
+        before <= tip,
+        "unchanged file must not be newer than the tip: {before:?} > {tip:?}"
+    );
+    // An edit made afterwards is newer than the tip, so cargo rebuilds it.
+    std::fs::write(&readme, "edited\n").expect("edit");
+    let after = std::fs::metadata(&readme)
+        .expect("meta")
+        .modified()
+        .expect("mtime");
+    assert!(
+        after > tip,
+        "an edited file must be newer than the tip: {after:?} <= {tip:?}"
+    );
 }

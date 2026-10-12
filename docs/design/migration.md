@@ -1,6 +1,11 @@
 # Migration from v1 and rollout
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias).
+Status: draft
+Owner: frob
+Decisions: D36, D95
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias).
 
 Milestone 1 (D36) migrates only this repository's own tickets, by a
 one-off script that mints ULIDs and writes the ledger; the verbs and
@@ -14,8 +19,9 @@ and the v1 file as reference, import tickets worth keeping with the
 existing developer importer (`cargo dev import-v1-tickets` with a
 selection file, as this repository did) or recreate them, and rewrite
 directives and waivers as they are touched. The section 1 table stays as
-the mapping a person follows; `grimble migrate` for `.strata` files is
-unaffected.
+the mapping a person follows. There is no `.strata` migration path (D136):
+because grimble is not strata's successor and strata is deprecated, a `.strata`
+model is rewritten by hand as `.grmb`, with no tool.
 
 ## 1. What migrates
 
@@ -26,7 +32,6 @@ unaffected.
 | `frob.lock` | re-emitted, but only after the digest scheme is final (universal-model.md 7.1, open question 5; build-test-ci.md Milestone 2 item 3): refs unchanged, digests recomputed under the final scheme with `digest_scheme` recorded (BLAKE3); only acks that were current under v1 are carried (each is re-verified with v1 hashing first) with a migration note in the ack log, and acks that were already stale are reported, never re-blessed; there is no bulk `ack --all` |
 | `frob.toml` | `frob migrate config`: known keys mapped and split into `frob.toml` and `grimble.toml` by family (boundaries.md), `[gates.severity]` collapsed to the rows that differ from v2 defaults, profile mapped per rules.md section 7, unknown keys reported |
 | `frob:waive RULE` ids | rule id map in `docs/migration/rule-ids.md` (many-to-one where a family collapsed); `frob migrate exceptions` rewrites waivers into exceptions (exceptions.md section 7), maps merged ids, and deletes waivers for dropped rules, reporting each |
-| `design/*.strata` (v1) | `grimble migrate` accepts the v1 grammar and emits `design/*.grmb`: `code` to `owns` (fnmatch to path globs with a report of semantic changes), `attr interface=[...]` to `surface`, `may ... via` to `may ... at`; constructs with no v2 equivalent are listed, never silently dropped |
 | `invariants/INV-*.md` | unchanged format; frontmatter validated; `decisions/` moves to `docs/decisions/<date>-<slug>.md` |
 | `.frob/` | deleted; rebuilt |
 | `fleet.toml` | unchanged shape |

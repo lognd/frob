@@ -1,4 +1,4 @@
-//! One JSON line per run in `<state dir>/telemetry.jsonl` (no arguments, no paths).
+//! One JSON line per run in `<telemetry dir>/telemetry.jsonl` (no arguments, no paths).
 
 use std::io::Write;
 use std::path::Path;
@@ -22,8 +22,7 @@ struct Line<'a> {
 /// Append the telemetry line; failures are logged, never raised.
 pub(crate) fn append(
     at: gob_time::Stamp,
-    root: &Path,
-    state_dir: &str,
+    dir: &Path,
     timing: &Timing,
     stats: &Stats,
     counts: Counts,
@@ -41,8 +40,7 @@ pub(crate) fn append(
         return;
     };
     text.push('\n');
-    let dir = root.join(state_dir);
-    let result = std::fs::create_dir_all(&dir).and_then(|()| {
+    let result = std::fs::create_dir_all(dir).and_then(|()| {
         std::fs::OpenOptions::new()
             .create(true)
             .append(true)

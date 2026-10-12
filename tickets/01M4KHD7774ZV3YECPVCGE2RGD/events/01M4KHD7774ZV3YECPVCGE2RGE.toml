@@ -1,0 +1,11 @@
+kind = "create"
+title = "Read dotfile templates (.env.example) as key=value text instead of opaque"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/frob-check/**"]
+acceptance = ["Given a .env.example file with KEY=value lines and # comments, when frob check classifies files, then it is read as text by a key=value reader and is not counted as an opaque text file"]
+body = "Split from ~T54E67N (logand F-556): no key=value reader exists, so classifying dotfile templates needs a new language/adapter in gob-languages and gob-symbols, outside the T54E67N scope."
+at = "2026-10-10T18:32:35Z"
+actor = "Claude"
+rev = 1

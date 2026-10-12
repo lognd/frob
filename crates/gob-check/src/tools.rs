@@ -21,6 +21,66 @@ use crate::tool_parse::{
     find_version, parse,
 };
 
+/// A store of finished tool-stage results keyed by the hash of everything the stage reads.
+///
+/// Payloads are opaque to the store. A failed `store` only costs a later re-run, so it reports nothing.
+pub trait ToolMemo: std::fmt::Debug + Send + Sync {
+    /// The payload recorded under `key`, if any.
+    fn load(&self, key: &str) -> Option<String>;
+    /// Record `payload` under `key`.
+    fn store(&self, key: &str, payload: &str);
+}
+
+/// Bumped when the key recipe or the payload shape changes, so old records never match.
+const MEMO_VERSION: &str = "tool-memo-v1";
+
+/// Feed one tagged, length-prefixed field to `h` so adjacent values cannot run together.
+fn field(h: &mut blake3::Hasher, tag: &str, value: &[u8]) {
+    h.update(tag.as_bytes());
+    h.update(&(value.len() as u64).to_le_bytes());
+    h.update(value);
+}
+
+/// The memo key of `stage`: its command line and version window plus the content of every file its `inputs` match.
+///
+/// `None` when the stage declares no inputs (what it reads is unknown) or a glob does not parse.
+/// No process is spawned: the key is a pure function of the stage and the file digests.
+fn memo_key(stage: &ToolStage, files: &[gob_walk::FileEntry]) -> Option<String> {
+    if stage.inputs.is_empty() {
+        return None;
+    }
+    let mut builder = globset::GlobSetBuilder::new();
+    for glob in &stage.inputs {
+        builder.add(globset::Glob::new(glob).ok()?);
+    }
+    let set = builder.build().ok()?;
+    let mut h = blake3::Hasher::new();
+    field(&mut h, "v", MEMO_VERSION.as_bytes());
+    field(&mut h, "command", stage.command.as_bytes());
+    field(&mut h, "parser", format!("{:?}", stage.parser).as_bytes());
+    for a in &stage.args {
+        field(&mut h, "arg", a.as_bytes());
+    }
+    for a in stage.version_args.iter().flatten() {
+        field(&mut h, "varg", a.as_bytes());
+    }
+    field(
+        &mut h,
+        "min",
+        stage.min_version.as_deref().unwrap_or("").as_bytes(),
+    );
+    field(
+        &mut h,
+        "max",
+        stage.max_version.as_deref().unwrap_or("").as_bytes(),
+    );
+    for f in files.iter().filter(|f| set.is_match(&f.path)) {
+        field(&mut h, "file", f.path.as_bytes());
+        field(&mut h, "digest", f.digest.as_bytes());
+    }
+    Some(h.finalize().to_hex().to_string())
+}
+
 /// Trailing characters of a tool's output quoted in the finding.
 const TAIL: usize = 400;
 
@@ -43,14 +103,52 @@ fn escape(text: &str) -> String {
         .collect()
 }
 
-/// The escaped, capped tail of a stream, or `(empty)`.
+// frob:ticket 01M4GKCBT6MW3BHED91718ANQ7
+/// True when a stderr line looks like the tool reporting a failure rather than progress.
+fn error_looking(line: &str) -> bool {
+    let l = line.to_ascii_lowercase();
+    ["error", "fatal", "panic", "failed", "cannot", "no such"]
+        .iter()
+        .any(|k| l.contains(k))
+}
+
+// frob:ticket 01M4GKCBT6MW3BHED91718ANQ7
+/// The escaped, capped excerpt of a stream, or `(empty)`.
+///
+/// Output that fits the cap is quoted whole. Longer output shows the last two
+/// error-looking lines and the last two lines, so leading INFO noise is dropped.
 fn excerpt(text: &str) -> String {
-    let t = tail(text);
+    let t = text.trim();
     if t.is_empty() {
-        "(empty)".to_owned()
-    } else {
-        escape(&t)
+        return "(empty)".to_owned();
     }
+    if t.chars().count() <= TAIL {
+        return escape(t);
+    }
+    let lines: Vec<&str> = t.lines().map(str::trim).filter(|l| !l.is_empty()).collect();
+    let mut keep: Vec<usize> = lines
+        .iter()
+        .enumerate()
+        .filter(|(_, l)| error_looking(l))
+        .map(|(i, _)| i)
+        .rev()
+        .take(2)
+        .collect();
+    keep.extend(lines.len().saturating_sub(2)..lines.len());
+    keep.sort_unstable();
+    keep.dedup();
+    let picked: Vec<String> = keep
+        .iter()
+        .map(|&i| {
+            let l = lines[i];
+            if l.chars().count() > 90 {
+                format!("{}...", l.chars().take(90).collect::<String>())
+            } else {
+                l.to_owned()
+            }
+        })
+        .collect();
+    escape(&tail(&picked.join(" | ")))
 }
 
 /// The command line of a stage invocation, for a finding.
@@ -328,6 +426,8 @@ fn normal_exits(parser: ToolParser) -> &'static [i32] {
         ToolParser::None => &[0],
         ToolParser::ZizmorJsonV1 => &[0, 10, 11, 12, 13, 14],
         ToolParser::ActionlintJson | ToolParser::Sarif => &[0, 1],
+        // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
+        ToolParser::StylelintJson => &[0, 2],
     }
 }
 
@@ -507,7 +607,7 @@ pub(crate) fn applicable_stages(
 }
 
 /// One stage's outcome and wall time, as a worker thread produced it.
-type Finished = (usize, StageResult, Duration);
+type Finished = (usize, StageResult, Duration, bool);
 
 /// Tool stages running on background threads; [`ToolRun::finish`] joins them and builds the findings.
 ///
@@ -531,10 +631,30 @@ fn group_key(stage: &ToolStage, index: usize) -> String {
 }
 
 /// Start `stages` on background threads and return at once; `None` when there are no stages.
-pub(crate) fn start_tools(root: &Path, stages: &[ToolStage]) -> Option<ToolRun> {
+pub(crate) fn start_tools(
+    root: &Path,
+    stages: &[ToolStage],
+    memo: Option<&std::sync::Arc<dyn ToolMemo>>,
+) -> Option<ToolRun> {
     if stages.is_empty() {
         return None;
     }
+    // One walk hashes the inputs for every stage; it is skipped when nothing can be memoized.
+    let digests = memo
+        .filter(|_| stages.iter().any(|s| !s.inputs.is_empty()))
+        .and_then(|_| {
+            let config = gob_walk::WalkConfig {
+                size_cap: u64::MAX,
+                ..gob_walk::WalkConfig::default()
+            };
+            match gob_walk::walk(root, &config) {
+                Ok(w) => Some(w.files),
+                Err(e) => {
+                    tracing::warn!(error = %e, "tool memo disabled: the input walk failed");
+                    None
+                }
+            }
+        });
     let runner = std::sync::Arc::new(
         Runner::new(Limits::default()).allow_tools(stages.iter().map(|s| s.command.clone())),
     );
@@ -556,17 +676,37 @@ pub(crate) fn start_tools(root: &Path, stages: &[ToolStage]) -> Option<ToolRun> 
         .map(|(key, members)| {
             let runner = std::sync::Arc::clone(&runner);
             let root = root.to_path_buf();
-            let work: Vec<(usize, ToolStage)> = members
+            let work: Vec<(usize, ToolStage, Option<String>)> = members
                 .into_iter()
-                .map(|i| (i, stages[i].clone()))
+                .map(|i| {
+                    let key = digests.as_deref().and_then(|f| memo_key(&stages[i], f));
+                    (i, stages[i].clone(), key)
+                })
                 .collect();
+            let memo = memo.cloned();
             std::thread::spawn(move || {
                 tracing::debug!(group = %key, "tool group running");
                 work.into_iter()
-                    .map(|(i, stage)| {
+                    .map(|(i, stage, key)| {
                         let started = Instant::now();
+                        let hit = memo
+                            .as_ref()
+                            .zip(key.as_deref())
+                            .and_then(|(m, k)| m.load(k))
+                            .and_then(|p| serde_json::from_str::<Vec<RawFinding>>(&p).ok());
+                        if let Some(raws) = hit {
+                            tracing::info!(stage = %stage.name, "tool stage reused a recorded pass");
+                            return (i, StageResult::Done(raws), started.elapsed(), true);
+                        }
                         let result = execute(&runner, &root, &stage);
-                        (i, result, started.elapsed())
+                        // Only a stage that ran to a verdict is recorded; failures are never reused.
+                        if let (StageResult::Done(raws), Some(m), Some(k)) =
+                            (&result, memo.as_ref(), key.as_deref())
+                            && let Ok(payload) = serde_json::to_string(raws)
+                        {
+                            m.store(k, &payload);
+                        }
+                        (i, result, started.elapsed(), false)
                     })
                     .collect()
             })
@@ -594,15 +734,16 @@ impl ToolRun {
                 Err(panic) => std::panic::resume_unwind(panic),
             }
         }
-        done.sort_by_key(|(i, _, _)| *i);
+        done.sort_by_key(|(i, _, _, _)| *i);
         let id: RuleId = Tool001
             .meta()
             .rule_id()
             .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
         let mut out = ToolOutput::default();
-        for (index, result, took) in done {
+        for (index, result, took, cached) in done {
             let stage = &self.stages[index];
-            timing.push(format!("tool:{}", stage.name), took, false);
+            let suffix = if cached { " (cached)" } else { "" };
+            timing.push(format!("tool:{}{suffix}", stage.name), took, false);
             let part = stage_findings(&self.root, &id, stage, result, files);
             out.findings.extend(part.findings);
             out.suppressed.extend(part.suppressed);
@@ -734,7 +875,7 @@ mod tests {
     fn run_full(stage: &ToolStage, root: &Path) -> ToolOutput {
         let mut timing = Timing::default();
         let mut files = FileInterner::default();
-        start_tools(root, std::slice::from_ref(stage))
+        start_tools(root, std::slice::from_ref(stage), None)
             .expect("one stage")
             .finish(&mut timing, &mut files)
     }
@@ -748,7 +889,7 @@ mod tests {
         let mut timing = Timing::default();
         let mut files = FileInterner::default();
         let started = Instant::now();
-        let found = start_tools(Path::new("."), &stages)
+        let found = start_tools(Path::new("."), &stages, None)
             .expect("stages")
             .finish(&mut timing, &mut files);
         let wall = started.elapsed();
@@ -1016,5 +1157,89 @@ mod tests {
         assert!(msg.len() < 900, "capped: {}", msg.len());
         let esc = escape("\u{1b}[31mx\n");
         assert_eq!(esc, "\\u{1b}[31mx\\n");
+    }
+
+    // frob:ticket 01M4GKCBT6MW3BHED91718ANQ7
+    #[test]
+    fn the_excerpt_shows_error_lines_and_the_tail_not_leading_info_noise() {
+        let mut lines: Vec<String> = (0..40)
+            .map(|i| format!("INFO starting step {i} of the long running tool"))
+            .collect();
+        lines.push("error: could not parse config.yml line 7".to_owned());
+        lines.extend((0..10).map(|i| format!("INFO cleanup {i}")));
+        lines.push("tool exited with status 3".to_owned());
+        let text = lines.join("\n");
+        let out = excerpt(&text);
+        assert!(!out.contains("starting step 0"), "{out}");
+        assert!(
+            out.contains("error: could not parse config.yml line 7"),
+            "{out}"
+        );
+        assert!(out.contains("tool exited with status 3"), "{out}");
+        assert!(out.contains("INFO cleanup 9"), "{out}");
+        assert!(out.chars().count() <= TAIL + 8, "capped: {}", out.len());
+    }
+
+    // frob:ticket 01M4GKCBT6MW3BHED91718ANQ7
+    #[test]
+    fn a_failing_tool_with_info_noise_quotes_its_error_line_in_tool001() {
+        let stage = sh_stage(
+            "lint",
+            ToolParser::ActionlintJson,
+            "for i in $(seq 1 60); do echo \"INFO warming up $i\" >&2; done; echo 'error: bad workflow file' >&2; echo 'INFO done' >&2; exit 2",
+            VERSION_OK,
+        );
+        let found = run_one(&stage);
+        let msg = &found[0].message;
+        assert!(msg.contains("error: bad workflow file"), "{msg}");
+        assert!(msg.contains("INFO done"), "{msg}");
+        assert!(!msg.contains("warming up 1 "), "{msg}");
+    }
+
+    #[derive(Debug, Default)]
+    struct MapMemo(std::sync::Mutex<HashMap<String, String>>);
+
+    impl ToolMemo for MapMemo {
+        fn load(&self, key: &str) -> Option<String> {
+            self.0.lock().expect("lock").get(key).cloned()
+        }
+        fn store(&self, key: &str, payload: &str) {
+            self.0
+                .lock()
+                .expect("lock")
+                .insert(key.to_owned(), payload.to_owned());
+        }
+    }
+
+    // frob:ticket 01M4MH624WYQHRVHT9B3K1MDJD
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
+    #[test]
+    fn a_recorded_pass_is_reused_until_one_input_changes() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(dir.path().join("a.txt"), "one").expect("write");
+        let mut stage = sh_stage("m", ToolParser::None, "echo x >> spawns.log", "true");
+        stage.inputs = vec!["*.txt".to_owned()];
+        let memo: std::sync::Arc<dyn ToolMemo> = std::sync::Arc::new(MapMemo::default());
+        let run = || {
+            let mut timing = Timing::default();
+            let mut files = FileInterner::default();
+            start_tools(dir.path(), std::slice::from_ref(&stage), Some(&memo))
+                .expect("stage")
+                .finish(&mut timing, &mut files);
+            timing.stages[0].name.clone()
+        };
+        let spawns = || {
+            std::fs::read_to_string(dir.path().join("spawns.log"))
+                .unwrap_or_default()
+                .lines()
+                .count()
+        };
+        assert_eq!(run(), "tool:m");
+        assert_eq!(spawns(), 1);
+        assert_eq!(run(), "tool:m (cached)", "same inputs hit");
+        assert_eq!(spawns(), 1, "a hit spawns nothing");
+        std::fs::write(dir.path().join("a.txt"), "two").expect("write");
+        assert_eq!(run(), "tool:m", "a changed input misses");
+        assert_eq!(spawns(), 2);
     }
 }

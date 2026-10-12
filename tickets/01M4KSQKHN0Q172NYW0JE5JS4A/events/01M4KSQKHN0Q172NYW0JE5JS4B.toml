@@ -1,0 +1,12 @@
+kind = "create"
+title = "docs/migration/v1-import.md still lists sprint as a dropped v1 field after ~KB92Z06 carries it as a sprint:<v> label"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 1
+scope = ["docs/migration/v1-import.md", "changelog.d/**"]
+acceptance = ["Given docs/migration/v1-import.md, when this lands, then the dropped-fields table has no sprint row and the mapping table lists sprint as the label sprint:<v>"]
+body = "found while landing ~KB92Z06: the page is historical, hand-kept output of the importer report, not covered by gen all --check"
+at = "2026-10-10T20:58:04Z"
+actor = "Claude"
+rev = 1

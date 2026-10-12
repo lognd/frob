@@ -1,6 +1,11 @@
 # Ticket branch and the one-way tracker mirror
 
-Status: ACCEPTED with changes (D79). Owner decisions 2026-10-04: GitHub
+Status: current
+Owner: frob
+Decisions: D79
+Audience: contributor
+
+Provenance: ACCEPTED with changes (D79). Owner decisions 2026-10-04: GitHub
 Issues first behind a platform-agnostic producer (section 2.1); tracker
 edits never block anything (section 3.4). The protocol (section 3) was
 rewritten from an adversarial audit and a TLA+ model (ticket ~HV53M66).

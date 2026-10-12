@@ -1,6 +1,11 @@
 # Tickets: the project-management core
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias).
+Status: current
+Owner: frob
+Decisions: D26
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias).
 Inputs: notes/v1/tickets.md (data model, 25 incident classes, Jira gap
 list), notes/rust-ecosystem.md section 3, notes/v1/ops-and-integrations.md
 (telemetry), notes/jira.md and notes/v1/agent-usage.md (sections 7 and 8).
@@ -331,7 +336,13 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   `poetry.lock`, `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`,
   `go.sum`, `Gemfile.lock`, `composer.lock`, `flake.lock`); an explicit
   value, including `[]`, replaces that default, and an `E-LEASE-HELD` whose
-  overlap is only lockfiles names the key in its remedy. At land, a base
+  overlap is only lockfiles names the key in its remedy. Generated
+  outputs are exempt the same way through `[lease] generated_files`
+  (default `docs/reference/**` and `docs/schemas/**`, the `gen all`
+  outputs; an explicit value, including `[]`, replaces it), so a broad
+  `docs/**` lease does not block a ticket that regenerates them.
+  <!-- frob:ticket 01M4GPWWWZFCHYMKYNKB3S3XGJ -->
+  At land, a base
   merge whose conflicts are all shared lockfiles takes the base side and
   regenerates `Cargo.lock` with `cargo metadata --offline` (it keeps locked
   versions, unlike `cargo update --workspace`), committing the result in
@@ -575,12 +586,15 @@ are `Passed | Failed | Unmeasured` and Unmeasured never reads as Failed.
 --ref '<pytest args>'` runs `pytest -o junit_family=xunit1 --junitxml=<tmp>
 <args>` through gob-exec (a `Tool` program, so `pytest` must be in
 `[evidence] allowed_tools`, else `E-EVIDENCE-TOOL`), reads the junit file and
-records one measured record whose `tests` are pytest node ids
+records one measured record whose test names (`test_count` in the event, the
+full list in the artifact named by `tests_digest`; old events carry an inline
+`tests` array that still reads) are pytest node ids
 (`tests/test_a.py::TestC::test_m[param]`) and whose `failed_tests` are the
 cases with a `failure` or `error`; a skipped case did not execute and is not
 listed. The transcript (stdout then stderr) goes through the same redaction,
 path scrub and non-ASCII escape as every provider, so the stored text is
-ASCII. Exit code 5 (nothing collected) is `E-EVIDENCE-NO-TESTS`, not a failed
+ASCII. A ref matching more than 50 tests draws a warning from `evidence add`
+that suggests exact-name refs. Exit code 5 (nothing collected) is `E-EVIDENCE-NO-TESTS`, not a failed
 measurement. `frob test` selects Python tests the same way as Rust ones (the
 Python adapter puts their symbols and calls in the graph; a changed `.py`
 file is no longer an `unresolved_files` entry), runs

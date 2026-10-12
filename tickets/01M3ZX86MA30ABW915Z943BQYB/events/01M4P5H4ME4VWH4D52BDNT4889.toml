@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-obligations/src/tick_paths.rs", "crates/frob-ledger/src/mirror_map.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/rules.rs", "crates/frob-obligations/tests/mdtest/tick006.md", "crates/frob-check/src/filecheck.rs", "crates/gob-check/src/applicability.rs", "crates/frob/tests/ticket_path_refs.rs", "docs/reference/rules/**"]
+new = ["crates/frob-obligations/src/tick_paths.rs", "crates/frob-ledger/src/mirror_map.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/rules.rs", "crates/frob-obligations/tests/mdtest/tick006.md", "crates/frob-check/src/filecheck.rs", "crates/gob-check/src/applicability.rs", "crates/frob/tests/ticket_path_refs.rs", "docs/reference/rules/**", "docs/design/navigation.md"]
+at = "2026-10-11T19:02:44Z"
+actor = "lognd"
+rev = 1

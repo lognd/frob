@@ -130,9 +130,16 @@ pub struct EvidenceRecord {
     /// The process exit code, when it exited.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
-    /// Names of the tests that executed (nextest only).
+    // frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+    /// Names of the tests that executed; only old events and `https://` stores carry them, new `dir:` records keep `test_count` and `tests_digest` instead.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tests: Vec<String>,
+    /// How many tests executed, when the provider listed them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub test_count: Option<u64>,
+    /// blake3 hex of the newline-joined test names, the artifact file that holds the full list.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tests_digest: Option<String>,
     /// Names of the tests that failed, timed out or crashed (nextest only), so a flake is identifiable.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub failed_tests: Vec<String>,
@@ -196,6 +203,35 @@ impl EvidenceRecord {
             },
             // https blobs and digest-only records (file provider) cannot be re-checked here.
             _ => Status::Measured,
+        }
+    }
+
+    // frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+    /// How many tests executed: the stored count, else the length of an old event's inline list.
+    pub fn tests_executed(&self) -> u64 {
+        self.test_count.unwrap_or(self.tests.len() as u64)
+    }
+
+    // frob:ticket 01M4NZCSJWT2XSEZQBVPNMA6HM
+    /// The names of the tests that executed: an old event's inline list, else the artifact file named by `tests_digest`.
+    ///
+    /// `None` when the names are not retrievable (artifact missing or corrupt).
+    pub fn test_names(&self, store: &BlobStore) -> Option<Vec<String>> {
+        if !self.tests.is_empty() {
+            return Some(self.tests.clone());
+        }
+        let Some(digest) = &self.tests_digest else {
+            return Some(Vec::new());
+        };
+        let uri = store.artifact_uri(digest)?;
+        match store.fetch_verified(&uri, digest) {
+            Fetched::Found(bytes) => Some(
+                String::from_utf8_lossy(&bytes)
+                    .lines()
+                    .map(str::to_owned)
+                    .collect(),
+            ),
+            Fetched::Unmeasured { .. } => None,
         }
     }
 

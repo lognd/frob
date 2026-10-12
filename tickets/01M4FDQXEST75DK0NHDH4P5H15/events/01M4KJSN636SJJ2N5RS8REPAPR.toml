@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T18:56:50Z"
+digest = "9ff68faa736fbd5447761adb91f5c6b518c218f80e8f7d1ccca3490f38aaecc8"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 794573d3-2837-4509-a8a8-39ee7b29c768 with nextest profile: default
+    Starting 1 test across 39 binaries (273 tests skipped)
+        PASS [   0.449s] frob-cli::fragment writes_a_valid_fragment_from_the_title_with_the_mapped_type
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.450s] 1 test run: 1 passed, 273 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(=writes_a_valid_fragment_from_the_title_with_the_mapped_type)'"
+size = 560
+status = "measured"
+tests = ["writes_a_valid_fragment_from_the_title_with_the_mapped_type"]
+at = "2026-10-10T18:56:50Z"
+actor = "Claude"
+rev = 1

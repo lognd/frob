@@ -8,6 +8,7 @@ use std::process::Output;
 
 use serde_json::Value;
 
+// frob:ticket 01M4D6NRS8BHPBDVD2CEGY0KCD
 const PM_KEYS: [&str; 13] = [
     "pm.strict",
     "pm.pull",
@@ -18,10 +19,10 @@ const PM_KEYS: [&str; 13] = [
     "pm.min_history",
     "pm.capacity_k",
     "pm.sprint_gate",
-    "pm.wip.in_progress_per_identity",
-    "pm.wip.in_progress",
     "pm.classes.expedite_max",
     "pm.classes.intangible_share",
+    "pm.wip.in_progress_per_identity",
+    "pm.wip.in_progress",
 ];
 
 fn repo() -> tempfile::TempDir {
@@ -162,4 +163,50 @@ fn unknown_requirement_name_is_a_config_error_with_did_you_mean() {
     assert_ne!(out.status.code(), Some(0));
     let text = String::from_utf8_lossy(&out.stdout);
     assert!(text.contains("did you mean `points`?"), "{text}");
+}
+
+/// The `[pm*]` keys of a `frob.toml` text in file order, spelled `pm.<table>.<key>`.
+fn pm_keys_in_order(text: &str) -> Vec<String> {
+    let mut table = String::new();
+    let mut keys = Vec::new();
+    for line in text.lines() {
+        let line = line.trim();
+        if line.starts_with('#') {
+            continue;
+        }
+        if let Some(name) = line.strip_prefix('[').and_then(|l| l.strip_suffix(']')) {
+            name.clone_into(&mut table);
+        } else if (table == "pm" || table.starts_with("pm."))
+            && let Some((k, _)) = line.split_once(" = ")
+        {
+            keys.push(format!("{table}.{k}"));
+        }
+    }
+    keys
+}
+
+// frob:ticket 01M4D6NRS8BHPBDVD2CEGY0KCD
+#[test]
+fn pm_knob_order_is_one_across_init_the_sync_list_and_the_repo_frob_toml() {
+    let dir = repo();
+    let out = frob(dir.path(), &["init"]);
+    assert_eq!(out.status.code(), Some(0));
+    let derived: Vec<String> = added(&json(&out))
+        .into_iter()
+        .filter(|k| k.starts_with("pm."))
+        .collect();
+    assert_eq!(derived, PM_KEYS, "the test's key list follows the derive");
+    let written = std::fs::read_to_string(dir.path().join("frob.toml")).expect("init toml");
+    assert_eq!(
+        pm_keys_in_order(&written),
+        derived,
+        "the init snapshot follows the derive"
+    );
+    let repo_toml = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../frob.toml");
+    let checked_in = std::fs::read_to_string(repo_toml).expect("repo frob.toml");
+    assert_eq!(
+        pm_keys_in_order(&checked_in),
+        derived,
+        "the repo frob.toml follows the derive"
+    );
 }

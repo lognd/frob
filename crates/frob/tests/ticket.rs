@@ -676,6 +676,39 @@ fn doable_lists_expedite_first_then_fixed_date_by_due() {
     );
 }
 
+// frob:ticket 01M3ZX87QPD21PCSSSAJHVK7HJ
+#[test]
+fn doable_newcomer_lists_good_first_smallest_first_with_start_notes() {
+    let repo = Repo::new(false);
+    let mk = |title: &str, points: &str| {
+        repo.id_of(&[
+            "ticket",
+            "new",
+            "--title",
+            title,
+            "--good-first",
+            "--points",
+            points,
+        ])
+    };
+    let two_a = mk("two a", "2");
+    let one = mk("one", "1");
+    let two_b = mk("two b", "2");
+    repo.id_of(&["ticket", "new", "--title", "plain", "--points", "1"]);
+    let out = repo.ok(&["ticket", "doable", "--newcomer"]);
+    let rows = out["data"]["tickets"].as_array().expect("tickets");
+    let ids: Vec<&str> = rows.iter().map(|r| r["id"].as_str().expect("id")).collect();
+    let (first, second) = if two_a < two_b {
+        (&two_a, &two_b)
+    } else {
+        (&two_b, &two_a)
+    };
+    assert_eq!(ids, [one.as_str(), first.as_str(), second.as_str()]);
+    let notes = rows[0]["start_here"].as_str().expect("start notes");
+    assert!(notes.contains("Files to read first"), "{notes}");
+    assert_eq!(out["data"]["count"], 3);
+}
+
 /// The warnings of an envelope as one string.
 fn warnings_of(v: &Value) -> String {
     v["warnings"].to_string()
@@ -729,4 +762,66 @@ fn zero_match_scope_warns_on_new_and_update_but_new_scope_declares_it() {
         !warnings_of(&new_decl).contains("matches no tracked file"),
         "{new_decl}"
     );
+}
+
+// frob:ticket 01M4GKAYSGHAE5QAXN1BJBTQN2
+// frob:tests crates/frob/src/ticket/read.rs::List
+#[test]
+fn list_full_emits_every_ticket_with_its_events_and_aliases_in_one_call() {
+    let repo = Repo::new(false);
+    let a = repo.id_of(&["ticket", "new", "--title", "first"]);
+    let b = repo.id_of(&["ticket", "new", "--title", "second"]);
+    repo.ok(&["ticket", "comment", &a, "--body", "hello"]);
+    let plain = repo.ok(&["ticket", "list"]);
+    assert!(plain["data"]["tickets"][0].get("events").is_none());
+    let full = repo.ok(&["ticket", "list", "--full"]);
+    assert_eq!(full["data"]["count"], 2);
+    let rows = full["data"]["tickets"].as_array().expect("tickets");
+    for row in rows {
+        assert!(row["aliases"].is_array(), "{row}");
+        assert!(!row["events"].as_array().expect("events").is_empty());
+    }
+    let by_id = |id: &str| rows.iter().find(|r| r["id"] == id).expect("row");
+    let kinds = |id: &str| -> Vec<String> {
+        by_id(id)["events"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["kind"].as_str().unwrap().to_owned())
+            .collect()
+    };
+    assert!(kinds(&a).contains(&"comment".to_owned()), "{:?}", kinds(&a));
+    assert!(!kinds(&b).contains(&"comment".to_owned()));
+}
+
+// frob:ticket 01M3ZX85H7VX2XFX1T663BD9NG
+#[test]
+fn ticket_file_path_is_refused_with_the_handle_it_names() {
+    let repo = Repo::new(false);
+    let id = repo.id_of(&["ticket", "new", "--title", "pathy"]);
+    let handle = repo.ok(&["ticket", "show", &id])["data"]["summary"]["handle"]
+        .as_str()
+        .expect("handle")
+        .to_owned();
+    let path = format!("tickets/{id}/ticket.md");
+    let out = repo.frob(&["ticket", "show", &path]);
+    assert_eq!(code(&out), 2);
+    let v = json(&out);
+    assert_eq!(v["error"]["code"], "E-TICKET-PATH");
+    let msg = v["error"]["message"].as_str().expect("message");
+    assert_eq!(msg, format!("that file is {handle}; pass the id"));
+}
+
+// frob:ticket 01M3ZX85H7VX2XFX1T663BD9NG
+#[test]
+fn handle_ulid_and_alias_still_resolve() {
+    let repo = Repo::new(false);
+    let id = repo.id_of(&["ticket", "new", "--title", "plain", "--alias", "T-0007"]);
+    let handle = repo.ok(&["ticket", "show", &id])["data"]["summary"]["handle"]
+        .as_str()
+        .expect("handle")
+        .to_owned();
+    for arg in [id.as_str(), handle.as_str(), "T-0007"] {
+        assert_eq!(code(&repo.frob(&["ticket", "show", arg])), 0, "{arg}");
+    }
 }

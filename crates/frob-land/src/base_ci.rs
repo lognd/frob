@@ -17,12 +17,18 @@
 use std::fmt::Debug;
 use std::path::Path;
 
-use frob_release::ci::{CiState, check_tip};
+use frob_ledger::Ledger;
+use frob_ledger::index::ListFilter;
+use frob_ledger::model::{Category, TicketType};
+use frob_ledger::ops::NewTicket;
+use frob_release::ci::{CiState, check_tip, list_runs};
+use frob_release::culprit::{BLOCKS_LANDS_LABEL, Commit, RunRecord, find_culprit};
 use gob_config::ConfigTable;
 use gob_exec::Program;
 use gob_git::Repo;
 
 use crate::error::{LandError, needs_action};
+use crate::git::git;
 
 /// Stable code of the refusal when a required base CI check failed.
 pub const CODE_BASE_RED: &str = "E-LAND-BASE-RED";
@@ -52,6 +58,11 @@ pub struct LandConfig {
 pub trait CiReader: Send + Sync + Debug {
     /// The CI verdict of `sha` for the repository `repo` (`cwd` is a checkout of it).
     fn read(&self, repo: &Repo, cwd: &Path, sha: &str) -> CiState;
+
+    /// The latest workflow runs of `branch`, newest first, for culprit finding; `None` when they cannot be read.
+    fn runs(&self, _repo: &Repo, _cwd: &Path, _branch: &str) -> Option<Vec<RunRecord>> {
+        None
+    }
 }
 
 /// The production reader: the GitHub CLI against origin.
@@ -69,6 +80,30 @@ impl CiReader for GhCli {
             repo.remote_url("origin").as_deref(),
             sha,
         )
+    }
+
+    fn runs(&self, repo: &Repo, cwd: &Path, branch: &str) -> Option<Vec<RunRecord>> {
+        match list_runs(
+            repo.runner(),
+            &Self::gh(),
+            cwd,
+            repo.remote_url("origin").as_deref(),
+            branch,
+        ) {
+            Ok(runs) => Some(runs),
+            Err(u) => {
+                tracing::warn!(reason = %u.reason, "workflow runs unreadable; no culprit finding");
+                None
+            }
+        }
+    }
+}
+
+impl GhCli {
+    fn gh() -> Program {
+        Program::Tool {
+            name: "gh".to_owned(),
+        }
     }
 }
 
@@ -208,13 +243,120 @@ fn join<'a>(names: impl IntoIterator<Item = &'a String>) -> String {
         .join(", ")
 }
 
+/// The first-parent history of `base`, newest first, as culprit finding wants it.
+fn history(wt: &Repo, cwd: &Path, base: &str) -> Vec<Commit> {
+    let range = format!("refs/heads/{base}");
+    let run = git(
+        wt,
+        cwd,
+        &[
+            "log",
+            "--first-parent",
+            "-n",
+            "200",
+            "--format=%H%x09%s",
+            &range,
+        ],
+    );
+    let Ok(run) = run else {
+        return Vec::new();
+    };
+    run.text
+        .lines()
+        .filter_map(|l| l.split_once('\t'))
+        .map(|(sha, subject)| Commit {
+            sha: sha.to_owned(),
+            subject: subject.to_owned(),
+        })
+        .collect()
+}
+
+/// Open tickets that block lands (carry [`BLOCKS_LANDS_LABEL`]) other than the one landing.
+fn open_blockers(ledger: &Ledger, landing: &str) -> Vec<String> {
+    let filter = ListFilter {
+        label: Some(BLOCKS_LANDS_LABEL.to_owned()),
+        ..ListFilter::default()
+    };
+    match ledger.list(&filter) {
+        Ok(all) => all
+            .into_iter()
+            .filter(|t| t.category != Category::Done && t.handle != landing)
+            .map(|t| t.handle)
+            .collect(),
+        Err(e) => {
+            tracing::warn!(error = %e, "blocking tickets unreadable; not gating on them");
+            Vec::new()
+        }
+    }
+}
+
+// frob:ticket 01M4GWS3GBJTFXFEGSNFB7J4FQ
+/// Add the culprit range to a red-base refusal and file the blocking fix ticket (idempotent on the first-red sha).
+///
+/// Any failure to read runs, find the range or file the ticket leaves the refusal as it was.
+fn with_culprit(
+    err: LandError,
+    reader: &dyn CiReader,
+    (wt, cwd, base): (&Repo, &Path, &str),
+    ledger: &Ledger,
+) -> LandError {
+    let Some(refusal) = err.refusal() else {
+        return err;
+    };
+    let Some(runs) = reader.runs(wt, cwd, base) else {
+        return err;
+    };
+    let culprit = match find_culprit(&runs, &history(wt, cwd, base)) {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::info!(error = %e, "no culprit range named");
+            return err;
+        }
+    };
+    let mut req = NewTicket::new(culprit.fix.title.clone(), TicketType::Bug);
+    req.body.clone_from(&culprit.fix.body);
+    req.labels.clone_from(&culprit.fix.labels);
+    req.idempotency_key = Some(culprit.fix.idempotency_key.clone());
+    req.priority = frob_ledger::model::Priority::High;
+    let handle = match ledger.new_ticket(req) {
+        Ok(applied) => {
+            tracing::info!(handle = %applied.handle, already = applied.already, "fix ticket for the red base");
+            applied.handle
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "fix ticket not filed");
+            return err;
+        }
+    };
+    let lands = culprit
+        .lands
+        .iter()
+        .map(|c| format!("{} {}", &c.sha[..c.sha.len().min(9)], c.subject))
+        .collect::<Vec<_>>()
+        .join("; ");
+    let message = format!(
+        "{}; land commits since the last green run: {}; fix ticket {handle} blocks lands until it closes",
+        refusal.message,
+        if lands.is_empty() { "none" } else { &lands }
+    );
+    needs_action(
+        CODE_BASE_RED,
+        message,
+        format!("land the fix for {handle} (it may land while the base is red), then rerun"),
+    )
+}
+
 /// Run the gate for `base`: read the config from the committed base, the CI of its pushed tip, and judge.
+///
+/// `landing` is the handle of the ticket being landed: an open `blocks-lands` ticket other than it
+/// blocks the land (the fix ticket itself may land).
 pub(crate) fn gate(
     wt: &Repo,
     cwd: &Path,
     base: &str,
     reader: Option<&dyn CiReader>,
     override_reason: Option<&str>,
+    (ledger, landing): (&Ledger, &str),
 ) -> Result<Gate, LandError> {
     let label = Path::new("frob.toml");
     let base_ref = format!("refs/heads/{base}");
@@ -230,15 +372,29 @@ pub(crate) fn gate(
         tracing::info!("base CI gate off ([land] require_base_green = false)");
         return Ok(Gate::default());
     }
+    let blockers = open_blockers(ledger, landing);
+    if !blockers.is_empty() && override_reason.is_none() {
+        let named = blockers.join(", ");
+        tracing::warn!(%named, "lands blocked by an open fix ticket");
+        return Err(needs_action(
+            CODE_BASE_RED,
+            format!("lands are blocked until the fix ticket closes: {named}"),
+            format!("land and close {named}, or rerun with `--override-base-ci --reason <text>`"),
+        ));
+    }
     let sha = wt
         .rev_parse(&format!("refs/remotes/origin/{base}"))
         .or_else(|_| wt.rev_parse(&base_ref))?
         .to_string();
-    let state = match reader {
-        Some(r) => r.read(wt, cwd, &sha),
-        None => GhCli.read(wt, cwd, &sha),
-    };
-    judge(&cfg, state, &sha, override_reason)
+    let default_reader = GhCli;
+    let reader: &dyn CiReader = reader.unwrap_or(&default_reader);
+    let state = reader.read(wt, cwd, &sha);
+    match judge(&cfg, state, &sha, override_reason) {
+        Err(e) if e.refusal().is_some_and(|r| r.code == CODE_BASE_RED) => {
+            Err(with_culprit(e, reader, (wt, cwd, base), ledger))
+        }
+        other => other,
+    }
 }
 
 #[cfg(test)]

@@ -88,6 +88,13 @@ impl Product for Crunk {
         PRODUCT
     }
 
+    // frob:ticket 01M4FD0EP322SV5ZNXD5SQT8RX
+    fn telemetry_dir(&self, root: &std::path::Path) -> std::path::PathBuf {
+        // The shared cache dir lives under the git dir, so a check never leaves a file in the worktree.
+        gob_cache::shared_dir(root, &self.state_dir())
+            .unwrap_or_else(|| root.join(self.state_dir()))
+    }
+
     fn collect(&self, cx: &mut CollectCx<'_>) -> Result<Collected<Self>, CheckError> {
         let spec = match crunk_spec::load_spec(&cx.core.root) {
             Ok(spec) => Some(spec),

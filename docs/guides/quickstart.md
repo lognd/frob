@@ -1,5 +1,10 @@
 # Quickstart: from `frob init` to a landed ticket
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: user
+
 Tutorial (Diataxis: learning). You will take one change through the whole frob
 loop in a throwaway repository: init, plan, lease, change, test, bind evidence,
 check, land, and look at the board and the release status. It takes about ten

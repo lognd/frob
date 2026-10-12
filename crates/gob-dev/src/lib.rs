@@ -89,6 +89,8 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError>
     let all = kind == Kind::All;
     if all || kind == Kind::Rules {
         files.extend(render::rules::generate(crates_dir));
+        // frob:ticket 01M3ZX7DT0J6MRW68P60GAYD3N
+        files.extend(render::grl_catalog::generate());
     }
     if all || kind == Kind::RulesIndex {
         files.extend(render::rules_index::generate(crates_dir)?);
@@ -110,6 +112,14 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError>
         files.extend(render::artifacts::generate(
             gob_config::ArtifactFamily::Schemas,
         ));
+    }
+    for f in &mut files {
+        if std::path::Path::new(&f.path)
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("md"))
+        {
+            f.content = render::with_visible_line(std::mem::take(&mut f.content));
+        }
     }
     files.sort_by(|a, b| a.path.cmp(&b.path));
     tracing::info!(?kind, files = files.len(), "generated");

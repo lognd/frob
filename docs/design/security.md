@@ -1,6 +1,11 @@
 # Security of packs, plugins, tool stages and the mirror
 
-Status: ACCEPTED (D82, ticket ~AR02B3E), from the pessimistic audit
+Status: current
+Owner: gob
+Decisions: D82
+Audience: contributor
+
+Provenance: ACCEPTED (D82, ticket ~AR02B3E), from the pessimistic audit
 notes/review/plugin-security-audit.md (34 findings: 4 critical, 17 high,
 10 medium, 3 low). The owner decisions on three judgment calls are section 5.
 Applies to frob, grimble and crunk; the shared pieces live in gob crates.
@@ -91,7 +96,10 @@ not re-lock, but it does change the tree digest and so needs trust again.
   store refuses a root inside the work tree.
 - Guard: if git tracks any state or cache directory (`.frob/`,
   `.grimble/`, `.crunk/`), the run refuses with exit 3
-  (`E-STATE-TRACKED`) naming the files.
+  (`E-STATE-TRACKED`) naming the files. The check is
+  `gob_trust::check_state_untracked` (it asks `git ls-files`, so a
+  staged file counts); `Refusal::state_tracked` maps it to the refusal.
+  A directory outside any git repository passes.
 - CI mode (`--base` or `CI=true`) ignores any in-tree cache. CI caching
   of compiled artefacts across trust boundaries is a cicd.md finding
   unless the MAC key comes from a secret pull-request jobs do not get.

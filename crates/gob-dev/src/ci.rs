@@ -365,38 +365,64 @@ pub const TYPOS: Prerequisite = Prerequisite::SystemTool {
     install: "cargo install --locked typos-cli --version 1.50.3",
 };
 
+/// True when `rust-version` names the pinned toolchain's own minor series (`1.98` vs `1.98.0`),
+/// so an `msrv` check would build the workspace with the compiler clippy already used.
+fn msrv_is_the_toolchain(rust_version: &str, channel: &str) -> bool {
+    channel == rust_version || channel.starts_with(&format!("{rust_version}."))
+}
+
 /// The `msrv` step: install the toolchain named by `[workspace.package] rust-version` (minimal
 /// profile) and `cargo check` the whole workspace with it, so code never needs a newer compiler
-/// than the manifest promises. One shell command; the step is Linux-only.
+/// than the manifest promises. One shell command; the step is Linux-only. `None` while
+/// `rust-version` is the pinned toolchain's own series: the check would repeat clippy's compile
+/// with the same compiler (audit M18), and it returns the moment `rust-version` drops below it.
 /// frob:ticket 01M47QVDTG48F4426J019X37CZ
-fn msrv(root: &Path) -> Result<Step, CiError> {
-    let text = std::fs::read_to_string(root.join("Cargo.toml")).map_err(|e| {
-        tracing::error!(error = %e, "Cargo.toml unreadable");
-        CiError::Config(e.to_string())
-    })?;
-    let manifest: toml::Table = text.parse().map_err(|e: toml::de::Error| {
-        tracing::error!(error = %e, "Cargo.toml unparsable");
-        CiError::Config(e.to_string())
-    })?;
+/// frob:ticket 01M4CTE2T943ATA1PKVBN7DCP3
+fn msrv(root: &Path) -> Result<Option<Step>, CiError> {
+    let read = |file: &str| -> Result<toml::Table, CiError> {
+        let text = std::fs::read_to_string(root.join(file)).map_err(|e| {
+            tracing::error!(file, error = %e, "unreadable");
+            CiError::Config(e.to_string())
+        })?;
+        text.parse().map_err(|e: toml::de::Error| {
+            tracing::error!(file, error = %e, "unparsable");
+            CiError::Config(e.to_string())
+        })
+    };
+    let manifest = read("Cargo.toml")?;
     let rv = manifest
         .get("workspace")
         .and_then(|w| w.get("package"))
         .and_then(|p| p.get("rust-version"))
         .and_then(toml::Value::as_str)
         .ok_or_else(|| CiError::Config("Cargo.toml: no [workspace.package] rust-version".into()))?;
-    tracing::info!(rust_version = rv, "msrv step toolchain");
+    let toolchain = read("rust-toolchain.toml")?;
+    let channel = toolchain
+        .get("toolchain")
+        .and_then(|w| w.get("channel"))
+        .and_then(toml::Value::as_str)
+        .ok_or_else(|| CiError::Config("rust-toolchain.toml: no [toolchain] channel".into()))?;
+    if msrv_is_the_toolchain(rv, channel) {
+        tracing::info!(
+            rust_version = rv,
+            channel,
+            "msrv step dropped: same compiler as the pinned toolchain"
+        );
+        return Ok(None);
+    }
+    tracing::info!(rust_version = rv, channel, "msrv step toolchain");
     let script = format!(
         "rustup toolchain install {rv} --profile minimal && \
          exec cargo +{rv} check --workspace --all-targets --all-features"
     );
-    Ok(Step {
+    Ok(Some(Step {
         program: Program::Tool {
             name: "sh".to_owned(),
         },
         args: vec!["-c".to_owned(), script],
         linux_only: true,
         ..cargo("msrv", &[])
-    })
+    }))
 }
 
 /// Every CI check in the order `ci.yml` runs it; zizmor and actionlint pins come from `frob.toml`.
@@ -463,7 +489,7 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
     docs.env = vec![("RUSTDOCFLAGS".to_owned(), "-D warnings".to_owned())];
     docs.offload = true;
     let nextest = nextest_step(require_python);
-    Ok(vec![
+    let mut all = vec![
         cargo("fmt", &["fmt", "--all", "--check"]),
         offloaded(cargo(
             "clippy",
@@ -487,7 +513,6 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
         hygiene("deny", CARGO_DENY, &frob_toml, "cargo-deny")?,
         hygiene("shear", CARGO_SHEAR, &frob_toml, "cargo-shear")?,
         hygiene("typos", TYPOS, &frob_toml, "typos")?,
-        msrv(root)?,
         offloaded(linux(cargo(
             "doctor",
             &["run", "-p", "frob-cli", "--", "doctor"],
@@ -506,7 +531,16 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
                 "--dry-run",
             ],
         )),
-    ])
+    ];
+    // msrv sits between the hygiene tools and doctor, where ci.yml lists it.
+    if let Some(m) = msrv(root)? {
+        let at = all
+            .iter()
+            .position(|s| s.name == "doctor")
+            .unwrap_or(all.len());
+        all.insert(at, m);
+    }
+    Ok(all)
 }
 
 /// Executes one step; a trait so tests drive the flow without spawning anything.
@@ -1403,12 +1437,18 @@ mod tests {
                 "{step}: {version} not in {min}..{max}"
             );
         }
-        let m = all.iter().find(|s| s.name == "msrv").unwrap();
-        assert!(
-            m.args[1].contains("cargo +1.98 check --workspace"),
-            "{:?}",
-            m.args
-        );
+        // rust-version is the pinned toolchain's series, so the msrv step is dropped.
+        assert!(all.iter().all(|s| s.name != "msrv"));
+    }
+
+    // frob:ticket 01M4CTE2T943ATA1PKVBN7DCP3
+    // frob:tests crates/gob-dev/src/ci.rs::msrv_is_the_toolchain
+    #[test]
+    fn msrv_is_dropped_only_when_rust_version_is_the_toolchain_series() {
+        assert!(msrv_is_the_toolchain("1.98", "1.98.0"));
+        assert!(msrv_is_the_toolchain("1.98.0", "1.98.0"));
+        assert!(!msrv_is_the_toolchain("1.97", "1.98.0"));
+        assert!(!msrv_is_the_toolchain("1.9", "1.98.0"));
     }
 
     fn repo_root() -> std::path::PathBuf {

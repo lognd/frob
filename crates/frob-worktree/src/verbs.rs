@@ -42,7 +42,9 @@ impl Opened {
         let config =
             WorktreeConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
         let gc = GcConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
-        let pm = PmConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
+        // frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
+        let pm = PmConfig::load_repo_wide(&root, &ledger_cfg.ref_name)
+            .map_err(|e| WorktreeError::Config(e.to_string()))?;
         let wip = pm.wip;
         let (leases, _) = frob_lease::open_store_from_file(&root, ctx.clock.clone())?;
         Ok(Self {

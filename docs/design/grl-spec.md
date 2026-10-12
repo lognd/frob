@@ -1,6 +1,11 @@
 # GRL: the grimble rule language
 
-Status: ACCEPTED as the design (D80, ticket ~4QBTKCK); the newcomer test
+Status: draft
+Owner: grimble
+Decisions: D80
+Audience: rule author
+
+Provenance: ACCEPTED as the design (D80, ticket ~4QBTKCK); the newcomer test
 of section 13 is still to run. Evidence:
 notes/research/rule-languages.md (17 rule systems surveyed, six run
 locally with their error messages measured, ten frob rules rewritten).
@@ -161,7 +166,7 @@ That is the whole loop: paste, read, test, refine, run, ask why. Section
   `[A-Z]+[0-9]{3}`; kinds and relations are lowercase words from the
   catalog (section 6), multi-word relations are written with spaces
   (`resolves to`, `owned by`).
-- Strings: `"..."` with `\"`, `\\` and `\n`. Interpolation `{expr}`
+- Strings: `"..."` with `\"`, `\\`, `\n`, `\{` and `\}`. Interpolation `{expr}`
   exists only in message positions: `report` and `note` text, `fix`
   replacement text, `unresolved ... because` reasons and `explain`. There
   `\{` and `\}` write literal braces. In every other position (globs,
@@ -189,6 +194,10 @@ That is the whole loop: paste, read, test, refine, run, ask why. Section
   the quotes.
 - Numbers: integers, decimals for knobs and ratios.
 - Regex: `/.../` with flags `i`, `m`; Rust regex syntax, size-limited.
+  A regex literal is ASCII-only (write other characters as `\uXXXX`
+  escapes) and cannot span lines. A generic type argument list directly
+  followed by an equals sign needs a space before it: write `list<T> =`,
+  never `list<T>=`.
 
 ## 4. The twenty constructs
 
@@ -266,7 +275,7 @@ rel        = [ "directly" ] ( "inside" | "has" ) object
            | "under" term                           (* module or path segments, not characters *)
            | ( "before" | "after" | "adjoins" ) object
            | VERB object
-           | "reaches" object "via" VERB_LIST [ "within" term ]
+           | "reaches" object "via" ( VERB { "," VERB } | "(" VERB { "," VERB } ")" ) [ "within" term ]
            | [ "certainly" | "possibly" ] VERB object ;
 object     = term | shape ;                         (* a bound variable, or an anonymous shape *)
 term       = NAME { "." NAME } | literal | "knob" "." NAME | count | term ARITH term ;
@@ -293,6 +302,17 @@ APPLICABILITY = "machine" | "maybe-incorrect" | "has-placeholders" ;
 CMP        = "==" | "!=" | "<" | "<=" | ">" | ">=" ;
 ARITH      = "+" | "-" | "*" ;
 ```
+
+Two rules keep every source to one parse:
+
+- **A binding's `where` filter stays on the binding's line.** A `where` that starts a
+  line is always a clause of the rule, even straight after an unfiltered `find`, `some`
+  or `no` (`find f: function` then `where f.public` on the next line is two clauses; for
+  a P+ rule that equals the filter, for a P- rule the clause belongs to the good thing,
+  not the subjects).
+- **Inside `any { }` a comma ends the item.** A bare `via a, b` list therefore ends
+  at the first verb there; write several verbs as `via (a, b)`, which is accepted
+  everywhere and is how the formatter prints every multi-verb list.
 
 `VERB`, `KIND` and the field names come from the relation catalog
 (section 6), so the grammar is closed but the vocabulary is generated
@@ -518,6 +538,13 @@ sound:
    condition they are allowed, because that condition only adds doubt.
    This keeps each word meaning what it says (`certainly` can only
    remove fires, `possibly` can only add them).
+   Positions are counted through `def` calls (a call under `not` carries
+   the negation into the def body, whose own `not` and `no` count too),
+   through `count` (a `count` on the side that is true when it is small,
+   that is left of `<` and `<=`, right of `>` and `>=` and either side of
+   `==` and `!=`, and a subtrahend are negative in what they count) and through `report ... when` (a `when`
+   with a later `report` behind it is negative, because that later
+   report is chosen only when the earlier `when` is not Yes).
 2. **Collapse is an assumption.** Let V1 be the binding's value as
    defined above and V0 its value with every `certainly` and `possibly`
    read as the identity. Then V0 <=_k V1 (induction on the formula:

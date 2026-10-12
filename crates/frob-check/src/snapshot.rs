@@ -55,6 +55,8 @@ impl LedgerState {
 pub struct FrobShared {
     /// Ledger tip commit (hex), or the empty string without a ledger.
     pub ledger_tip: String,
+    /// Per file, the sorted ticket references that resolve to neither an open nor a terminal ticket: the whole ledger input of `REF001`.
+    pub ref_unsettled: std::collections::BTreeMap<String, String>,
     /// Files the obligation rules evaluate: graph file nodes plus files holding a directive.
     pub obligation_paths: BTreeSet<String>,
     /// True when a ledger is open (the ledger-reading rules can run).
@@ -88,6 +90,12 @@ pub struct FrobInputs {
     pub(crate) tickets_configured: bool,
     /// True when the caller declared the checked ticket exempt from the changelog fragment.
     pub(crate) changelog_exempt: bool,
+    // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+    /// Tool ids bound to frob rules by the `[[check.tool]]` `id_map`s (EXC017).
+    pub(crate) tool_ids: std::collections::BTreeMap<String, gob_rules::RuleId>,
+    // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+    /// The UTC day `until=` dates are compared with, from the pass's one clock.
+    pub(crate) today: gob_time::Day,
 }
 
 impl FrobInputs {
@@ -101,6 +109,8 @@ impl FrobInputs {
             ledger: self.ledger.as_ref().map(|l| &l.ledger),
             files: &self.ack.files,
             config: &self.invariants,
+            today: self.today,
+            tool_ids: &self.tool_ids,
         }
     }
 }
@@ -326,9 +336,32 @@ fn tickets_configured(root: &Path) -> bool {
         .is_some_and(|t| t.get("tickets").is_some_and(toml::Value::is_table))
 }
 
+/// Per file path, its unsettled ticket references joined by newlines (`REF001`'s per-file side input).
+fn unsettled_by_path(
+    directives: &[DirectiveRecord],
+    files: &FileInterner,
+    ledger: Option<&LedgerState>,
+) -> std::collections::BTreeMap<String, String> {
+    let mut out: std::collections::BTreeMap<String, Vec<String>> =
+        std::collections::BTreeMap::new();
+    for (file, id) in frob_obligations::unsettled_ticket_refs(directives, ledger.map(|l| &l.ledger))
+    {
+        if let Some(path) = files.path(file) {
+            out.entry(path.to_owned()).or_default().push(id);
+        }
+    }
+    out.into_iter()
+        .map(|(p, ids)| (p, ids.join("\n")))
+        .collect()
+}
+
 /// Collect frob's inputs of one run on top of the walk in `cx`.
 ///
 /// Stage times go to `cx.timing`; graph cache counters to `cx.stats`.
+#[allow(
+    clippy::too_many_lines,
+    reason = "one linear collection pass; each stage is timed and logged in place"
+)]
 pub(crate) fn collect(
     cx: &mut CollectCx<'_>,
     opts: &CheckOptions,
@@ -384,7 +417,7 @@ pub(crate) fn collect(
         .unwrap_or_else(|| Arc::new(gob_time::SystemClock::pin()));
     let configured = tickets_configured(root);
     let (ledger, ledger_error, ledger_missing) =
-        open_ledger(root, ledger_cfg, clock, configured).split();
+        open_ledger(root, ledger_cfg, clock.clone(), configured).split();
     cx.timing.push("ledger", started.elapsed(), true);
     let invariants = InvariantsConfig::load(root)?;
 
@@ -404,7 +437,9 @@ pub(crate) fn collect(
         directives = directives.len(),
         "inputs collected"
     );
+    let ref_unsettled = unsettled_by_path(&directives, files, ledger.as_ref());
     let shared = FrobShared {
+        ref_unsettled,
         ledger_tip: ledger.as_ref().map_or_else(String::new, |l| l.tip.clone()),
         obligation_paths,
         has_ledger: ledger.is_some(),
@@ -432,6 +467,8 @@ pub(crate) fn collect(
             invariants,
             tickets_configured: configured,
             changelog_exempt: opts.changelog_exempt,
+            tool_ids: frob_obligations::tool_bound_ids(root),
+            today: clock.today(),
         },
         findings: scan_findings,
     })

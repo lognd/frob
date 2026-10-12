@@ -49,6 +49,7 @@ struct NewRequest {
     so_that: Option<String>,
     flavour: Option<String>,
     assignee: Option<String>,
+    good_first: bool,
 }
 
 impl Command for New {
@@ -103,6 +104,12 @@ impl Command for New {
             .arg(text_flag("so-that", "Story outcome (so that ...)"))
             .arg(text_flag("flavour", "Free-form flavour such as user_story"))
             .arg(text_flag("assignee", "Assignee"))
+            .arg(
+                Arg::new("good-first")
+                    .long("good-first")
+                    .action(ArgAction::SetTrue)
+                    .help("Label the ticket good-first and append a `## Start here` scaffold to the body"),
+            )
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
@@ -134,6 +141,8 @@ impl Command for New {
                 so_that: get(m, "so-that"),
                 flavour: get(m, "flavour"),
                 assignee: get(m, "assignee"),
+                // frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
+                good_first: m.get_flag("good-first"),
             }),
         })
     }
@@ -164,7 +173,8 @@ impl Command for New {
         }
         req.acceptance.clone_from(&r.acceptance);
         req.aliases.clone_from(&r.aliases);
-        req.body.clone_from(&r.body);
+        // frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
+        req.body = good_first_body(&r.body, r.good_first, &mut req.labels);
         req.idempotency_key.clone_from(&r.key);
         req.persona.clone_from(&r.persona);
         req.capability.clone_from(&r.capability);
@@ -180,6 +190,26 @@ impl Command for New {
             .into_iter()
             .fold(payload(&applied), gob_cli::Payload::with_warning))
     }
+}
+
+/// The body for `ticket new`: `body` plus, under `--good-first`, the Start here scaffold, with the label added to `labels`.
+// frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
+fn good_first_body(body: &str, good_first: bool, labels: &mut Vec<String>) -> String {
+    if !good_first {
+        return body.to_owned();
+    }
+    let label = frob_pm::rules::good_first::GOOD_FIRST_LABEL;
+    if !labels.iter().any(|l| l == label) {
+        labels.push(label.to_owned());
+    }
+    if body.is_empty() {
+        return frob_pm::rules::good_first::START_HERE_SCAFFOLD.to_owned();
+    }
+    format!(
+        "{}\n\n{}",
+        body.trim_end(),
+        frob_pm::rules::good_first::START_HERE_SCAFFOLD
+    )
 }
 
 /// Patch fields of a ticket: `--set key=value`, dedicated flags, label, scope and acceptance edits.
@@ -235,6 +265,37 @@ pub struct UpdateData {
 /// Each record's recorded positions are first mapped through every earlier
 /// acceptance edit (`Ledger::criteria_now`), so a record written before an
 /// earlier removal is judged by the criterion it was really offered for.
+/// Write the reindex commit right after a decision commit that changed a parent or title.
+///
+/// Only on the ticket-branch layout and only when `[tickets] index_writer = "local"`; a failure
+/// is a warning because the decision commit already landed and `ticket reindex` repeats the work.
+fn reindex_after(
+    ctx: &Context,
+    ledger: &frob_ledger::Ledger,
+    id: frob_ledger::TicketId,
+    applied: &frob_ledger::Applied,
+) -> Result<Option<String>, CliError> {
+    if applied.already || ledger.layout() != frob_ledger::Layout::Branch {
+        return Ok(None);
+    }
+    let (_, root) = crate::workspace::Located::discover(&ctx.cwd).into_repo()?;
+    let cfg =
+        crate::config::FrobConfig::load(&root).map_err(|e| crate::workspace::config_refusal(&e))?;
+    if cfg.tickets.index_writer != crate::config::IndexWriterKnob::Local {
+        return Ok(None);
+    }
+    let moves = ledger.events(id).map_err(cli_err)?.into_iter().rev().find(|e| {
+        applied.events.contains(&e.id)
+            && matches!(&e.body, frob_ledger::event::EventBody::Field(f) if f.field == "parent" || f.field == "title")
+    });
+    let Some(event) = moves else { return Ok(None) };
+    Ok(Some(match ledger.reindex_commit(Some(event.id)) {
+        Ok(Some(c)) => format!("reindex commit {c} follows the decision commit"),
+        Ok(None) => "ticket files already at their computed paths".to_owned(),
+        Err(e) => format!("reindex commit failed ({e}); run `frob ticket reindex`"),
+    }))
+}
+
 fn lost_evidence(
     ledger: &frob_ledger::Ledger,
     id: frob_ledger::TicketId,
@@ -295,6 +356,7 @@ impl Command for Update {
                 "FIELD=VALUE to set (repeatable; empty value unsets a scalar, lists need --clear); lists are comma separated; acceptance needs --add-acceptance",
             ))
             .arg(text_flag("title", "New title"))
+            .arg(text_flag("parent", "New parent ticket (handle, id or alias); empty unsets it"))
             .arg(choice_flag("priority", Priority::NAMES, "New priority"))
             .arg(choice_flag("class", Class::NAMES, "New class of service"))
             .arg(text_flag("points", "New story points"))
@@ -344,6 +406,7 @@ impl Command for Update {
         }
         for (flag, field) in [
             ("title", "title"),
+            ("parent", "parent"),
             ("priority", "priority"),
             ("class", "class"),
             ("points", "points"),
@@ -407,6 +470,8 @@ impl Command for Update {
         let lost = lost_evidence(&ledger, id, &patch)?;
         let (applied, warnings) = crate::lease_cmd::update_with_lease(ctx, &ledger, id, &patch)?;
         tracing::info!(ticket = %id, already = applied.already, lost = lost.len(), "ticket update");
+        // frob:ticket 01M3ZX85X37W6QSQSJD1WYVKZG
+        let reindex_note = reindex_after(ctx, &ledger, id, &applied)?;
         let note = (!lost.is_empty() && !applied.already).then(|| {
             let each: Vec<String> = lost
                 .iter()
@@ -426,6 +491,7 @@ impl Command for Update {
         let out = warnings
             .into_iter()
             .chain(note)
+            .chain(reindex_note)
             .chain(applied.warnings.iter().cloned())
             .fold(out, gob_cli::Payload::with_warning);
         Ok(out)
@@ -812,6 +878,63 @@ impl Command for Close {
     }
 }
 
+// frob:ticket 01M4FDQFHJKT30DHZEEA6GWB4R
+/// Close a finished ticket after the fact: needs bound evidence and a reason, takes no lease and counts toward no cycle.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "ticket closeout",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct Closeout {
+    ticket: String,
+    reason: String,
+}
+
+impl Command for Closeout {
+    type Data = ChangeData;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        cmd.arg(ticket_arg()).arg(
+            Arg::new("reason")
+                .long("reason")
+                .value_name("TEXT")
+                .required(true)
+                .help("Why the ticket is closed after the fact; recorded on the close event"),
+        )
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            ticket: get(m, "ticket").unwrap_or_default(),
+            reason: get(m, "reason").unwrap_or_default(),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> CliOutcome<ChangeData> {
+        if self.reason.trim().is_empty() {
+            return Err(CliError::Usage(
+                "--reason needs text saying why the ticket is closed after the fact".to_owned(),
+            ));
+        }
+        // The evidence, changelog and merge guards all apply: only the lease and the cycle are skipped.
+        Close {
+            ticket: self.ticket.clone(),
+            outcome: Some(Outcome::Done),
+            reason: Some(format!(
+                "{}{}",
+                frob_pm::cycle::velocity::RETROACTIVE_PREFIX,
+                self.reason.trim()
+            )),
+            no_evidence: false,
+            no_changelog: false,
+            no_land: false,
+        }
+        .run(ctx)
+    }
+}
+
 /// Drop a ticket: close it as wont-fix with a required reason.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
@@ -886,5 +1009,37 @@ impl Command for Reopen {
         let applied = ledger.reopen(id, &self.reason).map_err(cli_err)?;
         tracing::info!(ticket = %id, already = applied.already, "ticket reopen");
         Ok(payload(&applied))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
+    #[test]
+    fn good_first_adds_the_label_and_a_start_here_scaffold() {
+        let mut labels = vec!["x".to_owned()];
+        let body = good_first_body("", true, &mut labels);
+        assert_eq!(labels, ["x", "good-first"]);
+        assert!(body.starts_with("## Start here\n"), "{body}");
+        assert!(body.contains("Test command:"), "{body}");
+    }
+
+    // frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
+    #[test]
+    fn good_first_keeps_the_given_body_and_does_not_repeat_the_label() {
+        let mut labels = vec!["good-first".to_owned()];
+        let body = good_first_body("why\n", true, &mut labels);
+        assert_eq!(labels, ["good-first"]);
+        assert!(body.starts_with("why\n\n## Start here"), "{body}");
+    }
+
+    // frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
+    #[test]
+    fn without_the_flag_body_and_labels_are_untouched() {
+        let mut labels = Vec::new();
+        assert_eq!(good_first_body("b", false, &mut labels), "b");
+        assert!(labels.is_empty());
     }
 }

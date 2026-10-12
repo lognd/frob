@@ -1,4 +1,4 @@
-//! `frob work [--here]` (hidden alias `start`) and `frob requeue` (tickets.md section 6, cli.md sections 3 and 5).
+//! `frob work [--here]` (hidden alias `start`) and `frob requeue` (tickets.md section 3, cli.md sections 3 and 5).
 //!
 //! [`Workspace::work`] takes the scope lease ([`frob_lease`]), creates a linked
 //! worktree on branch `ticket/<handle>` from the base branch (`[tickets] ref`),
@@ -23,7 +23,7 @@ pub use config::{WorktreeConfig, ledger_config};
 pub use error::WorktreeError;
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
 pub use gc::GcConfig;
-pub use work::{Requeued, Started, WorkOptions, Workspace};
+pub use work::{Requeued, Started, WorkOptions, Workspace, normalize_mtimes};
 
 /// Register `work`, `start` and `requeue` on a product root.
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {

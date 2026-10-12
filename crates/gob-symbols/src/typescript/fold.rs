@@ -1929,7 +1929,9 @@ impl<'a> Fold<'a> {
         let mut kids = Vec::new();
         for c in children(n) {
             if c.kind() != "variable_declarator" {
-                kids.push(if is_comment(c) {
+                // frob:ticket 01M4NTWET2QT576F2CHN60YHK6
+                // A recovery node is a parse hole, not a keyword token (`const y = ;`).
+                kids.push(if is_comment(c) || c.is_error() || c.is_missing() {
                     self.tr(c, depth + 1)?
                 } else {
                     self.cx.lit(c.kind(), self.t(c), c)?

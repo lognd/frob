@@ -451,6 +451,61 @@ fn query(
     Ok(classify(checks, sha))
 }
 
+/// One workflow run as `actions/runs` lists it.
+#[derive(Deserialize)]
+struct RawRun {
+    head_sha: String,
+    status: Option<String>,
+    conclusion: Option<String>,
+}
+
+/// A page of `actions/runs`.
+#[derive(Deserialize)]
+struct RunsPage {
+    workflow_runs: Vec<RawRun>,
+}
+
+// frob:ticket 01M4GWS3GBJTFXFEGSNFB7J4FQ
+/// The latest workflow runs of `branch` on the GitHub repository behind `remote_url`, newest first.
+///
+/// This feeds [`crate::culprit::find_culprit`]. Like [`check_tip`] it never guesses: an answer that
+/// cannot be read is a [`CiUnknown`] with the reason and remedy.
+///
+/// # Errors
+/// [`CiUnknown`] when there is no GitHub remote, `gh` fails, or its answer cannot be read.
+pub fn list_runs(
+    runner: &Runner,
+    gh: &Program,
+    cwd: &Path,
+    remote_url: Option<&str>,
+    branch: &str,
+) -> Result<Vec<crate::culprit::RunRecord>, CiUnknown> {
+    let url = remote_url.ok_or_else(|| CiUnknown {
+        reason: "there is no `origin` remote, so there is no repository to ask".to_owned(),
+        remedy: "add one (`git remote add origin https://github.com/<owner>/<repo>.git`)"
+            .to_owned(),
+    })?;
+    let repo = parse_remote(url)?;
+    let endpoint = format!(
+        "repos/{}/{}/actions/runs?branch={branch}&per_page=100",
+        repo.owner, repo.name
+    );
+    let body = gh_api(runner, gh, cwd, &endpoint, branch, &repo)?;
+    let runs: Vec<crate::culprit::RunRecord> = pages::<RunsPage>(&body, "workflow runs")?
+        .into_iter()
+        .flat_map(|p| p.workflow_runs)
+        .map(|r| crate::culprit::RunRecord {
+            verdict: crate::culprit::Verdict::from_run(
+                r.status.as_deref(),
+                r.conclusion.as_deref(),
+            ),
+            sha: r.head_sha,
+        })
+        .collect();
+    tracing::info!(branch, runs = runs.len(), "workflow runs read");
+    Ok(runs)
+}
+
 #[cfg(all(test, unix))]
 mod tests {
     use super::*;
@@ -472,7 +527,7 @@ mod tests {
             let body = match fail {
                 Some((code, err)) => format!("echo '{err}' >&2\nexit {code}\n"),
                 None => format!(
-                    "case \"$*\" in\n*check-runs*) cat '{d}/runs.json';;\n*/status*) cat '{d}/status.json';;\n*) exit 9;;\nesac\n"
+                    "case \"$*\" in\n*actions/runs*) cat '{d}/runs.json';;\n*actions/runs*) cat '{d}/runs.json';;\n*check-runs*) cat '{d}/runs.json';;\n*/status*) cat '{d}/status.json';;\n*) exit 9;;\nesac\n"
                 ),
             };
             let path = dir.path().join("gh");
@@ -516,6 +571,43 @@ mod tests {
             items.len(),
             items.join(",")
         )
+    }
+
+    // frob:ticket 01M4GWS3GBJTFXFEGSNFB7J4FQ
+    // frob:tests crates/frob-release/src/ci.rs::list_runs
+    #[test]
+    fn workflow_runs_become_verdict_records() {
+        use crate::culprit::Verdict;
+        let body = r#"{"workflow_runs":[
+            {"head_sha":"aaa","status":"completed","conclusion":"failure"},
+            {"head_sha":"bbb","status":"in_progress","conclusion":null},
+            {"head_sha":"ccc","status":"completed","conclusion":"success"}]}"#;
+        let fake = FakeGh::new(body, NO_STATUS, None);
+        let runs = list_runs(
+            &Runner::new(Limits { jobs: 1 }),
+            &fake.program(),
+            fake.dir.path(),
+            ORIGIN,
+            "experimental",
+        )
+        .expect("runs");
+        let got: Vec<(&str, Verdict)> = runs.iter().map(|r| (r.sha.as_str(), r.verdict)).collect();
+        assert_eq!(
+            got,
+            [
+                ("aaa", Verdict::Red),
+                ("bbb", Verdict::Unknown),
+                ("ccc", Verdict::Green)
+            ]
+        );
+        let none = list_runs(
+            &Runner::new(Limits { jobs: 1 }),
+            &fake.program(),
+            fake.dir.path(),
+            None,
+            "experimental",
+        );
+        assert!(none.is_err());
     }
 
     fn unknown(s: CiState) -> CiUnknown {

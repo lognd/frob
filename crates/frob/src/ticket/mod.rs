@@ -10,15 +10,20 @@ pub mod branch_cmd;
 pub mod doctor_cmd;
 pub mod fragment_cmd;
 pub mod merge_cmd;
+pub mod migrate_cmd;
 pub mod read;
+pub mod reindex_cmd;
 pub mod terminal_lease;
 pub mod triage_cmd;
+// frob:ticket 01M3ZX88FHDWF9C082QZR1PXXA
+pub mod url_cmd;
 pub mod write;
 
 use frob_ledger::model::{Category, Class, Outcome, Priority, TicketType};
 use frob_ledger::{Applied, Ledger, LedgerError, TicketId};
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Context};
+use gob_diagnostics::{Refusal, RefusalClass};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -58,7 +63,40 @@ pub(crate) fn cli_err(e: LedgerError) -> CliError {
 
 /// Resolve a ticket reference given on the command line.
 pub(crate) fn resolve(ledger: &Ledger, input: &str) -> Result<TicketId, CliError> {
+    if let Some(id) = ticket_file_id(input) {
+        // frob:ticket 01M3ZX85H7VX2XFX1T663BD9NG
+        if let Ok(view) = ledger.show(id) {
+            return Err(Refusal::new(
+                "E-TICKET-PATH",
+                RefusalClass::UsageError,
+                format!("that file is {}; pass the id", view.summary.handle),
+            )
+            .with_remedy(format!("frob ticket show {}", view.summary.handle))
+            .into());
+        }
+    }
     ledger.resolve(input).map_err(cli_err)
+}
+
+/// The ticket a path-shaped argument names: a ULID path component (legacy `tickets/<ULID>/ticket.md`) or the frontmatter id of the file it points at.
+// frob:ticket 01M3ZX85H7VX2XFX1T663BD9NG
+fn ticket_file_id(input: &str) -> Option<TicketId> {
+    let input = input.trim();
+    if !(input.contains('/')
+        || input.contains('\\')
+        || std::path::Path::new(input)
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("md")))
+    {
+        return None;
+    }
+    let by_component = input
+        .split(['/', '\\'])
+        .find_map(|part| part.parse::<TicketId>().ok());
+    by_component.or_else(|| {
+        let text = std::fs::read_to_string(input).ok()?;
+        frob_ledger::layout::peek_ticket_id(&text)
+    })
 }
 
 /// A required positional ticket argument.
@@ -185,6 +223,7 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<write::Unlink>()
         .register::<write::Comment>()
         .register::<write::Close>()
+        .register::<write::Closeout>()
         .register::<write::DropTicket>()
         .register::<write::Reopen>()
         .register::<read::Show>()
@@ -198,6 +237,10 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<triage_cmd::InboxList>()
         .register::<fragment_cmd::Fragment>()
         .register::<branch_cmd::BranchInit>()
+        .register::<migrate_cmd::Migrate>()
+        .register::<reindex_cmd::Reindex>()
+        // frob:ticket 01M3ZX88FHDWF9C082QZR1PXXA
+        .register::<url_cmd::Url>()
         .register::<doctor_cmd::TicketDoctor>()
         .register::<merge_cmd::MergeDriver>()
 }

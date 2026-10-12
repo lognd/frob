@@ -1,0 +1,24 @@
++++
+id = "01M4MC43CFCTQ7TQCHCF0C0YRR"
+title = "Library entry point: build a gob-ir Model from one example source text and language"
+type = "task"
+category = "done"
+outcome = "done"
+priority = "medium"
+points = 5
+parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
+reporter = "lognd"
+created = "2026-10-11T02:19:28Z"
+updated = "2026-10-11T04:18:42Z"
+scope = ["crates/gob-ir/**", "crates/gob-languages/**", "crates/gob-symbols/**"]
+
+[[acceptance]]
+text = "Given a Rust source with a function and a call on line 3, when the entry point builds its Model, then the Model has a function node and a call node whose line is 3"
+bound = true
+
+[[acceptance]]
+text = "Given source with a syntax error, when the entry point builds its Model, then it returns a Model with an unread node instead of failing"
+bound = true
++++
+
+Found while picking up ~A4HFP5X. The example runner must turn an example's source (rust, python, markdown, json, ...) into the gob-ir Model the executor reads. gob-plan depends only on gob-caps, gob-ir, gob-rules and gob-text, and no crate exposes a source-text-plus-language to Model function; today's models come from grimble-bind or hand-built TermBuilders in tests. Add one such function (parse errors become opaque or hole nodes) that gob-plan can call without pulling in a product crate.

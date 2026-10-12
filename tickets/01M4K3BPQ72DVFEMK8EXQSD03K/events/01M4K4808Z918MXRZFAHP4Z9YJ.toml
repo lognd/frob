@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [1, 3]
+captured_at = "2026-10-10T14:41:30Z"
+digest = "fa807f20f7e570c304b446b9da14493ac413dae9a107a5458a72b02df05eda23"
+exit_code = 0
+passed = true
+provider = "command"
+ref = "cargo run -q -p frob-cli -- check --ticket ~XQSD03K"
+size = 1299982
+status = "measured"
+uri = "dir:.git/frob/artifacts/fa807f20f7e570c304b446b9da14493ac413dae9a107a5458a72b02df05eda23"
+at = "2026-10-10T14:41:30Z"
+actor = "Claude"
+rev = 1

@@ -1,0 +1,21 @@
+[package]
+name = "gob-pattern"
+version.workspace = true
+description = "The declarative rule engine over U terms: rules/*.grl.toml with kind, role, callee, all, any, not, inside and has, one rule file for every language."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[dependencies]
+gob-ir = { version = "0.532.0", path = "../gob-ir" }
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+toml = "1"
+
+[dev-dependencies]
+gob-text = { version = "0.532.0", path = "../gob-text" }
+
+[lints]
+workspace = true

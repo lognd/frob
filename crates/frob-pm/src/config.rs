@@ -209,4 +209,39 @@ impl PmConfig {
         tracing::debug!(root = %root.display(), "pm config loaded");
         Ok(cfg)
     }
+
+    /// Like [`PmConfig::load`], but the repository-wide tables (`[pm]`, `[pm.wip]`, `[pm.classes]`) come from `<rev>:frob.toml` when that blob exists, so a branch cut before a limit changed enforces the current value; a missing blob or unreadable `rev` keeps the file in `root`.
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable or invalid file in `root` or an invalid blob at `rev`.
+    // frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
+    pub fn load_repo_wide(root: &Path, rev: &str) -> Result<Self, ConfigError> {
+        let local = Self::load(root)?;
+        let Some(text) = blob_at(root, rev) else {
+            return Ok(local);
+        };
+        let label = Path::new(rev);
+        let cfg = Self {
+            pm: gob_config::load_str::<PmTable>(&text, label)?.value,
+            wip: gob_config::load_str::<PmWipTable>(&text, label)?.value,
+            classes: gob_config::load_str::<PmClassesTable>(&text, label)?.value,
+        };
+        tracing::debug!(rev, "pm config read from the base ref");
+        Ok(cfg)
+    }
+}
+
+/// The text of `frob.toml` at `rev` in the repository containing `root`, or `None` (logged) when the ref or blob is unavailable.
+// frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
+fn blob_at(root: &Path, rev: &str) -> Option<String> {
+    let repo = gob_git::Repo::discover(root).ok()?;
+    match repo.read_blob_at(rev, "frob.toml") {
+        Ok(Some(bytes)) => String::from_utf8(bytes).ok(),
+        Ok(None) => None,
+        Err(e) => {
+            tracing::debug!(rev, error = %e, "base-ref frob.toml unavailable; using the worktree copy");
+            None
+        }
+    }
 }

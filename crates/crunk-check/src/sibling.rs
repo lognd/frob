@@ -28,5 +28,6 @@ pub fn sibling_document(run: &CrunkRun) -> Value {
         entities: Vec::new(),
         bindings: Vec::new(),
         packs: None,
+        template_excuses: None,
     })
 }

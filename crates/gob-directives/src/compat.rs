@@ -1,7 +1,7 @@
 //! v1 compatibility: `note="..."` on `frob:todo` and `reason="..."` on
 //! `frob:invariant` are read as the v2 trailing free text and offered a fix.
 
-use gob_rules::{Finding, Fix, FixKind, RuleId, TextEdit};
+use gob_rules::{Applicability, Finding, Fix, FixKind, RuleId, TextEdit};
 use gob_text::{FileId, Span, TextRange};
 
 use crate::args::{ArgList, Token};
@@ -69,6 +69,8 @@ pub(crate) fn v1_finding(v1: &V1Key, file: FileId, anchor: &str) -> Finding {
     )
     .with_fix(Fix {
         kind: FixKind::Deterministic,
+        // frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+        applicability: Applicability::Machine,
         title: format!("rewrite `{}=` to the v2 form", v1.key),
         edits: vec![TextEdit {
             file,

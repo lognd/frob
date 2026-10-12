@@ -1,0 +1,41 @@
+kind = "evidence"
+captured_at = "2026-10-10T21:04:25Z"
+digest = "20aaad20a0c0df9c0a797748b5ce72b6e91395a81c5aaa46a1e893276c88842c"
+exit_code = 0
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized] target(s) in 17.04s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 960af26b-f15e-4d26-a5e3-4897b002d181 with nextest profile: default
+    Starting 19 tests across 39 binaries (258 tests skipped)
+        PASS [   0.485s] frob-cli::ticket ambiguous_handle_exits_3_listing_both_candidates
+        PASS [   0.655s] frob-cli::ticket add_acceptance_keeps_commas_whole_and_is_idempotent
+        PASS [   0.730s] frob-cli::ticket add_scope_and_remove_scope_round_trip_with_noop_semantics
+        PASS [   0.733s] frob-cli::ticket class_defaults_to_standard_and_new_and_update_set_it
+        PASS [   0.601s] frob-cli::ticket clear_acceptance_empties_the_list_and_reports_all_bound_evidence
+        PASS [   0.628s] frob-cli::ticket empty_set_on_a_list_is_refused_and_clear_empties_it_with_an_event
+        PASS [   0.734s] frob-cli::ticket doable_lists_expedite_first_then_fixed_date_by_due
+        PASS [   0.663s] frob-cli::ticket evidence_keeps_pointing_at_its_own_criterion_after_an_earlier_removal
+        PASS [   0.317s] frob-cli::ticket merge_driver_fails_with_exit_1_when_the_fold_fails
+        PASS [   0.491s] frob-cli::ticket list_full_emits_every_ticket_with_its_events_and_aliases_in_one_call
+        PASS [   0.909s] frob-cli::ticket links_blocked_doable_and_repeat_semantics
+        PASS [   0.439s] frob-cli::ticket new_with_the_same_key_returns_already
+        PASS [   0.894s] frob-cli::ticket merge_driver_unions_events_from_both_branches_and_refolds
+        PASS [   0.627s] frob-cli::ticket new_update_close_makes_three_commits_and_frontmatter_equals_the_fold
+        PASS [   0.587s] frob-cli::ticket removing_a_criterion_with_bound_evidence_reports_it_in_data_and_warning
+        PASS [   0.414s] frob-cli::ticket set_acceptance_is_refused_naming_the_dedicated_flags_and_schema_works
+        PASS [   0.438s] frob-cli::ticket show_json_has_every_schema_field
+        PASS [   0.735s] frob-cli::ticket update_set_comment_brief_and_parent
+        PASS [   0.505s] frob-cli::ticket zero_match_scope_warns_on_new_and_update_but_new_scope_declares_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.089s] 19 tests run: 19 passed, 258 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E '(package(=frob-cli) & (test(=add_acceptance_keeps_commas_whole_and_is_idempotent) | test(=add_scope_and_remove_scope_round_trip_with_noop_semantics) | test(=ambiguous_handle_exits_3_listing_both_candidates) | test(=class_defaults_to_standard_and_new_and_update_set_it) | test(=clear_acceptance_empties_the_list_and_reports_all_bound_evidence) | test(=doable_lists_expedite_first_then_fixed_date_by_due) | test(=empty_set_on_a_list_is_refused_and_clear_empties_it_with_an_event) | test(=evidence_keeps_pointing_at_its_own_criterion_after_an_earlier_removal) | test(=links_blocked_doable_and_repeat_semantics) | test(=list_full_emits_every_ticket_with_its_events_and_aliases_in_one_call) | test(=merge_driver_fails_with_exit_1_when_the_fold_fails) | test(=merge_driver_unions_events_from_both_branches_and_refolds) | test(=new_update_close_makes_three_commits_and_frontmatter_equals_the_fold) | test(=new_with_the_same_key_returns_already) | test(=removing_a_criterion_with_bound_evidence_reports_it_in_data_and_warning) | test(=set_acceptance_is_refused_naming_the_dedicated_flags_and_schema_works) | test(=show_json_has_every_schema_field) | test(=update_set_comment_brief_and_parent) | test(=zero_match_scope_warns_on_new_and_update_but_new_scope_declares_it)))'"
+size = 2385
+status = "measured"
+tests = ["ambiguous_handle_exits_3_listing_both_candidates", "add_acceptance_keeps_commas_whole_and_is_idempotent", "add_scope_and_remove_scope_round_trip_with_noop_semantics", "class_defaults_to_standard_and_new_and_update_set_it", "clear_acceptance_empties_the_list_and_reports_all_bound_evidence", "empty_set_on_a_list_is_refused_and_clear_empties_it_with_an_event", "doable_lists_expedite_first_then_fixed_date_by_due", "evidence_keeps_pointing_at_its_own_criterion_after_an_earlier_removal", "merge_driver_fails_with_exit_1_when_the_fold_fails", "list_full_emits_every_ticket_with_its_events_and_aliases_in_one_call", "links_blocked_doable_and_repeat_semantics", "new_with_the_same_key_returns_already", "merge_driver_unions_events_from_both_branches_and_refolds", "new_update_close_makes_three_commits_and_frontmatter_equals_the_fold", "removing_a_criterion_with_bound_evidence_reports_it_in_data_and_warning", "set_acceptance_is_refused_naming_the_dedicated_flags_and_schema_works", "show_json_has_every_schema_field", "update_set_comment_brief_and_parent", "zero_match_scope_warns_on_new_and_update_but_new_scope_declares_it"]
+at = "2026-10-10T21:04:25Z"
+actor = "Claude"
+rev = 1

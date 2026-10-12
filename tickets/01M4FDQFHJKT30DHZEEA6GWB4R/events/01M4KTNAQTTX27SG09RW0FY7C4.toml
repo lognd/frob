@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T21:14:17Z"
+digest = "69274645914f9de9cf7c58a41e417bce32381aa620507e7ca469fb561cf99934"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e0f5d4b9-add2-490c-b026-b9d7c329252d with nextest profile: default
+    Starting 1 test across 39 binaries (278 tests skipped)
+        PASS [   0.404s] frob-cli::close_guards closeout_needs_bound_evidence_and_a_reason_then_closes_done_without_a_lease
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.405s] 1 test run: 1 passed, 278 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(=closeout_needs_bound_evidence_and_a_reason_then_closes_done_without_a_lease)'"
+size = 580
+status = "measured"
+tests = ["closeout_needs_bound_evidence_and_a_reason_then_closes_done_without_a_lease"]
+at = "2026-10-10T21:14:17Z"
+actor = "Claude"
+rev = 1

@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T19:30:00Z"
+digest = "c71cfaec4afed12256295918fc998902765efcab9c79bf92f4b9458b48e0673c"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized] target(s) in 0.47s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f9124552-240c-4d3a-a1fd-0cf4a7200b04 with nextest profile: default
+    Starting 1 test across 7 binaries (36 tests skipped)
+        PASS [   0.009s] grimble-model directive::tests::v1_ticket_aliases_are_accepted_but_abbreviations_are_not
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 36 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E 'test(=directive::tests::v1_ticket_aliases_are_accepted_but_abbreviations_are_not)'"
+size = 933
+status = "measured"
+tests = ["directive::tests::v1_ticket_aliases_are_accepted_but_abbreviations_are_not"]
+at = "2026-10-10T19:30:00Z"
+actor = "Claude"
+rev = 1

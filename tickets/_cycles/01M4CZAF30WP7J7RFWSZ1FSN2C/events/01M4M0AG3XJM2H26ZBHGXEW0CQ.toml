@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4M0ABX9R9J96C1CF1PSGNZP"
+text = "CI red on experimental: nextest hermeticity"
+at = "2026-10-10T22:53:14Z"
+actor = "lognd"
+rev = 1

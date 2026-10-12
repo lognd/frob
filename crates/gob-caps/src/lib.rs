@@ -8,6 +8,10 @@
 
 // frob:ticket 01M48R002DA5FKCXDP8HQ6B02X
 
+/// The digest scheme number the universal model computes and `frob.lock` records; the one definition every crate re-exports.
+// frob:ticket 01M4M52WDAB9VH3PJ2VDF2JFRY
+pub const DIGEST_SCHEME: u32 = 2;
+
 mod capability;
 mod lang;
 mod matrix;

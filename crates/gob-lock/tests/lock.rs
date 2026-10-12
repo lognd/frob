@@ -2,7 +2,7 @@
 
 use gob_lock::{
     Current, CurrentFlow, CurrentSymbol, EntryKind, Facet, FacetSet, FlowEnd, FlowEntry, LockEntry,
-    LockFile, LockTarget, PlanError, PlanOptions, diff, file_name, plan,
+    LockError, LockFile, LockTarget, PlanError, PlanOptions, diff, file_name, plan,
 };
 
 fn entry(sig: &str) -> LockEntry {
@@ -342,4 +342,46 @@ fn rename_log_and_absent_shape_contract_round_trip() {
     let back = LockFile::from_toml(&text).unwrap();
     assert_eq!(back, lock);
     assert_eq!(back.ack_log[0].target.as_deref(), Some("a.rs::new"));
+}
+
+// frob:ticket 01M4GK4M8KKRE7X7JCP6YJ5K96
+#[test]
+fn a_v1_frob_lock_is_named_as_such_with_the_remedy() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("frob.lock");
+    for text in [
+        "{\"entries\": {}}\n",
+        "[pins]\nkey = \"x\"\n",
+        "version = 0\n",
+    ] {
+        std::fs::write(&path, text).unwrap();
+        let err = LockFile::load(&path).unwrap_err();
+        assert!(matches!(err, LockError::LegacyV1 { .. }), "{text}: {err}");
+        let msg = err.to_string();
+        assert!(msg.contains(&path.display().to_string()), "{msg}");
+        assert!(msg.contains("v1"), "{msg}");
+        assert!(msg.contains("delete it and run `frob ack"), "{msg}");
+    }
+    std::fs::write(&path, "not = [toml").unwrap();
+    assert!(
+        matches!(LockFile::load(&path), Err(LockError::Parse { .. })),
+        "plain garbage stays a parse error"
+    );
+}
+
+// frob:ticket 01M4M52WDAB9VH3PJ2VDF2JFRY
+// frob:tests crates/gob-lock/src/file.rs::DIGEST_SCHEME
+#[test]
+fn gob_lock_does_not_depend_on_gob_ir() {
+    let manifest = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"))
+        .expect("gob-lock manifest");
+    let table: toml::Table = manifest.parse().expect("manifest parses");
+    for section in ["dependencies", "dev-dependencies", "build-dependencies"] {
+        let deps = table.get(section).and_then(toml::Value::as_table);
+        assert!(
+            deps.is_none_or(|d| !d.contains_key("gob-ir")),
+            "gob-lock [{section}] must not name gob-ir: the lock only needs the scheme number, which gob-caps owns"
+        );
+    }
+    assert_eq!(gob_lock::DIGEST_SCHEME, gob_caps::DIGEST_SCHEME);
 }

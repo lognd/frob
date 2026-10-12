@@ -1,0 +1,1 @@
+New PM031 rule fails a ticket labelled good-first that has too many points, no scope, non-Given/When/Then acceptance or no Start here section; the point limit is the new [tickets] good_first_max_points knob (default 2).

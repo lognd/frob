@@ -272,7 +272,7 @@ impl Ledger {
             ),
             _ => format!("tickets(triage-{}): {} tickets", req.action, planned.len()),
         };
-        let ref_name = self.ledger_ref()?;
+        let ref_name = self.ledger_write_ref()?;
         let opts = CommitOptions {
             cas_retries: self.cfg.cas_retries,
             author: None,

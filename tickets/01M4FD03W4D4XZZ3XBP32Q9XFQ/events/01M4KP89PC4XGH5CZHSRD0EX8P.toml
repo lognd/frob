@@ -1,0 +1,8 @@
+kind = "land"
+base_ref = "refs/heads/experimental"
+commit = "ff6f8cea8d513b165bf35ba5bebf713d71996a91"
+branch = "ticket/32Q9XFQ"
+pushed = false
+at = "2026-10-10T19:54:19Z"
+actor = "Claude"
+rev = 1

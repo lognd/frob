@@ -1,6 +1,11 @@
 # C#, .NET and Unity support (D94)
 
-Status: accepted direction, owner request 2026-10-05: run frob on the
+Status: current
+Owner: grimble
+Decisions: D94
+Audience: contributor
+
+Provenance: accepted direction, owner request 2026-10-05: run frob on the
 owner's project-hullbreach repositories. `game` is a Unity 6 project
 (6000.0.43f1, URP, Input System): 129 C# files in 17 assembly
 definitions, 274 NUnit `[Test]` and 17 `[UnityTest]` tests through the

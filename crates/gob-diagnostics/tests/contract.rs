@@ -6,7 +6,7 @@ use gob_diagnostics::{
     RequiredReason, TextOptions, UnresolvedPolicy, envelope_schema, fail_on, render_json,
     render_text,
 };
-use gob_rules::{Finding, Fix, FixKind, Registry, Severity};
+use gob_rules::{Applicability, Finding, Fix, FixKind, Registry, Severity};
 use gob_text::{FileId, FileInterner, SourceText, Span, TextRange};
 
 struct Fixture {
@@ -47,6 +47,8 @@ fn fixture() -> Fixture {
         )
         .with_fix(Fix {
             kind: FixKind::Manual,
+            // frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+            applicability: Applicability::Manual,
             title: "remove call".into(),
             edits: vec![],
         }),
@@ -377,4 +379,62 @@ fn text_escapes_hostile_message_and_json_keeps_it_exact() {
     let rec = FindingRecord::from_finding(&findings[0], &fx.sources, Registry::global());
     let json = serde_json::to_value(&rec).unwrap();
     assert_eq!(json["message"], HOSTILE);
+}
+
+// frob:tests crates/gob-diagnostics/src/record.rs::FindingRecord
+// frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+#[test]
+fn deterministic_fix_serializes_machine_applicability_and_exact_edits() {
+    let mut files = FileInterner::new();
+    let a = files.intern("src/a.rs");
+    let mut sources = MemorySources::new();
+    sources.insert(a, "src/a.rs", SourceText::new("let colour = 1;\n").unwrap());
+    let f = Finding::new(
+        "DOC001".parse().unwrap(),
+        Severity::Warn,
+        Some(Span::new(a, range(4, 10))),
+        "spell it color",
+        "src/a.rs",
+    )
+    .with_fix(Fix {
+        kind: FixKind::Deterministic,
+        applicability: FixKind::Deterministic.applicability(),
+        title: "colour to color".into(),
+        edits: vec![gob_rules::TextEdit {
+            file: a,
+            range: range(4, 10),
+            replacement: "color".into(),
+        }],
+    });
+    let rec = FindingRecord::from_finding(&f, &sources, Registry::global());
+    let v = serde_json::to_value(&rec).unwrap();
+    assert_eq!(
+        v["fixes"],
+        serde_json::json!([{
+            "title": "colour to color",
+            "applicability": "machine",
+            "edits": [{"file": "src/a.rs", "start": 4, "end": 10, "replacement": "color"}]
+        }])
+    );
+}
+
+// frob:ticket 01M3ZX7E968R74N08V8DW4RJVG
+#[test]
+fn fix_kinds_map_onto_distinct_applicability_labels() {
+    let labels: Vec<_> = [
+        FixKind::Manual,
+        FixKind::Deterministic,
+        FixKind::VerifyCommit,
+        FixKind::FixIt,
+    ]
+    .map(|k| k.applicability().label())
+    .into();
+    assert_eq!(
+        labels,
+        ["manual", "machine", "maybe-incorrect", "has-placeholders"]
+    );
+    assert_eq!(
+        serde_json::to_string(&Applicability::HasPlaceholders).unwrap(),
+        "\"has-placeholders\""
+    );
 }

@@ -208,6 +208,26 @@ pub struct SiblingDocument {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[schemars(regex(pattern = "^blake3:[0-9a-f]{64}$"))]
     pub packs_digest: Option<String>,
+    /// Matrix-build template excuses in force (grmb-spec 4.7), sorted by `(template, atom)`; omitted by products without templates.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[schemars(with = "Option<Vec<TemplateExcuseRow>>")]
+    pub template_excuses: Option<Vec<Value>>,
+}
+
+/// One entry of `template_excuses`.
+#[derive(Debug, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct TemplateExcuseRow {
+    /// Template name.
+    pub template: String,
+    /// The excused atom as written.
+    pub atom: String,
+    /// The `for` selector as written.
+    pub selector: String,
+    /// The reason, verbatim.
+    pub because: String,
+    /// `pack:NAME@VERSION` or `model:TEMPLATE`.
+    pub source: String,
 }
 
 /// Detector answer for one atom in one language: `typed` and `lexical` are precisions, `none` is

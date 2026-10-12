@@ -2,12 +2,13 @@
 id = "01M4FCWY3H8CRHYYHVQ19SEHXJ"
 title = "grmb research cycle R1: exhaustive cited audits of design practice, failure modes, languages, incompleteness and graph languages"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-09T03:56:43Z"
-updated = "2026-10-10T01:40:09Z"
+updated = "2026-10-10T02:32:16Z"
 labels = ["grimble"]
 scope = ["notes/research/grmb-*", "changelog.d/**"]
 

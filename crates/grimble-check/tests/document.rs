@@ -159,3 +159,54 @@ fn a_climbing_include_without_the_marker_is_an_mdl_error_and_no_root_is_required
     assert_eq!(f["severity"], "unresolved");
     assert_eq!(f["required"]["rule"], "MDL021");
 }
+
+// frob:ticket 01M4FGYEWFAA9K4AHNCTV4NG4F
+// frob:tests crates/grimble-check/src/model_view.rs::ModelView
+#[test]
+fn a_template_parses_and_its_excuses_are_listed_with_their_source() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/model.grmb\"]\n",
+    );
+    write(
+        dir.path(),
+        "design/model.grmb",
+        "grimble = \"2\";\nmodule m;\n\
+         template gen_proto {\n  excuse net.listen\n    for kind(function) & lang(rust)\n    because=\"stubs never bind\";\n}\n",
+    );
+    let doc = sibling_document(&run(dir.path(), &CheckOptions::default()).unwrap());
+    assert!(
+        !rules_of(&doc).iter().any(|r| r.starts_with("MDL")),
+        "{:?}",
+        rules_of(&doc)
+    );
+    let rows = doc["template_excuses"].as_array().unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0]["template"], "gen_proto");
+    assert_eq!(rows[0]["atom"], "net.listen");
+    assert_eq!(rows[0]["because"], "stubs never bind");
+    assert_eq!(rows[0]["source"], "model:gen_proto");
+    assert!(rows[0]["selector"].as_str().unwrap().contains("lang(rust)"));
+}
+
+// frob:ticket 01M4FGYEWFAA9K4AHNCTV4NG4F
+// frob:tests crates/grimble-check/src/product.rs::Grimble
+#[test]
+fn a_template_excuse_without_because_is_mdl008() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/model.grmb\"]\n",
+    );
+    write(
+        dir.path(),
+        "design/model.grmb",
+        "grimble = \"2\";\nmodule m;\ntemplate t {\n  excuse net.listen for lang(rust);\n}\n",
+    );
+    let doc = sibling_document(&run(dir.path(), &CheckOptions::default()).unwrap());
+    assert!(rules_of(&doc).contains(&"MDL008".to_owned()));
+    assert!(!rules_of(&doc).contains(&"MDL000".to_owned()));
+}

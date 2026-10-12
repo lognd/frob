@@ -2,6 +2,7 @@
 
 // frob:ticket 01M4069WYA9D1EGVEBC4PT3KZB
 // frob:ticket 01M413T4PVDKZ014X3WB5DF7DD
+// frob:ticket 01M4FDQXEST75DK0NHDH4P5H15
 use std::path::Path;
 
 use gob_config::ConfigTable;
@@ -27,6 +28,9 @@ pub struct ReleaseConfig {
     /// Products a release ships, one tag each; empty means one product named after the repository.
     #[config(default = Vec::<String>::new(), enforcement)]
     pub products: Vec<String>,
+    /// Text `frob ticket fragment` puts before the ticket title in the skeleton (for example `frob: `); empty adds nothing.
+    #[config(default = String::new())]
+    pub fragment_prefix: String,
     /// Products that ship as a preview: their tag message and changelog heading carry " (preview)".
     #[config(default = Vec::<String>::new(), enforcement)]
     pub preview: Vec<String>,

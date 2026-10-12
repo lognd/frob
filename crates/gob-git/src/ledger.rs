@@ -28,6 +28,14 @@ const BACKOFF_BASE: Duration = Duration::from_millis(100);
 /// Largest backoff window, so the whole retry budget stays bounded (about 3 s of sleep at 5 retries).
 const BACKOFF_CAP: Duration = Duration::from_millis(3200);
 
+/// Index-lock wait granted per attempt of the retry budget: the wait is `(cas_retries + 1)` times this.
+const INDEX_LOCK_WAIT_PER_ATTEMPT: Duration = Duration::from_secs(2);
+
+/// How long a checkout sync waits for a held `index.lock`, scaled by the retry budget (`[git] cas_retries`).
+fn index_lock_wait(cas_retries: u32) -> Duration {
+    INDEX_LOCK_WAIT_PER_ATTEMPT.saturating_mul(cas_retries.saturating_add(1))
+}
+
 /// Sleep time for the `retries`-th lost compare-and-swap: full jitter in `[0, min(cap, base * 2^(n-1))]`.
 fn backoff_delay(retries: u32) -> Duration {
     let window = BACKOFF_BASE
@@ -171,6 +179,7 @@ impl Repo {
         let planned = self.plan(changes)?;
         let checked_out = self.is_checked_out(&full)?;
         let attempts = opts.cas_retries.saturating_add(1);
+        let lock_wait = index_lock_wait(opts.cas_retries);
         let mut retries = 0;
         for attempt in 0..attempts {
             let tip = self.read_ref(&full)?;
@@ -212,9 +221,9 @@ impl Repo {
                     info!(ref_name = %full, oid = %new_id, retries, paths = planned.len(), "ledger commit");
                     after_cas();
                     if checked_out {
-                        self.sync_checkout(&full, &planned, base_tree)?;
+                        self.sync_checkout(&full, &planned, base_tree, lock_wait)?;
                     }
-                    let unsynced = self.sync_other_checkouts(&full, &planned, base_tree);
+                    let unsynced = self.sync_other_checkouts(&full, &planned, base_tree, lock_wait);
                     return Ok(CommitOutcome {
                         oid: new_id,
                         retries,
@@ -396,6 +405,7 @@ impl Repo {
         full: &str,
         planned: &[Planned<'_>],
         old_tree: Oid,
+        lock_wait: Duration,
     ) -> Vec<UnsyncedCheckout> {
         let mut unsynced = Vec::new();
         let worktrees = match self.list_worktrees() {
@@ -418,7 +428,7 @@ impl Repo {
             if Some(&canon) == me.as_ref() {
                 continue;
             }
-            match self.sync_one_other(full, &w.path, planned, old_tree) {
+            match self.sync_one_other(full, &w.path, planned, old_tree, lock_wait) {
                 Ok(None) => info!(path = %w.path.display(), "checkout synced to new tip"),
                 Ok(Some(paths)) => {
                     warn!(path = %w.path.display(), ?paths, "checkout left stale: local edits");
@@ -440,6 +450,7 @@ impl Repo {
         path: &Path,
         planned: &[Planned<'_>],
         old_tree: Oid,
+        lock_wait: Duration,
     ) -> Result<Option<Vec<String>>, GitError> {
         let gix = gix::open(path).map_err(odb_err)?;
         let other = Repo {
@@ -459,7 +470,7 @@ impl Repo {
             })
             .collect();
         if !free.is_empty() {
-            other.sync_checkout(full, &free, old_tree)?;
+            other.sync_checkout(full, &free, old_tree, lock_wait)?;
         }
         if blocked.is_empty() {
             Ok(None)
@@ -479,6 +490,7 @@ impl Repo {
         full: &str,
         planned: &[Planned<'_>],
         old_tree: Oid,
+        lock_wait: Duration,
     ) -> Result<(), GitError> {
         let root = self.work_dir().expect("checked_out implies a worktree");
         let old = self.gix.find_tree(old_tree).map_err(odb_err)?;
@@ -486,10 +498,13 @@ impl Repo {
         // (and git itself) cannot lose each other's entries.
         let lock = gix::lock::File::acquire_to_update_resource(
             self.gix.index_path(),
-            gix::lock::acquire::Fail::AfterDurationWithBackoff(std::time::Duration::from_secs(10)),
+            gix::lock::acquire::Fail::AfterDurationWithBackoff(lock_wait),
             None,
         )
-        .map_err(|e| GitError::Index(e.to_string()))?;
+        .map_err(|e| {
+            warn!(wait = ?lock_wait, error = %e, "index.lock stayed held past the retry budget");
+            GitError::Index(e.to_string())
+        })?;
         let mut index = match self.gix.open_index() {
             Ok(i) => i,
             Err(_) => gix::index::File::from_state(

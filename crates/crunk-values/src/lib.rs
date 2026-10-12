@@ -6,8 +6,8 @@
 //!
 //! # Overview
 //!
-//! - [`Color`]: 0-1 sRGB channels plus alpha; [`Color::parse`], [`Color::distance`],
-//!   [`Color::contrast_ratio`], [`Color::to_hex`].
+//! - [`Color`]: 0-1 sRGB channels plus alpha; [`Color::parse`] (hex, rgb, hsl, named and CSS
+//!   Color 4), [`Color::delta_e_ok`], [`Color::contrast_ratio`], [`Color::to_hex`].
 //! - [`Length`] / [`LengthKind`]: [`Length::parse`] with a root font size for `rem`.
 //! - [`NAMED_COLORS`] / [`named_color`]: the CSS named-color table.
 //! - [`ColorError`] / [`LengthError`]: why a literal was rejected.
@@ -28,11 +28,14 @@
 //! Digits are ASCII only (Python's `\d` also accepts other Unicode digits). Rejections are
 //! typed errors instead of `Nothing`.
 
+// frob:ticket 01M48NF9E0WTVHPA4XQ3200J6N
+
 mod color;
 mod error;
 mod length;
 mod named;
 mod num;
+mod wide;
 
 pub use color::Color;
 pub use error::{ColorError, LengthError};

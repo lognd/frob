@@ -1,6 +1,11 @@
 # Documentation: what is written, what is generated, and where rationale lives
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Inputs: notes/documentation.md (rustdoc
+Status: current
+Owner: gob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/documentation.md (rustdoc
 conventions, how ruff, uv, ty, cargo, rust-analyzer, tokio and bevy
 document, ADR practice, Diataxis, doc-gen tooling). Owner direction
 2026-10-02: v1 source was full of ticket narrative that rotted; v2 must

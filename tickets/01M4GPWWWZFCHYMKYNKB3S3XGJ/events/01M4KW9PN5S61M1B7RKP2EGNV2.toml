@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T21:42:53Z"
+digest = "12632b10c1821c16a72519102fc637fc766f1c73f2b31f80b52d3dccbaf1b885"
+exit_code = 0
+inline = '''
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+    Finished `test` profile [unoptimized] target(s) in 1.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4c4cb54b-6a3f-4507-9c4c-0941cdb6aed4 with nextest profile: default
+    Starting 1 test across 3 binaries (44 tests skipped)
+        PASS [   0.061s] frob-lease::lease a_broad_docs_lease_does_not_block_generated_outputs_or_a_declared_append_only_registry
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.062s] 1 test run: 1 passed, 44 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-lease -E 'test(=a_broad_docs_lease_does_not_block_generated_outputs_or_a_declared_append_only_registry)'"
+size = 647
+status = "measured"
+tests = ["a_broad_docs_lease_does_not_block_generated_outputs_or_a_declared_append_only_registry"]
+at = "2026-10-10T21:42:53Z"
+actor = "Claude"
+rev = 1

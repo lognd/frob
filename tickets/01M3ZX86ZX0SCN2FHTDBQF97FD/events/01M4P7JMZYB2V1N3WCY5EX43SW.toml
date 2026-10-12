@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a ticket file at a stale path, when checked, then TICK007 fires and the fix is `frob ticket reindex`", "Given all files at computed paths, when checked, then it does not fire"]
+new = ["Given all files at computed paths, when checked, then it does not fire", "Given a ticket file at a stale path, when checked, then TICK009 fires and the fix is `frob ticket reindex`"]
+moved = [0, 1]
+at = "2026-10-11T19:38:31Z"
+actor = "lognd"
+rev = 1

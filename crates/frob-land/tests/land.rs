@@ -79,6 +79,11 @@ impl Fixture {
 
     /// A fixture whose `[pm] done_requires` is exactly `requirement`.
     fn requiring(requirement: &str) -> Self {
+        Self::configured(requirement, "")
+    }
+
+    /// A fixture whose `frob.toml` is the `[pm]` requirement followed by `extra` TOML.
+    fn configured(requirement: &str, extra: &str) -> Self {
         let tmp = tempfile::tempdir().expect("tempdir");
         let root = tmp.path().join("repo");
         std::fs::create_dir(&root).expect("mkdir");
@@ -103,7 +108,9 @@ impl Fixture {
                 ),
                 (
                     RelPath::new("frob.toml").expect("path"),
-                    Some(format!("[pm]\ndone_requires = [\"{requirement}\"]\n").into_bytes()),
+                    Some(
+                        format!("[pm]\ndone_requires = [\"{requirement}\"]\n{extra}").into_bytes(),
+                    ),
                 ),
                 (
                     RelPath::new(".gitignore").expect("path"),
@@ -1583,6 +1590,63 @@ fn two_lands_back_to_back_from_one_primary_both_succeed_without_failure_warnings
     );
 }
 
+/// Create, pack and delete scratch branches until `stop` is set: the multi-process ref churn a busy primary sees.
+fn churn_refs(root: &Path, stop: &std::sync::atomic::AtomicBool) {
+    let run = |args: &[&str]| {
+        let _ = std::process::Command::new("git")
+            .args(args)
+            .current_dir(root)
+            .env("GIT_CONFIG_GLOBAL", "/dev/null")
+            .env("GIT_CONFIG_SYSTEM", "/dev/null")
+            .output();
+    };
+    let mut n = 0_u32;
+    while !stop.load(std::sync::atomic::Ordering::Relaxed) {
+        let name = format!("churn-{n}");
+        run(&["branch", &name, "main"]);
+        run(&["pack-refs", "--all"]);
+        run(&["branch", "-D", &name]);
+        n += 1;
+    }
+}
+
+// frob:ticket 01M4CXTQ7DM4XEG3F1EAVNARNQ
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn concurrent_lands_under_branch_delete_and_pack_refs_churn_succeed_or_refuse_cleanly() {
+    if !git_available() {
+        return;
+    }
+    for round in 0..if cfg!(windows) { 3 } else { 20 } {
+        let fx = Fixture::new();
+        let a = fx.start("Add a", &["src/a/**"]);
+        let b = fx.start("Add b", &["src/b/**"]);
+        Fixture::commit_in(&a.wt, "src/a/a.rs", "fn a() {}\n");
+        Fixture::evidence(&a, "src/a/a.rs");
+        Fixture::commit_in(&b.wt, "src/b/b.rs", "fn b() {}\n");
+        Fixture::evidence(&b, "src/b/b.rs");
+        let stop = std::sync::atomic::AtomicBool::new(false);
+        let results = std::thread::scope(|scope| {
+            let churn = scope.spawn(|| churn_refs(&fx.root, &stop));
+            let la = scope.spawn(|| land_now(&fx, &a));
+            let lb = scope.spawn(|| land_now(&fx, &b));
+            let out = (la.join().expect("land a"), lb.join().expect("land b"));
+            stop.store(true, std::sync::atomic::Ordering::Relaxed);
+            churn.join().expect("churn");
+            out
+        });
+        for (name, result) in [("a", results.0), ("b", results.1)] {
+            match result {
+                Ok(out) => assert!(out.closed, "round {round} land {name}: {out:?}"),
+                Err(e) => assert!(
+                    e.refusal().is_some(),
+                    "round {round} land {name} failed uncleanly: {e}"
+                ),
+            }
+        }
+    }
+}
+
 // frob:ticket 01M4BMRY81T9B3T7SC3BWMVSPZ
 // frob:tests crates/frob-land/src/land.rs::land
 #[test]
@@ -1697,6 +1761,7 @@ fn a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit
 struct CannedCi {
     state: frob_release::ci::CiState,
     asked: std::sync::Mutex<Vec<String>>,
+    runs: Option<Vec<frob_release::culprit::RunRecord>>,
 }
 
 impl CannedCi {
@@ -1704,6 +1769,19 @@ impl CannedCi {
         Arc::new(Self {
             state,
             asked: std::sync::Mutex::new(Vec::new()),
+            runs: None,
+        })
+    }
+
+    /// A reader that also lists `runs` for culprit finding.
+    fn with_runs(
+        state: frob_release::ci::CiState,
+        runs: Vec<frob_release::culprit::RunRecord>,
+    ) -> Arc<Self> {
+        Arc::new(Self {
+            state,
+            asked: std::sync::Mutex::new(Vec::new()),
+            runs: Some(runs),
         })
     }
 }
@@ -1712,6 +1790,15 @@ impl frob_land::CiReader for CannedCi {
     fn read(&self, _repo: &Repo, _cwd: &Path, sha: &str) -> frob_release::ci::CiState {
         self.asked.lock().expect("lock").push(sha.to_owned());
         self.state.clone()
+    }
+
+    fn runs(
+        &self,
+        _repo: &Repo,
+        _cwd: &Path,
+        _branch: &str,
+    ) -> Option<Vec<frob_release::culprit::RunRecord>> {
+        self.runs.clone()
     }
 }
 
@@ -1871,4 +1958,193 @@ fn require_base_green_false_skips_the_ci_read_entirely() {
     let (_, out) = ci_land(&fx, ci.clone(), |_| {});
     assert!(out.expect("lands").closed);
     assert!(ci.asked.lock().expect("lock").is_empty());
+}
+
+// frob:ticket 01M4GWS3GBJTFXFEGSNFB7J4FQ
+// frob:tests crates/frob-land/src/base_ci.rs::with_culprit
+#[test]
+fn a_red_base_files_one_blocking_fix_ticket_and_later_lands_wait_for_it() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let tip = fx.main_tip();
+    let red = vec![frob_release::culprit::RunRecord {
+        sha: tip,
+        verdict: frob_release::culprit::Verdict::Red,
+    }];
+    let ci = CannedCi::with_runs(failing("rust (linux)"), red);
+    let (_, out) = ci_land(&fx, ci.clone(), |_| {});
+    let first = refusal(&out.expect_err("refused")).message.clone();
+    assert!(first.contains("fix ticket ~"), "{first}");
+    let blockers = |fx: &Fixture| {
+        fx.ledger()
+            .list(&frob_ledger::index::ListFilter {
+                label: Some("blocks-lands".to_owned()),
+                ..Default::default()
+            })
+            .expect("list")
+            .len()
+    };
+    assert_eq!(blockers(&fx), 1);
+    let t = fx.start("Add other", &["lib/**"]);
+    Fixture::commit_in(&t.wt, "lib/o.rs", "fn o() {}\n");
+    Fixture::evidence(&t, "lib/o.rs");
+    let mut opts = Fixture::opts(&t);
+    opts.ci_reader = Some(ci);
+    let again = land(
+        &fx.root,
+        &opts,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    );
+    let second = refusal(&again.expect_err("still refused")).message.clone();
+    assert!(
+        second.contains("blocked until the fix ticket closes"),
+        "{second}"
+    );
+    assert_eq!(blockers(&fx), 1, "no second fix ticket");
+}
+
+// frob:ticket 01M4CTDWJRKBC64EBQPGHMWDGG
+// frob:tests crates/frob-land/src/base_ci.rs::gate
+#[test]
+fn the_base_ci_gate_asks_about_the_remote_tracking_tip_when_there_is_one() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let pushed = fx.main_tip();
+    // The remote-tracking ref is what GitHub ran CI for; local main has moved on since.
+    let remote = fx.root.join(".git/refs/remotes/origin");
+    std::fs::create_dir_all(&remote).expect("remote dir");
+    std::fs::write(remote.join("main"), format!("{pushed}\n")).expect("remote ref");
+    commit_on_main(&fx, "unpushed.txt", "local only\n");
+    assert_ne!(fx.main_tip(), pushed, "local main is ahead of the remote");
+    let ci = CannedCi::new(failing("rust (linux)"));
+    let (_, out) = ci_land(&fx, ci.clone(), |_| {});
+    assert_eq!(refusal(&out.expect_err("red")).code, "E-LAND-BASE-RED");
+    assert_eq!(
+        ci.asked.lock().expect("lock")[0],
+        pushed,
+        "the pushed tip, not the local one"
+    );
+}
+
+// frob:ticket 01M4CTDWJRKBC64EBQPGHMWDGG
+// frob:tests crates/frob-land/src/base_ci.rs::gate
+#[test]
+fn the_base_ci_gate_falls_back_to_the_local_tip_without_a_remote_tracking_ref() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    assert!(
+        !fx.root.join(".git/refs/remotes/origin/main").exists(),
+        "no remote-tracking ref in the fixture"
+    );
+    commit_on_main(&fx, "unpushed.txt", "local only\n");
+    let ci = CannedCi::new(failing("rust (linux)"));
+    let (_, out) = ci_land(&fx, ci.clone(), |_| {});
+    assert_eq!(refusal(&out.expect_err("red")).code, "E-LAND-BASE-RED");
+    assert_eq!(ci.asked.lock().expect("lock")[0], fx.main_tip());
+}
+
+/// Whether a directory the probe logged names `wt`, ignoring slash style, verbatim prefix and case.
+fn same_dir(logged: &str, wt: &Path) -> bool {
+    let norm = |s: &str| {
+        s.trim()
+            .trim_start_matches(r"\\?\")
+            .replace('\\', "/")
+            .to_lowercase()
+    };
+    norm(logged) == norm(&wt.to_string_lossy())
+}
+
+// frob:ticket 01M4MH61ZJD4VYYXPANZ8132AR
+// frob:tests crates/frob-land/src/land.rs::verify_check
+#[test]
+#[cfg_attr(
+    windows,
+    ignore = "frob:todo T-NXY7BCD: the sh tool probe spawns nothing on the Windows runner"
+)]
+fn land_reuses_a_recorded_tool_pass_for_an_unchanged_tree_and_reruns_after_an_input_changes() {
+    if !git_available() {
+        return;
+    }
+    let spawns_dir = tempfile::tempdir().expect("tempdir");
+    let log = spawns_dir.path().join("spawns.log");
+    // The probe is a git alias: git runs it through its own bundled sh, which a bare `sh` is not on Windows.
+    let extra = format!(
+        "[[check.tool]]\nname = \"probe\"\ncommand = \"git\"\nargs = [\"-c\", \"alias.probe=!(pwd -W 2>/dev/null || pwd) >> '{}'\", \"probe\"]\ninputs = [\"src/**\"]\n",
+        // Forward slashes: backslashes are TOML escapes and sh escapes alike on Windows.
+        log.display().to_string().replace('\\', "/")
+    );
+    // The probe logs its working directory, so spawns in a ticket worktree are told apart from
+    // the one land's base-set run makes in the persistent base checkout.
+    let spawned_in = |wt: &Path| {
+        std::fs::read_to_string(&log)
+            .unwrap_or_default()
+            .lines()
+            .filter(|l| same_dir(l, wt))
+            .count()
+    };
+    let clock = || Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
+    let check = |s: &Started| {
+        let opts = frob_check::CheckOptions {
+            ticket: Some(s.handle.clone()),
+            skip_telemetry: true,
+            ..frob_check::CheckOptions::default()
+        };
+        frob_check::run(&s.wt, &opts).expect("check");
+    };
+
+    // Same tree checked, then landed: the land runs no tool process.
+    let fx = Fixture::configured("criteria_evidenced", &extra);
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+    let s_wt = gob_exec::canonical(&s.wt).expect("worktree");
+    check(&s);
+    assert_eq!(spawned_in(&s_wt), 1, "the check ran the tool once");
+    land(&fx.root, &Fixture::opts(&s), &clock()).expect("land");
+    assert_eq!(spawned_in(&s_wt), 1, "land reused the recorded pass");
+
+    // A tree whose input differs from every recorded pass runs the tool again.
+    let t = fx.start("Add b", &["src/**"]);
+    Fixture::commit_in(&t.wt, "src/b.rs", "fn b() {}\n");
+    Fixture::evidence(&t, "src/b.rs");
+    let t_wt = gob_exec::canonical(&t.wt).expect("worktree");
+    land(&fx.root, &Fixture::opts(&t), &clock()).expect("land b");
+    assert_eq!(
+        spawned_in(&t_wt),
+        1,
+        "a changed input misses and runs the tool"
+    );
+}
+
+// frob:ticket 01M4CXTP6NCCZ7YNQCER0RXNYF
+#[test]
+fn retrying_the_land_record_after_a_failed_close_leaves_exactly_one_land_event() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Retry record", &["src/**"]);
+    let ledger = fx.ledger();
+    let body = frob_land::events::LandEvent {
+        base_ref: MAIN,
+        commit: "0123456789abcdef0123456789abcdef01234567",
+        branch: "ticket/retry",
+        pushed: false,
+    };
+    // First attempt records the land, then the close "fails" (never runs); the retry records again.
+    frob_land::events::append_land(&ledger, s.id, &body).expect("first");
+    frob_land::events::append_land(&ledger, s.id, &body).expect("retry");
+    let lands = ledger
+        .events(s.id)
+        .expect("events")
+        .iter()
+        .filter(|e| matches!(e.body, frob_ledger::event::EventBody::Land(_)))
+        .count();
+    assert_eq!(lands, 1, "a retry must not duplicate the land event");
 }

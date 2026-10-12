@@ -1,0 +1,42 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T02:47:33Z"
+digest = "71689506603ba8f5b2946427f21b8b7661021cf8f321083bf6f6efd071fb20c8"
+exit_code = 101
+inline = """
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+error[E0599]: no method named `delta_e_ok` found for struct `crunk_values::Color` in the current scope
+  --> crates/crunk-rules/src/color/mod.rs:53:38
+   |
+53 |             .map(|(n, c)| (*n, color.delta_e_ok(*c) * DELTA_SCALE))
+   |                                      ^^^^^^^^^^ method not found in `crunk_values::Color`
+
+error[E0433]: cannot find `PrecisionLedger` in `gob_rules`
+   --> crates/gob-check/src/report.rs:243:20
+    |
+243 |         gob_rules::PrecisionLedger::of_run(&self.findings, &self.suppressed)
+    |                    ^^^^^^^^^^^^^^^ could not find `PrecisionLedger` in `gob_rules`
+
+error[E0425]: cannot find type `PrecisionLedger` in crate `gob_rules`
+   --> crates/gob-check/src/report.rs:242:43
+    |
+242 |     pub fn precision(&self) -> gob_rules::PrecisionLedger {
+    |                                           ^^^^^^^^^^^^^^^ not found in `gob_rules`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `crunk-rules` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+Some errors have detailed explanations: E0425, E0433.
+For more information about an error, try `rustc --explain E0425`.
+error: could not compile `gob-check` (lib) due to 2 previous errors
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics --package crunk` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "-p crunk -E 'test(=a_clean_project_exits_zero)'"
+size = 1585
+status = "measured"
+at = "2026-10-11T02:47:33Z"
+actor = "lognd"
+rev = 1

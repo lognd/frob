@@ -159,8 +159,8 @@ jobs:
         run: cargo dev publish
 
   # PyPI, trusted publishing (OIDC, no stored token) from the protected `pypi`
-  # environment, which carries the owner's required-reviewer approval. Two PyPI projects,
-  # frob and grimble (one wheel set per product, D87; each project trusts this workflow and
+  # environment, which carries the owner's required-reviewer approval. Three PyPI projects,
+  # frob, grimble and crunk (one wheel set per product, D87; each project trusts this workflow and
   # this environment). It builds nothing: it uploads exactly the wheels the shared workflow
   # built and smoked
   # on fresh runners. It runs after smoke and independently of the crates.io publish
@@ -184,25 +184,11 @@ jobs:
           pattern: wheel-*
           path: dist
           merge-multiple: true
-      # D87 gate: the crunk wheel is built and smoked by the shared workflow but is NOT uploaded
-      # while the Python crunk (lognd/crunk) still publishes the PyPI project `crunk`; a Rust
-      # wheel would replace it. Retiring the Python crunk removes this step and adds crunk to the
-      # loop below (packaging/pypi/BUILDING.md, pinned by crates/frob-release/tests/products.rs).
-      - name: Hold back the gated crunk wheels (not uploaded until the Python crunk is retired)
-        shell: bash
-        run: |
-          held=$(find dist -maxdepth 1 -name 'crunk-*.whl' | wc -l)
-          if [ "$held" -ne 5 ]; then
-            echo "expected exactly five crunk wheels to hold back, found $held" >&2
-            find dist -type f >&2
-            exit 1
-          fi
-          find dist -maxdepth 1 -name 'crunk-*.whl' -delete
       - name: Exactly five wheels per product are present
         shell: bash
         run: |
           total=0
-          for product in frob grimble; do
+          for product in frob grimble crunk; do
             count=$(find dist -maxdepth 1 -name "$product-*.whl" | wc -l)
             if [ "$count" -ne 5 ]; then
               echo "expected exactly five $product wheels in dist, found $count:" >&2

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T00:27:09Z"
+digest = "648a7ee4418ab32d78bad45135c74005e14ae52695e15c180660d2636bc8712a"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 03ea7d07-5f3b-4ac5-a6e6-01d1ccad1729 with nextest profile: default
+    Starting 1 test across 9 binaries (120 tests skipped)
+        PASS [   0.007s] frob-ledger slug::tests::long_title_is_cut_on_a_word_boundary_within_sixty
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 120 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(=slug::tests::long_title_is_cut_on_a_word_boundary_within_sixty)'"
+size = 555
+status = "measured"
+tests = ["slug::tests::long_title_is_cut_on_a_word_boundary_within_sixty"]
+at = "2026-10-11T00:27:09Z"
+actor = "lognd"
+rev = 1

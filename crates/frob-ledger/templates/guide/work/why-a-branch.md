@@ -1,0 +1,9 @@
+# Why a branch
+
+> Profile: **Working here**. For a walk through the day-to-day steps see [your first ticket](../new/first-ticket.md) (New here).
+
+- **ULIDs** identify tickets. A path is only presentation, so it may change; the lookup under `indexes/by-id` always finds the current one.
+- **Handles** are short suffixes of the ULID, at least {{handle_min_len}} characters, and never persisted.
+- **Events** are the history. A ticket file is the fold of its events, and only `{{frob}} ticket ...` writes either.
+- **One writer** at a time touches a ticket, enforced by the lease taken in `{{frob}} work`.
+- **Reindex** moves files to their computed paths and regenerates these pages in one commit, a pure function of the ledger and the frob version (v{{version}}).

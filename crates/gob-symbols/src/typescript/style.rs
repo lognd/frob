@@ -50,10 +50,17 @@ pub(super) fn css_property(key: &str) -> String {
     out
 }
 
+// frob:ticket 01M4DPJQ0TAE8FM53FEJZPBV6H
+/// Whether React leaves a bare number on `property` (a CSS name) without a unit: the single unitless list, plus custom properties.
+pub fn is_unitless(property: &str) -> bool {
+    UNITLESS.contains(&property) || property.starts_with("--")
+}
+
+// frob:ticket 01M4DPJQ0TAE8FM53FEJZPBV6H
 /// The raw CSS text of a numeric style value: React appends `px` unless the property is unitless or the value is 0.
-pub(super) fn numeric_raw(property: &str, number: &str) -> String {
+pub fn numeric_raw(property: &str, number: &str) -> String {
     let zero = number.parse::<f64>().is_ok_and(|v| v == 0.0);
-    if zero || UNITLESS.contains(&property) || property.starts_with("--") {
+    if zero || is_unitless(property) {
         number.to_owned()
     } else {
         format!("{number}px")
@@ -72,6 +79,15 @@ mod tests {
         assert_eq!(css_property("msTransform"), "-ms-transform");
         assert_eq!(css_property("--gap"), "--gap");
         assert_eq!(css_property("color"), "color");
+    }
+
+    // frob:ticket 01M4DPJQ0TAE8FM53FEJZPBV6H
+    // frob:tests crates/gob-symbols/src/typescript/style.rs::is_unitless
+    #[test]
+    fn unitless_covers_the_list_and_custom_properties() {
+        assert!(is_unitless("opacity"));
+        assert!(is_unitless("--gap"));
+        assert!(!is_unitless("margin-top"));
     }
 
     // frob:tests crates/gob-symbols/src/typescript/style.rs::numeric_raw

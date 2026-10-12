@@ -1,6 +1,11 @@
 # Navigation: canonical ids, a verifiable reindex, generated docs, profiles and a tour
 
-Status: ACCEPTED (D81, owner decisions 2026-10-04 on the documentation
+Status: current
+Owner: frob
+Decisions: D81
+Audience: contributor
+
+Provenance: ACCEPTED (D81, owner decisions 2026-10-04 on the documentation
 survey, ticket ~AMBGYQ4). Evidence: notes/research/docs-survey.md (1254
 repositories, ten exemplars). Depends on mirror.md (the ticket branch),
 tickets.md (identity, events), documentation.md (generators, GEN001),
@@ -18,13 +23,13 @@ canonical id is.
 
 | Where | Allowed reference | Enforced by |
 |---|---|---|
-| hand-written text in the code repository (docs, code comments, commit messages, directives) | full ULID; `~handle` only in chat and CLI output (tickets.md 2) | TICK004 (below) and the existing abbreviated-id fixer |
-| ticket bodies, comments and events on the ticket branch | full ULID or `~handle` (expanded to the ULID on write) | TICK004 |
+| hand-written text in the code repository (docs, code comments, commit messages, directives) | full ULID; `~handle` only in chat and CLI output (tickets.md 2) | TICK006 (below) and the existing abbreviated-id fixer |
+| ticket bodies, comments and events on the ticket branch | full ULID or `~handle` (expanded to the ULID on write) | TICK006 |
 | generated pages (README, indexes, epic pages) | relative paths, because they are regenerated whenever a path changes | GEN001 |
 | the tracker mirror | the issue projection carries the ULID; links point to the issue or to `indexes/by-id/` | mirror.md 2.1 |
 | CLI arguments | ULID, `~handle` or alias | a path argument is refused (`E-TICKET-PATH`) with the id it names: `that file is ~6C0D1E2; pass the id` |
 
-- **TICK004 ledger-path-reference** (Error, P+, machine fix): tracked
+- **TICK006 ledger-path-reference** (Error, P+, machine fix): tracked
   hand-written text links to a ticket-branch path
   (`<epic>/<slug>.md`, a blob or tree URL on the ticket branch, or the
   old `tickets/<ULID>/ticket.md` form). The machine fix rewrites the link
@@ -80,20 +85,20 @@ CI job):
 
 The reindex commit is checkable as nothing but a reindex, exactly:
 
-- **Replay check (TICK005, Error).** Run the reindex in memory on the
+- **Replay check (TICK007, Error).** Run the reindex in memory on the
   parent commit's tree with the frob version named in the trailer; the
   resulting tree id must equal the commit's tree id. This proves the
   commit is the pure output of the reindex function, with no room for a
   hidden edit, because tree ids cover every byte. It needs no
   similarity heuristics: a moved ticket file keeps its blob id.
-- **No moves elsewhere (TICK006, Error).** A ledger commit without the
+- **No moves elsewhere (TICK008, Error).** A ledger commit without the
   trailer may not rename or delete a ticket file or touch an event file
   it did not add.
-- **No misfiled tickets (TICK007, Error, machine fix).** On the tip of
+- **No misfiled tickets (TICK009, Error, machine fix).** On the tip of
   the branch every ticket file is at its computed path; the fix is
   `frob ticket reindex`.
 
-When the frob version in the trailer is not available locally, TICK005
+When the frob version in the trailer is not available locally, TICK007
 reports Unresolved (reason `generator-version`) instead of guessing; CI
 pins the frob version, so CI always decides it.
 
@@ -117,7 +122,7 @@ is a one-shot, verifiable move:
    through frob-ledger, which reads the configured storage.
 4. Rollback is reverting that one code commit; the branch can be
    deleted. The migration ticket is the first user of the reindex
-   replay check (TICK005), run on the initial branch commit.
+   replay check (TICK007), run on the initial branch commit.
 
 ### 2.4 Why this is the least confusing option
 
@@ -255,7 +260,8 @@ repositories) is a good-first label; frob makes it trustworthy:
   points (default 2), a scope, Given/When/Then acceptance, and a
   `## Start here` section naming the files to read first, the test
   command and who to ask. `frob ticket new --good-first` scaffolds the
-  section.
+  section with `<TODO: ...>` placeholders, and PM031 reports a section
+  that still contains one.
 - **PM032 good-first-pool-low** (Warning): fewer than
   `[tickets] good_first_min` ready good-first tickets (default 3), so
   maintainers see when newcomers have nothing to pick.
@@ -299,10 +305,10 @@ a time, with next and previous, and opens linked files in the pager.
 
 | Id or verb | Kind | Meaning |
 |---|---|---|
-| TICK004 | Error, P+, machine fix | ledger-path-reference: a path used as a ticket reference |
-| TICK005 | Error, P+ | reindex-not-pure: replay of a reindex commit does not reproduce its tree |
-| TICK006 | Error, P+ | move-outside-reindex: a non-reindex ledger commit moved, deleted or edited existing ticket or event files |
-| TICK007 | Error, P+, machine fix | misfiled-ticket: a ticket file is not at its computed path |
+| TICK006 | Error, P+, machine fix | ledger-path-reference: a path used as a ticket reference |
+| TICK007 | Error, P+ | reindex-not-pure: replay of a reindex commit does not reproduce its tree |
+| TICK008 | Error, P+ | move-outside-reindex: a non-reindex ledger commit moved, deleted or edited existing ticket or event files |
+| TICK009 | Error, P+, machine fix | misfiled-ticket: a ticket file is not at its computed path |
 | PM031 | Error | good-first-incomplete |
 | PM032 | Warning | good-first-pool-low |
 | `E-TICKET-PATH` | CLI error | a file path was given where a ticket id is expected |

@@ -762,3 +762,54 @@ fn exempt_types_and_tickets_with_criteria_still_close() {
     let closed = ok(dir.path(), &["ticket", "close", &id, "--outcome", "done"]);
     assert_eq!(closed["data"]["category"], "done");
 }
+
+// frob:ticket 01M4FDQFHJKT30DHZEEA6GWB4R
+// frob:tests crates/frob/src/ticket/write.rs::Closeout
+#[test]
+fn closeout_needs_bound_evidence_and_a_reason_then_closes_done_without_a_lease() {
+    let dir = repo(&["criteria_evidenced"]);
+    let id = chore(dir.path(), &["--acceptance", "the widget works"]);
+    let no_reason = frob(dir.path(), &["ticket", "closeout", &id]);
+    assert_eq!(code(&no_reason), 2, "{}", refusal_text(&no_reason));
+    let unbound = frob(
+        dir.path(),
+        &["ticket", "closeout", &id, "--reason", "shipped"],
+    );
+    assert_eq!(code(&unbound), 3);
+    assert_eq!(json(&unbound)["error"]["code"], "E-DONE-CRITERIA-UNBOUND");
+    ok(
+        dir.path(),
+        &[
+            "ticket",
+            "evidence",
+            "add",
+            &id,
+            "--provider",
+            "file",
+            "--ref",
+            "frob.toml",
+            "--accepts",
+            "1",
+        ],
+    );
+    let closed = ok(
+        dir.path(),
+        &["ticket", "closeout", &id, "--reason", "shipped last cycle"],
+    );
+    assert_eq!(closed["data"]["category"], "done");
+    assert_eq!(closed["data"]["outcome"], "done");
+    let shown = ok(dir.path(), &["ticket", "show", &id, "--events"]);
+    let reasons: Vec<String> = shown["data"]["events"]
+        .as_array()
+        .expect("events")
+        .iter()
+        .filter(|e| e["kind"] == "transition")
+        .filter_map(|e| e["body"]["reason"].as_str().map(str::to_owned))
+        .collect();
+    assert!(
+        reasons
+            .iter()
+            .any(|r| r == "retroactive closeout: shipped last cycle"),
+        "{reasons:?}"
+    );
+}

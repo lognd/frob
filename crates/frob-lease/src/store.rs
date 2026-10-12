@@ -118,7 +118,8 @@ impl LeaseStore {
         clock: Arc<dyn Clock>,
     ) -> Result<Self, LeaseError> {
         let base = common_dir.join("frob");
-        let shared = glob_set(&cfg.shared_files)?;
+        // frob:ticket 01M4GPWWWZFCHYMKYNKB3S3XGJ
+        let shared = glob_set(cfg.shared_files.iter().chain(&cfg.generated_files))?;
         tracing::debug!(dir = %base.display(), ttl_secs = cfg.ttl_secs, "lease store opened");
         Ok(Self {
             dir: base.join("leases"),
@@ -184,7 +185,7 @@ impl LeaseStore {
         &self.cfg
     }
 
-    /// The compiled `[lease] shared_files` patterns.
+    /// The compiled `[lease] shared_files` and `generated_files` patterns.
     pub fn shared(&self) -> &GlobSet {
         &self.shared
     }

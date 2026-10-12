@@ -1,6 +1,11 @@
 # Releases: a scrumban flow wired to milestones, cycles and incremental releases
 
-Status: ACCEPTED (D83, ticket ~5MAFAAY; version scheme decided by the
+Status: current
+Owner: frob
+Decisions: D83
+Audience: contributor
+
+Provenance: ACCEPTED (D83, ticket ~5MAFAAY; version scheme decided by the
 owner 2026-10-03). Builds on pm-enforcement.md (cycles,
 capacity, velocity, forecasts, flow metrics, WIP limits, the PM family),
 documentation.md 6 (changelog fragments), monorepo.md 4 (lockstep crate
@@ -297,7 +302,17 @@ part of the job's design:
   the `dev` prerelease assets add-then-prune: new assets carry the sha in
   their names, the tag and notes move, and the previous assets are
   deleted last, so a failed run leaves the previous ones. It publishes
-  nothing to PyPI or crates.io. `crates/frob-release/tests/dev_workflow.rs`
+  nothing to PyPI or crates.io. CI cost controls (~BN7DCP3): superseded
+  runs are cancelled per job (`<workflow>-<ref>-<job>` groups, never a
+  workflow-level group, which would also cancel a `dev-publish`
+  mid-upload); a `changes` job skips the Rust jobs for pushes that touch
+  only tickets, changelog fragments, notes and the design, decision and
+  migration docs (a job-level filter, not a `paths:` trigger, so every
+  commit still carries checks for the land gate); a `dev-gate` job
+  rebuilds the dev channel at most once an hour, so the last land of a
+  burst can wait for the next code push to be published; and sccache
+  (GitHub Actions backend) caches workspace crates by content across
+  runs. `crates/frob-release/tests/dev_workflow.rs`
   pins these invariants and that both workflows call the shared one;
   publishing is not a `cargo dev ci` step, so the parity test ignores it.
 - **CI status in `release status`.** Read through the hosting API (`gh`

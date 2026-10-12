@@ -29,6 +29,11 @@ pub struct CrunkProduct;
 
 gob_product::register_commands!(CrunkProduct);
 
+// frob:ticket 01M4FD0EP322SV5ZNXD5SQT8RX
+gob_cli::inventory::submit! {
+    gob_cli::SchemaExtension::new(crunk_spec::schema::schema)
+}
+
 impl Product for CrunkProduct {
     const NAME: &'static str = PRODUCT;
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");

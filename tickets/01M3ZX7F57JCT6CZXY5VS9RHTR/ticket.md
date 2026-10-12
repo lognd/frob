@@ -2,16 +2,17 @@
 id = "01M3ZX7F57JCT6CZXY5VS9RHTR"
 title = "Executor skips files and subtrees lacking the plan's prefilter kinds"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:21Z"
-updated = "2026-10-03T03:34:21Z"
+updated = "2026-10-11T21:00:32Z"
 idempotency_key = "m2-exec-prefilter"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/exec/prefilter.rs"]
+scope = ["crates/gob-plan/src/exec/prefilter.rs", "crates/gob-plan/src/exec/core/mod.rs", "crates/gob-plan/src/exec/mod.rs", "crates/gob-plan/tests/exec_prefilter.rs"]
 
 [[links]]
 kind = "blocked-by"
@@ -23,11 +24,11 @@ target = "01M3ZX7ETPH5Z6K2VJ64K5XTMX"
 
 [[acceptance]]
 text = "Given a plan requiring a directive kind and a file with none, when executed, then the file is skipped and counted as skipped, not as clean-by-examination"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a file containing the kind, when executed, then results equal those of an unfiltered run"
-bound = false
+bound = true
 +++
 
 Implements plugins.md section 6.2.

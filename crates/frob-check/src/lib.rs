@@ -34,6 +34,7 @@
 #![cfg_attr(not(test), deny(unused_crate_dependencies))]
 
 mod filecheck;
+mod memo;
 mod options;
 mod product;
 pub mod product_rules;
@@ -50,6 +51,7 @@ pub use gob_check::{
     Counts, FailOn, FileCheck, FixOutcome, Perf001, PerfTable, Proc001, StageTime, Stats, Timing,
     Tool001, Tool002, ToolParser, ToolStage,
 };
+pub use memo::FileToolMemo;
 pub use options::CheckOptions;
 pub use product::Frob;
 pub use scope::TicketScope;
@@ -91,10 +93,42 @@ pub fn run_with_diff(
     root: &Path,
     opts: &CheckOptions,
 ) -> Result<(CheckReport, Option<std::collections::BTreeSet<String>>), CheckError> {
+    run_with_cone(root, opts).map(|(report, diff, _)| (report, diff))
+}
+
+// frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH
+/// [`run_with_diff`] plus the `--ticket` affected cone: the ticket's files and their dependents.
+///
+/// Unresolved calls widen the cone, so a base commit touching none of its paths cannot change the
+/// ticket's verdict. Both sets are `None` without `--ticket`.
+///
+/// # Errors
+///
+/// As [`run`].
+#[allow(
+    clippy::type_complexity,
+    reason = "the pair of optional path sets reads best inline"
+)]
+pub fn run_with_cone(
+    root: &Path,
+    opts: &CheckOptions,
+) -> Result<
+    (
+        CheckReport,
+        Option<std::collections::BTreeSet<String>>,
+        Option<std::collections::BTreeSet<String>>,
+    ),
+    CheckError,
+> {
     let mut opts = opts.clone();
     opts.clock
         .get_or_insert_with(|| Arc::new(gob_time::SystemClock::pin()));
     let product = Frob::new(opts.clone());
-    let report = gob_check::run(&product, root, &opts.run_options())?;
-    Ok((report, product.diff_paths()))
+    let mut run_opts = opts.run_options();
+    if run_opts.tool_memo.is_none() {
+        run_opts.tool_memo =
+            FileToolMemo::for_repo(root).map(|m| Arc::new(m) as Arc<dyn gob_check::ToolMemo>);
+    }
+    let report = gob_check::run(&product, root, &run_opts)?;
+    Ok((report, product.diff_paths(), product.cone_paths()))
 }

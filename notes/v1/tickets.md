@@ -1,8 +1,8 @@
 # frob v1 ticket subsystem -- inventory for the Rust redesign
 
-Source of truth: /home/logan/projects/frob (read-only). ASCII only. No code pastes; names are
+Source of truth: <frob-v1> (read-only). ASCII only. No code pastes; names are
 quoted only where load-bearing. T-#### cites are v1 ticket ids that carry the incident or decision
-(look them up in /home/logan/projects/frob/tickets/T-####/ticket.md).
+(look them up in <frob-v1>/tickets/T-####/ticket.md).
 
 ## 0. Honest scope statement (denominator and what was NOT read)
 
@@ -574,15 +574,15 @@ remove it after a failed land. A land that dies silently may have succeeded: che
 
 | Need | File |
 |---|---|
-| Field list and validators | /home/logan/projects/frob/src/frob/tickets/_models.py |
-| State machine, doable, wave | /home/logan/projects/frob/src/frob/tickets/__init__.py, _doable.py |
-| Leases | /home/logan/projects/frob/src/frob/tickets/_leases.py, _scope.py |
-| Close guards | /home/logan/projects/frob/src/frob/tickets/_evidence.py |
-| Land | /home/logan/projects/frob/src/frob/tickets/_land.py, _land_squash.py, _land_compose.py, _land_queue.py |
-| Verb strategy table | /home/logan/projects/frob/src/frob/app/ticket_runner/_ledger_mirror.py |
-| Start guard chain | /home/logan/projects/frob/src/frob/app/ticket_runner/_lifecycle.py |
-| Design records | /home/logan/projects/frob/docs/design/ledger-v2.md, ledger-mirror-batching.md, land-*.md |
-| Sample tickets | /home/logan/projects/frob/tickets/T-2451 (anchor + done report), T-6528 (scope audit), T-2371 (acceptance), archive/T-0001 |
+| Field list and validators | <frob-v1>/src/frob/tickets/_models.py |
+| State machine, doable, wave | <frob-v1>/src/frob/tickets/__init__.py, _doable.py |
+| Leases | <frob-v1>/src/frob/tickets/_leases.py, _scope.py |
+| Close guards | <frob-v1>/src/frob/tickets/_evidence.py |
+| Land | <frob-v1>/src/frob/tickets/_land.py, _land_squash.py, _land_compose.py, _land_queue.py |
+| Verb strategy table | <frob-v1>/src/frob/app/ticket_runner/_ledger_mirror.py |
+| Start guard chain | <frob-v1>/src/frob/app/ticket_runner/_lifecycle.py |
+| Design records | <frob-v1>/docs/design/ledger-v2.md, ledger-mirror-batching.md, land-*.md |
+| Sample tickets | <frob-v1>/tickets/T-2451 (anchor + done report), T-6528 (scope audit), T-2371 (acceptance), archive/T-0001 |
 
 ## 10. Phase-2 coverage verdict
 

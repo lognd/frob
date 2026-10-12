@@ -1,0 +1,12 @@
+kind = "create"
+title = "Land gate: a cancelled base CI check is Pending, not Red"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 1
+scope = ["crates/frob-release/src/ci.rs"]
+acceptance = ["Given a base tip whose only non-passing check run concluded cancelled, when the land gate judges it, then the state is Pending, never Red or Green"]
+body = "found while working ~BN7DCP3: CI now cancels superseded runs, and classify/Check::from treat conclusion cancelled as a failure, so a land that fetched an older base tip right as a newer push cancelled its run reads Red. Treat cancelled (superseded) as Pending with a warning."
+at = "2026-10-10T02:25:28Z"
+actor = "lognd"
+rev = 1

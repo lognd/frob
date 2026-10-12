@@ -1,0 +1,98 @@
+kind = "evidence"
+captured_at = "2026-10-11T00:31:17Z"
+digest = "ee9bb3ce9a6a7c346b392da9db1fa1f58fa789b77f955098e2789dc160bafaea"
+exit_code = 0
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling proptest v1.11.0
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized] target(s) in 41.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 803a648d-f05a-4e82-8fbe-354d70144201 with nextest profile: default
+    Starting 58 tests across 43 binaries (401 tests skipped)
+        PASS [   0.010s] frob-obligations exc::tests::a_defer_still_parks_an_unresolved_finding
+        PASS [   0.009s] frob-obligations native::tests::finds_rust_zizmor_and_eslint_suppressions
+        PASS [   0.013s] frob-obligations exc::tests::only_a_past_defer_day_lapses
+        PASS [   0.016s] frob-obligations exc::tests::an_accept_cannot_park_an_unresolved_finding
+        PASS [   0.013s] frob-obligations native::tests::only_id_map_targets_are_bound
+        PASS [   0.324s] frob-obligations::csharp csharp_files_are_counted_as_cov001_subjects
+        PASS [   0.334s] frob-obligations::csharp an_untested_public_csharp_method_is_a_cov001_finding_and_a_tested_one_is_not
+        PASS [   0.338s] frob-obligations::repo a_frob_doc_line_between_a_doc_block_and_its_item_does_not_raise_doc001
+        PASS [   0.335s] frob-obligations::repo accept_attestation_is_checked_against_frob_lock
+        PASS [   0.084s] frob-obligations::repo accept_with_a_bad_reason_raises_exc001_but_still_suppresses
+        PASS [   0.086s] frob-obligations::repo an_exception_covers_only_its_bound_symbol
+        PASS [   0.073s] frob-obligations::repo cov001_covers_a_cross_crate_path_call_through_a_use_import
+        PASS [   0.084s] frob-obligations::repo cov001_counts_a_test_in_another_file_and_a_cross_file_call
+        PASS [   0.144s] frob-obligations::repo cov001_is_unresolved_when_a_test_reaches_an_unresolved_call_naming_the_item
+        PASS [   0.138s] frob-obligations::repo cov001_path_qualifier_poisons_only_the_named_type
+        PASS [   0.155s] frob-obligations::repo cov001_external_path_call_does_not_poison_same_named_methods
+        PASS [   0.239s] frob-obligations::repo cov001_never_covers_a_genuinely_ambiguous_cross_crate_call
+        PASS [   0.099s] frob-obligations::repo cov001_unit_struct_value_types_its_receiver_and_covers_the_method
+        PASS [   0.164s] frob-obligations::repo cov001_qualifierless_unknown_call_keeps_the_broad_match
+        PASS [   0.160s] frob-obligations::repo cov001_unknown_receiver_is_never_falsely_covered
+        PASS [   0.117s] frob-obligations::repo cov003_is_declared_but_never_emitted
+        PASS [   0.241s] frob-obligations::repo cov001_unknown_receiver_poisons_methods_but_not_free_functions
+        PASS [   0.251s] frob-obligations::repo crlf_checkout_under_autocrlf_keeps_an_accept_attested_but_a_real_edit_does_not
+        PASS [   0.085s] frob-obligations::repo evaluate_file_runs_the_per_file_rules_on_toml_text
+        PASS [   0.177s] frob-obligations::repo file_level_accept_covers_the_whole_file
+        PASS [   0.171s] frob-obligations::repo inv001_is_satisfied_by_a_directive_in_another_file
+        PASS [   0.479s] frob-obligations::repo defer_bound_to_a_done_ticket_raises_exc003_and_lists_the_suppressed_finding
+        PASS [   0.113s] frob-obligations::repo ledger_rules_stay_silent_without_a_ledger
+        PASS [   0.116s] frob-obligations::repo inv002_reports_a_forbidden_import_from_frob_toml
+        PASS [   0.507s] frob-obligations::repo defer_to_an_open_ticket_suppresses_quietly_and_a_missing_one_is_exc007
+        PASS [   0.011s] gob-dev render::rules::tests::fence_grows_past_inner_backticks
+        PASS [   0.012s] gob-dev render::rules::tests::page_has_title_table_explanation_examples
+        PASS [   0.014s] gob-dev render::rules::tests::page_without_examples_has_no_examples_section
+        PASS [   0.047s] gob-dev tests::real_workspace_found_regardless_of_compile_time_path
+        PASS [   0.284s] frob-tests::dotnet the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies
+        PASS [   0.131s] gob-dev::generate check_reports_stale_and_missing_files_without_writing
+        PASS [   0.020s] gob-dev::generate committed_pages_have_no_orphans_on_disk
+        PASS [   0.044s] gob-dev::generate every_rule_has_a_page_and_every_page_a_rule
+        PASS [   0.307s] frob-tests::typescript a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip
+        PASS [   0.078s] gob-dev::generate crunk_config_reference_and_schema_are_generated_apart_from_frobs
+        PASS [   0.321s] frob-tests::typescript run_groups_selected_tests_by_member_and_maps_results_back_to_units
+        PASS [   0.035s] gob-exec::runner captured_output_is_redacted_and_env_added
+        PASS [   0.215s] gob-dev::generate output_is_deterministic_and_check_passes
+        PASS [   0.045s] gob-exec::runner spawn_counter_counts_only_real_spawns
+        PASS [   0.417s] gob-dev::generate one_required_reason_and_one_polarity
+        PASS [   0.438s] gob-exec::runner concurrency_is_bounded_by_jobs
+        PASS [   0.248s] gob-exec::runner timeout_kills_group
+        PASS [   0.010s] gob-exec::runner unlisted_program_is_not_allowed
+        PASS [   0.059s] gob-plan::exec_core executor_connectives_follow_the_kleene_tables
+        PASS [   0.432s] gob-exec::runner timeout_kills_setsid_grandchild_and_returns_promptly
+        PASS [   0.011s] gob-plan::print_stability a_printer_that_never_settles_fails_with_a_shrunk_minimal_example
+        PASS [   0.429s] gob-exec::runner timeout_leaves_no_grandchild
+        PASS [   0.039s] gob-plan::print_stability the_real_printer_is_stable_over_generated_sizes
+        PASS [   0.013s] grimble-model::stability a_broken_printer_fails_with_a_shrunk_minimal_example
+        PASS [   0.071s] grimble-model::stability the_real_formatter_is_stable_over_generated_sizes
+        PASS [   1.056s] gob-exec::runner normal_exit_does_not_block_on_pipe_held_by_background_child
+        PASS [   0.446s] gob-plan::print_stability generated_trees_round_trip_and_print_to_a_fixed_point
+        PASS [   1.013s] gob-plan::print_stability a_printer_that_changes_the_tree_fails_with_a_shrunk_minimal_tree
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.182s] 58 tests run: 58 passed, 401 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -p frob-tests -p gob-dev -p gob-exec -p gob-plan -p grimble-model -E '(package(=frob-obligations) & (test(=a_frob_doc_line_between_a_doc_block_and_its_item_does_not_raise_doc001) | test(=accept_attestation_is_checked_against_frob_lock) | test(=accept_with_a_bad_reason_raises_exc001_but_still_suppresses) | test(=an_exception_covers_only_its_bound_symbol) | test(=an_untested_public_csharp_method_is_a_cov001_finding_and_a_tested_one_is_not) | test(=cov001_counts_a_test_in_another_file_and_a_cross_file_call) | test(=cov001_covers_a_cross_crate_path_call_through_a_use_import) | test(=cov001_external_path_call_does_not_poison_same_named_methods) | test(=cov001_is_unresolved_when_a_test_reaches_an_unresolved_call_naming_the_item) | test(=cov001_never_covers_a_genuinely_ambiguous_cross_crate_call) | test(=cov001_path_qualifier_poisons_only_the_named_type) | test(=cov001_qualifierless_unknown_call_keeps_the_broad_match) | test(=cov001_unit_struct_value_types_its_receiver_and_covers_the_method) | test(=cov001_unknown_receiver_is_never_falsely_covered) | test(=cov001_unknown_receiver_poisons_methods_but_not_free_functions) | test(=cov003_is_declared_but_never_emitted) | test(=crlf_checkout_under_autocrlf_keeps_an_accept_attested_but_a_real_edit_does_not) | test(=csharp_files_are_counted_as_cov001_subjects) | test(=defer_bound_to_a_done_ticket_raises_exc003_and_lists_the_suppressed_finding) | test(=defer_to_an_open_ticket_suppresses_quietly_and_a_missing_one_is_exc007) | test(=evaluate_file_runs_the_per_file_rules_on_toml_text) | test(=exc::tests::a_defer_still_parks_an_unresolved_finding) | test(=exc::tests::an_accept_cannot_park_an_unresolved_finding) | test(=exc::tests::only_a_past_defer_day_lapses) | test(=file_level_accept_covers_the_whole_file) | test(=inv001_is_satisfied_by_a_directive_in_another_file) | test(=inv002_reports_a_forbidden_import_from_frob_toml) | test(=ledger_rules_stay_silent_without_a_ledger) | test(=native::tests::finds_rust_zizmor_and_eslint_suppressions) | test(=native::tests::only_id_map_targets_are_bound))) | (package(=frob-tests) & (test(=a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip) | test(=run_groups_selected_tests_by_member_and_maps_results_back_to_units) | test(=the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies))) | (package(=gob-dev) & (test(=check_reports_stale_and_missing_files_without_writing) | test(=committed_pages_have_no_orphans_on_disk) | test(=crunk_config_reference_and_schema_are_generated_apart_from_frobs) | test(=every_rule_has_a_page_and_every_page_a_rule) | test(=one_required_reason_and_one_polarity) | test(=output_is_deterministic_and_check_passes) | test(=render::rules::tests::fence_grows_past_inner_backticks) | test(=render::rules::tests::page_has_title_table_explanation_examples) | test(=render::rules::tests::page_without_examples_has_no_examples_section) | test(=tests::real_workspace_found_regardless_of_compile_time_path))) | (package(=gob-exec) & (test(=captured_output_is_redacted_and_env_added) | test(=concurrency_is_bounded_by_jobs) | test(=normal_exit_does_not_block_on_pipe_held_by_background_child) | test(=spawn_counter_counts_only_real_spawns) | test(=timeout_kills_group) | test(=timeout_kills_setsid_grandchild_and_returns_promptly) | test(=timeout_leaves_no_grandchild) | test(=unlisted_program_is_not_allowed))) | (package(=gob-plan) & (test(=a_printer_that_changes_the_tree_fails_with_a_shrunk_minimal_tree) | test(=a_printer_that_never_settles_fails_with_a_shrunk_minimal_example) | test(=executor_connectives_follow_the_kleene_tables) | test(=generated_trees_round_trip_and_print_to_a_fixed_point) | test(=the_real_printer_is_stable_over_generated_sizes))) | (package(=grimble-model) & (test(=a_broken_printer_fails_with_a_shrunk_minimal_example) | test(=the_real_formatter_is_stable_over_generated_sizes)))'"
+size = 7379
+status = "measured"
+tests = ["exc::tests::a_defer_still_parks_an_unresolved_finding", "native::tests::finds_rust_zizmor_and_eslint_suppressions", "exc::tests::only_a_past_defer_day_lapses", "exc::tests::an_accept_cannot_park_an_unresolved_finding", "native::tests::only_id_map_targets_are_bound", "csharp_files_are_counted_as_cov001_subjects", "an_untested_public_csharp_method_is_a_cov001_finding_and_a_tested_one_is_not", "a_frob_doc_line_between_a_doc_block_and_its_item_does_not_raise_doc001", "accept_attestation_is_checked_against_frob_lock", "accept_with_a_bad_reason_raises_exc001_but_still_suppresses", "an_exception_covers_only_its_bound_symbol", "cov001_covers_a_cross_crate_path_call_through_a_use_import", "cov001_counts_a_test_in_another_file_and_a_cross_file_call", "cov001_is_unresolved_when_a_test_reaches_an_unresolved_call_naming_the_item", "cov001_path_qualifier_poisons_only_the_named_type", "cov001_external_path_call_does_not_poison_same_named_methods", "cov001_never_covers_a_genuinely_ambiguous_cross_crate_call", "cov001_unit_struct_value_types_its_receiver_and_covers_the_method", "cov001_qualifierless_unknown_call_keeps_the_broad_match", "cov001_unknown_receiver_is_never_falsely_covered", "cov003_is_declared_but_never_emitted", "cov001_unknown_receiver_poisons_methods_but_not_free_functions", "crlf_checkout_under_autocrlf_keeps_an_accept_attested_but_a_real_edit_does_not", "evaluate_file_runs_the_per_file_rules_on_toml_text", "file_level_accept_covers_the_whole_file", "inv001_is_satisfied_by_a_directive_in_another_file", "defer_bound_to_a_done_ticket_raises_exc003_and_lists_the_suppressed_finding", "ledger_rules_stay_silent_without_a_ledger", "inv002_reports_a_forbidden_import_from_frob_toml", "defer_to_an_open_ticket_suppresses_quietly_and_a_missing_one_is_exc007", "render::rules::tests::fence_grows_past_inner_backticks", "render::rules::tests::page_has_title_table_explanation_examples", "render::rules::tests::page_without_examples_has_no_examples_section", "tests::real_workspace_found_regardless_of_compile_time_path", "the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies", "a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip", "run_groups_selected_tests_by_member_and_maps_results_back_to_units", "check_reports_stale_and_missing_files_without_writing", "committed_pages_have_no_orphans_on_disk", "every_rule_has_a_page_and_every_page_a_rule", "crunk_config_reference_and_schema_are_generated_apart_from_frobs", "output_is_deterministic_and_check_passes", "one_required_reason_and_one_polarity", "executor_connectives_follow_the_kleene_tables", "a_broken_printer_fails_with_a_shrunk_minimal_example", "the_real_formatter_is_stable_over_generated_sizes", "captured_output_is_redacted_and_env_added", "spawn_counter_counts_only_real_spawns", "concurrency_is_bounded_by_jobs", "timeout_kills_group", "unlisted_program_is_not_allowed", "timeout_kills_setsid_grandchild_and_returns_promptly", "timeout_leaves_no_grandchild", "normal_exit_does_not_block_on_pipe_held_by_background_child", "a_printer_that_never_settles_fails_with_a_shrunk_minimal_example", "the_real_printer_is_stable_over_generated_sizes", "generated_trees_round_trip_and_print_to_a_fixed_point", "a_printer_that_changes_the_tree_fails_with_a_shrunk_minimal_tree"]
+at = "2026-10-11T00:31:17Z"
+actor = "lognd"
+rev = 1

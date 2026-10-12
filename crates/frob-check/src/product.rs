@@ -7,13 +7,16 @@ use frob_ack::{Affect001, Drift001, Drift002, Drift003};
 use frob_lease::{LeaseConfig, LeaseStore};
 use frob_ledger::TicketId;
 use frob_ledger::guards::{LeaseCheck, NoLeases};
-use frob_ledger::rules::{Tick001, Tick003, Tick004, Tick005};
+use frob_ledger::rules::{Tick001, Tick003, Tick004, Tick005, Tick007, Tick008, Tick009};
 use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
 use frob_pm::rules::cycle::Pm036;
+use frob_pm::rules::cycle_plan::{Pm010, Pm011, Pm012};
+use frob_pm::rules::good_first::Pm031;
 use frob_pm::rules::membership::Pm034;
 use frob_pm::rules::milestone::{Pm001, Pm002};
+use frob_pm::rules::pm032::Pm032;
 use frob_pm::rules::replenish::Pm033;
 use frob_pm::rules::wip::Pm013;
 use frob_release::rel001::Rel001;
@@ -45,6 +48,8 @@ pub struct Frob {
     siblings: Siblings,
     /// Paths of the `--ticket` branch diff, recorded by the scoped rules for the text view.
     diff: std::sync::Mutex<Option<std::collections::BTreeSet<String>>>,
+    /// The `--ticket` cone (scope files plus dependents), recorded by the scoped rules.
+    cone: std::sync::Mutex<Option<std::collections::BTreeSet<String>>>,
 }
 
 impl Frob {
@@ -54,7 +59,17 @@ impl Frob {
             opts,
             siblings: Siblings::default(),
             diff: std::sync::Mutex::new(None),
+            cone: std::sync::Mutex::new(None),
         }
+    }
+
+    // frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH
+    /// The affected cone of the last `--ticket` run: the ticket's files plus their dependents, unresolved calls included; `None` outside `--ticket`.
+    pub fn cone_paths(&self) -> Option<std::collections::BTreeSet<String>> {
+        self.cone
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
     }
 
     // frob:ticket 01M413V8CDKKBSBV8JDV92VDGB
@@ -135,10 +150,26 @@ fn ledger_of<'a>(
     }
 }
 
+/// The metas of the `TICK` rules that `ledger_findings` evaluates.
+// frob:ticket 01M3ZX86ZX0SCN2FHTDBQF97FD
+fn ledger_rule_metas() -> Vec<&'static gob_rules::RuleMeta> {
+    vec![
+        Tick001.meta(),
+        Tick003.meta(),
+        Tick004.meta(),
+        Tick005.meta(),
+        Tick007.meta(),
+        Tick008.meta(),
+        Tick009.meta(),
+    ]
+}
+
 /// `TICK001` and `TICK003` from the ledger doctor and `TICK004` from the home-path scan (read-only); empty without a ledger.
 // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
 fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
-    const ALL: &[&str] = &["TICK001", "TICK003", "TICK004", "TICK005"];
+    const ALL: &[&str] = &[
+        "TICK001", "TICK003", "TICK004", "TICK005", "TICK007", "TICK008",
+    ];
     // frob:ticket 01M44VQ57WQW4G5JTZDDYEVJPW
     if let Some(why) = &inputs.ledger_missing {
         // One finding for the whole absent ledger, carried by the ledger doctor's first rule.
@@ -160,6 +191,21 @@ fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
             .home_path_findings()
             .map_err(|e| failed(&["TICK004"], e)),
         private_term_findings(inputs, state),
+        // frob:ticket 01M3ZX86R5V67MT726K3X7KVWM
+        state
+            .ledger
+            .reindex_replay_findings()
+            .map_err(|e| failed(&["TICK007"], e)),
+        // frob:ticket 01M3ZX86W1P62F80ZNR17Q0SQ9
+        state
+            .ledger
+            .move_outside_reindex_findings()
+            .map_err(|e| failed(&["TICK008"], e)),
+        // frob:ticket 01M3ZX86ZX0SCN2FHTDBQF97FD
+        state
+            .ledger
+            .misfiled_ticket_findings()
+            .map_err(|e| failed(&["TICK009"], e)),
     ])
 }
 
@@ -230,6 +276,26 @@ fn cycle_findings(inputs: &FrobInputs) -> Vec<Finding> {
         .map_err(|e| failed(ALL, e))])
 }
 
+/// `PM010`-`PM012` findings for the `repo:cycle-plan` group; empty without a ledger or cycles, `[pm]` knobs from `frob.toml`.
+// frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
+fn cycle_plan_findings(inputs: &FrobInputs) -> Vec<Finding> {
+    const ALL: &[&str] = &["PM010", "PM011", "PM012"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
+    };
+    let pm = match frob_pm::PmConfig::load(&inputs.root) {
+        Ok(cfg) => cfg.pm,
+        Err(e) => {
+            return settle([Err(failed(ALL, format_args!("pm config unreadable: {e}")))]);
+        }
+    };
+    settle([frob_pm::rules::cycle_plan::evaluate(&state.ledger, &pm)
+        .map(|e| e.findings)
+        .map_err(|e| failed(ALL, e))])
+}
+
 /// Ticket ids holding a live lease, the liveness input of `PM013`; `None` (every in-progress ticket counts) when the lease store cannot be read.
 // frob:ticket 01M416Z11V5GR012FR47HWFTBP
 fn live_leases(
@@ -279,6 +345,21 @@ fn wip_evaluated(inputs: &FrobInputs, state: &snapshot::LedgerState) -> Evaluate
         .map_err(|e| failed(&["PM013"], e))
 }
 
+/// `PM031` findings for the `repo:good-first` group; empty without a ledger, limit from `[tickets] good_first_max_points`.
+// frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
+fn good_first_findings(inputs: &FrobInputs) -> Vec<Finding> {
+    const ALL: &[&str] = &["PM031"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
+    };
+    let max = frob_pm::rules::good_first::max_points(&inputs.root);
+    settle([frob_pm::rules::good_first::evaluate(&state.ledger, max)
+        .map(|e| e.findings)
+        .map_err(|e| failed(ALL, e))])
+}
+
 /// `PM033` findings for the `repo:replenish` group; ready is `Ledger::doable` under the live lease check, as `ticket doable` computes it.
 // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
 fn replenish_findings(inputs: &FrobInputs, lease_cfg: Option<&LeaseConfig>) -> Vec<Finding> {
@@ -289,6 +370,52 @@ fn replenish_findings(inputs: &FrobInputs, lease_cfg: Option<&LeaseConfig>) -> V
         Err(e) => return settle([Err(e)]),
     };
     settle([replenish_evaluated(inputs, state, lease_cfg)])
+}
+
+/// `PM032` findings for the `repo:good-first-pool` group; the ready pool is `Ledger::doable` under the live lease check, the minimum `[tickets] good_first_min`.
+// frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
+fn good_first_pool_findings(inputs: &FrobInputs, lease_cfg: Option<&LeaseConfig>) -> Vec<Finding> {
+    const ALL: &[&str] = &["PM032"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
+    };
+    let min = frob_pm::rules::pm032::min_ready(&inputs.root);
+    let leases = lease_check(inputs, state, lease_cfg, "PM032");
+    settle([
+        frob_pm::rules::pm032::evaluate(&state.ledger, &*leases, min)
+            .map(|e| e.findings)
+            .map_err(|e| failed(ALL, e)),
+    ])
+}
+
+/// The live lease check for `state`, or one that frees everything (logged) when the lease store cannot be opened.
+// frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
+fn lease_check(
+    inputs: &FrobInputs,
+    state: &snapshot::LedgerState,
+    lease_cfg: Option<&LeaseConfig>,
+    rule: &str,
+) -> Box<dyn LeaseCheck> {
+    let cfg = match lease_cfg {
+        Some(c) => Ok(c.clone()),
+        None => LeaseConfig::load(&inputs.root),
+    };
+    let guard = cfg
+        .map_err(|e| e.to_string())
+        .and_then(|c| {
+            frob_lease::open_store(&inputs.root, c, state.ledger.clock().clone())
+                .map_err(|e| e.to_string())
+        })
+        .and_then(|(store, _)| frob_lease::LeaseGuard::new(store).map_err(|e| e.to_string()));
+    match guard {
+        Ok(g) => Box::new(g),
+        Err(msg) => {
+            tracing::warn!(error = %msg, "lease check unavailable; {rule} counts every doable ticket");
+            Box::new(NoLeases)
+        }
+    }
 }
 
 /// `PM033` for `state`, or the failure when `[pm]` or the ledger cannot be read.
@@ -302,24 +429,7 @@ fn replenish_evaluated(
         .map_err(|e| failed(&["PM033"], format_args!("pm config unreadable: {e}")))?
         .pm
         .ready_min;
-    let cfg = match lease_cfg {
-        Some(c) => Ok(c.clone()),
-        None => LeaseConfig::load(&inputs.root),
-    };
-    let guard = cfg
-        .map_err(|e| e.to_string())
-        .and_then(|c| {
-            frob_lease::open_store(&inputs.root, c, state.ledger.clock().clone())
-                .map_err(|e| e.to_string())
-        })
-        .and_then(|(store, _)| frob_lease::LeaseGuard::new(store).map_err(|e| e.to_string()));
-    let leases: Box<dyn LeaseCheck> = match guard {
-        Ok(g) => Box::new(g),
-        Err(msg) => {
-            tracing::warn!(error = %msg, "lease check unavailable; PM033 counts every doable ticket");
-            Box::new(NoLeases)
-        }
-    };
+    let leases = lease_check(inputs, state, lease_cfg, "PM033");
     frob_pm::rules::replenish::evaluate(&state.ledger, &*leases, ready_min)
         .map(|e| e.findings)
         .map_err(|e| failed(&["PM033"], e))
@@ -332,6 +442,11 @@ impl Product for Frob {
 
     fn name(&self) -> &'static str {
         "frob"
+    }
+
+    // frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+    fn defers_unknown_only(&self) -> bool {
+        true
     }
 
     fn collect(&self, cx: &mut CollectCx<'_>) -> Result<Collected<Self>, CheckError> {
@@ -397,6 +512,26 @@ impl Product for Frob {
                 strict_pm(&s.inputs, cycle_findings(&s.inputs))
             })
             .full_only(),
+            // frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
+            RepoGroup::new(
+                "repo:cycle-plan",
+                vec![Pm010.meta(), Pm011.meta(), Pm012.meta()],
+                |s: &Snapshot<Self>, _| strict_pm(&s.inputs, cycle_plan_findings(&s.inputs)),
+            )
+            .full_only(),
+            // frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
+            RepoGroup::new(
+                "repo:good-first",
+                vec![Pm031.meta()],
+                |s: &Snapshot<Self>, _| good_first_findings(&s.inputs),
+            )
+            .full_only(),
+            // frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
+            RepoGroup::new("repo:good-first-pool", vec![Pm032.meta()], {
+                let lease = self.opts.lease.clone();
+                move |s: &Snapshot<Self>, _| good_first_pool_findings(&s.inputs, lease.as_ref())
+            })
+            .full_only(),
             // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
             RepoGroup::new("repo:replenish", vec![Pm033.meta()], {
                 let lease = self.opts.lease.clone();
@@ -425,12 +560,7 @@ impl Product for Frob {
             ),
             RepoGroup::new(
                 "repo:ledger",
-                vec![
-                    Tick001.meta(),
-                    Tick003.meta(),
-                    Tick004.meta(),
-                    Tick005.meta(),
-                ],
+                ledger_rule_metas(),
                 |s: &Snapshot<Self>, _| ledger_findings(&s.inputs),
             ),
         ]
@@ -462,7 +592,7 @@ impl Product for Frob {
             Some(c) => c.clone(),
             None => LeaseConfig::load(&snap.core.root)?,
         };
-        scope::resolve(snap, reference, table.ticket_hops, lease_cfg)
+        scope::resolve(snap, reference, table.ticket_hops, &table.base, lease_cfg)
     }
 
     fn scoped_rules(
@@ -473,6 +603,10 @@ impl Product for Frob {
     ) -> ScopedFindings {
         let base = self.opts.base.clone().unwrap_or_else(|| table.base.clone());
         let mut diff = None;
+        *self
+            .cone
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(scope.files.clone());
         let mut findings = scope::ticket_rules(snap, scope, &base, &mut diff);
         *self
             .diff
@@ -505,8 +639,14 @@ impl Product for Frob {
         scope_files: Option<&std::collections::BTreeSet<String>>,
     ) {
         let base = self.opts.base.clone().unwrap_or_else(|| table.base.clone());
-        self.siblings
-            .start(&snap.core.root, table, &base, scope_files, &self.opts);
+        self.siblings.start(
+            &snap.core.root,
+            table,
+            &base,
+            scope_files,
+            &snap.core.index.digests,
+            &self.opts,
+        );
     }
 
     fn join_external(

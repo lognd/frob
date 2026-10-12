@@ -1,0 +1,1 @@
+frob check now probes a sibling's --version before passing v2 flags and reports SIB001 incompatible, naming the binary, its version, the required gob.sibling/1 contract and the install remedy, when it finds a v1 tool such as PyPI crunk 0.1.1.

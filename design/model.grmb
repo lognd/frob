@@ -9,6 +9,7 @@ node frob : trusted {
   owns "crates/frob/**";
   may fs.read at "crates/frob*/**";
   may fs.write at "crates/frob*/**";
+  may process.env at "crates/frob*/**";
   may exec at "crates/frob*/tests/**";
 }
 
@@ -19,6 +20,7 @@ node gob : trusted {
   owns "crates/gob-*/**";
   may fs.read at "crates/gob-*/**";
   may fs.write at "crates/gob-*/**";
+  may process.env at "crates/gob-*/**";
   may exec at "crates/gob-*/tests/**";
   may exec at "crates/gob-exec/**";
   may exec at "crates/gob-git/**";
@@ -32,6 +34,7 @@ node grimble : trusted {
   owns "crates/grimble/**";
   may fs.read at "crates/grimble*/**";
   may fs.write at "crates/grimble*/**";
+  may process.env at "crates/grimble*/**";
   may exec at "crates/grimble*/tests/**";
 }
 
@@ -43,6 +46,7 @@ node crunk : trusted {
   owns "crates/crunk/**";
   may fs.read at "crates/crunk*/**";
   may fs.write at "crates/crunk*/**";
+  may process.env at "crates/crunk*/**";
   may exec at "crates/crunk*/tests/**";
 }
 

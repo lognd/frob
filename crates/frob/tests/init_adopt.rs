@@ -1,6 +1,7 @@
 //! `frob init` on repositories of different shapes: the ledger ref and `[check] base` follow the repository's default branch.
 // frob:ticket 01M40FXTW5FYKQWG82PD8STDJR
 // frob:ticket 01M4069Z0HH5RV8TNPFVA936C5
+// frob:ticket 01M4FD03W4D4XZZ3XBP32Q9XFQ
 
 mod common;
 
@@ -202,7 +203,7 @@ fn with_origin_head(dir: &Path, default: &str) {
     );
 }
 
-/// The remote HEAD of origin wins over the checked-out branch; the ledger ref still follows the checkout.
+/// The remote HEAD of origin wins over the checked-out branch, for the base and the ledger ref alike.
 #[test]
 fn init_prefers_the_origin_head_for_base() {
     let dir = repo("feature", true);
@@ -213,7 +214,7 @@ fn init_prefers_the_origin_head_for_base() {
         "{}",
         config_text(dir.path())
     );
-    assert!(config_text(dir.path()).contains("ref = \"refs/heads/feature\""));
+    assert!(config_text(dir.path()).contains("ref = \"refs/heads/develop\""));
 }
 
 /// A detached HEAD with an origin HEAD still detects the base; without one init refuses (ledger ref cannot be named).
@@ -274,4 +275,28 @@ fn init_touches_only_config_files_and_installs_the_driver() {
         !untracked.iter().any(|n| n == "tickets" || n == ".frob"),
         "{untracked:?}"
     );
+}
+
+/// A feature branch with `main` present: the ledger ref names main, not the checkout.
+#[test]
+fn init_on_a_feature_branch_names_main_as_the_ledger_ref() {
+    let dir = repo("main", true);
+    git(dir.path(), &["switch", "-q", "-c", "feature"]);
+    assert_eq!(frob(dir.path(), &["init"]).status.code(), Some(0));
+    let text = config_text(dir.path());
+    assert!(text.contains("ref = \"refs/heads/main\""), "{text}");
+    assert!(base_line(dir.path(), "main"), "{text}");
+}
+
+/// `--ledger-ref` overrides the detected default; a value that is not a branch ref is a usage error.
+#[test]
+fn init_ledger_ref_flag_overrides_and_is_validated() {
+    let dir = repo("main", true);
+    git(dir.path(), &["switch", "-q", "-c", "feature"]);
+    let bad = frob(dir.path(), &["init", "--ledger-ref", "main"]);
+    assert_eq!(bad.status.code(), Some(2), "{}", json(&bad));
+    assert!(!dir.path().join("frob.toml").exists());
+    let out = frob(dir.path(), &["init", "--ledger-ref", "refs/heads/feature"]);
+    assert_eq!(out.status.code(), Some(0), "{}", json(&out));
+    assert!(config_text(dir.path()).contains("ref = \"refs/heads/feature\""));
 }

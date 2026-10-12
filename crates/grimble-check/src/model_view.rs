@@ -9,6 +9,7 @@ use gob_ir::DIGEST_SCHEME;
 use gob_rules::{BoundException, Exception, ExceptionKind, RuleId};
 use grimble_model::ast::{ClauseKind, ExcKind, FileStatus, Spanned, Value};
 use grimble_model::model::{Index, LoadedRoot, load_roots};
+use grimble_model::text::selector_text;
 use grimble_model::{ModelFiles, fold_file, parse_file};
 use serde_json::{Value as Json, json};
 
@@ -73,6 +74,21 @@ pub struct ExceptionRow {
     pub bound: Option<BoundException>,
 }
 
+/// One matrix-build template excuse (grmb-spec 4.7), as listed in `template_excuses`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TemplateExcuseRow {
+    /// The template's full name.
+    pub template: String,
+    /// The excused atom as written.
+    pub atom: String,
+    /// The `for` selector as written (empty when missing, which MDL008 reports).
+    pub selector: String,
+    /// The `because=` text, verbatim (empty when missing).
+    pub because: String,
+    /// `model:TEMPLATE` (pack templates are not loaded yet).
+    pub source: String,
+}
+
 /// How one `.grmb` file was read.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FileRow {
@@ -95,6 +111,8 @@ pub struct ModelView {
     pub entities: Vec<EntityRow>,
     /// Exceptions sorted by file then line.
     pub exceptions: Vec<ExceptionRow>,
+    /// Template excuses sorted by `(template, atom)`.
+    pub template_excuses: Vec<TemplateExcuseRow>,
     /// One row per file, sorted by path.
     pub file_rows: Vec<FileRow>,
 }
@@ -185,6 +203,25 @@ fn exception_row(x: &grimble_model::ast::Exception, site: &Site<'_>) -> Exceptio
     }
 }
 
+fn template_excuse_row(
+    template: &str,
+    x: &grimble_model::ast::TemplateExcuse,
+) -> TemplateExcuseRow {
+    let because = x
+        .attrs
+        .iter()
+        .find(|a| a.key.text == "because")
+        .and_then(|a| str_of(&a.value))
+        .unwrap_or_default();
+    TemplateExcuseRow {
+        template: template.to_owned(),
+        atom: x.atom.written(),
+        selector: x.selector.as_ref().map(selector_text).unwrap_or_default(),
+        because,
+        source: format!("model:{template}"),
+    }
+}
+
 fn root_module(root: &LoadedRoot) -> String {
     root.files
         .first()
@@ -229,9 +266,14 @@ fn directives_of(root: &LoadedRoot) -> BTreeMap<(String, String), Vec<DirectiveR
 
 impl ModelView {
     /// Read entities, exceptions and file status out of `files`.
+    #[allow(
+        clippy::too_many_lines,
+        reason = "one pass over entities, exceptions and template excuses per root"
+    )]
     pub fn build(files: &ModelFiles) -> Self {
         let mut entities: BTreeMap<(String, String, usize), EntityRow> = BTreeMap::new();
         let mut exceptions: BTreeMap<(String, usize), ExceptionRow> = BTreeMap::new();
+        let mut template_excuses: Vec<TemplateExcuseRow> = Vec::new();
         for root in &load_roots(files) {
             let module = root_module(root);
             let directives = directives_of(root);
@@ -263,6 +305,10 @@ impl ModelView {
                     renamed_from,
                 };
                 entities.insert((anchor, parsed.path.clone(), e.span.start), row);
+                template_excuses.extend(e.clauses.iter().filter_map(|c| match &c.kind {
+                    ClauseKind::Excuse(x) => Some(template_excuse_row(&rec.full, x)),
+                    _ => None,
+                }));
                 for c in &e.clauses {
                     if let ClauseKind::Exception(x) = &c.kind {
                         let site = Site {
@@ -316,8 +362,12 @@ impl ModelView {
             .map(|(path, bytes)| file_row(path, bytes))
             .collect();
         file_rows.sort_by(|a, b| a.path.cmp(&b.path));
+        template_excuses.sort_by(|a, b| {
+            (&a.template, &a.atom, &a.selector).cmp(&(&b.template, &b.atom, &b.selector))
+        });
         let view = Self {
             files: files.files.len(),
+            template_excuses,
             entities: entities.into_values().collect(),
             exceptions: exceptions.into_values().collect(),
             file_rows,
@@ -326,6 +376,7 @@ impl ModelView {
             files = view.files,
             entities = view.entities.len(),
             exceptions = view.exceptions.len(),
+            template_excuses = view.template_excuses.len(),
             "model view built"
         );
         view
@@ -337,6 +388,22 @@ impl ModelView {
             .iter()
             .enumerate()
             .filter_map(|(i, e)| e.bound.as_ref().map(|b| (i, b)))
+            .collect()
+    }
+
+    /// The `template_excuses` array of the sibling document, sorted by `(template, atom)`.
+    pub fn template_excuses_json(&self) -> Vec<Json> {
+        self.template_excuses
+            .iter()
+            .map(|t| {
+                json!({
+                    "template": t.template,
+                    "atom": t.atom,
+                    "selector": t.selector,
+                    "because": t.because,
+                    "source": t.source,
+                })
+            })
             .collect()
     }
 

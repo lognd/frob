@@ -1,6 +1,6 @@
 # frob v1 gates and rule inventory (input to the Rust v2 redesign)
 
-Source of truth read: /home/logan/projects/frob (read-only). Main sources:
+Source of truth read: <frob-v1> (read-only). Main sources:
 `src/frob/gates/_waive.py::_KNOWN_GATE_RULES` (rule registry),
 `src/frob/gates/__init__.py` (`_ALL_GATES`, `_GATE_STAGE_GROUPS`,
 `_build_process_jobs`, `REPO_WIDE_GATES`), `frob.toml [gates.severity]`,

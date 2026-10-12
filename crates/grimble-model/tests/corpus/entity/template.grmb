@@ -1,0 +1,19 @@
+grimble = "2";
+module m;
+
+template gen_proto {
+  excuse net.listen
+    for kind(function) & lang(rust) & attr(generated_by = "protoc")
+    because="generated stubs declare a server trait but never bind a socket";
+  excuse fs.write
+    for "crates/*/src/gen/**" & lang(rust)
+    because="build-time generated code only writes under OUT_DIR";
+}
+template no_because {
+  excuse net.listen for lang(rust);
+}
+template no_for {
+  excuse net.listen because="no selector";
+}
+template empty {
+}

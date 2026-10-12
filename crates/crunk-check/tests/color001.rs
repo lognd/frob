@@ -134,3 +134,26 @@ fn a_failing_role_pair_is_reported_at_the_spec() {
         hit.message
     );
 }
+
+/// A spec-only project: a valid `crunk.toml` and nothing to ingest.
+// frob:ticket 01M4DYPH29YAN8DBKAKKCDWQGX
+// frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
+#[test]
+fn a_spec_only_project_gets_a_required_unresolved_from_color001() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "crunk.toml", spec());
+    let report = run(dir.path(), &CheckOptions::default())
+        .expect("run")
+        .report;
+    let hit = report
+        .findings
+        .iter()
+        .find(|f| f.rule.as_str() == "COLOR001")
+        .expect("COLOR001 is not silent on a spec-only project");
+    assert_eq!(hit.severity, gob_rules::Severity::Unresolved, "{hit:?}");
+    assert!(
+        hit.message.contains("examined zero subjects"),
+        "{}",
+        hit.message
+    );
+}

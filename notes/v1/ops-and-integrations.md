@@ -1,6 +1,6 @@
 # frob v1 inventory: ops, integrations, config, and performance evidence
 
-Scope: everything in v1 (Python, /home/logan/projects/frob, read-only) that is NOT tickets, gates, graph/lang, strata,
+Scope: everything in v1 (Python, <frob-v1>, read-only) that is NOT tickets, gates, graph/lang, strata,
 or the CLI-surface inventory. Written for the Rust redesign. ASCII only. Sources: src/frob/, docs/modules,
 docs/guides, docs/commands, .claude/hooks, .github/workflows, .frob/telemetry.jsonl.
 
@@ -564,7 +564,7 @@ and a `frob check` gate (T-1809).
 ### 6.5 .claude/ hooks (14 files, 4,636 lines; registered in .claude/settings.json)
 
 settings.json also sets `worktree.baseRef = head` and hard-codes absolute paths
-(/home/logan/projects/frob/.claude/hooks/...). Registration: PreToolUse 6 entries, PostToolUse 2, SessionStart 2, Stop
+(<frob-v1>/.claude/hooks/...). Registration: PreToolUse 6 entries, PostToolUse 2, SessionStart 2, Stop
 3. Hooks run under system python3 (3.10), so they import nothing from frob.
 
 | Hook | Event / matcher | What it intercepts and does |

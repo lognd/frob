@@ -19,18 +19,22 @@
 //! | `EXC003` | Error | repo | a defer names a done or dropped ticket |
 //! | `EXC005` | Warn | repo | an accept is unattested or its symbol changed since `frob ack` |
 //! | `EXC007` | Error | repo | a defer names a ticket that does not exist |
+//! | `EXC014` | Error | repo | a defer's `until` day has passed (the finding stands again) |
+//! | `EXC016` | Error | repo | an accept names a rule at an Unresolved finding (it does not park it) |
+//! | `EXC017` | Warn | repo | a native suppression of a tool-bound rule has no frob exception |
 //!
-//! The EXC numbers follow the milestone-1 ticket (D36), not the stale and
-//! reattest numbering of the exceptions design table.
+//! The EXC numbers 001 to 007 follow the milestone-1 ticket (D36), not the stale and
+//! reattest numbering of the exceptions design table; 014, 016 and 017 follow the table.
 //!
 //! # Per-file versus repo-level
 //!
 //! [`evaluate_file`] runs the per-file rules (`TODO001`, `DOC001`, `DOC002`,
-//! `REF001`) over one file's text; their result depends on that file alone
+//! `REF001`, `TICK006`) over one file's text; their result depends on that file alone
 //! except where noted, so `frob check` may cache it by file digest.
 //! `REF001` reads the ledger and `DOC002` reads the link targets on disk, so
-//! those two must also fold the ledger tip and the target digests into the
-//! key. [`evaluate_repo`] runs the repo-level rules (`COV001`, `TODO002`,
+//! those two must also fold their side inputs into the key: the file's
+//! unsettled ticket references ([`unsettled_ticket_refs`]) and the target
+//! digests. [`evaluate_repo`] runs the repo-level rules (`COV001`, `TODO002`,
 //! `INV001`, `INV002`) over the whole graph; [`apply_exceptions`] then
 //! suppresses findings and raises the `EXC*` findings. [`evaluate`] does all
 //! three. Files evaluated are the graph's file nodes (Rust and markdown) plus
@@ -52,7 +56,10 @@
 //! is returned in [`Evaluation::suppressed`] with its [`gob_rules::Exception`],
 //! never dropped. An exception stays in force even when it is itself flagged
 //! (`EXC001`, `EXC003`, `EXC005`, `EXC007`), so the gate fails on the
-//! exception, once. The `until` key is not evaluated at milestone 1.
+//! exception, once. A defer whose `until` day (UTC, [`ObligationInputs::today`])
+//! has passed stops suppressing and raises `EXC014`; `until` values holding a
+//! `:` are metric targets and are not evaluated here. An accept never parks an
+//! Unresolved finding: it raises `EXC016` and the finding stands.
 
 mod collect;
 mod comments;
@@ -61,9 +68,11 @@ mod cov;
 mod doc;
 mod exc;
 mod inv;
+mod native;
 mod refs;
 mod rules;
 mod sibling;
+mod tick_paths;
 mod tickets;
 mod todo;
 mod util;
@@ -75,18 +84,21 @@ use frob_ledger::Ledger;
 use gob_directives::DirectiveRecord;
 use gob_languages::Language;
 use gob_lock::LockFile;
-use gob_rules::{Exception, Finding, Rule, RuleMeta};
+use gob_rules::{Exception, Finding, Rule, RuleId, RuleMeta};
 use gob_symbols::{SymbolGraph, Target};
 use gob_text::{FileId, FileInterner};
 
 pub use collect::{CollectError, Collected, collect};
 pub use config::{ForbidImport, InvariantsConfig};
 pub use gob_rules::Resolved;
+pub use native::tool_bound_ids;
+pub use refs::unsettled_ticket_refs;
 pub use rules::{
-    Cov001, Cov003, Doc001, Doc002, Exc001, Exc003, Exc005, Exc007, Inv001, Inv002, Ref001,
-    Todo001, Todo002,
+    Cov001, Cov003, Doc001, Doc002, Exc001, Exc003, Exc005, Exc007, Exc014, Exc016, Exc017, Inv001,
+    Inv002, Ref001, Tick006, Todo001, Todo002,
 };
 pub use sibling::{SiblingException, sibling_exception_findings};
+pub use tick_paths::tick006_reads_ledger;
 
 use tickets::Tickets;
 
@@ -110,6 +122,10 @@ pub struct ObligationInputs<'a> {
     pub files: &'a FileInterner,
     /// The `[invariants]` table.
     pub config: &'a InvariantsConfig,
+    /// The UTC day `until=` dates are compared with, read once from the command's clock.
+    pub today: gob_time::Day,
+    /// Tool ids bound to frob rules by `[[check.tool]]` `id_map`s (see [`tool_bound_ids`]).
+    pub tool_ids: &'a BTreeMap<String, RuleId>,
 }
 
 /// The outcome of a full evaluation.
@@ -157,12 +173,21 @@ fn file_rules(
     out.extend(doc::doc001(inputs.graph, file, path, text));
     out.extend(doc::doc002(inputs.root, file, path, text));
     out.extend(refs::ref001(directives, tickets));
+    // frob:ticket 01M3ZX86MA30ABW915Z943BQYB
+    out.extend(tick_paths::tick006(file, path, text, inputs.ledger));
     out
 }
 
 /// The per-file rule metadata, in evaluation order.
-fn file_rule_metas() -> [&'static RuleMeta; 4] {
-    [Todo001.meta(), Doc001.meta(), Doc002.meta(), Ref001.meta()]
+// frob:ticket 01M3ZX86MA30ABW915Z943BQYB
+fn file_rule_metas() -> [&'static RuleMeta; 5] {
+    [
+        Todo001.meta(),
+        Doc001.meta(),
+        Doc002.meta(),
+        Ref001.meta(),
+        Tick006.meta(),
+    ]
 }
 
 /// Keep the findings whose rule may examine `path`; add Unresolved ones for the rest.
@@ -176,6 +201,7 @@ fn gate_file(
     file: FileId,
     path: &str,
     head: &[u8],
+    text: &str,
     found: Vec<Finding>,
     opaque: &mut BTreeMap<&'static str, (&'static RuleMeta, Vec<String>)>,
 ) -> Vec<Finding> {
@@ -191,7 +217,13 @@ fn gate_file(
             gob_check::SubjectStatus::Examine => {
                 examined.push(meta.id);
                 if let Some(why) = gob_check::hole_caveat(info, meta) {
-                    out.push(gob_check::unresolved_finding(meta, Some(file), path, &why));
+                    // frob:ticket 01M4GKD8WNG2NW2VAR1MBP382J
+                    out.push(match gob_check::locate_hole(path, text) {
+                        Some(site) => {
+                            gob_check::unresolved_finding_at(meta.id, file, path, &why, &site)
+                        }
+                        None => gob_check::unresolved_finding(meta, Some(file), path, &why),
+                    });
                 }
             }
             gob_check::SubjectStatus::NotApplicable(why) => {
@@ -234,7 +266,7 @@ pub fn evaluate_file(
     file_rules(inputs, &tickets, file, path, text, &directives)
 }
 
-/// The repo-level rules (`COV001`, `TODO002`, `INV001`, `INV002`); new files are interned into `files`.
+/// The repo-level rules (`COV001`, `TODO002`, `INV001`, `INV002`, `EXC017`); new files are interned into `files`.
 ///
 /// Findings are raw: exceptions are applied by [`apply_exceptions`].
 pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) -> Vec<Finding> {
@@ -243,6 +275,20 @@ pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) ->
     out.extend(todo::todo002(inputs.directives, &tickets));
     out.extend(inv::inv001(inputs.graph, inputs.directives, files));
     out.extend(inv::inv002(inputs.root, inputs.graph, inputs.config, files));
+    // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
+    // Every exception counts, expired ones included: this result is cached by file digests, which
+    // do not change when the day does, and an expired defer already raises EXC014.
+    let bound: Vec<_> = exc::collect(inputs.graph, inputs.directives, files)
+        .into_iter()
+        .map(|b| b.inner)
+        .collect();
+    out.extend(native::exc017(
+        inputs.root,
+        inputs.graph,
+        files,
+        inputs.tool_ids,
+        &bound,
+    ));
     out
 }
 
@@ -268,6 +314,7 @@ pub fn apply_exceptions(
         inputs.directives,
         files,
         &tickets,
+        inputs.today,
         raw,
     );
     sort_findings(&mut resolved.findings, files);
@@ -309,7 +356,15 @@ pub fn evaluate(inputs: &ObligationInputs<'_>) -> Evaluation {
         let directives = by_path.get(path).map_or(&[][..], Vec::as_slice);
         let found = file_rules(inputs, &tickets, file, path, &text, directives);
         let head = &bytes[..bytes.len().min(4096)];
-        raw.extend(gate_file(inputs, file, path, head, found, &mut opaque));
+        raw.extend(gate_file(
+            inputs,
+            file,
+            path,
+            head,
+            &text,
+            found,
+            &mut opaque,
+        ));
     }
     for (meta, files) in opaque.into_values() {
         let names: Vec<&str> = files.iter().map(String::as_str).collect();
@@ -325,6 +380,7 @@ pub fn evaluate(inputs: &ObligationInputs<'_>) -> Evaluation {
         inputs.directives,
         &files,
         &tickets,
+        inputs.today,
         raw,
     );
     sort_findings(&mut findings, &files);

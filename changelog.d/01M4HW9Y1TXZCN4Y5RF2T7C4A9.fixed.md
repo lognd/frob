@@ -1,0 +1,1 @@
+CAP001 now sees Path.read_text/read_bytes/write_text/write_bytes/open on a Path-typed receiver (inline chain, module-level constant, annotated name) as a Must fs use, treats the same method names on an unresolved receiver as an Unresolved May use, and the Python and Rust fs vocabularies gain the common pathlib, os, shutil, tempfile, std::fs and tokio::fs calls.

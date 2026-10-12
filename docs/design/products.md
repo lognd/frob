@@ -1,6 +1,11 @@
 # Product split: three goblins, one workspace
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Owner direction 2026-10-01: make the
+Status: current
+Owner: gob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Owner direction 2026-10-01: make the
 responsibilities of frob and crunk unmistakable; rename strata (v1 name) into its
 own goblin-named tool; decide whether the structural linter and the
 design model belong together.
@@ -54,7 +59,7 @@ The design goblin is **grimble** (owner: reminiscent of "grumble", what
 you do when you realize you started with a bad design). Binary
 `grimble`, crates `crates/grimble-*`, model files `design/*.grmb`, the
 model language is called grimble too; "strata" survives only as the v1
-name in notes/ and the migration map. Availability checked 2026-10-01:
+name in notes/ (no migration path, D136). Availability checked 2026-10-01:
 free on crates.io and PyPI. Alternatives considered: gnarl (PyPI taken),
 snag and skulk (both taken), krenk (free, too close to crunk).
 

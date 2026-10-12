@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-10T19:18:03Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+inline = ""
+passed = true
+provider = "command"
+ref = """python3 -c 'import sys;fs=["crates/frob-lease/src/config.rs","crates/frob-lease/src/lib.rs","docs/schemas/config.json","docs/reference/config.md"];t=[open(f).read() for f in fs];sys.exit(0 if all("tickets.md section 3, decision D26" in x and "tickets.md section 6" not in x for x in t) else 1)'"""
+size = 0
+status = "measured"
+at = "2026-10-10T19:18:03Z"
+actor = "Claude"
+rev = 1

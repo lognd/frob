@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in repo-wt/KCDWQGX; scope: changelog.d/**, crates/crunk-rules/**, crates/crunk-check/**, docs/design/crunk.md, docs/reference/directives.md, docs/schemas/directives.json; ttl 7200s"
+at = "2026-10-12T02:29:57Z"
+actor = "lognd"
+rev = 1

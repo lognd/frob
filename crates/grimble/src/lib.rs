@@ -10,10 +10,12 @@
 // frob:ticket 01M47QSGHYD2EQ4552V1B4EEQZ
 
 pub mod ack;
+pub mod compile_cmd;
 pub mod doctor;
 pub mod exceptions;
 pub mod fmt_cmd;
 pub mod init;
+pub mod rule_cmd;
 mod workspace;
 
 use std::path::Path;
@@ -75,7 +77,14 @@ impl Product for GrimbleProduct {
         cli.register::<ack::Ack>()
             .register::<init::Init>()
             .register::<fmt_cmd::Fmt>()
+            .register::<compile_cmd::Compile>()
             .register::<exceptions::ExceptionsList>()
+            .register::<rule_cmd::RuleTest>()
+            .register::<rule_cmd::RuleCheck>()
+            .register::<rule_cmd::RuleCatalog>()
+            .register::<rule_cmd::RuleFmt>()
+            // frob:ticket 01M3ZX7HCQYMTNB9S8ANCZA04W
+            .register::<rule_cmd::RuleNew>()
     }
 }
 

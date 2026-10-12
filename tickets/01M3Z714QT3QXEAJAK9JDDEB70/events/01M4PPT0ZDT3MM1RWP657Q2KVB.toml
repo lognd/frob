@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-12T00:04:40Z"
+digest = "4bbb72e9d3f6042d4bed1a2b7aa26c8f2b90fef2d74f33c602abbedf0f7df29f"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID abb64e1f-b9c9-4d1f-8587-8badc7180d77 with nextest profile: default
+    Starting 1 test across 2 binaries (3 tests skipped)
+        PASS [   0.007s] gob-pattern::rules compile_errors_are_typed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-pattern -E 'test(=compile_errors_are_typed)'"
+size = 520
+status = "measured"
+tests = ["compile_errors_are_typed"]
+at = "2026-10-12T00:04:40Z"
+actor = "lognd"
+rev = 1

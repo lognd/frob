@@ -1,6 +1,11 @@
 # The sibling JSON contract (G03)
 
-Status: DRAFT under T-0001 (a v1-format id that migrates with an alias);
+Status: current
+Owner: gob
+Decisions: D28, D97
+Audience: contributor
+
+Provenance: DRAFT under T-0001 (a v1-format id that migrates with an alias);
 written under ticket 01M3Z712PSRGMHPGJ01CMBK6TR (G03). It makes
 grimble-model.md section 9.5 precise: the one document a sibling product
 (grimble, crunk) prints for `check --json`, how frob validates and merges
@@ -13,7 +18,7 @@ Inputs: grimble-model.md 9.3, 9.5, 9.6, 9.7; binding.md (SYS001-SYS012,
 the polarity and Unresolved conditions of 6.13, the capability matrix of
 section 7); grmb-spec.md (entities, anchors in 9.1, MDL001-018);
 cli.md section 2 (the single Unresolved gate, `fail_on_unresolved`, the
-three required reasons); universal-model.md 3.3 and 4 (fidelity, answer
+five required cases); universal-model.md 3.3 and 4 (fidelity, answer
 lattice, polarity); exceptions.md (kinds, opaque `ticket=`, the
 evaluation boundary of D28); notes/review/grimble-review.md H3;
 docs/schemas/envelope.json and the landed `gob-diagnostics` types
@@ -183,7 +188,7 @@ shared part has one definition. Every field is always present.
 | `subjects_examined` | integer | subjects the rule examined in the scope this finding rolls up (universal-model.md 4.2); zero only on a vacuous Unresolved |
 | `reason` | string or null | the Unresolved reason code, a kebab-case word: the conditions of binding.md 6.13 (`unseen-remainder`, `may-only-owner`, `fidelity`, `opaque-cone`, `no-detector`, `index-stale`, `inference-unavailable`, `vacuous`), `annotation-required` and `pack-unavailable` (an enabled data pack could not be loaded, PACK006, packs.md section 9); the codes frob itself uses for a missing sibling (section 6). Null unless `severity` is `unresolved`; the schema enforces both directions |
 | `maybe` | array of strings | for an Unresolved on a P+ rule, the maybe-set `hi` minus `lo` as anchors or symrefs; empty otherwise |
-| `required` | RequiredReason or null | the landed `RequiredReason` (`sibling_missing`, `annotation_required`, `zero_subjects`, `tool_failed`), verbatim; set only on an Unresolved finding. This is the mark of cli.md section 2; the key is mandatory even when null |
+| `required` | RequiredReason or null | the landed `RequiredReason` (`sibling_missing`, `annotation_required`, `zero_subjects`, `evaluation_failed`, `tool_failed`), verbatim; set only on an Unresolved finding. This is the mark of cli.md section 2; the key is mandatory even when null |
 | `file`, `line`, `column` | string or null, integer or null | the landed location: repository-relative path with `/` separators, 1-based line and column; null for a finding with only a logical location |
 | `range` | `{start, end}` or null | byte range of the span in `file` (half-open); frob re-renders spans from it and the file |
 | `anchor` | string or null | logical location, `kind/full-name` or `kind/full-name/clause[i]` (grmb-spec 9.1), for example `node/cli/owns[0]` |
@@ -296,6 +301,17 @@ sibling.json and will move to docs/schemas/grimble-graph.json
   migration frob may accept `[1, 2]` for one release; the sibling prints
   only the major it implements, there is no downgrade negotiation and no
   `--schema-version` flag.
+- Probe first. Before any v2 flag (`--base`, `--ticket-scope`) is passed,
+  frob runs `<sibling> --version` and reads `<product> <major>.<minor>.<patch>`
+  from the first stdout line. A parsed version older than the first release
+  that speaks `gob.sibling/1` (0.532.0, the lockstep release; constant
+  `SIBLING_CONTRACT_SINCE` in `frob-check`) is a v1 tool (the PyPI Python
+  crunk 0.1.x is one): the check verb is never invoked and the finding is
+  `incompatible`, naming the binary found (its path), its version line, the
+  required contract (`gob.sibling/1`) and the remedy `uv tool install
+  --upgrade <product>`. A probe that cannot run, times out or prints
+  something unrecognised is skipped (logged); the document checks below
+  still decide.
 - A document whose contract name is not `gob.sibling`, whose major is
   not accepted, or that does not parse at all, is incompatible. Frob does
   not try to read its findings.
@@ -422,6 +438,18 @@ configured but not installed`, exits 1 under the default
 to a reported Unresolved, and that is a tracked, reviewable config
 change. The same mechanism run by a standalone grimble applies to its
 own required findings (grimble-model.md 9.5).
+
+### 6.1 Skipping a sibling for a ticket
+
+`frob check --ticket` and `frob land` skip a configured sibling whose inputs
+the ticket scope does not touch, instead of paying for a run that cannot find
+anything new. The inputs of a sibling are its config file (`grimble.toml`), its
+pack lock (`<product>.packs.lock`), for grimble its model roots and `.grmb`
+files, and any file of a known code language (Markdown, TOML and YAML do not
+count). A docs-only scope skips; a code scope runs. The skip is reported as a
+warning with a reason, for example `grimble not evaluated: the ticket scope (3
+files) touches none of its inputs`, and the sibling's rules count as not
+evaluated, never as passed. A whole-repository `frob check` never skips.
 
 ## 7. Performance budget
 

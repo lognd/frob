@@ -1,6 +1,11 @@
 # Data packs and the registry drift-lock (G04)
 
-Status: DRAFT under T-0001 (a v1-format id that migrates with an alias);
+Status: draft
+Owner: grimble
+Decisions: D36
+Audience: contributor
+
+Provenance: DRAFT under T-0001 (a v1-format id that migrates with an alias);
 written under ticket 01M3Z712SX9DEEAF4K8ER867TX (G04). It makes
 grimble-model.md section 5 and section 9.6 precise: what a data pack is,
 its file format, where packs live, how a repository pins them, how a

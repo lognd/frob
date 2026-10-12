@@ -3,7 +3,8 @@
 use std::fmt;
 
 /// The digest scheme implemented here (scheme 2, the canonical facet stream).
-pub const DIGEST_SCHEME: u32 = 2;
+// frob:ticket 01M4M52WDAB9VH3PJ2VDF2JFRY
+pub const DIGEST_SCHEME: u32 = gob_caps::DIGEST_SCHEME;
 
 /// A BLAKE3 digest.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]

@@ -1,6 +1,11 @@
 # Enforcing project management
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Owner direction 2026-10-01: enforce good
+Status: current
+Owner: frob
+Decisions: D36
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Owner direction 2026-10-01: enforce good
 project-management practice, not just record it: structured user
 stories for functional goals, velocity-aware cycle commitments, and
 real estimates of time to deploy.
@@ -150,9 +155,12 @@ Milestone 2 or later (D36).
   one; the limit is floored to whole points. `assign` defaults the cycle to the
   open one holding today, else the next planned; a ticket lives in one open or
   planned cycle, so assigning it elsewhere moves it (`remove` then `add`);
-  epics and unestimated tickets are refused. PM010 flags cycles
-  over capacity; PM011 flags a cycle with no goal; PM012 flags stories
-  in a cycle that are not `ready`.
+  epics and unestimated tickets are refused. PM010 (advisory) flags an
+  open or planned cycle committing more points than its capacity, silent
+  while capacity is unenforced; PM011 (warn) flags such a cycle with no
+  goal; PM012 (advisory) flags its not-yet-started members (triage or
+  todo) that fail a `[pm] ready_requires` predicate, naming the failed
+  ones. Closed cycles and started or finished members are not judged.
 - Work comes from the sprint backlog. While a cycle is active and
   `[pm] sprint_gate` is true (the default), `frob work` and `start`
   refuse a ticket that is not a member of the active cycle with
@@ -270,6 +278,13 @@ counted in their own lane, exempt from `in_progress` and capped by
 `[pm.classes] expedite_max` (0 closes the lane, so expedite then counts
 as standard). PM013 fires when live standard holders exceed
 `in_progress` and when live expedite holders exceed `expedite_max`.
+
+The repository-wide tables (`[pm]`, `[pm.wip]`, `[pm.classes]` and
+`[lease]`) are read from `frob.toml` at the ledger ref (`[tickets] ref`),
+not from the worktree copy, so a branch cut before a limit changed
+enforces the current value; the worktree file is used only when the ref
+has none. Per-worktree code config stays per worktree.
+<!-- frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W -->
 
 ## 7. Rule family PM (generated like every other family)
 

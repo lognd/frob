@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-10T16:09:12Z"
+digest = "9688abfbf850af851a0139f1911759b0026c74205510b3930cae1d41f59564ff"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c1950e45-7022-48aa-a4ea-b86dc6104245 with nextest profile: default
+    Starting 1 test across 4 binaries (25 tests skipped)
+        PASS [   0.070s] gob-trust::guard untracked_and_ignored_state_passes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.070s] 1 test run: 1 passed, 25 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-trust -E 'test(=untracked_and_ignored_state_passes)'"
+size = 530
+status = "measured"
+tests = ["untracked_and_ignored_state_passes"]
+at = "2026-10-10T16:09:12Z"
+actor = "Claude"
+rev = 1

@@ -82,10 +82,11 @@ pub use gob_cache::ArtifactKey;
 #[doc(hidden)]
 pub use gob_rules as __rules;
 pub use options::RunOptions;
+pub use packages::public_surface_differs;
 pub use pipeline::run;
 pub use product::{
-    CollectCx, Collected, CountFn, External, NoScope, Product, RepoGroup, RunFn, ScopeView,
-    ScopedFindings, Snapshot,
+    BranchChanges, CollectCx, Collected, CountFn, External, NoScope, Product, RepoGroup, RunFn,
+    ScopeView, ScopedFindings, Snapshot,
 };
 pub use report::{AppliedFix, CheckReport, Counts, FixOutcome, StageTime, Stats, Timing};
 pub use rule_set::RuleSet;
@@ -93,7 +94,8 @@ pub use rules::{
     Ci001, Ci003, Ci006, Ci007, Ci010, Ci014, Perf001, Proc001, Read001, Tool001, Tool002,
 };
 pub use status::{
-    FidelityReport, LanguageFidelity, OtherCopy, SiblingRow, SkippedReport, SubjectStatus,
-    hole_caveat, is_binary, opaque_finding, subject_status, subject_status_for, unreadable_finding,
-    unresolved_finding,
+    FidelityReport, HoleSite, LanguageFidelity, OtherCopy, SiblingRow, SkippedReport,
+    SubjectStatus, hole_caveat, is_binary, locate_hole, opaque_finding, subject_status,
+    subject_status_for, unreadable_finding, unresolved_finding, unresolved_finding_at,
 };
+pub use tools::ToolMemo;

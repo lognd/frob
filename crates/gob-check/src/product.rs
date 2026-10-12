@@ -6,6 +6,7 @@
 //! its scope semantics and how exceptions are parsed.
 
 use std::collections::{BTreeSet, HashMap};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use gob_cache::Cache;
@@ -27,6 +28,20 @@ pub trait ScopeView {
     fn label(&self) -> &str;
     /// Repo-relative files per-file rules and located findings are limited to.
     fn files(&self) -> &BTreeSet<String>;
+    /// What this branch changed since its base, when the scope can tell; tool stages scoped to
+    /// cargo packages narrow to it (frob:ticket 01M4MH62ATTYVEF66Y4C93BJQC).
+    fn changes(&self) -> Option<&BranchChanges> {
+        None
+    }
+}
+
+/// The files a branch changed since its base, and which of them may alter a crate's public API.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct BranchChanges {
+    /// Every repo-relative file changed.
+    pub files: BTreeSet<String>,
+    /// The subset that can change a package's public API: manifests, added or removed Rust files, and Rust files whose public surface differs.
+    pub api: BTreeSet<String>,
 }
 
 /// The scope type of a product without scopes; never constructed.
@@ -105,6 +120,8 @@ pub struct External {
     pub languages: Vec<(String, LanguageFidelity)>,
     /// Non-fatal notes for the report's warnings.
     pub warnings: Vec<String>,
+    /// Ids of every rule the external products reported, for validating `--only` names.
+    pub rule_ids: Vec<String>,
     /// Where each external product's binary was found and its version.
     pub siblings: Vec<crate::SiblingRow>,
 }
@@ -185,6 +202,12 @@ pub trait Product: Sized + Sync {
         format!(".{}", self.name())
     }
 
+    // frob:ticket 01M4FD0EP322SV5ZNXD5SQT8RX
+    /// Directory that receives `telemetry.jsonl`; the state directory under `root` unless a product keeps it out of the worktree.
+    fn telemetry_dir(&self, root: &Path) -> PathBuf {
+        root.join(self.state_dir())
+    }
+
     /// Whether `meta` is one of this product's rules (validates `--only` and picks `must_measure` rules).
     fn includes(&self, meta: &RuleMeta) -> bool {
         meta.product == self.name()
@@ -260,6 +283,14 @@ pub trait Product: Sized + Sync {
         _table: &CheckTable,
         _scope_files: Option<&BTreeSet<String>>,
     ) {
+    }
+
+    // frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+    /// True when `--only` names no rule of this product may still be an external product's rule.
+    ///
+    /// The run then refuses a name that neither this product nor any external stage knows.
+    fn defers_unknown_only(&self) -> bool {
+        false
     }
 
     /// Join the stages started by [`Product::start_external`], timing them outside the budget.

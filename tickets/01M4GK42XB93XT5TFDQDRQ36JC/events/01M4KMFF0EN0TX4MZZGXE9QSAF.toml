@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-model/src/directive.rs", "changelog.d/**"]
+new = ["crates/grimble-model/src/directive.rs", "changelog.d/**", "crates/gob-directives/src/lib.rs"]
+at = "2026-10-10T19:26:14Z"
+actor = "Claude"
+rev = 1

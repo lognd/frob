@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "land overrode a red base CI at bb57f810b3e0 (profile (command budgets) (failure) https://github.com/lognd/frob/actions/runs/38090570849/job/114326038134; rust (ubuntu-latest) (failure) https://github.com/lognd/frob/actions/runs/38090570849/job/114326038086): this ticket repairs the red Docs step of base CI (rustdoc -D warnings, private intra-doc link from ~MBP382J); the profile job is fixed by a follow-up ticket"
+at = "2026-10-10T22:18:56Z"
+actor = "lognd"
+rev = 1

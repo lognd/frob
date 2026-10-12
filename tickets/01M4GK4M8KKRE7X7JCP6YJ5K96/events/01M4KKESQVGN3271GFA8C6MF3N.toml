@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T19:08:23Z"
+digest = "767b032ca5e7de277f3a7fa03acf15c8eeab5bef5c814e2632d14723dc669afe"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b91b125d-e13e-405f-9fa0-f9d9280bcf45 with nextest profile: default
+    Starting 1 test across 2 binaries (13 tests skipped)
+        PASS [   0.014s] gob-lock::lock a_v1_frob_lock_is_named_as_such_with_the_remedy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 1 test run: 1 passed, 13 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-lock -E 'test(=a_v1_frob_lock_is_named_as_such_with_the_remedy)'"
+size = 541
+status = "measured"
+tests = ["a_v1_frob_lock_is_named_as_such_with_the_remedy"]
+at = "2026-10-10T19:08:23Z"
+actor = "Claude"
+rev = 1

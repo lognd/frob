@@ -2786,8 +2786,9 @@ impl<'a> Fold<'a> {
                     } else if outer {
                         lead.docs.push(k);
                     } else {
-                        let orphaned = std::mem::take(&mut lead.docs);
-                        lead.comments.extend(orphaned);
+                        // frob:ticket 01M4FH86F1XAWKC7KQZSH5B4JE
+                        // A plain comment (a `// frob:doc` line included) is whitespace to rustc: the
+                        // `///` block above it still documents the item below.
                         lead.comments.push(k);
                     }
                 }

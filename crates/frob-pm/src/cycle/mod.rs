@@ -5,6 +5,7 @@
 //! [`lifecycle::CycleError`] to a refusal; nothing here touches the ledger.
 
 pub mod assign;
+pub mod history;
 pub mod lifecycle;
 pub mod plan;
 pub mod velocity;

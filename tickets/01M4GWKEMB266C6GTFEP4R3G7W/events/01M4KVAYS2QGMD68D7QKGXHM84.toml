@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T21:26:01Z"
+digest = "4f3f79d0577ee42a4b4fa16e08f6f90da6e85e3a45e92cffcf8c2cfb11d944ce"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized] target(s) in 4.93s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4531fda6-2916-4394-b0c9-3c98c7e07855 with nextest profile: default
+    Starting 1 test across 3 binaries (47 tests skipped)
+        PASS [   0.159s] frob-worktree::work work_takes_the_repository_wip_limit_from_the_base_ref_not_the_worktree_copy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.160s] 1 test run: 1 passed, 47 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -E 'test(=work_takes_the_repository_wip_limit_from_the_base_ref_not_the_worktree_copy)'"
+size = 698
+status = "measured"
+tests = ["work_takes_the_repository_wip_limit_from_the_base_ref_not_the_worktree_copy"]
+at = "2026-10-10T21:26:01Z"
+actor = "Claude"
+rev = 1

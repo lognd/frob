@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T02:12:50Z"
+digest = "22205f372f68f65ba1e0b375fba06085293bf9371fb9a08e3babd1fa62eccea8"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 00a76f49-d599-4e67-aa75-57d710755cb0 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.028s] grimble-lints err::tests::handlers_that_log_rethrow_or_catch_a_specific_type_are_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.029s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints -E 'test(=err::tests::handlers_that_log_rethrow_or_catch_a_specific_type_are_clean)'"
+size = 561
+status = "measured"
+tests = ["err::tests::handlers_that_log_rethrow_or_catch_a_specific_type_are_clean"]
+at = "2026-10-11T02:12:50Z"
+actor = "lognd"
+rev = 1

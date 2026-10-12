@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T19:18:03Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+inline = ""
+passed = true
+provider = "command"
+ref = '''python3 -c 'import re,sys;idx=open("docs/README.md").read();ok=all(re.search(r"^# [^\n]*\n\nStatus: current\nOwner: \w+\nDecisions: [^\n]+\nAudience: \w+\n",open("docs/design/"+f).read()) is not None and re.search(r"\]\(design/"+re.escape(f)+r"\)[^\n]*\| current \|",idx) is not None for f in ["README.md","tickets.md","cli.md","build-test-ci.md"]);sys.exit(0 if ok else 1)''''
+size = 0
+status = "measured"
+at = "2026-10-10T19:18:03Z"
+actor = "Claude"
+rev = 1

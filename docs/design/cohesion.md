@@ -1,11 +1,16 @@
 # Function cohesion ("one job per function"), type precision and directive admission (D118-D121)
 
-Owner: grimble. The COH rules live beside NEAT in grimble-lints (they
+Status: draft
+Owner: grimble
+Decisions: D118-D121
+Audience: rule author
+
+Ownership note: grimble. The COH rules live beside NEAT in grimble-lints (they
 judge code structure, not work accounting; products.md section 1), with
 knobs under `[coh]` in `grimble.toml`. frob runs them only through the
 sibling protocol.
 
-Status: accepted direction, owner questions 2026-10-08: "enforce a one
+Provenance: accepted direction, owner questions 2026-10-08: "enforce a one
 job per function rule, where we don't mix logic; how would you detect
 that in the cross-language linter?" and "do we account for Python being
 typed or untyped; will we ever mark something decidable as undecidable

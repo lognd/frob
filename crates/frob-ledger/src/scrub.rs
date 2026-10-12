@@ -88,7 +88,7 @@ impl Ledger {
         self.require_dir_layout("ticket scrub")?;
         let rules = self.redaction()?.clone().with_home_path();
         let mut report = ScrubReport::default();
-        let ref_name = self.ledger_ref()?;
+        let ref_name = self.ledger_write_ref()?;
         let Some(tip) = self.tip_of(&ref_name)? else {
             return Ok(report);
         };

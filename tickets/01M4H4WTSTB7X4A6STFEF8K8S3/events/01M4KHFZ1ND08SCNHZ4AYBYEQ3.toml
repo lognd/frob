@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-check/src/config.rs", "docs/schemas/config.json", "docs/reference/config.md", "changelog.d/**"]
+new = ["crates/grimble-check/src/config.rs", "docs/schemas/config.json", "docs/reference/config.md", "changelog.d/**", "crates/grimble-check/tests/packs.rs"]
+at = "2026-10-10T18:34:03Z"
+actor = "Claude"
+rev = 1

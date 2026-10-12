@@ -1,6 +1,11 @@
 # Tool binding: bind before own (D122)
 
-Status: accepted direction, owner question 2026-10-08: "I want to be sure
+Status: draft
+Owner: gob
+Decisions: D122
+Audience: contributor
+
+Provenance: accepted direction, owner question 2026-10-08: "I want to be sure
 that we aren't retreading the work of things like ty and ruff ... can we
 use what's already been built and pipe it through our thing?" Evidence:
 notes/research/lint-reuse-research-2026-10-08.md (108 fetched sources;

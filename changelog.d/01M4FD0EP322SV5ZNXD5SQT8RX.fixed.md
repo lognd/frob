@@ -1,0 +1,1 @@
+crunk check no longer writes .crunk/telemetry.jsonl into the worktree (it goes to the shared cache directory under the git dir), and crunk schema now prints the crunk.toml tables with their keys and types, not only the shared tables.

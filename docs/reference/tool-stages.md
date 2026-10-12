@@ -1,5 +1,10 @@
 # Tool stages (`[[check.tool]]`)
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: user
+
 A tool stage runs an external command after the built-in rules of `frob check`. Design: `docs/design/cicd.md` section 3.
 
 | Key | Default | Meaning |
@@ -9,7 +14,7 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | `args` | `[]` | Arguments, no shell. |
 | `timeout_secs` | `300` | Kill limit. |
 | `fail_on_nonzero` | `true` | A failing stage is `TOOL001` (Error); a missing binary is `TOOL001` Unresolved and required. |
-| `parser` | `none` | `zizmor-json-v1` or `actionlint-json`: turn stdout into findings. |
+| `parser` | `none` | `zizmor-json-v1`, `actionlint-json` or `stylelint-json`: turn stdout into findings. |
 | `labels` | `[]` | actionlint runner labels the repository defines. |
 | `id_map` | `{}` | Tool finding id to rule id, merged over the parser default. |
 | `min_version`, `max_version` | unset | Inclusive dotted-number range of trusted tool versions. |
@@ -18,7 +23,7 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 
 ## Parsed stages
 
-With a `parser` the stage exit status no longer decides: tools exit nonzero when they have findings, so only a signal, a timeout or unparseable stdout is a stage failure (`TOOL001`). Findings carry the file and span the tool printed (zizmor byte offsets, actionlint line and column), so `frob:accept` applies to them like native findings (a file whose language frob scans for directives; YAML is not yet one).
+With a `parser` the stage exit status no longer decides: tools exit nonzero when they have findings, so only a signal, a timeout or unparseable stdout is a stage failure (`TOOL001`). Findings carry the file and span the tool printed (zizmor byte offsets, actionlint and stylelint line and column), so `frob:accept` applies to them like native findings (a file whose language frob scans for directives; YAML is not yet one).
 
 | Parser | Tool id | Rule | Severity |
 |---|---|---|---|
@@ -29,12 +34,18 @@ With a `parser` the stage exit status no longer decides: tools exit nonzero when
 | zizmor | `artipacked` | `CI010` | Advisory |
 | zizmor | any other id | `TOOL002` | Advisory |
 | actionlint | every kind | `CI014` | Warn |
+| stylelint | `no-descending-specificity`, `selector-max-compound-selectors`, `selector-max-specificity` | `WCSS001` | Advisory |
+| stylelint | `selector-max-id` | `WCSS002` | Advisory |
+| stylelint | `declaration-no-important` | `WCSS003` | Advisory |
+| stylelint | any other id | `TOOL002` | Advisory |
+
+stylelint runs as `stylelint --formatter json` (exit 2 for lint errors is a normal exit; the stage exit status does not decide). `crunk check` reads `[[check.tool]]` from `crunk.toml`, so the same stage binds under the crunk ids.
 
 actionlint `runner-label` findings are dropped when the label is listed in `labels`; with no `labels` configured they are Advisory (they cannot be told apart from custom-label noise); with `labels` configured and the label absent they stay Warn. The filter runs inside frob, so the tool needs no config file.
 
 ## Version range and schema lag
 
-The version is read with `version_args` (default `--version` for zizmor, `-version` for actionlint). Outside `min_version`..`max_version`, or unreadable while a range is set, the stage is skipped and yields one `TOOL001` Unresolved finding saying schema lag. It is not a required Unresolved, so it never fails the default gate.
+The version is read with `version_args` (default `--version` for zizmor and stylelint, `-version` for actionlint). Outside `min_version`..`max_version`, or unreadable while a range is set, the stage is skipped and yields one `TOOL001` Unresolved finding saying schema lag. It is not a required Unresolved, so it never fails the default gate.
 
 ## Running behind uvx
 

@@ -1,5 +1,10 @@
 # Changelog fragments
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: contributor
+
 Every user-visible change carries one fragment in `changelog.d/`. At release,
 `frob release changelog --version X` compiles them into a new section at the top
 of `CHANGELOG.md` and removes them. `CHANGELOG.md` is never hand-edited between
@@ -42,14 +47,16 @@ that succeeds.
 
 `frob ticket fragment TICKET [--type T] [--sentence S] [--force]` writes the file
 into the ticket's worktree. Without `--sentence` the text defaults to
-`frob: <ticket title>.`, except for `bug`, `security` and `incident` tickets: their
+`<ticket title>.` with no product prefix, except for `bug`, `security` and `incident` tickets: their
 titles describe the problem, so the verb exits 2 and shows
 `frob ticket fragment TICKET --sentence "<what changed for the user>"`.
+A repository that wants a prefix on every skeleton sets `[release] fragment_prefix`
+in `frob.toml` (for example `"frob: "`); it defaults to empty.
 
 ## Section shape
 
 ```text
-## 0.532.0 - 2026-10-03
+## X.Y.Z - YYYY-MM-DD
 
 Read this before upgrading. (~R8CA0D, 01M4069QWSJEH5KW8K0YR8CA0D)
 
@@ -59,7 +66,7 @@ Read this before upgrading. (~R8CA0D, 01M4069QWSJEH5KW8K0YR8CA0D)
 
 - Added a thing. (~R8CA0D, 01M4069QWSJEH5KW8K0YR8CA0D)
 
-<!-- frob-section: 0.532.0 blake3:<hash> -->
+<!-- frob-section: X.Y.Z blake3:<hash> -->
 ```
 
 The lead notice comes first, above the product headings. The rest is grouped by product (frob, gob, grimble, crunk), then by type, then

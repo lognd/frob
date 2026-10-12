@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: Claude in repo-wt/32Q9XFQ; scope: crates/frob/**, crates/frob-ledger/**, changelog.d/**; ttl 7200s"
+at = "2026-10-10T19:47:49Z"
+actor = "Claude"
+rev = 1

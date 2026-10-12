@@ -170,6 +170,7 @@ fn account<P: Product>(
         let scanned = product.scans_text(path);
         let file = snap.core.index.ids.get(path).copied();
         let mut examined = false;
+        let mut hole_site: Option<Option<crate::status::HoleSite>> = None;
         let mut unresolved: Vec<&str> = Vec::new();
         let mut family_total: BTreeMap<&str, (usize, usize)> = BTreeMap::new();
         for rule in rules {
@@ -182,13 +183,28 @@ fn account<P: Product>(
                     examined = true;
                     if let Some(why) = hole_caveat_of(&info, &rule.applies) {
                         unresolved.push(rule.id);
-                        acc.findings.push(unresolved_finding_for(
-                            rule.id,
-                            file,
-                            path,
-                            &why,
-                            UnresolvedReason::Partial,
-                        ));
+                        // frob:ticket 01M4GKD8WNG2NW2VAR1MBP382J
+                        let site = file.zip(
+                            hole_site
+                                .get_or_insert_with(|| {
+                                    std::fs::read_to_string(snap.core.root.join(path))
+                                        .ok()
+                                        .and_then(|t| crate::status::locate_hole(path, &t))
+                                })
+                                .as_ref(),
+                        );
+                        acc.findings.push(match site {
+                            Some((file, site)) => crate::status::unresolved_finding_at(
+                                rule.id, file, path, &why, site,
+                            ),
+                            None => unresolved_finding_for(
+                                rule.id,
+                                file,
+                                path,
+                                &why,
+                                UnresolvedReason::Partial,
+                            ),
+                        });
                     }
                 }
                 SubjectStatus::NotApplicable(why) => {

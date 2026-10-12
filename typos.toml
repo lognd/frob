@@ -19,6 +19,10 @@ extend-exclude = [
   "tests/crunk-parity/fixtures/**",
 ]
 
+# ULID fragment names under changelog.d/ are random; a ULID can spell a word (TEH).
+[default]
+extend-ignore-identifiers-re = ["[0-9A-HJKMNP-TV-Z]{26}"]
+
 # Deliberate tokens; each group says why it is not a typo.
 [default.extend-words]
 # Rule-id and language-name fragments, short identifiers and test inputs.
@@ -28,6 +32,7 @@ fo = "fo"          # short identifier in the grimble fold code
 caf = "caf"        # short identifier and cafe-style fixture word in tests
 ket = "ket"        # fragment of an identifier/hash literal in tests and docs
 wya = "wya"        # fragment of a hash literal in release code
+wheres = "wheres"  # plural of a GRL `where` clause in the lowering code (gob-plan), not 'whereas'
 ot = "ot"          # fragment in the TypeScript fold test data
 rela = "rela"      # fragment of the relative-path status parser in gob-git
 abl = "abl"        # fragment in the mirror model notes

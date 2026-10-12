@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a doc linking `https://github.com/o/r/blob/frob-tickets/parser-rewrite/x.md`, when check runs, then TICK004 fires and `--fix` rewrites it to the ticket ULID", "Given generated pages that use relative paths, when check runs, then TICK004 does not fire"]
+new = ["Given a doc linking `https://github.com/o/r/blob/frob-tickets/parser-rewrite/x.md`, when check runs, then TICK006 fires and `--fix` rewrites it to the ticket ULID", "Given generated pages that use relative paths, when check runs, then TICK006 does not fire"]
+moved = [0, 0]
+at = "2026-10-11T18:43:47Z"
+actor = "lognd"
+rev = 1

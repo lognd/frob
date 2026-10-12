@@ -382,6 +382,50 @@ fn guard_hides_overlapping_tickets() {
     );
 }
 
+// frob:ticket 01M4MGNX6AWFK18T5YJ566VMKA
+// frob:tests crates/frob-lease/src/guard.rs::LeaseGuard
+/// `ticket doable` asks the guard once per candidate: 2,000 candidates against 8 live leases
+/// must stay interactive (a debug build took about 9 s before compiled globs were reused).
+#[test]
+fn guard_answers_two_thousand_candidates_quickly() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    for c in 0..40 {
+        for f in 0..5 {
+            write(dir.path(), &format!("crates/c{c}/src/f{f}.rs"));
+        }
+    }
+    let store = store_in(dir.path(), LeaseConfig::default());
+    for held in 0..8 {
+        store
+            .acquire(
+                TicketId::mint(),
+                &holder(&format!("h{held}")),
+                &scope(&[&format!("crates/c{held}/**")]),
+            )
+            .expect("lease");
+    }
+    let guard = LeaseGuard::new(store).expect("guard");
+    let started = std::time::Instant::now();
+    let mut free = 0;
+    for n in 0..2000 {
+        let c = n % 40;
+        let globs = [
+            format!("crates/c{c}/**"),
+            format!("crates/c{c}/src/f{}.rs", n % 5),
+            format!("docs/page{}.md", n % 7),
+        ];
+        if guard.is_free(&summary(TicketId::mint()), &globs) {
+            free += 1;
+        }
+    }
+    let took = started.elapsed();
+    assert_eq!(free, 2000 / 40 * 32, "tickets in crates c0..c7 are hidden");
+    assert!(
+        took < std::time::Duration::from_secs(3),
+        "2,000 candidates took {took:?}"
+    );
+}
+
 #[test]
 fn scope001_flags_outside_paths_only() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -1018,4 +1062,78 @@ fn each_scope_is_matched_once_across_many_overlap_checks() {
         4,
         "4 distinct scopes, matched once each"
     );
+}
+
+// frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
+// frob:ticket 01M4KZWDQ2EATVKFDQX16ATP75
+#[test]
+fn lease_config_reads_the_base_ref_over_a_stale_worktree_copy() {
+    use gob_git::{CommitOptions, RelPath, Repo};
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let root = tmp.path();
+    let repo = Repo::init(root).expect("init");
+    repo.commit_paths(
+        "refs/heads/main",
+        &[(
+            RelPath::new("frob.toml").expect("path"),
+            Some(b"[lease]\nttl_secs = 900\n".to_vec()),
+        )],
+        "base config",
+        &CommitOptions {
+            author: Some(("Test".into(), "test@example.com".into())),
+            ..CommitOptions::default()
+        },
+    )
+    .expect("commit");
+    std::fs::write(root.join("frob.toml"), "[lease]\nttl_secs = 60\n").expect("stale");
+    let cfg = LeaseConfig::load_repo_wide(root, "refs/heads/main").expect("load");
+    assert_eq!(cfg.ttl_secs, 900);
+    let unknown = LeaseConfig::load_repo_wide(root, "refs/heads/nope").expect("fallback");
+    assert_eq!(unknown.ttl_secs, 60, "an unresolvable ref keeps the file");
+}
+
+// frob:ticket 01M4GPWWWZFCHYMKYNKB3S3XGJ
+// frob:tests crates/frob-lease/src/config.rs::default_generated_files
+#[test]
+fn a_broad_docs_lease_does_not_block_generated_outputs_or_a_declared_append_only_registry() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "docs/reference/config.md");
+    write(dir.path(), "docs/registry.md");
+    write(dir.path(), "docs/guide.md");
+    let store = store_in(dir.path(), cfg(&["docs/registry.md"]));
+    store
+        .acquire(TicketId::mint(), &holder("a"), &scope(&["docs/**"]))
+        .expect("a holds docs/**");
+    store
+        .acquire(
+            TicketId::mint(),
+            &holder("b"),
+            &scope(&["docs/reference/config.md", "docs/registry.md"]),
+        )
+        .expect("b shares the generated page and the registry");
+    let err = store
+        .acquire(TicketId::mint(), &holder("c"), &scope(&["docs/guide.md"]))
+        .expect_err("a hand-written page stays exclusive");
+    assert!(matches!(err, LeaseError::Held { .. }));
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "docs/reference/config.md");
+    let strict = store_in(
+        dir.path(),
+        LeaseConfig {
+            generated_files: Vec::new(),
+            ..cfg(&[])
+        },
+    );
+    strict
+        .acquire(TicketId::mint(), &holder("a"), &scope(&["docs/**"]))
+        .expect("a");
+    assert!(matches!(
+        strict.acquire(
+            TicketId::mint(),
+            &holder("b"),
+            &scope(&["docs/reference/config.md"])
+        ),
+        Err(LeaseError::Held { .. })
+    ));
 }

@@ -30,7 +30,7 @@ fn is_callable(rec: &SymbolRecord) -> bool {
 }
 
 // frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
-/// Number of test-capable source files (Rust and Python) in `graph`: the subjects `COV001` examines.
+/// Number of test-capable source files (Rust, Python and C#) in `graph`: the subjects `COV001` examines.
 ///
 /// Zero while the walk holds Rust files means the graph came up empty, so a
 /// clean `COV001` would be silence, not a pass.
@@ -41,7 +41,7 @@ pub(crate) fn test_capable_files(graph: &SymbolGraph) -> usize {
         .filter(|r| {
             matches!(
                 Language::detect(r.symref.path()),
-                Some(Language::Rust | Language::Python)
+                Some(Language::Rust | Language::Python | Language::CSharp)
             )
         })
         .count()

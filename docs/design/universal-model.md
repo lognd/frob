@@ -1,6 +1,11 @@
 # The universal structural model (gob-ir)
 
-Status: DRAFT under T-0001; decision D56 is accepted (2026-10-04) and this
+Status: current
+Owner: gob
+Decisions: D56
+Audience: contributor
+
+Provenance: DRAFT under T-0001; decision D56 is accepted (2026-10-04) and this
 file supersedes code-model.md section 5 (now a pointer here). Evidence: notes/research/paradigms.md (202
 languages, 33 families), notes/research/calculi.md (calculi, type
 theories, universal cores, impossibility results),
@@ -288,10 +293,14 @@ its Unresolved sites.
 
 The gate. Unresolved is a finding severity orthogonal to the
 Error/Warn/Advisory threshold; the one mechanism by which it can fail
-a run (`[check] fail_on_unresolved`, the three `required` cases, exit 1)
+a run (`[check] fail_on_unresolved`, the five `required` cases, exit 1)
 is defined in cli.md section 2 and is not restated here. A rule flagged
-`must_measure` in its derive is one of the three required cases when it
-examined zero subjects.
+`must_measure` in its derive that examined zero subjects is the
+`zero_subjects` case. The five are `sibling_missing`,
+`annotation_required`, `zero_subjects`, `evaluation_failed` and `tool_failed`;
+`evaluation_failed` is a rule that could not be evaluated; `tool_failed`
+is a configured tool stage that could not run, exited abnormally, or
+printed output its parser cannot read.
 
 Exceptions and Unresolved. An Unresolved finding can be parked only by
 `defer` (with a ticket) or `baseline`, never by `accept`: accepting a

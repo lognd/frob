@@ -62,6 +62,10 @@ pub enum ToolParser {
     /// SARIF 2.1.0 on stdout (oxlint, Biome, golangci-lint, Roslyn, the eslint SARIF formatter); ids come from the stage `id_map`.
     #[serde(rename = "sarif")]
     Sarif,
+    /// stylelint `--formatter json`: an array of files with line and column warnings.
+    // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
+    #[serde(rename = "stylelint-json")]
+    StylelintJson,
 }
 
 /// One external tool stage: a command run after the built-in rules (`[[check.tool]]`).

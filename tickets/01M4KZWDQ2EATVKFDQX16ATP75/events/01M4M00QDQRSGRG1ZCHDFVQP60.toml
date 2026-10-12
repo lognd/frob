@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-10T22:47:44Z"
+digest = "e3857be35a3b604b181d7fbad56043d95ef30f68568cec2eb125c39cfc48d070"
+exit_code = 0
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+    Finished `test` profile [unoptimized] target(s) in 10.05s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID deacef59-77c4-4536-84bc-a6207ff6314d with nextest profile: default
+    Starting 1 test across 4 binaries (67 tests skipped)
+        PASS [   0.015s] frob-pm::config repo_wide_tables_come_from_the_base_ref_over_a_stale_worktree_copy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 67 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm -E 'test(=repo_wide_tables_come_from_the_base_ref_over_a_stale_worktree_copy)'"
+size = 1186
+status = "measured"
+tests = ["repo_wide_tables_come_from_the_base_ref_over_a_stale_worktree_copy"]
+at = "2026-10-10T22:47:44Z"
+actor = "lognd"
+rev = 1

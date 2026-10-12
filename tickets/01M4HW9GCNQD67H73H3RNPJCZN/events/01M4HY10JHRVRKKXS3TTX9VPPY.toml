@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "land overrode a red base CI at f8601a43f20e (profile (command budgets) (failure) https://github.com/lognd/frob/actions/runs/38019285313/job/114116507869; rust (ubuntu-latest) (failure) https://github.com/lognd/frob/actions/runs/38019285313/job/114116507792): this-ticket-fixes-the-red-base-profile-coverage"
+at = "2026-10-10T03:30:18Z"
+actor = "lognd"
+rev = 1

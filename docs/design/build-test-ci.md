@@ -1,6 +1,11 @@
 # Build, test, docs generation, CI
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Inputs: notes/rust-ecosystem.md sections 1 and
+Status: current
+Owner: frob
+Decisions: D102
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/rust-ecosystem.md sections 1 and
 5, notes/v1/ops-and-integrations.md section 8 (v1 CI: 7 green of the
 last 100 runs, green median 123 minutes).
 
@@ -67,7 +72,7 @@ grimble-model.md 9.7, cicd.md section 6 and migration.md point here.
    orchestration of the sibling stage, G14 grimble-capabilities with the
    cell set of grimble-model.md 9.6, G15 shrink, G16 kernel port, G17
    gob-pattern and GPOL (blocked by the ast-grep `Doc`-over-U spike,
-   rules.md section 3), G18 `grimble migrate`, G19 grimble-serve.
+   rules.md section 3), G18 (was `grimble migrate`; dropped, D136), G19 grimble-serve.
 6. The first ten NEAT rules (neatness.md section 4), then
    `[neat] require_effects` for this repository's public surface.
 7. The GitHub Actions and Dockerfile adapters and the CI and DK rules in
@@ -444,8 +449,10 @@ Master Green at Scale", EuroSys 2019).
    touched files plus their dependency cone: for frob rules the reverse
    closure over the obligation graph, with `Unknown` and `May` edges
    included (an edge that cannot be resolved widens the cone, never
-   narrows it). Cargo stages run over the affected crates and their
-   reverse dependencies; a stage that declares input paths in
+   narrows it). Cargo stages run over the crates the branch changed and their
+   direct reverse dependencies, widening to the transitive closure only
+   for a crate whose public API changed (a manifest, an added or removed
+   Rust file, or a differing `pub` signature against the merge base); a stage that declares input paths in
    `frob.toml` (`dev gen --check` declares the generator inputs) is not
    run or gated when the ticket touches none of them.
 2. **Moving base.** New base commits that touch nothing in the ticket's

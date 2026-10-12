@@ -1,5 +1,6 @@
 //! The fragment skeleton writer: mapping, validity, refusal on existing, force.
 // frob:ticket 01M4069WHH6KXYWDAJD3TXB8SR
+// frob:ticket 01M4FDQXEST75DK0NHDH4P5H15
 
 use frob_release::skeleton::{Request, default_kind, skeleton_text, write};
 use frob_release::{Kind, Mode, Options, SkeletonError, run};
@@ -16,6 +17,7 @@ fn req(root: &std::path::Path, kind: Kind, force: bool) -> Request<'_> {
         ulid: A,
         title: "Land helps with fragments",
         kind,
+        prefix: "",
         text: None,
         force,
     }
@@ -53,7 +55,7 @@ fn writes_a_valid_fragment_from_the_title_that_passes_the_changelog_check() {
     let d = tempfile::tempdir().unwrap();
     let w = write(&req(d.path(), Kind::Changed, false), &resolver).unwrap();
     assert_eq!(w.file, format!("{A}.changed.md"));
-    assert_eq!(w.body, "frob: Land helps with fragments.\n");
+    assert_eq!(w.body, "Land helps with fragments.\n");
     assert_eq!(std::fs::read_to_string(&w.path).unwrap(), w.body);
     let out = check(d.path()).expect("changelog --check accepts the skeleton");
     assert_eq!(out.fragments, vec![w.file]);
@@ -111,6 +113,20 @@ fn an_invalid_text_writes_nothing() {
 // frob:tests crates/frob-release/src/skeleton.rs::skeleton_text
 #[test]
 fn skeleton_text_adds_a_period_only_when_missing() {
-    assert_eq!(skeleton_text("Add a thing"), "frob: Add a thing.");
-    assert_eq!(skeleton_text("Add  a thing!"), "frob: Add a thing!");
+    assert_eq!(skeleton_text("Add a thing", ""), "Add a thing.");
+    assert_eq!(skeleton_text("Add  a thing!", ""), "Add a thing!");
+}
+
+// frob:tests crates/frob-release/src/skeleton.rs::skeleton_text
+#[test]
+fn a_configured_prefix_starts_the_skeleton_and_still_passes_the_check() {
+    assert_eq!(skeleton_text("Add a thing", "frob: "), "frob: Add a thing.");
+    let d = tempfile::tempdir().unwrap();
+    let r = Request {
+        prefix: "frob: ",
+        ..req(d.path(), Kind::Changed, false)
+    };
+    let w = write(&r, &resolver).unwrap();
+    assert_eq!(w.body, "frob: Land helps with fragments.\n");
+    check(d.path()).expect("changelog --check accepts the prefixed skeleton");
 }

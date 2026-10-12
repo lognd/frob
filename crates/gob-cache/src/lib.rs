@@ -106,26 +106,43 @@ pub struct Cache {
     clock: std::sync::Arc<dyn gob_time::Clock>,
 }
 
-/// The default engine fingerprint of the running binary: crate version plus a blake3 digest of the executable's bytes.
+/// Environment variable that, when set to a non-empty value, folds the executable's digest into the engine.
 ///
-/// Build identity, not file identity: a rebuilt binary (upgrade, worktree
-/// build, any source edit) has different bytes, so results cached by another
-/// build are misses, while a byte-identical copy at a new path or with a new
-/// mtime (global install, landing binary) shares the cache. Measured at
-/// runtime (no build script, so editing a low-level crate does not force a
-/// rebuild of everything above it); when the executable is unreadable the
-/// fingerprint is `unknown` and still scoped by the crate version.
-// frob:ticket 01M4GS7C37A8JVNEBMJEWJGM32
+/// For rule development: an edited rule whose `version` was not bumped then cannot reuse
+/// results cached by an older build.
+pub const EXE_IDENTITY_ENV: &str = "FROB_CACHE_EXE_IDENTITY";
+
+/// The engine string for crate `version`, with the executable digest `exe_id` only when strict identity is on.
+// frob:ticket 01M4MGNX1RJNX032GWZ1NN2YCK
+fn engine_string(version: &str, exe_id: Option<&str>) -> String {
+    match exe_id {
+        Some(id) => format!("gob-cache/{version}/exe:{id}"),
+        None => format!("gob-cache/{version}"),
+    }
+}
+
+/// The default engine fingerprint of the running binary: the crate version, plus the executable digest on opt-in.
+///
+/// Every rule result is already keyed by file digest, rule id and rule version, and
+/// callers add their extractor version, so the fingerprint need not change on each
+/// rebuild. Keying on the executable's bytes made every build of the shared target
+/// dir (any worker, any source edit) start with a cold cache: 30k stale rows per
+/// build and a 23 percent hit rate. Set [`EXE_IDENTITY_ENV`] to restore per-build
+/// scoping while editing rules.
+// frob:ticket 01M4MGNX1RJNX032GWZ1NN2YCK
 pub fn default_engine() -> &'static str {
     static ENGINE: OnceLock<String> = OnceLock::new();
     ENGINE.get_or_init(|| {
-        let id = std::env::current_exe()
-            .and_then(|exe| exe_digest(&exe))
-            .unwrap_or_else(|e| {
-                tracing::warn!(error = %e, "executable unreadable; engine fingerprint is unknown");
-                "unknown".to_owned()
-            });
-        let engine = format!("gob-cache/{}/exe:{id}", env!("CARGO_PKG_VERSION"));
+        let strict = std::env::var_os(EXE_IDENTITY_ENV).is_some_and(|v| !v.is_empty());
+        let id = strict.then(|| {
+            std::env::current_exe()
+                .and_then(|exe| exe_digest(&exe))
+                .unwrap_or_else(|e| {
+                    tracing::warn!(error = %e, "executable unreadable; engine fingerprint is unknown");
+                    "unknown".to_owned()
+                })
+        });
+        let engine = engine_string(env!("CARGO_PKG_VERSION"), id.as_deref());
         tracing::debug!(%engine, "default engine fingerprint");
         engine
     })
@@ -218,31 +235,8 @@ fn open_conn(dir: &Path, config: CacheConfig) -> Result<Connection, String> {
 /// Directory under the git common dir that holds frob's per-repository state.
 pub const SHARED_DIR: &str = "frob";
 
-/// The git common directory of the checkout at `root`, read from the filesystem (no git process).
-///
-/// A primary checkout has a `.git` directory; a linked worktree has a `.git` file naming its
-/// private git dir, whose `commondir` file points back at the shared one. Both branches return
-/// the `gob_exec::canonical` form so the two spellings of one directory (8.3 short vs long name
-/// on Windows) agree.
-pub fn git_common_dir(root: &Path) -> Option<PathBuf> {
-    let dot_git = root.join(".git");
-    let meta = std::fs::metadata(&dot_git).ok()?;
-    if meta.is_dir() {
-        return gob_exec::canonical(&dot_git).ok();
-    }
-    let text = std::fs::read_to_string(&dot_git).ok()?;
-    let private = Path::new(text.trim().strip_prefix("gitdir:")?.trim());
-    let private = if private.is_absolute() {
-        private.to_path_buf()
-    } else {
-        root.join(private)
-    };
-    let common = match std::fs::read_to_string(private.join("commondir")) {
-        Ok(rel) => private.join(rel.trim()),
-        Err(_) => private,
-    };
-    gob_exec::canonical(&common).ok()
-}
+// frob:ticket 01M4M52WKHGXADHPQ08J1AS8BJ
+pub use gob_fs::git_common_dir;
 
 /// The repository-wide cache directory for the state directory `state_dir` (for example `.frob`) of `root`.
 ///
@@ -475,6 +469,25 @@ mod tests {
 
     // frob:tests exe_digest
     // frob:ticket 01M4GS7C37A8JVNEBMJEWJGM32
+    #[test]
+    fn engine_is_build_independent_unless_strict() {
+        let lax = engine_string("1.2.3", None);
+        assert_eq!(lax, "gob-cache/1.2.3");
+        // Two builds with different bytes share the lax engine and split the strict one.
+        assert_ne!(
+            engine_string("1.2.3", Some("aa")),
+            engine_string("1.2.3", Some("bb"))
+        );
+        assert_ne!(lax, engine_string("1.2.4", None));
+        // The lax default is what an unconfigured process uses.
+        if std::env::var_os(EXE_IDENTITY_ENV).is_none() {
+            assert_eq!(
+                default_engine(),
+                engine_string(env!("CARGO_PKG_VERSION"), None)
+            );
+        }
+    }
+
     #[test]
     fn exe_digest_follows_content_not_path_or_mtime() {
         let dir = tempfile::tempdir().unwrap();

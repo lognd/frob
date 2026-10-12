@@ -39,23 +39,23 @@ reason = "dev publish moved into ci.yml (~25QHMNX); same shared-workflow call as
 identity = ".github/workflows/ci.yml::jobs.profile.steps"
 symref = ".github/workflows/ci.yml::jobs.profile.steps"
 sig = "f63c0a3294fb97e385bac5723be2574fe7093bca0f2b54424881ff41bc708e24"
-body = "dacff40653f21a456a97a6fb2b5d9f0640c5bfd3972ee4e9e9780fdb53d1bb34"
+body = "54028671b8c784f6757cebd9bad08998b5f556627db0f08ab70b76c1876e2831"
 doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
 attr = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
 contract = "d54656bdc4cbdf9619192a2ebf0bbd2d7caa4480624d54891c42c03c2a60976f"
 acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-10-08T04:17:55.372188144Z"
+acked_at = "2026-10-10T02:19:16.478710526Z"
 
 [[symbol]]
 identity = ".github/workflows/ci.yml::jobs.rust.steps"
 symref = ".github/workflows/ci.yml::jobs.rust.steps"
 sig = "f63c0a3294fb97e385bac5723be2574fe7093bca0f2b54424881ff41bc708e24"
-body = "19a97c10d99d1c2d4d04298054091daccf5e1146d74b6603a673f1e8024a28d2"
+body = "498b87a05ca4048a67dfdf3ba07d9ea9c19afbaa723087b828faf5f3f666ee30"
 doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
 attr = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
 contract = "d54656bdc4cbdf9619192a2ebf0bbd2d7caa4480624d54891c42c03c2a60976f"
 acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-10-06T10:41:29.672273748Z"
+acked_at = "2026-10-10T02:18:11.237003886Z"
 
 [[symbol]]
 identity = ".github/workflows/release.yml::jobs.artifacts.uses"

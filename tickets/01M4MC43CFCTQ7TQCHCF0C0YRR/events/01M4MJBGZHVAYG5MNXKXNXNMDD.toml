@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T04:08:06Z"
+digest = "d5a1a9259f6fc0d3258cc284c5efb4e38e509811c2cdc81e501b4f0470b142e1"
+exit_code = 0
+inline = '''
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized] target(s) in 15.67s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e8382da6-10e0-44da-928c-5f6a8259b020 with nextest profile: default
+    Starting 1 test across 16 binaries (233 tests skipped)
+        PASS [   0.006s] gob-symbols source_model::tests::rust_source_has_a_function_and_a_call_on_line_three
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 233 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(=source_model::tests::rust_source_has_a_function_and_a_call_on_line_three)'"
+size = 1169
+status = "measured"
+tests = ["source_model::tests::rust_source_has_a_function_and_a_call_on_line_three"]
+at = "2026-10-11T04:08:06Z"
+actor = "lognd"
+rev = 1

@@ -281,27 +281,20 @@ fn the_workflows_count_wheels_for_every_pypi_product() {
         read(".github/workflows/build-smoke.yml").contains(&loop_line),
         "build-smoke.yml lacks `{loop_line}`"
     );
-    // The upload job counts the uploaded products: the PyPI list minus the gated crunk.
-    let uploaded: Vec<&str> = names
-        .iter()
-        .map(String::as_str)
-        .filter(|n| *n != GATED_FROM_PYPI)
-        .collect();
-    let upload_line = format!("for product in {}; do", uploaded.join(" "));
     assert!(
-        read(".github/workflows/release.yml").contains(&upload_line),
-        "release.yml lacks `{upload_line}`"
+        read(".github/workflows/release.yml").contains(&loop_line),
+        "release.yml lacks `{loop_line}`"
     );
 }
 
-/// The product whose wheel is built and smoked but not uploaded to `PyPI` while the Python crunk
-/// (lognd/crunk) still publishes that project name (D87, packaging/pypi/BUILDING.md).
-const GATED_FROM_PYPI: &str = "crunk";
+/// The product that ships as a preview; its wheels upload to `PyPI` like the others (D87 lifted,
+/// docs/design/README.md D135, packaging/pypi/BUILDING.md).
+const PREVIEW_PRODUCT: &str = "crunk";
 
 /// Binds: crunk is registered in the release config as a preview product, and the release job
-/// holds the crunk wheels back from the `PyPI` upload until the Python crunk is retired.
+/// uploads its wheels with the others (no hold-back step remains).
 #[test]
-fn crunk_is_a_preview_release_product_whose_wheel_is_not_uploaded_yet() {
+fn crunk_is_a_preview_release_product_whose_wheel_is_uploaded() {
     let cfg: toml::Table = read("frob.toml").parse().unwrap();
     let list = |key: &str| -> Vec<String> {
         cfg["release"][key]
@@ -318,18 +311,12 @@ fn crunk_is_a_preview_release_product_whose_wheel_is_not_uploaded_yet() {
         "[release] products are the product list"
     );
     assert!(
-        list("preview").contains(&GATED_FROM_PYPI.to_owned()),
+        list("preview").contains(&PREVIEW_PRODUCT.to_owned()),
         "crunk ships as a preview"
     );
     let rel = read(".github/workflows/release.yml");
     assert!(
-        rel.contains("-name 'crunk-*.whl' -delete"),
-        "the crunk wheels are held back"
-    );
-    let hold = rel.find("-name 'crunk-*.whl' -delete").unwrap();
-    let count = rel.find("-name \"$product-*.whl\"").unwrap();
-    assert!(
-        hold < count,
-        "the hold-back precedes the per-product upload checks"
+        !rel.contains("-name 'crunk-*.whl' -delete"),
+        "the crunk wheels are no longer held back"
     );
 }

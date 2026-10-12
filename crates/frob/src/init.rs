@@ -1,5 +1,7 @@
 //! `frob init`: materialize config, ignore `.frob/`, install the ledger merge driver.
 
+// frob:ticket 01M4FD03W4D4XZZ3XBP32Q9XFQ
+
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -45,6 +47,8 @@ pub struct Init {
     driver_command: Option<String>,
     /// Rewrite an existing driver that points at a different frob.
     fix_driver: bool,
+    /// Ledger ref to write as `[tickets] ref` instead of the detected default branch.
+    ledger_ref: Option<String>,
 }
 
 /// One file-or-config step of init.
@@ -110,12 +114,16 @@ pub(crate) fn checked_out_branch(repo: &Repo) -> Result<String, CliError> {
     }
 }
 
-/// The ledger ref (`refs/heads/<branch>`) of the checked-out branch.
-fn ledger_ref_of_current_branch(repo: &Repo) -> Result<String, CliError> {
-    Ok(format!("refs/heads/{}", checked_out_branch(repo)?))
+/// The ledger ref (`refs/heads/<branch>`) of the repository's default branch.
+///
+/// A detached `HEAD` is still refused, so a bare checkout never guesses; otherwise the ledger belongs to the
+/// base branch (the remote default, or `main`), not to whichever feature branch init happens to run on.
+fn ledger_ref_of_default_branch(repo: &Repo, root: &Path) -> Result<String, CliError> {
+    checked_out_branch(repo)?;
+    Ok(format!("refs/heads/{}", default_branch(repo, root)?))
 }
 
-/// The repository's default branch: the remote HEAD of `origin` when present, else the checked-out branch.
+/// The repository's default branch: the remote HEAD of `origin` when present, else a local `main`, else the checked-out branch.
 ///
 /// # Errors
 /// A refusal on a detached `HEAD` when there is no `origin` HEAD to fall back on.
@@ -131,6 +139,15 @@ pub(crate) fn default_branch(repo: &Repo, root: &Path) -> Result<String, CliErro
     {
         tracing::info!(branch, "default branch from origin HEAD");
         return Ok(branch.to_owned());
+    }
+    let (main_code, _) = git(
+        &runner,
+        root,
+        &["rev-parse", "--verify", "--quiet", "refs/heads/main"],
+    )?;
+    if main_code == 0 {
+        tracing::info!("default branch from the local main branch");
+        return Ok("main".to_owned());
     }
     let branch = checked_out_branch(repo)?;
     tracing::info!(branch, "default branch from the checked-out branch");
@@ -148,7 +165,7 @@ pub(crate) fn detected_default(
 ) -> Result<Option<toml::Value>, CliError> {
     let text = |s: String| Some(toml::Value::String(s));
     match key {
-        "tickets.ref" => ledger_ref_of_current_branch(repo).map(text),
+        "tickets.ref" => ledger_ref_of_default_branch(repo, root).map(text),
         "check.base" => default_branch(repo, root).map(text),
         "evidence.attesters" => Ok(owner_attesters(repo)),
         _ => Ok(None),
@@ -575,6 +592,12 @@ impl Command for Init {
                 .help("Write this exact merge driver command instead of the resolved one"),
         )
         .arg(
+            gob_cli::clap::Arg::new("ledger-ref")
+                .long("ledger-ref")
+                .value_name("REF")
+                .help("Write this ref (refs/heads/<branch>) as [tickets] ref instead of the default branch"),
+        )
+        .arg(
             gob_cli::clap::Arg::new("fix-driver")
                 .long("fix-driver")
                 .action(gob_cli::clap::ArgAction::SetTrue)
@@ -586,6 +609,7 @@ impl Command for Init {
         Ok(Self {
             driver_command: matches.get_one::<String>("driver-command").cloned(),
             fix_driver: matches.get_flag("fix-driver"),
+            ledger_ref: matches.get_one::<String>("ledger-ref").cloned(),
         })
     }
 
@@ -594,10 +618,20 @@ impl Command for Init {
         let repo = located.require_repo()?;
         let root = &located.root;
         let cfg = FrobConfig::load(root).map_err(|e| config_refusal(&e))?;
+        if let Some(r) = self.ledger_ref.as_deref()
+            && r.strip_prefix("refs/heads/").is_none_or(str::is_empty)
+        {
+            return Err(CliError::Usage(format!(
+                "--ledger-ref `{r}` must name a branch as refs/heads/<branch>"
+            )));
+        }
         let config = sync_config(
             root,
             ctx.dry_run,
-            Some(&|key| detected_default(repo, root, key)),
+            Some(&|key| match (key, self.ledger_ref.as_deref()) {
+                ("tickets.ref", Some(r)) => Ok(Some(toml::Value::String(r.to_owned()))),
+                _ => detected_default(repo, root, key),
+            }),
         )?;
         let gitignore = ensure_gitignore(root, ctx.dry_run)?;
         let (merge_driver, driver, driver_warning) = ensure_merge_driver(

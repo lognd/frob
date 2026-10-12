@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T20:01:18Z"
+digest = "c6c5c6c2796731e6edba057233e77136502f84196110e2ad0b7cbcb83136ffec"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+    Finished `test` profile [unoptimized] target(s) in 37.10s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fdaf445a-3487-49ee-a5e9-bcab6540023c with nextest profile: default
+    Starting 1 test across 7 binaries (21 tests skipped)
+        PASS [   0.060s] crunk-check::telemetry a_crunk_check_leaves_no_state_directory_in_the_worktree
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.060s] 1 test run: 1 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check -E 'test(=a_crunk_check_leaves_no_state_directory_in_the_worktree)'"
+size = 1718
+status = "measured"
+tests = ["a_crunk_check_leaves_no_state_directory_in_the_worktree"]
+at = "2026-10-10T20:01:18Z"
+actor = "Claude"
+rev = 1

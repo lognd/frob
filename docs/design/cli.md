@@ -1,6 +1,11 @@
 # CLI contract and verb surface
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Inputs: notes/v1/cli-surface.md (51 verbs, 243
+Status: current
+Owner: frob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/v1/cli-surface.md (51 verbs, 243
 parser nodes), notes/v1/agent-usage.md (36,610 agent calls over 34
 days; 30,467 process calls over 13 days).
 
@@ -71,9 +76,15 @@ Every verb, every time:
 | 1 | domain negative | false | the caller asked for the verb's yes/no answer as an exit code and the answer is no | `check --fail-on error` (or `[check] fail_on`) with a finding at or above the level; `check` with a required Unresolved finding under `[check] fail_on_unresolved`; `test` when a selected test fails |
 | 2 | usage | false | bad flags, unknown verb, input that fails its schema | `E-USAGE` with did-you-mean |
 | 3 | guard, clears by waiting | true | a guard that clears without caller action; `retry_after_ms` is set | `E-LEASE-HELD` (holder named), land lock held, ledger CAS lost after `[git] cas_retries`, `E-WAIT-TIMEOUT` (a `--wait <secs>` expired before the lock freed) |
-| 3 | guard, needs action | false | a guard that needs the caller to change something; `remedy` is the exact command | `ticket close` with missing evidence (`E-CLOSE-EVIDENCE`), dirty root, empty scope, `cycle assign` over capacity (remedy `--over-commit --reason`), `land` whose check failed (`E-LAND-CHECK`), stale plan token (`E-PLAN-STALE`), a file changed between `check` and `check --fix` (`E-FIX-STALE`, remedy rerun `frob check` then `--fix`) |
+| 3 | guard, needs action | false | a guard that needs the caller to change something; `remedy` is the exact command | `ticket close` with missing evidence (`E-CLOSE-EVIDENCE`), dirty root, `E-STATE-TRACKED` (git tracks a state or cache directory), empty scope, `cycle assign` over capacity (remedy `--over-commit --reason`), `land` whose check failed (`E-LAND-CHECK`), stale plan token (`E-PLAN-STALE`), a file changed between `check` and `check --fix` (`E-FIX-STALE`, remedy rerun `frob check` then `--fix`) |
 | 4 | internal error | false | a bug, with a report path in the envelope | `E-INTERNAL` |
 
+- `E-NO-CONFIG` (exit 3, guard that needs action) is what a verb that
+  reads `frob.toml` gets when the file is absent. The remedy is `frob
+  init` inside a git work tree, or `git init` first when the directory
+  is not in one. The verbs that work without `frob.toml` are `doctor`,
+  `init`, `schema`, `config show`, `config sync` and `merge-driver`, plus
+  `--help` and `--schema` on any verb.
 - There is no "job failed" class in milestone 1: `land` is synchronous
   (D25), so a failed check inside `land` is a guard that needs action.
 - The environment never changes the exit contract. The earlier CI
@@ -89,7 +100,8 @@ Every verb, every time:
   marked `required` fails the gate with exit 1 (a negative domain
   answer), never exit 3, which stays reserved for refusals; `"all"`
   fails on any Unresolved and `"never"` on none. The required
-  Unresolved findings are exactly three: (a) a configured sibling
+  Unresolved findings are five (`sibling_missing`, `annotation_required`,
+  `zero_subjects`, `evaluation_failed` and `tool_failed`): (a) a configured sibling
   product that is unusable, in any of five reasons, all required:
   `absent` (not installed), `incompatible` (`--json` with another
   `schema_version` or a different `[compute]` digest), `failed` (exit 2,
@@ -100,7 +112,11 @@ Every verb, every time:
   `[check] require_siblings`, default true, is what makes a configured
   sibling required; (b) an `annotation-required` opaque on the public
   surface when `[compute]` requires the declaration (universal-model.md
-  4.6); (c) a rule flagged `must_measure` that examined zero subjects.
+  4.6); (c) a rule flagged `must_measure` that examined zero subjects;
+  (d) `evaluation_failed`: a rule that could not be evaluated (an unreadable
+  ledger, config or milestones), so its silence is not a pass; (e) `tool_failed`:
+  a configured tool stage that could not run, exited abnormally, or printed
+  output its parser cannot read.
   Every other Unresolved is reported, counted in the summary, and does
   not fail under `"required"`. The `required` mark travels on the
   finding record and in sibling JSON, so frob applies it to a sibling's
@@ -218,7 +234,7 @@ described in their own files, and are Milestone 2 or later (D36).
 
 | Verb | Product | Crate | Idempotent | Exit codes | M |
 |---|---|---|---|---|---|
-| `init` | frob | frob (bin) | yes, adds only missing knobs; a missing `[tickets] ref` is written as `refs/heads/<checked-out branch>` (an unborn branch counts, a detached HEAD is refused with `E-DETACHED-HEAD`) and a missing `[check] base` is the default branch (the remote HEAD of `origin` when present, else the checked-out branch); `config sync` detects both the same way; an existing value is never changed; the merge driver is written as bare `frob` only when `frob` on PATH (resolved without a shell) is the running executable (same canonical path, else same version), otherwise as the running executable's absolute path, and the output says why; `--driver-command TEXT` overrides; an existing driver that resolves to the running frob is left alone, one that resolves to a different frob is reported and rewritten only with `--fix-driver` | 0 2 3 4 | 1 |
+| `init` | frob | frob (bin) | yes, adds only missing knobs; a missing `[tickets] ref` is written as `refs/heads/<default branch>` and a missing `[check] base` is that default branch: the remote HEAD of `origin` when present, else a local `main`, else the checked-out branch (an unborn branch counts, a detached HEAD is refused with `E-DETACHED-HEAD`); `--ledger-ref refs/heads/<branch>` overrides the ref; `config sync` detects both the same way; an existing value is never changed; the merge driver is written as bare `frob` only when `frob` on PATH (resolved without a shell) is the running executable (same canonical path, else same version), otherwise as the running executable's absolute path, and the output says why; `--driver-command TEXT` overrides; an existing driver that resolves to the running frob is left alone, one that resolves to a different frob is reported and rewritten only with `--fix-driver` | 0 2 3 4 | 1 |
 | `doctor` | frob | frob (bin) | yes; reports a ledger merge driver that resolves to a different frob than the running one (or to nothing) with the exact fix command (`<running frob> init --fix-driver`); reports each sibling binary (`siblings`: location `beside-frob`, `path` or `absent`, its version, and a second copy with a different version, D87); reports each corrupt lease file (`leases.corrupt`: path and parse error) as a warning with its remedy; `--fix` installs the merge driver and moves corrupt lease files aside as `<name>.toml.corrupt` (`leases.quarantined`), never deleting them | 0 2 4 | 1 |
 | `doctor --languages` | frob | frob (bin) | yes, read-only; prints per-language fidelity level, capability precision and the rules that are NotApplicable once per language (universal-model.md 3.3, 4.2) | 0 2 4 | 2 |
 | `init --ci` (open question, cicd.md section 7) | frob | frob (bin) | yes, adds only missing files | 0 2 4 | 2 |
@@ -235,7 +251,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `rule test` (also `grimble rule test`) | frob, grimble | gob-rules | yes, read-only | 0 1 2 4 | 2 |
 | `batch` | frob | frob-ledger | yes, all or nothing | 0 2 3 4 | 2 |
 | `ticket new` | frob | frob-ledger | only with `--idempotency-key` or an identical request | 0 2 3 4 | 1 |
-| `ticket show [--events] [--format md]`, `ticket list [--tree] [--category C]` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
+| `ticket show [--events] [--format md]`, `ticket list [--tree] [--category C] [--full]` (`--full` adds every row's aliases and events in one pass) | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
 | `ticket doable` (policy: lease-aware dispatch order) | frob | frob-lease | yes, read-only | 0 2 4 | 1 |
 | `ticket update\|link\|unlink\|comment\|body\|accept` | frob | frob-ledger | yes, same request | 0 2 3 4 | 1 |
 | `ticket attach\|component` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
@@ -245,6 +261,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `ticket evidence fetch` (the action `fetch` is a positional of `ticket evidence`) | frob | frob-evidence | yes | 0 2 3 4 | 2 |
 | `work [--here]`, `requeue` (top-level: lease and worktree lifecycle) | frob | frob-lease | `work --here` only for the same holder; others get 3 | 0 2 3 4 | 1 |
 | `ticket close\|drop\|reopen` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
+| `ticket closeout --reason TEXT` | frob | frob-ledger | yes; closes done after the fact under the same evidence, changelog and merge guards, takes no lease, and the close reason is prefixed `retroactive closeout: ` so the ticket counts in no cycle's delivery | 0 2 3 4 | 1 |
 | `ticket review` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
 | `ticket reconcile\|doctor` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
 | `merge-driver` (hidden, git invokes it) | frob | frob-ledger | yes, pure union and re-fold | git contract: 0 merged, 1 conflict | 1 |
@@ -270,11 +287,11 @@ described in their own files, and are Milestone 2 or later (D36).
 | `grimble check\|status\|graph\|shrink\|init\|packs` | grimble | grimble-check | yes | 0 1 2 3 4 | 2 |
 | `grimble doctor [--languages]` | grimble | grimble-check | yes, read-only | 0 2 4 | 2 |
 | `grimble fmt` | grimble | grimble-model (the alpha-normal printer) | yes | 0 2 4 | 2 |
+| `grimble compile [PATH...]` | grimble | gob-plan (the GRL checker) | yes, read-only | 0 1 2 4 | 2 |
 | `grimble exceptions list` | grimble | grimble-check over gob-rules | yes, read-only | 0 2 4 | 2 |
 | `grimble ack` | grimble | grimble-bind on gob-lock | yes | 0 2 3 4 | 2 |
 | `grimble vet [--hook]` | grimble | grimble-vet | yes | 0 1 2 4 | 2 (after the G01-G19 cut; build-test-ci.md Milestone 2 item 8) |
 | `grimble explore outline\|map\|xref` | grimble | grimble-check over gob-symbols | yes, read-only | 0 2 4 | 2 |
-| `grimble migrate` | grimble | grimble-model | yes | 0 2 3 4 | 2 |
 | `grimble serve --mcp` | grimble | grimble-serve | not applicable | 0 2 4 | 2 |
 | crunk verbs (notes/crunk.md section 1) | crunk | crunk-* | per crunk | the shared table in section 2 | 2 |
 

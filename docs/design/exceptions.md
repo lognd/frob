@@ -1,6 +1,11 @@
 # Exceptions: waivers, debt, quick fixes, and permanent decisions
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Owner direction 2026-10-02: v1 never had a
+Status: current
+Owner: gob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Owner direction 2026-10-02: v1 never had a
 clean line between a waiver, debt, a quick fix that should expire
 "somehow", and a permanent decision. Evidence: notes/v1/gates-and-rules.md
 sections 15-16 (waive with until, follow_up, permanent, presets, debt,
@@ -50,8 +55,12 @@ Milestone 1 (D36) implements `accept` and `defer` only, with EXC001,
 EXC003, EXC005 and EXC007 (section 6 gives their meaning as built);
 `hotfix`, `baseline`, budgets, the audit and `convert` are Milestone 2
 or later (D36). A flagged exception still suppresses its finding; the
-EXC finding is what fails the gate. The optional `until=` is parsed but
-not evaluated yet.
+EXC finding is what fails the gate, with two exceptions. A `defer` whose
+`until=YYYY-MM-DD` day (UTC, inclusive) has passed no longer suppresses and
+raises EXC014; an `until` holding a `:` is a metric target that only the
+product knowing the metric evaluates. An `accept` on an Unresolved finding
+does not suppress it and raises EXC016. EXC017 reads the tool ids that a
+`[[check.tool]]` `id_map` binds (a parser's built-in map is not read yet).
 
 ## 2. Syntax
 

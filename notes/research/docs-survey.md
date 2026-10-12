@@ -2,7 +2,7 @@
 
 Date: 2026-10-02. Status: research input for the ticket-branch navigation spec (mirror.md
 section 1, open question 3) and for documentation.md. ASCII only. Raw data and scripts live under
-`/tmp/claude-1000/-home-logan-projects-frob-v2/62e4a831-7814-4d7a-bff3-31149f162233/scratchpad/docs/`
+`<scratchpad>/docs/`
 (never in the repo); they are listed in section 9.
 
 ## 0. Honest summary (read this first)
@@ -941,7 +941,7 @@ Where generated docs rot or confuse (observed in the sample and design):
 
 ## 9. Raw data, scripts and reproducibility
 
-All under `/tmp/claude-1000/-home-logan-projects-frob-v2/62e4a831-7814-4d7a-bff3-31149f162233/scratchpad/docs/`:
+All under `<scratchpad>/docs/`:
 
 | Path | What |
 |---|---|

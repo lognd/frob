@@ -5,6 +5,7 @@
 
 // frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
 // frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
+// frob:ticket 01M4H4WTSTB7X4A6STFEF8K8S3
 
 use std::path::Path;
 
@@ -29,7 +30,7 @@ pub struct ExternalPack {
     pub digest: String,
 }
 
-/// Which data packs the repository enables (packs.md 3.6). Packs are not loaded yet.
+/// Which data packs the repository enables (packs.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.
 #[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
 #[config(table = "packs", materialize)]
 pub struct PacksTable {

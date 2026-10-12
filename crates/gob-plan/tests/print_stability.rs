@@ -864,29 +864,6 @@ fn clause() -> BoxedStrategy<Clause> {
     .boxed()
 }
 
-/// A `where` clause straight after an unfiltered `find`/`some`/`no` clause would read back as its
-/// filter; one after a clause that merely ends in an open binding is guarded by the printer.
-fn separate_where_clauses(clauses: Vec<Clause>) -> Vec<Clause> {
-    let mut out: Vec<Clause> = Vec::new();
-    for c in clauses {
-        let unfiltered = out.last().is_some_and(|p| match &p.node {
-            ClauseKind::Find(b) | ClauseKind::Quant { binding: b, .. } => b.filter.is_none(),
-            _ => false,
-        });
-        if unfiltered && matches!(c.node, ClauseKind::Where(_)) {
-            out.push(sn(ClauseKind::Note(Note {
-                target: word("x"),
-                message: Message {
-                    parts: Vec::new(),
-                    span: sp(),
-                },
-            })));
-        }
-        out.push(c);
-    }
-    out
-}
-
 fn type_ref() -> BoxedStrategy<TypeRef> {
     select(vec![
         TypeKind::Int,
@@ -1039,7 +1016,7 @@ fn rule() -> BoxedStrategy<Rule> {
             id,
             slug: strlit(slug),
             headers,
-            clauses: separate_where_clauses(clauses),
+            clauses,
             examples,
             explain: Some(Explain { text, span: sp() }),
             span: sp(),

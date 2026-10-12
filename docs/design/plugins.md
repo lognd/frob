@@ -1,6 +1,11 @@
 # Plugins: one mechanism for the standard library and third parties
 
-Status: ACCEPTED with changes (D76, owner review 2026-10-04, ticket
+Status: draft
+Owner: gob
+Decisions: D76
+Audience: contributor
+
+Provenance: ACCEPTED with changes (D76, owner review 2026-10-04, ticket
 ~J8PJHKX). The changes: GRL is the one rule language (no second source
 form), so it must be intuitive (grl-spec.md, ticket ~4QBTKCK); built-in
 rules are compiled into the binary for speed and treated logically the

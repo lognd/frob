@@ -7,6 +7,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+// frob:ticket 01M4FDQXEST75DK0NHDH4P5H15
 use crate::error::SkeletonError;
 use crate::fragment::{Kind, TicketResolver, files_of, parse_one};
 
@@ -36,6 +37,8 @@ pub struct Request<'a> {
     pub title: &'a str,
     /// Fragment type.
     pub kind: Kind,
+    /// Text put before the title-derived body (`[release] fragment_prefix`); usually empty.
+    pub prefix: &'a str,
     /// Explicit text replacing the title-derived one.
     pub text: Option<&'a str>,
     /// Replace an existing fragment of the ticket.
@@ -55,16 +58,19 @@ pub struct Written {
     pub replaced: Vec<String>,
 }
 
-/// The default body: `frob: <title>.`, with a period added when the title has no end punctuation.
+/// The default body: `<prefix><title>.`, with a period added when the title has no end punctuation.
+///
+/// `prefix` is the repository's `[release] fragment_prefix`; empty by default.
 #[must_use]
-pub fn skeleton_text(title: &str) -> String {
+pub fn skeleton_text(title: &str, prefix: &str) -> String {
+    // frob:ticket 01M4FDQXEST75DK0NHDH4P5H15
     let t = title.split_whitespace().collect::<Vec<_>>().join(" ");
     let end = if t.ends_with(['.', '!', '?']) {
         ""
     } else {
         "."
     };
-    format!("frob: {t}{end}")
+    format!("{prefix}{t}{end}")
 }
 
 /// Validate and write the fragment of `req`; the file is created only when the body passes.
@@ -91,9 +97,10 @@ pub fn write(req: &Request<'_>, resolver: &dyn TicketResolver) -> Result<Written
             file: first.clone(),
         });
     }
-    let text = req
-        .text
-        .map_or_else(|| skeleton_text(req.title), |t| t.trim().to_owned());
+    let text = req.text.map_or_else(
+        || skeleton_text(req.title, req.prefix),
+        |t| t.trim().to_owned(),
+    );
     let body = format!("{text}\n");
     parse_one(&file, &body, resolver).map_err(SkeletonError::Invalid)?;
     fs::create_dir_all(&dir).map_err(|e| SkeletonError::Io(e.to_string()))?;

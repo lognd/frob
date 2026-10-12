@@ -1,6 +1,11 @@
 # Doc consistency: one source, paired sections, checked facts
 
-Status: ACCEPTED as the design (D84, ticket ~2NAP90Y). Evidence:
+Status: draft
+Owner: frob
+Decisions: D84
+Audience: contributor
+
+Provenance: ACCEPTED as the design (D84, ticket ~2NAP90Y). Evidence:
 notes/research/docs-survey.md (1254 repositories; the exemplars ruff, uv,
 jj, clippy, rustc, rust-analyzer generate reference from code, mark it,
 and gate its freshness) and notes/research/docgen-survey.md (the same 1254 repositories: 43 percent

@@ -1,6 +1,11 @@
 # Rules, gates, and the check pipeline
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Ownership after products.md: the rule framework (sections 1, 2, 5, 6) is `gob-rules`; family ownership between frob and grimble is in boundaries.md. Inputs: notes/v1/gates-and-rules.md (667 rule
+Status: current
+Owner: gob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Ownership after products.md: the rule framework (sections 1, 2, 5, 6) is `gob-rules`; family ownership between frob and grimble is in boundaries.md. Inputs: notes/v1/gates-and-rules.md (667 rule
 ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
 
 ## 1. Decisions in one screen
@@ -22,6 +27,13 @@ ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
   side-input digest)`. Repo-wide rules (cycles, dead symbols, dup)
   declare `scope = Repo` and add a graph digest to the key. The cache is
   per worktree (architecture.md section 2), which is what "warm" means.
+  `grimble check` also caches its binding summary on the warm path: the
+  rows of B as document items, the SYS findings and the subject counts.
+  The key is the path and content digest of every walked file, the
+  `grimble.lock` bytes and the `[grimble]` knobs, and the entry is scoped
+  by the engine fingerprint, so another build never reuses it. Any change
+  to a walked file, the lock or a knob is a miss. `grimble ack` still
+  builds the full binding.
 - Severity enum `Error | Warn | Advisory | Unresolved` kept; the exit
   code follows the table in cli.md section 2 (findings alone never fail
   a run; `--fail-on` does, and a required Unresolved does under
@@ -256,7 +268,9 @@ grammar level, with the U level implemented on the same matcher trait
 so combinators behave identically. Status, stated once: version
 compatibility is answered (D42, ast-grep-core 0.45.3 against the
 workspace tree-sitter pin); the remaining spike is an ast-grep `Doc`
-implementation over U terms, and it blocks level-2 rules (G17). A rule
+implementation over U terms; the spike is decided: level 2 uses the in-house matcher of
+`gob-pattern` (kind, role, callee, all, any, not, inside, has), no `Doc` trait (G17a);
+metavariable patterns and fixes follow in G17b. A rule
 authored at level 1
 can be promoted to level 2 by changing `language`, and to level 3 by
 `cargo dev scaffold-rule`, keeping its id and tests.
@@ -363,6 +377,15 @@ section, never dropped.
   fingerprint: (rule id, symref or file path, hash of the normalized
   message), never a line number, so an edit above a baselined finding
   does not make it new.
+- Rule precision ledger (~B2ZBRER). `gob_rules::PrecisionLedger` counts, per
+  rule, findings accepted, waived (`defer`, `hotfix`), dismissed, fixed and
+  still open. The not-useful rate is `(accepted + dismissed)` over every
+  decided finding, in whole percent, and is absent below `MIN_DECIDED` (5)
+  decided findings. `frob check --json` reports the run's rows as
+  `data.precision`; `demotions(ceiling)` names the rules over a ceiling with
+  their numbers. A rule that ships Warn by default needs a measured rate.
+  Recording fixes and dismissals across runs, and the `frob doctor`
+  recommendation, build on this type in later tickets.
 - `--delta` uses a per-checkout `.frob/baseline` of finding fingerprints
   (advisory, untracked), same as v1.
 - `frob land` applies the same fingerprints as a ratchet on the base tip

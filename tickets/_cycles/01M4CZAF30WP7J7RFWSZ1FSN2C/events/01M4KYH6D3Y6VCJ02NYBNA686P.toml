@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4KYH3CT4JRJ2V0HGVVFYE34"
+text = "CI red on experimental: profile step"
+at = "2026-10-10T22:21:56Z"
+actor = "lognd"
+rev = 1

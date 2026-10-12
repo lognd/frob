@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T19:41:04Z"
+digest = "a523032032bc7f90318c8c670663b409fbc876bf4b0eac9820fa5912518e0d3e"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a6894d1f-093e-4580-95ab-705dc35f669b with nextest profile: default
+    Starting 1 test across 5 binaries (14 tests skipped)
+        PASS [   0.155s] grimble::ack ack_writes_the_lock_and_check_reports_contract_skew_after_a_producer_edit
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.156s] 1 test run: 1 passed, 14 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble -E 'test(=ack_writes_the_lock_and_check_reports_contract_skew_after_a_producer_edit)'"
+size = 669
+status = "measured"
+tests = ["ack_writes_the_lock_and_check_reports_contract_skew_after_a_producer_edit"]
+at = "2026-10-10T19:41:04Z"
+actor = "Claude"
+rev = 1

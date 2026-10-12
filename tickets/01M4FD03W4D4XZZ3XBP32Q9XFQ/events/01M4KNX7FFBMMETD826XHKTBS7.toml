@@ -1,0 +1,39 @@
+kind = "evidence"
+captured_at = "2026-10-10T19:50:57Z"
+digest = "c2183061ecd5561a9c8ceb006785192f2b6ee34b8219384a63f1d95d436a37da"
+exit_code = 0
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized] target(s) in 10.84s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 80b0d681-43ad-48a7-8d28-2189c25e41ae with nextest profile: default
+    Starting 17 tests across 39 binaries (259 tests skipped)
+        PASS [   0.006s] frob-cli init::tests::windows_paths_become_forward_slash_sh_words
+        PASS [   0.008s] frob-cli init::tests::the_driver_command_is_built_by_command_line_and_keeps_git_placeholders
+        PASS [   0.174s] frob-cli::init_adopt init_on_a_detached_head_refuses_and_writes_nothing
+        PASS [   0.191s] frob-cli::init_adopt config_sync_detects_ref_and_base
+        PASS [   0.209s] frob-cli::init_adopt init_on_a_detached_head_refuses_before_writing_a_base
+        PASS [   0.252s] frob-cli::init_adopt init_ledger_ref_flag_overrides_and_is_validated
+        PASS [   0.123s] frob-cli::init_adopt init_on_an_unborn_branch_names_it
+        PASS [   0.225s] frob-cli::init_adopt init_on_a_feature_branch_names_main_as_the_ledger_ref
+        PASS [   0.192s] frob-cli::init_adopt init_on_main_keeps_main
+        PASS [   0.231s] frob-cli::init_adopt init_on_master_detects_base_master
+        PASS [   0.202s] frob-cli::init_adopt init_on_trunk_detects_base_trunk
+        PASS [   0.231s] frob-cli::init_adopt init_prefers_the_origin_head_for_base
+        PASS [   0.299s] frob-cli::init_adopt init_on_trunk_points_the_ledger_at_trunk
+        PASS [   0.265s] frob-cli::init_adopt init_rerun_keeps_an_existing_base
+        PASS [   0.323s] frob-cli::init_adopt init_rerun_keeps_an_existing_ref
+        PASS [   0.224s] frob-cli::init_adopt init_touches_only_config_files_and_installs_the_driver
+        PASS [   0.430s] frob-cli::init_adopt init_then_check_on_main_exits_zero_with_base_main
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.074s] 17 tests run: 17 passed, 259 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E '(package(=frob-cli) & (test(=config_sync_detects_ref_and_base) | test(=init::tests::the_driver_command_is_built_by_command_line_and_keeps_git_placeholders) | test(=init::tests::windows_paths_become_forward_slash_sh_words) | test(=init_ledger_ref_flag_overrides_and_is_validated) | test(=init_on_a_detached_head_refuses_and_writes_nothing) | test(=init_on_a_detached_head_refuses_before_writing_a_base) | test(=init_on_a_feature_branch_names_main_as_the_ledger_ref) | test(=init_on_an_unborn_branch_names_it) | test(=init_on_main_keeps_main) | test(=init_on_master_detects_base_master) | test(=init_on_trunk_detects_base_trunk) | test(=init_on_trunk_points_the_ledger_at_trunk) | test(=init_prefers_the_origin_head_for_base) | test(=init_rerun_keeps_an_existing_base) | test(=init_rerun_keeps_an_existing_ref) | test(=init_then_check_on_main_exits_zero_with_base_main) | test(=init_touches_only_config_files_and_installs_the_driver)))'"
+size = 2034
+status = "measured"
+tests = ["init::tests::windows_paths_become_forward_slash_sh_words", "init::tests::the_driver_command_is_built_by_command_line_and_keeps_git_placeholders", "init_on_a_detached_head_refuses_and_writes_nothing", "config_sync_detects_ref_and_base", "init_on_a_detached_head_refuses_before_writing_a_base", "init_ledger_ref_flag_overrides_and_is_validated", "init_on_an_unborn_branch_names_it", "init_on_a_feature_branch_names_main_as_the_ledger_ref", "init_on_main_keeps_main", "init_on_master_detects_base_master", "init_on_trunk_detects_base_trunk", "init_prefers_the_origin_head_for_base", "init_on_trunk_points_the_ledger_at_trunk", "init_rerun_keeps_an_existing_base", "init_rerun_keeps_an_existing_ref", "init_touches_only_config_files_and_installs_the_driver", "init_then_check_on_main_exits_zero_with_base_main"]
+at = "2026-10-10T19:50:57Z"
+actor = "Claude"
+rev = 1

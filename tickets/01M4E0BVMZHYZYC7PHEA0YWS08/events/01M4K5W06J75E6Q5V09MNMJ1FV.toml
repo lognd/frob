@@ -1,0 +1,42 @@
+kind = "evidence"
+captured_at = "2026-10-10T15:10:46Z"
+digest = "78e6e4818e0edbb71ecc7aef80e8d6c28c924b14c79696c4293874af138270bc"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 26542f5b-4262-430d-a71a-df65591336ec with nextest profile: default
+    Starting 21 tests across 11 binaries (142 tests skipped)
+        PASS [   0.010s] gob-plan::check_names a_variable_used_inside_not_is_grl003_but_a_typo_of_a_variable_is_grl001
+        PASS [   0.012s] gob-plan::catalog a_misspelt_config_column_is_not_a_member
+        PASS [   0.017s] gob-plan::check_names a_syntax_error_renders_without_a_code
+        PASS [   0.010s] gob-plan::check_names a_word_no_language_answers_is_grl018_but_universal_rules_are_not_checked
+        PASS [   0.020s] gob-plan::check_names a_misspelt_kind_field_verb_and_knob_are_unknown_words
+        PASS [   0.013s] gob-plan::check_names binding_rules_for_quantifiers_and_defs
+        PASS [   0.011s] gob-plan::check_names certainly_in_an_earlier_report_when_is_negative
+        PASS [   0.014s] gob-plan::check_names certainly_in_a_def_body_is_negative_when_the_call_is_under_not
+        PASS [   0.015s] gob-plan::check_names certainly_in_a_count_body_is_negative_under_a_lower_bound_comparison
+        PASS [   0.017s] gob-plan::check_names certainly_is_only_allowed_in_positive_positions
+        PASS [   0.013s] gob-plan::check_names side_relations_are_checked
+        PASS [   0.014s] gob-plan::check_names the_fixture_rules_of_the_spec_check_clean
+        PASS [   0.021s] gob-plan::check_names compile_report_prints_a_golden_shape_for_a_unknown_kind
+        PASS [   0.010s] gob-plan::check_names type_mismatches_are_grl005
+        PASS [   0.009s] gob-plan::check_names unused_quantifier_heads_are_not_warned_but_unused_finds_are
+        PASS [   0.010s] gob-plan::grl_errors every_golden_is_well_formed_and_agrees_with_its_input
+        PASS [   0.007s] gob-plan::structure a_closure_needs_within
+        PASS [   0.008s] gob-plan::structure a_side_relation_needs_its_root_declared
+        PASS [   0.008s] gob-plan::structure defs_may_call_earlier_defs_only
+        PASS [   0.017s] gob-plan::grl_errors validator_rejects_a_misplaced_caret
+        PASS [   0.010s] gob-plan::structure examples_and_remedy_are_required_and_universal_rules_need_a_third
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.072s] 21 tests run: 21 passed, 142 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E '(package(=gob-plan) & (test(=a_closure_needs_within) | test(=a_misspelt_config_column_is_not_a_member) | test(=a_misspelt_kind_field_verb_and_knob_are_unknown_words) | test(=a_side_relation_needs_its_root_declared) | test(=a_syntax_error_renders_without_a_code) | test(=a_variable_used_inside_not_is_grl003_but_a_typo_of_a_variable_is_grl001) | test(=a_word_no_language_answers_is_grl018_but_universal_rules_are_not_checked) | test(=binding_rules_for_quantifiers_and_defs) | test(=certainly_in_a_count_body_is_negative_under_a_lower_bound_comparison) | test(=certainly_in_a_def_body_is_negative_when_the_call_is_under_not) | test(=certainly_in_an_earlier_report_when_is_negative) | test(=certainly_is_only_allowed_in_positive_positions) | test(=compile_report_prints_a_golden_shape_for_a_unknown_kind) | test(=defs_may_call_earlier_defs_only) | test(=every_golden_is_well_formed_and_agrees_with_its_input) | test(=examples_and_remedy_are_required_and_universal_rules_need_a_third) | test(=side_relations_are_checked) | test(=the_fixture_rules_of_the_spec_check_clean) | test(=type_mismatches_are_grl005) | test(=unused_quantifier_heads_are_not_warned_but_unused_finds_are) | test(=validator_rejects_a_misplaced_caret)))'"
+size = 2454
+status = "measured"
+tests = ["a_misspelt_config_column_is_not_a_member", "a_variable_used_inside_not_is_grl003_but_a_typo_of_a_variable_is_grl001", "a_syntax_error_renders_without_a_code", "a_word_no_language_answers_is_grl018_but_universal_rules_are_not_checked", "a_misspelt_kind_field_verb_and_knob_are_unknown_words", "binding_rules_for_quantifiers_and_defs", "certainly_in_an_earlier_report_when_is_negative", "certainly_in_a_def_body_is_negative_when_the_call_is_under_not", "certainly_in_a_count_body_is_negative_under_a_lower_bound_comparison", "certainly_is_only_allowed_in_positive_positions", "side_relations_are_checked", "the_fixture_rules_of_the_spec_check_clean", "compile_report_prints_a_golden_shape_for_a_unknown_kind", "type_mismatches_are_grl005", "unused_quantifier_heads_are_not_warned_but_unused_finds_are", "every_golden_is_well_formed_and_agrees_with_its_input", "validator_rejects_a_misplaced_caret", "a_closure_needs_within", "a_side_relation_needs_its_root_declared", "defs_may_call_earlier_defs_only", "examples_and_remedy_are_required_and_universal_rules_need_a_third"]
+at = "2026-10-10T15:10:46Z"
+actor = "Claude"
+rev = 1

@@ -1,0 +1,12 @@
+kind = "create"
+title = "gob-dev: profile.toml has no scenario for frob ticket closeout, so cargo dev profile aborts in CI"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 1
+scope = ["crates/gob-dev/profile.toml"]
+acceptance = ["the profile_coverage test passes"]
+body = "found while fixing red base CI: profile step aborts"
+at = "2026-10-10T22:21:54Z"
+actor = "lognd"
+rev = 1

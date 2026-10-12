@@ -44,8 +44,10 @@ type Render = fn(path: &str, source: &str) -> String;
 fn checker(code: &str) -> Option<Render> {
     // Each checker ticket adds its codes here, e.g. `"GRL001" => Some(gob_plan::...::render)`.
     match code {
-        "GRL001" | "GRL003" | "GRL004" | "GRL005" | "GRL009" | "GRL010" | "GRL011" | "GRL012"
-        | "GRL013" | "GRL014" | "GRL017" | "GRL018" => Some(gob_plan::check::compile_report),
+        "GRL001" | "GRL003" | "GRL004" | "GRL005" | "GRL006" | "GRL008" | "GRL009" | "GRL010"
+        | "GRL011" | "GRL012" | "GRL013" | "GRL014" | "GRL015" | "GRL017" | "GRL018" => {
+            Some(gob_plan::check::compile_report)
+        }
         _ => None,
     }
 }
@@ -326,20 +328,20 @@ macro_rules! goldens {
 
 goldens! {
     enabled golden_grl001 "GRL001" "landed (~E8Q56WW)";
-    pending golden_grl002 "GRL002" "pending: GRL002 checker not landed (~APQDEAP)";
+    pending golden_grl002 "GRL002" "pending: GRL002 checker not landed (needs the grammar engine, G17b)";
     enabled golden_grl003 "GRL003" "landed (~E8Q56WW)";
     enabled golden_grl004 "GRL004" "landed (~E8Q56WW)";
     enabled golden_grl005 "GRL005" "landed (~E8Q56WW)";
-    pending golden_grl006 "GRL006" "pending: GRL006 checker not landed (~APQDEAP)";
-    pending golden_grl007 "GRL007" "pending: GRL007 checker not landed (~APQDEAP)";
-    pending golden_grl008 "GRL008" "pending: GRL008 checker not landed (~APQDEAP)";
+    enabled golden_grl006 "GRL006" "landed (~APQDEAP)";
+    pending golden_grl007 "GRL007" "pending: GRL007 checker not landed (needs the grammar engine, G17b)";
+    enabled golden_grl008 "GRL008" "landed (~APQDEAP)";
     enabled golden_grl009 "GRL009" "landed (~ZKM5W7Y)";
     enabled golden_grl010 "GRL010" "landed (~ZKM5W7Y)";
     enabled golden_grl011 "GRL011" "landed (~ZKM5W7Y)";
     enabled golden_grl012 "GRL012" "landed (~ZKM5W7Y)";
     enabled golden_grl013 "GRL013" "landed (~E8Q56WW)";
     enabled golden_grl014 "GRL014" "landed (~ZKM5W7Y)";
-    pending golden_grl015 "GRL015" "pending: GRL015 checker not landed (~16R03NG)";
+    enabled golden_grl015 "GRL015" "landed (~16R03NG)";
     pending golden_grl016 "GRL016" "pending: GRL016 example runner not landed (grimble rule test)";
     enabled golden_grl017 "GRL017" "landed (~E8Q56WW)";
     enabled golden_grl018 "GRL018" "landed (~E8Q56WW)";

@@ -34,6 +34,7 @@ pub mod git;
 pub mod glue;
 pub mod jail;
 pub mod pass;
+pub mod removing;
 pub mod scan;
 pub mod stamp;
 pub mod worktrees;

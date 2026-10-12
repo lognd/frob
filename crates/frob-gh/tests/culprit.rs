@@ -32,7 +32,7 @@ async fn runs() -> Vec<frob_gh::RunRecord> {
     c.workflow_runs("o", "r", "experimental").await.unwrap()
 }
 
-// frob:tests crates/frob-gh/src/culprit.rs::find_culprit
+// frob:tests crates/frob-release/src/culprit.rs::find_culprit
 #[tokio::test(flavor = "current_thread")]
 async fn names_the_range_between_last_green_and_first_red() {
     let runs = runs().await;
@@ -45,7 +45,7 @@ async fn names_the_range_between_last_green_and_first_red() {
     assert!(c.fix.labels.contains(&BLOCKS_LANDS_LABEL.to_owned()));
 }
 
-// frob:tests crates/frob-gh/src/culprit.rs::find_culprit
+// frob:tests crates/frob-release/src/culprit.rs::find_culprit
 #[tokio::test(flavor = "current_thread")]
 async fn key_is_stable_across_later_red_lands() {
     let runs = runs().await;
@@ -55,7 +55,7 @@ async fn key_is_stable_across_later_red_lands() {
     assert_eq!(first.fix, again.fix);
 }
 
-// frob:tests crates/frob-gh/src/culprit.rs::find_culprit
+// frob:tests crates/frob-release/src/culprit.rs::find_culprit
 #[tokio::test(flavor = "current_thread")]
 async fn green_tip_and_foreign_runs_are_refused() {
     let runs = runs().await;

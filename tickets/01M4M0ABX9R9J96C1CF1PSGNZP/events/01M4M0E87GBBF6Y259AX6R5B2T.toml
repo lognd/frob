@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T22:55:12Z"
+digest = "fe9d8a0c607f8565d3a599dfa64d65926622b72f8e07020a112b1e558998f35b"
+exit_code = 0
+inline = '''
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+    Finished `test` profile [unoptimized] target(s) in 4.84s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 31dd981b-4a76-4071-934d-c173f3082281 with nextest profile: ci
+    Starting 1 test across 8 binaries (38 tests skipped)
+        PASS [   0.507s] frob-tests::rust_root a_crate_under_a_subdirectory_runs_nextest_from_that_directory
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.508s] 1 test run: 1 passed, 38 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-tests -E 'test(=a_crate_under_a_subdirectory_runs_nextest_from_that_directory)'"
+size = 691
+status = "measured"
+tests = ["a_crate_under_a_subdirectory_runs_nextest_from_that_directory"]
+at = "2026-10-10T22:55:12Z"
+actor = "lognd"
+rev = 1

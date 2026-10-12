@@ -1,6 +1,11 @@
 # Git and GitHub without subprocess storms
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias). Owner direction 2026-10-01: keep everything
+Status: current
+Owner: gob
+Decisions: none
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Owner direction 2026-10-01: keep everything
 automatic for the agent, but minimize process IO. v1 evidence: 370
 `git`/`gh` argv literals across 34 modules; one ticket verb commonly
 spawned `rev-parse`, `status --porcelain` (several times), `worktree

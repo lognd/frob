@@ -237,6 +237,12 @@ impl CheckReport {
             .collect()
     }
 
+    // frob:ticket 01M4D95B4W3XEMKKFG4B2ZBRER
+    /// The precision ledger of this run: standing findings and the exceptions that suppressed the rest.
+    pub fn precision(&self) -> gob_rules::PrecisionLedger {
+        gob_rules::PrecisionLedger::of_run(&self.findings, &self.suppressed)
+    }
+
     /// Unresolved findings that carry a required reason.
     pub fn required_unresolved(&self) -> usize {
         self.findings

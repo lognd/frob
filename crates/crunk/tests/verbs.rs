@@ -156,3 +156,65 @@ fn a_bad_flag_exits_two() {
     let (code, _, _) = crunk(dir.path(), &["check", "--no-such-flag"]);
     assert_eq!(code, 2);
 }
+
+/// Every `$ref` under `v` that points into the document's own `$defs`.
+fn refs(v: &Value, out: &mut Vec<String>) {
+    match v {
+        Value::Object(m) => {
+            for (k, x) in m {
+                match (k.as_str(), x.as_str()) {
+                    ("$ref", Some(r)) => out.push(r.to_owned()),
+                    _ => refs(x, out),
+                }
+            }
+        }
+        Value::Array(a) => a.iter().for_each(|x| refs(x, out)),
+        _ => {}
+    }
+}
+
+// frob:ticket 01M4FD0EP322SV5ZNXD5SQT8RX
+// frob:tests crates/gob-cli/src/schema_cmd.rs::extend_config
+#[test]
+fn schema_prints_the_crunk_tables_with_keys_and_types_not_only_the_shared_ones() {
+    let dir = repo();
+    let (code, json, err) = crunk(dir.path(), &["schema"]);
+    assert_eq!(code, 0, "{err}");
+    let config = &json["data"]["config"];
+    let props = config["properties"].as_object().expect("properties");
+    for shared in ["check", "compute", "directives", "perf"] {
+        assert!(props.contains_key(shared), "shared table [{shared}] kept");
+    }
+    for table in [
+        "project",
+        "palette",
+        "scales",
+        "typography",
+        "layers",
+        "org",
+        "jsx",
+        "tailwind",
+        "tokens",
+        "lint",
+    ] {
+        assert!(props.contains_key(table), "crunk table [{table}] missing");
+    }
+    let css_root = &props["project"]["properties"]["css_root"];
+    assert_eq!(
+        css_root["type"], "string",
+        "keys carry their types: {css_root}"
+    );
+    // The shared tables' own refs are not this test's concern; crunk's must resolve.
+    let mut wanted = Vec::new();
+    for table in ["jsx", "tailwind", "tokens", "lint"] {
+        refs(&props[table], &mut wanted);
+    }
+    assert!(!wanted.is_empty(), "the optional tables reference $defs");
+    for r in wanted {
+        let name = r.strip_prefix("#/$defs/").expect("local ref");
+        assert!(
+            config["$defs"].get(name).is_some(),
+            "{r} dangles in the merged schema"
+        );
+    }
+}

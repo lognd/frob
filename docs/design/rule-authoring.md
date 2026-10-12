@@ -1,6 +1,11 @@
 # Rule authoring: one rule, two files, compile errors first (D107)
 
-Status: accepted, coordinator decision 2026-10-06. Owner requirements:
+Status: current
+Owner: gob
+Decisions: D107
+Audience: rule author
+
+Provenance: accepted, coordinator decision 2026-10-06. Owner requirements:
 "the macros and code gen made so that it's impossible to mess up adding;
 compile errors over runtime errors"; "for a single rule, the information
 should live next to each other"; adding universal cross-language and

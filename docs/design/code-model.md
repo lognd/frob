@@ -1,6 +1,11 @@
 # Code model, symbolic binding, and the directive DSL
 
-Status: DRAFT (T-0001, a v1-format id that migrates with an alias).
+Status: current
+Owner: gob
+Decisions: D36
+Audience: contributor
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias).
 Ownership after products.md: sections 1-4 and 8-9 are `gob-symbols`,
 `gob-directives` and `gob-cache` (shared by all three products);
 section 5 is now a pointer to universal-model.md (`gob-ir`), and

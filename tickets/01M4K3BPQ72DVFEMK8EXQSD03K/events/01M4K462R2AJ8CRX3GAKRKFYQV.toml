@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-10T14:41:29Z"
+digest = "17ee40ad0142d7174cc39f2bc6337860d3559df95c779290e43539ad8ed6ae3b"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 25015edf-c9e8-4510-9ccd-eb8c1e5d8600 with nextest profile: default
+    Starting 1 test across 7 binaries (57 tests skipped)
+        PASS [   0.189s] grimble-bind::caps a_clap_command_is_not_a_process_spawn_but_std_process_command_is
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.190s] 1 test run: 1 passed, 57 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(=a_clap_command_is_not_a_process_spawn_but_std_process_command_is)'"
+size = 574
+status = "measured"
+tests = ["a_clap_command_is_not_a_process_spawn_but_std_process_command_is"]
+at = "2026-10-10T14:41:29Z"
+actor = "Claude"
+rev = 1

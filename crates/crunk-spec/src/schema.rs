@@ -71,8 +71,14 @@ fn unwrap_option<'a>(root: &'a Value, node: &'a Value) -> &'a Value {
     node
 }
 
+// frob:ticket 01M43ANVJYA7GHN0Y8GX0SN72M
+/// A table is an object with named keys or with user-named entries (`[layers]`).
 fn is_table(node: &Value) -> bool {
-    node.get("properties").is_some_and(Value::is_object) && kind(node) == Some("object")
+    kind(node) == Some("object")
+        && (node.get("properties").is_some_and(Value::is_object)
+            || node
+                .get("additionalProperties")
+                .is_some_and(Value::is_object))
 }
 
 fn array_item_table<'a>(root: &'a Value, node: &'a Value) -> Option<&'a Value> {

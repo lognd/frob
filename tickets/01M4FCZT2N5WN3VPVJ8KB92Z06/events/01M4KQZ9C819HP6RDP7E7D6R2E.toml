@@ -1,0 +1,50 @@
+kind = "evidence"
+captured_at = "2026-10-10T20:27:07Z"
+digest = "879b57d54e2e44fbc2d529a477e468efe451ccdf6b0239944a9ed28ce0cd8b48"
+exit_code = 0
+inline = '''
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized] target(s) in 4.48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a3b022d4-ae04-4dd4-8d77-4c46d1bf922b with nextest profile: default
+    Starting 28 tests across 7 binaries (105 tests skipped)
+        PASS [   0.008s] gob-dev render::rules::tests::page_without_examples_has_no_examples_section
+        PASS [   0.016s] gob-dev render::rules::tests::fence_grows_past_inner_backticks
+        PASS [   0.019s] gob-dev render::rules::tests::page_has_title_table_explanation_examples
+        PASS [   0.024s] gob-dev tests::real_workspace_found_regardless_of_compile_time_path
+        PASS [   0.044s] gob-dev::generate every_rule_has_a_page_and_every_page_a_rule
+        PASS [   0.060s] gob-dev::generate check_reports_stale_and_missing_files_without_writing
+        PASS [   0.013s] gob-dev::import_v1 an_unmapped_open_ticket_stops_the_run
+        PASS [   0.014s] gob-dev::import_v1 crlf_tickets_import_and_a_sprint_becomes_a_label
+        PASS [   0.073s] gob-dev::generate crunk_config_reference_and_schema_are_generated_apart_from_frobs
+        PASS [   0.017s] gob-dev::import_v1 home_paths_and_private_terms_are_redacted
+        PASS [   0.018s] gob-dev::import_v1 imports_maps_and_verifies
+        PASS [   0.016s] gob-dev::import_v1 merge_adds_only_new_ticket_directories
+        PASS [   0.014s] gob-dev::import_v1 refuses_a_non_empty_target
+        PASS [   0.030s] gob-dev::import_v1 merge_refuses_id_and_alias_collisions_without_writing
+        PASS [   0.030s] gob-dev::import_v1 open_category_triage_places_open_tickets_in_triage
+        PASS [   0.016s] gob-dev::import_v1 renders_the_id_map
+        PASS [   0.014s] gob-dev::import_v1 renders_the_migration_report
+        PASS [   0.015s] gob-dev::import_v1 renders_the_summary_table
+        PASS [   0.015s] gob-dev::import_v1 selection_imports_requirement_bearing_open_tickets_only
+        PASS [   0.015s] gob-dev::import_v1 ulids_keep_creation_order
+        PASS [   0.008s] gob-dev::bin/gob-dev tests::gen_check_parses
+        PASS [   0.008s] gob-dev::bin/gob-dev tests::import_parses
+        PASS [   0.008s] gob-dev::bin/gob-dev tests::profile_parses_its_knobs
+        PASS [   0.008s] gob-dev::bin/gob-dev tests::import_v1_tickets_has_no_default_selection_file
+        PASS [   0.007s] gob-dev::bin/gob-dev tests::publish_parses
+        PASS [   0.008s] gob-dev::bin/gob-dev tests::wheel_and_wheel_smoke_parse_the_workflow_arguments
+        PASS [   0.009s] gob-dev::bin/gob-dev tests::publish_reserve_parses_and_apply_needs_reserve
+        PASS [   0.189s] gob-dev::generate output_is_deterministic_and_check_passes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.214s] 28 tests run: 28 passed, 105 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E '(package(=gob-dev) & (test(=an_unmapped_open_ticket_stops_the_run) | test(=check_reports_stale_and_missing_files_without_writing) | test(=crlf_tickets_import_and_a_sprint_becomes_a_label) | test(=crunk_config_reference_and_schema_are_generated_apart_from_frobs) | test(=every_rule_has_a_page_and_every_page_a_rule) | test(=home_paths_and_private_terms_are_redacted) | test(=imports_maps_and_verifies) | test(=merge_adds_only_new_ticket_directories) | test(=merge_refuses_id_and_alias_collisions_without_writing) | test(=open_category_triage_places_open_tickets_in_triage) | test(=output_is_deterministic_and_check_passes) | test(=refuses_a_non_empty_target) | test(=render::rules::tests::fence_grows_past_inner_backticks) | test(=render::rules::tests::page_has_title_table_explanation_examples) | test(=render::rules::tests::page_without_examples_has_no_examples_section) | test(=renders_the_id_map) | test(=renders_the_migration_report) | test(=renders_the_summary_table) | test(=selection_imports_requirement_bearing_open_tickets_only) | test(=tests::gen_check_parses) | test(=tests::import_parses) | test(=tests::import_v1_tickets_has_no_default_selection_file) | test(=tests::profile_parses_its_knobs) | test(=tests::publish_parses) | test(=tests::publish_reserve_parses_and_apply_needs_reserve) | test(=tests::real_workspace_found_regardless_of_compile_time_path) | test(=tests::wheel_and_wheel_smoke_parse_the_workflow_arguments) | test(=ulids_keep_creation_order)))'"
+size = 2915
+status = "measured"
+tests = ["render::rules::tests::page_without_examples_has_no_examples_section", "render::rules::tests::fence_grows_past_inner_backticks", "render::rules::tests::page_has_title_table_explanation_examples", "tests::real_workspace_found_regardless_of_compile_time_path", "an_unmapped_open_ticket_stops_the_run", "crlf_tickets_import_and_a_sprint_becomes_a_label", "home_paths_and_private_terms_are_redacted", "imports_maps_and_verifies", "merge_adds_only_new_ticket_directories", "refuses_a_non_empty_target", "merge_refuses_id_and_alias_collisions_without_writing", "open_category_triage_places_open_tickets_in_triage", "renders_the_id_map", "renders_the_migration_report", "renders_the_summary_table", "selection_imports_requirement_bearing_open_tickets_only", "ulids_keep_creation_order", "tests::gen_check_parses", "tests::import_parses", "tests::profile_parses_its_knobs", "tests::import_v1_tickets_has_no_default_selection_file", "tests::publish_parses", "tests::wheel_and_wheel_smoke_parse_the_workflow_arguments", "tests::publish_reserve_parses_and_apply_needs_reserve", "every_rule_has_a_page_and_every_page_a_rule", "check_reports_stale_and_missing_files_without_writing", "crunk_config_reference_and_schema_are_generated_apart_from_frobs", "output_is_deterministic_and_check_passes"]
+at = "2026-10-10T20:27:07Z"
+actor = "Claude"
+rev = 1

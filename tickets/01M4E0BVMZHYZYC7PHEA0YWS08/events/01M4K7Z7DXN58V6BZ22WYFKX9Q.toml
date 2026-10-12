@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-10T15:47:39Z"
+digest = "28e53ac369a61ba5da213a1db2e6e212c2350f49492a32a0235832239e662664"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9e741a11-0b86-49a2-878c-549c1aaafdc8 with nextest profile: default
+    Starting 1 test across 11 binaries (162 tests skipped)
+        PASS [   0.007s] gob-plan::check_names certainly_in_a_count_body_is_negative_under_a_lower_bound_comparison
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 162 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=certainly_in_a_count_body_is_negative_under_a_lower_bound_comparison)'"
+size = 572
+status = "measured"
+tests = ["certainly_in_a_count_body_is_negative_under_a_lower_bound_comparison"]
+at = "2026-10-10T15:47:39Z"
+actor = "Claude"
+rev = 1

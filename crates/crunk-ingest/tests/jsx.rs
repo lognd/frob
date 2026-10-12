@@ -359,6 +359,21 @@ fn documented_style_divergences_from_python() {
 }
 
 // Syntax that does not parse becomes a diagnostic; the rest of the file still ingests.
+// A MISSING node (tree-sitter inserted a token) is a syntax error too, not a silent repair.
+// frob:ticket 01M4NTWET2QT576F2CHN60YHK6
+// frob:tests crates/crunk-ingest/src/jsx/mod.rs::parse_in_project
+#[test]
+fn a_missing_node_is_reported_as_a_syntax_error() {
+    let p = parse_jsx_source("a.ts", "const y = ;\n", RFS).unwrap();
+    assert!(
+        p.errors
+            .iter()
+            .any(|e| e.starts_with("jsx syntax error at line 1")),
+        "{:?}",
+        p.errors
+    );
+}
+
 // frob:tests crates/crunk-ingest/src/jsx/mod.rs::parse_in_project
 #[test]
 fn a_syntax_error_is_reported_and_the_rest_of_the_file_still_counts() {
@@ -517,4 +532,20 @@ fn every_certain_class_token_of_the_engine_is_among_the_utilities() {
         }
     }
     assert!(checked >= 4, "the engine answered {checked} certain tokens");
+}
+
+// frob:ticket 01M4DPJQ0TAE8FM53FEJZPBV6H
+// frob:tests crates/crunk-ingest/src/jsx/style.rs::number
+#[test]
+fn numeric_style_values_follow_gob_symbols_numeric_raw() {
+    let p = tsx("<div style={{ width: 3, margin: 0, '--gap': 16, opacity: 1 }} />");
+    let by = |prop: &str| p.declarations.iter().find(|d| d.prop == prop).unwrap();
+    // Non-zero numbers get `px`, exactly as gob_symbols::numeric_raw says.
+    assert_eq!(by("width").lengths[0].length.raw, "3px");
+    // Zero stays the unitless zero.
+    assert_eq!(by("margin").lengths[0].length.raw, "0");
+    assert_eq!(by("margin").lengths[0].length.kind, LengthKind::Zero);
+    // React leaves custom properties and unitless properties alone.
+    assert!(by("--gap").lengths.is_empty());
+    assert!(by("opacity").lengths.is_empty());
 }

@@ -16,7 +16,7 @@ use crate::filecheck::{opaque_binary, run_file_checks};
 use crate::fix;
 use crate::options::RunOptions;
 use crate::packages::{Affected, Workspace};
-use crate::product::{CollectCx, Collected, Product, ScopeView, Snapshot};
+use crate::product::{BranchChanges, CollectCx, Collected, Product, ScopeView, Snapshot};
 use crate::repo::run_repo_rules;
 use crate::report::{CheckReport, Counts, FixOutcome, Tally, Timing};
 use crate::required::{mark_annotations, zero_subjects};
@@ -44,19 +44,32 @@ fn matches_only(only: &[String], family: &str, id: &str) -> bool {
     only.is_empty() || only.iter().any(|o| o == family || o == id)
 }
 
-/// Normalize `--only` entries and reject names the product's rules do not use.
-fn validate_only<P: Product>(product: &P, only: &[String]) -> Result<Vec<String>, CheckError> {
-    let registry = Registry::global();
+// frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+/// True when `name` (upper-case) is a family or id of one of the product's own rules.
+fn known_here<P: Product>(product: &P, name: &str) -> bool {
     let set = product.rule_set();
+    Registry::global()
+        .iter()
+        .filter(|m| product.includes(m))
+        .any(|m| m.family == name || m.id == name)
+        || set.defs().any(|d| d.family == name || d.id == name)
+}
+
+// frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+/// The family of a rule id: its leading letters (`COLOR001` is `COLOR`).
+fn family_of_id(id: &str) -> &str {
+    id.trim_end_matches(|c: char| c.is_ascii_digit())
+}
+
+/// Normalize `--only` entries and reject names the product's rules do not use.
+///
+/// A product that [defers](Product::defers_unknown_only) unknown names keeps them: an external
+/// product may own them, and the run refuses them after the external stages report their rules.
+fn validate_only<P: Product>(product: &P, only: &[String]) -> Result<Vec<String>, CheckError> {
     only.iter()
         .map(|raw| {
             let name = raw.trim().to_ascii_uppercase();
-            let known = registry
-                .iter()
-                .filter(|m| product.includes(m))
-                .any(|m| m.family == name || m.id == name)
-                || set.defs().any(|d| d.family == name || d.id == name);
-            if known {
+            if known_here(product, &name) || product.defers_unknown_only() {
                 Ok(name)
             } else {
                 Err(CheckError::UnknownFamily(raw.clone()))
@@ -105,8 +118,13 @@ fn affected_packages(
     root: &Path,
     manifests: &[String],
     files: &std::collections::BTreeSet<String>,
+    changes: Option<&BranchChanges>,
 ) -> Affected {
-    Workspace::load(root, manifests).affected(files)
+    // The branch's own changes narrow the packages; without them the scope files stand for both.
+    match changes.filter(|c| !c.files.is_empty()) {
+        Some(c) => Workspace::load(root, manifests).affected(&c.files, &c.api),
+        None => Workspace::load(root, manifests).affected(files, files),
+    }
 }
 
 /// Start the `[[check.tool]]` stages in the background unless skipped or filtered out by `--only`.
@@ -118,6 +136,7 @@ fn begin_tools(
     table: &CheckTable,
     only: &[String],
     scope_files: Option<&std::collections::BTreeSet<String>>,
+    changes: Option<&BranchChanges>,
     manifests: &[String],
 ) -> Option<ToolRun> {
     let wanted = only.is_empty()
@@ -134,10 +153,11 @@ fn begin_tools(
                 .iter()
                 .any(|t| t.args.iter().any(|a| a == "{packages}"))
         })
-        .map(|files| affected_packages(root, manifests, files));
+        .map(|files| affected_packages(root, manifests, files, changes));
     start_tools(
         root,
         &applicable_stages(&table.tool, scope_files, affected.as_ref()),
+        opts.tool_memo.as_ref(),
     )
 }
 
@@ -372,7 +392,15 @@ fn pass<P: Product>(
         .filter(|e| e.path == "Cargo.toml" || e.path.ends_with("/Cargo.toml"))
         .map(|e| e.path.clone())
         .collect();
-    let tools = begin_tools(root, opts, table, only, scope_files, &manifests);
+    let tools = begin_tools(
+        root,
+        opts,
+        table,
+        only,
+        scope_files,
+        scope.as_ref().and_then(ScopeView::changes),
+        &manifests,
+    );
     product.start_external(&snap, table, scope_files);
 
     let wanted = |m: &RuleMeta| matches_only(only, m.family, m.id);
@@ -495,12 +523,24 @@ fn pass<P: Product>(
     ));
 
     let external = product.join_external(&snap, &mut files, &mut tally.timing);
+    // frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+    if let Some(name) = only.iter().find(|n| {
+        !known_here(product, n)
+            && !external
+                .rule_ids
+                .iter()
+                .any(|id| id == *n || family_of_id(id) == n.as_str())
+    }) {
+        return Err(CheckError::UnknownFamily(name.clone()));
+    }
     raw.extend(external.findings);
     for (label, row) in external.languages {
         tally.fidelity.languages.insert(label, row);
     }
     warnings.extend(external.warnings);
 
+    // frob:ticket 01M4FG5RCDA668CK81QT54E67N
+    let raw = crate::status::merge_opaque_notices(raw);
     let (mut findings, mut suppressed) =
         resolve_exceptions(product, &snap, &files, raw, only, &mut tally.timing);
     suppressed.extend(external.suppressed);
@@ -580,10 +620,10 @@ pub fn run<P: Product>(
             .clock
             .as_ref()
             .map_or_else(|| gob_time::Clock::now(&gob_time::SystemClock), |c| c.now());
+        // frob:ticket 01M4FD0EP322SV5ZNXD5SQT8RX
         telemetry::append(
             at,
-            root,
-            &product.state_dir(),
+            &product.telemetry_dir(root),
             &report.timing,
             &report.stats,
             Counts::of(&report.findings),

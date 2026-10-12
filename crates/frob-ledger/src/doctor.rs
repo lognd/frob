@@ -14,6 +14,28 @@ use crate::rules::{tick001, tick001_unreadable, tick003};
 /// Seconds an event's `at` may differ from its ULID time before it is flagged.
 pub const CLOCK_SKEW_SECS: i64 = 600;
 
+/// Seconds an event's ULID may be later than its `at` before it is flagged.
+///
+/// A command stamps every event with one clock reading taken when it starts, while each ULID is
+/// minted when the event is built; long commands (`land`, evidence runs, transitions after a
+/// test run) therefore legitimately lag `at` behind the ULID, up to the command's duration.
+pub const MINT_LAG_SECS: i64 = 6 * 3600;
+
+/// Why an event's `at` and ULID time disagree, or `None` when they are consistent.
+///
+/// An `at` later than the ULID by more than [`CLOCK_SKEW_SECS`] is impossible for an honest
+/// writer; a ULID later than `at` is flagged only beyond [`MINT_LAG_SECS`].
+// frob:ticket 01M4HQ2VER5JCH39RCHY8NVYNZ
+pub fn order_skew(at_secs: i64, ulid_secs: i64) -> Option<i64> {
+    let ahead = at_secs - ulid_secs;
+    let lag = -ahead;
+    if ahead > CLOCK_SKEW_SECS || lag > MINT_LAG_SECS {
+        Some(ahead.abs())
+    } else {
+        None
+    }
+}
+
 /// A problem that is not one of the TICK rules.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Issue {
@@ -63,7 +85,12 @@ impl Ledger {
     ///
     /// Git read or commit failures; unreadable tickets are reported as issues, not errors.
     pub fn doctor(&self, fix: bool) -> Result<DoctorReport> {
-        let ref_name = self.ledger_ref()?;
+        // frob:ticket 01M4GSTXC34Q811RXW8SH36RMT
+        let ref_name = if fix {
+            self.ledger_write_ref()?
+        } else {
+            self.ledger_ref()?
+        };
         let mut report = DoctorReport {
             tickets: 0,
             events: 0,
@@ -183,8 +210,7 @@ impl Ledger {
         report.events += events.len();
         for ev in &events {
             let ulid_secs = i64::try_from(ev.id.timestamp_ms() / 1000).unwrap_or(0);
-            let skew = (ev.at.unix() - ulid_secs).abs();
-            if skew > CLOCK_SKEW_SECS {
+            if let Some(skew) = order_skew(ev.at.unix(), ulid_secs) {
                 report.issues.push(issue(
                     "E-DOCTOR-ORDER",
                     format!(
@@ -235,5 +261,28 @@ impl Ledger {
                 false
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/frob-ledger/src/doctor.rs::order_skew
+    #[test]
+    fn a_command_frozen_clock_lagging_the_ulid_is_not_flagged() {
+        assert_eq!(order_skew(1_000, 1_000 + 1_875), None);
+        assert_eq!(order_skew(1_000, 1_000 + MINT_LAG_SECS), None);
+    }
+
+    // frob:tests crates/frob-ledger/src/doctor.rs::order_skew
+    #[test]
+    fn an_at_ahead_of_its_ulid_or_a_huge_lag_is_flagged() {
+        assert_eq!(order_skew(1_000 + 601, 1_000), Some(601));
+        assert_eq!(order_skew(1_000 + 600, 1_000), None);
+        assert_eq!(
+            order_skew(1_000, 1_000 + MINT_LAG_SECS + 1),
+            Some(MINT_LAG_SECS + 1)
+        );
     }
 }

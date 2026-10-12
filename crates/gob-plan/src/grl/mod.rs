@@ -25,6 +25,7 @@
 
 pub mod ast;
 mod error;
+mod fmt;
 mod lexer;
 mod parse;
 mod print;
@@ -33,6 +34,7 @@ mod strings;
 mod token;
 
 pub use error::{LexError, LexErrorKind};
+pub use fmt::{FormatError, format_source};
 pub use lexer::{lex, lex_range};
 pub use parse::{
     ParseError, ParseErrorKind, ParseWarning, ParseWarningKind, Parsed, parse, parse_tokens,

@@ -1,5 +1,6 @@
 //! `ticket fragment` end to end: write, refuse, force, remedy naming the verb, guard passes.
 // frob:ticket 01M4069WHH6KXYWDAJD3TXB8SR
+// frob:ticket 01M4FDQXEST75DK0NHDH4P5H15
 
 use std::path::Path;
 use std::process::Output;
@@ -95,7 +96,7 @@ fn writes_a_valid_fragment_from_the_title_with_the_mapped_type() {
         let file = dir.path().join(format!("changelog.d/{id}.{kind}.md"));
         assert_eq!(
             std::fs::read_to_string(file).expect("written"),
-            "frob: Teach the widget.\n"
+            "Teach the widget.\n"
         );
     }
     let out = frob(
@@ -221,4 +222,30 @@ fn bug_security_and_incident_tickets_require_a_sentence() {
         );
         assert_eq!(v["data"]["kind"], kind, "{ty}");
     }
+}
+
+// frob:tests crates/frob/src/ticket/fragment_cmd.rs::Fragment.run
+#[test]
+fn a_configured_fragment_prefix_starts_the_skeleton() {
+    let dir = repo();
+    let toml = dir.path().join("frob.toml");
+    let text = std::fs::read_to_string(&toml)
+        .expect("read frob.toml")
+        .replacen(
+            "[release]\n",
+            "[release]\nfragment_prefix = \"frob: \"\n",
+            1,
+        );
+    assert!(
+        text.contains("fragment_prefix"),
+        "init writes a [release] table"
+    );
+    std::fs::write(&toml, text).expect("write frob.toml");
+    let (id, handle) = ticket(dir.path(), "task");
+    ok(dir.path(), &["ticket", "fragment", &handle]);
+    let file = dir.path().join(format!("changelog.d/{id}.changed.md"));
+    assert_eq!(
+        std::fs::read_to_string(file).expect("written"),
+        "frob: Teach the widget.\n"
+    );
 }

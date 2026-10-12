@@ -1,6 +1,6 @@
 # frob v1 inventory: obligation graph, language layer, comment DSL, analysis tools
 
-Source of truth: /home/logan/projects/frob (read-only, branch experimental, HEAD b10d67a0f).
+Source of truth: <frob-v1> (read-only, branch experimental, HEAD b10d67a0f).
 Purpose: input to a from-scratch Rust redesign (frob v2). ASCII only. No code pastes.
 Provenance tags used below: [src] = verified by reading source (or running the v1 parser
 on probe files), [doc] = taken from docs/ only, not re-verified against source.

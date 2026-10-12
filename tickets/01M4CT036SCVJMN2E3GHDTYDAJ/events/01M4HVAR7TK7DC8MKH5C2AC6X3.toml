@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-pm/src/cycle/mod.rs", "crates/frob-pm/src/cycle/history.rs", "crates/frob-pm/src/rules/mod.rs", "crates/frob-pm/src/rules/cycle_plan.rs", "crates/frob-pm/tests/corpus.rs", "crates/frob-pm/tests/mdtest/pm01*.md", "crates/frob/src/cycle_cmd.rs", "docs/reference/rules/**"]
+new = ["docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-pm/src/cycle/mod.rs", "crates/frob-pm/src/cycle/history.rs", "crates/frob-pm/src/rules/mod.rs", "crates/frob-pm/src/rules/cycle_plan.rs", "crates/frob-pm/tests/corpus.rs", "crates/frob-pm/tests/mdtest/pm01*.md", "crates/frob/src/cycle_cmd.rs", "docs/reference/rules/**", "crates/frob-check/src/product.rs"]
+at = "2026-10-10T02:47:31Z"
+actor = "lognd"
+rev = 1

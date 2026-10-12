@@ -58,7 +58,7 @@ impl Ledger {
         message: &str,
         changes: &[(String, Option<Vec<u8>>)],
     ) -> Result<Oid> {
-        let ref_name = self.ledger_ref()?;
+        let ref_name = self.ledger_write_ref()?;
         let mut rel = Vec::with_capacity(changes.len());
         for (path, bytes) in changes {
             if let Some(b) = bytes {

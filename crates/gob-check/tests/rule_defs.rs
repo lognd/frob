@@ -290,14 +290,21 @@ fn the_resolver_decides_per_file_for_declared_rules() {
     std::fs::write(dir.path().join("p.png"), [0u8, 1, 2]).expect("write");
     let report = run(&toy(false, 1, false), dir.path(), &quiet()).expect("run");
     // ALP001 fires only on the file it examined; the opaque logs are one rolled-up Unresolved
-    // per rule (ALP001 and BET001 read comments), the binary is declared not applicable.
+    // per run naming both rules that read comments (ALP001 and BET001); the binary is declared
+    // not applicable.
+    // frob:ticket 01M4FG5RCDA668CK81QT54E67N
     let unresolved: Vec<String> = report
         .findings
         .iter()
         .filter(|f| f.severity == Severity::Unresolved)
-        .map(|f| f.rule.to_string())
+        .map(|f| f.message.clone())
         .collect();
-    assert_eq!(unresolved, ["ALP001", "BET001"]);
+    assert_eq!(unresolved.len(), 1, "{unresolved:?}");
+    assert!(unresolved[0].contains("ALP001, BET001"), "{unresolved:?}");
+    assert!(
+        unresolved[0].contains("2 opaque text file(s)"),
+        "{unresolved:?}"
+    );
     assert_eq!(
         report.subjects_examined.get("ALP001"),
         Some(&2),

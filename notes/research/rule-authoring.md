@@ -1,6 +1,6 @@
 # Rule authoring: how it works today, and the simplest design
 
-Date 2026-10-06. Read-only study of /home/logan/projects/frob-v2 (HEAD 91fbe9548, branch experimental).
+Date 2026-10-06. Read-only study of <frob-v2> (HEAD 91fbe9548, branch experimental).
 All citations are path:line against the working tree. ASCII only.
 
 ## 0. Honesty block (denominator and coverage)

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T19:51:14Z"
+digest = "867a92496c4672f3d39231cfe644c90e63aeefbcaaa75494782f147129bcbebf"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c0b23537-7e9a-473a-b86a-4911a75ea0b1 with nextest profile: default
+    Starting 1 test across 39 binaries (275 tests skipped)
+        PASS [   0.215s] frob-cli::init_adopt init_on_a_feature_branch_names_main_as_the_ledger_ref
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.216s] 1 test run: 1 passed, 275 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(=init_on_a_feature_branch_names_main_as_the_ledger_ref)'"
+size = 556
+status = "measured"
+tests = ["init_on_a_feature_branch_names_main_as_the_ledger_ref"]
+at = "2026-10-10T19:51:14Z"
+actor = "Claude"
+rev = 1

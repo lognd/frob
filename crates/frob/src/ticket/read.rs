@@ -244,6 +244,15 @@ pub struct ListRow {
     /// Set for a snoozed ticket listed with `--category triage --all`: when it returns.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub snoozed_until: Option<Stamp>,
+    /// With `--full`: the ticket's v1 aliases.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aliases: Option<Vec<String>>,
+    /// With `--full`: the ticket's events in fold order.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub events: Option<Vec<EventView>>,
+    /// With `--newcomer`: the ticket's `## Start here` notes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start_here: Option<String>,
 }
 
 impl From<InboxEntry> for ListRow {
@@ -251,6 +260,9 @@ impl From<InboxEntry> for ListRow {
         Self {
             summary: e.summary,
             snoozed_until: e.snoozed_until,
+            aliases: None,
+            events: None,
+            start_here: None,
         }
     }
 }
@@ -277,6 +289,9 @@ impl ListData {
                 .map(|summary| ListRow {
                     summary,
                     snoozed_until: None,
+                    aliases: None,
+                    events: None,
+                    start_here: None,
                 })
                 .collect(),
         }
@@ -299,6 +314,7 @@ pub struct List {
     blocked: bool,
     at: Option<String>,
     all: bool,
+    full: bool,
 }
 
 impl Command for List {
@@ -331,6 +347,12 @@ impl Command for List {
                     "With --category triage: include snoozed tickets, with the time each returns",
                 ),
         )
+        .arg(
+            gob_cli::clap::Arg::new("full")
+                .long("full")
+                .action(ArgAction::SetTrue)
+                .help("Also emit every listed ticket's aliases and events, read in one pass"),
+        )
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
@@ -342,6 +364,7 @@ impl Command for List {
             blocked: m.get_flag("blocked"),
             at: get(m, "at"),
             all: m.get_flag("all"),
+            full: m.get_flag("full"),
         })
     }
 
@@ -369,8 +392,29 @@ impl Command for List {
         };
         let tickets = ledger.list(&filter).map_err(cli_err)?;
         tracing::debug!(count = tickets.len(), "ticket list");
-        Ok(Payload::new(ListData::of(tickets)))
+        let mut data = ListData::of(tickets);
+        if self.full {
+            fill_full(&ledger, &mut data)?;
+        }
+        Ok(Payload::new(data))
     }
+}
+
+// frob:ticket 01M4GKAYSGHAE5QAXN1BJBTQN2
+/// Add aliases and events to every row of `data` with one ledger sync and one tree walk.
+fn fill_full(ledger: &frob_ledger::Ledger, data: &mut ListData) -> Result<(), CliError> {
+    let ids: std::collections::BTreeSet<TicketId> =
+        data.tickets.iter().map(|r| r.summary.id).collect();
+    let mut aliases = ledger.aliases_many(&ids).map_err(cli_err)?;
+    let mut events = ledger.events_many(&ids).map_err(cli_err)?;
+    for row in &mut data.tickets {
+        row.aliases = aliases.remove(&row.summary.id);
+        row.events = events
+            .remove(&row.summary.id)
+            .map(|all| all.iter().map(EventView::from).collect());
+    }
+    tracing::debug!(tickets = data.tickets.len(), "ticket list --full filled");
+    Ok(())
 }
 
 impl List {
@@ -404,7 +448,7 @@ impl List {
     }
 }
 
-/// List tickets that can be started: todo, no open blocker, scope not leased.
+/// List tickets that can be started: todo, no open blocker, scope not leased; `--newcomer` keeps the good-first ones, smallest first, with start notes.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket doable",
@@ -414,6 +458,7 @@ impl List {
 )]
 pub struct Doable {
     limit: Option<usize>,
+    newcomer: bool,
 }
 
 impl Command for Doable {
@@ -421,6 +466,12 @@ impl Command for Doable {
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
         cmd.arg(text_flag("limit", "Show at most this many tickets"))
+            .arg(
+                gob_cli::clap::Arg::new("newcomer")
+                    .long("newcomer")
+                    .action(ArgAction::SetTrue)
+                    .help("Only good-first tickets, smallest first, with their start notes"),
+            )
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
@@ -430,22 +481,60 @@ impl Command for Doable {
                     .map_err(|_| CliError::Usage(format!("--limit expects a number, got `{l}`")))
             })
             .transpose()?;
-        Ok(Self { limit })
+        Ok(Self {
+            limit,
+            newcomer: m.get_flag("newcomer"),
+        })
     }
 
     fn run(&self, ctx: &Context) -> CliOutcome<ListData> {
         let ledger = open(ctx)?;
         let (leases, warning) = lease_check(ctx);
-        let mut tickets = ledger.doable(&*leases).map_err(cli_err)?;
+        let tickets = ledger.doable(&*leases).map_err(cli_err)?;
+        let mut data = if self.newcomer {
+            newcomer_rows(&ledger, tickets)?
+        } else {
+            ListData::of(tickets)
+        };
         if let Some(n) = self.limit {
-            tickets.truncate(n);
+            data.tickets.truncate(n);
+            data.count = data.tickets.len();
         }
-        let payload = Payload::new(ListData::of(tickets));
+        let payload = Payload::new(data);
         Ok(match warning {
             Some(w) => payload.with_warning(w),
             None => payload,
         })
     }
+}
+
+/// The good-first subset of `tickets`, ordered like `indexes/good-first.md`, with start notes.
+// frob:ticket 01M3ZX87QPD21PCSSSAJHVK7HJ
+fn newcomer_rows(
+    ledger: &frob_ledger::Ledger,
+    tickets: Vec<Summary>,
+) -> Result<ListData, CliError> {
+    use frob_ledger::r#gen::good_first;
+    let mut rows = Vec::new();
+    for summary in tickets {
+        let view = ledger.show(summary.id).map_err(cli_err)?;
+        if good_first::is_good_first(&view.ticket.front.labels) {
+            let start_here = good_first::start_here(&view.ticket.body);
+            rows.push(ListRow {
+                summary,
+                snoozed_until: None,
+                aliases: None,
+                events: None,
+                start_here,
+            });
+        }
+    }
+    rows.sort_by_key(|r| good_first::order_key(r.summary.points, r.summary.id));
+    Ok(ListData {
+        count: rows.len(),
+        at: None,
+        tickets: rows,
+    })
 }
 
 /// The live-lease check for `doable`, or `NoLeases` plus a warning when it cannot be built.

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T19:51:16Z"
+digest = "86c513230912b38369d7ad1b08d948b440b5ecd2d03bfb09b13bfa3046415b44"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7e766276-f426-4acf-99d1-987e2c48cd3b with nextest profile: default
+    Starting 1 test across 39 binaries (275 tests skipped)
+        PASS [   0.223s] frob-cli::init_adopt init_ledger_ref_flag_overrides_and_is_validated
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.223s] 1 test run: 1 passed, 275 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(=init_ledger_ref_flag_overrides_and_is_validated)'"
+size = 550
+status = "measured"
+tests = ["init_ledger_ref_flag_overrides_and_is_validated"]
+at = "2026-10-10T19:51:16Z"
+actor = "Claude"
+rev = 1

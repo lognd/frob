@@ -580,3 +580,25 @@ fn crlf_checkout_under_autocrlf_keeps_an_accept_attested_but_a_real_edit_does_no
     let changed = common::evaluate_tree(dir.path(), None, &defaults(), Some(lock));
     assert_eq!(count(&changed.findings, "EXC005"), 1);
 }
+
+// frob:ticket 01M4FH86F1XAWKC7KQZSH5B4JE
+#[test]
+fn a_frob_doc_line_between_a_doc_block_and_its_item_does_not_raise_doc001() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(
+        dir.path(),
+        &[(
+            "src/lib.rs",
+            "/// Does f.\n// frob:doc docs/f.md#f\npub fn f() {}\n\npub fn g() {}\n",
+        )],
+    );
+    let ev = common::evaluate_tree(dir.path(), None, &defaults(), None);
+    let docs: Vec<String> = ev
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "DOC001")
+        .map(|f| f.message.clone())
+        .collect();
+    assert_eq!(docs.len(), 1, "only the undocumented g: {docs:?}");
+    assert!(docs[0].contains("::g"), "{docs:?}");
+}
