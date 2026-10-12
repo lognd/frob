@@ -7,10 +7,12 @@
 // frob:ticket 01M3ZX88BP9P0ZWPMJ5J5SBSMN
 
 use std::io::{BufRead, IsTerminal, Write};
+use std::time::Duration;
 
 use frob_ledger::Ledger;
 use gob_cli::clap::{Arg, ArgAction, ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_exec::{Limits, Program, Runner, Spec};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -182,7 +184,7 @@ pub fn session(
     }
 }
 
-/// Opens a ticket-branch file in `$PAGER` (`less` by default), or prints it when no pager starts.
+/// Opens a ticket-branch file in `$PAGER` (`less` by default) through [`Runner`], or prints it when no pager starts.
 struct PagerOpener<'a> {
     ledger: &'a Ledger,
     tip: String,
@@ -198,24 +200,32 @@ impl Opener for PagerOpener<'_> {
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "not on the ticket branch".to_owned())?;
         let pager = std::env::var("PAGER").unwrap_or_else(|_| "less".to_owned());
-        let spawned = std::process::Command::new(&pager)
-            .stdin(std::process::Stdio::piped())
-            .spawn();
-        match spawned {
-            Ok(mut child) => {
-                if let Some(mut stdin) = child.stdin.take() {
-                    // A pager quitting early closes the pipe; that is not an error.
-                    let _ = stdin.write_all(&bytes);
-                }
-                child.wait().map(|_| ()).map_err(|e| e.to_string())
-            }
-            Err(e) => {
-                tracing::debug!(pager = %pager, error = %e, "no pager; printing");
-                std::io::stdout()
-                    .write_all(&bytes)
-                    .map_err(|e| e.to_string())
-            }
+        let mut words = pager.split_whitespace().map(str::to_owned);
+        let name = words.next().unwrap_or_else(|| "less".to_owned());
+        let name_of_file = path.rsplit('/').next().unwrap_or("page");
+        let tmp =
+            std::env::temp_dir().join(format!("frob-tour-{}-{name_of_file}", std::process::id()));
+        std::fs::write(&tmp, &bytes).map_err(|e| e.to_string())?;
+        let mut args: Vec<String> = words.collect();
+        args.push(tmp.display().to_string());
+        let spec = Spec {
+            program: Program::Tool { name },
+            args,
+            cwd: None,
+            env: Vec::new(),
+            timeout: Duration::from_secs(3600),
+            // Not captured: the pager owns the terminal.
+            capture: false,
+        };
+        let ran = Runner::new(Limits { jobs: 1 }).run(&spec);
+        let _ = std::fs::remove_file(&tmp);
+        if let Err(e) = ran {
+            tracing::debug!(error = %e, "no pager; printing");
+            std::io::stdout()
+                .write_all(&bytes)
+                .map_err(|e| e.to_string())?;
         }
+        Ok(())
     }
 }
 
