@@ -7,6 +7,10 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-10-12T02:21:16Z"
-updated = "2026-10-12T02:42:50Z"
+updated = "2026-10-12T02:43:06Z"
 scope = ["docs/design/cli.md", "docs/design/universal-model.md", "docs/design/sibling-contract.md"]
+
+[[acceptance]]
+text = "Given the docs that count the required Unresolved cases, when read, then they name five including evaluation_failed"
+bound = false
 +++

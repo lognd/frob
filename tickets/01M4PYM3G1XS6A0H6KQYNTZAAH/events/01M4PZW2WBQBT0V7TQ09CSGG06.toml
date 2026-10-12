@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the docs that count the required Unresolved cases, when read, then they name five including evaluation_failed"]
+moved = []
+at = "2026-10-12T02:43:06Z"
+actor = "lognd"
+rev = 1
