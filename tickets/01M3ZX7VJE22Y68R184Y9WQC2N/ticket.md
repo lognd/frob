@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-12T21:21:11Z"
+updated = "2026-10-12T21:36:02Z"
 idempotency_key = "m2-sec-argv-templates"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-check/src/tools.rs", "crates/gob-check/src/config.rs"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a placeholder typed tracked path and a path outside the tracked set, when expanded, then the stage is refused"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.4.
