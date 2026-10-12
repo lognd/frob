@@ -8,12 +8,12 @@ points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:09:45Z"
-updated = "2026-10-12T12:51:24Z"
+updated = "2026-10-12T12:57:14Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "frob.toml"]
 
 [[acceptance]]
 text = "Given cargo clippy --message-format=json output, when the stage runs, then unused lints map to DEAD, too_many_arguments to NEAT002, the correctness group to LOGIC and unmapped lints to LINT with source_rule"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given this repository, when frob check runs, then the clippy finding count equals cargo clippy's"
