@@ -2,7 +2,8 @@
 id = "01M40K5J87866MD3CRN2XMCJCD"
 title = "cli.md: document E-NO-CONFIG and the verbs that run without frob.toml"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
