@@ -2,7 +2,8 @@
 id = "01M4NTWET2QT576F2CHN60YHK6"
 title = "TS adapter keeps a parse-error hole for MISSING nodes (const y = ;) so crunk reports the JSX syntax error"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
