@@ -2,13 +2,13 @@
 id = "01M4052VBC2P0NJT399YVSCZ53"
 title = "Mirror job on the default branch: schedule, workflow_dispatch, repository_dispatch, never push"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-03T05:51:38Z"
+updated = "2026-10-12T21:15:36Z"
 idempotency_key = "m2-mirror2-job"
 labels = ["milestone:2", "area:mirror"]
 scope = [".github/workflows/mirror.yml"]
