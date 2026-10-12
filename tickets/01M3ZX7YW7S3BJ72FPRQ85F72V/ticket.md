@@ -2,13 +2,13 @@
 id = "01M3ZX7YW7S3BJ72FPRQ85F72V"
 title = "Origin on every text field: host, std, pack:NAME, source, tracker, ledger"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:37Z"
-updated = "2026-10-03T03:34:37Z"
+updated = "2026-10-12T21:15:26Z"
 idempotency_key = "m2-sec-text-origin"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-diagnostics/src/record.rs", "crates/gob-diagnostics/src/envelope.rs", "docs/schemas/**"]
