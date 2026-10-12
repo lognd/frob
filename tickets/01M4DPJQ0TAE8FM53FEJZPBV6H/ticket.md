@@ -2,7 +2,8 @@
 id = "01M4DPJQ0TAE8FM53FEJZPBV6H"
 title = "Share numeric_raw and the React unitless list from gob-symbols with crunk-ingest"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
