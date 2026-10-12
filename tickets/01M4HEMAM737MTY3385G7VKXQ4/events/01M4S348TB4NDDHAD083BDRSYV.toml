@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-12T22:17:04Z"
+digest = "c8c0b376f3382a3b9b9facf9b5d043d0681adeef3710623c6ca89160d5b61b77"
+exit_code = 100
+failed_tests = ["workspace_layering_holds_and_every_crate_has_a_layer"]
+passed = false
+provider = "nextest"
+ref = "package(grimble-check) and test(/pack_atom|pack_atom_use|no_detector/)"
+size = 122624
+status = "measured"
+test_count = 1190
+tests_digest = "7cbc9207a8937ad45f8b490569e17886f169d8a15c9ef7c6116b8c8e594c635e"
+uri = "dir:.git/frob/artifacts/c8c0b376f3382a3b9b9facf9b5d043d0681adeef3710623c6ca89160d5b61b77"
+at = "2026-10-12T22:17:04Z"
+actor = "lognd"
+rev = 1
