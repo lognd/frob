@@ -2,7 +2,8 @@
 id = "01M3ZX860YGPCJE6ETPJADMNFE"
 title = "Generated front door: ticket-branch README and epic pages"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
