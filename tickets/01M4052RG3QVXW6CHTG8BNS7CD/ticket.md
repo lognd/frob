@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-12T21:43:01Z"
+updated = "2026-10-12T21:43:06Z"
 idempotency_key = "m2-mirror2-keyring"
 labels = ["milestone:2", "area:mirror", "creates:crates/frob-mirror/Cargo.toml", "creates:crates/frob-mirror/src/lib.rs", "creates:Cargo.lock"]
 scope = ["crates/frob-mirror/src/keyring.rs", "crates/frob-mirror/Cargo.toml", "crates/frob-mirror/src/lib.rs", "Cargo.lock"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a key past its verify-only period, when a marker under it is verified, then it fails as unknown kid"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a rotation, when planned, then re-marking is a list of budgeted operations spread over runs"
