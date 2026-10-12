@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-12T21:22:29Z"
+digest = "0780e65349d0794a76b732935343bdb32476d444116b3b986a6a7fa8e280c5c5"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c59652c9-04b4-409a-a9b3-d7e7458daa66 with nextest profile: default
+    Starting 4 tests across 3 binaries (18 tests skipped)
+        PASS [   0.008s] frob-gh graphql::tests::partial_data_fails_the_scope
+        PASS [   0.009s] frob-gh policy::tests::repeated_5xx_waits_60_120_240_then_stops_after_three_retries
+        PASS [   0.014s] frob-gh policy::tests::no_budget_stops_without_sleeping_and_reports_reset
+        PASS [   0.026s] frob-gh graphql::tests::rate_limit_in_errors_is_a_failure_with_reset_and_no_data
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.027s] 4 tests run: 4 passed, 18 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-gh -E 'test(rate_limit_in_errors) | test(partial_data_fails) | test(no_budget_stops) | test(repeated_5xx)'"
+size = 859
+status = "measured"
+test_count = 4
+tests_digest = "855d73c6b4f6717cfa0cf8173e55dcc22b5d3326d52857e46a9d1c2f93b6de42"
+at = "2026-10-12T21:22:29Z"
+actor = "lognd"
+rev = 1
