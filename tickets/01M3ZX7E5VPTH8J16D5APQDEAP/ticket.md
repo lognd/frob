@@ -2,7 +2,8 @@
 id = "01M3ZX7E5VPTH8J16D5APQDEAP"
 title = "GRL snippet checks that need no parser: GRL006 and GRL008"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
