@@ -2,7 +2,8 @@
 id = "01M4FGYEWFAA9K4AHNCTV4NG4F"
 title = "template entity does not parse: grmb-spec 4.7 excuse templates are MDL000"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
