@@ -2,7 +2,8 @@
 id = "01M4052RG3QVXW6CHTG8BNS7CD"
 title = "Marker keyring: one signing key, verify-only older keys, gradual re-marking"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
