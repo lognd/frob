@@ -2,7 +2,8 @@
 id = "01M408FXDQNHMQSA4RF2HHBFSY"
 title = "universal-model.md and cli.md: four required Unresolved cases (tool-failed added)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
