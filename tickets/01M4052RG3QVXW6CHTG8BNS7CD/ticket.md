@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-12T21:15:33Z"
+updated = "2026-10-12T21:27:41Z"
 idempotency_key = "m2-mirror2-keyring"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/keyring.rs"]
@@ -27,7 +27,7 @@ bound = false
 
 [[acceptance]]
 text = "Given a rotation, when planned, then re-marking is a list of budgeted operations spread over runs"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.3 (Marker format, keyring).
