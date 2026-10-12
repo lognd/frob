@@ -121,11 +121,7 @@ impl Limits {
             .nest_limit(u32::try_from(self.regex_nesting).unwrap_or(u32::MAX))
             .build()
             .map(|_| ())
-            .map_err(|e| {
-                fail(Breach::RegexSize {
-                    why: e.to_string(),
-                })
-            })
+            .map_err(|e| fail(Breach::RegexSize { why: e.to_string() }))
     }
 }
 
