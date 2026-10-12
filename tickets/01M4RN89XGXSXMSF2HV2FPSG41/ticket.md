@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-12T18:16:01Z"
-updated = "2026-10-12T20:51:23Z"
+updated = "2026-10-12T20:54:08Z"
 scope = ["crates/crunk/Cargo.toml", "crates/crunk/src/main.rs"]
 
 [[acceptance]]
