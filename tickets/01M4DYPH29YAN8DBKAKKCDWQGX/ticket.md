@@ -8,12 +8,12 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T14:29:25Z"
-updated = "2026-10-12T02:31:48Z"
+updated = "2026-10-12T02:35:27Z"
 scope = ["changelog.d/**", "crates/crunk-rules/**", "crates/crunk-check/**", "docs/design/crunk.md", "docs/reference/directives.md", "docs/schemas/directives.json"]
 
 [[acceptance]]
 text = "Given a spec-only project (crunk.toml, no sources), when crunk check runs, then COLOR001 reports a required Unresolved (examined zero subjects)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the generated directives reference, when it is read, then crunk:waive documents that a missing or blank reason grants nothing"
