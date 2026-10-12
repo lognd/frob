@@ -10,6 +10,7 @@ pub mod codegen;
 pub mod examples;
 pub mod exec;
 pub mod grl;
+pub mod limits;
 pub mod lower;
 pub mod plan;
 pub mod verbs;
