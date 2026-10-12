@@ -2,7 +2,8 @@
 id = "01M4PYM3G1XS6A0H6KQYNTZAAH"
 title = "Docs say four required cases; code has five (EvaluationFailed)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
