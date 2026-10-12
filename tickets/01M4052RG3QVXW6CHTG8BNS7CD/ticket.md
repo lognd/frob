@@ -2,13 +2,13 @@
 id = "01M4052RG3QVXW6CHTG8BNS7CD"
 title = "Marker keyring: one signing key, verify-only older keys, gradual re-marking"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-03T05:51:35Z"
+updated = "2026-10-12T21:15:33Z"
 idempotency_key = "m2-mirror2-keyring"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/keyring.rs"]
