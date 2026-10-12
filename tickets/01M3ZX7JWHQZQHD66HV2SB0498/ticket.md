@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-12T20:36:41Z"
+updated = "2026-10-12T20:40:43Z"
 idempotency_key = "m2-packs-activation"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/gob-packs/src/activation.rs"]
@@ -19,7 +19,7 @@ target = "01M3ZX7FG2JNTHKVQ5R535DAVZ"
 
 [[acceptance]]
 text = 'Given `[[packs.enable]] name="react" paths=["frontend/**"]`, when resolving frontend/a.tsx and backend/b.ts, then react is active only for the first and the answer names the config line'
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a pack.toml in a subdirectory, when resolving files beneath it, then nothing changes"
