@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:23Z"
 updated = "2026-10-12T00:19:19Z"
 idempotency_key = "m2-grl-new"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/gob-plan/src/verbs/new.rs", "crates/gob-plan/src/verbs/mod.rs"]
+scope = ["crates/gob-plan/src/verbs/new.rs", "crates/gob-plan/src/verbs/mod.rs", "crates/grimble/src/rule_cmd.rs"]
 
 [[links]]
 kind = "blocked-by"
