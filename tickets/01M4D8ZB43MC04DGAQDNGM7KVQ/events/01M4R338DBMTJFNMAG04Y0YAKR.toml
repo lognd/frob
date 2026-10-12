@@ -1,0 +1,185 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-12T12:57:14Z"
+digest = "b06c5459a567a4b14a460b941a9df7cdc156b29db6889e1e6d2ceaaa10f6c84d"
+exit_code = 0
+inline = '''
+   Compiling thiserror v2.0.21
+   Compiling serde v1.0.229
+   Compiling ref-cast v1.0.27
+   Compiling nix v0.31.3
+   Compiling gix-path v0.12.6
+   Compiling gix-packetline v0.22.2
+   Compiling gix-zlib v0.1.0
+   Compiling cobs v0.3.0
+   Compiling tracing-serde v0.2.0
+   Compiling schemars v1.2.2
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling gix-config-value v0.19.1
+   Compiling gix-url v0.38.0
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling gix-transport v0.59.2
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-refspec v0.45.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-ignore v0.22.1
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling gix-shallow v0.13.0
+   Compiling gix-pathspec v0.20.0
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-traverse v0.61.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-index v0.55.0
+   Compiling gix-odb v0.84.0
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-worktree v0.56.0
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-worktree-state v0.34.1
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling postcard v1.1.3
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling target-tuple v1.0.2
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling glob v0.3.4
+   Compiling termcolor v1.4.1
+   Compiling trybuild v1.0.121
+   Compiling gix v0.87.1
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 31.36s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e65a2eb4-8d6c-408e-b2ce-eab3d0afcc7b with nextest profile: ci
+    Starting 95 tests across 6 binaries
+        PASS [   0.010s] gob-check fix::tests::one_out_of_range_edit_skips_the_whole_fix
+        PASS [   0.010s] gob-check applicability::tests::opaque_rows_keep_todays_answers_and_reasons
+        PASS [   0.011s] gob-check cargo_json::tests::a_line_that_is_not_json_is_an_error
+        PASS [   0.012s] gob-check applicability::tests::languages_outside_the_set_are_not_applicable_with_a_reason
+        PASS [   0.013s] gob-check fix::tests::a_line_ending_only_edit_since_the_check_is_refused
+        PASS [   0.016s] gob-check applicability::tests::symbol_subjects_derive_from_needs
+        PASS [   0.016s] gob-check applicability::tests::project_rules_always_examine
+        PASS [   0.017s] gob-check cargo_json::tests::diagnostics_parse_with_byte_spans_groups_and_dedup
+        PASS [   0.007s] gob-check packages::tests::a_crate_file_affects_its_package_and_reverse_dependencies_only
+        PASS [   0.008s] gob-check packages::tests::a_workspace_level_file_or_no_packages_means_everything
+        PASS [   0.017s] gob-check fix::tests::refuses_a_file_edited_since_the_check_and_writes_nothing
+        PASS [   0.010s] gob-check packages::tests::a_body_only_change_names_direct_dependents_and_an_api_change_the_closure
+        PASS [   0.009s] gob-check packages::tests::the_public_surface_ignores_bodies_and_sees_signatures_and_variants
+        PASS [   0.007s] gob-check required::tests::a_reason_carried_by_the_finding_is_marked
+        PASS [   0.007s] gob-check required::tests::a_typed_annotation_reason_maps_to_a_required_mark_without_reading_the_message
+        PASS [   0.008s] gob-check required::tests::a_zero_subject_finding_is_typed_vacuous
+        PASS [   0.008s] gob-check required::tests::an_annotation_prefix_in_the_message_alone_marks_nothing
+        PASS [   0.007s] gob-check required::tests::only_an_applicable_rule_with_zero_subjects_is_flagged
+        PASS [   0.027s] gob-check fix::tests::applies_a_fix_atomically_to_a_fresh_file
+        PASS [   0.007s] gob-check required::tests::unrelated_unresolved_is_not_marked
+        PASS [   0.008s] gob-check sarif::tests::biome_and_golangci_logs_parse
+        PASS [   0.006s] gob-check sarif::tests::oxlint_log_parses_with_its_prefixed_id_and_character_columns
+        PASS [   0.035s] gob-check fix::tests::a_fix_that_breaks_syntax_is_rolled_back_and_not_applied
+        PASS [   0.008s] gob-check sarif::tests::unreadable_logs_are_errors
+        PASS [   0.010s] gob-check sarif::tests::roslyn_log_decodes_uris_and_honours_suppression_status
+        PASS [   0.006s] gob-check status::tests::binary_detection
+        PASS [   0.008s] gob-check sarif::tests::rule_id_falls_back_to_rule_ref_then_descriptor_index
+        PASS [   0.007s] gob-check sarif::tests::uris_decode_percent_escapes_and_drive_letters
+        PASS [   0.008s] gob-check status::tests::a_single_opaque_notice_is_left_untouched
+        PASS [   0.012s] gob-check sarif::tests::eslint_in_source_suppression_is_kept_and_flagged
+        PASS [   0.008s] gob-check status::tests::inapplicable_reasons_are_kept_once_and_printed
+        PASS [   0.042s] gob-check fix::tests::a_failed_second_write_restores_the_first_file
+        PASS [   0.008s] gob-check status::tests::low_fidelity_is_unresolved
+        PASS [   0.007s] gob-check status::tests::locate_hole_points_at_the_table_row_with_the_pipe_in_a_code_span
+        PASS [   0.008s] gob-check status::tests::unknown_rules_are_always_examined
+        PASS [   0.008s] gob-check status::tests::partial_files_are_examined_with_a_caveat
+        PASS [   0.008s] gob-check status::tests::not_applicable_reasons_are_kept_once_and_printed
+        PASS [   0.008s] gob-check status::tests::opaque_files_split_by_need_and_binariness
+        PASS [   0.008s] gob-check tool_parse::tests::actionlint_output_parses_with_line_and_column
+        PASS [   0.013s] gob-check status::tests::scanned_opaque_text_is_examined
+        PASS [   0.013s] gob-check status::tests::opaque_notices_of_many_rules_merge_into_one_naming_count_and_rules
+        PASS [   0.008s] gob-check tool_parse::tests::cargo_lints_map_to_dead_neat_logic_and_lint_with_the_level_as_severity
+        PASS [   0.010s] gob-check tool_parse::tests::actionlint_runner_labels_follow_the_labels_knob
+        PASS [   0.007s] gob-check tool_parse::tests::stylelint_output_parses_with_line_and_column
+        PASS [   0.008s] gob-check tool_parse::tests::id_map_overrides_and_bad_targets_fall_back
+        PASS [   0.008s] gob-check tool_parse::tests::version_range_is_inclusive_and_numeric
+        PASS [   0.009s] gob-check tool_parse::tests::stylelint_findings_carry_crunk_ids_and_are_advisory
+        PASS [   0.009s] gob-check tool_parse::tests::versions_are_found_in_banner_text
+        PASS [   0.009s] gob-check tool_parse::tests::zizmor_ids_map_to_ci_ids_and_the_rest_is_tool002
+        PASS [   0.006s] gob-check tool_parse::tests::zizmor_output_parses_with_byte_spans
+        PASS [   0.044s] gob-check repo::tests::a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh
+        PASS [   0.010s] gob-check tools::tests::a_spawn_io_failure_is_a_required_tool_failed_even_when_not_gating
+        PASS [   0.008s] gob-check tools::tests::cargo_stages_share_one_group_and_others_get_their_own
+        PASS [   0.007s] gob-check tools::tests::character_columns_become_byte_offsets
+        PASS [   0.054s] gob-check repo::tests::engines_never_share_a_cached_repo_group
+        PASS [   0.011s] gob-check tools::tests::printed_paths_become_repo_relative
+        PASS [   0.022s] gob-check tools::tests::a_stage_is_skipped_only_when_it_declares_inputs_the_scope_misses
+        PASS [   0.007s] gob-check tools::tests::the_packages_token_expands_to_the_affected_set_or_the_unscoped_default
+        PASS [   0.010s] gob-check tools::tests::the_excerpt_shows_error_lines_and_the_tail_not_leading_info_noise
+        PASS [   0.035s] gob-check tools::tests::an_unresolvable_pin_fails_the_version_probe_loudly
+        PASS [   0.039s] gob-check tools::tests::a_failing_tool_with_info_noise_quotes_its_error_line_in_tool001
+        PASS [   0.038s] gob-check tools::tests::an_undeclared_exit_with_empty_output_names_status_and_stderr
+        PASS [   0.009s] gob-check::boundary no_frob_crate_is_a_direct_or_transitive_dependency
+        PASS [   0.046s] gob-check tools::tests::a_findings_exit_with_no_output_is_a_failure
+        PASS [   0.040s] gob-check tools::tests::sarif_results_map_keep_source_rule_and_set_suppressed_aside
+        PASS [   0.046s] gob-check tools::tests::stderr_is_escaped_and_capped
+        PASS [   0.069s] gob-check tools::tests::a_recorded_pass_is_reused_until_one_input_changes
+        PASS [   0.008s] gob-check::product_rules a_clean_host_and_text_fire_nothing
+        PASS [   0.045s] gob-check tools::tests::unparseable_output_is_a_failure
+        PASS [   0.078s] gob-check tools::tests::a_clean_run_yields_no_finding
+        PASS [   0.009s] gob-check::product_rules alpha_rules::freshness::rules_index_is_fresh
+        PASS [   0.009s] gob-check::product_rules beta_rules::freshness::rules_index_is_fresh
+        PASS [   0.006s] gob-check::product_rules rules_binds_every_listed_rule_and_runs_it
+        PASS [   0.007s] gob-check::product_rules fixture_indexes_are_fresh
+        PASS [   0.007s] gob-check::product_rules the_list_names_every_listed_crates_rules
+        PASS [   0.010s] gob-check::rule_defs alpha_rules::freshness::rules_index_is_fresh
+        PASS [   0.062s] gob-check tools::tests::unreadable_sarif_is_a_required_tool_failed
+        PASS [   0.058s] gob-check::pipeline a_must_measure_rule_with_zero_subjects_is_a_required_unresolved
+        PASS [   0.058s] gob-check::pipeline only_accepts_this_products_rules_and_rejects_the_others
+        PASS [   0.010s] gob-check::rule_defs fixture_indexes_are_fresh
+        PASS [   0.069s] gob-check::pipeline a_foreign_product_gets_findings_caches_and_subject_counts
+        PASS [   0.011s] gob-check::rule_defs gamma_rules::freshness::rules_index_is_fresh
+        PASS [   0.016s] gob-check::rule_defs beta_rules::freshness::rules_index_is_fresh
+        PASS [   0.063s] gob-check::pipeline zero_subjects_pass_when_the_rule_is_not_applicable_or_was_filtered_out
+        PASS [   0.075s] gob-check::pipeline a_scoped_run_skips_full_only_groups_with_a_reason_and_a_full_run_keeps_them
+        PASS [   0.058s] gob-check::rule_defs a_clean_toy_fires_nothing
+        PASS [   0.061s] gob-check::rule_defs an_inapplicable_rule_is_skipped_and_its_reason_reported_once_in_json_and_text
+        PASS [   0.064s] gob-check::rule_defs a_toy_product_runs_its_listed_file_and_repo_rules_with_no_group_wiring
+        PASS [   0.044s] gob-check::rule_defs zero_subjects_for_a_must_measure_rule_is_the_required_unresolved
+        PASS [   0.049s] gob-check::rule_defs the_resolver_decides_per_file_for_declared_rules
+        PASS [   0.047s] gob-check::rule_defs the_zero_subject_unresolved_is_typed_vacuous_and_the_counters_convert_to_a_rule_report
+        PASS [   0.162s] gob-check tools::tests::a_missing_binary_is_a_required_tool_failed
+        PASS [   0.057s] gob-check::rule_defs only_selects_declared_rules_by_id_and_family_and_skips_the_rest
+        PASS [   1.042s] gob-check tools::tests::independent_stages_overlap_and_keep_their_order_and_timing
+        SLOW [> 30.000s] gob-check::ui_product ui_product
+        PASS [  55.011s] gob-check::ui_product ui_product
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  55.174s] 95 tests run: 95 passed (1 slow), 0 skipped
+'''
+passed = true
+provider = "command"
+ref = "cargo nextest run --profile ci -p gob-check"
+size = 12504
+status = "measured"
+at = "2026-10-12T12:57:14Z"
+actor = "lognd"
+rev = 1
