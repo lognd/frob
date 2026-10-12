@@ -2,7 +2,8 @@
 id = "01M4DYPH29YAN8DBKAKKCDWQGX"
 title = "crunk: must_measure design note (spec-only project gets a required Unresolved from COLOR001), multi-file mdtest projects, stale crunk:waive directive docs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
