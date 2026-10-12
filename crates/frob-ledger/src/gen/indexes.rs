@@ -53,7 +53,7 @@ fn priority_rank(p: Priority) -> usize {
 }
 
 /// Sort key: highest priority first, then fewest points (unpointed last), then id.
-fn ranked(r: &Row) -> (std::cmp::Reverse<usize>, u8, TicketId) {
+pub(super) fn ranked(r: &Row) -> (std::cmp::Reverse<usize>, u8, TicketId) {
     (
         std::cmp::Reverse(priority_rank(r.front.priority)),
         r.front.points.map_or(u8::MAX, crate::model::Points::get),
