@@ -2,13 +2,13 @@
 id = "01M40K5J87866MD3CRN2XMCJCD"
 title = "cli.md: document E-NO-CONFIG and the verbs that run without frob.toml"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T09:57:47Z"
-updated = "2026-10-11T14:46:46Z"
+updated = "2026-10-12T02:19:33Z"
 idempotency_key = "m2-cli-no-config-doc"
 labels = ["milestone:2", "good-first"]
 scope = ["docs/design/cli.md"]
