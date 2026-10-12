@@ -2,7 +2,8 @@
 id = "01M3ZX887RZB82G8HR5JKQ2FER"
 title = "Repository tour: templates, five stops, pinned examples in [tour]"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
