@@ -7,8 +7,8 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T04:22:44Z"
-updated = "2026-10-12T03:49:27Z"
-scope = ["crates/frob-check/src/filecheck.rs", "crates/frob-check/src/snapshot.rs"]
+updated = "2026-10-12T03:57:49Z"
+scope = ["crates/frob-check/src/filecheck.rs", "crates/frob-check/src/snapshot.rs", "crates/frob-obligations/src/**", "crates/frob-check/tests/**"]
 
 [[acceptance]]
 text = "a second frob check after an unrelated ledger event has file_hits equal to file_misses of the first run (no per-file recompute), covered by a test"
