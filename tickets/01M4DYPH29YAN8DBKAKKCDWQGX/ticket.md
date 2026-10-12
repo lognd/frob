@@ -8,7 +8,7 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T14:29:25Z"
-updated = "2026-10-12T02:35:27Z"
+updated = "2026-10-12T02:36:21Z"
 scope = ["changelog.d/**", "crates/crunk-rules/**", "crates/crunk-check/**", "docs/design/crunk.md", "docs/reference/directives.md", "docs/schemas/directives.json"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the generated directives reference, when it is read, then crunk:waive documents that a missing or blank reason grants nothing"
-bound = false
+bound = true
 +++
 
 Follow-ups from ~8MQFYVM. Decision recorded: ingest stays to css_root plus [jsx] globs; ungoverned files belong to the org rules.
