@@ -2,12 +2,12 @@
 id = "01M4MK5SXY0VMZ0PGV4BE4PRM2"
 title = "REF001 per-file cache key uses the ledger tip, so every ticket event misses all 14k files"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T04:22:44Z"
-updated = "2026-10-11T04:22:44Z"
+updated = "2026-10-12T03:49:27Z"
 scope = ["crates/frob-check/src/filecheck.rs", "crates/frob-check/src/snapshot.rs"]
 
 [[acceptance]]
