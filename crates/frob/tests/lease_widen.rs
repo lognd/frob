@@ -198,3 +198,17 @@ fn lease_widen_without_a_lease_is_refused() {
         .to_owned();
     assert_eq!(code(&repo.frob(&["lease", "widen", &id])), 3);
 }
+
+// frob:ticket 01M4D6NSC2DP2P09F4QTR723S3
+#[test]
+fn lease_release_frees_the_lease_and_is_idempotent_and_holder_only() {
+    let repo = Repo::new();
+    let (id, t) = repo.leased("Someone Else", "a/**");
+    assert_eq!(code(&repo.frob(&["lease", "release", &id])), 3);
+    assert!(repo.store().live_lease(t).expect("read").is_some());
+    let (id, t) = repo.leased("Test User", "b/**");
+    let first = repo.ok(&["lease", "release", &id]);
+    assert_eq!(first["already"], false);
+    assert!(repo.store().live_lease(t).expect("read").is_none());
+    assert_eq!(repo.ok(&["lease", "release", &id])["already"], true);
+}

@@ -25,6 +25,7 @@
 | `init` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Write frob.toml knobs, ignore .frob/, and install the ledger merge driver; safe to repeat. |
 | `land` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Land a leased ticket branch onto the base branch, close the ticket and clean up. |
 | `lease list` | yes | no | 0 ok, 3 refused, 4 internal | List the live scope leases of this clone; `--contention` adds the files claimed by more than one. |
+| `lease release` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Give up the caller's lease on a finished-but-unlanded ticket; the ticket stays in-progress and `land` re-takes the lease. |
 | `lease widen` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-read the ticket scope (optionally adding globs to it) and rescope the caller's lease to match. |
 | `merge-driver` | yes | no | 0 ok, 1 negative, 2 usage, 4 internal | Union both sides' event files of a conflicted ticket.md and re-fold it (git invokes this). |
 | `milestone add` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Add an epic to a milestone; a repeat returns `already`, a non-epic is refused. |

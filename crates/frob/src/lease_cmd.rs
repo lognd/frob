@@ -1,4 +1,4 @@
-//! Keeping a held lease in step with its ticket's scope: `lease widen` and `ticket update`.
+//! Keeping a held lease in step with its ticket's scope: `lease widen`, `lease release` and `ticket update`.
 //!
 //! Ordering (ticket 01M3ZBRRMQ55G1B8VCNKDR4ZBR): the lease is rescoped first,
 //! under the lease lock, and only then is the ledger event committed. A refusal
@@ -191,5 +191,56 @@ impl Command for LeaseWiden {
             payload = payload.with_warning(w);
         }
         Ok(payload)
+    }
+}
+
+/// Output of `lease release`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct ReleaseData {
+    /// The ticket whose lease was released.
+    pub ticket: TicketId,
+    /// The lease that was given up; absent when the ticket held none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub released: Option<Lease>,
+}
+
+/// Give up the caller's lease on a finished-but-unlanded ticket; the ticket stays in-progress and `land` re-takes the lease.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "lease release",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct LeaseRelease {
+    ticket: String,
+}
+
+impl Command for LeaseRelease {
+    type Data = ReleaseData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        cmd.arg(ticket_arg())
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            ticket: get(m, "ticket").unwrap_or_default(),
+        })
+    }
+
+    // frob:ticket 01M4D6NSC2DP2P09F4QTR723S3
+    fn run(&self, ctx: &Context) -> Outcome<ReleaseData> {
+        let ledger = open(ctx)?;
+        let id = resolve(&ledger, &self.ticket)?;
+        let (store, _) = open_lease_store(ctx)?;
+        let actor = ledger.actor().map_err(cli_err)?;
+        let released = store.release(id, Some(&actor))?;
+        tracing::info!(ticket = %id, %actor, released = released.is_some(), "lease release");
+        Ok(Payload::new(ReleaseData {
+            ticket: id,
+            released: released.clone(),
+        })
+        .with_already(released.is_none()))
     }
 }

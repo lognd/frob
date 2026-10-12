@@ -196,10 +196,10 @@ fn remedies_name_only_existing_commands_and_flags() {
 
 /// The registry accessor knows the verbs this ticket's remedy points at.
 #[test]
-fn registry_has_requeue_and_no_lease_release() {
+fn registry_has_requeue_and_lease_release() {
     let frob = frob_cli::cli().verb_flags();
     assert!(frob["requeue"].contains("reason"));
-    assert!(!frob.contains_key("lease release"));
+    assert!(frob.contains_key("lease release"));
     assert!(frob.contains_key("lease widen"));
 }
 
@@ -215,7 +215,7 @@ fn checker_rejects_bad_spans() {
         weak: false,
         log_like: false,
     };
-    assert!(check_span(&mk("lease release T-1"), &frob).is_some());
+    assert!(check_span(&mk("lease nonesuch T-1"), &frob).is_some());
     assert!(check_span(&mk("requeue <t> --nope x"), &frob).is_some());
     assert!(check_span(&mk("requeue <t> --reason <why>"), &frob).is_none());
 }

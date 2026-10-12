@@ -384,6 +384,7 @@ fn every_verb_is_in_the_command_inventory() {
         "merge-driver",
         "lease list",
         "lease widen",
+        "lease release",
         "ticket contention",
         "work",
         "start",
