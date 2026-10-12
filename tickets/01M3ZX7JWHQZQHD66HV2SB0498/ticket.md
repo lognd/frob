@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-12T20:40:43Z"
+updated = "2026-10-12T20:47:43Z"
 idempotency_key = "m2-packs-activation"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/gob-packs/src/activation.rs"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a pack.toml in a subdirectory, when resolving files beneath it, then nothing changes"
-bound = false
+bound = true
 +++
 
 Implements plugins.md section 2 (no directory-scoped packs).
