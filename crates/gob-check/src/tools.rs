@@ -524,7 +524,10 @@ pub(crate) struct ToolRun {
 
 /// The lock group of a stage: stages with an equal key run serially.
 fn group_key(stage: &ToolStage, index: usize) -> String {
-    if stage.command == "cargo" {
+    // `env VAR=x cargo ...` wraps cargo to set an env var and shares cargo's build lock
+    // (frob:ticket 01M4DYPEJYZSKH9VDD1AJKH9PM).
+    let wraps_cargo = stage.command == "env" && stage.args.iter().any(|a| a == "cargo");
+    if stage.command == "cargo" || wraps_cargo {
         "cargo".to_owned()
     } else {
         format!("stage-{index}")
@@ -841,6 +844,10 @@ mod tests {
         cargo.command = "cargo".to_owned();
         let other = sh_stage("o", ToolParser::None, "true", "true");
         assert_eq!(group_key(&cargo, 0), group_key(&cargo, 5));
+        let mut wrapped = cargo.clone();
+        wrapped.command = "env".to_owned();
+        wrapped.args = vec!["RUSTDOCFLAGS=-D warnings".to_owned(), "cargo".to_owned()];
+        assert_eq!(group_key(&wrapped, 3), group_key(&cargo, 0));
         assert_ne!(group_key(&other, 1), group_key(&other, 2));
         assert_ne!(group_key(&cargo, 0), group_key(&other, 0));
     }
