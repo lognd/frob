@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-12T21:15:18Z"
+updated = "2026-10-12T21:21:11Z"
 idempotency_key = "m2-sec-argv-templates"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-check/src/tools.rs", "crates/gob-check/src/config.rs"]
@@ -19,7 +19,7 @@ target = "01M3ZX7J6SES21T3KC4WESVR7H"
 
 [[acceptance]]
 text = "Given a stage whose command is a shell string or a bare name with no template, when loaded, then it is a CFG error naming the stage"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a placeholder typed tracked path and a path outside the tracked set, when expanded, then the stage is refused"
