@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:45Z"
-updated = "2026-10-12T01:37:25Z"
+updated = "2026-10-12T01:38:48Z"
 idempotency_key = "m2-nav-guide-templates"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob-ledger/src/gen/guide.rs", "crates/frob-ledger/templates/**", "crates/frob-ledger/src/gen/mod.rs", "crates/frob-ledger/tests/gen_guide.rs", "crates/frob-ledger/src/replay.rs"]
@@ -19,7 +19,7 @@ target = "01M3ZX85S7ASFGT31GDYMRB5JX"
 
 [[acceptance]]
 text = "Given a repository, when reindexed, then guide pages exist with names and commands filled and each page names its profile at the top and links to the other"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a newer frob version, when reindexed, then the templates refresh and the diff is the template change only"
