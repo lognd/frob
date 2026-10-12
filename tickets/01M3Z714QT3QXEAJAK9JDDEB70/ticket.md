@@ -2,7 +2,8 @@
 id = "01M3Z714QT3QXEAJAK9JDDEB70"
 title = "G17a: gob-pattern U-level rules (kind, role, callee, all/any/not/inside/has) and the Doc spike decision"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
