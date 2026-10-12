@@ -261,7 +261,9 @@ grammar level, with the U level implemented on the same matcher trait
 so combinators behave identically. Status, stated once: version
 compatibility is answered (D42, ast-grep-core 0.45.3 against the
 workspace tree-sitter pin); the remaining spike is an ast-grep `Doc`
-implementation over U terms, and it blocks level-2 rules (G17). A rule
+implementation over U terms; the spike is decided: level 2 uses the in-house matcher of
+`gob-pattern` (kind, role, callee, all, any, not, inside, has), no `Doc` trait (G17a);
+metavariable patterns and fixes follow in G17b. A rule
 authored at level 1
 can be promoted to level 2 by changing `language`, and to level 3 by
 `cargo dev scaffold-rule`, keeping its id and tests.
