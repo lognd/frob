@@ -19,6 +19,10 @@ extend-exclude = [
   "tests/crunk-parity/fixtures/**",
 ]
 
+# ULID fragment names under changelog.d/ are random; a ULID can spell a word (TEH).
+[default]
+extend-ignore-identifiers-re = ["[0-9A-HJKMNP-TV-Z]{26}"]
+
 # Deliberate tokens; each group says why it is not a typo.
 [default.extend-words]
 # Rule-id and language-name fragments, short identifiers and test inputs.
