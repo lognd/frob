@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-12T00:11:26Z"
+updated = "2026-10-12T00:15:52Z"
 idempotency_key = "m2-grl-snippets"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/src/check/snippets.rs", "crates/gob-plan/src/grl/snippet.rs", "crates/gob-plan/src/check/mod.rs", "crates/gob-plan/tests/grl_errors/main.rs", "crates/gob-plan/src/check/render.rs", "docs/design/grl-spec.md"]
@@ -23,7 +23,7 @@ target = "01M3ZX7DYR7PR1PBCZ7E8Q56WW"
 
 [[acceptance]]
 text = "Given a plain snippet in a lang * rule, when compiled, then GRL006 is emitted byte-equal to its golden, and a snippet with as roles is accepted"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a fix snippet whose metavariable no find snippet binds, when compiled, then GRL008 is emitted byte-equal to its golden with a did-you-mean"
