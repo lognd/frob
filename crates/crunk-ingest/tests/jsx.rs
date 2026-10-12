@@ -359,6 +359,21 @@ fn documented_style_divergences_from_python() {
 }
 
 // Syntax that does not parse becomes a diagnostic; the rest of the file still ingests.
+// A MISSING node (tree-sitter inserted a token) is a syntax error too, not a silent repair.
+// frob:ticket 01M4NTWET2QT576F2CHN60YHK6
+// frob:tests crates/crunk-ingest/src/jsx/mod.rs::parse_in_project
+#[test]
+fn a_missing_node_is_reported_as_a_syntax_error() {
+    let p = parse_jsx_source("a.ts", "const y = ;\n", RFS).unwrap();
+    assert!(
+        p.errors
+            .iter()
+            .any(|e| e.starts_with("jsx syntax error at line 1")),
+        "{:?}",
+        p.errors
+    );
+}
+
 // frob:tests crates/crunk-ingest/src/jsx/mod.rs::parse_in_project
 #[test]
 fn a_syntax_error_is_reported_and_the_rest_of_the_file_still_counts() {
