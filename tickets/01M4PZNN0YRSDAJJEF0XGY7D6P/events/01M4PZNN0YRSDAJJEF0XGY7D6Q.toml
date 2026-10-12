@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk mdtest: multi-file projects in one rule-page example"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-rules/**"]
+body = "Split from ~KCDWQGX (title item: multi-file mdtest projects), not done there."
+at = "2026-10-12T02:39:35Z"
+actor = "lognd"
+rev = 1
