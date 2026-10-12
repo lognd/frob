@@ -9,14 +9,16 @@
 //! - [`FixtureTransport`]: replays recorded exchanges and refuses anything unrecorded, so tests
 //!   never touch the network.
 //!
-//! The stop-instead-of-sleep rule, the 60 s doubling and GraphQL `errors` arrays belong to the
-//! error-policy ticket, which builds on this client.
+//! The stop-instead-of-sleep rule, the 60 s doubling ([`send_with_policy`]) and GraphQL `errors`
+//! arrays ([`parse_response`]) live in the policy and graphql modules.
 
 mod client;
 mod culprit;
 mod error;
 mod fixture;
+mod graphql;
 mod live;
+mod policy;
 mod rate;
 mod token;
 mod transport;
@@ -28,7 +30,9 @@ pub use culprit::{
 };
 pub use error::Error;
 pub use fixture::{Exchange, FixtureTransport, RecordedRequest, RecordedResponse};
+pub use graphql::{GraphqlFailure, parse_response};
 pub use live::ReqwestTransport;
+pub use policy::{ErrorPolicy, Halt, send_with_policy};
 pub use rate::RateLimit;
 pub use token::Token;
 pub use transport::{RawRequest, RawResponse, Transport};
