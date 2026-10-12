@@ -210,7 +210,10 @@ mod origin_tests {
     fn pack_origin_serializes() {
         let o = TextOrigin::of_rule(Some(&Provenance::Pack("acme".into())));
         assert_eq!(serde_json::to_value(&o).unwrap(), "pack:acme");
-        assert_eq!(serde_json::to_value(TextOrigin::of_rule(None)).unwrap(), "std");
+        assert_eq!(
+            serde_json::to_value(TextOrigin::of_rule(None)).unwrap(),
+            "std"
+        );
     }
 
     // frob:ticket 01M3ZX7YW7S3BJ72FPRQ85F72V
