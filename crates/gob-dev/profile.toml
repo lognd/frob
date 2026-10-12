@@ -465,6 +465,12 @@ args = ["profile"]
 exit = [0, 2, 3]
 budget_ms = 500
 
+[scenario."frob tour"]
+args = ["tour"]
+readonly = true
+exit = [0, 2, 3]
+budget_ms = 500
+
 [scenario."grimble rule test"]
 args = ["rule", "test"]
 readonly = true

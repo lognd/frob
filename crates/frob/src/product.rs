@@ -77,6 +77,7 @@ impl Product for FrobProduct {
         let cli = crate::milestone_cmd::register(cli);
         let cli = crate::cycle_cmd::register(cli);
         let cli = crate::profile_cmd::register(cli);
+        let cli = crate::tour_cmd::register(cli);
         let cli = crate::release_cmd::register(cli);
         let cli = cli
             .register::<crate::rule_cmd::RuleTest>()

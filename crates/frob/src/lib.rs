@@ -23,6 +23,7 @@ pub mod profile_cmd;
 pub mod release_cmd;
 pub mod rule_cmd;
 pub mod ticket;
+pub mod tour_cmd;
 mod workspace;
 
 use gob_cli::Cli;
