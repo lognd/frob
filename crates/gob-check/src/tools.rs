@@ -998,7 +998,14 @@ mod tests {
             let mut files = FileInterner::default();
             let id: RuleId = Tool001.meta().rule_id().expect("id");
             let found = stage_findings(Path::new("."), &id, &stage, result, &mut files);
-            assert_tool_failed(&found, &["could not run", "failed to spawn"]);
+            assert_tool_failed(
+                &found
+                    .findings
+                    .iter()
+                    .map(|t| t.finding.clone())
+                    .collect::<Vec<_>>(),
+                &["could not run", "failed to spawn"],
+            );
         }
     }
 
@@ -1096,7 +1103,7 @@ mod tests {
         stage
     }
 
-    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn sarif_results_map_keep_source_rule_and_set_suppressed_aside() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -1152,7 +1159,7 @@ mod tests {
         );
     }
 
-    // frob:tests crates/gob-check/src/tools.rs::run_tools
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn unreadable_sarif_is_a_required_tool_failed() {
         for script in ["echo 'not sarif'", "echo '{}'", "exit 2", "exit 1"] {
