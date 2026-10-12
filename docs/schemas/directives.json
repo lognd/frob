@@ -6,7 +6,7 @@
       "description": "Waive one crunk rule at the declaration this comment attaches to.",
       "properties": {
         "reason": {
-          "description": "Why the waiver exists.",
+          "description": "Why the waiver exists; a missing or blank reason grants nothing.",
           "type": "string"
         },
         "rule": {

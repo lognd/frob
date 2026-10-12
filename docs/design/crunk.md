@@ -155,6 +155,16 @@ CI) and reports anything above it as not run, never as clean
 | T3 live | a browser or the Unity editor | axe-core, real keyboard and gamepad focus, real fonts |
 | T4 human | a person | taste, soul, usability observation; a person's ack is recorded in `crunk.lock` against the subject's content hash (section 4.1); a subject changed since its ack is Advisory in check and CI and blocks only the release gate |
 
+<!-- frob:ticket 01M4DYPH29YAN8DBKAKKCDWQGX -->
+A rule flagged `must_measure` that examines zero subjects is never silent.
+A spec-only project (a valid `crunk.toml`, no stylesheet, JSX or HTML to
+ingest) therefore gets one required Unresolved finding per such rule
+("examined zero subjects; it is flagged must_measure, so silence is not a
+pass"), starting with COLOR001, and `crunk check` does not pass until
+sources exist or the rule is set to `off` in `[lint]`. Ingest stays to
+`css_root` plus the `[jsx]` globs; a file outside them is ungoverned and
+belongs to the organisation rules (ORG), not to a per-file waiver.
+
 ### 4.1 Human review lock (owner requirement 2026-10-08)
 
 The human tier is enforced the way `frob ack` enforces symbol review

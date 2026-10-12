@@ -2,17 +2,20 @@
 //! directive scanner finds it in CSS comments.
 
 // frob:ticket 01M43ARY91XZ35DN9SCHRHS033
+// frob:ticket 01M4DYPH29YAN8DBKAKKCDWQGX
 
 use gob_directives::Directive;
 
 /// Waive one crunk rule at the declaration this comment attaches to.
+///
+/// A waiver without a reason grants nothing (WAIVE001); ORG, WAIVE, TOKENS and gallery rules cannot be waived.
 #[derive(Debug, Clone, PartialEq, Eq, Directive)]
 #[directive(namespace = "crunk", verb = "waive")]
 pub struct Waive {
     /// The waived rule id, for example `COLOR001`.
     #[arg(positional)]
     pub rule: String,
-    /// Why the waiver exists.
+    /// Why the waiver exists; a missing or blank reason grants nothing.
     #[arg(key = "reason", optional)]
     pub reason: Option<String>,
 }
