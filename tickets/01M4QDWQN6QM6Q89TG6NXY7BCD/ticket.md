@@ -7,12 +7,12 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-12T06:48:07Z"
-updated = "2026-10-12T23:46:35Z"
+updated = "2026-10-12T23:46:38Z"
 scope = ["crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
 text = "land_reuses_a_recorded_tool_pass_for_an_unchanged_tree_and_reruns_after_an_input_changes passes on Linux and the Windows runner runs it un-ignored"
-bound = false
+bound = true
 +++
 
 land_reuses_a_recorded_tool_pass... sees 0 spawns on windows-latest; the sh-based tool probably cannot spawn there. Test is ignored on Windows until a Windows-capable probe exists.
