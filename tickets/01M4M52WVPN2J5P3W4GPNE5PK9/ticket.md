@@ -7,7 +7,7 @@ priority = "medium"
 parent = "01M4CTE0GYDX0XW64JRNF2ZMQG"
 reporter = "lognd"
 created = "2026-10-11T00:16:29Z"
-updated = "2026-10-11T01:16:10Z"
+updated = "2026-10-12T18:30:50Z"
 scope = ["crates/gob-walk/**", "crates/frob-check/**", "crates/frob-ack/**", "crates/frob-lease/**", "crates/frob-obligations/**", "changelog.d/**"]
 +++
 
