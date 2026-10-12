@@ -535,6 +535,7 @@ dependencies = [
  "gob-check",
  "gob-cli",
  "gob-config",
+ "gob-git",
  "gob-product",
  "jsonschema",
  "schemars",
