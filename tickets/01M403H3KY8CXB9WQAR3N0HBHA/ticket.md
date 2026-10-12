@@ -2,7 +2,8 @@
 id = "01M403H3KY8CXB9WQAR3N0HBHA"
 title = "Add gob-plan to the boundaries.md crate table and the lexer additions to grl-spec 3"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
