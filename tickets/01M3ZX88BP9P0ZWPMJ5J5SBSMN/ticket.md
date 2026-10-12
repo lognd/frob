@@ -2,7 +2,8 @@
 id = "01M3ZX88BP9P0ZWPMJ5J5SBSMN"
 title = "frob tour: the stops one at a time with next and previous"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
