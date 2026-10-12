@@ -146,6 +146,23 @@ struct AFinding {
     end_column: u32,
 }
 
+// frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
+#[derive(Deserialize)]
+struct RFinding {
+    code: Option<String>,
+    message: String,
+    filename: String,
+    location: RPos,
+    end_location: Option<RPos>,
+}
+
+// frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
+#[derive(Deserialize)]
+struct RPos {
+    row: u32,
+    column: u32,
+}
+
 // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
 #[derive(Deserialize)]
 struct SFile {
@@ -181,7 +198,47 @@ pub(crate) fn parse(parser: ToolParser, stdout: &str) -> Result<Vec<RawFinding>,
         ToolParser::Sarif => crate::sarif::parse_sarif(stdout),
         ToolParser::CargoJson => crate::cargo_json::parse_cargo_json(stdout),
         ToolParser::StylelintJson => parse_stylelint(stdout),
+        ToolParser::RuffJson => parse_ruff(stdout),
     }
+}
+
+// frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
+/// ruff `--output-format=json`: an array of violations with 1-based row and character column (empty output is no finding).
+fn parse_ruff(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
+    let text = stdout.trim();
+    let findings: Vec<RFinding> = if text.is_empty() {
+        Vec::new()
+    } else {
+        serde_json::from_str(text).map_err(|source| ParseError::Json {
+            format: "ruff",
+            source,
+        })?
+    };
+    tracing::debug!(count = findings.len(), "ruff findings parsed");
+    Ok(findings
+        .into_iter()
+        .filter_map(|f| {
+            // A syntax error carries no rule code; the parse failure is not a lint finding.
+            let code = f.code?;
+            let start = f.location;
+            let end_col = match f.end_location {
+                Some(e) if e.row == start.row && e.column > start.column => e.column,
+                _ => start.column + 1,
+            };
+            Some(RawFinding {
+                path: f.filename,
+                range: RawRange::LineCol {
+                    line: start.row,
+                    col: start.column,
+                    end_col,
+                },
+                tool_id: code,
+                message: f.message,
+                suppressed: None,
+                meta: RawMeta::default(),
+            })
+        })
+        .collect())
 }
 
 fn parse_zizmor(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
@@ -320,6 +377,7 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
         ToolParser::ActionlintJson
         | ToolParser::Sarif
         | ToolParser::CargoJson
+        | ToolParser::RuffJson
         | ToolParser::None => BTreeMap::new(),
     }
 }
@@ -328,7 +386,7 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
 fn fallback(parser: ToolParser) -> &'static str {
     match parser {
         ToolParser::ActionlintJson => "CI014",
-        ToolParser::CargoJson => "LINT001",
+        ToolParser::CargoJson | ToolParser::RuffJson => "LINT001",
         _ => "TOOL002",
     }
 }
@@ -351,9 +409,31 @@ fn cargo_target(raw: &RawFinding) -> Option<&'static str> {
     }
 }
 
+// frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
+/// The built-in rule for a ruff code the id map does not name, by code family.
+///
+/// `Some(None)` means ruff's rule is switched off (`PLR2004` magic values:
+/// the lint catalogue keeps it off); `None` falls through to `LINT001`.
+fn ruff_target(code: &str) -> Option<Option<&'static str>> {
+    let target = match code {
+        "PLR2004" => return Some(None),
+        "S110" => "ERR001",
+        "BLE001" | "E722" => "ERR003",
+        _ if code.starts_with("F401") || code.starts_with("F841") || code.starts_with("ARG") => {
+            "DEAD001"
+        }
+        _ if code.starts_with("ASYNC") => "CONC001",
+        _ if code.starts_with("PT") => "TESTQ001",
+        _ if code.starts_with('B') && code[1..].bytes().all(|b| b.is_ascii_digit()) => "LOGIC001",
+        _ => return None,
+    };
+    Some(Some(target))
+}
+
 /// Default severity of a rule this module can produce.
 fn default_severity(rule: &str) -> Severity {
     match rule {
+        "DEAD001" | "ERR001" | "ERR003" | "CONC001" | "TESTQ001" | "LOGIC001" => Severity::Warn,
         "CI006" | "CI007" => Severity::Error,
         "CI001" | "CI003" | "CI014" => Severity::Warn,
         _ => Severity::Advisory,
@@ -381,11 +461,19 @@ pub(crate) fn classify(stage: &ToolStage, raw: &RawFinding) -> Option<(RuleId, S
         }
     }
     let defaults = default_id_map(stage.parser);
+    let ruff = (stage.parser == ToolParser::RuffJson && !stage.id_map.contains_key(&raw.tool_id))
+        .then(|| ruff_target(&raw.tool_id))
+        .flatten();
+    if ruff == Some(None) {
+        tracing::debug!(stage = %stage.name, code = %raw.tool_id, "ruff rule is off; dropped");
+        return None;
+    }
     let target = stage
         .id_map
         .get(&raw.tool_id)
         .map(String::as_str)
         .or_else(|| defaults.get(raw.tool_id.as_str()).copied())
+        .or(ruff.flatten())
         .or_else(|| {
             (stage.parser == ToolParser::CargoJson)
                 .then(|| cargo_target(raw))
@@ -499,7 +587,9 @@ pub(crate) fn check_version(stage: &ToolStage, found: Option<&str>) -> VersionVe
 /// The default arguments that print `parser`'s tool version.
 pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
     match parser {
-        ToolParser::ZizmorJsonV1 | ToolParser::StylelintJson => Some(vec!["--version".to_owned()]),
+        ToolParser::ZizmorJsonV1 | ToolParser::StylelintJson | ToolParser::RuffJson => {
+            Some(vec!["--version".to_owned()])
+        }
         ToolParser::ActionlintJson => Some(vec!["-version".to_owned()]),
         ToolParser::Sarif | ToolParser::CargoJson | ToolParser::None => None,
     }
@@ -511,6 +601,7 @@ mod tests {
 
     const ZIZMOR: &str = include_str!("../tests/fixtures/zizmor-json-v1.json");
     const ACTIONLINT: &str = include_str!("../tests/fixtures/actionlint.json");
+    const RUFF: &str = include_str!("../tests/fixtures/ruff.json");
 
     fn stage(parser: ToolParser) -> ToolStage {
         ToolStage {
@@ -567,6 +658,68 @@ mod tests {
                 .is_empty()
         );
         assert!(parse(ToolParser::ActionlintJson, "[").is_err());
+    }
+
+    // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
+    // frob:tests crates/gob-check/src/tool_parse.rs::parse
+    #[test]
+    fn ruff_output_parses_with_row_and_column() {
+        let found = parse(ToolParser::RuffJson, RUFF).expect("parse");
+        assert_eq!(found.len(), 8);
+        assert_eq!(found[0].tool_id, "F401");
+        assert_eq!(found[0].path, "/work/app/main.py");
+        assert_eq!(
+            found[0].range,
+            RawRange::LineCol {
+                line: 1,
+                col: 8,
+                end_col: 10
+            }
+        );
+        // A multi-row violation is underlined to its first column.
+        assert_eq!(
+            found[4].range,
+            RawRange::LineCol {
+                line: 18,
+                col: 5,
+                end_col: 6
+            }
+        );
+        assert!(parse(ToolParser::RuffJson, "").expect("empty").is_empty());
+        assert!(parse(ToolParser::RuffJson, "[").is_err());
+    }
+
+    // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
+    // frob:tests crates/gob-check/src/tool_parse.rs::classify
+    #[test]
+    fn ruff_codes_map_to_families_and_plr2004_is_off() {
+        let st = stage(ToolParser::RuffJson);
+        let found = parse(ToolParser::RuffJson, RUFF).expect("parse");
+        let ids: Vec<_> = found
+            .iter()
+            .filter_map(|f| classify(&st, f).map(|(id, _)| (f.tool_id.as_str(), id.to_string())))
+            .collect();
+        let want = [
+            ("F401", "DEAD001"),
+            ("BLE001", "ERR003"),
+            ("E722", "ERR003"),
+            ("S110", "ERR001"),
+            ("ASYNC110", "CONC001"),
+            ("PT011", "TESTQ001"),
+            ("E501", "LINT001"),
+        ];
+        assert_eq!(
+            ids,
+            want.map(|(a, b)| (a, b.to_owned())),
+            "PLR2004 is dropped"
+        );
+        let mut on = stage(ToolParser::RuffJson);
+        on.id_map.insert("PLR2004".to_owned(), "LINT001".to_owned());
+        assert!(
+            found
+                .iter()
+                .any(|f| f.tool_id == "PLR2004" && classify(&on, f).is_some())
+        );
     }
 
     // frob:tests crates/gob-check/src/tool_parse.rs::classify

@@ -30,6 +30,21 @@ const DRIVER_NAME: &str = "frob ledger union-and-refold";
 const DRIVER_ATTR: &str = frob_ledger::layout::MERGE_DRIVER_ATTR;
 /// Lines that already ignore the cache directory.
 const IGNORE_FORMS: [&str; 4] = [".frob/", ".frob", "/.frob/", "/.frob"];
+/// The `[[check.tool]]` stage `frob init` adds to a pyproject repository (ruff, pinned with a trusted version range).
+// frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
+const RUFF_STAGE: &str = r#"
+# ruff is bound through `uvx` (pinned); its rule codes map to DEAD, ERR, CONC, TESTQ and LOGIC ids.
+# The version range makes a ruff outside it an Unresolved finding instead of a violation.
+[[check.tool]]
+name = "ruff"
+command = "uvx"
+args = ["ruff@0.14.1", "check", "--output-format=json", "--no-cache", "."]
+parser = "ruff-json"
+version_args = ["ruff@0.14.1", "--version"]
+min_version = "0.14.0"
+max_version = "0.14.99"
+inputs = ["**/*.py", "pyproject.toml", "ruff.toml", ".ruff.toml"]
+"#;
 /// Time a `git config` call may take.
 const GIT_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -184,6 +199,43 @@ fn owner_attesters(repo: &Repo) -> Option<toml::Value> {
             None
         }
     }
+}
+
+// frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
+/// Append the ruff stage to `frob.toml` when the repository has a `pyproject.toml` and no ruff stage yet; returns whether it changed.
+fn ensure_python_stage(root: &Path, dry_run: bool) -> Result<bool, CliError> {
+    if !root.join("pyproject.toml").is_file() {
+        tracing::debug!("no pyproject.toml; no python stage");
+        return Ok(false);
+    }
+    let path = root.join("frob.toml");
+    let existing = read_or_empty(&path)?;
+    let has_ruff = existing
+        .parse::<toml::Table>()
+        .ok()
+        .and_then(|t| {
+            t.get("check")?.get("tool")?.as_array().map(|stages| {
+                stages
+                    .iter()
+                    .any(|s| s.get("name").and_then(toml::Value::as_str) == Some("ruff"))
+            })
+        })
+        .unwrap_or(false);
+    if has_ruff {
+        tracing::debug!("ruff stage already configured");
+        return Ok(false);
+    }
+    if !dry_run {
+        let mut text = existing;
+        if !text.is_empty() && !text.ends_with('\n') {
+            text.push('\n');
+        }
+        text.push_str(RUFF_STAGE);
+        std::fs::write(&path, text)
+            .map_err(|e| CliError::internal(format!("cannot write {}: {e}", path.display())))?;
+    }
+    tracing::info!(path = %path.display(), dry_run, "ruff stage added for the pyproject repository");
+    Ok(true)
 }
 
 /// Ensure `.frob/` is ignored; returns whether the file changed.
@@ -633,6 +685,7 @@ impl Command for Init {
                 _ => detected_default(repo, root, key),
             }),
         )?;
+        let python_stage = ensure_python_stage(root, ctx.dry_run)?;
         let gitignore = ensure_gitignore(root, ctx.dry_run)?;
         let (merge_driver, driver, driver_warning) = ensure_merge_driver(
             root,
@@ -653,6 +706,7 @@ impl Command for Init {
             ensure_gitattributes(root, Layout::Dir, &cfg.tickets.dir, ctx.dry_run)?
         };
         let already = config.added.is_empty()
+            && !python_stage
             && !gitignore.changed
             && !merge_driver.changed
             && !gitattributes.changed;
@@ -676,6 +730,28 @@ impl Command for Init {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
+    // frob:tests crates/frob/src/init.rs::ensure_python_stage
+    #[test]
+    fn a_pyproject_repository_gets_one_pinned_ruff_stage() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path();
+        std::fs::write(root.join("frob.toml"), "[check]\nbase = \"main\"\n").expect("write");
+        assert!(!ensure_python_stage(root, false).expect("no pyproject"));
+        std::fs::write(root.join("pyproject.toml"), "[project]\nname = \"x\"\n").expect("write");
+        assert!(ensure_python_stage(root, true).expect("dry run"));
+        assert!(ensure_python_stage(root, false).expect("first"));
+        assert!(!ensure_python_stage(root, false).expect("second is a no-op"));
+        let table: toml::Table = std::fs::read_to_string(root.join("frob.toml"))
+            .expect("read")
+            .parse()
+            .expect("valid toml");
+        let stage = &table["check"]["tool"][0];
+        assert_eq!(stage["parser"].as_str(), Some("ruff-json"));
+        assert_eq!(stage["min_version"].as_str(), Some("0.14.0"));
+        assert_eq!(stage["max_version"].as_str(), Some("0.14.99"));
+    }
 
     // frob:ticket 01M41RK1G648EJJNRK4G5RJY40
     // frob:tests crates/frob/src/init.rs::windows_shell_path

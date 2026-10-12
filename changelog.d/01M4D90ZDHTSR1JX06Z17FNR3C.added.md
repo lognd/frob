@@ -1,0 +1,1 @@
+frob: `[[check.tool]]` stages accept `parser = "ruff-json"` (ruff `--output-format=json`): F401/F841/ARG map to `DEAD001`, S110 to `ERR001`, BLE001 and E722 to `ERR003`, ASYNC to `CONC001`, PT to `TESTQ001`, bugbear B to `LOGIC001`, PLR2004 is off and the rest `LINT001`; `frob init` in a pyproject repository adds a pinned `ruff` stage.

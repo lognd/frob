@@ -69,6 +69,10 @@ pub enum ToolParser {
     // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
     #[serde(rename = "stylelint-json")]
     StylelintJson,
+    /// `ruff check --output-format=json`: an array of findings with row and column; rule codes map to `DEAD001`, `ERR001`, `ERR003`, `CONC001`, `TESTQ001`, `LOGIC001` or `LINT001`.
+    // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
+    #[serde(rename = "ruff-json")]
+    RuffJson,
 }
 
 /// One external tool stage: a command run after the built-in rules (`[[check.tool]]`).
