@@ -6,8 +6,8 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-12T22:18:04Z"
-updated = "2026-10-12T22:18:04Z"
-scope = ["crates/frob-check/tests/tool_bind.rs", "crates/frob-obligations/tests/corpus.rs", "crates/frob/tests/snapshots/cli__doctor_fresh_repo.snap"]
+updated = "2026-10-12T22:18:17Z"
+scope = ["crates/frob-check/tests/tool_bind.rs", "crates/frob-obligations/tests/corpus.rs"]
 +++
 
 Three tests went stale after the tool-stage argv-template change (args now required) and the message_origin field landing.
