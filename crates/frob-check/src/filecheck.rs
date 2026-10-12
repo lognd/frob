@@ -125,14 +125,24 @@ impl FileCheck<Frob> for ObligationFileCheck {
         text: &str,
     ) -> String {
         match rule.id {
-            "REF001" | "TICK006" => ctx.product.ledger_tip.clone(),
+            // REF001 reads the ledger only through the references the file makes that are not open or terminal.
+            "REF001" => ctx
+                .product
+                .ref_unsettled
+                .get(path)
+                .cloned()
+                .unwrap_or_default(),
+            // TICK006 classifies ticket-branch paths against the ledger only for texts that mention `.md`.
+            "TICK006" if frob_obligations::tick006_reads_ledger(text) => {
+                ctx.product.ledger_tip.clone()
+            }
             "DOC002" if is_markdown(path) => link_target_digest(ctx, path, text),
             _ => String::new(),
         }
     }
 
     fn side_input_needs_text(&self, rule: &RuleMeta) -> bool {
-        rule.id == "DOC002"
+        matches!(rule.id, "DOC002" | "TICK006")
     }
 
     fn check(

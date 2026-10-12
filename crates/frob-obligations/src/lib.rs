@@ -32,8 +32,9 @@
 //! `REF001`, `TICK006`) over one file's text; their result depends on that file alone
 //! except where noted, so `frob check` may cache it by file digest.
 //! `REF001` reads the ledger and `DOC002` reads the link targets on disk, so
-//! those two must also fold the ledger tip and the target digests into the
-//! key. [`evaluate_repo`] runs the repo-level rules (`COV001`, `TODO002`,
+//! those two must also fold their side inputs into the key: the file's
+//! unsettled ticket references ([`unsettled_ticket_refs`]) and the target
+//! digests. [`evaluate_repo`] runs the repo-level rules (`COV001`, `TODO002`,
 //! `INV001`, `INV002`) over the whole graph; [`apply_exceptions`] then
 //! suppresses findings and raises the `EXC*` findings. [`evaluate`] does all
 //! three. Files evaluated are the graph's file nodes (Rust and markdown) plus
@@ -91,11 +92,13 @@ pub use collect::{CollectError, Collected, collect};
 pub use config::{ForbidImport, InvariantsConfig};
 pub use gob_rules::Resolved;
 pub use native::tool_bound_ids;
+pub use refs::unsettled_ticket_refs;
 pub use rules::{
     Cov001, Cov003, Doc001, Doc002, Exc001, Exc003, Exc005, Exc007, Exc014, Exc016, Exc017, Inv001,
     Inv002, Ref001, Tick006, Todo001, Todo002,
 };
 pub use sibling::{SiblingException, sibling_exception_findings};
+pub use tick_paths::tick006_reads_ledger;
 
 use tickets::Tickets;
 
