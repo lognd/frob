@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-12T00:16:42Z"
+digest = "828c45e3615f08f39f12470ec66a6aebabefc255cf913d9d0134fe49cccb2857"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e5ee00b2-60cc-4cbd-ba3d-4c7a350d35f8 with nextest profile: default
+    Starting 2 tests across 20 binaries (198 tests skipped)
+        PASS [   0.005s] gob-plan::grl_errors golden_grl008
+        PASS [   0.006s] gob-plan::snippets a_fix_metavariable_must_be_bound_by_a_snippet
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 2 tests run: 2 passed, 198 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=golden_grl008) | test(=a_fix_metavariable_must_be_bound_by_a_snippet)'"
+size = 608
+status = "measured"
+tests = ["golden_grl008", "a_fix_metavariable_must_be_bound_by_a_snippet"]
+at = "2026-10-12T00:16:42Z"
+actor = "lognd"
+rev = 1
