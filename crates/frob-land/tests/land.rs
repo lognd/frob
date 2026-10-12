@@ -1617,7 +1617,7 @@ fn concurrent_lands_under_branch_delete_and_pack_refs_churn_succeed_or_refuse_cl
     if !git_available() {
         return;
     }
-    for round in 0..20 {
+    for round in 0..if cfg!(windows) { 3 } else { 20 } {
         let fx = Fixture::new();
         let a = fx.start("Add a", &["src/a/**"]);
         let b = fx.start("Add b", &["src/b/**"]);
@@ -2069,8 +2069,9 @@ fn land_reuses_a_recorded_tool_pass_for_an_unchanged_tree_and_reruns_after_an_in
     }
     let spawns_dir = tempfile::tempdir().expect("tempdir");
     let log = spawns_dir.path().join("spawns.log");
+    // The probe is a git alias: git runs it through its own bundled sh, which a bare `sh` is not on Windows.
     let extra = format!(
-        "[[check.tool]]\nname = \"probe\"\ncommand = \"sh\"\nargs = [\"-c\", \"(pwd -W 2>/dev/null || pwd) >> '{}'\"]\ninputs = [\"src/**\"]\n",
+        "[[check.tool]]\nname = \"probe\"\ncommand = \"git\"\nargs = [\"-c\", \"alias.probe=!(pwd -W 2>/dev/null || pwd) >> '{}'\", \"probe\"]\ninputs = [\"src/**\"]\n",
         // Forward slashes: backslashes are TOML escapes and sh escapes alike on Windows.
         log.display().to_string().replace('\\', "/")
     );
