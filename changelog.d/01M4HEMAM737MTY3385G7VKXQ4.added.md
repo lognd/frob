@@ -1,0 +1,1 @@
+Repository packs now declare detectors (`[[vocab]]` callee vocabularies and `[[detector]]` rows per language), so CAP001 and CAP002 enforce pack atoms; a granted pack atom with no detector for a node's language is reported Unresolved once per node, atom and language.

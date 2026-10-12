@@ -113,3 +113,91 @@ fn the_packs_table_doc_and_generated_references_describe_what_loads() {
         );
     }
 }
+
+// frob:ticket 01M4HEMAM737MTY3385G7VKXQ4
+const DETECTED_PACK: &str = "format = 1\n\n[pack]\nname = \"logand-effects\"\nversion = \"1.0.0\"\ndescription = \"d\"\nlicence = \"MIT\"\n\n[[atom]]\nname = \"fetch_url\"\ndoc = \"Fetches a URL.\"\n\n[[vocab]]\nlang = \"python\"\nclass = \"fetch_url\"\nnames = [\"httpx.get\", \"requests.get\"]\n\n[[vocab]]\nlang = \"typescript\"\nclass = \"fetch_url\"\nnames = [\"fetch\"]\n\n[[detector]]\natom = \"fetch_url\"\nlangs = [\"python\", \"typescript\"]\nkind = \"callee\"\n";
+const GRANTED: &str = "grimble = \"2\";\nmodule m;\npack le { ref \"local/logand-effects\"; version \"1.0.0\"; }\nnode a : trusted { owns \"src/**\"; may fetch_url at \"src/**\"; }\n";
+const UNGRANTED: &str = "grimble = \"2\";\nmodule m;\npack le { ref \"local/logand-effects\"; version \"1.0.0\"; }\nnode a : trusted { owns \"src/**\"; }\n";
+
+fn check(
+    pack: &str,
+    model: &str,
+    files: &[(&str, &str)],
+) -> (tempfile::TempDir, serde_json::Value) {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"design/model.grmb\"]\n[packs]\nenabled = [\"local/logand-effects\"]\n",
+    );
+    write(dir.path(), "design/model.grmb", model);
+    write(dir.path(), "packs/logand-effects.toml", pack);
+    for (rel, text) in files {
+        write(dir.path(), rel, text);
+    }
+    let r = run(dir.path(), &CheckOptions::default()).unwrap();
+    let doc = sibling_document(&r);
+    (dir, doc)
+}
+
+const PY_USE: &str = "import httpx\n\ndef go():\n    return httpx.get('u')\n";
+const PY_IDLE: &str = "def go():\n    pass\n";
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_pack_atom_use_without_a_grant_is_cap001() {
+    let (_d, doc) = check(DETECTED_PACK, UNGRANTED, &[("src/x.py", PY_USE)]);
+    let m = messages(&doc, "CAP001");
+    assert!(
+        m.iter().any(|x| x.contains("fetch_url")),
+        "{}",
+        doc["findings"]
+    );
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_granted_pack_atom_use_is_clean() {
+    let (_d, doc) = check(DETECTED_PACK, GRANTED, &[("src/x.py", PY_USE)]);
+    assert!(messages(&doc, "CAP001").is_empty(), "{}", doc["findings"]);
+    assert!(messages(&doc, "CAP002").is_empty(), "{}", doc["findings"]);
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn an_unused_pack_atom_grant_is_cap002() {
+    let (_d, doc) = check(DETECTED_PACK, GRANTED, &[("src/x.py", PY_IDLE)]);
+    let m = messages(&doc, "CAP002");
+    assert!(
+        m.iter().any(|x| x.contains("fetch_url")),
+        "{}",
+        doc["findings"]
+    );
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_granted_pack_atom_with_no_detector_for_a_language_is_unresolved_once_per_node() {
+    let pack = DETECTED_PACK.replace("langs = [\"python\", \"typescript\"]", "lang = \"python\"");
+    let (_d, doc) = check(
+        &pack,
+        GRANTED,
+        &[
+            ("src/x.py", PY_USE),
+            ("src/a.ts", "export const a = 1;\n"),
+            ("src/b.ts", "export const b = 2;\n"),
+        ],
+    );
+    let hits: Vec<_> = doc["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|f| f["rule"] == "CAP002" && f["severity"] == "unresolved")
+        .collect();
+    assert_eq!(hits.len(), 1, "{}", doc["findings"]);
+    let msg = hits[0]["message"].as_str().unwrap();
+    assert!(
+        msg.contains("fetch_url") && msg.contains("typescript"),
+        "{msg}"
+    );
+}

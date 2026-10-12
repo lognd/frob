@@ -166,6 +166,7 @@ impl PackLine for ModelFiles {
             version: it.next().expect("pack version").to_owned(),
             digest: None,
             atoms: BTreeSet::new(),
+            detectors: Vec::new(),
         };
         for extra in it {
             if let Some(a) = extra.strip_prefix("atoms=") {

@@ -21,6 +21,7 @@
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
+// frob:ticket 01M4HEMAM737MTY3385G7VKXQ4
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -31,6 +32,7 @@ use gob_rules::Severity;
 use gob_symbols::EdgeKind;
 use gob_walk::{Owner, select_files};
 use grimble_model::ast::EntityKind;
+use grimble_model::{PackDetectorKind, PackPin};
 
 use crate::code::CodeFile;
 use crate::model::Grant;
@@ -48,7 +50,7 @@ const METHOD_GATES: [(&str, &str, &str, &str); 1] =
 /// One observed use of an atom.
 #[derive(Clone, Debug)]
 struct Use {
-    atom: &'static str,
+    atom: String,
     file: String,
     line: Option<u32>,
     callee: String,
@@ -107,26 +109,51 @@ fn names_callee(lang: &str, names: &BTreeSet<&str>, callee: &str) -> bool {
 
 /// One atom a call may use and whether the call certainly does.
 struct Hit {
-    atom: &'static str,
+    atom: String,
     certain: bool,
+}
+
+/// Every atom with a callee vocabulary in `lang` and that vocabulary: the shared registry's atoms
+/// and the atoms of the enabled repository packs whose detector row is a `callee` row.
+fn vocabularies<'a>(
+    lang: &str,
+    packs: &'a BTreeMap<String, PackPin>,
+) -> Vec<(&'a str, BTreeSet<&'a str>)> {
+    let mut out: Vec<(&'a str, BTreeSet<&'a str>)> = Vec::new();
+    for a in atoms() {
+        if let Answer::Exact(names) = callee_vocab(lang, a.name) {
+            out.push((a.name, names));
+        }
+    }
+    for d in packs
+        .values()
+        .flat_map(|p| p.detectors.iter())
+        .filter(|d| d.kind == PackDetectorKind::Callee && d.lang == lang)
+    {
+        let names = d.names.iter().map(String::as_str);
+        match out.iter_mut().find(|(a, _)| *a == d.atom) {
+            Some((_, have)) => have.extend(names),
+            None => out.push((d.atom.as_str(), names.collect())),
+        }
+    }
+    out
 }
 
 /// The atoms whose vocabulary in `lang` names the call `callee`, given the calls `file_calls` of
 /// its file and the lazily computed type of its receiver.
 fn atoms_of(
+    vocabs: &[(&str, BTreeSet<&str>)],
     lang: &str,
     callee: &str,
     file_calls: &BTreeSet<String>,
     receiver_is_path: &mut dyn FnMut(&str) -> bool,
 ) -> Vec<Hit> {
     let mut out = Vec::new();
-    for a in atoms() {
-        let Answer::Exact(names) = callee_vocab(lang, a.name) else {
-            continue;
-        };
-        if names_callee(lang, &names, callee) {
+    for (atom, names) in vocabs {
+        let atom = *atom;
+        if names_callee(lang, names, callee) {
             out.push(Hit {
-                atom: a.name,
+                atom: atom.to_owned(),
                 certain: true,
             });
             continue;
@@ -139,30 +166,30 @@ fn atoms_of(
         }
         let gated = METHOD_GATES
             .iter()
-            .any(|(atom, l, method, _)| *atom == a.name && *l == lang && *method == m);
+            .any(|(m_atom, l, method, _)| *m_atom == atom && *l == lang && *method == m);
         if gated {
-            let open = METHOD_GATES.iter().any(|(atom, l, method, gate)| {
-                *atom == a.name && *l == lang && *method == m && file_calls.contains(*gate)
+            let open = METHOD_GATES.iter().any(|(m_atom, l, method, gate)| {
+                *m_atom == atom && *l == lang && *method == m && file_calls.contains(*gate)
             });
             if open {
                 out.push(Hit {
-                    atom: a.name,
+                    atom: atom.to_owned(),
                     certain: true,
                 });
             }
         } else if names.contains(format!("Path.{m}").as_str()) && receiver_is_path(recv) {
             out.push(Hit {
-                atom: a.name,
+                atom: atom.to_owned(),
                 certain: true,
             });
         } else {
             tracing::debug!(
                 callee,
-                atom = a.name,
+                atom,
                 "vocabulary method on an unresolved receiver: May"
             );
             out.push(Hit {
-                atom: a.name,
+                atom: atom.to_owned(),
                 certain: false,
             });
         }
@@ -409,6 +436,7 @@ fn observe(cx: &Cx<'_>) -> Uses {
     let empty = BTreeSet::new();
     let mut sources: BTreeMap<String, Option<String>> = BTreeMap::new();
     let mut uses = Uses::default();
+    let mut vocabs: BTreeMap<String, Vec<(&str, BTreeSet<&str>)>> = BTreeMap::new();
     for e in &edges {
         let Some(text) = &e.text else { continue };
         let from = e.from.to_string();
@@ -436,7 +464,12 @@ fn observe(cx: &Cx<'_>) -> Uses {
                     .as_deref()
                     .is_some_and(|src| pytype::is_path_expr(src, recv, 0))
         };
-        for Hit { atom, certain } in atoms_of(&code.language, callee, file_calls, &mut is_path) {
+        let vocab = vocabs
+            .entry(code.language.clone())
+            .or_insert_with(|| vocabularies(&code.language, cx.packs));
+        for Hit { atom, certain } in
+            atoms_of(vocab, &code.language, callee, file_calls, &mut is_path)
+        {
             let u = Use {
                 atom,
                 file: uo.file.clone(),
@@ -513,8 +546,11 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
             // (atom, receiver unresolved) -> uses; an unresolved receiver is a May use.
             let mut by_atom: BTreeMap<(&str, bool), Vec<&Use>> = BTreeMap::new();
             for u in found {
-                if !e.grants.iter().any(|g| covers(cx, g, u.atom, &u.file)) {
-                    by_atom.entry((u.atom, !u.certain)).or_default().push(u);
+                if !e.grants.iter().any(|g| covers(cx, g, &u.atom, &u.file)) {
+                    by_atom
+                        .entry((u.atom.as_str(), !u.certain))
+                        .or_default()
+                        .push(u);
                 }
             }
             for ((atom, unresolved_receiver), us) in by_atom {
@@ -564,13 +600,57 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
     }
 }
 
-/// The registered atoms a grant of `granted` covers: itself and its children.
-fn expansion(granted: &str) -> Vec<&'static str> {
+/// The atoms a grant of `granted` covers: itself and its children, registered or declared by a pack.
+fn expansion(granted: &str, packs: &BTreeMap<String, PackPin>) -> Vec<String> {
     atoms()
         .into_iter()
         .map(|a| a.name)
+        .chain(
+            packs
+                .values()
+                .flat_map(|p| p.atoms.iter().map(String::as_str)),
+        )
         .filter(|n| *n == granted || n.strip_prefix(granted).is_some_and(|r| r.starts_with('.')))
+        .map(str::to_owned)
         .collect()
+}
+
+/// How the enabled packs answer `(atom, lang)`: `Some(kind)` for a real row, `None` for no row.
+///
+/// A `callee` row wins over `impossible` (PACK004 reports the clash); `none` rows are no row.
+fn pack_answer(
+    packs: &BTreeMap<String, PackPin>,
+    atom: &str,
+    lang: &str,
+) -> Option<PackDetectorKind> {
+    let kinds: BTreeSet<PackDetectorKind> = packs
+        .values()
+        .flat_map(|p| p.detectors.iter())
+        .filter(|d| d.atom == atom && d.lang == lang && d.kind != PackDetectorKind::None)
+        .map(|d| d.kind)
+        .collect();
+    if kinds.contains(&PackDetectorKind::Callee) {
+        Some(PackDetectorKind::Callee)
+    } else {
+        kinds.into_iter().next()
+    }
+}
+
+/// True when another pack atom is a child of `atom` (`db` over `db.query`): it has no row of its own.
+fn is_pack_parent(packs: &BTreeMap<String, PackPin>, atom: &str) -> bool {
+    packs
+        .values()
+        .flat_map(|p| p.atoms.iter())
+        .any(|n| n.strip_prefix(atom).is_some_and(|r| r.starts_with('.')))
+}
+
+/// True when `atom` is declared by an enabled pack rather than the shared registry.
+fn is_pack_atom(packs: &BTreeMap<String, PackPin>, atom: &str) -> bool {
+    !atom_registered(atom) && packs.values().any(|p| p.atoms.contains(atom))
+}
+
+fn atom_registered(atom: &str) -> bool {
+    gob_ir::registry::atom(atom).is_some()
 }
 
 fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
@@ -603,10 +683,14 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
             .iter()
             .filter_map(|f| cx.code.file(f))
             .any(CodeFile::has_unseen);
+        let mut reported: BTreeSet<(String, &str)> = BTreeSet::new();
         for g in &e.grants {
             out.count("CAP002", 1);
             let site = Some((g.file.as_str(), (g.span.start, g.span.end)));
-            let atoms = expansion(gob_ir::registry::canonical(&g.atom).unwrap_or(&g.atom));
+            let atoms = expansion(
+                gob_ir::registry::canonical(&g.atom).unwrap_or(&g.atom),
+                cx.packs,
+            );
             if atoms.is_empty() || files.is_empty() {
                 tracing::debug!(node = %e.anchor, atom = %g.atom, "grant has no detectable atom or no owned code; not judged");
                 continue;
@@ -615,6 +699,36 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
                 g.at.as_ref()
                     .is_none_or(|sel| select_files(sel, &cx.code.walk).iter().any(|m| m.path == f))
             };
+            for a in atoms
+                .iter()
+                .filter(|a| is_pack_atom(cx.packs, a) && !is_pack_parent(cx.packs, a))
+            {
+                let mut no_detector: BTreeSet<&str> = BTreeSet::new();
+                for f in files.iter().filter(|f| in_scope(f)) {
+                    let Some(lang) = cx.code.file(f).map(|c| c.language.as_str()) else {
+                        continue;
+                    };
+                    if lang != crate::code::OPAQUE && pack_answer(cx.packs, a, lang).is_none() {
+                        no_detector.insert(lang);
+                    }
+                }
+                for lang in no_detector {
+                    if !reported.insert((a.clone(), lang)) {
+                        continue;
+                    }
+                    tracing::warn!(node = %e.anchor, atom = %a, lang, "pack atom has no detector for the language; not enforced");
+                    out.unresolved(
+                        "CAP002",
+                        Reason::Fidelity,
+                        &format!(
+                            "`{a}` is granted to `{}` but no pack detector covers it in {lang} (no-detector); its use in {lang} code is not enforced",
+                            e.anchor
+                        ),
+                        &format!("cap/{}/{a}/{lang}/no-detector", e.anchor),
+                        site,
+                    );
+                }
+            }
             let observed = [&uses.lo, &uses.hi].iter().any(|by_node| {
                 by_node.get(&e.anchor).is_some_and(|us| {
                     us.iter()
@@ -625,10 +739,16 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
                 continue;
             }
             let covered = atoms.iter().all(|a| {
-                langs.iter().all(|l| match detectors(a, l) {
-                    Answer::Exact(kinds) => !kinds.contains(&DetectorKind::Lexical),
-                    Answer::NotApplicable => true,
-                    _ => false,
+                langs.iter().all(|l| {
+                    if is_pack_atom(cx.packs, a) {
+                        return is_pack_parent(cx.packs, a)
+                            || pack_answer(cx.packs, a, l).is_some();
+                    }
+                    match detectors(a, l) {
+                        Answer::Exact(kinds) => !kinds.contains(&DetectorKind::Lexical),
+                        Answer::NotApplicable => true,
+                        _ => false,
+                    }
                 })
             });
             if may_owned || unseen || !covered {

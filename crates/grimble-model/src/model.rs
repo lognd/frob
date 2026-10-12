@@ -2,6 +2,7 @@
 
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
 // frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
+// frob:ticket 01M4HEMAM737MTY3385G7VKXQ4
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -20,6 +21,32 @@ pub struct PackPin {
     pub digest: Option<String>,
     /// The capability atoms the pack contributes.
     pub atoms: BTreeSet<String>,
+    /// The detector rows the pack declares for its atoms (packs.md 2.2), expanded per language.
+    pub detectors: Vec<PackDetector>,
+}
+
+/// What a pack detector row does for one `(atom, language)` cell.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub enum PackDetectorKind {
+    /// Calls are matched against a callee vocabulary.
+    Callee,
+    /// The pack records that the gap is known: the same as no row (the cell is Unknown).
+    None,
+    /// The capability cannot exist in the language (not-applicable).
+    Impossible,
+}
+
+/// One detector row of a pack for one atom and one language, with its resolved vocabulary.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct PackDetector {
+    /// The atom name as the pack declares it.
+    pub atom: String,
+    /// The language tag the row applies to.
+    pub lang: String,
+    /// The row's kind.
+    pub kind: PackDetectorKind,
+    /// The callee names of the row's vocabulary class (empty unless `kind` is `Callee`).
+    pub names: BTreeSet<String>,
 }
 
 /// Everything the model rules need, supplied by the caller (no I/O happens in this crate).

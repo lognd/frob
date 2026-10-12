@@ -1,16 +1,18 @@
-//! Repository packs, tier 1 (atoms only): `packs/NAME.toml` for each `local/NAME` in `[packs] enabled`.
+//! Repository packs, tier 1 (atoms, callee vocabularies and detector rows): `packs/NAME.toml` for each `local/NAME` in `[packs] enabled`.
 //!
 //! The minimal slice of the pack loader (packs.md 3.3): the file is parsed for its `[pack]`
-//! version and its `[[atom]]` names, and handed to the model rules as a
+//! version, its `[[atom]]` names, its `[[vocab]]` classes and its `[[detector]]` rows (kinds
+//! `callee`, `none` and `impossible`; other kinds are logged and left as no detector), and handed to the model rules as a
 //! [`PackPin`]. The lock, the other tiers, templates and external packs stay with the full
 //! loader. Built-in `grimble/...` packs have no file here and stay unloaded (their atoms are compiled into the registry).
 
 // frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
+// frob:ticket 01M4HEMAM737MTY3385G7VKXQ4
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
-use grimble_model::PackPin;
+use grimble_model::{PackDetector, PackDetectorKind, PackPin};
 use serde::Deserialize;
 
 use crate::config::{PacksTable, blake3_tagged};
@@ -36,6 +38,10 @@ struct PackFile {
     pack: PackHeader,
     #[serde(default)]
     atom: Vec<AtomRow>,
+    #[serde(default)]
+    vocab: Vec<VocabRow>,
+    #[serde(default)]
+    detector: Vec<DetectorRow>,
 }
 
 #[derive(Deserialize)]
@@ -46,6 +52,95 @@ struct PackHeader {
 #[derive(Deserialize)]
 struct AtomRow {
     name: String,
+}
+
+#[derive(Deserialize)]
+struct VocabRow {
+    lang: String,
+    class: String,
+    #[serde(default)]
+    names: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct DetectorRow {
+    atom: Option<String>,
+    #[serde(default)]
+    atoms: Option<AtomsSel>,
+    lang: Option<String>,
+    #[serde(default)]
+    langs: Vec<String>,
+    kind: String,
+    /// The vocabulary class of a `callee` row; defaults to the atom's own name.
+    vocab: Option<String>,
+}
+
+/// `atoms = "*"` or `atoms = [..]` of a detector row.
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum AtomsSel {
+    One(String),
+    Many(Vec<String>),
+}
+
+/// Expand the detector rows of a pack file into one [`PackDetector`] per `(atom, language)`.
+///
+/// `atoms = "*"` is every atom of the pack. A `callee` row's names are the union of the `[[vocab]]`
+/// rows of its class and language; query, attribute and pattern rows are not executable by this
+/// build and are skipped (the cell stays Unknown, which the capability rules report).
+fn expand_detectors(file: &PackFile, atoms: &BTreeSet<String>) -> Vec<PackDetector> {
+    let mut out = Vec::new();
+    for row in &file.detector {
+        let kind = match row.kind.as_str() {
+            "callee" => PackDetectorKind::Callee,
+            "none" => PackDetectorKind::None,
+            "impossible" => PackDetectorKind::Impossible,
+            other => {
+                tracing::warn!(
+                    kind = other,
+                    "pack detector kind is not executable here; no detector"
+                );
+                continue;
+            }
+        };
+        let names_atoms: Vec<String> = match (&row.atom, &row.atoms) {
+            (Some(a), _) => vec![a.clone()],
+            (None, Some(AtomsSel::One(s))) if s == "*" => atoms.iter().cloned().collect(),
+            (None, Some(AtomsSel::One(s))) => vec![s.clone()],
+            (None, Some(AtomsSel::Many(v))) => v.clone(),
+            (None, None) => {
+                tracing::warn!("pack detector row names no atom; skipped");
+                continue;
+            }
+        };
+        let langs: Vec<String> = row
+            .lang
+            .iter()
+            .cloned()
+            .chain(row.langs.iter().cloned())
+            .collect();
+        for atom in names_atoms {
+            for lang in &langs {
+                let class = row.vocab.as_deref().unwrap_or(&atom);
+                let names: BTreeSet<String> = if kind == PackDetectorKind::Callee {
+                    file.vocab
+                        .iter()
+                        .filter(|v| v.class == class && &v.lang == lang)
+                        .flat_map(|v| v.names.iter().cloned())
+                        .collect()
+                } else {
+                    BTreeSet::new()
+                };
+                out.push(PackDetector {
+                    atom: atom.clone(),
+                    lang: lang.clone(),
+                    kind,
+                    names,
+                });
+            }
+        }
+    }
+    out
 }
 
 /// Load every enabled `local/NAME` pack of `table` from `<root>/packs/NAME.toml`.
@@ -76,8 +171,9 @@ pub fn load(root: &Path, table: &PacksTable) -> LoadedPacks {
             .and_then(|t| toml::from_str::<PackFile>(t).map_err(|e| e.to_string()));
         match parsed {
             Ok(file) => {
-                let atoms: BTreeSet<String> = file.atom.into_iter().map(|a| a.name).collect();
-                tracing::info!(%id, path = %rel, atoms = atoms.len(), version = %file.pack.version, "repository pack loaded");
+                let atoms: BTreeSet<String> = file.atom.iter().map(|a| a.name.clone()).collect();
+                let detectors = expand_detectors(&file, &atoms);
+                tracing::info!(%id, path = %rel, atoms = atoms.len(), detectors = detectors.len(), version = %file.pack.version, "repository pack loaded");
                 out.sources
                     .insert(id.clone(), format!("repo:{PACKS_DIR}/{name}"));
                 out.pins.insert(
@@ -86,6 +182,7 @@ pub fn load(root: &Path, table: &PacksTable) -> LoadedPacks {
                         version: file.pack.version,
                         digest: Some(blake3_tagged(&bytes)),
                         atoms,
+                        detectors,
                     },
                 );
             }
