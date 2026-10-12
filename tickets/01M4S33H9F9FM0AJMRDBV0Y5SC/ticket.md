@@ -11,7 +11,7 @@ scope = ["crates/frob-check/tests/tool_bind.rs", "crates/frob-obligations/tests/
 
 [[acceptance]]
 text = "Given the stale tool_bind test, when it runs, then it passes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the exc017 corpus, when mdtest_corpus runs, then it passes"
