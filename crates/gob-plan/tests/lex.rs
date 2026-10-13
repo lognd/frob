@@ -1,6 +1,6 @@
 //! Lexer behaviour: the acceptance examples, each token kind, errors, and a no-panic property.
 
-use gob_plan::grl::{LexErrorKind, Lexed, MetaKind, StrPart, TokenKind, lex, lex_range};
+use gob_plan::grl::{LexErrorKind, Lexed, MetaKind, TokenKind, lex, lex_range};
 use gob_text::{FileInterner, TextRange};
 use proptest::prelude::*;
 
@@ -139,34 +139,25 @@ fn every_token_kind() {
 }
 
 #[test]
-fn strings_escapes_and_interpolation() {
-    let src = r#""a \"q\" \\ \n {d.name} b {f("x}")} \{lit\}""#;
-    let toks = kinds(src);
-    let [TokenKind::Str(parts)] = toks.as_slice() else {
-        panic!("{toks:?}")
-    };
-    let text = |p: &StrPart| match p {
-        StrPart::Text { value, .. } => value.clone(),
-        StrPart::Interp { expr } => format!("<{}>", &src[expr.range.to_usize_range()]),
-    };
-    let got: Vec<String> = parts.iter().map(text).collect();
-    assert_eq!(
-        got,
-        vec!["a \"q\" \\ \n ", "<d.name>", " b ", "<f(\"x}\")>", " {lit}"]
-    );
-    assert_eq!(kinds("\"\""), vec![TokenKind::Str(vec![])]);
+fn strings_stay_raw_and_braces_never_fail_in_the_lexer() {
+    // frob:ticket 01M40P6D3AGPV868NBY2P406G2
+    let src = r#""a \"q\" \\ \n {d.name} \{lit\}""#;
+    let inner = &src[1..src.len() - 1];
+    assert_eq!(kinds(src), vec![TokenKind::Str(inner.to_owned())]);
+    assert_eq!(kinds("\"\""), vec![TokenKind::Str(String::new())]);
+    for raw in ["a{2", "a}", "{", "{}", "{x"] {
+        let src = format!("\"{raw}\"");
+        assert_eq!(kinds(&src), vec![TokenKind::Str(raw.to_owned())], "{raw}");
+    }
 }
 
 #[test]
 fn interpolation_expression_relexes() {
     let src = "\"x {a.b} y\"";
     let lexed = ok(src);
-    let TokenKind::Str(parts) = &lexed.tokens[0].kind else {
-        panic!()
-    };
-    let StrPart::Interp { expr } = &parts[1] else {
-        panic!()
-    };
+    let span = lexed.tokens[0].span.range.to_usize_range();
+    assert_eq!(span, 0..src.len());
+    let expr = gob_text::Span::new(file(), gob_text::TextRange::new(4u32.into(), 7u32.into()));
     let inner = lex_range(file(), src, expr.range).unwrap();
     assert_eq!(inner.tokens.len(), 3);
     assert_eq!(inner.tokens[0].span.range.start(), 4u32.into());
@@ -249,8 +240,6 @@ fn error_messages_and_spans() {
         ("/a/x", "`x` is not a regex flag", "x"),
         ("/a/ii", "given twice", "i"),
         ("//", "is empty", "//"),
-        ("\"{\"", "never closed", "{"),
-        ("\"{}\"", "needs an expression", "{}"),
         ("fooBar", "`fooBar` is not a valid name", "fooBar"),
         ("Foo", "`Foo` is not a valid name or rule id", "Foo"),
         ("TODO12", "rule id", "TODO12"),

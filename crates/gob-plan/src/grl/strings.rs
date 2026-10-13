@@ -1,8 +1,8 @@
-//! `"..."` strings with escapes and interpolation, and `"""..."""` blocks.
+//! `"..."` strings (raw, escape-checked; the parser splits interpolation) and `"""..."""` blocks.
 
 use super::error::{LexError, LexErrorKind};
 use super::lexer::Lexer;
-use super::token::{Block, StrPart, TokenKind};
+use super::token::{Block, TokenKind};
 
 impl Lexer<'_> {
     /// A string or block string; the opening quote is at `start`.
@@ -11,9 +11,7 @@ impl Lexer<'_> {
             return self.block(start);
         }
         self.bump();
-        let mut parts = Vec::new();
-        let mut text = String::new();
-        let mut text_start = self.pos;
+        let body = self.pos;
         loop {
             let at = self.pos;
             match self.bump() {
@@ -21,77 +19,15 @@ impl Lexer<'_> {
                     return self.err(LexErrorKind::UnterminatedString, start, at);
                 }
                 Some('"') => {
-                    self.flush_text(&mut parts, &mut text, text_start, at);
-                    break;
+                    let raw = self.src[body..at].to_owned();
+                    self.push(TokenKind::Str(raw), start);
+                    return Ok(());
                 }
                 Some('\\') => match self.bump() {
-                    Some('"') => text.push('"'),
-                    Some('\\') => text.push('\\'),
-                    Some('n') => text.push('\n'),
-                    Some('{') => text.push('{'),
-                    Some('}') => text.push('}'),
+                    Some('"' | '\\' | 'n' | '{' | '}') => {}
                     None => return self.err(LexErrorKind::UnterminatedString, start, at),
                     Some(c) => return self.err(LexErrorKind::UnknownEscape(c), at, self.pos),
                 },
-                Some('{') => {
-                    self.flush_text(&mut parts, &mut text, text_start, at);
-                    let expr = self.interpolation(at)?;
-                    parts.push(StrPart::Interp { expr });
-                    text_start = self.pos;
-                }
-                Some(c) => text.push(c),
-            }
-        }
-        self.push(TokenKind::Str(parts), start);
-        Ok(())
-    }
-
-    fn flush_text(&self, parts: &mut Vec<StrPart>, text: &mut String, from: usize, to: usize) {
-        if !text.is_empty() {
-            parts.push(StrPart::Text {
-                value: std::mem::take(text),
-                span: self.span(from, to),
-            });
-        }
-    }
-
-    /// Scan to the `}` matching the `{` at `open`; returns the expression span.
-    fn interpolation(&mut self, open: usize) -> Result<gob_text::Span, LexError> {
-        let body = self.pos;
-        let mut depth = 1usize;
-        loop {
-            let at = self.pos;
-            match self.bump() {
-                None | Some('\n' | '\r') => {
-                    return self.err(LexErrorKind::UnterminatedInterpolation, open, open + 1);
-                }
-                Some('{') => depth += 1,
-                Some('}') => {
-                    depth -= 1;
-                    if depth == 0 {
-                        if at == body {
-                            return self.err(LexErrorKind::EmptyInterpolation, open, self.pos);
-                        }
-                        return Ok(self.span(body, at));
-                    }
-                }
-                Some('"') => self.skip_nested_string(open)?,
-                Some(_) => {}
-            }
-        }
-    }
-
-    /// Skip a string literal inside an interpolation (its opening quote is consumed).
-    fn skip_nested_string(&mut self, open: usize) -> Result<(), LexError> {
-        loop {
-            match self.bump() {
-                None | Some('\n' | '\r') => {
-                    return self.err(LexErrorKind::UnterminatedInterpolation, open, open + 1);
-                }
-                Some('\\') => {
-                    self.bump();
-                }
-                Some('"') => return Ok(()),
                 Some(_) => {}
             }
         }
