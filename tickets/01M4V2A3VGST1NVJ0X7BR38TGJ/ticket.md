@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-13T16:42:40Z"
-updated = "2026-10-13T16:55:53Z"
+updated = "2026-10-13T17:04:20Z"
 idempotency_key = "gen001-2026-10-13"
 scope = ["docs/**", "changelog.d/**"]
 
