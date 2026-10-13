@@ -470,6 +470,72 @@ pub struct ScreenConfig {
     pub states: Vec<ScreenState>,
     /// Platform ids and `tag:<name>` entries the screen applies to; absent means every platform.
     pub applies_to: Option<Vec<String>>,
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    /// Who made the screen: `human` or `agent`; an agent screen needs a human review by default.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provenance: Option<Provenance>,
+    /// `human` requires a recorded human review (HUMAN001); `skip` waives it for an agent screen.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub review: Option<ReviewRequirement>,
+    /// Source files or directories (relative to the project root) whose bytes and token uses the
+    /// review digest covers; absent means only the spec and every token.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sources: Option<Vec<String>>,
+}
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+/// Who authored a screen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Provenance {
+    /// Written by a person.
+    Human,
+    /// Written by an agent; a human review is required unless `review = "skip"`.
+    Agent,
+}
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+/// Whether a screen needs a recorded human review.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ReviewRequirement {
+    /// A human review is required.
+    Human,
+    /// No human review is required, even for an agent screen.
+    Skip,
+}
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+/// One `[[review.reviewers]]` entry: who may ack, and the signing keys their acks may carry.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Reviewer {
+    /// The reviewer identity, matched against the git `user.email` (or `user.name`) at ack time.
+    pub id: String,
+    /// Signing key ids or fingerprints the reviewer's signed commits may carry.
+    #[serde(default)]
+    pub keys: Vec<String>,
+}
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+/// The `[review]` table: the human review lock policy.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ReviewConfig {
+    /// Allow-list of reviewers; empty means any identity may ack.
+    #[serde(default)]
+    pub reviewers: Vec<Reviewer>,
+    /// When true, the commit that introduced an ack must carry a good signature from a key
+    /// listed for a reviewer, else HUMAN001 fires.
+    #[serde(default)]
+    pub require_signed: bool,
+}
+
+impl ReviewConfig {
+    /// True when nothing is configured (used to keep the spec dump unchanged).
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
 }
 
 /// One `[[session]]` or `[[mock_set]]` roster entry: an id plus opaque renderer-consumed data.
@@ -528,6 +594,9 @@ pub struct RawSpec {
     pub session: Option<Vec<RosterEntry>>,
     /// Gallery mock-set roster; optional.
     pub mock_set: Option<Vec<RosterEntry>>,
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    /// Human review lock policy; optional.
+    pub review: Option<ReviewConfig>,
 }
 
 fn palette_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {

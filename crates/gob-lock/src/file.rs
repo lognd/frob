@@ -166,6 +166,51 @@ pub struct AckLogEntry {
     pub reason: String,
 }
 
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+/// A human reviewer's decision on a subject (`[[review]]`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReviewVerdict {
+    /// The reviewer approved the subject as rendered.
+    Approved,
+    /// The reviewer rejected the subject; the rejection stands until the inputs change.
+    Rejected,
+}
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+/// One recorded human review (`[[review]]`); its map key in [`LockFile::reviews`] is the subject.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReviewEntry {
+    /// The combined digest of every input at review time.
+    pub digest: String,
+    /// Approved or rejected.
+    pub verdict: ReviewVerdict,
+    /// Reviewer identity (`Name <email>` or a configured id).
+    pub reviewer: String,
+    /// When (RFC 3339, UTC).
+    pub at: String,
+    /// Why, when the reviewer gave a note.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+    /// The render artifact reference reviewed, when one existed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub render: Option<String>,
+    /// True when the ack was recorded without a terminal (`--non-interactive`).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub non_interactive: bool,
+    /// Per-input digests at review time (input name to digest), so staleness can name what moved.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub inputs: BTreeMap<String, String>,
+}
+
+/// The on-disk `[[review]]` row: the subject key then the entry.
+#[derive(Serialize, Deserialize)]
+struct ReviewRow {
+    subject: String,
+    #[serde(flatten)]
+    entry: ReviewEntry,
+}
+
 /// One acknowledged flow (`[[flow]]`); its map key in [`LockFile::flows`] is the flow key.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FlowEntry {
@@ -238,6 +283,9 @@ pub struct LockFile {
     pub renamed: BTreeMap<String, String>,
     /// The append-only ack log (`[[ack_log]]`): decisions such as renames, oldest first.
     pub ack_log: Vec<AckLogEntry>,
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    /// Human review entries (`[[review]]`) in subject order.
+    pub reviews: BTreeMap<String, ReviewEntry>,
 }
 
 impl Default for LockFile {
@@ -249,6 +297,7 @@ impl Default for LockFile {
             flows: BTreeMap::new(),
             renamed: BTreeMap::new(),
             ack_log: Vec::new(),
+            reviews: BTreeMap::new(),
         }
     }
 }
@@ -329,6 +378,8 @@ struct FileV2 {
     renamed: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     ack_log: Vec<AckLogEntry>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    review: Vec<ReviewRow>,
 }
 
 impl LockFile {
@@ -350,6 +401,7 @@ impl LockFile {
             flows: BTreeMap::new(),
             renamed: BTreeMap::new(),
             ack_log: Vec::new(),
+            reviews: BTreeMap::new(),
         }
     }
 
@@ -365,7 +417,13 @@ impl LockFile {
             flows: BTreeMap::new(),
             renamed: v2.renamed,
             ack_log: v2.ack_log,
+            reviews: BTreeMap::new(),
         };
+        for r in v2.review {
+            if lock.reviews.insert(r.subject.clone(), r.entry).is_some() {
+                return Err(dup("review", &r.subject));
+            }
+        }
         for r in v2.symbol {
             let e = LockEntry {
                 identity: (r.identity != r.symref).then_some(r.identity),
@@ -433,6 +491,14 @@ impl LockFile {
                 .collect(),
             renamed: self.renamed.clone(),
             ack_log: self.ack_log.clone(),
+            review: self
+                .reviews
+                .iter()
+                .map(|(k, e)| ReviewRow {
+                    subject: k.clone(),
+                    entry: e.clone(),
+                })
+                .collect(),
         }
     }
 

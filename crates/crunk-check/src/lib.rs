@@ -22,6 +22,7 @@ use gob_diagnostics as _; // unused today; removal tracked in ~MKG678C
 
 mod product;
 pub mod product_rules;
+pub mod review;
 pub mod sibling;
 mod tailwind;
 
@@ -48,6 +49,9 @@ pub struct CheckOptions {
     pub base: Option<String>,
     /// `--ticket-scope`: echoed in the document; no per-file rule exists yet to narrow.
     pub ticket_scope: Option<Vec<String>>,
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    /// The gate the run is for; `Release` raises families with a release severity.
+    pub gate: crunk_rules::family::Gate,
 }
 
 /// Everything one run produced, enough to build the document and the verbs' views.
@@ -88,7 +92,9 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<CrunkRun, CheckError> {
         fail_on: opts.fail_on,
         ..gob_check::RunOptions::default()
     };
-    let report = gob_check::run(&Crunk, root, &run_opts)?;
+    let mut report = gob_check::run(&Crunk, root, &run_opts)?;
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    crunk_rules::family::apply_gate(&mut report.findings, opts.gate);
     let elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
     tracing::info!(
         findings = report.findings.len(),

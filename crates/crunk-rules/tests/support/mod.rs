@@ -12,14 +12,17 @@
     reason = "each test binary uses a different part of the support module"
 )]
 
+use std::fmt::Write as _;
 use std::path::Path;
 
 use crunk_ingest::{ProjectStyles, ingest_tree};
 use crunk_rules::CrunkHost;
+use crunk_rules::review::{AckSignature, ReviewFacts, Subject, judge};
 use crunk_rules::tailwind::TailwindFacts;
 use crunk_spec::DesignSpec;
 use crunk_tailwind::runtime::{ClassDeclaration, ClassResult, ClassStatus};
 use gob_cache::Cache;
+use gob_lock::{ReviewEntry, ReviewVerdict};
 use gob_rules::{Emitted, Finding, RepoRule, run_repo};
 use gob_text::FileInterner;
 use indexmap::IndexMap;
@@ -29,6 +32,7 @@ pub struct Project {
     pub spec: DesignSpec,
     pub styles: ProjectStyles,
     pub tailwind: TailwindFacts,
+    pub reviews: Option<ReviewFacts>,
     _dir: tempfile::TempDir,
 }
 
@@ -41,6 +45,9 @@ impl CrunkHost for Project {
     }
     fn tailwind(&self) -> Option<&TailwindFacts> {
         Some(&self.tailwind)
+    }
+    fn reviews(&self) -> Option<&ReviewFacts> {
+        self.reviews.as_ref()
     }
 }
 
@@ -199,6 +206,9 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
     if config == Some("breakpoints") {
         spec_text.push_str(BREAKPOINTS_TABLE);
     }
+    if config.is_some_and(|c| c.starts_with("review-")) {
+        spec_text.push_str(&review_tables(config));
+    }
     if [".tsx", ".jsx", ".ts"].iter().any(|e| file.ends_with(e)) {
         spec_text.push_str("\n[jsx]\nglobs = [\"src/**/*\"]\n");
     }
@@ -222,10 +232,12 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
     }
     let styles = ingest_tree(&spec, &Cache::null()).expect("ingest").styles;
     let tailwind = tailwind_facts(&spec, &styles, config);
+    let reviews = config.and_then(|c| review_facts(&spec, c));
     Project {
         spec,
         styles,
         tailwind,
+        reviews,
         _dir: dir,
     }
 }
@@ -238,4 +250,82 @@ pub fn run<R: RepoRule<Project> + Default>(host: &Project) -> Vec<Finding> {
         .into_iter()
         .map(|e| e.into_located_finding(R::DEF, &mut files))
         .collect()
+}
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+/// The `[review]` policy and the reviewed screen `home` a `config=review-*` case adds.
+fn review_tables(config: Option<&str>) -> String {
+    let mut text = String::from(
+        "\n[[screen]]\nid = \"home\"\nentry = \"/\"\nreview = \"human\"\n[[screen.states]]\nid = \"default\"\n",
+    );
+    if matches!(config, Some("review-unlisted" | "review-unsigned")) {
+        let signed = config == Some("review-unsigned");
+        let _ = write!(
+            text,
+            "\n[review]\nrequire_signed = {signed}\n[[review.reviewers]]\nid = \"alice@example.com\"\nkeys = [\"KEY1\"]\n"
+        );
+    }
+    text
+}
+
+/// The current subject of the case's screen: one token input.
+fn review_subject(token_digest: &str) -> Subject {
+    Subject {
+        id: "screen/home/default".to_owned(),
+        screen: "home".to_owned(),
+        inputs: [("token:--color-bg".to_owned(), token_digest.to_owned())].into(),
+    }
+}
+
+/// The judged review of the case's screen for the `review-*` case named `config`.
+fn review_facts(spec: &DesignSpec, config: &str) -> Option<ReviewFacts> {
+    if !config.starts_with("review-") {
+        return None;
+    }
+    let now = review_subject("new");
+    let recorded = |subject: &Subject, reviewer: &str, verdict| ReviewEntry {
+        digest: subject.digest(),
+        verdict,
+        reviewer: reviewer.to_owned(),
+        at: "2026-10-13T00:00:00Z".to_owned(),
+        note: Some("spacing is off".to_owned()),
+        render: None,
+        non_interactive: false,
+        inputs: subject.inputs.clone(),
+    };
+    let alice = "Alice <alice@example.com>";
+    let (entry, signature) = match config {
+        "review-missing" => (None, None),
+        "review-stale" => (
+            Some(recorded(
+                &review_subject("old"),
+                alice,
+                ReviewVerdict::Approved,
+            )),
+            None,
+        ),
+        "review-unlisted" => (
+            Some(recorded(
+                &now,
+                "Mallory <m@example.com>",
+                ReviewVerdict::Approved,
+            )),
+            None,
+        ),
+        "review-unsigned" => (
+            Some(recorded(&now, alice, ReviewVerdict::Approved)),
+            Some(AckSignature::Unsigned("commit is not signed".to_owned())),
+        ),
+        "review-rejected" => (Some(recorded(&now, alice, ReviewVerdict::Rejected)), None),
+        _ => (Some(recorded(&now, alice, ReviewVerdict::Approved)), None),
+    };
+    Some(ReviewFacts {
+        findings: vec![judge(
+            &now,
+            entry.as_ref(),
+            &spec.review,
+            signature.as_ref(),
+        )],
+        unreadable: None,
+    })
 }

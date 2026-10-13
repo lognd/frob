@@ -32,6 +32,6 @@ mod plan;
 pub use diff::{Facet, LockDiff, diff};
 pub use file::{
     AckLogEntry, AckLogKind, DIGEST_SCHEME, EntryKind, FlowEnd, FlowEntry, LOCK_VERSION, LockEntry,
-    LockError, LockFile, LockTarget, Reattest, file_name,
+    LockError, LockFile, LockTarget, Reattest, ReviewEntry, ReviewVerdict, file_name,
 };
 pub use plan::{Current, CurrentFlow, CurrentSymbol, FacetSet, Plan, PlanError, PlanOptions, plan};

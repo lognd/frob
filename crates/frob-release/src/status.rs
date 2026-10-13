@@ -36,6 +36,9 @@ pub enum BlockerKind {
     CiPending,
     /// CI could not be read and `[release] require_ci` is true.
     CiUnknown,
+    /// A sibling product reports a release-tier finding (an Error at the release gate), such as a stale human review.
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    ReleaseTier,
 }
 
 /// One reason the release is not ready.
@@ -155,6 +158,23 @@ pub struct Input {
     pub changelog: ChangelogFacts,
     /// What CI said about the base-branch tip.
     pub ci: CiFacts,
+    /// What the sibling products' release gate said (stale human reviews and the like).
+    pub release_tier: ReleaseTierFacts,
+}
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+/// The sibling products' release-gate findings (`crunk check --gate release`).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum ReleaseTierFacts {
+    /// No sibling product has a release gate in this repository.
+    #[default]
+    NotApplicable,
+    /// The gate ran and found nothing at Error.
+    Clean,
+    /// The gate raised these findings: `(rule id, message)`.
+    Findings(Vec<(String, String)>),
+    /// The gate could not run or be read; the reason. Never assumed clean.
+    Unresolved(String),
 }
 
 /// Fragment validity as the report shows it.
@@ -253,6 +273,12 @@ pub fn unresolved_items(registry_setup: bool) -> Vec<Unresolved> {
 /// The fixed items plus, when CI could not be read, its line with the exact reason and remedy.
 fn unresolved_of(input: &Input, registry_setup: bool) -> Vec<Unresolved> {
     let mut items = Vec::new();
+    if let ReleaseTierFacts::Unresolved(reason) = &input.release_tier {
+        items.push(Unresolved {
+            item: "release-tier findings".to_owned(),
+            reason: reason.clone(),
+        });
+    }
     if let CiState::Unknown(u) = &input.ci.state {
         items.push(Unresolved {
             item: format!("CI status on {}", short(input.ci.sha.as_deref())),
@@ -335,6 +361,11 @@ fn blockers_of(input: &Input) -> Vec<Blocker> {
         ));
     }
     out.extend(ci_blocker(&input.ci));
+    if let ReleaseTierFacts::Findings(found) = &input.release_tier {
+        for (rule, message) in found {
+            out.push(blocker(BlockerKind::ReleaseTier, rule, message.clone()));
+        }
+    }
     match &input.changelog {
         ChangelogFacts::Valid { .. } => {}
         ChangelogFacts::InvalidFragments(errs) => {
@@ -494,6 +525,12 @@ fn glance(r: &Report, input: &Input) -> Vec<String> {
         l.push(format!("  {f}"));
     }
     l.push(format!("CI: {} ({})", r.ci.state, r.ci.detail));
+    l.push(match &input.release_tier {
+        ReleaseTierFacts::NotApplicable => "release-tier findings: not applicable".to_owned(),
+        ReleaseTierFacts::Clean => "release-tier findings: clean".to_owned(),
+        ReleaseTierFacts::Findings(f) => format!("release-tier findings: {}", f.len()),
+        ReleaseTierFacts::Unresolved(why) => format!("release-tier findings: unresolved ({why})"),
+    });
     l.push(format!("fragments: {}", r.fragments.state));
     for e in &r.fragments.errors {
         l.push(format!("  {e}"));
@@ -661,7 +698,36 @@ mod tests {
                 section: Some("## 0.532.0\n".to_owned()),
             },
             ci: ci(CiState::Green { checks: 3 }, true),
+            release_tier: ReleaseTierFacts::Clean,
         }
+    }
+
+    // frob:tests crates/frob-release/src/status.rs::assess
+    #[test]
+    fn a_stale_human_review_is_a_release_tier_blocker_and_an_unreadable_gate_is_unresolved() {
+        let mut i = input(vec![crit(1, true)]);
+        i.release_tier = ReleaseTierFacts::Findings(vec![(
+            "HUMAN001".to_owned(),
+            "screen `home` changed since alice reviewed it".to_owned(),
+        )]);
+        let r = assess(&i);
+        assert!(!r.ready);
+        assert_eq!(r.blockers[0].kind, BlockerKind::ReleaseTier);
+        assert_eq!(r.blockers[0].subject, "HUMAN001");
+        assert!(
+            r.at_a_glance
+                .iter()
+                .any(|l| l == "release-tier findings: 1")
+        );
+
+        i.release_tier = ReleaseTierFacts::Unresolved("crunk is not installed".to_owned());
+        let r = assess(&i);
+        assert!(r.ready, "an unreadable gate is unresolved, not a blocker");
+        assert!(
+            r.unresolved
+                .iter()
+                .any(|u| u.item == "release-tier findings")
+        );
     }
 
     #[test]

@@ -836,7 +836,35 @@ pub(crate) fn screens(
                 ));
             }
         }
+        // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+        for (j, src) in screen.sources.iter().flatten().enumerate() {
+            non_empty(
+                extend(&at, vec![key("sources"), Seg::Idx(j)]),
+                src,
+                "sources entry",
+            )?;
+        }
         out.insert(screen.id.clone(), screen.clone());
     }
     Ok(out)
+}
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+/// `[review]`: reviewer ids are non-empty and unique, and keys are non-empty.
+pub(crate) fn review(raw: &crate::table::ReviewConfig) -> Res<()> {
+    let mut seen: HashSet<&str> = HashSet::new();
+    for (i, r) in raw.reviewers.iter().enumerate() {
+        let at = vec![key("review"), key("reviewers"), Seg::Idx(i)];
+        non_empty(extend(&at, vec![key("id")]), &r.id, "id")?;
+        if !seen.insert(r.id.as_str()) {
+            return Err(fail(
+                extend(&at, vec![key("id")]),
+                format!("duplicate reviewer id `{}`", r.id),
+            ));
+        }
+        for (j, k) in r.keys.iter().enumerate() {
+            non_empty(extend(&at, vec![key("keys"), Seg::Idx(j)]), k, "key")?;
+        }
+    }
+    Ok(())
 }
