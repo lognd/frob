@@ -2,7 +2,8 @@
 id = "01M4CXV1896SWK19F3YYF7EC9A"
 title = "One relational structure for rules: lower SymbolGraph status edges into U relations with lo/hi"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
