@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T04:58:29Z"
+digest = "d089d7b0942c235df715070ed387f61f2d1ec98000e530e47ee9e4303ca90cd8"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 36.51s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 53acf2d1-095b-4077-8c4a-7e1ffcf03529 with nextest profile: default
+    Starting 1 test across 341 binaries (3011 tests skipped)
+        PASS [   0.017s] gob-directives::scan dropped_spellings_offer_an_accept_exception_or_guidance
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.036s] 1 test run: 1 passed, 3011 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "dropped_spellings_offer_an_accept_exception_or_guidance"
+size = 628
+status = "measured"
+test_count = 1
+tests_digest = "2afa21f5e66bb28cbfcafef1f0b61c54714c28caa9381a7332fc273df94c8a9f"
+at = "2026-10-13T04:58:29Z"
+actor = "lognd"
+rev = 1
