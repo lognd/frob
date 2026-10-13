@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T07:12:26Z"
+digest = "3261984ddc40d1f72e30b6a54c59cc2ddc3027e37e27318e4f2ee532c2c8c88d"
+exit_code = 101
+inline = """
+    Blocking waiting for file lock on package cache
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling frob-gh v0.532.0 (<worktree>/crates/frob-gh)
+warning: ignoring -C extra-filename flag due to -o flag
+
+error[E0432]: unresolved imports `gob_ir::registry::RegisterError`, `gob_ir::registry::TemplateEntry`
+  --> crates/gob-packs/src/tier1/mod.rs:14:56
+   |
+14 | use gob_ir::registry::{self, AtomEntry, DetectorEntry, RegisterError, TemplateEntry, VocabEntry};
+   |                                                        ^^^^^^^^^^^^^  ^^^^^^^^^^^^^ no `TemplateEntry` in `registry`
+   |                                                        |
+   |                                                        no `RegisterError` in `registry`
+
+error[E0425]: cannot find function `register_pack` in module `registry`
+   --> crates/gob-packs/src/tier1/mod.rs:137:15
+    |
+137 |     registry::register_pack(&content.pack, atoms, vocabs, templates)?;
+    |               ^^^^^^^^^^^^^ not found in `registry`
+
+Some errors have detailed explanations: E0425, E0432.
+For more information about an error, try `rustc --explain E0425`.
+warning: `gob-packs` (lib) generated 1 warning
+error: could not compile `gob-packs` (lib) due to 2 previous errors; 1 warning emitted
+warning: build failed, waiting for other jobs to finish...
+error: command `~/.rustup/toolchains/1.98.0-aarch64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "test(fixture_renders_the_tree_with_rollups_and_unparented)"
+size = 1575
+status = "measured"
+at = "2026-10-13T07:12:26Z"
+actor = "lognd"
+rev = 1
