@@ -2,13 +2,14 @@
 id = "01M41S1KC8PQFTVDETMARHP82G"
 title = "gob-path crate: RelPath moved from gob-git, Shown, component validation, typed-path property tests"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:59:43Z"
-updated = "2026-10-13T06:06:26Z"
+updated = "2026-10-13T06:06:37Z"
 scope = ["crates/gob-path/**", "crates/gob-git/src/relpath.rs", "crates/gob-git/src/lib.rs", "crates/gob-git/Cargo.toml", "Cargo.toml", "docs/design/paths.md", "crates/frob-ledger/src/error.rs", "crates/frob-ack/src/error.rs", "crates/frob-ledger/Cargo.toml", "crates/frob-ack/Cargo.toml", "crates/frob-ledger/src/branch.rs", "crates/gob-git/tests/ledger.rs", "crates/gob-git/src/error.rs", "crates/frob-release/src/cut.rs"]
 
 [[acceptance]]
