@@ -2,7 +2,8 @@
 id = "01M4DPJJW8D3KXZVTEN5D4WN5G"
 title = "New worktrees seed their derived cache from the primary's so check --ticket is not a cold whole-repo run"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
