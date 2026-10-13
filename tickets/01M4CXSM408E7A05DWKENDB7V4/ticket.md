@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:54:24Z"
-updated = "2026-10-13T05:22:45Z"
+updated = "2026-10-13T05:22:46Z"
 scope = ["changelog.d/**", "crates/gob-lock/**", "crates/crunk/**", "crates/crunk-check/**", "crates/crunk-spec/**", "crates/frob-release/**", "crates/gob-rules/**", "docs/design/releases.md", "docs/design/rules.md", "crates/crunk-rules/**", "docs/crunk/**", "docs/schemas/crunk.json", "docs/design/crunk.md", "crates/gob-exec/**", "crates/frob/src/release_cmd.rs", "crates/frob/tests/**", "crates/gob-product/**", "Cargo.lock", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "Given crunk ack without a terminal and without --non-interactive, when it runs, then it refuses"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md section 4.1 (owner requirement 2026-10-08): a design change fails the human tier until a person inspects and acks it. Reuse gob-lock (D28) with a new entry kind; digest covers sources, resolved tokens per mode, fonts and the render digest; reviewers allow-list; non-interactive acks are marked; [review] require_signed checks the introducing commit's signature against gob-trust keys. Severity: Advisory in check/CI, Error only at the release gate through a general rule field release_severity and a new release status readiness item (also update docs/design/releases.md and rules.md).
