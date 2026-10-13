@@ -175,7 +175,10 @@ mod tests {
     fn put(path: &Path, now: SystemTime, age: Duration) {
         std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
         std::fs::write(path, vec![b'x'; 100]).expect("write");
-        let f = std::fs::File::open(path).expect("open");
+        let f = std::fs::OpenOptions::new()
+            .write(true)
+            .open(path)
+            .expect("open");
         f.set_modified(now - age).expect("mtime");
     }
 
