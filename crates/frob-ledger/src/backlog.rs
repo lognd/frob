@@ -2,6 +2,7 @@
 // frob:ticket 01M48Q2A6GSSETPGKGJ6NJDNWV
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::Write as _;
 
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -187,7 +188,7 @@ impl Backlog {
 fn line(n: &BacklogNode, indent: usize, out: &mut Vec<String>) {
     let mut s = format!("{}{} {} {}", "  ".repeat(indent), n.handle, n.ty, n.title);
     if let Some(p) = n.percent_done {
-        s.push_str(&format!(" [{} pts, {p}% done]", n.rollup_points));
+        let _ = write!(s, " [{} pts, {p}% done]", n.rollup_points);
     }
     if n.blocked {
         s.push_str(" (blocked)");
@@ -195,7 +196,7 @@ fn line(n: &BacklogNode, indent: usize, out: &mut Vec<String>) {
         s.push_str(" (doable)");
     }
     if n.folded > 0 {
-        s.push_str(&format!(" (+{} folded)", n.folded));
+        let _ = write!(s, " (+{} folded)", n.folded);
     }
     out.push(s);
     for c in &n.children {
