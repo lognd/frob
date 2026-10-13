@@ -1,0 +1,9 @@
+kind = "create"
+title = "Regenerate stale generated docs on experimental (GEN001 CI red)"
+type = "task"
+category = "todo"
+priority = "medium"
+idempotency_key = "gen001-2026-10-13"
+at = "2026-10-13T16:42:40Z"
+actor = "lognd"
+rev = 1
