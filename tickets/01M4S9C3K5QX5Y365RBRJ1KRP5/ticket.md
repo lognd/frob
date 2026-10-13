@@ -2,11 +2,11 @@
 id = "01M4S9C3K5QX5Y365RBRJ1KRP5"
 title = "crunk tokens: unknown --target exits 0 instead of usage 2"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-13T00:07:37Z"
-updated = "2026-10-13T00:07:37Z"
+updated = "2026-10-13T02:15:23Z"
 scope = ["crates/crunk/**"]
 +++
 
