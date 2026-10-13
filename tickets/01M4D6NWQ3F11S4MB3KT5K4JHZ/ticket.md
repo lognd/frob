@@ -2,7 +2,8 @@
 id = "01M4D6NWQ3F11S4MB3KT5K4JHZ"
 title = "Register [land] (require_base_green, ci_required, ci_ignore, block_on_unknown_ci) in FrobConfig so validation and config sync see it"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
