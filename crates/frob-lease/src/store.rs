@@ -25,7 +25,7 @@ use serde::Serialize;
 
 use crate::config::LeaseConfig;
 use crate::error::{LeaseError, SAME_TICKET};
-use crate::model::{Holder, Lease, StealRecord};
+use crate::model::{Holder, Lease, StealRecord, Waiter};
 use crate::overlap::{Resolver, covers_foreign_fragments, glob_set, scopes_overlap};
 
 /// How often a blocked caller retries the lock.
@@ -67,6 +67,19 @@ pub struct CorruptLease {
     pub message: String,
 }
 
+/// A queued waiter as reported: how long it has waited and which live leases block it (frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct WaiterInfo {
+    /// The queued ticket.
+    pub ticket: TicketId,
+    /// Who is waiting.
+    pub holder: Holder,
+    /// Whole seconds in the queue.
+    pub age_secs: i64,
+    /// Tickets whose live leases overlap the waiter's scope, plus earlier overlapping waiters.
+    pub blockers: Vec<TicketId>,
+}
+
 /// Proof that the lease lock is held; unlocks on drop.
 struct LockGuard(File);
 
@@ -82,6 +95,7 @@ impl Drop for LockGuard {
 #[derive(Debug)]
 pub struct LeaseStore {
     dir: PathBuf,
+    waiters_dir: PathBuf,
     lock_path: PathBuf,
     cfg: LeaseConfig,
     holder_limit: u32,
@@ -123,6 +137,7 @@ impl LeaseStore {
         tracing::debug!(dir = %base.display(), ttl_secs = cfg.ttl_secs, "lease store opened");
         Ok(Self {
             dir: base.join("leases"),
+            waiters_dir: base.join("waiters"),
             lock_path: base.join("leases.lock"),
             cfg,
             holder_limit: 0,
@@ -429,6 +444,9 @@ impl LeaseStore {
                 .into());
             }
         }
+        if existing.is_none() {
+            self.check_queue(ticket, scope, now)?;
+        }
         for other in live.iter().filter(|l| l.ticket != ticket) {
             if let Some(overlap) = scopes_overlap(
                 (scope, ticket),
@@ -465,8 +483,193 @@ impl LeaseStore {
         };
         let already = existing.is_some_and(|e| e.scope == scope);
         self.write(&lock, &lease)?;
+        self.remove_waiter(ticket)?;
         tracing::info!(%ticket, %holder, already, scope = ?lease.scope, "lease acquired");
         Ok(Acquired { lease, already })
+    }
+
+    fn waiter_path(&self, ticket: TicketId) -> PathBuf {
+        self.waiters_dir.join(format!("{ticket}.toml"))
+    }
+
+    /// Every readable waiter record, oldest first (FIFO: enqueue time, then ticket); unreadable files are skipped with a warning.
+    fn read_waiters(&self) -> Result<Vec<Waiter>, LeaseError> {
+        let entries = match fs::read_dir(&self.waiters_dir) {
+            Ok(e) => e,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(e) => {
+                return Err(LeaseError::io(
+                    format!("reading {}", self.waiters_dir.display()),
+                    e,
+                ));
+            }
+        };
+        let mut out = Vec::new();
+        for entry in entries {
+            let path = entry
+                .map_err(|e| LeaseError::io(format!("reading {}", self.waiters_dir.display()), e))?
+                .path();
+            if path.extension().is_none_or(|x| x != "toml") {
+                continue;
+            }
+            let text = fs::read_to_string(&path)
+                .map_err(|e| LeaseError::io(format!("reading {}", path.display()), e))?;
+            match toml::from_str::<Waiter>(&text) {
+                Ok(w) => out.push(w),
+                Err(e) => {
+                    tracing::warn!(path = %path.display(), error = %e, "corrupt waiter file skipped");
+                }
+            }
+        }
+        out.sort_by_key(|w| (w.enqueued_at.unix(), w.ticket));
+        Ok(out)
+    }
+
+    /// Live waiters in FIFO order, deleting dead ones (requires the lock).
+    fn live_waiters_pruned(&self, now: Stamp) -> Result<Vec<Waiter>, LeaseError> {
+        let mut live = Vec::new();
+        for w in self.read_waiters()? {
+            if w.is_live(now) {
+                live.push(w);
+            } else {
+                tracing::info!(ticket = %w.ticket, holder = %w.holder, "dead waiter reaped");
+                self.remove_waiter(w.ticket)?;
+            }
+        }
+        Ok(live)
+    }
+
+    fn remove_waiter(&self, ticket: TicketId) -> Result<(), LeaseError> {
+        let path = self.waiter_path(ticket);
+        match fs::remove_file(&path) {
+            Ok(()) => {
+                tracing::debug!(%ticket, "waiter dequeued");
+                Ok(())
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(e) => Err(LeaseError::io(format!("removing {}", path.display()), e)),
+        }
+    }
+
+    /// Refuse with [`LeaseError::Queued`] when a live waiter ahead of `ticket` (every waiter if `ticket` is not one) overlaps `scope`; requires the lock.
+    fn check_queue(
+        &self,
+        ticket: TicketId,
+        scope: &[String],
+        now: Stamp,
+    ) -> Result<(), LeaseError> {
+        let waiters = self.live_waiters_pruned(now)?;
+        let own = waiters.iter().position(|w| w.ticket == ticket);
+        let ahead = &waiters[..own.unwrap_or(waiters.len())];
+        for w in ahead {
+            if let Some(overlap) = scopes_overlap(
+                (scope, ticket),
+                (&w.scope, w.ticket),
+                &self.shared,
+                &self.resolver,
+            )? {
+                tracing::info!(%ticket, waiter = %w.ticket, %overlap, "acquire refused: queued waiter ahead");
+                return Err(LeaseError::Queued {
+                    waiter: w.ticket,
+                    holder: Box::new(w.holder.clone()),
+                    age_secs: w.age_secs(now),
+                    overlap,
+                });
+            }
+        }
+        Ok(())
+    }
+
+    /// Join (or heartbeat in) the wait queue for `scope`; the first call fixes the FIFO position.
+    ///
+    /// # Errors
+    ///
+    /// Lock, I/O and format failures.
+    pub fn enqueue(
+        &self,
+        ticket: TicketId,
+        holder: &Holder,
+        scope: &[String],
+    ) -> Result<Waiter, LeaseError> {
+        let _lock = self.lock()?;
+        let now = self.now();
+        fs::create_dir_all(&self.waiters_dir)
+            .map_err(|e| LeaseError::io(format!("creating {}", self.waiters_dir.display()), e))?;
+        let previous = self
+            .read_waiters()?
+            .into_iter()
+            .find(|w| w.ticket == ticket);
+        let enqueued_at = previous
+            .filter(|w| w.is_live(now))
+            .map_or(now, |w| w.enqueued_at);
+        let waiter = Waiter {
+            ticket,
+            holder: holder.clone(),
+            scope: scope.to_vec(),
+            enqueued_at,
+            renewed_at: now,
+            ttl_secs: self.cfg.waiter_ttl_secs,
+        };
+        let path = self.waiter_path(ticket);
+        let text = toml::to_string_pretty(&waiter).map_err(|e| LeaseError::Format {
+            path: path.clone(),
+            message: e.to_string(),
+        })?;
+        gob_fs::write_atomic(&path, text.as_bytes())
+            .map_err(|e| LeaseError::io(format!("writing {}", path.display()), e))?;
+        tracing::debug!(%ticket, %holder, "waiter enqueued or heartbeat");
+        Ok(waiter)
+    }
+
+    /// Leave the wait queue (the wait ended without a lease); a no-op when not queued.
+    ///
+    /// # Errors
+    ///
+    /// Lock and I/O failures.
+    pub fn dequeue(&self, ticket: TicketId) -> Result<(), LeaseError> {
+        let _lock = self.lock()?;
+        self.remove_waiter(ticket)
+    }
+
+    /// Live waiters in FIFO order with their age and blockers, reaping dead ones.
+    ///
+    /// # Errors
+    ///
+    /// Lock, I/O, glob and walk failures.
+    pub fn waiters(&self) -> Result<Vec<WaiterInfo>, LeaseError> {
+        let lock = self.lock()?;
+        let now = self.now();
+        let live = self.live_pruned(&lock, now)?;
+        let waiters = self.live_waiters_pruned(now)?;
+        let mut out = Vec::new();
+        for (i, w) in waiters.iter().enumerate() {
+            let mut blockers = Vec::new();
+            let others = live
+                .iter()
+                .filter(|l| l.ticket != w.ticket)
+                .map(|l| (l.ticket, &l.scope))
+                .chain(waiters[..i].iter().map(|e| (e.ticket, &e.scope)));
+            for (other, other_scope) in others {
+                if scopes_overlap(
+                    (&w.scope, w.ticket),
+                    (other_scope, other),
+                    &self.shared,
+                    &self.resolver,
+                )?
+                .is_some()
+                {
+                    blockers.push(other);
+                }
+            }
+            out.push(WaiterInfo {
+                ticket: w.ticket,
+                holder: w.holder.clone(),
+                age_secs: w.age_secs(now),
+                blockers,
+            });
+        }
+        tracing::debug!(count = out.len(), "waiters listed");
+        Ok(out)
     }
 
     /// Heartbeat: push the expiry of `holder`'s lease on `ticket` forward.
