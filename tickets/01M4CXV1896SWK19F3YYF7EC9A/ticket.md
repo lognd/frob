@@ -2,13 +2,13 @@
 id = "01M4CXV1896SWK19F3YYF7EC9A"
 title = "One relational structure for rules: lower SymbolGraph status edges into U relations with lo/hi"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T04:55:10Z"
-updated = "2026-10-08T04:55:10Z"
+updated = "2026-10-13T06:12:28Z"
 scope = ["changelog.d/**", "crates/gob-ir/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
