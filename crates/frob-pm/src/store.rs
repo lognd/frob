@@ -377,6 +377,53 @@ impl<'a> PmStore<'a> {
         self.commit(kind, id, &events)
     }
 
+    /// Assign `moves` to the cycle `target` in one ledger commit: each ticket is added, and removed from its old cycle when it has one.
+    ///
+    /// The caller has already checked eligibility and capacity (see `cycle::assign::plan_assign`); `over_commit`
+    /// bodies for the target, in order, are appended after the memberships. The fold of every touched cycle must
+    /// succeed or nothing is written. Returns the target and the old cycles, each as committed.
+    ///
+    /// # Errors
+    ///
+    /// As [`PmStore::append`]; [`PmError::Invalid`] for an empty `moves`.
+    pub fn assign_many(
+        self,
+        target: ObjectId,
+        moves: &[(TicketId, Option<ObjectId>)],
+        over_commit: Vec<PmBody>,
+    ) -> Result<Vec<Applied>> {
+        if moves.is_empty() {
+            return Err(PmError::invalid("assign_many takes at least one ticket"));
+        }
+        let actor = self.ledger.actor()?;
+        let event = |body| PmEvent::new(self.ledger.clock().now(), &actor, body);
+        let mut by_old: BTreeMap<ObjectId, Vec<PmEvent>> = BTreeMap::new();
+        let mut added = Vec::with_capacity(moves.len() + over_commit.len());
+        for (ticket, from) in moves {
+            if let Some(old) = from {
+                by_old
+                    .entry(*old)
+                    .or_default()
+                    .push(event(PmBody::Member(MemberData {
+                        op: Op::Remove,
+                        ticket: *ticket,
+                    })));
+            }
+            added.push(event(PmBody::Member(MemberData {
+                op: Op::Add,
+                ticket: *ticket,
+            })));
+        }
+        added.extend(over_commit.into_iter().map(event));
+        tracing::info!(cycle = %target, tickets = moves.len(), sources = by_old.len(), "assigning in one commit");
+        let mut batch: Vec<_> = by_old
+            .into_iter()
+            .map(|(old, evs)| (ObjectKind::Cycle, old, evs))
+            .collect();
+        batch.push((ObjectKind::Cycle, target, added));
+        self.commit_many(&batch)
+    }
+
     /// Change one frontmatter field (`new` of `None` unsets it); the previous value is recorded for conflict detection.
     ///
     /// # Errors
@@ -521,46 +568,78 @@ impl<'a> PmStore<'a> {
 
     /// Commit `new` events of one object with its re-folded frontmatter, then reconcile concurrent writers.
     fn commit(self, kind: ObjectKind, id: ObjectId, new: &[PmEvent]) -> Result<Applied> {
-        let creating = new.iter().any(|e| matches!(e.body, PmBody::Create(_)));
-        let mut all = match (creating, self.ledger.tip_hex()?) {
-            (false, Some(tip)) => self.read_events_at(&tip, kind, id)?,
-            _ => Vec::new(),
+        let mut applied = self.commit_many(&[(kind, id, new.to_vec())])?;
+        Ok(applied.remove(0))
+    }
+
+    /// Commit the new events of several objects, each with its re-folded frontmatter, as one ledger commit.
+    ///
+    /// Every object must fold with its events or nothing is written. The commit message names the last
+    /// object (the whole batch when there is more than one); concurrent writers are reconciled afterwards.
+    fn commit_many(self, batch: &[(ObjectKind, ObjectId, Vec<PmEvent>)]) -> Result<Vec<Applied>> {
+        let tip = self.ledger.tip_hex()?;
+        let mut changes = Vec::new();
+        let mut folds = Vec::new();
+        for (kind, id, new) in batch {
+            let (kind, id) = (*kind, *id);
+            let creating = new.iter().any(|e| matches!(e.body, PmBody::Create(_)));
+            let mut all = match (creating, &tip) {
+                (false, Some(tip)) => self.read_events_at(tip, kind, id)?,
+                _ => Vec::new(),
+            };
+            if !creating && all.is_empty() {
+                return Err(PmError::NotFound {
+                    kind,
+                    reference: id.to_string(),
+                });
+            }
+            all.extend(new.iter().cloned());
+            let folded = fold(kind, id, &all)?;
+            let dir = self.object_dir(kind, id);
+            changes.push((
+                format!("{dir}/{}", kind.file()),
+                Some(folded.object.render()?.into_bytes()),
+            ));
+            for ev in new {
+                tracing::debug!(object = %id, event = %ev.id, kind = ev.body.name(), "pm event written");
+                changes.push((
+                    format!("{dir}/events/{}", ev.file_name()),
+                    Some(ev.to_toml()?.into_bytes()),
+                ));
+            }
+            folds.push(folded);
+        }
+        let (kind, id, new) = batch.last().expect("a commit has at least one object");
+        let last = folds.last().expect("one fold per object");
+        let verb = new.last().map_or("noop", |e| e.body.name());
+        let message = if batch.len() == 1 {
+            format!(
+                "tickets({kind}-{verb}): {} {}",
+                id.handle(),
+                last.object.alias()
+            )
+        } else {
+            format!(
+                "tickets({kind}-{verb}): {} {} (+{} more objects)",
+                id.handle(),
+                last.object.alias(),
+                batch.len() - 1
+            )
         };
-        if !creating && all.is_empty() {
-            return Err(PmError::NotFound {
-                kind,
-                reference: id.to_string(),
+        let commit = self.ledger.commit_files(&message, &changes)?.to_string();
+        tracing::info!(%commit, objects = batch.len(), "pm commit");
+        let mut out = Vec::with_capacity(batch.len());
+        for ((kind, id, new), folded) in batch.iter().zip(folds) {
+            let object = self
+                .reconcile(*kind, *id, MAX_RECONCILE)?
+                .map_or(folded.object, |f| f.object);
+            out.push(Applied {
+                object,
+                events: new.iter().map(|e| e.id).collect(),
+                commit: commit.clone(),
             });
         }
-        all.extend(new.iter().cloned());
-        let folded = fold(kind, id, &all)?;
-        let dir = self.object_dir(kind, id);
-        let mut changes = vec![(
-            format!("{dir}/{}", kind.file()),
-            Some(folded.object.render()?.into_bytes()),
-        )];
-        for ev in new {
-            tracing::debug!(object = %id, event = %ev.id, kind = ev.body.name(), "pm event written");
-            changes.push((
-                format!("{dir}/events/{}", ev.file_name()),
-                Some(ev.to_toml()?.into_bytes()),
-            ));
-        }
-        let verb = new.last().map_or("noop", |e| e.body.name());
-        let message = format!(
-            "tickets({kind}-{verb}): {} {}",
-            id.handle(),
-            folded.object.alias()
-        );
-        let commit = self.ledger.commit_files(&message, &changes)?.to_string();
-        let object = self
-            .reconcile(kind, id, MAX_RECONCILE)?
-            .map_or(folded.object, |f| f.object);
-        Ok(Applied {
-            object,
-            events: new.iter().map(|e| e.id).collect(),
-            commit,
-        })
+        Ok(out)
     }
 
     /// Re-fold `id` at the tip and rewrite its frontmatter when a concurrent writer left it stale.
