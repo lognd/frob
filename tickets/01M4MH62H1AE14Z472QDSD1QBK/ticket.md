@@ -2,7 +2,8 @@
 id = "01M4MH62H1AE14Z472QDSD1QBK"
 title = "Merge train: land several ready tickets as one speculative batch, verify the batch tip once, and fall back to bisecting on failure"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
