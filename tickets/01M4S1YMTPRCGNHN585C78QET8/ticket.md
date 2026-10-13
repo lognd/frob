@@ -2,7 +2,8 @@
 id = "01M4S1YMTPRCGNHN585C78QET8"
 title = "gob-diagnostics: add message origin to EnvelopeError and re-export TextOrigin"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
