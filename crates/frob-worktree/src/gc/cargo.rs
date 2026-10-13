@@ -165,3 +165,40 @@ impl BuildAdapter for CargoAdapter {
         units
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::gc::adapter::{BuildPolicy, plan};
+    use std::time::Duration;
+
+    fn put(path: &Path, age: Duration) {
+        std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
+        std::fs::write(path, vec![b'x'; 100]).expect("write");
+        let f = std::fs::File::open(path).expect("open");
+        f.set_modified(SystemTime::now() - age).expect("mtime");
+    }
+
+    // frob:ticket 01M4P1YTX7FMRTYCRQ08VVT0ZP
+    // frob:tests crates/frob-worktree/src/gc/cargo.rs::CargoAdapter
+    #[test]
+    fn land_target_layout_evicts_the_stale_unit_and_keeps_the_recent_one() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let deps = tmp.path().join("debug").join("deps");
+        put(
+            &deps.join("libstale-aaa.rlib"),
+            Duration::from_secs(30 * 3600),
+        );
+        put(&deps.join("libfresh-bbb.rlib"), Duration::from_secs(60));
+        let policy = BuildPolicy {
+            incremental_max_age: Duration::from_secs(6 * 3600),
+            keep_recent: Duration::from_secs(3600),
+            budget_bytes: 0,
+            keep_binaries: Vec::new(),
+        };
+        let units = CargoAdapter.units(tmp.path(), &policy);
+        let p = plan(units, 200, SystemTime::now(), &policy);
+        let labels: Vec<_> = p.evict.iter().map(|u| u.label.as_str()).collect();
+        assert_eq!(labels, ["deps/stale-aaa"]);
+    }
+}
