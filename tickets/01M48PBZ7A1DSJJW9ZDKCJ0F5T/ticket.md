@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:38Z"
-updated = "2026-10-13T05:49:42Z"
+updated = "2026-10-13T12:44:11Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]

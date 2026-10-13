@@ -2629,6 +2629,38 @@ impl SymbolGraph {
         &self.status_edges
     }
 
+    /// The status edges of the given kinds lowered into one [`gob_ir::StatusRelation`] with lo/hi
+    /// bounds; an `Unknown` edge puts its source on the Unknown frontier.
+    // frob:ticket 01M4CXV1896SWK19F3YYF7EC9A
+    pub fn relation(&self, kinds: &[EdgeKind]) -> gob_ir::StatusRelation<Symref> {
+        let mut r = gob_ir::StatusRelation::new();
+        // Import edges live only in the link graph; call, reference and link edges are status edges.
+        for e in self.graph.edge_references() {
+            let k = e.weight().kind;
+            if k == EdgeKind::Imports && kinds.contains(&k) {
+                let (a, b) = (&self.graph[e.source()], &self.graph[e.target()]);
+                r.insert(a.symref.clone(), b.symref.clone(), e.weight().status);
+            }
+        }
+        for e in self.status_edges.iter().filter(|e| kinds.contains(&e.kind)) {
+            match (&e.to, e.status) {
+                (Some(to), s) if s != Status::Unknown => r.insert(e.from.clone(), to.clone(), s),
+                _ => r.mark_unknown_out(e.from.clone()),
+            }
+        }
+        r
+    }
+
+    /// Hot-context reachability over call edges from `roots` (vocabulary-declared hot entry
+    /// points); `enabled` false (pack off) makes every query `NotApplicable`.
+    // frob:ticket 01M4D94Y2JVPYCGCZQJF0RDFDA
+    pub fn hot_context(&self, roots: &[Symref], enabled: bool) -> gob_ir::HotContext<Symref> {
+        if !enabled {
+            return gob_ir::HotContext::disabled();
+        }
+        gob_ir::HotContext::new(&self.relation(&[EdgeKind::Calls]), roots.iter().cloned())
+    }
+
     /// Facts about a walked file: language, fidelity and parse status.
     pub fn file_info(&self, path: &str) -> Option<&FileInfo> {
         self.files.get(path)

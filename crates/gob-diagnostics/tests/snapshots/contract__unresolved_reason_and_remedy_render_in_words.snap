@@ -1,0 +1,10 @@
+---
+source: crates/gob-diagnostics/tests/contract.rs
+expression: out
+---
+(no location)
+  unresolved[TOOL001]: no adapter
+  reason: the language support is too shallow for this rule (fidelity)
+  remedy: use a richer adapter or disable the rule here
+
+0 errors, 0 warnings, 0 advisory, 1 unresolved (0 required)

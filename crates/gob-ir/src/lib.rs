@@ -63,6 +63,7 @@ pub mod const_value;
 mod defuse;
 mod digest;
 pub mod eval;
+mod hot;
 mod location;
 pub mod markup;
 mod operator;
@@ -71,6 +72,7 @@ mod query;
 pub mod registry;
 mod scope;
 mod select;
+mod status_relation;
 pub mod style;
 mod symref;
 mod term;
@@ -83,6 +85,7 @@ pub use eval::{
     Ctx, EvalConfig, EvalError, Observation, Poison, PoisonReason, Polarity, Relation, RuleOutcome,
     RuleProgram, SubjectResult, ThresholdKind, Verdict,
 };
+pub use hot::{HotContext, Hotness};
 pub use location::Location;
 pub use operator::{AdapterOp, GroupOrder, Operator, Sort, Universal};
 pub use print::{FacetStream, PrintOpts};
@@ -95,5 +98,6 @@ pub use scope::{
 pub use select::{
     Hidden, HiddenReason, UnitMatch, UnitSelection, owner_of_unit, select, select_units,
 };
+pub use status_relation::StatusRelation;
 pub use symref::{Anchor, Identity, IdentityDelta, Segment, Symref, SymrefError};
 pub use term::{Node, NodeId, NodeSpec, Term, TermBuilder, TermError};

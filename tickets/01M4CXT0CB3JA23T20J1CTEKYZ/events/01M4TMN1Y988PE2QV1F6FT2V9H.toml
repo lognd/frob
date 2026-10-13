@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "re-lease after disk pause"
+at = "2026-10-13T12:43:59Z"
+actor = "lognd"
+rev = 1

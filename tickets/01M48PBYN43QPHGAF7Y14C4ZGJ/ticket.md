@@ -2,12 +2,13 @@
 id = "01M48PBYN43QPHGAF7Y14C4ZGJ"
 title = "gob-diagnostics: render fix edits as a diff with the applicability tier in the text renderer"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:38Z"
-updated = "2026-10-13T05:51:40Z"
+updated = "2026-10-13T13:34:05Z"
 scope = ["crates/gob-diagnostics/**"]
 
 [[acceptance]]

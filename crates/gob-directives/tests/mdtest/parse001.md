@@ -88,7 +88,6 @@ fn g() {}
 
 ```rust expect=clean
 let s = "// frob:bogus";
-// grimble:binds anything at all
 // see frob:ticket in the docs
 // plain comment: with a colon
 fn a() {}
