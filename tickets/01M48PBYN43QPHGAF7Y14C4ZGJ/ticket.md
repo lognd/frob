@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:38Z"
-updated = "2026-10-13T05:49:51Z"
+updated = "2026-10-13T05:50:36Z"
 scope = ["crates/gob-diagnostics/**"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "JSON output is unchanged"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the text renderer also shows an Unresolved finding's reason in words and its remedy, and JSON carries reason"
