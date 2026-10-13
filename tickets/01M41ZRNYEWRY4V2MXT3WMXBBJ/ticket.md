@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T22:57:11Z"
-updated = "2026-10-13T03:44:14Z"
+updated = "2026-10-13T03:52:40Z"
 scope = ["crates/frob-lease/**", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/**", "docs/design/tickets.md", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given two waiters on overlapping scopes, when holders release, then they are served in FIFO order and neither deadlocks"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a waiter whose process died, when its heartbeat expires, then it is reaped and no longer blocks new leases"
