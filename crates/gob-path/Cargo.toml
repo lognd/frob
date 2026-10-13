@@ -1,0 +1,20 @@
+[package]
+name = "gob-path"
+version.workspace = true
+description = "Repository-relative path type, host-path bridges and display paths for the frob/grimble/crunk goblins."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[dependencies]
+thiserror = "2"
+tracing = "0.1"
+typed-path = "0.12"
+
+[dev-dependencies]
+proptest = "1"
+
+[lints]
+workspace = true

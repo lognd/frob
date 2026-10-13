@@ -47,6 +47,12 @@ pub enum BranchError {
     Git(#[from] GitError),
 }
 
+impl From<gob_git::PathError> for BranchError {
+    fn from(e: gob_git::PathError) -> Self {
+        Self::Git(e.into())
+    }
+}
+
 /// Check that `name` is a plain branch name (not a ref path, option or revision expression).
 ///
 /// # Errors
