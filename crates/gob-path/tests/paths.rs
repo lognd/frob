@@ -19,45 +19,46 @@ fn win_root() -> impl Strategy<Value = String> {
     ]
 }
 
-proptest! {
-    // frob:tests prop_windows_roundtrip
-    #[test]
-    fn prop_windows_roundtrip(root in win_root(), names in prop::collection::vec(name(), 1..5), upper in any::<bool>()) {
+// frob:tests prop_windows_roundtrip
+#[test]
+fn prop_windows_roundtrip() {
+    proptest!(|(root in win_root(), names in prop::collection::vec(name(), 1..5), upper in any::<bool>())| {
         let rel = RelPath::new(names.join("/")).unwrap();
         let full = rel.to_host_style(PathStyle::Windows, &root);
         let probe = if upper { root.to_uppercase() } else { root.clone() };
         let got = RelPath::from_host_style(PathStyle::Windows, &probe, &full).unwrap();
         prop_assert_eq!(&got, &rel);
         prop_assert!(!got.as_str().contains('\\'));
-        prop_assert_eq!(got.to_host_style(PathStyle::Windows, &root), full);
-    }
+        prop_assert_eq!(got.to_host_style(PathStyle::Windows, &root), full);});
+}
 
-    // frob:tests prop_unix_roundtrip
-    #[test]
-    fn prop_unix_roundtrip(names in prop::collection::vec(name(), 1..5), root in prop_oneof![Just("/".to_owned()), Just("/a/b".to_owned())]) {
+// frob:tests prop_unix_roundtrip
+#[test]
+fn prop_unix_roundtrip() {
+    proptest!(|(names in prop::collection::vec(name(), 1..5), root in prop_oneof![Just("/".to_owned()), Just("/a/b".to_owned())])| {
         let rel = RelPath::new(names.join("/")).unwrap();
         let full = rel.to_host_style(PathStyle::Unix, &root);
         let got = RelPath::from_host_style(PathStyle::Unix, &root, &full).unwrap();
         prop_assert_eq!(&got, &rel);
         prop_assert_eq!(got.to_host_style(PathStyle::Unix, &root), full);
         let host = rel.to_host(Path::new("/r"));
-        prop_assert_eq!(RelPath::from_host(Path::new("/r"), &host).ok(), cfg!(unix).then_some(rel));
-    }
+        prop_assert_eq!(RelPath::from_host(Path::new("/r"), &host).ok(), cfg!(unix).then_some(rel));});
+}
 
-    // frob:tests prop_invalid_component_refused
-    #[test]
-    fn prop_invalid_component_refused(bad in prop_oneof![
+// frob:tests prop_invalid_component_refused
+#[test]
+fn prop_invalid_component_refused() {
+    proptest!(|(bad in prop_oneof![
         Just("con".to_owned()), Just("NUL.txt".to_owned()), Just("com1".to_owned()), Just("a:b".to_owned()),
         Just("x?".to_owned()), Just("dir.".to_owned()), Just("sp ".to_owned()), Just("a|b".to_owned()),
-    ]) {
+    ])| {
         match RelPath::from_host_style(PathStyle::Unix, "/r", &format!("/r/ok/{bad}")) {
             Err(PathError::BadComponent { component, platform, .. }) => {
                 prop_assert_eq!(component, bad);
                 prop_assert_eq!(platform, "windows");
             }
             other => prop_assert!(false, "{:?}", other),
-        }
-    }
+        }});
 }
 
 // frob:tests outside_and_dotdot_refused
