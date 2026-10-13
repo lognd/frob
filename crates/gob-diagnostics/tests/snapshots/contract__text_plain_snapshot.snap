@@ -11,7 +11,8 @@ src/a.rs
     |
   2 |     bad_call();
     |     ^^^^^^^^
-  fix: remove call
+  fix[manual]: remove call
+  note: display-only: no edit is attached; apply by hand
 
 src/b.rs
   1:5: warning[COV006]: unused x
