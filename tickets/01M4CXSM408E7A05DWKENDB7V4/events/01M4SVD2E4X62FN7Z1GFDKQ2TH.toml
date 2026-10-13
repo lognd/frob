@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-13T05:22:26Z"
+digest = "fdd91f0c6f2d08336e88cc699bcfd43fe440ee392cce5ffa0139001114380f6a"
+exit_code = 0
+inline = '''
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.77s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0f57d624-4f89-4823-bf05-4a09f6bd17f1 with nextest profile: default
+    Starting 1 test across 1 binary (8 tests skipped)
+        PASS [   0.020s] frob-cli release_cmd::release_tier_tests::a_stale_human_review_in_the_envelope_blocks_and_other_shapes_do_not
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --lib -E test(a_stale_human_review_in_the_envelope_blocks_and_other_shapes_do_not)"
+size = 773
+status = "measured"
+test_count = 1
+tests_digest = "689ba9a985d531e13627ebe7482fda4a70450006e1e5d8eda0a09458a3b99281"
+at = "2026-10-13T05:22:26Z"
+actor = "lognd"
+rev = 1
