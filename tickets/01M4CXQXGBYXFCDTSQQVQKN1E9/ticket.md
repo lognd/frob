@@ -2,13 +2,13 @@
 id = "01M4CXQXGBYXFCDTSQQVQKN1E9"
 title = "Token dialect compiles to DTCG 2025.10: tiers, aliases, composites, scopes and modes through the resolver module"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-08T04:53:28Z"
-updated = "2026-10-08T04:53:28Z"
+updated = "2026-10-13T03:34:40Z"
 scope = ["changelog.d/**", "crates/crunk-spec/**", "crates/crunk-tokens/**", "crates/crunk/**"]
 
 [[acceptance]]

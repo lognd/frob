@@ -1,0 +1,10 @@
+kind = "create"
+title = "Wire [release] registry_setup into release status and frob.toml"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob/src/release_cmd.rs", "frob.toml"]
+body = "found while working ~57AZHYH: frob-release has assess_with(input, registry_setup) and ReleaseConfig.registry_setup; release_cmd.rs must call assess_with(&input, cfg.release.registry_setup) and frob.toml set registry_setup = true, else frob loses its own registry-setup item."
+at = "2026-10-13T03:27:58Z"
+actor = "lognd"
+rev = 1

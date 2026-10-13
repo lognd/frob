@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T03:10:04Z"
+digest = "afb53bafb5af63506d2bc7ccf283a350ab0d828820fedcb2f1d9dd17df6bbc2c"
+exit_code = 0
+inline = '''
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 51.45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b4196ab8-74d5-4337-82eb-4b4315ccf1f1 with nextest profile: default
+    Starting 2 tests across 1 binary (8 binaries skipped)
+        PASS [   0.036s] gob-dev::profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason
+        PASS [   0.041s] gob-dev::profile_coverage skips_carry_a_reason_and_measured_scenarios_a_budget
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.043s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'binary(profile_coverage)'"
+size = 1027
+status = "measured"
+test_count = 2
+tests_digest = "6473b09f4349691325ba5193d26ef4030da8e8db862c5bfca0e093857b66893f"
+at = "2026-10-13T03:10:04Z"
+actor = "lognd"
+rev = 1
