@@ -49,14 +49,19 @@ pub(super) struct PyIndex {
     file_nodes: HashMap<String, NodeIndex>,
 }
 
-/// The dotted module name of `path` (`src/` and `lib/` roots stripped, `__init__` dropped), empty for none.
+/// The dotted module name of `path` (everything up to a `src/` root, or a leading `lib/`, stripped; `__init__` dropped), empty for none.
 fn module_name(path: &str) -> String {
     let stem = path.rsplit_once('.').map_or(path, |(s, _)| s);
     let mut parts: Vec<&str> = stem.split('/').collect();
     if parts.last() == Some(&"__init__") {
         parts.pop();
     }
-    if parts.first().is_some_and(|p| matches!(*p, "src" | "lib")) && parts.len() > 1 {
+    // frob:ticket 01M4FGYMCWYPJ04HFYCKPHPNSQ
+    if let Some(i) = parts.iter().position(|p| *p == "src")
+        && i + 1 < parts.len()
+    {
+        parts.drain(..=i);
+    } else if parts.first() == Some(&"lib") && parts.len() > 1 {
         parts.remove(0);
     }
     parts.join(".")
@@ -528,6 +533,7 @@ mod tests {
         assert_eq!(module_name("pkg/__init__.py"), "pkg");
         assert_eq!(module_name("__init__.py"), "");
         assert_eq!(module_name("tests/test_a.py"), "tests.test_a");
+        assert_eq!(module_name("backend/src/pkg/api/h.py"), "pkg.api.h");
     }
 
     #[test]
