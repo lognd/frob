@@ -2,7 +2,8 @@
 id = "01M4D6NXRHA7NH42PB67TH24RC"
 title = "Decide frob-gh: wire it in (mirror, CI) or remove it (audit M11)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
