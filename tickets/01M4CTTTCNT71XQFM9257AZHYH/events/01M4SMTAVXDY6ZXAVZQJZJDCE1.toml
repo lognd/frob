@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T03:27:32Z"
+digest = "be43f5b65bc0ca7724a4493ec4b6fee6420b966090cd003fe718cae34f2ec282"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.85s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8a223605-8a6d-4f41-a2d1-c5b59cc3f042 with nextest profile: default
+    Starting 1 test across 340 binaries (2990 tests skipped)
+        PASS [   0.065s] frob-release::bump python_project_bump_edits_pyproject_and_creates_no_cargo_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.096s] 1 test run: 1 passed, 2990 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "python_project_bump_edits_pyproject_and_creates_no_cargo_file"
+size = 577
+status = "measured"
+test_count = 1
+tests_digest = "b9613c76e537cd6dd02152d8fa8e1a39fb86cf681d6188300568956a1fa11664"
+at = "2026-10-13T03:27:32Z"
+actor = "lognd"
+rev = 1

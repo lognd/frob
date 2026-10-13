@@ -8,12 +8,12 @@ points = 5
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:37Z"
-updated = "2026-10-13T03:08:48Z"
+updated = "2026-10-13T03:27:32Z"
 scope = ["changelog.d/**", "crates/frob-release/**", "docs/guides/release.md"]
 
 [[acceptance]]
 text = "Given a Python project, when frob release bump and cut run, then pyproject.toml's version changes and no Cargo file is created or rewritten"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a project without [release] registry settings, when release status runs, then no frob-specific item appears"
