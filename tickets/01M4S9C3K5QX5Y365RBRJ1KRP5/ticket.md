@@ -11,7 +11,7 @@ scope = ["crates/crunk/**"]
 
 [[acceptance]]
 text = "Given an unknown --target value, when crunk tokens runs, then it exits 2 with a usage error"
-bound = false
+bound = true
 +++
 
 found while working ~C78QET8: test an_unknown_target_is_a_usage_error_and_a_bad_spec_is_a_refusal (crates/crunk/tests/tokens.rs:160) fails, left 0 right 2
