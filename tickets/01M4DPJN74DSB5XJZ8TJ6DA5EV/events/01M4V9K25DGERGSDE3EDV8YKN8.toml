@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["changelog.d/**", ".github/workflows/**"]
+new = ["changelog.d/**", ".github/workflows/**", "docs/design/build-test-ci.md"]
+at = "2026-10-13T18:49:52Z"
+actor = "lognd"
+rev = 1

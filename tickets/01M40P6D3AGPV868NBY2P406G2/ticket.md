@@ -2,13 +2,13 @@
 id = "01M40P6D3AGPV868NBY2P406G2"
 title = "GRL lexer: keep strings raw and let the parser decide interpolation by position"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T10:50:41Z"
-updated = "2026-10-03T10:50:41Z"
+updated = "2026-10-13T18:46:35Z"
 idempotency_key = "m2-grl-lexer-raw-strings"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-plan/**"]
