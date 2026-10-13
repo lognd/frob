@@ -2,7 +2,8 @@
 id = "01M4CXT0CB3JA23T20J1CTEKYZ"
 title = "Directive admission (D120): merge into grimble:effects, rename core/shell/calls to grimble:, drop pure/honest/dispatcher/trusted/idempotent/hook, admission registry test"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
