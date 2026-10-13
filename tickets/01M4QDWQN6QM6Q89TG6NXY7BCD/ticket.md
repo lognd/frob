@@ -2,7 +2,8 @@
 id = "01M4QDWQN6QM6Q89TG6NXY7BCD"
 title = "Windows: land tool-pass reuse test spawns no tool (sh probe writes nothing on the runner)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
