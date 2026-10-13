@@ -520,7 +520,18 @@ jobs:
         id: ensure
         shell: bash
         run: |
-          if gh release view dev --repo "$REPO" >/dev/null 2>&1; then
+          # `gh release view/edit/upload dev` resolve the tag, and a draft release has none (the
+          # tag-move step below drafts the release when it deletes the tag ref), so a draft is
+          # found through the releases list by tag_name and published first, which recreates the
+          # tag at the tested sha and lets the tag-based commands below see it again.
+          draft_id=$(gh api "repos/$REPO/releases" --paginate \
+            --jq '.[] | select(.tag_name == "dev" and .draft) | .id' | head -n 1)
+          if [ -n "$draft_id" ]; then
+            echo "::notice::reusing the draft dev release $draft_id"
+            gh api -X PATCH "repos/$REPO/releases/$draft_id" \
+              -F draft=false -F prerelease=true -f target_commitish="$SHA" >/dev/null
+            echo "fresh=false" >> "$GITHUB_OUTPUT"
+          elif gh release view dev --repo "$REPO" >/dev/null 2>&1; then
             echo "fresh=false" >> "$GITHUB_OUTPUT"
           else
             gh release create dev --repo "$REPO" --prerelease --target "$SHA" \
