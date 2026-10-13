@@ -8,12 +8,12 @@ points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:29Z"
-updated = "2026-10-13T21:10:28Z"
+updated = "2026-10-13T21:39:27Z"
 scope = ["changelog.d/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
 text = "Given the Rust corpus, when parsed, then outputs are unchanged and the nested parse is gone"
-bound = false
+bound = true
 +++
 
 notes/research/profile-2026-10-07.md section 5 item 10 (rust.rs:1838; 35-43 percent of any parse).
