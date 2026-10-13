@@ -7,12 +7,12 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T22:57:11Z"
-updated = "2026-10-13T03:08:39Z"
+updated = "2026-10-13T03:18:57Z"
 scope = ["crates/frob-lease/**", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/**", "docs/design/tickets.md"]
 
 [[acceptance]]
 text = "Given a waiter queued on a path held by A, when B requests a new lease overlapping the waiter, then B is refused with E-LEASE-QUEUED and the waiter gets the lease when A releases"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given two waiters on overlapping scopes, when holders release, then they are served in FIFO order and neither deadlocks"
