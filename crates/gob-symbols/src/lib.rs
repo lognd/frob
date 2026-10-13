@@ -48,6 +48,7 @@
 
 mod adapter;
 mod crates;
+mod def_use;
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
 mod css;
 mod html;
@@ -91,6 +92,7 @@ pub use csharp::{
     is_csharp_test_file, is_csharp_test_fn, is_csharp_test_text,
 };
 pub use css::{CssAdapter, is_css_path};
+pub use def_use::{PYTHON_SYNTAX, RUST_SYNTAX, TYPESCRIPT_SYNTAX, def_use_of, syntax_for};
 pub use dotnet::{
     Assignment, DotnetError, DotnetProjects, MalformedProject, Project, SolutionEntry,
     parse_project, parse_solution,
