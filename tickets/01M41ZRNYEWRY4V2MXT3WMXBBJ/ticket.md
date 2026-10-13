@@ -2,29 +2,29 @@
 id = "01M41ZRNYEWRY4V2MXT3WMXBBJ"
 title = "Lease waits are unfair: a waiting ticket can starve while new overlapping leases keep winning; add frob work --wait with a FIFO waiter queue"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T22:57:11Z"
-updated = "2026-10-03T22:57:11Z"
-scope = ["crates/frob-lease/**", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/**", "docs/design/tickets.md"]
+updated = "2026-10-13T03:55:50Z"
+scope = ["crates/frob-lease/**", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/**", "docs/design/tickets.md", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "Given a waiter queued on a path held by A, when B requests a new lease overlapping the waiter, then B is refused with E-LEASE-QUEUED and the waiter gets the lease when A releases"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given two waiters on overlapping scopes, when holders release, then they are served in FIFO order and neither deadlocks"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a waiter whose process died, when its heartbeat expires, then it is reaped and no longer blocks new leases"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given waiters, when ticket contention runs, then it lists each waiter with its age and blocker"
-bound = false
+bound = true
 +++
 
 Reported by goway (2026-10-03, FROB_FEEDBACK item 5): an agent polled frob work ~NKCC1DM for 90 minutes and never got its lease; other agents kept starting new tickets whose scope overlapped one of its paths, because nothing records or protects a waiter. v1's lesson (tickets.md 7) was that agents poll blindly; the design answer is --wait instead of polling, but work has no fair wait yet.
