@@ -8,12 +8,12 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-08T08:12:49Z"
-updated = "2026-10-13T13:01:28Z"
+updated = "2026-10-13T13:26:32Z"
 scope = ["changelog.d/**", "crates/gob-ir/**", "crates/gob-symbols/**", "crates/gob-caps/**"]
 
 [[acceptance]]
 text = "Given a MonoBehaviour whose Update calls a helper that calls GetComponent, when hot(region) is queried, then the helper call is Must-hot"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a call through an interface with unknown targets, when queried, then the answer is May; given the unity pack disabled, then NotApplicable"
