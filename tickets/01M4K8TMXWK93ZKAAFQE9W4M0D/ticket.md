@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "Claude"
 created = "2026-10-10T16:02:38Z"
-updated = "2026-10-13T00:08:08Z"
+updated = "2026-10-13T00:11:16Z"
 scope = ["crates/frob/src/**", "crates/grimble/src/**", "crates/crunk/src/**", "crates/gob-product/src/**", "crates/gob-product/Cargo.toml", "crates/gob-product/tests/**", "Cargo.lock"]
 
 [[links]]
