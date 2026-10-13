@@ -2648,6 +2648,7 @@ name = "gob-packs"
 version = "0.532.0"
 dependencies = [
  "globset",
+ "gob-ir",
  "proptest",
  "serde",
  "tempfile",
