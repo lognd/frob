@@ -41,10 +41,34 @@ snapshots with `INSTA_UPDATE=always` (or `cargo insta review`); CI runs with
 
 ## Markers
 
-A line holding a comment (`//`, `#`, or `<!--`) followed by
-`error: RULE` or `warn: RULE` asserts a finding of that rule and severity
-on that very line (1-based within the block). Findings are compared
-exactly against the markers: extra or missing findings fail the case.
+A comment (`//`, `#`, or `<!--`) holding a marker word asserts a finding.
+The full form is
+
+    // WORD: [COL] RULE "substring"
+
+- `WORD` is `error`, `warn`, `advisory` or `unresolved`; it asserts that
+  severity. `unresolved[REASON]:` also asserts the finding's Unresolved
+  reason code (`unresolved[hole]:`); `unresolved[REASON, required]:` also
+  asserts the finding carries a required reason; a bare `unresolved:` accepts
+  any reason. A differing severity or reason fails the case.
+- `[COL]` (optional) is the 1-based byte column the finding's span starts at.
+- `RULE` (optional) is the rule id; omitted, it is the rule under test (the
+  block `rule=` or the suite default), so a bare `error:` means that rule.
+- `"substring"` (optional) must occur in the finding message. No escapes;
+  the string ends at the next `"`.
+
+Placement: a marker after code on a line asserts a finding on that very line
+(1-based within the block). A marker alone on its line (only whitespace
+before the comment) applies to the next line that is not itself an own-line
+marker, blank lines included; markers stacked on consecutive lines all apply
+to that one line, so one line may assert several findings. An own-line marker
+with no later line is a parse error, as is a malformed `[COL]` (non-numeric
+or `[0]`) or an unterminated string.
+
+Findings are compared against the markers as a multiset: each marker needs a
+distinct finding that satisfies every part it states, and extra or missing
+findings fail the case with an expected-vs-actual table (`!` rows), showing
+column and message for unmatched findings.
 
 - `expect=fire` with markers: findings must equal the markers.
 - `expect=fire` without markers: at least one finding of the rule.

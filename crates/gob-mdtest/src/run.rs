@@ -154,40 +154,142 @@ impl<R: CaseOutput, F: Fn(&Case) -> R> Runner<F> {
     }
 }
 
-/// One `(line, rule, severity)` triple used for exact comparison.
-type Key = (u32, RuleId, Severity);
-
-/// Convert findings to block-relative line keys (line 0 when spanless).
-fn actual_keys(text: &str, findings: &[Finding]) -> Vec<Key> {
-    let idx = LineIndex::new(text).ok();
-    let mut keys: Vec<Key> = findings
-        .iter()
-        .map(|f| {
-            let line = f
-                .span
-                .and_then(|s| idx.as_ref()?.line_col(s.range.start()))
-                .map_or(0, |lc| lc.line);
-            (line, f.rule.clone(), f.severity)
-        })
-        .collect();
-    keys.sort();
-    keys
+/// What one finding looks like in block-relative terms (line 0 when spanless).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct Actual {
+    /// 1-based block line.
+    line: u32,
+    /// Rule of the finding.
+    rule: RuleId,
+    /// Severity of the finding.
+    severity: Severity,
+    /// 1-based byte column (0 when spanless).
+    col: u32,
+    /// Finding message.
+    message: String,
+    /// Unresolved reason code, if any.
+    reason: Option<String>,
+    /// True when the finding is a required Unresolved.
+    required: bool,
 }
 
-/// Render an expected-vs-actual table, one row per differing entry.
-fn diff(expected: &[Key], actual: &[Key]) -> String {
-    let mut rows: BTreeMap<u32, (Vec<String>, Vec<String>)> = BTreeMap::new();
-    let show = |k: &Key| format!("{:?} {}", k.2, k.1);
-    for k in expected {
-        rows.entry(k.0).or_default().0.push(show(k));
+impl Actual {
+    /// Short form `Severity RULE`, with `[reason]` for an Unresolved.
+    fn short(&self) -> String {
+        match (&self.reason, self.severity) {
+            (Some(r), Severity::Unresolved) => format!("Unresolved[{r}] {}", self.rule),
+            _ => format!("{:?} {}", self.severity, self.rule),
+        }
     }
-    for k in actual {
-        rows.entry(k.0).or_default().1.push(show(k));
+
+    /// Short form plus column, message and required flag.
+    fn detail(&self) -> String {
+        let req = if self.required { " required" } else { "" };
+        format!(
+            "{}{req} [col {}] \"{}\"",
+            self.short(),
+            self.col,
+            self.message
+        )
+    }
+
+    /// True when this finding satisfies every constraint the marker states.
+    fn satisfies(&self, m: &Marker) -> bool {
+        self.line == m.line
+            && self.rule == m.rule
+            && self.severity == m.severity
+            && m.col.is_none_or(|c| c == self.col)
+            && m.message.as_ref().is_none_or(|t| self.message.contains(t))
+            && m.reason
+                .as_ref()
+                .is_none_or(|r| self.reason.as_ref() == Some(r))
+            && (!m.required || self.required)
+    }
+}
+
+/// Convert findings to block-relative, sorted [`Actual`]s.
+fn actuals(text: &str, findings: &[Finding]) -> Vec<Actual> {
+    let idx = LineIndex::new(text).ok();
+    let mut out: Vec<Actual> = findings
+        .iter()
+        .map(|f| {
+            let lc = f.span.and_then(|s| idx.as_ref()?.line_col(s.range.start()));
+            Actual {
+                line: lc.map_or(0, |lc| lc.line),
+                rule: f.rule.clone(),
+                severity: f.severity,
+                col: lc.map_or(0, |lc| lc.col),
+                message: f.message.clone(),
+                reason: f.reason.as_ref().map(|r| r.code().to_owned()),
+                required: f.required.is_some(),
+            }
+        })
+        .collect();
+    out.sort();
+    out
+}
+
+/// Describe a marker as the `Severity RULE [col N] "msg"` it asserts.
+fn show_marker(m: &Marker) -> String {
+    let mut s = match (&m.reason, m.severity) {
+        (Some(r), Severity::Unresolved) => format!("Unresolved[{r}] {}", m.rule),
+        _ => format!("{:?} {}", m.severity, m.rule),
+    };
+    if m.required {
+        s.push_str(" required");
+    }
+    if let Some(c) = m.col {
+        let _ = write!(s, " [col {c}]");
+    }
+    if let Some(t) = &m.message {
+        let _ = write!(s, " \"{t}\"");
+    }
+    s
+}
+
+/// Pair each marker with a distinct satisfying finding; return unmatched markers and findings.
+fn match_markers<'a>(
+    markers: &'a [Marker],
+    actual: &'a [Actual],
+) -> (Vec<&'a Marker>, Vec<&'a Actual>, Vec<&'a Actual>) {
+    let mut used = vec![false; actual.len()];
+    let mut missing = Vec::new();
+    for m in markers {
+        match (0..actual.len()).find(|&i| !used[i] && actual[i].satisfies(m)) {
+            Some(i) => used[i] = true,
+            None => missing.push(m),
+        }
+    }
+    let (hit, extra): (Vec<_>, Vec<_>) = actual.iter().zip(&used).partition(|(_, u)| **u);
+    (
+        missing,
+        hit.into_iter().map(|(a, _)| a).collect(),
+        extra.into_iter().map(|(a, _)| a).collect(),
+    )
+}
+
+/// Render an expected-vs-actual table, one row per line; `!` marks unmatched entries.
+fn diff(missing: &[&Marker], matched: &[&Actual], extra: &[&Actual]) -> String {
+    let mut rows: BTreeMap<u32, (Vec<String>, Vec<String>, bool)> = BTreeMap::new();
+    for a in matched {
+        let r = rows.entry(a.line).or_default();
+        r.0.push(a.short());
+        r.1.push(a.short());
+    }
+    for m in missing {
+        let r = rows.entry(m.line).or_default();
+        r.0.push(show_marker(m));
+        r.2 = true;
+    }
+    for a in extra {
+        let r = rows.entry(a.line).or_default();
+        r.1.push(a.detail());
+        r.2 = true;
     }
     let mut s = String::from("    line | expected | actual\n");
-    for (line, (e, a)) in rows {
+    for (line, (e, a, bad)) in rows {
         let (e, a) = (e.join(", "), a.join(", "));
-        let mark = if e == a { " " } else { "!" };
+        let mark = if bad { "!" } else { " " };
         let dash = |x: String| if x.is_empty() { "-".to_owned() } else { x };
         let _ = writeln!(s, "  {mark} {line:>4} | {} | {}", dash(e), dash(a));
     }
@@ -201,27 +303,16 @@ fn check(block: &Block, findings: &[Finding]) -> Result<(), String> {
         .filter(|f| f.rule == block.rule || block.markers.iter().any(|m| m.rule == f.rule))
         .cloned()
         .collect();
-    let actual = actual_keys(&block.text, &mine);
+    let actual = actuals(&block.text, &mine);
     match (block.expect, block.markers.is_empty()) {
         (Expect::Clean, _) if actual.is_empty() => Ok(()),
         (Expect::Fire, true) if !actual.is_empty() => Ok(()),
         (Expect::Fire, false) => {
-            let mut expected: Vec<Key> = block
-                .markers
-                .iter()
-                .map(
-                    |Marker {
-                         line,
-                         rule,
-                         severity,
-                     }| (*line, rule.clone(), *severity),
-                )
-                .collect();
-            expected.sort();
-            if expected == actual {
+            let (missing, matched, extra) = match_markers(&block.markers, &actual);
+            if missing.is_empty() && extra.is_empty() {
                 Ok(())
             } else {
-                Err(diff(&expected, &actual))
+                Err(diff(&missing, &matched, &extra))
             }
         }
         (Expect::Fire, true) => Err(format!(
@@ -231,7 +322,7 @@ fn check(block: &Block, findings: &[Finding]) -> Result<(), String> {
         (Expect::Clean, _) => Err(format!(
             "    expected no {} findings\n{}",
             block.rule,
-            diff(&[], &actual)
+            diff(&[], &[], &actual.iter().collect::<Vec<_>>())
         )),
     }
 }

@@ -29,8 +29,16 @@ pub struct Marker {
     pub line: u32,
     /// Rule named by the marker.
     pub rule: RuleId,
-    /// `Error` for `error:`, `Warn` for `warn:`.
+    /// Severity the marker word asserts (`error`, `warn`, `advisory`, `unresolved`).
     pub severity: Severity,
+    /// 1-based byte column the finding must start at, when asserted.
+    pub col: Option<u32>,
+    /// Substring the finding message must contain, when asserted.
+    pub message: Option<String>,
+    /// Unresolved reason code the finding must carry, when asserted.
+    pub reason: Option<String>,
+    /// True when the finding must be a required Unresolved.
+    pub required: bool,
 }
 
 /// One parsed fenced block, before it is handed to the runner.
@@ -105,34 +113,155 @@ fn extension(lang: &str) -> &str {
     }
 }
 
-/// Extract markers from a block body.
-fn markers(text: &str, line_err: usize) -> Result<Vec<Marker>, ParseError> {
-    let mut out = Vec::new();
-    for (i, l) in text.lines().enumerate() {
-        let Some(c) = ["//", "#", "<!--"].iter().filter_map(|t| l.find(t)).min() else {
-            continue;
-        };
-        let comment = &l[c..];
-        for (key, severity) in [("error:", Severity::Error), ("warn:", Severity::Warn)] {
-            if let Some(p) = comment.find(key) {
-                let id: String = comment[p + key.len()..]
-                    .trim_start()
-                    .chars()
-                    .take_while(char::is_ascii_alphanumeric)
-                    .collect();
-                let rule = id.parse::<RuleId>().map_err(|e| ParseError {
-                    line: line_err,
-                    message: format!("bad marker on block line {}: {e}", i + 1),
-                })?;
-                let line = u32::try_from(i + 1).unwrap_or(u32::MAX);
-                out.push(Marker {
-                    line,
-                    rule,
+/// Marker words in matching order, with the severity each asserts.
+const WORDS: [(&str, Severity); 4] = [
+    ("error", Severity::Error),
+    ("warn", Severity::Warn),
+    ("advisory", Severity::Advisory),
+    ("unresolved", Severity::Unresolved),
+];
+
+/// A marker word found in a comment: where the tail starts and the bracket options.
+struct Hit {
+    /// Byte offset of the word in the comment.
+    at: usize,
+    /// Severity the word asserts.
+    severity: Severity,
+    /// Text after the colon.
+    tail_at: usize,
+    /// `unresolved[REASON]` reason code, if given.
+    reason: Option<String>,
+    /// `unresolved[..., required]` flag.
+    required: bool,
+}
+
+/// Find the earliest marker word (`error:`, `warn:`, `advisory:`, `unresolved[R]:`) in `comment`.
+fn find_hit(comment: &str) -> Option<Hit> {
+    let mut best: Option<Hit> = None;
+    for (word, severity) in WORDS {
+        for (at, _) in comment.match_indices(word) {
+            if comment[..at].ends_with(|c: char| c.is_ascii_alphanumeric()) {
+                continue;
+            }
+            let mut rest = &comment[at + word.len()..];
+            let (mut reason, mut required) = (None, false);
+            if severity == Severity::Unresolved
+                && let Some(inner) = rest.strip_prefix('[').and_then(|r| r.split_once(']'))
+            {
+                for item in inner.0.split(',').map(str::trim) {
+                    if item == "required" {
+                        required = true;
+                    } else if !item.is_empty() {
+                        reason = Some(item.to_owned());
+                    }
+                }
+                rest = inner.1;
+            }
+            let Some(after) = rest.strip_prefix(':') else {
+                continue;
+            };
+            let tail_at = comment.len() - after.len();
+            if best.as_ref().is_none_or(|b| at < b.at) {
+                best = Some(Hit {
+                    at,
                     severity,
+                    tail_at,
+                    reason,
+                    required,
                 });
             }
+            break;
         }
     }
+    best
+}
+
+/// Parse the part of a marker after the colon: `[COL] RULE "substring"`, all optional.
+fn parse_tail(tail: &str, default_rule: &RuleId, hit: Hit) -> Result<Marker, String> {
+    let mut rest = tail.trim_start();
+    let mut col = None;
+    if let Some((inner, after)) = rest.strip_prefix('[').and_then(|r| r.split_once(']')) {
+        let n: u32 = inner
+            .trim()
+            .parse()
+            .map_err(|_| format!("bad column `[{inner}]`"))?;
+        if n == 0 {
+            return Err("column is 1-based, got `[0]`".into());
+        }
+        col = Some(n);
+        rest = after.trim_start();
+    }
+    let id: String = rest
+        .chars()
+        .take_while(char::is_ascii_alphanumeric)
+        .collect();
+    rest = rest[id.len()..].trim_start();
+    let rule = if id.is_empty() {
+        default_rule.clone()
+    } else {
+        id.parse::<RuleId>().map_err(|e| e.to_string())?
+    };
+    let message = match rest.strip_prefix('"') {
+        Some(q) => Some(
+            q.split_once('"')
+                .ok_or("unterminated message string")?
+                .0
+                .to_owned(),
+        ),
+        None => None,
+    };
+    Ok(Marker {
+        line: 0,
+        rule,
+        severity: hit.severity,
+        col,
+        message,
+        reason: hit.reason,
+        required: hit.required,
+    })
+}
+
+/// Extract markers from a block body; an own-line marker applies to the next non-marker line.
+fn markers(text: &str, line_err: usize, default_rule: &RuleId) -> Result<Vec<Marker>, ParseError> {
+    let mut out: Vec<Marker> = Vec::new();
+    let mut pending: Vec<(usize, Marker)> = Vec::new();
+    for (i, l) in text.lines().enumerate() {
+        let line = u32::try_from(i + 1).unwrap_or(u32::MAX);
+        let parsed = ["//", "#", "<!--"]
+            .iter()
+            .filter_map(|t| l.find(t))
+            .min()
+            .and_then(|c| find_hit(&l[c..]).map(|h| (c, h)));
+        let Some((c, hit)) = parsed else {
+            for (_, mut m) in pending.drain(..) {
+                m.line = line;
+                out.push(m);
+            }
+            continue;
+        };
+        let tail = &l[c..][hit.tail_at..];
+        let mut m = parse_tail(tail, default_rule, hit).map_err(|e| ParseError {
+            line: line_err,
+            message: format!("bad marker on block line {line}: {e}"),
+        })?;
+        if l[..c].trim().is_empty() {
+            pending.push((i + 1, m));
+        } else {
+            m.line = line;
+            for (_, mut p) in pending.drain(..) {
+                p.line = line;
+                out.push(p);
+            }
+            out.push(m);
+        }
+    }
+    if let Some((n, _)) = pending.first() {
+        return Err(ParseError {
+            line: line_err,
+            message: format!("marker on block line {n} has no following line"),
+        });
+    }
+    tracing::debug!(count = out.len(), "markers parsed");
     Ok(out)
 }
 
@@ -214,7 +343,7 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
                 .clone()
                 .ok_or_else(|| err("no rule=ID and no suite default".into()))?,
         };
-        let marks = markers(&body, fence_line)?;
+        let marks = markers(&body, fence_line, &rule)?;
         if expect == Expect::Clean && !marks.is_empty() {
             return Err(err("expect=clean block must not carry markers".into()));
         }
@@ -279,4 +408,81 @@ fn parse_outside(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn rule() -> RuleId {
+        "MDT001".parse().unwrap()
+    }
+
+    // frob:tests crates/gob-mdtest/src/parse.rs::markers
+    #[test]
+    fn trailing_marker_with_column_rule_and_message() {
+        let m = markers("a // error: [3] MDT002 \"boo\"\n", 1, &rule()).unwrap();
+        assert_eq!(m.len(), 1);
+        assert_eq!(m[0].line, 1);
+        assert_eq!(m[0].col, Some(3));
+        assert_eq!(m[0].rule.as_str(), "MDT002");
+        assert_eq!(m[0].message.as_deref(), Some("boo"));
+        assert_eq!(m[0].severity, Severity::Error);
+    }
+
+    // frob:tests crates/gob-mdtest/src/parse.rs::markers
+    #[test]
+    fn bare_marker_takes_the_default_rule() {
+        let m = markers("a # warn:\nb <!-- error: [2] -->\n", 1, &rule()).unwrap();
+        assert_eq!(m[0].rule, rule());
+        assert_eq!(m[0].severity, Severity::Warn);
+        assert_eq!(m[1].rule, rule());
+        assert_eq!(m[1].col, Some(2));
+    }
+
+    // frob:tests crates/gob-mdtest/src/parse.rs::markers
+    #[test]
+    fn own_line_and_stacked_markers_target_the_next_non_marker_line() {
+        let m = markers("// error: [1]\n// advisory: \"x\"\n\ncode\n", 1, &rule()).unwrap();
+        assert_eq!(m.len(), 2);
+        assert!(m.iter().all(|m| m.line == 3));
+        assert_eq!(m[1].severity, Severity::Advisory);
+    }
+
+    // frob:tests crates/gob-mdtest/src/parse.rs::markers
+    #[test]
+    fn unresolved_takes_reason_and_required() {
+        let m = markers("x // unresolved[hole, required]: [4] \"m\"\n", 1, &rule()).unwrap();
+        assert_eq!(m[0].severity, Severity::Unresolved);
+        assert_eq!(m[0].reason.as_deref(), Some("hole"));
+        assert!(m[0].required);
+        let m = markers("x # unresolved:\n", 1, &rule()).unwrap();
+        assert_eq!(m[0].reason, None);
+        assert!(!m[0].required);
+    }
+
+    // frob:tests crates/gob-mdtest/src/parse.rs::markers
+    #[test]
+    fn malformed_markers_are_parse_errors() {
+        for bad in [
+            "x // error: [0]\n",
+            "x // error: [z]\n",
+            "x // error: \"open\n",
+            "// error:\n",
+            "x // error: not-a-rule\n",
+        ] {
+            assert!(markers(bad, 7, &rule()).is_err(), "{bad}");
+        }
+    }
+
+    // frob:tests crates/gob-mdtest/src/parse.rs::markers
+    #[test]
+    fn plain_comments_and_words_are_not_markers() {
+        let m = markers(
+            "a // no error here\nb # unresolved thing\nc // myerror: X\n",
+            1,
+            &rule(),
+        );
+        assert!(m.unwrap().is_empty());
+    }
 }

@@ -116,3 +116,102 @@ fn a_runner_may_return_a_rule_report() {
     );
     assert!(ok.passed(), "{}", ok.render());
 }
+
+/// Extended toy: columns at the word, plus advisory, unresolved (hole, optionally required) and two-hit lines.
+fn toy_ext(case: &Case) -> Vec<Finding> {
+    let file = FileInterner::new().intern(&case.file_name);
+    let mut out = Vec::new();
+    let mut off = 0usize;
+    for line in case.text.split_inclusive('\n') {
+        for (word, sev, msg) in [
+            ("forbidden", Severity::Error, "forbidden word"),
+            ("advisory_word", Severity::Advisory, "advisory advice"),
+            ("unsure_req", Severity::Unresolved, "undecided required"),
+            ("unsure;", Severity::Unresolved, "undecided"),
+            ("twice", Severity::Error, "first hit"),
+            ("twice", Severity::Error, "second hit"),
+        ] {
+            let Some(at) = line.find(word) else { continue };
+            let start = TextSize::try_from(off + at).unwrap();
+            let len = TextSize::try_from(word.len()).unwrap();
+            let span = Span::new(file, TextRange::at(start, len));
+            let mut f = Finding::new(case.rule.clone(), sev, Some(span), msg, &case.file_name);
+            if sev == Severity::Unresolved {
+                f.reason = Some(gob_rules::UnresolvedReason::Hole);
+                if word == "unsure_req" {
+                    f.required = Some(gob_rules::RequiredReason::ZeroSubjects {
+                        rule: case.rule.to_string(),
+                    });
+                }
+            }
+            out.push(f);
+        }
+        off += line.len();
+    }
+    out
+}
+
+gob_mdtest::mdtest!(
+    name = mdtest_ext_forms,
+    dir = "tests/mdtest_ext",
+    runner = toy_ext
+);
+
+fn ext_fail(name: &str) -> String {
+    let path = gob_mdtest::manifest_dir(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/mdtest_fail_ext")
+        .join(name);
+    let r = run_file(&path, &Runner::new(toy_ext));
+    assert!(!r.passed(), "{name} should fail");
+    r.render_failures()
+}
+
+// frob:tests crates/gob-mdtest/src/run.rs::check
+#[test]
+fn wrong_rule_in_a_marker_fails() {
+    let t = ext_fail("wrong_rule.md");
+    assert!(t.contains("Error MDT002 | Error MDT001"), "{t}");
+}
+
+// frob:tests crates/gob-mdtest/src/run.rs::check
+#[test]
+fn wrong_column_fails_showing_both_columns() {
+    let t = ext_fail("wrong_column.md");
+    assert!(
+        t.contains("Error MDT001 [col 1] | Error MDT001 [col 9]"),
+        "{t}"
+    );
+}
+
+// frob:tests crates/gob-mdtest/src/run.rs::check
+#[test]
+fn wrong_message_fails_showing_both_messages() {
+    let t = ext_fail("wrong_message.md");
+    assert!(t.contains("\"no such text\""), "{t}");
+    assert!(t.contains("\"forbidden word\""), "{t}");
+}
+
+// frob:tests crates/gob-mdtest/src/run.rs::check
+#[test]
+fn expected_unresolved_but_got_error_fails() {
+    let t = ext_fail("unresolved_got_error.md");
+    assert!(t.contains("Unresolved[hole] MDT001 | Error MDT001"), "{t}");
+}
+
+// frob:tests crates/gob-mdtest/src/run.rs::check
+#[test]
+fn differing_unresolved_reason_fails() {
+    let t = ext_fail("wrong_reason.md");
+    assert!(
+        t.contains("Unresolved[partial] MDT001 | Unresolved[hole] MDT001"),
+        "{t}"
+    );
+}
+
+// frob:tests crates/gob-mdtest/src/run.rs::check
+#[test]
+fn own_line_marker_applies_to_the_next_line_even_if_blank() {
+    let t = ext_fail("own_line_wrong_target.md");
+    assert!(t.contains("!    1") || t.contains("!    2"), "{t}");
+    assert!(t.contains("!    3"), "{t}");
+}

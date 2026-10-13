@@ -6,8 +6,10 @@
 //!
 //! - info string: `lang rule=ID expect=fire|clean [config="toml"] [file=name]`
 //! - suite default rule: `<!-- mdtest: rule=ID -->`
-//! - markers `// error: ID`, `# warn: ID`, `<!-- error: ID -->` assert a
-//!   finding on that exact line of the block.
+//! - markers `// error: [COL] ID "substring"` (also `warn`, `advisory`,
+//!   `unresolved[REASON]`; column, rule and message optional; a bare `error:`
+//!   means the rule under test) assert a finding on that line of the block;
+//!   a marker alone on its line applies to the next non-marker line.
 //! - positive controls: each rule named in a file needs one fire and one
 //!   clean block, else the file fails with [`MissingControl`].
 //!
