@@ -2,12 +2,12 @@
 id = "01M4K8TMXWK93ZKAAFQE9W4M0D"
 title = "Wire the E-STATE-TRACKED guard into frob, grimble and crunk check runs"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "Claude"
 created = "2026-10-10T16:02:38Z"
-updated = "2026-10-13T03:08:43Z"
+updated = "2026-10-13T03:08:44Z"
 scope = ["crates/frob/src/**", "crates/grimble/src/**", "crates/crunk/src/**", "crates/gob-product/src/**", "crates/gob-product/Cargo.toml", "crates/gob-product/tests/**", "Cargo.lock"]
 
 [[links]]
