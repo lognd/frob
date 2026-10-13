@@ -2,13 +2,13 @@
 id = "01M4D6NWQ3F11S4MB3KT5K4JHZ"
 title = "Register [land] (require_base_green, ci_required, ci_ignore, block_on_unknown_ci) in FrobConfig so validation and config sync see it"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T07:29:39Z"
-updated = "2026-10-08T07:29:39Z"
+updated = "2026-10-13T18:46:16Z"
 scope = ["changelog.d/**", "crates/frob/**", "crates/frob-land/**"]
 
 [[acceptance]]
