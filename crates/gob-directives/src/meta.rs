@@ -103,6 +103,10 @@ pub fn validate<D: Directive>(args: &ArgList) -> Result<(), ArgError> {
 
 /// Every directive linked into the binary, sorted by namespace then verb.
 pub fn all_directives() -> impl Iterator<Item = &'static DirectiveMeta> {
+    tracing::trace!(
+        rules = crate::rules::declared().len(),
+        "directive rules linked with the directive registry"
+    );
     let mut metas: Vec<&'static DirectiveMeta> = inventory::iter::<DirectiveEntry>()
         .map(|e| e.meta)
         .collect();
