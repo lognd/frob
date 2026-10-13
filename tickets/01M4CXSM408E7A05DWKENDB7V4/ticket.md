@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:54:24Z"
-updated = "2026-10-13T05:22:26Z"
+updated = "2026-10-13T05:22:43Z"
 scope = ["changelog.d/**", "crates/gob-lock/**", "crates/crunk/**", "crates/crunk-check/**", "crates/crunk-spec/**", "crates/frob-release/**", "crates/gob-rules/**", "docs/design/releases.md", "docs/design/rules.md", "crates/crunk-rules/**", "docs/crunk/**", "docs/schemas/crunk.json", "docs/design/crunk.md", "crates/gob-exec/**", "crates/frob/src/release_cmd.rs", "crates/frob/tests/**", "crates/gob-product/**", "Cargo.lock", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given require_signed and an ack added in an unsigned commit or by a key not listed for a reviewer, when crunk check runs, then HUMAN001 fires"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given crunk ack without a terminal and without --non-interactive, when it runs, then it refuses"
