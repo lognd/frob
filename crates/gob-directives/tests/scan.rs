@@ -394,7 +394,7 @@ fn registry_lists_every_verb_with_schemas() {
 
 #[test]
 fn dsl001_suggests_the_surviving_verbs() {
-    for (typo, want) in [("tikcet", "ticket"), ("acept", "accept")] {
+    for (typo, want) in [("tikcet", "ticket"), ("tickte", "ticket")] {
         let r = common::scan("src/a.rs", &format!("// frob:{typo} x\n"));
         assert_eq!(r.findings[0].rule.as_str(), "DSL001", "{typo}");
         assert!(
