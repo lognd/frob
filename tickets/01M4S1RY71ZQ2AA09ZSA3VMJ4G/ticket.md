@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-12T21:54:49Z"
-updated = "2026-10-12T23:39:52Z"
+updated = "2026-10-13T00:05:37Z"
+scope = ["crates/frob-gh/src/client.rs"]
 +++
 
 ~05XQ12K landed policy.rs and graphql.rs standalone; client.rs still uses the old retry logic. Wire them in. Acceptance: Client::execute uses send_with_policy; existing frob-gh tests plus one test showing a GraphQL error body halts per ErrorPolicy.
