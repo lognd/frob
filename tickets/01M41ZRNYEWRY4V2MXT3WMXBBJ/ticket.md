@@ -2,12 +2,12 @@
 id = "01M41ZRNYEWRY4V2MXT3WMXBBJ"
 title = "Lease waits are unfair: a waiting ticket can starve while new overlapping leases keep winning; add frob work --wait with a FIFO waiter queue"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T22:57:11Z"
-updated = "2026-10-03T22:57:11Z"
+updated = "2026-10-13T03:08:39Z"
 scope = ["crates/frob-lease/**", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/**", "docs/design/tickets.md"]
 
 [[acceptance]]
