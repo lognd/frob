@@ -178,6 +178,11 @@ fn is_rev_error(e: &gob_git::GitError) -> bool {
 }
 
 impl Ledger {
+    /// The local ticket index path; sibling local-only records live beside it.
+    pub(crate) fn index_path(&self) -> &std::path::Path {
+        &self.index_path
+    }
+
     /// Open the ledger of `repo` under `cfg`, stamping every event from `clock`.
     pub fn open(repo: Repo, cfg: LedgerConfig, clock: std::sync::Arc<dyn gob_time::Clock>) -> Self {
         let index_path = repo.work_dir().map_or_else(
