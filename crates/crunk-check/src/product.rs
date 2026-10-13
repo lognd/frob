@@ -165,7 +165,7 @@ impl Product for Crunk {
     }
 
     fn repo_digest(&self, snap: &Snapshot<Self>) -> Vec<u8> {
-        let mut digest = format!("crunk/rules/3/ingest/{INGEST_VERSION}").into_bytes();
+        let mut digest = format!("crunk/rules/4/ingest/{INGEST_VERSION}").into_bytes();
         if let Some(spec) = &snap.inputs.spec {
             digest.extend(serde_json::to_vec(spec).unwrap_or_default());
         }

@@ -933,6 +933,45 @@
       },
       "type": "object"
     },
+    "decisions": {
+      "additionalProperties": false,
+      "description": "Declared design decisions (`key = \"reason\"`) that silence the SLOP rules built on an\nunchosen default; optional.",
+      "properties": {
+        "accent": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "emoji": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "eyebrows": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "fonts": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "glows": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "gradients": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "radius": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "voice": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "jsx": {
       "anyOf": [
         {
@@ -1534,7 +1573,8 @@
     "typography",
     "org",
     "lint",
-    "breakpoints"
+    "breakpoints",
+    "decisions"
   ],
   "title": "crunk.toml",
   "type": "object"
