@@ -680,7 +680,7 @@
         },
         "registry_setup": {
           "default": false,
-          "description": "When true, `frob release status` lists frob's own registry setup (PyPI trusted publishing, crates.io) as an owner action; false for every other project.",
+          "description": "When true, `frob release status` lists frob's own registry setup (trusted publishing on `PyPI` and `crates.io`) as an owner action; false for every other project.",
           "type": "boolean"
         },
         "require_ci": {
