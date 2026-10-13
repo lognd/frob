@@ -13,6 +13,9 @@ use crate::rules::{Tick004, id_of};
 
 // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
 
+/// Format tag of the clean-scan record; bump it when the scan rules change so old records are ignored.
+const CLEAN_SCAN_VERSION: &str = "v1";
+
 /// The first absolute home path in `bytes`: what it looked like and its byte offset.
 ///
 /// Matches `/home/<name>/`, `/Users/<name>/`, `/root/` and the Windows forms
@@ -171,33 +174,100 @@ pub fn tick004(path: &str, bytes: &[u8]) -> Option<Finding> {
     ))
 }
 
+// frob:ticket 01M4DPJHJG8CH9J2H24S030HC7
 impl Ledger {
-    /// `TICK004` findings for every file below the tickets directory at the ledger tip, one per file.
+    /// `TICK004` findings for the files below the tickets directory at the ledger tip, one per file.
+    ///
+    /// Files whose blob the last recorded clean scan already covered are skipped; only changed files are read.
     ///
     /// # Errors
     ///
     /// Git read failures.
     pub fn home_path_findings(&self) -> Result<Vec<Finding>> {
+        self.home_path_scan().map(|(findings, _)| findings)
+    }
+
+    /// As [`Ledger::home_path_findings`], also returning how many files were actually read.
+    ///
+    /// # Errors
+    ///
+    /// Git read failures.
+    pub fn home_path_scan(&self) -> Result<(Vec<Finding>, usize)> {
         let ref_name = self.ledger_ref()?;
         let Some(tip) = self.tip_of(&ref_name)? else {
-            return Ok(Vec::new());
+            return Ok((Vec::new(), 0));
         };
         let hex = tip.to_string();
         let dir = self.config().dir.clone();
+        let known_clean = self.clean_blobs(&dir);
         let mut out = Vec::new();
         let mut scanned = 0usize;
+        let mut skipped = 0usize;
         for (rel, oid) in self.list_blobs(&format!("{hex}:{dir}"))? {
+            if known_clean.contains(&oid) {
+                skipped += 1;
+                continue;
+            }
             let path = format!("{dir}/{rel}");
             let bytes = self.repo().read_blob(&oid)?;
             scanned += 1;
             out.extend(tick004(&path, &bytes));
         }
+        if out.is_empty() {
+            self.record_clean_scan(&hex);
+        }
         tracing::info!(
             scanned,
+            skipped,
             findings = out.len(),
             "ledger home-path scan finished"
         );
-        Ok(out)
+        Ok((out, scanned))
+    }
+
+    /// Where the last clean `TICK004` scan is recorded: a local file beside the ticket index, never committed.
+    fn clean_scan_path(&self) -> std::path::PathBuf {
+        self.index_path().with_file_name("tick004-clean")
+    }
+
+    /// Blob ids that the last recorded clean scan covered; empty when there is no usable record.
+    ///
+    /// Blobs are content addressed, so a blob present in a clean tree is clean now whatever path it sits at.
+    fn clean_blobs(&self, dir: &str) -> std::collections::HashSet<gob_git::Oid> {
+        let Ok(text) = std::fs::read_to_string(self.clean_scan_path()) else {
+            tracing::debug!("no recorded clean TICK004 scan; scanning every file");
+            return std::collections::HashSet::default();
+        };
+        let Some(old) = text
+            .trim()
+            .strip_prefix(CLEAN_SCAN_VERSION)
+            .map(str::trim)
+            .filter(|h| !h.is_empty())
+        else {
+            tracing::debug!("recorded clean TICK004 scan has another version; scanning every file");
+            return std::collections::HashSet::default();
+        };
+        match self.list_blobs(&format!("{old}:{dir}")) {
+            Ok(blobs) => blobs.into_iter().map(|(_, oid)| oid).collect(),
+            Err(e) => {
+                tracing::warn!(error = %e, "recorded clean TICK004 scan unreadable; scanning every file");
+                std::collections::HashSet::default()
+            }
+        }
+    }
+
+    /// Record that the ledger at commit `hex` held no home path; best effort, a failure only costs a full scan next time.
+    fn record_clean_scan(&self, hex: &str) {
+        let path = self.clean_scan_path();
+        if let Some(parent) = path.parent()
+            && let Err(e) = std::fs::create_dir_all(parent)
+        {
+            tracing::warn!(error = %e, "cannot create the clean-scan record directory");
+            return;
+        }
+        if let Err(e) = std::fs::write(&path, format!("{CLEAN_SCAN_VERSION} {hex}\n")) {
+            tracing::warn!(error = %e, path = %path.display(), "cannot record the clean TICK004 scan");
+        }
     }
 }
 
