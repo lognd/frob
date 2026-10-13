@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T12:07:30Z"
-updated = "2026-10-13T18:49:52Z"
+updated = "2026-10-13T19:00:34Z"
 scope = ["changelog.d/**", ".github/workflows/**", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
