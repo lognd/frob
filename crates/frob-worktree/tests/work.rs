@@ -135,7 +135,8 @@ fn work_creates_worktree_and_is_idempotent_for_the_holder() {
     assert!(first.path.join("README.md").exists());
     #[cfg(unix)]
     {
-        let link = std::fs::read_link(first.path.join("target")).expect("target linked to land-target");
+        let link =
+            std::fs::read_link(first.path.join("target")).expect("target linked to land-target");
         assert!(link.ends_with("frob/land-target"), "{link:?}");
     }
     let branch = first.branch.clone().expect("branch");
