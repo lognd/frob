@@ -258,7 +258,7 @@ fn every_target_round_trips_its_name_and_owns_its_exporter() {
         assert_eq!(Target::parse(target.name()), Some(target));
         assert_eq!(target.exporter().target(), target);
     }
-    assert_eq!(Target::parse("dtcg"), None);
+    assert_eq!(Target::parse("figma"), None);
 }
 
 // frob:tests crates/crunk-tokens/src/export/write.rs::write_all

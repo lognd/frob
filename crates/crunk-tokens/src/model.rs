@@ -75,6 +75,8 @@ pub enum TokenKind {
     Layer,
     /// The `base` font-family stack or a `[typography.stacks]` entry.
     FontFamily,
+    /// A token authored in the design/tokens dialect, outside the `crunk.toml` families.
+    Custom,
 }
 
 /// A property kind a token may bind to (DTCG and Figma scopes); empty scopes mean unrestricted.
@@ -96,6 +98,35 @@ pub enum Scope {
     ZIndex,
     /// Font family.
     FontFamily,
+}
+
+impl Scope {
+    /// Parse the `snake_case` spelling the serialized form uses (`font_size`).
+    pub fn parse(name: &str) -> Option<Self> {
+        Some(match name {
+            "color" => Self::Color,
+            "spacing" => Self::Spacing,
+            "font_size" => Self::FontSize,
+            "radius" => Self::Radius,
+            "size" => Self::Size,
+            "z_index" => Self::ZIndex,
+            "font_family" => Self::FontFamily,
+            _ => return None,
+        })
+    }
+
+    /// The `snake_case` spelling [`Scope::parse`] reads.
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Color => "color",
+            Self::Spacing => "spacing",
+            Self::FontSize => "font_size",
+            Self::Radius => "radius",
+            Self::Size => "size",
+            Self::ZIndex => "z_index",
+            Self::FontFamily => "font_family",
+        }
+    }
 }
 
 /// The unit of a [`TokenValue::Dimension`].
@@ -139,6 +170,10 @@ pub enum TokenValue {
     Duration(f64),
     /// A cubic-bezier easing: x1, y1, x2, y2 (DTCG `cubicBezier`).
     CubicBezier([f64; 4]),
+    /// A unitless fractional number (a line height, a letter spacing).
+    Float(f64),
+    /// A literal string (a border style, a font-weight name); composite members only.
+    Text(String),
     /// A reference to another token by custom property name.
     Alias(String),
     /// A composite (typography, shadow, border, transition): named sub-values.
@@ -174,8 +209,39 @@ impl TokenValue {
                 length_number(*c),
                 length_number(*d)
             )),
+            Self::Float(n) => Some(length_number(*n)),
+            Self::Text(text) => Some(text.clone()),
             Self::Alias(target) => Some(var_ref(target)),
             Self::Composite(_) => None,
+        }
+    }
+
+    /// The DTCG `$type` of the value, or `None` for an alias (it takes its target's) and for a
+    /// composite whose members match no DTCG composite shape.
+    pub fn dtcg_type(&self) -> Option<&'static str> {
+        match self {
+            Self::Color(_) => Some("color"),
+            Self::Channels { .. } | Self::Alias(_) => None,
+            Self::Dimension { .. } => Some("dimension"),
+            Self::Number(_) | Self::Float(_) => Some("number"),
+            Self::FontFamily(_) => Some("fontFamily"),
+            Self::Duration(_) => Some("duration"),
+            Self::CubicBezier(_) => Some("cubicBezier"),
+            Self::Text(_) => Some("string"),
+            Self::Composite(members) => {
+                let has = |keys: &[&str]| keys.iter().all(|k| members.contains_key(*k));
+                if has(&["fontFamily", "fontSize"]) {
+                    Some("typography")
+                } else if has(&["offsetX", "offsetY", "blur", "color"]) {
+                    Some("shadow")
+                } else if has(&["color", "width", "style"]) {
+                    Some("border")
+                } else if has(&["duration", "timingFunction"]) {
+                    Some("transition")
+                } else {
+                    None
+                }
+            }
         }
     }
 }
