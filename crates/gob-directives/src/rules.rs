@@ -55,3 +55,22 @@ pub struct Dsl001;
     version = 1
 )]
 pub struct Dsl002;
+
+/// A directive uses a deprecated `frob:` claim spelling that D120 moved or dropped.
+///
+/// `frob:effects`, `core`, `shell`, `calls`, `pure` and `honest` became `grimble:` verbs;
+/// `dispatcher`, `hook`, `trusted` and `idempotent` were dropped in favour of an `accept`
+/// exception, inference or a bound test. Old spellings parse for one minor release; apply the
+/// attached fix (`grimble:effects none`, or an `accept` exception to complete) to migrate.
+#[derive(Debug, Clone, Copy, Default, gob_rules::Rule)]
+#[rule(
+    id = "DSL003",
+    slug = "deprecated-directive-spelling",
+    family = "DSL",
+    severity = Warn,
+    tier = Universal,
+    scope = File,
+    fix = Deterministic,
+    version = 1
+)]
+pub struct Dsl003;

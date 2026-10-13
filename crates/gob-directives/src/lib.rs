@@ -14,11 +14,13 @@
 //!   `<!-- -->` outside code blocks; TOML `#`), returning
 //!   [`DirectiveRecord`]s and findings.
 //! - Rules [`Parse001`] (malformed directive), [`Dsl001`] (unknown verb with
-//!   did-you-mean) and [`Dsl002`] (abbreviated ticket id).
+//!   did-you-mean) [`Dsl002`] (abbreviated ticket id) and [`Dsl003`] (deprecated spelling).
 //! - [`frob`]: the milestone-1 verbs `ticket`, `todo`, `doc`, `tests`,
-//!   `invariant`, `accept`, `defer`, and the milestone-2 claim verbs `effects`,
-//!   `pure`, `honest`, `core`, `shell`, `hook`, `dispatcher`, `idempotent`,
-//!   `trusted`, `calls` (parsed only; see [`EffectSet`] for the effect grammar).
+//!   `invariant`, `accept`, `defer`.
+//! - [`grimble`]: `binds` plus the claim verbs `effects`, `core`, `shell`, `calls`
+//!   (parsed only; see [`EffectSet`] for the effect grammar). The old `frob:` spellings
+//!   (and `pure`, `honest`, `dispatcher`, `trusted`, `idempotent`, `hook`) report DSL003.
+//! - [`ADMISSION`]: the D120 admission row of every registered verb.
 //!
 //! # Grammar
 //!
@@ -44,6 +46,7 @@
 // The derive expands to `::gob_directives::...`, which must resolve here too.
 extern crate self as gob_directives;
 
+mod admission;
 mod args;
 mod bind;
 mod comments;
@@ -52,6 +55,7 @@ mod config;
 mod effects;
 pub mod frob;
 pub mod grimble;
+mod legacy;
 mod lex;
 mod meta;
 mod rules;
@@ -59,14 +63,15 @@ mod scan;
 mod ulid;
 mod wire;
 
+pub use admission::{ADMISSION, Admission, admission_for};
 pub use args::{ArgError, ArgKind, ArgList, ArgMeta, Cursor, FromArg, FromArgs, Keyed, Token};
 pub use bind::Binding;
 pub use config::DirectivesConfig;
-pub use effects::{EffectAlias, EffectAtom, EffectBase, EffectSet, EffectsClaim, effects_claim};
+pub use effects::{EffectAtom, EffectBase, EffectSet, EffectsClaim, effects_claim};
 pub use gob_macros::Directive;
 pub use inventory;
 pub use meta::{Directive, DirectiveEntry, DirectiveMeta, all_directives, validate};
-pub use rules::{Dsl001, Dsl002, Parse001};
+pub use rules::{Dsl001, Dsl002, Dsl003, Parse001};
 pub use scan::{DirectiveRecord, NOT_ATTACHED, REORIENT_VERB, ScanConfig, ScanResult, Scanner};
 // frob:ticket 01M4GK42XB93XT5TFDQDRQ36JC
 pub use ulid::{is_full_ulid, is_v1_alias, looks_like_ticket_ref};

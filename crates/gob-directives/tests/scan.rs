@@ -6,6 +6,14 @@ use gob_directives::frob::{Accept, Defer, Doc, Tests, Ticket, Todo};
 use gob_directives::{Binding, Directive, ScanConfig, all_directives};
 use gob_rules::Registry;
 
+/// A scanner honouring both `frob` and `grimble`.
+fn both() -> ScanConfig {
+    ScanConfig {
+        namespaces: vec!["frob".to_owned(), "grimble".to_owned()],
+        product: "grimble".to_owned(),
+    }
+}
+
 const ID: &str = "01J9QKX3M8Z4T7N2V5B6C0D1E2";
 
 fn bound(path: &str, text: &str) -> Vec<Binding> {
@@ -339,6 +347,7 @@ fn rules_are_registered_with_d32_identity() {
         ("PARSE001", "malformed-directive"),
         ("DSL001", "unknown-directive-verb"),
         ("DSL002", "abbreviated-ticket-id"),
+        ("DSL003", "deprecated-directive-spelling"),
     ] {
         let m = reg.by_id(id).unwrap();
         assert_eq!((m.slug, m.product), (slug, "frob"));
@@ -354,24 +363,18 @@ fn registry_lists_every_verb_with_schemas() {
         verbs,
         [
             "frob:accept",
-            "frob:calls",
-            "frob:core",
             "frob:defer",
             "frob:describes",
-            "frob:dispatcher",
             "frob:doc",
-            "frob:effects",
-            "frob:honest",
-            "frob:hook",
-            "frob:idempotent",
             "frob:invariant",
-            "frob:pure",
-            "frob:shell",
             "frob:tests",
             "frob:ticket",
             "frob:todo",
-            "frob:trusted",
-            "grimble:binds"
+            "grimble:binds",
+            "grimble:calls",
+            "grimble:core",
+            "grimble:effects",
+            "grimble:shell"
         ]
         .map(String::from)
     );
@@ -382,28 +385,22 @@ fn registry_lists_every_verb_with_schemas() {
     let todo = all_directives().find(|m| m.verb == "todo").unwrap();
     let schema = serde_json::to_value(todo.json_schema()).unwrap();
     assert_eq!(schema["properties"]["note"]["type"], "array");
-    let effects = all_directives().find(|m| m.verb == "effects").unwrap();
+    let effects = all_directives()
+        .find(|m| m.qualified() == "grimble:effects")
+        .unwrap();
     let schema = serde_json::to_value(effects.json_schema()).unwrap();
     assert_eq!(schema["properties"]["set"]["type"], "array");
 }
 
 #[test]
-fn dsl001_suggests_the_new_claim_verbs() {
-    for (typo, want) in [
-        ("effect", "effects"),
-        ("dispatch", "dispatcher"),
-        ("idempotant", "idempotent"),
-        ("trust", "trusted"),
-        ("call", "calls"),
-    ] {
+fn dsl001_suggests_the_surviving_verbs() {
+    for (typo, want) in [("tikcet", "ticket"), ("acept", "accept")] {
         let r = common::scan("src/a.rs", &format!("// frob:{typo} x\n"));
         assert_eq!(r.findings[0].rule.as_str(), "DSL001", "{typo}");
         assert!(
             r.findings[0]
                 .message
-                .contains(&format!("did you mean `frob:{want}`")),
-            "{typo}: {}",
-            r.findings[0].message
+                .contains(&format!("did you mean `frob:{want}`"))
         );
     }
 }
@@ -411,13 +408,14 @@ fn dsl001_suggests_the_new_claim_verbs() {
 #[test]
 fn effects_record_carries_the_parsed_atom_set() {
     use gob_directives::{EffectAtom, EffectBase, effects_claim};
-    let r = common::scan(
+    let r = common::scan_with(
+        &both(),
         "src/a.rs",
-        "// frob:effects reads(src/x.rs::X) writes(src/y.rs::Y)\nfn a() {}\n",
+        "// grimble:effects reads(src/x.rs::X) writes(src/y.rs::Y)\nfn a() {}\n",
     );
     assert!(r.findings.is_empty(), "{:?}", r.findings);
     let claim = effects_claim(&r.directives[0]).unwrap().unwrap();
-    assert_eq!(claim.alias, None);
+    assert_eq!(claim.because, None);
     let EffectBase::Atoms(atoms) = claim.set.base else {
         panic!("expected atoms");
     };
@@ -426,11 +424,19 @@ fn effects_record_carries_the_parsed_atom_set() {
 }
 
 #[test]
-fn aliases_yield_the_same_claim_as_the_long_form() {
-    use gob_directives::{EffectAlias, effects_claim};
-    let text = "// frob:pure\nfn a() {}\n// frob:honest\nfn b() {}\n// frob:effects none\nfn c() {}\n// frob:effects honest\nfn d() {}\n// frob:core\nfn e() {}\n";
-    let r = common::scan("src/a.rs", text);
-    assert!(r.findings.is_empty(), "{:?}", r.findings);
+fn legacy_aliases_migrate_to_the_same_claim_with_a_fix() {
+    use gob_directives::effects_claim;
+    let text = "// frob:pure\nfn a() {}\n// frob:honest\nfn b() {}\n// grimble:effects none\nfn c() {}\n// grimble:effects honest\nfn d() {}\n// frob:core\nfn e() {}\n";
+    let r = common::scan_with(&both(), "src/a.rs", text);
+    let dsl003: Vec<_> = r
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "DSL003")
+        .collect();
+    assert_eq!(dsl003.len(), 3, "{:?}", r.findings);
+    assert_eq!(r.findings.len(), 3);
+    let fix = dsl003[0].fix.as_ref().unwrap();
+    assert_eq!(fix.edits[0].replacement, "grimble:effects none");
     let claims: Vec<_> = r
         .directives
         .iter()
@@ -439,15 +445,55 @@ fn aliases_yield_the_same_claim_as_the_long_form() {
     assert_eq!(claims.len(), 4);
     assert_eq!(claims[0].set, claims[2].set);
     assert_eq!(claims[1].set, claims[3].set);
-    assert_eq!(claims[0].alias, Some(EffectAlias::Pure));
-    assert_eq!(claims[1].alias, Some(EffectAlias::Honest));
-    assert_eq!(claims[2].alias, None);
+}
+
+#[test]
+fn dropped_spellings_offer_an_accept_exception_or_guidance() {
+    let r = common::scan(
+        "src/a.rs",
+        "// frob:dispatcher\nfn a() {}\n// frob:trusted because=x\nfn b() {}\n",
+    );
+    assert!(r.directives.is_empty());
+    assert_eq!(r.findings.len(), 2);
+    assert!(r.findings.iter().all(|f| f.rule.as_str() == "DSL003"));
+    let fix = r.findings[0].fix.as_ref().unwrap();
+    assert!(
+        fix.edits[0]
+            .replacement
+            .starts_with("frob:accept NEAT031 because=")
+    );
+    assert!(r.findings[1].fix.is_none());
+}
+
+#[test]
+fn every_registered_frob_and_grimble_verb_has_an_admission_row() {
+    use gob_directives::{ADMISSION, admission_for};
+    let registered: Vec<String> = all_directives()
+        .filter(|m| m.namespace == "frob" || m.namespace == "grimble")
+        .map(gob_directives::DirectiveMeta::qualified)
+        .collect();
+    for v in &registered {
+        let row = admission_for(v).unwrap_or_else(|| panic!("{v} has no admission row"));
+        assert!(
+            !row.not_derivable.is_empty()
+                && !row.not_an_exception.is_empty()
+                && !row.consumers.is_empty(),
+            "{v}: incomplete admission row"
+        );
+    }
+    for row in ADMISSION {
+        assert!(
+            registered.iter().any(|v| v == row.verb),
+            "{} not registered",
+            row.verb
+        );
+    }
 }
 
 #[test]
 fn effect_set_errors_point_inside_the_token() {
-    let text = "// frob:effects clock reads(src/a.rs::x teleport\n";
-    let r = common::scan("src/a.rs", text);
+    let text = "// grimble:effects clock reads(src/a.rs::x teleport\n";
+    let r = common::scan_with(&both(), "src/a.rs", text);
     assert_eq!(r.findings[0].rule.as_str(), "PARSE001");
     let range = r.findings[0].span.unwrap().range;
     let bad = &text[range.to_usize_range()];
@@ -465,25 +511,15 @@ fn directives_config_defaults_and_scan_config() {
 }
 
 #[test]
-fn claim_verbs_are_registered_and_documented() {
+fn claim_verbs_are_registered_under_grimble_only() {
     let verbs: Vec<_> = gob_directives::all_directives()
-        .filter(|m| m.namespace == "frob")
+        .filter(|m| m.namespace == "grimble")
         .map(|m| m.verb)
         .collect();
-    for v in [
-        "effects",
-        "pure",
-        "honest",
-        "core",
-        "shell",
-        "hook",
-        "dispatcher",
-        "idempotent",
-        "trusted",
-        "calls",
-    ] {
+    for v in ["effects", "core", "shell", "calls", "binds"] {
         assert!(verbs.contains(&v), "{v} missing from the registry");
     }
+    assert!(!gob_directives::all_directives().any(|m| m.namespace == "frob" && m.verb == "pure"));
 }
 
 // frob:tests crates/gob-directives/src/grimble.rs::Binds

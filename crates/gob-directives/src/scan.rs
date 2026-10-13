@@ -12,6 +12,7 @@ use crate::bind::{Binding, Site, bind, is_test_item};
 use crate::comments::{Segment, segments};
 use crate::compat::{fold_v1_key, v1_finding};
 use crate::config::DirectivesConfig;
+use crate::legacy::{self, Remedy};
 use crate::lex::{is_word, range_at, tokenize};
 use crate::meta::{DirectiveEntry, entries};
 use crate::rules::{Dsl001, Dsl002, Parse001};
@@ -187,6 +188,11 @@ impl Scanner {
         let verb_len = after.find(char::is_whitespace).unwrap_or(after.len());
         let verb = &after[..verb_len];
         let verb_span = ctx.span(range_at(seg.offset, colon + 1, colon + 1 + verb_len));
+        let (ns, verb, injected) = match self.migrate_legacy(ctx, seg, (ns, verb), verb_span, out) {
+            Legacy::Keep => (ns, verb, None),
+            Legacy::Migrated(n, v, t) => (n, v, t),
+            Legacy::Stop => return,
+        };
         let mut emit = |meta: &RuleMeta, span: Span, message: String| {
             tracing::debug!(rule = meta.id, %message, "directive finding");
             out.findings
@@ -228,6 +234,9 @@ impl Scanner {
                 return;
             }
         };
+        if let Some(t) = injected {
+            args.positional.insert(0, t);
+        }
         let v1 = fold_v1_key(ns, verb, &mut args);
         if let Err(e) = (entry.validate)(&args) {
             let span = e.range().map_or(whole, |r| ctx.span(r));
@@ -244,6 +253,41 @@ impl Scanner {
                 .push(v1_finding(&v1, ctx.file, &ctx.symbols.path));
         }
         out.directives.extend(rec);
+    }
+
+    /// Report a deprecated `frob:` spelling (DSL003) and say how scanning continues.
+    fn migrate_legacy<'a>(
+        &self,
+        ctx: &Ctx<'_>,
+        seg: &Segment<'_>,
+        (ns, verb): (&str, &str),
+        verb_span: Span,
+        out: &mut ScanResult,
+    ) -> Legacy<'a> {
+        let Some(remedy) = legacy::lookup(ns, verb).filter(|_| is_word(verb, true)) else {
+            return Legacy::Keep;
+        };
+        let range = range_at(seg.offset, 0, ns.len() + 1 + verb.len());
+        out.findings.push(legacy::finding(
+            verb,
+            remedy,
+            ctx.file,
+            range,
+            &ctx.symbols.path,
+        ));
+        match remedy {
+            Remedy::Rename { verb: new, args }
+                if self.namespaces.iter().any(|n| n == "grimble") =>
+            {
+                let token = args.map(|a| Token {
+                    value: a.to_owned(),
+                    range: verb_span.range,
+                    quoted: false,
+                });
+                Legacy::Migrated("grimble", new, token)
+            }
+            _ => Legacy::Stop,
+        }
     }
 
     // frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
@@ -333,6 +377,16 @@ impl Scanner {
             ),
         }
     }
+}
+
+/// How scanning continues after the deprecated-spelling check.
+enum Legacy<'a> {
+    /// Not a deprecated spelling.
+    Keep,
+    /// Continue as this `(namespace, verb)` with an optional leading argument.
+    Migrated(&'a str, &'a str, Option<Token>),
+    /// Reported; produce no record.
+    Stop,
 }
 
 /// Per-scan shared state.

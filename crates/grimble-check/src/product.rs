@@ -71,7 +71,7 @@ impl Grimble {
 }
 
 /// Directive-scanner rules `check_model` also emits for `frob:` and `grimble:` comments in `.grmb` files.
-const DIRECTIVE_RULES: [&str; 3] = ["PARSE001", "DSL001", "DSL002"];
+const DIRECTIVE_RULES: [&str; 4] = ["PARSE001", "DSL001", "DSL002", "DSL003"];
 
 /// The rules the model group emits: the MDL family and the directive-scanner rules it relays.
 ///
