@@ -27,7 +27,11 @@ struct Record {
     facts: Vec<Fact>,
 }
 
-/// Parse the embedded record; a malformed record is a programmer bug and panics.
+/// Parse the embedded record.
+///
+/// # Panics
+///
+/// Panics if the embedded record is malformed (a programmer bug).
 pub fn facts() -> Vec<Fact> {
     serde_json::from_str::<Record>(RECORD_JSON)
         .expect("capabilities.json is valid")
