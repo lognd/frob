@@ -3,7 +3,7 @@
     "request": { "method": "GET", "url": "https://api.github.com/repos/o/r/issues/1" },
     "response": {
       "status": 429,
-      "headers": { "Retry-After": "7", "X-RateLimit-Remaining": "0", "X-RateLimit-Limit": "5000", "X-RateLimit-Used": "5000", "X-RateLimit-Reset": "1700000000" },
+      "headers": { "Retry-After": "7", "X-RateLimit-Remaining": "10", "X-RateLimit-Limit": "5000", "X-RateLimit-Used": "4990", "X-RateLimit-Reset": "1700000000" },
       "body": "{\"message\":\"rate limited\"}"
     }
   },

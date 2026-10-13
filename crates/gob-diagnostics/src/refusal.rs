@@ -2,6 +2,7 @@
 
 use crate::envelope::EnvelopeError;
 use crate::exit::ExitCode;
+use crate::record::TextOrigin;
 
 /// Class of a non-ok outcome; fixes the exit code and `retryable` flag.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -129,6 +130,8 @@ impl From<&Refusal> for EnvelopeError {
         Self {
             code: r.code.clone(),
             message: r.message.clone(),
+            // frob:ticket 01M4S1YMTPRCGNHN585C78QET8
+            message_origin: TextOrigin::Host,
             remedy: r.remedy.clone(),
             retryable: r.class.retryable(),
             requires_human: r.requires_human,

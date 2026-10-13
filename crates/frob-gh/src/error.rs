@@ -1,8 +1,6 @@
 //! The typed errors of the GitHub client.
 
-use std::time::Duration;
-
-/// Everything the client can fail with; none is retried silently beyond the [`crate::Policy`].
+/// Everything the client can fail with; none is retried silently beyond the [`crate::ErrorPolicy`].
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// Neither `GH_TOKEN` nor `GITHUB_TOKEN` is set (or both are empty).
@@ -30,15 +28,16 @@ pub enum Error {
         /// Request URL.
         url: String,
     },
-    /// The server asked for a longer wait than the policy cap allows.
-    #[error("Retry-After {wait:?} exceeds the cap {cap:?}")]
-    RetryAfterExceedsCap {
-        /// The wait the server asked for.
-        wait: Duration,
-        /// The configured maximum single wait.
-        cap: Duration,
+    /// Rate limited with no budget left: the run stops without sleeping.
+    #[error("rate limited with no budget left; window resets at {reset:?} (epoch seconds)")]
+    RateLimited {
+        /// `x-ratelimit-reset`, UTC epoch seconds, when reported.
+        reset: Option<u64>,
     },
-    /// Rate limited on every attempt the policy allows.
+    /// A GraphQL response carried errors; the whole scope failed.
+    #[error(transparent)]
+    Graphql(#[from] crate::GraphqlFailure),
+    /// Retry-able answers on every attempt the policy allows.
     #[error("still rate limited after {attempts} attempts")]
     RetriesExhausted {
         /// Attempts made, including the first.

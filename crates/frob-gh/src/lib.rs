@@ -2,7 +2,7 @@
 //!
 //! - [`Client`]: REST and GraphQL calls over a [`Transport`], conditional requests through an
 //!   in-memory `ETag` cache, rate-limit headers surfaced as [`RateLimit`] (or `None`), and
-//!   `Retry-After` backoff bounded by [`Policy`].
+//!   retries via [`ErrorPolicy`].
 //! - [`Token`]: read from `GH_TOKEN` or `GITHUB_TOKEN` only; never from `gh`'s config; redacted
 //!   in every `Debug` rendering.
 //! - [`ReqwestTransport`]: the live transport (HTTPS only, redirects off).
@@ -23,7 +23,7 @@ mod rate;
 mod token;
 mod transport;
 
-pub use client::{Client, Method, Pause, Policy, Reply, TokioPause};
+pub use client::{Client, Method, Pause, Reply, TokioPause};
 pub use culprit::{
     BLOCKS_LANDS_LABEL, Commit, Culprit, CulpritError, FixTicket, LAND_PREFIX, RunRecord, Verdict,
     find_culprit,

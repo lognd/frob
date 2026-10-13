@@ -3,7 +3,7 @@
 use std::sync::Mutex;
 use std::time::Duration;
 
-use frob_gh::{Client, Error, FixtureTransport, Pause, Policy, Token};
+use frob_gh::{Client, Error, ErrorPolicy, FixtureTransport, Pause, Token};
 
 #[derive(Debug, Default)]
 struct RecordingPause(Mutex<Vec<Duration>>);
@@ -49,23 +49,25 @@ async fn waits_at_least_retry_after_then_retries() {
     );
 }
 
+// frob:ticket 01M4S1RY71ZQ2AA09ZSA3VMJ4G
 #[tokio::test(flavor = "current_thread")]
-async fn retry_after_beyond_the_cap_stops_instead_of_waiting() {
+async fn no_budget_stops_instead_of_waiting() {
     let pause = leak_pause();
     let c = client(TOO_LONG).with_pause(pause);
     let err = c.get("/x").await.unwrap_err();
-    assert!(matches!(err, Error::RetryAfterExceedsCap { .. }), "{err}");
+    assert!(matches!(err, Error::RateLimited { .. }), "{err}");
     assert!(pause.0.lock().unwrap().is_empty());
 }
 
+// frob:ticket 01M4S1RY71ZQ2AA09ZSA3VMJ4G
 #[tokio::test(flavor = "current_thread")]
-async fn attempts_are_capped() {
+async fn retries_are_capped() {
     let one = r#"{"request":{"method":"GET","url":"https://api.github.com/x"},"response":{"status":429,"headers":{"Retry-After":"1"}}}"#;
     let fixture = format!("[{one},{one}]");
     let pause = leak_pause();
-    let c = client(&fixture).with_pause(pause).with_policy(Policy {
-        max_attempts: 2,
-        ..Policy::default()
+    let c = client(&fixture).with_pause(pause).with_policy(ErrorPolicy {
+        max_retries: 1,
+        ..ErrorPolicy::default()
     });
     let err = c.get("/x").await.unwrap_err();
     assert!(
@@ -73,6 +75,32 @@ async fn attempts_are_capped() {
         "{err}"
     );
     assert_eq!(pause.0.lock().unwrap().len(), 1);
+}
+
+// frob:ticket 01M4S1RY71ZQ2AA09ZSA3VMJ4G
+#[tokio::test(flavor = "current_thread")]
+async fn graphql_error_body_halts_the_scope_without_retrying() {
+    let body = r#"{\"data\":{\"x\":1},\"errors\":[{\"type\":\"RATE_LIMITED\",\"message\":\"API rate limit exceeded\"}]}"#;
+    let fixture = format!(
+        r#"[{{"request":{{"method":"POST","url":"https://api.github.com/graphql"}},"response":{{"status":200,"headers":{{"X-RateLimit-Remaining":"0","X-RateLimit-Reset":"1700000000"}},"body":"{body}"}}}}]"#
+    );
+    let pause = leak_pause();
+    let c = client(&fixture).with_pause(pause);
+    let err = c
+        .graphql("query { x }", &serde_json::json!({}))
+        .await
+        .unwrap_err();
+    assert!(
+        matches!(
+            err,
+            Error::Graphql(frob_gh::GraphqlFailure::RateLimited {
+                reset: Some(1_700_000_000)
+            })
+        ),
+        "{err}"
+    );
+    assert!(pause.0.lock().unwrap().is_empty());
+    assert_eq!(c.transport().requests().len(), 1);
 }
 
 #[tokio::test(flavor = "current_thread")]
