@@ -1,0 +1,27 @@
+kind = "evidence"
+captured_at = "2026-10-13T19:00:31Z"
+digest = "38b90c91369a76da3c7ae971756043f9f1ec177983ef789683083b8093a5bf4e"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4m 55s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5eff8186-9208-46a5-80ee-b0a3b279e3d8 with nextest profile: default
+    Starting 1 test across 9 binaries (149 tests skipped)
+        PASS [   0.083s] gob-dev publish::tests::crates_with_no_consumer_are_skipped_and_no_published_crate_needs_a_skipped_one
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.084s] 1 test run: 1 passed, 149 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(crates_with_no_consumer)'"
+size = 820
+status = "measured"
+test_count = 1
+tests_digest = "c168fc5c3a6fbff0f4a6c3c511ca87298afee5bb433392d38de6320d151e60c9"
+at = "2026-10-13T19:00:31Z"
+actor = "lognd"
+rev = 1
