@@ -2,13 +2,13 @@
 id = "01M4D6NJZYKMD1J9PSFE4GA6NV"
 title = "gob-symbols: stop re-parsing Rust macro bodies with a second tree-sitter pass"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:29Z"
-updated = "2026-10-08T07:29:29Z"
+updated = "2026-10-13T18:46:39Z"
 scope = ["changelog.d/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
