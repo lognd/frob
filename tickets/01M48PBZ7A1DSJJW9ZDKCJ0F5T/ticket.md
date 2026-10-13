@@ -7,16 +7,16 @@ priority = "high"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:38Z"
-updated = "2026-10-13T05:37:50Z"
+updated = "2026-10-13T05:44:50Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
 text = "parser unit tests cover each marker form"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a failing self-test corpus exists for each mismatch kind (rule, column, message)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "FORMAT.md documents every form"
@@ -24,7 +24,7 @@ bound = false
 
 [[acceptance]]
 text = "marker words advisory and unresolved[REASON] (with required) exist and take column and message"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a self-test fails on expected unresolved but got error, and on a differing reason"
