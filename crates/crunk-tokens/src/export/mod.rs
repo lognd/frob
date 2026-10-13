@@ -29,6 +29,7 @@
 mod csharp;
 mod css;
 mod drift;
+mod dtcg;
 mod flat;
 mod json;
 mod tailwind;
@@ -45,6 +46,7 @@ use crate::model::{TokenError, TokenSet};
 pub use csharp::CsharpExporter;
 pub use css::{BANNER, CssExporter};
 pub use drift::{DriftReport, FileDrift, Rendered, Status, check, compare, render_managed};
+pub use dtcg::{DTCG_VERSION, DtcgExporter, document as dtcg_document};
 pub use flat::FlatJsonExporter;
 pub use json::Json;
 pub use tailwind::TailwindExporter;
@@ -65,16 +67,19 @@ pub enum Target {
     Uss,
     /// An engine-free C# token class using plain floats (no configured file path yet).
     Csharp,
+    /// The DTCG 2025.10 resolver document (no configured file path yet).
+    Dtcg,
 }
 
 impl Target {
     /// Every target, in the order the managed files are written and reported.
-    pub const ALL: [Target; 5] = [
+    pub const ALL: [Target; 6] = [
         Target::Css,
         Target::Tailwind,
         Target::Json,
         Target::Uss,
         Target::Csharp,
+        Target::Dtcg,
     ];
 
     /// The `--target` / `--format` spelling (`css`, `json`, `tailwind`).
@@ -85,6 +90,7 @@ impl Target {
             Self::Tailwind => "tailwind",
             Self::Uss => "uss",
             Self::Csharp => "csharp",
+            Self::Dtcg => "dtcg",
         }
     }
 
@@ -101,6 +107,7 @@ impl Target {
             Self::Tailwind => &TailwindExporter,
             Self::Uss => &UssExporter,
             Self::Csharp => &CsharpExporter,
+            Self::Dtcg => &DtcgExporter,
         }
     }
 }

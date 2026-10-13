@@ -75,6 +75,8 @@ fn csharp_value(value: &TokenValue) -> Option<(&'static str, String, bool)> {
             Some(("float", float(*value), true))
         }
         TokenValue::Number(n) => Some(("int", n.to_string(), true)),
+        TokenValue::Float(f) => Some(("float", float(*f), true)),
+        TokenValue::Text(t) => Some(("string", string_lit(t), true)),
         TokenValue::FontFamily(names) => {
             let items: Vec<String> = names.iter().map(|n| string_lit(n)).collect();
             Some((

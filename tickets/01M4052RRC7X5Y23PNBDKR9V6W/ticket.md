@@ -2,16 +2,17 @@
 id = "01M4052RRC7X5Y23PNBDKR9V6W"
 title = "Budget planner: rate-limit headers, share, create and mutation caps, spacing"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-13T04:15:36Z"
+updated = "2026-10-13T04:30:36Z"
 idempotency_key = "m2-mirror2-budget"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/budget.rs"]
+scope = ["crates/frob-mirror/src/budget.rs", "crates/frob-mirror/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"

@@ -2,12 +2,13 @@
 id = "01M4P1YTX7FMRTYCRQ08VVT0ZP"
 title = "Bounded GC for land-target and speed cache that never evicts the warm set"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-11T18:00:19Z"
-updated = "2026-10-13T04:02:16Z"
+updated = "2026-10-13T04:02:20Z"
 scope = ["crates/frob-worktree/src/gc/**", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
