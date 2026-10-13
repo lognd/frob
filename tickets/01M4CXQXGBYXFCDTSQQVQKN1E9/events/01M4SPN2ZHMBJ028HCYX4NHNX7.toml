@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-13T03:59:35Z"
+digest = "e9afec27fb095af1fef709baae0eca62a9fec2bafbfd5ba3bacb065c7c77c04b"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.74s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6c1352c1-278d-4fa9-bbf3-b81372697ec5 with nextest profile: default
+    Starting 1 test across 341 binaries (2993 tests skipped)
+        PASS [   0.012s] crunk-tokens::dialect crunk_toml_palette_is_the_same_token_set_and_exports_to_dtcg
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.030s] 1 test run: 1 passed, 2993 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "crunk_toml_palette_is_the_same_token_set_and_exports_to_dtcg"
+size = 579
+status = "measured"
+test_count = 1
+tests_digest = "8e8b357af07ad36a9459910d2e4550219d76f9763b3b08ad39cd21e09c6f8b43"
+at = "2026-10-13T03:59:35Z"
+actor = "lognd"
+rev = 1

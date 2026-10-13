@@ -329,6 +329,23 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   an flock) in the git common dir; `--steal` takes the same lock and is
   allowed only for the same ticket (it never takes another ticket's
   lease), recording the previous holder in the lease history.
+- Waiting is fair. `frob work TICKET --wait SECS` enqueues a waiter
+  record (ticket, holder, scope, enqueued-at, heartbeat) in
+  `<common_dir>/frob/waiters/<id>.toml`, written under the same lock as
+  acquisition, then blocks inside the process (sleep with capped
+  backoff, re-check under the lock, heartbeat each pass) until its whole
+  scope is free or SECS pass; callers never poll. While a waiter exists,
+  a new acquisition whose scope overlaps the waiter's is refused with
+  `E-LEASE-QUEUED` naming the waiter and its age, so the waiter gets the
+  paths as soon as the holders release; acquisitions overlapping no
+  waiter proceed, and overlapping waiters are served FIFO by enqueue
+  time (a waiter only yields to earlier waiters, and waiters hold
+  nothing, so two waiters cannot deadlock). A waiter whose heartbeat is
+  older than `[lease] waiter_ttl_secs` (default 60) is reaped, so a
+  crashed waiter never blocks others. `lease list` and
+  `ticket contention` report each waiter with its age and blockers
+  (overlapping live leases and earlier waiters).
+<!-- frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ -->
 - TTL is the knob `[lease] ttl_secs` (default 7200); the lock wait is
   `[lease] lock_timeout_ms` (default 5000), and append-shared files are
   exempt from overlap through `[lease] shared_files`, which when unset

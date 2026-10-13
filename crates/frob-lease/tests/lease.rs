@@ -1137,3 +1137,126 @@ fn a_broad_docs_lease_does_not_block_generated_outputs_or_a_declared_append_only
         Err(LeaseError::Held { .. })
     ));
 }
+
+fn queue_store(dir: &Path) -> (LeaseStore, std::sync::Arc<AtomicI64>) {
+    let now = std::sync::Arc::new(AtomicI64::new(1_800_000_000));
+    let store = store_in(
+        dir,
+        LeaseConfig {
+            waiter_ttl_secs: 30,
+            ..LeaseConfig::default()
+        },
+    )
+    .with_clock(std::sync::Arc::new(HandClock(now.clone())));
+    (store, now)
+}
+
+// frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ
+#[test]
+fn queued_waiter_blocks_newcomers_and_gets_the_lease_on_release() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let (store, _) = queue_store(dir.path());
+    let (a, w, b) = (TicketId::mint(), TicketId::mint(), TicketId::mint());
+    store
+        .acquire(a, &holder("alice"), &scope(&["src/**"]))
+        .expect("a");
+    assert!(matches!(
+        store.acquire(w, &holder("wendy"), &scope(&["src/**"])),
+        Err(LeaseError::Held { .. })
+    ));
+    store
+        .enqueue(w, &holder("wendy"), &scope(&["src/**"]))
+        .expect("enqueue");
+    let refused = store.acquire(b, &holder("bob"), &scope(&["src/lib.rs"]));
+    match refused {
+        Err(LeaseError::Queued { waiter, .. }) => assert_eq!(waiter, w),
+        other => panic!("expected E-LEASE-QUEUED, got {other:?}"),
+    }
+    store
+        .acquire(TicketId::mint(), &holder("carol"), &scope(&["docs/**"]))
+        .expect("a non-overlapping acquisition proceeds");
+    store.release(a, None).expect("release");
+    store
+        .acquire(w, &holder("wendy"), &scope(&["src/**"]))
+        .expect("waiter gets the lease");
+    assert!(store.waiters().expect("waiters").is_empty());
+}
+
+// frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ
+#[test]
+fn waiters_are_served_fifo_without_deadlock() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let (store, now) = queue_store(dir.path());
+    let (a, w1, w2) = (TicketId::mint(), TicketId::mint(), TicketId::mint());
+    store
+        .acquire(a, &holder("alice"), &scope(&["src/**"]))
+        .expect("a");
+    store
+        .enqueue(w1, &holder("w1"), &scope(&["src/**"]))
+        .expect("w1");
+    now.fetch_add(5, Ordering::SeqCst);
+    store
+        .enqueue(w2, &holder("w2"), &scope(&["src/a.rs"]))
+        .expect("w2");
+    let info = store.waiters().expect("waiters");
+    assert_eq!(info.iter().map(|i| i.ticket).collect::<Vec<_>>(), [w1, w2]);
+    assert_eq!(info[0].age_secs, 5);
+    assert!(info[1].blockers.contains(&a) && info[1].blockers.contains(&w1));
+    store.release(a, None).expect("release");
+    assert!(matches!(
+        store.acquire(w2, &holder("w2"), &scope(&["src/a.rs"])),
+        Err(LeaseError::Queued { waiter, .. }) if waiter == w1
+    ));
+    store
+        .acquire(w1, &holder("w1"), &scope(&["src/**"]))
+        .expect("first waiter goes first");
+    store.release(w1, None).expect("release w1");
+    store
+        .acquire(w2, &holder("w2"), &scope(&["src/a.rs"]))
+        .expect("second waiter follows");
+}
+
+// frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ
+#[test]
+fn a_dead_waiter_is_reaped_and_stops_blocking() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let (store, now) = queue_store(dir.path());
+    let (w, b) = (TicketId::mint(), TicketId::mint());
+    store
+        .enqueue(w, &holder("wendy"), &scope(&["src/**"]))
+        .expect("enqueue");
+    now.fetch_add(29, Ordering::SeqCst);
+    assert!(matches!(
+        store.acquire(b, &holder("bob"), &scope(&["src/**"])),
+        Err(LeaseError::Queued { .. })
+    ));
+    now.fetch_add(2, Ordering::SeqCst);
+    store
+        .acquire(b, &holder("bob"), &scope(&["src/**"]))
+        .expect("waiter heartbeat expired");
+    assert!(
+        !dir.path()
+            .join(".git/frob/waiters")
+            .join(format!("{w}.toml"))
+            .exists()
+    );
+}
+
+// frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ
+#[test]
+fn lease_list_and_contention_report_waiters_with_age_and_blocker() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let (store, now) = queue_store(dir.path());
+    let (a, w) = (TicketId::mint(), TicketId::mint());
+    store
+        .acquire(a, &holder("alice"), &scope(&["src/**"]))
+        .expect("a");
+    store
+        .enqueue(w, &holder("wendy"), &scope(&["src/**"]))
+        .expect("enqueue");
+    now.fetch_add(7, Ordering::SeqCst);
+    let info = store.waiters().expect("waiters");
+    assert_eq!(info.len(), 1);
+    assert_eq!((info[0].ticket, info[0].age_secs), (w, 7));
+    assert_eq!(info[0].blockers, [a]);
+}
