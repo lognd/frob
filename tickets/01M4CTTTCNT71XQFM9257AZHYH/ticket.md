@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:37Z"
-updated = "2026-10-13T03:27:49Z"
-scope = ["changelog.d/**", "crates/frob-release/**", "docs/guides/release.md"]
+updated = "2026-10-13T03:44:47Z"
+scope = ["changelog.d/**", "crates/frob-release/**", "docs/guides/release.md", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "Given a Python project, when frob release bump and cut run, then pyproject.toml's version changes and no Cargo file is created or rewritten"
