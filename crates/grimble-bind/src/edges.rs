@@ -85,6 +85,8 @@ struct Tally {
     crossing: BTreeMap<(String, String), Vec<(String, String)>>,
     /// Unresolved edges per (reason, owner label) with example texts.
     soft: BTreeMap<(&'static str, String), (Reason, usize, Vec<String>)>,
+    /// Callers that already carry an Unresolved for a call: one per caller names the reason.
+    callers: BTreeSet<String>,
 }
 
 impl Tally {
@@ -98,6 +100,11 @@ impl Tally {
             e.2.push(example);
         }
     }
+}
+
+/// True the first time `edge`'s caller is seen for a call Unresolved (imports are never deduplicated).
+fn first_call_of_caller(t: &mut Tally, edge: &StatusEdge) -> bool {
+    edge.kind != EdgeKind::Calls || t.callers.insert(edge.from.to_string())
 }
 
 fn spell(edge: &StatusEdge) -> String {
@@ -136,7 +143,9 @@ fn classify(cx: &Cx<'_>, edge: &StatusEdge, out: &mut Output, t: &mut Tally) {
         if edge.reason == Some(GapReason::External) {
             return;
         }
-        t.soft(Reason::UnresolvedEdge, owner_label, spell(edge));
+        if first_call_of_caller(t, edge) {
+            t.soft(Reason::UnresolvedEdge, owner_label, spell(edge));
+        }
         return;
     };
     let to_end = end_of(cx, &to.to_string());
@@ -144,6 +153,21 @@ fn classify(cx: &Cx<'_>, edge: &StatusEdge, out: &mut Output, t: &mut Tally) {
         (_, End::Foreign) => {}
         (End::Node(a), End::Node(b)) => {
             if a == &b || declared(cx.model, a, &b) {
+                return;
+            }
+            if edge.kind == EdgeKind::Calls && edge.status != EdgeStatus::Must {
+                // A May call fans out to every same-named method (a receiver of unknown type, or an
+                // ambiguous name): the target is no evidence of an edge, so no target is named.
+                if first_call_of_caller(t, edge) {
+                    t.soft(
+                        Reason::UnresolvedEdge,
+                        owner_label,
+                        format!(
+                            "{} -> <call on a receiver of unknown type or an ambiguous name>",
+                            edge.from
+                        ),
+                    );
+                }
                 return;
             }
             if edge.status == EdgeStatus::Must {
