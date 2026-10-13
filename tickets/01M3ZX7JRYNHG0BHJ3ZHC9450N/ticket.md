@@ -2,7 +2,8 @@
 id = "01M3ZX7JRYNHG0BHJ3ZHC9450N"
 title = "Tier-1 pack content: atoms, detectors, vocabularies and excuse templates into the registry"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
