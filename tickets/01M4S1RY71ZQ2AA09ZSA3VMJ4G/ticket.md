@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-12T21:54:49Z"
-updated = "2026-10-13T00:06:04Z"
+updated = "2026-10-13T00:09:19Z"
 scope = ["crates/frob-gh/src/client.rs", "crates/frob-gh/src/error.rs", "crates/frob-gh/src/lib.rs", "crates/frob-gh/tests/client.rs", "crates/frob-gh/tests/fixtures/rate_limited_then_ok.json", "crates/frob-gh/tests/fixtures/retry_after_too_long.json"]
 +++
 
