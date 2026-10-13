@@ -63,6 +63,7 @@ pub mod const_value;
 mod defuse;
 mod digest;
 pub mod eval;
+mod hot;
 mod location;
 pub mod markup;
 mod operator;
@@ -84,6 +85,7 @@ pub use eval::{
     Ctx, EvalConfig, EvalError, Observation, Poison, PoisonReason, Polarity, Relation, RuleOutcome,
     RuleProgram, SubjectResult, ThresholdKind, Verdict,
 };
+pub use hot::{HotContext, Hotness};
 pub use location::Location;
 pub use operator::{AdapterOp, GroupOrder, Operator, Sort, Universal};
 pub use print::{FacetStream, PrintOpts};
