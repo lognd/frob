@@ -8,12 +8,12 @@ points = 5
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:10:53Z"
-updated = "2026-10-13T14:28:28Z"
+updated = "2026-10-13T14:50:30Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**"]
 
 [[acceptance]]
 text = "Given eslint -f json output, when parsed, then jsx-a11y ids map to A11Y, react-hooks to REACT, no-floating-promises to CONC and no-explicit-any to TYPING"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the type-aware stage, when frob check runs, then its time is reported separately and outside the check budget"
