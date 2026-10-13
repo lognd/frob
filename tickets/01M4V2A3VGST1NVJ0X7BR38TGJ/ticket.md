@@ -7,11 +7,11 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-13T16:42:40Z"
-updated = "2026-10-13T16:42:43Z"
+updated = "2026-10-13T16:55:53Z"
 idempotency_key = "gen001-2026-10-13"
 scope = ["docs/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "gen all --check is clean on experimental"
-bound = false
+bound = true
 +++
