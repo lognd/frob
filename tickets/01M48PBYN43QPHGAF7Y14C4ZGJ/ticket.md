@@ -2,7 +2,7 @@
 id = "01M48PBYN43QPHGAF7Y14C4ZGJ"
 title = "gob-diagnostics: render fix edits as a diff with the applicability tier in the text renderer"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
