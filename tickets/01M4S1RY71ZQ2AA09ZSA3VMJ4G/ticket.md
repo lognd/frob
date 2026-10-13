@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-12T21:54:49Z"
-updated = "2026-10-13T00:05:52Z"
-scope = ["crates/frob-gh/src/client.rs", "crates/frob-gh/src/error.rs", "crates/frob-gh/src/lib.rs", "crates/frob-gh/tests/client.rs", "crates/frob-gh/tests/fixtures/rate_limited_then_ok.json"]
+updated = "2026-10-13T00:05:55Z"
+scope = ["crates/frob-gh/src/client.rs", "crates/frob-gh/src/error.rs", "crates/frob-gh/src/lib.rs", "crates/frob-gh/tests/client.rs", "crates/frob-gh/tests/fixtures/rate_limited_then_ok.json", "crates/frob-gh/tests/fixtures/retry_after_too_long.json"]
 +++
 
 ~05XQ12K landed policy.rs and graphql.rs standalone; client.rs still uses the old retry logic. Wire them in. Acceptance: Client::execute uses send_with_policy; existing frob-gh tests plus one test showing a GraphQL error body halts per ErrorPolicy.
