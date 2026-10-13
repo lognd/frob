@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:22Z"
-updated = "2026-10-13T03:35:52Z"
+updated = "2026-10-13T03:37:30Z"
 idempotency_key = "m2-sec-tree-digest"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-packs/src/digest/**", "crates/gob-packs/src/lib.rs", "crates/gob-packs/Cargo.toml", "Cargo.lock"]
@@ -19,7 +19,7 @@ target = "01M3ZX7FG2JNTHKVQ5R535DAVZ"
 
 [[acceptance]]
 text = "Given a pack directory, when a documentation-only file changes, then the tree digest changes; when the executable bit changes, it changes too"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a symlink, hardlink, device file or path escaping the root inside a pack, when digested, then PACK005 is returned and no digest is produced"
