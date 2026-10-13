@@ -254,8 +254,7 @@ impl Workspace<'_> {
         };
         let (lease, fresh, stolen_from) =
             self.take_waiting(taking, needs_slot, (&holder, &scope), steal, wait_secs)?;
-        let outcome = self.build(plan, id, &handle, &lease, branch.as_deref());
-        let built = match outcome {
+        let built = match self.build(plan, id, &handle, &lease, branch.as_deref()) {
             Ok(b) => b,
             Err(e) => {
                 if fresh {
