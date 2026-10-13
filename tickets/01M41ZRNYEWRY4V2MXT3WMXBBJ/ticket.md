@@ -7,8 +7,8 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T22:57:11Z"
-updated = "2026-10-13T03:31:45Z"
-scope = ["crates/frob-lease/**", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/**", "docs/design/tickets.md"]
+updated = "2026-10-13T03:44:14Z"
+scope = ["crates/frob-lease/**", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/**", "docs/design/tickets.md", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "Given a waiter queued on a path held by A, when B requests a new lease overlapping the waiter, then B is refused with E-LEASE-QUEUED and the waiter gets the lease when A releases"
