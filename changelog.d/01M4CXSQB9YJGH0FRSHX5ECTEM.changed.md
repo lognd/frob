@@ -1,0 +1,1 @@
+COH001 independent jobs: slices a unit's statements into components with lo (May merged) and hi (Must only) bounds, fires only when lo >= 2, names May witnesses when unresolved, and proposes an extract-unit edit per job.
