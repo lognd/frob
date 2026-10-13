@@ -7,8 +7,8 @@ priority = "high"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:38Z"
-updated = "2026-10-13T12:44:11Z"
-scope = ["crates/gob-mdtest/**"]
+updated = "2026-10-13T14:28:25Z"
+scope = ["crates/gob-mdtest/**", "docs/reference/**", "docs/schemas/**"]
 
 [[acceptance]]
 text = "parser unit tests cover each marker form"
