@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:51Z"
-updated = "2026-10-13T07:08:31Z"
+updated = "2026-10-13T07:12:35Z"
 scope = ["crates/frob-ledger/**", "crates/frob/src/ticket/**", "crates/frob/tests/**"]
 
 [[acceptance]]
