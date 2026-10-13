@@ -8,8 +8,8 @@ points = 5
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:10:53Z"
-updated = "2026-10-13T14:52:05Z"
-scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**"]
+updated = "2026-10-13T15:03:15Z"
+scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**", "docs/reference/**"]
 
 [[acceptance]]
 text = "Given eslint -f json output, when parsed, then jsx-a11y ids map to A11Y, react-hooks to REACT, no-floating-promises to CONC and no-explicit-any to TYPING"
