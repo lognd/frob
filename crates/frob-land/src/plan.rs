@@ -49,6 +49,10 @@ impl fmt::Debug for RetryPolicy {
 }
 
 /// Options of [`crate::land()`].
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "each flag is a distinct CLI switch"
+)]
 #[derive(Debug, Clone)]
 pub struct LandOptions {
     /// The ticket (`~handle`, ULID or alias); the ticket leased by the current worktree when absent.
@@ -75,6 +79,8 @@ pub struct LandOptions {
     pub ci_reader: Option<Arc<dyn CiReader>>,
     /// Land despite a red or unreadable base CI, saying why (`--override-base-ci --reason`); audited on the ticket.
     pub override_base_ci: Option<String>,
+    /// The merge train already verified this ticket's tree as part of a batch; skip the per-ticket check (frob:ticket 01M4MH62H1AE14Z472QDSD1QBK).
+    pub prechecked: bool,
 }
 
 impl Default for LandOptions {
@@ -92,6 +98,7 @@ impl Default for LandOptions {
             retry: RetryPolicy::default(),
             ci_reader: None,
             override_base_ci: None,
+            prechecked: false,
         }
     }
 }

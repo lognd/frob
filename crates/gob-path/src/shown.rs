@@ -20,7 +20,7 @@ impl Shown {
             .and_then(|h| p.strip_prefix(h).ok())
         {
             Some(rest) if rest.as_os_str().is_empty() => "~".to_owned(),
-            Some(rest) => format!("~{}{}", std::path::MAIN_SEPARATOR, rest.display()),
+            Some(rest) => format!("~/{}", rest.display()),
             None => p.display().to_string(),
         };
         tracing::trace!(shown = %shown, "path shown");
