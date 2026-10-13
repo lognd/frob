@@ -813,3 +813,30 @@ fn unregistered_removing_leftovers_are_swept_and_registered_ones_kept() {
 fn wall_now() -> SystemTime {
     gob_time::Clock::now(&gob_time::SystemClock).to_system_time()
 }
+
+// frob:ticket 01M4P1YTX7FMRTYCRQ08VVT0ZP
+// frob:tests crates/frob-worktree/src/gc/pass.rs::run
+#[test]
+fn land_target_gc_removes_stale_units_and_keeps_the_recent_one() {
+    let fx = Fixture::new();
+    let debug = fx
+        .root
+        .join(".git")
+        .join("frob")
+        .join("land-target")
+        .join("debug");
+    write(
+        &debug.join("deps").join("libstale-aaa.rlib"),
+        4000,
+        30 * HOUR,
+    );
+    write(&debug.join("deps").join("libfresh-bbb.rlib"), 4000, 60);
+    let oracle = Oracle::default();
+    let mut c = ctx(&fx, &oracle);
+    c.cfg.land_target_budget_gb = 0;
+    let report = c.run(sweep_mode());
+    let left = names(&debug.join("deps"));
+    assert!(!left.contains("libstale-aaa.rlib"), "{left:?}");
+    assert!(left.contains("libfresh-bbb.rlib"), "{left:?}");
+    assert_eq!(report.reclaimed_bytes, 4000, "{report:?}");
+}

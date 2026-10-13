@@ -307,7 +307,10 @@ fn collect(run: &mut Run<'_>) -> Vec<Usage> {
         collect_land_base(run, &common, &state_jail);
     }
     let checkouts = checkouts(env, &wenv);
-    let (build_usage, build_by_checkout) = collect_build(run, &checkouts);
+    let (mut build_usage, build_by_checkout) = collect_build(run, &checkouts);
+    if !run.deadline.expired() {
+        build_usage += collect_land_target(run, &common);
+    }
     collect_caches(run, &checkouts, &common, &state_jail);
     if !run.deadline.expired() {
         collect_artifacts(run, &common, &state_jail);
@@ -501,55 +504,86 @@ fn collect_build(run: &mut Run<'_>, checkouts: &[PathBuf]) -> (u64, Vec<(PathBuf
             let dirs = a.output_dirs(checkout);
             let jail = Jail::new(dirs.clone());
             for dir in dirs {
-                let Ok(canon) = gob_exec::canonical(&dir) else {
-                    continue;
-                };
-                let units = a.units(&canon, &policy);
-                let total = scan(&canon).bytes;
-                let plan = adapter::plan(units, total, env.now, &policy);
-                let mut left = plan.remaining_bytes;
-                let mut stopped = false;
-                for unit in &plan.evict {
-                    if run.deadline.expired() {
-                        stopped = true;
-                        break;
-                    }
-                    if run.dry {
-                        run.did("build", &canon.join(&unit.label), unit.bytes);
-                        continue;
-                    }
-                    let mut ok = true;
-                    for p in &unit.paths {
-                        if let Err(e) = jail.remove(p) {
-                            ok = false;
-                            run.warn(e);
-                        }
-                    }
-                    if ok {
-                        run.did("build", &canon.join(&unit.label), unit.bytes);
-                    } else {
-                        left = left.saturating_add(unit.bytes);
-                    }
-                }
-                if stopped {
-                    left = total;
-                }
-                if plan.over_budget_kept_recent {
-                    run.kept(
-                        &canon,
-                        format!(
-                            "{} over budget; only the latest build's artifacts remain",
-                            a.name()
-                        ),
-                    );
-                }
-                checkout_build += left;
+                checkout_build += evict_dir(run, *a, &dir, &jail, &policy);
             }
         }
         remaining_total += checkout_build;
         per.push((checkout.clone(), checkout_build));
     }
     (remaining_total, per)
+}
+
+/// Plan and evict one build-output directory through `jail`; returns the bytes left in it.
+fn evict_dir(
+    run: &mut Run<'_>,
+    a: &dyn BuildAdapter,
+    dir: &Path,
+    jail: &Jail,
+    policy: &BuildPolicy,
+) -> u64 {
+    let Ok(canon) = gob_exec::canonical(dir) else {
+        return 0;
+    };
+    let units = a.units(&canon, policy);
+    let total = scan(&canon).bytes;
+    let plan = adapter::plan(units, total, run.env.now, policy);
+    let mut left = plan.remaining_bytes;
+    let mut stopped = false;
+    for unit in &plan.evict {
+        if run.deadline.expired() {
+            stopped = true;
+            break;
+        }
+        if run.dry {
+            run.did("build", &canon.join(&unit.label), unit.bytes);
+            continue;
+        }
+        let mut ok = true;
+        for p in &unit.paths {
+            if let Err(e) = jail.remove(p) {
+                ok = false;
+                run.warn(e);
+            }
+        }
+        if ok {
+            run.did("build", &canon.join(&unit.label), unit.bytes);
+        } else {
+            left = left.saturating_add(unit.bytes);
+        }
+    }
+    if stopped {
+        left = total;
+    }
+    if plan.over_budget_kept_recent {
+        run.kept(
+            &canon,
+            format!(
+                "{} over budget; only the latest build's artifacts remain",
+                a.name()
+            ),
+        );
+    }
+    left
+}
+
+/// Evict the repository-shared `land-target` over `[gc] land_target_budget_gb`, never the latest build (~8VVT0ZP).
+// frob:ticket 01M4P1YTX7FMRTYCRQ08VVT0ZP
+fn collect_land_target(run: &mut Run<'_>, common: &Path) -> u64 {
+    let dir = common.join(gob_cache::SHARED_DIR).join("land-target");
+    if !dir.is_dir() {
+        return 0;
+    }
+    let cfg = run.env.config;
+    let policy = BuildPolicy {
+        incremental_max_age: Duration::from_secs(cfg.incremental_max_age_secs),
+        keep_recent: Duration::from_secs(cfg.keep_recent_secs),
+        budget_bytes: cfg.land_target_budget_gb.saturating_mul(GIB),
+        keep_binaries: cfg.keep_binaries.clone(),
+    };
+    let jail = Jail::new([dir.clone()]);
+    let left = evict_dir(run, &CargoAdapter, &dir, &jail, &policy);
+    tracing::info!(left, "land-target collected");
+    left
 }
 
 fn collect_caches(run: &mut Run<'_>, checkouts: &[PathBuf], common: &Path, state_jail: &Jail) {
