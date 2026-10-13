@@ -314,6 +314,19 @@ fn schema_has_envelope_fields() {
     }
 }
 
+// frob:ticket 01M4S1YMTPRCGNHN585C78QET8
+// frob:tests crates/gob-diagnostics/tests/contract.rs::error_carries_host_origin_and_schema_lists_it
+#[test]
+fn error_carries_host_origin_and_schema_lists_it() {
+    let r = Refusal::new("E-X", RefusalClass::UsageError, "m");
+    let err = gob_diagnostics::EnvelopeError::from(&r);
+    assert_eq!(err.message_origin, gob_diagnostics::TextOrigin::Host);
+    let wire = serde_json::to_value(&err).unwrap();
+    assert_eq!(wire["message_origin"], "host");
+    let schema = envelope_schema().to_string();
+    assert!(schema.contains("message_origin"), "{schema}");
+}
+
 #[test]
 fn slug_resolves_from_registry() {
     use gob_rules::{RuleMeta, Scope, Tier};

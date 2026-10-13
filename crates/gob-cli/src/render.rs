@@ -5,7 +5,7 @@ use std::io::Write as _;
 
 use gob_diagnostics::{
     ColorChoice, Envelope, EnvelopeError, ExitCode, FindingRecord, MemorySources, Report,
-    TextOptions, render_text,
+    TextOptions, TextOrigin, render_text,
 };
 use gob_rules::Registry;
 use serde::Serialize;
@@ -209,6 +209,8 @@ fn plain(code: &str, message: String) -> EnvelopeError {
     EnvelopeError {
         code: code.to_owned(),
         message,
+        // frob:ticket 01M4S1YMTPRCGNHN585C78QET8
+        message_origin: TextOrigin::Host,
         remedy: None,
         retryable: false,
         requires_human: false,
