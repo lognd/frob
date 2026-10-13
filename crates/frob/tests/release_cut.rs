@@ -582,3 +582,16 @@ fn adopt_without_tags_is_refused_with_a_remedy_and_writes_nothing() {
             || !milestone_events(&repo).contains("0.2.0")
     );
 }
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+#[test]
+fn an_unreadable_release_gate_is_an_unresolved_item_in_status() {
+    // frob:tests crates/frob/src/release_cmd.rs::release_tier_facts
+    let repo = releasable(true);
+    write(&repo, "crunk.toml", "this is = = not toml\n");
+    git(repo.dir.path(), &["add", "-A"]);
+    git(repo.dir.path(), &["commit", "-q", "-m", "crunk.toml"]);
+    let out = repo.frob(&["release", "status", "0.532.0"]);
+    let text = String::from_utf8_lossy(&out.stdout).into_owned();
+    assert!(text.contains("release-tier findings: unresolved"), "{text}");
+}

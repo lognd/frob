@@ -19,6 +19,7 @@
 //!   `docs/crunk/rules/`.
 //! - [`lint`]: `[lint]` of `crunk.toml` applied to a declared rule or to a finding.
 //! - [`waiver`]: the `crunk:waive` comment: scan, bind to the covered region, turn into exceptions.
+//! - [`review`]: the pure human review judgment HUMAN001 and HUMAN002 read.
 //! - [`host`]: [`host::CrunkHost`], the host trait crunk's rules evaluate against.
 
 // frob:ticket 01M43ATASM383KB9130JY79XVV
@@ -32,6 +33,7 @@ pub mod lint;
 pub mod mode;
 pub mod org;
 pub mod registry;
+pub mod review;
 pub mod rules;
 pub mod scales;
 pub mod sheets;

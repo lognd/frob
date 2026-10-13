@@ -21,7 +21,8 @@ use frob_release::bump::{BumpError, BumpOptions, BumpReport, LockState};
 use frob_release::ci::{CiFacts, CiState, CiUnknown, check_tip};
 use frob_release::cut::{CutError, CutLedger, CutPlan};
 use frob_release::status::{
-    ChangelogFacts, EvidenceRef, ExemptTicket, Input, MilestoneFacts, OpenTicket, Report, assess,
+    ChangelogFacts, EvidenceRef, ExemptTicket, Input, MilestoneFacts, OpenTicket, ReleaseTierFacts,
+    Report, assess,
 };
 use frob_release::{Mode, Options, ReleaseError};
 use gob_cli::clap::{Arg, ArgAction, ArgMatches, Command as ClapCommand};
@@ -325,9 +326,89 @@ fn report_for(
             &frob_worktree::work::base_branch(ledger),
             cfg.release.require_ci,
         ),
+        release_tier: release_tier_facts(root),
         version,
     };
     Ok(assess(&input))
+}
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+/// How long `crunk check --gate release` may run before the release tier is reported unresolved.
+const RELEASE_TIER_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(300);
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+/// The sibling products' release gate: `crunk check --gate release` when `crunk.toml` exists; never fails, a gate that cannot run is unresolved.
+fn release_tier_facts(root: &std::path::Path) -> ReleaseTierFacts {
+    if !root.join("crunk.toml").is_file() {
+        return ReleaseTierFacts::NotApplicable;
+    }
+    let spec = gob_exec::Spec {
+        program: Program::Sibling {
+            name: "crunk".to_owned(),
+        },
+        args: ["check", "--gate", "release", "--json"]
+            .map(str::to_owned)
+            .to_vec(),
+        cwd: Some(root.to_path_buf()),
+        env: Vec::new(),
+        timeout: RELEASE_TIER_TIMEOUT,
+        capture: true,
+    };
+    let unresolved = |why: String| {
+        tracing::warn!(%why, "release tier: crunk release gate unresolved");
+        ReleaseTierFacts::Unresolved(why)
+    };
+    let out = match Runner::new(Limits { jobs: 1 }).run(&spec) {
+        Ok(out) => out,
+        Err(err) => {
+            return unresolved(format!(
+                "`crunk check --gate release` did not run: {err}; install crunk next to frob"
+            ));
+        }
+    };
+    if !matches!(out.status, gob_exec::Outcome::Exited(0 | 1)) {
+        return unresolved(format!(
+            "`crunk check --gate release` ended abnormally ({:?})",
+            out.status
+        ));
+    }
+    read_release_tier(out.stdout.trim())
+}
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+/// Read the `crunk check --json` envelope into release-tier facts: HUMAN error findings block, no list is unresolved.
+fn read_release_tier(stdout: &str) -> ReleaseTierFacts {
+    let Ok(env) = serde_json::from_str::<serde_json::Value>(stdout) else {
+        tracing::warn!("release tier: crunk printed no JSON envelope");
+        return ReleaseTierFacts::Unresolved(
+            "`crunk check --gate release` printed no JSON envelope".to_owned(),
+        );
+    };
+    let Some(findings) = env["data"]["findings"].as_array() else {
+        tracing::warn!("release tier: crunk document has no findings list");
+        return ReleaseTierFacts::Unresolved("the crunk document has no findings list".to_owned());
+    };
+    let raised: Vec<(String, String)> = findings
+        .iter()
+        .filter(|f| {
+            f["severity"] == "error" && f["rule"].as_str().is_some_and(|r| r.starts_with("HUMAN"))
+        })
+        .map(|f| {
+            (
+                f["rule"].as_str().unwrap_or_default().to_owned(),
+                f["message"].as_str().unwrap_or_default().to_owned(),
+            )
+        })
+        .collect();
+    tracing::info!(
+        raised = raised.len(),
+        "release tier: crunk release gate read"
+    );
+    if raised.is_empty() {
+        ReleaseTierFacts::Clean
+    } else {
+        ReleaseTierFacts::Findings(raised)
+    }
 }
 
 // frob:ticket 01M4069WYA9D1EGVEBC4PT3KZB
@@ -1133,4 +1214,38 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<ReleaseBump>()
         .register::<ReleaseCut>()
         .register::<ReleaseAdopt>()
+}
+
+#[cfg(test)]
+mod release_tier_tests {
+    use super::{ReleaseTierFacts, read_release_tier};
+
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    // frob:tests crates/frob/src/release_cmd.rs::read_release_tier
+    #[test]
+    fn a_stale_human_review_in_the_envelope_blocks_and_other_shapes_do_not() {
+        let human = r#"{"data":{"findings":[
+            {"rule":"HUMAN001","severity":"error","message":"screen home: token color.bg changed"},
+            {"rule":"CONTRAST001","severity":"error","message":"low"},
+            {"rule":"HUMAN002","severity":"advisory","message":"x"}]}}"#;
+        assert_eq!(
+            read_release_tier(human),
+            ReleaseTierFacts::Findings(vec![(
+                "HUMAN001".to_owned(),
+                "screen home: token color.bg changed".to_owned()
+            )])
+        );
+        assert_eq!(
+            read_release_tier(r#"{"data":{"findings":[]}}"#),
+            ReleaseTierFacts::Clean
+        );
+        assert!(matches!(
+            read_release_tier("not json"),
+            ReleaseTierFacts::Unresolved(_)
+        ));
+        assert!(matches!(
+            read_release_tier(r#"{"data":{}}"#),
+            ReleaseTierFacts::Unresolved(_)
+        ));
+    }
 }

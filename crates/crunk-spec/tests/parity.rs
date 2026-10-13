@@ -113,12 +113,18 @@ fn every_fixture_equals_the_python_spec_dump() {
 
 #[test]
 fn corpus_covers_every_section() {
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    // Tables added after the Python reference was frozen; tests/spec.rs covers them.
+    const RUST_ONLY: &[&str] = &["review"];
     let all: String = fixtures()
         .iter()
         .map(|p| std::fs::read_to_string(p).unwrap())
         .collect::<Vec<_>>()
         .join("\n");
-    for table in crunk_spec::OWN_TABLES {
+    for table in crunk_spec::OWN_TABLES
+        .iter()
+        .filter(|t| !RUST_ONLY.contains(t))
+    {
         assert!(
             all.contains(&format!("[{table}]")) || all.contains(&format!("[[{table}]]")),
             "no fixture exercises [{table}]"
