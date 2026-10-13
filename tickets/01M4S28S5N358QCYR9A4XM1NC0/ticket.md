@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-12T22:03:28Z"
-updated = "2026-10-12T23:42:00Z"
+updated = "2026-10-12T23:56:02Z"
 scope = ["crates/frob-worktree/src/work.rs", "crates/frob-land/src/ratchet.rs", "crates/frob-worktree/tests/work.rs"]
 +++
 
