@@ -122,6 +122,9 @@ pub struct FrobConfig {
     pub pm: frob_pm::PmConfig,
     /// `[release]`, owned by `frob-release`.
     pub release: frob_release::ReleaseConfig,
+    // frob:ticket 01M4D6NWQ3F11S4MB3KT5K4JHZ
+    /// `[land]`, owned by `frob-land`.
+    pub land: frob_land::LandConfig,
 }
 
 impl FrobConfig {
@@ -158,6 +161,8 @@ impl FrobConfig {
             evidence: gob_config::load::<frob_evidence::EvidenceTable>(root, PRODUCT)?.value,
             pm: frob_pm::PmConfig::load(root)?,
             release: gob_config::load::<frob_release::ReleaseConfig>(root, PRODUCT)?.value,
+            // frob:ticket 01M4D6NWQ3F11S4MB3KT5K4JHZ
+            land: gob_config::load::<frob_land::LandConfig>(root, PRODUCT)?.value,
         };
         tracing::debug!(root = %root.display(), "frob config loaded");
         Ok(cfg)
