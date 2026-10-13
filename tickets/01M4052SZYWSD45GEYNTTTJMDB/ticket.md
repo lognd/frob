@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-13T04:19:53Z"
+updated = "2026-10-13T04:19:55Z"
 idempotency_key = "m2-mirror2-ledger-proposal-events"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/proposal.rs", "crates/frob-ledger/src/fold.rs", "docs/design/tickets.md"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an accepted, declined or expired proposal, when a proposal with the same tracker event id is appended, then the fold keeps it closed"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the tickets.md 2a table, when `frob check` runs, then every new kind appears in it (doc-drift gate)"
