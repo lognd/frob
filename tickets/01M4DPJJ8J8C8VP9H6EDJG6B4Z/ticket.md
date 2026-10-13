@@ -2,7 +2,8 @@
 id = "01M4DPJJ8J8C8VP9H6EDJG6B4Z"
 title = "cycle plan --apply: batch the assignments into one ledger commit"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
