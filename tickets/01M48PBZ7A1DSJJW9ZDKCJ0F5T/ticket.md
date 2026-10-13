@@ -2,7 +2,7 @@
 id = "01M48PBZ7A1DSJJW9ZDKCJ0F5T"
 title = "gob-mdtest: column and message assertions, own-line and stacked markers, bare marker with a default rule"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
