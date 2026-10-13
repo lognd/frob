@@ -8,7 +8,7 @@ points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:59:43Z"
-updated = "2026-10-13T04:46:28Z"
+updated = "2026-10-13T04:46:40Z"
 scope = ["crates/gob-path/**", "crates/gob-git/src/relpath.rs", "crates/gob-git/src/lib.rs", "crates/gob-git/Cargo.toml", "Cargo.toml", "docs/design/paths.md", "crates/frob-ledger/src/error.rs", "crates/frob-ack/src/error.rs", "crates/frob-ledger/Cargo.toml", "crates/frob-ack/Cargo.toml", "crates/frob-ledger/src/branch.rs", "crates/gob-git/tests/ledger.rs"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a component that is invalid on any supported platform, when RelPath is built, then it is refused naming the component and the platform"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given gob-git callers, when they use RelPath, then they compile unchanged through the re-export"
