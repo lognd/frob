@@ -2,13 +2,14 @@
 id = "01M3ZX7FPXFVAXEF6QJCFZ0A54"
 title = "Pack tree digest: blake3 Merkle over every byte of a pack"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:22Z"
-updated = "2026-10-13T03:53:24Z"
+updated = "2026-10-13T05:04:40Z"
 idempotency_key = "m2-sec-tree-digest"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-packs/src/digest/**", "crates/gob-packs/src/lib.rs", "crates/gob-packs/Cargo.toml", "Cargo.lock"]
