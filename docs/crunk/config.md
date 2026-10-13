@@ -18,22 +18,6 @@ declared means the Tailwind v3 defaults; absent entirely means the BP rules are 
 | `base_required` | array of string | no | `["flex","grid","block","hidden","w-","h-","col-","row-"]` | Layout-critical utility families whose responsive variants demand an unprefixed mobile base (BP002). |
 | any other key | integer | no | - | Breakpoint width in px. |
 
-## `[decisions]`
-
-Declared design decisions (`key = "reason"`) that silence the SLOP rules built on an
-unchosen default; optional.
-
-| Key | Type | Required | Default | Doc |
-|---|---|---|---|---|
-| `accent` | string | no | `-` |  |
-| `emoji` | string | no | `-` |  |
-| `eyebrows` | string | no | `-` |  |
-| `fonts` | string | no | `-` |  |
-| `glows` | string | no | `-` |  |
-| `gradients` | string | no | `-` |  |
-| `radius` | string | no | `-` |  |
-| `voice` | string | no | `-` |  |
-
 ## `[jsx]`
 
 The `[jsx]` table: sources to ingest for style props and `className` strings.
