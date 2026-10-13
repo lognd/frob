@@ -97,41 +97,54 @@ impl Product for FrobProduct {
 }
 
 // frob:ticket 01M4K8TMXWK93ZKAAFQE9W4M0D
+/// Run `git` in `dir` through the runner and assert it exited 0.
 #[cfg(test)]
-mod state_guard_tests {
-    use std::path::Path;
+fn git(dir: &Path, args: &[&str]) {
+    let spec = gob_exec::Spec {
+        program: gob_exec::Program::Git,
+        args: args.iter().map(|a| (*a).to_owned()).collect(),
+        cwd: Some(dir.to_owned()),
+        env: Vec::new(),
+        timeout: std::time::Duration::from_secs(30),
+        capture: true,
+    };
+    let out = gob_exec::Runner::new(gob_exec::Limits { jobs: 1 })
+        .run(&spec)
+        .expect("run git");
+    assert!(
+        matches!(out.status, gob_exec::Outcome::Exited(0)),
+        "git {args:?}: {}",
+        out.stderr
+    );
+}
 
-    use serde_json::Value;
-
-    // frob:ticket 01M4K8TMXWK93ZKAAFQE9W4M0D
-    /// Run `git` in `dir` and assert it succeeded.
-    fn git(dir: &Path, args: &[&str]) {
-        let ok = std::process::Command::new("git")
-            .args(args)
-            .current_dir(dir)
-            .status()
-            .expect("run git")
-            .success();
-        assert!(ok, "git {args:?}");
-    }
-
-    // frob:tests crates/frob/src/product.rs::state_guard_tests::check_refuses_exit_3_when_git_tracks_a_state_file
-    #[test]
-    fn check_refuses_exit_3_when_git_tracks_a_state_file() {
+// frob:ticket 01M4K8TMXWK93ZKAAFQE9W4M0D
+// frob:tests crates/frob/src/product.rs::check_refuses_exit_3_when_git_tracks_a_state_file
+#[cfg(test)]
+#[test]
+fn check_refuses_exit_3_when_git_tracks_a_state_file() {
+    let products = [
+        ("frob", crate::cli()),
+        ("grimble", grimble::cli()),
+        ("crunk", crunk::cli()),
+    ];
+    for (product, cli) in products {
         let dir = tempfile::tempdir().expect("tempdir");
-        std::fs::write(dir.path().join("frob.toml"), "").expect("config");
-        std::fs::create_dir_all(dir.path().join(".frob")).expect("state dir");
-        std::fs::write(dir.path().join(".frob/cache.sqlite"), b"x").expect("state");
+        std::fs::write(dir.path().join(format!("{product}.toml")), "").expect("config");
+        let state = format!(".{product}/cache.sqlite");
+        std::fs::create_dir_all(dir.path().join(format!(".{product}"))).expect("state dir");
+        std::fs::write(dir.path().join(&state), b"x").expect("state");
         git(dir.path(), &["init", "-q"]);
-        git(dir.path(), &["add", "-f", ".frob/cache.sqlite"]);
-        let (code, out, _) = gob_cli::run_for_test(&crate::cli(), &["check", "--json"], dir.path());
-        assert_eq!(code, 3, "{out}");
-        let env: Value = serde_json::from_str(&out).expect("json envelope");
-        assert_eq!(env["error"]["code"], "E-STATE-TRACKED");
+        git(dir.path(), &["add", "-f", &state]);
+        let (code, out, _) = gob_cli::run_for_test(&cli, &["check", "--json"], dir.path());
+        assert_eq!(code, 3, "{product}: {out}");
+        let env: serde_json::Value = serde_json::from_str(&out).expect("json envelope");
+        assert_eq!(env["error"]["code"], "E-STATE-TRACKED", "{product}");
         assert!(
             env["error"]["message"]
                 .as_str()
-                .is_some_and(|m| m.contains(".frob/cache.sqlite"))
+                .is_some_and(|m| m.contains(&state)),
+            "{product}: {out}"
         );
     }
 }
