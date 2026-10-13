@@ -156,7 +156,7 @@ fn dry_run_reports_the_files_without_writing_them() {
 #[test]
 fn an_unknown_target_is_a_usage_error_and_a_bad_spec_is_a_refusal() {
     let dir = project();
-    let (code, _, _) = crunk(dir.path(), &["tokens", "--target", "uss"]);
+    let (code, _, _) = crunk(dir.path(), &["tokens", "--target", "bogus"]);
     assert_eq!(code, 2);
     std::fs::write(dir.path().join("crunk.toml"), "[palette]\nink = \"nope\"\n").unwrap();
     let (code, out, _) = crunk(dir.path(), &["tokens", "--json"]);
