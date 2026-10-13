@@ -8,12 +8,12 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T12:07:30Z"
-updated = "2026-10-13T19:00:43Z"
+updated = "2026-10-13T19:05:44Z"
 scope = ["changelog.d/**", ".github/workflows/**", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
 text = "Given a draft dev release, when the dev job runs, then it is found and reused; the 403 cause is recorded in build-test-ci.md"
-bound = false
+bound = true
 +++
 
 Follow-ups from ~1QDWWPS; the post-land run refuted the old-tag-diff hypothesis.
