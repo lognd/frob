@@ -2,13 +2,14 @@
 id = "01M4CXSM408E7A05DWKENDB7V4"
 title = "Human review lock: crunk.lock [[review]] entries over subject content digests, HUMAN001/002, crunk review and crunk ack (person only)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:54:24Z"
-updated = "2026-10-13T05:29:32Z"
+updated = "2026-10-13T05:55:07Z"
 scope = ["changelog.d/**", "crates/gob-lock/**", "crates/crunk/**", "crates/crunk-check/**", "crates/crunk-spec/**", "crates/frob-release/**", "crates/gob-rules/**", "docs/design/releases.md", "docs/design/rules.md", "crates/crunk-rules/**", "docs/crunk/**", "docs/schemas/crunk.json", "docs/design/crunk.md", "crates/gob-exec/**", "crates/frob/src/release_cmd.rs", "crates/frob/tests/**", "crates/gob-product/**", "Cargo.lock", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
