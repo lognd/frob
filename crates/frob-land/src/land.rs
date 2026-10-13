@@ -202,7 +202,10 @@ fn prepare(
     }
     let mut warnings = ci_gate.warnings;
     let mut ratchet = Ratchet::default();
-    if base_merged {
+    if base_merged && opts.prechecked {
+        // frob:ticket 01M4MH62H1AE14Z472QDSD1QBK
+        tracing::info!(ticket = %id, "check skipped: the merge train verified the batch tree");
+    } else if base_merged {
         ratchet = verify_check(&wt, &wt_path, &site.ledger, &handle, base, opts)?;
     } else {
         // A dry run leaves the base unmerged, so the ticket-scoped diff would
@@ -459,14 +462,14 @@ fn empty_outcome(id: TicketId, handle: &str, base: &str, opts: &LandOptions) -> 
 }
 
 /// The work tree root of `repo`.
-fn work_dir(repo: &Repo) -> Result<PathBuf, LandError> {
+pub(crate) fn work_dir(repo: &Repo) -> Result<PathBuf, LandError> {
     repo.work_dir()
         .map(Path::to_path_buf)
         .ok_or_else(|| LandError::Config("not inside a git work tree".to_owned()))
 }
 
 /// The primary checkout: the first entry of the worktree list.
-fn primary_root(repo: &Repo) -> Result<PathBuf, LandError> {
+pub(crate) fn primary_root(repo: &Repo) -> Result<PathBuf, LandError> {
     Ok(repo
         .list_worktrees()?
         .into_iter()
@@ -481,7 +484,7 @@ fn canon(path: &Path) -> PathBuf {
 }
 
 /// The ticket to land: the given reference, else the one leased by `cwd_root`.
-fn resolve(
+pub(crate) fn resolve(
     ledger: &Ledger,
     leases: &LeaseStore,
     cwd_root: &Path,
@@ -506,7 +509,7 @@ fn resolve(
 }
 
 /// The live lease of an in-progress ticket held by this actor.
-fn held_lease(
+pub(crate) fn held_lease(
     repo: &Repo,
     leases: &LeaseStore,
     ledger: &Ledger,
@@ -1029,7 +1032,7 @@ fn jitter(policy: &RetryPolicy, attempt: u32, salt: &str) -> Duration {
 }
 
 /// The full ref name of the base branch: resolved by full name, never by a DWIM short name that a concurrent ref change can make ambiguous or stale.
-fn base_ref(base: &str) -> String {
+pub(crate) fn base_ref(base: &str) -> String {
     format!("refs/heads/{base}")
 }
 

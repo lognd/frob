@@ -1,0 +1,38 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T08:06:48Z"
+digest = "d47378305c617f74af2a9d0a46221ea5d13dce7645c4a27f1cb2b4701babdb2c"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 06s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 97efb525-de5b-4221-a5d2-f890c588431b with nextest profile: default
+    Starting 1 test across 1 binary (9 tests skipped)
+        PASS [   1.153s] crunk-rules::rules mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.154s] 1 test run: 1 passed, 9 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test rules mdtest_corpus"
+size = 1440
+status = "measured"
+test_count = 1
+tests_digest = "9ec64940864b7f20e4bb0f2dc7bcc0f16e3d600664005ed72db069deef3d1d51"
+at = "2026-10-13T08:06:48Z"
+actor = "lognd"
+rev = 1

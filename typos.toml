@@ -51,4 +51,5 @@ wher = "wher"
 repositorys = "repositorys"
 # Accepted spelling: used in diagnostics text and asserted by tests.
 unparseable = "unparseable"
+unparented = "unparented" # the backlog tree node for tickets without a listed parent (ticket list --tree)
 weas = "weas" # fragment of a grammar token in grmb-spec

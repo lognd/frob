@@ -366,6 +366,22 @@ fn blocking(report: &CheckReport) -> Vec<FindingNote> {
         .collect()
 }
 
+// frob:ticket 01M4MH62H1AE14Z472QDSD1QBK
+/// Blocking findings of an unscoped `report` that the `base` set does not absorb (multiset comparison); the merge train's verdict.
+pub(crate) fn new_blocking(report: &CheckReport, base: &[FindingNote]) -> Vec<FindingNote> {
+    let mut budget = counts(base);
+    blocking(report)
+        .into_iter()
+        .filter(|n| match budget.get_mut(n.fingerprint.as_str()) {
+            Some(left) if *left > 0 => {
+                *left -= 1;
+                false
+            }
+            _ => true,
+        })
+        .collect()
+}
+
 /// Decide the ratchet: compare the unscoped `head` run with the unscoped `base` set, and add the
 /// ticket-only blocking findings of the `scoped` run (a located finding the unscoped run lacks, or a
 /// location-free one of a rule the unscoped run never produces, such as SCOPE001); a location-free
