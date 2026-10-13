@@ -12,7 +12,9 @@
 // frob:ticket 01M40Q3S4T9QTYX0Z1MPAZP9JM
 
 use std::path::{Component, Path, PathBuf};
+use std::time::Duration;
 
+use frob_lease::error::SAME_TICKET;
 use frob_lease::{Holder, Lease, LeaseError, LeaseStore};
 use frob_ledger::model::{Category, CommentSubtype, TicketType};
 use frob_ledger::{Ledger, TicketId};
@@ -32,6 +34,8 @@ pub struct WorkOptions {
     pub steal: Option<String>,
     /// Start a ticket outside the active cycle anyway, assigning it as an over-commit with this reason.
     pub unplanned: Option<String>,
+    /// Seconds to queue for a blocked scope (`work --wait`); 0 refuses at once (frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ).
+    pub wait_secs: u64,
     /// Apply the sprint gate (`[pm] sprint_gate`): refuse a ticket outside the active cycle; off in a default `WorkOptions`.
     pub sprint_gate: bool,
 }
@@ -82,6 +86,7 @@ struct Escapes<'a> {
     steal: Option<&'a str>,
     unplanned: Option<&'a str>,
     sprint_gate: bool,
+    wait_secs: u64,
 }
 
 /// Where the holder works: a fresh worktree for `work`, the current checkout for `start`.
@@ -119,6 +124,7 @@ impl Workspace<'_> {
                 steal: opts.steal.as_deref(),
                 unplanned: opts.unplanned.as_deref(),
                 sprint_gate: opts.sprint_gate,
+                wait_secs: opts.wait_secs,
             },
         )
     }
@@ -162,6 +168,7 @@ impl Workspace<'_> {
                 steal: opts.steal.as_deref(),
                 unplanned: opts.unplanned.as_deref(),
                 sprint_gate: opts.sprint_gate,
+                wait_secs: opts.wait_secs,
             },
         )
     }
@@ -216,6 +223,7 @@ impl Workspace<'_> {
             steal,
             unplanned,
             sprint_gate,
+            wait_secs,
         }: Escapes<'_>,
     ) -> Result<Started, WorktreeError> {
         let id = self.ledger.resolve(ticket)?;
@@ -244,7 +252,8 @@ impl Workspace<'_> {
             handle: &handle,
             class: view.summary.class,
         };
-        let (lease, fresh, stolen_from) = self.take(taking, needs_slot, &holder, &scope, steal)?;
+        let (lease, fresh, stolen_from) =
+            self.take_waiting(taking, needs_slot, (&holder, &scope), steal, wait_secs)?;
         let outcome = self.build(plan, id, &handle, &lease, branch.as_deref());
         let built = match outcome {
             Ok(b) => b,
@@ -355,6 +364,51 @@ impl Workspace<'_> {
             repo.is_linked_worktree() && repo.current_branch().ok()?.as_deref() == Some(&branch);
         tracing::debug!(handle, here = %here.display(), own, "work: resumed worktree check");
         own.then(|| clean(here))
+    }
+
+    /// [`Workspace::take`], queueing as a fair waiter for up to `wait_secs` while an overlapping lease or earlier waiter blocks (frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ).
+    fn take_waiting(
+        &self,
+        taking: crate::wip::Taking<'_>,
+        needs_slot: bool,
+        (holder, scope): (&Holder, &[String]),
+        steal: Option<&str>,
+        wait_secs: u64,
+    ) -> Result<(Lease, bool, Option<Holder>), WorktreeError> {
+        let id = taking.id;
+        let deadline = std::time::Instant::now() + Duration::from_secs(wait_secs);
+        let cap = Duration::from_secs(self.leases.config().waiter_ttl_secs.max(3) / 3)
+            .min(Duration::from_secs(2));
+        let mut pause = Duration::from_millis(50);
+        let mut queued = false;
+        let result = loop {
+            let taken = self.take(taking, needs_slot, holder, scope, steal);
+            let blocked = match &taken {
+                Err(WorktreeError::Refused(r)) => {
+                    r.code == "E-LEASE-QUEUED"
+                        || (r.code == "E-LEASE-HELD" && !r.message.contains(SAME_TICKET))
+                }
+                _ => false,
+            };
+            if !blocked || wait_secs == 0 || std::time::Instant::now() >= deadline {
+                break taken;
+            }
+            if let Err(e) = self.leases.enqueue(id, holder, scope) {
+                break Err(e.into());
+            }
+            if !queued {
+                tracing::info!(ticket = %id, wait_secs, "queued for lease");
+                queued = true;
+            }
+            std::thread::sleep(
+                pause.min(deadline.saturating_duration_since(std::time::Instant::now())),
+            );
+            pause = (pause * 2).min(cap);
+        };
+        if queued && let Err(e) = self.leases.dequeue(id) {
+            tracing::warn!(ticket = %id, error = %e, "leaving the wait queue failed");
+        }
+        result
     }
 
     /// Acquire the lease (or steal it): the lease, whether it is new, and the previous holder when stolen.
@@ -586,6 +640,15 @@ fn vet(
 
 /// Turn a held lease into the refusal for `work`, with the right remedy; pass other errors through.
 fn held_refusal(e: LeaseError, id: TicketId, handle: &str) -> WorktreeError {
+    if let LeaseError::Queued { waiter, .. } = &e {
+        let remedy = format!(
+            "ticket {waiter} is queued first for this scope; rerun with `frob work {handle} --wait <secs>` to queue behind it"
+        );
+        return match e.to_refusal() {
+            Some(r) => WorktreeError::Refused(r.with_remedy(remedy)),
+            None => e.into(),
+        };
+    }
     let LeaseError::Held { ticket, .. } = &e else {
         return e.into();
     };

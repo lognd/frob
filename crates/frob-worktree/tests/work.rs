@@ -225,6 +225,7 @@ fn another_holder_is_refused_and_can_steal_with_a_reason() {
                 steal: Some("alice is gone".to_owned()),
                 unplanned: None,
                 sprint_gate: false,
+                wait_secs: 0,
             },
         )
         .expect("steal");
@@ -277,6 +278,7 @@ fn work_events_carry_no_absolute_path() {
             steal: Some("alice is gone".to_owned()),
             unplanned: None,
             sprint_gate: false,
+            wait_secs: 0,
         },
     )
     .expect("steal");
@@ -1284,4 +1286,59 @@ fn a_new_worktree_keeps_unchanged_sources_no_newer_than_the_tip_commit() {
         after > tip,
         "an edited file must be newer than the tip: {after:?} <= {tip:?}"
     );
+}
+
+// frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ
+#[test]
+fn wait_times_out_cleanly_and_a_queued_waiter_blocks_overlapping_work() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let alice = fx.ledger(Some("alice"));
+    let bob = fx.ledger(Some("bob"));
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws_a = Workspace {
+        ledger: &alice,
+        leases: &leases,
+        config: &cfg,
+    };
+    let ws_b = Workspace {
+        ledger: &bob,
+        leases: &leases,
+        config: &cfg,
+    };
+    let held = Fixture::ticket(&alice, "Held", TicketType::Task, &["src/q/**"]);
+    let waiting = Fixture::ticket(&alice, "Waits", TicketType::Task, &["src/q/a.rs"]);
+    let third = Fixture::ticket(&alice, "Third", TicketType::Task, &["src/q/b.rs"]);
+    ws_a.work(&held.to_string(), &WorkOptions::default())
+        .expect("alice works");
+
+    let err = ws_b
+        .work(
+            &waiting.to_string(),
+            &WorkOptions {
+                wait_secs: 1,
+                ..WorkOptions::default()
+            },
+        )
+        .expect_err("still held after the wait");
+    assert_eq!(refusal_code(&err), "E-LEASE-HELD");
+    assert!(
+        leases.waiters().expect("waiters").is_empty(),
+        "a timed-out waiter leaves the queue"
+    );
+
+    let holder = frob_lease::Holder {
+        actor: "bob".to_owned(),
+        worktree: fx.root.clone(),
+    };
+    leases
+        .enqueue(waiting, &holder, &["src/q/**".to_owned()])
+        .expect("enqueue");
+    let err = ws_b
+        .work(&third.to_string(), &WorkOptions::default())
+        .expect_err("queued behind the waiter");
+    assert_eq!(refusal_code(&err), "E-LEASE-QUEUED");
 }
