@@ -7,7 +7,8 @@ use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, CommandMeta, Context, Described, ExitCode, Outcome, Payload};
 use serde_json::{Value, json};
 
-use crate::workspace::check_error;
+// frob:ticket 01M4K8TMXWK93ZKAAFQE9W4M0D
+use crate::workspace::{check_error, require_untracked_state};
 use crate::{CheckOptions, Product, ProductRun};
 
 /// Run the rules over the repository and print the `gob.sibling/1` document; exit 1 when the gate fails.
@@ -141,6 +142,7 @@ impl<P: Product> Command for Check<P> {
 
     fn run(&self, ctx: &Context) -> Outcome<P::CheckData> {
         let root = P::locate_root(&ctx.cwd);
+        require_untracked_state(&root)?;
         let opts = CheckOptions {
             only: self.only.clone(),
             fail_on: self.fail_on,

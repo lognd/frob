@@ -2695,6 +2695,7 @@ dependencies = [
  "gob-cli",
  "gob-config",
  "gob-rules",
+ "gob-trust",
  "schemars",
  "serde",
  "serde_json",

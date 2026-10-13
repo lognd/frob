@@ -101,6 +101,36 @@ fn the_guard_refuses_check_without_the_product_config_naming_the_file() {
     );
 }
 
+// frob:ticket 01M4K8TMXWK93ZKAAFQE9W4M0D
+// frob:tests crates/gob-product/src/workspace.rs::require_untracked_state
+#[test]
+fn check_refuses_exit_3_when_git_tracks_a_state_file_and_names_it() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("demo.toml"), "").unwrap();
+    std::fs::create_dir_all(dir.path().join(".crunk")).unwrap();
+    std::fs::write(dir.path().join(".crunk/cache.sqlite"), b"x").unwrap();
+    let git = |args: &[&str]| {
+        let ok = std::process::Command::new("git")
+            .args(args)
+            .current_dir(dir.path())
+            .status()
+            .unwrap()
+            .success();
+        assert!(ok, "git {args:?}");
+    };
+    git(&["init", "-q"]);
+    git(&["add", "-f", ".crunk/cache.sqlite"]);
+    let (code, env) = run(dir.path(), &["check", "--json"]);
+    assert_eq!(code, 3, "{env}");
+    assert_eq!(env["error"]["code"], "E-STATE-TRACKED");
+    assert!(
+        env["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains(".crunk/cache.sqlite")
+    );
+}
+
 // frob:tests crates/gob-product/src/lib.rs::register_commands
 #[test]
 fn registered_commands_list_the_generic_verbs_under_the_product() {

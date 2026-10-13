@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use gob_check::CheckError;
 use gob_cli::{CliError, Context, Refusal, RefusalClass};
 use gob_config::ConfigError;
+use gob_trust::GuardError;
 
 use crate::Product;
 
@@ -54,6 +55,29 @@ pub fn require_config<P: Product>(verb: &str, ctx: &Context) -> Result<(), CliEr
         P::NAME
     ))
     .into())
+}
+
+// frob:ticket 01M4K8TMXWK93ZKAAFQE9W4M0D
+/// Refuse with `E-STATE-TRACKED` when git tracks a state or cache file under `root`.
+///
+/// # Errors
+///
+/// `E-STATE-TRACKED` (exit 3, names every tracked file); an internal error when git cannot be run.
+pub fn require_untracked_state(root: &Path) -> Result<(), CliError> {
+    match gob_trust::check_state_untracked(root) {
+        Ok(()) => {
+            tracing::debug!(root = %root.display(), "no tracked state files");
+            Ok(())
+        }
+        Err(GuardError::StateTracked { files }) => {
+            tracing::warn!(count = files.len(), "refusing: state files are tracked");
+            Err(Refusal::state_tracked(&files).into())
+        }
+        Err(e @ GuardError::Git(_)) => {
+            tracing::error!(error = %e, "tracked-state guard could not run");
+            Err(CliError::internal(e))
+        }
+    }
 }
 
 /// A config failure as a refusal naming the file to fix.
