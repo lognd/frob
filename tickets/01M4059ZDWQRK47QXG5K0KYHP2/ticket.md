@@ -2,7 +2,7 @@
 id = "01M4059ZDWQRK47QXG5K0KYHP2"
 title = "Verify the audit's UNVERIFIED GitHub facts against the live API in a sandbox repository"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
