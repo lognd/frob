@@ -138,6 +138,7 @@ impl Command for Land {
                 retry: RetryPolicy::default(),
                 ci_reader: None,
                 override_base_ci,
+                prechecked: false,
             },
         })
     }

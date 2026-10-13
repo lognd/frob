@@ -2149,3 +2149,116 @@ fn retrying_the_land_record_after_a_failed_close_leaves_exactly_one_land_event()
         .count();
     assert_eq!(lands, 1, "a retry must not duplicate the land event");
 }
+
+/// Counts verifications and goes red when the combined tree holds `poison`.
+struct Counting {
+    calls: std::sync::atomic::AtomicU32,
+    poison: Option<&'static str>,
+}
+
+impl frob_land::TrainVerifier for Counting {
+    fn verify(&self, tree: &Path, _members: &[String]) -> Result<(), String> {
+        self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        match self.poison {
+            Some(p) if tree.join(p).exists() => Err(format!("{p} breaks the build")),
+            _ => Ok(()),
+        }
+    }
+}
+
+/// Three disjoint started tickets, each with one committed and evidenced file.
+fn train_of_three(fx: &Fixture) -> Vec<Started> {
+    ["a", "b", "c"]
+        .iter()
+        .map(|n| {
+            let s = fx.start(&format!("Add {n}"), &[&format!("{n}/**")]);
+            let rel = format!("{n}/{n}.rs");
+            Fixture::commit_in(&s.wt, &rel, "fn f() {}\n");
+            Fixture::evidence(&s, &rel);
+            s
+        })
+        .collect()
+}
+
+fn train_opts(tickets: &[Started], verifier: &Arc<Counting>) -> frob_land::TrainOptions {
+    frob_land::TrainOptions {
+        handles: tickets.iter().map(|s| s.handle.clone()).collect(),
+        land: LandOptions::default(),
+        verifier: Some(verifier.clone()),
+    }
+}
+
+// frob:ticket 01M4MH62H1AE14Z472QDSD1QBK
+// frob:tests crates/frob-land/src/train.rs::land_train
+#[test]
+fn a_green_train_verifies_the_combined_tree_once_and_lands_every_ticket() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let tickets = train_of_three(&fx);
+    let v = Arc::new(Counting {
+        calls: 0.into(),
+        poison: None,
+    });
+    let clock = Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
+    let out = frob_land::land_train(&fx.root, &train_opts(&tickets, &v), &clock).expect("train");
+    assert_eq!(out.verifications, 1, "one verification for three tickets");
+    assert_eq!(v.calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    assert_eq!(out.landed.len(), 3);
+    assert!(out.deferred.is_empty() && out.culprit.is_none(), "{out:?}");
+    for n in ["a", "b", "c"] {
+        let blob = fx
+            .repo()
+            .read_blob_at("main", &format!("{n}/{n}.rs"))
+            .expect("read");
+        assert!(blob.is_some(), "{n} landed on main");
+    }
+    for s in &tickets {
+        let view = fx.ledger().show(s.id).expect("show");
+        assert_eq!(view.summary.category, Category::Done);
+    }
+}
+
+// frob:ticket 01M4MH62H1AE14Z472QDSD1QBK
+// frob:tests crates/frob-land/src/train.rs::land_train
+#[test]
+fn a_failing_ticket_lands_the_passing_prefix_and_defers_the_rest() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let tickets = train_of_three(&fx);
+    let v = Arc::new(Counting {
+        calls: 0.into(),
+        poison: Some("c/c.rs"),
+    });
+    let clock = Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
+    let out = frob_land::land_train(&fx.root, &train_opts(&tickets, &v), &clock).expect("train");
+    assert_eq!(out.landed.len(), 2, "{out:?}");
+    assert_eq!(out.culprit.as_deref(), Some(tickets[2].handle.as_str()));
+    assert_eq!(out.deferred, vec![tickets[2].handle.clone()]);
+    assert!(out.verifications > 1);
+    assert!(
+        fx.repo()
+            .read_blob_at("main", "b/b.rs")
+            .expect("read")
+            .is_some(),
+        "the passing prefix landed"
+    );
+    assert!(
+        fx.repo()
+            .read_blob_at("main", "c/c.rs")
+            .expect("read")
+            .is_none(),
+        "the culprit did not"
+    );
+    let culprit = fx.ledger().show(tickets[2].id).expect("show");
+    assert_eq!(culprit.summary.category, Category::InProgress);
+    assert!(
+        fx.leases()
+            .live_lease(tickets[2].id)
+            .expect("lease")
+            .is_some()
+    );
+}
