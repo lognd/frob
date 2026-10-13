@@ -7,6 +7,7 @@
 //! device files and paths escaping the root are refused as PACK005 and no
 //! digest is produced.
 
+use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
@@ -52,7 +53,10 @@ pub fn tree_digest(root: &Path, included: &[Digest]) -> Result<Digest, PackError
 
 /// Renders a digest as lowercase hex.
 pub fn to_hex(d: &Digest) -> String {
-    d.iter().map(|b| format!("{b:02x}")).collect()
+    d.iter().fold(String::with_capacity(64), |mut s, b| {
+        let _ = write!(s, "{b:02x}");
+        s
+    })
 }
 
 fn bad(file: &str, key: &str, reason: impl Into<String>) -> PackError {
