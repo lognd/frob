@@ -2,7 +2,8 @@
 id = "01M4S1RY71ZQ2AA09ZSA3VMJ4G"
 title = "frob-gh: route Client::execute through send_with_policy and graphql::parse_response, dropping its own retry loop"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
