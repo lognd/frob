@@ -7,8 +7,8 @@ priority = "high"
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:51Z"
-updated = "2026-10-13T07:49:40Z"
-scope = ["crates/frob-ledger/**", "crates/frob/src/ticket/**", "crates/frob/tests/**"]
+updated = "2026-10-13T08:07:50Z"
+scope = ["crates/frob-ledger/**", "crates/frob/src/ticket/**", "crates/frob/tests/**", "typos.toml"]
 
 [[acceptance]]
 text = "a fixture ledger renders the expected tree (snapshot) with roll-up points and percent done"
