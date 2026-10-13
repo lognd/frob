@@ -7,12 +7,12 @@ priority = "high"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:38Z"
-updated = "2026-10-13T05:19:21Z"
+updated = "2026-10-13T05:49:09Z"
 scope = ["crates/gob-diagnostics/**"]
 
 [[acceptance]]
 text = "a fixable toy rule produces a rendering that contains the diff and the tier (snapshot)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "changing an edit fails that snapshot"
