@@ -2,7 +2,7 @@
 id = "01M4TWEHV492BDDVAR8AWBBYBQ"
 title = "gob-mdtest: marker position must come from the hit, not the first comment token (CI red on corpora)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
