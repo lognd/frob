@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-13T05:19:30Z"
+updated = "2026-10-13T05:23:21Z"
 idempotency_key = "m2-packs-tier1"
 labels = ["milestone:2", "area:packs", "creates:crates/gob-packs/tests/tier1.rs"]
 scope = ["crates/gob-packs/src/tier1/**", "crates/gob-ir/src/registry.rs", "crates/gob-packs/tests/tier1.rs", "crates/gob-packs/Cargo.toml", "crates/gob-packs/src/lib.rs", "Cargo.lock"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given two packs declaring the same atom, when loaded, then PACK004 names both packs"
-bound = false
+bound = true
 +++
 
 Implements plugins.md sections 3 and 7; packs.md section 2.
