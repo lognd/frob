@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-13T15:00:14Z"
-updated = "2026-10-13T15:12:12Z"
+updated = "2026-10-13T15:14:28Z"
 idempotency_key = "mdtest-marker-at"
 scope = ["crates/gob-mdtest/**", "changelog.d/**"]
 
