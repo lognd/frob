@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T21:17:44Z"
+digest = "6beb4abebe5368e872d31eae2f5c21a7938e4b2e1445b59962248e491a14695b"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9m 28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 19c062fc-3b87-434a-b517-048bfc10be1e with nextest profile: default
+    Starting 3 tests across 1 binary
+        PASS [   0.568s] frob-cli::work_unplanned a_reason_alone_is_a_usage_error
+        PASS [   0.569s] frob-cli::work_unplanned unplanned_with_a_blank_reason_is_a_usage_error
+        PASS [   0.810s] frob-cli::work_unplanned unplanned_without_a_reason_is_a_usage_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.813s] 3 tests run: 3 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test work_unplanned"
+size = 773
+status = "measured"
+test_count = 3
+tests_digest = "c8b82b96fc8a93ca210b55fe87a2023b88c9b7d51d176fef211ddbba0d9d4b26"
+at = "2026-10-13T21:17:44Z"
+actor = "lognd"
+rev = 1
