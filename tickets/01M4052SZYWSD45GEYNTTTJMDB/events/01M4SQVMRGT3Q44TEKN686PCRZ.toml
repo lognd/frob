@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/proposal.rs", "crates/frob-ledger/src/fold.rs", "docs/design/tickets.md"]
+new = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/proposal.rs", "crates/frob-ledger/src/fold.rs", "docs/design/tickets.md", "crates/frob-ledger/src/lib.rs"]
+at = "2026-10-13T04:20:45Z"
+actor = "lognd"
+rev = 1
