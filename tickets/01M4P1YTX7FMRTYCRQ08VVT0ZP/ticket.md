@@ -2,12 +2,12 @@
 id = "01M4P1YTX7FMRTYCRQ08VVT0ZP"
 title = "Bounded GC for land-target and speed cache that never evicts the warm set"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-11T18:00:19Z"
-updated = "2026-10-11T18:00:19Z"
+updated = "2026-10-13T03:08:43Z"
 
 [[acceptance]]
 text = "Eviction is LRU by last-use stamp with a size budget; entries used in the last N hours or by any live worktree are never evicted"
