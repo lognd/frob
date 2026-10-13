@@ -2,7 +2,8 @@
 id = "01M3ZX7VYSYT45N8ZKZJQ2DY5D"
 title = "Effect classes: ordinary, secret-shaped, control plane, privilege"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
