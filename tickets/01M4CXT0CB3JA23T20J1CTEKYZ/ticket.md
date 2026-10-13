@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:36Z"
-updated = "2026-10-13T05:05:31Z"
+updated = "2026-10-13T05:08:06Z"
 scope = ["changelog.d/**", "crates/gob-directives/**", "crates/grimble-check/**", "crates/gob-check/**", "docs/reference/**", "docs/schemas/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a file using frob:pure or frob:dispatcher, when checked, then a deprecation finding offers the fix to grimble:effects none or an accept exception"
-bound = false
+bound = true
 +++
 
 docs/design/cohesion.md 4. Old spellings parse for one minor release with a DSL deprecation finding and an automatic fix.
