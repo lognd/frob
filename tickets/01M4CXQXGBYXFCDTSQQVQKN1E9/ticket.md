@@ -2,7 +2,8 @@
 id = "01M4CXQXGBYXFCDTSQQVQKN1E9"
 title = "Token dialect compiles to DTCG 2025.10: tiers, aliases, composites, scopes and modes through the resolver module"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
