@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-11T18:00:19Z"
-updated = "2026-10-13T03:45:02Z"
+updated = "2026-10-13T04:01:57Z"
 scope = ["crates/frob-worktree/src/gc/**", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "A before/after timing of frob check and frob land on a warm tree shows no regression"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "GC runs off the hot path (idle or explicit verb) and reports bytes freed"
