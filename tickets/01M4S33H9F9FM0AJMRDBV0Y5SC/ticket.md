@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-12T22:18:04Z"
-updated = "2026-10-13T03:20:23Z"
+updated = "2026-10-13T03:20:47Z"
 scope = ["crates/frob-check/tests/tool_bind.rs", "crates/frob-obligations/tests/corpus.rs", "docs/design/boundaries.md"]
 
 [[acceptance]]
