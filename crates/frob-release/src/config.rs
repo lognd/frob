@@ -34,6 +34,9 @@ pub struct ReleaseConfig {
     /// Products that ship as a preview: their tag message and changelog heading carry " (preview)".
     #[config(default = Vec::<String>::new(), enforcement)]
     pub preview: Vec<String>,
+    /// When true, `frob release status` lists frob's own registry setup (PyPI trusted publishing, crates.io) as an owner action; false for every other project.
+    #[config(default = false)]
+    pub registry_setup: bool,
 }
 
 /// The products of a repository and the pattern naming their release tags.
