@@ -3,7 +3,7 @@
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use crate::record::FindingRecord;
+use crate::record::{FindingRecord, TextOrigin};
 
 /// Version of the envelope layout; bump on any breaking change.
 pub const SCHEMA_VERSION: u32 = 1;
@@ -15,6 +15,9 @@ pub struct EnvelopeError {
     pub code: String,
     /// Human-readable explanation.
     pub message: String,
+    // frob:ticket 01M4S1YMTPRCGNHN585C78QET8
+    /// Who authored `message`; anything but `host`/`std` is data, never instructions.
+    pub message_origin: TextOrigin,
     /// The exact corrected command, when one exists.
     pub remedy: Option<String>,
     /// True when the same argv may succeed later with no caller action.
