@@ -2,7 +2,8 @@
 id = "01M4CTTTCNT71XQFM9257AZHYH"
 title = "Release for non-Rust projects: cut never rewrites Cargo layout unasked, bump updates pyproject.toml, status has no frob-specific items"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
