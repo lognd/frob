@@ -444,3 +444,34 @@ fn relation_lowers_status_edges_into_lo_hi() {
     assert!(r.hi(&user.from, &sym("c/src/lib.rs::zzz")));
     assert!(!r.lo(&user.from, &sym("c/src/lib.rs::zzz")));
 }
+
+// frob:ticket 01M4D94Y2JVPYCGCZQJF0RDFDA
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.hot_context
+#[test]
+fn hot_context_reaches_helpers_and_poisons_on_unknown_calls() {
+    let src = "fn leaf() {}\nfn helper() { leaf(); }\nfn update() { helper(); }\nfn cold() {}\n";
+    let g = graph_of(&[("c/src/lib.rs", src)]);
+    let root = sym("c/src/lib.rs::update");
+    let h = g.hot_context(std::slice::from_ref(&root), true);
+    assert_eq!(
+        h.answer(&sym("c/src/lib.rs::leaf")),
+        gob_ir::Answer::Exact(true)
+    );
+    assert_eq!(
+        h.answer(&sym("c/src/lib.rs::cold")),
+        gob_ir::Answer::Exact(false)
+    );
+    let off = g.hot_context(&[root], false);
+    assert_eq!(
+        off.answer(&sym("c/src/lib.rs::leaf")),
+        gob_ir::Answer::NotApplicable
+    );
+
+    let src2 = "fn cold() {}\nfn update() { mystery(); }\n";
+    let g2 = graph_of(&[("c/src/lib.rs", src2)]);
+    let h2 = g2.hot_context(&[sym("c/src/lib.rs::update")], true);
+    assert_eq!(
+        h2.answer(&sym("c/src/lib.rs::cold")),
+        gob_ir::Answer::Unknown
+    );
+}

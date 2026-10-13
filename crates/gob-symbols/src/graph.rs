@@ -2651,6 +2651,16 @@ impl SymbolGraph {
         r
     }
 
+    /// Hot-context reachability over call edges from `roots` (vocabulary-declared hot entry
+    /// points); `enabled` false (pack off) makes every query `NotApplicable`.
+    // frob:ticket 01M4D94Y2JVPYCGCZQJF0RDFDA
+    pub fn hot_context(&self, roots: &[Symref], enabled: bool) -> gob_ir::HotContext<Symref> {
+        if !enabled {
+            return gob_ir::HotContext::disabled();
+        }
+        gob_ir::HotContext::new(&self.relation(&[EdgeKind::Calls]), roots.iter().cloned())
+    }
+
     /// Facts about a walked file: language, fidelity and parse status.
     pub fn file_info(&self, path: &str) -> Option<&FileInfo> {
         self.files.get(path)
