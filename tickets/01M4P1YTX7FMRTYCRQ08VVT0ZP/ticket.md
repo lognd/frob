@@ -2,7 +2,8 @@
 id = "01M4P1YTX7FMRTYCRQ08VVT0ZP"
 title = "Bounded GC for land-target and speed cache that never evicts the warm set"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 reporter = "lognd"
