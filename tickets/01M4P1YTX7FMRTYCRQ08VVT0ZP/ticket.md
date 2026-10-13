@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-11T18:00:19Z"
-updated = "2026-10-13T04:01:57Z"
+updated = "2026-10-13T04:02:12Z"
 scope = ["crates/frob-worktree/src/gc/**", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "GC runs off the hot path (idle or explicit verb) and reports bytes freed"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A test asserts a recently used entry survives GC and a stale one is removed"
