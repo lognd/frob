@@ -8,12 +8,12 @@ points = 2
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T12:07:27Z"
-updated = "2026-10-13T21:56:54Z"
+updated = "2026-10-13T22:37:27Z"
 scope = ["changelog.d/**", "crates/frob-pm/**", "crates/frob-ledger/**"]
 
 [[acceptance]]
 text = "Given plan --apply assigning N tickets, when run, then one commit is written"
-bound = false
+bound = true
 +++
 
 Follow-up from ~D672RXD: 3.4 s, about 0.5 s per ticket.
