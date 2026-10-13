@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:38Z"
-updated = "2026-10-13T05:19:29Z"
+updated = "2026-10-13T05:37:50Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
@@ -28,7 +28,7 @@ bound = false
 
 [[acceptance]]
 text = "a self-test fails on expected unresolved but got error, and on a differing reason"
-bound = false
+bound = true
 +++
 
 Extend markers to `error: [COL] RULE "substring"` (1-based column, message contains), allow a marker on its own line applying to the next non-marker line and stacked markers, and add a default rule so a bare `error:` in a rule-docs corpus means that rule (ty assertion syntax). Prerequisite for executable rule docs (~D3ZK8NM). Source: notes/research/rule-testing.md (D103).
