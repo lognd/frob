@@ -2,7 +2,8 @@
 id = "01M4FGYMCWYPJ04HFYCKPHPNSQ"
 title = "SYS013 binding accuracy: src-layout Python imports are Errors, method-name collisions are not edges"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
