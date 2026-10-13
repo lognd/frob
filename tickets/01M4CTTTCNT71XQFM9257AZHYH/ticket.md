@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:37Z"
-updated = "2026-10-13T03:27:32Z"
+updated = "2026-10-13T03:27:43Z"
 scope = ["changelog.d/**", "crates/frob-release/**", "docs/guides/release.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a project without [release] registry settings, when release status runs, then no frob-specific item appears"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a non-Rust project whose pyproject name is logand-app, when REL002 runs, then it names the package by its pyproject name and does not require Cargo.toml/pyproject lockstep unless the project declares it (logand.app-v2 F-505)"
