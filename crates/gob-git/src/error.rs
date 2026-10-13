@@ -107,3 +107,9 @@ impl GitError {
         }
     }
 }
+
+impl From<gob_path::PathError> for GitError {
+    fn from(e: gob_path::PathError) -> Self {
+        Self::BadPath(e.to_string())
+    }
+}
