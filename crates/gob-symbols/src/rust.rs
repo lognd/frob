@@ -378,6 +378,10 @@ struct Fold<'a> {
     impl_types: Vec<String>,
     /// The derives of each struct and enum declared in this file.
     derives: Vec<DeriveDecl>,
+    /// The Rust grammar, for the macro-argument second parse.
+    macro_lang: tree_sitter::Language,
+    /// The parser of that second parse, built on first use and reused for the whole file.
+    macro_parser: Option<tree_sitter::Parser>,
 }
 
 fn is_comment(n: Node<'_>) -> bool {
@@ -447,6 +451,8 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         consts: HashMap::new(),
         impl_types: Vec::new(),
         derives: Vec::new(),
+        macro_lang: tree_sitter::Language::clone(&root.language()),
+        macro_parser: None,
     };
     f.collect_consts(root, None);
     let kids = f.container(root, &Scope::default(), true)?;
@@ -1858,15 +1864,13 @@ impl<'a> Fold<'a> {
         let Some(tt) = children(n).into_iter().find(|c| c.kind() == "token_tree") else {
             return false;
         };
-        let Some(synth) = self.synthetic_macro_text(name, tt) else {
+        let Some((start, tail)) = self.synthetic_macro_text(name, tt) else {
             return false;
         };
-        let gob_languages::ParseResult::Parsed(tree) =
-            parse(Language::Rust, &synth, &ParseLimits::default())
-        else {
+        let Some(tree) = self.parse_synthetic(start, &tail, tt) else {
             return false;
         };
-        if tree.has_errors() {
+        if tree.root_node().has_error() {
             tracing::trace!(
                 path = self.path,
                 macro_name = name,
@@ -1876,9 +1880,9 @@ impl<'a> Fold<'a> {
         }
         let a = tt.start_byte();
         let root = if name == "matches" {
-            find_synthetic(tree.root(), "match_expression", a - 5)
+            find_synthetic(tree.root_node(), "match_expression", a - 5)
         } else {
-            find_synthetic(tree.root(), "call_expression", a - 1)
+            find_synthetic(tree.root_node(), "call_expression", a - 1)
                 .and_then(|c| c.child_by_field_name("arguments"))
         };
         let Some(root) = root else {
@@ -1897,22 +1901,26 @@ impl<'a> Fold<'a> {
 
     /// The synthetic Rust text that re-parses the arguments of macro `name` (token tree `tt`) as expressions.
     ///
-    /// Everything before the arguments is blanked so each node keeps its byte offset and line:
-    /// `f(ARGS)` for most macros, `match E { P if G =>0 }` for `matches!(E, P if G)`, and `vec![x; n]`
-    /// with its `;` read as a comma.
-    fn synthetic_macro_text(&self, name: &str, tt: Node<'_>) -> Option<String> {
+    /// Returned as the synthetic text from byte `start` on (the part the second parse reads; the head
+    /// is the fixed `fn g(){` and the gap between is skipped by included ranges, never lexed), so each
+    /// node keeps its byte offset and line: `f(ARGS)` for most macros, `match E { P if G =>0 }` for
+    /// `matches!(E, P if G)`, and `vec![x; n]` with its `;` read as a comma.
+    // frob:ticket 01M4D6NJZYKMD1J9PSFE4GA6NV
+    fn synthetic_macro_text(&self, name: &str, tt: Node<'_>) -> Option<(usize, Vec<u8>)> {
         let (a, b) = (tt.start_byte(), tt.end_byte());
         let bytes = self.cx.text.as_bytes();
         let is_matches = name == "matches";
         if a < if is_matches { 13 } else { 8 } || b > bytes.len() || b < a + 2 {
             return None;
         }
-        let mut synth: Vec<u8> = bytes[..b]
+        let start = if is_matches { a - 5 } else { a - 1 };
+        // Everything before the arguments is blank in the synthetic text, so only `start..b` is copied.
+        let mut synth: Vec<u8> = bytes[start..b]
             .iter()
             .enumerate()
-            .map(|(i, &c)| if i < a { blank(c) } else { c })
+            .map(|(i, &c)| if start + i < a { blank(c) } else { c })
             .collect();
-        synth[..7].copy_from_slice(b"fn g(){");
+        let at = |i: usize| i - start;
         let top_level = |tok: &str| {
             children(tt)
                 .into_iter()
@@ -1922,34 +1930,99 @@ impl<'a> Fold<'a> {
         if is_matches {
             // `matches!(E, P if G)` is `match E { P if G =>0 }`: the closing text lies past the real arguments.
             let comma = top_level(",")?;
-            synth[a - 5..a].copy_from_slice(b"match");
-            synth[a] = b' ';
-            synth[comma] = b'{';
-            synth[b - 1] = b' ';
+            synth[..5].copy_from_slice(b"match");
+            synth[at(a)] = b' ';
+            synth[at(comma)] = b'{';
+            synth[at(b - 1)] = b' ';
         } else {
-            synth[a - 1] = b'f';
-            synth[a] = b'(';
-            synth[b - 1] = b')';
+            synth[0] = b'f';
+            synth[at(a)] = b'(';
+            synth[at(b - 1)] = b')';
             if name == "vec"
                 && let Some(semi) = top_level(";")
             {
-                synth[semi] = b',';
+                synth[at(semi)] = b',';
             }
         }
         // `%x` and `?x` field values (tracing) are not Rust expressions: blank the sigil.
         for i in a + 1..b - 1 {
-            if matches!(synth[i], b'%' | b'?')
-                && synth[..i]
+            if matches!(synth[at(i)], b'%' | b'?')
+                && synth[..at(i)]
                     .iter()
                     .rev()
                     .find(|c| !c.is_ascii_whitespace())
                     .is_some_and(|c| matches!(c, b'=' | b',' | b'('))
             {
-                synth[i] = b' ';
+                synth[at(i)] = b' ';
             }
         }
         synth.extend_from_slice(if is_matches { b"=>0};}" } else { b";}" });
-        String::from_utf8(synth).ok()
+        Some((start, synth))
+    }
+
+    /// Parses the synthetic macro text `tail` (which begins at byte `start` of the file) with the
+    /// reused parser, lexing only `fn g(){` and `tail`: included ranges skip the gap, so cost follows
+    /// the macro body and not the file prefix. `tt` supplies the row and column of its own start.
+    // frob:ticket 01M4D6NJZYKMD1J9PSFE4GA6NV
+    fn parse_synthetic(
+        &mut self,
+        start: usize,
+        tail: &[u8],
+        tt: Node<'_>,
+    ) -> Option<tree_sitter::Tree> {
+        const HEAD: &[u8] = b"fn g(){";
+        let bytes = self.cx.text.as_bytes();
+        let a = tt.start_byte();
+        let (row_a, col_a) = (tt.start_position().row, tt.start_position().column);
+        let newlines = bytes[start..a]
+            .iter()
+            .fold(0, |n, &c| n + usize::from(c == b'\n'));
+        let (row, column) = if newlines == 0 {
+            (row_a, col_a - (a - start))
+        } else {
+            let line_start = bytes[..start]
+                .iter()
+                .rposition(|&c| c == b'\n')
+                .map_or(0, |p| p + 1);
+            (row_a - newlines, start - line_start)
+        };
+        let end = tt.end_position();
+        let extra = tail.len() - (tt.end_byte() - start);
+        let point = |row, column| tree_sitter::Point { row, column };
+        let ranges = [
+            tree_sitter::Range {
+                start_byte: 0,
+                end_byte: HEAD.len(),
+                start_point: point(0, 0),
+                end_point: point(0, HEAD.len()),
+            },
+            tree_sitter::Range {
+                start_byte: start,
+                end_byte: start + tail.len(),
+                start_point: point(row, column),
+                end_point: point(end.row, end.column + extra),
+            },
+        ];
+        let lang = self.macro_lang.clone();
+        let parser = self
+            .macro_parser
+            .get_or_insert_with(tree_sitter::Parser::new);
+        if parser.set_language(&lang).is_err() || parser.set_included_ranges(&ranges).is_err() {
+            return None;
+        }
+        parser.parse_with_options(
+            &mut |offset, _| {
+                if offset < HEAD.len() {
+                    &HEAD[offset..]
+                } else if offset >= start {
+                    tail.get(offset - start..).unwrap_or_default()
+                } else {
+                    &[]
+                }
+            },
+            None,
+            None,
+        )
     }
 
     /// Walks the parsed argument tree `x` of a std macro in scope order: records its call sites with

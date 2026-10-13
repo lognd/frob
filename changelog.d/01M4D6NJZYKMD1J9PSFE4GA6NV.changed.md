@@ -1,0 +1,1 @@
+Rust symbol extraction no longer re-lexes the whole file prefix for each std-macro argument parse; the second parse reads only the macro body through included ranges and a reused parser (35-43 percent of a cold parse).
