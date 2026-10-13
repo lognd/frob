@@ -8,8 +8,8 @@ points = 5
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T13:38:05Z"
-updated = "2026-10-13T07:18:58Z"
-scope = ["changelog.d/**", "crates/gob-check/**", "crates/gob-packs/**", "docs/design/rules.md"]
+updated = "2026-10-13T07:20:23Z"
+scope = ["changelog.d/**", "crates/gob-check/**", "crates/gob-packs/**", "docs/design/rules.md", "crates/frob-obligations/src/native.rs", "docs/reference/tool-stages.md", "docs/reference/config.md", "docs/schemas/config.json", "frob.toml", "docs/design/boundaries.md"]
 
 [[acceptance]]
 text = "Given a tool definition for zizmor and one for ruff, when frob check runs, then both stages run from data with no tool-specific Rust code beyond their parsers"
