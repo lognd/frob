@@ -8,7 +8,7 @@ points = 5
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:10:53Z"
-updated = "2026-10-13T14:50:30Z"
+updated = "2026-10-13T14:52:05Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the type-aware stage, when frob check runs, then its time is reported separately and outside the check budget"
-bound = false
+bound = true
 +++
 
 notes/research/lint-catalogue-2026-10-08.md rows W01, W02, K17, K23 (4.2 N04); notes/research/creators-web-2026-10-08.md 4.1 (form-no-label 9 voices, effect-for-derived-state 8, alt-text 8) and 5.6 (type-aware rules cost a type check: separate stage outside the 2 s budget).
