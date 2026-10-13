@@ -2,7 +2,8 @@
 id = "01M4DPJN74DSB5XJZ8TJ6DA5EV"
 title = "Dev channel: the ensure-prerelease step handles a draft dev release; pin the 403 cause on a throwaway ref"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
