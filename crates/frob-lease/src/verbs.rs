@@ -10,7 +10,7 @@ use crate::config::overlap_is_lockfiles;
 use crate::error::{LeaseError, SAME_TICKET};
 use crate::model::Lease;
 use crate::open_store_from_file as open_store;
-use crate::store::{Contended, CorruptLease};
+use crate::store::{Contended, CorruptLease, WaiterInfo};
 
 impl From<LeaseError> for CliError {
     fn from(e: LeaseError) -> Self {
@@ -30,6 +30,9 @@ impl From<LeaseError> for CliError {
                     )),
                     LeaseError::Held { ticket, .. } => r.with_remedy(format!(
                         "wait until the lease on {ticket} ends (`frob requeue {ticket} --reason <why>` frees it), then rerun"
+                    )),
+                    LeaseError::Queued { waiter, .. } => r.with_remedy(format!(
+                        "ticket {waiter} is queued first for this scope; wait for it, or queue yourself with `--wait <secs>`"
                     )),
                     LeaseError::Format { path, .. } => {
                         r.with_remedy(format!(
@@ -53,6 +56,8 @@ pub struct LeaseListData {
     pub leases: Vec<Lease>,
     /// Lease files that could not be read; skipped, not deleted.
     pub corrupt: Vec<CorruptLease>,
+    /// Queued `work --wait` waiters in FIFO order, each with its age and blockers.
+    pub waiters: Vec<WaiterInfo>,
     /// With `--contention`: files declared by two or more live leases, most contended first.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub files: Option<Vec<ContendedFile>>,
@@ -94,6 +99,7 @@ impl Command for LeaseList {
         let (store, _) = open_store(&ctx.cwd, ctx.clock.clone())?;
         let leases = store.list()?;
         let corrupt = store.corrupt_leases()?;
+        let waiters = store.waiters()?;
         let files = if self.contention {
             Some(contended_files(&store)?)
         } else {
@@ -102,6 +108,7 @@ impl Command for LeaseList {
         let mut payload = Payload::new(LeaseListData {
             leases,
             corrupt,
+            waiters,
             files,
         });
         for c in payload.data.corrupt.clone() {
@@ -120,6 +127,8 @@ impl Command for LeaseList {
 pub struct ContentionData {
     /// Files declared by two or more live leases, most contended first.
     pub files: Vec<ContendedFile>,
+    /// Queued `work --wait` waiters in FIFO order, each with its age and blockers.
+    pub waiters: Vec<WaiterInfo>,
 }
 
 /// One contended file as reported.
@@ -164,7 +173,8 @@ impl Command for Contention {
     fn run(&self, ctx: &Context) -> Outcome<ContentionData> {
         let (store, _) = open_store(&ctx.cwd, ctx.clock.clone())?;
         let files = contended_files(&store)?;
-        Ok(Payload::new(ContentionData { files }))
+        let waiters = store.waiters()?;
+        Ok(Payload::new(ContentionData { files, waiters }))
     }
 }
 

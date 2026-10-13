@@ -30,9 +30,9 @@ use std::path::{Path, PathBuf};
 pub use config::LeaseConfig;
 pub use error::LeaseError;
 pub use guard::LeaseGuard;
-pub use model::{Holder, Lease, StealRecord};
+pub use model::{Holder, Lease, StealRecord, Waiter};
 pub use rule::{Scope001, scope001};
-pub use store::{Acquired, Contended, CorruptLease, LeaseStore, Stolen};
+pub use store::{Acquired, Contended, CorruptLease, LeaseStore, Stolen, WaiterInfo};
 
 /// Open the lease store of the repository containing `cwd` with the caller's `cfg`.
 ///

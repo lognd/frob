@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-13T03:55:44Z"
+digest = "f7ea83d94e1efa0ae948a4ab1becbaa94af11a0a2414200a27050e4af3a7bc0f"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.96s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b5c85dcb-3d02-4e5e-b926-5af002e7c625 with nextest profile: default
+    Starting 1 test across 340 binaries (2992 tests skipped)
+        PASS [   0.097s] frob-lease::lease a_dead_waiter_is_reaped_and_stops_blocking
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.165s] 1 test run: 1 passed, 2992 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_dead_waiter_is_reaped"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "84ddef585453650f5c57c814cf975fc22cb052264552c51a40e1af07613d2eff"
+at = "2026-10-13T03:55:44Z"
+actor = "lognd"
+rev = 1

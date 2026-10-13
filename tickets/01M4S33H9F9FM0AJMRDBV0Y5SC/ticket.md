@@ -2,11 +2,12 @@
 id = "01M4S33H9F9FM0AJMRDBV0Y5SC"
 title = "Fix base CI red: tool stage args in tests, message_origin in doctor snapshot"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-12T22:18:04Z"
-updated = "2026-10-12T22:25:42Z"
+updated = "2026-10-13T03:20:47Z"
 scope = ["crates/frob-check/tests/tool_bind.rs", "crates/frob-obligations/tests/corpus.rs", "docs/design/boundaries.md"]
 
 [[acceptance]]
