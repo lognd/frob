@@ -29,6 +29,7 @@ pub const OWN_TABLES: &[&str] = &[
     "session",
     "mock_set",
     "review",
+    "decisions",
 ];
 
 /// The sections a valid file must declare.
@@ -299,6 +300,9 @@ impl<'a> Ctx<'a> {
         )?;
         let review = raw.review.unwrap_or_default();
         validate::review(&review)?;
+        // frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
+        let decisions = raw.decisions.unwrap_or_default();
+        validate::decisions(&decisions)?;
         Ok(DesignSpec {
             root: root.to_owned(),
             project,
@@ -318,6 +322,7 @@ impl<'a> Ctx<'a> {
             sessions,
             mock_sets,
             review,
+            decisions,
         })
     }
 }

@@ -203,6 +203,15 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
     if config.is_some_and(|c| c.starts_with("tw-theme-")) {
         spec_text.push_str("\n[tailwind]\nconfig = \"tailwind.config.js\"\n");
     }
+    // frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
+    if let Some(key) = config.and_then(|c| c.strip_prefix("decide-")) {
+        spec_text.push_str("\n[decisions]\n");
+        spec_text.push_str(key);
+        spec_text.push_str(" = \"chosen on purpose\"\n");
+    }
+    if config == Some("palette-indigo") {
+        spec_text = spec_text.replace("accent = \"#2f6fed\"", "accent = \"#6366f1\"");
+    }
     if config == Some("breakpoints") {
         spec_text.push_str(BREAKPOINTS_TABLE);
     }
