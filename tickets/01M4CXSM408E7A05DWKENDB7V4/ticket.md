@@ -2,7 +2,8 @@
 id = "01M4CXSM408E7A05DWKENDB7V4"
 title = "Human review lock: crunk.lock [[review]] entries over subject content digests, HUMAN001/002, crunk review and crunk ack (person only)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
