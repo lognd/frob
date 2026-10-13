@@ -304,6 +304,13 @@
           "minimum": 0,
           "type": "integer"
         },
+        "land_target_budget_gb": {
+          "default": 15,
+          "description": "Budget in GiB of the repository-shared `land-target` under the git common dir; the oldest units go first and the latest build's are never evicted.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
         "target_budget_gb": {
           "default": 30,
           "description": "Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; `frob work` links each new worktree's `target/` to the shared `land-target`.",
@@ -472,6 +479,13 @@
         "ttl_secs": {
           "default": 7200,
           "description": "Seconds a lease stays live after its last renewal (default two hours).",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "waiter_ttl_secs": {
+          "default": 60,
+          "description": "Seconds a queued `work --wait` waiter may go without a heartbeat before it is dropped (frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ).",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
@@ -677,6 +691,11 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "registry_setup": {
+          "default": false,
+          "description": "When true, `frob release status` lists frob's own registry setup (trusted publishing on `PyPI` and `crates.io`) as an owner action; false for every other project.",
+          "type": "boolean"
         },
         "require_ci": {
           "default": true,

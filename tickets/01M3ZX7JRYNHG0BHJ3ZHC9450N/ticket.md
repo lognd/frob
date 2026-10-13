@@ -2,13 +2,13 @@
 id = "01M3ZX7JRYNHG0BHJ3ZHC9450N"
 title = "Tier-1 pack content: atoms, detectors, vocabularies and excuse templates into the registry"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-03T03:34:25Z"
+updated = "2026-10-13T05:04:10Z"
 idempotency_key = "m2-packs-tier1"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/gob-packs/src/tier1/**", "crates/gob-ir/src/registry.rs"]

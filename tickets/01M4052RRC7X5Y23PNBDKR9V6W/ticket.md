@@ -2,16 +2,17 @@
 id = "01M4052RRC7X5Y23PNBDKR9V6W"
 title = "Budget planner: rate-limit headers, share, create and mutation caps, spacing"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-03T05:51:36Z"
+updated = "2026-10-13T04:30:36Z"
 idempotency_key = "m2-mirror2-budget"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/budget.rs"]
+scope = ["crates/frob-mirror/src/budget.rs", "crates/frob-mirror/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
@@ -19,15 +20,15 @@ target = "01M4052QNSFSWV0SQ0A05XQ12K"
 
 [[acceptance]]
 text = "Given 5000 remaining and the default share, when the run starts, then at most 2500 calls, 50 creates and 300 mutations are planned"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a remaining budget below one ticket's reads plus one write, when planned, then the run reports MIR001 budget-too-small and makes no write"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given missing rate-limit headers, when the run starts, then it stops with MIR001 and the reason"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.2 (Budget planner; F8).

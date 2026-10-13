@@ -1,0 +1,1 @@
+The crunk token dialect now compiles to DTCG 2025.10 through a new dtcg export target and the crunk_tokens::dialect module, covering aliases, composites, scopes and per-mode overrides in a resolver document.

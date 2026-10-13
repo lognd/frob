@@ -145,6 +145,11 @@ any (provider, reference) pair's latest record for it passes.
 | `cycle` | ticket | cycle id, op (assign, carried, over-commit), reason (required for over-commit) | cycle assign, cycle close | velocity, forecasts, cycle report |
 | `attempt` | ticket | outcome (failed, abandoned), reason | requeue --failed, a failed land | brief, doctor |
 | `triage` | ticket | action (accept, decline, snooze, duplicate), until (snooze only), reason (when given) | ticket triage | inbox; the fold ignores it (the `transition` and `link` events written beside it carry the state change) |
+| `proposal` | ticket | tracker event id, item, field, actor id, time, value digest, excerpt (capped), origin (`tracker`) | mirror run | proposals list, `proposals accept`; the ticket fold ignores it (mirror.md 3.5) |
+| `proposal-superseded` | ticket | the `proposal` fields plus `supersedes` (the replaced tracker event id) | mirror run | proposals list; the latest pending proposal per (item, field) wins |
+| `proposal-accepted` | ticket | tracker event id, reason (when given) | `ticket proposals accept` | proposals list; closed for good, a re-recorded tracker event id stays closed |
+| `proposal-declined` | ticket | tracker event id, reason (when given) | `ticket proposals decline` | proposals list; closed for good |
+| `proposal-expired` | ticket | tracker event id, reason (when given) | mirror run after `proposal_ttl_days` | proposals list; closed for good |
 | `cost` | ticket | tokens in, out, cache, cost, wall seconds | harness hook, land | stats, forecasts |
 
 The class of service is the field `class` (and `due`): `create` and
@@ -329,6 +334,23 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   an flock) in the git common dir; `--steal` takes the same lock and is
   allowed only for the same ticket (it never takes another ticket's
   lease), recording the previous holder in the lease history.
+- Waiting is fair. `frob work TICKET --wait SECS` enqueues a waiter
+  record (ticket, holder, scope, enqueued-at, heartbeat) in
+  `<common_dir>/frob/waiters/<id>.toml`, written under the same lock as
+  acquisition, then blocks inside the process (sleep with capped
+  backoff, re-check under the lock, heartbeat each pass) until its whole
+  scope is free or SECS pass; callers never poll. While a waiter exists,
+  a new acquisition whose scope overlaps the waiter's is refused with
+  `E-LEASE-QUEUED` naming the waiter and its age, so the waiter gets the
+  paths as soon as the holders release; acquisitions overlapping no
+  waiter proceed, and overlapping waiters are served FIFO by enqueue
+  time (a waiter only yields to earlier waiters, and waiters hold
+  nothing, so two waiters cannot deadlock). A waiter whose heartbeat is
+  older than `[lease] waiter_ttl_secs` (default 60) is reaped, so a
+  crashed waiter never blocks others. `lease list` and
+  `ticket contention` report each waiter with its age and blockers
+  (overlapping live leases and earlier waiters).
+<!-- frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ -->
 - TTL is the knob `[lease] ttl_secs` (default 7200); the lock wait is
   `[lease] lock_timeout_ms` (default 5000), and append-shared files are
   exempt from overlap through `[lease] shared_files`, which when unset

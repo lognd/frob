@@ -35,7 +35,15 @@ in the last section, "Not verified".
 ## One-time setup
 
 Do these once, before the first tag is pushed. `frob release status` lists
-"registry setup" as an unresolved owner action until this is done.
+"registry setup" as an unresolved owner action until this is done, but only in a
+repository that sets `[release] registry_setup = true`; other projects never see it.
+
+## Projects without Cargo
+
+`frob release bump` and `cut` in a repository with no `Cargo.toml` edit only the
+static `[project] version` of `pyproject.toml`; no Cargo file is created or
+rewritten, and REL002 is not applicable (it names a wheel by its `[project] name`
+when a Cargo workspace is present).
 
 ### 1. GitHub environment `crates-io`
 

@@ -108,7 +108,7 @@ jobs:
     timeout-minutes: 60
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-rust-${{ matrix.os }}
-      cancel-in-progress: true
+      cancel-in-progress: ${{ github.ref != 'refs/heads/experimental' }}
     strategy:
       fail-fast: false
       matrix:
@@ -255,7 +255,7 @@ jobs:
     timeout-minutes: 45
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-crunk
-      cancel-in-progress: true
+      cancel-in-progress: ${{ github.ref != 'refs/heads/experimental' }}
     env:
       # Every crates/crunk* package; crates/gob-dev/tests/ci_plan.rs fails when this list drifts.
       CRUNK_PACKAGES: -p crunk -p crunk-check -p crunk-ingest -p crunk-rules -p crunk-spec -p crunk-tailwind -p crunk-tokens -p crunk-values
@@ -320,7 +320,7 @@ jobs:
     timeout-minutes: 30
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-crunk-node
-      cancel-in-progress: true
+      cancel-in-progress: ${{ github.ref != 'refs/heads/experimental' }}
     env:
       CRUNK_REQUIRE_NODE: "1"
       RUSTC_WRAPPER: sccache
@@ -363,7 +363,7 @@ jobs:
     timeout-minutes: 60
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-profile
-      cancel-in-progress: true
+      cancel-in-progress: ${{ github.ref != 'refs/heads/experimental' }}
     permissions:
       contents: read
       actions: read
