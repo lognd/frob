@@ -6,8 +6,8 @@ use std::fmt::Write as _;
 use std::io::IsTerminal;
 
 use anstyle::{AnsiColor, Style};
-use gob_rules::{Finding, Registry, Severity};
-use gob_text::render_snippet;
+use gob_rules::{Applicability, Finding, Fix, Registry, Severity, TextEdit, UnresolvedReason};
+use gob_text::{TextSize, render_snippet};
 
 use crate::escape::escape_text;
 use crate::source::SourceProvider;
@@ -160,8 +160,159 @@ fn write_finding(
     if let Some(reason) = f.required.as_ref() {
         let _ = writeln!(out, "  required: {}", escape_text(&reason.to_string()));
     }
+    if let Some(reason) = f
+        .reason
+        .as_ref()
+        .filter(|_| f.severity == Severity::Unresolved)
+    {
+        let (words, remedy) = reason_words(reason);
+        let _ = writeln!(out, "  reason: {words} ({})", escape_text(reason.code()));
+        let _ = writeln!(out, "  remedy: {remedy}");
+    }
     if let Some(fix) = &f.fix {
-        let _ = writeln!(out, "  fix: {}", escape_text(&fix.title));
+        write_fix(out, report.sources, fix);
+    }
+}
+
+/// Words for an Unresolved reason and the remedy that would let the rule decide.
+fn reason_words(reason: &UnresolvedReason) -> (&'static str, &'static str) {
+    match reason {
+        UnresolvedReason::AnnotationSignature => (
+            "a public signature has no type annotation",
+            "annotate the signature",
+        ),
+        UnresolvedReason::AnnotationEffects => (
+            "a function has no effect declaration",
+            "declare the function's effects",
+        ),
+        UnresolvedReason::DynamicUnresolvable => (
+            "the target of dynamic dispatch or reflection is unknown",
+            "make the call static or annotate its target",
+        ),
+        UnresolvedReason::DynamicStringCode => (
+            "a region is code held as a string",
+            "move the code out of the string or annotate it",
+        ),
+        UnresolvedReason::ExpansionBudget => (
+            "macro or template expansion exceeded its step budget",
+            "simplify the expansion or raise the budget",
+        ),
+        UnresolvedReason::NormalizationUnverified => (
+            "a dependent definition was not accepted by the termination checker",
+            "make the definition structurally terminating",
+        ),
+        UnresolvedReason::OrderUnrecorded => (
+            "no execution order is recorded",
+            "record the execution order",
+        ),
+        UnresolvedReason::Opaque(_) => ("an opaque region was not analyzed", "annotate the region"),
+        UnresolvedReason::Hole => ("the code has a hole or parse error", "fill or fix the hole"),
+        UnresolvedReason::EdgeMay => (
+            "the deciding edge is only possible, not certain",
+            "resolve the edge or add an exception",
+        ),
+        UnresolvedReason::EdgeUnknown => (
+            "the deciding edge or answer is unknown",
+            "supply the missing facts or add an exception",
+        ),
+        UnresolvedReason::Vacuous => (
+            "the rule examined zero subjects",
+            "point the rule at a scope with subjects or drop it",
+        ),
+        UnresolvedReason::Fidelity => (
+            "the language support is too shallow for this rule",
+            "use a richer adapter or disable the rule here",
+        ),
+        UnresolvedReason::ParseFailed => (
+            "a file could not be read or parsed",
+            "fix the file so it parses",
+        ),
+        UnresolvedReason::Partial => (
+            "a file parsed only partially, with holes",
+            "fix the parse errors",
+        ),
+    }
+}
+
+/// Trailing note for a fix tier that a human must act on, if any.
+const fn tier_note(a: Applicability) -> Option<&'static str> {
+    match a {
+        Applicability::Machine => None,
+        Applicability::MaybeIncorrect => Some("unsafe: review the diff before applying"),
+        Applicability::HasPlaceholders => Some("unsafe: fill in the placeholders before applying"),
+        Applicability::Manual => Some("display-only: no edit is attached; apply by hand"),
+    }
+}
+
+/// Write `fix` as `fix[tier]: title`, a unified diff of its edits, and a note for unsafe tiers.
+fn write_fix(out: &mut String, sources: &dyn SourceProvider, fix: &Fix) {
+    let _ = writeln!(
+        out,
+        "  fix[{}]: {}",
+        fix.applicability.label(),
+        escape_text(&fix.title)
+    );
+    for edit in &fix.edits {
+        write_edit_diff(out, sources, edit);
+    }
+    if let Some(note) = tier_note(fix.applicability) {
+        let _ = writeln!(out, "  note: {note}");
+    }
+}
+
+/// Write one edit as a unified-diff hunk over the whole lines it touches.
+fn write_edit_diff(out: &mut String, sources: &dyn SourceProvider, edit: &TextEdit) {
+    let (Some(path), Some(src)) = (sources.path(edit.file), sources.source(edit.file)) else {
+        tracing::warn!("fix edit has no resolvable source; diff omitted");
+        return;
+    };
+    let text = src.as_str();
+    let (start, end) = (edit.range.start(), edit.range.end());
+    let last = if end > start {
+        TextSize::new(u32::from(end) - 1)
+    } else {
+        end
+    };
+    let (Some(first_lc), Some(last_lc)) = (src.line_col(start), src.line_col(last)) else {
+        tracing::warn!("fix edit range outside its source; diff omitted");
+        return;
+    };
+    let idx = src.line_index();
+    let (Some(ls), Some(le)) = (
+        idx.line_start(first_lc.line),
+        idx.line_end(text, last_lc.line),
+    ) else {
+        return;
+    };
+    let (Some(head), Some(tail)) = (
+        text.get(ls.to_usize()..start.to_usize()),
+        text.get(end.to_usize()..le.to_usize().max(end.to_usize())),
+    ) else {
+        tracing::warn!("fix edit not on char boundaries; diff omitted");
+        return;
+    };
+    let old = text
+        .get(ls.to_usize()..le.to_usize().max(end.to_usize()))
+        .unwrap_or("");
+    let new = format!("{head}{}{tail}", edit.replacement);
+    let old_lines: Vec<&str> = old.split('\n').collect();
+    let new_lines: Vec<&str> = new.split('\n').collect();
+    let p = escape_text(path);
+    let _ = writeln!(out, "    --- {p}");
+    let _ = writeln!(out, "    +++ {p}");
+    let _ = writeln!(
+        out,
+        "    @@ -{},{} +{},{} @@",
+        first_lc.line,
+        old_lines.len(),
+        first_lc.line,
+        new_lines.len()
+    );
+    for l in old_lines {
+        let _ = writeln!(out, "    -{}", escape_text(l));
+    }
+    for l in new_lines {
+        let _ = writeln!(out, "    +{}", escape_text(l));
     }
 }
 

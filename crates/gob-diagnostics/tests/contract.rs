@@ -451,3 +451,90 @@ fn fix_kinds_map_onto_distinct_applicability_labels() {
         "\"has-placeholders\""
     );
 }
+
+fn fixable(kind: FixKind, replacement: &str) -> (MemorySources, Vec<Finding>) {
+    let mut files = FileInterner::new();
+    let a = files.intern("src/a.rs");
+    let mut sources = MemorySources::new();
+    sources.insert(
+        a,
+        "src/a.rs",
+        SourceText::new("let a = 1;\nlet colour = 1;\n").unwrap(),
+    );
+    let f = Finding::new(
+        "DOC001".parse().unwrap(),
+        Severity::Warn,
+        Some(Span::new(a, range(15, 21))),
+        "spell it color",
+        "src/a.rs",
+    )
+    .with_fix(Fix {
+        kind,
+        applicability: kind.applicability(),
+        title: "colour to color".into(),
+        edits: vec![gob_rules::TextEdit {
+            file: a,
+            range: range(15, 21),
+            replacement: replacement.into(),
+        }],
+    });
+    (sources, vec![f])
+}
+
+fn plain(sources: &MemorySources, findings: &[Finding]) -> String {
+    render_text(
+        &Report { findings, sources },
+        &TextOptions {
+            color: ColorChoice::Never,
+            snippets: false,
+        },
+    )
+}
+
+// frob:tests crates/gob-diagnostics/src/text.rs::render_text
+// frob:ticket 01M48PBYN43QPHGAF7Y14C4ZGJ
+#[test]
+fn fix_renders_diff_and_tier_safe() {
+    let (s, f) = fixable(FixKind::Deterministic, "color");
+    insta::assert_snapshot!(plain(&s, &f));
+}
+
+// frob:tests crates/gob-diagnostics/src/text.rs::render_text
+// frob:ticket 01M48PBYN43QPHGAF7Y14C4ZGJ
+#[test]
+fn fix_renders_unsafe_tier_note() {
+    let (s, f) = fixable(FixKind::VerifyCommit, "color");
+    insta::assert_snapshot!(plain(&s, &f));
+}
+
+// frob:tests crates/gob-diagnostics/src/text.rs::render_text
+// frob:ticket 01M48PBYN43QPHGAF7Y14C4ZGJ
+#[test]
+fn changing_an_edit_changes_the_rendering() {
+    let (s1, f1) = fixable(FixKind::Deterministic, "color");
+    let (s2, f2) = fixable(FixKind::Deterministic, "kolor");
+    assert_ne!(plain(&s1, &f1), plain(&s2, &f2));
+}
+
+// frob:tests crates/gob-diagnostics/src/text.rs::render_text
+// frob:ticket 01M48PBYN43QPHGAF7Y14C4ZGJ
+#[test]
+fn unresolved_reason_and_remedy_render_in_words() {
+    let f = vec![
+        Finding::new(
+            "TOOL001".parse().unwrap(),
+            Severity::Unresolved,
+            None,
+            "no adapter",
+            "repo",
+        )
+        .with_reason(gob_rules::UnresolvedReason::Fidelity),
+    ];
+    let out = plain(&MemorySources::new(), &f);
+    assert!(
+        out.contains("reason: ") && out.contains("(fidelity)"),
+        "{out}"
+    );
+    assert!(out.contains("remedy: "), "{out}");
+    insta::assert_snapshot!(out);
+}
