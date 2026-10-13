@@ -153,6 +153,9 @@ pub enum CutError {
     /// Git failed.
     #[error("E-CUT-GIT: {0}")]
     Git(#[from] gob_git::GitError),
+    /// A repository path was refused.
+    #[error(transparent)]
+    Path(#[from] gob_git::PathError),
     /// The ledger could not be read or written.
     #[error("E-CUT-LEDGER: {0}")]
     Ledger(String),

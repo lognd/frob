@@ -19,6 +19,9 @@ pub enum AckError {
     /// A git operation failed.
     #[error(transparent)]
     Git(#[from] GitError),
+    /// A repository path was refused.
+    #[error(transparent)]
+    Path(#[from] gob_git::PathError),
     /// A target names no symbol, or several.
     #[error("E-ACK-RESOLVE: `{input}`: {source}")]
     Resolve {

@@ -2546,6 +2546,7 @@ version = "0.532.0"
 dependencies = [
  "gix",
  "gob-exec",
+ "gob-path",
  "gob-walk",
  "tempfile",
  "thiserror",
@@ -2653,6 +2654,16 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+]
+
+[[package]]
+name = "gob-path"
+version = "0.532.0"
+dependencies = [
+ "proptest",
+ "thiserror",
+ "tracing",
+ "typed-path",
 ]
 
 [[package]]
@@ -5033,6 +5044,12 @@ dependencies = [
  "termcolor",
  "toml",
 ]
+
+[[package]]
+name = "typed-path"
+version = "0.12.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e28f89b80c87b8fb0cf04ab448d5dd0dd0ade2f8891bae878de66a75a28600e"
 
 [[package]]
 name = "typenum"
