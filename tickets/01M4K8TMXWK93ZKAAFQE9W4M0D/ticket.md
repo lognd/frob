@@ -2,13 +2,13 @@
 id = "01M4K8TMXWK93ZKAAFQE9W4M0D"
 title = "Wire the E-STATE-TRACKED guard into frob, grimble and crunk check runs"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "Claude"
 created = "2026-10-10T16:02:38Z"
-updated = "2026-10-10T16:02:38Z"
-scope = ["crates/frob/src/**", "crates/grimble/src/**", "crates/crunk/src/**"]
+updated = "2026-10-12T23:56:59Z"
+scope = ["crates/frob/src/**", "crates/grimble/src/**", "crates/crunk/src/**", "crates/gob-product/src/**", "crates/gob-product/Cargo.toml", "crates/gob-product/tests/**", "Cargo.lock"]
 
 [[links]]
 kind = "blocked-by"
@@ -16,7 +16,7 @@ target = "01M3ZX7TR7HMSXPCQSHFSG8SMS"
 
 [[acceptance]]
 text = "Given a repo tracking .frob/cache.sqlite, when frob check runs, then exit code is 3 and the envelope code is E-STATE-TRACKED naming the file"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the same repo for grimble check and crunk check, then both exit 3 with E-STATE-TRACKED"
