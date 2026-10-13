@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-08T04:54:41Z"
-updated = "2026-10-13T06:06:40Z"
-scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-spec/**"]
+updated = "2026-10-13T06:08:47Z"
+scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-spec/**", "crates/crunk-rules/**", "docs/crunk/**"]
 
 [[acceptance]]
 text = "Given fire and clean fixtures per rule, when the corpus runs, then each fires only on its fire case; declared design decisions silence the unchosen-based rules"
