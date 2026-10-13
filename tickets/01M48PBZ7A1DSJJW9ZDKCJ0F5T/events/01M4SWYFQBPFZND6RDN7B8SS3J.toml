@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-13T05:49:42Z"
+digest = "12b15f90212de7b4828cb233d38d3fc5b99b0e34cc9305aeabc6bbc7f380649d"
+provider = "file"
+ref = "crates/gob-mdtest/FORMAT.md"
+size = 4534
+status = "measured"
+at = "2026-10-13T05:49:42Z"
+actor = "lognd"
+rev = 1
