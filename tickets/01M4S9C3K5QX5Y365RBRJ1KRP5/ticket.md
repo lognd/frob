@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-13T00:07:37Z"
-updated = "2026-10-13T03:05:27Z"
+updated = "2026-10-13T03:05:38Z"
 scope = ["crates/crunk/**"]
 
 [[acceptance]]
