@@ -2,13 +2,13 @@
 id = "01M4059ZDWQRK47QXG5K0KYHP2"
 title = "Verify the audit's UNVERIFIED GitHub facts against the live API in a sandbox repository"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:55:32Z"
-updated = "2026-10-12T21:58:43Z"
+updated = "2026-10-13T02:21:51Z"
 idempotency_key = "m2-mirror2-verify-facts"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-gh/**", "crates/frob-mirror/**", "notes/review/mirror-audit.md"]
