@@ -79,6 +79,9 @@ pub enum BudgetError {
 }
 
 /// Plan a run from the rate-limit headers; makes no write itself.
+///
+/// # Errors
+/// `HeadersMissing` when a header is absent; `TooSmall` when one ticket does not fit.
 pub fn plan(limit: RateLimit, cfg: &BudgetConfig) -> Result<Plan, BudgetError> {
     let missing = match (limit.remaining, limit.reset) {
         (Some(_), Some(_)) => None,
