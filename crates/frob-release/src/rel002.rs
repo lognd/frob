@@ -246,6 +246,17 @@ pub(crate) fn wheel_path(root: &Path) -> Option<PathBuf> {
         .find(|p| p.is_file())
 }
 
+/// The package name the wheel metadata declares (`[project] name`), when readable.
+pub(crate) fn wheel_name(path: &Path) -> Option<String> {
+    read_table(path)
+        .ok()?
+        .get("project")?
+        .as_table()?
+        .get("name")?
+        .as_str()
+        .map(str::to_owned)
+}
+
 /// What the wheel metadata says about the version.
 pub(crate) enum Wheel {
     /// No `[project]` table: not a wheel definition.
@@ -353,8 +364,9 @@ pub fn evaluate(root: &Path) -> Evaluation {
             .replace('\\', "/");
         match wheel_version(&path) {
             Ok(Wheel::Static(v)) if v != expected => {
+                let name = wheel_name(&path).unwrap_or_else(|| "wheel".to_owned());
                 out.findings
-                    .push(mismatch("wheel", "frob", &rel, &v, &expected));
+                    .push(mismatch("wheel", &name, &rel, &v, &expected));
             }
             Ok(_) => tracing::debug!(wheel = %rel, "REL002: wheel agrees or follows Cargo.toml"),
             Err(e) => out.findings.push(unresolved(&rel, &e)),

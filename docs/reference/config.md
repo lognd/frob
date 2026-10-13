@@ -114,6 +114,7 @@ Materialized: yes.
 | `interval_secs` | `u64` | `3600` | no | Minimum seconds between automatic passes (the stamp lives under the git common dir). |
 | `keep_binaries` | `Vec<String>` | `["frob", "grimble"]` | no | Binary names (without extension) whose build output is never collected. |
 | `keep_recent_secs` | `u64` | `3600` | no | Artifacts within this many seconds of the newest one belong to the latest build and are kept. |
+| `land_target_budget_gb` | `u64` | `15` | no | Budget in GiB of the repository-shared `land-target` under the git common dir; the oldest units go first and the latest build's are never evicted. |
 | `target_budget_gb` | `u64` | `30` | no | Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; `frob work` links each new worktree's `target/` to the shared `land-target`. |
 | `time_limit_secs` | `u64` | `30` | no | Wall-clock bound in seconds of one pass; the rest waits for the next one. |
 | `worktrees` | `bool` | `true` | no | Remove worktrees of closed tickets and of expired leases with nothing unsaved. |
@@ -254,6 +255,7 @@ Materialized: yes.
 | `fragment_prefix` | `String` | `""` | no | Text `frob ticket fragment` puts before the ticket title in the skeleton (for example `frob: `); empty adds nothing. |
 | `preview` | `Vec<String>` | `[]` | yes | Products that ship as a preview: their tag message and changelog heading carry " (preview)". |
 | `products` | `Vec<String>` | `[]` | yes | Products a release ships, one tag each; empty means one product named after the repository. |
+| `registry_setup` | `bool` | `false` | no | When true, `frob release status` lists frob's own registry setup (trusted publishing on `PyPI` and `crates.io`) as an owner action; false for every other project. |
 | `require_ci` | `bool` | `true` | yes | When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green. |
 | `tag` | `String` | `"v{version}"` | yes | Tag name pattern of a release: `{version}` is required, `{product}` is replaced by each product name (one tag per product). |
 
