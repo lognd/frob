@@ -71,6 +71,7 @@ mod query;
 pub mod registry;
 mod scope;
 mod select;
+mod status_relation;
 pub mod style;
 mod symref;
 mod term;
@@ -95,5 +96,6 @@ pub use scope::{
 pub use select::{
     Hidden, HiddenReason, UnitMatch, UnitSelection, owner_of_unit, select, select_units,
 };
+pub use status_relation::StatusRelation;
 pub use symref::{Anchor, Identity, IdentityDelta, Segment, Symref, SymrefError};
 pub use term::{Node, NodeId, NodeSpec, Term, TermBuilder, TermError};

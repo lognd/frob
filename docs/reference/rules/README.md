@@ -63,6 +63,7 @@
 |---|---|---|---|---|---|---|
 | [DSL001](DSL001.md) | unknown-directive-verb | error | manual | P+ | false | A directive names a verb its namespace does not declare. |
 | [DSL002](DSL002.md) | abbreviated-ticket-id | error | deterministic | P+ | false | A directive carries an abbreviated ticket id instead of a full 26-char ULID. |
+| [DSL003](DSL003.md) | deprecated-directive-spelling | warn | deterministic | P+ | false | A directive uses a deprecated `frob:` claim spelling that D120 moved or dropped. |
 
 ## EXC
 

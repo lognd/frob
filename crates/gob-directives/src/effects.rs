@@ -1,4 +1,4 @@
-//! The typed effect claim of `frob:effects` (neatness.md section 3); parsed only, never evaluated.
+//! The typed effect claim of `grimble:effects` (neatness.md section 3); parsed only, never evaluated.
 
 use std::fmt;
 
@@ -86,7 +86,7 @@ pub enum EffectBase {
     Atoms(Vec<EffectAtom>),
 }
 
-/// A parsed `frob:effects` set: a base and the optional `total` suffix.
+/// A parsed `grimble:effects` set: a base and the optional `total` suffix.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EffectSet {
     /// The level or atom list.
@@ -282,52 +282,31 @@ impl FromArgs for EffectSet {
     }
 }
 
-/// Which alias spelled an effects claim, when not `frob:effects` itself.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EffectAlias {
-    /// `frob:pure`, meaning `frob:effects none`.
-    Pure,
-    /// `frob:honest`, meaning `frob:effects honest`.
-    Honest,
-}
-
-/// An effect claim read from `frob:effects`, `frob:pure` or `frob:honest`.
+/// An effect claim read from `grimble:effects`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EffectsClaim {
-    /// The claimed set (`none` for `pure`, `honest` for `honest`).
+    /// The claimed set.
     pub set: EffectSet,
-    /// The alias the author wrote, or `None` for the full `frob:effects` form.
-    pub alias: Option<EffectAlias>,
+    /// The stated reason, when the author gave one.
+    pub because: Option<String>,
 }
 
 /// The effect claim a record carries, or `None` for any other directive.
 ///
 /// # Errors
 ///
-/// The [`ArgError`] when a `frob:effects` record's set does not parse (the
+/// The [`ArgError`] when a `grimble:effects` record's set does not parse (the
 /// scanner already reports it as PARSE001, so scanned records parse).
 pub fn effects_claim(record: &DirectiveRecord) -> Option<Result<EffectsClaim, ArgError>> {
     use crate::Directive;
-    use crate::frob::{Effects, Honest, Pure};
-    if record.namespace != Effects::NAMESPACE {
+    use crate::grimble::Effects;
+    if record.namespace != Effects::NAMESPACE || record.verb != Effects::VERB {
         return None;
     }
-    let claim = match record.verb.as_str() {
-        Effects::VERB => Effects::parse_args(&record.args).map(|e| EffectsClaim {
-            set: e.set,
-            alias: None,
-        }),
-        Pure::VERB => Pure::parse_args(&record.args).map(|_| EffectsClaim {
-            set: EffectSet::NONE,
-            alias: Some(EffectAlias::Pure),
-        }),
-        Honest::VERB => Honest::parse_args(&record.args).map(|_| EffectsClaim {
-            set: EffectSet::HONEST,
-            alias: Some(EffectAlias::Honest),
-        }),
-        _ => return None,
-    };
-    Some(claim)
+    Some(Effects::parse_args(&record.args).map(|e| EffectsClaim {
+        set: e.set,
+        because: e.because,
+    }))
 }
 
 #[cfg(test)]
