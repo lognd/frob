@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-13T04:40:13Z"
+updated = "2026-10-13T04:40:20Z"
 idempotency_key = "m2-sec-effect-classes"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-trust/src/effects/**", "crates/gob-trust/src/lib.rs", "crates/gob-trust/tests/effects.rs"]
@@ -27,7 +27,7 @@ bound = false
 
 [[acceptance]]
 text = "Given a grant of fs.write.control over .git/**, when parsed, then it is refused as not grantable"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.6 (I6, I8, I10).
