@@ -12,6 +12,7 @@
 //! The stop-instead-of-sleep rule, the 60 s doubling ([`send_with_policy`]) and GraphQL `errors`
 //! arrays ([`parse_response`]) live in the policy and graphql modules.
 
+pub mod capabilities;
 mod client;
 mod culprit;
 mod error;

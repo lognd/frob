@@ -1,0 +1,40 @@
+[
+  {
+    "request": {
+      "method": "POST",
+      "url": "https://api.github.com/repos/lognd/frob-capability-sandbox-1/issues"
+    },
+    "response": {
+      "status": 201,
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "etag": "\"9744d541812e6f29069d4c78b4d3f1803a641d2bc5493885b5497b620f8088dc\"",
+        "link": "<https://docs.github.com/en/rest/about-the-rest-api/api-versions>; rel=\"deprecation\"; type=\"text/html\"",
+        "x-github-media-type": "github.v3; format=json",
+        "x-ratelimit-limit": "5000",
+        "x-ratelimit-remaining": "4955",
+        "x-ratelimit-reset": "1791861318",
+        "x-ratelimit-resource": "core"
+      },
+      "body": "{\"url\":\"https://api.github.com/repos/lognd/frob-capability-sandbox-1/issues/12\",\"repository_url\":\"https://api.github.com/repos/lognd/frob-capability-sandbox-1\",\"labels_url\":\"https://api.github.com/repos/lognd/frob-capability-sandbox-1/issues/12/labels{/name}\",\"comments_url\":\"https://api.github.com/repos/lognd/frob-capability-sandbox-1/issues/12/comments\",\"events_url\":\"https://api.github.com/repos/lognd/frob-capability-sandbox-1/issues/12/events\",\"html_url\":\"https://github.com/lognd/frob-capability-sandbox-1/issues/12\",\"id\":5823432725,\"node_id\":\"I_kwDOVGu4iM8AAAABWxqIFQ\",\"number\":12,\"title\":\"u5\",\"user\":{\"login\":\"lognd\",\"id\":181419926,\"node_id\":\"U_kgDOCtA_lg\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/181419926?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/lognd\",\"html_url\":\"https://github.com/lognd\",\"followers_url\":\"https://api.github.com/users/lognd/followers\",\"following_url\":\"https://api.github.com/users/lognd/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/lognd/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/lognd/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/lognd/subscriptions\",\"organizations_url\":\"https://api.github.com/users/lognd/orgs\",\"repos_url\":\"https://api.github.com/users/lognd/repos\",\"events_url\":\"https://api.github.com/users/lognd/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/lognd/received_events\",\"type\":\"User\",\"user_view_type\":\"public\",\"site_admin\":false},\"labels\":[],\"state\":\"open\",\"locked\":false,\"assignees\":[],\"milestone\":null,\"comments\":0,\"created_at\":\"2026-10-13T02:24:45Z\",\"updated_at\":\"2026-10-13T02:24:45Z\",\"closed_at\":null,\"assignee\":null,\"author_association\":\"OWNER\",\"active_lock_reason\":null,\"sub_issues_summary\":{\"total\":0,\"completed\":0,\"percent_completed\":0},\"issue_dependencies_summary\":{\"blocked_by\":0,\"total_blocked_by\":0,\"blocking\":0,\"total_blocking\":0},\"body\":\"rev0 line\\nline\\nline\\nline\\nline\\n\",\"closed_by\":null,\"reactions\":{\"url\":\"https://api.github.com/repos/lognd/frob-capability-sandbox-1/issues/12/reactions\",\"total_count\":0,\"+1\":0,\"-1\":0,\"laugh\":0,\"hooray\":0,\"confused\":0,\"heart\":0,\"rocket\":0,\"eyes\":0},\"timeline_url\":\"https://api.github.com/repos/lognd/frob-capability-sandbox-1/issues/12/timeline\",\"performed_via_github_app\":null,\"state_reason\":null,\"pinned_comment\":null}"
+    }
+  },
+  {
+    "request": {
+      "method": "POST",
+      "url": "https://api.github.com/graphql"
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "x-github-media-type": "github.v4; format=json",
+        "x-ratelimit-limit": "5000",
+        "x-ratelimit-remaining": "4985",
+        "x-ratelimit-reset": "1791861313",
+        "x-ratelimit-resource": "graphql"
+      },
+      "body": "{\"data\":{\"repository\":{\"issue\":{\"lastEditedAt\":\"2026-10-13T02:24:51Z\",\"userContentEdits\":{\"nodes\":[{\"editedAt\":\"2026-10-13T02:24:51Z\",\"createdAt\":\"2026-10-13T02:24:51Z\",\"diff\":\"rev3 line\\nline\\nline\\nline\\nline\\nextra3\",\"editor\":{\"login\":\"lognd\"}},{\"editedAt\":\"2026-10-13T02:24:49Z\",\"createdAt\":\"2026-10-13T02:24:49Z\",\"diff\":\"rev2 line\\nline\\nline\\nline\\nline\\nextra2\",\"editor\":{\"login\":\"lognd\"}},{\"editedAt\":\"2026-10-13T02:24:47Z\",\"createdAt\":\"2026-10-13T02:24:47Z\",\"diff\":\"rev1 line\\nline\\nline\\nline\\nline\\nextra1\",\"editor\":{\"login\":\"lognd\"}},{\"editedAt\":\"2026-10-13T02:24:45Z\",\"createdAt\":\"2026-10-13T02:24:47Z\",\"diff\":\"rev0 line\\nline\\nline\\nline\\nline\\n\",\"editor\":{\"login\":\"lognd\"}}]}}}}}"
+    }
+  }
+]

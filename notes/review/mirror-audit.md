@@ -181,6 +181,28 @@ UNVERIFIED (not found in GitHub's documentation; measure before relying):
 - U15 Limits on issue dependencies per issue.
 - U16 Whether `retry-after` is sent on content-creation secondary limits.
 
+Measured against the live API on 2026-10-13 in a throwaway private repository (ticket K0KYHP2); the record is crates/frob-gh/capabilities.json and the transcripts are crates/frob-gh/tests/fixtures/live/.
+
+| Id | Verdict | Finding |
+|---|---|---|
+| U1 | verified | Issue body maximum is 65,536 Unicode code points (not UTF-16 units, not bytes). |
+| U2 | verified | Label name maximum is 50 characters; 51 is 422. Labels per issue and per repository were not exhausted (no limit observed in the runs; the per-issue 100 and per-repo limits stay unmeasured). |
+| U3 | verified | Title: the validation message says maximum 256 but the API accepts up to 1024 characters and rejects 1025+; code must not rely on either number and should clamp to 256. |
+| U4 | verified | Search index lag after creation was 3 s (HTML-comment token) and 11 s (visible token) in one run; text inside HTML comments is searchable. Never read your own write via search. |
+| U5 | partial | UserContentEdit.diff holds the full revision text of the previous state, not a patch; edits are ordered newest first; edits 2 s apart were not coalesced; the original body is recorded as the last node. Edits by Apps were not testable with a user PAT. |
+| U6 | verified | Deleting a label emits an unlabeled event on each issue carrying it. Renaming a label emits no issue event and does not change issue updated_at. |
+| U7 | partial | 150 consecutive issue PATCHes at about 70 per minute produced no 403 or 429. Whether edits count toward 80/min or 500/h is not proven; they did not trip either limit at that pace. |
+| U8 | verified | Bodies written through the API are stored byte for byte (CRLF, trailing spaces and tabs preserved). Web-editor normalization was not compared. |
+| U9 | verified | Label application is case-insensitive: applying 'mixedcase' attaches the existing 'MixedCase'; creating a duplicate differing only in case is 422 already_exists. |
+| U10 | unmeasurable | No public REST or GraphQL operation converts an issue to a discussion (mutation list has createDiscussion but no convert), so the status code could not be produced. Treat 404, 410 and 301 as gone or moved, per F6. |
+| U11 | partial | The issues edited payload carries changes.title.from and changes.body.from, but not reliably: a combined title and body PATCH delivered only changes.body, and a title-only PATCH delivered body.from as an empty string next to title.from. Treat changes.* as a hint only. |
+| U12 | partial | A code span suppresses the issue autolink: no cross-referenced event was produced for `#N`, while plain #N produced one. Mention-notification suppression was not testable with a single account. |
+| U13 | verified | An issue ETag changes on a new comment and on a reaction (If-None-Match then returns 200, not 304); an untouched issue returns 304. |
+| U14 | verified | updated_at does not advance when a repository-level label rename changes what the issue shows. |
+| U15 | partial | No dependency limit was reached: 60 blocked_by relations on one issue were accepted. The true limit is above 60 or absent. |
+| U16 | partial | retry-after on content-creation secondary limits was not observed: 150 comment creations at about 70 per minute never tripped a limit, and deliberately exceeding 80 per minute was not attempted to avoid an integration ban. Keep F3 handling (retry-after, else reset, else 60 s backoff). |
+| N1 | verified | Nudge: repository_dispatch from a workflow GITHUB_TOKEN needs `contents: write` (204); `contents: read` or none gets 403. |
+
 The design's own UNVERIFIED item (mirror.md line 152, conditional
 writes on issue updates) is now settled: not supported (F5, F10).
 

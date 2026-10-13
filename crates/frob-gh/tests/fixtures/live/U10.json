@@ -1,0 +1,38 @@
+[
+  {
+    "request": {
+      "method": "GET",
+      "url": "https://api.github.com/repos/lognd/frob-capability-sandbox-1/issues/999999"
+    },
+    "response": {
+      "status": 404,
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "x-github-media-type": "github.v3; format=json",
+        "x-ratelimit-limit": "5000",
+        "x-ratelimit-remaining": "4852",
+        "x-ratelimit-reset": "1791861313",
+        "x-ratelimit-resource": "core"
+      },
+      "body": "{\"message\":\"Not Found\",\"documentation_url\":\"https://docs.github.com/rest/issues/issues#get-an-issue\",\"status\":\"404\"}"
+    }
+  },
+  {
+    "request": {
+      "method": "POST",
+      "url": "https://api.github.com/graphql"
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json; charset=utf-8",
+        "x-github-media-type": "github.v4; format=json",
+        "x-ratelimit-limit": "5000",
+        "x-ratelimit-remaining": "4973",
+        "x-ratelimit-reset": "1791861313",
+        "x-ratelimit-resource": "graphql"
+      },
+      "body": "{\"data\":{\"__type\":{\"fields\":[{\"name\":\"abortQueuedMigrations\"},{\"name\":\"abortRepositoryMigration\"},{\"name\":\"acceptEnterpriseAdministratorInvitation\"},{\"name\":\"acceptEnterpriseMemberInvitation\"},{\"name\""
+    }
+  }
+]

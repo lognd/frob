@@ -1,0 +1,142 @@
+{
+  "sandbox": "throwaway private repository, deleted afterwards (or left if the token lacks delete_repo)",
+  "measured": "2026-10-13",
+  "facts": [
+    {
+      "id": "U1",
+      "verdict": "verified",
+      "finding": "Issue body maximum is 65,536 Unicode code points (not UTF-16 units, not bytes).",
+      "request": "POST /repos/{r}/issues with body of 65536 and 65537 'a'; 65536 two-byte chars; 32768 and 32769 astral chars.",
+      "response": "65536 chars: 201. 65537: 422 'body is too long (maximum is 65536 characters)'. 131072 bytes and 65538 UTF-16 units: 201.",
+      "fixture": "live/U1.json"
+    },
+    {
+      "id": "U2",
+      "verdict": "verified",
+      "finding": "Label name maximum is 50 characters; 51 is 422. Labels per issue and per repository were not exhausted (no limit observed in the runs; the per-issue 100 and per-repo limits stay unmeasured).",
+      "request": "POST /repos/{r}/labels with names of 50, 51 and 100 characters.",
+      "response": "50: 201. 51 and 100: 422 'name is too long (maximum is 50 characters)'.",
+      "fixture": "live/U2.json"
+    },
+    {
+      "id": "U3",
+      "verdict": "verified",
+      "finding": "Title: the validation message says maximum 256 but the API accepts up to 1024 characters and rejects 1025+; code must not rely on either number and should clamp to 256.",
+      "request": "POST /repos/{r}/issues with titles of 256, 257, 1024, 1025, 2048, 4096 characters.",
+      "response": "256, 257, 1024: 201. 1025 (bisected), 2048, 4096: 422 'title is too long (maximum is 256 characters)'.",
+      "fixture": "live/U3.json"
+    },
+    {
+      "id": "U4",
+      "verdict": "verified",
+      "finding": "Search index lag after creation was 3 s (HTML-comment token) and 11 s (visible token) in one run; text inside HTML comments is searchable. Never read your own write via search.",
+      "request": "POST issue with a unique visible token and a unique token inside an HTML comment, then poll GET /search/issues every 3 s.",
+      "response": "Both found; first hit at 3.1 s and 11.3 s after create.",
+      "fixture": "live/U4.json"
+    },
+    {
+      "id": "U5",
+      "verdict": "partial",
+      "finding": "UserContentEdit.diff holds the full revision text of the previous state, not a patch; edits are ordered newest first; edits 2 s apart were not coalesced; the original body is recorded as the last node. Edits by Apps were not testable with a user PAT.",
+      "request": "PATCH an issue body three times, then GraphQL repository.issue.userContentEdits(first:10){editedAt createdAt diff editor{login}}.",
+      "response": "Four nodes, newest first, each diff the full text; editor lognd on all.",
+      "fixture": "live/U5.json"
+    },
+    {
+      "id": "U6",
+      "verdict": "verified",
+      "finding": "Deleting a label emits an unlabeled event on each issue carrying it. Renaming a label emits no issue event and does not change issue updated_at.",
+      "request": "DELETE /repos/{r}/labels/dellab and PATCH new_name on renlab, then GET issue events and the issue.",
+      "response": "events: labeled, labeled, unlabeled(dellab); no event for the rename.",
+      "fixture": "live/U6.json"
+    },
+    {
+      "id": "U7",
+      "verdict": "partial",
+      "finding": "150 consecutive issue PATCHes at about 70 per minute produced no 403 or 429. Whether edits count toward 80/min or 500/h is not proven; they did not trip either limit at that pace.",
+      "request": "150 PATCH /repos/{r}/issues/{n} back to back (about 0.95 s each).",
+      "response": "All 200; first transcript stored.",
+      "fixture": "live/U7.json"
+    },
+    {
+      "id": "U8",
+      "verdict": "verified",
+      "finding": "Bodies written through the API are stored byte for byte (CRLF, trailing spaces and tabs preserved). Web-editor normalization was not compared.",
+      "request": "POST body 'a\\r\\nb\\nc  \\n\\td \\r\\n' then GET it back.",
+      "response": "Identical string returned.",
+      "fixture": "live/U8.json"
+    },
+    {
+      "id": "U9",
+      "verdict": "verified",
+      "finding": "Label application is case-insensitive: applying 'mixedcase' attaches the existing 'MixedCase'; creating a duplicate differing only in case is 422 already_exists.",
+      "request": "POST label MixedCase, POST issue with labels ['mixedcase'], POST label mixedcase.",
+      "response": "issue labels ['MixedCase']; duplicate create 422.",
+      "fixture": "live/U9.json"
+    },
+    {
+      "id": "U10",
+      "verdict": "unmeasurable",
+      "finding": "No public REST or GraphQL operation converts an issue to a discussion (mutation list has createDiscussion but no convert), so the status code could not be produced. Treat 404, 410 and 301 as gone or moved, per F6.",
+      "request": "GraphQL introspection of Mutation fields; GET of a nonexistent issue (404) recorded as the closest measurable case.",
+      "response": "No convert mutation; nonexistent issue 404.",
+      "fixture": "live/U10.json"
+    },
+    {
+      "id": "U11",
+      "verdict": "partial",
+      "finding": "The issues edited payload carries changes.title.from and changes.body.from, but not reliably: a combined title and body PATCH delivered only changes.body, and a title-only PATCH delivered body.from as an empty string next to title.from. Treat changes.* as a hint only.",
+      "request": "Workflow on issues:[edited] printing toJSON(github.event.changes); PATCH title and body, then title only.",
+      "response": "changes.body.from only; then changes.body.from='' plus changes.title.from.",
+      "fixture": "live/U11.json"
+    },
+    {
+      "id": "U12",
+      "verdict": "partial",
+      "finding": "A code span suppresses the issue autolink: no cross-referenced event was produced for `#N`, while plain #N produced one. Mention-notification suppression was not testable with a single account.",
+      "request": "POST issue bodies containing `#N` in a code span and #N plain; GET /issues/{N}/timeline after each.",
+      "response": "code span: []; plain: ['cross-referenced'].",
+      "fixture": "live/U12.json"
+    },
+    {
+      "id": "U13",
+      "verdict": "verified",
+      "finding": "An issue ETag changes on a new comment and on a reaction (If-None-Match then returns 200, not 304); an untouched issue returns 304.",
+      "request": "GET issue, conditional GET, POST comment, conditional GET, POST reaction, conditional GET.",
+      "response": "304, 200, 200.",
+      "fixture": "live/U13.json"
+    },
+    {
+      "id": "U14",
+      "verdict": "verified",
+      "finding": "updated_at does not advance when a repository-level label rename changes what the issue shows.",
+      "request": "PATCH /repos/{r}/labels/renlab new_name, GET issue before and after.",
+      "response": "updated_at identical; the issue shows the new name.",
+      "fixture": "live/U14.json"
+    },
+    {
+      "id": "U15",
+      "verdict": "partial",
+      "finding": "No dependency limit was reached: 60 blocked_by relations on one issue were accepted. The true limit is above 60 or absent.",
+      "request": "POST /repos/{r}/issues/{n}/dependencies/blocked_by 60 times with distinct issue_id.",
+      "response": "All accepted (first transcript stored).",
+      "fixture": "live/U15.json"
+    },
+    {
+      "id": "U16",
+      "verdict": "partial",
+      "finding": "retry-after on content-creation secondary limits was not observed: 150 comment creations at about 70 per minute never tripped a limit, and deliberately exceeding 80 per minute was not attempted to avoid an integration ban. Keep F3 handling (retry-after, else reset, else 60 s backoff).",
+      "request": "150 POST /repos/{r}/issues/{n}/comments back to back; GET /rate_limit.",
+      "response": "All 201; rate_limit transcript stored.",
+      "fixture": "live/U16.json"
+    }
+  ],
+  "extra": {
+    "nudge_repository_dispatch": {
+      "verdict": "verified",
+      "finding": "POST /dispatches from a workflow GITHUB_TOKEN needs contents: write (204); contents: read and no permissions both get 403. The receiving workflow needs no permissions.",
+      "request": "workflow_dispatch workflow with three jobs calling POST /repos/{r}/dispatches with permissions {}, contents:read, contents:write.",
+      "response": "none 403, read 403, write 204; PAT also 204; the repository_dispatch run succeeded."
+    }
+  }
+}
