@@ -2,7 +2,8 @@
 id = "01M4K8TMXWK93ZKAAFQE9W4M0D"
 title = "Wire the E-STATE-TRACKED guard into frob, grimble and crunk check runs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "Claude"
