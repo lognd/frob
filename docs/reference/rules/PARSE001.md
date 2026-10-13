@@ -114,13 +114,12 @@ fn g() {}
 
 ```rust
 let s = "// frob:bogus";
-// grimble:binds anything at all
 // see frob:ticket in the docs
 // plain comment: with a colon
 fn a() {}
 ```
 
-### PARSE001 malformed directive / Clean: markdown fenced code is not scanned #11 (line 99) (clean)
+### PARSE001 malformed directive / Clean: markdown fenced code is not scanned #11 (line 98) (clean)
 
 ````markdown
 # Title

@@ -4,103 +4,89 @@
 ## Rust: unknown atom in an effect set
 
 ```rust expect=fire
-/* frob:effects reads(src/a.rs::x) teleport */ // error: PARSE001
+/* grimble:effects reads(src/a.rs::x) teleport */ // error: PARSE001
 fn a() {}
 ```
 
 ## Rust: unclosed reads
 
 ```rust expect=fire
-/* frob:effects reads(src/a.rs::x */ // error: PARSE001
+/* grimble:effects reads(src/a.rs::x */ // error: PARSE001
 fn a() {}
 ```
 
 ## Rust: empty writes argument
 
 ```rust expect=fire
-/* frob:effects writes() */ // error: PARSE001
+/* grimble:effects writes() */ // error: PARSE001
 fn a() {}
 ```
 
 ## Rust: level keyword joined with an atom
 
 ```rust expect=fire
-/* frob:effects io clock */ // error: PARSE001
+/* grimble:effects io clock */ // error: PARSE001
 fn a() {}
 ```
 
 ## Rust: total with panic
 
 ```rust expect=fire
-/* frob:effects clock panic total */ // error: PARSE001
+/* grimble:effects clock panic total */ // error: PARSE001
 fn a() {}
 ```
 
 ## Rust: total alone
 
 ```rust expect=fire
-/* frob:effects total */ // error: PARSE001
+/* grimble:effects total */ // error: PARSE001
 fn a() {}
 ```
 
 ## Rust: empty effect set
 
 ```rust expect=fire
-/* frob:effects */ // error: PARSE001
+/* grimble:effects */ // error: PARSE001
 fn a() {}
 ```
 
-## Rust: pure takes no arguments
+## Rust: core takes no arguments
 
 ```rust expect=fire
-/* frob:pure now */ // error: PARSE001
-fn a() {}
-```
-
-## Rust: trusted needs a because
-
-```rust expect=fire
-/* frob:trusted */ // error: PARSE001
-fn a() {}
-```
-
-## Rust: hook takes one kind at most
-
-```rust expect=fire
-/* frob:hook route extra */ // error: PARSE001
+/* grimble:core now */ // error: PARSE001
 fn a() {}
 ```
 
 ## Rust: calls target is not a symref
 
 ```rust expect=fire
-/* frob:calls src/a.rs::f ::x */ // error: PARSE001
+/* grimble:calls src/a.rs::f ::x */ // error: PARSE001
 fn a() {}
 ```
 
 ## Clean: every valid effect set
 
 ```rust expect=clean
-// frob:effects none
+// grimble:effects none
 fn a() {}
 
-// frob:effects honest
+// grimble:effects honest
 fn b() {}
 
-// frob:effects io total
+// grimble:effects io total
 fn c() {}
 
-// frob:effects any
+// grimble:effects any
 fn d() {}
 
-// frob:effects clock rng env fs net stdio exit panic diverge
+// grimble:effects clock rng env fs net stdio exit panic diverge
 fn e() {}
 
-// frob:effects reads(src/a.rs::STATE) writes(src/b.rs::Cache.map) fs total
+// grimble:effects reads(src/a.rs::STATE) writes(src/b.rs::Cache.map) fs total
 fn f() {}
 ```
 
-## Clean: aliases and markers
+## Clean: deprecated spellings raise DSL003, not PARSE001
 
 ```rust expect=clean
 // frob:pure
@@ -135,7 +121,7 @@ fn i() {}
 
 ```rust expect=clean
 fn a(f: fn()) {
-    // frob:calls src/b.rs::run src/c.rs::Handler.handle
+    // grimble:calls src/b.rs::run src/c.rs::Handler.handle
     f();
 }
 ```
