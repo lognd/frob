@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-13T00:07:37Z"
-updated = "2026-10-13T03:10:04Z"
+updated = "2026-10-13T03:12:32Z"
 scope = ["crates/gob-dev/profile.toml"]
 
 [[acceptance]]
