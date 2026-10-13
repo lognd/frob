@@ -84,7 +84,7 @@ pub fn land_train(
         return Err(needs_action(
             "E-TRAIN-EMPTY",
             "no tickets were given",
-            "frob land --train <ticket>...",
+            "name at least one ticket to land as a train",
         ));
     }
     let repo = Repo::discover(root).map_err(|e| LandError::Config(e.to_string()))?;
