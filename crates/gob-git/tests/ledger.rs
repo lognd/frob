@@ -629,18 +629,23 @@ fn losing_sync_order_leaves_checkout_equal_to_head() {
     });
     ready_rx.recv().unwrap();
     // A's ref update lands first, but B fully syncs "new" before A syncs "old".
-    repo.commit_paths_traced(
-        MAIN,
-        &[change("tickets/t.md", "old\n")],
-        "a",
-        &opts(),
-        &mut |_| {},
-        &mut || {
-            go_tx.send(()).unwrap();
-            done_rx.recv().unwrap();
-        },
-    )
-    .unwrap();
+    let a_out = repo
+        .commit_paths_traced(
+            MAIN,
+            &[change("tickets/t.md", "old\n")],
+            "a",
+            &opts(),
+            &mut |_| {},
+            &mut || {
+                go_tx.send(()).unwrap();
+                done_rx.recv().unwrap();
+            },
+        )
+        .unwrap();
+    // frob:ticket 01M4DPJMH0KAMV38DMWTXC59AG
+    assert_eq!(a_out.unsynced.len(), 1, "the skipped path is reported");
+    assert_eq!(a_out.unsynced[0].paths_superseded, ["tickets/t.md"]);
+    assert!(a_out.unsynced[0].paths_with_local_edits.is_empty());
     b.join().unwrap();
     let head = repo.read_blob_at(MAIN, "tickets/t.md").unwrap().unwrap();
     assert_eq!(head, b"new\n");
@@ -706,4 +711,36 @@ fn a_held_index_lock_is_waited_out_and_the_write_succeeds() {
         "one\n"
     );
     assert!(!lock.exists(), "the lock is released");
+}
+
+// frob:ticket 01M4DPJMH0KAMV38DMWTXC59AG
+// frob:tests crates/gob-git/src/ledger.rs::Repo.commit_inner
+#[test]
+fn a_cas_retry_reruns_the_local_edit_check() {
+    let (dir, repo) = fixture();
+    let other = Repo::discover(dir.path()).unwrap();
+    let mut first = true;
+    let err = repo
+        .commit_paths_with(
+            MAIN,
+            &[change("tickets/z.md", "z\n")],
+            "z",
+            &opts(),
+            &mut |_| {
+                if std::mem::replace(&mut first, false) {
+                    // Lose the race, and edit the path locally while the writer backs off.
+                    other
+                        .commit_paths(MAIN, &[change("churn.md", "c\n")], "churn", &opts())
+                        .unwrap();
+                    std::fs::create_dir_all(dir.path().join("tickets")).unwrap();
+                    std::fs::write(dir.path().join("tickets/z.md"), "mine\n").unwrap();
+                }
+            },
+        )
+        .unwrap_err();
+    assert!(matches!(err, GitError::LocalEdits { .. }), "{err}");
+    assert_eq!(
+        std::fs::read(dir.path().join("tickets/z.md")).unwrap(),
+        b"mine\n"
+    );
 }

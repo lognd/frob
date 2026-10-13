@@ -84,6 +84,10 @@ pub struct UnsyncedCheckout {
     pub path: std::path::PathBuf,
     /// Changed paths whose local edits blocked the sync (they were left untouched).
     pub paths_with_local_edits: Vec<String>,
+    /// Changed paths not synced because a later write moved the tip past this one.
+    ///
+    /// The later writer owns the sync; if it fails, the checkout stays stale at these paths.
+    pub paths_superseded: Vec<String>,
 }
 
 /// One planned change: blob id and bytes, or deletion.
@@ -181,6 +185,9 @@ impl Repo {
         let attempts = opts.cas_retries.saturating_add(1);
         let lock_wait = index_lock_wait(opts.cas_retries);
         let mut retries = 0;
+        // Every tip tree this write has built on: a checkout may still show any of them
+        // while the winner of a lost CAS has not synced yet, and that is not a local edit.
+        let mut seen_bases: Vec<Oid> = Vec::new();
         for attempt in 0..attempts {
             let tip = self.read_ref(&full)?;
             debug!(ref_name = %full, attempt, tip = ?tip, "cas attempt");
@@ -188,8 +195,11 @@ impl Repo {
                 Some(t) => self.tree_of(&t)?.id,
                 None => Oid::empty_tree(self.gix.object_hash()),
             };
-            if checked_out && attempt == 0 {
-                let blocked = self.check_local_edits(&planned, base_tree)?;
+            // frob:ticket 01M4DPJMH0KAMV38DMWTXC59AG
+            // Re-checked on every attempt: edits can land while a lost CAS backs off.
+            seen_bases.push(base_tree);
+            if checked_out {
+                let blocked = self.check_local_edits(&planned, &seen_bases)?;
                 if let Some(path) = blocked.into_iter().next() {
                     return Err(GitError::LocalEdits { path });
                 }
@@ -220,10 +230,12 @@ impl Repo {
                 Ok(()) => {
                     info!(ref_name = %full, oid = %new_id, retries, paths = planned.len(), "ledger commit");
                     after_cas();
+                    let mut unsynced = Vec::new();
                     if checked_out {
-                        self.sync_checkout(&full, &planned, base_tree, lock_wait)?;
+                        unsynced.extend(self.sync_own(&full, &planned, base_tree, lock_wait)?);
                     }
-                    let unsynced = self.sync_other_checkouts(&full, &planned, base_tree, lock_wait);
+                    unsynced
+                        .extend(self.sync_other_checkouts(&full, &planned, base_tree, lock_wait));
                     return Ok(CommitOutcome {
                         oid: new_id,
                         retries,
@@ -357,10 +369,13 @@ impl Repo {
     fn check_local_edits(
         &self,
         planned: &[Planned<'_>],
-        base_tree: Oid,
+        bases: &[Oid],
     ) -> Result<Vec<String>, GitError> {
         let mut blocked = Vec::new();
-        let tree = self.gix.find_tree(base_tree).map_err(odb_err)?;
+        let trees = bases
+            .iter()
+            .map(|b| self.gix.find_tree(*b).map_err(odb_err))
+            .collect::<Result<Vec<_>, _>>()?;
         let fresh = self.fresh_gix()?;
         let index = fresh
             .index_or_empty()
@@ -368,10 +383,14 @@ impl Repo {
         // One shared filter pipeline for every planned path.
         self.with_worktree_reader(|reader| -> Result<(), GitError> {
             for p in planned {
-                let old = tree
-                    .lookup_entry_by_path(p.path.as_str())
-                    .map_err(odb_err)?
-                    .map(|e| e.object_id());
+                let mut olds = Vec::with_capacity(trees.len());
+                for tree in &trees {
+                    olds.push(
+                        tree.lookup_entry_by_path(p.path.as_str())
+                            .map_err(odb_err)?
+                            .map(|e| e.object_id()),
+                    );
+                }
                 let new = p.blob.as_ref().map(|(id, _)| *id);
                 let staged = index.entry_by_path(p.path.as_str().into()).map(|e| e.id);
                 // Shared normalization: filters applied, symlinks hashed as their target string.
@@ -386,7 +405,10 @@ impl Repo {
                     ),
                     None => None,
                 };
-                if [staged, disk].iter().any(|s| *s != old && *s != new) {
+                if [staged, disk]
+                    .iter()
+                    .any(|s| *s != new && !olds.contains(s))
+                {
                     warn!(path = %p.path, "local edits block ledger checkout update");
                     blocked.push(p.path.to_string());
                 }
@@ -394,6 +416,29 @@ impl Repo {
             Ok(())
         })??;
         Ok(blocked)
+    }
+
+    /// Sync this checkout; `Some` names the paths left behind because a later write superseded them.
+    fn sync_own(
+        &self,
+        full: &str,
+        planned: &[Planned<'_>],
+        base_tree: Oid,
+        lock_wait: Duration,
+    ) -> Result<Option<UnsyncedCheckout>, GitError> {
+        let superseded = self.sync_checkout(full, planned, base_tree, lock_wait)?;
+        if superseded.is_empty() {
+            return Ok(None);
+        }
+        warn!(
+            ?superseded,
+            "own checkout left behind the tip at superseded paths"
+        );
+        Ok(self.work_dir().map(|path| UnsyncedCheckout {
+            path: path.to_path_buf(),
+            paths_with_local_edits: Vec::new(),
+            paths_superseded: superseded,
+        }))
     }
 
     /// Sync every other worktree that has `full` checked out; report those blocked by local edits.
@@ -429,12 +474,15 @@ impl Repo {
                 continue;
             }
             match self.sync_one_other(full, &w.path, planned, old_tree, lock_wait) {
-                Ok(None) => info!(path = %w.path.display(), "checkout synced to new tip"),
-                Ok(Some(paths)) => {
-                    warn!(path = %w.path.display(), ?paths, "checkout left stale: local edits");
+                Ok((blocked, superseded)) if blocked.is_empty() && superseded.is_empty() => {
+                    info!(path = %w.path.display(), "checkout synced to new tip");
+                }
+                Ok((blocked, superseded)) => {
+                    warn!(path = %w.path.display(), ?blocked, ?superseded, "checkout left stale");
                     unsynced.push(UnsyncedCheckout {
                         path: w.path,
-                        paths_with_local_edits: paths,
+                        paths_with_local_edits: blocked,
+                        paths_superseded: superseded,
                     });
                 }
                 Err(e) => warn!(path = %w.path.display(), error = %e, "checkout sync failed"),
@@ -443,7 +491,7 @@ impl Repo {
         unsynced
     }
 
-    /// Sync the checkout at `path`; `Some(paths)` when local edits blocked it.
+    /// Sync the checkout at `path`; returns (paths blocked by local edits, paths superseded by a newer tip).
     fn sync_one_other(
         &self,
         full: &str,
@@ -451,13 +499,13 @@ impl Repo {
         planned: &[Planned<'_>],
         old_tree: Oid,
         lock_wait: Duration,
-    ) -> Result<Option<Vec<String>>, GitError> {
+    ) -> Result<(Vec<String>, Vec<String>), GitError> {
         let gix = gix::open(path).map_err(odb_err)?;
         let other = Repo {
             gix,
             runner: self.runner.clone(),
         };
-        let blocked = other.check_local_edits(planned, old_tree)?;
+        let blocked = other.check_local_edits(planned, &[old_tree])?;
         // frob:ticket 01M42MGNZZ1BY6YCG49BDHEZAT
         // Sync every unblocked path so a blocked sibling never
         // leaves the new paths staged-deleted in the other checkout.
@@ -469,14 +517,12 @@ impl Repo {
                 blob: p.blob,
             })
             .collect();
-        if !free.is_empty() {
-            other.sync_checkout(full, &free, old_tree, lock_wait)?;
-        }
-        if blocked.is_empty() {
-            Ok(None)
+        let superseded = if free.is_empty() {
+            Vec::new()
         } else {
-            Ok(Some(blocked))
-        }
+            other.sync_checkout(full, &free, old_tree, lock_wait)?
+        };
+        Ok((blocked, superseded))
     }
 
     /// Write files and stage entries for exactly the changed paths; nothing else in the index moves.
@@ -484,6 +530,7 @@ impl Repo {
     /// Under `index.lock` the ref tip is re-read and any path whose tip blob is no longer the
     /// one being written is skipped: a later writer owns it and syncs it itself, so applying
     /// this older write would leave worktree and index behind HEAD.
+    /// Returns the superseded paths that were skipped, so the caller can report them.
     // frob:ticket 01M4CTDZFRZP5SBAB0X84HHHVK
     fn sync_checkout(
         &self,
@@ -491,7 +538,8 @@ impl Repo {
         planned: &[Planned<'_>],
         old_tree: Oid,
         lock_wait: Duration,
-    ) -> Result<(), GitError> {
+    ) -> Result<Vec<String>, GitError> {
+        let mut superseded = Vec::new();
         let root = self.work_dir().expect("checked_out implies a worktree");
         let old = self.gix.find_tree(old_tree).map_err(odb_err)?;
         // Hold index.lock across read-modify-write so concurrent ledger writers
@@ -526,6 +574,7 @@ impl Repo {
             };
             if at_tip != p.blob.map(|(id, _)| id) {
                 info!(path = %p.path, "tip moved past this write; checkout sync skipped for path");
+                superseded.push(p.path.to_string());
                 continue;
             }
             let rel: &BString = &p.path.as_str().into();
@@ -565,8 +614,12 @@ impl Repo {
         index.sort_entries();
         index.remove_tree();
         write_index(&mut index, lock)?;
-        debug!(paths = planned.len(), "checkout index and worktree updated");
-        Ok(())
+        debug!(
+            paths = planned.len(),
+            skipped = superseded.len(),
+            "checkout index and worktree updated"
+        );
+        Ok(superseded)
     }
 }
 

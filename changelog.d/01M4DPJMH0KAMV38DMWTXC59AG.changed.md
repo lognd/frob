@@ -1,0 +1,1 @@
+gob-git ledger: a lost-CAS retry re-runs the local-edit check, and checkout paths skipped because a later write superseded them are reported in `UnsyncedCheckout::paths_superseded` instead of only logged.
