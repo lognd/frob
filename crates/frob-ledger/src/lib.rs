@@ -55,6 +55,7 @@
 //! consults (`frob-lease`). [`rules`] declares `TICK001` to `TICK005`, `TICK007`, `TICK008` and `TICK009` (`TICK004` is [`privacy`], a byte scan of committed ledger files, repaired by [`scrub`]; `TICK005` is the same scan for the local private terms of [`redact`]);
 //! `frob-check` supplies the ticket ids [`rules::tick002`] checks.
 
+pub mod backlog;
 pub mod branch;
 mod brief;
 pub mod config;

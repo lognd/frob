@@ -277,6 +277,9 @@ pub struct ListData {
     pub at: Option<Stamp>,
     /// The tickets, oldest first.
     pub tickets: Vec<ListRow>,
+    /// With `--tree`: the same tickets as a backlog hierarchy with roll-ups (`tickets` is then empty).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tree: Option<frob_ledger::backlog::Backlog>,
 }
 
 impl ListData {
@@ -284,6 +287,7 @@ impl ListData {
         Self {
             count: tickets.len(),
             at: None,
+            tree: None,
             tickets: tickets
                 .into_iter()
                 .map(|summary| ListRow {
@@ -306,6 +310,7 @@ impl ListData {
     idempotent = true,
     exits(ok, refused, usage, internal)
 )]
+#[allow(clippy::struct_excessive_bools)] // one bool per CLI switch
 pub struct List {
     category: Option<Category>,
     ty: Option<TicketType>,
@@ -315,6 +320,8 @@ pub struct List {
     at: Option<String>,
     all: bool,
     full: bool,
+    tree: bool,
+    depth: Option<usize>,
 }
 
 impl Command for List {
@@ -353,6 +360,16 @@ impl Command for List {
                 .action(ArgAction::SetTrue)
                 .help("Also emit every listed ticket's aliases and events, read in one pass"),
         )
+        .arg(
+            gob_cli::clap::Arg::new("tree")
+                .long("tree")
+                .action(ArgAction::SetTrue)
+                .help("The backlog as a parent hierarchy with points roll-ups and percent done"),
+        )
+        .arg(text_flag(
+            "depth",
+            "With --tree: show this many levels (1 = top only); deeper tickets fold into a count",
+        ))
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
@@ -365,6 +382,15 @@ impl Command for List {
             at: get(m, "at"),
             all: m.get_flag("all"),
             full: m.get_flag("full"),
+            tree: m.get_flag("tree"),
+            depth: get(m, "depth")
+                .map(|d| match d.parse::<usize>() {
+                    Ok(n) if n > 0 => Ok(n),
+                    _ => Err(CliError::Usage(format!(
+                        "--depth expects a positive number, got `{d}`"
+                    ))),
+                })
+                .transpose()?,
         })
     }
 
@@ -372,6 +398,16 @@ impl Command for List {
         if self.category != Some(Category::Triage) && (self.at.is_some() || self.all) {
             return Err(CliError::Usage(
                 "--at and --all apply only with --category triage".to_owned(),
+            ));
+        }
+        if self.depth.is_some() && !self.tree {
+            return Err(CliError::Usage(
+                "--depth applies only with --tree".to_owned(),
+            ));
+        }
+        if self.tree && (self.category == Some(Category::Triage) || self.full) {
+            return Err(CliError::Usage(
+                "--tree cannot combine with --full or --category triage".to_owned(),
             ));
         }
         let ledger = open(ctx)?;
@@ -392,6 +428,9 @@ impl Command for List {
         };
         let tickets = ledger.list(&filter).map_err(cli_err)?;
         tracing::debug!(count = tickets.len(), "ticket list");
+        if self.tree {
+            return Ok(self.tree_payload(ctx, &ledger, &tickets));
+        }
         let mut data = ListData::of(tickets);
         if self.full {
             fill_full(&ledger, &mut data)?;
@@ -418,6 +457,38 @@ fn fill_full(ledger: &frob_ledger::Ledger, data: &mut ListData) -> Result<(), Cl
 }
 
 impl List {
+    /// The `--tree` view of `tickets`: doable markers from the live-lease check, text rendered as an indented hierarchy.
+    // frob:ticket 01M48Q2A6GSSETPGKGJ6NJDNWV
+    fn tree_payload(
+        &self,
+        ctx: &Context,
+        ledger: &frob_ledger::Ledger,
+        tickets: &[Summary],
+    ) -> Payload<ListData> {
+        let (leases, warning) = lease_check(ctx);
+        let doable: std::collections::BTreeSet<TicketId> = match ledger.doable(&*leases) {
+            Ok(rows) => rows.into_iter().map(|s| s.id).collect(),
+            Err(e) => {
+                tracing::warn!(error = %e, "ticket list --tree: doable markers unavailable");
+                std::collections::BTreeSet::new()
+            }
+        };
+        let tree = frob_ledger::backlog::build(tickets, &doable, self.depth);
+        tracing::debug!(nodes = tree.len(), depth = ?self.depth, "ticket list --tree");
+        let rows = tree.render();
+        let payload = Payload::new(ListData {
+            count: tickets.len(),
+            at: None,
+            tickets: Vec::new(),
+            tree: Some(tree),
+        })
+        .with_rendered(rows);
+        match warning {
+            Some(w) => payload.with_warning(w),
+            None => payload,
+        }
+    }
+
     /// The triage inbox (snoozed tickets hidden until their date unless `--all`), as the old `ticket triage list` printed it.
     fn run_inbox(&self, ledger: &frob_ledger::Ledger, ctx: &Context) -> CliOutcome<ListData> {
         let at = self
@@ -443,6 +514,7 @@ impl List {
         Ok(Payload::new(ListData {
             count: entries.len(),
             at: Some(at),
+            tree: None,
             tickets: entries.into_iter().map(ListRow::from).collect(),
         }))
     }
@@ -533,6 +605,7 @@ fn newcomer_rows(
     Ok(ListData {
         count: rows.len(),
         at: None,
+        tree: None,
         tickets: rows,
     })
 }

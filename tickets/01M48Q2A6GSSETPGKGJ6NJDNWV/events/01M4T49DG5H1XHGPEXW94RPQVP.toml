@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2, 3]
+captured_at = "2026-10-13T07:49:40Z"
+digest = "a1533ab49e129be540af3440daee9fc2a44f351fbb205c7512675b4bdc4ee4ec"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8m 03s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a55beb4c-79f6-4061-a97a-da35ff8dd6de with nextest profile: default
+    Starting 1 test across 349 binaries (3053 tests skipped)
+        PASS [  12.143s] frob-cli::ticket list_tree_json_nests_children_and_filter_orphans_land_under_unparented
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  12.158s] 1 test run: 1 passed, 3053 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "list_tree_json_nests_children_and_filter_orphans_land_under_unparented"
+size = 639
+status = "measured"
+test_count = 1
+tests_digest = "d2fd4069713a8e5cc8d7a5cc8ef7d767305e82c2b4872ca92e99ef70a8204802"
+at = "2026-10-13T07:49:40Z"
+actor = "lognd"
+rev = 1
