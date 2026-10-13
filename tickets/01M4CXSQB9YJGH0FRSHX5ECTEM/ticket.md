@@ -2,7 +2,8 @@
 id = "01M4CXSQB9YJGH0FRSHX5ECTEM"
 title = "COH001 independent jobs: slice components with lo (May merged) and hi (Must only) bounds and extract-unit fix"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
