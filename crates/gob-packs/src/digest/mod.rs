@@ -135,6 +135,7 @@ fn check_links(md: &fs::Metadata, file: &str, rp: &str) -> Result<(), PackError>
 }
 
 #[cfg(not(unix))]
+#[allow(clippy::unnecessary_wraps)]
 fn check_links(_md: &fs::Metadata, _file: &str, _rp: &str) -> Result<(), PackError> {
     Ok(())
 }

@@ -8,12 +8,12 @@ points = 8
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:47:56Z"
-updated = "2026-10-13T05:19:48Z"
+updated = "2026-10-13T05:43:58Z"
 scope = ["crates/frob-land/**"]
 
 [[acceptance]]
 text = "landing N ready tickets whose scopes are disjoint runs one verification of the combined tree instead of N, and a failure lands the passing prefix, covered by a test with an injected failing ticket"
-bound = false
+bound = true
 +++
 
 design: GitHub merge queue, Bors and Zuul speculative execution are the public precedents. Disjoint leases already tell frob which tickets cannot conflict. Depends on the content-addressed result cache ticket.
