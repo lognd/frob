@@ -27,6 +27,7 @@
 //! ```
 
 mod activation;
+mod digest;
 mod error;
 mod limits;
 mod manifest;
@@ -34,6 +35,7 @@ pub mod tier1;
 mod validate;
 
 pub use activation::{Activation, Active, Enable};
+pub use digest::{Digest, to_hex, tree_digest};
 pub use error::{PackCode, PackError};
 pub use limits::{MAX_MANIFEST_BYTES, Owner};
 pub use manifest::{Manifest, PackTable, Provides, check_unique, load};
