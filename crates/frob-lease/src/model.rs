@@ -70,3 +70,35 @@ impl Lease {
         now.unix() < self.expires_at()
     }
 }
+
+/// A queued request for a scope that a live lease blocks, stored as `<ticket>.toml` in the waiters directory (frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ).
+///
+/// The waiter heartbeats while its `work --wait` process lives; a record not renewed for `ttl_secs` is dropped.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct Waiter {
+    /// The ticket waiting for its lease.
+    pub ticket: TicketId,
+    /// Who will hold the lease once granted.
+    pub holder: Holder,
+    /// Glob patterns the waiter needs free.
+    pub scope: Vec<String>,
+    /// When the waiter joined the queue (FIFO order key).
+    pub enqueued_at: Stamp,
+    /// Last heartbeat of the waiting process.
+    pub renewed_at: Stamp,
+    /// Seconds after `renewed_at` at which the waiter is presumed dead.
+    pub ttl_secs: u64,
+}
+
+impl Waiter {
+    /// True while `now` is before the heartbeat expiry.
+    pub fn is_live(&self, now: Stamp) -> bool {
+        let ttl = i64::try_from(self.ttl_secs).unwrap_or(i64::MAX);
+        now.unix() < self.renewed_at.unix().saturating_add(ttl)
+    }
+
+    /// Whole seconds spent in the queue as of `now`.
+    pub fn age_secs(&self, now: Stamp) -> i64 {
+        (now.unix() - self.enqueued_at.unix()).max(0)
+    }
+}

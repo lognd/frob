@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-08T04:53:28Z"
-updated = "2026-10-13T03:46:55Z"
+updated = "2026-10-13T03:59:35Z"
 scope = ["changelog.d/**", "crates/crunk-spec/**", "crates/crunk-tokens/**", "crates/crunk/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an existing crunk.toml palette, when compiled, then it yields the same tokens as before"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md section 2 (D109). Existing crunk.toml [palette]/[scales] stay valid as a view.

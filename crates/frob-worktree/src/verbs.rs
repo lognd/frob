@@ -223,6 +223,13 @@ impl Command for Work {
                     .conflicts_with("worktree")
                     .help("Lease the ticket for this checkout: no new worktree or branch"),
             )
+            .arg(
+                Arg::new("wait")
+                    .long("wait")
+                    .value_name("SECS")
+                    .value_parser(gob_cli::clap::value_parser!(u64))
+                    .help("Queue fairly for a blocked scope for up to SECS seconds instead of refusing"),
+            )
             .arg(steal_arg())
             .arg(unplanned_arg())
             .arg(reason_arg(
@@ -238,6 +245,7 @@ impl Command for Work {
                 worktree: m.get_one::<PathBuf>("worktree").cloned(),
                 steal,
                 unplanned,
+                wait_secs: m.get_one::<u64>("wait").copied().unwrap_or(0),
                 sprint_gate: false,
             },
             here: m.get_flag("here"),

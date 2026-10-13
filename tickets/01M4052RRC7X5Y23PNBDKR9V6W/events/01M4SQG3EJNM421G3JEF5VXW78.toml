@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-13T04:14:24Z"
+digest = "95a136da6a93868ffa6686b93b584d91259db52f4b353e82d096ad61114fab45"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.74s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4d8f0aae-0073-4ed4-966f-bf2719297501 with nextest profile: default
+    Starting 3 tests across 340 binaries (2988 tests skipped)
+        PASS [   0.011s] frob-mirror budget::tests::missing_headers_stop_with_reason
+        PASS [   0.011s] frob-mirror budget::tests::below_one_ticket_is_too_small
+        PASS [   0.012s] frob-mirror budget::tests::default_share_caps_calls_creates_and_mutations
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.032s] 3 tests run: 3 passed, 2988 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "budget::tests"
+size = 739
+status = "measured"
+test_count = 3
+tests_digest = "e4aa801582aec4592bfd51d01d43450d05e69e8feb94b03f4af7a2d1743fe597"
+at = "2026-10-13T04:14:24Z"
+actor = "lognd"
+rev = 1

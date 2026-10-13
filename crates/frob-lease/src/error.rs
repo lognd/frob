@@ -28,6 +28,20 @@ pub enum LeaseError {
         /// The globs or files that collide, comma separated.
         overlap: String,
     },
+    /// An earlier waiter is queued for an overlapping scope; the caller must not jump the queue.
+    #[error(
+        "E-LEASE-QUEUED: ticket {waiter} ({holder}) has waited {age_secs}s for an overlapping scope; overlap: {overlap}"
+    )]
+    Queued {
+        /// The queued ticket that goes first.
+        waiter: TicketId,
+        /// Who is waiting.
+        holder: Box<Holder>,
+        /// Seconds it has been queued.
+        age_secs: i64,
+        /// The globs or files that collide, comma separated.
+        overlap: String,
+    },
     /// The holder already owns its limit of live leases.
     #[error("E-LEASE-WIP: {holder} already holds {count} live leases (limit {limit})")]
     WipLimit {
@@ -106,6 +120,7 @@ impl LeaseError {
         use RefusalClass::{GuardNeedsAction, GuardRetryByWaiting, Timeout};
         let code = match self {
             Self::Held { .. } => ("E-LEASE-HELD", GuardRetryByWaiting),
+            Self::Queued { .. } => ("E-LEASE-QUEUED", GuardRetryByWaiting),
             Self::WipLimit { .. } => ("E-LEASE-WIP", GuardNeedsAction),
             Self::NotHeld { .. } => ("E-LEASE-NONE", GuardNeedsAction),
             Self::LockTimeout { .. } => ("E-LEASE-LOCK-TIMEOUT", Timeout),
