@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T03:31:45Z"
+digest = "652e73fdf247f722ca8861518e4229d4a9190acaf0f79f08ff4f09001b7bd8ad"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.94s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 18efac57-5794-4199-8038-eea6542d95fc with nextest profile: default
+    Starting 1 test across 340 binaries (2992 tests skipped)
+        PASS [   1.826s] frob-worktree::work wait_times_out_cleanly_and_a_queued_waiter_blocks_overlapping_work
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.863s] 1 test run: 1 passed, 2992 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "wait_times_out_cleanly"
+size = 583
+status = "measured"
+test_count = 1
+tests_digest = "dc0e1db938b1f9398250560fcea132e238b3f1a3325ee2b205492697c7fdd592"
+at = "2026-10-13T03:31:45Z"
+actor = "lognd"
+rev = 1
