@@ -2,13 +2,13 @@
 id = "01M4D6NSXSZXY4G6282RSHJV4M"
 title = "CLI test for work --unplanned --reason parsing"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T07:29:36Z"
-updated = "2026-10-08T07:29:36Z"
+updated = "2026-10-13T20:40:24Z"
 scope = ["changelog.d/**", "crates/frob/**"]
 
 [[acceptance]]

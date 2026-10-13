@@ -279,6 +279,21 @@ every OS-specific term (needs term, probe commands); a Windows host
 (`--remote-os windows`) is one more variant there, deliberately not built.
 CI never sets the variable.
 
+### Dev channel release and the tag-move 403 (~J6DA5EV)
+
+The `dev` job keeps one prerelease whose tag follows the last tested sha. Moving the tag
+with `PATCH git/refs/tags/dev` is refused to the job token with 403 "Resource not
+accessible by integration" whenever the diff between the old tag target and the new sha
+touches `.github/workflows/**`: updating a ref that carries a workflow-file change needs
+the `workflows` permission, which cannot be granted to `GITHUB_TOKEN`. The earlier old-tag-diff
+hypothesis was refuted by the post-land run (~1QDWWPS follow-up), so this cause is the
+documented one (docs.github.com) and is not yet reproduced on a throwaway ref. The job therefore deletes the tag ref, which
+turns the release into a draft, and republishes it with `--target`; Releases API writes
+are not subject to the workflows check. Because `gh release view dev` needs the tag, the
+ensure step now finds a draft by `tag_name` in the releases list and publishes it before
+the tag-based steps run. Pinning the cause on a throwaway ref needs a write to the real
+repository and is tracked as a follow-up.
+
 ### Command profile (~RWD03DW)
 
 `cargo dev profile` times every leaf command of `frob`, `grimble` and

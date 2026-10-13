@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T19:51:06Z"
+digest = "6ddf7f578454ccb677b7933a71479b260ee074048138da2ecd8d5cf0807defde"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 47.63s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a3af8bbb-9d87-42ed-90da-ea5bb9eeaa73 with nextest profile: default
+    Starting 2 tests across 5 binaries (63 tests skipped)
+        PASS [   0.151s] gob-cache::shared a_warm_primary_cache_seeds_the_shared_one_once
+        PASS [   0.485s] frob-worktree::work work_seeds_the_shared_cache_from_a_warm_primary
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.502s] 2 tests run: 2 passed, 63 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-cache -p frob-worktree -E 'test(seed)'"
+size = 757
+status = "measured"
+test_count = 2
+tests_digest = "d79b29514dfa3bc2c3bbe2888192619cb2e83b3d2b3f04f4d4528621b878081b"
+at = "2026-10-13T19:51:06Z"
+actor = "lognd"
+rev = 1
