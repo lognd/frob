@@ -8,12 +8,12 @@ points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T07:29:40Z"
-updated = "2026-10-13T19:00:31Z"
+updated = "2026-10-13T19:05:44Z"
 scope = ["changelog.d/**", "crates/frob-gh/**", "Cargo.toml"]
 
 [[acceptance]]
 text = "Given the decision, when recorded, then frob-gh is either consumed or deleted with a dropped-ticket note"
-bound = false
+bound = true
 +++
 
 ~GHMWDGG chose frob-release::ci over frob-gh; frob-gh has no consumer.
