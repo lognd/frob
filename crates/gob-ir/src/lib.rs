@@ -60,6 +60,7 @@ pub(crate) fn idx32(n: usize) -> u32 {
 mod answer;
 mod attrs;
 pub mod const_value;
+mod defuse;
 mod digest;
 pub mod eval;
 mod location;
@@ -76,6 +77,7 @@ mod term;
 
 pub use answer::{Answer, Truth};
 pub use attrs::{AttrValue, Attributes, reserved};
+pub use defuse::{DefUseEdge, DefUseSyntax, MayCause, def_use};
 pub use digest::{DIGEST_SCHEME, Digest, Facet, FacetDigest};
 pub use eval::{
     Ctx, EvalConfig, EvalError, Observation, Poison, PoisonReason, Polarity, Relation, RuleOutcome,

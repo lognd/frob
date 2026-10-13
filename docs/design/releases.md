@@ -328,6 +328,13 @@ part of the job's design:
   `[release] require_ci` defaults to true, also a blocker (false reports it
   as Unresolved only). `release cut` runs the same gate, so a red tip cannot
   be cut without `--override`.
+- **Release-tier findings in `release status`.** When `crunk.toml` exists,
+  `crunk check --gate release --json` runs (sibling lookup, 300 s cap) and
+  every HUMAN error finding (a stale human review, D120 area) becomes a
+  `release-tier` blocker, so `release cut` refuses without `--override
+  --reason`. A gate that cannot run or print JSON is an Unresolved line
+  ("release-tier findings"), never a silent pass; no `crunk.toml` is not
+  applicable.
 - **Owner actions before the first publish.** Configure trusted
   publishing on PyPI (`frob`) and, once the first publish has created the
   crates, on crates.io (the first publish uses a token in the release

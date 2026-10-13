@@ -450,6 +450,17 @@ readonly = true
 exit = [0, 3]
 budget_ms = 500
 
+# frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+[scenario."crunk review"]
+args = ["review"]
+readonly = true
+exit = [0, 1, 3]
+budget_ms = 500
+
+# frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+[scenario."crunk ack"]
+skip = "records a person's review in crunk.lock and refuses without a terminal, so it is not safe or meaningful to time against the repo fixture; covered by crates/crunk/tests/review.rs"
+
 [scenario."crunk tokens"]
 args = ["tokens", "--check"]
 readonly = true

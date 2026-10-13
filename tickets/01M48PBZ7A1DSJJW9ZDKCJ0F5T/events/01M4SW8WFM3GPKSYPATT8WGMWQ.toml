@@ -1,0 +1,51 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-13T05:37:50Z"
+digest = "54c278a64fd44d1e9dfcb8fed163e6ada27709fa92ed3c46782389bf5457c9cc"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.41s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 72162e6e-ebe0-4f3f-acae-a11e808648f3 with nextest profile: default
+    Starting 27 tests across 3 binaries (340 binaries skipped)
+        PASS [   0.029s] gob-mdtest parse::tests::bare_marker_takes_the_default_rule
+        PASS [   0.051s] gob-mdtest parse::tests::own_line_and_stacked_markers_target_the_next_non_marker_line
+        PASS [   0.051s] gob-mdtest parse::tests::malformed_markers_are_parse_errors
+        PASS [   0.051s] gob-mdtest::coverage allowlist_hides_a_gap_and_only_shrinks
+        PASS [   0.051s] gob-mdtest::coverage allowlist_file_rejects_a_missing_ticket
+        PASS [   0.049s] gob-mdtest::coverage pair_covers_and_removing_it_fails_naming_the_rule
+        PASS [   0.051s] gob-mdtest::coverage fixture_needs_its_snapshot
+        PASS [   0.057s] gob-mdtest parse::tests::unresolved_takes_reason_and_required
+        PASS [   0.062s] gob-mdtest parse::tests::trailing_marker_with_column_rule_and_message
+        PASS [   0.066s] gob-mdtest::coverage allowlist_entry_needs_a_ticket_handle
+        PASS [   0.043s] gob-mdtest::coverage the_checked_in_allowlist_parses
+        PASS [   0.073s] gob-mdtest parse::tests::plain_comments_and_words_are_not_markers
+        PASS [   0.036s] gob-mdtest::selftest differing_unresolved_reason_fails
+        PASS [   0.037s] gob-mdtest::selftest fail_dir_reports_every_file
+        PASS [   0.037s] gob-mdtest::selftest expected_unresolved_but_got_error_fails
+        PASS [   0.023s] gob-mdtest::selftest wrong_column_fails_showing_both_columns
+        PASS [   0.013s] gob-mdtest::selftest wrong_line_fails_showing_both_lines
+        PASS [   0.031s] gob-mdtest::selftest own_line_marker_applies_to_the_next_line_even_if_blank
+        PASS [   0.059s] gob-mdtest::selftest mdtest_corpus
+        PASS [   0.059s] gob-mdtest::selftest a_runner_may_return_a_rule_report
+        PASS [   0.029s] gob-mdtest::selftest wrong_message_fails_showing_both_messages
+        PASS [   0.117s] gob-mdtest::coverage fire_without_clean_is_not_coverage
+        PASS [   0.060s] gob-mdtest::selftest mdtest_ext_forms
+        PASS [   0.040s] gob-mdtest::selftest wrong_rule_in_a_marker_fails
+        PASS [   0.095s] gob-mdtest::selftest missing_control_fails_naming_rule
+        PASS [   0.215s] gob-mdtest::selftest mdtest_snapshots
+        PASS [   0.238s] gob-mdtest::selftest changed_rendering_fails_with_snapshot_mismatch
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.293s] 27 tests run: 27 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'package(gob-mdtest)'"
+size = 2775
+status = "measured"
+test_count = 27
+tests_digest = "5d75706fbb5702e13360bc58e19b49b1dfb46fcbac4727607a920fc6dca9de33"
+at = "2026-10-13T05:37:50Z"
+actor = "lognd"
+rev = 1

@@ -2,13 +2,14 @@
 id = "01M4052SZYWSD45GEYNTTTJMDB"
 title = "Ledger: proposal event kinds, fold and the tickets.md 2a table"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-13T04:20:45Z"
+updated = "2026-10-13T04:20:47Z"
 idempotency_key = "m2-mirror2-ledger-proposal-events"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/proposal.rs", "crates/frob-ledger/src/fold.rs", "docs/design/tickets.md", "crates/frob-ledger/src/lib.rs"]

@@ -188,6 +188,24 @@ Where managed CSS and generated tokens live. Required.
 | `root_font_size` | number | yes | `-` | Pixels per `rem`, used to compare `rem` lengths against the px scales. |
 | `tokens_file` | string | yes | `-` | The generated tokens file, relative to `css_root`. This is the one `*_file` key that resolves against `css_root`; every other `*_file` key resolves against the project root. |
 
+## `[review]`
+
+The `[review]` table: the human review lock policy.
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| `require_signed` | boolean | no | `false` | When true, the commit that introduced an ack must carry a good signature from a key listed for a reviewer, else HUMAN001 fires. |
+| `reviewers` | array of table | no | `[]` | Allow-list of reviewers; empty means any identity may ack. |
+
+## `[[review.reviewers]]`
+
+One `[[review.reviewers]]` entry: who may ack, and the signing keys their acks may carry.
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| `id` | string | yes | `-` | The reviewer identity, matched against the git `user.email` (or `user.name`) at ack time. |
+| `keys` | array of string | no | `[]` | Signing key ids or fingerprints the reviewer's signed commits may carry. |
+
 ## `[scales]`
 
 Allowed px scales. Required.
@@ -208,6 +226,9 @@ One `[[screen]]` entry: a route, page or activity with named states.
 | `applies_to` | array of string | no | `-` | Platform ids and `tag:<name>` entries the screen applies to; absent means every platform. |
 | `entry` | string | yes | `-` | Entry route, page or activity. |
 | `id` | string | yes | `-` | Screen id, unique across `[[screen]]`. |
+| `provenance` | `human` or `agent` | no | `-` | Who authored a screen. |
+| `review` | `human` or `skip` | no | `-` | Whether a screen needs a recorded human review. |
+| `sources` | array of string | no | `-` | Source files or directories (relative to the project root) whose bytes and token uses the review digest covers; absent means only the spec and every token. |
 | `states` | array of table | yes | `-` | Named states, at least one. |
 
 ## `[[screen.states]]`

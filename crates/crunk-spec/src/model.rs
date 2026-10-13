@@ -11,8 +11,8 @@ use serde::{Serialize, Serializer};
 
 use crate::catalog::{Severity, default_severity};
 use crate::table::{
-    Engine, JsxConfig, MediaFeatures, NetworkThrottle, OrgConfig, ProjectConfig, RosterEntry,
-    ScalesConfig, ScreenConfig, TailwindConfig, TypographyConfig, Viewport,
+    Engine, JsxConfig, MediaFeatures, NetworkThrottle, OrgConfig, ProjectConfig, ReviewConfig,
+    RosterEntry, ScalesConfig, ScreenConfig, TailwindConfig, TypographyConfig, Viewport,
 };
 
 /// One `[palette.roles]` entry: a foreground and background palette name plus a contrast floor.
@@ -198,6 +198,10 @@ pub struct DesignSpec {
     pub sessions: IndexMap<String, RosterEntry>,
     /// `[[mock_set]]` by id.
     pub mock_sets: IndexMap<String, RosterEntry>,
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    /// `[review]`: the human review lock policy.
+    #[serde(skip_serializing_if = "ReviewConfig::is_default")]
+    pub review: ReviewConfig,
 }
 
 fn serialize_palette<S: Serializer>(

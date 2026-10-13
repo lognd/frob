@@ -1,0 +1,28 @@
+---
+source: crates/gob-symbols/tests/def_use.rs
+expression: "render(\"flow.ts\", \"typescript\", include_str!(\"fixtures/def_use/flow.ts\"))"
+---
+a        param -> L11  must
+a        param -> L2   must
+b        param -> L3   must
+c           L7 -> L14  must
+i          L11 -> L11  must
+i          L11 -> L12  must
+this.v      L5 -> L6   may(attribute)
+x           L2 -> L4   must
+x           L2 -> L5   must
+x           L2 -> L7   may(closure)
+x           L2 -> L8   must
+x        param -> L7   may(closure)
+y           L3 -> L7   may(closure)
+y           L4 -> L12  must
+y           L4 -> L14  must
+y           L4 -> L7   may(closure)
+y           L9 -> L12  must
+y           L9 -> L14  must
+y           L9 -> L7   may(closure)
+y          L12 -> L12  must
+y          L12 -> L14  must
+y          L12 -> L7   may(closure)
+y        param -> L7   may(closure)
+z           L6 -> L14  must
