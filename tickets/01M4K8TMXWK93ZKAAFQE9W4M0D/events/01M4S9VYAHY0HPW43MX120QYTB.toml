@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-13T00:16:15Z"
+digest = "c0c34941c7de672ae780bb50ab955f64b5132d5602ed8fba517630e105ea36ff"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e549612a-5e45-4d8f-b66f-07fad85d8ac0 with nextest profile: default
+    Starting 1 test across 48 binaries (315 tests skipped)
+        PASS [   0.076s] frob-cli product::check_refuses_exit_3_when_git_tracks_a_state_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.078s] 1 test run: 1 passed, 315 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(/check_refuses_exit_3_when_git_tracks_a_state_file/)"
+size = 561
+status = "measured"
+test_count = 1
+tests_digest = "ed7fb3e60f4a3fc3eeac326a1a1706ba71f85ece9bd95ab719dd451a18c8ddf2"
+at = "2026-10-13T00:16:15Z"
+actor = "lognd"
+rev = 1
