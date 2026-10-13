@@ -2,13 +2,13 @@
 id = "01M4CXT0CB3JA23T20J1CTEKYZ"
 title = "Directive admission (D120): merge into grimble:effects, rename core/shell/calls to grimble:, drop pure/honest/dispatcher/trusted/idempotent/hook, admission registry test"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:36Z"
-updated = "2026-10-08T04:54:36Z"
+updated = "2026-10-13T04:42:32Z"
 scope = ["changelog.d/**", "crates/gob-directives/**", "crates/grimble-check/**", "crates/gob-check/**"]
 
 [[acceptance]]
