@@ -530,12 +530,14 @@ version = "0.532.0"
 dependencies = [
  "assert_cmd",
  "crunk-check",
+ "crunk-rules",
  "crunk-spec",
  "crunk-tokens",
  "gob-check",
  "gob-cli",
  "gob-config",
  "gob-git",
+ "gob-lock",
  "gob-product",
  "jsonschema",
  "schemars",
@@ -550,17 +552,22 @@ dependencies = [
 name = "crunk-check"
 version = "0.532.0"
 dependencies = [
+ "blake3",
  "crunk-ingest",
  "crunk-rules",
  "crunk-spec",
  "crunk-tailwind",
+ "crunk-tokens",
  "gob-cache",
  "gob-check",
  "gob-config",
  "gob-diagnostics",
+ "gob-exec",
+ "gob-lock",
  "gob-mdtest",
  "gob-rules",
  "gob-text",
+ "serde",
  "serde_json",
  "tempfile",
  "tracing",
@@ -595,12 +602,14 @@ dependencies = [
 name = "crunk-rules"
 version = "0.532.0"
 dependencies = [
+ "blake3",
  "crunk-ingest",
  "crunk-spec",
  "crunk-tailwind",
  "crunk-tokens",
  "crunk-values",
  "gob-cache",
+ "gob-lock",
  "gob-mdtest",
  "gob-rules",
  "gob-text",
@@ -2649,6 +2658,7 @@ version = "0.532.0"
 dependencies = [
  "blake3",
  "globset",
+ "gob-ir",
  "proptest",
  "serde",
  "tempfile",

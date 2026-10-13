@@ -217,6 +217,18 @@ platform, a component variant, a flow, a copy deck, a token mode.
   agent-authored subjects default to `review = "human"`, because
   generation now outpaces evaluation (NN/g on the custodial era of UX
   and on design systems needing an enforcer with veto).
+- As built: reviewers and the signature policy live in `crunk.toml`
+  `[review]` (`reviewers` with `key` fingerprints, `require_signed`), since
+  gob-trust holds no signature keys. `crunk check --gate release` raises
+  HUMAN001/HUMAN002 to Error (`--gate check` is the default); findings are
+  anchored at `crunk.toml`. `crunk review` lists stale subjects, `crunk ack
+  SUBJECT... | --all-stale` records `[[review]]` rows in `crunk.lock` and
+  refuses with `E-ACK-NO-TTY` without a terminal unless `--non-interactive`.
+  `require_signed` is judged from `git log -S<digest> -- crunk.lock`, the
+  commit that introduced the entry, so an ack is not valid until committed.
+  `frob release status` runs `crunk check --gate release` when `crunk.toml`
+  exists and reports HUMAN errors as `release-tier` blockers.
+
 - Mass changes stay reviewable: a re-ack may cover many subjects at once
   (`crunk ack --all-changed-by TOKEN`), each still recorded with its own
   digest.

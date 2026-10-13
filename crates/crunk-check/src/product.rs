@@ -33,6 +33,9 @@ pub struct CrunkInputs {
     pub styles: Option<ProjectStyles>,
     /// The Tailwind theme and compiled utilities; `None` when there are no styles to scan.
     pub tailwind: Option<TailwindFacts>,
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    /// Judged human-review subjects (crunk.md 4.1); `None` when there is no spec.
+    pub reviews: Option<crunk_rules::review::ReviewFacts>,
 }
 
 impl CrunkHost for CrunkInputs {
@@ -46,6 +49,11 @@ impl CrunkHost for CrunkInputs {
 
     fn tailwind(&self) -> Option<&TailwindFacts> {
         self.tailwind.as_ref()
+    }
+
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    fn reviews(&self) -> Option<&crunk_rules::review::ReviewFacts> {
+        self.reviews.as_ref()
     }
 }
 
@@ -128,12 +136,17 @@ impl Product for Crunk {
             .as_ref()
             .zip(styles.as_ref())
             .map(|(spec, styles)| crate::tailwind::collect(spec, styles, &self.state_dir()));
+        // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+        let reviews = spec.as_ref().map(|spec| {
+            crate::review::gather(spec, &crate::review::GitSignatures::new(&cx.core.root))
+        });
         Ok(Collected {
             shared: CrunkShared,
             inputs: CrunkInputs {
                 spec,
                 styles,
                 tailwind,
+                reviews,
             },
             findings: Vec::new(),
         })
@@ -158,6 +171,10 @@ impl Product for Crunk {
         }
         if let Some(facts) = &snap.inputs.tailwind {
             digest.extend(facts.fingerprint().into_bytes());
+        }
+        if let Some(facts) = &snap.inputs.reviews {
+            // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+            digest.extend(format!("{facts:?}").into_bytes());
         }
         if let Some(spec) = &snap.inputs.spec {
             // TOKENS001 reads the generated files from disk, outside the walk.

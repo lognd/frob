@@ -15,7 +15,7 @@
 
 // frob:ticket 01M43ATASM383KB9130JY79XVV
 
-use gob_rules::{RuleDef, Severity};
+use gob_rules::{Finding, RuleDef, Severity};
 
 /// The check tier that can decide a family (crunk.md section 4).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -43,9 +43,10 @@ impl CheckTier {
 }
 
 /// Where a finding is being judged: the everyday check or the release gate.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub enum Gate {
     /// `crunk check`, `frob check`, local runs and CI.
+    #[default]
     Check,
     /// `crunk check --gate release` and `frob release`.
     Release,
@@ -242,6 +243,30 @@ pub fn gate_severity(def: &RuleDef, gate: Gate) -> Severity {
     };
     tracing::trace!(rule = def.id, ?gate, ?severity, "gate severity resolved");
     severity
+}
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+/// Give every resolved finding of a family with a `release_severity` that severity at the release
+/// gate; at [`Gate::Check`] nothing changes.
+pub fn apply_gate(findings: &mut [Finding], gate: Gate) {
+    if gate != Gate::Release {
+        return;
+    }
+    for f in findings
+        .iter_mut()
+        .filter(|f| f.severity != Severity::Unresolved)
+    {
+        let prefix = f
+            .rule
+            .as_str()
+            .trim_end_matches(|c: char| c.is_ascii_digit());
+        if let Some(sev) = family(prefix).and_then(|row| row.release_severity)
+            && sev != f.severity
+        {
+            tracing::debug!(rule = %f.rule, from = ?f.severity, to = ?sev, "release gate raises severity");
+            f.severity = sev;
+        }
+    }
 }
 
 /// True when a `crunk:waive` for `rule_id` may silence anything (its family is waivable).

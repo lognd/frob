@@ -11,6 +11,7 @@
 // frob:ticket 01M47QSGHYD2EQ4552V1B4EEQZ
 
 pub mod doctor;
+pub mod review;
 pub mod tokens;
 
 use std::path::Path;
@@ -52,7 +53,7 @@ impl Product for CrunkProduct {
         ctx: &Context,
         root: &Path,
         opts: &CheckOptions,
-        _matches: &ArgMatches,
+        matches: &ArgMatches,
     ) -> Outcome<Value> {
         let run = crunk_check::run(
             root,
@@ -61,6 +62,16 @@ impl Product for CrunkProduct {
                 fail_on: opts.fail_on,
                 base: opts.base.clone(),
                 ticket_scope: opts.ticket_scope.clone(),
+                // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+                gate: match matches
+                    .try_get_one::<String>("gate")
+                    .ok()
+                    .flatten()
+                    .map(String::as_str)
+                {
+                    Some("release") => crunk_rules::family::Gate::Release,
+                    _ => crunk_rules::family::Gate::Check,
+                },
             },
         )
         .map(|run| {
@@ -74,12 +85,25 @@ impl Product for CrunkProduct {
         gob_product::sibling_check(Self::NAME, ctx, run)
     }
 
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    fn configure_check(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        gob_product::shared_flags(cmd).arg(
+            gob_cli::clap::Arg::new("gate")
+                .long("gate")
+                .value_name("GATE")
+                .value_parser(["check", "release"])
+                .help("Judge for this gate; release raises stale human reviews to errors"),
+        )
+    }
+
     fn doctor(_ctx: &Context, root: &Path, _matches: &ArgMatches) -> Outcome<doctor::DoctorData> {
         Ok(doctor::report(root))
     }
 
     fn register(cli: Cli) -> Cli {
         cli.register::<tokens::Tokens>()
+            .register::<review::Review>()
+            .register::<review::Ack>()
     }
 }
 
