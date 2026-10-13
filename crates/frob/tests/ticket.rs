@@ -825,3 +825,51 @@ fn handle_ulid_and_alias_still_resolve() {
         assert_eq!(code(&repo.frob(&["ticket", "show", arg])), 0, "{arg}");
     }
 }
+
+// frob:ticket 01M48Q2A6GSSETPGKGJ6NJDNWV
+#[test]
+fn list_tree_json_nests_children_and_filter_orphans_land_under_unparented() {
+    let repo = Repo::new(false);
+    let epic = repo.id_of(&["ticket", "new", "--title", "Epic", "--type", "epic"]);
+    let child = repo.id_of(&[
+        "ticket", "new", "--title", "Child", "--parent", &epic, "--points", "3", "--label", "kid",
+    ]);
+    let tree = repo.ok(&["ticket", "list", "--tree"]);
+    let roots = tree["data"]["tree"]["roots"].as_array().expect("roots");
+    assert_eq!(roots.len(), 1);
+    assert_eq!(roots[0]["rollup_points"], 3);
+    assert_eq!(roots[0]["percent_done"], 0);
+    assert_eq!(roots[0]["children"][0]["id"], child.as_str());
+    assert_eq!(
+        tree["data"]["tree"]["unparented"]
+            .as_array()
+            .expect("u")
+            .len(),
+        0
+    );
+
+    let folded = repo.ok(&["ticket", "list", "--tree", "--depth", "1"]);
+    assert_eq!(folded["data"]["tree"]["roots"][0]["folded"], 1);
+
+    let filtered = repo.ok(&["ticket", "list", "--tree", "--label", "kid"]);
+    assert_eq!(
+        filtered["data"]["tree"]["roots"]
+            .as_array()
+            .expect("r")
+            .len(),
+        0
+    );
+    assert_eq!(
+        filtered["data"]["tree"]["unparented"][0]["id"],
+        child.as_str()
+    );
+
+    let text = common::frob_command()
+        .current_dir(repo.path())
+        .env_remove("FROB_LOG")
+        .args(["ticket", "list", "--tree", "--text", "--label", "kid"])
+        .output()
+        .expect("run frob");
+    assert!(String::from_utf8_lossy(&text.stdout).contains("Unparented"));
+    assert_eq!(code(&repo.frob(&["ticket", "list", "--depth", "2"])), 2);
+}

@@ -857,3 +857,17 @@ fn review_table_and_screen_review_fields_load_and_validate() {
     assert!(detail(&err(&with("[[review.reviewers]]\nid = \"\"\n"))).contains("id must not"));
     assert!(ok(full()).review.is_default());
 }
+
+// frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
+// frob:tests crates/crunk-spec/src/validate.rs::decisions
+#[test]
+fn decisions_table_declares_known_decisions_with_reasons() {
+    let spec = ok(&with("[decisions]\nfonts = \"Inter is the brand face\"\n"));
+    assert!(spec.decided("fonts"));
+    assert!(!spec.decided("accent"));
+    assert!(ok(full()).decisions.is_empty());
+    let unknown = err(&with("[decisions]\nvibes = \"x\"\n"));
+    assert!(detail(&unknown).contains("unknown decision `vibes`"));
+    let blank = err(&with("[decisions]\nfonts = \"\"\n"));
+    assert!(detail(&blank).contains("reason must not"));
+}

@@ -33,6 +33,24 @@ pub mod org005;
 pub mod radius001;
 /// Rule `SIZE001`.
 pub mod size001;
+/// Rule `SLOP001`.
+pub mod slop001;
+/// Rule `SLOP003`.
+pub mod slop003;
+/// Rule `SLOP004`.
+pub mod slop004;
+/// Rule `SLOP010`.
+pub mod slop010;
+/// Rule `SLOP011`.
+pub mod slop011;
+/// Rule `SLOP014`.
+pub mod slop014;
+/// Rule `SLOP022`.
+pub mod slop022;
+/// Rule `SLOP040`.
+pub mod slop040;
+/// Rule `SLOP060`.
+pub mod slop060;
 /// Rule `SPACE001`.
 pub mod space001;
 /// Rule `TOKENS001`.
@@ -75,6 +93,15 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <org005::Org005 as gob_rules::RuleDecl>::DEF,
     <radius001::Radius001 as gob_rules::RuleDecl>::DEF,
     <size001::Size001 as gob_rules::RuleDecl>::DEF,
+    <slop001::Slop001 as gob_rules::RuleDecl>::DEF,
+    <slop003::Slop003 as gob_rules::RuleDecl>::DEF,
+    <slop004::Slop004 as gob_rules::RuleDecl>::DEF,
+    <slop010::Slop010 as gob_rules::RuleDecl>::DEF,
+    <slop011::Slop011 as gob_rules::RuleDecl>::DEF,
+    <slop014::Slop014 as gob_rules::RuleDecl>::DEF,
+    <slop022::Slop022 as gob_rules::RuleDecl>::DEF,
+    <slop040::Slop040 as gob_rules::RuleDecl>::DEF,
+    <slop060::Slop060 as gob_rules::RuleDecl>::DEF,
     <space001::Space001 as gob_rules::RuleDecl>::DEF,
     <tokens001::Tokens001 as gob_rules::RuleDecl>::DEF,
     <tw001::Tw001 as gob_rules::RuleDecl>::DEF,
@@ -118,6 +145,15 @@ where
     org005::Org005: gob_rules::Measured<P>,
     radius001::Radius001: gob_rules::Measured<P>,
     size001::Size001: gob_rules::Measured<P>,
+    slop001::Slop001: gob_rules::RepoRule<P>,
+    slop003::Slop003: gob_rules::RepoRule<P>,
+    slop004::Slop004: gob_rules::RepoRule<P>,
+    slop010::Slop010: gob_rules::RepoRule<P>,
+    slop011::Slop011: gob_rules::RepoRule<P>,
+    slop014::Slop014: gob_rules::RepoRule<P>,
+    slop022::Slop022: gob_rules::RepoRule<P>,
+    slop040::Slop040: gob_rules::RepoRule<P>,
+    slop060::Slop060: gob_rules::RepoRule<P>,
     space001::Space001: gob_rules::Measured<P>,
     tokens001::Tokens001: gob_rules::Measured<P>,
     tw001::Tw001: gob_rules::Measured<P>,
@@ -147,6 +183,15 @@ where
     rules.push(gob_rules::BoundRule::measured(org005::Org005));
     rules.push(gob_rules::BoundRule::measured(radius001::Radius001));
     rules.push(gob_rules::BoundRule::measured(size001::Size001));
+    rules.push(gob_rules::BoundRule::repo(slop001::Slop001));
+    rules.push(gob_rules::BoundRule::repo(slop003::Slop003));
+    rules.push(gob_rules::BoundRule::repo(slop004::Slop004));
+    rules.push(gob_rules::BoundRule::repo(slop010::Slop010));
+    rules.push(gob_rules::BoundRule::repo(slop011::Slop011));
+    rules.push(gob_rules::BoundRule::repo(slop014::Slop014));
+    rules.push(gob_rules::BoundRule::repo(slop022::Slop022));
+    rules.push(gob_rules::BoundRule::repo(slop040::Slop040));
+    rules.push(gob_rules::BoundRule::repo(slop060::Slop060));
     rules.push(gob_rules::BoundRule::measured(space001::Space001));
     rules.push(gob_rules::BoundRule::measured(tokens001::Tokens001));
     rules.push(gob_rules::BoundRule::measured(tw001::Tw001));

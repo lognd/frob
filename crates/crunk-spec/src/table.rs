@@ -597,6 +597,42 @@ pub struct RawSpec {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     /// Human review lock policy; optional.
     pub review: Option<ReviewConfig>,
+    // frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
+    /// Declared design decisions (`key = "reason"`) that silence the SLOP rules built on an
+    /// unchosen default; optional.
+    #[schemars(schema_with = "decisions_schema")]
+    pub decisions: Option<IndexMap<String, String>>,
+}
+
+// frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
+/// The decisions a `[decisions]` table may declare; each silences the SLOP rules named beside it.
+pub const DECISION_KEYS: &[&str] = &[
+    "accent",
+    "fonts",
+    "radius",
+    "gradients",
+    "glows",
+    "emoji",
+    "eyebrows",
+    "voice",
+];
+
+fn decisions_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+    schemars::json_schema!({
+        "type": "object",
+        "description": "Declared design decisions, `key = \"reason\"`. A declared decision silences the SLOP rule that flags the unchosen default: accent (SLOP001), gradients (SLOP003), glows (SLOP004), fonts (SLOP010, SLOP011), eyebrows (SLOP014), radius (SLOP022), emoji (SLOP040), voice (SLOP060).",
+        "properties": {
+            "accent": {"type": "string", "minLength": 1},
+            "fonts": {"type": "string", "minLength": 1},
+            "radius": {"type": "string", "minLength": 1},
+            "gradients": {"type": "string", "minLength": 1},
+            "glows": {"type": "string", "minLength": 1},
+            "emoji": {"type": "string", "minLength": 1},
+            "eyebrows": {"type": "string", "minLength": 1},
+            "voice": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+    })
 }
 
 fn palette_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {

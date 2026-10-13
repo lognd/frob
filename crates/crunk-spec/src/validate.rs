@@ -868,3 +868,22 @@ pub(crate) fn review(raw: &crate::table::ReviewConfig) -> Res<()> {
     }
     Ok(())
 }
+
+// frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
+/// `[decisions]`: every key is a known decision and every reason is non-blank.
+pub(crate) fn decisions(raw: &IndexMap<String, String>) -> Res<()> {
+    for (name, reason) in raw {
+        let at = vec![key("decisions"), key(name)];
+        if !crate::table::DECISION_KEYS.contains(&name.as_str()) {
+            return Err(fail(
+                at,
+                format!(
+                    "unknown decision `{name}` (expected one of {})",
+                    crate::table::DECISION_KEYS.join(", ")
+                ),
+            ));
+        }
+        non_empty(at, reason, "reason")?;
+    }
+    Ok(())
+}

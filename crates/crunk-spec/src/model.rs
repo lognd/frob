@@ -202,6 +202,10 @@ pub struct DesignSpec {
     /// `[review]`: the human review lock policy.
     #[serde(skip_serializing_if = "ReviewConfig::is_default")]
     pub review: ReviewConfig,
+    // frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
+    /// `[decisions]`: decision key to the reason it was made.
+    #[serde(skip_serializing_if = "IndexMap::is_empty")]
+    pub decisions: IndexMap<String, String>,
 }
 
 fn serialize_palette<S: Serializer>(
@@ -254,6 +258,12 @@ impl DesignSpec {
             .copied()
             .or_else(|| default_severity(rule))
             .unwrap_or(Severity::Error)
+    }
+
+    // frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
+    /// True when `[decisions]` declares `key` (validated, so the reason is never blank).
+    pub fn decided(&self, key: &str) -> bool {
+        self.decisions.contains_key(key)
     }
 
     /// Absolute managed CSS root: `root` joined with `[project] css_root`.

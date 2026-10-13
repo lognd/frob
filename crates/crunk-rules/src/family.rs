@@ -122,6 +122,12 @@ pub const FAMILIES: &[FamilyMeta] = &[
     fam("SIZE", "size scale steps", &[T0], true),
     fam("LAYER", "z-index layers", &[T0], true),
     fam(
+        "SLOP",
+        "unchosen defaults and generic copy, silenced by declared decisions",
+        &[T0],
+        true,
+    ),
+    fam(
         "ORG",
         "stylesheet organisation: buckets, class naming, custom property placement",
         &[T0],

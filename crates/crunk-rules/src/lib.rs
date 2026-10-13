@@ -9,6 +9,8 @@
 //!   rules join the same directory (or another crate listed in `crunk-check`'s `product_rules!`).
 //! - [`scales`], [`typography`]: the scale judgment SPACE001, TYPE001, RADIUS001 and SIZE001 share, and
 //!   the font stack and weight reading of TYPE002 and TYPE003.
+//! - [`slop`]: the decision gate, accent stops and markup scanner the SLOP rules (the deslop T0
+//!   slice, advisory) share.
 //! - [`org`]: the class-case and component-prefix judgments ORG002 and ORG003 share.
 //! - [`color`], [`contrast`], [`mode`], [`sheets`]: the plain modules the colour and contrast rules
 //!   share (palette conformance, the definition set, role measurement, the mode loop, site paths).
@@ -37,6 +39,7 @@ pub mod review;
 pub mod rules;
 pub mod scales;
 pub mod sheets;
+pub mod slop;
 pub mod tailwind;
 pub mod tokens_drift;
 pub mod typography;
