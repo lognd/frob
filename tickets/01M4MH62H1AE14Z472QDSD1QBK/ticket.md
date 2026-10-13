@@ -2,13 +2,13 @@
 id = "01M4MH62H1AE14Z472QDSD1QBK"
 title = "Merge train: land several ready tickets as one speculative batch, verify the batch tip once, and fall back to bisecting on failure"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:47:56Z"
-updated = "2026-10-11T03:52:10Z"
+updated = "2026-10-13T05:19:48Z"
 scope = ["crates/frob-land/**"]
 
 [[acceptance]]

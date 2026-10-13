@@ -184,8 +184,7 @@ fn an_unevidenced_criterion_is_listed_and_the_exit_is_zero() {
         unresolved.contains("CI status on commit") && unresolved.contains("no `origin` remote"),
         "{unresolved}"
     );
-    // the registry-setup owner item is opt-in (`[release] registry_setup`), so only the forecast shows here.
-    assert!(unresolved.contains("no history yet"), "{unresolved}");
+    assert!(unresolved.contains("no history yet"));
 }
 
 #[test]

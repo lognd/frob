@@ -1,0 +1,30 @@
+---
+source: crates/gob-symbols/tests/def_use.rs
+expression: "render(\"flow.rs\", \"rust\", include_str!(\"fixtures/def_use/flow.rs\"))"
+---
+a        param -> L13  must
+a        param -> L3   must
+b        param -> L4   must
+c           L9 -> L16  must
+i          L13 -> L14  must
+s           L7 -> L8   may(attribute)
+s        param -> L7   must
+s        param -> L8   must
+s.v         L7 -> L8   may(attribute)
+seen        L8 -> L16  must
+x           L3 -> L10  must
+x           L3 -> L5   must
+x           L3 -> L7   must
+x           L3 -> L9   may(closure)
+y           L4 -> L9   may(closure)
+y           L5 -> L6   must
+y           L5 -> L9   may(closure)
+y           L6 -> L14  must
+y           L6 -> L16  must
+y           L6 -> L9   may(closure)
+y          L11 -> L14  must
+y          L11 -> L16  must
+y          L11 -> L9   may(closure)
+y          L14 -> L14  must
+y          L14 -> L16  must
+y          L14 -> L9   may(closure)
