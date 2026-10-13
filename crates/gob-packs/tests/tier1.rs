@@ -48,7 +48,7 @@ fn content(pack: &str, atoms: &str, tpl: Option<&str>) -> tier1::Content {
     .unwrap()
 }
 
-// frob:tests gob_packs::tier1::intern
+// frob:tests crates/gob-packs/src/tier1/mod.rs::intern
 #[test]
 fn pack_content_answers_like_an_inventory_atom() {
     let c = content("alpha-pack", ATOMS, Some(TEMPLATES));
@@ -73,7 +73,7 @@ fn pack_content_answers_like_an_inventory_atom() {
     );
 }
 
-// frob:tests gob_packs::tier1::intern_all
+// frob:tests crates/gob-packs/src/tier1/mod.rs::intern_all
 #[test]
 fn duplicate_atom_is_pack004_naming_both_packs() {
     let a = "[[atom]]\nname = \"t1dup.x\"\ndoc = \"d\"\n";
