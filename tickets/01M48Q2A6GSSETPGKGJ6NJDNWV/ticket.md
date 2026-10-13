@@ -7,12 +7,12 @@ priority = "high"
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:51Z"
-updated = "2026-10-13T07:12:35Z"
+updated = "2026-10-13T07:49:24Z"
 scope = ["crates/frob-ledger/**", "crates/frob/src/ticket/**", "crates/frob/tests/**"]
 
 [[acceptance]]
 text = "a fixture ledger renders the expected tree (snapshot) with roll-up points and percent done"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "orphans appear under Unparented"
