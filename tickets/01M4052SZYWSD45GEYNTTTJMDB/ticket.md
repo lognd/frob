@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-13T04:19:56Z"
+updated = "2026-10-13T04:20:45Z"
 idempotency_key = "m2-mirror2-ledger-proposal-events"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/proposal.rs", "crates/frob-ledger/src/fold.rs", "docs/design/tickets.md"]
+scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/proposal.rs", "crates/frob-ledger/src/fold.rs", "docs/design/tickets.md", "crates/frob-ledger/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
