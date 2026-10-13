@@ -464,6 +464,13 @@ fields, stories, exceptions) refuse only when the rule's effective
 severity is Error and otherwise succeed with the finding as a warning in
 the envelope.
 
+The release gate is one more step after those: a family may raise some
+rules to Error only at the release gate (`crunk check --gate release`,
+read by `frob release status`). As built, crunk-rules applies this at the
+family level (`apply_gate`): HUMAN001 and HUMAN002 are Advisory under the
+default `check` gate and Error under `release`. A per-rule
+`release_severity` field on `#[rule]` is tracked separately.
+
 ## 8. Crate layout for this layer
 
 ```

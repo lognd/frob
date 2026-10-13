@@ -6,6 +6,7 @@
 use crunk_ingest::ProjectStyles;
 use crunk_spec::DesignSpec;
 
+use crate::review::ReviewFacts;
 use crate::tailwind::TailwindFacts;
 
 /// What a crunk rule may ask of its product: the validated design spec and the ingested styles.
@@ -27,6 +28,12 @@ pub trait CrunkHost {
     /// The Tailwind theme and compiled utilities, when the pipeline collected them (the TW rules'
     /// side input).
     fn tailwind(&self) -> Option<&TailwindFacts> {
+        None
+    }
+
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    /// The judged human reviews, when the pipeline gathered them (HUMAN001 and HUMAN002's input).
+    fn reviews(&self) -> Option<&ReviewFacts> {
         None
     }
 }

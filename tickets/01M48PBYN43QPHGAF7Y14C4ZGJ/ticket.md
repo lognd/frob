@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:38Z"
-updated = "2026-10-13T05:49:51Z"
+updated = "2026-10-13T05:51:40Z"
 scope = ["crates/gob-diagnostics/**"]
 
 [[acceptance]]
@@ -20,11 +20,11 @@ bound = true
 
 [[acceptance]]
 text = "JSON output is unchanged"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the text renderer also shows an Unresolved finding's reason in words and its remedy, and JSON carries reason"
-bound = false
+bound = true
 +++
 
 The text renderer prints only `fix: <title>` (crates/gob-diagnostics/src/text.rs:163). Render each fix as a unified diff of its edits with the tier (safe/unsafe/display-only) and a note for unsafe tiers, the way ruff renders fixes in its mdtest snapshots, so one snapshot asserts message, span and fix. Source: notes/research/rule-testing.md (D103).

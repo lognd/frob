@@ -31,6 +31,7 @@ mod digest;
 mod error;
 mod limits;
 mod manifest;
+pub mod tier1;
 mod validate;
 
 pub use activation::{Activation, Active, Enable};

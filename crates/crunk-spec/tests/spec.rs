@@ -836,3 +836,24 @@ fn error_display_names_file_line_and_column() {
         "x: d"
     );
 }
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+// frob:tests crates/crunk-spec/src/table.rs::ReviewConfig
+#[test]
+fn review_table_and_screen_review_fields_load_and_validate() {
+    use crunk_spec::table::{Provenance, ReviewRequirement};
+    let text = gallery(
+        "[review]\nrequire_signed = true\n[[review.reviewers]]\nid = \"me@example.com\"\nkeys = [\"ABCD\"]\n\n[[screen]]\nid = \"home\"\nentry = \"/\"\nprovenance = \"agent\"\nreview = \"human\"\nsources = [\"src/home\"]\n[[screen.states]]\nid = \"a\"\n",
+    );
+    let spec = ok(&text);
+    assert!(spec.review.require_signed);
+    assert_eq!(spec.review.reviewers[0].keys, ["ABCD"]);
+    let home = &spec.screens["home"];
+    assert_eq!(home.provenance, Some(Provenance::Agent));
+    assert_eq!(home.review, Some(ReviewRequirement::Human));
+    assert_eq!(home.sources.as_deref(), Some(&["src/home".to_owned()][..]));
+    let dup = "[[review.reviewers]]\nid = \"a\"\n[[review.reviewers]]\nid = \"a\"\n";
+    assert!(detail(&err(&with(dup))).contains("duplicate reviewer id `a`"));
+    assert!(detail(&err(&with("[[review.reviewers]]\nid = \"\"\n"))).contains("id must not"));
+    assert!(ok(full()).review.is_default());
+}
