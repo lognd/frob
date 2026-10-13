@@ -1,11 +1,14 @@
-//! The client: auth headers, conditional GETs, rate-limit exposure and Retry-After backoff.
+//! The client: auth headers, conditional GETs, rate-limit exposure; retries via the error policy.
 
 use std::collections::{BTreeMap, HashMap};
 use std::future::Future;
 use std::sync::{Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 
-use crate::{Error, RateLimit, RawRequest, RawResponse, Token, Transport};
+use crate::{
+    Error, ErrorPolicy, Halt, RateLimit, RawRequest, RawResponse, Token, Transport, parse_response,
+    send_with_policy,
+};
 
 /// Lock, recovering the data if a panicking holder poisoned it.
 fn relock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -56,27 +59,6 @@ impl Pause for TokioPause {
     }
 }
 
-/// Retry bounds for rate-limited answers.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Policy {
-    /// Total attempts including the first.
-    pub max_attempts: u32,
-    /// The longest single wait the client will perform; a larger Retry-After is an error.
-    pub max_wait: Duration,
-    /// The first wait when no Retry-After is given; doubles per further attempt.
-    pub base_backoff: Duration,
-}
-
-impl Default for Policy {
-    fn default() -> Self {
-        Self {
-            max_attempts: 4,
-            max_wait: Duration::from_secs(120),
-            base_backoff: Duration::from_secs(1),
-        }
-    }
-}
-
 /// A successful answer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Reply {
@@ -109,19 +91,19 @@ pub struct Client<T, P = TokioPause> {
     pause: P,
     token: Token,
     base: String,
-    policy: Policy,
+    policy: ErrorPolicy,
     etags: Mutex<HashMap<String, (String, Vec<u8>)>>,
 }
 
 impl<T: Transport> Client<T, TokioPause> {
-    /// A client for `https://api.github.com` with the default [`Policy`].
+    /// A client for `https://api.github.com` with the default [`ErrorPolicy`].
     pub fn new(transport: T, token: Token) -> Self {
         Self {
             transport,
             pause: TokioPause,
             token,
             base: "https://api.github.com".to_string(),
-            policy: Policy::default(),
+            policy: ErrorPolicy::default(),
             etags: Mutex::new(HashMap::new()),
         }
     }
@@ -142,7 +124,7 @@ impl<T: Transport, P: Pause> Client<T, P> {
 
     /// Replace the retry policy.
     #[must_use]
-    pub fn with_policy(mut self, policy: Policy) -> Self {
+    pub fn with_policy(mut self, policy: ErrorPolicy) -> Self {
         self.policy = policy;
         self
     }
@@ -186,24 +168,30 @@ impl<T: Transport, P: Pause> Client<T, P> {
             .await
     }
 
-    /// GraphQL call: POST `/graphql` with `query` and `variables`; the `errors` array is the
-    /// caller's to read (the error-policy ticket classifies it).
+    /// GraphQL call: POST `/graphql` with `query` and `variables`; any `errors` entry fails the
+    /// whole scope via [`parse_response`].
     ///
     /// # Errors
-    /// Any [`Error`]; see [`Client::execute`].
+    /// [`Error::Graphql`] for an errors array or bad envelope; else see [`Client::execute`].
     pub async fn graphql(
         &self,
         query: &str,
         variables: &serde_json::Value,
     ) -> Result<Reply, Error> {
         let body = serde_json::json!({ "query": query, "variables": variables });
-        self.send_json(Method::Post, "/graphql", &body).await
+        let reply = self.send_json(Method::Post, "/graphql", &body).await?;
+        if let Err(failure) = parse_response(&reply.body, reply.rate_limit.as_ref()) {
+            tracing::warn!(%failure, "graphql response failed the scope");
+            return Err(Error::Graphql(failure));
+        }
+        Ok(reply)
     }
 
-    /// Issue a request, retrying 429 and Retry-After-bearing 403/503 answers per the [`Policy`].
+    /// Issue a request through [`send_with_policy`]: stop on no budget, else retry 5xx and
+    /// Retry-After answers on the [`ErrorPolicy`] schedule.
     ///
     /// # Errors
-    /// [`Error::RetryAfterExceedsCap`], [`Error::RetriesExhausted`], [`Error::Status`] for other
+    /// [`Error::RateLimited`], [`Error::RetriesExhausted`], [`Error::Status`] for other
     /// non-success statuses, [`Error::InsecureBase`] for a non-https URL, and transport errors.
     pub async fn execute(
         &self,
@@ -224,71 +212,32 @@ impl<T: Transport, P: Pause> Client<T, P> {
         } else {
             None
         };
-        let mut attempt = 1u32;
-        loop {
-            let request = self.build(
-                method,
-                &url,
-                body.clone(),
-                cached.as_ref().map(|(e, _)| e.as_str()),
-            );
-            let response = self.transport.send(request).await?;
-            let rate_limit = RateLimit::parse(&response.headers);
-            match response.status {
-                200..=299 => return Ok(self.accept(method, &url, response, rate_limit)),
-                304 => {
-                    let (etag, cached_body) = cached.ok_or(Error::Status {
-                        status: 304,
-                        url: url.clone(),
-                    })?;
-                    tracing::debug!(%url, "not modified; serving cached body");
-                    return Ok(Reply {
-                        status: 200,
-                        body: cached_body,
-                        rate_limit,
-                        etag: Some(etag),
-                        from_cache: true,
-                    });
-                }
-                429 | 403 | 503 if is_retryable(&response) => {
-                    let asked = retry_after(&response.headers);
-                    let wait = asked.unwrap_or_else(|| self.backoff(attempt));
-                    if wait > self.policy.max_wait {
-                        tracing::warn!(?wait, cap = ?self.policy.max_wait, "retry-after exceeds the cap");
-                        return Err(Error::RetryAfterExceedsCap {
-                            wait,
-                            cap: self.policy.max_wait,
-                        });
-                    }
-                    if attempt >= self.policy.max_attempts {
-                        tracing::warn!(attempt, "rate limited; attempts exhausted");
-                        return Err(Error::RetriesExhausted { attempts: attempt });
-                    }
-                    tracing::info!(
-                        attempt,
-                        ?wait,
-                        status = response.status,
-                        "rate limited; waiting before retry"
-                    );
-                    self.pause.pause(wait).await;
-                    attempt += 1;
-                }
-                status => {
-                    tracing::warn!(status, %url, "unsuccessful status");
-                    return Err(Error::Status { status, url });
-                }
+        let request = self.build(method, &url, body, cached.as_ref().map(|(e, _)| e.as_str()));
+        let response = send_with_policy(&self.transport, &self.pause, self.policy, request)
+            .await
+            .map_err(halt_to_error)?;
+        let rate_limit = RateLimit::parse(&response.headers);
+        match response.status {
+            200..=299 => Ok(self.accept(method, &url, response, rate_limit)),
+            304 => {
+                let (etag, cached_body) = cached.ok_or(Error::Status {
+                    status: 304,
+                    url: url.clone(),
+                })?;
+                tracing::debug!(%url, "not modified; serving cached body");
+                Ok(Reply {
+                    status: 200,
+                    body: cached_body,
+                    rate_limit,
+                    etag: Some(etag),
+                    from_cache: true,
+                })
+            }
+            status => {
+                tracing::warn!(status, %url, "unsuccessful status");
+                Err(Error::Status { status, url })
             }
         }
-    }
-
-    fn backoff(&self, attempt: u32) -> Duration {
-        let factor = 1u32
-            .checked_shl(attempt.saturating_sub(1))
-            .unwrap_or(u32::MAX);
-        self.policy
-            .base_backoff
-            .saturating_mul(factor)
-            .min(self.policy.max_wait)
     }
 
     fn build(
@@ -340,17 +289,13 @@ impl<T: Transport, P: Pause> Client<T, P> {
     }
 }
 
-/// 429 always retries; 403 and 503 only when the server named a wait.
-fn is_retryable(response: &RawResponse) -> bool {
-    response.status == 429 || response.headers.contains_key("retry-after")
-}
-
-/// `Retry-After` in whole seconds; an HTTP-date form is treated as absent.
-fn retry_after(headers: &BTreeMap<String, String>) -> Option<Duration> {
-    headers
-        .get("retry-after")?
-        .trim()
-        .parse::<u64>()
-        .ok()
-        .map(Duration::from_secs)
+/// Map a policy halt onto the client's error type.
+fn halt_to_error(halt: Halt) -> Error {
+    match halt {
+        Halt::RateLimited { reset } => Error::RateLimited { reset },
+        Halt::RetriesExhausted { retries, .. } => Error::RetriesExhausted {
+            attempts: retries + 1,
+        },
+        Halt::Transport(e) => e,
+    }
 }
