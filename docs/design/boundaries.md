@@ -353,11 +353,11 @@ fails the test. Every workspace crate must appear here exactly once.
 
 | Layer | Name | Crates |
 |---|---|---|
-| 0 | base | crunk-values, gob-caps, gob-fs, gob-log, gob-macros, gob-packs, gob-text, gob-time |
+| 0 | base | crunk-values, gob-caps, gob-fs, gob-log, gob-macros, gob-path, gob-text, gob-time |
 | 1 | io | gob-cache, gob-exec, gob-languages, gob-lock, gob-walk |
 | 2 | repo | gob-git, gob-trust |
 | 3 | model | gob-ir |
-| 4 | rules | gob-pattern, gob-rules, gob-symbols |
+| 4 | rules | gob-packs, gob-pattern, gob-rules, gob-symbols |
 | 5 | config | gob-config, gob-diagnostics, gob-frameworks, gob-plan |
 | 6 | pipeline | gob-check, gob-cli, gob-directives, gob-mdtest, gob-testsupport |
 | 7 | product base | crunk-spec, crunk-tailwind, frob-ack, frob-ledger, frob-mirror, gob-product, grimble-lints, grimble-model |

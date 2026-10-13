@@ -2,12 +2,12 @@
 id = "01M48Q2A6GSSETPGKGJ6NJDNWV"
 title = "frob ticket list --tree: the backlog as milestone, epic, story, task with roll-ups"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:51Z"
-updated = "2026-10-06T13:39:51Z"
+updated = "2026-10-13T07:12:35Z"
 scope = ["crates/frob-ledger/**", "crates/frob/src/ticket/**", "crates/frob/tests/**"]
 
 [[acceptance]]

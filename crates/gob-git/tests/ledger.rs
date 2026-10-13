@@ -350,7 +350,7 @@ fn read_apis() {
 #[test]
 fn rel_path_validation_and_error_codes() {
     for bad in ["", "/abs", "a/../b", "a//b", ".git/config", "a\\b"] {
-        let e = RelPath::new(bad).unwrap_err();
+        let e = gob_git::GitError::from(RelPath::new(bad).unwrap_err());
         assert_eq!(e.code(), "E-GIT-PATH");
     }
     assert!(RelPath::new("tickets/T-0001/ticket.md").is_ok());
