@@ -16,6 +16,7 @@ pub mod lock;
 mod lockfile;
 pub mod plan;
 mod ratchet;
+pub mod train;
 pub mod verb;
 
 pub use base_ci::{CiReader, GhCli, LandConfig};
@@ -26,6 +27,7 @@ pub use plan::{LandOptions, LandOutcome, RetryPolicy};
 pub use ratchet::FindingNote;
 #[doc(hidden)]
 pub use ratchet::{base_findings, cache_key, code_tree_key};
+pub use train::{TrainOptions, TrainOutcome, TrainVerifier, land_train};
 
 /// Register `land` on a product root.
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
