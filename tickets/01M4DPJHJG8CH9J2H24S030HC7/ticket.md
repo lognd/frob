@@ -2,7 +2,8 @@
 id = "01M4DPJHJG8CH9J2H24S030HC7"
 title = "ticket doctor: home-path (TICK004) scan only over files changed since the last clean scan"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
