@@ -8,9 +8,9 @@ points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-13T05:05:47Z"
+updated = "2026-10-13T05:06:43Z"
 idempotency_key = "m2-packs-tier1"
-labels = ["milestone:2", "area:packs"]
+labels = ["milestone:2", "area:packs", "creates:crates/gob-packs/tests/tier1.rs"]
 scope = ["crates/gob-packs/src/tier1/**", "crates/gob-ir/src/registry.rs", "crates/gob-packs/tests/tier1.rs"]
 
 [[links]]
