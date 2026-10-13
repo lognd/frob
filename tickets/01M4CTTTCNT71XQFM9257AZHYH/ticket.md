@@ -2,13 +2,14 @@
 id = "01M4CTTTCNT71XQFM9257AZHYH"
 title = "Release for non-Rust projects: cut never rewrites Cargo layout unasked, bump updates pyproject.toml, status has no frob-specific items"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:37Z"
-updated = "2026-10-13T03:44:47Z"
+updated = "2026-10-13T03:55:23Z"
 scope = ["changelog.d/**", "crates/frob-release/**", "docs/guides/release.md", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]

@@ -36,7 +36,7 @@ pub enum LeaseError {
         /// The queued ticket that goes first.
         waiter: TicketId,
         /// Who is waiting.
-        holder: Holder,
+        holder: Box<Holder>,
         /// Seconds it has been queued.
         age_secs: i64,
         /// The globs or files that collide, comma separated.

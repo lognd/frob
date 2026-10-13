@@ -101,7 +101,7 @@ pub enum BumpError {
         requested: String,
     },
     /// The root has no `Cargo.toml` with a `[workspace]` table.
-    #[error("no Cargo workspace at {}; run from the repository root", .0.display())]
+    #[error("no Cargo workspace or pyproject.toml with a static version at {}; run from the repository root", .0.display())]
     NotWorkspace(PathBuf),
     /// Discovery could not read a manifest; nothing was changed.
     #[error("cannot bump, manifests are unreadable (nothing was changed):\n{}", .0.join("\n"))]
@@ -350,6 +350,52 @@ fn write_atomic(path: &Path, text: &str) -> Result<(), BumpError> {
     gob_fs::write_atomic(path, text.as_bytes()).map_err(|e| io("write", path, &e))
 }
 
+/// Plan the bump of a project with no `Cargo.toml`: only `pyproject.toml`'s static version; no Cargo file is touched.
+fn plan_python(
+    root: &Path,
+    version: &str,
+    allow_downgrade: bool,
+) -> Result<(Vec<Edit>, Option<String>), BumpError> {
+    let requested =
+        Version::parse(version).map_err(|_| BumpError::InvalidVersion(version.to_owned()))?;
+    let Some(path) = rel002::wheel_path(root) else {
+        return Err(BumpError::NotWorkspace(root.to_owned()));
+    };
+    let rel = path
+        .strip_prefix(root)
+        .unwrap_or(&path)
+        .to_string_lossy()
+        .replace('\\', "/");
+    let current = match rel002::wheel_version(&path) {
+        Ok(Wheel::Static(v)) => v,
+        Ok(Wheel::Absent | Wheel::FollowsCargo) => {
+            return Err(BumpError::NotWorkspace(root.to_owned()));
+        }
+        Err(e) => return Err(BumpError::Unresolved(vec![format!("{rel} {e}")])),
+    };
+    if let Ok(cur) = Version::parse(&current)
+        && requested < cur
+        && !allow_downgrade
+    {
+        return Err(BumpError::Downgrade {
+            current: cur.to_string(),
+            requested: requested.to_string(),
+        });
+    }
+    let old = read(root, &rel)?;
+    let new = edit_wheel(&rel, &old, version)?;
+    let edits = if new == old {
+        Vec::new()
+    } else {
+        vec![Edit {
+            path: rel,
+            old,
+            new,
+        }]
+    };
+    Ok((edits, Some(current)))
+}
+
 /// Plan every edit; nothing is written.
 fn plan(
     root: &Path,
@@ -359,7 +405,8 @@ fn plan(
     let root_rel = "Cargo.toml";
     let root_path = root.join(root_rel);
     if !root_path.is_file() {
-        return Err(BumpError::NotWorkspace(root.to_owned()));
+        tracing::info!("bump: no Cargo.toml, bumping the Python project only");
+        return plan_python(root, version, allow_downgrade);
     }
     let table = rel002::read_table(&root_path)
         .map_err(|e| BumpError::Unresolved(vec![format!("{root_rel} {e}")]))?;
@@ -502,7 +549,7 @@ pub fn run(root: &Path, opts: &BumpOptions) -> Result<BumpReport, BumpError> {
                 .to_string(),
         })
         .collect();
-    let has_lock = root.join("Cargo.lock").is_file();
+    let has_lock = root.join("Cargo.toml").is_file() && root.join("Cargo.lock").is_file();
     let mut report = BumpReport {
         version: opts.version.clone(),
         previous,

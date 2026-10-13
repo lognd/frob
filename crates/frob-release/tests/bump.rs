@@ -186,3 +186,17 @@ fn comments_and_layout_survive_and_the_workspace_version_is_added_when_absent() 
     assert!(a.contains("serde = \"1\"\n"), "{a}");
     assert!(a.contains("# pin for publishing"), "{a}");
 }
+
+// frob:ticket 01M4CTTTCNT71XQFM9257AZHYH
+#[test]
+fn python_project_bump_edits_pyproject_and_creates_no_cargo_file() {
+    // frob:tests crates/frob-release/src/bump.rs::run
+    let d = tempfile::tempdir().unwrap();
+    write(d.path(), "pyproject.toml", WHEEL);
+    let report = run(d.path(), &opts("1.2.3")).unwrap();
+    assert_eq!(report.lock, LockState::Absent);
+    assert!(text(d.path(), "pyproject.toml").contains("version = \"1.2.3\"  # keep in step"));
+    assert!(!d.path().join("Cargo.toml").exists());
+    assert!(!d.path().join("Cargo.lock").exists());
+    assert!(run(d.path(), &opts("1.2.3")).unwrap().already);
+}
