@@ -2659,6 +2659,7 @@ version = "0.532.0"
 dependencies = [
  "blake3",
  "globset",
+ "gob-ir",
  "proptest",
  "serde",
  "tempfile",
