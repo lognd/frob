@@ -423,3 +423,24 @@ fn an_undecodable_file_is_listed_with_its_reason_not_only_counted() {
         "no file node for an unread file"
     );
 }
+
+// frob:ticket 01M4CXV1896SWK19F3YYF7EC9A
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.relation
+#[test]
+fn relation_lowers_status_edges_into_lo_hi() {
+    let src = "fn free() {}\nfn user() { free(); other(); }\n";
+    let g = graph_of(&[("c/src/lib.rs", src)]);
+    let r = g.relation(&[EdgeKind::Calls]);
+    let user = g
+        .edges_with_status()
+        .iter()
+        .find(|e| e.from.to_string().ends_with("user"))
+        .unwrap();
+    let free = user.to.clone().expect("free resolves");
+    assert!(r.lo(&user.from, &free));
+    assert!(r.hi(&user.from, &free));
+    // `other()` is unbound: user is on the Unknown frontier, so anything is in hi but not lo.
+    assert!(r.is_unknown_out(&user.from));
+    assert!(r.hi(&user.from, &sym("c/src/lib.rs::zzz")));
+    assert!(!r.lo(&user.from, &sym("c/src/lib.rs::zzz")));
+}
