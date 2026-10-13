@@ -306,7 +306,7 @@
         },
         "target_budget_gb": {
           "default": 30,
-          "description": "Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it.",
+          "description": "Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; `frob work` links each new worktree's `target/` to the shared `land-target`.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
