@@ -108,6 +108,9 @@ error_set! {
         /// A git read or the ledger commit failed.
         #[display("{0}")]
         Git(GitError),
+        /// A repository path was refused.
+        #[display("{0}")]
+        Path(gob_git::PathError),
         /// The SQLite index failed.
         #[display("E-LEDGER-INDEX: {0}")]
         Sql(rusqlite::Error),
@@ -205,7 +208,7 @@ impl LedgerError {
                 GitError::NoIdentity => Refusal::new(g.code(), GuardNeedsAction, g.to_string()),
                 _ => return None,
             },
-            Self::Malformed { .. } | Self::Fold { .. } | Self::Sql(_) | Self::Io(_) => return None,
+            Self::Malformed { .. } | Self::Fold { .. } | Self::Sql(_) | Self::Io(_) | Self::Path(_) => return None,
         };
         Some(r)
     }

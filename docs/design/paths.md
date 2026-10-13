@@ -45,6 +45,12 @@ Persisted model types hold `RelPath`, never `PathBuf` or a path in a
 local registry under `.git/`) is local data and says so in its type
 (`LocalPath`, not serialized into anything committed).
 
+Status (~ARHP82G): `gob-path` exists with `RelPath` (also validating
+components on every platform), `PathStyle` (Unix or Windows, read with
+`typed-path`), `RelPath::from_host_style` / `to_host_style` for style-explicit
+bridges, and `Shown`. gob-git re-exports `RelPath` and `PathError`;
+`RelPath::new` now returns `PathError`, which converts into `GitError`.
+
 ## 2. Command lines: arguments, never strings
 
 Processes take an argument vector of `OsString` through gob-exec

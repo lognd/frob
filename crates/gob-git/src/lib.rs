@@ -24,6 +24,7 @@ pub use backend::{GitContentBackend, install_content_backend};
 pub use content::{WorktreeReader, WorktreeSource};
 pub use error::GitError;
 pub use fallback::MergeOutcome;
+pub use gob_path::PathError;
 pub use ledger::{CommitOptions, CommitOutcome, UnsyncedCheckout};
 pub use read::{Head, Repo, WorktreeInfo};
 pub use relpath::RelPath;
