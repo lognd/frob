@@ -7,7 +7,8 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-11T18:00:19Z"
-updated = "2026-10-13T03:13:28Z"
+updated = "2026-10-13T03:28:20Z"
+scope = ["crates/frob-worktree/src/gc/**", "docs/reference/config.md"]
 
 [[acceptance]]
 text = "Eviction is LRU by last-use stamp with a size budget; entries used in the last N hours or by any live worktree are never evicted"
