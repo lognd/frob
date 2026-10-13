@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-13T04:46:49Z"
+digest = "ce02b07f13f8495e46953f9464ed3e4338ce32b5c5b78aee7a3a096504f755c1"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.69s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1b15959f-4bb6-425c-8eec-f4f1bb2628cb with nextest profile: default
+    Starting 1 test across 342 binaries (3001 tests skipped)
+        PASS [   0.017s] gob-git::ledger rel_path_validation_and_error_codes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.040s] 1 test run: 1 passed, 3001 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "rel_path_validation_and_error_codes"
+size = 548
+status = "measured"
+test_count = 1
+tests_digest = "5e9eaf30347d71efdee27e9fa6664ccb47729776643e0f25da3616c3781d808e"
+at = "2026-10-13T04:46:49Z"
+actor = "lognd"
+rev = 1
