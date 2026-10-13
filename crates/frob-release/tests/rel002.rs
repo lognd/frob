@@ -154,3 +154,25 @@ fn runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
 }
 
 gob_mdtest::mdtest!(dir = "tests/mdtest", runner = runner);
+
+// frob:ticket 01M4CTTTCNT71XQFM9257AZHYH
+#[test]
+fn wheel_finding_names_the_pyproject_package_and_python_only_is_not_applicable() {
+    // frob:tests crates/frob-release/src/rel002.rs::evaluate
+    let d = tempfile::tempdir().unwrap();
+    write(
+        d.path(),
+        "pyproject.toml",
+        "[project]\nname = \"logand-app\"\nversion = \"0.1.0\"\n",
+    );
+    assert!(evaluate(d.path()).findings.is_empty());
+    workspace(d.path(), "0.2.0");
+    krate(d.path(), "a", "version.workspace = true");
+    let e = evaluate(d.path());
+    assert_eq!(e.findings.len(), 1);
+    assert!(
+        e.findings[0].message.contains("`logand-app`"),
+        "{:?}",
+        e.findings
+    );
+}

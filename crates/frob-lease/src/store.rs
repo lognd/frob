@@ -571,7 +571,7 @@ impl LeaseStore {
                 tracing::info!(%ticket, waiter = %w.ticket, %overlap, "acquire refused: queued waiter ahead");
                 return Err(LeaseError::Queued {
                     waiter: w.ticket,
-                    holder: w.holder.clone(),
+                    holder: Box::new(w.holder.clone()),
                     age_secs: w.age_secs(now),
                     overlap,
                 });

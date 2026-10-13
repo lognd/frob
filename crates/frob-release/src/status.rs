@@ -230,25 +230,28 @@ const CATEGORY_ORDER: [&str; 3] = ["triage", "todo", "in-progress"];
 const REGISTRY_SETUP_GUIDE: &str = "docs/guides/release.md#one-time-setup";
 
 /// The fixed items the design lists as owner actions or later checks (`releases.md` 6a), with reasons; CI is added per report.
+///
+/// The frob-specific "registry setup" item appears only when `registry_setup` is true (`[release] registry_setup`).
 #[must_use]
-pub fn unresolved_items() -> Vec<Unresolved> {
+pub fn unresolved_items(registry_setup: bool) -> Vec<Unresolved> {
     let u = |item: &str, reason: &str| Unresolved {
         item: item.to_owned(),
         reason: reason.to_owned(),
     };
-    vec![
-        u("forecast", "no history yet"),
-        u(
+    let mut items = vec![u("forecast", "no history yet")];
+    if registry_setup {
+        items.push(u(
             "registry setup",
             &format!(
                 "owner action: trusted publishing on PyPI (frob) and crates.io, reserved crate names confirmed; see {REGISTRY_SETUP_GUIDE}"
             ),
-        ),
-    ]
+        ));
+    }
+    items
 }
 
 /// The fixed items plus, when CI could not be read, its line with the exact reason and remedy.
-fn unresolved_of(input: &Input) -> Vec<Unresolved> {
+fn unresolved_of(input: &Input, registry_setup: bool) -> Vec<Unresolved> {
     let mut items = Vec::new();
     if let CiState::Unknown(u) = &input.ci.state {
         items.push(Unresolved {
@@ -256,7 +259,7 @@ fn unresolved_of(input: &Input) -> Vec<Unresolved> {
             reason: format!("{}; {}", u.reason, u.remedy),
         });
     }
-    items.extend(unresolved_items());
+    items.extend(unresolved_items(registry_setup));
     items
 }
 
@@ -520,9 +523,15 @@ fn glance(r: &Report, input: &Input) -> Vec<String> {
     l
 }
 
-/// Assess readiness: collect blockers from the facts, add the unresolved items, state the verdict.
+/// Assess readiness without frob-specific items: collect blockers, add the unresolved items, state the verdict.
 #[must_use]
 pub fn assess(input: &Input) -> Report {
+    assess_with(input, false)
+}
+
+/// Assess readiness; `registry_setup` adds the frob registry-setup owner item (`[release] registry_setup`).
+#[must_use]
+pub fn assess_with(input: &Input, registry_setup: bool) -> Report {
     let blockers = blockers_of(input);
     let ready = blockers.is_empty();
     let verdict = if ready {
@@ -551,7 +560,7 @@ pub fn assess(input: &Input) -> Report {
             .map(|m| m.pm034.clone())
             .unwrap_or_default(),
         ready,
-        unresolved: unresolved_of(input),
+        unresolved: unresolved_of(input, registry_setup),
         verdict,
         version: input.version.clone(),
     };
@@ -565,10 +574,19 @@ mod tests {
     use super::*;
     use crate::ci::{CiFailure, CiUnknown};
 
+    // frob:ticket 01M4CTTTCNT71XQFM9257AZHYH
+    #[test]
+    fn status_has_no_registry_setup_item_without_the_config() {
+        let r = assess(&input(vec![]));
+        assert!(r.unresolved.iter().all(|u| u.item != "registry setup"));
+        let r = assess_with(&input(vec![]), true);
+        assert!(r.unresolved.iter().any(|u| u.item == "registry setup"));
+    }
+
     // frob:ticket 01M41EBQN0HT7956KPP0ZJET37
     #[test]
     fn registry_setup_names_an_existing_guide_section() {
-        let item = unresolved_items()
+        let item = unresolved_items(true)
             .into_iter()
             .find(|i| i.item == "registry setup")
             .expect("registry setup item");
@@ -653,7 +671,7 @@ mod tests {
         assert!(r.ready && r.blockers.is_empty());
         assert_eq!(r.verdict, "READY");
         assert!(r.changelog_preview.is_some());
-        assert_eq!(r.unresolved.len(), 2, "green CI adds no unresolved line");
+        assert_eq!(r.unresolved.len(), 1, "green CI adds no unresolved line");
         assert_eq!(r.ci.state, "green");
         assert!(r.at_a_glance[0].ends_with("READY"));
     }
