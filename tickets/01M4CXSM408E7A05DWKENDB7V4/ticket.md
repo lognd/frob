@@ -2,13 +2,13 @@
 id = "01M4CXSM408E7A05DWKENDB7V4"
 title = "Human review lock: crunk.lock [[review]] entries over subject content digests, HUMAN001/002, crunk review and crunk ack (person only)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:54:24Z"
-updated = "2026-10-08T04:54:24Z"
+updated = "2026-10-13T04:28:53Z"
 scope = ["changelog.d/**", "crates/gob-lock/**", "crates/crunk/**", "crates/crunk-check/**", "crates/crunk-spec/**", "crates/frob-release/**", "crates/gob-rules/**", "docs/design/releases.md", "docs/design/rules.md"]
 
 [[acceptance]]
