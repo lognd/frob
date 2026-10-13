@@ -8,8 +8,8 @@ points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:59:43Z"
-updated = "2026-10-13T04:29:08Z"
-scope = ["crates/gob-path/**", "crates/gob-git/src/relpath.rs", "crates/gob-git/src/lib.rs", "crates/gob-git/Cargo.toml", "Cargo.toml", "docs/design/paths.md", "crates/frob-ledger/src/error.rs", "crates/frob-ack/src/error.rs", "crates/frob-ledger/Cargo.toml", "crates/frob-ack/Cargo.toml"]
+updated = "2026-10-13T04:29:30Z"
+scope = ["crates/gob-path/**", "crates/gob-git/src/relpath.rs", "crates/gob-git/src/lib.rs", "crates/gob-git/Cargo.toml", "Cargo.toml", "docs/design/paths.md", "crates/frob-ledger/src/error.rs", "crates/frob-ack/src/error.rs", "crates/frob-ledger/Cargo.toml", "crates/frob-ack/Cargo.toml", "crates/frob-ledger/src/branch.rs"]
 
 [[acceptance]]
 text = "Given random Windows-style and Unix-style host paths under a root, when from_host then to_host runs, then the original path is returned and the RelPath uses only /"
