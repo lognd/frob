@@ -2,13 +2,13 @@
 id = "01M4FGYMCWYPJ04HFYCKPHPNSQ"
 title = "SYS013 binding accuracy: src-layout Python imports are Errors, method-name collisions are not edges"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:39Z"
-updated = "2026-10-09T05:07:39Z"
+updated = "2026-10-13T13:56:58Z"
 idempotency_key = "logand-gaps-B1"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble-bind/**", "crates/gob-symbols/**", "crates/gob-languages/**", "changelog.d/**"]
