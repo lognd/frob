@@ -2,13 +2,13 @@
 id = "01M4D94Y2JVPYCGCZQJF0RDFDA"
 title = "hot-context capability: region reachable (Must/May) from vocabulary-declared hot roots; Unknown edges give Unresolved"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-08T08:12:49Z"
-updated = "2026-10-08T08:12:49Z"
+updated = "2026-10-13T13:01:28Z"
 scope = ["changelog.d/**", "crates/gob-ir/**", "crates/gob-symbols/**", "crates/gob-caps/**"]
 
 [[acceptance]]
