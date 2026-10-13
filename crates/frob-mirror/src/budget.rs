@@ -19,10 +19,10 @@ pub struct RateLimit {
 }
 
 /// Operator configuration for the planner.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BudgetConfig {
-    /// Share of the remaining calls one run may spend, in (0, 1].
-    pub share: f64,
+    /// Percent (0..=100) of the remaining calls one run may spend.
+    pub share_percent: u64,
     /// Most creates per run.
     pub max_creates: u64,
     /// Most mutations per run.
@@ -37,7 +37,7 @@ impl Default for BudgetConfig {
     /// The design defaults: half the remaining calls, 50 creates, 300 mutations, 1 s spacing.
     fn default() -> Self {
         Self {
-            share: 0.5,
+            share_percent: 50,
             max_creates: 50,
             max_mutations: 300,
             reads_per_ticket: 2,
@@ -91,7 +91,7 @@ pub fn plan(limit: RateLimit, cfg: &BudgetConfig) -> Result<Plan, BudgetError> {
         return Err(BudgetError::HeadersMissing { missing });
     }
     let remaining = limit.remaining.unwrap_or(0);
-    let calls = (remaining as f64 * cfg.share.clamp(0.0, 1.0)).floor() as u64;
+    let calls = remaining.saturating_mul(cfg.share_percent.min(100)) / 100;
     let needed = cfg.reads_per_ticket + 1;
     if calls < needed {
         warn!(calls, needed, "budget: too small for one ticket");
@@ -122,7 +122,6 @@ mod tests {
         }
     }
 
-    // frob:tests budget::plan
     #[test]
     fn default_share_caps_calls_creates_and_mutations() {
         let p = plan(lim(Some(5000), Some(1)), &BudgetConfig::default()).unwrap();
