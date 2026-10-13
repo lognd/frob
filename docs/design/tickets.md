@@ -145,6 +145,11 @@ any (provider, reference) pair's latest record for it passes.
 | `cycle` | ticket | cycle id, op (assign, carried, over-commit), reason (required for over-commit) | cycle assign, cycle close | velocity, forecasts, cycle report |
 | `attempt` | ticket | outcome (failed, abandoned), reason | requeue --failed, a failed land | brief, doctor |
 | `triage` | ticket | action (accept, decline, snooze, duplicate), until (snooze only), reason (when given) | ticket triage | inbox; the fold ignores it (the `transition` and `link` events written beside it carry the state change) |
+| `proposal` | ticket | tracker event id, item, field, actor id, time, value digest, excerpt (capped), origin (`tracker`) | mirror run | proposals list, `proposals accept`; the ticket fold ignores it (mirror.md 3.5) |
+| `proposal-superseded` | ticket | the `proposal` fields plus `supersedes` (the replaced tracker event id) | mirror run | proposals list; the latest pending proposal per (item, field) wins |
+| `proposal-accepted` | ticket | tracker event id, reason (when given) | `ticket proposals accept` | proposals list; closed for good, a re-recorded tracker event id stays closed |
+| `proposal-declined` | ticket | tracker event id, reason (when given) | `ticket proposals decline` | proposals list; closed for good |
+| `proposal-expired` | ticket | tracker event id, reason (when given) | mirror run after `proposal_ttl_days` | proposals list; closed for good |
 | `cost` | ticket | tokens in, out, cache, cost, wall seconds | harness hook, land | stats, forecasts |
 
 The class of service is the field `class` (and `due`): `create` and

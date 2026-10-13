@@ -8,12 +8,12 @@ points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:26Z"
-updated = "2026-10-13T04:19:25Z"
+updated = "2026-10-13T04:33:38Z"
 scope = ["changelog.d/**", "crates/gob-ir/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
 text = "Given fixtures in Rust, Python and TypeScript, when def_use runs, then Must and May edges match golden files, with self attributes, setattr, kwargs and by-reference closures as May"
-bound = false
+bound = true
 +++
 
 docs/design/cohesion.md 1.1 and 3.

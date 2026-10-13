@@ -295,6 +295,12 @@ pub fn fold(id: TicketId, events: &[Event]) -> Result<Folded> {
             | EventBody::LandExempt(_)
             | EventBody::Land(_)
             | EventBody::Triage(_)
+            // Proposals are read by `crate::proposal`, never folded into the ticket.
+            | EventBody::Proposal(_)
+            | EventBody::ProposalSuperseded(_)
+            | EventBody::ProposalAccepted(_)
+            | EventBody::ProposalDeclined(_)
+            | EventBody::ProposalExpired(_)
             | EventBody::Other
             // Evidence binds once at the end, through the acceptance remap.
             | EventBody::Evidence(_) => {}

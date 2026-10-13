@@ -245,6 +245,44 @@ pub struct LandData {
     pub pushed: bool,
 }
 
+/// What a `proposal` or `proposal-superseded` event records: a tracker edit held for review (mirror.md 3.5).
+///
+/// Stored by reference: only a digest of the value and a capped excerpt enter the ledger.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ProposalData {
+    /// The tracker's event id for the edit: the idempotency key of the proposal.
+    pub tracker_event: String,
+    /// The tracker item (issue) id.
+    pub item: String,
+    /// The ticket field the edit touches.
+    pub field: String,
+    /// The tracker user id of the editor (never the login).
+    pub actor_id: String,
+    /// When the editor made the edit.
+    pub time: Stamp,
+    /// Digest of the full proposed value.
+    pub digest: String,
+    /// Capped, escaped excerpt of the value.
+    pub excerpt: String,
+    /// Where the text came from; always `tracker` for now.
+    pub origin: String,
+    /// Tracker event id of the proposal this one replaces (`proposal-superseded` only).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supersedes: Option<String>,
+}
+
+/// What `proposal-accepted`, `proposal-declined` and `proposal-expired` record: a proposal closed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ProposalCloseData {
+    /// The tracker event id of the proposal that closed.
+    pub tracker_event: String,
+    /// Why, when given.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
 /// The kind-specific part of an event; the `kind` key selects the variant.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
@@ -276,6 +314,16 @@ pub enum EventBody {
     // frob:ticket 01M44C546DQRE4D11HHPM0HX6M
     /// A triage decision (accept, decline, snooze, duplicate); the inbox reads it, the fold ignores it.
     Triage(TriageData),
+    /// A tracker edit held as a proposal; the proposal fold reads it, the ticket fold ignores it.
+    Proposal(ProposalData),
+    /// A proposal replaced by a later edit of the same actor and field.
+    ProposalSuperseded(ProposalData),
+    /// A proposal accepted into the ticket.
+    ProposalAccepted(ProposalCloseData),
+    /// A proposal declined.
+    ProposalDeclined(ProposalCloseData),
+    /// A proposal that outlived `proposal_ttl_days`.
+    ProposalExpired(ProposalCloseData),
     /// A kind this version does not interpret; it folds to no change.
     #[serde(other)]
     Other,
@@ -438,6 +486,11 @@ pub const fn kind_name(body: &EventBody) -> &'static str {
         EventBody::Land(_) => "land",
         EventBody::Scrub(_) => "scrub",
         EventBody::Triage(_) => "triage",
+        EventBody::Proposal(_) => "proposal",
+        EventBody::ProposalSuperseded(_) => "proposal-superseded",
+        EventBody::ProposalAccepted(_) => "proposal-accepted",
+        EventBody::ProposalDeclined(_) => "proposal-declined",
+        EventBody::ProposalExpired(_) => "proposal-expired",
         EventBody::Other => "other",
     }
 }
@@ -445,6 +498,20 @@ pub const fn kind_name(body: &EventBody) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn proposal_data(key: &str, supersedes: Option<&str>) -> ProposalData {
+        ProposalData {
+            tracker_event: key.into(),
+            item: "I_1".into(),
+            field: "title".into(),
+            actor_id: "42".into(),
+            time: "2026-11-01T00:00:00Z".parse().expect("stamp"),
+            digest: "sha256:ab".into(),
+            excerpt: "new title".into(),
+            origin: "tracker".into(),
+            supersedes: supersedes.map(str::to_owned),
+        }
+    }
 
     fn create() -> CreateData {
         CreateData {
@@ -547,6 +614,20 @@ mod tests {
                 action: TriageAction::Snooze,
                 until: Some("2026-11-01T00:00:00Z".parse().expect("stamp")),
                 reason: Some("after the release".into()),
+            }),
+            EventBody::Proposal(proposal_data("t1", None)),
+            EventBody::ProposalSuperseded(proposal_data("t2", Some("t1"))),
+            EventBody::ProposalAccepted(ProposalCloseData {
+                tracker_event: "t2".into(),
+                reason: None,
+            }),
+            EventBody::ProposalDeclined(ProposalCloseData {
+                tracker_event: "t3".into(),
+                reason: Some("no".into()),
+            }),
+            EventBody::ProposalExpired(ProposalCloseData {
+                tracker_event: "t4".into(),
+                reason: None,
             }),
         ];
         for body in bodies {
