@@ -8,8 +8,8 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:54:24Z"
-updated = "2026-10-13T04:55:25Z"
-scope = ["changelog.d/**", "crates/gob-lock/**", "crates/crunk/**", "crates/crunk-check/**", "crates/crunk-spec/**", "crates/frob-release/**", "crates/gob-rules/**", "docs/design/releases.md", "docs/design/rules.md", "crates/crunk-rules/**", "docs/crunk/**", "docs/schemas/crunk.json", "docs/design/crunk.md", "crates/gob-exec/**", "crates/frob/src/release_cmd.rs", "crates/frob/tests/**", "crates/gob-product/**", "Cargo.lock"]
+updated = "2026-10-13T05:21:35Z"
+scope = ["changelog.d/**", "crates/gob-lock/**", "crates/crunk/**", "crates/crunk-check/**", "crates/crunk-spec/**", "crates/frob-release/**", "crates/gob-rules/**", "docs/design/releases.md", "docs/design/rules.md", "crates/crunk-rules/**", "docs/crunk/**", "docs/schemas/crunk.json", "docs/design/crunk.md", "crates/gob-exec/**", "crates/frob/src/release_cmd.rs", "crates/frob/tests/**", "crates/gob-product/**", "Cargo.lock", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
 text = "Given an acked screen, when a token it uses changes, then HUMAN001 fires (Advisory in check and CI) naming the screen and the token, and clears only after crunk ack records a new digest"
