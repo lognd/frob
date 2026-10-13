@@ -517,7 +517,7 @@ impl LeaseStore {
             match toml::from_str::<Waiter>(&text) {
                 Ok(w) => out.push(w),
                 Err(e) => {
-                    tracing::warn!(path = %path.display(), error = %e, "corrupt waiter file skipped")
+                    tracing::warn!(path = %path.display(), error = %e, "corrupt waiter file skipped");
                 }
             }
         }
