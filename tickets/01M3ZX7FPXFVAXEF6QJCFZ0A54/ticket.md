@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:22Z"
-updated = "2026-10-13T03:37:30Z"
+updated = "2026-10-13T03:53:24Z"
 idempotency_key = "m2-sec-tree-digest"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-packs/src/digest/**", "crates/gob-packs/src/lib.rs", "crates/gob-packs/Cargo.toml", "Cargo.lock"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a symlink, hardlink, device file or path escaping the root inside a pack, when digested, then PACK005 is returned and no digest is produced"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.1 (I3).
