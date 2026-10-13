@@ -81,6 +81,7 @@ pub mod objects;
 pub mod ops;
 pub mod path_fn; // frob:ticket 01M3ZX82K7HX9D2VKT25KS4MV2
 pub mod privacy;
+pub mod proposal;
 pub mod redact;
 pub mod reindex; // frob:ticket 01M3ZX85S7ASFGT31GDYMRB5JX
 pub mod replay; // frob:ticket 01M3ZX86R5V67MT726K3X7KVWM
