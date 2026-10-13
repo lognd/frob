@@ -1,0 +1,1 @@
+frob: gob-ir gains a def_use engine (Must/May def-use edges per unit, May for attributes, dynamic setattr, kwargs splats, closures and method mutation) with Rust, Python and TypeScript syntax tables in gob-symbols.

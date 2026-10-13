@@ -1,0 +1,37 @@
+---
+source: crates/gob-symbols/tests/def_use.rs
+expression: "render(\"flow.py\", \"python\", include_str!(\"fixtures/def_use/flow.py\"))"
+---
+a           L7 -> L16  may(dynamic-attribute)
+a           L7 -> L8   may(dynamic-attribute)
+a        param -> L16  must
+a        param -> L2   must
+a        param -> L7   must
+a        param -> L8   must
+a.k         L7 -> L8   may(dynamic-attribute)
+b        param -> L3   must
+i          L16 -> L17  must
+kw          L9 -> L10  may(kwargs)
+kw       param -> L10  must
+kw       param -> L9   must
+self.v      L5 -> L6   may(attribute)
+w           L8 -> L18  must
+x           L2 -> L11  may(closure)
+x           L2 -> L12  must
+x           L2 -> L4   must
+x           L2 -> L5   must
+x        param -> L11  may(closure)
+y           L3 -> L11  may(closure)
+y           L4 -> L11  may(closure)
+y           L4 -> L7   must
+y          L13 -> L11  may(closure)
+y          L13 -> L17  must
+y          L13 -> L18  must
+y          L15 -> L11  may(closure)
+y          L15 -> L17  must
+y          L15 -> L18  must
+y          L17 -> L11  may(closure)
+y          L17 -> L17  must
+y          L17 -> L18  must
+y        param -> L11  may(closure)
+z           L6 -> L18  must

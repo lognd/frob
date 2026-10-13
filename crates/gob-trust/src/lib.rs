@@ -19,6 +19,8 @@
 //! assert!(verify(&key, "gob-cache-row/v1", b"rox", &tag).is_err());
 //! ```
 
+// frob:ticket 01M3ZX7VYSYT45N8ZKZJQ2DY5D
+pub mod effects;
 mod error;
 // frob:ticket 01M3ZX7TR7HMSXPCQSHFSG8SMS
 mod guard;
