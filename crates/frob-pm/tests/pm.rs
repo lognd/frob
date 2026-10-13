@@ -691,3 +691,64 @@ fn done_facts_reads_every_tickets_events_in_one_batch() {
         "one batched events walk for four tickets"
     );
 }
+
+/// Commits on `main` in `dir`.
+fn commit_count(dir: &Path) -> usize {
+    let out = Command::new("git")
+        .args(["rev-list", "--count", "main"])
+        .current_dir(dir)
+        .output()
+        .expect("git");
+    String::from_utf8_lossy(&out.stdout)
+        .trim()
+        .parse()
+        .expect("count")
+}
+
+/// Assigning N tickets (some moved out of another cycle) writes exactly one ledger commit.
+// frob:ticket 01M4DPJJ8J8C8VP9H6EDJG6B4Z
+// frob:tests crates/frob-pm/src/store.rs::PmStore.assign_many
+#[test]
+fn assigning_many_tickets_is_one_commit() {
+    let (dir, ledger) = fixture();
+    let pm = PmStore::new(&ledger);
+    let mk = |s: &str, e: &str| NewObject::Cycle {
+        start: day(s),
+        end: day(e),
+        goal: "g".into(),
+        capacity_points: None,
+    };
+    let old = pm.create(mk("2026-10-05", "2026-10-11")).expect("old");
+    let new = pm.create(mk("2026-10-12", "2026-10-18")).expect("new");
+    let (old, new) = (old.object.id(), new.object.id());
+    let tickets: Vec<TicketId> = (0..4).map(|i| ticket(&ledger, &format!("T{i}"))).collect();
+    pm.set_member(ObjectKind::Cycle, old, tickets[0], Op::Add)
+        .expect("seed");
+    pm.set_member(ObjectKind::Cycle, old, tickets[1], Op::Add)
+        .expect("seed");
+    let before = commit_count(dir.path());
+    let moves = [
+        (tickets[0], Some(old)),
+        (tickets[1], Some(old)),
+        (tickets[2], None),
+        (tickets[3], None),
+    ];
+    let applied = pm.assign_many(new, &moves, Vec::new()).expect("assign");
+    assert_eq!(
+        commit_count(dir.path()),
+        before + 1,
+        "one commit for four tickets"
+    );
+    assert_eq!(applied.len(), 2, "the old cycle and the target");
+    let members = |id| {
+        pm.get(ObjectKind::Cycle, id)
+            .expect("get")
+            .expect("cycle")
+            .object
+            .members()
+            .to_vec()
+    };
+    assert_eq!(members(new), tickets);
+    assert!(members(old).is_empty(), "both moved out");
+    assert!(pm.assign_many(new, &[], Vec::new()).is_err());
+}

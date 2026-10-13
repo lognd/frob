@@ -1342,3 +1342,35 @@ fn wait_times_out_cleanly_and_a_queued_waiter_blocks_overlapping_work() {
         .expect_err("queued behind the waiter");
     assert_eq!(refusal_code(&err), "E-LEASE-QUEUED");
 }
+
+// frob:ticket 01M4DPJJW8D3KXZVTEN5D4WN5G
+// frob:tests crates/frob-worktree/src/work.rs::seed_caches
+#[test]
+fn work_seeds_the_shared_cache_from_a_warm_primary() {
+    if !git_available() {
+        eprintln!("git not available; skipping");
+        return;
+    }
+    let fx = Fixture::new();
+    let key = gob_cache::FindingsKey {
+        file_digest: "d".into(),
+        rule_id: "R".into(),
+        rule_version: 1,
+        side_input_digest: "s".into(),
+    };
+    gob_cache::Cache::open(&fx.root.join(".frob")).put_findings(&key, b"warm");
+    let ledger = fx.ledger(None);
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let id = Fixture::ticket(&ledger, "Seed", TicketType::Task, &["crates/x/**"]);
+    let started = ws
+        .work(&id.to_string(), &WorkOptions::default())
+        .expect("work");
+    let hit = gob_cache::Cache::open_shared(&started.path, ".frob").get_findings(&key);
+    assert_eq!(hit.as_deref(), Some(&b"warm"[..]));
+}

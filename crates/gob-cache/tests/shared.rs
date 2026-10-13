@@ -3,7 +3,7 @@
 use std::path::Path;
 use std::process::Command;
 
-use gob_cache::{Cache, FindingsKey, git_common_dir, shared_dir};
+use gob_cache::{Cache, FindingsKey, Seeded, git_common_dir, seed_shared, shared_dir};
 
 const CHILD_ENV: &str = "GOB_CACHE_SHARED_TEST_DIR";
 const ROWS: u32 = 300;
@@ -122,4 +122,25 @@ fn gob_cache_does_not_depend_on_gob_exec() {
     );
     let (primary, linked) = fake_repo(tempfile::tempdir().unwrap().keep().as_path());
     assert_eq!(git_common_dir(&primary), git_common_dir(&linked));
+}
+
+// frob:ticket 01M4DPJJW8D3KXZVTEN5D4WN5G
+// frob:tests crates/gob-cache/src/lib.rs::seed_shared
+#[test]
+fn a_warm_primary_cache_seeds_the_shared_one_once() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (primary, linked) = fake_repo(tmp.path());
+    assert_eq!(seed_shared(&primary, ".frob"), Seeded::NothingToSeed);
+    Cache::open(&primary.join(".frob")).put_findings(&key("w", 1), b"warm");
+    assert_eq!(seed_shared(&primary, ".frob"), Seeded::Copied);
+    let hit = Cache::open_shared(&linked, ".frob").get_findings(&key("w", 1));
+    assert_eq!(hit.as_deref(), Some(&b"warm"[..]));
+    // The shared cache now exists and wins over later primary rows.
+    Cache::open(&primary.join(".frob")).put_findings(&key("w", 2), b"late");
+    assert_eq!(seed_shared(&primary, ".frob"), Seeded::AlreadyShared);
+    assert!(
+        Cache::open_shared(&linked, ".frob")
+            .get_findings(&key("w", 2))
+            .is_none()
+    );
 }
