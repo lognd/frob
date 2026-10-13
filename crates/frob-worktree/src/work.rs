@@ -478,6 +478,8 @@ impl Workspace<'_> {
             let aged = normalize_mtimes(repo, path);
             // frob:ticket 01M4S28S5N358QCYR9A4XM1NC0
             share_build_dir(repo.common_dir(), path);
+            // frob:ticket 01M4DPJJW8D3KXZVTEN5D4WN5G
+            seed_caches(&self.primary_root());
             tracing::info!(ticket = %id, handle, path = %path.display(), branch, base = %base, aged, "worktree created");
         }
         let (merge, conflicts) = if exists {
@@ -756,6 +758,20 @@ fn git_out(repo: &Repo, cwd: &Path, args: &[&str]) -> Option<String> {
     };
     let out = repo.runner().run(&spec).ok()?;
     (out.status == Outcome::Exited(0)).then_some(out.stdout)
+}
+
+/// State directories whose shared cache a new worktree is seeded for.
+const SEEDED_STATE_DIRS: [&str; 2] = [".frob", ".grimble"];
+
+/// Seed each product's repository-shared cache from the primary checkout's own cache when the shared one does not exist yet.
+///
+/// Best effort: failures are logged by [`gob_cache::seed_shared`] and the checks run cold.
+// frob:ticket 01M4DPJJW8D3KXZVTEN5D4WN5G
+pub fn seed_caches(primary: &Path) {
+    for state_dir in SEEDED_STATE_DIRS {
+        let outcome = gob_cache::seed_shared(primary, state_dir);
+        tracing::debug!(state_dir, ?outcome, "worktree cache seeding");
+    }
 }
 
 /// Directory (under `<common>/frob/`) of the cargo target directory every land checkout and ticket worktree shares.

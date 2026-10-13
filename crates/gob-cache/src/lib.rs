@@ -253,6 +253,79 @@ pub fn shared_dir(root: &Path, state_dir: &str) -> Option<PathBuf> {
     )
 }
 
+/// What [`seed_shared`] did.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Seeded {
+    /// The shared cache already exists; nothing was copied.
+    AlreadyShared,
+    /// No shared location (not a git checkout) or no per-checkout cache to copy.
+    NothingToSeed,
+    /// The per-checkout cache of the primary was snapshotted into the shared location.
+    Copied,
+    /// The copy failed (logged at warn); the shared cache starts empty.
+    Failed,
+}
+
+/// Seeds the repository-shared cache for `state_dir` from the primary checkout's own `<primary>/<state_dir>/cache.sqlite`.
+///
+/// A repository warmed before cache sharing (or by a per-checkout run) keeps its rows in the
+/// primary's directory; a new worktree would otherwise start from an empty shared cache and
+/// analyse every file cold. The snapshot is a consistent `VACUUM INTO` a temporary file renamed
+/// into place, so a concurrent opener never sees a partial database. An existing shared cache wins.
+// frob:ticket 01M4DPJJW8D3KXZVTEN5D4WN5G
+pub fn seed_shared(primary: &Path, state_dir: &str) -> Seeded {
+    let Some(dest_dir) = shared_dir(primary, state_dir) else {
+        tracing::debug!(primary = %primary.display(), "no shared cache location; nothing to seed");
+        return Seeded::NothingToSeed;
+    };
+    let dest = dest_dir.join(DB_FILE);
+    if dest.exists() {
+        tracing::debug!(dest = %dest.display(), "shared cache present; not seeding");
+        return Seeded::AlreadyShared;
+    }
+    let src = primary.join(state_dir).join(DB_FILE);
+    if !src.is_file() {
+        tracing::debug!(src = %src.display(), "no per-checkout cache to seed from");
+        return Seeded::NothingToSeed;
+    }
+    let started = std::time::Instant::now();
+    let tmp = dest_dir.join(format!("{DB_FILE}.seed-{}", std::process::id()));
+    let result = std::fs::create_dir_all(&dest_dir)
+        .map_err(|e| format!("create dir: {e}"))
+        .and_then(|()| {
+            let _ = std::fs::remove_file(&tmp);
+            Connection::open_with_flags(&src, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+                .map_err(|e| format!("open source: {e}"))
+        })
+        .and_then(|conn| {
+            conn.busy_timeout(CacheConfig::default().busy_timeout)
+                .map_err(|e| format!("busy timeout: {e}"))?;
+            conn.execute("VACUUM INTO ?1", [tmp.to_string_lossy().as_ref()])
+                .map_err(|e| format!("snapshot: {e}"))
+        })
+        .and_then(|_| {
+            // hard_link fails when a racing seeder won, which is the desired "existing wins".
+            let linked = std::fs::hard_link(&tmp, &dest);
+            let _ = std::fs::remove_file(&tmp);
+            linked.map_err(|e| format!("install: {e}"))
+        });
+    match result {
+        Ok(()) => {
+            tracing::info!(src = %src.display(), dest = %dest.display(), elapsed_ms = started.elapsed().as_millis(), "shared cache seeded from the primary");
+            Seeded::Copied
+        }
+        Err(err) if dest.exists() => {
+            tracing::debug!(%err, "lost the seeding race; shared cache present");
+            Seeded::AlreadyShared
+        }
+        Err(err) => {
+            tracing::warn!(src = %src.display(), %err, "shared cache not seeded; it starts empty");
+            let _ = std::fs::remove_file(&tmp);
+            Seeded::Failed
+        }
+    }
+}
+
 impl Cache {
     /// Opens the repository-shared cache for `root`'s `state_dir`, else `<root>/<state_dir>`.
     pub fn open_shared(root: &Path, state_dir: &str) -> Self {
