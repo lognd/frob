@@ -192,3 +192,61 @@ fn worktree_dir_matches_both_styles() {
         assert_eq!(got, *want, "{text}");
     }
 }
+
+/// After a clean scan is recorded, a later scan reads only the files written since, and still reports a dirty one.
+// frob:ticket 01M4DPJHJG8CH9J2H24S030HC7
+// frob:tests crates/frob-ledger/src/privacy.rs::Ledger.home_path_scan
+#[test]
+fn clean_scan_makes_the_next_scan_incremental() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let repo = Repo::init(dir.path()).expect("init");
+    std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").expect("head");
+    let cfg = std::fs::read_to_string(repo.git_dir().join("config")).expect("config");
+    std::fs::write(
+        repo.git_dir().join("config"),
+        format!("{cfg}[user]\n\tname = Test User\n\temail = test@example.com\n"),
+    )
+    .expect("identity");
+    drop(repo);
+    let repo = Repo::discover(dir.path()).expect("discover");
+    repo.commit_paths(
+        "refs/heads/main",
+        &[(
+            RelPath::new("README.md").expect("path"),
+            Some(b"hello\n".to_vec()),
+        )],
+        "root",
+        &CommitOptions::default(),
+    )
+    .expect("root commit");
+    let ledger = Ledger::open(
+        repo,
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
+    for title in ["One", "Two", "Three"] {
+        ledger
+            .new_ticket(NewTicket::new(title, TicketType::Task))
+            .expect("ticket");
+    }
+    let (found, first) = ledger.home_path_scan().expect("full scan");
+    assert!(
+        found.is_empty() && first >= 6,
+        "first scan reads all: {first}"
+    );
+    ledger
+        .new_ticket(NewTicket::new("Four", TicketType::Task))
+        .expect("ticket");
+    let (found, second) = ledger.home_path_scan().expect("incremental scan");
+    assert!(found.is_empty());
+    assert_eq!(second, 2, "only the new ticket's two files");
+    let mut dirty = NewTicket::new("Dirty", TicketType::Task);
+    dirty.body = "see /home/name/projects/x".to_owned();
+    ledger.new_ticket(dirty).expect("dirty");
+    let (found, third) = ledger.home_path_scan().expect("dirty scan");
+    assert_eq!(found.len(), 2);
+    assert_eq!(third, 2);
+    let (found, fourth) = ledger.home_path_scan().expect("rescan");
+    assert_eq!(found.len(), 2, "a dirty ledger is never recorded clean");
+    assert_eq!(fourth, 2);
+}
