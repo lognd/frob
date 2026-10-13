@@ -2061,12 +2061,9 @@ fn same_dir(logged: &str, wt: &Path) -> bool {
 }
 
 // frob:ticket 01M4MH61ZJD4VYYXPANZ8132AR
+// frob:ticket 01M4QDWQN6QM6Q89TG6NXY7BCD
 // frob:tests crates/frob-land/src/land.rs::verify_check
 #[test]
-#[cfg_attr(
-    windows,
-    ignore = "frob:todo T-NXY7BCD: the sh tool probe spawns nothing on the Windows runner"
-)]
 fn land_reuses_a_recorded_tool_pass_for_an_unchanged_tree_and_reruns_after_an_input_changes() {
     if !git_available() {
         return;
