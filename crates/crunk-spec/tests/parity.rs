@@ -115,7 +115,7 @@ fn every_fixture_equals_the_python_spec_dump() {
 fn corpus_covers_every_section() {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     // Tables added after the Python reference was frozen; tests/spec.rs covers them.
-    const RUST_ONLY: &[&str] = &["review"];
+    const RUST_ONLY: &[&str] = &["review", "decisions"];
     let all: String = fixtures()
         .iter()
         .map(|p| std::fs::read_to_string(p).unwrap())

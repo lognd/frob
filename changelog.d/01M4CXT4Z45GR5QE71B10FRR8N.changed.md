@@ -1,0 +1,1 @@
+crunk gains a [decisions] table and nine advisory SLOP rules (default accent, gradient and glow density, unchosen and unshipped fonts, eyebrow labels, uniform radius, emoji icons, buzzword density) that a declared decision silences.
