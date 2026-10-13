@@ -2,7 +2,8 @@
 id = "01M4CXT4Z45GR5QE71B10FRR8N"
 title = "SLOP T0 first slice: default palette accent, gradient and glow density, unchosen fonts, emoji bullets, uniform radius, eyebrow repetition, buzzword density"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
