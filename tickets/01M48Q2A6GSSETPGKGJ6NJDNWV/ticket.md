@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:51Z"
-updated = "2026-10-13T07:49:24Z"
+updated = "2026-10-13T07:49:40Z"
 scope = ["crates/frob-ledger/**", "crates/frob/src/ticket/**", "crates/frob/tests/**"]
 
 [[acceptance]]
@@ -16,11 +16,11 @@ bound = true
 
 [[acceptance]]
 text = "orphans appear under Unparented"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "JSON carries the same tree"
-bound = false
+bound = true
 +++
 
 The backlog view (D104: a flag, not a verb): a hierarchy by parent links (milestone, epic, story, task), rank order within a level, points and roll-up points with percent done per node, blocked and doable markers, folding below a depth (--depth N, like clocx --rows), filters shared with ticket list. Orphans are listed under an Unparented node, never dropped.
