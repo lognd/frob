@@ -13,7 +13,8 @@ mod doctor;
 mod product;
 pub mod workspace;
 
-pub use check::{Check, sibling_check};
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+pub use check::{Check, shared_flags, sibling_check};
 pub use doctor::Doctor;
 pub use gob_cli;
 pub use product::{CheckOptions, Product, ProductRun};

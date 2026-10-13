@@ -336,6 +336,21 @@
         }
       ]
     },
+    "Provenance": {
+      "description": "Who authored a screen.",
+      "oneOf": [
+        {
+          "const": "human",
+          "description": "Written by a person.",
+          "type": "string"
+        },
+        {
+          "const": "agent",
+          "description": "Written by an agent; a human review is required unless `review = \"skip\"`.",
+          "type": "string"
+        }
+      ]
+    },
     "RawPlatform": {
       "additionalProperties": false,
       "description": "One `[[platform]]` entry: an id, a renderer and that renderer's parameters.\n\nThe `web` renderer takes `engine` and `viewport` (required) plus the other web keys; the\n`command` renderer takes `command` (required), `cwd` and `env`. A key of the other renderer\nis rejected at load. Parameters are flat in the entry, not nested.",
@@ -517,6 +532,63 @@
       },
       "type": "object"
     },
+    "ReviewConfig": {
+      "additionalProperties": false,
+      "description": "The `[review]` table: the human review lock policy.",
+      "properties": {
+        "require_signed": {
+          "default": false,
+          "description": "When true, the commit that introduced an ack must carry a good signature from a key\nlisted for a reviewer, else HUMAN001 fires.",
+          "type": "boolean"
+        },
+        "reviewers": {
+          "default": [],
+          "description": "Allow-list of reviewers; empty means any identity may ack.",
+          "items": {
+            "$ref": "#/$defs/Reviewer"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ReviewRequirement": {
+      "description": "Whether a screen needs a recorded human review.",
+      "oneOf": [
+        {
+          "const": "human",
+          "description": "A human review is required.",
+          "type": "string"
+        },
+        {
+          "const": "skip",
+          "description": "No human review is required, even for an agent screen.",
+          "type": "string"
+        }
+      ]
+    },
+    "Reviewer": {
+      "additionalProperties": false,
+      "description": "One `[[review.reviewers]]` entry: who may ack, and the signing keys their acks may carry.",
+      "properties": {
+        "id": {
+          "description": "The reviewer identity, matched against the git `user.email` (or `user.name`) at ack time.",
+          "type": "string"
+        },
+        "keys": {
+          "default": [],
+          "description": "Signing key ids or fingerprints the reviewer's signed commits may carry.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
     "RosterEntry": {
       "additionalProperties": false,
       "description": "One `[[session]]` or `[[mock_set]]` roster entry: an id plus opaque renderer-consumed data.",
@@ -558,6 +630,38 @@
         "id": {
           "description": "Screen id, unique across `[[screen]]`.",
           "type": "string"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Who made the screen: `human` or `agent`; an agent screen needs a human review by default."
+        },
+        "review": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReviewRequirement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "`human` requires a recorded human review (HUMAN001); `skip` waives it for an agent screen."
+        },
+        "sources": {
+          "description": "Source files or directories (relative to the project root) whose bytes and token uses the\nreview digest covers; absent means only the spec and every token.",
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
         },
         "states": {
           "description": "Named states, at least one.",
@@ -1286,6 +1390,17 @@
         "root_font_size"
       ],
       "type": "object"
+    },
+    "review": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReviewConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Human review lock policy; optional."
     },
     "scales": {
       "additionalProperties": false,

@@ -2,7 +2,8 @@
 
 use gob_lock::{
     Current, CurrentFlow, CurrentSymbol, EntryKind, Facet, FacetSet, FlowEnd, FlowEntry, LockEntry,
-    LockError, LockFile, LockTarget, PlanError, PlanOptions, diff, file_name, plan,
+    LockError, LockFile, LockTarget, PlanError, PlanOptions, ReviewEntry, ReviewVerdict, diff,
+    file_name, plan,
 };
 
 fn entry(sig: &str) -> LockEntry {
@@ -384,4 +385,39 @@ fn gob_lock_does_not_depend_on_gob_ir() {
         );
     }
     assert_eq!(gob_lock::DIGEST_SCHEME, gob_caps::DIGEST_SCHEME);
+}
+
+// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+// frob:tests crates/gob-lock/src/file.rs::ReviewEntry
+#[test]
+fn review_entries_round_trip_sorted_with_inputs() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("crunk.lock");
+    let mut lock = LockFile::default();
+    for subject in ["screen/z/default", "screen/a/default"] {
+        let mut inputs = std::collections::BTreeMap::new();
+        inputs.insert("token:--color-bg".to_owned(), "abc".to_owned());
+        inputs.insert("source:src/a.tsx".to_owned(), "def".to_owned());
+        lock.reviews.insert(
+            subject.to_owned(),
+            ReviewEntry {
+                digest: "d1".to_owned(),
+                verdict: ReviewVerdict::Approved,
+                reviewer: "Me <me@example.com>".to_owned(),
+                at: "2026-10-13T00:00:00Z".to_owned(),
+                note: Some("looks right".to_owned()),
+                render: None,
+                non_interactive: subject.ends_with("z/default"),
+                inputs,
+            },
+        );
+    }
+    lock.save(&path).unwrap();
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert!(text.find("screen/a/default").unwrap() < text.find("screen/z/default").unwrap());
+    assert_eq!(text.matches("non_interactive").count(), 1);
+    let back = LockFile::load(&path).unwrap();
+    assert_eq!(back, lock);
+    lock.save(&path).unwrap();
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
 }
