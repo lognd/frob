@@ -2,7 +2,7 @@
 id = "01M4V2A3VGST1NVJ0X7BR38TGJ"
 title = "Regenerate stale generated docs on experimental (GEN001 CI red)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
