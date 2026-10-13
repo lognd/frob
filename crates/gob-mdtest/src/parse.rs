@@ -239,12 +239,17 @@ fn markers(text: &str, line_err: usize, default_rule: &RuleId) -> Result<Vec<Mar
             }
             continue;
         };
+        let start = ["//", "#", "<!--"]
+            .iter()
+            .filter_map(|t| l[..c + hit.at].rfind(t))
+            .max()
+            .unwrap_or(c);
         let tail = &l[c..][hit.tail_at..];
         let mut m = parse_tail(tail, default_rule, hit).map_err(|e| ParseError {
             line: line_err,
             message: format!("bad marker on block line {line}: {e}"),
         })?;
-        if l[..c].trim().is_empty() {
+        if l[..start].trim().is_empty() {
             pending.push((i + 1, m));
         } else {
             m.line = line;
