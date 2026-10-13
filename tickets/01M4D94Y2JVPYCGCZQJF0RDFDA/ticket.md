@@ -8,7 +8,7 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-08T08:12:49Z"
-updated = "2026-10-13T13:26:32Z"
+updated = "2026-10-13T13:26:33Z"
 scope = ["changelog.d/**", "crates/gob-ir/**", "crates/gob-symbols/**", "crates/gob-caps/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a call through an interface with unknown targets, when queried, then the answer is May; given the unity pack disabled, then NotApplicable"
-bound = false
+bound = true
 +++
 
 notes/research/lint-catalogue-2026-10-08.md rows U02, U03 (4.2 N17); notes/research/creators-games-2026-10-08.md 5.1 ranks 2-3 (Unity docs, Microsoft analyzers, JetBrains performance-critical context, Dunstan measurements). JetBrains' hot context is IDE-only, so this is value only frob provides in CI. Also usable for game loops, render bodies and request handlers.
