@@ -48,6 +48,10 @@ args = ["lease", "widen", "{ticket}"]
 exit = [0, 2, 3]
 budget_ms = 500
 
+# frob:ticket 01M4S9C3XGXEZSWB8T2WMXTC4A
+[scenario."frob lease release"]
+skip = "gives up the caller's lease on a ticket, which mutates lease state and needs a finished-but-unlanded ticket that the repo fixture does not provide; the cost is a single ledger write"
+
 [scenario."frob board"]
 args = ["board"]
 readonly = true
