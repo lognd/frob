@@ -7,11 +7,11 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-11T18:00:19Z"
-updated = "2026-10-13T03:08:43Z"
+updated = "2026-10-13T03:13:28Z"
 
 [[acceptance]]
 text = "Eviction is LRU by last-use stamp with a size budget; entries used in the last N hours or by any live worktree are never evicted"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A before/after timing of frob check and frob land on a warm tree shows no regression"
