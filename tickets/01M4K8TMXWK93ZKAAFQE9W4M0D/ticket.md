@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "Claude"
 created = "2026-10-10T16:02:38Z"
-updated = "2026-10-12T23:56:59Z"
+updated = "2026-10-13T00:11:18Z"
 scope = ["crates/frob/src/**", "crates/grimble/src/**", "crates/crunk/src/**", "crates/gob-product/src/**", "crates/gob-product/Cargo.toml", "crates/gob-product/tests/**", "Cargo.lock"]
 
 [[links]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the same repo for grimble check and crunk check, then both exit 3 with E-STATE-TRACKED"
-bound = false
+bound = true
 +++
 
 ~FSG8SMS added gob_trust::check_state_untracked and Refusal::state_tracked. Call them at the start of every frob/grimble/crunk run so a tracked .frob/.grimble/.crunk file exits 3 with E-STATE-TRACKED.
