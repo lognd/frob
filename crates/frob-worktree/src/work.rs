@@ -765,7 +765,7 @@ const SEEDED_STATE_DIRS: [&str; 2] = [".frob", ".grimble"];
 
 /// Seed each product's repository-shared cache from the primary checkout's own cache when the shared one does not exist yet.
 ///
-/// Best effort: failures are logged by [`gob_cache::seed_shared`] and the checks run cold.
+/// Best effort: failures are logged by `gob_cache::seed_shared` and the checks run cold.
 // frob:ticket 01M4DPJJW8D3KXZVTEN5D4WN5G
 pub fn seed_caches(primary: &Path) {
     for state_dir in SEEDED_STATE_DIRS {
