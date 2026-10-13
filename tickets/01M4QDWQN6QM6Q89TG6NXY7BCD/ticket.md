@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-12T06:48:07Z"
-updated = "2026-10-12T23:46:38Z"
+updated = "2026-10-12T23:46:46Z"
 scope = ["crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
