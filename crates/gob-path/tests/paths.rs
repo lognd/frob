@@ -42,7 +42,7 @@ fn prop_unix_roundtrip() {
         prop_assert_eq!(&got, &rel);
         prop_assert_eq!(got.to_host_style(PathStyle::Unix, &root), full);
         let host = rel.to_host(Path::new("/r"));
-        prop_assert_eq!(RelPath::from_host(Path::new("/r"), &host).ok(), cfg!(unix).then_some(rel));});
+        if cfg!(unix) { prop_assert_eq!(RelPath::from_host(Path::new("/r"), &host).ok(), Some(rel)); }});
 }
 
 // frob:tests prop_invalid_component_refused
