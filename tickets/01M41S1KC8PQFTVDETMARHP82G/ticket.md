@@ -2,7 +2,8 @@
 id = "01M41S1KC8PQFTVDETMARHP82G"
 title = "gob-path crate: RelPath moved from gob-git, Shown, component validation, typed-path property tests"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
