@@ -50,6 +50,13 @@ node crunk : trusted {
   may exec at "crates/crunk*/tests/**";
 }
 
+/// The std rules compiled to Rust by `cargo dev gen std-rules`: no grants, so any ambient effect in them is CAP001.
+node std_rules : trusted {
+  kind component;
+  clearance Internal;
+  owns "packs/std/generated/**";
+}
+
 /// Substrate data (check results, locks, walks) flows to crunk, which calls it (SYS013 allows an edge in either direction of a flow).
 flow gob_to_crunk : gob -> crunk {
   label Internal;

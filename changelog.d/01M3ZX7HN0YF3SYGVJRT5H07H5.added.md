@@ -1,0 +1,1 @@
+Added `cargo dev gen std-rules`, which compiles the std GRL sources under `packs/std/rules` to checked-in Rust modules under `packs/std/generated`; `cargo dev gen all --check` reports a stale module as GEN001, each module forbids `unsafe`, and the model gives its node no grants so any ambient effect is CAP001.

@@ -8,6 +8,7 @@ pub mod grl_catalog;
 pub mod rules;
 pub mod rules_index;
 pub mod schemas;
+pub mod std_rules;
 
 /// The generator version stamped into every marker.
 pub const GENERATOR_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -19,6 +20,7 @@ pub fn source_of(kind: &str) -> &'static str {
         "directives" => "directive declarations",
         "config" => "config table declarations",
         "cli" => "command registry",
+        "std-rules" => "std GRL sources (packs/std/rules)",
         _ => "schema declarations",
     }
 }
