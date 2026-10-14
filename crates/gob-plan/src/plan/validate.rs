@@ -300,9 +300,21 @@ fn references(p: &PlanParts) -> Result<(), PlanError> {
                 var_in_range(*var, p.vars)?;
                 str_in_range(*attr, n)?;
             }
-            Op::Under { subject, prefix } => {
+            Op::MatchSnippet { var, lang, pattern } => {
+                var_in_range(*var, p.vars)?;
+                str_in_range(*lang, n)?;
+                str_in_range(*pattern, n)?;
+            }
+            Op::MatchGlobOperand {
+                subject,
+                pattern: other,
+            }
+            | Op::Under {
+                subject,
+                prefix: other,
+            } => {
                 operand_refs(subject, p)?;
-                operand_refs(prefix, p)?;
+                operand_refs(other, p)?;
             }
             Op::InUnit { sub, unit } => {
                 var_in_range(*sub, p.vars)?;
@@ -536,10 +548,17 @@ impl<'a> Walk<'a> {
                 self.use_operand(subject)?;
             }
             Op::Is { subject, .. } | Op::Exists { subject } => self.use_operand(subject)?,
-            Op::HasAttr { var, .. } => self.use_var(*var)?,
-            Op::Under { subject, prefix } => {
+            Op::HasAttr { var, .. } | Op::MatchSnippet { var, .. } => self.use_var(*var)?,
+            Op::MatchGlobOperand {
+                subject,
+                pattern: other,
+            }
+            | Op::Under {
+                subject,
+                prefix: other,
+            } => {
                 self.use_operand(subject)?;
-                self.use_operand(prefix)?;
+                self.use_operand(other)?;
             }
             Op::InUnit { sub, unit } => {
                 self.use_var(*sub)?;

@@ -2,12 +2,12 @@
 id = "01M4X91TRR145XCPQ01R1CD7W9"
 title = "GRL lowering: needs vocab(NAME) and vocab membership (in knob.NAME)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T13:18:58Z"
-updated = "2026-10-14T13:18:58Z"
+updated = "2026-10-14T15:30:25Z"
 scope = ["crates/gob-plan/**"]
 +++
 

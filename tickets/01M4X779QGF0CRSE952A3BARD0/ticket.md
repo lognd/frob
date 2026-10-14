@@ -2,12 +2,13 @@
 id = "01M4X779QGF0CRSE952A3BARD0"
 title = 'GRL lowering: kind with a string argument (directive "todo")'
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "logan"
 created = "2026-10-14T12:47:00Z"
-updated = "2026-10-14T12:47:00Z"
+updated = "2026-10-14T14:32:10Z"
 scope = ["crates/gob-plan/**"]
 +++
 

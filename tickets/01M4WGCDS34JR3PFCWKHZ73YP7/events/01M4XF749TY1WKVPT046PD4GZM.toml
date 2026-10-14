@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A snippet binder (find x: lang`pat`) and `x is` a snippet lower to a new MatchSnippet op, with the rule's single lang as the default language", "The executor answers MatchSnippet exactly from grammar-level matches over the file text, and Unknown/Unresolved without text", "MatchSnippet round-trips through the plan codec and validates; unsupported snippet forms (cast, as roles, no language) are refused by name"]
+moved = []
+at = "2026-10-14T15:06:43Z"
+actor = "lognd"
+rev = 1

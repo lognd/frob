@@ -405,6 +405,63 @@ fn a_glob_set_op_matches_any_glob_in_a_side_column() {
     assert_eq!(got, vec![0]);
 }
 
+// frob:ticket 01M4XBAPBBMQ5TMT0EH30ZJZBC
+// frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::Eval.glob_operand_op
+#[test]
+fn a_glob_operand_op_matches_a_path_against_a_row_glob_and_an_invalid_glob_is_unknown() {
+    let (m, _) = model(&["a"]);
+    let mut b = PlanBuilder::new("SIDE003", Polarity::Pplus);
+    b.needs(NeedSet::of(&[Need::Diff, Need::Lease]));
+    let (p, g) = (b.var(), b.var());
+    let dt = b.s("diff.changed");
+    let lt = b.s("lease.globs");
+    for (var, need, table) in [(p, Need::Diff, dt), (g, Need::Lease, lt)] {
+        let id = b.op(Op::FindSide { var, need, table });
+        b.clause(id);
+    }
+    let (path, glob) = (b.field(p, "path"), b.field(g, "glob"));
+    let id = b.op(Op::MatchGlobOperand {
+        subject: path,
+        pattern: glob,
+    });
+    b.clause(id);
+    b.report(None, p, "changed");
+    let plan = b.build();
+    let mut side = SideData::new();
+    let rows = ["src/a.rs", "docs/x.md"]
+        .iter()
+        .map(|a| vec![Scalar::Str((*a).into()), Scalar::Str("modified".into())])
+        .collect();
+    side.insert(
+        "diff.changed",
+        SideTable::new(vec![col_("path"), col_("status")], rows),
+    )
+    .unwrap();
+    let globs = ["src/**", "[bad"]
+        .iter()
+        .map(|a| vec![Scalar::Str((*a).into())])
+        .collect();
+    side.insert("lease.globs", SideTable::new(vec![col_("glob")], globs))
+        .unwrap();
+    let out = run_with(&plan, &input(&m), &Relations::new().with_side(side)).unwrap();
+    let hit = |path_row: u32, glob_row: u32| {
+        out.rows.iter().find(|r| {
+            matches!(
+                (r.vars[usize::from(p)], r.vars[usize::from(g)]),
+                (Some(gob_plan::exec::Val::Row(a)), Some(gob_plan::exec::Val::Row(b)))
+                    if a.index == path_row && b.index == glob_row
+            )
+        })
+    };
+    assert_eq!(hit(0, 0).map(|r| r.verdict.truth), Some(Truth::Yes));
+    assert!(hit(1, 0).is_none(), "docs/x.md is not under src/**");
+    assert_ne!(
+        hit(0, 1).map(|r| r.verdict.truth),
+        Some(Truth::Yes),
+        "an invalid glob never matches"
+    );
+}
+
 fn col_(name: &str) -> Column {
     col(name, FieldType::Str)
 }

@@ -2,12 +2,13 @@
 id = "01M4XBAPBBMQ5TMT0EH30ZJZBC"
 title = "GRL lowering: glob match against a non-literal rhs (i.file.path matches row.from)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T13:58:45Z"
-updated = "2026-10-14T13:58:45Z"
+updated = "2026-10-14T15:21:55Z"
 scope = ["crates/gob-plan/**"]
 +++
 

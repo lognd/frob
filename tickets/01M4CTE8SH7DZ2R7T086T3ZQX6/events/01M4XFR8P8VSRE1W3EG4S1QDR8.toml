@@ -1,0 +1,48 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-14T15:15:49Z"
+digest = "df7fe257e85f47d1b2860122f42d4156e480cc981bd2dffa0b8370526932b5bd"
+exit_code = 0
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.53s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1e46e208-99a6-42a6-ac96-cc6f88ae1968 with nextest profile: default
+    Starting 12 tests across 1 binary
+        PASS [   0.015s] gob-dev::generate stale_marker_version_warns
+        PASS [   0.021s] gob-dev::generate committed_pages_have_no_orphans_on_disk
+        PASS [   0.030s] gob-dev::generate check_prints_a_capped_diff_for_a_hand_edited_page
+        PASS [   0.071s] gob-dev::generate every_rule_has_a_page_and_every_page_a_rule
+        PASS [   0.127s] gob-dev::generate grl_catalog_page_is_generated
+        PASS [   0.139s] gob-dev::generate crunk_config_reference_and_schema_are_generated_apart_from_frobs
+        PASS [   0.139s] gob-dev::generate generated_pages_carry_the_versioned_marker_and_visible_line
+        PASS [   0.142s] gob-dev::generate stale_grl_catalog_page_is_reported
+        PASS [   0.143s] gob-dev::generate check_reports_stale_and_missing_files_without_writing
+        PASS [   0.145s] gob-dev::generate check_reports_missing_markers_unknown_commands_and_orphans
+        PASS [   0.266s] gob-dev::generate output_is_deterministic_and_check_passes
+        PASS [   0.481s] gob-dev::generate one_required_reason_and_one_polarity
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.482s] 12 tests run: 12 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --test generate"
+size = 2323
+status = "measured"
+test_count = 12
+tests_digest = "1a1a829bc6ae606e328a016875ccbc19e55cc781f88102d8babc195450f9985d"
+at = "2026-10-14T15:15:49Z"
+actor = "lognd"
+rev = 1

@@ -67,7 +67,16 @@ fn the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans() {
     }
     assert_eq!(
         lowered,
-        ["CAP001.grl", "CI002.grl", "SCOPE001.grl", "SYS001.grl"]
+        [
+            "CAP001.grl",
+            "CI002.grl",
+            "COV001.grl",
+            "INV002.grl",
+            "NOPE001.grl",
+            "SCOPE001.grl",
+            "SYS001.grl",
+            "TODO001.grl"
+        ]
     );
 }
 
@@ -109,11 +118,11 @@ fn a_p_minus_rule_splits_its_subjects_from_the_good_thing() {
 // frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
 #[test]
 fn constructs_outside_the_ir_are_refused_by_name_not_mislowered() {
-    let snippet = rule(&["find c: rust`$X.unwrap()`", "report c \"x\""]);
+    let cast = rule(&["find c: rust`$X.unwrap()` as call", "report c \"x\""]);
     assert!(matches!(
-        lower(&snippet),
+        lower(&cast),
         Err(LowerError::Unsupported {
-            what: "a snippet",
+            what: "a snippet cast",
             ..
         })
     ));
@@ -305,4 +314,91 @@ fn paths_of_three_or_more_segments_are_dotted_field_operands() {
     let plan = lower(&src).expect("deep paths lower");
     assert!(plan.parts().strings.iter().any(|s| s == "target.anchor"));
     assert!(plan.parts().strings.iter().any(|s| s == "a.b.c"));
+}
+
+fn reaches_rule(knob: &str, tail: &str) -> String {
+    knob_rule(
+        knob,
+        &format!("\n  find g: function where f reaches g {tail}"),
+    )
+}
+
+// frob:ticket 01M4WGCDP6MTWDWNGRTNVMH9MV
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn reaches_lowers_with_a_literal_or_knob_within_bound() {
+    for (knob, tail) in [
+        ("", "via calls within 4"),
+        ("knob n: int = 3 \"d\"", "via calls within knob.n"),
+    ] {
+        let plan = lower(&reaches_rule(knob, tail)).expect("reaches lowers");
+        assert!(
+            plan.parts()
+                .ops
+                .iter()
+                .any(|o| matches!(o, Op::Reaches { .. })),
+            "{tail}"
+        );
+    }
+}
+
+// frob:ticket 01M4WGCDP6MTWDWNGRTNVMH9MV
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn reaches_without_a_usable_bound_or_with_many_verbs_is_refused() {
+    for (knob, tail) in [
+        ("", "via calls"),
+        ("", "via calls within 0"),
+        ("", "via calls within 70000"),
+        ("knob s: string = \"x\" \"d\"", "via calls within knob.s"),
+        ("", "via calls, imports within 2"),
+    ] {
+        let r = lower(&reaches_rule(knob, tail));
+        assert!(
+            matches!(r, Err(LowerError::Unsupported { .. })),
+            "{tail}: {r:?}"
+        );
+    }
+}
+
+// frob:ticket 01M4X779QGF0CRSE952A3BARD0
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn a_kind_string_argument_tests_the_name_as_binder_and_as_relation_object() {
+    let binder = rule(&["find d: directive \"todo\"", "report d \"x\""]);
+    let plan = lower(&binder).expect("binder lowers");
+    assert!(plan.parts().strings.iter().any(|s| s == "todo"));
+    let object = rule(&[
+        "find c: comment",
+        "no d: directive \"todo\" where d adjoins c",
+        "report c \"x\"",
+    ]);
+    let plan = lower(&object).expect("quantifier lowers");
+    assert!(plan.parts().strings.iter().any(|s| s == "todo"));
+    let rel = rule(&[
+        "find c: comment",
+        "where c adjoins directive \"todo\"",
+        "report c \"x\"",
+    ]);
+    assert!(lower(&rel).is_ok(), "{:?}", lower(&rel));
+}
+
+// frob:ticket 01M4XBAPBBMQ5TMT0EH30ZJZBC
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn a_glob_matched_against_a_side_row_field_lowers_to_an_operand_glob_op() {
+    let src = rule(&[
+        "needs config",
+        "find row: config.invariants.forbid_imports",
+        "find i: import where i.file.path matches row.from and i.target under row.to",
+        "report i \"{i.file.path} imports {i.target}: {row.reason}\"",
+    ]);
+    let plan = lower(&src).expect("lowers");
+    assert_eq!(Plan::load(&plan.to_bytes()).expect("round trips"), plan);
+    assert!(
+        plan.parts()
+            .ops
+            .iter()
+            .any(|o| matches!(o, Op::MatchGlobOperand { .. }))
+    );
 }

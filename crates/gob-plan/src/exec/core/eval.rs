@@ -6,6 +6,7 @@
 
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
+use std::ops::Range;
 use std::rc::Rc;
 
 use gob_ir::{Location, Model, NodeId, Relation, Truth};
@@ -21,6 +22,9 @@ use crate::plan::{Limit, Op, OpId, Operand, PlanParts, Position, Quant, StrId, V
 mod predicate;
 
 pub(crate) use predicate::is_test_word;
+
+/// The byte ranges a snippet matched in the file, or `None` when the text could not be scanned.
+type SnippetRanges = Rc<Option<Vec<Range<usize>>>>;
 
 /// A value a variable is bound to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -43,6 +47,8 @@ pub(crate) enum Matcher {
     Glob(globset::GlobMatcher),
     /// Any glob of a side-relation column.
     Set(globset::GlobSet),
+    /// A grammar-level snippet pattern.
+    Snippet(Box<gob_pattern::grammar::Pattern>),
 }
 
 /// The relation inputs a plan names, resolved by the plan string that names them.
@@ -71,6 +77,8 @@ pub(crate) struct Eval<'a> {
     /// Materialised def views by (def, argument values): each is computed once (7.0.2).
     views: RefCell<HashMap<(u16, Vec<Val>), Verdict>>,
     steps: Cell<u64>,
+    /// Snippet matches by op: the byte ranges found in the file text, computed once per run.
+    snippets: RefCell<HashMap<OpId, SnippetRanges>>,
 }
 
 impl<'a> Eval<'a> {
@@ -94,6 +102,7 @@ impl<'a> Eval<'a> {
             domains: RefCell::default(),
             views: RefCell::default(),
             steps: Cell::new(0),
+            snippets: RefCell::default(),
         }
     }
 
@@ -269,10 +278,12 @@ impl<'a> Eval<'a> {
             Op::MatchRegex { subject, .. }
             | Op::MatchGlob { subject, .. }
             | Op::MatchGlobSet { subject, .. } => self.matches(id, subject, env),
+            Op::MatchSnippet { var, .. } => self.snippet_op(id, *var, env),
             op @ (Op::Is { .. }
             | Op::Exists { .. }
             | Op::HasAttr { .. }
             | Op::Under { .. }
+            | Op::MatchGlobOperand { .. }
             | Op::InUnit { .. }) => self.predicate_op(op, env),
             Op::CountCmp {
                 var,
@@ -473,12 +484,58 @@ impl<'a> Eval<'a> {
         }
     }
 
+    /// `var is` a snippet: the node's span is exactly a pattern match; Unknown when the file
+    /// text is missing, does not parse, or the node has no text location.
+    fn snippet_op(&self, id: OpId, var: VarId, env: &Env) -> Verdict {
+        let node = Self::node(env, var);
+        let unknown = |field: &str| {
+            Verdict::unknown(Doubt::Dynamic {
+                node: Some(node),
+                field: field.to_owned(),
+            })
+        };
+        let cached = self.snippets.borrow().get(&id).map(Rc::clone);
+        let found = cached.unwrap_or_else(|| {
+            let ranges = self.rd.source.and_then(|s| {
+                let Matcher::Snippet(p) = &self.matchers[&id] else {
+                    unreachable!("prepared as a snippet");
+                };
+                match p.find(s.as_str()) {
+                    Ok(ms) => Some(ms.into_iter().map(|m| m.range).collect::<Vec<_>>()),
+                    Err(e) => {
+                        tracing::warn!(error = %e, "snippet pattern could not scan the file");
+                        None
+                    }
+                }
+            });
+            tracing::debug!(
+                op = id,
+                matches = ranges.as_ref().map(Vec::len),
+                "snippet scanned"
+            );
+            let rc = Rc::new(ranges);
+            self.snippets.borrow_mut().insert(id, Rc::clone(&rc));
+            rc
+        });
+        let Some(ranges) = found.as_ref() else {
+            return unknown("text");
+        };
+        match self.rd.model.term().node(node).location() {
+            Location::Text { range, .. } => {
+                let r = u32::from(range.start()) as usize..u32::from(range.end()) as usize;
+                Verdict::certain(ranges.contains(&r))
+            }
+            _ => unknown("location"),
+        }
+    }
+
     fn matches(&self, id: OpId, subject: &Operand, env: &Env) -> Verdict {
         let d = self.datum(subject, env);
         let test = |s: &str| match &self.matchers[&id] {
             Matcher::Regex(r) => r.is_match(s),
             Matcher::Glob(g) => g.is_match(s),
             Matcher::Set(g) => g.is_match(s),
+            Matcher::Snippet(_) => unreachable!("a snippet op tests a node, not a string"),
         };
         let truth = match &d {
             Datum::Known(Scalar::Str(s)) => Truth::from_bool(test(s)),

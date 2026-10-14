@@ -433,6 +433,11 @@ fn put_op(w: &mut Vec<u8>, op: &Op) {
             put_u32(w, *table);
             put_u32(w, *column);
         }
+        Op::MatchGlobOperand { subject, pattern } => {
+            w.push(22);
+            put_operand(w, subject);
+            put_operand(w, pattern);
+        }
         Op::Is { subject, test } => {
             w.push(16);
             put_operand(w, subject);
@@ -446,6 +451,12 @@ fn put_op(w: &mut Vec<u8>, op: &Op) {
             w.push(18);
             put_u16(w, *var);
             put_u32(w, *attr);
+        }
+        Op::MatchSnippet { var, lang, pattern } => {
+            w.push(21);
+            put_u16(w, *var);
+            put_u32(w, *lang);
+            put_u32(w, *pattern);
         }
         Op::Under { subject, prefix } => {
             w.push(19);
@@ -635,6 +646,7 @@ impl Reader<'_> {
         }
     }
 
+    #[allow(clippy::too_many_lines, reason = "a flat table of op tags")]
     fn op(&mut self) -> Result<Op, PlanError> {
         Ok(match self.u8("op")? {
             0 => Op::Find {
@@ -726,6 +738,15 @@ impl Reader<'_> {
             20 => Op::InUnit {
                 sub: self.u16("var")?,
                 unit: self.u16("var")?,
+            },
+            21 => Op::MatchSnippet {
+                var: self.u16("var")?,
+                lang: self.u32("lang")?,
+                pattern: self.u32("pattern")?,
+            },
+            22 => Op::MatchGlobOperand {
+                subject: self.operand()?,
+                pattern: self.operand()?,
             },
             tag => return Err(PlanError::BadTag { what: "op", tag }),
         })

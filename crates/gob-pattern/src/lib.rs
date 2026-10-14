@@ -4,14 +4,21 @@
 //! not by implementing ast-grep's `Doc` trait. The U level needs `role`, `callee` and the
 //! per-language vocabularies, which the tree-sitter oriented trait cannot express, and an
 //! in-house matcher keeps the combinators identical for every language. Grammar-level
-//! `pattern` rules (level 1) are refused with a typed error until their ticket lands.
+//! `pattern` rules (level 1) live in [`grammar`]: the pattern is parsed with the language's own
+//! tree-sitter grammar, `$X` / `$$$ARGS` are metavariables, and a `fix` template rewrites the match.
 //!
 //! A rule file is TOML (`rules/*.grl.toml`); a rule with `language = "*"` runs on terms of
 //! every language and fires on each node the `rule` table matches.
 
 // frob:ticket 01M3Z714QT3QXEAJAK9JDDEB70
+// frob:ticket 01M4PPRHCTN3TZ0TJF8NRQ4KHD
+
+pub mod grammar;
+
+use std::ops::Range;
 
 use gob_ir::{Answer, Node, NodeId, Operator, Term, Universal, registry};
+use grammar::{Edit, GrammarError, Pattern};
 use serde::Deserialize;
 
 /// Why a rule file could not be compiled.
@@ -23,9 +30,15 @@ pub enum PatternError {
     /// The rule id is not of the form `GPOLnnn`.
     #[error("rule id `{0}` must look like GPOL001")]
     BadId(String),
-    /// A grammar-level `pattern` was given; only U-level rules are available yet.
-    #[error("`pattern` rules need the grammar-level engine, which is not available yet")]
-    PatternUnavailable,
+    /// A grammar-level pattern or fix did not compile.
+    #[error("pattern rule: {0}")]
+    Grammar(#[from] GrammarError),
+    /// A `pattern` rule must name one concrete language, not `*`.
+    #[error("a `pattern` rule needs a concrete `language`, not `*`")]
+    PatternNeedsLanguage,
+    /// A `fix` was given on a rule whose top table has no `pattern`.
+    #[error("`fix` needs the rule table to set `pattern`")]
+    FixWithoutPattern,
     /// A combinator table is empty or a rule table sets nothing.
     #[error("a rule table must set at least one key")]
     EmptyRule,
@@ -35,7 +48,7 @@ pub enum PatternError {
 #[derive(Debug, Clone, Default, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Rule {
-    /// Grammar-level pattern (refused at compile time).
+    /// Grammar-level pattern with `$X` / `$$$ARGS` metavariables; matched by [`RuleFile::find_source`].
     pub pattern: Option<String>,
     /// The operator kind (`apply` kind, `bind` kind, `unit` kind, ...).
     pub kind: Option<String>,
@@ -73,6 +86,19 @@ pub struct RuleFile {
     pub message: String,
     /// The matching rule.
     pub rule: Rule,
+    /// Fix template over the pattern's metavariables; needs `rule.pattern`.
+    pub fix: Option<String>,
+}
+
+/// One firing of a grammar-level rule over source text.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Finding {
+    /// Byte range of the matched node.
+    pub range: Range<usize>,
+    /// The rule message.
+    pub message: String,
+    /// The rewrite, when the rule has a `fix`.
+    pub edit: Option<Edit>,
 }
 
 impl RuleFile {
@@ -90,7 +116,54 @@ impl RuleFile {
             return Err(PatternError::BadId(file.id));
         }
         file.rule.validate()?;
+        if file.rule.pattern.is_some() {
+            file.compile_pattern()?;
+        } else if file.fix.is_some() {
+            return Err(PatternError::FixWithoutPattern);
+        }
         Ok(file)
+    }
+
+    /// Compile the top-level pattern for the rule's language, if there is one.
+    fn compile_pattern(&self) -> Result<Option<Pattern>, PatternError> {
+        let Some(text) = self.rule.pattern.as_deref() else {
+            return Ok(None);
+        };
+        if self.language == "*" {
+            return Err(PatternError::PatternNeedsLanguage);
+        }
+        Ok(Some(Pattern::compile(&self.language, text)?))
+    }
+
+    /// Fire a grammar-level rule over `source`: each match, with its rewrite when `fix` is set.
+    ///
+    /// A rule without `pattern` yields nothing here; run [`RuleFile::find`] on a term instead.
+    ///
+    /// # Errors
+    ///
+    /// [`PatternError::Grammar`] when the source does not parse or the fix names an unbound
+    /// metavariable.
+    pub fn find_source(&self, source: &str) -> Result<Vec<Finding>, PatternError> {
+        let Some(pattern) = self.compile_pattern()? else {
+            return Ok(Vec::new());
+        };
+        let mut out = Vec::new();
+        for m in pattern.find(source)? {
+            let edit = match &self.fix {
+                Some(t) => Some(Edit {
+                    range: m.range.clone(),
+                    text: grammar::render(t, &m.bindings)?,
+                }),
+                None => None,
+            };
+            tracing::debug!(rule = %self.id, start = m.range.start, "pattern rule fired");
+            out.push(Finding {
+                range: m.range,
+                message: self.message.clone(),
+                edit,
+            });
+        }
+        Ok(out)
     }
 
     /// Every node of `term` the rule fires on, in arena order; empty when the language differs.
@@ -106,12 +179,12 @@ impl RuleFile {
 
 impl Rule {
     fn validate(&self) -> Result<(), PatternError> {
-        if self.pattern.is_some() {
-            return Err(PatternError::PatternUnavailable);
-        }
         let nested = self.all.iter().chain(&self.any);
         let boxed = [&self.not, &self.inside, &self.has].into_iter().flatten();
-        let leaf = self.kind.is_some() || self.role.is_some() || self.callee.is_some();
+        let leaf = self.pattern.is_some()
+            || self.kind.is_some()
+            || self.role.is_some()
+            || self.callee.is_some();
         if !leaf && nested.clone().next().is_none() && boxed.clone().next().is_none() {
             return Err(PatternError::EmptyRule);
         }
@@ -124,9 +197,12 @@ impl Rule {
     /// Whether the rule holds at node `at`.
     pub fn matches(&self, term: &Term, at: NodeId) -> bool {
         let node = term.node(at);
-        self.kind
-            .as_deref()
-            .is_none_or(|k| kind_of(node) == Some(k))
+        // A grammar-level pattern has no meaning on a U term; it never holds here.
+        self.pattern.is_none()
+            && self
+                .kind
+                .as_deref()
+                .is_none_or(|k| kind_of(node) == Some(k))
             && self
                 .role
                 .as_deref()

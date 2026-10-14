@@ -8,7 +8,7 @@ use crate::grl::ast::{
     self, Binding, Clause, ClauseKind, CondKind, Header, HeaderKind, LangSet, LiteralKind,
     MessagePart, Object, RelKind, Rule, ShapeKind, Source, Term, TermKind,
 };
-use crate::plan::{Certainty, CmpOp, Need, Polarity, Position, Quant};
+use crate::plan::{ANY_NODES, Certainty, CmpOp, Need, Polarity, Position, Quant};
 
 /// A value a condition compares, by name.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -76,13 +76,29 @@ pub(super) enum Cond {
         var: String,
         attr: String,
     },
+    GlobOperand {
+        subject: Opd,
+        pattern: Opd,
+    },
     Under {
         subject: Opd,
         prefix: Opd,
     },
+    /// The variable's node is exactly a match of a grammar-level snippet in `lang`.
+    MatchSnippet {
+        var: String,
+        lang: String,
+        pattern: String,
+    },
     InUnit {
         sub: String,
         unit: String,
+    },
+    Reaches {
+        from: String,
+        to: String,
+        via: String,
+        within: u16,
     },
     /// A call of the def at this index in [`Lowered::defs`].
     Call {
@@ -178,6 +194,8 @@ struct Cx {
     /// The defs lowered so far: name and parameter count, parallel to [`Lowered::defs`].
     defs: Vec<(String, usize)>,
     fresh: u32,
+    /// The rule's one `lang`, the default language of an untagged snippet.
+    lang: Option<String>,
 }
 
 fn unsupported<T>(what: &'static str, span: Span) -> Result<T, LowerError> {
@@ -210,6 +228,10 @@ pub(super) fn convert(rule: &Rule) -> Result<Lowered, LowerError> {
         side_vars: Vec::new(),
         defs: Vec::new(),
         fresh: 0,
+        lang: match &out.langs {
+            LangNames::Only(v) if v.len() == 1 => Some(v[0].clone()),
+            _ => None,
+        },
     };
     for c in &rule.clauses {
         if let ClauseKind::Find(b) = &c.node {
@@ -316,6 +338,29 @@ fn def_item(out: &mut Lowered, cx: &mut Cx, d: &ast::Def) -> Result<(), LowerErr
     Ok(())
 }
 
+/// The `within` bound of a `reaches`: an integer literal or an int knob (at its declared
+/// default), from 1 to 65535 edges.
+fn within_bound(cx: &Cx, t: &Term) -> Result<u16, LowerError> {
+    let n = match &t.node {
+        TermKind::Literal(l) => match &l.node {
+            LiteralKind::Int(i) => i64::try_from(*i).ok(),
+            _ => None,
+        },
+        TermKind::Knob(w) => match knob_of(cx, w)? {
+            KnobVal::Int(i) => Some(*i),
+            _ => None,
+        },
+        _ => None,
+    };
+    match n.and_then(|n| u16::try_from(n).ok()).filter(|n| *n >= 1) {
+        Some(n) => Ok(n),
+        None => unsupported(
+            "a `within` bound that is not an integer from 1 to 65535",
+            t.span,
+        ),
+    }
+}
+
 /// `NAME(args)` as a condition: the def by index, with variable arguments.
 fn call_cond(cx: &Cx, call: &ast::Call) -> Result<Cond, LowerError> {
     let Some(def) = cx.defs.iter().position(|(n, _)| *n == call.name.text) else {
@@ -359,6 +404,59 @@ fn message_text(m: &ast::Message) -> String {
         .collect()
 }
 
+/// The field equalities a kind shape states: its `(f = v)` pairs, and a string argument
+/// (`directive "todo"`) as an equality on the node's `name`.
+fn kind_fields(
+    fields: &[ast::FieldEq],
+    arg: Option<&ast::StrLit>,
+) -> Result<Vec<(String, Opd)>, LowerError> {
+    let mut out = fields
+        .iter()
+        .map(|f| Ok((f.name.text.clone(), literal(&f.value)?)))
+        .collect::<Result<Vec<_>, LowerError>>()?;
+    if let Some(a) = arg {
+        out.push(("name".to_owned(), Opd::Str(a.value.clone())));
+    }
+    Ok(out)
+}
+
+/// `x is` a snippet: a match op on a variable; the `as roles` form is refused.
+fn is_snippet_cond(
+    cx: &Cx,
+    subject: &Term,
+    snippet: &crate::grl::Snippet,
+    roles: bool,
+    span: Span,
+) -> Result<Cond, LowerError> {
+    if roles {
+        return unsupported("`is` a snippet as roles", span);
+    }
+    match var_name(cx, subject)? {
+        Some(var) => snippet_cond(cx, &var, snippet, span),
+        None => unsupported("`is` a snippet on a non-variable", subject.span),
+    }
+}
+
+/// A snippet as a condition on a variable, in the snippet's language or the rule's only one.
+fn snippet_cond(
+    cx: &Cx,
+    var: &str,
+    snippet: &crate::grl::Snippet,
+    span: Span,
+) -> Result<Cond, LowerError> {
+    let lang = match (&snippet.lang, &cx.lang) {
+        (Some(l), _) => l.name.clone(),
+        (None, Some(l)) => l.clone(),
+        (None, None) => return unsupported("a snippet with no language", span),
+    };
+    tracing::debug!(var, lang, "lowering a snippet pattern");
+    Ok(Cond::MatchSnippet {
+        var: var.to_owned(),
+        lang,
+        pattern: snippet.text.clone(),
+    })
+}
+
 /// The source of a binder and the conditions written on it: field equalities, relations, filter.
 fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>), LowerError> {
     let name = b.name.text.clone();
@@ -366,19 +464,22 @@ fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>)
     let src = match &b.source {
         Source::Shape(s) => match &s.node {
             ShapeKind::Kind { kind, fields, arg } => {
-                if arg.is_some() {
-                    return unsupported("a kind with a string argument", s.span);
-                }
-                for f in fields {
+                for (f, rhs) in kind_fields(fields, arg.as_ref())? {
                     attached.push(Cond::Cmp {
-                        lhs: Opd::Field(name.clone(), f.name.text.clone()),
+                        lhs: Opd::Field(name.clone(), f),
                         op: CmpOp::Eq,
-                        rhs: literal(&f.value)?,
+                        rhs,
                     });
                 }
                 Src::Kind(kind.text.clone())
             }
-            ShapeKind::Snippet { .. } => return unsupported("a snippet", s.span),
+            ShapeKind::Snippet { snippet, cast } => {
+                if cast.is_some() {
+                    return unsupported("a snippet cast", s.span);
+                }
+                attached.push(snippet_cond(cx, &name, snippet, s.span)?);
+                Src::Kind(ANY_NODES.to_owned())
+            }
             ShapeKind::Alt(_) => return unsupported("alternative shapes", s.span),
         },
         Source::Side(p) => {
@@ -496,6 +597,10 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
                 column,
             }
         }
+        CondKind::GlobMatch { lhs, rhs } if is_field_path(cx, rhs) => Cond::GlobOperand {
+            subject: glob_subject(cx, lhs)?,
+            pattern: operand(cx, rhs)?,
+        },
         CondKind::GlobMatch { lhs, rhs } => {
             let subject = glob_subject(cx, lhs)?;
             let globs = glob_literals(cx, rhs)?;
@@ -522,7 +627,11 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
         },
         CondKind::In { lhs, rhs } => in_cond(cx, lhs, rhs)?,
         CondKind::Is { subject, test } => is_cond(cx, subject, test)?,
-        CondKind::IsSnippet { .. } => return unsupported("`is` with a snippet", c.span),
+        CondKind::IsSnippet {
+            subject,
+            snippet,
+            roles,
+        } => is_snippet_cond(cx, subject, snippet, *roles, c.span)?,
         CondKind::HasAttr { subject, attr } => match var_name(cx, subject)? {
             Some(var) => Cond::HasAttr {
                 var,
@@ -750,6 +859,11 @@ fn glob_subject(cx: &Cx, t: &Term) -> Result<Opd, LowerError> {
     operand(cx, t)
 }
 
+/// Whether `t` is a field path of a bound variable (`row.from`), a glob read at run time.
+fn is_field_path(cx: &Cx, t: &Term) -> bool {
+    matches!(&t.node, TermKind::Path(p) if p.segments.len() >= 2 && cx.scope.contains(&p.segments[0].text))
+}
+
 fn glob_literals(cx: &Cx, t: &Term) -> Result<Vec<String>, LowerError> {
     match &t.node {
         TermKind::Knob(w) => match knob_of(cx, w)? {
@@ -840,14 +954,7 @@ fn with_object(
         },
         Object::Shape(s) => match &s.node {
             ShapeKind::Kind { kind, fields, arg } => {
-                if arg.is_some() {
-                    return unsupported("a kind with a string argument", s.span);
-                }
-                let fs = fields
-                    .iter()
-                    .map(|f| Ok((f.name.text.clone(), literal(&f.value)?)))
-                    .collect::<Result<_, LowerError>>()?;
-                (kind.text.clone(), fs)
+                (kind.text.clone(), kind_fields(fields, arg.as_ref())?)
             }
             _ => return unsupported("a snippet or alternatives as a relation object", s.span),
         },
@@ -928,6 +1035,24 @@ fn rel_cond(cx: &mut Cx, subject: &str, r: &ast::Rel) -> Result<Cond, LowerError
         RelKind::Under { .. } => Err(LowerError::Internal {
             what: "under is lowered with its subject term",
         }),
-        RelKind::Reaches { .. } => unsupported("`reaches`", r.span),
+        RelKind::Reaches {
+            target,
+            via,
+            within,
+        } => {
+            let [verb] = via.as_slice() else {
+                return unsupported("`reaches` over more than one verb", r.span);
+            };
+            let Some(within) = within else {
+                return unsupported("`reaches` without `within`", r.span);
+            };
+            let (within, via) = (within_bound(cx, within)?, verb.text.clone());
+            with_object(cx, target, move |o| Cond::Reaches {
+                from: s,
+                to: o,
+                via,
+                within,
+            })
+        }
     }
 }

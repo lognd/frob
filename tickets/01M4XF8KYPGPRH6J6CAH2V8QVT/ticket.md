@@ -1,0 +1,29 @@
++++
+id = "01M4XF8KYPGPRH6J6CAH2V8QVT"
+title = "GRL lowering: snippet casts, as roles, and fix-template metavariables"
+type = "task"
+category = "todo"
+priority = "medium"
+reporter = "lognd"
+created = "2026-10-14T15:07:32Z"
+updated = "2026-10-14T15:07:32Z"
+scope = ["crates/gob-plan/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M4WGCDS34JR3PFCWKHZ73YP7"
+
+[[acceptance]]
+text = "A snippet 'as KIND' cast lowers and filters the matched node by kind"
+bound = false
+
+[[acceptance]]
+text = "'is snippet as roles' lowers and binds metavariables as role nodes the rest of the rule can use"
+bound = false
+
+[[acceptance]]
+text = "Fix templates using metavariables lower with bindings"
+bound = false
++++
+
+Follow-up of ~HZ73YP7. Lowering still refuses a snippet cast (as KIND), 'is ... as roles', and drops fix templates/metavariable bindings. Needs a role-binding op in the plan IR and executor wiring using gob_pattern::grammar Match.bindings.

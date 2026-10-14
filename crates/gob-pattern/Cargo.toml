@@ -11,7 +11,10 @@ authors.workspace = true
 [dependencies]
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
 serde = { version = "1", features = ["derive"] }
+gob-languages = { version = "0.532.0", path = "../gob-languages" }
 thiserror = "2"
+tracing = "0.1"
+tree-sitter = "=0.27.0"
 toml = "1"
 
 [dev-dependencies]

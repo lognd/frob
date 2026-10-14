@@ -325,6 +325,14 @@ pub enum Op {
         /// The column holding the globs, in the string pool.
         column: StrId,
     },
+    /// Condition: the subject matches a glob read at run time from another operand
+    /// (`i.file.path matches row.from`); an unreadable or invalid glob is unknown.
+    MatchGlobOperand {
+        /// Value tested.
+        subject: Operand,
+        /// The operand holding the glob source.
+        pattern: Operand,
+    },
     /// Condition: `x is WORD`. A kind word tests membership of a variable; any other word reads
     /// the boolean field of that name (`is public`), or for a field operand a string predicate
     /// (`is relative`, `is valid_glob`) or the dotted field `field.WORD`.
@@ -345,6 +353,16 @@ pub enum Op {
         var: VarId,
         /// The attribute name, in the string pool.
         attr: StrId,
+    },
+    /// Condition: `x is` a snippet: the node's span is exactly a match of the grammar
+    /// pattern (metavariables allowed) found by parsing the file's text; Unknown without text.
+    MatchSnippet {
+        /// The node variable tested.
+        var: VarId,
+        /// The pattern's language tag, in the string pool.
+        lang: StrId,
+        /// The pattern text, in the string pool.
+        pattern: StrId,
     },
     /// Condition: `x under p`: the segment-wise path or module prefix test (`a.b` is under `a`,
     /// `ab` is not).
@@ -421,3 +439,6 @@ pub struct PlanParts {
     /// Reports in text order.
     pub reports: Vec<Report>,
 }
+
+/// The kind word a lowered snippet binder ranges over: every node (no GRL kind word spells it).
+pub const ANY_NODES: &str = "node";

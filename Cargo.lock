@@ -2589,10 +2589,13 @@ name = "gob-pattern"
 version = "0.532.0"
 dependencies = [
  "gob-ir",
+ "gob-languages",
  "gob-text",
  "serde",
  "thiserror",
  "toml",
+ "tracing",
+ "tree-sitter",
 ]
 
 [[package]]
@@ -2602,6 +2605,7 @@ dependencies = [
  "globset",
  "gob-caps",
  "gob-ir",
+ "gob-pattern",
  "gob-rules",
  "gob-symbols",
  "gob-text",
