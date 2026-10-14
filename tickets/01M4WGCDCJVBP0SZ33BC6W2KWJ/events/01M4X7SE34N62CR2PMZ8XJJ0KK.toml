@@ -1,0 +1,30 @@
+kind = "evidence"
+captured_at = "2026-10-14T12:55:58Z"
+digest = "a695455a1347a64efb3ef77d74749da92afeef6d1f36329b4758b37b31d3c95a"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 55.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dcfc1a5e-58e3-44df-afc2-002109c9a10e with nextest profile: default
+    Starting 7 tests across 1 binary
+        PASS [   0.007s] gob-plan::lower constructs_outside_the_ir_are_refused_by_name_not_mislowered
+        PASS [   0.007s] gob-plan::lower an_undeclared_knob_is_an_unknown_var
+        PASS [   0.007s] gob-plan::lower the_prefilter_lists_exactly_the_found_kinds_and_not_negated_ones
+        PASS [   0.007s] gob-plan::lower int_string_bool_and_regex_knobs_lower_at_their_declared_defaults
+        PASS [   0.007s] gob-plan::lower a_p_minus_rule_splits_its_subjects_from_the_good_thing
+        PASS [   0.008s] gob-plan::lower the_same_clauses_in_every_order_lower_to_byte_identical_plans
+        PASS [   0.012s] gob-plan::lower the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 7 tests run: 7 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test lower"
+size = 1204
+status = "measured"
+test_count = 7
+tests_digest = "1eecb2ef1d03f2646886cdb369187ced74ebbcbe53f38780e327b4fdec78fb26"
+at = "2026-10-14T12:55:58Z"
+actor = "lognd"
+rev = 1
