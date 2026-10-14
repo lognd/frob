@@ -210,7 +210,7 @@ fn rust_depth_limit_collapses_into_opaque_and_keeps_calls() {
 }
 
 // frob:ticket 01M3ZTAV8SXD9C6G4A42WY14K9
-// frob:tests gob_symbols::rust::RustAdapter
+// frob:tests crates/gob-symbols/src/rust.rs::fold_tree
 #[test]
 fn rust_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit() {
     let depth = 5000;
