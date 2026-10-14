@@ -38,7 +38,7 @@ use crate::events::{LandEvent, append_land};
 use crate::git::git;
 use crate::lock::LandLock;
 use crate::lockfile;
-use crate::plan::{LandOptions, LandOutcome, PlanInputs, RetryPolicy, digest, steps};
+use crate::plan::{LandOptions, LandOutcome, PlanInputs, RetryPolicy, StageTiming, digest, steps};
 use crate::ratchet::{self, Ratchet};
 use gob_time::Clock;
 use std::sync::Arc;
@@ -206,6 +206,10 @@ fn build_guards(
 }
 
 /// Check every precondition (merging the base into the ticket branch unless dry-running).
+#[expect(
+    clippy::too_many_lines,
+    reason = "one ordered pipeline of timed preconditions; splitting it would scatter the order"
+)]
 fn prepare(
     repo: Repo,
     cwd_root: &Path,
@@ -257,25 +261,25 @@ fn prepare(
     // frob:ticket 01M4W4R7PNWSRECR99078ATXCB
     // The lock is taken before the merge and the check: a queued land does no heavy work (and so
     // never contends on cargo's build lock with the holder), and the base cannot move under the check.
-    let lock = take_land_lock(&repo, &site, &handle, opts)?;
-    let (base_merge, base_merged) = merge_or_assume(
-        &wt,
-        &wt_path,
-        &site,
-        &handle,
-        &branch,
-        base,
-        base_oid,
-        lock.as_ref(),
-        opts,
-    )?;
+    let mut stages = Vec::new();
+    let lock = timed(&mut stages, "lock-wait", || {
+        take_land_lock(&repo, &site, &handle, opts)
+    })?;
+    let (base_merge, base_merged) = timed(&mut stages, "merge", || {
+        merge_or_assume(
+            &wt,
+            &wt_path,
+            &site,
+            &handle,
+            &branch,
+            base,
+            base_oid,
+            lock.as_ref(),
+            opts,
+        )
+    })?;
     let mut warnings = ci_gate.warnings;
-    if lock.is_some() && crate::lock::is_debug_build() {
-        warnings.push(
-            "this frob is an unoptimized debug build; use the optimized binary for lands"
-                .to_owned(),
-        );
-    }
+    warnings.extend(lock.as_ref().and_then(|_| debug_build_notice()));
     let mut ratchet = Ratchet::default();
     if base_merged && opts.prechecked {
         // frob:ticket 01M4MH62H1AE14Z472QDSD1QBK
@@ -284,7 +288,10 @@ fn prepare(
         if let Some(l) = &lock {
             l.progress("check");
         }
-        ratchet = verify_check(&wt, &wt_path, &site.ledger, &handle, base, opts)?;
+        ratchet = timed(&mut stages, "check", || {
+            verify_check(&wt, &wt_path, &site.ledger, &handle, base, opts)
+        })?;
+        stages.extend(prefixed("check", std::mem::take(&mut ratchet.stages)));
     } else {
         // A dry run leaves the base unmerged, so the ticket-scoped diff would
         // include the base's own changes; the real land merges first.
@@ -292,7 +299,6 @@ fn prepare(
             "check skipped: {base} is not merged into {branch} yet and a dry run does not merge it"
         ));
     }
-
     let mut done_view = view.ticket.clone();
     done_view.front.outcome = Some(opts.outcome);
     warnings.extend(done.warnings(&done_view));
@@ -303,9 +309,9 @@ fn prepare(
         warnings,
         pre_existing: ratchet.pre_existing,
         resolved: ratchet.resolved,
+        stages,
         ..blank_outcome(id, &handle, base, opts)
     };
-    let cone = ratchet.cone;
     Ok(Ready {
         repo,
         wt,
@@ -316,7 +322,7 @@ fn prepare(
         base: base.to_owned(),
         branch,
         base_merged,
-        cone,
+        cone: ratchet.cone,
         scope: view.ticket.front.scope.clone(),
         ci_override: ci_gate.override_note,
         site,
@@ -399,24 +405,25 @@ impl Ready {
             match advanced {
                 Err(LandError::Refused(r)) if retrying && r.code == CODE_STALE => {
                     lock.progress("recheck");
-                    if let Some(r) = ctx.recover_stale(
+                    let timer = Instant::now();
+                    let rechecked = ctx.recover_stale(
                         &site.ledger,
                         opts,
                         (cone.as_ref(), &self.scope),
                         attempt,
                         started,
                         budget,
-                    )? {
-                        self.out.pre_existing = r.pre_existing;
-                        self.out.resolved = r.resolved;
-                        cone = r.cone;
-                    }
+                    )?;
+                    record_recheck(&mut self.out, rechecked, timer.elapsed(), &mut cone);
                 }
                 other => break other?,
             }
             lock.progress("publish");
         };
         self.out.attempts = attempt;
+        self.out
+            .stages
+            .push(StageTiming::new("publish", started.elapsed()));
         self.out.commit = Some(oid.to_string());
         if opts.push {
             self.out.pushed = push_base(&self.repo, &self.base, &mut self.out.warnings);
@@ -543,6 +550,7 @@ pub(crate) fn blank_outcome(
         pre_existing: Vec::new(),
         resolved: Vec::new(),
         changelog_exempt: None,
+        stages: Vec::new(),
         lock: None,
     }
 }
@@ -843,10 +851,27 @@ fn verify_check(
         changelog_exempt: opts.no_changelog_reason.is_some(),
         ..CheckOptions::default()
     };
+    // frob:ticket 01M4W7DAHAVC5HDWJJ5NPGXR8M
+    let mut stages = Vec::new();
+    let timer = Instant::now();
     let (scoped, _, cone) = frob_check::run_with_cone(wt_path, &options(Some(handle)))?;
+    stages.push(StageTiming::new("scoped", timer.elapsed()));
+    stages.extend(
+        scoped
+            .timing
+            .stages
+            .iter()
+            .filter(|s| s.name.starts_with("tool:"))
+            .map(|s| StageTiming::new(s.name.clone(), Duration::from_millis(s.ms))),
+    );
+    let timer = Instant::now();
     let head = frob_check::run(wt_path, &options(None))?;
+    stages.push(StageTiming::new("head", timer.elapsed()));
+    let timer = Instant::now();
     let base_oid = wt.rev_parse(&base_ref(base))?.to_string();
     let base_set = ratchet::base_findings(wt, wt_path, &base_oid, ledger.config())?;
+    stages.push(StageTiming::new("base-findings", timer.elapsed()));
+    tracing::info!(?stages, "land check stage timings");
     let mut verdict = ratchet::verdict(&scoped, &head, &base_set);
     if let Some(cone) = &cone {
         // The scoped run examines only the cone, so a base finding elsewhere was not re-judged.
@@ -866,10 +891,55 @@ fn verify_check(
             pre_existing: verdict.pre_existing,
             resolved: verdict.resolved,
             cone,
+            stages,
         });
     }
     tracing::warn!(blocking = verdict.new.len(), "land check red");
     Err(refuse(&scoped, &verdict, (handle, base)))
+}
+
+/// Run `f`, recording its wall time in `stages` as `name`.
+fn timed<T>(stages: &mut Vec<StageTiming>, name: &str, f: impl FnOnce() -> T) -> T {
+    let timer = Instant::now();
+    let value = f();
+    stages.push(StageTiming::new(name, timer.elapsed()));
+    value
+}
+
+/// The warning a debug build earns when it lands.
+fn debug_build_notice() -> Option<String> {
+    crate::lock::is_debug_build().then(|| {
+        "this frob is an unoptimized debug build; use the optimized binary for lands".to_owned()
+    })
+}
+
+/// `stages` with `prefix:` put before each name.
+fn prefixed(prefix: &str, stages: Vec<StageTiming>) -> impl Iterator<Item = StageTiming> + '_ {
+    stages.into_iter().map(move |s| StageTiming {
+        name: format!("{prefix}:{}", s.name),
+        ..s
+    })
+}
+
+/// Fold a stale-base `rechecked` result into `out` with its timing; the cone follows a re-run check.
+fn record_recheck(
+    out: &mut LandOutcome,
+    rechecked: Option<Ratchet>,
+    took: Duration,
+    cone: &mut Option<BTreeSet<String>>,
+) {
+    // frob:ticket 01M4W7DAHAVC5HDWJJ5NPGXR8M
+    let name = if rechecked.is_some() {
+        "recheck"
+    } else {
+        "retry-reuse"
+    };
+    out.stages.push(StageTiming::new(name, took));
+    let Some(r) = rechecked else { return };
+    out.stages.extend(prefixed("recheck", r.stages));
+    out.pre_existing = r.pre_existing;
+    out.resolved = r.resolved;
+    *cone = r.cone;
 }
 
 /// The `E-LAND-CHECK-RED` refusal naming only the new blocking findings of `verdict`.

@@ -721,6 +721,12 @@ work and the base cannot move under the holder's check (~78ATXCB). The holder fi
 when no stage has progressed and no child process runs for `FROB_LAND_STALL_SECS` (default
 1200); a waiter terminates a frob holder idle for twice that bound, and replaces the lock file
 when a dead holder's descendants still pin it, logging the reason. A debug build warns.
+The land envelope carries `stages`, the wall time of each stage in order: `lock-wait`, `merge`,
+`check` with its `check:scoped`, `check:tool:<name>`, `check:head` and `check:base-findings`
+parts, `recheck` (with `recheck:` parts) or `retry-reuse` on a stale-base retry, and `publish`
+(~NPGXR8M). The cargo stages already narrow themselves to the affected packages (`{packages}` in
+`[[check.tool]]`) and are served from the tool memo when their inputs are unchanged; a stale-base
+retry whose base delta misses the ticket's cone reuses the whole first check (`retry-reuse`).
 The land check is a ratchet (~QAFRXM3): it refuses only blocking findings
 that are new relative to the base tip by fingerprint (rules.md section 6).
 Findings already on the base are reported as `pre_existing`, fixed ones as

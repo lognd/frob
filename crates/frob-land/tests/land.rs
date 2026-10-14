@@ -911,6 +911,8 @@ fn move_main(root: &Path, rel: &str, text: &str) {
 }
 
 // Covers ~VMHTBE7.
+// frob:tests crates/frob-land/src/land.rs::verify_check
+// frob:tests crates/frob-land/src/plan.rs::StageTiming
 #[test]
 fn wait_retries_a_base_that_moved_once_with_ledger_only_commits() {
     if !git_available() {
@@ -937,6 +939,24 @@ fn wait_retries_a_base_that_moved_once_with_ledger_only_commits() {
     .expect("land retried");
     assert!(out.closed, "landed without a manual retry");
     assert_eq!(out.attempts, 2);
+    // frob:ticket 01M4W7DAHAVC5HDWJJ5NPGXR8M
+    let names: Vec<&str> = out.stages.iter().map(|s| s.name.as_str()).collect();
+    for want in [
+        "lock-wait",
+        "merge",
+        "check",
+        "check:scoped",
+        "check:head",
+        "check:base-findings",
+        "retry-reuse",
+        "publish",
+    ] {
+        assert!(names.contains(&want), "stage {want} timed in {names:?}");
+    }
+    assert!(
+        !names.iter().any(|n| n.starts_with("recheck")),
+        "a ledger-only base move reuses the first check: {names:?}"
+    );
     let blob = fx.repo().read_blob_at("main", "src/a.rs").expect("read");
     assert_eq!(blob.as_deref(), Some(b"fn a() {}\n".as_slice()));
     let note = fx

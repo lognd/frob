@@ -59,6 +59,9 @@ pub(crate) struct Ratchet {
     pub resolved: Vec<FindingNote>,
     /// The ticket's affected cone at the checked tree (scope files plus dependents); `None` when the check did not report one.
     pub cone: Option<BTreeSet<String>>,
+    // frob:ticket 01M4W7DAHAVC5HDWJJ5NPGXR8M
+    /// Wall time of the check's stages (scoped run and its tool stages, head run, base findings).
+    pub stages: Vec<crate::plan::StageTiming>,
 }
 
 /// The notes of every finding in `report`, with fingerprints as the report prints them.

@@ -23,7 +23,7 @@ pub use base_ci::{CiReader, GhCli, LandConfig};
 pub use error::LandError;
 pub use land::land;
 pub use lock::{HolderRecord, LandLock, LockOptions, LockStatus, StallAction};
-pub use plan::{LandOptions, LandOutcome, RetryPolicy};
+pub use plan::{LandOptions, LandOutcome, RetryPolicy, StageTiming};
 pub use ratchet::FindingNote;
 #[doc(hidden)]
 pub use ratchet::{base_findings, cache_key, code_tree_key};

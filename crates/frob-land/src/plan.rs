@@ -106,6 +106,25 @@ impl Default for LandOptions {
     }
 }
 
+/// Wall time of one named stage of a land (`lock-wait`, `merge`, `check:tool:clippy`, `publish`, ...).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct StageTiming {
+    /// Stage name; check sub-stages are prefixed `check:` (`recheck:` on a stale-base retry).
+    pub name: String,
+    /// Elapsed wall time in milliseconds (rounded down).
+    pub ms: u64,
+}
+
+impl StageTiming {
+    /// A stage called `name` that took `took`.
+    pub fn new(name: impl Into<String>, took: Duration) -> Self {
+        Self {
+            name: name.into(),
+            ms: u64::try_from(took.as_millis()).unwrap_or(u64::MAX),
+        }
+    }
+}
+
 /// What a land did, or with `dry_run` what it would do.
 #[expect(
     clippy::struct_excessive_bools,
@@ -157,6 +176,10 @@ pub struct LandOutcome {
     /// The reason of the `--no-changelog` exemption this land recorded, when it did.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub changelog_exempt: Option<String>,
+    // frob:ticket 01M4W7DAHAVC5HDWJJ5NPGXR8M
+    /// Wall time per stage, in execution order: lock wait, merge, each check stage, retries, publish.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stages: Vec<StageTiming>,
     /// The land lock's state (`frob land --status` only).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lock: Option<crate::lock::LockStatus>,
