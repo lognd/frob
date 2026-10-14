@@ -4,9 +4,10 @@ title = "Land verification re-runs the whole workspace (clippy, rustdoc, test bu
 type = "task"
 category = "todo"
 priority = "high"
+points = 5
 reporter = "lognd"
 created = "2026-10-14T03:31:03Z"
-updated = "2026-10-14T03:31:03Z"
+updated = "2026-10-14T03:32:58Z"
 idempotency_key = "land-check-cost-20261013"
 scope = ["crates/frob-land/**"]
 
