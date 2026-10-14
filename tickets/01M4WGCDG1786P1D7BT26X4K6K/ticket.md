@@ -2,12 +2,12 @@
 id = "01M4WGCDG1786P1D7BT26X4K6K"
 title = "GRL lowering: is, in, exists, has attr, under, in unit"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "Claude"
 created = "2026-10-14T06:07:50Z"
-updated = "2026-10-14T12:43:18Z"
+updated = "2026-10-14T13:28:35Z"
 scope = ["crates/gob-plan/**"]
 +++
 
