@@ -1,4 +1,4 @@
-//! Source text to plans: the one-call path generators use (parse, then lower every rule).
+//! Source text to plans: the one-call path generators use (parse, then lower every rule), no I/O.
 
 // frob:ticket 01M3ZX7HN0YF3SYGVJRT5H07H5
 
