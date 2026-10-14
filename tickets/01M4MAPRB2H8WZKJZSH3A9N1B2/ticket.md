@@ -9,7 +9,7 @@ parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-11T01:54:42Z"
 updated = "2026-10-14T05:19:30Z"
-scope = ["crates/gob-plan/src/lower/**", "crates/gob-plan/src/plan/**", "crates/gob-plan/tests/**"]
+scope = ["crates/gob-plan/src/lower/**", "crates/gob-plan/src/plan/**", "crates/gob-plan/tests/**", "crates/gob-plan/src/exec/**"]
 
 [[links]]
 kind = "blocked-by"
