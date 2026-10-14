@@ -2,7 +2,8 @@
 id = "01M4WGCDG1786P1D7BT26X4K6K"
 title = "GRL lowering: is, in, exists, has attr, under, in unit"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "Claude"
