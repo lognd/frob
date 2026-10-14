@@ -2292,5 +2292,8 @@ fn a_cache_miss_checks_out_the_base_once_for_both_passes() {
         .lines()
         .filter(|l| l.ends_with("land-checkout"))
         .count();
-    assert_eq!(base_runs, 1, "one checkout serves the exact and full passes");
+    assert_eq!(
+        base_runs, 1,
+        "one checkout serves the exact and full passes"
+    );
 }

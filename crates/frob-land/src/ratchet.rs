@@ -328,10 +328,7 @@ impl BaseCheckout {
         let guard = lock_base_checkout(&lock)?;
         checkout_base(wt, wt_path, &dir, oid)?;
         share_build_dir(common, &dir);
-        Ok(Self {
-            dir,
-            _guard: guard,
-        })
+        Ok(Self { dir, _guard: guard })
     }
 
     /// Run the unscoped check in the checkout, without the tool stages when `skip_tools`.
