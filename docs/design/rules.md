@@ -466,10 +466,12 @@ the envelope.
 
 The release gate is one more step after those: a family may raise some
 rules to Error only at the release gate (`crunk check --gate release`,
-read by `frob release status`). As built, crunk-rules applies this at the
-family level (`apply_gate`): HUMAN001 and HUMAN002 are Advisory under the
-default `check` gate and Error under `release`. A per-rule
-`release_severity` field on `#[rule]` is tracked separately.
+read by `frob release status`). A rule declares it with the optional
+`release_severity = Error|Warn|Advisory` field of `#[rule]`
+(`RuleDef::release_severity`); a family row may carry the same value for
+all its rules (HUMAN001 and HUMAN002 do: Advisory under the default
+`check` gate, Error under `release`). `gate_severity` and `apply_gate`
+use the rule's own value first and the family's as the fallback.
 
 ## 8. Crate layout for this layer
 

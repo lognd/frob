@@ -69,6 +69,8 @@ pub struct RuleDef {
     pub family: &'static str,
     /// Default severity.
     pub severity: Severity,
+    /// Severity at the release gate when it differs from `severity` (D117), else `None`.
+    pub release_severity: Option<Severity>,
     /// Polarity class.
     pub polarity: Polarity,
     /// Whether the rule must account for the subjects it measured.
@@ -99,6 +101,7 @@ impl RuleDef {
         slug: "poisoned",
         family: "POISONED",
         severity: Severity::Advisory,
+        release_severity: None,
         polarity: Polarity::P0,
         must_measure: false,
         scope: Scope::File,

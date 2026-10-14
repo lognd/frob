@@ -117,13 +117,10 @@ fn constructs_outside_the_ir_are_refused_by_name_not_mislowered() {
             ..
         })
     ));
-    let knob = &format!(
-        "rule TST003 \"t\" {{\n  knob n: int = 1 \"d\"\n  find f: function\n  report f \"x\"\n{EXPLAIN}}}\n"
+    let vocab = &format!(
+        "rule TST003 \"t\" {{\n  knob v: list<int> = [1] \"d\"\n  find f: function where f.name == knob.v\n  report f \"x\"\n{EXPLAIN}}}\n"
     );
-    assert!(matches!(
-        lower(knob),
-        Err(LowerError::Unsupported { what: "a knob", .. })
-    ));
+    assert!(matches!(lower(vocab), Err(LowerError::Unsupported { .. })));
     let unbound = rule(&["find c: call where h.x == 1", "report c \"x\""]);
     assert!(matches!(
         lower(&unbound),
@@ -144,4 +141,37 @@ fn the_prefilter_lists_exactly_the_found_kinds_and_not_negated_ones() {
     let mut kinds: Vec<&str> = plan.prefilter_kinds().collect();
     kinds.sort_unstable();
     assert_eq!(kinds, ["comment", "directive"]);
+}
+
+fn knob_rule(knob: &str, clause: &str) -> String {
+    format!(
+        "rule TST004 \"t\" {{\n  lang rust\n  {knob}\n  find f: function {clause}\n  report f \"x\"\n{EXPLAIN}}}\n"
+    )
+}
+
+// frob:ticket 01M4WGCDCJVBP0SZ33BC6W2KWJ
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn int_string_bool_and_regex_knobs_lower_at_their_declared_defaults() {
+    for (knob, clause) in [
+        ("knob n: int = 3 \"d\"", "where f.line >= knob.n"),
+        ("knob s: string = \"x\" \"d\"", "where f.name == knob.s"),
+        ("knob b: bool = true \"d\"", "where f.public == knob.b"),
+        ("knob r: regex = /^t/i \"d\"", "where f.name ~ knob.r"),
+        (
+            "knob g: glob = \"src/**\" \"d\"",
+            "where f.path matches knob.g",
+        ),
+    ] {
+        let plan = lower(&knob_rule(knob, clause));
+        assert!(plan.is_ok(), "{knob} {clause}: {plan:?}");
+    }
+}
+
+// frob:ticket 01M4WGCDCJVBP0SZ33BC6W2KWJ
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn an_undeclared_knob_is_an_unknown_var() {
+    let src = knob_rule("knob n: int = 3 \"d\"", "where f.line >= knob.m");
+    assert!(matches!(lower(&src), Err(LowerError::UnknownVar { .. })));
 }

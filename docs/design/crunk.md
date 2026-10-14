@@ -192,7 +192,8 @@ platform, a component variant, a flow, a copy deck, a token mode.
   are Advisory in `crunk check`, `frob check`, local runs and CI, so
   design work and agents are never blocked waiting for a person; they
   are Error at release. The mechanism is general, not crunk-specific: a
-  rule may declare a `release_severity` (rules.md registry field) that
+  rule may declare a `release_severity` (optional `#[rule]` field, or a
+  family row value as fallback; rules.md) that
   applies only when the release gate evaluates it. `frob release status`
   gains a readiness item "release-tier findings clean" that runs the
   products' checks with release severities (siblings through
