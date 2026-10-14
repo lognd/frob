@@ -1,0 +1,35 @@
+kind = "evidence"
+captured_at = "2026-10-14T14:06:40Z"
+digest = "c632fdeaddbf4fcc414780d6f047e0c032504f4184d83e4672c1de75f77ef3e2"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 39.64s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e7393899-0403-488d-9cc8-32f3329cfc4d with nextest profile: default
+    Starting 12 tests across 1 binary
+        PASS [   0.008s] gob-plan::exec_relations a_glob_set_op_matches_any_glob_in_a_side_column
+        PASS [   0.008s] gob-plan::exec_relations find_over_a_side_relation_binds_the_typed_rows
+        PASS [   0.008s] gob-plan::exec_relations a_lowered_def_runs_as_a_view
+        PASS [   0.008s] gob-plan::exec_relations side_tables_report_their_shape
+        PASS [   0.008s] gob-plan::exec_relations a_def_is_a_view_computed_once_per_distinct_arguments
+        PASS [   0.008s] gob-plan::exec_relations a_verb_reads_its_relation_and_peer_of_reads_the_term
+        PASS [   0.008s] gob-plan::exec_relations a_knob_override_changes_a_count_threshold
+        PASS [   0.008s] gob-plan::exec_relations is_exists_and_under_filter_function_names
+        PASS [   0.008s] gob-plan::exec_relations reaches_across_a_may_edge_is_unknown_with_the_edge_on_the_frontier
+        PASS [   0.009s] gob-plan::exec_relations side_tables_are_typed_against_the_catalog
+        PASS [   0.009s] gob-plan::exec_relations a_relation_the_plan_names_but_the_caller_lacks_is_refused
+        PASS [   0.010s] gob-plan::exec_relations a_count_op_compares_against_a_knob_that_the_rules_table_overrides
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 12 tests run: 12 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test exec_relations"
+size = 1681
+status = "measured"
+test_count = 12
+tests_digest = "e6469d9508f5a42104b69e816b078d378d06243861f0d2f60bf0014eea53fd63"
+at = "2026-10-14T14:06:40Z"
+actor = "lognd"
+rev = 1
