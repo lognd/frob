@@ -1,0 +1,69 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-14T03:52:40Z"
+digest = "5339d259efc0c06f475f5fdabdf52c22d4fd5b7679e67172600e41bb50cce917"
+exit_code = 0
+inline = '''
+   Compiling serde_core v1.0.229
+   Compiling indexmap v2.14.2
+   Compiling similar v2.7.0
+   Compiling serde_json v1.0.151
+   Compiling petgraph v0.8.3
+   Compiling tree-sitter v0.27.0
+   Compiling serde v1.0.229
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_spanned v1.1.1
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling schemars v1.2.2
+   Compiling tracing-serde v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling postcard v1.1.3
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 24.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9b4600d9-5ad7-4b54-a433-032a301e4b46 with nextest profile: default
+    Starting 4 tests across 1 binary (2 binaries skipped)
+        PASS [   0.011s] frob-land::lock a_busy_lock_refusal_names_the_stage
+        PASS [   0.011s] frob-land::lock progress_reaches_the_sidecar_and_the_status_readout
+        PASS [   0.038s] frob-land::lock a_waiter_takes_over_a_holder_whose_progress_is_stale
+        PASS [   0.187s] frob-land::lock a_land_blocked_forever_is_aborted_by_the_watchdog_and_frees_the_lock
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.189s] 4 tests run: 4 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'binary(lock)'"
+size = 3069
+status = "measured"
+test_count = 4
+tests_digest = "c85236c88978a1d785ef5cb5cfc321833aa9c6ef328687efef8222d3bc4789f6"
+at = "2026-10-14T03:52:40Z"
+actor = "lognd"
+rev = 1
