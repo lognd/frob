@@ -1,0 +1,11 @@
+kind = "create"
+title = "GRL executor: markdown link and heading fields for DOC002 (target.path, target.anchor, file, heading text)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+scope = ["crates/gob-plan/**"]
+body = "Found while working ~ETGCVS0. DOC002 now lowers, but the executor field reader (exec/core/field.rs) yields Unknown for link fields target, target.path, target.anchor, file and for heading text/file, so the rule cannot decide at run time. Read them from the markdown model nodes."
+at = "2026-10-14T15:51:43Z"
+actor = "lognd"
+rev = 1
