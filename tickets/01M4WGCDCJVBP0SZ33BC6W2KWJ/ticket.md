@@ -2,11 +2,12 @@
 id = "01M4WGCDCJVBP0SZ33BC6W2KWJ"
 title = "GRL lowering: knobs (int, string, regex, vocab, knob patterns)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
+points = 5
 reporter = "Claude"
 created = "2026-10-14T06:07:50Z"
-updated = "2026-10-14T12:22:16Z"
+updated = "2026-10-14T13:04:51Z"
 scope = ["crates/gob-plan/**"]
 +++
 

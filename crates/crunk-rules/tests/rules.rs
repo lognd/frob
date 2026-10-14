@@ -224,6 +224,26 @@ fn the_release_gate_raises_human_and_leaves_others_alone() {
     assert_eq!(gate_severity(waive, Gate::Release), Severity::Error);
 }
 
+// frob:tests crates/crunk-rules/src/family.rs::gate_severity
+#[test]
+fn a_rules_own_release_severity_beats_the_family_and_the_default() {
+    let advisory = gob_rules::RuleDef {
+        id: "ZZZ001",
+        family: "ZZZ",
+        severity: Severity::Advisory,
+        release_severity: Some(Severity::Error),
+        ..gob_rules::RuleDef::POISONED
+    };
+    assert_eq!(gate_severity(&advisory, Gate::Check), Severity::Advisory);
+    assert_eq!(gate_severity(&advisory, Gate::Release), Severity::Error);
+    let human = gob_rules::RuleDef {
+        family: "HUMAN",
+        release_severity: Some(Severity::Warn),
+        ..gob_rules::RuleDef::POISONED
+    };
+    assert_eq!(gate_severity(&human, Gate::Release), Severity::Warn);
+}
+
 // frob:tests crates/crunk-rules/src/family.rs::is_waivable
 #[test]
 fn only_declaration_level_families_are_waivable() {

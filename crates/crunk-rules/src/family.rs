@@ -7,11 +7,10 @@
 //!
 //! # Release severity
 //!
-//! `release_severity` (D117, crunk.md 4.1) is a field of the family row, not of `#[rule]`: the
-//! attribute belongs to gob-macros and gains a per-rule field in its own ticket. The row is
-//! enough for HUMAN001 and HUMAN002 (Advisory in `crunk check`, Error at release), the only users
-//! so far; [`gate_severity`] is the one place that reads it, so moving the field onto the
-//! attribute later changes this function and nothing else.
+//! `release_severity` (D117, crunk.md 4.1) can be declared per rule on `#[rule]` or once on the
+//! family row; the rule's own value wins, the family's is the fallback. HUMAN001 and HUMAN002
+//! (Advisory in `crunk check`, Error at release) use the family row. [`gate_severity`] and
+//! [`apply_gate`] are the places that read it.
 
 // frob:ticket 01M43ATASM383KB9130JY79XVV
 
@@ -239,12 +238,13 @@ pub fn family(prefix: &str) -> Option<&'static FamilyMeta> {
 }
 
 /// The severity `def` takes at `gate`: its declared default at [`Gate::Check`]; at
-/// [`Gate::Release`] the family's `release_severity` when it has one.
+/// [`Gate::Release`] the rule's own `release_severity`, else the family's, when either is set.
 pub fn gate_severity(def: &RuleDef, gate: Gate) -> Severity {
     let severity = match gate {
         Gate::Check => def.severity,
-        Gate::Release => family(def.family)
-            .and_then(|f| f.release_severity)
+        Gate::Release => def
+            .release_severity
+            .or_else(|| family(def.family).and_then(|f| f.release_severity))
             .unwrap_or(def.severity),
     };
     tracing::trace!(rule = def.id, ?gate, ?severity, "gate severity resolved");
@@ -252,8 +252,8 @@ pub fn gate_severity(def: &RuleDef, gate: Gate) -> Severity {
 }
 
 // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
-/// Give every resolved finding of a family with a `release_severity` that severity at the release
-/// gate; at [`Gate::Check`] nothing changes.
+/// Give every resolved finding of a rule (or family) with a `release_severity` that severity at the
+/// release gate, the rule's own value first; at [`Gate::Check`] nothing changes.
 pub fn apply_gate(findings: &mut [Finding], gate: Gate) {
     if gate != Gate::Release {
         return;
@@ -266,7 +266,12 @@ pub fn apply_gate(findings: &mut [Finding], gate: Gate) {
             .rule
             .as_str()
             .trim_end_matches(|c: char| c.is_ascii_digit());
-        if let Some(sev) = family(prefix).and_then(|row| row.release_severity)
+        let own = crate::rules::INDEX
+            .metas
+            .iter()
+            .find(|d| d.id == f.rule.as_str())
+            .and_then(|d| d.release_severity);
+        if let Some(sev) = own.or_else(|| family(prefix).and_then(|row| row.release_severity))
             && sev != f.severity
         {
             tracing::debug!(rule = %f.rule, from = ?f.severity, to = ?sev, "release gate raises severity");

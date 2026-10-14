@@ -366,12 +366,12 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
     let mut errs = Errors::default();
     let args: Args = syn::parse2(attr)?;
     for (i, (k, _)) in args.0.iter().enumerate() {
-        if !REQUIRED.contains(&k.to_string().as_str()) {
+        if !REQUIRED.contains(&k.to_string().as_str()) && k != "release_severity" {
             errs.at(
                 k.span(),
                 format!(
                     "unknown rule field `{k}`; fields are: {}",
-                    REQUIRED.join(", ")
+                    REQUIRED.join(", ") + ", release_severity (optional)"
                 ),
             );
         }
@@ -475,6 +475,11 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
         None => None,
     };
     let severity = choice_of(&args, "severity", SEVERITY, &mut errs);
+    let release_severity = if find(&args, "release_severity").is_some() {
+        choice_of(&args, "release_severity", SEVERITY, &mut errs)
+    } else {
+        None
+    };
     let polarity = choice_of(&args, "polarity", POLARITY, &mut errs);
     let scope = choice_of(&args, "scope", SCOPE, &mut errs);
     let fix = choice_of(&args, "fix", FIX, &mut errs);
@@ -514,6 +519,12 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
         enum_tokens("Scope", &scope),
         enum_tokens("FixKind", &fix),
     );
+    let release_ts = if let Some(s) = &release_severity {
+        let e = enum_tokens("Severity", s);
+        quote!(::core::option::Option::Some(#e))
+    } else {
+        quote!(::core::option::Option::None)
+    };
     let applies_ts = applies_tokens(applies);
     let asserts = matrix_asserts(&id.value(), applies);
     let host_span = host.span();
@@ -547,6 +558,7 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
                 slug: #slug,
                 family: #family,
                 severity: #sev,
+                release_severity: #release_ts,
                 polarity: #pol,
                 must_measure: #must_measure,
                 scope: #sc,

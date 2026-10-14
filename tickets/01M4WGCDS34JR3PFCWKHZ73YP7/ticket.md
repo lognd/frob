@@ -4,9 +4,10 @@ title = "GRL lowering: snippets"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "Claude"
 created = "2026-10-14T06:07:51Z"
-updated = "2026-10-14T12:22:17Z"
+updated = "2026-10-14T12:43:26Z"
 scope = ["crates/gob-plan/**"]
 +++
 
