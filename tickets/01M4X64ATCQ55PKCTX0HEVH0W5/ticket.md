@@ -7,8 +7,8 @@ priority = "high"
 points = 2
 reporter = "Claude"
 created = "2026-10-14T12:27:54Z"
-updated = "2026-10-14T12:42:30Z"
-scope = ["crates/frob-test/**"]
+updated = "2026-10-14T12:42:37Z"
+scope = ["crates/frob-test/**", "crates/frob-tests/**"]
 
 [[acceptance]]
 text = "Given a full-workspace run, when frob test --base experimental runs, then no spawn fails with E2BIG"
