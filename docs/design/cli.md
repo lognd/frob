@@ -339,3 +339,16 @@ Color and tables on a TTY, `-v` for the span tree, shell completions,
 man pages, `frob <verb> --help` generated from the same metadata as
 the generated CLI reference (documentation.md section 3), and tickets
 accepted by full ULID or by `~handle` (goals.md).
+
+## 6. Declaring verb flags once
+
+A verb declares its flags and positionals once, on a private struct that
+derives `clap::Args`. `Command::configure` is `gob_cli::augment::<XxxArgs>(cmd)`
+and `Command::from_matches` starts with `gob_cli::parse::<XxxArgs>(matches)?`;
+cross-flag validation follows in `from_matches`. Help text lives in the field
+doc comments, copied verbatim so the generated CLI reference does not change;
+the verb's about text stays owned by its `CommandMeta` (`augment` restores it).
+Shared argument groups are `#[command(flatten)]` structs. No verb reads a flag
+by string name (`.get_one`, `.get_flag`, `Arg::new` ...); the lint test
+`crates/gob-cli/tests/flags_declared_once.rs` enforces it for frob, grimble,
+crunk and the `frob-*` crates.

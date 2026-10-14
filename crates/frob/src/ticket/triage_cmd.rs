@@ -11,14 +11,12 @@ use frob_ledger::index::ListFilter;
 use frob_ledger::model::{Stamp, TicketType, TriageAction};
 use frob_ledger::triage::{InboxEntry, TriageReport, TriageRequest, TriageStatus};
 use frob_ledger::{Ledger, TicketId};
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use super::{
-    choice_flag, cli_err, get, get_many, get_parsed, open, resolve, text_flag, ticket_arg,
-};
+use super::{TicketArg, choices, cli_err, open, parsed, resolve};
 
 /// Parse a date (`2026-11-01`, midnight UTC) or an RFC 3339 timestamp.
 pub(crate) fn parse_when(flag: &str, text: &str) -> Result<Stamp, CliError> {
@@ -42,31 +40,32 @@ struct Selection {
     ty: Option<TicketType>,
 }
 
-impl Selection {
-    /// Add the selection arguments to a verb.
-    fn args(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("tickets")
-                .value_name("TICKET")
-                .num_args(0..)
-                .help("Full ULID, ~handle or alias of each ticket; or select with --label/--type"),
-        )
-        .arg(text_flag(
-            "label",
-            "Select every ticket in the inbox with this label",
-        ))
-        .arg(choice_flag(
-            "type",
-            TicketType::NAMES,
-            "Select every ticket in the inbox of this type",
-        ))
-    }
+/// The selection flags shared by the triage decision verbs, declared once.
+#[derive(Debug, Clone, clap::Args)]
+struct SelectionArgs {
+    #[arg(
+        value_name = "TICKET",
+        num_args = 0..,
+        help = "Full ULID, ~handle or alias of each ticket; or select with --label/--type"
+    )]
+    tickets: Vec<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Select every ticket in the inbox with this label"
+    )]
+    label: Option<String>,
+    #[arg(long = "type", value_name = "VALUE", value_parser = choices(TicketType::NAMES), help = "Select every ticket in the inbox of this type")]
+    ty: Option<String>,
+}
 
-    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+impl Selection {
+    /// Build the selection from its parsed flags.
+    fn from_args(a: SelectionArgs) -> Result<Self, CliError> {
         Ok(Self {
-            tickets: get_many(m, "tickets"),
-            label: get(m, "label"),
-            ty: get_parsed(m, "type")?,
+            tickets: a.tickets,
+            label: a.label,
+            ty: parsed("type", a.ty)?,
         })
     }
 
@@ -122,7 +121,17 @@ fn decide(
 
 /// Declares a decision verb with only `--reason` beyond the selection; `$action` is its [`TriageAction`].
 macro_rules! decision_verb {
-    ($(#[$doc:meta])* $name:ident, $verb:literal, $action:expr, $help:literal) => {
+    ($(#[$doc:meta])* $name:ident, $args:ident, $verb:literal, $action:expr, $help:literal) => {
+        /// The flags of a triage decision verb, declared once.
+        #[derive(Debug, Clone, clap::Args)]
+        #[command(about = None, long_about = None)]
+        struct $args {
+            #[command(flatten)]
+            sel: SelectionArgs,
+            #[arg(long, value_name = "TEXT", help = $help)]
+            reason: Option<String>,
+        }
+
         $(#[$doc])*
         #[derive(Debug, Clone, gob_cli::Command)]
         #[command(
@@ -140,13 +149,14 @@ macro_rules! decision_verb {
             type Data = TriageReport;
 
             fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-                Selection::args(cmd).arg(text_flag("reason", $help))
+                gob_cli::augment::<$args>(cmd)
             }
 
             fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+                let a = gob_cli::parse::<$args>(m)?;
                 Ok(Self {
-                    sel: Selection::from_matches(m)?,
-                    reason: get(m, "reason"),
+                    sel: Selection::from_args(a.sel)?,
+                    reason: a.reason,
                 })
             }
 
@@ -167,6 +177,7 @@ macro_rules! decision_verb {
 decision_verb!(
     /// Accept tickets from the inbox: triage becomes todo, all in one ledger commit.
     Accept,
+    AcceptArgs,
     "ticket triage accept",
     TriageAction::Accept,
     "Why the tickets are accepted (optional)"
@@ -175,10 +186,32 @@ decision_verb!(
 decision_verb!(
     /// Decline tickets from the inbox: close them as wont-fix with a required reason.
     Decline,
+    DeclineArgs,
     "ticket triage decline",
     TriageAction::Decline,
     "Why the tickets are declined (required)"
 );
+
+/// The flags of `ticket triage snooze`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct SnoozeArgs {
+    #[command(flatten)]
+    sel: SelectionArgs,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Why the tickets are snoozed (optional)"
+    )]
+    reason: Option<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        required = true,
+        help = "Date (2026-11-01) or RFC 3339 time the tickets return to the inbox"
+    )]
+    until: String,
+}
 
 /// Snooze tickets: hide them from the inbox until a date.
 #[derive(Debug, Clone, gob_cli::Command)]
@@ -198,25 +231,15 @@ impl Command for Snooze {
     type Data = TriageReport;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        Selection::args(cmd)
-            .arg(text_flag(
-                "reason",
-                "Why the tickets are snoozed (optional)",
-            ))
-            .arg(
-                text_flag(
-                    "until",
-                    "Date (2026-11-01) or RFC 3339 time the tickets return to the inbox",
-                )
-                .required(true),
-            )
+        gob_cli::augment::<SnoozeArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<SnoozeArgs>(m)?;
         Ok(Self {
-            sel: Selection::from_matches(m)?,
-            reason: get(m, "reason"),
-            until: get(m, "until").unwrap_or_default(),
+            sel: Selection::from_args(a.sel)?,
+            reason: a.reason,
+            until: a.until,
         })
     }
 
@@ -231,6 +254,27 @@ impl Command for Snooze {
             })
         })
     }
+}
+
+/// The flags of `ticket triage duplicate`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct DuplicateArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        required = true,
+        help = "The ticket this one duplicates"
+    )]
+    of: String,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Why it is a duplicate (default: duplicate of the target)"
+    )]
+    reason: Option<String>,
 }
 
 /// Close a ticket from the inbox as a duplicate of another, linking the two.
@@ -251,19 +295,15 @@ impl Command for Duplicate {
     type Data = TriageReport;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
-            .arg(text_flag("of", "The ticket this one duplicates").required(true))
-            .arg(text_flag(
-                "reason",
-                "Why it is a duplicate (default: duplicate of the target)",
-            ))
+        gob_cli::augment::<DuplicateArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<DuplicateArgs>(m)?;
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-            of: get(m, "of").unwrap_or_default(),
-            reason: get(m, "reason"),
+            ticket: a.ticket.ticket,
+            of: a.of,
+            reason: a.reason,
         })
     }
 
@@ -299,6 +339,24 @@ pub struct InboxData {
     pub tickets: Vec<InboxEntry>,
 }
 
+/// The flags of `ticket triage list`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct InboxListArgs {
+    #[arg(long, value_name = "TEXT", help = "Only tickets with this label")]
+    label: Option<String>,
+    #[arg(long = "type", value_name = "VALUE", value_parser = choices(TicketType::NAMES), help = "Only this type")]
+    ty: Option<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "List the inbox as of this date or RFC 3339 time (default now)"
+    )]
+    at: Option<String>,
+    #[arg(long, help = "Include snoozed tickets, with the time each returns")]
+    all: bool,
+}
+
 /// Deprecated alias of `ticket list --category triage`, removed in the next minor release.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
@@ -319,26 +377,16 @@ impl Command for InboxList {
     type Data = InboxData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(text_flag("label", "Only tickets with this label"))
-            .arg(choice_flag("type", TicketType::NAMES, "Only this type"))
-            .arg(text_flag(
-                "at",
-                "List the inbox as of this date or RFC 3339 time (default now)",
-            ))
-            .arg(
-                Arg::new("all")
-                    .long("all")
-                    .action(ArgAction::SetTrue)
-                    .help("Include snoozed tickets, with the time each returns"),
-            )
+        gob_cli::augment::<InboxListArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<InboxListArgs>(m)?;
         Ok(Self {
-            label: get(m, "label"),
-            ty: get_parsed(m, "type")?,
-            at: get(m, "at"),
-            all: m.get_flag("all"),
+            label: a.label,
+            ty: parsed("type", a.ty)?,
+            at: a.at,
+            all: a.all,
         })
     }
 

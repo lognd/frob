@@ -1,7 +1,7 @@
 //! The `ticket evidence add`, `ticket evidence list` and `ticket evidence fetch` verbs.
 
 use frob_ledger::TicketId;
-use gob_cli::clap::{Arg, ArgAction, ArgMatches, builder::PossibleValuesParser};
+use gob_cli::clap::{ArgAction, ArgMatches, builder::PossibleValuesParser};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -229,59 +229,71 @@ impl EvidenceFetch {
     }
 }
 
-fn flag(m: &ArgMatches, name: &str) -> Option<String> {
-    m.get_one::<String>(name).cloned()
+/// The positional ticket handle every evidence verb takes.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct TicketArg {
+    #[arg(
+        required = true,
+        value_name = "TICKET",
+        help = "Full ULID, ~handle or alias of the ticket"
+    )]
+    ticket: String,
 }
 
-fn ticket_arg() -> Arg {
-    Arg::new("ticket")
-        .required(true)
-        .value_name("TICKET")
-        .help("Full ULID, ~handle or alias of the ticket")
+/// Help text of `--provider`, listing the measurers.
+fn provider_help() -> String {
+    format!(
+        "Measurer: {} (a person's statement; needs a terminal and a listed attester)",
+        Provider::expected()
+    )
+}
+
+/// The `--provider`, `--ref` and `--accepts` flags every evidence-capturing verb shares.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+pub struct CaptureFlags {
+    #[arg(
+        long,
+        required = true,
+        value_name = "PROVIDER",
+        value_parser = PossibleValuesParser::new(Provider::NAMES),
+        help = provider_help()
+    )]
+    provider: String,
+    #[arg(
+        long = "ref",
+        value_name = "REF",
+        allow_hyphen_values = true,
+        help = "Nextest filter args, pytest arguments (node ids), vitest or jest arguments (test files), dotnet arguments (fully qualified test ids and an optional project path) or the command line (POSIX shell quoting, no shell run), or the file path (not for attestation)"
+    )]
+    reference: Option<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        allow_hyphen_values = true,
+        help = "Attestation only: the statement, taken whole"
+    )]
+    statement: Option<String>,
+    #[arg(
+        long = "fact",
+        value_name = "FACT",
+        action = ArgAction::Append,
+        help = "Attestation only: an https URL, commit id or ticket handle the statement rests on (repeatable)"
+    )]
+    facts: Vec<String>,
+    #[arg(
+        long,
+        value_name = "N",
+        action = ArgAction::Append,
+        help = "1-based acceptance criterion this evidence is offered for (repeatable)"
+    )]
+    accepts: Vec<usize>,
 }
 
 /// The `--provider`, `--ref` and `--accepts` flags every evidence-capturing verb shares.
 pub fn capture_args(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-    cmd.arg(
-        Arg::new("provider")
-            .long("provider")
-            .required(true)
-            .value_name("PROVIDER")
-            .value_parser(PossibleValuesParser::new(Provider::NAMES))
-            .help(format!(
-                "Measurer: {} (a person's statement; needs a terminal and a listed attester)",
-                Provider::expected()
-            )),
-    )
-    .arg(
-        Arg::new("ref")
-            .long("ref")
-            .value_name("REF")
-            .allow_hyphen_values(true)
-            .help("Nextest filter args, pytest arguments (node ids), vitest or jest arguments (test files), dotnet arguments (fully qualified test ids and an optional project path) or the command line (POSIX shell quoting, no shell run), or the file path (not for attestation)"),
-    )
-    .arg(
-        Arg::new("statement")
-            .long("statement")
-            .value_name("TEXT")
-            .allow_hyphen_values(true)
-            .help("Attestation only: the statement, taken whole"),
-    )
-    .arg(
-        Arg::new("fact")
-            .long("fact")
-            .value_name("FACT")
-            .action(ArgAction::Append)
-            .help("Attestation only: an https URL, commit id or ticket handle the statement rests on (repeatable)"),
-    )
-    .arg(
-        Arg::new("accepts")
-            .long("accepts")
-            .value_name("N")
-            .value_parser(gob_cli::clap::value_parser!(usize))
-            .action(ArgAction::Append)
-            .help("1-based acceptance criterion this evidence is offered for (repeatable)"),
-    )
+    gob_cli::augment::<CaptureFlags>(cmd)
 }
 
 /// The parsed capture flags of [`capture_args`].
@@ -306,16 +318,26 @@ impl CaptureArgs {
     ///
     /// [`CliError::Usage`] when a required flag is missing or the provider is unknown.
     pub fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let provider = flag(m, "provider")
-            .ok_or_else(|| CliError::Usage("add needs --provider".to_owned()))?
+        Self::from_flags(gob_cli::parse::<CaptureFlags>(m)?)
+    }
+
+    /// Validate parsed capture flags against the provider they select.
+    ///
+    /// # Errors
+    ///
+    /// [`CliError::Usage`] when the provider is unknown or the flags do not belong to it.
+    pub fn from_flags(flags: CaptureFlags) -> Result<Self, CliError> {
+        let provider = flags
+            .provider
             .parse::<Provider>()
             .map_err(|e| CliError::Usage(e.to_string()))?;
-        let reference = flag(m, "ref");
-        let statement = flag(m, "statement");
-        let facts: Vec<String> = m
-            .get_many::<String>("fact")
-            .map(|v| v.cloned().collect())
-            .unwrap_or_default();
+        let CaptureFlags {
+            reference,
+            statement,
+            facts,
+            accepts,
+            ..
+        } = flags;
         let attesting = provider == Provider::Attestation;
         if attesting && reference.is_some() {
             return Err(CliError::Usage(
@@ -333,10 +355,7 @@ impl CaptureArgs {
         Ok(Self {
             provider,
             reference: reference.unwrap_or_default(),
-            accepts: m
-                .get_many::<usize>("accepts")
-                .map(|v| v.copied().collect())
-                .unwrap_or_default(),
+            accepts,
             statement,
             facts,
         })
@@ -367,6 +386,30 @@ impl CaptureArgs {
     }
 }
 
+/// The flags of `ticket evidence add`.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct AddFlags {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[command(flatten)]
+    capture: CaptureFlags,
+}
+
+/// The flags of `ticket evidence fetch`.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct FetchFlags {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(
+        required = true,
+        value_name = "INDEX",
+        help = "1-based position from `ticket evidence list`"
+    )]
+    index: usize,
+}
+
 /// Capture evidence with a provider and append it to a ticket: `ticket evidence add <ticket>`.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
@@ -380,13 +423,14 @@ impl Command for AddVerb {
     type Data = AddData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        capture_args(cmd.arg(ticket_arg()))
+        gob_cli::augment::<AddFlags>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<AddFlags>(m)?;
         Ok(Self(EvidenceAdd {
-            ticket: flag(m, "ticket").unwrap_or_default(),
-            args: CaptureArgs::from_matches(m)?,
+            ticket: a.ticket.ticket,
+            args: CaptureArgs::from_flags(a.capture)?,
         }))
     }
 
@@ -409,13 +453,12 @@ impl Command for ListVerb {
     type Data = ListData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
+        gob_cli::augment::<TicketArg>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self(EvidenceList {
-            ticket: flag(m, "ticket").unwrap_or_default(),
-        }))
+        let a = gob_cli::parse::<TicketArg>(m)?;
+        Ok(Self(EvidenceList { ticket: a.ticket }))
     }
 
     fn run(&self, ctx: &Context) -> Outcome<ListData> {
@@ -437,22 +480,14 @@ impl Command for FetchVerb {
     type Data = FetchData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg()).arg(
-            Arg::new("index")
-                .required(true)
-                .value_name("INDEX")
-                .value_parser(gob_cli::clap::value_parser!(usize))
-                .help("1-based position from `ticket evidence list`"),
-        )
+        gob_cli::augment::<FetchFlags>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<FetchFlags>(m)?;
         Ok(Self(EvidenceFetch {
-            ticket: flag(m, "ticket").unwrap_or_default(),
-            index: m
-                .get_one::<usize>("index")
-                .copied()
-                .ok_or_else(|| CliError::Usage("fetch needs an INDEX".to_owned()))?,
+            ticket: a.ticket.ticket,
+            index: a.index,
         }))
     }
 

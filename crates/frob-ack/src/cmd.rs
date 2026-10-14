@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{Cli, CliError, Command, Context, Outcome, Payload};
 use gob_git::Repo;
 use gob_symbols::{SymbolRecord, Symref};
@@ -29,10 +29,6 @@ fn root_of(ctx: &Context) -> PathBuf {
         .ok()
         .and_then(|r| r.work_dir().map(std::path::Path::to_path_buf))
         .unwrap_or_else(|| ctx.cwd.clone())
-}
-
-fn text_arg(name: &'static str, help: &'static str) -> Arg {
-    Arg::new(name).long(name).value_name("TEXT").help(help)
 }
 
 /// Output of `ack`.
@@ -64,33 +60,39 @@ pub struct Ack {
     reason: Option<String>,
 }
 
+/// The flags of `ack`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct AckArgs {
+    #[arg(
+        num_args = 0..,
+        value_name = "SYMREF|PATH",
+        help = "Symbols to acknowledge; a path means every symbol in the file"
+    )]
+    targets: Vec<String>,
+    #[arg(long, help = "Re-ack every acked symbol and every frob:doc binding")]
+    all: bool,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Why the current state is acknowledged"
+    )]
+    reason: Option<String>,
+}
+
 impl Command for Ack {
     type Data = AckData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("targets")
-                .num_args(0..)
-                .value_name("SYMREF|PATH")
-                .help("Symbols to acknowledge; a path means every symbol in the file"),
-        )
-        .arg(
-            Arg::new("all")
-                .long("all")
-                .action(ArgAction::SetTrue)
-                .help("Re-ack every acked symbol and every frob:doc binding"),
-        )
-        .arg(text_arg("reason", "Why the current state is acknowledged"))
+        gob_cli::augment::<AckArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<AckArgs>(m)?;
         Ok(Self {
-            targets: m
-                .get_many::<String>("targets")
-                .map(|v| v.cloned().collect())
-                .unwrap_or_default(),
-            all: m.get_flag("all"),
-            reason: m.get_one::<String>("reason").cloned(),
+            targets: a.targets,
+            all: a.all,
+            reason: a.reason,
         })
     }
 
@@ -130,6 +132,18 @@ impl Command for Ack {
         let already = data.acked.is_empty();
         Ok(Payload::new(data).with_already(already))
     }
+}
+
+/// The one positional the `graph` query verbs share.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct SymbolArg {
+    #[arg(
+        required = true,
+        value_name = "SYMREF",
+        help = "Symref, path or unique name suffix"
+    )]
+    symbol: String,
 }
 
 /// Resolves a symbol or a whole-file path for the query verbs.
@@ -261,18 +275,12 @@ impl Command for GraphWhy {
     type Data = WhyData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("symbol")
-                .required(true)
-                .value_name("SYMREF")
-                .help("Symref, path or unique name suffix"),
-        )
+        gob_cli::augment::<SymbolArg>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            symbol: m.get_one::<String>("symbol").cloned().unwrap_or_default(),
-        })
+        let a = gob_cli::parse::<SymbolArg>(m)?;
+        Ok(Self { symbol: a.symbol })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<WhyData> {
@@ -359,18 +367,12 @@ impl Command for GraphAffects {
     type Data = AffectsData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("symbol")
-                .required(true)
-                .value_name("SYMREF")
-                .help("Symref, path or unique name suffix"),
-        )
+        gob_cli::augment::<SymbolArg>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            symbol: m.get_one::<String>("symbol").cloned().unwrap_or_default(),
-        })
+        let a = gob_cli::parse::<SymbolArg>(m)?;
+        Ok(Self { symbol: a.symbol })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<AffectsData> {

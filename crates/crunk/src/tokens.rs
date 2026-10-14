@@ -11,7 +11,7 @@
 use std::path::{Path, PathBuf};
 
 use crunk_tokens::export::{self, ExportError, Status, Target};
-use gob_cli::clap::{Arg, ArgAction, ArgMatches, builder::PossibleValuesParser};
+use gob_cli::clap::{ArgMatches, builder::PossibleValuesParser};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -88,31 +88,36 @@ pub struct TokensData {
     pub collisions: Vec<CollisionRow>,
 }
 
+/// `Tokens` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct TokensArgs {
+    #[arg(
+        long,
+        value_name = "TARGET",
+        value_parser = PossibleValuesParser::new(Target::ALL.map(Target::name)),
+        help = "Print this export to the output instead of writing the files"
+    )]
+    target: Option<String>,
+    #[arg(
+        long,
+        help = "Compare the files on disk with the render; exit 1 on drift, write nothing"
+    )]
+    check: bool,
+}
+
 impl Command for Tokens {
     type Data = TokensData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("target")
-                .long("target")
-                .value_name("TARGET")
-                .value_parser(PossibleValuesParser::new(Target::ALL.map(Target::name)))
-                .help("Print this export to the output instead of writing the files"),
-        )
-        .arg(
-            Arg::new("check")
-                .long("check")
-                .action(ArgAction::SetTrue)
-                .help("Compare the files on disk with the render; exit 1 on drift, write nothing"),
-        )
+        gob_cli::augment::<TokensArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<TokensArgs>(m)?;
         Ok(Self {
-            target: m
-                .get_one::<String>("target")
-                .and_then(|name| Target::parse(name)),
-            check: m.get_flag("check"),
+            target: a.target.as_deref().and_then(Target::parse),
+            check: a.check,
         })
     }
 

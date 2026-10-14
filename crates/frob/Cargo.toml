@@ -21,6 +21,7 @@ name = "frob"
 path = "src/main.rs"
 
 [dependencies]
+clap = { version = "4", features = ["derive"] }
 gob-cache = { version = "0.532.0", path = "../gob-cache" }
 gob-cli = { version = "0.532.0", path = "../gob-cli" }
 gob-config = { version = "0.532.0", path = "../gob-config" }

@@ -1,6 +1,6 @@
 //! `fmt [--check]`: the `grimble-model` formatter over every `.grmb` file.
 
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use grimble_model::{format_file, parse_file};
 use schemars::JsonSchema;
@@ -42,22 +42,27 @@ pub struct FmtData {
     pub skipped: Vec<Skipped>,
 }
 
+/// `Fmt` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct FmtArgs {
+    #[arg(
+        long,
+        help = "Report unformatted files and exit 1 instead of rewriting them"
+    )]
+    check: bool,
+}
+
 impl Command for Fmt {
     type Data = FmtData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("check")
-                .long("check")
-                .action(ArgAction::SetTrue)
-                .help("Report unformatted files and exit 1 instead of rewriting them"),
-        )
+        gob_cli::augment::<FmtArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            check: m.get_flag("check"),
-        })
+        let a = gob_cli::parse::<FmtArgs>(m)?;
+        Ok(Self { check: a.check })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<FmtData> {

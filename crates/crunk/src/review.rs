@@ -12,7 +12,7 @@ use std::path::Path;
 
 use crunk_check::review::{self as gather, AckRefusal, AckRequest, GitSignatures};
 use crunk_rules::review::{ReviewFacts, ReviewStatus, Subject};
-use gob_cli::clap::{Arg, ArgAction, ArgMatches, builder::PossibleValuesParser};
+use gob_cli::clap::{ArgMatches, builder::PossibleValuesParser};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -171,56 +171,53 @@ impl Ack {
     }
 }
 
+/// `Ack` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct AckArgs {
+    #[arg(
+        num_args = 0..,
+        value_name = "SUBJECT",
+        help = "Subjects (screen/<id>/<state>) or screen ids to record"
+    )]
+    subjects: Vec<String>,
+    #[arg(
+        long = "all-stale",
+        help = "Also record every subject whose review is missing or stale"
+    )]
+    all_stale: bool,
+    #[arg(
+        long,
+        value_name = "VERDICT",
+        value_parser = PossibleValuesParser::new(["approved", "rejected"]),
+        default_value = "approved",
+        help = "The verdict to record; a rejection needs --note"
+    )]
+    verdict: String,
+    #[arg(long, value_name = "TEXT", help = "A note stored with the entry")]
+    note: Option<String>,
+    #[arg(
+        long = "non-interactive",
+        help = "Record without a terminal; the entry says so"
+    )]
+    non_interactive: bool,
+}
+
 impl Command for Ack {
     type Data = AckData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("subjects")
-                .value_name("SUBJECT")
-                .num_args(0..)
-                .help("Subjects (screen/<id>/<state>) or screen ids to record"),
-        )
-        .arg(
-            Arg::new("all_stale")
-                .long("all-stale")
-                .action(ArgAction::SetTrue)
-                .help("Also record every subject whose review is missing or stale"),
-        )
-        .arg(
-            Arg::new("verdict")
-                .long("verdict")
-                .value_name("VERDICT")
-                .value_parser(PossibleValuesParser::new(["approved", "rejected"]))
-                .default_value("approved")
-                .help("The verdict to record; a rejection needs --note"),
-        )
-        .arg(
-            Arg::new("note")
-                .long("note")
-                .value_name("TEXT")
-                .help("A note stored with the entry"),
-        )
-        .arg(
-            Arg::new("non_interactive")
-                .long("non-interactive")
-                .action(ArgAction::SetTrue)
-                .help("Record without a terminal; the entry says so"),
-        )
+        gob_cli::augment::<AckArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<AckArgs>(m)?;
         Ok(Self {
-            subjects: m
-                .get_many::<String>("subjects")
-                .map(|v| v.cloned().collect())
-                .unwrap_or_default(),
-            all_stale: m.get_flag("all_stale"),
-            rejected: m
-                .get_one::<String>("verdict")
-                .is_some_and(|v| v == "rejected"),
-            note: m.get_one::<String>("note").cloned(),
-            non_interactive: m.get_flag("non_interactive"),
+            subjects: a.subjects,
+            all_stale: a.all_stale,
+            rejected: a.verdict == "rejected",
+            note: a.note,
+            non_interactive: a.non_interactive,
         })
     }
 

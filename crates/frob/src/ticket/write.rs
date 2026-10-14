@@ -6,13 +6,10 @@ use frob_ledger::model::{
 };
 use frob_ledger::ops::{NewTicket, Patch};
 use frob_ledger::schema::parse_text_value;
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome};
 
-use super::{
-    ChangeData, choice_flag, cli_err, get, get_many, get_parsed, many_flag, open, payload, resolve,
-    text_flag, ticket_arg,
-};
+use super::{ChangeData, TicketArg, choices, cli_err, open, parsed, payload, resolve};
 
 /// Create a ticket; with `--idempotency-key` a repeat returns the first ticket.
 #[derive(Debug, Clone, gob_cli::Command)]
@@ -52,97 +49,111 @@ struct NewRequest {
     good_first: bool,
 }
 
+/// The flags of `ticket new`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct NewArgs {
+    #[arg(long, value_name = "TEXT", help = "Ticket title")]
+    title: String,
+    #[arg(long = "type", value_name = "VALUE", value_parser = choices(TicketType::NAMES), help = "Ticket type (default task)")]
+    ty: Option<String>,
+    #[arg(long, value_name = "VALUE", value_parser = choices(Priority::NAMES), help = "Priority (default medium)")]
+    priority: Option<String>,
+    #[arg(long, value_name = "VALUE", value_parser = choices(Class::NAMES), help = "Class of service (default standard)")]
+    class: Option<String>,
+    #[arg(long, value_name = "VALUE", value_parser = choices(&["triage", "todo"]), help = "Starting category (default todo)")]
+    category: Option<String>,
+    #[arg(long, value_name = "TEXT", help = "Story points: 1, 2, 3, 5, 8 or 13")]
+    points: Option<String>,
+    #[arg(long, value_name = "TEXT", help = "Parent ticket")]
+    parent: Option<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "A ticket that blocks this one (repeatable)"
+    )]
+    blocked_by: Vec<String>,
+    #[arg(long, value_name = "TEXT", help = "Write-scope glob (repeatable)")]
+    scope: Vec<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Write-scope glob for files this ticket will create: scope plus a `creates:` label that silences the zero-match warning (repeatable)"
+    )]
+    new_scope: Vec<String>,
+    #[arg(long = "label", value_name = "TEXT", help = "Label (repeatable)")]
+    labels: Vec<String>,
+    #[arg(long, value_name = "TEXT", help = "Acceptance criterion (repeatable)")]
+    acceptance: Vec<String>,
+    #[arg(
+        long = "alias",
+        value_name = "TEXT",
+        help = "Id from another system, such as v1 T-0042 (repeatable)"
+    )]
+    aliases: Vec<String>,
+    #[arg(long, value_name = "TEXT", help = "Markdown body")]
+    body: Option<String>,
+    #[arg(
+        long = "idempotency-key",
+        value_name = "TEXT",
+        help = "Return the same ticket for the same key"
+    )]
+    key: Option<String>,
+    #[arg(long, value_name = "TEXT", help = "Story persona")]
+    persona: Option<String>,
+    #[arg(long, value_name = "TEXT", help = "Story capability")]
+    capability: Option<String>,
+    #[arg(long, value_name = "TEXT", help = "Story outcome (so that ...)")]
+    so_that: Option<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Free-form flavour such as user_story"
+    )]
+    flavour: Option<String>,
+    #[arg(long, value_name = "TEXT", help = "Assignee")]
+    assignee: Option<String>,
+    #[arg(
+        long,
+        help = "Label the ticket good-first and append a `## Start here` scaffold to the body"
+    )]
+    good_first: bool,
+}
+
 impl Command for New {
     type Data = ChangeData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(text_flag("title", "Ticket title").required(true))
-            .arg(choice_flag(
-                "type",
-                TicketType::NAMES,
-                "Ticket type (default task)",
-            ))
-            .arg(choice_flag(
-                "priority",
-                Priority::NAMES,
-                "Priority (default medium)",
-            ))
-            .arg(choice_flag(
-                "class",
-                Class::NAMES,
-                "Class of service (default standard)",
-            ))
-            .arg(choice_flag(
-                "category",
-                &["triage", "todo"],
-                "Starting category (default todo)",
-            ))
-            .arg(text_flag("points", "Story points: 1, 2, 3, 5, 8 or 13"))
-            .arg(text_flag("parent", "Parent ticket"))
-            .arg(many_flag(
-                "blocked-by",
-                "A ticket that blocks this one (repeatable)",
-            ))
-            .arg(many_flag("scope", "Write-scope glob (repeatable)"))
-            .arg(many_flag(
-                "new-scope",
-                "Write-scope glob for files this ticket will create: scope plus a `creates:` label that silences the zero-match warning (repeatable)",
-            ))
-            .arg(many_flag("label", "Label (repeatable)"))
-            .arg(many_flag("acceptance", "Acceptance criterion (repeatable)"))
-            .arg(many_flag(
-                "alias",
-                "Id from another system, such as v1 T-0042 (repeatable)",
-            ))
-            .arg(text_flag("body", "Markdown body"))
-            .arg(text_flag(
-                "idempotency-key",
-                "Return the same ticket for the same key",
-            ))
-            .arg(text_flag("persona", "Story persona"))
-            .arg(text_flag("capability", "Story capability"))
-            .arg(text_flag("so-that", "Story outcome (so that ...)"))
-            .arg(text_flag("flavour", "Free-form flavour such as user_story"))
-            .arg(text_flag("assignee", "Assignee"))
-            .arg(
-                Arg::new("good-first")
-                    .long("good-first")
-                    .action(ArgAction::SetTrue)
-                    .help("Label the ticket good-first and append a `## Start here` scaffold to the body"),
-            )
+        gob_cli::augment::<NewArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let points = get(m, "points")
-            .map(|p| {
-                p.parse::<Points>()
-                    .map_err(|e| CliError::Usage(format!("--points: {e}")))
-            })
-            .transpose()?;
+        let a = gob_cli::parse::<NewArgs>(m)?;
+        let points = parsed::<Points>("points", a.points)?;
         Ok(Self {
             req: Box::new(NewRequest {
-                title: get(m, "title").unwrap_or_default(),
-                ty: get_parsed(m, "type")?.unwrap_or(TicketType::Task),
-                category: get_parsed(m, "category")?.unwrap_or(Category::Todo),
-                priority: get_parsed(m, "priority")?.unwrap_or(Priority::Medium),
-                class: get_parsed(m, "class")?.unwrap_or_default(),
+                title: a.title,
+                ty: parsed("type", a.ty)?.unwrap_or(TicketType::Task),
+                category: parsed("category", a.category)?.unwrap_or(Category::Todo),
+                priority: parsed("priority", a.priority)?.unwrap_or(Priority::Medium),
+                class: parsed("class", a.class)?.unwrap_or_default(),
                 points,
-                parent: get(m, "parent"),
-                blocked_by: get_many(m, "blocked-by"),
-                scope: get_many(m, "scope"),
-                new_scope: get_many(m, "new-scope"),
-                labels: get_many(m, "label"),
-                acceptance: get_many(m, "acceptance"),
-                aliases: get_many(m, "alias"),
-                body: get(m, "body").unwrap_or_default(),
-                key: get(m, "idempotency-key"),
-                persona: get(m, "persona"),
-                capability: get(m, "capability"),
-                so_that: get(m, "so-that"),
-                flavour: get(m, "flavour"),
-                assignee: get(m, "assignee"),
+                parent: a.parent,
+                blocked_by: a.blocked_by,
+                scope: a.scope,
+                new_scope: a.new_scope,
+                labels: a.labels,
+                acceptance: a.acceptance,
+                aliases: a.aliases,
+                body: a.body.unwrap_or_default(),
+                key: a.key,
+                persona: a.persona,
+                capability: a.capability,
+                so_that: a.so_that,
+                flavour: a.flavour,
+                assignee: a.assignee,
                 // frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
-                good_first: m.get_flag("good-first"),
+                good_first: a.good_first,
             }),
         })
     }
@@ -346,91 +357,125 @@ fn lost_evidence(
     Ok(out)
 }
 
+/// The flags of `ticket update`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct UpdateArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(
+        long = "set",
+        value_name = "TEXT",
+        help = "FIELD=VALUE to set (repeatable; empty value unsets a scalar, lists need --clear); lists are comma separated; acceptance needs --add-acceptance"
+    )]
+    sets: Vec<String>,
+    #[arg(long, value_name = "TEXT", help = "New title")]
+    title: Option<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "New parent ticket (handle, id or alias); empty unsets it"
+    )]
+    parent: Option<String>,
+    #[arg(long, value_name = "VALUE", value_parser = choices(Priority::NAMES), help = "New priority")]
+    priority: Option<String>,
+    #[arg(long, value_name = "VALUE", value_parser = choices(Class::NAMES), help = "New class of service")]
+    class: Option<String>,
+    #[arg(long, value_name = "TEXT", help = "New story points")]
+    points: Option<String>,
+    #[arg(
+        long = "add-label",
+        value_name = "TEXT",
+        help = "Label to add (repeatable)"
+    )]
+    add_labels: Vec<String>,
+    #[arg(
+        long = "remove-label",
+        value_name = "TEXT",
+        help = "Label to remove (repeatable)"
+    )]
+    remove_labels: Vec<String>,
+    #[arg(long, value_name = "TEXT", help = "Scope glob to add (repeatable)")]
+    add_scope: Vec<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Scope glob to add for files this ticket will create: scope plus a `creates:` label that silences the zero-match warning (repeatable)"
+    )]
+    add_new_scope: Vec<String>,
+    #[arg(long, value_name = "TEXT", help = "Scope glob to remove (repeatable)")]
+    remove_scope: Vec<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Acceptance criterion to add, taken whole, commas included (repeatable)"
+    )]
+    add_acceptance: Vec<String>,
+    #[arg(
+        long,
+        value_name = "N",
+        help = "1-based acceptance criterion to remove, as `ticket show` numbers them (repeatable); reports evidence that loses it"
+    )]
+    remove_acceptance: Vec<usize>,
+    #[arg(
+        long,
+        help = "Remove every acceptance criterion; reports evidence that loses one"
+    )]
+    clear_acceptance: bool,
+    #[arg(
+        long = "clear",
+        value_name = "TEXT",
+        help = "List field to empty (repeatable); the only way to empty a list"
+    )]
+    clears: Vec<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Why (required when changing flavour)"
+    )]
+    reason: Option<String>,
+}
+
 impl Command for Update {
     type Data = UpdateData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
-            .arg(many_flag(
-                "set",
-                "FIELD=VALUE to set (repeatable; empty value unsets a scalar, lists need --clear); lists are comma separated; acceptance needs --add-acceptance",
-            ))
-            .arg(text_flag("title", "New title"))
-            .arg(text_flag("parent", "New parent ticket (handle, id or alias); empty unsets it"))
-            .arg(choice_flag("priority", Priority::NAMES, "New priority"))
-            .arg(choice_flag("class", Class::NAMES, "New class of service"))
-            .arg(text_flag("points", "New story points"))
-            .arg(many_flag("add-label", "Label to add (repeatable)"))
-            .arg(many_flag("remove-label", "Label to remove (repeatable)"))
-            .arg(many_flag("add-scope", "Scope glob to add (repeatable)"))
-            .arg(many_flag(
-                "add-new-scope",
-                "Scope glob to add for files this ticket will create: scope plus a `creates:` label that silences the zero-match warning (repeatable)",
-            ))
-            .arg(many_flag(
-                "remove-scope",
-                "Scope glob to remove (repeatable)",
-            ))
-            .arg(many_flag(
-                "add-acceptance",
-                "Acceptance criterion to add, taken whole, commas included (repeatable)",
-            ))
-            .arg(
-                Arg::new("remove-acceptance")
-                    .long("remove-acceptance")
-                    .value_name("N")
-                    .action(ArgAction::Append)
-                    .value_parser(gob_cli::clap::value_parser!(usize))
-                    .help("1-based acceptance criterion to remove, as `ticket show` numbers them (repeatable); reports evidence that loses it"),
-            )
-            .arg(
-                Arg::new("clear-acceptance")
-                    .long("clear-acceptance")
-                    .action(ArgAction::SetTrue)
-                    .help("Remove every acceptance criterion; reports evidence that loses one"),
-            )
-            .arg(many_flag(
-                "clear",
-                "List field to empty (repeatable); the only way to empty a list",
-            ))
-            .arg(text_flag("reason", "Why (required when changing flavour)"))
+        gob_cli::augment::<UpdateArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<UpdateArgs>(m)?;
         let mut sets = Vec::new();
-        for raw in get_many(m, "set") {
+        for raw in a.sets {
             let (k, v) = raw.split_once('=').ok_or_else(|| {
                 CliError::Usage(format!("--set expects FIELD=VALUE, got `{raw}`"))
             })?;
             sets.push((k.trim().to_owned(), v.to_owned()));
         }
-        for (flag, field) in [
-            ("title", "title"),
-            ("parent", "parent"),
-            ("priority", "priority"),
-            ("class", "class"),
-            ("points", "points"),
+        for (field, value) in [
+            ("title", a.title),
+            ("parent", a.parent),
+            ("priority", a.priority),
+            ("class", a.class),
+            ("points", a.points),
         ] {
-            if let Some(v) = get(m, flag) {
+            if let Some(v) = value {
                 sets.push((field.to_owned(), v));
             }
         }
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
+            ticket: a.ticket.ticket,
             sets,
-            add_labels: get_many(m, "add-label"),
-            remove_labels: get_many(m, "remove-label"),
-            add_scope: get_many(m, "add-scope"),
-            add_new_scope: get_many(m, "add-new-scope"),
-            remove_scope: get_many(m, "remove-scope"),
-            clears: get_many(m, "clear"),
-            add_acceptance: get_many(m, "add-acceptance"),
-            remove_acceptance: m
-                .get_many::<usize>("remove-acceptance")
-                .map(|v| v.copied().collect())
-                .unwrap_or_default(),
-            clear_acceptance: m.get_flag("clear-acceptance"),
-            reason: get(m, "reason"),
+            add_labels: a.add_labels,
+            remove_labels: a.remove_labels,
+            add_scope: a.add_scope,
+            add_new_scope: a.add_new_scope,
+            remove_scope: a.remove_scope,
+            clears: a.clears,
+            add_acceptance: a.add_acceptance,
+            remove_acceptance: a.remove_acceptance,
+            clear_acceptance: a.clear_acceptance,
+            reason: a.reason,
         })
     }
 
@@ -529,25 +574,20 @@ enum KindArg {
     Child,
 }
 
-fn kind_args() -> [Arg; 3] {
-    [
-        ticket_arg(),
-        Arg::new("target")
-            .required(true)
-            .value_name("TARGET")
-            .help("The other ticket"),
-        choice_flag(
-            "kind",
-            link_kind_names(),
-            "Link kind from the canonical table",
-        )
-        .required(true),
-    ]
+/// The positionals and flag of `ticket link` and `ticket unlink`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct KindArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(value_name = "TARGET", help = "The other ticket")]
+    target: String,
+    #[arg(long, value_name = "VALUE", value_parser = choices(link_kind_names()), help = "Link kind from the canonical table")]
+    kind: String,
 }
 
-fn parse_kind(m: &ArgMatches) -> Result<KindArg, CliError> {
-    let name = get(m, "kind").unwrap_or_default();
-    match name.as_str() {
+fn parse_kind(name: &str) -> Result<KindArg, CliError> {
+    match name {
         "parent" => Ok(KindArg::Parent),
         "child" => Ok(KindArg::Child),
         other => other
@@ -596,14 +636,15 @@ impl Command for Link {
     type Data = ChangeData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.args(kind_args())
+        gob_cli::augment::<KindArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<KindArgs>(m)?;
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-            target: get(m, "target").unwrap_or_default(),
-            kind: parse_kind(m)?,
+            ticket: a.ticket.ticket,
+            target: a.target,
+            kind: parse_kind(&a.kind)?,
         })
     }
 
@@ -628,14 +669,15 @@ impl Command for Unlink {
     type Data = ChangeData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.args(kind_args())
+        gob_cli::augment::<KindArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<KindArgs>(m)?;
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-            target: get(m, "target").unwrap_or_default(),
-            kind: parse_kind(m)?,
+            ticket: a.ticket.ticket,
+            target: a.target,
+            kind: parse_kind(&a.kind)?,
         })
     }
 
@@ -683,24 +725,31 @@ pub struct Comment {
     subtype: CommentSubtype,
 }
 
+/// The flags of `ticket comment`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct CommentArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(long, value_name = "TEXT", help = "Comment text (markdown)")]
+    body: String,
+    #[arg(long, value_name = "VALUE", value_parser = choices(CommentSubtype::NAMES), help = "note (default), decision, question or answer")]
+    subtype: Option<String>,
+}
+
 impl Command for Comment {
     type Data = ChangeData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
-            .arg(text_flag("body", "Comment text (markdown)").required(true))
-            .arg(choice_flag(
-                "subtype",
-                CommentSubtype::NAMES,
-                "note (default), decision, question or answer",
-            ))
+        gob_cli::augment::<CommentArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<CommentArgs>(m)?;
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-            body: get(m, "body").unwrap_or_default(),
-            subtype: get_parsed(m, "subtype")?.unwrap_or(CommentSubtype::Note),
+            ticket: a.ticket.ticket,
+            body: a.body,
+            subtype: parsed("subtype", a.subtype)?.unwrap_or(CommentSubtype::Note),
         })
     }
 
@@ -732,48 +781,53 @@ pub struct Close {
     no_land: bool,
 }
 
+/// The flags of `ticket close`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct CloseArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(long, value_name = "VALUE", value_parser = choices(Outcome::NAMES), help = "Why the ticket is done (required)")]
+    outcome: Option<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Free-text reason recorded on the event; required with --no-evidence and --no-changelog"
+    )]
+    reason: Option<String>,
+    #[arg(
+        long,
+        help = "Close without measured evidence; needs --reason and is audited"
+    )]
+    no_evidence: bool,
+    #[arg(
+        long,
+        help = "Close done although the ticket branch holds commits not merged into the base; needs --reason and is audited"
+    )]
+    no_land: bool,
+    #[arg(
+        long,
+        help = "Close without a changelog fragment; needs --reason and is audited"
+    )]
+    no_changelog: bool,
+}
+
 impl Command for Close {
     type Data = ChangeData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
-            .arg(choice_flag(
-                "outcome",
-                Outcome::NAMES,
-                "Why the ticket is done (required)",
-            ))
-            .arg(text_flag(
-                "reason",
-                "Free-text reason recorded on the event; required with --no-evidence and --no-changelog",
-            ))
-            .arg(
-                Arg::new("no-evidence")
-                    .long("no-evidence")
-                    .action(ArgAction::SetTrue)
-                    .help("Close without measured evidence; needs --reason and is audited"),
-            )
-            .arg(
-                Arg::new("no-land")
-                    .long("no-land")
-                    .action(ArgAction::SetTrue)
-                    .help("Close done although the ticket branch holds commits not merged into the base; needs --reason and is audited"),
-            )
-            .arg(
-                Arg::new("no-changelog")
-                    .long("no-changelog")
-                    .action(ArgAction::SetTrue)
-                    .help("Close without a changelog fragment; needs --reason and is audited"),
-            )
+        gob_cli::augment::<CloseArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<CloseArgs>(m)?;
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-            outcome: get_parsed(m, "outcome")?,
-            reason: get(m, "reason"),
-            no_evidence: m.get_flag("no-evidence"),
-            no_changelog: m.get_flag("no-changelog"),
-            no_land: m.get_flag("no-land"),
+            ticket: a.ticket.ticket,
+            outcome: parsed("outcome", a.outcome)?,
+            reason: a.reason,
+            no_evidence: a.no_evidence,
+            no_changelog: a.no_changelog,
+            no_land: a.no_land,
         })
     }
 
@@ -892,23 +946,32 @@ pub struct Closeout {
     reason: String,
 }
 
+/// The flags of `ticket closeout`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct CloseoutArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Why the ticket is closed after the fact; recorded on the close event"
+    )]
+    reason: String,
+}
+
 impl Command for Closeout {
     type Data = ChangeData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg()).arg(
-            Arg::new("reason")
-                .long("reason")
-                .value_name("TEXT")
-                .required(true)
-                .help("Why the ticket is closed after the fact; recorded on the close event"),
-        )
+        gob_cli::augment::<CloseoutArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<CloseoutArgs>(m)?;
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-            reason: get(m, "reason").unwrap_or_default(),
+            ticket: a.ticket.ticket,
+            reason: a.reason,
         })
     }
 
@@ -948,18 +1011,28 @@ pub struct DropTicket {
     reason: String,
 }
 
+/// The flags of `ticket drop`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct DropTicketArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(long, value_name = "TEXT", help = "Why the ticket is dropped")]
+    reason: String,
+}
+
 impl Command for DropTicket {
     type Data = ChangeData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
-            .arg(text_flag("reason", "Why the ticket is dropped").required(true))
+        gob_cli::augment::<DropTicketArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<DropTicketArgs>(m)?;
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-            reason: get(m, "reason").unwrap_or_default(),
+            ticket: a.ticket.ticket,
+            reason: a.reason,
         })
     }
 
@@ -988,18 +1061,28 @@ pub struct Reopen {
     reason: String,
 }
 
+/// The flags of `ticket reopen`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct ReopenArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(long, value_name = "TEXT", help = "Why the ticket is reopened")]
+    reason: String,
+}
+
 impl Command for Reopen {
     type Data = ChangeData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
-            .arg(text_flag("reason", "Why the ticket is reopened").required(true))
+        gob_cli::augment::<ReopenArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<ReopenArgs>(m)?;
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-            reason: get(m, "reason").unwrap_or_default(),
+            ticket: a.ticket.ticket,
+            reason: a.reason,
         })
     }
 

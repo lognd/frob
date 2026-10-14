@@ -5,7 +5,7 @@
 use std::fmt::Write as _;
 use std::path::Path;
 
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_plan::verbs::catalog::{CatalogResult, lookup};
 use gob_plan::verbs::check::{FileCheck, RuleCost, check_source};
@@ -38,19 +38,15 @@ fn read_rule(base: &Path, path: &str) -> Result<String, CliError> {
         .map_err(|e| CliError::Usage(format!("cannot read rule file {path}: {e}")))
 }
 
-fn paths_arg(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-    cmd.arg(
-        Arg::new("paths")
-            .num_args(0..)
-            .value_name("PATH")
-            .help("Rule files; default every .grl file under the workspace root"),
-    )
-}
-
-fn paths_of(m: &ArgMatches) -> Vec<String> {
-    m.get_many::<String>("paths")
-        .map(|v| v.cloned().collect())
-        .unwrap_or_default()
+/// The optional positional rule file list shared by the rule verbs.
+#[derive(Debug, Clone, clap::Args)]
+struct PathsArg {
+    #[arg(
+        num_args = 0..,
+        value_name = "PATH",
+        help = "Rule files; default every .grl file under the workspace root"
+    )]
+    paths: Vec<String>,
 }
 
 fn gate<T: Serialize>(message: String, data: &T) -> CliError {
@@ -99,15 +95,26 @@ pub struct RuleTestData {
     pub failed: usize,
 }
 
+/// `RuleTest` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct RuleTestArgs {
+    #[command(flatten)]
+    paths: PathsArg,
+}
+
 impl Command for RuleTest {
     type Data = RuleTestData;
 
-    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        paths_arg(cmd)
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        gob_cli::augment::<RuleTestArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self { paths: paths_of(m) })
+        let a = gob_cli::parse::<RuleTestArgs>(m)?;
+        Ok(Self {
+            paths: a.paths.paths,
+        })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<RuleTestData> {
@@ -163,15 +170,26 @@ pub struct RuleCheckData {
     pub files: Vec<FileCheck>,
 }
 
+/// `RuleCheck` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct RuleCheckArgs {
+    #[command(flatten)]
+    paths: PathsArg,
+}
+
 impl Command for RuleCheck {
     type Data = RuleCheckData;
 
-    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        paths_arg(cmd)
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        gob_cli::augment::<RuleCheckArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self { paths: paths_of(m) })
+        let a = gob_cli::parse::<RuleCheckArgs>(m)?;
+        Ok(Self {
+            paths: a.paths.paths,
+        })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<RuleCheckData> {
@@ -206,21 +224,24 @@ pub struct RuleCatalog {
     word: Option<String>,
 }
 
+/// `RuleCatalog` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct CatalogArgs {
+    #[arg(value_name = "WORD", help = "The word to look up; default list all")]
+    word: Option<String>,
+}
+
 impl Command for RuleCatalog {
     type Data = CatalogResult;
 
-    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("word")
-                .value_name("WORD")
-                .help("The word to look up; default list all"),
-        )
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        gob_cli::augment::<CatalogArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            word: m.get_one::<String>("word").cloned(),
-        })
+        let a = gob_cli::parse::<CatalogArgs>(m)?;
+        Ok(Self { word: a.word })
     }
 
     fn run(&self, _ctx: &Context) -> Outcome<CatalogResult> {
@@ -279,24 +300,31 @@ pub struct RuleFmtData {
     pub skipped: Vec<String>,
 }
 
+/// `RuleFmt` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct FmtArgs {
+    #[arg(
+        long,
+        help = "Report non-canonical files and exit 1 instead of rewriting them"
+    )]
+    check: bool,
+    #[command(flatten)]
+    paths: PathsArg,
+}
+
 impl Command for RuleFmt {
     type Data = RuleFmtData;
 
-    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        paths_arg(
-            cmd.arg(
-                Arg::new("check")
-                    .long("check")
-                    .action(ArgAction::SetTrue)
-                    .help("Report non-canonical files and exit 1 instead of rewriting them"),
-            ),
-        )
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        gob_cli::augment::<FmtArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<FmtArgs>(m)?;
         Ok(Self {
-            check: m.get_flag("check"),
-            paths: paths_of(m),
+            check: a.check,
+            paths: a.paths.paths,
         })
     }
 
@@ -374,37 +402,36 @@ pub struct RuleNewData {
     pub text: String,
 }
 
+/// `RuleNew` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct NewArgs {
+    #[arg(required = true, value_name = "ID", help = "Rule id, such as NOPE001")]
+    id: String,
+    #[arg(
+        long = "from",
+        required = true,
+        value_name = "FILE:LINE",
+        help = "The code to build the rule from"
+    )]
+    location: String,
+    #[arg(long, help = "Show the scaffold without writing rules/ID.grl")]
+    print: bool,
+}
+
 impl Command for RuleNew {
     type Data = RuleNewData;
 
-    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("id")
-                .required(true)
-                .value_name("ID")
-                .help("Rule id, such as NOPE001"),
-        )
-        .arg(
-            Arg::new("location")
-                .long("from")
-                .required(true)
-                .value_name("FILE:LINE")
-                .help("The code to build the rule from"),
-        )
-        .arg(
-            Arg::new("print")
-                .long("print")
-                .action(ArgAction::SetTrue)
-                .help("Show the scaffold without writing rules/ID.grl"),
-        )
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        gob_cli::augment::<NewArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let get = |k: &str| m.get_one::<String>(k).cloned().unwrap_or_default();
+        let a = gob_cli::parse::<NewArgs>(m)?;
         Ok(Self {
-            id: get("id"),
-            location: get("location"),
-            print: m.get_flag("print"),
+            id: a.id,
+            location: a.location,
+            print: a.print,
         })
     }
 

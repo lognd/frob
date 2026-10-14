@@ -1,6 +1,6 @@
 //! The `check` verb: flags in, [`crate::run`] out, exit code from `fail_on`.
 
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{
     Cli, CliError, Command, CommandMeta, Context, Described, ExitCode, FindingsFailure, Outcome,
     Payload, Refusal, RefusalClass,
@@ -260,71 +260,62 @@ impl Described for Check {
     };
 }
 
+/// The flags of `check`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct CheckArgs {
+    #[arg(
+        long,
+        value_name = "HANDLE",
+        help = "Scope per-file rules to the ticket's lease files plus [check] ticket_hops of dependents"
+    )]
+    ticket: Option<String>,
+    #[arg(
+        long,
+        value_name = "FAMILY",
+        value_delimiter = ',',
+        action = gob_cli::clap::ArgAction::Append,
+        help = "Keep only these rule families or ids (comma separated)"
+    )]
+    only: Vec<String>,
+    #[arg(long, help = "Apply Deterministic fixes, then re-run once")]
+    fix: bool,
+    #[arg(
+        long,
+        value_name = "SEVERITY",
+        value_parser = ["error", "warn", "advisory", "none"],
+        help = "Exit 1 at or above this severity (default: [check] fail_on)"
+    )]
+    fail_on: Option<String>,
+    #[arg(long, value_name = "RULEID", help = "Print the rule page and exit 0")]
+    explain: Option<String>,
+    #[arg(long, help = "Print the per-stage timing breakdown")]
+    timing: bool,
+    #[arg(
+        long,
+        value_name = "REF",
+        help = "Ref the --ticket diff is taken against (default: [check] base)"
+    )]
+    base: Option<String>,
+}
+
 impl Command for Check {
     type Data = CheckData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("ticket")
-                .long("ticket")
-                .value_name("HANDLE")
-                .help("Scope per-file rules to the ticket's lease files plus [check] ticket_hops of dependents"),
-        )
-        .arg(
-            Arg::new("only")
-                .long("only")
-                .value_name("FAMILY")
-                .value_delimiter(',')
-                .action(ArgAction::Append)
-                .help("Keep only these rule families or ids (comma separated)"),
-        )
-        .arg(
-            Arg::new("fix")
-                .long("fix")
-                .action(ArgAction::SetTrue)
-                .help("Apply Deterministic fixes, then re-run once"),
-        )
-        .arg(
-            Arg::new("fail_on")
-                .long("fail-on")
-                .value_name("SEVERITY")
-                .value_parser(["error", "warn", "advisory", "none"])
-                .help("Exit 1 at or above this severity (default: [check] fail_on)"),
-        )
-        .arg(
-            Arg::new("explain")
-                .long("explain")
-                .value_name("RULEID")
-                .help("Print the rule page and exit 0"),
-        )
-        .arg(
-            Arg::new("timing")
-                .long("timing")
-                .action(ArgAction::SetTrue)
-                .help("Print the per-stage timing breakdown"),
-        )
-        .arg(
-            Arg::new("base")
-                .long("base")
-                .value_name("REF")
-                .help("Ref the --ticket diff is taken against (default: [check] base)"),
-        )
+        gob_cli::augment::<CheckArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<CheckArgs>(m)?;
         Ok(Self {
-            ticket: m.get_one::<String>("ticket").cloned(),
-            only: m
-                .get_many::<String>("only")
-                .map(|v| v.cloned().collect())
-                .unwrap_or_default(),
-            fix: m.get_flag("fix"),
-            fail_on: m
-                .get_one::<String>("fail_on")
-                .and_then(|s| FailOn::parse(s)),
-            explain: m.get_one::<String>("explain").cloned(),
-            timing: m.get_flag("timing"),
-            base: m.get_one::<String>("base").cloned(),
+            ticket: a.ticket,
+            only: a.only,
+            fix: a.fix,
+            fail_on: a.fail_on.as_deref().and_then(FailOn::parse),
+            explain: a.explain,
+            timing: a.timing,
+            base: a.base,
         })
     }
 

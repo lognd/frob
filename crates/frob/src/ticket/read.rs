@@ -7,13 +7,13 @@ use frob_ledger::index::{ListFilter, Summary};
 use frob_ledger::model::{Category, Stamp, TicketType};
 use frob_ledger::ops::TicketView;
 use frob_ledger::triage::InboxEntry;
-use gob_cli::clap::{ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
 
 use super::triage_cmd::parse_when;
-use super::{choice_flag, cli_err, get, get_parsed, open, resolve, text_flag, ticket_arg};
+use super::{TicketArg, choices, cli_err, open, parsed, resolve};
 use crate::config::FrobConfig;
 
 /// One event as shown by `show --events`.
@@ -170,22 +170,28 @@ pub struct Show {
     events: bool,
 }
 
+/// The flags of `ticket show`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct ShowArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(long, help = "Include the event timeline")]
+    events: bool,
+}
+
 impl Command for Show {
     type Data = ShowData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg()).arg(
-            gob_cli::clap::Arg::new("events")
-                .long("events")
-                .action(ArgAction::SetTrue)
-                .help("Include the event timeline"),
-        )
+        gob_cli::augment::<ShowArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<ShowArgs>(m)?;
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-            events: m.get_flag("events"),
+            ticket: a.ticket.ticket,
+            events: a.events,
         })
     }
 
@@ -324,66 +330,71 @@ pub struct List {
     depth: Option<usize>,
 }
 
+/// The flags of `ticket list`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+#[allow(clippy::struct_excessive_bools)] // one bool per CLI flag
+struct ListArgs {
+    #[arg(long, value_name = "VALUE", value_parser = choices(Category::NAMES), help = "Only this category")]
+    category: Option<String>,
+    #[arg(long = "type", value_name = "VALUE", value_parser = choices(TicketType::NAMES), help = "Only this type")]
+    ty: Option<String>,
+    #[arg(long, value_name = "TEXT", help = "Only children of this ticket")]
+    parent: Option<String>,
+    #[arg(long, value_name = "TEXT", help = "Only tickets with this label")]
+    label: Option<String>,
+    #[arg(long, help = "Only tickets blocked by an open blocker")]
+    blocked: bool,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "With --category triage: list the inbox as of this date or RFC 3339 time (default now)"
+    )]
+    at: Option<String>,
+    #[arg(
+        long,
+        help = "With --category triage: include snoozed tickets, with the time each returns"
+    )]
+    all: bool,
+    #[arg(
+        long,
+        help = "Also emit every listed ticket's aliases and events, read in one pass"
+    )]
+    full: bool,
+    #[arg(
+        long,
+        help = "The backlog as a parent hierarchy with points roll-ups and percent done"
+    )]
+    tree: bool,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "With --tree: show this many levels (1 = top only); deeper tickets fold into a count"
+    )]
+    depth: Option<String>,
+}
+
 impl Command for List {
     type Data = ListData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(choice_flag(
-            "category",
-            Category::NAMES,
-            "Only this category",
-        ))
-        .arg(choice_flag("type", TicketType::NAMES, "Only this type"))
-        .arg(text_flag("parent", "Only children of this ticket"))
-        .arg(text_flag("label", "Only tickets with this label"))
-        .arg(
-            gob_cli::clap::Arg::new("blocked")
-                .long("blocked")
-                .action(ArgAction::SetTrue)
-                .help("Only tickets blocked by an open blocker"),
-        )
-        .arg(text_flag(
-            "at",
-            "With --category triage: list the inbox as of this date or RFC 3339 time (default now)",
-        ))
-        .arg(
-            gob_cli::clap::Arg::new("all")
-                .long("all")
-                .action(ArgAction::SetTrue)
-                .help(
-                    "With --category triage: include snoozed tickets, with the time each returns",
-                ),
-        )
-        .arg(
-            gob_cli::clap::Arg::new("full")
-                .long("full")
-                .action(ArgAction::SetTrue)
-                .help("Also emit every listed ticket's aliases and events, read in one pass"),
-        )
-        .arg(
-            gob_cli::clap::Arg::new("tree")
-                .long("tree")
-                .action(ArgAction::SetTrue)
-                .help("The backlog as a parent hierarchy with points roll-ups and percent done"),
-        )
-        .arg(text_flag(
-            "depth",
-            "With --tree: show this many levels (1 = top only); deeper tickets fold into a count",
-        ))
+        gob_cli::augment::<ListArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<ListArgs>(m)?;
         Ok(Self {
-            category: get_parsed(m, "category")?,
-            ty: get_parsed(m, "type")?,
-            parent: get(m, "parent"),
-            label: get(m, "label"),
-            blocked: m.get_flag("blocked"),
-            at: get(m, "at"),
-            all: m.get_flag("all"),
-            full: m.get_flag("full"),
-            tree: m.get_flag("tree"),
-            depth: get(m, "depth")
+            category: parsed("category", a.category)?,
+            ty: parsed("type", a.ty)?,
+            parent: a.parent,
+            label: a.label,
+            blocked: a.blocked,
+            at: a.at,
+            all: a.all,
+            full: a.full,
+            tree: a.tree,
+            depth: a
+                .depth
                 .map(|d| match d.parse::<usize>() {
                     Ok(n) if n > 0 => Ok(n),
                     _ => Err(CliError::Usage(format!(
@@ -533,21 +544,30 @@ pub struct Doable {
     newcomer: bool,
 }
 
+/// The flags of `ticket doable`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct DoableArgs {
+    #[arg(long, value_name = "TEXT", help = "Show at most this many tickets")]
+    limit: Option<String>,
+    #[arg(
+        long,
+        help = "Only good-first tickets, smallest first, with their start notes"
+    )]
+    newcomer: bool,
+}
+
 impl Command for Doable {
     type Data = ListData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(text_flag("limit", "Show at most this many tickets"))
-            .arg(
-                gob_cli::clap::Arg::new("newcomer")
-                    .long("newcomer")
-                    .action(ArgAction::SetTrue)
-                    .help("Only good-first tickets, smallest first, with their start notes"),
-            )
+        gob_cli::augment::<DoableArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let limit = get(m, "limit")
+        let a = gob_cli::parse::<DoableArgs>(m)?;
+        let limit = a
+            .limit
             .map(|l| {
                 l.parse::<usize>()
                     .map_err(|_| CliError::Usage(format!("--limit expects a number, got `{l}`")))
@@ -555,7 +575,7 @@ impl Command for Doable {
             .transpose()?;
         Ok(Self {
             limit,
-            newcomer: m.get_flag("newcomer"),
+            newcomer: a.newcomer,
         })
     }
 
@@ -671,13 +691,12 @@ impl Command for Brief {
     type Data = BriefData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
+        gob_cli::augment::<TicketArg>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-        })
+        let a = gob_cli::parse::<TicketArg>(m)?;
+        Ok(Self { ticket: a.ticket })
     }
 
     fn run(&self, ctx: &Context) -> CliOutcome<BriefData> {

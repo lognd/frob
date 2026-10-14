@@ -17,9 +17,7 @@ use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use crate::ticket::{
-    ChangeData, cli_err, get, get_many, many_flag, open, open_lease_store, resolve, ticket_arg,
-};
+use crate::ticket::{ChangeData, TicketArg, cli_err, open, open_lease_store, resolve};
 
 /// What the lease side of a scope change did.
 enum LeaseSide {
@@ -126,25 +124,39 @@ pub struct LeaseWiden {
     new_globs: Vec<String>,
 }
 
+/// The flags of `lease widen`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct WidenArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(
+        long = "glob",
+        value_name = "TEXT",
+        help = "Scope glob to add to the ticket first (repeatable)"
+    )]
+    globs: Vec<String>,
+    #[arg(
+        long = "new-glob",
+        value_name = "TEXT",
+        help = "Like --glob, for files the ticket will create: adds a `creates:` label that silences the zero-match warning (repeatable)"
+    )]
+    new_globs: Vec<String>,
+}
+
 impl Command for LeaseWiden {
     type Data = WidenData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(ticket_arg()).arg(many_flag(
-            "glob",
-            "Scope glob to add to the ticket first (repeatable)",
-        ))
-        .arg(many_flag(
-            "new-glob",
-            "Like --glob, for files the ticket will create: adds a `creates:` label that silences the zero-match warning (repeatable)",
-        ))
+        gob_cli::augment::<WidenArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<WidenArgs>(m)?;
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-            globs: get_many(m, "glob"),
-            new_globs: get_many(m, "new-glob"),
+            ticket: a.ticket.ticket,
+            globs: a.globs,
+            new_globs: a.new_globs,
         })
     }
 
@@ -220,16 +232,14 @@ impl Command for LeaseRelease {
     type Data = ReleaseData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(ticket_arg())
+        gob_cli::augment::<TicketArg>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-        })
+        let a = gob_cli::parse::<TicketArg>(m)?;
+        Ok(Self { ticket: a.ticket })
     }
 
-    // frob:ticket 01M4D6NSC2DP2P09F4QTR723S3
     fn run(&self, ctx: &Context) -> Outcome<ReleaseData> {
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;

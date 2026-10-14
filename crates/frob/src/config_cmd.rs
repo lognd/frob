@@ -208,19 +208,23 @@ fn inline_json(inline: &str) -> serde_json::Value {
         .unwrap_or(serde_json::Value::Null)
 }
 
+/// `ConfigShow` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct ShowArgs {
+    #[arg(long, help = "Show the merged effective values (the only view today)")]
+    effective: bool,
+}
+
 impl Command for ConfigShow {
     type Data = ShowData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            gob_cli::clap::Arg::new("effective")
-                .long("effective")
-                .action(gob_cli::clap::ArgAction::SetTrue)
-                .help("Show the merged effective values (the only view today)"),
-        )
+        gob_cli::augment::<ShowArgs>(cmd)
     }
 
-    fn from_matches(_matches: &gob_cli::clap::ArgMatches) -> Result<Self, CliError> {
+    fn from_matches(matches: &gob_cli::clap::ArgMatches) -> Result<Self, CliError> {
+        gob_cli::parse::<ShowArgs>(matches)?;
         Ok(Self)
     }
 

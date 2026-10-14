@@ -35,6 +35,19 @@ gob_cli::inventory::submit! {
     gob_cli::SchemaExtension::new(crunk_spec::schema::schema)
 }
 
+/// The crunk-only `check --gate` flag.
+#[derive(Debug, Clone, gob_cli::clap::Args)]
+#[command(about = None, long_about = None)]
+struct GateArgs {
+    #[arg(
+        long,
+        value_name = "GATE",
+        value_parser = ["check", "release"],
+        help = "Judge for this gate; release raises stale human reviews to errors"
+    )]
+    gate: Option<String>,
+}
+
 impl Product for CrunkProduct {
     const NAME: &'static str = PRODUCT;
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -63,11 +76,10 @@ impl Product for CrunkProduct {
                 base: opts.base.clone(),
                 ticket_scope: opts.ticket_scope.clone(),
                 // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
-                gate: match matches
-                    .try_get_one::<String>("gate")
+                gate: match gob_cli::parse::<GateArgs>(matches)
                     .ok()
-                    .flatten()
-                    .map(String::as_str)
+                    .and_then(|a| a.gate)
+                    .as_deref()
                 {
                     Some("release") => crunk_rules::family::Gate::Release,
                     _ => crunk_rules::family::Gate::Check,
@@ -87,13 +99,7 @@ impl Product for CrunkProduct {
 
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     fn configure_check(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        gob_product::shared_flags(cmd).arg(
-            gob_cli::clap::Arg::new("gate")
-                .long("gate")
-                .value_name("GATE")
-                .value_parser(["check", "release"])
-                .help("Judge for this gate; release raises stale human reviews to errors"),
-        )
+        gob_cli::augment::<GateArgs>(gob_product::shared_flags(cmd))
     }
 
     fn doctor(_ctx: &Context, root: &Path, _matches: &ArgMatches) -> Outcome<doctor::DoctorData> {

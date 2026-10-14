@@ -9,7 +9,7 @@
 
 use std::path::Path;
 
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::{ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use gob_git::{CommitOptions, RelPath, Repo};
 use gob_lock::PlanError;
@@ -135,51 +135,52 @@ impl Ack {
     }
 }
 
+/// `Ack` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct AckArgs {
+    #[arg(
+        num_args = 0..,
+        value_name = "ENTITY|SYMREF|FLOW",
+        help = "A flow (flow/NAME), a contract, a symref or a path; acking a flow covers both ends"
+    )]
+    targets: Vec<String>,
+    #[arg(
+        long,
+        help = "Re-ack every acked entry that still exists; with --reason it migrates a stale lock"
+    )]
+    all: bool,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Why the current state is acknowledged (required)"
+    )]
+    reason: Option<String>,
+    #[arg(
+        long,
+        num_args = 2,
+        value_names = ["OLD", "NEW"],
+        action = ArgAction::Append,
+        help = "Carry the lock entry of a vanished identity to the one that holds its Body now"
+    )]
+    rename: Vec<String>,
+}
+
 impl Command for Ack {
     type Data = AckData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("targets")
-                .num_args(0..)
-                .value_name("ENTITY|SYMREF|FLOW")
-                .help("A flow (flow/NAME), a contract, a symref or a path; acking a flow covers both ends"),
-        )
-        .arg(
-            Arg::new("all")
-                .long("all")
-                .action(ArgAction::SetTrue)
-                .help("Re-ack every acked entry that still exists; with --reason it migrates a stale lock"),
-        )
-        .arg(
-            Arg::new("reason")
-                .long("reason")
-                .value_name("TEXT")
-                .help("Why the current state is acknowledged (required)"),
-        )
-        .arg(
-            Arg::new("rename")
-                .long("rename")
-                .num_args(2)
-                .value_names(["OLD", "NEW"])
-                .action(ArgAction::Append)
-                .help("Carry the lock entry of a vanished identity to the one that holds its Body now"),
-        )
+        gob_cli::augment::<AckArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let flat: Vec<String> = m
-            .get_many::<String>("rename")
-            .map(|v| v.cloned().collect())
-            .unwrap_or_default();
+        let a = gob_cli::parse::<AckArgs>(m)?;
         Ok(Self {
-            targets: m
-                .get_many::<String>("targets")
-                .map(|v| v.cloned().collect())
-                .unwrap_or_default(),
-            all: m.get_flag("all"),
-            reason: m.get_one::<String>("reason").cloned(),
-            renames: flat
+            targets: a.targets,
+            all: a.all,
+            reason: a.reason,
+            renames: a
+                .rename
                 .as_chunks::<2>()
                 .0
                 .iter()

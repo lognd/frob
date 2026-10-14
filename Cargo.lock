@@ -485,6 +485,7 @@ name = "crunk"
 version = "0.532.0"
 dependencies = [
  "assert_cmd",
+ "clap",
  "crunk-check",
  "crunk-rules",
  "crunk-spec",
@@ -959,6 +960,7 @@ name = "frob-ack"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "clap",
  "gob-cache",
  "gob-cli",
  "gob-config",
@@ -987,6 +989,7 @@ name = "frob-check"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "clap",
  "criterion",
  "frob-ack",
  "frob-evidence",
@@ -1028,6 +1031,7 @@ name = "frob-cli"
 version = "0.532.0"
 dependencies = [
  "assert_cmd",
+ "clap",
  "crunk",
  "frob-ack",
  "frob-check",
@@ -1067,6 +1071,7 @@ name = "frob-evidence"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "clap",
  "frob-lease",
  "frob-ledger",
  "frob-pm",
@@ -1096,6 +1101,7 @@ name = "frob-land"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "clap",
  "frob-check",
  "frob-evidence",
  "frob-lease",
@@ -1124,6 +1130,7 @@ dependencies = [
 name = "frob-lease"
 version = "0.532.0"
 dependencies = [
+ "clap",
  "frob-ledger",
  "frob-release",
  "globset",
@@ -1259,6 +1266,7 @@ dependencies = [
 name = "frob-tests"
 version = "0.532.0"
 dependencies = [
+ "clap",
  "frob-evidence",
  "frob-ledger",
  "gob-cache",
@@ -1286,6 +1294,7 @@ dependencies = [
 name = "frob-worktree"
 version = "0.532.0"
 dependencies = [
+ "clap",
  "frob-lease",
  "frob-ledger",
  "frob-pm",
@@ -2727,6 +2736,7 @@ name = "grimble"
 version = "0.532.0"
 dependencies = [
  "assert_cmd",
+ "clap",
  "gob-check",
  "gob-cli",
  "gob-config",

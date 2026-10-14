@@ -315,21 +315,26 @@ fn sibling_row(runner: &Runner, product: &str, cwd: &std::path::Path) -> Sibling
     }
 }
 
+/// `Doctor` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct DoctorArgs {
+    #[arg(
+        long,
+        help = "Report each adapter's fidelity and capability precisions"
+    )]
+    languages: bool,
+    #[arg(
+        long,
+        help = "Run the garbage-collection pass now, unthrottled, and report it"
+    )]
+    fix: bool,
+}
+
 impl Doctor {
     /// Add the `--languages` and `--fix` flags to the generic `doctor` verb.
     pub fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            gob_cli::clap::Arg::new("languages")
-                .long("languages")
-                .action(gob_cli::clap::ArgAction::SetTrue)
-                .help("Report each adapter's fidelity and capability precisions"),
-        )
-        .arg(
-            gob_cli::clap::Arg::new("fix")
-                .long("fix")
-                .action(gob_cli::clap::ArgAction::SetTrue)
-                .help("Run the garbage-collection pass now, unthrottled, and report it"),
-        )
+        gob_cli::augment::<DoctorArgs>(cmd)
     }
 
     /// Read the flags back from the parsed matches.
@@ -338,9 +343,10 @@ impl Doctor {
     ///
     /// Never today; the signature matches the verb contract.
     pub fn from_matches(matches: &gob_cli::clap::ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<DoctorArgs>(matches)?;
         Ok(Self {
-            languages: matches.get_flag("languages"),
-            fix: matches.get_flag("fix"),
+            languages: a.languages,
+            fix: a.fix,
         })
     }
 

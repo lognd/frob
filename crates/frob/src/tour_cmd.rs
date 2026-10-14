@@ -10,7 +10,7 @@ use std::io::{BufRead, IsTerminal, Write};
 use std::time::Duration;
 
 use frob_ledger::Ledger;
-use gob_cli::clap::{Arg, ArgAction, ArgMatches, Command as ClapCommand};
+use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use gob_exec::{Limits, Program, Runner, Spec};
 use schemars::JsonSchema;
@@ -229,22 +229,24 @@ impl Opener for PagerOpener<'_> {
     }
 }
 
+/// `TourVerb` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct TourArgs {
+    #[arg(long, help = "Print every stop in order even on a terminal")]
+    all: bool,
+}
+
 impl Command for TourVerb {
     type Data = TourData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(
-            Arg::new("all")
-                .long("all")
-                .action(ArgAction::SetTrue)
-                .help("Print every stop in order even on a terminal"),
-        )
+        gob_cli::augment::<TourArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            all: m.get_flag("all"),
-        })
+        let a = gob_cli::parse::<TourArgs>(m)?;
+        Ok(Self { all: a.all })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<TourData> {

@@ -9,6 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
+clap = { version = "4", features = ["derive"] }
 blake3 = "1"
 frob-check = { version = "0.532.0", path = "../frob-check" }
 frob-evidence = { version = "0.532.0", path = "../frob-evidence" }

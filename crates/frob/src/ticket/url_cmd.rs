@@ -7,7 +7,7 @@ use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload, Refusa
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use super::{cli_err, get, open, resolve, ticket_arg};
+use super::{TicketArg, cli_err, open, resolve};
 use crate::config::FrobConfig;
 use crate::workspace::{Located, config_refusal};
 
@@ -41,13 +41,12 @@ impl Command for Url {
     type Data = UrlData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
+        gob_cli::augment::<TicketArg>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-        })
+        let a = gob_cli::parse::<TicketArg>(m)?;
+        Ok(Self { ticket: a.ticket })
     }
 
     fn run(&self, ctx: &Context) -> CliOutcome<UrlData> {

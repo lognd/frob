@@ -1,7 +1,7 @@
 //! The read-only lease verbs: `lease list [--contention]`; `ticket contention` stays as a hidden alias.
 
 use frob_ledger::TicketId;
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -75,23 +75,28 @@ pub struct LeaseList {
     contention: bool,
 }
 
+/// The flags of `lease list`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct LeaseListArgs {
+    #[arg(
+        long,
+        help = "Also report files claimed by more than one live lease, ranked by holder count"
+    )]
+    contention: bool,
+}
+
 impl Command for LeaseList {
     type Data = LeaseListData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("contention")
-                .long("contention")
-                .action(ArgAction::SetTrue)
-                .help(
-                    "Also report files claimed by more than one live lease, ranked by holder count",
-                ),
-        )
+        gob_cli::augment::<LeaseListArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<LeaseListArgs>(m)?;
         Ok(Self {
-            contention: m.get_flag("contention"),
+            contention: a.contention,
         })
     }
 

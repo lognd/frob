@@ -2,7 +2,7 @@
 // frob:ticket 01M3ZX85X37W6QSQSJD1WYVKZG
 
 use frob_ledger::r#gen::code_readme::{self, Home, RegionSettings};
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -101,29 +101,35 @@ pub struct Reindex {
     code_readme: bool,
 }
 
+/// The flags of `ticket reindex`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct ReindexArgs {
+    #[arg(
+        long,
+        help = "Write nothing; print the diff and exit 1 when the ticket branch is not current"
+    )]
+    check: bool,
+    // frob:ticket 01M3ZX87403VR4YVK4QMJ7KPBV
+    #[arg(
+        long,
+        help = "Also regenerate the marked tickets region of the code repository's README.md; with --check, report GEN001 when it is stale"
+    )]
+    code_readme: bool,
+}
+
 impl Command for Reindex {
     type Data = ReindexData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("check")
-                .long("check")
-                .action(ArgAction::SetTrue)
-                .help("Write nothing; print the diff and exit 1 when the ticket branch is not current"),
-        )
-        // frob:ticket 01M3ZX87403VR4YVK4QMJ7KPBV
-        .arg(
-            Arg::new("code-readme")
-                .long("code-readme")
-                .action(ArgAction::SetTrue)
-                .help("Also regenerate the marked tickets region of the code repository's README.md; with --check, report GEN001 when it is stale"),
-        )
+        gob_cli::augment::<ReindexArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<ReindexArgs>(m)?;
         Ok(Self {
-            check: m.get_flag("check"),
-            code_readme: m.get_flag("code-readme"),
+            check: a.check,
+            code_readme: a.code_readme,
         })
     }
 

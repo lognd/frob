@@ -1,7 +1,7 @@
 //! The `land` verb.
 
 use frob_ledger::model::Outcome as TicketOutcome;
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 
 use crate::error::LandError;
@@ -23,101 +23,91 @@ pub struct Land {
     opts: LandOptions,
 }
 
-fn text(m: &ArgMatches, name: &str) -> Option<String> {
-    m.get_one::<String>(name).cloned()
+/// The flags of `land`, declared once; the help text is the operator-facing contract.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+#[allow(clippy::struct_excessive_bools)] // one bool per CLI flag
+struct LandArgs {
+    #[arg(
+        value_name = "TICKET",
+        help = "Full ULID, ~handle or alias; defaults to the ticket leased by this worktree"
+    )]
+    ticket: Option<String>,
+    #[arg(long, help = "Push the base branch to origin after landing")]
+    push: bool,
+    #[arg(
+        long,
+        value_name = "SECS",
+        help = "Wait up to this many seconds for the land lock and to retry when the base moves (default 0)"
+    )]
+    wait: Option<u64>,
+    #[arg(
+        long,
+        help = "Show who holds the land lock, at which stage and for how long; land nothing"
+    )]
+    status: bool,
+    #[arg(long, help = "Keep the worktree and branch after landing")]
+    keep_worktree: bool,
+    #[arg(
+        long,
+        help = "Close without measured evidence; needs --reason and is audited"
+    )]
+    no_evidence: bool,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Why no evidence or no changelog note is recorded (with --no-evidence or --no-changelog)"
+    )]
+    reason: Option<String>,
+    #[arg(
+        long,
+        help = "Land despite a red or unreadable base CI; needs --reason and is audited on the ticket"
+    )]
+    override_base_ci: bool,
+    #[arg(
+        long,
+        help = "Close without a changelog fragment; needs --reason and is audited"
+    )]
+    no_changelog: bool,
+    #[arg(
+        long,
+        value_name = "VALUE",
+        value_parser = gob_cli::clap::builder::PossibleValuesParser::new(TicketOutcome::NAMES),
+        help = "Outcome the ticket is closed with (default done)"
+    )]
+    outcome: Option<String>,
 }
 
 impl Command for Land {
     type Data = LandOutcome;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("ticket").value_name("TICKET").help(
-                "Full ULID, ~handle or alias; defaults to the ticket leased by this worktree",
-            ),
-        )
-        .arg(
-            Arg::new("push")
-                .long("push")
-                .action(ArgAction::SetTrue)
-                .help("Push the base branch to origin after landing"),
-        )
-        .arg(
-            Arg::new("wait")
-                .long("wait")
-                .value_name("SECS")
-                .value_parser(gob_cli::clap::value_parser!(u64))
-                .help("Wait up to this many seconds for the land lock and to retry when the base moves (default 0)"),
-        )
-        .arg(
-            Arg::new("status")
-                .long("status")
-                .action(ArgAction::SetTrue)
-                .help("Show who holds the land lock, at which stage and for how long; land nothing"),
-        )
-        .arg(
-            Arg::new("keep-worktree")
-                .long("keep-worktree")
-                .action(ArgAction::SetTrue)
-                .help("Keep the worktree and branch after landing"),
-        )
-        .arg(
-            Arg::new("no-evidence")
-                .long("no-evidence")
-                .action(ArgAction::SetTrue)
-                .help("Close without measured evidence; needs --reason and is audited"),
-        )
-        .arg(
-            Arg::new("reason")
-                .long("reason")
-                .value_name("TEXT")
-                .help("Why no evidence or no changelog note is recorded (with --no-evidence or --no-changelog)"),
-        )
-        .arg(
-            Arg::new("override-base-ci")
-                .long("override-base-ci")
-                .action(ArgAction::SetTrue)
-                .help("Land despite a red or unreadable base CI; needs --reason and is audited on the ticket"),
-        )
-        .arg(
-            Arg::new("no-changelog")
-                .long("no-changelog")
-                .action(ArgAction::SetTrue)
-                .help("Close without a changelog fragment; needs --reason and is audited"),
-        )
-        .arg(
-            Arg::new("outcome")
-                .long("outcome")
-                .value_name("VALUE")
-                .value_parser(gob_cli::clap::builder::PossibleValuesParser::new(
-                    TicketOutcome::NAMES,
-                ))
-                .help("Outcome the ticket is closed with (default done)"),
-        )
+        gob_cli::augment::<LandArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let outcome = match text(m, "outcome") {
+        let a = gob_cli::parse::<LandArgs>(m)?;
+        let outcome = match a.outcome.clone() {
             Some(s) => s
                 .parse::<TicketOutcome>()
                 .map_err(|e| CliError::Usage(format!("--outcome: {e}")))?,
             None => TicketOutcome::Done,
         };
         if let Some(msg) =
-            frob_evidence::done::missing_reason(Some(outcome), text(m, "reason").as_deref())
+            frob_evidence::done::missing_reason(Some(outcome), a.reason.clone().as_deref())
         {
             return Err(CliError::Usage(msg));
         }
-        let reason = text(m, "reason").filter(|r| !r.trim().is_empty());
-        let (no_evidence, no_changelog) = (m.get_flag("no-evidence"), m.get_flag("no-changelog"));
+        let reason = a.reason.clone().filter(|r| !r.trim().is_empty());
+        let (no_evidence, no_changelog) = (a.no_evidence, a.no_changelog);
         let given = |flag: &str| match &reason {
             Some(r) => Ok(r.clone()),
             None => Err(CliError::Usage(format!(
                 "{flag} needs --reason <text> saying why"
             ))),
         };
-        let override_base_ci = m
-            .get_flag("override-base-ci")
+        let override_base_ci = a
+            .override_base_ci
             .then(|| given("--override-base-ci"))
             .transpose()?;
         let claims = frob_evidence::done::guards_apply(Some(outcome));
@@ -125,7 +115,7 @@ impl Command for Land {
             && !no_evidence
             && !no_changelog
             && override_base_ci.is_none()
-            && text(m, "reason").is_some()
+            && a.reason.clone().is_some()
         {
             return Err(CliError::Usage(
                 "--reason is only used with --no-evidence, --no-changelog, --override-base-ci or an invalid, duplicate or wont-fix outcome".to_owned(),
@@ -135,11 +125,11 @@ impl Command for Land {
         let no_changelog_reason = no_changelog.then(|| given("--no-changelog")).transpose()?;
         Ok(Self {
             opts: LandOptions {
-                handle: text(m, "ticket"),
+                handle: a.ticket,
                 dry_run: false,
-                push: m.get_flag("push"),
-                wait_secs: m.get_one::<u64>("wait").copied().unwrap_or(0),
-                keep_worktree: m.get_flag("keep-worktree"),
+                push: a.push,
+                wait_secs: a.wait.unwrap_or(0),
+                keep_worktree: a.keep_worktree,
                 no_evidence_reason,
                 no_changelog_reason,
                 reason: if claims { None } else { reason.clone() },
@@ -148,7 +138,7 @@ impl Command for Land {
                 ci_reader: None,
                 override_base_ci,
                 prechecked: false,
-                status: m.get_flag("status"),
+                status: a.status,
             },
         })
     }

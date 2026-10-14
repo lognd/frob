@@ -7,7 +7,7 @@ use frob_ledger::doctor::Issue;
 use frob_ledger::scrub::{ScrubReport, ScrubTools};
 use frob_pm::doctor::PmIssue;
 use frob_pm::{ObjectKind, PmStore};
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -88,22 +88,27 @@ pub struct TicketDoctor {
     fix: bool,
 }
 
+/// The flags of `ticket doctor`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct DoctorArgs {
+    #[arg(
+        long,
+        help = "Rewrite frontmatter that differs from its events (TICK001, E-PM-DRIFT) and scrub absolute home paths (TICK004) and local private terms (TICK005) from the ledger in one commit"
+    )]
+    fix: bool,
+}
+
 impl Command for TicketDoctor {
     type Data = DoctorData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("fix")
-                .long("fix")
-                .action(ArgAction::SetTrue)
-                .help("Rewrite frontmatter that differs from its events (TICK001, E-PM-DRIFT) and scrub absolute home paths (TICK004) and local private terms (TICK005) from the ledger in one commit"),
-        )
+        gob_cli::augment::<DoctorArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            fix: m.get_flag("fix"),
-        })
+        let a = gob_cli::parse::<DoctorArgs>(m)?;
+        Ok(Self { fix: a.fix })
     }
 
     fn run(&self, ctx: &Context) -> CliOutcome<DoctorData> {

@@ -1,6 +1,6 @@
 //! `ticket migrate --to-branch`: copy the legacy `tickets/` ledger onto the orphan ticket branch (`navigation.md` 2.3).
 
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload, Refusal, RefusalClass};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -48,20 +48,27 @@ pub struct MigrateData {
 )]
 pub struct Migrate;
 
+/// The flags of `ticket migrate`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct MigrateArgs {
+    #[arg(
+        long,
+        required = true,
+        help = "Move the ledger onto the orphan ticket branch (the only migration so far)"
+    )]
+    to_branch: bool,
+}
+
 impl Command for Migrate {
     type Data = MigrateData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("to-branch")
-                .long("to-branch")
-                .action(ArgAction::SetTrue)
-                .required(true)
-                .help("Move the ledger onto the orphan ticket branch (the only migration so far)"),
-        )
+        gob_cli::augment::<MigrateArgs>(cmd)
     }
 
-    fn from_matches(_m: &ArgMatches) -> Result<Self, CliError> {
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        gob_cli::parse::<MigrateArgs>(m)?;
         Ok(Self)
     }
 

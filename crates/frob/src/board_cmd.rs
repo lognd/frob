@@ -28,7 +28,7 @@ use frob_ledger::index::Summary;
 use frob_ledger::model::{Category, LinkKind, Stamp};
 use frob_pm::board::{self, Board, Brief, BriefInput, Input, RenderOptions, Signal, SignalKind};
 use frob_pm::rules::wip::{self, WipLimits};
-use gob_cli::clap::{Arg, ArgMatches, Command as ClapCommand};
+use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_diagnostics::ColorChoice;
 use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec};
@@ -255,40 +255,42 @@ fn present(
     }
 }
 
+/// `BoardVerb` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct BoardArgs {
+    #[arg(
+        long,
+        value_name = "COLUMNS",
+        help = "Text width; default the terminal's COLUMNS, else 100"
+    )]
+    width: Option<usize>,
+    #[arg(
+        long,
+        value_name = "N",
+        help = "Most cards per column (0 lists all); in-progress is never cut [default: 8]"
+    )]
+    cards: Option<usize>,
+    #[arg(
+        long,
+        help = "Compact view: in progress with last signal, next, blocked"
+    )]
+    brief: bool,
+}
+
 impl Command for BoardVerb {
     type Data = BoardData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(
-            Arg::new("width")
-                .long("width")
-                .value_name("COLUMNS")
-                .value_parser(gob_cli::clap::value_parser!(usize))
-                .help("Text width; default the terminal's COLUMNS, else 100"),
-        )
-        .arg(
-            Arg::new("cards")
-                .long("cards")
-                .value_name("N")
-                .value_parser(gob_cli::clap::value_parser!(usize))
-                .help("Most cards per column (0 lists all); in-progress is never cut [default: 8]"),
-        )
-        .arg(
-            Arg::new("brief")
-                .long("brief")
-                .action(gob_cli::clap::ArgAction::SetTrue)
-                .help("Compact view: in progress with last signal, next, blocked"),
-        )
+        gob_cli::augment::<BoardArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<BoardArgs>(m)?;
         Ok(Self {
-            width: m.get_one::<usize>("width").copied(),
-            cards: m
-                .get_one::<usize>("cards")
-                .copied()
-                .unwrap_or(board::DEFAULT_SHOWN),
-            brief: m.get_flag("brief"),
+            width: a.width,
+            cards: a.cards.unwrap_or(board::DEFAULT_SHOWN),
+            brief: a.brief,
         })
     }
 

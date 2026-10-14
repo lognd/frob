@@ -4,7 +4,7 @@
 
 use std::path::{Path, PathBuf};
 
-use gob_cli::clap::{Arg, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_plan::check::{Severity, compile_diagnostics, compile_report};
 use schemars::JsonSchema;
@@ -65,25 +65,28 @@ fn discover(root: &Path, dir: &Path, out: &mut Vec<String>) -> std::io::Result<(
     Ok(())
 }
 
+/// `Compile` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct CompileArgs {
+    #[arg(
+        num_args = 0..,
+        value_name = "PATH",
+        help = "Rule files to check; default every .grl file under the workspace root"
+    )]
+    paths: Vec<String>,
+}
+
 impl Command for Compile {
     type Data = CompileData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("paths")
-                .num_args(0..)
-                .value_name("PATH")
-                .help("Rule files to check; default every .grl file under the workspace root"),
-        )
+        gob_cli::augment::<CompileArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            paths: m
-                .get_many::<String>("paths")
-                .map(|v| v.cloned().collect())
-                .unwrap_or_default(),
-        })
+        let a = gob_cli::parse::<CompileArgs>(m)?;
+        Ok(Self { paths: a.paths })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<CompileData> {

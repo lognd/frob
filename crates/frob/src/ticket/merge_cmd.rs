@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use frob_ledger::event::Event;
 use frob_ledger::merge::{locate, resolve_at};
-use gob_cli::clap::{Arg, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -99,47 +99,34 @@ impl MergeDriver {
     }
 }
 
+/// The positionals of the git merge driver, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct MergeArgs {
+    #[arg(help = "Common ancestor version (%O); read only to find the ticket id")]
+    base: String,
+    #[arg(help = "Our version (%A); the result is written here")]
+    ours: String,
+    #[arg(help = "Their version (%B); read only to find the ticket id")]
+    theirs: String,
+    #[arg(help = "Repo-relative path of the file (%P)")]
+    path: String,
+}
+
 impl Command for MergeDriver {
     type Data = MergeData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.hide(true)
-            .arg(
-                Arg::new("base")
-                    .required(true)
-                    .help("Common ancestor version (%O); read only to find the ticket id"),
-            )
-            .arg(
-                Arg::new("ours")
-                    .required(true)
-                    .help("Our version (%A); the result is written here"),
-            )
-            .arg(
-                Arg::new("theirs")
-                    .required(true)
-                    .help("Their version (%B); read only to find the ticket id"),
-            )
-            .arg(
-                Arg::new("path")
-                    .required(true)
-                    .help("Repo-relative path of the file (%P)"),
-            )
+        gob_cli::augment::<MergeArgs>(cmd.hide(true))
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let path_arg = |name: &str| {
-            m.get_one::<String>(name)
-                .map(PathBuf::from)
-                .unwrap_or_default()
-        };
+        let a = gob_cli::parse::<MergeArgs>(m)?;
         Ok(Self {
-            base: path_arg("base"),
-            theirs: path_arg("theirs"),
-            ours: m
-                .get_one::<String>("ours")
-                .map(PathBuf::from)
-                .unwrap_or_default(),
-            path: m.get_one::<String>("path").cloned().unwrap_or_default(),
+            base: PathBuf::from(a.base),
+            theirs: PathBuf::from(a.theirs),
+            ours: PathBuf::from(a.ours),
+            path: a.path,
         })
     }
 
