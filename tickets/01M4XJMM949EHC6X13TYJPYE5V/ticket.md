@@ -2,7 +2,8 @@
 id = "01M4XJMM949EHC6X13TYJPYE5V"
 title = "GRL executor/runner: kinds link and directive, edge relations calls and resolves to, multi-file and config and diff/lease inputs, language-less examples"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 reporter = "lognd"
