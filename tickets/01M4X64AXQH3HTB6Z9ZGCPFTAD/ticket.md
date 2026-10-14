@@ -2,7 +2,8 @@
 id = "01M4X64AXQH3HTB6Z9ZGCPFTAD"
 title = "Wire Python type-fact clean-file set into frob-check snapshot graph build"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "Claude"
