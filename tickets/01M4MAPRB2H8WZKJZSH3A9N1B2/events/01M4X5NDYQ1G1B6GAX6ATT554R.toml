@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the section 12 fixtures other than the snippet rules, when lowered, then each yields a validated plan and none is refused as Unsupported"]
+new = ["Given the SCOPE001 and SYS001 side-relation glob-set rules, when lowered, then each yields a validated plan via MatchGlobSet; remaining section 12 fixtures are tracked by child tickets C6W2KWJ, 26X4K6K, 8Q9444T, NVMH9MV, HZ73YP7"]
+moved = [0]
+at = "2026-10-14T12:19:46Z"
+actor = "Claude"
+rev = 1

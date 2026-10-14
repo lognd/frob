@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-11T01:54:42Z"
-updated = "2026-10-14T12:19:26Z"
+updated = "2026-10-14T12:19:46Z"
 scope = ["crates/gob-plan/src/lower/**", "crates/gob-plan/src/plan/**", "crates/gob-plan/tests/**", "crates/gob-plan/src/exec/**"]
 
 [[links]]
@@ -16,7 +16,7 @@ kind = "blocked-by"
 target = "01M3ZX7EKNE5Q0NB0DKCH77AZX"
 
 [[acceptance]]
-text = "Given the section 12 fixtures other than the snippet rules, when lowered, then each yields a validated plan and none is refused as Unsupported"
+text = "Given the SCOPE001 and SYS001 side-relation glob-set rules, when lowered, then each yields a validated plan via MatchGlobSet; remaining section 12 fixtures are tracked by child tickets C6W2KWJ, 26X4K6K, 8Q9444T, NVMH9MV, HZ73YP7"
 bound = false
 +++
 
