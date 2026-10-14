@@ -67,7 +67,13 @@ fn the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans() {
     }
     assert_eq!(
         lowered,
-        ["CAP001.grl", "CI002.grl", "SCOPE001.grl", "SYS001.grl"]
+        [
+            "CAP001.grl",
+            "CI002.grl",
+            "COV001.grl",
+            "SCOPE001.grl",
+            "SYS001.grl"
+        ]
     );
 }
 
@@ -305,4 +311,49 @@ fn paths_of_three_or_more_segments_are_dotted_field_operands() {
     let plan = lower(&src).expect("deep paths lower");
     assert!(plan.parts().strings.iter().any(|s| s == "target.anchor"));
     assert!(plan.parts().strings.iter().any(|s| s == "a.b.c"));
+}
+
+fn reaches_rule(knob: &str, tail: &str) -> String {
+    knob_rule(
+        knob,
+        &format!("\n  find g: function where f reaches g {tail}"),
+    )
+}
+
+// frob:ticket 01M4WGCDP6MTWDWNGRTNVMH9MV
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn reaches_lowers_with_a_literal_or_knob_within_bound() {
+    for (knob, tail) in [
+        ("", "via calls within 4"),
+        ("knob n: int = 3 \"d\"", "via calls within knob.n"),
+    ] {
+        let plan = lower(&reaches_rule(knob, tail)).expect("reaches lowers");
+        assert!(
+            plan.parts()
+                .ops
+                .iter()
+                .any(|o| matches!(o, Op::Reaches { .. })),
+            "{tail}"
+        );
+    }
+}
+
+// frob:ticket 01M4WGCDP6MTWDWNGRTNVMH9MV
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn reaches_without_a_usable_bound_or_with_many_verbs_is_refused() {
+    for (knob, tail) in [
+        ("", "via calls"),
+        ("", "via calls within 0"),
+        ("", "via calls within 70000"),
+        ("knob s: string = \"x\" \"d\"", "via calls within knob.s"),
+        ("", "via calls, imports within 2"),
+    ] {
+        let r = lower(&reaches_rule(knob, tail));
+        assert!(
+            matches!(r, Err(LowerError::Unsupported { .. })),
+            "{tail}: {r:?}"
+        );
+    }
 }

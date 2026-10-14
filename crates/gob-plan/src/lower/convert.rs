@@ -84,6 +84,12 @@ pub(super) enum Cond {
         sub: String,
         unit: String,
     },
+    Reaches {
+        from: String,
+        to: String,
+        via: String,
+        within: u16,
+    },
     /// A call of the def at this index in [`Lowered::defs`].
     Call {
         def: usize,
@@ -314,6 +320,29 @@ fn def_item(out: &mut Lowered, cx: &mut Cx, d: &ast::Def) -> Result<(), LowerErr
     });
     cx.defs.push((d.name.text.clone(), params.len()));
     Ok(())
+}
+
+/// The `within` bound of a `reaches`: an integer literal or an int knob (at its declared
+/// default), from 1 to 65535 edges.
+fn within_bound(cx: &Cx, t: &Term) -> Result<u16, LowerError> {
+    let n = match &t.node {
+        TermKind::Literal(l) => match &l.node {
+            LiteralKind::Int(i) => i64::try_from(*i).ok(),
+            _ => None,
+        },
+        TermKind::Knob(w) => match knob_of(cx, w)? {
+            KnobVal::Int(i) => Some(*i),
+            _ => None,
+        },
+        _ => None,
+    };
+    match n.and_then(|n| u16::try_from(n).ok()).filter(|n| *n >= 1) {
+        Some(n) => Ok(n),
+        None => unsupported(
+            "a `within` bound that is not an integer from 1 to 65535",
+            t.span,
+        ),
+    }
 }
 
 /// `NAME(args)` as a condition: the def by index, with variable arguments.
@@ -928,6 +957,24 @@ fn rel_cond(cx: &mut Cx, subject: &str, r: &ast::Rel) -> Result<Cond, LowerError
         RelKind::Under { .. } => Err(LowerError::Internal {
             what: "under is lowered with its subject term",
         }),
-        RelKind::Reaches { .. } => unsupported("`reaches`", r.span),
+        RelKind::Reaches {
+            target,
+            via,
+            within,
+        } => {
+            let [verb] = via.as_slice() else {
+                return unsupported("`reaches` over more than one verb", r.span);
+            };
+            let Some(within) = within else {
+                return unsupported("`reaches` without `within`", r.span);
+            };
+            let (within, via) = (within_bound(cx, within)?, verb.text.clone());
+            with_object(cx, target, move |o| Cond::Reaches {
+                from: s,
+                to: o,
+                via,
+                within,
+            })
+        }
     }
 }

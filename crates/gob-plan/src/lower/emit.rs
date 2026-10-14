@@ -6,8 +6,8 @@ use std::collections::BTreeSet;
 use super::LowerError;
 use super::convert::{Cond, DefItem, FindItem, LangNames, Lim, Lowered, Opd, Src};
 use crate::plan::{
-    Def, Langs, Limit, Need, NeedSet, Op, OpId, Operand, Plan, PlanParts, Polarity, Provenance,
-    Report, StrId, Unresolved, VarId, cost_class,
+    Certainty, Def, Langs, Limit, Need, NeedSet, Op, OpId, Operand, Plan, PlanParts, Polarity,
+    Provenance, Report, StrId, Unresolved, VarId, cost_class,
 };
 
 /// The sort key of a condition: its structure, so equal clauses sort alike in any source order.
@@ -80,6 +80,10 @@ fn free(c: &Cond, bound: &mut Vec<String>, out: &mut BTreeSet<String>) {
         Cond::InUnit { sub, unit } => {
             name(sub, bound);
             name(unit, bound);
+        }
+        Cond::Reaches { from, to, .. } => {
+            name(from, bound);
+            name(to, bound);
         }
         Cond::Call { args, .. } => {
             for a in args {
@@ -269,6 +273,18 @@ impl Builder {
             Cond::InUnit { sub, unit } => Op::InUnit {
                 sub: self.var(sub)?,
                 unit: self.var(unit)?,
+            },
+            Cond::Reaches {
+                from,
+                to,
+                via,
+                within,
+            } => Op::Reaches {
+                from: self.var(from)?,
+                to: self.var(to)?,
+                via: self.intern(via),
+                within: *within,
+                certainty: Certainty::Default,
             },
             Cond::Call { def, args } => Op::Call {
                 def: u16::try_from(*def).map_err(|_| LowerError::Internal {
