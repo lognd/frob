@@ -1,0 +1,12 @@
+kind = "create"
+title = "Wire Python type-fact clean-file set into frob-check snapshot graph build"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+scope = ["crates/frob-check/**"]
+acceptance = ["Given [types] trust=checked and a clean file, when the snapshot graph is built, then annotation facts are trusted"]
+body = "Follow-up of 7TYG963: crates/frob-check/src/snapshot.rs must feed the checker's clean-file set into the real graph build so [types] trust applies."
+at = "2026-10-14T12:27:54Z"
+actor = "Claude"
+rev = 1
