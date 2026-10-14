@@ -2,7 +2,8 @@
 id = "01M3ZX7H37B9GKN45MPD6ZNBTY"
 title = "frob check runs rule test for std and repository packs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
