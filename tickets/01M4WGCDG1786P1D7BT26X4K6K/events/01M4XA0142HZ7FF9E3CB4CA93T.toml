@@ -1,0 +1,35 @@
+kind = "evidence"
+captured_at = "2026-10-14T13:28:35Z"
+digest = "6034443ed22fb68385329d9377b0aeb128052688216cf1a6c8bfaea4d42e939c"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6m 50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 45403adf-d504-42cf-93e4-1d613009d026 with nextest profile: default
+    Starting 11 tests across 1 binary
+        PASS [   0.024s] gob-plan::exec_relations a_count_op_compares_against_a_knob_that_the_rules_table_overrides
+        PASS [   0.027s] gob-plan::exec_relations a_knob_override_changes_a_count_threshold
+        PASS [   0.018s] gob-plan::exec_relations a_relation_the_plan_names_but_the_caller_lacks_is_refused
+        PASS [   0.021s] gob-plan::exec_relations is_exists_and_under_filter_function_names
+        PASS [   0.022s] gob-plan::exec_relations side_tables_report_their_shape
+        PASS [   0.025s] gob-plan::exec_relations a_verb_reads_its_relation_and_peer_of_reads_the_term
+        PASS [   0.025s] gob-plan::exec_relations find_over_a_side_relation_binds_the_typed_rows
+        PASS [   0.025s] gob-plan::exec_relations side_tables_are_typed_against_the_catalog
+        PASS [   0.026s] gob-plan::exec_relations a_glob_set_op_matches_any_glob_in_a_side_column
+        PASS [   0.026s] gob-plan::exec_relations reaches_across_a_may_edge_is_unknown_with_the_edge_on_the_frontier
+        PASS [   0.031s] gob-plan::exec_relations a_def_is_a_view_computed_once_per_distinct_arguments
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.047s] 11 tests run: 11 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test exec_relations"
+size = 1662
+status = "measured"
+test_count = 11
+tests_digest = "623f947eeeffb370b405636bfd9754d3966620a60bc423aad40a885a55e476ae"
+at = "2026-10-14T13:28:35Z"
+actor = "lognd"
+rev = 1
