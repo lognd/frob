@@ -7,9 +7,9 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T02:44:35Z"
-updated = "2026-10-14T03:33:17Z"
+updated = "2026-10-14T03:48:53Z"
 idempotency_key = "land-idle-hang-20261013"
-scope = ["crates/frob-land/**"]
+scope = ["crates/frob-land/**", "docs/design/tickets.md"]
 
 [[acceptance]]
 text = "A land whose stage blocks forever aborts within the watchdog bound and frees the lock; a waiter takes over a stale-holder lock; holder file shows stage and last-progress; test covers the blocked-stage case."
