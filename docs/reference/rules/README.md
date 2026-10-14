@@ -77,6 +77,12 @@
 | [EXC016](EXC016.md) | accept-on-unresolved | error | manual | P+ | false | An accept directive names a rule at a site where the finding is Unresolved. |
 | [EXC017](EXC017.md) | native-suppression-without-exception | warn | manual | P+ | false | A native suppression of a rule bound through a tool stage has no frob exception. |
 
+## GRL
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [GRL016](GRL016.md) | rule-example-mismatch | error | manual | P+ | false | A repository rule file whose example expectation does not match, or which fails to compile. |
+
 ## INV
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

@@ -857,7 +857,10 @@ Unresolved `budget` (plugins.md 6.5).
   they turn into failures when they start firing (so a fix is noticed).
 - `example ... fixed """..."""` asserts the output of the rule's fix.
 - `grimble rule test` runs every example, prints per-example results,
-  and is part of `frob check` for std and repository packs.
+  and is part of `frob check` for std and repository packs. `frob check`
+  runs it over every `.grl` file in the repository as rule GRL016 (one
+  finding per failing example or compile error; passing examples are the
+  rule's subject count). The std pack joins once its compiled-in bytes exist.
 
 ## 10. Compile errors (each has a golden test)
 
