@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-14T14:07:31Z"
+digest = "144632cb545903bcfc92975d790ce29cc4e071a75538e3c19116599335de0753"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 24.65s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e2407ca3-3f96-4ff6-84f6-10579c2b5e89 with nextest profile: default
+    Starting 1 test across 6 binaries (102 tests skipped)
+        PASS [   0.010s] gob-check core::tests::core_reads_walked_content_and_reports_absence
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 102 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'test(=core::tests::core_reads_walked_content_and_reports_absence)'"
+size = 678
+status = "measured"
+test_count = 1
+tests_digest = "f2aaeae67c29b21fe1d8ce2800e5d03f903d860b6f974861ded1455c62757c33"
+at = "2026-10-14T14:07:31Z"
+actor = "lognd"
+rev = 1
