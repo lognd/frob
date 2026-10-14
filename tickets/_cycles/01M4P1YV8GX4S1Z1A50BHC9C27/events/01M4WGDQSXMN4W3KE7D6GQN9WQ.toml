@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4WGDMGJTKYR0T76BK0RP5HB"
+committed = 472
+text = "0.533.0 milestone drain: baseline red blocks every land"
+capacity = 101
+at = "2026-10-14T06:08:33Z"
+actor = "Claude"
+rev = 1
