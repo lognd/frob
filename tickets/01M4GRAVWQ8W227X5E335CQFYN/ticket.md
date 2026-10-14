@@ -2,12 +2,12 @@
 id = "01M4GRAVWQ8W227X5E335CQFYN"
 title = "Docs consolidation audit: inventory every markdown file, propose an organized information architecture (merges, supersessions, index, status headers), owner approves before any move"
 type = "docs"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T16:35:41Z"
-updated = "2026-10-09T18:39:46Z"
+updated = "2026-10-14T05:24:00Z"
 scope = ["notes/review/docs-consolidation-*", "changelog.d/**"]
 
 [[acceptance]]
