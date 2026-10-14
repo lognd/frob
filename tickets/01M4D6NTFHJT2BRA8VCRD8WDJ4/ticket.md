@@ -2,7 +2,8 @@
 id = "01M4D6NTFHJT2BRA8VCRD8WDJ4"
 title = "land cache miss runs two checks; share one throwaway worktree"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
