@@ -8,7 +8,7 @@ points = 8
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:46Z"
-updated = "2026-10-14T15:14:38Z"
+updated = "2026-10-14T15:15:49Z"
 scope = ["changelog.d/**", "crates/frob/**", "crates/grimble/**", "crates/crunk/**", "crates/gob-cli/**", "crates/frob-*/src/cli.rs", "crates/frob-*/**", "Cargo.lock", "docs/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the generated CLI reference, when regenerated, then it is unchanged"
-bound = false
+bound = true
 +++
 
 notes/review/audit-2026-10-07.md M15: 72 verbs declare each flag twice (builder plus string lookups). Keep generated CLI docs byte-identical (GEN001).
