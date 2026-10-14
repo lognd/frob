@@ -8,12 +8,12 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T07:29:36Z"
-updated = "2026-10-14T00:44:40Z"
+updated = "2026-10-14T01:22:12Z"
 scope = ["changelog.d/**", "crates/frob-land/**"]
 
 [[acceptance]]
 text = "Given a cache miss, when land checks the base, then one worktree serves both passes"
-bound = false
+bound = true
 +++
 
 Follow-up from ~KJ95784.
