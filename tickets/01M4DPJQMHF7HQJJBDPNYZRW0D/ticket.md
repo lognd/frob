@@ -2,7 +2,8 @@
 id = "01M4DPJQMHF7HQJJBDPNYZRW0D"
 title = "release_severity per rule in #[rule] and a --gate release consumer in frob release status"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
