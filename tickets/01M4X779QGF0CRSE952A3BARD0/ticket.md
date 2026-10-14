@@ -2,7 +2,8 @@
 id = "01M4X779QGF0CRSE952A3BARD0"
 title = 'GRL lowering: kind with a string argument (directive "todo")'
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "logan"
