@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "Claude"
 created = "2026-10-14T12:27:54Z"
-updated = "2026-10-14T12:57:42Z"
+updated = "2026-10-14T12:57:47Z"
 scope = ["crates/frob-check/**", "docs/reference/tool-stages.md"]
 
 [[acceptance]]
