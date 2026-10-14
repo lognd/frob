@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "Claude"
 created = "2026-10-14T06:08:30Z"
-updated = "2026-10-14T11:40:06Z"
+updated = "2026-10-14T11:53:22Z"
 scope = ["crates/gob-dev/**", "crates/gob-fs/**", "crates/gob-cache/**", "crates/frob-land/**", "changelog.d/**"]
 
 [[acceptance]]
