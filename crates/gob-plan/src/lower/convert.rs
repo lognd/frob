@@ -373,13 +373,7 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
         CondKind::Not(x) => Cond::Not(Box::new(cond_of(cx, x)?)),
         CondKind::Quant { quant, binding } => quantifier(cx, *quant, binding)?,
         CondKind::Rel { subject, rel } if matches!(rel.node, RelKind::Under { .. }) => {
-            let RelKind::Under { term } = &rel.node else {
-                unreachable!("guarded")
-            };
-            Cond::Under {
-                subject: operand(cx, subject)?,
-                prefix: operand(cx, term)?,
-            }
+            under_cond(cx, subject, rel)?
         }
         CondKind::Rel { subject, rel } => {
             let Some(name) = var_name(cx, subject)? else {
@@ -450,17 +444,7 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
             _ => return unsupported("a flag that is not a field", t.span),
         },
         CondKind::In { lhs, rhs } => in_cond(cx, lhs, rhs)?,
-        CondKind::Is { subject, test } => {
-            let subject_opd = operand(cx, subject)?;
-            let on_field = matches!(subject_opd, Opd::Field(..));
-            if !crate::exec::is_test_word(&test.text, on_field) {
-                return unsupported("an `is` word the executor does not evaluate", test.span);
-            }
-            Cond::Is {
-                subject: subject_opd,
-                test: test.text.clone(),
-            }
-        }
+        CondKind::Is { subject, test } => is_cond(cx, subject, test)?,
         CondKind::IsSnippet { .. } => return unsupported("`is` with a snippet", c.span),
         CondKind::HasAttr { subject, attr } => match var_name(cx, subject)? {
             Some(var) => Cond::HasAttr {
@@ -471,6 +455,30 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
         },
         CondKind::DefCall(_) => return unsupported("a def call", c.span),
         CondKind::Exists(t) => Cond::Exists(operand(cx, t)?),
+    })
+}
+
+/// `subject is WORD`: only words the executor evaluates are lowered.
+fn is_cond(cx: &Cx, subject: &Term, test: &ast::Word) -> Result<Cond, LowerError> {
+    let subject_opd = operand(cx, subject)?;
+    let on_field = matches!(subject_opd, Opd::Field(..));
+    if !crate::exec::is_test_word(&test.text, on_field) {
+        return unsupported("an `is` word the executor does not evaluate", test.span);
+    }
+    Ok(Cond::Is {
+        subject: subject_opd,
+        test: test.text.clone(),
+    })
+}
+
+/// `subject under term`: a segment-wise prefix test between two operands.
+fn under_cond(cx: &Cx, subject: &Term, rel: &ast::Rel) -> Result<Cond, LowerError> {
+    let RelKind::Under { term } = &rel.node else {
+        unreachable!("caller matched Under")
+    };
+    Ok(Cond::Under {
+        subject: operand(cx, subject)?,
+        prefix: operand(cx, term)?,
     })
 }
 

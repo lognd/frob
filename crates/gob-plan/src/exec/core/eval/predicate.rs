@@ -4,7 +4,7 @@
 use gob_ir::{AttrValue, Truth};
 
 use super::{
-    Datum, Env, Eval, KindTest, Operand, Scalar, StrId, VarId, Verdict, is_canonical_unit,
+    Datum, Env, Eval, KindTest, Op, Operand, Scalar, StrId, VarId, Verdict, is_canonical_unit,
 };
 
 /// Words that test a string value (`l.target is relative`).
@@ -47,6 +47,18 @@ fn is_under(path: &str, prefix: &str) -> bool {
 }
 
 impl Eval<'_> {
+    /// Dispatches the five word and path predicate ops.
+    pub(super) fn predicate_op(&self, op: &Op, env: &Env) -> Verdict {
+        match op {
+            Op::Is { subject, test } => self.is_op(subject, *test, env),
+            Op::Exists { subject } => self.exists_op(subject, env),
+            Op::HasAttr { var, attr } => self.has_attr_op(*var, *attr, env),
+            Op::Under { subject, prefix } => self.under_op(subject, prefix, env),
+            Op::InUnit { sub, unit } => self.in_unit_op(*sub, *unit, env),
+            _ => unreachable!("not a predicate op"),
+        }
+    }
+
     /// `subject is test`: kind membership, a boolean field, or a string predicate.
     pub(super) fn is_op(&self, subject: &Operand, test: StrId, env: &Env) -> Verdict {
         let word = self.string(test);

@@ -210,28 +210,34 @@ impl<'a> Eval<'a> {
         found
     }
 
+    /// `and`: short-circuits on the first certain `no`.
+    fn conjunction(&self, cs: &[OpId], env: &mut Env) -> Verdict {
+        let mut acc = Verdict::yes();
+        for &c in cs {
+            acc = acc.and(self.eval(c, env));
+            if acc.truth == Truth::No {
+                break;
+            }
+        }
+        acc
+    }
+
+    /// `or`: short-circuits on the first certain `yes`.
+    fn disjunction(&self, cs: &[OpId], env: &mut Env) -> Verdict {
+        let mut acc = Verdict::no();
+        for &c in cs {
+            acc = acc.or(self.eval(c, env));
+            if acc.truth == Truth::Yes {
+                break;
+            }
+        }
+        acc
+    }
+
     fn eval_op(&self, id: OpId, env: &mut Env) -> Verdict {
         match &self.plan.ops[id as usize] {
-            Op::And(cs) => {
-                let mut acc = Verdict::yes();
-                for &c in cs {
-                    acc = acc.and(self.eval(c, env));
-                    if acc.truth == Truth::No {
-                        break;
-                    }
-                }
-                acc
-            }
-            Op::Or(cs) => {
-                let mut acc = Verdict::no();
-                for &c in cs {
-                    acc = acc.or(self.eval(c, env));
-                    if acc.truth == Truth::Yes {
-                        break;
-                    }
-                }
-                acc
-            }
+            Op::And(cs) => self.conjunction(cs, env),
+            Op::Or(cs) => self.disjunction(cs, env),
             Op::Not(c) => !self.eval(*c, env),
             Op::Quant {
                 quant,
@@ -263,11 +269,11 @@ impl<'a> Eval<'a> {
             Op::MatchRegex { subject, .. }
             | Op::MatchGlob { subject, .. }
             | Op::MatchGlobSet { subject, .. } => self.matches(id, subject, env),
-            Op::Is { subject, test } => self.is_op(subject, *test, env),
-            Op::Exists { subject } => self.exists_op(subject, env),
-            Op::HasAttr { var, attr } => self.has_attr_op(*var, *attr, env),
-            Op::Under { subject, prefix } => self.under_op(subject, prefix, env),
-            Op::InUnit { sub, unit } => self.in_unit_op(*sub, *unit, env),
+            op @ (Op::Is { .. }
+            | Op::Exists { .. }
+            | Op::HasAttr { .. }
+            | Op::Under { .. }
+            | Op::InUnit { .. }) => self.predicate_op(op, env),
             Op::CountCmp {
                 var,
                 kind,
