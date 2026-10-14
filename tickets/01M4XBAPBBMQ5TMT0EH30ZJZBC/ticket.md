@@ -2,7 +2,8 @@
 id = "01M4XBAPBBMQ5TMT0EH30ZJZBC"
 title = "GRL lowering: glob match against a non-literal rhs (i.file.path matches row.from)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
