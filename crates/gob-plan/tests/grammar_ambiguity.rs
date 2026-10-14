@@ -75,3 +75,51 @@ fn a_parenthesised_via_list_round_trips_in_every_position() {
     assert!(again.is_ok(), "{printed}");
     assert_eq!(print(&again.file), printed);
 }
+
+// frob:ticket 01M4CXV275FZJY5AZRC1QXB4AZ
+// frob:tests crates/gob-plan/src/grl/parse/cond.rs::filter_body
+#[test]
+fn a_braced_quantifier_body_ends_before_the_connective_and_a_bare_one_runs_on() {
+    // Bare: `C` is inside the `no`, so the whole cond is `A and no t (B and C)`.
+    let f = parse_ok(
+        "find f: function\n  where f.public and no t: test where t reaches f via calls and f.line > 1\n  report f \"x\"",
+    );
+    let ClauseKind::Where(c) = &f.rules[0].clauses[1].node else {
+        panic!("a where clause");
+    };
+    let CondKind::And(parts) = &c.node else {
+        panic!("an and");
+    };
+    assert_eq!(parts.len(), 2, "the bare body swallows the trailing `and`");
+
+    // Braced: `C` is outside, so there are three operands: the public test, the quantifier and the line test.
+    let f = parse_ok(
+        "find f: function\n  where f.public and no t: test where { t reaches f via calls } and f.line > 1\n  report f \"x\"",
+    );
+    let ClauseKind::Where(c) = &f.rules[0].clauses[1].node else {
+        panic!("a where clause");
+    };
+    let CondKind::And(parts) = &c.node else {
+        panic!("an and");
+    };
+    assert_eq!(parts.len(), 3, "the braced body ends at its brace");
+    assert!(matches!(&parts[1].node, CondKind::Quant { binding, .. } if binding.filter.is_some()));
+
+    // The printer parenthesises it and the output parses to the same tree.
+    let printed = print(&f);
+    assert!(
+        printed.contains("(no t: test where t reaches f via calls)"),
+        "{printed}"
+    );
+    let again = parse(FileInterner::new().intern("rules/T.grl"), &printed);
+    assert!(again.is_ok(), "{printed}");
+    assert_eq!(print(&again.file), printed);
+}
+
+// frob:tests crates/gob-plan/src/grl/parse/cond.rs::filter_body
+#[test]
+fn an_unclosed_quantifier_brace_is_a_parse_error() {
+    let src = "rule T001 \"t\" {\n  lang *\n  find f: function\n  where no t: test where { t reaches f\n  report f \"x\"\n  explain \"\"\"\n    Why.\n    ## Remedy\n    Fix.\n  \"\"\"\n}\n";
+    let p = parse(FileInterner::new().intern("rules/T.grl"), src);
+    assert!(!p.is_ok());
+}

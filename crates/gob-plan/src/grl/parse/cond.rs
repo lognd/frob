@@ -44,8 +44,8 @@ impl Parser<'_> {
         }
         // The filter's `where` stays on the binding's line: one that starts a line is a clause.
         let filter = if !self.starts_line() && self.eat_word("where").is_some() {
-            let cond = self.cond()?;
-            end = cond.span;
+            let (cond, close) = self.filter_body()?;
+            end = close.unwrap_or(cond.span);
             Some(cond)
         } else {
             None
@@ -57,6 +57,22 @@ impl Parser<'_> {
             rels,
             filter,
         })
+    }
+
+    /// A binding's filter: `{ cond }` ends exactly at its `}`, a bare `cond` runs as far right as it can.
+    ///
+    /// frob:ticket 01M4CXV275FZJY5AZRC1QXB4AZ
+    fn filter_body(&mut self) -> PResult<(Cond, Option<gob_text::Span>)> {
+        if self.eat(&TokenKind::LBrace).is_none() {
+            return Ok((self.cond()?, None));
+        }
+        tracing::trace!("grl parse: braced quantifier/filter body");
+        let outer = std::mem::replace(&mut self.in_any, false);
+        let inner = self.cond();
+        self.in_any = outer;
+        let inner = inner?;
+        let close = self.expect(&TokenKind::RBrace, "`}` to close the `where { ... }` body")?;
+        Ok((inner, Some(close)))
     }
 
     fn source(&mut self) -> PResult<Source> {
