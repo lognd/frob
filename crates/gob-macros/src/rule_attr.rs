@@ -519,12 +519,11 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
         enum_tokens("Scope", &scope),
         enum_tokens("FixKind", &fix),
     );
-    let release_ts = match &release_severity {
-        Some(s) => {
-            let e = enum_tokens("Severity", s);
-            quote!(::core::option::Option::Some(#e))
-        }
-        None => quote!(::core::option::Option::None),
+    let release_ts = if let Some(s) = &release_severity {
+        let e = enum_tokens("Severity", s);
+        quote!(::core::option::Option::Some(#e))
+    } else {
+        quote!(::core::option::Option::None)
     };
     let applies_ts = applies_tokens(applies);
     let asserts = matrix_asserts(&id.value(), applies);
