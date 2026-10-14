@@ -4,10 +4,9 @@ title = "GRL lowering: knobs (int, string, regex, vocab, knob patterns)"
 type = "task"
 category = "todo"
 priority = "medium"
-parent = "01M4MAPRB2H8WZKJZSH3A9N1B2"
 reporter = "Claude"
 created = "2026-10-14T06:07:50Z"
-updated = "2026-10-14T06:07:50Z"
+updated = "2026-10-14T12:22:16Z"
 scope = ["crates/gob-plan/**"]
 +++
 
