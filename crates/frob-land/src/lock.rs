@@ -411,11 +411,8 @@ fn locked_refusal(path: &Path, sidecar: &Path) -> LandError {
 fn write_record(sidecar: &Path, record: &HolderRecord) -> Result<(), LandError> {
     let text = serde_json::to_string(record)
         .map_err(|e| LandError::Config(format!("encoding the holder record: {e}")))?;
-    let tmp = sidecar.with_extension(format!("holder.{}.tmp", std::process::id()));
-    std::fs::write(&tmp, format!("{text}\n"))
-        .map_err(|e| LandError::io(format!("writing {}", tmp.display()), e))?;
-    std::fs::rename(&tmp, sidecar)
-        .map_err(|e| LandError::io(format!("renaming onto {}", sidecar.display()), e))
+    gob_fs::write_atomic(sidecar, format!("{text}\n").as_bytes())
+        .map_err(|e| LandError::io(format!("writing {}", sidecar.display()), e))
 }
 
 fn read_record(sidecar: &Path) -> Option<HolderRecord> {

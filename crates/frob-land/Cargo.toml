@@ -21,6 +21,7 @@ gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-cli = { version = "0.532.0", path = "../gob-cli" }
 gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
+gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-time = { version = "0.532.0", path = "../gob-time" }

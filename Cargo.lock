@@ -1107,6 +1107,7 @@ dependencies = [
  "gob-config",
  "gob-diagnostics",
  "gob-exec",
+ "gob-fs",
  "gob-git",
  "gob-rules",
  "gob-time",

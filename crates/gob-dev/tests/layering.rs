@@ -22,6 +22,10 @@ const ALLOWED: &[(&str, &str, &str)] = &[
     ("gob-dev", "grimble-check", "~M8WETW7"),
 ];
 
+/// Crates the table lists ahead of their code (boundaries.md: Milestone 2 or later, D36); each
+/// must leave this list the day its crate joins the workspace.
+const PLANNED: &[&str] = &["frob-gh"];
+
 /// A layer's number and name from the boundaries.md table.
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Layer {
@@ -181,7 +185,10 @@ fn workspace_layering_holds_and_every_crate_has_a_layer() {
     let layers = parse_table(&doc).unwrap();
     let (names, edges) = workspace_edges();
     let missing: Vec<&String> = names.iter().filter(|n| !layers.contains_key(*n)).collect();
-    let extra: Vec<&String> = layers.keys().filter(|k| !names.contains(*k)).collect();
+    let extra: Vec<&String> = layers
+        .keys()
+        .filter(|k| !names.contains(*k) && !PLANNED.contains(&k.as_str()))
+        .collect();
     assert!(
         missing.is_empty() && extra.is_empty(),
         "layer table out of date: missing {missing:?}, unknown {extra:?}"
