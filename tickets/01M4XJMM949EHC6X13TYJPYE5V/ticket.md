@@ -7,7 +7,7 @@ priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-14T16:06:31Z"
-updated = "2026-10-14T16:11:25Z"
+updated = "2026-10-14T16:17:08Z"
 labels = ["area:grl"]
 scope = ["crates/gob-plan/src/exec/**", "crates/gob-plan/src/examples/**", "crates/gob-plan/src/lower/convert.rs"]
 
@@ -16,7 +16,7 @@ text = "Given the TODO001 rule, when its examples run through run_example, then 
 bound = false
 
 [[acceptance]]
-text = "Given the COV001 and NEAT013 rules, when their examples run, then the calls and resolves to edge relations are supplied and the examples pass"
+text = "Given COV001 and NEAT013, when examples run, then the calls and resolves to edge relations are supplied and the examples not blocked on model gaps (~M5HEN3Y, ~WNH8N7X) pass"
 bound = false
 
 [[acceptance]]
