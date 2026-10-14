@@ -7,7 +7,7 @@ priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-12T00:03:52Z"
-updated = "2026-10-14T14:38:13Z"
+updated = "2026-10-14T14:53:18Z"
 scope = ["crates/gob-pattern/**", "crates/grimble-lints/**"]
 
 [[links]]
