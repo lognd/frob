@@ -1,0 +1,41 @@
+kind = "evidence"
+captured_at = "2026-10-14T15:21:49Z"
+digest = "bb17d1fa3464df8523a9dd877ebdf7da8f67fbccf46eb58ada8b2bb708ea8b7a"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.05s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9685e5d6-7a68-4952-a0a0-2e3a9da4effa with nextest profile: default
+    Starting 18 tests across 1 binary
+        PASS [   0.006s] gob-plan::lower a_p_minus_rule_splits_its_subjects_from_the_good_thing
+        PASS [   0.006s] gob-plan::lower an_undeclared_knob_is_an_unknown_var
+        PASS [   0.006s] gob-plan::lower defs_and_calls_lower_to_views_and_call_ops
+        PASS [   0.006s] gob-plan::lower constructs_outside_the_ir_are_refused_by_name_not_mislowered
+        PASS [   0.007s] gob-plan::lower in_is_exists_has_attr_under_and_in_unit_lower
+        PASS [   0.007s] gob-plan::lower int_string_bool_and_regex_knobs_lower_at_their_declared_defaults
+        PASS [   0.008s] gob-plan::lower a_call_with_the_wrong_arity_or_an_unknown_def_is_refused
+        PASS [   0.008s] gob-plan::lower a_count_of_a_count_ratio_is_refused
+        PASS [   0.008s] gob-plan::lower in_unit_lowers_with_an_object
+        PASS [   0.010s] gob-plan::lower a_kind_string_argument_tests_the_name_as_binder_and_as_relation_object
+        PASS [   0.011s] gob-plan::lower a_glob_matched_against_a_side_row_field_lowers_to_an_operand_glob_op
+        PASS [   0.011s] gob-plan::lower count_lowers_against_an_integer_or_a_knob_in_either_order
+        PASS [   0.007s] gob-plan::lower reaches_lowers_with_a_literal_or_knob_within_bound
+        PASS [   0.007s] gob-plan::lower the_prefilter_lists_exactly_the_found_kinds_and_not_negated_ones
+        PASS [   0.007s] gob-plan::lower reaches_without_a_usable_bound_or_with_many_verbs_is_refused
+        PASS [   0.009s] gob-plan::lower paths_of_three_or_more_segments_are_dotted_field_operands
+        PASS [   0.009s] gob-plan::lower the_same_clauses_in_every_order_lower_to_byte_identical_plans
+        PASS [   0.010s] gob-plan::lower the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.018s] 18 tests run: 18 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test lower"
+size = 2237
+status = "measured"
+test_count = 18
+tests_digest = "ebc31ea2d0375dcc0aa398d13962f77b14f3f9845d2680da4f6f9a70a604b9fa"
+at = "2026-10-14T15:21:49Z"
+actor = "lognd"
+rev = 1
