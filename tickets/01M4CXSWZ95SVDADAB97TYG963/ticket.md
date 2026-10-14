@@ -2,7 +2,8 @@
 id = "01M4CXSWZ95SVDADAB97TYG963"
 title = "Python type facts from ty or pyright as a bound tool, with [types] trust = checked | annotated | none"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
