@@ -2,7 +2,8 @@
 id = "01M4MAPRB2H8WZKJZSH3A9N1B2"
 title = "GRL lowering: knobs, side-relation operands, is/in/exists/has attr, defs, count, reaches, snippets"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
