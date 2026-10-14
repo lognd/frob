@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-14T22:11:38Z"
+digest = "5545e46fcecc526c07526c7ae3de1bfda9567c0c8c9b4f24addc449b39a87653"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f30d1263-475c-4311-9b1d-d7d74a3ca1f8 with nextest profile: default
+    Starting 2 tests across 3 binaries (34 tests skipped)
+        PASS [   0.005s] gob-diagnostics text::tests::host_and_std_messages_are_not_prefixed
+        PASS [   0.005s] gob-diagnostics text::tests::pack_message_is_prefixed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 2 tests run: 2 passed, 34 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-diagnostics -E 'test(pack_message_is_prefixed) | test(host_and_std_messages_are_not_prefixed)'"
+size = 694
+status = "measured"
+test_count = 2
+tests_digest = "dd103565ad3f8d33ddf2394e29096e260d60c70d80e50b6e19ecab9c81cb4820"
+at = "2026-10-14T22:11:38Z"
+actor = "lognd"
+rev = 1
