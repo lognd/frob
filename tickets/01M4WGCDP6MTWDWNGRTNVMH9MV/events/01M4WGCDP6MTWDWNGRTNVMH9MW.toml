@@ -1,0 +1,11 @@
+kind = "create"
+title = "GRL lowering: reaches with within knob"
+type = "task"
+category = "todo"
+priority = "medium"
+parent = "01M4MAPRB2H8WZKJZSH3A9N1B2"
+scope = ["crates/gob-plan/**"]
+body = "Remaining slice of ~3A9N1B2 (slice 1, SCOPE001 glob sets, landed)."
+at = "2026-10-14T06:07:50Z"
+actor = "Claude"
+rev = 1
