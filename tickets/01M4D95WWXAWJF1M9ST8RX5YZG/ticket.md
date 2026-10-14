@@ -2,7 +2,8 @@
 id = "01M4D95WWXAWJF1M9ST8RX5YZG"
 title = "GX catalogue additions: volume channels, haptics toggle, time limits to 10x, subtitle 2 lines and 38-40 characters, text in images, Unicode glyph icons"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
