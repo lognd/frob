@@ -2,7 +2,7 @@
 id = "01M4WGDMGJTKYR0T76BK0RP5HB"
 title = "Fix red experimental baseline: frob-gh layer entry, hand-rolled temp-and-rename in gob-cache and frob-land"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "Claude"
