@@ -8,12 +8,12 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T12:07:32Z"
-updated = "2026-10-14T12:45:35Z"
+updated = "2026-10-14T13:04:48Z"
 scope = ["changelog.d/**", "crates/gob-macros/**", "crates/crunk-rules/**", "crates/frob-release/**", "crates/gob-rules/**", "docs/design/**"]
 
 [[acceptance]]
 text = "Given a rule with release_severity Error and severity Advisory, when release status runs, then the finding blocks; in check it stays Advisory"
-bound = false
+bound = true
 +++
 
 Follow-ups from ~JY79XVV; design crunk.md 4.1 (D117).
