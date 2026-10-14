@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "Claude"
 created = "2026-10-14T06:07:51Z"
-updated = "2026-10-14T15:07:20Z"
+updated = "2026-10-14T15:07:21Z"
 scope = ["crates/gob-plan/**"]
 
 [[links]]
@@ -24,7 +24,7 @@ bound = true
 
 [[acceptance]]
 text = "MatchSnippet round-trips through the plan codec and validates; unsupported snippet forms (cast, as roles, no language) are refused by name"
-bound = false
+bound = true
 +++
 
 Remaining slice of ~3A9N1B2 (slice 1, SCOPE001 glob sets, landed).
