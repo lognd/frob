@@ -4,7 +4,7 @@ use gob_text::{Span, TextRange, TextSize};
 use proptest::prelude::*;
 
 use super::{FIXTURES, file, fixture};
-use crate::grl::{StrPart, Token, TokenKind, parse, parse_tokens};
+use crate::grl::{Token, TokenKind, parse, parse_tokens};
 
 const WORDS: &[&str] = &[
     "rule",
@@ -72,7 +72,7 @@ const WORDS: &[&str] = &[
     "repo",
 ];
 
-fn arb_kind(len: u32) -> impl Strategy<Value = TokenKind> {
+fn arb_kind(_len: u32) -> impl Strategy<Value = TokenKind> {
     let punct = prop_oneof![
         Just(TokenKind::LBrace),
         Just(TokenKind::RBrace),
@@ -105,14 +105,8 @@ fn arb_kind(len: u32) -> impl Strategy<Value = TokenKind> {
         1 => Just(TokenKind::Polarity("P+".into())),
         1 => any::<u64>().prop_map(TokenKind::Int),
         1 => Just(TokenKind::Decimal("0.5".into())),
-        1 => (0..=len, 0..=len).prop_map(move |(a, b)| {
-            let (lo, hi) = (a.min(b), a.max(b));
-            TokenKind::Str(vec![
-                StrPart::Text { value: "t".into(), span: span(0, 1) },
-                StrPart::Interp { expr: span(lo, hi) },
-            ])
-        }),
-        1 => Just(TokenKind::Str(vec![])),
+        1 => Just(TokenKind::Str("t{x}".into())),
+        1 => Just(TokenKind::Str(String::new())),
     ]
 }
 
