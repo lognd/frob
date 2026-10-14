@@ -6,7 +6,7 @@ category = "todo"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-14T02:44:35Z"
-updated = "2026-10-14T02:44:35Z"
+updated = "2026-10-14T02:56:40Z"
 idempotency_key = "land-idle-hang-20261013"
 scope = ["crates/frob-land/**"]
 
