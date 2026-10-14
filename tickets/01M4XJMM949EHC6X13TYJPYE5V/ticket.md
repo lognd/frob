@@ -7,7 +7,7 @@ priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-14T16:06:31Z"
-updated = "2026-10-14T16:19:19Z"
+updated = "2026-10-14T16:19:20Z"
 labels = ["area:grl"]
 scope = ["crates/gob-plan/src/exec/**", "crates/gob-plan/src/examples/**", "crates/gob-plan/src/lower/convert.rs"]
 
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the SCOPE001 rule (lang -), when its language-less examples with diff, lease and config inputs run, then they pass"
-bound = false
+bound = true
 +++
 
 found while working ~0HC06TD. The six fixtures lower but the executor/runner rejects: kind link (DOC002), kind directive (TODO001), edge relations calls (COV001) and resolves to (NEAT013), example inputs file/config/diff/lease (DOC002, INV002, SCOPE001), and lang - examples (SCOPE001).
