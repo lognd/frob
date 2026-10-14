@@ -2,7 +2,8 @@
 id = "01M4X64ATCQ55PKCTX0HEVH0W5"
 title = "frob test: Argument list too long (E2BIG) on full-workspace base run"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "Claude"
