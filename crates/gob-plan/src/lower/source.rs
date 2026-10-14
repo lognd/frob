@@ -46,7 +46,7 @@ pub fn lower_source(path: &str, text: &str) -> Result<Vec<Plan>, SourceError> {
         .iter()
         .map(|rule| {
             lower_rule(rule, Provenance::Std).map_err(|source| SourceError::Lower {
-                rule: rule.id.text.to_string(),
+                rule: rule.id.text.clone(),
                 source,
             })
         })
