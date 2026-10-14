@@ -291,6 +291,23 @@ fn references(p: &PlanParts) -> Result<(), PlanError> {
                 str_in_range(*table, n)?;
                 str_in_range(*column, n)?;
             }
+            Op::Is { subject, test: s } => {
+                operand_refs(subject, p)?;
+                str_in_range(*s, n)?;
+            }
+            Op::Exists { subject } => operand_refs(subject, p)?,
+            Op::HasAttr { var, attr } => {
+                var_in_range(*var, p.vars)?;
+                str_in_range(*attr, n)?;
+            }
+            Op::Under { subject, prefix } => {
+                operand_refs(subject, p)?;
+                operand_refs(prefix, p)?;
+            }
+            Op::InUnit { sub, unit } => {
+                var_in_range(*sub, p.vars)?;
+                var_in_range(*unit, p.vars)?;
+            }
             Op::And(_) | Op::Or(_) | Op::Not(_) => {}
         }
         if let Op::CountCmp {
@@ -517,6 +534,16 @@ impl<'a> Walk<'a> {
                     return Err(PlanError::UndeclaredNeed { need: need.name() });
                 }
                 self.use_operand(subject)?;
+            }
+            Op::Is { subject, .. } | Op::Exists { subject } => self.use_operand(subject)?,
+            Op::HasAttr { var, .. } => self.use_var(*var)?,
+            Op::Under { subject, prefix } => {
+                self.use_operand(subject)?;
+                self.use_operand(prefix)?;
+            }
+            Op::InUnit { sub, unit } => {
+                self.use_var(*sub)?;
+                self.use_var(*unit)?;
             }
         }
         Ok(())

@@ -433,6 +433,30 @@ fn put_op(w: &mut Vec<u8>, op: &Op) {
             put_u32(w, *table);
             put_u32(w, *column);
         }
+        Op::Is { subject, test } => {
+            w.push(16);
+            put_operand(w, subject);
+            put_u32(w, *test);
+        }
+        Op::Exists { subject } => {
+            w.push(17);
+            put_operand(w, subject);
+        }
+        Op::HasAttr { var, attr } => {
+            w.push(18);
+            put_u16(w, *var);
+            put_u32(w, *attr);
+        }
+        Op::Under { subject, prefix } => {
+            w.push(19);
+            put_operand(w, subject);
+            put_operand(w, prefix);
+        }
+        Op::InUnit { sub, unit } => {
+            w.push(20);
+            put_u16(w, *sub);
+            put_u16(w, *unit);
+        }
     }
 }
 
@@ -683,6 +707,25 @@ impl Reader<'_> {
                 need: self.need()?,
                 table: self.u32("table")?,
                 column: self.u32("column")?,
+            },
+            16 => Op::Is {
+                subject: self.operand()?,
+                test: self.u32("test")?,
+            },
+            17 => Op::Exists {
+                subject: self.operand()?,
+            },
+            18 => Op::HasAttr {
+                var: self.u16("var")?,
+                attr: self.u32("attr")?,
+            },
+            19 => Op::Under {
+                subject: self.operand()?,
+                prefix: self.operand()?,
+            },
+            20 => Op::InUnit {
+                sub: self.u16("var")?,
+                unit: self.u16("var")?,
             },
             tag => return Err(PlanError::BadTag { what: "op", tag }),
         })

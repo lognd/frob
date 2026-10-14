@@ -13,8 +13,13 @@
 //! side-relation glob column (`lease.globs`, or a `config.<table>.<key>` list read through its
 //! `value` column; lowered to `MatchGlobSet`), `report` and `unresolved when`. Knobs (`knob NAME: ty = default`) lower at their declared default:
 //! `knob.NAME` of type int/string/bool is an operand, a regex knob follows `~`, and a string or list-of-string knob is a glob
-//! set (a `[rules]` override is honoured only by a `count` limit). Everything else (snippets, defs, `count`, vocab knobs, `reaches`, `in`, `is`,
-//! `exists`, other side-relation operands, `under`, `in unit`) is a [`LowerError::Unsupported`] that names
+//! set (a `[rules]` override is honoured only by a `count` limit). `in` over a list, range or
+//! list knob, `is` (kind words, `public`, `exported`, `relative`, `valid_glob`), `exists`, `has attr`, `under` and `in unit`
+//! lower too, as do defs (each a view over its parameters, every call by index; a def body
+//! calls only earlier defs), `count(x: SRC ...)` against an integer or an int knob (either side
+//! of the comparison; a knob limit honours a `[rules]` override), and operand paths of any
+//! length (`l.target.anchor` reads the dotted field). Everything else (snippets, vocab knobs, `reaches`, function-call terms, a count compared with
+//! anything but an integer or knob, other `is` words, other side-relation operands) is a [`LowerError::Unsupported`] that names
 //! the construct. Notes and fixes are not part of the plan and are dropped.
 
 mod convert;

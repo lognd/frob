@@ -30,7 +30,7 @@ use gob_text::SourceText;
 use regex::RegexBuilder;
 
 pub use eval::Val;
-pub(crate) use eval::{Env, Eval, Wired};
+pub(crate) use eval::{Env, Eval, Wired, is_test_word};
 pub use field::{Datum, Scalar, compare};
 pub use verdict::{Doubt, Verdict};
 
@@ -232,7 +232,12 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
             | Op::Call { .. }
             | Op::Inside { .. }
             | Op::Order { .. }
-            | Op::Cmp { .. } => {}
+            | Op::Cmp { .. }
+            | Op::Is { .. }
+            | Op::Exists { .. }
+            | Op::HasAttr { .. }
+            | Op::Under { .. }
+            | Op::InUnit { .. } => {}
         }
     }
     Ok((kinds, matchers, wired))
@@ -273,7 +278,15 @@ fn free_vars(p: &PlanParts, id: OpId, out: &mut Vec<VarId>) {
         }
         Op::MatchRegex { subject, .. }
         | Op::MatchGlob { subject, .. }
-        | Op::MatchGlobSet { subject, .. } => operand(subject, out),
+        | Op::MatchGlobSet { subject, .. }
+        | Op::Is { subject, .. }
+        | Op::Exists { subject } => operand(subject, out),
+        Op::HasAttr { var, .. } => out.push(*var),
+        Op::Under { subject, prefix } => {
+            operand(subject, out);
+            operand(prefix, out);
+        }
+        Op::InUnit { sub, unit } => out.extend([*sub, *unit]),
         Op::Find { .. } | Op::FindSide { .. } => {}
     }
 }
