@@ -2,13 +2,13 @@
 id = "01M4CTE6TNY9C5R18NE53J42W1"
 title = "Config Document: parse frob.toml once per command; move [tickets] and git tables into frob-ledger with one parser (audit M13)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:44Z"
-updated = "2026-10-08T03:55:44Z"
+updated = "2026-10-14T13:18:35Z"
 scope = ["changelog.d/**", "crates/gob-config/**", "crates/frob-ledger/**", "crates/frob/**", "crates/frob-*/src/config.rs"]
 
 [[acceptance]]
