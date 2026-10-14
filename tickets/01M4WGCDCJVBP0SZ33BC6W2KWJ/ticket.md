@@ -2,7 +2,8 @@
 id = "01M4WGCDCJVBP0SZ33BC6W2KWJ"
 title = "GRL lowering: knobs (int, string, regex, vocab, knob patterns)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "Claude"
