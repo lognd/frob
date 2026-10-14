@@ -2,12 +2,12 @@
 id = "01M4XJMM949EHC6X13TYJPYE5V"
 title = "GRL executor/runner: kinds link and directive, edge relations calls and resolves to, multi-file and config and diff/lease inputs, language-less examples"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-14T16:06:31Z"
-updated = "2026-10-14T16:06:48Z"
+updated = "2026-10-14T16:06:49Z"
 labels = ["area:grl"]
 scope = ["crates/gob-plan/src/exec/**", "crates/gob-plan/src/examples/**"]
 +++
