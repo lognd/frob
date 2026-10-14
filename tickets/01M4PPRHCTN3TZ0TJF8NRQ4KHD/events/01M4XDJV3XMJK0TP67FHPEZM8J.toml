@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-14T14:38:09Z"
+digest = "3d1e6f75f5baa15f6b289aabc531736cd741cc19927c7eaa76cbffd317676d0e"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dae54c1e-09a2-40d6-a8b1-8d0c109c53de with nextest profile: default
+    Starting 8 tests across 3 binaries
+        PASS [   0.005s] gob-pattern::patterns single_metavariable_binds_one_node_and_repeats_must_agree
+        PASS [   0.005s] gob-pattern::patterns print_pattern_fires_and_fix_rewrites_the_call
+        PASS [   0.006s] gob-pattern::patterns rule_errors_are_typed
+        PASS [   0.006s] gob-pattern::rules not_inside_and_other_callee_do_not_fire
+        PASS [   0.006s] gob-pattern::patterns multi_metavariable_in_the_middle_and_in_rust
+        PASS [   0.006s] gob-pattern::rules language_restriction_and_has
+        PASS [   0.006s] gob-pattern::rules one_rule_file_fires_in_rust_and_python
+        PASS [   0.006s] gob-pattern::rules compile_errors_are_typed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 8 tests run: 8 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-pattern"
+size = 1115
+status = "measured"
+test_count = 8
+tests_digest = "3e59fb37e530fb1f3a704e6120b40fec083bd80d072d66e5991061286c883041"
+at = "2026-10-14T14:38:09Z"
+actor = "lognd"
+rev = 1
