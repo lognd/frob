@@ -2,7 +2,8 @@
 id = "01M4X91TW6Y91R51R9BETGCVS0"
 title = "GRL lowering: function-call terms (resolve, slug) in rule bodies"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
