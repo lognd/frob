@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:23Z"
-updated = "2026-10-14T16:31:32Z"
+updated = "2026-10-14T16:40:55Z"
 idempotency_key = "m2-grl-check-integration"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/frob-check/src/**", "docs/reference/rules/GRL016.md", "docs/reference/rules/README.md", "docs/design/grl-spec.md"]
@@ -23,7 +23,7 @@ target = "01M3ZX7FYE5D1N2SY01VNVVACK"
 
 [[acceptance]]
 text = "Given a repository pack whose example no longer matches, when frob check runs, then a GRL016 finding names the rule and example"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given all examples passing, when frob check runs, then no GRL finding is emitted and the run reports the example counts"
