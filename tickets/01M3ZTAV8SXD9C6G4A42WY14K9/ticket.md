@@ -2,13 +2,13 @@
 id = "01M3ZTAV8SXD9C6G4A42WY14K9"
 title = "gob-symbols: lift the 160 term-depth cap now that gob-ir is stack-safe"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T02:43:46Z"
-updated = "2026-10-03T02:43:58Z"
+updated = "2026-10-14T00:05:46Z"
 idempotency_key = "m2-gobsym-depth-cap"
 labels = ["milestone:2"]
 scope = ["crates/gob-symbols/**"]
