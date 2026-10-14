@@ -51,6 +51,9 @@ pub(crate) enum KindTest {
     ApplyKinds(&'static [&'static str]),
     /// A comment.
     Comment,
+    // frob:ticket 01M4XJMM949EHC6X13TYJPYE5V
+    /// A comment that carries a `frob:<name>` directive; its `name` field is the directive name.
+    Directive,
     /// A literal other than a markup tag head.
     Literal,
     /// A markup element.
@@ -85,6 +88,7 @@ impl KindTest {
             "branch" => Self::Control(BRANCH_KINDS),
             "loop" => Self::Control(LOOP_KINDS),
             "comment" => Self::Comment,
+            "directive" => Self::Directive,
             "literal" => Self::Literal,
             "element" => Self::Element,
             "attribute" => Self::Attribute,
@@ -135,6 +139,10 @@ impl KindTest {
                 _ => None,
             },
             Self::Comment => yes(matches!(universal, Some(Universal::Comment { .. }))),
+            Self::Directive => match universal {
+                Some(Universal::Comment { text }) => yes(directive_name(text).is_some()),
+                _ => None,
+            },
             Self::Literal => match universal {
                 Some(Universal::Lit { kind, .. }) => yes(kind != markup::TAG),
                 _ => None,
@@ -155,6 +163,15 @@ impl KindTest {
                 Operator::Adapter(a) if a.lang == style::LANG && a.name == "declaration")),
         }
     }
+}
+
+/// The name of the first `frob:<name>` directive in a comment's text (`frob:todo` is `todo`).
+pub(crate) fn directive_name(text: &str) -> Option<&str> {
+    let rest = &text[text.find("frob:")? + "frob:".len()..];
+    let end = rest
+        .find(|c: char| !(c.is_ascii_alphanumeric() || c == '_' || c == '-'))
+        .unwrap_or(rest.len());
+    (end > 0).then(|| &rest[..end])
 }
 
 fn unit_kind_is(model: &Model, node: NodeId, want: &str) -> bool {

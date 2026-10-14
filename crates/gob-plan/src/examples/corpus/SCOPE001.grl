@@ -1,0 +1,28 @@
+rule SCOPE001 "path-outside-lease" {
+  lang -
+  severity error  scope repo
+  needs diff, lease, config
+
+  find p: diff.changed
+  where not p matches lease.globs and not p matches config.lease.shared_files
+  report p "{p} is outside the scope lease of {lease.ticket}"
+  fix manual "widen the lease with `frob lease widen`, or move the change to a ticket that owns the path"
+
+  example fire {
+    lease ["crates/a/**"]
+    diff ["crates/b/src/lib.rs"]
+  }
+  example clean {
+    lease ["crates/a/**"]
+    config """
+      [lease]
+      shared_files = ["Cargo.lock"]
+    """
+    diff ["Cargo.lock"]
+  }
+  explain """
+    A ticket may only change the paths its lease covers.
+    ## Remedy
+    Widen the lease or move the change.
+  """
+}

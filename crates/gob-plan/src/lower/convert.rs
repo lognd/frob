@@ -556,7 +556,8 @@ fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>)
             let table: Vec<&str> = p.segments.iter().map(|s| s.text.as_str()).collect();
             let table = table.join(".");
             cx.side_vars.push((name.clone(), table.clone()));
-            Src::Side(need, table[p.segments[0].text.len() + 1..].to_owned())
+            // frob:ticket 01M4XJMM949EHC6X13TYJPYE5V
+            Src::Side(need, table)
         }
     };
     if !top {
