@@ -2,16 +2,17 @@
 id = "01M3ZX7H37B9GKN45MPD6ZNBTY"
 title = "frob check runs rule test for std and repository packs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:23Z"
-updated = "2026-10-14T21:08:44Z"
+updated = "2026-10-14T21:35:50Z"
 idempotency_key = "m2-grl-check-integration"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/frob-check/src/**", "docs/reference/rules/GRL016.md", "docs/reference/rules/README.md", "docs/design/grl-spec.md"]
+scope = ["crates/frob-check/src/**", "docs/reference/rules/GRL016.md", "docs/reference/rules/README.md", "docs/design/grl-spec.md", "crates/frob-check/Cargo.toml"]
 
 [[links]]
 kind = "blocked-by"

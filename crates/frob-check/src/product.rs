@@ -558,6 +558,13 @@ impl Product for Frob {
                 vec![Rel003.meta()],
                 |s: &Snapshot<Self>, _| rel003_findings(s),
             ),
+            // frob:ticket 01M3ZX7H37B9GKN45MPD6ZNBTY
+            RepoGroup::new(
+                "repo:grl",
+                vec![crate::grl::Grl016.meta()],
+                |s: &Snapshot<Self>, files| crate::grl::findings(s, files),
+            )
+            .counting(|s| vec![("GRL016", crate::grl::example_count(s))]),
             RepoGroup::new(
                 "repo:ledger",
                 ledger_rule_metas(),
