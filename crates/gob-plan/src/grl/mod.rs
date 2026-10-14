@@ -41,6 +41,5 @@ pub use parse::{
 };
 pub use print::{print, print_rule};
 pub use token::{
-    Block, Comment, Lexed, MetaKind, MetaVar, Regex, Snippet, SnippetLang, StrPart, Token,
-    TokenKind,
+    Block, Comment, Lexed, MetaKind, MetaVar, Regex, Snippet, SnippetLang, Token, TokenKind,
 };

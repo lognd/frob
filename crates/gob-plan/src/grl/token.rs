@@ -31,8 +31,10 @@ pub enum TokenKind {
     Int(u64),
     /// A decimal number, kept as written (for example `0.75`) so no precision is lost.
     Decimal(String),
-    /// A `"..."` string split into text and `{expr}` parts.
-    Str(Vec<StrPart>),
+    /// A `"..."` string: the raw text between the quotes, escapes checked but not decoded.
+    ///
+    /// Whether `{` starts an interpolation depends on the position, so the parser decides.
+    Str(String),
     /// A `"""..."""` block string with the common indentation removed.
     Block(Block),
     /// A backtick snippet.
@@ -85,23 +87,6 @@ pub enum TokenKind {
     Star,
     /// `->`
     Arrow,
-}
-
-/// One piece of a `"..."` string.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum StrPart {
-    /// Literal text with escapes decoded.
-    Text {
-        /// The decoded text.
-        value: String,
-        /// The source range it was read from (escapes included).
-        span: Span,
-    },
-    /// A `{expr}` interpolation; the span is the expression between the braces.
-    Interp {
-        /// Range of the expression text, braces excluded; the parser lexes it with [`crate::grl::lex_range`].
-        expr: Span,
-    },
 }
 
 /// A triple-quoted block string.

@@ -8,8 +8,9 @@ use crate::grl::ast::{
     BlockLit, Literal, LiteralKind, Message, MessagePart, Path, Spanned, StrLit, TypeKind, TypeRef,
     Word,
 };
+use crate::grl::error::LexErrorKind;
 use crate::grl::lexer::lex_range;
-use crate::grl::token::{StrPart, Token, TokenKind};
+use crate::grl::token::{Token, TokenKind};
 
 impl Parser<'_> {
     /// A non-message string: braces are literal, so the value is read back from the source.
@@ -38,42 +39,73 @@ impl Parser<'_> {
         }
     }
 
-    /// The range of an interpolation including its braces.
-    fn braces(expr: Span) -> Span {
-        let start = u32::from(expr.range.start()).saturating_sub(1);
-        let end = u32::from(expr.range.end()).saturating_add(1);
-        Span::new(
-            expr.file,
-            TextRange::new(TextSize::new(start), TextSize::new(end)),
-        )
-    }
-
-    /// A message string: text with `{path}` interpolations.
+    /// A message string: text with `{path}` interpolations, split here because only messages interpolate.
     pub(super) fn message(&mut self, what: &str) -> PResult<Message> {
         let Some(Token {
-            kind: TokenKind::Str(parts),
+            kind: TokenKind::Str(raw),
             span,
         }) = self.peek()
         else {
             return self.expected(what);
         };
         self.bump();
+        let base = u32::from(span.range.start()).saturating_add(1);
+        let at = |from: usize, to: usize| {
+            let lo = base.saturating_add(u32::try_from(from).unwrap_or(u32::MAX));
+            let hi = base.saturating_add(u32::try_from(to).unwrap_or(u32::MAX));
+            Span::new(
+                span.file,
+                TextRange::new(TextSize::new(lo), TextSize::new(hi)),
+            )
+        };
         let mut out = Vec::new();
-        for part in parts {
-            match part {
-                StrPart::Text { value, span } => out.push(MessagePart::Text {
-                    value: value.clone(),
-                    span: *span,
-                }),
-                StrPart::Interp { expr } => {
-                    if let Some(path) = self.interp_path(*expr) {
-                        out.push(MessagePart::Interp {
-                            path,
-                            span: Self::braces(*expr),
+        let mut text = String::new();
+        let mut text_start = 0usize;
+        let mut chars = raw.char_indices().peekable();
+        while let Some((i, c)) = chars.next() {
+            match c {
+                '\\' => match chars.next() {
+                    Some((_, 'n')) => text.push('\n'),
+                    Some((_, e)) => text.push(e),
+                    None => {}
+                },
+                '{' => {
+                    if !text.is_empty() {
+                        out.push(MessagePart::Text {
+                            value: std::mem::take(&mut text),
+                            span: at(text_start, i),
                         });
                     }
+                    let Some(close) = interp_end(raw, i + 1) else {
+                        self.error(
+                            ParseErrorKind::Lexical(LexErrorKind::UnterminatedInterpolation),
+                            at(i, i + 1),
+                        );
+                        return Ok(Message {
+                            parts: out,
+                            span: *span,
+                        });
+                    };
+                    let (expr, braces) = (at(i + 1, close), at(i, close + 1));
+                    if close == i + 1 {
+                        self.error(
+                            ParseErrorKind::Lexical(LexErrorKind::EmptyInterpolation),
+                            braces,
+                        );
+                    } else if let Some(path) = self.interp_path(expr) {
+                        out.push(MessagePart::Interp { path, span: braces });
+                    }
+                    while chars.next_if(|(j, _)| *j <= close).is_some() {}
+                    text_start = close + 1;
                 }
+                _ => text.push(c),
             }
+        }
+        if !text.is_empty() {
+            out.push(MessagePart::Text {
+                value: text,
+                span: at(text_start, raw.len()),
+            });
         }
         Ok(Message {
             parts: out,
@@ -328,4 +360,22 @@ fn decode_plain(inner: &str) -> String {
         }
     }
     out
+}
+
+/// The index of the `}` closing an interpolation whose body starts at `from`, counting nested braces.
+fn interp_end(raw: &str, from: usize) -> Option<usize> {
+    let mut depth = 1usize;
+    for (i, c) in raw.get(from..)?.char_indices() {
+        match c {
+            '{' => depth += 1,
+            '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(from + i);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
 }
