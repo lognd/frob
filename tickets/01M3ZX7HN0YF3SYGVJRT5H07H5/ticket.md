@@ -2,7 +2,8 @@
 id = "01M3ZX7HN0YF3SYGVJRT5H07H5"
 title = "cargo dev gen rules: std GRL to generated Rust, GEN001, no ambient effects"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
