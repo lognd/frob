@@ -7,9 +7,9 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T03:31:03Z"
-updated = "2026-10-14T04:02:31Z"
+updated = "2026-10-14T04:08:24Z"
 idempotency_key = "land-check-cost-20261013"
-scope = ["crates/frob-land/**"]
+scope = ["crates/frob-land/**", "docs/design/tickets.md"]
 
 [[acceptance]]
 text = "A single-crate ticket lands with clippy/doc/test build limited to affected crates; per-stage timings appear in the land envelope; a stale-base retry reuses unaffected stage results; offload to a helper works and falls back locally."
