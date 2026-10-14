@@ -4,7 +4,7 @@
 
 use gob_plan::grl::parse;
 use gob_plan::lower::{LowerError, lower_rule};
-use gob_plan::plan::{Op, Plan, Polarity, Provenance};
+use gob_plan::plan::{Op, Operand, Plan, Polarity, Provenance};
 use gob_text::FileInterner;
 
 fn lower(src: &str) -> Result<Plan, LowerError> {
@@ -71,6 +71,7 @@ fn the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans() {
             "CAP001.grl",
             "CI002.grl",
             "COV001.grl",
+            "DOC002.grl",
             "INV002.grl",
             "NEAT013.grl",
             "NOPE001.grl",
@@ -434,4 +435,41 @@ fn a_vocab_knob_membership_lowers_and_a_vocab_need_must_name_a_vocab_knob() {
         lower(&src("needs vocab(missing)")),
         Err(LowerError::UnknownNeed { .. })
     ));
+}
+
+// frob:ticket 01M4X91TW6Y91R51R9BETGCVS0
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn slug_and_resolve_calls_lower_and_other_calls_or_nesting_are_refused() {
+    let src = |cond: &str| {
+        format!(
+            "rule FNC001 \"t\" {{\n  lang rust\n  find f: function where {cond}\n  report f \"x\"\n{EXPLAIN}}}\n"
+        )
+    };
+    let plan = lower(&src(
+        "slug(f.name) == \"a-b\" and f.file == resolve(f.name, f.file)",
+    ))
+    .expect("lowers");
+    assert_eq!(Plan::load(&plan.to_bytes()).expect("round trips"), plan);
+    let calls = plan
+        .parts()
+        .ops
+        .iter()
+        .filter(|o| {
+            matches!(o, Op::Cmp { lhs, rhs, .. }
+                if matches!(lhs, Operand::Slug(_) | Operand::Resolve(..))
+                    || matches!(rhs, Operand::Slug(_) | Operand::Resolve(..)))
+        })
+        .count();
+    assert_eq!(calls, 2);
+    for bad in [
+        "slug(slug(f.name)) == \"a\"",
+        "slug(f.name, f.name) == \"a\"",
+        "resolve(f.name) == \"a\"",
+    ] {
+        assert!(
+            matches!(lower(&src(bad)), Err(LowerError::Unsupported { .. })),
+            "{bad}"
+        );
+    }
 }

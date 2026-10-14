@@ -6,7 +6,7 @@
 
 use super::error::PlanError;
 use super::ir::{
-    Certainty, CmpOp, CostClass, Def, Langs, Limit, Need, NeedSet, Op, Operand, PlanParts,
+    Certainty, CmpOp, CostClass, Def, Langs, Leaf, Limit, Need, NeedSet, Op, Operand, PlanParts,
     Polarity, Position, Provenance, Quant, Report, Unresolved,
 };
 use super::limits::{MAX_BYTES, MAX_DEFS, MAX_LIST, MAX_OPS, MAX_PARAMS, MAX_STR_LEN, MAX_STRINGS};
@@ -294,6 +294,15 @@ fn put_operand(w: &mut Vec<u8>, o: &Operand) {
             w.push(4);
             w.push(u8::from(b));
         }
+        Operand::Slug(a) => {
+            w.push(5);
+            put_operand(w, &a.operand());
+        }
+        Operand::Resolve(a, b) => {
+            w.push(6);
+            put_operand(w, &a.operand());
+            put_operand(w, &b.operand());
+        }
     }
 }
 
@@ -575,6 +584,15 @@ impl Reader<'_> {
         (0..n).map(|_| self.u32(what)).collect()
     }
 
+    /// A call argument: a plain operand (a nested call is a bad tag).
+    fn leaf(&mut self) -> Result<Leaf, PlanError> {
+        let o = self.operand()?;
+        Leaf::of(o).ok_or(PlanError::BadTag {
+            what: "call argument",
+            tag: 5,
+        })
+    }
+
     fn operand(&mut self) -> Result<Operand, PlanError> {
         Ok(match self.u8("operand")? {
             0 => Operand::Var(self.u16("operand var")?),
@@ -582,6 +600,8 @@ impl Reader<'_> {
             2 => Operand::Int(self.i64("operand int")?),
             3 => Operand::Str(self.u32("operand string")?),
             4 => Operand::Bool(self.bool("operand bool")?),
+            5 => Operand::Slug(self.leaf()?),
+            6 => Operand::Resolve(self.leaf()?, self.leaf()?),
             tag => {
                 return Err(PlanError::BadTag {
                     what: "operand",

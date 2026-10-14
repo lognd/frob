@@ -18,6 +18,7 @@
 //!   order whole nodes of one file; `adjoins` needs the file text.
 //! - Field comparison is Kleene over [`Datum`]: unknown data never decides.
 
+mod call;
 mod eval;
 mod field;
 mod kind;
@@ -261,11 +262,17 @@ fn bad_pattern(p: &PlanParts, src: &str, e: &dyn std::fmt::Display) -> ExecError
 
 /// The free variables of the condition `id` (variables bound inside it are not free).
 fn free_vars(p: &PlanParts, id: OpId, out: &mut Vec<VarId>) {
-    let operand = |o: &Operand, out: &mut Vec<VarId>| {
-        if let Operand::Var(v) | Operand::Field(v, _) = o {
-            out.push(*v);
+    fn operand(o: &Operand, out: &mut Vec<VarId>) {
+        match o {
+            Operand::Var(v) | Operand::Field(v, _) => out.push(*v),
+            Operand::Slug(a) => operand(&a.operand(), out),
+            Operand::Resolve(a, b) => {
+                operand(&a.operand(), out);
+                operand(&b.operand(), out);
+            }
+            Operand::Int(_) | Operand::Str(_) | Operand::Bool(_) => {}
         }
-    };
+    }
     match &p.ops[id as usize] {
         Op::And(cs) | Op::Or(cs) => cs.iter().for_each(|&c| free_vars(p, c, out)),
         Op::Not(c) => free_vars(p, *c, out),

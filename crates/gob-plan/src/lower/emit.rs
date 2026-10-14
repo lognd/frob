@@ -6,8 +6,8 @@ use std::collections::BTreeSet;
 use super::LowerError;
 use super::convert::{Cond, DefItem, FindItem, LangNames, Lim, Lowered, Opd, Src};
 use crate::plan::{
-    Certainty, Def, Langs, Limit, Need, NeedSet, Op, OpId, Operand, Plan, PlanParts, Polarity,
-    Provenance, Report, StrId, Unresolved, VarId, cost_class,
+    Certainty, Def, Langs, Leaf, Limit, Need, NeedSet, Op, OpId, Operand, Plan, PlanParts,
+    Polarity, Provenance, Report, StrId, Unresolved, VarId, cost_class,
 };
 
 /// The sort key of a condition: its structure, so equal clauses sort alike in any source order.
@@ -21,10 +21,18 @@ fn sorted(mut v: Vec<Cond>) -> Vec<Cond> {
 }
 
 fn free_in_opd(o: &Opd, bound: &[String], out: &mut BTreeSet<String>) {
-    if let Opd::Var(v) | Opd::Field(v, _) = o
-        && !bound.contains(v)
-    {
-        out.insert(v.clone());
+    match o {
+        Opd::Var(v) | Opd::Field(v, _) => {
+            if !bound.contains(v) {
+                out.insert(v.clone());
+            }
+        }
+        Opd::Slug(a) => free_in_opd(a, bound, out),
+        Opd::Resolve(a, b) => {
+            free_in_opd(a, bound, out);
+            free_in_opd(b, bound, out);
+        }
+        Opd::Int(_) | Opd::Str(_) | Opd::Bool(_) => {}
     }
 }
 
@@ -158,6 +166,16 @@ impl Builder {
             Opd::Int(i) => Operand::Int(*i),
             Opd::Str(s) => Operand::Str(self.intern(s)),
             Opd::Bool(b) => Operand::Bool(*b),
+            Opd::Slug(a) => Operand::Slug(self.leaf(a)?),
+            Opd::Resolve(a, b) => Operand::Resolve(self.leaf(a)?, self.leaf(b)?),
+        })
+    }
+
+    /// A call argument: a call-free operand.
+    fn leaf(&mut self, o: &Opd) -> Result<Leaf, LowerError> {
+        let plain = self.operand(o)?;
+        Leaf::of(plain).ok_or(LowerError::Internal {
+            what: "a call argument reached emission as a call",
         })
     }
 

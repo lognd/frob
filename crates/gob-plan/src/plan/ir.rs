@@ -177,6 +177,48 @@ pub struct Def {
     pub body: OpId,
 }
 
+/// A call-free value: the argument of a builtin function operand.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Leaf {
+    /// A bound variable itself.
+    Var(VarId),
+    /// A field of a bound variable (name in the string pool).
+    Field(VarId, StrId),
+    /// An integer literal.
+    Int(i64),
+    /// A string literal (string pool).
+    Str(StrId),
+    /// A boolean literal.
+    Bool(bool),
+}
+
+impl Leaf {
+    /// The plain operand with the same value.
+    #[must_use]
+    pub fn operand(self) -> Operand {
+        match self {
+            Leaf::Var(v) => Operand::Var(v),
+            Leaf::Field(v, f) => Operand::Field(v, f),
+            Leaf::Int(i) => Operand::Int(i),
+            Leaf::Str(s) => Operand::Str(s),
+            Leaf::Bool(b) => Operand::Bool(b),
+        }
+    }
+
+    /// The leaf with the same value as a plain operand; None for a call operand.
+    #[must_use]
+    pub fn of(o: Operand) -> Option<Leaf> {
+        match o {
+            Operand::Var(v) => Some(Leaf::Var(v)),
+            Operand::Field(v, f) => Some(Leaf::Field(v, f)),
+            Operand::Int(i) => Some(Leaf::Int(i)),
+            Operand::Str(s) => Some(Leaf::Str(s)),
+            Operand::Bool(b) => Some(Leaf::Bool(b)),
+            Operand::Slug(_) | Operand::Resolve(..) => None,
+        }
+    }
+}
+
 /// A value a condition compares.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Operand {
@@ -190,6 +232,10 @@ pub enum Operand {
     Str(StrId),
     /// A boolean literal.
     Bool(bool),
+    /// `slug(s)`: the GitHub-style heading anchor of the text `s`.
+    Slug(Leaf),
+    /// `resolve(path, from)`: `path` resolved against the directory of `from`.
+    Resolve(Leaf, Leaf),
 }
 
 /// One node of the plan arena.

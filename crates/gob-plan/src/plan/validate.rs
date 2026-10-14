@@ -176,6 +176,10 @@ fn operand_refs(o: &Operand, p: &PlanParts) -> Result<(), PlanError> {
         }
         Operand::Str(s) => str_in_range(s, p.strings.len()),
         Operand::Int(_) | Operand::Bool(_) => Ok(()),
+        Operand::Slug(a) => operand_refs(&a.operand(), p),
+        Operand::Resolve(a, b) => {
+            operand_refs(&a.operand(), p).and_then(|()| operand_refs(&b.operand(), p))
+        }
     }
 }
 
@@ -456,6 +460,10 @@ impl<'a> Walk<'a> {
     fn use_operand(&self, o: &Operand) -> Result<(), PlanError> {
         match *o {
             Operand::Var(v) | Operand::Field(v, _) => self.use_var(v),
+            Operand::Slug(a) => self.use_operand(&a.operand()),
+            Operand::Resolve(a, b) => self
+                .use_operand(&a.operand())
+                .and_then(|()| self.use_operand(&b.operand())),
             _ => Ok(()),
         }
     }

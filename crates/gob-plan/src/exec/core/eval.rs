@@ -164,6 +164,19 @@ impl<'a> Eval<'a> {
             Operand::Int(i) => Datum::Known(Scalar::Int(i)),
             Operand::Str(s) => Datum::text(self.string(s)),
             Operand::Bool(b) => Datum::Known(Scalar::Bool(b)),
+            Operand::Slug(a) => super::call::slug(self.leaf_text(a.operand(), env)),
+            Operand::Resolve(a, b) => super::call::resolve(
+                self.leaf_text(a.operand(), env),
+                self.leaf_text(b.operand(), env),
+            ),
+        }
+    }
+
+    /// A call argument as a datum; a file node stands for its path.
+    fn leaf_text(&self, o: Operand, env: &Env) -> Datum {
+        match self.datum(&o, env) {
+            Datum::Node(n) => self.rd.field(n, "path"),
+            d => d,
         }
     }
 

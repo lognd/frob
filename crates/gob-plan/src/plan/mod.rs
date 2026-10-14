@@ -30,8 +30,8 @@ mod tests;
 pub use cost::cost_class;
 pub use error::PlanError;
 pub use ir::{
-    ANY_NODES, Certainty, CmpOp, CostClass, Def, Langs, Limit, Need, NeedSet, Op, OpId, Operand,
-    PlanParts, Polarity, Position, Provenance, Quant, Report, StrId, Unresolved, VarId,
+    ANY_NODES, Certainty, CmpOp, CostClass, Def, Langs, Leaf, Limit, Need, NeedSet, Op, OpId,
+    Operand, PlanParts, Polarity, Position, Provenance, Quant, Report, StrId, Unresolved, VarId,
 };
 pub use limits::{MAX_BYTES, MAX_DEFS, MAX_DEPTH, MAX_OPS, MAX_STR_LEN, MAX_STRINGS};
 

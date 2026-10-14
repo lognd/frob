@@ -18,6 +18,10 @@ pub(super) enum Opd {
     Int(i64),
     Str(String),
     Bool(bool),
+    /// `slug(s)`; the argument is never itself a call.
+    Slug(Box<Opd>),
+    /// `resolve(path, from)`; the arguments are never themselves calls.
+    Resolve(Box<Opd>, Box<Opd>),
 }
 
 /// A condition by variable name. Its `Debug` text is the planner's sort key.
@@ -998,7 +1002,31 @@ fn operand(cx: &Cx, t: &Term) -> Result<Opd, LowerError> {
             KnobVal::Str(s) => Ok(Opd::Str(s.clone())),
             _ => unsupported("a knob of this type as a value", w.span),
         },
+        TermKind::Call(c) => call_operand(cx, c),
         _ => unsupported("this term", t.span),
+    }
+}
+
+/// A builtin function call as a value: `slug(s)` or `resolve(path, from)` over call-free
+/// arguments (a nested call is refused).
+fn call_operand(cx: &Cx, call: &ast::Call) -> Result<Opd, LowerError> {
+    let args = call
+        .args
+        .iter()
+        .map(|a| match operand(cx, a)? {
+            Opd::Slug(_) | Opd::Resolve(..) => unsupported("a call nested in a call", a.span),
+            leaf => Ok(leaf),
+        })
+        .collect::<Result<Vec<_>, LowerError>>()?;
+    match (call.name.text.as_str(), <[Opd; 1]>::try_from(args.clone())) {
+        ("slug", Ok([s])) => return Ok(Opd::Slug(Box::new(s))),
+        ("slug", Err(_)) => return unsupported("slug without exactly one argument", call.span),
+        _ => {}
+    }
+    match (call.name.text.as_str(), <[Opd; 2]>::try_from(args)) {
+        ("resolve", Ok([p, f])) => Ok(Opd::Resolve(Box::new(p), Box::new(f))),
+        ("resolve", Err(_)) => unsupported("resolve without exactly two arguments", call.span),
+        _ => unsupported("this function as a value", call.span),
     }
 }
 

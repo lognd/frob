@@ -130,6 +130,34 @@ fn err(p: PlanParts) -> PlanError {
     Plan::new(p).expect_err("plan should be rejected")
 }
 
+// frob:ticket 01M4X91TW6Y91R51R9BETGCVS0
+// frob:tests crates/gob-plan/src/plan/mod.rs::Plan.to_bytes
+#[test]
+fn call_operands_round_trip_and_their_arguments_are_range_checked() {
+    let mut p = sample();
+    p.ops[2] = Op::Cmp {
+        lhs: Operand::Slug(Leaf::Field(0, 4)),
+        op: CmpOp::Eq,
+        rhs: Operand::Resolve(Leaf::Str(5), Leaf::Field(0, 4)),
+    };
+    let plan = Plan::new(p).expect("call operands are valid");
+    assert_eq!(Plan::load(&plan.to_bytes()).expect("load"), plan);
+    let mut p = sample();
+    p.ops[2] = Op::Cmp {
+        lhs: Operand::Slug(Leaf::Field(0, 99)),
+        op: CmpOp::Eq,
+        rhs: Operand::Int(1),
+    };
+    assert!(matches!(
+        err(p),
+        PlanError::OutOfRange {
+            what: "string",
+            index: 99,
+            ..
+        }
+    ));
+}
+
 // frob:tests crates/gob-plan/src/plan/mod.rs::Plan.to_bytes
 #[test]
 fn round_trip_keeps_every_header_field() {

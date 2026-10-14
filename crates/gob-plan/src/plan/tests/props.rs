@@ -75,6 +75,8 @@ fn arb_op() -> impl Strategy<Value = Op> {
         any::<i64>().prop_map(Operand::Int),
         st.clone().prop_map(Operand::Str),
         any::<bool>().prop_map(Operand::Bool),
+        (var.clone(), st.clone()).prop_map(|(v, f)| Operand::Slug(Leaf::Field(v, f))),
+        (var.clone(), st.clone()).prop_map(|(v, s)| Operand::Resolve(Leaf::Str(s), Leaf::Var(v))),
     ];
     prop_oneof![
         (var.clone(), st.clone()).prop_map(|(var, kind)| Op::Find { var, kind }),

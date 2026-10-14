@@ -10,7 +10,9 @@ use gob_ir::{Model, NodeId, NodeSpec, Operator, Relation, Truth};
 use gob_plan::catalog::{Column, FieldType};
 use gob_plan::exec::relations::{Count, Knobs, Relations, SideData, SideError, SideTable};
 use gob_plan::exec::{Doubt, ExecError, Input, Scalar, count, run, run_with};
-use gob_plan::plan::{Certainty, CmpOp, Limit, Need, NeedSet, Op, Plan, Polarity, Quant};
+use gob_plan::plan::{
+    Certainty, CmpOp, Leaf, Limit, Need, NeedSet, Op, Operand, Plan, Polarity, Quant,
+};
 use support::{Doc, PlanBuilder};
 
 fn func(d: &mut Doc, name: &str, start: u32) -> NodeId {
@@ -556,4 +558,44 @@ fn an_in_vocab_op_tests_a_name_against_the_language_vocabulary_classes() {
     assert_eq!(run_for(&["clock", "net"]), vec![fs[0].index()]);
     // A class the language has no vocabulary for is the empty set: nothing matches.
     assert!(run_for(&["no_such_class"]).is_empty());
+}
+
+// frob:ticket 01M4X91TW6Y91R51R9BETGCVS0
+// frob:tests crates/gob-plan/src/exec/core/call.rs::slug
+// frob:tests crates/gob-plan/src/exec/core/call.rs::resolve
+#[test]
+fn slug_and_resolve_operands_compute_their_text() {
+    let (m, fs) = model(&["Hello, World!", "other"]);
+    let run_for = |lhs: &dyn Fn(&mut PlanBuilder, u16) -> Operand, want: &str| {
+        let mut b = PlanBuilder::new("FNC001", Polarity::Pplus);
+        let f = b.find("function");
+        let l = lhs(&mut b, f);
+        let r = b.str_lit(want);
+        let op = b.cmp(l, CmpOp::Eq, r);
+        b.clause(op);
+        b.report(None, f, "x");
+        rows_of(&b.build(), &m, 0)
+    };
+    let name = |b: &mut PlanBuilder, f| match b.field(f, "name") {
+        Operand::Field(v, s) => Leaf::Field(v, s),
+        _ => unreachable!(),
+    };
+    assert_eq!(
+        run_for(&|b, f| Operand::Slug(name(b, f)), "hello-world"),
+        vec![fs[0].index()]
+    );
+    let resolved = |b: &mut PlanBuilder, _f| {
+        let (p, from) = (b.s("../x/y.md"), b.s("docs/a.md"));
+        Operand::Resolve(Leaf::Str(p), Leaf::Str(from))
+    };
+    assert_eq!(
+        run_for(&resolved, "x/y.md"),
+        vec![fs[0].index(), fs[1].index()]
+    );
+    // A path that climbs out of the repository root has no value, so nothing matches.
+    let escaping = |b: &mut PlanBuilder, _f| {
+        let (p, from) = (b.s("../../x.md"), b.s("a.md"));
+        Operand::Resolve(Leaf::Str(p), Leaf::Str(from))
+    };
+    assert!(run_for(&escaping, "x.md").is_empty());
 }
