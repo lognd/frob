@@ -408,3 +408,55 @@ fn a_glob_set_op_matches_any_glob_in_a_side_column() {
 fn col_(name: &str) -> Column {
     col(name, FieldType::Str)
 }
+
+fn rows_of(plan: &Plan, m: &Model, v: u16) -> Vec<usize> {
+    run(plan, &input(m))
+        .unwrap()
+        .rows
+        .iter()
+        .map(|r| match r.vars[usize::from(v)] {
+            Some(gob_plan::exec::Val::Row(row)) => row.index as usize,
+            Some(gob_plan::exec::Val::Node(n)) => n.index(),
+            other => panic!("unexpected {other:?}"),
+        })
+        .collect()
+}
+
+// frob:ticket 01M4WGCDG1786P1D7BT26X4K6K
+// frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::is_test_word
+#[test]
+fn is_exists_and_under_filter_function_names() {
+    let (m, fs) = model(&["a.b", "/abs", "ab"]);
+    let build = |mk: &dyn Fn(&mut PlanBuilder, u16) -> gob_plan::plan::OpId| {
+        let mut b = PlanBuilder::new("PRED001", Polarity::Pplus);
+        let f = b.find("function");
+        let op = mk(&mut b, f);
+        b.clause(op);
+        b.report(None, f, "x");
+        b.build()
+    };
+    let idx = |n: &[NodeId]| -> Vec<usize> { n.iter().map(|x| x.index()).collect() };
+    let rel = build(&|b, f| {
+        let s = b.field(f, "name");
+        let t = b.s("relative");
+        b.op(Op::Is {
+            subject: s,
+            test: t,
+        })
+    });
+    assert_eq!(rows_of(&rel, &m, 0), idx(&[fs[0], fs[2]]));
+    let ex = build(&|b, f| {
+        let s = b.field(f, "name");
+        b.op(Op::Exists { subject: s })
+    });
+    assert_eq!(rows_of(&ex, &m, 0).len(), 3);
+    let under = build(&|b, f| {
+        let s = b.field(f, "name");
+        let p = b.str_lit("a");
+        b.op(Op::Under {
+            subject: s,
+            prefix: p,
+        })
+    });
+    assert_eq!(rows_of(&under, &m, 0), idx(&[fs[0]]));
+}

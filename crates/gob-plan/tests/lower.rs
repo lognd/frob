@@ -175,3 +175,35 @@ fn an_undeclared_knob_is_an_unknown_var() {
     let src = knob_rule("knob n: int = 3 \"d\"", "where f.line >= knob.m");
     assert!(matches!(lower(&src), Err(LowerError::UnknownVar { .. })));
 }
+
+// frob:ticket 01M4WGCDG1786P1D7BT26X4K6K
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn in_is_exists_has_attr_under_and_in_unit_lower() {
+    for clause in [
+        "where f.name in [\"a\", \"b\"]",
+        "where f.line in 1..10",
+        "where f is public",
+        "where exists f.name",
+        "where f has attr \"cfg\"",
+        "where f.path under \"src\"",
+        "where f is relative_is_not_a_word_but_kinds_are_checked_at_run",
+    ] {
+        let src = knob_rule("", clause);
+        let plan = lower(&src);
+        let want_ok = !clause.contains("relative_is_not");
+        assert_eq!(plan.is_ok(), want_ok, "{clause}: {plan:?}");
+    }
+}
+
+// frob:ticket 01M4WGCDG1786P1D7BT26X4K6K
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn in_unit_lowers_with_an_object() {
+    let src = rule(&[
+        "find u: module",
+        "find f: function where f in unit u",
+        "report f \"x\"",
+    ]);
+    assert!(lower(&src).is_ok(), "{:?}", lower(&src));
+}

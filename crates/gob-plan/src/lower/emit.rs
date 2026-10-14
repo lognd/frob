@@ -67,8 +67,19 @@ fn free(c: &Cond, bound: &mut Vec<String>, out: &mut BTreeSet<String>) {
         }
         Cond::Regex { subject, .. }
         | Cond::Glob { subject, .. }
-        | Cond::GlobSet { subject, .. } => {
+        | Cond::GlobSet { subject, .. }
+        | Cond::Is { subject, .. }
+        | Cond::Exists(subject) => {
             free_in_opd(subject, bound, out);
+        }
+        Cond::HasAttr { var, .. } => name(var, bound),
+        Cond::Under { subject, prefix } => {
+            free_in_opd(subject, bound, out);
+            free_in_opd(prefix, bound, out);
+        }
+        Cond::InUnit { sub, unit } => {
+            name(sub, bound);
+            name(unit, bound);
         }
     }
 }
@@ -201,6 +212,25 @@ impl Builder {
                 need: *need,
                 table: self.intern(table),
                 column: self.intern(column),
+            },
+            Cond::Is { subject, test } => Op::Is {
+                subject: self.operand(subject)?,
+                test: self.intern(test),
+            },
+            Cond::Exists(subject) => Op::Exists {
+                subject: self.operand(subject)?,
+            },
+            Cond::HasAttr { var, attr } => Op::HasAttr {
+                var: self.var(var)?,
+                attr: self.intern(attr),
+            },
+            Cond::Under { subject, prefix } => Op::Under {
+                subject: self.operand(subject)?,
+                prefix: self.operand(prefix)?,
+            },
+            Cond::InUnit { sub, unit } => Op::InUnit {
+                sub: self.var(sub)?,
+                unit: self.var(unit)?,
             },
         };
         Ok(self.push(op))

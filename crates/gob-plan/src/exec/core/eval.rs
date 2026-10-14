@@ -18,6 +18,10 @@ use super::verdict::{Doubt, Verdict};
 use crate::exec::relations::{self, Count, Knobs, PEER_OF, SideRow, SideTable};
 use crate::plan::{Limit, Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
 
+mod predicate;
+
+pub(crate) use predicate::is_test_word;
+
 /// A value a variable is bound to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Val {
@@ -259,6 +263,11 @@ impl<'a> Eval<'a> {
             Op::MatchRegex { subject, .. }
             | Op::MatchGlob { subject, .. }
             | Op::MatchGlobSet { subject, .. } => self.matches(id, subject, env),
+            Op::Is { subject, test } => self.is_op(subject, *test, env),
+            Op::Exists { subject } => self.exists_op(subject, env),
+            Op::HasAttr { var, attr } => self.has_attr_op(*var, *attr, env),
+            Op::Under { subject, prefix } => self.under_op(subject, prefix, env),
+            Op::InUnit { sub, unit } => self.in_unit_op(*sub, *unit, env),
             Op::CountCmp {
                 var,
                 kind,

@@ -325,6 +325,42 @@ pub enum Op {
         /// The column holding the globs, in the string pool.
         column: StrId,
     },
+    /// Condition: `x is WORD`. A kind word tests membership of a variable; any other word reads
+    /// the boolean field of that name (`is public`), or for a field operand a string predicate
+    /// (`is relative`, `is valid_glob`) or the dotted field `field.WORD`.
+    Is {
+        /// The value tested.
+        subject: Operand,
+        /// The word, in the string pool.
+        test: StrId,
+    },
+    /// Condition: `exists x.f`: the operand has a value (Absent is No, Unknown stays Unknown).
+    Exists {
+        /// The operand that must have a value.
+        subject: Operand,
+    },
+    /// Condition: `x has attr "k"`: the node carries attribute `k`.
+    HasAttr {
+        /// The node variable.
+        var: VarId,
+        /// The attribute name, in the string pool.
+        attr: StrId,
+    },
+    /// Condition: `x under p`: the segment-wise path or module prefix test (`a.b` is under `a`,
+    /// `ab` is not).
+    Under {
+        /// The value tested.
+        subject: Operand,
+        /// The prefix.
+        prefix: Operand,
+    },
+    /// Condition: `x in unit u`: `u` is the nearest enclosing canonical unit of `x`.
+    InUnit {
+        /// The contained node.
+        sub: VarId,
+        /// The unit.
+        unit: VarId,
+    },
 }
 
 /// An `unresolved when COND because "reason"` clause: a binding for which the condition is Yes

@@ -67,6 +67,23 @@ pub(super) enum Cond {
         table: String,
         column: String,
     },
+    Is {
+        subject: Opd,
+        test: String,
+    },
+    Exists(Opd),
+    HasAttr {
+        var: String,
+        attr: String,
+    },
+    Under {
+        subject: Opd,
+        prefix: Opd,
+    },
+    InUnit {
+        sub: String,
+        unit: String,
+    },
 }
 
 /// What a `find` ranges over.
@@ -355,6 +372,15 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
         CondKind::And(v) => Cond::And(v.iter().map(|x| cond_of(cx, x)).collect::<Result<_, _>>()?),
         CondKind::Not(x) => Cond::Not(Box::new(cond_of(cx, x)?)),
         CondKind::Quant { quant, binding } => quantifier(cx, *quant, binding)?,
+        CondKind::Rel { subject, rel } if matches!(rel.node, RelKind::Under { .. }) => {
+            let RelKind::Under { term } = &rel.node else {
+                unreachable!("guarded")
+            };
+            Cond::Under {
+                subject: operand(cx, subject)?,
+                prefix: operand(cx, term)?,
+            }
+        }
         CondKind::Rel { subject, rel } => {
             let Some(name) = var_name(cx, subject)? else {
                 return unsupported("a relation on a non-variable", subject.span);
@@ -423,11 +449,73 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
             },
             _ => return unsupported("a flag that is not a field", t.span),
         },
-        CondKind::In { .. } => return unsupported("`in`", c.span),
-        CondKind::Is { .. } | CondKind::IsSnippet { .. } => return unsupported("`is`", c.span),
-        CondKind::HasAttr { .. } => return unsupported("`has attr`", c.span),
+        CondKind::In { lhs, rhs } => in_cond(cx, lhs, rhs)?,
+        CondKind::Is { subject, test } => {
+            let subject_opd = operand(cx, subject)?;
+            let on_field = matches!(subject_opd, Opd::Field(..));
+            if !crate::exec::is_test_word(&test.text, on_field) {
+                return unsupported("an `is` word the executor does not evaluate", test.span);
+            }
+            Cond::Is {
+                subject: subject_opd,
+                test: test.text.clone(),
+            }
+        }
+        CondKind::IsSnippet { .. } => return unsupported("`is` with a snippet", c.span),
+        CondKind::HasAttr { subject, attr } => match var_name(cx, subject)? {
+            Some(var) => Cond::HasAttr {
+                var,
+                attr: attr.value.clone(),
+            },
+            None => return unsupported("`has attr` on a non-variable", subject.span),
+        },
         CondKind::DefCall(_) => return unsupported("a def call", c.span),
-        CondKind::Exists(_) => return unsupported("`exists`", c.span),
+        CondKind::Exists(t) => Cond::Exists(operand(cx, t)?),
+    })
+}
+
+/// `lhs in rhs` over a list literal, a list-of-strings knob or a range: an `or` of equalities,
+/// or the two bounds of a range. A vocabulary knob is not lowered here.
+fn in_cond(cx: &Cx, lhs: &Term, rhs: &Term) -> Result<Cond, LowerError> {
+    let subject = operand(cx, lhs)?;
+    let eq = |v: Opd| Cond::Cmp {
+        lhs: subject.clone(),
+        op: CmpOp::Eq,
+        rhs: v,
+    };
+    let items: Vec<Opd> = match &rhs.node {
+        TermKind::Range { lo, hi } => {
+            return Ok(Cond::And(vec![
+                Cond::Cmp {
+                    lhs: subject.clone(),
+                    op: CmpOp::Ge,
+                    rhs: operand(cx, lo)?,
+                },
+                Cond::Cmp {
+                    lhs: subject.clone(),
+                    op: CmpOp::Le,
+                    rhs: operand(cx, hi)?,
+                },
+            ]));
+        }
+        TermKind::Knob(w) => match knob_of(cx, w)? {
+            KnobVal::Strs(v) => v.iter().cloned().map(Opd::Str).collect(),
+            _ => return unsupported("a knob that is not a list of strings after `in`", w.span),
+        },
+        TermKind::Literal(l) => match &l.node {
+            LiteralKind::List(items) => items.iter().map(literal).collect::<Result<_, _>>()?,
+            _ => return unsupported("a non-list after `in`", rhs.span),
+        },
+        _ => return unsupported("this collection after `in`", rhs.span),
+    };
+    if items.is_empty() {
+        return unsupported("an empty list after `in`", rhs.span);
+    }
+    let mut alts: Vec<Cond> = items.into_iter().map(eq).collect();
+    Ok(if alts.len() == 1 {
+        alts.remove(0)
+    } else {
+        Cond::Or(alts)
     })
 }
 
@@ -693,8 +781,12 @@ fn rel_cond(cx: &mut Cx, subject: &str, r: &ast::Rel) -> Result<Cond, LowerError
                 certainty,
             })
         }
-        RelKind::InUnit { .. } => unsupported("`in unit`", r.span),
-        RelKind::Under { .. } => unsupported("`under`", r.span),
+        RelKind::InUnit { object } => {
+            with_object(cx, object, move |o| Cond::InUnit { sub: s, unit: o })
+        }
+        RelKind::Under { .. } => Err(LowerError::Internal {
+            what: "under is lowered with its subject term",
+        }),
         RelKind::Reaches { .. } => unsupported("`reaches`", r.span),
     }
 }
