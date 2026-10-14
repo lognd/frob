@@ -4,9 +4,10 @@ title = "GRL lowering: snippet casts, as roles, and fix-template metavariables"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-10-14T15:07:32Z"
-updated = "2026-10-14T15:07:32Z"
+updated = "2026-10-14T15:57:27Z"
 scope = ["crates/gob-plan/**"]
 
 [[links]]
