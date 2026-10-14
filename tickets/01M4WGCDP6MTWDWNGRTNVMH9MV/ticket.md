@@ -2,12 +2,12 @@
 id = "01M4WGCDP6MTWDWNGRTNVMH9MV"
 title = "GRL lowering: reaches with within knob"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "Claude"
 created = "2026-10-14T06:07:50Z"
-updated = "2026-10-14T12:43:23Z"
+updated = "2026-10-14T14:15:14Z"
 scope = ["crates/gob-plan/**"]
 +++
 
