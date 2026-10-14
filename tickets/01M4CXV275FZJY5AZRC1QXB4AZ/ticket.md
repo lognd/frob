@@ -2,7 +2,8 @@
 id = "01M4CXV275FZJY5AZRC1QXB4AZ"
 title = "GRL: 'A and no t: T where B and C' parses C inside the no; bind quantifier bodies explicitly (extends ~K0FVJFM)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
