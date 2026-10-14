@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T03:31:03Z"
-updated = "2026-10-14T04:14:23Z"
+updated = "2026-10-14T04:17:41Z"
 idempotency_key = "land-check-cost-20261013"
 scope = ["crates/frob-land/**", "docs/design/tickets.md"]
 
