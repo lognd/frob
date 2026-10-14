@@ -2,13 +2,13 @@
 id = "01M4CTE8SH7DZ2R7T086T3ZQX6"
 title = "Verbs declare flags once: clap derive for every frob, grimble and crunk verb (audit M15)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:46Z"
-updated = "2026-10-08T03:55:46Z"
+updated = "2026-10-14T14:22:28Z"
 scope = ["changelog.d/**", "crates/frob/**", "crates/grimble/**", "crates/crunk/**", "crates/gob-cli/**", "crates/frob-*/src/cli.rs"]
 
 [[acceptance]]
