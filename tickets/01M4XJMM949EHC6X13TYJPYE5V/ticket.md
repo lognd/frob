@@ -7,7 +7,7 @@ priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-14T16:06:31Z"
-updated = "2026-10-14T16:19:18Z"
+updated = "2026-10-14T16:19:19Z"
 labels = ["area:grl"]
 scope = ["crates/gob-plan/src/exec/**", "crates/gob-plan/src/examples/**", "crates/gob-plan/src/lower/convert.rs"]
 
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given COV001 and NEAT013, when examples run, then the calls and resolves to edge relations are supplied and the examples not blocked on model gaps (~M5HEN3Y, ~WNH8N7X) pass"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the SCOPE001 rule (lang -), when its language-less examples with diff, lease and config inputs run, then they pass"
