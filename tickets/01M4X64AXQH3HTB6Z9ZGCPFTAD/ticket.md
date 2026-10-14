@@ -2,12 +2,12 @@
 id = "01M4X64AXQH3HTB6Z9ZGCPFTAD"
 title = "Wire Python type-fact clean-file set into frob-check snapshot graph build"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "Claude"
 created = "2026-10-14T12:27:54Z"
-updated = "2026-10-14T12:27:54Z"
+updated = "2026-10-14T12:41:50Z"
 scope = ["crates/frob-check/**"]
 
 [[acceptance]]
