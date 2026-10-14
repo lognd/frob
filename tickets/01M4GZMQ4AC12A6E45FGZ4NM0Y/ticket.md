@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T18:43:37Z"
-updated = "2026-10-14T22:08:11Z"
+updated = "2026-10-14T22:11:04Z"
 labels = ["adoption:logand-app", "creates:crates/gob-check/src/tool_key.rs"]
 scope = ["changelog.d/**", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/lib.rs", "crates/gob-check/src/tool_key.rs"]
 
