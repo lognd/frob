@@ -305,9 +305,16 @@ fn references(p: &PlanParts) -> Result<(), PlanError> {
                 str_in_range(*lang, n)?;
                 str_in_range(*pattern, n)?;
             }
-            Op::Under { subject, prefix } => {
+            Op::MatchGlobOperand {
+                subject,
+                pattern: other,
+            }
+            | Op::Under {
+                subject,
+                prefix: other,
+            } => {
                 operand_refs(subject, p)?;
-                operand_refs(prefix, p)?;
+                operand_refs(other, p)?;
             }
             Op::InUnit { sub, unit } => {
                 var_in_range(*sub, p.vars)?;
@@ -542,9 +549,16 @@ impl<'a> Walk<'a> {
             }
             Op::Is { subject, .. } | Op::Exists { subject } => self.use_operand(subject)?,
             Op::HasAttr { var, .. } | Op::MatchSnippet { var, .. } => self.use_var(*var)?,
-            Op::Under { subject, prefix } => {
+            Op::MatchGlobOperand {
+                subject,
+                pattern: other,
+            }
+            | Op::Under {
+                subject,
+                prefix: other,
+            } => {
                 self.use_operand(subject)?;
-                self.use_operand(prefix)?;
+                self.use_operand(other)?;
             }
             Op::InUnit { sub, unit } => {
                 self.use_var(*sub)?;

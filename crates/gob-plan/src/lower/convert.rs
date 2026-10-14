@@ -76,6 +76,10 @@ pub(super) enum Cond {
         var: String,
         attr: String,
     },
+    GlobOperand {
+        subject: Opd,
+        pattern: Opd,
+    },
     Under {
         subject: Opd,
         prefix: Opd,
@@ -593,6 +597,10 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
                 column,
             }
         }
+        CondKind::GlobMatch { lhs, rhs } if is_field_path(cx, rhs) => Cond::GlobOperand {
+            subject: glob_subject(cx, lhs)?,
+            pattern: operand(cx, rhs)?,
+        },
         CondKind::GlobMatch { lhs, rhs } => {
             let subject = glob_subject(cx, lhs)?;
             let globs = glob_literals(cx, rhs)?;
@@ -849,6 +857,11 @@ fn glob_subject(cx: &Cx, t: &Term) -> Result<Opd, LowerError> {
         };
     }
     operand(cx, t)
+}
+
+/// Whether `t` is a field path of a bound variable (`row.from`), a glob read at run time.
+fn is_field_path(cx: &Cx, t: &Term) -> bool {
+    matches!(&t.node, TermKind::Path(p) if p.segments.len() >= 2 && cx.scope.contains(&p.segments[0].text))
 }
 
 fn glob_literals(cx: &Cx, t: &Term) -> Result<Vec<String>, LowerError> {

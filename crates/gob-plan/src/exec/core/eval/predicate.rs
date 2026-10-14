@@ -54,6 +54,9 @@ impl Eval<'_> {
             Op::Exists { subject } => self.exists_op(subject, env),
             Op::HasAttr { var, attr } => self.has_attr_op(*var, *attr, env),
             Op::Under { subject, prefix } => self.under_op(subject, prefix, env),
+            Op::MatchGlobOperand { subject, pattern } => {
+                self.glob_operand_op(subject, pattern, env)
+            }
             Op::InUnit { sub, unit } => self.in_unit_op(*sub, *unit, env),
             _ => unreachable!("not a predicate op"),
         }
@@ -130,6 +133,30 @@ impl Eval<'_> {
             }
             (Datum::Unknown | Datum::OneOf(_), _) => Verdict::unknown(self.describe(subject, env)),
             (_, Datum::Unknown | Datum::OneOf(_)) => Verdict::unknown(self.describe(prefix, env)),
+            _ => Verdict::no(),
+        }
+    }
+
+    /// `subject matches pattern` where the glob is read from an operand at run time; an
+    /// unreadable or invalid glob is unknown, never a mismatch.
+    pub(super) fn glob_operand_op(
+        &self,
+        subject: &Operand,
+        pattern: &Operand,
+        env: &Env,
+    ) -> Verdict {
+        match (self.datum(subject, env), self.datum(pattern, env)) {
+            (Datum::Known(Scalar::Str(s)), Datum::Known(Scalar::Str(g))) => {
+                match globset::Glob::new(&g) {
+                    Ok(glob) => Verdict::certain(glob.compile_matcher().is_match(&s)),
+                    Err(e) => {
+                        tracing::debug!(glob = %g, error = %e, "invalid glob operand is unknown");
+                        Verdict::unknown(self.describe(pattern, env))
+                    }
+                }
+            }
+            (Datum::Unknown | Datum::OneOf(_), _) => Verdict::unknown(self.describe(subject, env)),
+            (_, Datum::Unknown | Datum::OneOf(_)) => Verdict::unknown(self.describe(pattern, env)),
             _ => Verdict::no(),
         }
     }

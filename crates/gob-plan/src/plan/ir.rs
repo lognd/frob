@@ -325,6 +325,14 @@ pub enum Op {
         /// The column holding the globs, in the string pool.
         column: StrId,
     },
+    /// Condition: the subject matches a glob read at run time from another operand
+    /// (`i.file.path matches row.from`); an unreadable or invalid glob is unknown.
+    MatchGlobOperand {
+        /// Value tested.
+        subject: Operand,
+        /// The operand holding the glob source.
+        pattern: Operand,
+    },
     /// Condition: `x is WORD`. A kind word tests membership of a variable; any other word reads
     /// the boolean field of that name (`is public`), or for a field operand a string predicate
     /// (`is relative`, `is valid_glob`) or the dotted field `field.WORD`.

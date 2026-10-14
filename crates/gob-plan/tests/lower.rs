@@ -71,6 +71,7 @@ fn the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans() {
             "CAP001.grl",
             "CI002.grl",
             "COV001.grl",
+            "INV002.grl",
             "NOPE001.grl",
             "SCOPE001.grl",
             "SYS001.grl",
@@ -380,4 +381,24 @@ fn a_kind_string_argument_tests_the_name_as_binder_and_as_relation_object() {
         "report c \"x\"",
     ]);
     assert!(lower(&rel).is_ok(), "{:?}", lower(&rel));
+}
+
+// frob:ticket 01M4XBAPBBMQ5TMT0EH30ZJZBC
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn a_glob_matched_against_a_side_row_field_lowers_to_an_operand_glob_op() {
+    let src = rule(&[
+        "needs config",
+        "find row: config.invariants.forbid_imports",
+        "find i: import where i.file.path matches row.from and i.target under row.to",
+        "report i \"{i.file.path} imports {i.target}: {row.reason}\"",
+    ]);
+    let plan = lower(&src).expect("lowers");
+    assert_eq!(Plan::load(&plan.to_bytes()).expect("round trips"), plan);
+    assert!(
+        plan.parts()
+            .ops
+            .iter()
+            .any(|o| matches!(o, Op::MatchGlobOperand { .. }))
+    );
 }
