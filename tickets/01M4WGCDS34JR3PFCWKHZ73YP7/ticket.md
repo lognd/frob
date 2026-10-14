@@ -7,12 +7,24 @@ priority = "medium"
 points = 5
 reporter = "Claude"
 created = "2026-10-14T06:07:51Z"
-updated = "2026-10-14T15:00:00Z"
+updated = "2026-10-14T15:06:43Z"
 scope = ["crates/gob-plan/**"]
 
 [[links]]
 kind = "blocked-by"
 target = "01M4PPRHCTN3TZ0TJF8NRQ4KHD"
+
+[[acceptance]]
+text = "A snippet binder (find x: lang`pat`) and `x is` a snippet lower to a new MatchSnippet op, with the rule's single lang as the default language"
+bound = false
+
+[[acceptance]]
+text = "The executor answers MatchSnippet exactly from grammar-level matches over the file text, and Unknown/Unresolved without text"
+bound = false
+
+[[acceptance]]
+text = "MatchSnippet round-trips through the plan codec and validates; unsupported snippet forms (cast, as roles, no language) are refused by name"
+bound = false
 +++
 
 Remaining slice of ~3A9N1B2 (slice 1, SCOPE001 glob sets, landed).
