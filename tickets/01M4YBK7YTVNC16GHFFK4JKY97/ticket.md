@@ -1,0 +1,19 @@
++++
+id = "01M4YBK7YTVNC16GHFFK4JKY97"
+title = "Rule corpora (frob): AFFECT001 CFG001 CI001 CI003 CI006 CI007 CI010 CI014 COV003"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M480C43A6BCH54NX8C5DQ4WJ"
+reporter = "lognd"
+created = "2026-10-14T23:22:40Z"
+updated = "2026-10-14T23:22:40Z"
+scope = ["crates/gob-mdtest/coverage-allowlist.toml"]
+
+[[acceptance]]
+text = "Each listed rule has an mdtest fire/clean pair or fixture; its [[gap]] entry is deleted from crates/gob-mdtest/coverage-allowlist.toml; the product's rule_coverage test passes"
+bound = false
++++
+
+Write mdtest suites (see crates/gob-mdtest/FORMAT.md, examples in crates/frob-obligations/tests/mdtest) for these rules, then delete their allowlist entries. Do not allowlist new gaps.
