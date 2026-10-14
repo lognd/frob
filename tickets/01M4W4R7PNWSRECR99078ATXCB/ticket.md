@@ -2,7 +2,8 @@
 id = "01M4W4R7PNWSRECR99078ATXCB"
 title = "frob land can hang forever holding the land lock; add progress watchdog and stale-holder takeover"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 reporter = "lognd"
