@@ -4,9 +4,10 @@ title = "frob land can hang forever holding the land lock; add progress watchdog
 type = "bug"
 category = "todo"
 priority = "high"
+points = 5
 reporter = "lognd"
 created = "2026-10-14T02:44:35Z"
-updated = "2026-10-14T02:56:40Z"
+updated = "2026-10-14T03:32:57Z"
 idempotency_key = "land-idle-hang-20261013"
 scope = ["crates/frob-land/**"]
 
