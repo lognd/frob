@@ -2,7 +2,8 @@
 id = "01M4CTE8SH7DZ2R7T086T3ZQX6"
 title = "Verbs declare flags once: clap derive for every frob, grimble and crunk verb (audit M15)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
