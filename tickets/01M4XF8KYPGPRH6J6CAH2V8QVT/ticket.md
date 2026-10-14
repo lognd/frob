@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T15:07:32Z"
-updated = "2026-10-14T15:57:28Z"
+updated = "2026-10-14T16:00:35Z"
 scope = ["crates/gob-plan/**"]
 
 [[links]]
@@ -16,14 +16,6 @@ target = "01M4WGCDS34JR3PFCWKHZ73YP7"
 
 [[acceptance]]
 text = "A snippet 'as KIND' cast lowers and filters the matched node by kind"
-bound = false
-
-[[acceptance]]
-text = "'is snippet as roles' lowers and binds metavariables as role nodes the rest of the rule can use"
-bound = false
-
-[[acceptance]]
-text = "Fix templates using metavariables lower with bindings"
 bound = false
 +++
 
