@@ -2,7 +2,8 @@
 id = "01M4WGCDK2ND23SEPX38Q9444T"
 title = "GRL lowering: defs, 3-segment operand paths, count"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "Claude"
