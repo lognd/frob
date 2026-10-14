@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use frob_lease::{Holder, Lease, LeaseStore};
 use frob_ledger::{Ledger, TicketId};
 use frob_pm::PmConfig;
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_git::Repo;
 use schemars::JsonSchema;
@@ -134,49 +134,23 @@ fn start_payload(s: Started) -> Payload<StartData> {
     p
 }
 
-fn ticket_arg() -> Arg {
-    Arg::new("ticket")
-        .required(true)
-        .value_name("TICKET")
-        .help("Full ULID, ~handle or alias of the ticket")
-}
-
-fn reason_arg(help: &'static str) -> Arg {
-    Arg::new("reason")
-        .long("reason")
-        .value_name("TEXT")
-        .help(help)
-}
-
-fn unplanned_arg() -> Arg {
-    Arg::new("unplanned")
-        .long("unplanned")
-        .action(ArgAction::SetTrue)
-        .help("Start a ticket outside the active cycle: it joins the cycle as an over-commit (needs --reason)")
-}
-
-fn steal_arg() -> Arg {
-    Arg::new("steal")
-        .long("steal")
-        .action(ArgAction::SetTrue)
-        .help("Take over a lease held by someone else (needs --reason)")
-}
-
-fn text(m: &ArgMatches, name: &str) -> Option<String> {
-    m.get_one::<String>(name).cloned()
+/// The positional ticket every worktree verb takes.
+#[derive(Debug, Clone, clap::Args)]
+struct TicketArg {
+    #[arg(
+        value_name = "TICKET",
+        help = "Full ULID, ~handle or alias of the ticket"
+    )]
+    ticket: String,
 }
 
 /// The reason of `--steal` and `--unplanned`: one `--reason` serves whichever flags are set, and it is required by both and meaningless alone.
-fn flag_reasons(m: &ArgMatches) -> Result<(Option<String>, Option<String>), CliError> {
-    let (steal, unplanned) = (
-        m.get_flag("steal"),
-        m.try_get_one::<bool>("unplanned")
-            .ok()
-            .flatten()
-            .copied()
-            .unwrap_or(false),
-    );
-    match (steal || unplanned, text(m, "reason")) {
+fn flag_reasons(
+    steal: bool,
+    unplanned: bool,
+    reason: Option<String>,
+) -> Result<(Option<String>, Option<String>), CliError> {
+    match (steal || unplanned, reason) {
         (true, Some(r)) if !r.trim().is_empty() => {
             Ok((steal.then(|| r.clone()), unplanned.then_some(r)))
         }
@@ -188,6 +162,76 @@ fn flag_reasons(m: &ArgMatches) -> Result<(Option<String>, Option<String>), CliE
         )),
         (false, None) => Ok((None, None)),
     }
+}
+
+/// The flags of `work`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct WorkArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(
+        long,
+        value_name = "PATH",
+        help = "Create the worktree here instead of under [worktree] dir"
+    )]
+    worktree: Option<PathBuf>,
+    #[arg(
+        long,
+        conflicts_with = "worktree",
+        help = "Lease the ticket for this checkout: no new worktree or branch"
+    )]
+    here: bool,
+    #[arg(
+        long,
+        value_name = "SECS",
+        help = "Queue fairly for a blocked scope for up to SECS seconds instead of refusing"
+    )]
+    wait: Option<u64>,
+    #[arg(long, help = "Take over a lease held by someone else (needs --reason)")]
+    steal: bool,
+    #[arg(
+        long,
+        help = "Start a ticket outside the active cycle: it joins the cycle as an over-commit (needs --reason)"
+    )]
+    unplanned: bool,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Why the lease is stale (with --steal) or why the work is unplanned (with --unplanned)"
+    )]
+    reason: Option<String>,
+}
+
+/// The flags of `start`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct StartArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(long, help = "Take over a lease held by someone else (needs --reason)")]
+    steal: bool,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Why the lease is stale (with --steal)"
+    )]
+    reason: Option<String>,
+}
+
+/// The flags of `requeue`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct RequeueArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        required = true,
+        help = "Why the ticket goes back to todo"
+    )]
+    reason: String,
 }
 
 /// Lease a ticket, create its worktree and branch, and move it to in-progress; `--here` leases it for this checkout instead.
@@ -208,47 +252,22 @@ impl Command for Work {
     type Data = StartData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
-            .arg(
-                Arg::new("worktree")
-                    .long("worktree")
-                    .value_name("PATH")
-                    .value_parser(gob_cli::clap::value_parser!(PathBuf))
-                    .help("Create the worktree here instead of under [worktree] dir"),
-            )
-            .arg(
-                Arg::new("here")
-                    .long("here")
-                    .action(ArgAction::SetTrue)
-                    .conflicts_with("worktree")
-                    .help("Lease the ticket for this checkout: no new worktree or branch"),
-            )
-            .arg(
-                Arg::new("wait")
-                    .long("wait")
-                    .value_name("SECS")
-                    .value_parser(gob_cli::clap::value_parser!(u64))
-                    .help("Queue fairly for a blocked scope for up to SECS seconds instead of refusing"),
-            )
-            .arg(steal_arg())
-            .arg(unplanned_arg())
-            .arg(reason_arg(
-                "Why the lease is stale (with --steal) or why the work is unplanned (with --unplanned)",
-            ))
+        gob_cli::augment::<WorkArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let (steal, unplanned) = flag_reasons(m)?;
+        let a = gob_cli::parse::<WorkArgs>(m)?;
+        let (steal, unplanned) = flag_reasons(a.steal, a.unplanned, a.reason)?;
         Ok(Self {
-            ticket: text(m, "ticket").unwrap_or_default(),
+            ticket: a.ticket.ticket,
             opts: WorkOptions {
-                worktree: m.get_one::<PathBuf>("worktree").cloned(),
+                worktree: a.worktree,
                 steal,
                 unplanned,
-                wait_secs: m.get_one::<u64>("wait").copied().unwrap_or(0),
+                wait_secs: a.wait.unwrap_or(0),
                 sprint_gate: false,
             },
-            here: m.get_flag("here"),
+            here: a.here,
         })
     }
 
@@ -286,16 +305,15 @@ impl Command for Start {
     type Data = StartData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
-            .arg(steal_arg())
-            .arg(reason_arg("Why the lease is stale (with --steal)"))
+        gob_cli::augment::<StartArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<StartArgs>(m)?;
         Ok(Self {
-            ticket: text(m, "ticket").unwrap_or_default(),
+            ticket: a.ticket.ticket,
             opts: WorkOptions {
-                steal: flag_reasons(m)?.0,
+                steal: flag_reasons(a.steal, false, a.reason)?.0,
                 ..WorkOptions::default()
             },
         })
@@ -363,14 +381,14 @@ impl Command for Requeue {
     type Data = RequeueData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
-            .arg(reason_arg("Why the ticket goes back to todo").required(true))
+        gob_cli::augment::<RequeueArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<RequeueArgs>(m)?;
         Ok(Self {
-            ticket: text(m, "ticket").unwrap_or_default(),
-            reason: text(m, "reason").unwrap_or_default(),
+            ticket: a.ticket.ticket,
+            reason: a.reason,
         })
     }
 

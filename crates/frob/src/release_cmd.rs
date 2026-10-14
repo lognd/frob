@@ -25,7 +25,7 @@ use frob_release::status::{
     Report, assess,
 };
 use frob_release::{Mode, Options, ReleaseError};
-use gob_cli::clap::{Arg, ArgAction, ArgMatches, Command as ClapCommand};
+use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use gob_exec::{Limits, Program, Runner};
 use schemars::JsonSchema;
@@ -33,7 +33,7 @@ use serde::Serialize;
 
 use crate::config::FrobConfig;
 use crate::milestone_cmd::{MilestoneView, milestones, pm_err};
-use crate::ticket::{cli_err, get, open, text_flag};
+use crate::ticket::{cli_err, open};
 use crate::workspace::{Located, config_refusal};
 
 /// What `release changelog` did, or with `--check` and `--dry-run` would do.
@@ -66,34 +66,43 @@ pub struct ReleaseChangelog {
     check: bool,
 }
 
+/// `ReleaseChangelog` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct ChangelogArgs {
+    #[arg(
+        long,
+        required = true,
+        value_name = "X",
+        help = "Release version, MAJOR.MINOR.PATCH (for example 0.532.0)"
+    )]
+    version: String,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Section date YYYY-MM-DD (default: today)"
+    )]
+    date: Option<String>,
+    #[arg(
+        long,
+        help = "Validate fragments and that older sections are unedited; write nothing"
+    )]
+    check: bool,
+}
+
 impl Command for ReleaseChangelog {
     type Data = ChangelogData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(
-            Arg::new("version")
-                .long("version")
-                .required(true)
-                .value_name("X")
-                .help("Release version, MAJOR.MINOR.PATCH (for example 0.532.0)"),
-        )
-        .arg(text_flag(
-            "date",
-            "Section date YYYY-MM-DD (default: today)",
-        ))
-        .arg(
-            Arg::new("check")
-                .long("check")
-                .action(ArgAction::SetTrue)
-                .help("Validate fragments and that older sections are unedited; write nothing"),
-        )
+        gob_cli::augment::<ChangelogArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<ChangelogArgs>(m)?;
         Ok(Self {
-            version: get(m, "version").unwrap_or_default(),
-            date: get(m, "date"),
-            check: m.get_flag("check"),
+            version: a.version,
+            date: a.date,
+            check: a.check,
         })
     }
 
@@ -185,23 +194,29 @@ pub struct ReleaseNotes {
     version: String,
 }
 
+/// `ReleaseNotes` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct NotesArgs {
+    #[arg(
+        long,
+        required = true,
+        value_name = "X",
+        help = "Release version whose CHANGELOG section to print (for example 0.532.0)"
+    )]
+    version: String,
+}
+
 impl Command for ReleaseNotes {
     type Data = NotesData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(
-            Arg::new("version")
-                .long("version")
-                .required(true)
-                .value_name("X")
-                .help("Release version whose CHANGELOG section to print (for example 0.532.0)"),
-        )
+        gob_cli::augment::<NotesArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            version: get(m, "version").unwrap_or_default(),
-        })
+        let a = gob_cli::parse::<NotesArgs>(m)?;
+        Ok(Self { version: a.version })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<NotesData> {
@@ -261,21 +276,27 @@ pub struct ReleaseStatus {
     version: Option<String>,
 }
 
+/// `ReleaseStatus` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct StatusArgs {
+    #[arg(
+        value_name = "VERSION",
+        help = "Release version (default: the lowest open milestone)"
+    )]
+    version: Option<String>,
+}
+
 impl Command for ReleaseStatus {
     type Data = StatusData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(
-            Arg::new("version")
-                .value_name("VERSION")
-                .help("Release version (default: the lowest open milestone)"),
-        )
+        gob_cli::augment::<StatusArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            version: get(m, "version"),
-        })
+        let a = gob_cli::parse::<StatusArgs>(m)?;
+        Ok(Self { version: a.version })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<StatusData> {
@@ -712,28 +733,34 @@ pub struct ReleaseBump {
     allow_downgrade: bool,
 }
 
+/// `ReleaseBump` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct BumpArgs {
+    #[arg(
+        value_name = "VERSION",
+        help = "The lockstep version, semver (for example 0.532.0)"
+    )]
+    version: String,
+    #[arg(
+        long = "allow-downgrade",
+        help = "Permit a version lower than the current workspace version"
+    )]
+    allow_downgrade: bool,
+}
+
 impl Command for ReleaseBump {
     type Data = BumpData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(
-            Arg::new("version")
-                .value_name("VERSION")
-                .required(true)
-                .help("The lockstep version, semver (for example 0.532.0)"),
-        )
-        .arg(
-            Arg::new("allow-downgrade")
-                .long("allow-downgrade")
-                .action(ArgAction::SetTrue)
-                .help("Permit a version lower than the current workspace version"),
-        )
+        gob_cli::augment::<BumpArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<BumpArgs>(m)?;
         Ok(Self {
-            version: get(m, "version").unwrap_or_default(),
-            allow_downgrade: m.get_flag("allow-downgrade"),
+            version: a.version,
+            allow_downgrade: a.allow_downgrade,
         })
     }
 
@@ -824,37 +851,47 @@ pub struct ReleaseCut {
     push: bool,
 }
 
+/// `ReleaseCut` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct CutArgs {
+    #[arg(
+        value_name = "VERSION",
+        help = "The release version, semver (for example 0.532.0); its milestone must exist"
+    )]
+    version: String,
+    #[arg(
+        long = "override",
+        help = "Cut although release status is not READY; needs --reason, recorded on the milestone"
+    )]
+    override_ready: bool,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Why readiness is overridden (with --override)"
+    )]
+    reason: Option<String>,
+    #[arg(
+        long,
+        help = "Push the base branch and the tags to origin (starts the release job); default is local only"
+    )]
+    push: bool,
+}
+
 impl Command for ReleaseCut {
     type Data = CutReport;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(
-            Arg::new("version")
-                .value_name("VERSION")
-                .required(true)
-                .help("The release version, semver (for example 0.532.0); its milestone must exist"),
-        )
-        .arg(
-            Arg::new("override")
-                .long("override")
-                .action(ArgAction::SetTrue)
-                .help("Cut although release status is not READY; needs --reason, recorded on the milestone"),
-        )
-        .arg(text_flag("reason", "Why readiness is overridden (with --override)"))
-        .arg(
-            Arg::new("push")
-                .long("push")
-                .action(ArgAction::SetTrue)
-                .help("Push the base branch and the tags to origin (starts the release job); default is local only"),
-        )
+        gob_cli::augment::<CutArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<CutArgs>(m)?;
         Ok(Self {
-            version: get(m, "version").unwrap_or_default(),
-            override_ready: m.get_flag("override"),
-            reason: get(m, "reason"),
-            push: m.get_flag("push"),
+            version: a.version,
+            override_ready: a.override_ready,
+            reason: a.reason,
+            push: a.push,
         })
     }
 
@@ -1083,23 +1120,35 @@ pub struct ReleaseAdopt {
     reason: Option<String>,
 }
 
+/// `ReleaseAdopt` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct AdoptArgs {
+    #[arg(
+        value_name = "VERSION",
+        help = "The release version whose existing tags are recorded as its cut (for example 0.1.0)"
+    )]
+    version: String,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Why the tags are adopted instead of cut (recorded)"
+    )]
+    reason: Option<String>,
+}
+
 impl Command for ReleaseAdopt {
     type Data = AdoptReport;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(
-            Arg::new("version")
-                .value_name("VERSION")
-                .required(true)
-                .help("The release version whose existing tags are recorded as its cut (for example 0.1.0)"),
-        )
-        .arg(text_flag("reason", "Why the tags are adopted instead of cut (recorded)"))
+        gob_cli::augment::<AdoptArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<AdoptArgs>(m)?;
         Ok(Self {
-            version: get(m, "version").unwrap_or_default(),
-            reason: get(m, "reason"),
+            version: a.version,
+            reason: a.reason,
         })
     }
 

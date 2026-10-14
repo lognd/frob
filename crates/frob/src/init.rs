@@ -633,35 +633,42 @@ fn ensure_merge_driver(
     ))
 }
 
+/// `Init` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct InitArgs {
+    #[arg(
+        long = "driver-command",
+        value_name = "TEXT",
+        help = "Write this exact merge driver command instead of the resolved one"
+    )]
+    driver_command: Option<String>,
+    #[arg(
+        long = "ledger-ref",
+        value_name = "REF",
+        help = "Write this ref (refs/heads/<branch>) as [tickets] ref instead of the default branch"
+    )]
+    ledger_ref: Option<String>,
+    #[arg(
+        long = "fix-driver",
+        help = "Rewrite an existing merge driver that points at a different frob"
+    )]
+    fix_driver: bool,
+}
+
 impl Command for Init {
     type Data = InitData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            gob_cli::clap::Arg::new("driver-command")
-                .long("driver-command")
-                .value_name("TEXT")
-                .help("Write this exact merge driver command instead of the resolved one"),
-        )
-        .arg(
-            gob_cli::clap::Arg::new("ledger-ref")
-                .long("ledger-ref")
-                .value_name("REF")
-                .help("Write this ref (refs/heads/<branch>) as [tickets] ref instead of the default branch"),
-        )
-        .arg(
-            gob_cli::clap::Arg::new("fix-driver")
-                .long("fix-driver")
-                .action(gob_cli::clap::ArgAction::SetTrue)
-                .help("Rewrite an existing merge driver that points at a different frob"),
-        )
+        gob_cli::augment::<InitArgs>(cmd)
     }
 
     fn from_matches(matches: &gob_cli::clap::ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<InitArgs>(matches)?;
         Ok(Self {
-            driver_command: matches.get_one::<String>("driver-command").cloned(),
-            fix_driver: matches.get_flag("fix-driver"),
-            ledger_ref: matches.get_one::<String>("ledger-ref").cloned(),
+            driver_command: a.driver_command,
+            fix_driver: a.fix_driver,
+            ledger_ref: a.ledger_ref,
         })
     }
 

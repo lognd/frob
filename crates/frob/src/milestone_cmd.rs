@@ -10,12 +10,12 @@ use frob_ledger::model::{Stamp, TicketType};
 use frob_pm::milestone::{MilestoneError, NewPlan, parse_version, plan_new, unknown_version};
 use frob_pm::model::{Day, Milestone};
 use frob_pm::{NewObject, ObjectKind, PmError, PmStore};
-use gob_cli::clap::{Arg, ArgMatches, Command as ClapCommand};
+use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use crate::ticket::{cli_err, get, get_many, many_flag, open, resolve, text_flag};
+use crate::ticket::{cli_err, open, resolve};
 
 /// A member epic as listed under a milestone.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
@@ -272,12 +272,14 @@ pub(crate) fn find(store: PmStore<'_>, reference: &str) -> Result<Milestone, Cli
     }
 }
 
-/// The positional `VERSION` argument.
-pub(crate) fn version_arg() -> Arg {
-    Arg::new("version")
-        .required(true)
-        .value_name("VERSION")
-        .help("Milestone version (semver, for example 0.533.0)")
+/// The positional `VERSION` argument, declared once.
+#[derive(Debug, Clone, clap::Args)]
+pub(crate) struct VersionArg {
+    #[arg(
+        value_name = "VERSION",
+        help = "Milestone version (semver, for example 0.533.0)"
+    )]
+    pub(crate) version: String,
 }
 
 /// Create a milestone; an identical repeat returns `already`, a different one is refused.
@@ -295,28 +297,47 @@ pub struct MilestoneNew {
     criteria: Vec<String>,
 }
 
+/// The flags of `milestone new`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct NewArgs {
+    #[command(flatten)]
+    version: VersionArg,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        required = true,
+        help = "One-line goal of the release"
+    )]
+    goal: String,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Target date, YYYY-MM-DD (default unscheduled)"
+    )]
+    target: Option<String>,
+    #[arg(
+        long = "criterion",
+        value_name = "TEXT",
+        help = "Exit criterion, taken whole (repeatable); starts unbound"
+    )]
+    criteria: Vec<String>,
+}
+
 impl Command for MilestoneNew {
     type Data = MilestoneData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(version_arg())
-            .arg(text_flag("goal", "One-line goal of the release").required(true))
-            .arg(text_flag(
-                "target",
-                "Target date, YYYY-MM-DD (default unscheduled)",
-            ))
-            .arg(many_flag(
-                "criterion",
-                "Exit criterion, taken whole (repeatable); starts unbound",
-            ))
+        gob_cli::augment::<NewArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<NewArgs>(m)?;
         Ok(Self {
-            version: get(m, "version").unwrap_or_default(),
-            goal: get(m, "goal").unwrap_or_default(),
-            target: get(m, "target"),
-            criteria: get_many(m, "criterion"),
+            version: a.version.version,
+            goal: a.goal,
+            target: a.target,
+            criteria: a.criteria,
         })
     }
 
@@ -379,23 +400,31 @@ pub struct MilestoneAdd {
     version: String,
 }
 
+/// The positionals of `milestone add`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct AddArgs {
+    #[arg(
+        value_name = "EPIC",
+        help = "Full ULID, ~handle or alias of the epic ticket"
+    )]
+    epic: String,
+    #[command(flatten)]
+    version: VersionArg,
+}
+
 impl Command for MilestoneAdd {
     type Data = MilestoneData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(
-            Arg::new("epic")
-                .required(true)
-                .value_name("EPIC")
-                .help("Full ULID, ~handle or alias of the epic ticket"),
-        )
-        .arg(version_arg())
+        gob_cli::augment::<AddArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<AddArgs>(m)?;
         Ok(Self {
-            epic: get(m, "epic").unwrap_or_default(),
-            version: get(m, "version").unwrap_or_default(),
+            epic: a.epic,
+            version: a.version.version,
         })
     }
 
@@ -462,13 +491,12 @@ impl Command for MilestoneShow {
     type Data = MilestoneData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(version_arg())
+        gob_cli::augment::<VersionArg>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            version: get(m, "version").unwrap_or_default(),
-        })
+        let a = gob_cli::parse::<VersionArg>(m)?;
+        Ok(Self { version: a.version })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<MilestoneData> {

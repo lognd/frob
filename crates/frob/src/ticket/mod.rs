@@ -21,7 +21,6 @@ pub mod write;
 
 use frob_ledger::model::{Category, Class, Outcome, Priority, TicketType};
 use frob_ledger::{Applied, Ledger, LedgerError, TicketId};
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Context};
 use gob_diagnostics::{Refusal, RefusalClass};
 use schemars::JsonSchema;
@@ -99,61 +98,36 @@ fn ticket_file_id(input: &str) -> Option<TicketId> {
     })
 }
 
-/// A required positional ticket argument.
-pub(crate) fn ticket_arg() -> Arg {
-    Arg::new("ticket")
-        .required(true)
-        .value_name("TICKET")
-        .help("Full ULID, ~handle or alias of the ticket")
+/// The positional ticket argument shared by the ticket verbs, declared once.
+#[derive(Debug, Clone, clap::Args)]
+pub(crate) struct TicketArg {
+    /// The ticket as typed: full ULID, `~handle` or alias.
+    #[arg(
+        value_name = "TICKET",
+        help = "Full ULID, ~handle or alias of the ticket"
+    )]
+    pub(crate) ticket: String,
 }
 
-/// An optional single-valued text flag.
-pub(crate) fn text_flag(name: &'static str, help: &'static str) -> Arg {
-    Arg::new(name).long(name).value_name("TEXT").help(help)
-}
-
-/// A repeatable text flag.
-pub(crate) fn many_flag(name: &'static str, help: &'static str) -> Arg {
-    text_flag(name, help).action(ArgAction::Append)
-}
-
-/// A flag restricted to the given spellings.
-pub(crate) fn choice_flag(
-    name: &'static str,
+/// The value parser of a flag restricted to the given spellings.
+pub(crate) fn choices(
     names: &'static [&'static str],
-    help: &'static str,
-) -> Arg {
-    Arg::new(name)
-        .long(name)
-        .value_name("VALUE")
-        .value_parser(gob_cli::clap::builder::PossibleValuesParser::new(names))
-        .help(help)
+) -> gob_cli::clap::builder::PossibleValuesParser {
+    gob_cli::clap::builder::PossibleValuesParser::new(names)
 }
 
-/// The text value of flag `name`.
-pub(crate) fn get(m: &ArgMatches, name: &str) -> Option<String> {
-    m.get_one::<String>(name).cloned()
-}
-
-/// Every value of repeatable flag `name`.
-pub(crate) fn get_many(m: &ArgMatches, name: &str) -> Vec<String> {
-    m.get_many::<String>(name)
-        .map(|v| v.cloned().collect())
-        .unwrap_or_default()
-}
-
-/// Parse the spelling of a validated choice flag.
-pub(crate) fn get_parsed<T: std::str::FromStr>(
-    m: &ArgMatches,
-    name: &str,
+/// Parse the spelling of the validated choice flag `--flag`, when it was given.
+pub(crate) fn parsed<T: std::str::FromStr>(
+    flag: &str,
+    value: Option<String>,
 ) -> Result<Option<T>, CliError>
 where
     T::Err: std::fmt::Display,
 {
-    get(m, name)
+    value
         .map(|s| {
             s.parse::<T>()
-                .map_err(|e| CliError::Usage(format!("--{name}: {e}")))
+                .map_err(|e| CliError::Usage(format!("--{flag}: {e}")))
         })
         .transpose()
 }

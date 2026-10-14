@@ -40,19 +40,23 @@ impl ServeCmd {
     pub(crate) const VERB: &'static str = "serve";
 }
 
+/// `serve` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct ServeArgs {
+    #[arg(long, help = "Speak MCP over stdio (the default and only transport)")]
+    mcp: bool,
+}
+
 impl Command for ServeCmd {
     type Data = ();
 
     fn configure(cmd: clap::Command) -> clap::Command {
-        cmd.arg(
-            Arg::new("mcp")
-                .long("mcp")
-                .action(ArgAction::SetTrue)
-                .help("Speak MCP over stdio (the default and only transport)"),
-        )
+        crate::augment::<ServeArgs>(cmd)
     }
 
-    fn from_matches(_matches: &ArgMatches) -> Result<Self, CliError> {
+    fn from_matches(matches: &ArgMatches) -> Result<Self, CliError> {
+        crate::parse::<ServeArgs>(matches)?;
         Ok(Self)
     }
 

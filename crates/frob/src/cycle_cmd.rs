@@ -32,14 +32,14 @@ use frob_pm::cycle::velocity::{
 use frob_pm::event::{CycleEventData, CycleOp, MemberData, Op, PmBody, TransitionData};
 use frob_pm::model::{Cycle, Day, State};
 use frob_pm::{NewObject, ObjectKind, PmError, PmStore};
-use gob_cli::clap::{Arg, ArgMatches, Command as ClapCommand};
+use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::config::FrobConfig;
 use crate::milestone_cmd::pm_err;
-use crate::ticket::{cli_err, get, open, open_lease_store, resolve, text_flag, ticket_arg};
+use crate::ticket::{TicketArg, cli_err, open, open_lease_store, resolve};
 use crate::workspace::{Located, config_refusal};
 
 /// A member ticket as listed under a cycle.
@@ -373,12 +373,153 @@ fn parse_day(flag: &str, text: &str) -> Result<Day, CliError> {
         .map_err(|e| CliError::Usage(format!("--{flag}: {e}")))
 }
 
-/// The positional `CYCLE` argument.
-fn cycle_arg(required: bool) -> Arg {
-    Arg::new("cycle")
-        .required(required)
-        .value_name("CYCLE")
-        .help("Cycle ULID, ~handle or START..END alias")
+/// The optional positional `CYCLE` argument.
+#[derive(Debug, Clone, clap::Args)]
+struct OptCycleArg {
+    #[arg(value_name = "CYCLE", help = "Cycle ULID, ~handle or START..END alias")]
+    cycle: Option<String>,
+}
+
+/// The required positional `CYCLE` argument.
+#[derive(Debug, Clone, clap::Args)]
+struct ReqCycleArg {
+    #[arg(value_name = "CYCLE", help = "Cycle ULID, ~handle or START..END alias")]
+    cycle: String,
+}
+
+/// `CycleNew` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct NewArgs {
+    #[arg(
+        long,
+        value_name = "TEXT",
+        required = true,
+        help = "First day, YYYY-MM-DD"
+    )]
+    start: String,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Last day, YYYY-MM-DD (default start + [pm] cycle_days - 1)"
+    )]
+    end: Option<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        required = true,
+        help = "One-line goal of the cycle"
+    )]
+    goal: String,
+    #[arg(
+        long,
+        value_name = "N",
+        visible_alias = "capacity-points",
+        help = "Story points the team commits to (default unset, derived from history)"
+    )]
+    capacity: Option<String>,
+}
+
+/// `CycleClose` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct CloseArgs {
+    #[command(flatten)]
+    cycle: ReqCycleArg,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Retrospective note recorded with the close, taken whole"
+    )]
+    retro: Option<String>,
+    #[arg(
+        long = "carry-to",
+        value_name = "CYCLE",
+        help = "Cycle that takes the incomplete tickets (default: the next open or planned cycle by start date)"
+    )]
+    carry_to: Option<String>,
+    #[arg(
+        long = "next-goal",
+        value_name = "TEXT",
+        help = "Goal of the next cycle, created the day after the effective end (also when nothing carries) unless one already follows"
+    )]
+    next_goal: Option<String>,
+    #[arg(
+        long = "next-days",
+        value_name = "N",
+        help = "Length of the cycle --next-goal creates (default [pm] cycle_days)"
+    )]
+    next_days: Option<String>,
+}
+
+/// `CycleAssign` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct AssignArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[command(flatten)]
+    cycle: OptCycleArg,
+    #[arg(
+        long = "over-commit",
+        help = "Allow the assignment past capacity; needs --reason"
+    )]
+    over_commit: bool,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Why the cycle is over-committed, recorded as a cycle event (with --over-commit)"
+    )]
+    reason: Option<String>,
+}
+
+/// `CycleUnassign` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct UnassignArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[command(flatten)]
+    cycle: ReqCycleArg,
+}
+
+/// `CycleVelocity` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct VelocityArgs {
+    #[arg(
+        long,
+        value_name = "N",
+        help = "Closed cycles to show (default max(6, [pm] min_history))"
+    )]
+    last: Option<String>,
+}
+
+/// `CyclePlan` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct PlanArgs {
+    #[command(flatten)]
+    cycle: OptCycleArg,
+    #[arg(
+        long,
+        help = "Assign the proposed tickets (idempotent); without it nothing is written"
+    )]
+    apply: bool,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Fill to this many points instead of the cycle's capacity (needed while capacity is not enforced)"
+    )]
+    points: Option<String>,
+}
+
+/// `CycleShow` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct ShowArgs {
+    #[command(flatten)]
+    cycle: OptCycleArg,
 }
 
 /// Create a cycle; an identical repeat returns `already`, an overlapping or different one is refused.
@@ -400,28 +541,16 @@ impl Command for CycleNew {
     type Data = CycleData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(text_flag("start", "First day, YYYY-MM-DD").required(true))
-            .arg(text_flag(
-                "end",
-                "Last day, YYYY-MM-DD (default start + [pm] cycle_days - 1)",
-            ))
-            .arg(text_flag("goal", "One-line goal of the cycle").required(true))
-            .arg(
-                text_flag(
-                    "capacity",
-                    "Story points the team commits to (default unset, derived from history)",
-                )
-                .value_name("N")
-                .visible_alias("capacity-points"),
-            )
+        gob_cli::augment::<NewArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<NewArgs>(m)?;
         Ok(Self {
-            start: get(m, "start").unwrap_or_default(),
-            end: get(m, "end"),
-            goal: get(m, "goal").unwrap_or_default(),
-            capacity: get(m, "capacity"),
+            start: a.start,
+            end: a.end,
+            goal: a.goal,
+            capacity: a.capacity,
         })
     }
 
@@ -490,12 +619,13 @@ impl Command for CycleShow {
     type Data = CycleData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(cycle_arg(false))
+        gob_cli::augment::<ShowArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<ShowArgs>(m)?;
         Ok(Self {
-            cycle: get(m, "cycle"),
+            cycle: a.cycle.cycle,
         })
     }
 
@@ -681,38 +811,17 @@ impl Command for CycleClose {
     type Data = CycleData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(cycle_arg(true))
-            .arg(text_flag(
-                "retro",
-                "Retrospective note recorded with the close, taken whole",
-            ))
-            .arg(
-                text_flag(
-                    "carry-to",
-                    "Cycle that takes the incomplete tickets (default: the next open or planned cycle by start date)",
-                )
-                .value_name("CYCLE"),
-            )
-            .arg(text_flag(
-                "next-goal",
-                "Goal of the next cycle, created the day after the effective end (also when nothing carries) unless one already follows",
-            ))
-            .arg(
-                text_flag(
-                    "next-days",
-                    "Length of the cycle --next-goal creates (default [pm] cycle_days)",
-                )
-                .value_name("N"),
-            )
+        gob_cli::augment::<CloseArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<CloseArgs>(m)?;
         Ok(Self {
-            cycle: get(m, "cycle").unwrap_or_default(),
-            retro: get(m, "retro"),
-            carry_to: get(m, "carry-to"),
-            next_goal: get(m, "next-goal"),
-            next_days: get(m, "next-days"),
+            cycle: a.cycle.cycle,
+            retro: a.retro,
+            carry_to: a.carry_to,
+            next_goal: a.next_goal,
+            next_days: a.next_days,
         })
     }
 
@@ -972,26 +1081,16 @@ impl Command for CycleAssign {
     type Data = AssignData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(ticket_arg())
-            .arg(cycle_arg(false))
-            .arg(
-                Arg::new("over-commit")
-                    .long("over-commit")
-                    .action(gob_cli::clap::ArgAction::SetTrue)
-                    .help("Allow the assignment past capacity; needs --reason"),
-            )
-            .arg(text_flag(
-                "reason",
-                "Why the cycle is over-committed, recorded as a cycle event (with --over-commit)",
-            ))
+        gob_cli::augment::<AssignArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<AssignArgs>(m)?;
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-            cycle: get(m, "cycle"),
-            over_commit: m.get_flag("over-commit"),
-            reason: get(m, "reason"),
+            ticket: a.ticket.ticket,
+            cycle: a.cycle.cycle,
+            over_commit: a.over_commit,
+            reason: a.reason,
         })
     }
 
@@ -1080,13 +1179,14 @@ impl Command for CycleUnassign {
     type Data = AssignData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(ticket_arg()).arg(cycle_arg(true))
+        gob_cli::augment::<UnassignArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<UnassignArgs>(m)?;
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-            cycle: get(m, "cycle").unwrap_or_default(),
+            ticket: a.ticket.ticket,
+            cycle: a.cycle.cycle,
         })
     }
 
@@ -1205,19 +1305,12 @@ impl Command for CycleVelocity {
     type Data = VelocityData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(
-            text_flag(
-                "last",
-                "Closed cycles to show (default max(6, [pm] min_history))",
-            )
-            .value_name("N"),
-        )
+        gob_cli::augment::<VelocityArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            last: get(m, "last"),
-        })
+        let a = gob_cli::parse::<VelocityArgs>(m)?;
+        Ok(Self { last: a.last })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<VelocityData> {
@@ -1403,24 +1496,15 @@ impl Command for CyclePlan {
     type Data = PlanData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(cycle_arg(false))
-            .arg(
-                Arg::new("apply")
-                    .long("apply")
-                    .action(gob_cli::clap::ArgAction::SetTrue)
-                    .help("Assign the proposed tickets (idempotent); without it nothing is written"),
-            )
-            .arg(text_flag(
-                "points",
-                "Fill to this many points instead of the cycle's capacity (needed while capacity is not enforced)",
-            ))
+        gob_cli::augment::<PlanArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<PlanArgs>(m)?;
         Ok(Self {
-            cycle: get(m, "cycle"),
-            apply: m.get_flag("apply"),
-            points: get(m, "points"),
+            cycle: a.cycle.cycle,
+            apply: a.apply,
+            points: a.points,
         })
     }
 

@@ -8,16 +8,16 @@
 
 use frob_evidence::attestation::Presence;
 use frob_evidence::events::{self, StoredEvidence};
-use frob_evidence::verbs::{CaptureArgs, ListData, Listed, capture_args, with_record_warnings};
+use frob_evidence::verbs::{CaptureArgs, CaptureFlags, ListData, Listed, with_record_warnings};
 use frob_evidence::{EvidenceError, EvidenceRecord, Workspace};
 use frob_pm::{Milestone, PmStore};
-use gob_cli::clap::{Arg, ArgMatches, Command as ClapCommand};
+use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use crate::milestone_cmd::{MilestoneData, MilestoneView, find, pm_err, version_arg};
-use crate::ticket::{get, open};
+use crate::milestone_cmd::{MilestoneData, MilestoneView, VersionArg, find, pm_err};
+use crate::ticket::open;
 
 /// Refuse a criterion number outside `1..=count` with the command that lists them.
 fn bad_position(m: &Milestone, n: usize) -> CliError {
@@ -69,22 +69,31 @@ pub struct CriterionAdd {
     text: String,
 }
 
+/// The positionals of `milestone criterion add`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct CriterionAddArgs {
+    #[command(flatten)]
+    version: VersionArg,
+    #[arg(
+        value_name = "CRITERION",
+        help = "Exit criterion, taken whole; starts unbound"
+    )]
+    criterion: String,
+}
+
 impl Command for CriterionAdd {
     type Data = MilestoneData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(version_arg()).arg(
-            Arg::new("criterion")
-                .required(true)
-                .value_name("CRITERION")
-                .help("Exit criterion, taken whole; starts unbound"),
-        )
+        gob_cli::augment::<CriterionAddArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<CriterionAddArgs>(m)?;
         Ok(Self {
-            version: get(m, "version").unwrap_or_default(),
-            text: get(m, "criterion").unwrap_or_default(),
+            version: a.version.version,
+            text: a.criterion,
         })
     }
 
@@ -142,26 +151,31 @@ pub struct CriterionRemove {
     position: usize,
 }
 
+/// The positionals of `milestone criterion remove`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct CriterionRemoveArgs {
+    #[command(flatten)]
+    version: VersionArg,
+    #[arg(
+        value_name = "N",
+        help = "1-based position of the criterion, from `milestone show`"
+    )]
+    position: usize,
+}
+
 impl Command for CriterionRemove {
     type Data = CriterionRemoveData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(version_arg()).arg(
-            Arg::new("position")
-                .required(true)
-                .value_name("N")
-                .value_parser(gob_cli::clap::value_parser!(usize))
-                .help("1-based position of the criterion, from `milestone show`"),
-        )
+        gob_cli::augment::<CriterionRemoveArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<CriterionRemoveArgs>(m)?;
         Ok(Self {
-            version: get(m, "version").unwrap_or_default(),
-            position: m
-                .get_one::<usize>("position")
-                .copied()
-                .ok_or_else(|| CliError::Usage("criterion remove needs N".to_owned()))?,
+            version: a.version.version,
+            position: a.position,
         })
     }
 
@@ -266,17 +280,28 @@ fn ev_err(e: impl Into<EvidenceError>) -> CliError {
     e.into().into_cli()
 }
 
+/// The flags of `milestone evidence add`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct EvidenceAddArgs {
+    #[command(flatten)]
+    version: VersionArg,
+    #[command(flatten)]
+    capture: CaptureFlags,
+}
+
 impl Command for EvidenceAdd {
     type Data = EvidenceAddData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        capture_args(cmd.arg(version_arg()))
+        gob_cli::augment::<EvidenceAddArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<EvidenceAddArgs>(m)?;
         Ok(Self {
-            version: get(m, "version").unwrap_or_default(),
-            args: CaptureArgs::from_matches(m)?,
+            version: a.version.version,
+            args: CaptureArgs::from_flags(a.capture)?,
         })
     }
 
@@ -353,13 +378,12 @@ impl Command for EvidenceList {
     type Data = ListData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(version_arg())
+        gob_cli::augment::<VersionArg>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            version: get(m, "version").unwrap_or_default(),
-        })
+        let a = gob_cli::parse::<VersionArg>(m)?;
+        Ok(Self { version: a.version })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<ListData> {

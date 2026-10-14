@@ -40,6 +40,38 @@ pub trait Command: Described + Sized + 'static {
     fn run(&self, ctx: &Context) -> Outcome<Self::Data>;
 }
 
+/// Add the flags and positionals declared by the `#[derive(clap::Args)]` struct `A` to `cmd`.
+///
+/// Use it as the body of [`Command::configure`] so each flag is declared once, on the struct.
+#[must_use]
+pub fn augment<A: clap::Args>(cmd: clap::Command) -> clap::Command {
+    // Derive resets `about`/`long_about` from the struct docs; the verb's CommandMeta owns them.
+    let about = cmd.get_about().cloned();
+    let long_about = cmd.get_long_about().cloned();
+    let mut cmd = A::augment_args(cmd);
+    if let Some(a) = about {
+        cmd = cmd.about(a);
+    }
+    if let Some(l) = long_about {
+        cmd = cmd.long_about(l);
+    }
+    cmd
+}
+
+/// Read the `#[derive(clap::Args)]` struct `A` from the parsed `matches`, with no string lookups.
+///
+/// Use it as the first line of [`Command::from_matches`]; cross-flag checks follow it.
+///
+/// # Errors
+///
+/// [`CliError::Usage`] when clap cannot build `A` from the matches.
+pub fn parse<A: clap::FromArgMatches>(matches: &ArgMatches) -> Result<A, CliError> {
+    A::from_arg_matches(matches).map_err(|e| {
+        tracing::debug!(error = %e, "verb flags did not convert");
+        CliError::Usage(e.to_string())
+    })
+}
+
 /// A verb result with the data already serialized.
 #[derive(Debug)]
 pub(crate) struct Erased {

@@ -7,12 +7,12 @@ use std::path::PathBuf;
 use frob_release::fragment::sentence_required;
 use frob_release::skeleton::{Request, default_kind, write};
 use frob_release::{Kind, SkeletonError};
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload, Refusal, RefusalClass};
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use super::{cli_err, get, open, resolve, text_flag, ticket_arg};
+use super::{TicketArg, cli_err, open, resolve};
 use crate::config::FrobConfig;
 use crate::workspace::Located;
 
@@ -50,40 +50,43 @@ pub struct Fragment {
     force: bool,
 }
 
+/// The flags of `ticket fragment`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct FragmentArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(
+        long = "type",
+        value_name = "VALUE",
+        value_parser = gob_cli::clap::builder::PossibleValuesParser::new(Kind::ALL.map(Kind::as_str)),
+        help = "Fragment type (default from the ticket type: bug and incident fixed, security security, story and epic added, anything else changed)"
+    )]
+    kind: Option<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "The user-facing sentence (default: `<ticket title>.`, after `[release] fragment_prefix`; required for bug, security and incident tickets, whose titles describe the problem)"
+    )]
+    sentence: Option<String>,
+    #[arg(long, help = "Replace an existing fragment of the ticket")]
+    force: bool,
+}
+
 impl Command for Fragment {
     type Data = FragmentData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(ticket_arg())
-            .arg(
-                Arg::new("type")
-                    .long("type")
-                    .value_name("VALUE")
-                    .value_parser(gob_cli::clap::builder::PossibleValuesParser::new(
-                        Kind::ALL.map(Kind::as_str),
-                    ))
-                    .help(
-                        "Fragment type (default from the ticket type: bug and incident fixed, security security, story and epic added, anything else changed)",
-                    ),
-            )
-            .arg(text_flag(
-                "sentence",
-                "The user-facing sentence (default: `<ticket title>.`, after `[release] fragment_prefix`; required for bug, security and incident tickets, whose titles describe the problem)",
-            ))
-            .arg(
-                Arg::new("force")
-                    .long("force")
-                    .action(ArgAction::SetTrue)
-                    .help("Replace an existing fragment of the ticket"),
-            )
+        gob_cli::augment::<FragmentArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<FragmentArgs>(m)?;
         Ok(Self {
-            ticket: get(m, "ticket").unwrap_or_default(),
-            kind: get(m, "type"),
-            text: get(m, "sentence"),
-            force: m.get_flag("force"),
+            ticket: a.ticket.ticket,
+            kind: a.kind,
+            text: a.sentence,
+            force: a.force,
         })
     }
 

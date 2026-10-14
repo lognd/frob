@@ -2,7 +2,7 @@
 
 use frob_evidence::provider::{build_record, pytest_runner};
 use frob_evidence::{EvidenceError, Workspace, events};
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -141,27 +141,32 @@ fn record_runs(
     Ok(recorded)
 }
 
+/// The flags of `test`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct TestArgs {
+    #[arg(
+        long,
+        value_name = "REF",
+        help = "Ref to diff the work tree against (required unless --all)"
+    )]
+    base: Option<String>,
+    #[arg(
+        long,
+        help = "Run every test of the workspace instead of the touched set"
+    )]
+    all: bool,
+}
+
 impl Command for TestVerb {
     type Data = TestData;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        cmd.arg(
-            Arg::new("base")
-                .long("base")
-                .value_name("REF")
-                .help("Ref to diff the work tree against (required unless --all)"),
-        )
-        .arg(
-            Arg::new("all")
-                .long("all")
-                .action(ArgAction::SetTrue)
-                .help("Run every test of the workspace instead of the touched set"),
-        )
+        gob_cli::augment::<TestArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let base = m.get_one::<String>("base").cloned();
-        let all = m.get_flag("all");
+        let TestArgs { base, all } = gob_cli::parse::<TestArgs>(m)?;
         if base.is_none() && !all {
             return Err(CliError::Usage(
                 "test needs --base <ref> (or --all)".to_owned(),

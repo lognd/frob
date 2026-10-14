@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use frob_ledger::index::ListFilter;
 use frob_ledger::model::{Category, Outcome as TicketOutcome};
 use frob_ledger::{Ledger, event::EventBody};
-use gob_cli::clap::{Arg, ArgMatches, Command as ClapCommand};
+use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -123,22 +123,28 @@ fn closed_by(
     Ok(mine.len().min(limit))
 }
 
+/// `ProfileVerb` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct ProfileArgs {
+    #[arg(
+        value_name = "PROFILE",
+        value_parser = ["newcomer", "experienced"],
+        help = "Set the profile; omit to show it"
+    )]
+    profile: Option<String>,
+}
+
 impl Command for ProfileVerb {
     type Data = ProfileData;
 
     fn configure(cmd: ClapCommand) -> ClapCommand {
-        cmd.arg(
-            Arg::new("profile")
-                .value_name("PROFILE")
-                .value_parser(["newcomer", "experienced"])
-                .help("Set the profile; omit to show it"),
-        )
+        gob_cli::augment::<ProfileArgs>(cmd)
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        Ok(Self {
-            set: m.get_one::<String>("profile").cloned(),
-        })
+        let a = gob_cli::parse::<ProfileArgs>(m)?;
+        Ok(Self { set: a.profile })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<ProfileData> {
