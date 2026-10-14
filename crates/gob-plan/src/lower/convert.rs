@@ -84,6 +84,33 @@ pub(super) enum Cond {
         sub: String,
         unit: String,
     },
+    /// A call of the def at this index in [`Lowered::defs`].
+    Call {
+        def: usize,
+        args: Vec<String>,
+    },
+    /// `count(var: kind where cond) op limit`.
+    CountCmp {
+        var: String,
+        kind: String,
+        cond: Box<Cond>,
+        op: CmpOp,
+        limit: Lim,
+    },
+}
+
+/// What a count is compared with, by name.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) enum Lim {
+    Int(u64),
+    /// A knob: its name and declared default.
+    Knob(String, u64),
+}
+
+/// A `def` in name form: the body sees only the parameters.
+pub(super) struct DefItem {
+    pub params: Vec<String>,
+    pub body: Cond,
 }
 
 /// What a `find` ranges over.
@@ -124,6 +151,8 @@ pub(super) struct Lowered {
     pub wheres: Vec<Cond>,
     pub unresolved: Vec<(Cond, String)>,
     pub reports: Vec<ReportItem>,
+    /// The defs, in text order; a call names one by index.
+    pub defs: Vec<DefItem>,
 }
 
 /// A knob's declared default, which is what a lowered plan reads (an override from `[rules]` is
@@ -146,6 +175,8 @@ struct Cx {
     scope: Vec<String>,
     /// Variables bound by a top-level side-relation find, with that relation's dotted name.
     side_vars: Vec<(String, String)>,
+    /// The defs lowered so far: name and parameter count, parallel to [`Lowered::defs`].
+    defs: Vec<(String, usize)>,
     fresh: u32,
 }
 
@@ -164,6 +195,7 @@ pub(super) fn convert(rule: &Rule) -> Result<Lowered, LowerError> {
         wheres: Vec::new(),
         unresolved: Vec::new(),
         reports: Vec::new(),
+        defs: Vec::new(),
     };
     let mut knobs = Vec::new();
     for h in &rule.headers {
@@ -176,6 +208,7 @@ pub(super) fn convert(rule: &Rule) -> Result<Lowered, LowerError> {
         knobs,
         scope: Vec::new(),
         side_vars: Vec::new(),
+        defs: Vec::new(),
         fresh: 0,
     };
     for c in &rule.clauses {
@@ -187,6 +220,12 @@ pub(super) fn convert(rule: &Rule) -> Result<Lowered, LowerError> {
                 });
             }
             cx.scope.push(b.name.text.clone());
+        }
+    }
+    // Defs first, in text order, so any clause may call any def (a def body only earlier ones).
+    for c in &rule.clauses {
+        if let ClauseKind::Def(d) = &c.node {
+            def_item(&mut out, &mut cx, d)?;
         }
     }
     for c in &rule.clauses {
@@ -244,7 +283,6 @@ fn clause(out: &mut Lowered, cx: &mut Cx, c: &Clause) -> Result<(), LowerError> 
         }
         ClauseKind::Where(cond) => out.wheres.push(cond_of(cx, cond)?),
         ClauseKind::Quant { quant, binding } => out.wheres.push(quantifier(cx, *quant, binding)?),
-        ClauseKind::Def(d) => return unsupported("a def", d.name.span),
         ClauseKind::Report(r) => {
             require_bound(cx, &r.target)?;
             out.reports.push(ReportItem {
@@ -257,9 +295,44 @@ fn clause(out: &mut Lowered, cx: &mut Cx, c: &Clause) -> Result<(), LowerError> 
             out.unresolved
                 .push((cond_of(cx, &u.when)?, message_text(&u.because)));
         }
-        ClauseKind::Note(_) | ClauseKind::Fix(_) => {}
+        // Defs were lowered up front; notes and fixes carry no condition.
+        ClauseKind::Def(_) | ClauseKind::Note(_) | ClauseKind::Fix(_) => {}
     }
     Ok(())
+}
+
+/// A def: its body is lowered with only the parameters in scope.
+fn def_item(out: &mut Lowered, cx: &mut Cx, d: &ast::Def) -> Result<(), LowerError> {
+    let params: Vec<String> = d.params.iter().map(|p| p.text.clone()).collect();
+    let saved = std::mem::replace(&mut cx.scope, params.clone());
+    cx.fresh = 0;
+    let body = cond_of(cx, &d.body);
+    cx.scope = saved;
+    out.defs.push(DefItem {
+        params: params.clone(),
+        body: body?,
+    });
+    cx.defs.push((d.name.text.clone(), params.len()));
+    Ok(())
+}
+
+/// `NAME(args)` as a condition: the def by index, with variable arguments.
+fn call_cond(cx: &Cx, call: &ast::Call) -> Result<Cond, LowerError> {
+    let Some(def) = cx.defs.iter().position(|(n, _)| *n == call.name.text) else {
+        return unsupported("a call of a def that is not defined earlier", call.span);
+    };
+    if cx.defs[def].1 != call.args.len() {
+        return unsupported("a def call with the wrong number of arguments", call.span);
+    }
+    let args = call
+        .args
+        .iter()
+        .map(|a| match var_name(cx, a)? {
+            Some(v) => Ok(v),
+            None => unsupported("a def argument that is not a variable", a.span),
+        })
+        .collect::<Result<_, LowerError>>()?;
+    Ok(Cond::Call { def, args })
 }
 
 fn require_bound(cx: &Cx, w: &ast::Word) -> Result<(), LowerError> {
@@ -343,7 +416,8 @@ fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>)
     Ok((src, rest?))
 }
 
-fn quantifier(cx: &mut Cx, q: ast::Quant, b: &Binding) -> Result<Cond, LowerError> {
+/// A scoped binder (a quantifier's or a count's): its kind and the one condition on it.
+fn scoped(cx: &mut Cx, b: &Binding) -> Result<(String, Cond), LowerError> {
     let (src, mut conds) = binding_parts(cx, b, false)?;
     let Src::Kind(kind) = src else {
         return unsupported("a side relation inside a quantifier", b.span);
@@ -353,6 +427,11 @@ fn quantifier(cx: &mut Cx, q: ast::Quant, b: &Binding) -> Result<Cond, LowerErro
     } else {
         Cond::And(conds)
     };
+    Ok((kind, cond))
+}
+
+fn quantifier(cx: &mut Cx, q: ast::Quant, b: &Binding) -> Result<Cond, LowerError> {
+    let (kind, cond) = scoped(cx, b)?;
     Ok(Cond::Quant {
         quant: match q {
             ast::Quant::Some => Quant::Some,
@@ -381,16 +460,14 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
             };
             rel_cond(cx, &name, rel)?
         }
+        CondKind::Cmp { op, lhs, rhs }
+            if matches!(lhs.node, TermKind::Count(_)) || matches!(rhs.node, TermKind::Count(_)) =>
+        {
+            count_cmp(cx, *op, lhs, rhs)?
+        }
         CondKind::Cmp { op, lhs, rhs } => Cond::Cmp {
             lhs: operand(cx, lhs)?,
-            op: match op {
-                ast::CmpOp::Eq => CmpOp::Eq,
-                ast::CmpOp::Ne => CmpOp::Ne,
-                ast::CmpOp::Lt => CmpOp::Lt,
-                ast::CmpOp::Le => CmpOp::Le,
-                ast::CmpOp::Gt => CmpOp::Gt,
-                ast::CmpOp::Ge => CmpOp::Ge,
-            },
+            op: cmp_op(*op),
             rhs: operand(cx, rhs)?,
         },
         CondKind::RegexMatch { lhs, rhs } => match &rhs.node {
@@ -436,7 +513,7 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
             }
         }
         CondKind::Flag(t) => match &t.node {
-            TermKind::Path(p) if p.segments.len() == 2 => Cond::Cmp {
+            TermKind::Path(p) if p.segments.len() >= 2 => Cond::Cmp {
                 lhs: operand(cx, t)?,
                 op: CmpOp::Eq,
                 rhs: Opd::Bool(true),
@@ -453,9 +530,61 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
             },
             None => return unsupported("`has attr` on a non-variable", subject.span),
         },
-        CondKind::DefCall(_) => return unsupported("a def call", c.span),
+        CondKind::DefCall(call) => call_cond(cx, call)?,
         CondKind::Exists(t) => Cond::Exists(operand(cx, t)?),
     })
+}
+
+/// `count(x: SRC ...) op limit` (or the limit first): a count against an integer or a knob.
+fn count_cmp(cx: &mut Cx, op: ast::CmpOp, lhs: &Term, rhs: &Term) -> Result<Cond, LowerError> {
+    let (binding, other, op) = match (&lhs.node, &rhs.node) {
+        (TermKind::Count(b), _) => (b, rhs, op),
+        (_, TermKind::Count(b)) => (
+            b,
+            lhs,
+            match op {
+                ast::CmpOp::Lt => ast::CmpOp::Gt,
+                ast::CmpOp::Le => ast::CmpOp::Ge,
+                ast::CmpOp::Gt => ast::CmpOp::Lt,
+                ast::CmpOp::Ge => ast::CmpOp::Le,
+                same => same,
+            },
+        ),
+        _ => return unsupported("a count compared with a count", lhs.span),
+    };
+    let limit = match &other.node {
+        TermKind::Literal(l) => match &l.node {
+            LiteralKind::Int(i) => u64::try_from(*i).map(Lim::Int).ok(),
+            _ => None,
+        },
+        TermKind::Knob(w) => match knob_of(cx, w)? {
+            KnobVal::Int(i) => u64::try_from(*i).ok().map(|d| Lim::Knob(w.text.clone(), d)),
+            _ => None,
+        },
+        _ => None,
+    };
+    let Some(limit) = limit else {
+        return unsupported("a count compared with this term", other.span);
+    };
+    let (kind, cond) = scoped(cx, binding)?;
+    Ok(Cond::CountCmp {
+        var: binding.name.text.clone(),
+        kind,
+        cond: Box::new(cond),
+        op: cmp_op(op),
+        limit,
+    })
+}
+
+fn cmp_op(op: ast::CmpOp) -> CmpOp {
+    match op {
+        ast::CmpOp::Eq => CmpOp::Eq,
+        ast::CmpOp::Ne => CmpOp::Ne,
+        ast::CmpOp::Lt => CmpOp::Lt,
+        ast::CmpOp::Le => CmpOp::Le,
+        ast::CmpOp::Gt => CmpOp::Gt,
+        ast::CmpOp::Ge => CmpOp::Ge,
+    }
 }
 
 /// `subject is WORD`: only words the executor evaluates are lowered.
@@ -674,7 +803,11 @@ fn operand(cx: &Cx, t: &Term) -> Result<Opd, LowerError> {
             match p.segments.as_slice() {
                 [v] => Ok(Opd::Var(v.text.clone())),
                 [v, f] => Ok(Opd::Field(v.text.clone(), f.text.clone())),
-                _ => unsupported("a path of more than two segments", p.span),
+                [v, rest @ ..] => {
+                    let path: Vec<&str> = rest.iter().map(|s| s.text.as_str()).collect();
+                    Ok(Opd::Field(v.text.clone(), path.join(".")))
+                }
+                [] => unsupported("an empty path", p.span),
             }
         }
         TermKind::Knob(w) => match knob_of(cx, w)? {

@@ -460,3 +460,23 @@ fn is_exists_and_under_filter_function_names() {
     });
     assert_eq!(rows_of(&under, &m, 0), idx(&[fs[0]]));
 }
+
+// frob:ticket 01M4WGCDK2ND23SEPX38Q9444T
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn a_lowered_def_runs_as_a_view() {
+    use gob_plan::grl::parse;
+    use gob_plan::lower::lower_rule;
+    use gob_plan::plan::Provenance;
+    use gob_text::FileInterner;
+
+    let src = "rule DEF002 \"t\" {\n  lang rust\n  def is_x(f) = f.name == \"x\"\n  \
+               find g: function\n  where is_x(g)\n  report g \"x\"\n  \
+               explain \"\"\"\n    Why.\n    ## Remedy\n    Fix.\n  \"\"\"\n}\n";
+    let parsed = parse(FileInterner::new().intern("rules/T.grl"), src);
+    assert!(parsed.is_ok(), "{:?}", parsed.errors);
+    let plan = lower_rule(&parsed.file.rules[0], Provenance::Std).expect("lowers");
+    let (m, fs) = model(&["target", "x", "y"]);
+    // The def parameter takes slot 0, so the rule's `g` is slot 1.
+    assert_eq!(rows_of(&plan, &m, 1), vec![fs[1].index()]);
+}

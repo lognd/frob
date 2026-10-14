@@ -4,10 +4,10 @@
 use std::collections::BTreeSet;
 
 use super::LowerError;
-use super::convert::{Cond, FindItem, LangNames, Lowered, Opd, Src};
+use super::convert::{Cond, DefItem, FindItem, LangNames, Lim, Lowered, Opd, Src};
 use crate::plan::{
-    Langs, Need, NeedSet, Op, OpId, Operand, Plan, PlanParts, Polarity, Provenance, Report, StrId,
-    Unresolved, VarId, cost_class,
+    Def, Langs, Limit, Need, NeedSet, Op, OpId, Operand, Plan, PlanParts, Polarity, Provenance,
+    Report, StrId, Unresolved, VarId, cost_class,
 };
 
 /// The sort key of a condition: its structure, so equal clauses sort alike in any source order.
@@ -42,7 +42,7 @@ fn free(c: &Cond, bound: &mut Vec<String>, out: &mut BTreeSet<String>) {
             }
         }
         Cond::Not(x) => free(x, bound, out),
-        Cond::Quant { var, cond, .. } => {
+        Cond::Quant { var, cond, .. } | Cond::CountCmp { var, cond, .. } => {
             bound.push(var.clone());
             free(cond, bound, out);
             bound.pop();
@@ -80,6 +80,11 @@ fn free(c: &Cond, bound: &mut Vec<String>, out: &mut BTreeSet<String>) {
         Cond::InUnit { sub, unit } => {
             name(sub, bound);
             name(unit, bound);
+        }
+        Cond::Call { args, .. } => {
+            for a in args {
+                name(a, bound);
+            }
         }
     }
 }
@@ -168,27 +173,6 @@ impl Builder {
                     cond: inner?,
                 }
             }
-            Cond::Inside { sub, sup, direct } => Op::Inside {
-                sub: self.var(sub)?,
-                sup: self.var(sup)?,
-                direct: *direct,
-            },
-            Cond::Order { a, b, pos } => Op::Order {
-                a: self.var(a)?,
-                b: self.var(b)?,
-                pos: *pos,
-            },
-            Cond::Verb {
-                subject,
-                object,
-                verb,
-                certainty,
-            } => Op::Verb {
-                subject: self.var(subject)?,
-                object: self.var(object)?,
-                verb: self.intern(verb),
-                certainty: *certainty,
-            },
             Cond::Cmp { lhs, op, rhs } => Op::Cmp {
                 lhs: self.operand(lhs)?,
                 op: *op,
@@ -228,12 +212,76 @@ impl Builder {
                 subject: self.operand(subject)?,
                 prefix: self.operand(prefix)?,
             },
+            Cond::CountCmp {
+                var,
+                kind,
+                cond,
+                op,
+                limit,
+            } => {
+                let id = self.fresh();
+                self.env.push((var.clone(), id));
+                let inner = self.cond(cond);
+                self.env.pop();
+                Op::CountCmp {
+                    var: id,
+                    kind: self.intern(kind),
+                    cond: inner?,
+                    op: *op,
+                    limit: match limit {
+                        Lim::Int(i) => Limit::Int(*i),
+                        Lim::Knob(name, default) => Limit::Knob {
+                            name: self.intern(name),
+                            default: *default,
+                        },
+                    },
+                }
+            }
+            _ => self.relation(c)?,
+        };
+        Ok(self.push(op))
+    }
+
+    /// The conditions that relate variables: containment, order, verbs, units, def calls.
+    fn relation(&mut self, c: &Cond) -> Result<Op, LowerError> {
+        Ok(match c {
+            Cond::Inside { sub, sup, direct } => Op::Inside {
+                sub: self.var(sub)?,
+                sup: self.var(sup)?,
+                direct: *direct,
+            },
+            Cond::Order { a, b, pos } => Op::Order {
+                a: self.var(a)?,
+                b: self.var(b)?,
+                pos: *pos,
+            },
+            Cond::Verb {
+                subject,
+                object,
+                verb,
+                certainty,
+            } => Op::Verb {
+                subject: self.var(subject)?,
+                object: self.var(object)?,
+                verb: self.intern(verb),
+                certainty: *certainty,
+            },
             Cond::InUnit { sub, unit } => Op::InUnit {
                 sub: self.var(sub)?,
                 unit: self.var(unit)?,
             },
-        };
-        Ok(self.push(op))
+            Cond::Call { def, args } => Op::Call {
+                def: u16::try_from(*def).map_err(|_| LowerError::Internal {
+                    what: "more defs than a plan can index",
+                })?,
+                args: args.iter().map(|a| self.var(a)).collect::<Result<_, _>>()?,
+            },
+            _ => {
+                return Err(LowerError::Internal {
+                    what: "a condition reached the relation emitter",
+                });
+            }
+        })
     }
 }
 
@@ -282,6 +330,24 @@ fn place_conds(l: &Lowered, placed_names: &[&str]) -> (Vec<Vec<Cond>>, Vec<Cond>
     (slots, subject_tail, tail)
 }
 
+/// The defs in text order: each parameter is a fresh slot visible only in its own body.
+fn emit_defs(b: &mut Builder, defs: &[DefItem]) -> Result<Vec<Def>, LowerError> {
+    let mut out = Vec::new();
+    for d in defs {
+        let params: Vec<VarId> = d.params.iter().map(|_| b.fresh()).collect();
+        let mark = b.env.len();
+        b.env
+            .extend(d.params.iter().cloned().zip(params.iter().copied()));
+        let body = b.cond(&d.body);
+        b.env.truncate(mark);
+        out.push(Def {
+            params,
+            body: body?,
+        });
+    }
+    Ok(out)
+}
+
 pub(super) fn emit(l: &Lowered, provenance: Provenance) -> Result<Plan, LowerError> {
     let order = order_finds(&l.finds);
     let placed_names: Vec<&str> = order.iter().map(|&i| l.finds[i].name.as_str()).collect();
@@ -295,6 +361,7 @@ pub(super) fn emit(l: &Lowered, provenance: Provenance) -> Result<Plan, LowerErr
         next_var: 0,
         env: Vec::new(),
     };
+    let defs = emit_defs(&mut b, &l.defs)?;
     let mut clauses = Vec::new();
     for (slot, &fi) in order.iter().enumerate() {
         let f = &l.finds[fi];
@@ -362,7 +429,7 @@ pub(super) fn emit(l: &Lowered, provenance: Provenance) -> Result<Plan, LowerErr
         vars: b.next_var,
         strings: b.strings,
         ops: b.ops,
-        defs: Vec::new(),
+        defs,
         clauses,
         subjects,
         unresolved,

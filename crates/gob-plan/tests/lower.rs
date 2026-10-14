@@ -207,3 +207,102 @@ fn in_unit_lowers_with_an_object() {
     ]);
     assert!(lower(&src).is_ok(), "{:?}", lower(&src));
 }
+
+fn def_rule(defs: &[&str], body: &[&str]) -> String {
+    let mut lines: Vec<&str> = defs.to_vec();
+    lines.extend_from_slice(body);
+    rule(&lines)
+}
+
+// frob:ticket 01M4WGCDK2ND23SEPX38Q9444T
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn defs_and_calls_lower_to_views_and_call_ops() {
+    let src = def_rule(
+        &[
+            "def is_x(f) = f.name == \"x\"",
+            "def is_x_and_long(f) = is_x(f) and f.line > 3",
+        ],
+        &[
+            "find g: function",
+            "where is_x_and_long(g)",
+            "report g \"x\"",
+        ],
+    );
+    let plan = lower(&src).expect("defs lower");
+    let parts = plan.parts();
+    assert_eq!(parts.defs.len(), 2);
+    assert_eq!(parts.defs[0].params.len(), 1);
+    let calls = parts
+        .ops
+        .iter()
+        .filter(|o| matches!(o, Op::Call { .. }))
+        .count();
+    assert_eq!(
+        calls, 2,
+        "one call in the body of the second def, one in the rule"
+    );
+}
+
+// frob:ticket 01M4WGCDK2ND23SEPX38Q9444T
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn a_call_with_the_wrong_arity_or_an_unknown_def_is_refused() {
+    for body in ["where nope(g)", "where is_x(g, g)"] {
+        let src = def_rule(
+            &["def is_x(f) = f.name == \"x\""],
+            &["find g: function", body, "report g \"x\""],
+        );
+        assert!(
+            matches!(lower(&src), Err(LowerError::Unsupported { .. })),
+            "{body}"
+        );
+    }
+}
+
+// frob:ticket 01M4WGCDK2ND23SEPX38Q9444T
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn count_lowers_against_an_integer_or_a_knob_in_either_order() {
+    for (knob, clause) in [
+        ("", "where count(c: call directly inside f) > 3"),
+        ("", "where 3 < count(c: call directly inside f)"),
+        (
+            "knob n: int = 4 \"d\"",
+            "where count(c: call directly inside f where c.name == \"a\") >= knob.n",
+        ),
+    ] {
+        let plan = lower(&knob_rule(knob, clause)).unwrap_or_else(|e| panic!("{clause}: {e}"));
+        let counts: Vec<&Op> = plan
+            .parts()
+            .ops
+            .iter()
+            .filter(|o| matches!(o, Op::CountCmp { .. }))
+            .collect();
+        assert_eq!(counts.len(), 1, "{clause}");
+    }
+    let flipped = lower(&knob_rule("", "where 3 < count(c: call directly inside f)")).unwrap();
+    let plain = lower(&knob_rule("", "where count(c: call directly inside f) > 3")).unwrap();
+    assert_eq!(flipped.to_bytes(), plain.to_bytes());
+}
+
+// frob:ticket 01M4WGCDK2ND23SEPX38Q9444T
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn a_count_of_a_count_ratio_is_refused() {
+    let src = knob_rule(
+        "",
+        "where count(c: call directly inside f) >= count(c: call directly inside f)",
+    );
+    assert!(matches!(lower(&src), Err(LowerError::Unsupported { .. })));
+}
+
+// frob:ticket 01M4WGCDK2ND23SEPX38Q9444T
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn paths_of_three_or_more_segments_are_dotted_field_operands() {
+    let src = knob_rule("", "where exists f.target.anchor and f.a.b.c == \"x\"");
+    let plan = lower(&src).expect("deep paths lower");
+    assert!(plan.parts().strings.iter().any(|s| s == "target.anchor"));
+    assert!(plan.parts().strings.iter().any(|s| s == "a.b.c"));
+}
