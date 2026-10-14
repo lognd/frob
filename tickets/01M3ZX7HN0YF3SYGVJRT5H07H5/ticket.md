@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-14T21:06:09Z"
+updated = "2026-10-14T21:15:36Z"
 idempotency_key = "m2-codegen-gen"
 labels = ["milestone:2", "area:grl"]
 scope = ["crates/gob-dev/src/**", "packs/std/**", "design/model.grmb", "docs/reference/**", "crates/gob-plan/src/lower/**"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the generated module, when inspected, then it has #![forbid(unsafe_code)] and the model gives its node no grants so any ambient effect is CAP001"
-bound = false
+bound = true
 +++
 
 Implements plugins.md section 6.1; security.md section 2.8.
