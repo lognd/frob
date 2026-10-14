@@ -2,13 +2,13 @@
 id = "01M4MAPRB2H8WZKJZSH3A9N1B2"
 title = "GRL lowering: knobs, side-relation operands, is/in/exists/has attr, defs, count, reaches, snippets"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-11T01:54:42Z"
-updated = "2026-10-14T05:17:34Z"
+updated = "2026-10-14T05:19:30Z"
 scope = ["crates/gob-plan/src/lower/**", "crates/gob-plan/src/plan/**", "crates/gob-plan/tests/**"]
 
 [[links]]
