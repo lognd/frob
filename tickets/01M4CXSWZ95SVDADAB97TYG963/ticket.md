@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:33Z"
-updated = "2026-10-14T05:58:35Z"
-scope = ["changelog.d/**", "crates/gob-symbols/**", "crates/gob-check/**", "crates/gob-exec/**", "docs/**", "crates/frob/**"]
+updated = "2026-10-14T06:02:49Z"
+scope = ["changelog.d/**", "crates/gob-symbols/**", "crates/gob-check/**", "crates/gob-exec/**", "crates/frob/**", "docs/reference/**", "docs/schemas/**"]
 
 [[acceptance]]
 text = "Given a file that ty checks clean, when resolved, then annotated call targets are Must; given a failing check, then they are claimed (May)"
