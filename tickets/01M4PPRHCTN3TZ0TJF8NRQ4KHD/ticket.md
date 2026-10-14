@@ -2,7 +2,8 @@
 id = "01M4PPRHCTN3TZ0TJF8NRQ4KHD"
 title = "G17b: gob-pattern grammar-level patterns, metavariables, fix templates and GPOL id generation"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 reporter = "lognd"
