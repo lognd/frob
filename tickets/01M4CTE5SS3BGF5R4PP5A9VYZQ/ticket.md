@@ -8,12 +8,12 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:43Z"
-updated = "2026-10-14T13:45:08Z"
+updated = "2026-10-14T14:02:41Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/gob-rules/**", "crates/frob-check/**", "crates/grimble-check/**", "crates/crunk-check/**"]
 
 [[acceptance]]
 text = "Given rule crates, when the lint runs, then no rule body calls std::fs read functions (enforced by a rule or clippy disallowed_methods)"
-bound = false
+bound = true
 +++
 
 notes/review/audit-2026-10-07.md M7: 15+ places read files from disk instead of the snapshot.
