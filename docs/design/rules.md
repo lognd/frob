@@ -290,11 +290,7 @@ compatibility is answered (D42, ast-grep-core 0.45.3 against the
 workspace tree-sitter pin); the remaining spike is an ast-grep `Doc`
 implementation over U terms; the spike is decided: level 2 uses the in-house matcher of
 `gob-pattern` (kind, role, callee, all, any, not, inside, has), no `Doc` trait (G17a);
-grammar-level `pattern` rules (G17b) are parsed with the language's own tree-sitter grammar: `$X`
-binds one node, `$$$ARGS` zero or more siblings (a repeated name must capture equal text), and a
-`fix` template splices the captures back (`RuleFile::find_source`, `grammar::apply`). Follow,
-precede and regex combinators, metavariable constraints, GPOL id generation and rule-embedded
-tests are separate tickets. A rule
+metavariable patterns and fixes follow in G17b. A rule
 authored at level 1
 can be promoted to level 2 by changing `language`, and to level 3 by
 `cargo dev scaffold-rule`, keeping its id and tests.
