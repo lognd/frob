@@ -1,0 +1,2 @@
+{"version":"1.1.400","time":"0.1","generalDiagnostics":[{"file":"/work/app/main.py","severity":"error","message":"Argument of type \"int\" cannot be assigned","range":{"start":{"line":3,"character":4},"end":{"line":3,"character":8}},"rule":"reportArgumentType"},
+{"file":"/work/app/main.py","severity":"information","message":"Type of \"x\" is \"int\"","range":{"start":{"line":9,"character":0},"end":{"line":9,"character":1}}}],"summary":{"errorCount":1,"warningCount":0,"informationCount":1}}

@@ -22,6 +22,7 @@ use crate::model::{
     CallSite, FileSymbols, LocalBinding, Receiver, RefSite, SymbolKind, UseBinding,
 };
 use crate::symref::Symref;
+use crate::types::AnnotationWeight;
 use gob_ir::Status;
 
 /// Deepest chain of re-exports (`from .x import y` in an `__init__`) followed.
@@ -404,6 +405,11 @@ impl SymbolGraph {
                     return Outcome::Hit(own.to_vec(), Status::Must);
                 }
             }
+            if let Some(Receiver::Typed(ty)) = &call.receiver
+                && let Some(out) = self.py_typed_method(py, node, call, ty)
+            {
+                return out;
+            }
             return Self::py_unknown_receiver(py, &call.callee);
         }
         let Some(head) = call.qual_path.first() else {
@@ -450,6 +456,72 @@ impl SymbolGraph {
             status = Status::May;
         }
         Outcome::Hit(self.py_construct(py, nodes), status)
+    }
+
+    /// `x.m()` where `x` is a parameter annotated `ty`: the method of the annotated class, weighed by the type facts.
+    ///
+    /// Exact (Must) only where the checker vouches for the file, claimed (May) otherwise, and
+    /// `None` (fall back to every method of that name) when annotations are hints only or the
+    /// annotated class does not define the method here.
+    fn py_typed_method(
+        &self,
+        py: &PyIndex,
+        node: NodeIndex,
+        call: &CallSite,
+        ty: &str,
+    ) -> Option<Outcome> {
+        let weight = self
+            .type_facts
+            .weight(call.caller.path(), call.line);
+        if weight == AnnotationWeight::Hint {
+            return None;
+        }
+        let mut segs = ty.split('.').map(str::to_owned);
+        let head = segs.next()?;
+        let rest: Vec<String> = segs.collect();
+        let mut classes = Vec::new();
+        let lexical = self.py_lexical(py, node, &head);
+        if lexical.is_empty() {
+            let from = call.caller.path();
+            for u in Self::py_uses(py, &call.caller, &head) {
+                let (dots, mut path) = split_target(&u.target);
+                path.extend(rest.iter().cloned());
+                if let Some(f) = self.py_walk(py, (from, dots), &path, 0) {
+                    classes.extend(f.nodes);
+                }
+            }
+        } else {
+            let mut cur = lexical;
+            for seg in &rest {
+                cur = cur
+                    .iter()
+                    .flat_map(|&n| py.kids_of(n, seg).iter().copied())
+                    .collect();
+            }
+            classes = cur;
+        }
+        classes.retain(|&n| self.graph[n].kind == SymbolKind::Class);
+        classes.sort();
+        classes.dedup();
+        let mut methods: Vec<NodeIndex> = classes
+            .iter()
+            .flat_map(|&c| py.kids_of(c, &call.callee).iter().copied())
+            .collect();
+        methods.sort();
+        methods.dedup();
+        if methods.is_empty() {
+            return None;
+        }
+        let status = if weight == AnnotationWeight::Exact && methods.len() == 1 {
+            Status::Must
+        } else {
+            Status::May
+        };
+        tracing::debug!(
+            callee = %call.callee, ty, ?weight, ?status,
+            "annotated receiver resolved"
+        );
+        Some(Outcome::Hit(methods, status))
     }
 
     /// Follows `rest` then `callee` through the members of `start` (classes and functions defined in this repository).

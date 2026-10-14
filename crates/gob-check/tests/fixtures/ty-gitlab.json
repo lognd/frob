@@ -1,0 +1,2 @@
+[{"description":"Object of type `int` is not assignable to `str`","check_name":"invalid-assignment","fingerprint":"a1","severity":"major","location":{"path":"app/main.py","positions":{"begin":{"line":4,"column":5},"end":{"line":4,"column":9}}}},
+{"description":"Name `x` used when not defined","check_name":"unresolved-reference","fingerprint":"b2","severity":"major","location":{"path":"app/other.py","positions":{"begin":{"line":2,"column":1},"end":{"line":2,"column":2}}}}]

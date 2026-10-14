@@ -199,6 +199,8 @@ pub(crate) fn parse(parser: ToolParser, stdout: &str) -> Result<Vec<RawFinding>,
         ToolParser::CargoJson => crate::cargo_json::parse_cargo_json(stdout),
         ToolParser::StylelintJson => parse_stylelint(stdout),
         ToolParser::RuffJson => parse_ruff(stdout),
+        ToolParser::TyGitlab => crate::type_parse::parse_ty_gitlab(stdout),
+        ToolParser::PyrightJson => crate::type_parse::parse_pyright(stdout),
     }
 }
 
@@ -378,6 +380,8 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
         | ToolParser::Sarif
         | ToolParser::CargoJson
         | ToolParser::RuffJson
+        | ToolParser::TyGitlab
+        | ToolParser::PyrightJson
         | ToolParser::None => BTreeMap::new(),
     }
 }
@@ -386,7 +390,10 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
 fn fallback(parser: ToolParser) -> &'static str {
     match parser {
         ToolParser::ActionlintJson => "CI014",
-        ToolParser::CargoJson | ToolParser::RuffJson => "LINT001",
+        ToolParser::CargoJson
+        | ToolParser::RuffJson
+        | ToolParser::TyGitlab
+        | ToolParser::PyrightJson => "LINT001",
         _ => "TOOL002",
     }
 }
@@ -600,7 +607,11 @@ pub(crate) fn check_version(stage: &ToolStage, found: Option<&str>) -> VersionVe
 /// The default arguments that print `parser`'s tool version.
 pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
     match parser {
-        ToolParser::ZizmorJsonV1 | ToolParser::StylelintJson | ToolParser::RuffJson => {
+        ToolParser::ZizmorJsonV1
+        | ToolParser::StylelintJson
+        | ToolParser::RuffJson
+        | ToolParser::TyGitlab
+        | ToolParser::PyrightJson => {
             Some(vec!["--version".to_owned()])
         }
         ToolParser::ActionlintJson => Some(vec!["-version".to_owned()]),

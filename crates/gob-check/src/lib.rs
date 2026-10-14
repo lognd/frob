@@ -74,8 +74,10 @@ mod store;
 mod telemetry;
 mod tool_parse;
 mod tools;
+mod type_parse;
 
-pub use config::{CheckTable, FailOn, PerfTable, ToolParser, ToolStage};
+pub use type_parse::type_facts_from_output;
+pub use config::{CheckTable, FailOn, PerfTable, ToolParser, ToolStage, TypesTable};
 pub use core::{Core, FileIndex};
 pub use error::CheckError;
 pub use filecheck::{CheckCtx, FileCheck, SharedCtx};

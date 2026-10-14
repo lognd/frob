@@ -75,6 +75,7 @@ mod rust;
 mod source_model;
 mod stdtypes;
 mod symref;
+mod types;
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
 mod typescript;
 // frob:ticket 01M44YQWGP5553K61QKC8HB0GQ
@@ -121,6 +122,7 @@ pub use pipeline::{
     BuildStats, EXTRACTOR_VERSION, SkipKind, SkippedFile, build_graph, build_graph_with_stats,
     extract_file, fold_file,
 };
+pub use types::{AnnotationWeight, TypeFacts, TypesTrust};
 pub use python::{
     PythonAdapter, is_python_path, is_python_test_file, is_python_test_fn, is_python_test_module,
 };

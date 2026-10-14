@@ -34,6 +34,7 @@ mod typescript;
 use csharp::CsIndex;
 
 use python::{PyIndex, is_python};
+use crate::types::TypeFacts;
 use typescript::{TsIndex, is_ts};
 
 /// Kind of a graph edge.
@@ -179,6 +180,8 @@ pub enum ResolveError {
 #[derive(Debug, Default)]
 pub struct SymbolGraph {
     graph: DiGraph<SymbolRecord, Edge>,
+    /// Checker results and trust policy deciding how far Python annotations resolve calls.
+    type_facts: TypeFacts,
     /// (from, to, kind) to its edge: `link` dedupes in O(1) instead of scanning a hub's adjacency list.
     edge_ix: HashMap<(NodeIndex, NodeIndex, EdgeKind), EdgeIndex>,
     index: HashMap<Symref, NodeIndex>,
@@ -755,16 +758,21 @@ struct CallSink {
 impl SymbolGraph {
     /// Builds the graph from per-file results (any order), without crate manifests: calls resolve within a crate only.
     pub fn from_files(files: Vec<FileSymbols>) -> Self {
-        Self::build(files, None)
+        Self::build(files, None, TypeFacts::default())
+    }
+
+    /// Builds the graph like [`Self::from_files`], letting `facts` decide how far Python annotations resolve calls.
+    pub fn from_files_typed(files: Vec<FileSymbols>, facts: TypeFacts) -> Self {
+        Self::build(files, None, facts)
     }
 
     /// Builds the graph like [`Self::from_files`], resolving path calls across workspace crates
     /// through `use` imports and the dependency closure read by `deps`.
     pub fn from_files_with_deps(files: Vec<FileSymbols>, deps: &mut CrateDeps) -> Self {
-        Self::build(files, Some(deps))
+        Self::build(files, Some(deps), TypeFacts::default())
     }
 
-    fn build(mut files: Vec<FileSymbols>, deps: Option<&mut CrateDeps>) -> Self {
+    fn build(mut files: Vec<FileSymbols>, deps: Option<&mut CrateDeps>, facts: TypeFacts) -> Self {
         let t = std::time::Instant::now();
         let lap = |phase: &str| {
             tracing::debug!(
@@ -777,6 +785,7 @@ impl SymbolGraph {
         // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
         crate::model::merge_partials(&mut files);
         let mut g = Self::default();
+        g.type_facts = facts;
         for f in &files {
             g.add_file(f);
         }

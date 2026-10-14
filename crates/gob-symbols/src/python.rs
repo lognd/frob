@@ -30,7 +30,7 @@
 
 // frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use gob_ir::{GroupOrder, NodeId, NodeSpec, Operator, ScopeGraph, Sort, TermError, reserved};
 use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse};
@@ -193,6 +193,8 @@ struct Fold<'a> {
     units: Vec<(usize, bool)>,
     /// Binder names of the enclosing scopes (file, functions, lambdas), innermost last.
     bound: Vec<HashSet<String>>,
+    /// Annotated parameter types of the scopes in `bound` (same length), name to the annotation as written.
+    annotated: Vec<HashMap<String, String>>,
     sites: Vec<Site>,
     uses: Vec<PendingUse>,
 }
@@ -228,6 +230,29 @@ fn param_names(params: Node<'_>, text: &str, out: &mut Vec<String>) {
             _ => pattern_names(p, text, out),
         }
     }
+}
+
+/// The simple or dotted class annotation of each typed parameter of `params`, by name (`x: Foo`, `x: pkg.Foo = None`).
+fn param_annotations(params: Node<'_>, text: &str) -> HashMap<String, String> {
+    let mut out = HashMap::new();
+    for p in children(params).into_iter().filter(Node::is_named) {
+        if !matches!(p.kind(), "typed_parameter" | "typed_default_parameter") {
+            continue;
+        }
+        let name = p
+            .child_by_field_name("name")
+            .or_else(|| children(p).into_iter().find(Node::is_named));
+        let ty = p.child_by_field_name("type").map(|t| text_of(text, t));
+        if let (Some(n), Some(t)) = (name, ty)
+            && n.kind() == "identifier"
+            && t.split('.').all(|seg| {
+                !seg.is_empty() && seg.chars().all(|c| c.is_alphanumeric() || c == '_')
+            })
+        {
+            out.insert(text_of(text, n).to_owned(), t.to_owned());
+        }
+    }
+    out
 }
 
 /// Appends the names bound by the statements under `n` in its own scope, and the `global`/`nonlocal` names.
@@ -344,6 +369,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         ord_nodes: vec![None],
         units: Vec::new(),
         bound: Vec::new(),
+        annotated: Vec::new(),
         sites: Vec::new(),
         uses: Vec::new(),
     };
@@ -351,6 +377,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     let (doc, rest) = split_docstring(stmts);
     let names = scope_binders(Vec::new(), &rest, text);
     f.bound.push(names.iter().cloned().collect());
+    f.annotated.push(HashMap::new());
     let mut kids = Vec::new();
     if let Some(d) = doc.and_then(docstring_of) {
         kids.push(f.doc_node(d)?);
@@ -463,6 +490,12 @@ impl<'a> Fold<'a> {
     /// The ordinal of the unit calls are attributed to (0, the file, outside any def or class).
     fn caller(&self) -> usize {
         self.units.last().map_or(0, |u| u.0)
+    }
+
+    /// The annotation of `name` when its innermost binding scope is a function whose parameter it is.
+    fn annotation_of(&self, name: &str) -> Option<&String> {
+        let i = self.bound.iter().rposition(|s| s.contains(name))?;
+        self.annotated.get(i)?.get(name)
     }
 
     fn is_bound(&self, name: &str) -> bool {
@@ -669,6 +702,11 @@ impl<'a> Fold<'a> {
                 let head = chain[0].as_str();
                 if chain.len() == 1 && matches!(head, "self" | "cls") {
                     return method_on(Receiver::SelfValue);
+                }
+                if chain.len() == 1
+                    && let Some(ty) = self.annotation_of(head)
+                {
+                    return method_on(Receiver::Typed(ty.clone()));
                 }
                 if matches!(head, "self" | "cls") || self.is_bound(head) {
                     return method_on(Receiver::Expr);
@@ -1021,7 +1059,10 @@ impl<'a> Fold<'a> {
         let ord = self.alloc();
         self.units.push((ord, false));
         self.bound.push(binders.iter().cloned().collect());
+        self.annotated
+            .push(params.map(|p| param_annotations(p, self.cx.text)).unwrap_or_default());
         let body = self.body_group(block, &stmts, depth);
+        self.annotated.pop();
         self.bound.pop();
         self.units.pop();
         let kind = if in_class { "method" } else { "function" };
@@ -1090,9 +1131,11 @@ impl<'a> Fold<'a> {
         names.sort();
         names.dedup();
         self.bound.push(names.iter().cloned().collect());
+        self.annotated.push(HashMap::new());
         let body = n
             .child_by_field_name("body")
             .map(|b| self.with_expr(true, |f| f.tr(b, depth + 1)));
+        self.annotated.pop();
         self.bound.pop();
         let kids: Vec<NodeId> = body.transpose()?.into_iter().collect();
         let refs: Vec<&str> = names.iter().map(String::as_str).collect();

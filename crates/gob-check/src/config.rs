@@ -1,4 +1,4 @@
-//! The `[check]` and `[perf]` config tables and the `[[check.tool]]` stage entries.
+//! The `[check]`, `[perf]` and `[types]` config tables and the `[[check.tool]]` stage entries.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -6,8 +6,46 @@ use std::path::Path;
 use gob_config::{ConfigError, ConfigTable};
 use gob_diagnostics::UnresolvedPolicy;
 use gob_rules::Severity;
+use gob_symbols::TypesTrust;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
+/// How far Python type annotations are trusted when resolving calls (`docs/design/cohesion.md` 2.2).
+// frob:ticket 01M4CXSWZ95SVDADAB97TYG963
+#[derive(Debug, Clone, ConfigTable)]
+#[config(table = "types")]
+pub struct TypesTable {
+    /// `checked` (annotations are exact only in files the bound checker ran clean on), `annotated` (claimed, May) or `none` (hints only).
+    #[config(default = "checked".to_owned())]
+    pub trust: String,
+}
+
+impl TypesTable {
+    /// Load `[types]` from `<root>/<product>.toml` (a missing file means defaults) and validate `trust`.
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or an unknown `trust` spelling.
+    pub fn load(root: &Path, product: &str) -> Result<Self, ConfigError> {
+        let table = gob_config::load::<Self>(root, product)?.value;
+        table.trust()?;
+        Ok(table)
+    }
+
+    /// The parsed trust policy.
+    ///
+    /// # Errors
+    ///
+    /// [`ConfigError::Invalid`] when `trust` is not `checked`, `annotated` or `none`.
+    pub fn trust(&self) -> Result<TypesTrust, ConfigError> {
+        TypesTrust::parse(&self.trust).ok_or_else(|| {
+            ConfigError::Invalid {
+                table: "types".to_owned(),
+                message: format!("trust = {:?}: expected checked, annotated or none", self.trust),
+            }
+        })
+    }
+}
 
 /// Severity at which `frob check` fails (cli.md section 2, exit 1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -73,6 +111,14 @@ pub enum ToolParser {
     // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
     #[serde(rename = "ruff-json")]
     RuffJson,
+    /// `ty check --output-format gitlab`: a code-quality array with line and column; findings are `LINT001` and mark a file as not type-clean.
+    // frob:ticket 01M4CXSWZ95SVDADAB97TYG963
+    #[serde(rename = "ty-gitlab")]
+    TyGitlab,
+    /// `pyright --outputjson`: `generalDiagnostics` with 0-based ranges; error and warning findings are `LINT001` and mark a file as not type-clean.
+    // frob:ticket 01M4CXSWZ95SVDADAB97TYG963
+    #[serde(rename = "pyright-json")]
+    PyrightJson,
 }
 
 /// One external tool stage: a command run after the built-in rules (`[[check.tool]]`).
