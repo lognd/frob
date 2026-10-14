@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "Claude"
 created = "2026-10-14T06:07:51Z"
-updated = "2026-10-14T15:06:49Z"
+updated = "2026-10-14T15:07:20Z"
 scope = ["crates/gob-plan/**"]
 
 [[links]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "The executor answers MatchSnippet exactly from grammar-level matches over the file text, and Unknown/Unresolved without text"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "MatchSnippet round-trips through the plan codec and validates; unsupported snippet forms (cast, as roles, no language) are refused by name"
