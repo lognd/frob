@@ -714,6 +714,13 @@ process under the land lock (`.git/frob/land.lock`); there are no jobs
 and no job records (D25). No merge queue daemon, no deferred sweep, no
 mirror, no rapid debt; `land --wait <secs>` bounds only the wait for the
 land lock and exits 3 `E-WAIT-TIMEOUT` (retryable) when it expires.
+The lock is taken before the base merge and the check, so a queued land does no heavy
+work and the base cannot move under the holder's check (~78ATXCB). The holder file
+`.git/frob/land.lock.holder` is JSON (pid, holder, start, stage, last progress, build profile);
+`frob land --status` prints it. A watchdog thread in the holder releases the lock and exits 75
+when no stage has progressed and no child process runs for `FROB_LAND_STALL_SECS` (default
+1200); a waiter terminates a frob holder idle for twice that bound, and replaces the lock file
+when a dead holder's descendants still pin it, logging the reason. A debug build warns.
 The land check is a ratchet (~QAFRXM3): it refuses only blocking findings
 that are new relative to the base tip by fingerprint (rules.md section 6).
 Findings already on the base are reported as `pre_existing`, fixed ones as

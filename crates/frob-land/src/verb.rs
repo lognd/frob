@@ -4,8 +4,11 @@ use frob_ledger::model::Outcome as TicketOutcome;
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 
+use crate::error::LandError;
 use crate::land::land;
+use crate::lock::LandLock;
 use crate::plan::{LandOptions, LandOutcome, RetryPolicy};
+use frob_ledger::TicketId;
 
 /// Land a leased ticket branch onto the base branch, close the ticket and clean up.
 #[derive(Debug, Clone, gob_cli::Command)]
@@ -45,6 +48,12 @@ impl Command for Land {
                 .value_name("SECS")
                 .value_parser(gob_cli::clap::value_parser!(u64))
                 .help("Wait up to this many seconds for the land lock and to retry when the base moves (default 0)"),
+        )
+        .arg(
+            Arg::new("status")
+                .long("status")
+                .action(ArgAction::SetTrue)
+                .help("Show who holds the land lock, at which stage and for how long; land nothing"),
         )
         .arg(
             Arg::new("keep-worktree")
@@ -139,6 +148,7 @@ impl Command for Land {
                 ci_reader: None,
                 override_base_ci,
                 prechecked: false,
+                status: m.get_flag("status"),
             },
         })
     }
@@ -146,6 +156,9 @@ impl Command for Land {
     fn run(&self, ctx: &Context) -> Outcome<LandOutcome> {
         let mut opts = self.opts.clone();
         opts.dry_run = ctx.dry_run;
+        if opts.status {
+            return lock_status(ctx);
+        }
         let out = land(&ctx.cwd, &opts, &ctx.clock)?;
         let already = out.already;
         let mut warnings = out.warnings.clone();
@@ -171,4 +184,18 @@ impl Command for Land {
         }
         Ok(p)
     }
+}
+
+/// The `--status` result: the lock state in an otherwise empty outcome.
+fn lock_status(ctx: &Context) -> Outcome<LandOutcome> {
+    let repo = gob_git::Repo::discover(&ctx.cwd).map_err(|e| LandError::Config(e.to_string()))?;
+    let status = LandLock::status(repo.common_dir(), &*ctx.clock)?;
+    tracing::info!(held = status.held, summary = %status.summary, "land lock status");
+    let nil: TicketId = "0"
+        .repeat(26)
+        .parse()
+        .map_err(|_| LandError::Config("nil id".to_owned()))?;
+    let mut out = crate::land::blank_outcome(nil, "-", "-", &LandOptions::default());
+    out.lock = Some(status.clone());
+    Ok(Payload::new(out).with_warning(status.summary))
 }

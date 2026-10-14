@@ -22,7 +22,7 @@ pub mod verb;
 pub use base_ci::{CiReader, GhCli, LandConfig};
 pub use error::LandError;
 pub use land::land;
-pub use lock::LandLock;
+pub use lock::{HolderRecord, LandLock, LockOptions, LockStatus, StallAction};
 pub use plan::{LandOptions, LandOutcome, RetryPolicy};
 pub use ratchet::FindingNote;
 #[doc(hidden)]

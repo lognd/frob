@@ -1,0 +1,1 @@
+A wedged `frob land` no longer blocks every other land: the lock is taken before the check, a progress watchdog frees it, waiters take over stale holders, and `frob land --status` shows the holder and stage.

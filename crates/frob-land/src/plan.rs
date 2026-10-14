@@ -81,6 +81,8 @@ pub struct LandOptions {
     pub override_base_ci: Option<String>,
     /// The merge train already verified this ticket's tree as part of a batch; skip the per-ticket check (frob:ticket 01M4MH62H1AE14Z472QDSD1QBK).
     pub prechecked: bool,
+    /// Report the land lock's holder and stage, then stop (`--status`).
+    pub status: bool,
 }
 
 impl Default for LandOptions {
@@ -99,6 +101,7 @@ impl Default for LandOptions {
             ci_reader: None,
             override_base_ci: None,
             prechecked: false,
+            status: false,
         }
     }
 }
@@ -154,6 +157,9 @@ pub struct LandOutcome {
     /// The reason of the `--no-changelog` exemption this land recorded, when it did.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub changelog_exempt: Option<String>,
+    /// The land lock's state (`frob land --status` only).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lock: Option<crate::lock::LockStatus>,
 }
 
 /// The facts a plan is a pure function of.

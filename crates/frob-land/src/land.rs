@@ -77,7 +77,7 @@ pub fn land(
         return Ok(LandOutcome {
             already: true,
             outcome: view.ticket.front.outcome,
-            ..empty_outcome(id, &handle, &base, opts)
+            ..blank_outcome(id, &handle, &base, opts)
         });
     }
     let ready = prepare(repo, &cwd_root, here, &leases, &view, &base, opts)?;
@@ -107,6 +107,8 @@ struct Ready {
     evidence: EvidenceGuard,
     done: DoneGuard,
     out: LandOutcome,
+    /// The land lock, taken before the base merge and the check so verification never races another land.
+    lock: Option<LandLock>,
 }
 
 // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
@@ -123,6 +125,84 @@ fn ledger_only_ahead(
     let prefix = format!("{}/", dir.trim_end_matches('/'));
     let changed = wt.diff_names(&TreeRef::Oid(fork), &TreeRef::Oid(base_oid))?;
     Ok(changed.iter().all(|c| c.path.starts_with(&prefix)))
+}
+
+/// Take the land lock for a real land (none for a dry run), warning when running a debug build.
+fn take_land_lock(
+    repo: &Repo,
+    site: &Workspace,
+    handle: &str,
+    opts: &LandOptions,
+) -> Result<Option<LandLock>, LandError> {
+    if opts.dry_run {
+        return Ok(None);
+    }
+    let actor = site.ledger.actor()?;
+    let lock = LandLock::acquire(
+        repo.common_dir(),
+        Duration::from_secs(opts.wait_secs),
+        &format!("{actor} landing {handle}"),
+    )?;
+    if crate::lock::is_debug_build() {
+        tracing::warn!("this frob is an unoptimized debug build; lands run several times slower");
+    }
+    Ok(Some(lock))
+}
+
+/// Merge the base into the ticket branch (or judge it merged on a dry run); returns the note and whether it is merged.
+#[allow(clippy::too_many_arguments)]
+fn merge_or_assume(
+    wt: &Repo,
+    wt_path: &Path,
+    site: &Workspace,
+    handle: &str,
+    branch: &str,
+    base: &str,
+    base_oid: Oid,
+    lock: Option<&LandLock>,
+    opts: &LandOptions,
+) -> Result<(Option<String>, bool), LandError> {
+    let mut base_merge = None;
+    let fork = wt.merge_base(&base_ref(base), branch)?;
+    let mut base_merged = fork == Some(base_oid);
+    if !base_merged && !opts.dry_run {
+        if let Some(l) = lock {
+            l.progress("merge");
+        }
+        base_merge = Some(merge_base_in(wt, wt_path, base, handle)?);
+        base_merged = true;
+    } else if base_merged {
+        base_merge = Some("up-to-date".to_owned());
+    } else if ledger_only_ahead(wt, fork, base_oid, &site.ledger.config().dir)? {
+        // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
+        // Trunk-mode ticket verbs commit to the base all the time; those commits carry no code.
+        tracing::info!(
+            base,
+            "dry run: the base is ahead only by ledger commits; treated as merged"
+        );
+        base_merge = Some("up-to-date (the base moved only by ledger commits)".to_owned());
+        base_merged = true;
+    }
+    Ok((base_merge, base_merged))
+}
+
+/// Build the evidence and done guards for a ticket, applying the caller's bypass reasons.
+fn build_guards(
+    site: &Workspace,
+    id: TicketId,
+    wt_path: &Path,
+    opts: &LandOptions,
+) -> Result<(EvidenceGuard, DoneGuard), LandError> {
+    let mut evidence = EvidenceGuard::for_ticket(&site.ledger, &site.store, id)?;
+    let mut done = DoneGuard::for_ticket(&site.ledger, id, wt_path)?;
+    if let Some(reason) = &opts.no_evidence_reason {
+        evidence = evidence.allow_bypass(reason.clone());
+        done = done.allow_bypass(reason.clone());
+    }
+    if let Some(reason) = &opts.no_changelog_reason {
+        done = done.allow_no_changelog(reason.clone());
+    }
+    Ok((evidence, done))
 }
 
 /// Check every precondition (merging the base into the ticket branch unless dry-running).
@@ -156,15 +236,7 @@ fn prepare(
     } else {
         Workspace::open(&primary, clock.clone())?
     };
-    let mut evidence = EvidenceGuard::for_ticket(&site.ledger, &site.store, id)?;
-    let mut done = DoneGuard::for_ticket(&site.ledger, id, &wt_path)?;
-    if let Some(reason) = &opts.no_evidence_reason {
-        evidence = evidence.allow_bypass(reason.clone());
-        done = done.allow_bypass(reason.clone());
-    }
-    if let Some(reason) = &opts.no_changelog_reason {
-        done = done.allow_no_changelog(reason.clone());
-    }
+    let (evidence, done) = build_guards(&site, id, &wt_path, opts)?;
     run_guards(view, &handle, &evidence, &done, opts)?;
 
     let base_oid = wt.rev_parse(&base_ref(base)).map_err(|_| {
@@ -182,30 +254,36 @@ fn prepare(
         opts.override_base_ci.as_deref(),
         (&site.ledger, &handle),
     )?;
-    let mut base_merge = None;
-    let fork = wt.merge_base(&base_ref(base), &branch)?;
-    let mut base_merged = fork == Some(base_oid);
-    if !base_merged && !opts.dry_run {
-        base_merge = Some(merge_base_in(&wt, &wt_path, base, &handle)?);
-        base_merged = true;
-    } else if base_merged {
-        base_merge = Some("up-to-date".to_owned());
-    } else if ledger_only_ahead(&wt, fork, base_oid, &site.ledger.config().dir)? {
-        // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
-        // Trunk-mode ticket verbs commit to the base all the time; those commits carry no code.
-        tracing::info!(
-            base,
-            "dry run: the base is ahead only by ledger commits; treated as merged"
-        );
-        base_merge = Some("up-to-date (the base moved only by ledger commits)".to_owned());
-        base_merged = true;
-    }
+    // frob:ticket 01M4W4R7PNWSRECR99078ATXCB
+    // The lock is taken before the merge and the check: a queued land does no heavy work (and so
+    // never contends on cargo's build lock with the holder), and the base cannot move under the check.
+    let lock = take_land_lock(&repo, &site, &handle, opts)?;
+    let (base_merge, base_merged) = merge_or_assume(
+        &wt,
+        &wt_path,
+        &site,
+        &handle,
+        &branch,
+        base,
+        base_oid,
+        lock.as_ref(),
+        opts,
+    )?;
     let mut warnings = ci_gate.warnings;
+    if lock.is_some() && crate::lock::is_debug_build() {
+        warnings.push(
+            "this frob is an unoptimized debug build; use the optimized binary for lands"
+                .to_owned(),
+        );
+    }
     let mut ratchet = Ratchet::default();
     if base_merged && opts.prechecked {
         // frob:ticket 01M4MH62H1AE14Z472QDSD1QBK
         tracing::info!(ticket = %id, "check skipped: the merge train verified the batch tree");
     } else if base_merged {
+        if let Some(l) = &lock {
+            l.progress("check");
+        }
         ratchet = verify_check(&wt, &wt_path, &site.ledger, &handle, base, opts)?;
     } else {
         // A dry run leaves the base unmerged, so the ticket-scoped diff would
@@ -225,7 +303,7 @@ fn prepare(
         warnings,
         pre_existing: ratchet.pre_existing,
         resolved: ratchet.resolved,
-        ..empty_outcome(id, &handle, base, opts)
+        ..blank_outcome(id, &handle, base, opts)
     };
     let cone = ratchet.cone;
     Ok(Ready {
@@ -245,6 +323,7 @@ fn prepare(
         evidence,
         done,
         out,
+        lock,
     })
 }
 
@@ -278,11 +357,10 @@ impl Ready {
         let on_branch = self.site.ledger.config().mode == RefMode::Branch;
         let actor = self.site.ledger.actor()?;
         let started = Instant::now();
-        let _lock = LandLock::acquire(
-            self.repo.common_dir(),
-            Duration::from_secs(opts.wait_secs),
-            &format!("{actor} landing {}", self.handle),
-        )?;
+        let lock = self.lock.take().ok_or_else(|| {
+            LandError::Config("publish without the land lock (a dry run cannot publish)".to_owned())
+        })?;
+        lock.progress("publish");
         let ctx = Publish {
             repo: &self.repo,
             wt: &self.wt,
@@ -320,6 +398,7 @@ impl Ready {
             });
             match advanced {
                 Err(LandError::Refused(r)) if retrying && r.code == CODE_STALE => {
+                    lock.progress("recheck");
                     if let Some(r) = ctx.recover_stale(
                         &site.ledger,
                         opts,
@@ -335,6 +414,7 @@ impl Ready {
                 }
                 other => break other?,
             }
+            lock.progress("publish");
         };
         self.out.attempts = attempt;
         self.out.commit = Some(oid.to_string());
@@ -436,7 +516,12 @@ fn collect_garbage(
 }
 
 /// A blank outcome for `id`; callers fill in what they did.
-fn empty_outcome(id: TicketId, handle: &str, base: &str, opts: &LandOptions) -> LandOutcome {
+pub(crate) fn blank_outcome(
+    id: TicketId,
+    handle: &str,
+    base: &str,
+    opts: &LandOptions,
+) -> LandOutcome {
     LandOutcome {
         id,
         handle: handle.to_owned(),
@@ -458,6 +543,7 @@ fn empty_outcome(id: TicketId, handle: &str, base: &str, opts: &LandOptions) -> 
         pre_existing: Vec::new(),
         resolved: Vec::new(),
         changelog_exempt: None,
+        lock: None,
     }
 }
 
