@@ -2,12 +2,12 @@
 id = "01M4W7DAHAVC5HDWJJ5NPGXR8M"
 title = "Land verification re-runs the whole workspace (clippy, rustdoc, test build) on every land: make it touched-set incremental and offloadable"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T03:31:03Z"
-updated = "2026-10-14T03:32:58Z"
+updated = "2026-10-14T04:02:31Z"
 idempotency_key = "land-check-cost-20261013"
 scope = ["crates/frob-land/**"]
 
