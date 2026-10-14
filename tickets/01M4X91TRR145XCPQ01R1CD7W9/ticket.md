@@ -2,7 +2,8 @@
 id = "01M4X91TRR145XCPQ01R1CD7W9"
 title = "GRL lowering: needs vocab(NAME) and vocab membership (in knob.NAME)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
