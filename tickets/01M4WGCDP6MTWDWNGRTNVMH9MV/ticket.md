@@ -2,7 +2,8 @@
 id = "01M4WGCDP6MTWDWNGRTNVMH9MV"
 title = "GRL lowering: reaches with within knob"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "Claude"
