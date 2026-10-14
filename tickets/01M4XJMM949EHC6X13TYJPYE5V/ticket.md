@@ -4,9 +4,10 @@ title = "GRL executor/runner: kinds link and directive, edge relations calls and
 type = "task"
 category = "todo"
 priority = "medium"
+points = 8
 reporter = "lognd"
 created = "2026-10-14T16:06:31Z"
-updated = "2026-10-14T16:06:31Z"
+updated = "2026-10-14T16:06:48Z"
 labels = ["area:grl"]
 scope = ["crates/gob-plan/src/exec/**", "crates/gob-plan/src/examples/**"]
 +++
