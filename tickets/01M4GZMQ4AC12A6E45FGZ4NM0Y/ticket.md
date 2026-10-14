@@ -2,7 +2,8 @@
 id = "01M4GZMQ4AC12A6E45FGZ4NM0Y"
 title = "TOOL001 pre-existing match is keyed on the raw failure excerpt, so a tool stage already red on the base is NEW on every land when its output varies (timings, ordering)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
