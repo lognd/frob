@@ -7,9 +7,9 @@ priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-14T16:06:31Z"
-updated = "2026-10-14T16:19:20Z"
+updated = "2026-10-14T16:22:51Z"
 labels = ["area:grl"]
-scope = ["crates/gob-plan/src/exec/**", "crates/gob-plan/src/examples/**", "crates/gob-plan/src/lower/convert.rs"]
+scope = ["crates/gob-plan/src/exec/**", "crates/gob-plan/src/examples/**", "crates/gob-plan/src/lower/convert.rs", "docs/design/rules.md", "changelog.d/01M4XJMM949EHC6X13TYJPYE5V.*"]
 
 [[acceptance]]
 text = "Given the TODO001 rule, when its examples run through run_example, then all pass (kind directive is supported)"
