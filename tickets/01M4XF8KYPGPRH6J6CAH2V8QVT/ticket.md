@@ -2,7 +2,8 @@
 id = "01M4XF8KYPGPRH6J6CAH2V8QVT"
 title = "GRL lowering: snippet casts, as roles, and fix-template metavariables"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
