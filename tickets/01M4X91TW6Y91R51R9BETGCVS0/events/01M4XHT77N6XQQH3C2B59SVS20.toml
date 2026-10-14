@@ -1,0 +1,37 @@
+kind = "evidence"
+captured_at = "2026-10-14T15:52:05Z"
+digest = "de99ca4d2961fff6d60fb056033837d81ba50a5588e1a097bf58447e901bfc7d"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ef283fb2-afc6-4de2-b7cd-03b1409aceb6 with nextest profile: default
+    Starting 15 tests across 1 binary
+        PASS [   0.009s] gob-plan::exec_relations a_verb_reads_its_relation_and_peer_of_reads_the_term
+        PASS [   0.009s] gob-plan::exec_relations a_def_is_a_view_computed_once_per_distinct_arguments
+        PASS [   0.009s] gob-plan::exec_relations find_over_a_side_relation_binds_the_typed_rows
+        PASS [   0.009s] gob-plan::exec_relations a_glob_set_op_matches_any_glob_in_a_side_column
+        PASS [   0.009s] gob-plan::exec_relations reaches_across_a_may_edge_is_unknown_with_the_edge_on_the_frontier
+        PASS [   0.010s] gob-plan::exec_relations a_relation_the_plan_names_but_the_caller_lacks_is_refused
+        PASS [   0.009s] gob-plan::exec_relations a_count_op_compares_against_a_knob_that_the_rules_table_overrides
+        PASS [   0.010s] gob-plan::exec_relations an_in_vocab_op_tests_a_name_against_the_language_vocabulary_classes
+        PASS [   0.011s] gob-plan::exec_relations a_knob_override_changes_a_count_threshold
+        PASS [   0.011s] gob-plan::exec_relations a_lowered_def_runs_as_a_view
+        PASS [   0.011s] gob-plan::exec_relations a_glob_operand_op_matches_a_path_against_a_row_glob_and_an_invalid_glob_is_unknown
+        PASS [   0.013s] gob-plan::exec_relations is_exists_and_under_filter_function_names
+        PASS [   0.005s] gob-plan::exec_relations side_tables_are_typed_against_the_catalog
+        PASS [   0.006s] gob-plan::exec_relations slug_and_resolve_operands_compute_their_text
+        PASS [   0.006s] gob-plan::exec_relations side_tables_report_their_shape
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 15 tests run: 15 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test exec_relations"
+size = 1972
+status = "measured"
+test_count = 15
+tests_digest = "9968f42be4e13b69c2b429d490dd385061689d362ff6048859afd39414d8d124"
+at = "2026-10-14T15:52:05Z"
+actor = "lognd"
+rev = 1
