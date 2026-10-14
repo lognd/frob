@@ -25,7 +25,7 @@ mod serve;
 extern crate self as gob_cli;
 
 pub use clap;
-pub use cli::{Cli, Guard, run_for_test};
+pub use cli::{Cli, Guard, Presenter, run_for_test};
 pub use command::{Command, augment, parse};
 pub use context::{ColorMode, Context, FormatChoice};
 pub use error::{CliError, FindingsFailure, Outcome, Payload};

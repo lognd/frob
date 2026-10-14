@@ -21,6 +21,17 @@ pub struct Cli {
     pub(crate) verbs: Vec<Registered>,
     // frob:ticket 01M40FXV09GYGBH9YZZANDZXZ4
     guard: Option<Guard>,
+    // frob:ticket 01M3ZX87VKDKC0N65NH77EBEJP
+    presenter: Option<Presenter>,
+}
+
+/// A product's text-only presentation hooks; they add lines and never change an outcome or exit code.
+#[derive(Clone, Copy)]
+pub struct Presenter {
+    /// A one-line next step for a successful verb: `(dotted verb, envelope data, context)`.
+    pub next_step: fn(&str, &serde_json::Value, &Context) -> Option<String>,
+    /// Extra help lines after a failure or unknown verb: `(working directory)`.
+    pub failure_help: fn(&Path) -> Option<String>,
 }
 
 /// A product's precondition check, run after parsing and before a verb: `(verb path, context)`.
@@ -47,6 +58,7 @@ impl Cli {
             version,
             verbs: Vec::new(),
             guard: None,
+            presenter: None,
         }
         .register::<SchemaCmd>()
         .register::<ServeCmd>()
@@ -56,6 +68,13 @@ impl Cli {
     #[must_use]
     pub fn with_guard(mut self, guard: Guard) -> Self {
         self.guard = Some(guard);
+        self
+    }
+
+    /// Add text-only presentation lines from `presenter` (JSON output is never touched).
+    #[must_use]
+    pub fn with_presenter(mut self, presenter: Presenter) -> Self {
+        self.presenter = Some(presenter);
         self
     }
 
@@ -227,7 +246,17 @@ impl Cli {
         let relaxed = wants_schema(&full);
         let matches = match self.build(relaxed).try_get_matches_from(&full) {
             Ok(m) => m,
-            Err(e) => return self.parse_failure(&e, &full),
+            Err(e) => {
+                let mut exec = self.parse_failure(&e, &full);
+                if exec.exit != 0 && !sniff_json(&full) {
+                    let cwd = default_cwd.map_or_else(
+                        || std::env::current_dir().unwrap_or_default(),
+                        Path::to_path_buf,
+                    );
+                    self.add_failure_help(&mut exec, &cwd);
+                }
+                return exec;
+            }
         };
         let (path, leaf) = leaf_of(&matches);
         let ctx = match self.context(leaf, default_cwd, log) {
@@ -275,11 +304,24 @@ impl Cli {
                     already = erased.already,
                     "verb ok"
                 );
-                render::success(&dotted, erased, ctx.json, ctx.quiet, ctx.color)
+                let step = self
+                    .presenter
+                    .filter(|_| !ctx.json && !ctx.quiet && !ctx.markdown())
+                    .and_then(|p| (p.next_step)(&dotted, &erased.data, &ctx));
+                let mut exec = render::success(&dotted, erased, ctx.json, ctx.quiet, ctx.color);
+                if let Some(line) = step {
+                    tracing::debug!(%line, "next step appended");
+                    render::append_line(&mut exec.stdout, &line);
+                }
+                exec
             }
             Err(err) => {
                 tracing::debug!(error = %err, "verb failed");
-                render::failure(Some(&dotted), &err, ctx.json)
+                let mut exec = render::failure(Some(&dotted), &err, ctx.json);
+                if !ctx.json {
+                    self.add_failure_help(&mut exec, &ctx.cwd);
+                }
+                exec
             }
         };
         if let Some(note) = verb.meta.deprecation_note(self.product) {
@@ -287,6 +329,14 @@ impl Cli {
             exec.stderr.insert_str(0, &format!("{note}\n"));
         }
         exec
+    }
+
+    /// Append the presenter's failure help to a text failure's stderr.
+    fn add_failure_help(&self, exec: &mut Execution, cwd: &Path) {
+        if let Some(help) = self.presenter.and_then(|p| (p.failure_help)(cwd)) {
+            tracing::debug!("failure help appended");
+            render::append_line(&mut exec.stderr, &help);
+        }
     }
 
     /// Resolve global flags into a [`Context`] and install logging.

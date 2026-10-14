@@ -92,7 +92,9 @@ impl Product for FrobProduct {
         let cli = frob_evidence::register(cli);
         let cli = frob_tests::register(cli);
         let cli = frob_ack::register(cli);
-        frob_land::register(cli).with_guard(first_run::require_config)
+        frob_land::register(cli)
+            .with_guard(first_run::require_config)
+            .with_presenter(crate::profile::PRESENTER)
     }
 }
 
