@@ -65,7 +65,10 @@ fn the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans() {
             Err(e) => panic!("{name}: refused for the wrong reason: {e}"),
         }
     }
-    assert_eq!(lowered, ["CAP001.grl", "CI002.grl", "SCOPE001.grl", "SYS001.grl"]);
+    assert_eq!(
+        lowered,
+        ["CAP001.grl", "CI002.grl", "SCOPE001.grl", "SYS001.grl"]
+    );
 }
 
 // frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule

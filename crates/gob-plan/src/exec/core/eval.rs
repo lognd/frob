@@ -258,9 +258,7 @@ impl<'a> Eval<'a> {
             }
             Op::MatchRegex { subject, .. }
             | Op::MatchGlob { subject, .. }
-            | Op::MatchGlobSet { subject, .. } => {
-                self.matches(id, subject, env)
-            }
+            | Op::MatchGlobSet { subject, .. } => self.matches(id, subject, env),
             Op::CountCmp {
                 var,
                 kind,

@@ -384,18 +384,12 @@ fn a_glob_set_op_matches_any_glob_in_a_side_column() {
         .collect();
     side.insert(
         "diff.changed",
-        SideTable::new(
-            vec![col_("path"), col_("status")],
-            rows,
-        ),
+        SideTable::new(vec![col_("path"), col_("status")], rows),
     )
     .unwrap();
     side.insert(
         "lease.globs",
-        SideTable::new(
-            vec![col_("glob")],
-            vec![vec![Scalar::Str("src/**".into())]],
-        ),
+        SideTable::new(vec![col_("glob")], vec![vec![Scalar::Str("src/**".into())]]),
     )
     .unwrap();
     let rels = Relations::new().with_side(side);
