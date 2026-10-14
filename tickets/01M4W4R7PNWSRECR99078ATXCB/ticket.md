@@ -2,12 +2,12 @@
 id = "01M4W4R7PNWSRECR99078ATXCB"
 title = "frob land can hang forever holding the land lock; add progress watchdog and stale-holder takeover"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T02:44:35Z"
-updated = "2026-10-14T03:32:57Z"
+updated = "2026-10-14T03:33:17Z"
 idempotency_key = "land-idle-hang-20261013"
 scope = ["crates/frob-land/**"]
 
