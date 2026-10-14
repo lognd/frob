@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:44Z"
-updated = "2026-10-14T13:25:56Z"
+updated = "2026-10-14T13:26:42Z"
 scope = ["changelog.d/**", "crates/gob-config/**", "crates/frob-ledger/**", "crates/frob/**", "crates/frob-*/src/config.rs"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given [tickets], when parsed, then exactly one parser in frob-ledger owns it"
-bound = false
+bound = true
 +++
 
 notes/review/audit-2026-10-07.md M13: four [tickets] parsers, FrobConfig::load re-reads frob.toml 11 times per command.
