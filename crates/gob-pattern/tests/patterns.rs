@@ -15,7 +15,7 @@ rule = { pattern = "print($$$ARGS)" }
 const FIXTURE: &str =
     "import sys\n\ndef f(x):\n    print(x, 1)\n    print()\n    log(x)\n    return print\n";
 
-// frob:tests crates/gob-pattern/src/lib.rs::RuleFile::find_source
+// frob:tests crates/gob-pattern/src/lib.rs::find_source
 #[test]
 fn print_pattern_fires_and_fix_rewrites_the_call() {
     let rule = RuleFile::parse(RULE).unwrap();
@@ -28,7 +28,7 @@ fn print_pattern_fires_and_fix_rewrites_the_call() {
     );
 }
 
-// frob:tests crates/gob-pattern/src/grammar.rs::Pattern::find
+// frob:tests crates/gob-pattern/src/grammar.rs::find
 #[test]
 fn single_metavariable_binds_one_node_and_repeats_must_agree() {
     let p = Pattern::compile("python", "$A == $A").unwrap();
@@ -39,7 +39,7 @@ fn single_metavariable_binds_one_node_and_repeats_must_agree() {
     assert_eq!(one.find("f(1)\nf(1, 2)\nf()\n").unwrap().len(), 1);
 }
 
-// frob:tests crates/gob-pattern/src/grammar.rs::Pattern::find
+// frob:tests crates/gob-pattern/src/grammar.rs::find
 #[test]
 fn multi_metavariable_in_the_middle_and_in_rust() {
     let p = Pattern::compile("python", "f($A, $$$REST, $Z)").unwrap();
