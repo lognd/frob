@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "Claude"
 created = "2026-10-14T12:27:54Z"
-updated = "2026-10-14T12:52:01Z"
+updated = "2026-10-14T12:58:03Z"
 scope = ["crates/frob-test/**", "crates/frob-tests/**"]
 
 [[acceptance]]
