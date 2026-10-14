@@ -2,7 +2,8 @@
 id = "01M4WGCDS34JR3PFCWKHZ73YP7"
 title = "GRL lowering: snippets"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "Claude"
