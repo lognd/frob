@@ -8,16 +8,16 @@ points = 2
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-08T08:13:20Z"
-updated = "2026-10-14T12:27:55Z"
+updated = "2026-10-14T12:35:44Z"
 scope = ["changelog.d/**", "crates/crunk-spec/**", "crates/crunk-check/**", "crates/crunk-rules/**", "docs/crunk/**", "docs/schemas/crunk.json"]
 
 [[acceptance]]
 text = "Given a game profile lacking a volume-channel declaration, when crunk check runs, then a GX finding names the guideline"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given every coverage key declared, when checked, then clean"
-bound = false
+bound = true
 +++
 
 notes/research/lint-catalogue-2026-10-08.md 4.2 N24; notes/research/creators-games-2026-10-08.md 5.2 observation (each item has two or more voices among GAG, XAG and IGDA; none is in the crunk.md 6 GX row).
