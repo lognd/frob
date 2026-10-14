@@ -326,3 +326,8 @@ ticket = "~QSK0WB1"
 product = "grimble"
 rule = "CAP002"
 ticket = "~QSK0WB1"
+
+[[gap]]
+product = "frob"
+rule = "GRL016"
+ticket = "~C5DQ4WJ"
