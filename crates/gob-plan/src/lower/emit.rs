@@ -161,7 +161,10 @@ impl Builder {
         })
     }
 
-    #[allow(clippy::too_many_lines, reason = "a flat match over every condition form")]
+    #[allow(
+        clippy::too_many_lines,
+        reason = "a flat match over every condition form"
+    )]
     fn cond(&mut self, c: &Cond) -> Result<OpId, LowerError> {
         let op = match c {
             Cond::And(v) => Op::And(v.iter().map(|x| self.cond(x)).collect::<Result<_, _>>()?),
