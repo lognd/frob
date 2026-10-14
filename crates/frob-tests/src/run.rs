@@ -201,10 +201,46 @@ pub fn nextest_groups(root: &Path, selected: &[TestTarget]) -> Vec<(String, Vec<
             .unwrap_or_default();
         by_dir.entry(dir).or_default().push(t.clone());
     }
-    by_dir
-        .into_iter()
-        .map(|(dir, targets)| (dir, nextest_args(&targets)))
-        .collect()
+    let mut groups = Vec::new();
+    for (dir, targets) in by_dir {
+        let chunks = chunk_targets(&targets, MAX_FILTER_BYTES);
+        if chunks.len() > 1 {
+            tracing::info!(
+                dir,
+                targets = targets.len(),
+                chunks = chunks.len(),
+                "nextest filter split to keep argv bounded"
+            );
+        }
+        groups.extend(chunks.into_iter().map(|c| (dir.clone(), nextest_args(&c))));
+    }
+    groups
+}
+
+// frob:ticket 01M4X64ATCQ55PKCTX0HEVH0W5
+/// Byte budget of one nextest invocation's filter arguments (under Linux's 128 KiB single-argument limit, so the `-E` expression never trips E2BIG).
+pub const MAX_FILTER_BYTES: usize = 64 * 1024;
+
+// frob:ticket 01M4X64ATCQ55PKCTX0HEVH0W5
+/// Split `targets` into consecutive chunks whose [`nextest_args`] each stay within `budget` bytes (a single oversized target gets its own chunk).
+pub fn chunk_targets(targets: &[TestTarget], budget: usize) -> Vec<Vec<TestTarget>> {
+    let mut chunks: Vec<Vec<TestTarget>> = Vec::new();
+    let mut size = 0usize;
+    for t in targets {
+        // Upper bound of what the target adds: `-p pkg`, `test(=path) | ` and the package clause.
+        let cost = 2 * t.package.len() + t.test_path.len() + 48;
+        match chunks.last_mut() {
+            Some(cur) if size + cost <= budget => {
+                cur.push(t.clone());
+                size += cost;
+            }
+            _ => {
+                chunks.push(vec![t.clone()]);
+                size = cost;
+            }
+        }
+    }
+    chunks
 }
 
 // frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
@@ -583,6 +619,29 @@ mod tests {
         );
         let joined = join_args(&args);
         assert_eq!(frob_evidence::provider::split_args(&joined).unwrap(), args);
+    }
+
+    // frob:ticket 01M4X64ATCQ55PKCTX0HEVH0W5
+    #[test]
+    fn huge_selection_is_chunked_within_the_argv_budget() {
+        // frob:tests crates/frob-tests/src/run.rs::chunk_targets
+        let sel: Vec<TestTarget> = (0..20_000)
+            .map(|i| {
+                t(
+                    &format!("pkg{}", i % 50),
+                    &format!("module::tests::test_number_{i}"),
+                )
+            })
+            .collect();
+        let chunks = chunk_targets(&sel, MAX_FILTER_BYTES);
+        assert!(chunks.len() > 1);
+        assert_eq!(chunks.iter().map(Vec::len).sum::<usize>(), sel.len());
+        for c in &chunks {
+            let bytes: usize = nextest_args(c).iter().map(|a| a.len() + 1).sum();
+            assert!(bytes <= MAX_FILTER_BYTES, "chunk of {bytes} bytes");
+        }
+        assert_eq!(chunk_targets(&sel[..3], MAX_FILTER_BYTES).len(), 1);
+        assert!(chunk_targets(&[], MAX_FILTER_BYTES).is_empty());
     }
 
     // frob:ticket 01M43A5MA7GRAACT7E0M525Y1M
