@@ -109,7 +109,23 @@ pub(super) struct Lowered {
     pub reports: Vec<ReportItem>,
 }
 
+/// A knob's declared default, which is what a lowered plan reads (an override from `[rules]` is
+/// honoured only for a `count` limit; see `Limit::Knob`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum KnobVal {
+    Int(i64),
+    Bool(bool),
+    Str(String),
+    /// A regex in the plan's pattern form (flags folded in).
+    Regex(String),
+    /// A list of strings (globs or plain words).
+    Strs(Vec<String>),
+    /// A knob whose value the lowering does not read yet (decimals, vocabularies, other lists).
+    Other,
+}
+
 struct Cx {
+    knobs: Vec<(String, KnobVal)>,
     scope: Vec<String>,
     /// Variables bound by a top-level side-relation find, with that relation's dotted name.
     side_vars: Vec<(String, String)>,
@@ -132,10 +148,15 @@ pub(super) fn convert(rule: &Rule) -> Result<Lowered, LowerError> {
         unresolved: Vec::new(),
         reports: Vec::new(),
     };
+    let mut knobs = Vec::new();
     for h in &rule.headers {
         header(&mut out, h)?;
+        if let HeaderKind::Knob(k) = &h.node {
+            knobs.push((k.name.text.clone(), knob_value(&k.default)?));
+        }
     }
     let mut cx = Cx {
+        knobs,
         scope: Vec::new(),
         side_vars: Vec::new(),
         fresh: 0,
@@ -185,8 +206,10 @@ fn header(out: &mut Lowered, h: &Header) -> Result<(), LowerError> {
                 });
             }
         }
-        HeaderKind::Knob(k) => return unsupported("a knob", k.name.span),
-        HeaderKind::Severity(_) | HeaderKind::MustMeasure | HeaderKind::Rollup(_) => {}
+        HeaderKind::Knob(_)
+        | HeaderKind::Severity(_)
+        | HeaderKind::MustMeasure
+        | HeaderKind::Rollup(_) => {}
     }
     Ok(())
 }
@@ -358,6 +381,13 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
                 },
                 _ => return unsupported("a non-regex pattern after ~", rhs.span),
             },
+            TermKind::Knob(w) => match knob_of(cx, w)? {
+                KnobVal::Regex(pattern) => Cond::Regex {
+                    subject: operand(cx, lhs)?,
+                    pattern: pattern.clone(),
+                },
+                _ => return unsupported("a knob that is not a regex after ~", w.span),
+            },
             _ => return unsupported("a non-literal pattern after ~", rhs.span),
         },
         CondKind::GlobMatch { lhs, rhs } if side_set(rhs).is_some() => {
@@ -371,7 +401,7 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
         }
         CondKind::GlobMatch { lhs, rhs } => {
             let subject = glob_subject(cx, lhs)?;
-            let globs = glob_literals(rhs)?;
+            let globs = glob_literals(cx, rhs)?;
             let mut alts: Vec<Cond> = globs
                 .into_iter()
                 .map(|pattern| Cond::Glob {
@@ -399,6 +429,45 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
         CondKind::DefCall(_) => return unsupported("a def call", c.span),
         CondKind::Exists(_) => return unsupported("`exists`", c.span),
     })
+}
+
+/// The default a knob declaration carries, in the form the lowering reads.
+fn knob_value(l: &ast::Literal) -> Result<KnobVal, LowerError> {
+    Ok(match &l.node {
+        LiteralKind::Int(i) => KnobVal::Int(
+            i64::try_from(*i).or_else(|_| unsupported("an integer beyond 64 bits", l.span))?,
+        ),
+        LiteralKind::Bool(b) => KnobVal::Bool(*b),
+        LiteralKind::Str(s) => KnobVal::Str(s.clone()),
+        LiteralKind::Regex(r) => KnobVal::Regex(regex_text(r)),
+        LiteralKind::List(items) => {
+            let strs: Vec<String> = items
+                .iter()
+                .filter_map(|i| match &i.node {
+                    LiteralKind::Str(s) => Some(s.clone()),
+                    _ => None,
+                })
+                .collect();
+            if strs.len() == items.len() {
+                KnobVal::Strs(strs)
+            } else {
+                KnobVal::Other
+            }
+        }
+        LiteralKind::Decimal(_) | LiteralKind::Call { .. } => KnobVal::Other,
+    })
+}
+
+/// The declared default of `knob.NAME`.
+fn knob_of<'a>(cx: &'a Cx, w: &ast::Word) -> Result<&'a KnobVal, LowerError> {
+    cx.knobs
+        .iter()
+        .find(|(n, _)| *n == w.text)
+        .map(|(_, v)| v)
+        .ok_or(LowerError::UnknownVar {
+            name: format!("knob.{}", w.text),
+            span: w.span,
+        })
 }
 
 fn regex_text(r: &crate::grl::Regex) -> String {
@@ -456,8 +525,13 @@ fn glob_subject(cx: &Cx, t: &Term) -> Result<Opd, LowerError> {
     operand(cx, t)
 }
 
-fn glob_literals(t: &Term) -> Result<Vec<String>, LowerError> {
+fn glob_literals(cx: &Cx, t: &Term) -> Result<Vec<String>, LowerError> {
     match &t.node {
+        TermKind::Knob(w) => match knob_of(cx, w)? {
+            KnobVal::Str(s) => Ok(vec![s.clone()]),
+            KnobVal::Strs(v) if !v.is_empty() => Ok(v.clone()),
+            _ => unsupported("a knob that is not a glob or a list of globs", w.span),
+        },
         TermKind::Literal(l) => match &l.node {
             LiteralKind::Str(s) => Ok(vec![s.clone()]),
             LiteralKind::List(items) if !items.is_empty() => items
@@ -507,7 +581,12 @@ fn operand(cx: &Cx, t: &Term) -> Result<Opd, LowerError> {
                 _ => unsupported("a path of more than two segments", p.span),
             }
         }
-        TermKind::Knob(w) => unsupported("a knob", w.span),
+        TermKind::Knob(w) => match knob_of(cx, w)? {
+            KnobVal::Int(i) => Ok(Opd::Int(*i)),
+            KnobVal::Bool(b) => Ok(Opd::Bool(*b)),
+            KnobVal::Str(s) => Ok(Opd::Str(s.clone())),
+            _ => unsupported("a knob of this type as a value", w.span),
+        },
         _ => unsupported("this term", t.span),
     }
 }
