@@ -25,6 +25,7 @@ use crate::status::{
     FidelityReport, SubjectStatus, is_binary, opaque_finding_for, unreadable_finding,
 };
 use crate::telemetry;
+use crate::tool_key::tool_failure_key;
 use crate::tools::{ToolRun, applicable_stages, start_tools};
 
 /// The engine fingerprint scoping every cached rule result: binary identity plus `EXTRACTOR_VERSION`.
@@ -213,7 +214,13 @@ fn refingerprint(
             .and_then(|s| files.path(s.file))
             .unwrap_or_default()
             .to_owned();
-        f.fingerprint = Fingerprint::compute(&f.rule, &anchor, &f.message);
+        // frob:ticket 01M4GZMQ4AC12A6E45FGZ4NM0Y
+        // A TOOL001 stage failure is keyed by (stage, exit class), never by the tool's output text.
+        let keyed = (f.rule.as_str() == "TOOL001" && f.span.is_none())
+            .then(|| tool_failure_key(&f.message))
+            .flatten();
+        f.fingerprint =
+            Fingerprint::compute(&f.rule, &anchor, keyed.as_deref().unwrap_or(&f.message));
     }
 }
 
