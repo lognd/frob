@@ -92,6 +92,10 @@ fn polarity_of(rule: &str) -> MarkOfPolarity {
         })
 }
 
+#[allow(
+    clippy::disallowed_methods,
+    reason = "report excerpts show the current source of the files findings point into"
+)]
 /// A resolver of `file:line:column` over the files the findings point into.
 fn sources_of(root: &Path, report: &CheckReport) -> MemorySources {
     let mut sources = MemorySources::new();

@@ -36,6 +36,10 @@ impl FileToolMemo {
     }
 }
 
+#[allow(
+    clippy::disallowed_methods,
+    reason = "tool memo entries are cache files under the state dir, not walked sources"
+)]
 impl ToolMemo for FileToolMemo {
     fn load(&self, key: &str) -> Option<String> {
         std::fs::read_to_string(self.path(key)?).ok()

@@ -116,6 +116,10 @@ pub fn needs_review(screen: &ScreenConfig) -> bool {
 }
 
 /// Every file under `root/rel` (a file itself, or a directory walked in name order).
+#[allow(
+    clippy::disallowed_methods,
+    reason = "screen sources are declared by the spec and may lie outside the walk"
+)]
 fn source_files(root: &Path, rel: &str) -> Vec<PathBuf> {
     fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
         let Ok(read) = std::fs::read_dir(dir) else {
@@ -180,6 +184,10 @@ fn platform_inputs(
 ///
 /// # Errors
 /// The token set could not be built (colliding token names); the message says why.
+#[allow(
+    clippy::disallowed_methods,
+    reason = "screen sources and rendered pngs are spec-declared paths outside the walk"
+)]
 pub fn subjects(spec: &DesignSpec) -> Result<Vec<Subject>, String> {
     let screens: Vec<&ScreenConfig> = spec.screens.values().filter(|s| needs_review(s)).collect();
     if screens.is_empty() {

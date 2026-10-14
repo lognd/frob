@@ -486,7 +486,7 @@ impl Product for Frob {
                 "repo:tests",
                 vec![frob_tests::Test001.meta()],
                 |s: &Snapshot<Self>, _| {
-                    let read = |p: &str| std::fs::read_to_string(s.core.root.join(p)).ok();
+                    let read = |p: &str| s.core.text(p).ok();
                     frob_tests::test001_with_sources(
                         &s.inputs.directives,
                         &s.inputs.ack.graph,

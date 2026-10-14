@@ -138,7 +138,9 @@ impl Product for Grimble {
                 .or_default() += 1;
         }
         let table = GrimbleTable::load(&cx.core.root)?;
-        let model = read_models(&cx.core.root, &cx.core.entries, &table);
+        let model = read_models(&cx.core.root, &cx.core.entries, &table, &mut |p| {
+            cx.core.bytes(p)
+        });
         let started = std::time::Instant::now();
         let view = Arc::new(ModelView::build(&model));
         cx.timing.push("model", started.elapsed(), true);

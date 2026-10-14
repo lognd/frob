@@ -71,7 +71,7 @@ fn waiver_exceptions(snap: &Snapshot<Crunk>) -> Vec<BoundException> {
         .iter()
         .filter(|e| STYLE_TAGS.contains(&e.language.tag()))
     {
-        let Ok(text) = std::fs::read_to_string(snap.core.root.join(&entry.path)) else {
+        let Ok(text) = snap.core.text(&entry.path) else {
             tracing::debug!(path = %entry.path, "waivers: cannot read file");
             continue;
         };

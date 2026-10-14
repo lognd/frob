@@ -123,6 +123,10 @@ pub(super) struct Spawned {
 ///
 /// `None` when any part is unknown (no tree key, an unlocated binary), so an unprovable run is never reused
 /// (frob:ticket 01M4MGNWX3MF5KM98EPQZJGVGZ).
+#[allow(
+    clippy::disallowed_methods,
+    reason = "the sibling binary is hashed from disk; it is not a walked file"
+)]
 fn cache_key(run: &Run) -> Option<gob_cache::ArtifactKey> {
     let tree = run.tree_key.as_deref()?;
     let Program::Hook { path } = &run.program else {

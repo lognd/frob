@@ -1,6 +1,11 @@
 //! The `#[rule]` declaration and `FileRule<P: Host>` evaluation of the example `Todo001`
 //! (~N88H9SY, D107).
 
+#![allow(
+    clippy::disallowed_methods,
+    reason = "a test reads its own fixture sources, not a walked snapshot"
+)]
+
 #[path = "rule_attr/todo001.rs"]
 mod todo001;
 

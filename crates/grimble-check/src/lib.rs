@@ -205,7 +205,12 @@ pub fn walk_repo(root: &Path) -> Result<Vec<FileEntry>, CheckError> {
 }
 
 /// Read the `.grmb` files among `entries` and declare the `[grimble] models` roots.
-pub fn read_models(root: &Path, entries: &[FileEntry], table: &GrimbleTable) -> ModelFiles {
+pub fn read_models(
+    root: &Path,
+    entries: &[FileEntry],
+    table: &GrimbleTable,
+    read: &mut dyn FnMut(&str) -> std::io::Result<Vec<u8>>,
+) -> ModelFiles {
     let mut model = ModelFiles::new();
     let mut walk = Vec::with_capacity(entries.len());
     for e in entries {
@@ -213,7 +218,7 @@ pub fn read_models(root: &Path, entries: &[FileEntry], table: &GrimbleTable) -> 
         if !e.path.ends_with(MODEL_EXTENSION) {
             continue;
         }
-        match std::fs::read(root.join(&e.path)) {
+        match read(&e.path) {
             Ok(bytes) => {
                 tracing::debug!(path = %e.path, bytes = bytes.len(), "model file read");
                 model.files.insert(e.path.clone(), bytes);
@@ -263,7 +268,8 @@ pub fn bind_models(
 pub fn bind_repo(root: &Path) -> Result<grimble_bind::Binding, CheckError> {
     let entries = walk_repo(root)?;
     let table = GrimbleTable::load(root)?;
-    let model = read_models(root, &entries, &table);
+    let content = gob_walk::ContentSource::locate(root);
+    let model = content.with_reader(|r| read_models(root, &entries, &table, &mut |p| r.read(p)));
     Ok(bind_models(root, &entries, &model, &table))
 }
 

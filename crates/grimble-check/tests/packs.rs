@@ -1,3 +1,7 @@
+#![allow(
+    clippy::disallowed_methods,
+    reason = "a test reads fixtures and outputs, not a walked snapshot"
+)]
 //! Repository packs (tier 1, atoms only): `packs/NAME.toml` enabled by `local/NAME` supplies
 //! atoms and satisfies the `pack` entity. Repro 03 of the logand adoption run.
 

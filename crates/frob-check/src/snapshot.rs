@@ -240,7 +240,7 @@ struct ScanOutcome {
 /// empty) directive records and is not read next time. A file whose scan
 /// raised findings is rescanned each run, as findings are not serialized.
 fn scan_one(
-    root: &Path,
+    core: &gob_check::Core,
     cache: &Cache,
     entry: &FileEntry,
     file: FileId,
@@ -282,7 +282,7 @@ fn scan_one(
             fresh: true,
         })
     };
-    let Ok(text) = std::fs::read_to_string(root.join(&entry.path)) else {
+    let Ok(text) = core.text(&entry.path) else {
         return fresh(None);
     };
     let (directives, findings) = if text.contains(DIRECTIVE_MARKER) {
@@ -329,6 +329,10 @@ fn doc_directives(directives: &[DirectiveRecord], files: &FileInterner) -> Vec<D
 }
 
 /// True when `<root>/frob.toml` has a `[tickets]` table (an unreadable file counts as absent).
+#[allow(
+    clippy::disallowed_methods,
+    reason = "frob.toml is configuration read before any snapshot exists, not a walked file"
+)]
 fn tickets_configured(root: &Path) -> bool {
     std::fs::read_to_string(root.join("frob.toml"))
         .ok()
@@ -370,7 +374,7 @@ pub(crate) fn collect(
     let (root, entries, files, index) = (&core.root, &core.entries, &core.files, &core.index);
     let started = Instant::now();
     // frob:ticket 01M4X64AXQH3HTB6Z9ZGCPFTAD
-    let facts = crate::typefacts::type_facts(root, cx.table, entries, PRODUCT);
+    let facts = crate::typefacts::type_facts(root, cx.table, entries, PRODUCT, &|p| core.text(p));
     let (graph, built) = build_graph_with_stats_typed(root, entries, cx.cache, facts);
     cx.stats.graph_cached = built.cached;
     cx.stats.graph_extracted = built.extracted;
@@ -388,7 +392,7 @@ pub(crate) fn collect(
     let roles = Roles::new(&ledger_cfg.dir);
     let outcomes: Vec<ScanOutcome> = entries
         .par_iter()
-        .filter_map(|e| scan_one(root, cx.cache, e, index.ids[&e.path], &scanner, &roles))
+        .filter_map(|e| scan_one(core, cx.cache, e, index.ids[&e.path], &scanner, &roles))
         .collect();
     let mut directives = Vec::new();
     let mut scan_findings = Vec::new();

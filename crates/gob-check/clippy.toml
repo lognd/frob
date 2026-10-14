@@ -1,0 +1,27 @@
+# Per-crate copy of the workspace clippy.toml (clippy reads only the nearest file) plus the rule-code
+# read ban of audit M7. Keep the entries above the "Rules read" comment identical to ../../clippy.toml.
+msrv = "1.98"
+doc-valid-idents = ["GitHub", "GitLab", "SQLite", "TypeScript", "JavaScript", "OAuth", "gob", "frob", "grimble", "crunk", ".."]
+
+# One canonicalization function (docs/design/paths.md section 3): std's returns verbatim
+# (`\\?\C:\...`) paths on Windows that git and other tools cannot use.
+disallowed-methods = [
+    { path = "std::fs::canonicalize", reason = "use gob_fs::canonical (gob_exec re-exports it), which never returns a verbatim path when it can be avoided" },
+    { path = "std::path::Path::canonicalize", reason = "use gob_fs::canonical (gob_exec re-exports it), which never returns a verbatim path when it can be avoided" },
+
+    # One clock, one zone (docs/design/time.md section 3): only gob-time reads the wall clock or the local zone.
+    # `std::time::Instant` stays allowed (elapsed time is not a date).
+    { path = "std::time::SystemTime::now", reason = "take a gob_time::Clock; only gob-time reads the wall clock" },
+    { path = "std::time::SystemTime::elapsed", reason = "take a gob_time::Clock; only gob-time reads the wall clock" },
+    { path = "jiff::Timestamp::now", reason = "take a gob_time::Clock; only gob-time reads the wall clock" },
+    { path = "jiff::Zoned::now", reason = "take a gob_time::Clock; local-zone reads are gob_time::Shown only" },
+    { path = "jiff::tz::TimeZone::system", reason = "local-zone reads are gob_time::Shown only" },
+    { path = "jiff::tz::TimeZone::try_system", reason = "local-zone reads are gob_time::Shown only" },
+
+    # Rules read the walked content (docs/design/check.md, audit M7): `gob_check::Core::{text,bytes,with_content}`.
+    # A read that is not a walked file (cache, config, binary, tool output) carries an `#[allow]` with a reason.
+    { path = "std::fs::read", reason = "rule code reads the walked content through gob_check::Core, not the disk" },
+    { path = "std::fs::read_to_string", reason = "rule code reads the walked content through gob_check::Core, not the disk" },
+    { path = "std::fs::read_dir", reason = "rule code lists the walked files (Core::entries), not the disk" },
+    { path = "std::fs::File::open", reason = "rule code reads the walked content through gob_check::Core, not the disk" },
+]

@@ -1,3 +1,7 @@
+#![allow(
+    clippy::disallowed_methods,
+    reason = "a test reads fixtures and outputs, not a walked snapshot"
+)]
 //! A rule producer never maps an evaluation error to zero findings (`~A6C2R1C`, P-05 inventory).
 
 /// The sources whose rule producers must route failures through `settle`.

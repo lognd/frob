@@ -9,7 +9,7 @@ use gob_text::FileInterner;
 
 use crate::applicability::{FileFacts, RuleRef, resolve};
 use crate::config::{CheckTable, PerfTable};
-use crate::core::walk_core;
+use crate::core::{Core, walk_core};
 use crate::defs::{self, Live};
 use crate::error::CheckError;
 use crate::filecheck::{opaque_binary, run_file_checks};
@@ -115,15 +115,15 @@ fn resolve_exceptions<P: Product>(
 
 /// The cargo packages `files` touch (and their reverse dependencies), read from the walked manifests.
 fn affected_packages(
-    root: &Path,
+    core: &Core,
     manifests: &[String],
     files: &std::collections::BTreeSet<String>,
     changes: Option<&BranchChanges>,
 ) -> Affected {
     // The branch's own changes narrow the packages; without them the scope files stand for both.
     match changes.filter(|c| !c.files.is_empty()) {
-        Some(c) => Workspace::load(root, manifests).affected(&c.files, &c.api),
-        None => Workspace::load(root, manifests).affected(files, files),
+        Some(c) => Workspace::load(core, manifests).affected(&c.files, &c.api),
+        None => Workspace::load(core, manifests).affected(files, files),
     }
 }
 
@@ -131,7 +131,7 @@ fn affected_packages(
 ///
 /// They read the tree, not the rule results, so they overlap the in-process stages.
 fn begin_tools(
-    root: &Path,
+    core: &Core,
     opts: &RunOptions,
     table: &CheckTable,
     only: &[String],
@@ -153,9 +153,9 @@ fn begin_tools(
                 .iter()
                 .any(|t| t.args.iter().any(|a| a == "{packages}"))
         })
-        .map(|files| affected_packages(root, manifests, files, changes));
+        .map(|files| affected_packages(core, manifests, files, changes));
     start_tools(
-        root,
+        &core.root,
         &applicable_stages(&table.tool, scope_files, affected.as_ref()),
         opts.tool_memo.as_ref(),
     )
@@ -267,7 +267,7 @@ fn opaque_repo_findings<P: Product>(
         };
         if info.is_opaque()
             && !product.scans_text(&e.path)
-            && !opaque_binary(&snap.core.root, &e.path, &info)
+            && !opaque_binary(&snap.core, &e.path, &info)
         {
             opaque.push(&e.path);
         }
@@ -393,7 +393,7 @@ fn pass<P: Product>(
         .map(|e| e.path.clone())
         .collect();
     let tools = begin_tools(
-        root,
+        &snap.core,
         opts,
         table,
         only,

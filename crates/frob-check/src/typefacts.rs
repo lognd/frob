@@ -21,12 +21,15 @@ fn checker_stage(table: &CheckTable) -> Option<&ToolStage> {
     })
 }
 
+/// Reads the walked text of a repo-relative path (the snapshot content API).
+pub(crate) type TextReader<'a> = dyn Fn(&str) -> std::io::Result<String> + 'a;
+
 /// `(path, text)` of every Python file in the walk; unreadable files are left out (never clean).
-fn python_sources(root: &Path, entries: &[FileEntry]) -> Vec<(String, String)> {
+fn python_sources(read: &TextReader<'_>, entries: &[FileEntry]) -> Vec<(String, String)> {
     entries
         .iter()
         .filter(|e| e.language.tag() == "py")
-        .filter_map(|e| match std::fs::read_to_string(root.join(&e.path)) {
+        .filter_map(|e| match read(&e.path) {
             Ok(text) => Some((e.path.clone(), text)),
             Err(err) => {
                 tracing::warn!(path = %e.path, %err, "python file unreadable for type facts");
@@ -46,6 +49,7 @@ pub(crate) fn type_facts(
     table: &CheckTable,
     entries: &[FileEntry],
     product: &str,
+    read: &TextReader<'_>,
 ) -> TypeFacts {
     let trust = match TypesTable::load(root, product).and_then(|t| t.trust()) {
         Ok(trust) => trust,
@@ -63,7 +67,7 @@ pub(crate) fn type_facts(
         tracing::debug!("no ty-gitlab or pyright-json stage; annotations stay claims");
         return none;
     };
-    let files = python_sources(root, entries);
+    let files = python_sources(read, entries);
     if files.is_empty() {
         return none;
     }
@@ -103,6 +107,10 @@ pub(crate) fn type_facts(
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::disallowed_methods,
+    reason = "a test writes and reads a scratch repository"
+)]
 mod tests {
     use super::*;
     use gob_symbols::AnnotationWeight;
@@ -137,7 +145,9 @@ mod tests {
         let root = dir.path();
         let entries = walk(root);
         std::fs::write(root.join("fake.sh"), format!("echo '{DIRTY}'\nexit 1\n")).expect("script");
-        let facts = type_facts(root, &table("ty-gitlab"), &entries, "frob");
+        let facts = type_facts(root, &table("ty-gitlab"), &entries, "frob", &|p| {
+            std::fs::read_to_string(root.join(p))
+        });
         assert_eq!(facts.weight("clean.py", 1), AnnotationWeight::Exact);
         assert_eq!(facts.weight("dirty.py", 1), AnnotationWeight::Claimed);
     }
@@ -148,10 +158,14 @@ mod tests {
         let dir = tempfile::tempdir().expect("tempdir");
         let root = dir.path();
         let entries = walk(root);
-        let none = type_facts(root, &CheckTable::default(), &entries, "frob");
+        let none = type_facts(root, &CheckTable::default(), &entries, "frob", &|p| {
+            std::fs::read_to_string(root.join(p))
+        });
         assert_eq!(none.weight("clean.py", 1), AnnotationWeight::Claimed);
         std::fs::write(root.join("fake.sh"), "exit 3\n").expect("script");
-        let bad = type_facts(root, &table("ty-gitlab"), &entries, "frob");
+        let bad = type_facts(root, &table("ty-gitlab"), &entries, "frob", &|p| {
+            std::fs::read_to_string(root.join(p))
+        });
         assert_eq!(bad.weight("clean.py", 1), AnnotationWeight::Claimed);
     }
 
@@ -163,7 +177,9 @@ mod tests {
         let entries = walk(root);
         std::fs::write(root.join("frob.toml"), "[types]\ntrust = \"annotated\"\n").expect("cfg");
         std::fs::write(root.join("fake.sh"), "echo '[]'\n").expect("script");
-        let facts = type_facts(root, &table("ty-gitlab"), &entries, "frob");
+        let facts = type_facts(root, &table("ty-gitlab"), &entries, "frob", &|p| {
+            std::fs::read_to_string(root.join(p))
+        });
         assert_eq!(facts.weight("clean.py", 1), AnnotationWeight::Claimed);
     }
 }

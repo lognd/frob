@@ -184,6 +184,20 @@ Policy files live next to the owning product's config: frob's `POL`
 rules in `frob.toml`, grimble's `GPOL` rules in `rules/*.grl.toml` beside
 `grimble.toml`. The two prefixes cannot collide.
 
+#### Rule code reads the snapshot, not the disk
+
+Rule and check code in `gob-check`, `gob-rules`, `frob-check`,
+`grimble-check` and `crunk-check` reads walked files through
+`gob_check::Core::text` / `Core::bytes` (git-normalized content, the same
+form the walk digests), never `std::fs::read`, `read_to_string`,
+`read_dir` or `File::open` (audit M7). Each of the five crates carries its
+own `clippy.toml` (clippy reads only the nearest one; keep it in sync with
+the workspace file) listing those methods under `disallowed-methods`, so
+`cargo clippy -D warnings` rejects a new disk read. A site that is
+legitimately not a walked file (configuration, caches, state dirs,
+spec-declared paths, tests) carries `#[allow(clippy::disallowed_methods,
+reason = "...")]`.
+
 ### 2.6 v1 KEEP items and deferred items
 
 Every item from the v1 inventories that had no owner now has one, or is

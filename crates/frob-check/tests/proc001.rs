@@ -1,3 +1,7 @@
+#![allow(
+    clippy::disallowed_methods,
+    reason = "a test reads fixtures and outputs, not a walked snapshot"
+)]
 //! PROC001 is a repository-local policy: inert unless `[check] process_spawners` lists crates.
 
 use std::path::Path;

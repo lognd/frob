@@ -142,7 +142,7 @@ pub(crate) fn run_file_rules<P: Product>(
                 continue;
             }
             tally.stats.file_misses += 1;
-            let Ok(text) = std::fs::read_to_string(snap.core.root.join(path)) else {
+            let Ok(text) = snap.core.text(path) else {
                 tracing::warn!(
                     path,
                     rule = def.id,

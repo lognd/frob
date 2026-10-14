@@ -6,8 +6,8 @@
 //! `Cargo.toml` files directly: package names, and the dependency tables of the other
 //! workspace packages. Anything it cannot place widens to the whole workspace.
 
+use crate::core::Core;
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::Path;
 
 /// Files outside every package whose change can affect any package.
 const WORKSPACE_WIDE: [&str; 8] = [
@@ -46,13 +46,13 @@ pub(crate) enum Affected {
 
 impl Workspace {
     /// Read the `[package]` name and dependency names of each manifest in `paths` (repo-relative `Cargo.toml` paths).
-    pub(crate) fn load<'a>(root: &Path, paths: impl IntoIterator<Item = &'a String>) -> Self {
+    pub(crate) fn load<'a>(core: &Core, paths: impl IntoIterator<Item = &'a String>) -> Self {
         let mut raw: Vec<(String, String, BTreeSet<String>)> = Vec::new();
         for path in paths
             .into_iter()
             .filter(|p| *p == "Cargo.toml" || p.ends_with("/Cargo.toml"))
         {
-            let text = match std::fs::read_to_string(root.join(path)) {
+            let text = match core.text(path) {
                 Ok(t) => t,
                 Err(e) => {
                     tracing::warn!(%path, error = %e, "manifest unreadable; ignored");

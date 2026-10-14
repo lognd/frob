@@ -1,3 +1,7 @@
+#![allow(
+    clippy::disallowed_methods,
+    reason = "a test reads fixtures and outputs, not a walked snapshot"
+)]
 //! `crunk check` keeps its telemetry out of the worktree: it goes to the shared cache directory.
 
 // frob:ticket 01M4FD0EP322SV5ZNXD5SQT8RX

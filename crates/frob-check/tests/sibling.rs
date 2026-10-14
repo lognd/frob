@@ -1,3 +1,7 @@
+#![allow(
+    clippy::disallowed_methods,
+    reason = "a test reads fixtures and outputs, not a walked snapshot"
+)]
 //! The sibling stage end to end: a fake `grimble` binary driven through `frob check`.
 //!
 //! The real grimble cannot be a dev-dependency binary of this crate (cargo builds

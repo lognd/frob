@@ -135,16 +135,13 @@ struct Accounting {
     fidelity: FidelityReport,
 }
 
-/// True when `info` is opaque and the file at `root/path` looks binary.
-pub(crate) fn opaque_binary(root: &Path, path: &str, info: &gob_symbols::FileInfo) -> bool {
+/// True when `info` is opaque and the walked content of `path` looks binary.
+pub(crate) fn opaque_binary(core: &Core, path: &str, info: &gob_symbols::FileInfo) -> bool {
     if !info.is_opaque() {
         return false;
     }
-    let mut head = vec![0u8; 4096];
-    let n = std::fs::File::open(root.join(path))
-        .and_then(|mut f| std::io::Read::read(&mut f, &mut head))
-        .unwrap_or(0);
-    is_binary(path, &head[..n])
+    let bytes = core.bytes(path).unwrap_or_default();
+    is_binary(path, &bytes[..bytes.len().min(4096)])
 }
 
 /// Decide, for every checked file and file rule, examine / not applicable / unresolved.
@@ -166,7 +163,7 @@ fn account<P: Product>(
         let Some(info) = product.file_info(&snap.shared, path) else {
             continue;
         };
-        let binary = opaque_binary(&snap.core.root, path, &info);
+        let binary = opaque_binary(&snap.core, path, &info);
         let scanned = product.scans_text(path);
         let file = snap.core.index.ids.get(path).copied();
         let mut examined = false;
@@ -187,7 +184,8 @@ fn account<P: Product>(
                         let site = file.zip(
                             hole_site
                                 .get_or_insert_with(|| {
-                                    std::fs::read_to_string(snap.core.root.join(path))
+                                    snap.core
+                                        .text(path)
                                         .ok()
                                         .and_then(|t| crate::status::locate_hole(path, &t))
                                 })
@@ -286,7 +284,7 @@ pub(crate) fn run_file_checks<P: Product>(
         product: &snap.shared,
     };
     let metas: Vec<Vec<&'static RuleMeta>> = checks.iter().map(|c| c.rules()).collect();
-    let (root, index) = (&snap.core.root, &snap.core.index);
+    let (core, index) = (&snap.core, &snap.core.index);
     let mut rules: Vec<RuleRef> = unique_metas(&metas)
         .into_iter()
         .map(RuleRef::of_meta)
@@ -307,7 +305,7 @@ pub(crate) fn run_file_checks<P: Product>(
                 }
                 let needs_text = metas[ci].iter().any(|m| check.side_input_needs_text(m));
                 let text = if needs_text {
-                    std::fs::read_to_string(root.join(path)).unwrap_or_default()
+                    core.text(path).unwrap_or_default()
                 } else {
                     String::new()
                 };
@@ -366,7 +364,7 @@ pub(crate) fn run_file_checks<P: Product>(
             continue;
         }
         stage.misses += 1;
-        let Ok(text) = std::fs::read_to_string(snap.core.root.join(&lookup.path)) else {
+        let Ok(text) = snap.core.text(&lookup.path) else {
             tracing::warn!(path = %lookup.path, "unreadable file skipped by per-file rules");
             continue;
         };

@@ -126,6 +126,10 @@ impl BindSummary {
 }
 
 /// Digest of everything binding reads: each walked file, the lock file, the `[grimble]` knobs and the frob ledger directory.
+#[allow(
+    clippy::disallowed_methods,
+    reason = "the lock file is hashed from disk to key the bind cache"
+)]
 pub fn digest(root: &Path, entries: &[FileEntry], table: &GrimbleTable) -> String {
     let mut h = blake3::Hasher::new();
     for e in entries {

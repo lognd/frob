@@ -274,6 +274,10 @@ impl Indexes {
         Some(TextRange::new(from, to))
     }
 
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "external tool locations name on-disk files the tool read, which may lie outside the walk"
+    )]
     fn slot(&mut self, root: &Path, path: &str) -> Option<&(String, LineIndex)> {
         self.0
             .entry(path.to_owned())
@@ -887,6 +891,10 @@ fn stage_findings(
     out
 }
 
+#[allow(
+    clippy::disallowed_methods,
+    reason = "tests read the log a fake tool wrote to a temp dir"
+)]
 #[cfg(test)]
 mod tests {
     use super::*;

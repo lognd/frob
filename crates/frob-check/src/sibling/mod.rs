@@ -119,6 +119,10 @@ fn skip_reason(
 }
 
 /// The root model files declared in `grimble.toml` `[grimble] models`; empty when unreadable.
+#[allow(
+    clippy::disallowed_methods,
+    reason = "grimble.toml is configuration, read without a snapshot"
+)]
 fn grimble_models(root: &Path) -> Vec<String> {
     let text = std::fs::read_to_string(root.join("grimble.toml")).unwrap_or_default();
     let doc: toml::Table = text.parse().unwrap_or_default();

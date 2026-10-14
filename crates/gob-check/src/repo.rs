@@ -8,7 +8,6 @@
 //! rule version, so a bump misses.
 
 use std::collections::HashMap;
-use std::path::Path;
 use std::time::Instant;
 
 use gob_cache::Cache;
@@ -16,6 +15,7 @@ use gob_rules::{Finding, Rule, RuleId, RuleMeta, Severity};
 use gob_text::{FileInterner, Span, TextRange, TextSize};
 
 use crate::config::CheckTable;
+use crate::core::Core;
 use crate::product::{FULL_ONLY_REASON, Product, RepoGroup, Snapshot};
 use crate::report::{Stats, Tally};
 use crate::rules::Proc001;
@@ -144,20 +144,20 @@ fn line_start(text: &str, line: usize) -> usize {
 }
 
 /// `PROC001` over the repository: one finding per spawning reference outside `spawners`.
-fn proc001(root: &Path, spawners: &[String], files: &mut FileInterner) -> Vec<Finding> {
+fn proc001(core: &Core, spawners: &[String], files: &mut FileInterner) -> Vec<Finding> {
     let id: RuleId = Proc001
         .meta()
         .rule_id()
         .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
     let mut out = Vec::new();
-    for hit in gob_exec::proc001::scan(root, spawners) {
+    for hit in gob_exec::proc001::scan(&core.root, spawners) {
         let rel = hit
             .path
-            .strip_prefix(root)
+            .strip_prefix(&core.root)
             .unwrap_or(&hit.path)
             .to_string_lossy()
             .replace('\\', "/");
-        let text = std::fs::read_to_string(&hit.path).unwrap_or_default();
+        let text = core.text(&rel).unwrap_or_default();
         let start = line_start(&text, hit.line) + hit.col.saturating_sub(1);
         let line_end = line_start(&text, hit.line + 1).min(text.len());
         let end = line_end.max(start);
@@ -186,7 +186,7 @@ pub(crate) fn builtin_groups<P: Product>(spawners: Vec<String>) -> Vec<RepoGroup
     vec![RepoGroup::new(
         "repo:process",
         vec![Proc001.meta()],
-        move |s: &Snapshot<P>, f| proc001(&s.core.root, &spawners, f),
+        move |s: &Snapshot<P>, f| proc001(&s.core, &spawners, f),
     )]
 }
 

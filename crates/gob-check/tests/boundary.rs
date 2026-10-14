@@ -1,5 +1,10 @@
 //! gob-check serves frob and grimble alike, so it must not depend on any frob crate.
 
+#![allow(
+    clippy::disallowed_methods,
+    reason = "a test reads the crate manifests, not a walked snapshot"
+)]
+
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 

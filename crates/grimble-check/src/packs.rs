@@ -144,6 +144,10 @@ fn expand_detectors(file: &PackFile, atoms: &BTreeSet<String>) -> Vec<PackDetect
 }
 
 /// Load every enabled `local/NAME` pack of `table` from `<root>/packs/NAME.toml`.
+#[allow(
+    clippy::disallowed_methods,
+    reason = "pack files live under the packs state dir, outside the walk"
+)]
 pub fn load(root: &Path, table: &PacksTable) -> LoadedPacks {
     let mut out = LoadedPacks::default();
     for id in &table.enabled {

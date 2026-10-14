@@ -146,6 +146,10 @@ fn fail_on_name(f: FailOn) -> &'static str {
 }
 
 /// `file:line:col` resolver over the files the findings point into.
+#[allow(
+    clippy::disallowed_methods,
+    reason = "report excerpts read the working tree after the walk"
+)]
 fn sources_of(root: &std::path::Path, report: &CheckReport) -> MemorySources {
     let mut sources = MemorySources::new();
     let mut seen = std::collections::HashSet::new();

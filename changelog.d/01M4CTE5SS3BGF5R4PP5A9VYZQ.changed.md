@@ -1,0 +1,1 @@
+Rule code in gob-check, gob-rules, frob-check, grimble-check and crunk-check now reads walked files through the snapshot content API (`Core::text`, `Core::bytes`), and a per-crate clippy `disallowed-methods` ban rejects `std::fs` reads in those crates.

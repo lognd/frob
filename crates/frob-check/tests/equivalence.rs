@@ -1,3 +1,7 @@
+#![allow(
+    clippy::disallowed_methods,
+    reason = "a test reads fixtures and outputs, not a walked snapshot"
+)]
 //! The extraction regression: the pipeline reports exactly the findings the pre-extraction
 //! `frob check` reported on two fixture trees (ticket 01M3Z713NBP986Q2ZDHKKR84AW).
 //!

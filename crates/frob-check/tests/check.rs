@@ -1,3 +1,7 @@
+#![allow(
+    clippy::disallowed_methods,
+    reason = "a test reads fixtures and outputs, not a walked snapshot"
+)]
 //! End-to-end behaviour of the pipeline over temp repositories.
 
 use std::path::Path;

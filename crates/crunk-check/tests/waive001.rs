@@ -1,3 +1,7 @@
+#![allow(
+    clippy::disallowed_methods,
+    reason = "a test reads fixtures and outputs, not a walked snapshot"
+)]
 //! WAIVE001, `crunk:waive` suppression, `[lint]` severities and report order through `crunk check`;
 //! plus the registry page under `docs/crunk/rules/`.
 

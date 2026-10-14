@@ -45,6 +45,10 @@ impl ScopeView for TicketScope {
 /// A manifest, an added or removed Rust file, or a Rust file whose public surface differs from
 /// the merge base counts as an API change; any read failure counts as one too, so the answer
 /// only ever errs wide (frob:ticket 01M4MH62ATTYVEF66Y4C93BJQC).
+#[allow(
+    clippy::disallowed_methods,
+    reason = "compares the working tree against the merge-base blob; the walk is not involved"
+)]
 fn branch_api_changes(
     repo: &Repo,
     root: &std::path::Path,
@@ -401,6 +405,10 @@ pub(crate) fn ticket_rules(
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::disallowed_methods,
+    reason = "a test reads the git config it just initialised"
+)]
 mod tests {
     use super::*;
     use frob_ledger::model::TicketType;

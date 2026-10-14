@@ -7,6 +7,11 @@
 //!
 //! [`RuleIndex`]: crate::RuleIndex
 
+#![allow(
+    clippy::disallowed_methods,
+    reason = "a source generator reads the crate's own sources, which are not a walked snapshot"
+)]
+
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 

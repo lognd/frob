@@ -214,6 +214,10 @@ fn stale(path: &str) -> CheckError {
     CheckError::FixStale(path.to_owned())
 }
 
+#[allow(
+    clippy::disallowed_methods,
+    reason = "--fix digests the exact on-disk bytes its byte offsets apply to"
+)]
 /// Digest the exact raw bytes of every file a Deterministic fix edits (the offsets' basis).
 pub(crate) fn raw_digests(
     root: &Path,
@@ -236,6 +240,10 @@ pub(crate) fn raw_digests(
     out
 }
 
+#[allow(
+    clippy::disallowed_methods,
+    reason = "--fix refuses unless the raw on-disk bytes are the analysed ones"
+)]
 /// Read every file the candidates touch and refuse any whose digest is not the analysed one.
 fn load_checked(
     root: &Path,
@@ -295,6 +303,10 @@ fn write_all(
     Ok(())
 }
 
+#[allow(
+    clippy::disallowed_methods,
+    reason = "tests read the files they wrote to a temp dir"
+)]
 #[cfg(test)]
 mod tests {
     use super::*;
