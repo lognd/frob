@@ -1,0 +1,23 @@
+kind = "evidence"
+captured_at = "2026-10-14T12:35:33Z"
+digest = "e77b387dc315ebc4ec443de9872f8f8a2fd9db51ddb3717631ba39b8cd3a5cbd"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.96s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f77e9c38-e173-4f44-a861-29433eaa1016 with nextest profile: default
+    Starting 1 test across 351 binaries (3096 tests skipped)
+        PASS [   0.008s] crunk-spec::spec game_table_loads_reports_missing_keys_and_rejects_unknown_or_duplicate_keys
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 1 test run: 1 passed, 3096 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "game_table_loads_reports_missing_keys_and_rejects_unknown_or_duplicate_keys"
+size = 589
+status = "measured"
+test_count = 1
+tests_digest = "49a6ac15c2f89a16da6a09c84277bf256cf787d4ebecb87fbc92fba5fcdf8a54"
+at = "2026-10-14T12:35:33Z"
+actor = "Claude"
+rev = 1
