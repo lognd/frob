@@ -780,6 +780,18 @@
       },
       "type": "object"
     },
+    "types": {
+      "additionalProperties": false,
+      "description": "How far Python type annotations are trusted when resolving calls (`docs/design/cohesion.md` 2.2).",
+      "properties": {
+        "trust": {
+          "default": "checked",
+          "description": "`checked` (annotations are exact only in files the bound checker ran clean on), `annotated` (claimed, May) or `none` (hints only).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "worktree": {
       "additionalProperties": false,
       "description": "Where `frob work` creates worktrees.",

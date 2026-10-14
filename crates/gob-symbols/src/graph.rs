@@ -772,6 +772,16 @@ impl SymbolGraph {
         Self::build(files, Some(deps), TypeFacts::default())
     }
 
+    /// Builds the graph like [`Self::from_files_with_deps`] with checker-derived `facts` weighting Python annotations.
+    // frob:ticket 01M4CXSWZ95SVDADAB97TYG963
+    pub fn from_files_with_deps_typed(
+        files: Vec<FileSymbols>,
+        deps: &mut CrateDeps,
+        facts: TypeFacts,
+    ) -> Self {
+        Self::build(files, Some(deps), facts)
+    }
+
     fn build(mut files: Vec<FileSymbols>, deps: Option<&mut CrateDeps>, facts: TypeFacts) -> Self {
         let t = std::time::Instant::now();
         let lap = |phase: &str| {

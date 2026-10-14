@@ -287,6 +287,16 @@ Materialized: yes.
 | `ref` | `String` | `"refs/heads/main"` | yes | Ref holding the ledger; the ledger merge driver and `doctor` resolve it. |
 | `ref_mode` | `RefModeKnob` | `"trunk"` | yes | `trunk` commits to `ref`; `branch` commits to the checked-out branch; `orphan` commits to the ticket branch `branch` in the ticket-branch layout and keeps `ref` as the code base. |
 
+## `[types]`
+
+How far Python type annotations are trusted when resolving calls (`docs/design/cohesion.md` 2.2).
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `trust` | `String` | `"checked"` | no | `checked` (annotations are exact only in files the bound checker ran clean on), `annotated` (claimed, May) or `none` (hints only). |
+
 ## `[worktree]`
 
 Where `frob work` creates worktrees.

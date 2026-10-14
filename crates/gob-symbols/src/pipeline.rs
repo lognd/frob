@@ -18,6 +18,7 @@ use crate::fold::{base_file, opaque_file};
 use crate::graph::SymbolGraph;
 use crate::model::FileSymbols;
 use crate::registry::adapter_for;
+use crate::types::TypeFacts;
 
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
@@ -183,6 +184,17 @@ pub fn build_graph_with_stats(
     files: &[FileEntry],
     cache: &Cache,
 ) -> (SymbolGraph, BuildStats) {
+    build_graph_with_stats_typed(root, files, cache, TypeFacts::default())
+}
+
+// frob:ticket 01M4CXSWZ95SVDADAB97TYG963
+/// Like [`build_graph_with_stats`], weighting Python annotations by checker-derived `facts` (`[types] trust`).
+pub fn build_graph_with_stats_typed(
+    root: &Path,
+    files: &[FileEntry],
+    cache: &Cache,
+    facts: TypeFacts,
+) -> (SymbolGraph, BuildStats) {
     let started = std::time::Instant::now();
     let extracted = AtomicUsize::new(0);
     let cached = AtomicUsize::new(0);
@@ -271,7 +283,7 @@ pub fn build_graph_with_stats(
     let mut deps = CrateDeps::new(root);
     let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
     stats.malformed_projects = deps.malformed_projects(&paths);
-    let graph = SymbolGraph::from_files_with_deps(per_file, &mut deps);
+    let graph = SymbolGraph::from_files_with_deps_typed(per_file, &mut deps, facts);
     tracing::info!(
         assemble_ms = started.elapsed().as_millis() - per_file_ms,
         "symbol graph assembled"

@@ -120,7 +120,7 @@ pub use nodejs::{
 pub use opaque::OpaqueAdapter;
 pub use pipeline::{
     BuildStats, EXTRACTOR_VERSION, SkipKind, SkippedFile, build_graph, build_graph_with_stats,
-    extract_file, fold_file,
+    build_graph_with_stats_typed, extract_file, fold_file,
 };
 pub use python::{
     PythonAdapter, is_python_path, is_python_test_file, is_python_test_fn, is_python_test_module,

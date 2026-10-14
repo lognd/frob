@@ -105,6 +105,8 @@ pub struct FrobConfig {
     pub check: CheckTable,
     /// `[perf]`, owned by `frob-check`.
     pub perf: PerfTable,
+    /// `[types]`, owned by `gob-check`.
+    pub types: gob_check::TypesTable,
     /// `[cache]`.
     pub cache: CacheTable,
     /// `[git]`.
@@ -152,6 +154,7 @@ impl FrobConfig {
             tickets: gob_config::load::<TicketsTable>(root, PRODUCT)?.value,
             check: gob_config::load::<CheckTable>(root, PRODUCT)?.value,
             perf: gob_config::load::<PerfTable>(root, PRODUCT)?.value,
+            types: gob_check::TypesTable::load(root, PRODUCT)?,
             cache: gob_config::load::<CacheTable>(root, PRODUCT)?.value,
             git: gob_config::load::<GitTable>(root, PRODUCT)?.value,
             lease: gob_config::load::<frob_lease::LeaseConfig>(root, PRODUCT)?.value,
