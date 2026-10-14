@@ -4,9 +4,10 @@ title = "GRL lowering: defs, 3-segment operand paths, count"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "Claude"
 created = "2026-10-14T06:07:50Z"
-updated = "2026-10-14T12:22:16Z"
+updated = "2026-10-14T12:43:20Z"
 scope = ["crates/gob-plan/**"]
 +++
 
