@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:43Z"
-updated = "2026-10-14T14:07:31Z"
-scope = ["changelog.d/**", "crates/gob-check/**", "crates/gob-rules/**", "crates/frob-check/**", "crates/grimble-check/**", "crates/crunk-check/**"]
+updated = "2026-10-14T14:08:13Z"
+scope = ["changelog.d/**", "crates/gob-check/**", "crates/gob-rules/**", "crates/frob-check/**", "crates/grimble-check/**", "crates/crunk-check/**", "docs/design/boundaries.md"]
 
 [[acceptance]]
 text = "Given rule crates, when the lint runs, then no rule body calls std::fs read functions (enforced by a rule or clippy disallowed_methods)"
