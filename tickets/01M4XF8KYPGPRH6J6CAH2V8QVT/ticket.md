@@ -2,12 +2,12 @@
 id = "01M4XF8KYPGPRH6J6CAH2V8QVT"
 title = "GRL lowering: snippet casts, as roles, and fix-template metavariables"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T15:07:32Z"
-updated = "2026-10-14T15:57:27Z"
+updated = "2026-10-14T15:57:28Z"
 scope = ["crates/gob-plan/**"]
 
 [[links]]
