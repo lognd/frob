@@ -13,6 +13,8 @@ pub mod color001;
 pub mod color002;
 /// Rule `CONTRAST001`.
 pub mod contrast001;
+/// Rule `GX001`.
+pub mod gx001;
 /// Rule `HUMAN001`.
 pub mod human001;
 /// Rule `HUMAN002`.
@@ -83,6 +85,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <color001::Color001 as gob_rules::RuleDecl>::DEF,
     <color002::Color002 as gob_rules::RuleDecl>::DEF,
     <contrast001::Contrast001 as gob_rules::RuleDecl>::DEF,
+    <gx001::Gx001 as gob_rules::RuleDecl>::DEF,
     <human001::Human001 as gob_rules::RuleDecl>::DEF,
     <human002::Human002 as gob_rules::RuleDecl>::DEF,
     <layer001::Layer001 as gob_rules::RuleDecl>::DEF,
@@ -135,6 +138,7 @@ where
     color001::Color001: gob_rules::Measured<P>,
     color002::Color002: gob_rules::Measured<P>,
     contrast001::Contrast001: gob_rules::RepoRule<P>,
+    gx001::Gx001: gob_rules::RepoRule<P>,
     human001::Human001: gob_rules::RepoRule<P>,
     human002::Human002: gob_rules::RepoRule<P>,
     layer001::Layer001: gob_rules::Measured<P>,
@@ -173,6 +177,7 @@ where
     rules.push(gob_rules::BoundRule::measured(color001::Color001));
     rules.push(gob_rules::BoundRule::measured(color002::Color002));
     rules.push(gob_rules::BoundRule::repo(contrast001::Contrast001));
+    rules.push(gob_rules::BoundRule::repo(gx001::Gx001));
     rules.push(gob_rules::BoundRule::repo(human001::Human001));
     rules.push(gob_rules::BoundRule::repo(human002::Human002));
     rules.push(gob_rules::BoundRule::measured(layer001::Layer001));

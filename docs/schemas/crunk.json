@@ -200,6 +200,21 @@
         }
       ]
     },
+    "GameConfig": {
+      "additionalProperties": false,
+      "description": "The `[game]` table: a game profile and the accessibility coverage keys it has declared.",
+      "properties": {
+        "coverage": {
+          "default": [],
+          "description": "Coverage keys the project declares handled; each must be one of [`GAME_COVERAGE_KEYS`].",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "JsxConfig": {
       "additionalProperties": false,
       "description": "The `[jsx]` table: sources to ingest for style props and `className` strings.",
@@ -971,6 +986,17 @@
         }
       },
       "type": "object"
+    },
+    "game": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/GameConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Game accessibility profile (GX rules); optional, absent means the GX rules are off."
     },
     "jsx": {
       "anyOf": [

@@ -7,13 +7,13 @@ use crunk_rules::family::{CheckTier, FAMILIES, Gate, family, gate_severity, is_w
 use crunk_rules::registry::{catalog_mismatches, entries, render_markdown, unknown_families};
 use crunk_rules::rules::{
     INDEX, bp001::Bp001, bp002::Bp002, bp003::Bp003, color001::Color001, color002::Color002,
-    contrast001::Contrast001, human001::Human001, human002::Human002, layer001::Layer001,
-    org001::Org001, org002::Org002, org003::Org003, org004::Org004, org005::Org005,
-    radius001::Radius001, size001::Size001, slop001::Slop001, slop003::Slop003, slop004::Slop004,
-    slop010::Slop010, slop011::Slop011, slop014::Slop014, slop022::Slop022, slop040::Slop040,
-    slop060::Slop060, space001::Space001, tokens001::Tokens001, tw001::Tw001, tw002::Tw002,
-    tw003::Tw003, tw004::Tw004, tw005::Tw005, type001::Type001, type002::Type002, type003::Type003,
-    waive001::Waive001,
+    contrast001::Contrast001, gx001::Gx001, human001::Human001, human002::Human002,
+    layer001::Layer001, org001::Org001, org002::Org002, org003::Org003, org004::Org004,
+    org005::Org005, radius001::Radius001, size001::Size001, slop001::Slop001, slop003::Slop003,
+    slop004::Slop004, slop010::Slop010, slop011::Slop011, slop014::Slop014, slop022::Slop022,
+    slop040::Slop040, slop060::Slop060, space001::Space001, tokens001::Tokens001, tw001::Tw001,
+    tw002::Tw002, tw003::Tw003, tw004::Tw004, tw005::Tw005, type001::Type001, type002::Type002,
+    type003::Type003, waive001::Waive001,
 };
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
@@ -57,6 +57,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/tw005.rs::Tw005
     // frob:tests crates/crunk-rules/src/rules/human001.rs::Human001
     // frob:tests crates/crunk-rules/src/rules/human002.rs::Human002
+    // frob:tests crates/crunk-rules/src/rules/gx001.rs::Gx001
     // frob:tests crates/crunk-rules/src/rules/slop001.rs::Slop001
     // frob:tests crates/crunk-rules/src/rules/slop003.rs::Slop003
     // frob:tests crates/crunk-rules/src/rules/slop004.rs::Slop004
@@ -96,6 +97,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
         "BP002" => support::run::<Bp002>(&host),
         "BP003" => support::run::<Bp003>(&host),
         "TOKENS001" => support::run::<Tokens001>(&host),
+        "GX001" => support::run::<Gx001>(&host),
         "HUMAN001" => support::run::<Human001>(&host),
         "HUMAN002" => support::run::<Human002>(&host),
         "TW001" => support::run::<Tw001>(&host),
@@ -133,6 +135,7 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
             "COLOR001",
             "COLOR002",
             "CONTRAST001",
+            "GX001",
             "HUMAN001",
             "HUMAN002",
             "LAYER001",
@@ -288,6 +291,6 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids.len(), 36);
+    assert_eq!(ids.len(), 37);
     assert!(ids.contains(&"SPACE001"));
 }

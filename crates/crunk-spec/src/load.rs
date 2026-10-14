@@ -29,6 +29,7 @@ pub const OWN_TABLES: &[&str] = &[
     "session",
     "mock_set",
     "review",
+    "game",
     "decisions",
 ];
 
@@ -300,6 +301,11 @@ impl<'a> Ctx<'a> {
         )?;
         let review = raw.review.unwrap_or_default();
         validate::review(&review)?;
+        // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
+        let game = raw.game;
+        if let Some(g) = &game {
+            validate::game(g)?;
+        }
         // frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
         let decisions = raw.decisions.unwrap_or_default();
         validate::decisions(&decisions)?;
@@ -322,6 +328,7 @@ impl<'a> Ctx<'a> {
             sessions,
             mock_sets,
             review,
+            game,
             decisions,
         })
     }

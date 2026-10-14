@@ -869,6 +869,32 @@ pub(crate) fn review(raw: &crate::table::ReviewConfig) -> Res<()> {
     Ok(())
 }
 
+// frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
+/// `[game]`: every coverage key is a known key and none repeats.
+pub(crate) fn game(raw: &crate::table::GameConfig) -> Res<()> {
+    let mut seen: HashSet<&str> = HashSet::new();
+    for (i, k) in raw.coverage.iter().enumerate() {
+        let at = vec![key("game"), key("coverage"), Seg::Idx(i)];
+        if !crate::table::GAME_COVERAGE_KEYS.iter().any(|(g, _)| g == k) {
+            let known: Vec<&str> = crate::table::GAME_COVERAGE_KEYS
+                .iter()
+                .map(|(g, _)| *g)
+                .collect();
+            return Err(fail(
+                at,
+                format!(
+                    "unknown coverage key `{k}` (expected one of {})",
+                    known.join(", ")
+                ),
+            ));
+        }
+        if !seen.insert(k.as_str()) {
+            return Err(fail(at, format!("duplicate coverage key `{k}`")));
+        }
+    }
+    Ok(())
+}
+
 // frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
 /// `[decisions]`: every key is a known decision and every reason is non-blank.
 pub(crate) fn decisions(raw: &IndexMap<String, String>) -> Res<()> {

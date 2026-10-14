@@ -34,6 +34,14 @@ unchosen default; optional.
 | `radius` | string | no | `-` |  |
 | `voice` | string | no | `-` |  |
 
+## `[game]`
+
+The `[game]` table: a game profile and the accessibility coverage keys it has declared.
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| `coverage` | array of string | no | `[]` | Coverage keys the project declares handled; each must be one of [`GAME_COVERAGE_KEYS`]. |
+
 ## `[jsx]`
 
 The `[jsx]` table: sources to ingest for style props and `className` strings.

@@ -871,3 +871,35 @@ fn decisions_table_declares_known_decisions_with_reasons() {
     let blank = err(&with("[decisions]\nfonts = \"\"\n"));
     assert!(detail(&blank).contains("reason must not"));
 }
+
+// frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
+// frob:tests crates/crunk-spec/src/table.rs::GameConfig
+#[test]
+fn game_table_loads_reports_missing_keys_and_rejects_unknown_or_duplicate_keys() {
+    assert!(ok(full()).game.is_none());
+    let spec = ok(&with(
+        "[game]\ncoverage = [\"volume_channels\", \"glyph_icons\"]\n",
+    ));
+    let missing: Vec<&str> = spec
+        .game
+        .expect("game")
+        .missing()
+        .iter()
+        .map(|m| m.0)
+        .collect();
+    assert_eq!(
+        missing,
+        [
+            "haptics_toggle",
+            "time_limits",
+            "subtitle_format",
+            "text_in_images"
+        ]
+    );
+    let unknown = err(&with("[game]\ncoverage = [\"bogus\"]\n"));
+    assert!(detail(&unknown).contains("unknown coverage key `bogus`"));
+    let dup = err(&with(
+        "[game]\ncoverage = [\"glyph_icons\", \"glyph_icons\"]\n",
+    ));
+    assert!(detail(&dup).contains("duplicate coverage key"));
+}

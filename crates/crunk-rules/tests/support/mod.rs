@@ -218,6 +218,10 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
     if config.is_some_and(|c| c.starts_with("review-")) {
         spec_text.push_str(&review_tables(config));
     }
+    // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
+    if let Some(kind) = config.and_then(|c| c.strip_prefix("game-")) {
+        spec_text.push_str(&game_table(kind));
+    }
     if [".tsx", ".jsx", ".ts"].iter().any(|e| file.ends_with(e)) {
         spec_text.push_str("\n[jsx]\nglobs = [\"src/**/*\"]\n");
     }
@@ -262,6 +266,19 @@ pub fn run<R: RepoRule<Project> + Default>(host: &Project) -> Vec<Finding> {
 }
 
 // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+// frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
+/// The `[game]` table a `config=game-*` case adds: `game-complete` declares every coverage key,
+/// `game-no-volume` every key but `volume_channels`.
+fn game_table(kind: &str) -> String {
+    let keys: Vec<String> = crunk_spec::table::GAME_COVERAGE_KEYS
+        .iter()
+        .map(|(k, _)| *k)
+        .filter(|k| !(kind == "no-volume" && *k == "volume_channels"))
+        .map(|k| format!("\"{k}\""))
+        .collect();
+    format!("\n[game]\ncoverage = [{}]\n", keys.join(", "))
+}
+
 /// The `[review]` policy and the reviewed screen `home` a `config=review-*` case adds.
 fn review_tables(config: Option<&str>) -> String {
     let mut text = String::from(

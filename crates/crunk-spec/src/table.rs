@@ -538,6 +538,58 @@ impl ReviewConfig {
     }
 }
 
+// frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
+/// The game accessibility coverage keys a `[game]` profile declares, each with the guideline it
+/// answers (GAG = Game Accessibility Guidelines, XAG = Xbox Accessibility Guidelines, IGDA = IGDA
+/// GA-SIG). GX001 requires every one.
+pub const GAME_COVERAGE_KEYS: &[(&str, &str)] = &[
+    (
+        "volume_channels",
+        "separate volume channels for music, effects and speech (GAG, XAG 112)",
+    ),
+    (
+        "haptics_toggle",
+        "a toggle that turns haptics and vibration off (GAG, XAG 107)",
+    ),
+    (
+        "time_limits",
+        "time limits adjustable or removable, to at least 10x (GAG, IGDA)",
+    ),
+    (
+        "subtitle_format",
+        "subtitles of at most 2 lines and 38 to 40 characters per line (GAG, XAG 104)",
+    ),
+    (
+        "text_in_images",
+        "no essential text baked into images, or a text equivalent (GAG, IGDA)",
+    ),
+    (
+        "glyph_icons",
+        "Unicode glyph icons carry a text label or alternative (GAG, XAG)",
+    ),
+];
+
+// frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
+/// The `[game]` table: a game profile and the accessibility coverage keys it has declared.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GameConfig {
+    /// Coverage keys the project declares handled; each must be one of [`GAME_COVERAGE_KEYS`].
+    #[serde(default)]
+    pub coverage: Vec<String>,
+}
+
+impl GameConfig {
+    /// The `(key, guideline)` rows of [`GAME_COVERAGE_KEYS`] this profile has not declared.
+    pub fn missing(&self) -> Vec<(&'static str, &'static str)> {
+        GAME_COVERAGE_KEYS
+            .iter()
+            .filter(|(k, _)| !self.coverage.iter().any(|c| c == k))
+            .copied()
+            .collect()
+    }
+}
+
 /// One `[[session]]` or `[[mock_set]]` roster entry: an id plus opaque renderer-consumed data.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -597,6 +649,9 @@ pub struct RawSpec {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     /// Human review lock policy; optional.
     pub review: Option<ReviewConfig>,
+    // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
+    /// Game accessibility profile (GX rules); optional, absent means the GX rules are off.
+    pub game: Option<GameConfig>,
     // frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
     /// Declared design decisions (`key = "reason"`) that silence the SLOP rules built on an
     /// unchosen default; optional.
