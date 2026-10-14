@@ -2,7 +2,8 @@
 id = "01M3ZX87VKDKC0N65NH77EBEJP"
 title = "Profile behaviours: teach count, next-step line, doable order, failure help"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
