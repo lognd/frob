@@ -8,8 +8,8 @@ points = 2
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-08T08:13:20Z"
-updated = "2026-10-14T11:40:22Z"
-scope = ["changelog.d/**", "crates/crunk-spec/**", "crates/crunk-check/**", "crates/crunk-rules/**", "docs/crunk/**"]
+updated = "2026-10-14T12:27:54Z"
+scope = ["changelog.d/**", "crates/crunk-spec/**", "crates/crunk-check/**", "crates/crunk-rules/**", "docs/crunk/**", "docs/schemas/crunk.json"]
 
 [[acceptance]]
 text = "Given a game profile lacking a volume-channel declaration, when crunk check runs, then a GX finding names the guideline"
