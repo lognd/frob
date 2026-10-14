@@ -8,7 +8,7 @@ use crate::grl::ast::{
     self, Binding, Clause, ClauseKind, CondKind, Header, HeaderKind, LangSet, LiteralKind,
     MessagePart, Object, RelKind, Rule, ShapeKind, Source, Term, TermKind,
 };
-use crate::plan::{Certainty, CmpOp, Need, Polarity, Position, Quant};
+use crate::plan::{ANY_NODES, Certainty, CmpOp, Need, Polarity, Position, Quant};
 
 /// A value a condition compares, by name.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -79,6 +79,12 @@ pub(super) enum Cond {
     Under {
         subject: Opd,
         prefix: Opd,
+    },
+    /// The variable's node is exactly a match of a grammar-level snippet in `lang`.
+    MatchSnippet {
+        var: String,
+        lang: String,
+        pattern: String,
     },
     InUnit {
         sub: String,
@@ -184,6 +190,8 @@ struct Cx {
     /// The defs lowered so far: name and parameter count, parallel to [`Lowered::defs`].
     defs: Vec<(String, usize)>,
     fresh: u32,
+    /// The rule's one `lang`, the default language of an untagged snippet.
+    lang: Option<String>,
 }
 
 fn unsupported<T>(what: &'static str, span: Span) -> Result<T, LowerError> {
@@ -216,6 +224,10 @@ pub(super) fn convert(rule: &Rule) -> Result<Lowered, LowerError> {
         side_vars: Vec::new(),
         defs: Vec::new(),
         fresh: 0,
+        lang: match &out.langs {
+            LangNames::Only(v) if v.len() == 1 => Some(v[0].clone()),
+            _ => None,
+        },
     };
     for c in &rule.clauses {
         if let ClauseKind::Find(b) = &c.node {
@@ -404,6 +416,43 @@ fn kind_fields(
     Ok(out)
 }
 
+/// `x is` a snippet: a match op on a variable; the `as roles` form is refused.
+fn is_snippet_cond(
+    cx: &Cx,
+    subject: &Term,
+    snippet: &crate::grl::Snippet,
+    roles: bool,
+    span: Span,
+) -> Result<Cond, LowerError> {
+    if roles {
+        return unsupported("`is` a snippet as roles", span);
+    }
+    match var_name(cx, subject)? {
+        Some(var) => snippet_cond(cx, &var, snippet, span),
+        None => unsupported("`is` a snippet on a non-variable", subject.span),
+    }
+}
+
+/// A snippet as a condition on a variable, in the snippet's language or the rule's only one.
+fn snippet_cond(
+    cx: &Cx,
+    var: &str,
+    snippet: &crate::grl::Snippet,
+    span: Span,
+) -> Result<Cond, LowerError> {
+    let lang = match (&snippet.lang, &cx.lang) {
+        (Some(l), _) => l.name.clone(),
+        (None, Some(l)) => l.clone(),
+        (None, None) => return unsupported("a snippet with no language", span),
+    };
+    tracing::debug!(var, lang, "lowering a snippet pattern");
+    Ok(Cond::MatchSnippet {
+        var: var.to_owned(),
+        lang,
+        pattern: snippet.text.clone(),
+    })
+}
+
 /// The source of a binder and the conditions written on it: field equalities, relations, filter.
 fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>), LowerError> {
     let name = b.name.text.clone();
@@ -420,7 +469,13 @@ fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>)
                 }
                 Src::Kind(kind.text.clone())
             }
-            ShapeKind::Snippet { .. } => return unsupported("a snippet", s.span),
+            ShapeKind::Snippet { snippet, cast } => {
+                if cast.is_some() {
+                    return unsupported("a snippet cast", s.span);
+                }
+                attached.push(snippet_cond(cx, &name, snippet, s.span)?);
+                Src::Kind(ANY_NODES.to_owned())
+            }
             ShapeKind::Alt(_) => return unsupported("alternative shapes", s.span),
         },
         Source::Side(p) => {
@@ -564,7 +619,11 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
         },
         CondKind::In { lhs, rhs } => in_cond(cx, lhs, rhs)?,
         CondKind::Is { subject, test } => is_cond(cx, subject, test)?,
-        CondKind::IsSnippet { .. } => return unsupported("`is` with a snippet", c.span),
+        CondKind::IsSnippet {
+            subject,
+            snippet,
+            roles,
+        } => is_snippet_cond(cx, subject, snippet, *roles, c.span)?,
         CondKind::HasAttr { subject, attr } => match var_name(cx, subject)? {
             Some(var) => Cond::HasAttr {
                 var,

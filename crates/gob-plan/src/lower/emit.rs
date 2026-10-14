@@ -72,7 +72,7 @@ fn free(c: &Cond, bound: &mut Vec<String>, out: &mut BTreeSet<String>) {
         | Cond::Exists(subject) => {
             free_in_opd(subject, bound, out);
         }
-        Cond::HasAttr { var, .. } => name(var, bound),
+        Cond::HasAttr { var, .. } | Cond::MatchSnippet { var, .. } => name(var, bound),
         Cond::Under { subject, prefix } => {
             free_in_opd(subject, bound, out);
             free_in_opd(prefix, bound, out);
@@ -211,6 +211,11 @@ impl Builder {
             Cond::HasAttr { var, attr } => Op::HasAttr {
                 var: self.var(var)?,
                 attr: self.intern(attr),
+            },
+            Cond::MatchSnippet { var, lang, pattern } => Op::MatchSnippet {
+                var: self.var(var)?,
+                lang: self.intern(lang),
+                pattern: self.intern(pattern),
             },
             Cond::Under { subject, prefix } => Op::Under {
                 subject: self.operand(subject)?,

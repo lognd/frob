@@ -238,6 +238,12 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
             | Op::HasAttr { .. }
             | Op::Under { .. }
             | Op::InUnit { .. } => {}
+            Op::MatchSnippet { lang, pattern, .. } => {
+                let (l, src) = (&p.strings[*lang as usize], &p.strings[*pattern as usize]);
+                let pat = gob_pattern::grammar::Pattern::compile(l, src)
+                    .map_err(|e| bad_pattern(p, src, &e))?;
+                matchers.insert(id, Matcher::Snippet(Box::new(pat)));
+            }
         }
     }
     Ok((kinds, matchers, wired))
@@ -281,7 +287,7 @@ fn free_vars(p: &PlanParts, id: OpId, out: &mut Vec<VarId>) {
         | Op::MatchGlobSet { subject, .. }
         | Op::Is { subject, .. }
         | Op::Exists { subject } => operand(subject, out),
-        Op::HasAttr { var, .. } => out.push(*var),
+        Op::HasAttr { var, .. } | Op::MatchSnippet { var, .. } => out.push(*var),
         Op::Under { subject, prefix } => {
             operand(subject, out);
             operand(prefix, out);

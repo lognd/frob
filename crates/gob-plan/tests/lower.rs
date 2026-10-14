@@ -71,6 +71,7 @@ fn the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans() {
             "CAP001.grl",
             "CI002.grl",
             "COV001.grl",
+            "NOPE001.grl",
             "SCOPE001.grl",
             "SYS001.grl",
             "TODO001.grl"
@@ -116,11 +117,11 @@ fn a_p_minus_rule_splits_its_subjects_from_the_good_thing() {
 // frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
 #[test]
 fn constructs_outside_the_ir_are_refused_by_name_not_mislowered() {
-    let snippet = rule(&["find c: rust`$X.unwrap()`", "report c \"x\""]);
+    let cast = rule(&["find c: rust`$X.unwrap()` as call", "report c \"x\""]);
     assert!(matches!(
-        lower(&snippet),
+        lower(&cast),
         Err(LowerError::Unsupported {
-            what: "a snippet",
+            what: "a snippet cast",
             ..
         })
     ));

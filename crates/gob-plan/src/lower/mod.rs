@@ -18,7 +18,7 @@
 //! lower too, as do defs (each a view over its parameters, every call by index; a def body
 //! calls only earlier defs), `count(x: SRC ...)` against an integer or an int knob (either side
 //! of the comparison; a knob limit honours a `[rules]` override), and operand paths of any
-//! length (`l.target.anchor` reads the dotted field). `a reaches b via VERB within N` lowers when `N` is an integer literal or int knob from 1 to 65535 (one verb; an unbounded or multi-verb `reaches` is refused). A kind's string argument (`directive "todo"`) tests the node's `name`. Everything else (snippets, vocab knobs, function-call terms, a count compared with
+//! length (`l.target.anchor` reads the dotted field). `a reaches b via VERB within N` lowers when `N` is an integer literal or int knob from 1 to 65535 (one verb; an unbounded or multi-verb `reaches` is refused). A kind's string argument (`directive "todo"`) tests the node's `name`. a snippet binder and `x is` a snippet lower to a snippet match op (the rule's one `lang` stands in for a missing tag; casts and `as roles` are refused). Everything else (vocab knobs, function-call terms, a count compared with
 //! anything but an integer or knob, other `is` words, other side-relation operands) is a [`LowerError::Unsupported`] that names
 //! the construct. Notes and fixes are not part of the plan and are dropped.
 

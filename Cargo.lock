@@ -2596,6 +2596,7 @@ dependencies = [
  "globset",
  "gob-caps",
  "gob-ir",
+ "gob-pattern",
  "gob-rules",
  "gob-symbols",
  "gob-text",

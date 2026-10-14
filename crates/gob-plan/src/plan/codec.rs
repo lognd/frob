@@ -447,6 +447,12 @@ fn put_op(w: &mut Vec<u8>, op: &Op) {
             put_u16(w, *var);
             put_u32(w, *attr);
         }
+        Op::MatchSnippet { var, lang, pattern } => {
+            w.push(21);
+            put_u16(w, *var);
+            put_u32(w, *lang);
+            put_u32(w, *pattern);
+        }
         Op::Under { subject, prefix } => {
             w.push(19);
             put_operand(w, subject);
@@ -726,6 +732,11 @@ impl Reader<'_> {
             20 => Op::InUnit {
                 sub: self.u16("var")?,
                 unit: self.u16("var")?,
+            },
+            21 => Op::MatchSnippet {
+                var: self.u16("var")?,
+                lang: self.u32("lang")?,
+                pattern: self.u32("pattern")?,
             },
             tag => return Err(PlanError::BadTag { what: "op", tag }),
         })

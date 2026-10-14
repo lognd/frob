@@ -5,6 +5,7 @@
 //! certain. A kind this executor has no node test for is refused before the run starts
 //! ([`KindTest::from_word`] returns `None`), never answered as "no members".
 
+use crate::plan::ANY_NODES;
 use gob_ir::markup;
 use gob_ir::style;
 use gob_ir::{AttrValue, Model, NodeId, Operator, Truth, Universal};
@@ -34,6 +35,8 @@ const ASSIGN_KINDS: &[&str] = &["assign", "assignment"];
 pub(crate) enum KindTest {
     /// The artifact root: a file is an artifact with text.
     Artifact,
+    /// Every node (the internal range of a snippet binder; no GRL word spells it).
+    Any,
     /// Any named `unit`.
     Unit,
     /// A `unit` whose kind is one of the listed spellings.
@@ -67,6 +70,7 @@ impl KindTest {
     pub(crate) fn from_word(word: &str) -> Option<Self> {
         Some(match word {
             "artifact" | "file" => Self::Artifact,
+            ANY_NODES => Self::Any,
             "unit" => Self::Unit,
             "function" => Self::UnitKind(&["function"]),
             "method" => Self::UnitKind(&["method"]),
@@ -102,6 +106,7 @@ impl KindTest {
         let yes = |b: bool| b.then_some(Truth::Yes);
         match self {
             Self::Artifact => yes(node == term.root()),
+            Self::Any => Some(Truth::Yes),
             Self::Unit => yes(is_canonical_unit(model, node)),
             Self::UnitKind(kinds) => match universal {
                 Some(Universal::Unit { kind, .. }) => {
