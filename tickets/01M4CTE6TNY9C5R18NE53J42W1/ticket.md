@@ -8,12 +8,12 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:44Z"
-updated = "2026-10-14T13:18:35Z"
+updated = "2026-10-14T13:25:56Z"
 scope = ["changelog.d/**", "crates/gob-config/**", "crates/frob-ledger/**", "crates/frob/**", "crates/frob-*/src/config.rs"]
 
 [[acceptance]]
 text = "Given any frob verb, when it runs, then frob.toml is read once (counter test)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given [tickets], when parsed, then exactly one parser in frob-ledger owns it"
