@@ -2,13 +2,13 @@
 id = "01M4CTE9W9QH6SBZSJ3E0E8M28"
 title = "Tests: consolidate integration-test binaries per crate and run frob CLI tests in process by default (audit M17)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:47Z"
-updated = "2026-10-08T03:55:47Z"
+updated = "2026-10-14T16:06:51Z"
 scope = ["changelog.d/**", "crates/*/tests/**", "crates/*/Cargo.toml", "crates/gob-testsupport/**"]
 
 [[acceptance]]
