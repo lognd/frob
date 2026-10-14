@@ -2,13 +2,14 @@
 id = "01M4CXV275FZJY5AZRC1QXB4AZ"
 title = "GRL: 'A and no t: T where B and C' parses C inside the no; bind quantifier bodies explicitly (extends ~K0FVJFM)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T04:55:11Z"
-updated = "2026-10-14T01:44:22Z"
+updated = "2026-10-14T03:01:48Z"
 scope = ["changelog.d/**", "crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]

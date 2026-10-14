@@ -208,3 +208,43 @@ fn rust_depth_limit_collapses_into_opaque_and_keeps_calls() {
         "calls inside a collapsed subtree still become edges"
     );
 }
+
+// frob:ticket 01M3ZTAV8SXD9C6G4A42WY14K9
+// frob:tests crates/gob-symbols/src/rust.rs::fold_tree
+#[test]
+fn rust_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit() {
+    let depth = 5000;
+    let mut src = String::from("fn deep() { ");
+    for _ in 0..depth {
+        src.push_str("{ ");
+    }
+    src.push_str("callee();");
+    for _ in 0..depth {
+        src.push_str(" }");
+    }
+    src.push_str(" }\nfn callee() {}\n");
+    let run = std::thread::Builder::new()
+        .stack_size(2 << 20)
+        .spawn(move || {
+            let folded = fold_file(&entry("d.rs", &src), &src).expect("fold");
+            let opaque = folded
+                .term
+                .ids()
+                .filter(|&n| folded.term.operator(n).is_opaque())
+                .count();
+            let segs: usize = folded
+                .file
+                .symbols
+                .iter()
+                .map(|s| s.symref.segments().len())
+                .sum();
+            (opaque, segs, folded.file.symbols.len())
+        })
+        .unwrap();
+    let (opaque, segs, syms) = run.join().expect("no stack overflow");
+    assert_eq!(opaque, 0, "no depth-limit collapse at 5000 levels");
+    assert!(
+        segs <= 2 * syms,
+        "symref storage stays flat: {segs} segs for {syms} symbols"
+    );
+}

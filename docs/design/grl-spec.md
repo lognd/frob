@@ -303,13 +303,19 @@ CMP        = "==" | "!=" | "<" | "<=" | ">" | ">=" ;
 ARITH      = "+" | "-" | "*" ;
 ```
 
-Two rules keep every source to one parse:
+Three rules keep every source to one parse:
 
 - **A binding's `where` filter stays on the binding's line.** A `where` that starts a
   line is always a clause of the rule, even straight after an unfiltered `find`, `some`
   or `no` (`find f: function` then `where f.public` on the next line is two clauses; for
   a P+ rule that equals the filter, for a P- rule the clause belongs to the good thing,
   not the subjects).
+- **A quantifier body binds as far right as it can, unless it is braced.** In
+  `A and no t: T where B and C` the `where` body is `B and C`: `C` is inside the `no`.
+  To end the body before a connective, brace it: `A and no t: T where { B } and C` is
+  `A and (no t: T where B) and C`. The same `where { cond }` is accepted after `find` and
+  `count`. The braces carry no meaning of their own, so the printer drops them and
+  parenthesises the quantifier instead (`(no t: T where B) and C`), which round-trips.
 - **Inside `any { }` a comma ends the item.** A bare `via a, b` list therefore ends
   at the first verb there; write several verbs as `via (a, b)`, which is accepted
   everywhere and is how the formatter prints every multi-verb list.
