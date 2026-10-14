@@ -245,9 +245,8 @@ fn param_annotations(params: Node<'_>, text: &str) -> HashMap<String, String> {
         let ty = p.child_by_field_name("type").map(|t| text_of(text, t));
         if let (Some(n), Some(t)) = (name, ty)
             && n.kind() == "identifier"
-            && t.split('.').all(|seg| {
-                !seg.is_empty() && seg.chars().all(|c| c.is_alphanumeric() || c == '_')
-            })
+            && t.split('.')
+                .all(|seg| !seg.is_empty() && seg.chars().all(|c| c.is_alphanumeric() || c == '_'))
         {
             out.insert(text_of(text, n).to_owned(), t.to_owned());
         }
@@ -1059,8 +1058,11 @@ impl<'a> Fold<'a> {
         let ord = self.alloc();
         self.units.push((ord, false));
         self.bound.push(binders.iter().cloned().collect());
-        self.annotated
-            .push(params.map(|p| param_annotations(p, self.cx.text)).unwrap_or_default());
+        self.annotated.push(
+            params
+                .map(|p| param_annotations(p, self.cx.text))
+                .unwrap_or_default(),
+        );
         let body = self.body_group(block, &stmts, depth);
         self.annotated.pop();
         self.bound.pop();

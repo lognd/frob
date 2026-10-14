@@ -470,9 +470,7 @@ impl SymbolGraph {
         call: &CallSite,
         ty: &str,
     ) -> Option<Outcome> {
-        let weight = self
-            .type_facts
-            .weight(call.caller.path(), call.line);
+        let weight = self.type_facts.weight(call.caller.path(), call.line);
         if weight == AnnotationWeight::Hint {
             return None;
         }

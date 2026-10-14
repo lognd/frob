@@ -38,11 +38,12 @@ impl TypesTable {
     ///
     /// [`ConfigError::Invalid`] when `trust` is not `checked`, `annotated` or `none`.
     pub fn trust(&self) -> Result<TypesTrust, ConfigError> {
-        TypesTrust::parse(&self.trust).ok_or_else(|| {
-            ConfigError::Invalid {
-                table: "types".to_owned(),
-                message: format!("trust = {:?}: expected checked, annotated or none", self.trust),
-            }
+        TypesTrust::parse(&self.trust).ok_or_else(|| ConfigError::Invalid {
+            table: "types".to_owned(),
+            message: format!(
+                "trust = {:?}: expected checked, annotated or none",
+                self.trust
+            ),
         })
     }
 }

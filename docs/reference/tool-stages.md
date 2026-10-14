@@ -14,7 +14,7 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | `args` | `[]` | Arguments, no shell. |
 | `timeout_secs` | `300` | Kill limit. |
 | `fail_on_nonzero` | `true` | A failing stage is `TOOL001` (Error); a missing binary is `TOOL001` Unresolved and required. |
-| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab` or `pyright-json`: turn stdout into findings. |
+| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json` or `ruff-json`: turn stdout into findings. |
 | `labels` | `[]` | actionlint runner labels the repository defines. |
 | `id_map` | `{}` | Tool finding id to rule id, merged over the parser default. |
 | `min_version`, `max_version` | unset | Inclusive dotted-number range of trusted tool versions. |
@@ -55,16 +55,6 @@ With a `parser` the stage exit status no longer decides: tools exit nonzero when
 The cargo-json severity is the rustc level: `error` is Error, `warning` is Warn. Summary lines (`aborting due to`, `warnings emitted`) are not findings; build artifacts and other non-diagnostic lines are skipped. A diagnostic repeated for each cargo target is reported once per site.
 
 ruff-json reads `ruff check --output-format=json`. A diagnostic without a rule code (a syntax error) is dropped and is not a finding; only unparseable stdout fails the stage (`TOOL001`). An `id_map` entry for a ruff code wins over the table above.
-
-ty-gitlab reads `ty check --output-format gitlab` and pyright-json reads `pyright --outputjson` (error and warning diagnostics only, 0-based ranges shifted to 1-based). Both map every finding to `LINT001` (Advisory) unless `id_map` says otherwise, and normal exits are 0 and 1. Their findings also decide which Python files are type-clean for `[types] trust`.
-
-## `[types]`
-
-| Key | Default | Meaning |
-| --- | --- | --- |
-| `trust` | `checked` | How far a parameter annotation narrows a Python method call. `checked`: the call resolves exactly (Must) only when the bound checker reported nothing on the caller's file and the call's line has no `# type: ignore`, `# pyright: ignore` or `# ty: ignore`; otherwise the annotated class is a claim (May). `annotated`: always a claim (May). `none`: annotations are hints only and the call is not narrowed. |
-
-`gob_check::type_facts_from_output` turns a checker's stdout into the clean-file set the symbol graph consumes (`SymbolGraph::from_files_typed`).
 
 `frob init` in a repository with a `pyproject.toml` adds a pinned `ruff` stage: `uvx ruff@0.14.1 check --output-format=json --no-cache .`, parser `ruff-json`, with the range 0.14.0..0.14.99 and `inputs` covering Python sources and the ruff config files.
 

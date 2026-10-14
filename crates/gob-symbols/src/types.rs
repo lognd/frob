@@ -111,7 +111,7 @@ impl TypeFacts {
 mod tests {
     use super::*;
 
-    // frob:tests TypeFacts::weight
+    // frob:tests crates/gob-symbols/src/types.rs::TypeFacts.weight
     #[test]
     fn clean_file_is_exact_failing_is_claimed_ignore_demotes() {
         let mut f = TypeFacts::new(TypesTrust::Checked);
@@ -123,7 +123,7 @@ mod tests {
         assert_eq!(f.weight("b.py", 2), AnnotationWeight::Claimed);
     }
 
-    // frob:tests TypeFacts::weight
+    // frob:tests crates/gob-symbols/src/types.rs::TypeFacts.weight
     #[test]
     fn annotated_claims_and_none_hints() {
         let mut f = TypeFacts::new(TypesTrust::Annotated);
@@ -133,7 +133,7 @@ mod tests {
         assert_eq!(f.weight("a.py", 1), AnnotationWeight::Hint);
     }
 
-    // frob:tests TypesTrust::parse
+    // frob:tests crates/gob-symbols/src/types.rs::TypesTrust.parse
     #[test]
     fn trust_spellings_parse() {
         assert_eq!(TypesTrust::parse("checked"), Some(TypesTrust::Checked));

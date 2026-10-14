@@ -33,8 +33,8 @@ mod typescript;
 
 use csharp::CsIndex;
 
-use python::{PyIndex, is_python};
 use crate::types::TypeFacts;
+use python::{PyIndex, is_python};
 use typescript::{TsIndex, is_ts};
 
 /// Kind of a graph edge.
@@ -784,8 +784,10 @@ impl SymbolGraph {
         files.sort_by(|a, b| a.path.cmp(&b.path));
         // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
         crate::model::merge_partials(&mut files);
-        let mut g = Self::default();
-        g.type_facts = facts;
+        let mut g = Self {
+            type_facts: facts,
+            ..Self::default()
+        };
         for f in &files {
             g.add_file(f);
         }

@@ -611,9 +611,7 @@ pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
         | ToolParser::StylelintJson
         | ToolParser::RuffJson
         | ToolParser::TyGitlab
-        | ToolParser::PyrightJson => {
-            Some(vec!["--version".to_owned()])
-        }
+        | ToolParser::PyrightJson => Some(vec!["--version".to_owned()]),
         ToolParser::ActionlintJson => Some(vec!["-version".to_owned()]),
         ToolParser::Sarif | ToolParser::CargoJson | ToolParser::None => None,
     }

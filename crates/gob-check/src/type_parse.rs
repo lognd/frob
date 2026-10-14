@@ -109,7 +109,10 @@ pub(crate) fn parse_pyright(stdout: &str) -> Result<Vec<RawFinding>, ParseError>
             source,
         })?
     };
-    tracing::debug!(count = out.general_diagnostics.len(), "pyright diagnostics parsed");
+    tracing::debug!(
+        count = out.general_diagnostics.len(),
+        "pyright diagnostics parsed"
+    );
     Ok(out
         .general_diagnostics
         .into_iter()
@@ -163,7 +166,11 @@ pub fn type_facts_from_output(
         }
         facts.scan_ignores(path, text);
     }
-    tracing::debug!(files = files.len(), findings = found.len(), "type facts derived");
+    tracing::debug!(
+        files = files.len(),
+        findings = found.len(),
+        "type facts derived"
+    );
     Ok(facts)
 }
 
@@ -219,9 +226,17 @@ mod tests {
         ];
         let facts = type_facts_from_output(ToolParser::TyGitlab, TY, TypesTrust::Checked, &files)
             .expect("facts");
-        assert_eq!(facts.weight("app/main.py", 1), gob_symbols::AnnotationWeight::Claimed);
-        assert_eq!(facts.weight("app/ok.py", 1), gob_symbols::AnnotationWeight::Exact);
-        assert!(type_facts_from_output(ToolParser::TyGitlab, "[", TypesTrust::Checked, &files).is_err());
+        assert_eq!(
+            facts.weight("app/main.py", 1),
+            gob_symbols::AnnotationWeight::Claimed
+        );
+        assert_eq!(
+            facts.weight("app/ok.py", 1),
+            gob_symbols::AnnotationWeight::Exact
+        );
+        assert!(
+            type_facts_from_output(ToolParser::TyGitlab, "[", TypesTrust::Checked, &files).is_err()
+        );
         assert!(parse_pyright("{").is_err());
     }
 }
