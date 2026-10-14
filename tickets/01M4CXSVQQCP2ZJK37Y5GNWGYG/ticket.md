@@ -2,13 +2,13 @@
 id = "01M4CXSVQQCP2ZJK37Y5GNWGYG"
 title = "Type precision on every type-dependent answer (exact, claimed, inferred, dynamic) and Unknown reason classes"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "high"
 points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:31Z"
-updated = "2026-10-13T14:59:02Z"
+updated = "2026-10-14T05:23:58Z"
 scope = ["changelog.d/**", "crates/gob-ir/**", "crates/gob-rules/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
