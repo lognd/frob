@@ -13,6 +13,7 @@ static DEF: RuleDef = RuleDef {
     slug: "probe",
     family: "TST",
     severity: Severity::Warn,
+    release_severity: None,
     polarity: Polarity::Pplus,
     must_measure: false,
     scope: Scope::Repo,

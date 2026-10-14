@@ -44,6 +44,7 @@ fn def_carries_every_declared_field() {
         (d.severity, d.polarity, d.scope),
         (Severity::Error, Polarity::Pplus, Scope::File)
     );
+    assert_eq!(d.release_severity, Some(Severity::Error));
     assert!(!d.must_measure);
     assert_eq!(
         d.applies,
