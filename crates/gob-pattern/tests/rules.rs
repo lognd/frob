@@ -80,7 +80,10 @@ fn compile_errors_are_typed() {
         Err(PatternError::BadId("X1".into()))
     );
     let pat = NO_PRINT.replace("kind = \"call\"", "pattern = \"print($$$A)\"");
-    assert_eq!(RuleFile::parse(&pat), Err(PatternError::PatternUnavailable));
+    assert_eq!(
+        RuleFile::parse(&pat),
+        Err(PatternError::PatternNeedsLanguage)
+    );
     assert!(matches!(
         RuleFile::parse(&NO_PRINT.replace("callee", "calee")),
         Err(PatternError::Malformed(_))
