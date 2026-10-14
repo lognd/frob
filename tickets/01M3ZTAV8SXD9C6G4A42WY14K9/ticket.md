@@ -2,7 +2,8 @@
 id = "01M3ZTAV8SXD9C6G4A42WY14K9"
 title = "gob-symbols: lift the 160 term-depth cap now that gob-ir is stack-safe"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
