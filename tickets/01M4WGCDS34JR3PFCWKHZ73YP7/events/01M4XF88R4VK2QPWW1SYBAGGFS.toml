@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-14T15:06:49Z"
+digest = "c0b32895d81cdd65f940683ddaf522ff3d055dec09f1a22f3ede01d6f85a79e3"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 30.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 83ab3ed1-cb5d-46e2-bb66-0d9d42718047 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.009s] gob-plan::lower_snippets a_snippet_binder_and_an_is_snippet_lower_to_match_ops
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test lower_snippets -E test(a_snippet_binder_and_an_is_snippet_lower_to_match_ops)"
+size = 620
+status = "measured"
+test_count = 1
+tests_digest = "ea94513b123e1b71d4a810f9b132b2480284b5f61719b0be49e6a4a924f9f72a"
+at = "2026-10-14T15:06:49Z"
+actor = "lognd"
+rev = 1
