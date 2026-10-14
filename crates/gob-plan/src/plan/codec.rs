@@ -438,6 +438,11 @@ fn put_op(w: &mut Vec<u8>, op: &Op) {
             put_operand(w, subject);
             put_operand(w, pattern);
         }
+        Op::InVocab { var, classes } => {
+            w.push(23);
+            put_u16(w, *var);
+            put_u32s(w, classes);
+        }
         Op::Is { subject, test } => {
             w.push(16);
             put_operand(w, subject);
@@ -747,6 +752,10 @@ impl Reader<'_> {
             22 => Op::MatchGlobOperand {
                 subject: self.operand()?,
                 pattern: self.operand()?,
+            },
+            23 => Op::InVocab {
+                var: self.u16("var")?,
+                classes: self.u32s("vocab classes", MAX_LIST)?,
             },
             tag => return Err(PlanError::BadTag { what: "op", tag }),
         })

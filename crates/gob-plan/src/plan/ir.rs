@@ -333,6 +333,15 @@ pub enum Op {
         /// The operand holding the glob source.
         pattern: Operand,
     },
+    /// Condition: the variable's node name is a callee name registered for its language under
+    /// one of the vocabulary classes (`v in knob.sources`). A language with no vocabulary for
+    /// a class contributes nothing; a class with no registry entry at all is the empty set.
+    InVocab {
+        /// The node whose name is tested.
+        var: VarId,
+        /// The vocabulary classes (string pool ids) whose names are unioned.
+        classes: Vec<StrId>,
+    },
     /// Condition: `x is WORD`. A kind word tests membership of a variable; any other word reads
     /// the boolean field of that name (`is public`), or for a field operand a string predicate
     /// (`is relative`, `is valid_glob`) or the dotted field `field.WORD`.

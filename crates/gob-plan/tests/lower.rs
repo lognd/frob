@@ -72,6 +72,7 @@ fn the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans() {
             "CI002.grl",
             "COV001.grl",
             "INV002.grl",
+            "NEAT013.grl",
             "NOPE001.grl",
             "SCOPE001.grl",
             "SYS001.grl",
@@ -401,4 +402,36 @@ fn a_glob_matched_against_a_side_row_field_lowers_to_an_operand_glob_op() {
             .iter()
             .any(|o| matches!(o, Op::MatchGlobOperand { .. }))
     );
+}
+
+// frob:ticket 01M4X91TRR145XCPQ01R1CD7W9
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn a_vocab_knob_membership_lowers_and_a_vocab_need_must_name_a_vocab_knob() {
+    let src = |needs: &str| {
+        format!(
+            "rule VOC001 \"t\" {{\n  lang rust\n  {needs}\n  knob srcs: vocab = vocab(\"clock\", \"net\") \"d\"\n  find f: function where f in knob.srcs\n  report f \"x\"\n{EXPLAIN}}}\n"
+        )
+    };
+    let plan = lower(&src("needs vocab(srcs)")).expect("lowers");
+    assert_eq!(Plan::load(&plan.to_bytes()).expect("round trips"), plan);
+    let p = plan.parts();
+    let classes: Vec<&str> = p
+        .ops
+        .iter()
+        .find_map(|o| match o {
+            Op::InVocab { classes, .. } => Some(
+                classes
+                    .iter()
+                    .map(|&c| p.strings[c as usize].as_str())
+                    .collect(),
+            ),
+            _ => None,
+        })
+        .expect("an InVocab op");
+    assert_eq!(classes, ["clock", "net"]);
+    assert!(matches!(
+        lower(&src("needs vocab(missing)")),
+        Err(LowerError::UnknownNeed { .. })
+    ));
 }

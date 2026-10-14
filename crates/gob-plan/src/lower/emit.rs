@@ -72,7 +72,9 @@ fn free(c: &Cond, bound: &mut Vec<String>, out: &mut BTreeSet<String>) {
         | Cond::Exists(subject) => {
             free_in_opd(subject, bound, out);
         }
-        Cond::HasAttr { var, .. } | Cond::MatchSnippet { var, .. } => name(var, bound),
+        Cond::HasAttr { var, .. } | Cond::MatchSnippet { var, .. } | Cond::InVocab { var, .. } => {
+            name(var, bound);
+        }
         Cond::GlobOperand { subject, pattern } => {
             free_in_opd(subject, bound, out);
             free_in_opd(pattern, bound, out);
@@ -159,6 +161,7 @@ impl Builder {
         })
     }
 
+    #[allow(clippy::too_many_lines, reason = "a flat match over every condition form")]
     fn cond(&mut self, c: &Cond) -> Result<OpId, LowerError> {
         let op = match c {
             Cond::And(v) => Op::And(v.iter().map(|x| self.cond(x)).collect::<Result<_, _>>()?),
@@ -220,6 +223,10 @@ impl Builder {
                 var: self.var(var)?,
                 lang: self.intern(lang),
                 pattern: self.intern(pattern),
+            },
+            Cond::InVocab { var, classes } => Op::InVocab {
+                var: self.var(var)?,
+                classes: classes.iter().map(|c| self.intern(c)).collect(),
             },
             Cond::GlobOperand { subject, pattern } => Op::MatchGlobOperand {
                 subject: self.operand(subject)?,

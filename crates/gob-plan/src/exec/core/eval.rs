@@ -284,6 +284,7 @@ impl<'a> Eval<'a> {
             | Op::HasAttr { .. }
             | Op::Under { .. }
             | Op::MatchGlobOperand { .. }
+            | Op::InVocab { .. }
             | Op::InUnit { .. }) => self.predicate_op(op, env),
             Op::CountCmp {
                 var,

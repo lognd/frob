@@ -80,6 +80,11 @@ pub(super) enum Cond {
         subject: Opd,
         pattern: Opd,
     },
+    /// The variable's node name is in the union of the named vocabulary classes.
+    InVocab {
+        var: String,
+        classes: Vec<String>,
+    },
     Under {
         subject: Opd,
         prefix: Opd,
@@ -182,6 +187,8 @@ enum KnobVal {
     Regex(String),
     /// A list of strings (globs or plain words).
     Strs(Vec<String>),
+    /// A `vocab("class", ...)` knob: the vocabulary classes it unions.
+    Vocab(Vec<String>),
     /// A knob whose value the lowering does not read yet (decimals, vocabularies, other lists).
     Other,
 }
@@ -222,6 +229,7 @@ pub(super) fn convert(rule: &Rule) -> Result<Lowered, LowerError> {
             knobs.push((k.name.text.clone(), knob_value(&k.default)?));
         }
     }
+    check_vocab_needs(rule, &knobs)?;
     let mut cx = Cx {
         knobs,
         scope: Vec::new(),
@@ -256,6 +264,39 @@ pub(super) fn convert(rule: &Rule) -> Result<Lowered, LowerError> {
     Ok(out)
 }
 
+/// The knob name in a `vocab(NAME)` need word.
+fn vocab_need(word: &str) -> Option<&str> {
+    word.strip_prefix("vocab(")?.strip_suffix(')')
+}
+
+/// Every `needs vocab(NAME)` must name a declared vocab knob. The need itself is a language
+/// capability gate (a language with no registered vocabulary makes the rule not applicable), not
+/// a data input, so the plan records nothing for it: inside a formula an empty vocabulary is the
+/// empty set (`InVocab` is No).
+fn check_vocab_needs(rule: &Rule, knobs: &[(String, KnobVal)]) -> Result<(), LowerError> {
+    for h in &rule.headers {
+        let HeaderKind::Needs(words) = &h.node else {
+            continue;
+        };
+        for w in words {
+            let Some(name) = vocab_need(&w.text) else {
+                continue;
+            };
+            if !knobs
+                .iter()
+                .any(|(n, v)| n == name && matches!(v, KnobVal::Vocab(_)))
+            {
+                return Err(LowerError::UnknownNeed {
+                    name: w.text.clone(),
+                    span: w.span,
+                });
+            }
+            tracing::debug!(rule = %rule.id.text, vocab = name, "vocab need checked against its knob");
+        }
+    }
+    Ok(())
+}
+
 fn header(out: &mut Lowered, h: &Header) -> Result<(), LowerError> {
     match &h.node {
         HeaderKind::Lang(l) => {
@@ -270,6 +311,10 @@ fn header(out: &mut Lowered, h: &Header) -> Result<(), LowerError> {
         HeaderKind::Scope(s) => out.repo_scope = matches!(s, ast::Scope::Repo),
         HeaderKind::Needs(words) => {
             for w in words {
+                if vocab_need(&w.text).is_some() {
+                    // Checked against the knobs once all headers are read (see `convert`).
+                    continue;
+                }
                 out.needs.push(match w.text.as_str() {
                     "config" => Need::Config,
                     "diff" => Need::Diff,
@@ -746,6 +791,15 @@ fn in_cond(cx: &Cx, lhs: &Term, rhs: &Term) -> Result<Cond, LowerError> {
         }
         TermKind::Knob(w) => match knob_of(cx, w)? {
             KnobVal::Strs(v) => v.iter().cloned().map(Opd::Str).collect(),
+            KnobVal::Vocab(classes) => {
+                return match subject {
+                    Opd::Var(var) => Ok(Cond::InVocab {
+                        var,
+                        classes: classes.clone(),
+                    }),
+                    _ => unsupported("a vocabulary test on anything but a bound node", lhs.span),
+                };
+            }
             _ => return unsupported("a knob that is not a list of strings after `in`", w.span),
         },
         TermKind::Literal(l) => match &l.node {
@@ -784,6 +838,20 @@ fn knob_value(l: &ast::Literal) -> Result<KnobVal, LowerError> {
                 .collect();
             if strs.len() == items.len() {
                 KnobVal::Strs(strs)
+            } else {
+                KnobVal::Other
+            }
+        }
+        LiteralKind::Call { name, args } if name.text == "vocab" => {
+            let classes: Vec<String> = args
+                .iter()
+                .filter_map(|a| match &a.node {
+                    LiteralKind::Str(s) => Some(s.clone()),
+                    _ => None,
+                })
+                .collect();
+            if classes.len() == args.len() {
+                KnobVal::Vocab(classes)
             } else {
                 KnobVal::Other
             }

@@ -300,6 +300,12 @@ fn references(p: &PlanParts) -> Result<(), PlanError> {
                 var_in_range(*var, p.vars)?;
                 str_in_range(*attr, n)?;
             }
+            Op::InVocab { var, classes } => {
+                var_in_range(*var, p.vars)?;
+                for &c in classes {
+                    str_in_range(c, n)?;
+                }
+            }
             Op::MatchSnippet { var, lang, pattern } => {
                 var_in_range(*var, p.vars)?;
                 str_in_range(*lang, n)?;
@@ -548,7 +554,9 @@ impl<'a> Walk<'a> {
                 self.use_operand(subject)?;
             }
             Op::Is { subject, .. } | Op::Exists { subject } => self.use_operand(subject)?,
-            Op::HasAttr { var, .. } | Op::MatchSnippet { var, .. } => self.use_var(*var)?,
+            Op::HasAttr { var, .. } | Op::MatchSnippet { var, .. } | Op::InVocab { var, .. } => {
+                self.use_var(*var)?;
+            }
             Op::MatchGlobOperand {
                 subject,
                 pattern: other,

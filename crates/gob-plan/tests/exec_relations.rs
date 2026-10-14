@@ -537,3 +537,23 @@ fn a_lowered_def_runs_as_a_view() {
     // The def parameter takes slot 0, so the rule's `g` is slot 1.
     assert_eq!(rows_of(&plan, &m, 1), vec![fs[1].index()]);
 }
+
+// frob:ticket 01M4X91TRR145XCPQ01R1CD7W9
+// frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::in_vocab_op
+#[test]
+fn an_in_vocab_op_tests_a_name_against_the_language_vocabulary_classes() {
+    let (m, fs) = model(&["TcpStream::connect", "helper"]);
+    let run_for = |classes: &[&str]| {
+        let mut b = PlanBuilder::new("VOC001", Polarity::Pplus);
+        let f = b.find("function");
+        let classes: Vec<_> = classes.iter().map(|c| b.s(c)).collect();
+        let op = b.op(Op::InVocab { var: f, classes });
+        b.clause(op);
+        b.report(None, f, "x");
+        rows_of(&b.build(), &m, 0)
+    };
+    assert_eq!(run_for(&["net"]), vec![fs[0].index()]);
+    assert_eq!(run_for(&["clock", "net"]), vec![fs[0].index()]);
+    // A class the language has no vocabulary for is the empty set: nothing matches.
+    assert!(run_for(&["no_such_class"]).is_empty());
+}

@@ -57,6 +57,7 @@ impl Eval<'_> {
             Op::MatchGlobOperand { subject, pattern } => {
                 self.glob_operand_op(subject, pattern, env)
             }
+            Op::InVocab { var, classes } => self.in_vocab_op(*var, classes, env),
             Op::InUnit { sub, unit } => self.in_unit_op(*sub, *unit, env),
             _ => unreachable!("not a predicate op"),
         }
@@ -159,6 +160,26 @@ impl Eval<'_> {
             (_, Datum::Unknown | Datum::OneOf(_)) => Verdict::unknown(self.describe(pattern, env)),
             _ => Verdict::no(),
         }
+    }
+
+    /// `var in knob.V`: the node's name is registered in its language's vocabulary classes.
+    pub(super) fn in_vocab_op(&self, var: VarId, classes: &[StrId], env: &Env) -> Verdict {
+        let node = Self::node(env, var);
+        let Datum::Known(Scalar::Str(name)) = self.rd.field(node, "name") else {
+            return Verdict::unknown(super::Doubt::Dynamic {
+                node: Some(node),
+                field: "name".to_owned(),
+            });
+        };
+        let lang = self.rd.model.term().node(node).lang();
+        let hit = classes.iter().any(|&c| {
+            matches!(
+                gob_ir::registry::callee_vocab(lang, self.string(c)),
+                gob_ir::Answer::Exact(set) if set.contains(name.as_str())
+            )
+        });
+        tracing::trace!(%name, lang, hit, "vocabulary membership");
+        Verdict::certain(hit)
     }
 
     /// `sub in unit unit`: `unit` is the nearest enclosing canonical unit of `sub`.
