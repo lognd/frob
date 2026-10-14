@@ -351,7 +351,7 @@ fn a_def_is_a_view_computed_once_per_distinct_arguments() {
 }
 
 // frob:ticket 01M4MAPRB2H8WZKJZSH3A9N1B2
-// frob:tests crates/gob-plan/src/exec/core/eval.rs::Matcher.matches
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
 #[test]
 fn a_glob_set_op_matches_any_glob_in_a_side_column() {
     let (m, _) = model(&["a"]);
