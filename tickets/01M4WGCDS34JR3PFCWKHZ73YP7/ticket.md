@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "Claude"
 created = "2026-10-14T06:07:51Z"
-updated = "2026-10-14T15:06:43Z"
+updated = "2026-10-14T15:06:49Z"
 scope = ["crates/gob-plan/**"]
 
 [[links]]
@@ -16,7 +16,7 @@ target = "01M4PPRHCTN3TZ0TJF8NRQ4KHD"
 
 [[acceptance]]
 text = "A snippet binder (find x: lang`pat`) and `x is` a snippet lower to a new MatchSnippet op, with the rule's single lang as the default language"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The executor answers MatchSnippet exactly from grammar-level matches over the file text, and Unknown/Unresolved without text"
