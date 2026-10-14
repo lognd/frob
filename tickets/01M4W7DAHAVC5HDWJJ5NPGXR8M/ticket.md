@@ -2,7 +2,8 @@
 id = "01M4W7DAHAVC5HDWJJ5NPGXR8M"
 title = "Land verification re-runs the whole workspace (clippy, rustdoc, test build) on every land: make it touched-set incremental and offloadable"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 reporter = "lognd"
