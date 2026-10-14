@@ -585,6 +585,8 @@ impl Command for Doable {
         let tickets = ledger.doable(&*leases).map_err(cli_err)?;
         let mut data = if self.newcomer {
             newcomer_rows(&ledger, tickets)?
+        } else if crate::profile::Profile::for_cwd(&ctx.cwd) == crate::profile::Profile::Newcomer {
+            good_first_first(&ledger, tickets)?
         } else {
             ListData::of(tickets)
         };
@@ -598,6 +600,33 @@ impl Command for Doable {
             None => payload,
         })
     }
+}
+
+/// Every ticket in `tickets`: the good-first ones first (as `--newcomer` orders them, with start notes), then the rest in priority order.
+// frob:ticket 01M3ZX87VKDKC0N65NH77EBEJP
+fn good_first_first(
+    ledger: &frob_ledger::Ledger,
+    tickets: Vec<Summary>,
+) -> Result<ListData, CliError> {
+    let good = newcomer_rows(ledger, tickets.clone())?;
+    let first: std::collections::BTreeSet<_> = good.tickets.iter().map(|r| r.summary.id).collect();
+    let rest: Vec<Summary> = tickets
+        .into_iter()
+        .filter(|s| !first.contains(&s.id))
+        .collect();
+    tracing::debug!(
+        good_first = first.len(),
+        rest = rest.len(),
+        "doable: newcomer order"
+    );
+    let mut rows = good.tickets;
+    rows.extend(ListData::of(rest).tickets);
+    Ok(ListData {
+        count: rows.len(),
+        at: None,
+        tree: None,
+        tickets: rows,
+    })
 }
 
 /// The good-first subset of `tickets`, ordered like `indexes/good-first.md`, with start notes.

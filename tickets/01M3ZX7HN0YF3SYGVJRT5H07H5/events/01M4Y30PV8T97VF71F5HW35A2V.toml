@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-14T20:51:21Z"
+digest = "9a0bfeeab4d737bfbd9a889b3a24620fed4150fadfa323684dd22a9ef5346092"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5d97abe6-791d-4907-9539-ee942ed9ba2b with nextest profile: default
+    Starting 1 test across 1 binary (87 tests skipped)
+        PASS [   0.009s] gob-dev render::std_rules::tests::a_changed_source_is_reported_stale_by_check_mode
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 87 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --lib render::std_rules::tests::a_changed_source_is_reported_stale_by_check_mode"
+size = 912
+status = "measured"
+test_count = 1
+tests_digest = "226a2d5b8de8c1f41243e90fcc60368edc02666fefe37407d5645d9b39d43bed"
+at = "2026-10-14T20:51:21Z"
+actor = "lognd"
+rev = 1

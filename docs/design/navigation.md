@@ -250,6 +250,12 @@ Two reader profiles, used in two places:
   The profile changes presentation only: never what a check decides,
   never a gate.
 
+  Implementation: `crates/frob/src/profile.rs` resolves the profile and
+  supplies the text-only presenter hooks (`next:` line, failure help)
+  that `gob-cli` calls after a verb; JSON output is never touched. The
+  teach-count rule is `Profile::teach_for`; wiring it to
+  `.frob/seen.toml` waits on the teaching-state ticket.
+
 ### 4.2 Good first tickets
 
 The most common newcomer device in the survey (58.5 percent of

@@ -61,6 +61,15 @@ fn to_json(wire: &Wire<'_>) -> String {
     out
 }
 
+/// Append `line` to `text` as its own final line, adding a newline first when `text` lacks one.
+pub(crate) fn append_line(text: &mut String, line: &str) {
+    if !text.is_empty() && !text.ends_with('\n') {
+        text.push('\n');
+    }
+    text.push_str(line);
+    text.push('\n');
+}
+
 /// Render a successful verb.
 pub(crate) fn success(
     verb: &str,
@@ -299,6 +308,17 @@ mod tests {
         let json = success("v", erased(), true, false, ColorChoice::Never);
         let v: Value = serde_json::from_str(&json.stdout).unwrap();
         assert_eq!(v["data"], serde_json::json!({"k": 1}));
+    }
+
+    // frob:ticket 01M3ZX87VKDKC0N65NH77EBEJP
+    #[test]
+    fn append_line_ends_the_text_with_the_line() {
+        let mut s = "a".to_owned();
+        append_line(&mut s, "next: x");
+        assert_eq!(s, "a\nnext: x\n");
+        let mut e = String::new();
+        append_line(&mut e, "next: y");
+        assert_eq!(e, "next: y\n");
     }
 
     // frob:ticket 01M3Z713YNM5666B7YFEHPFVKD
