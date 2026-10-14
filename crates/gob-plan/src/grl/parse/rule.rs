@@ -9,7 +9,7 @@ use crate::grl::ast::{
     Clause, Example, ExampleBody, Expect, ExpectKind, Explain, File, Header, HeaderKind, Input,
     InputKind, Knob, LangSet, Polarity, Rollup, Rule, Scope, Severity, Spanned, StrLit, Word,
 };
-use crate::grl::token::{StrPart, Token, TokenKind};
+use crate::grl::token::{Token, TokenKind};
 
 /// Words that start a header.
 const HEADER_WORDS: &[&str] = &[
@@ -340,8 +340,7 @@ impl Parser<'_> {
                 self.bump();
                 Ok(LangSet::Nothing)
             }
-            TokenKind::Str(parts) if matches!(parts.as_slice(), [StrPart::Text { value, .. }] if value == "*") =>
-            {
+            TokenKind::Str(raw) if raw == "*" => {
                 self.bump();
                 self.warn(ParseWarningKind::QuotedLangStar, tok.span);
                 Ok(LangSet::Any { quoted: true })

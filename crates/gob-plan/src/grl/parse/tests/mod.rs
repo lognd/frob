@@ -185,6 +185,44 @@ fn regex_string_quantifiers_and_knob_defaults_keep_braces_literally() {
     assert!(format!("{:?}", p.file).contains(r#""*.{a,b}""#));
 }
 
+// frob:ticket 01M40P6D3AGPV868NBY2P406G2
+// frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
+#[test]
+fn unbalanced_brace_in_a_non_message_string_is_a_plain_literal() {
+    let d = dump_clause("find f: file where f.path matches \"a{2\"\n report f \"m\"");
+    assert!(d.contains(r#"Str("a{2")"#), "{d}");
+}
+
+// frob:ticket 01M40P6D3AGPV868NBY2P406G2
+// frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
+#[test]
+fn message_interpolation_spans_are_exact_and_bad_braces_are_parse_errors() {
+    let src = "rule T001 \"t\" {\n lang *\n severity warn\n find f: file\n report f \"hi {f.name}!\"\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}";
+    let p = clean(src);
+    let d = format!("{:?}", p.file);
+    let at = src.find("{f.name}").unwrap();
+    let want = format!("@{at}..{}", at + 8);
+    assert!(
+        fold_spans(&d).contains(&want),
+        "{want} in {}",
+        fold_spans(&d)
+    );
+    for (bad, msg) in [
+        (
+            "hi {f.name",
+            "this `{` starts an interpolation that is never closed",
+        ),
+        ("hi {}", "an interpolation `{}` needs an expression inside"),
+    ] {
+        let bad_src = src.replace("hi {f.name}!", bad);
+        let p = parsed(&bad_src);
+        assert_eq!(
+            p.errors.first().map(|e| e.kind.to_string()).as_deref(),
+            Some(msg)
+        );
+    }
+}
+
 /// Every header, clause, example and explain has a non-empty span inside its rule that starts at its keyword.
 #[test]
 fn spans_cover_every_clause_header_example_and_explain() {
