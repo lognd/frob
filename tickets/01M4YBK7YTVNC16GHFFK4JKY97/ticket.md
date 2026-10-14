@@ -8,11 +8,11 @@ points = 5
 parent = "01M480C43A6BCH54NX8C5DQ4WJ"
 reporter = "lognd"
 created = "2026-10-14T23:22:40Z"
-updated = "2026-10-14T23:34:29Z"
+updated = "2026-10-14T23:35:07Z"
 scope = ["crates/gob-mdtest/coverage-allowlist.toml", "crates/gob-config/Cargo.toml", "crates/gob-config/tests/**", "crates/frob-ack/Cargo.toml", "crates/frob-ack/tests/**", "crates/frob-check/tests/**"]
 
 [[acceptance]]
-text = "Each listed rule has an mdtest fire/clean pair or fixture; its [[gap]] entry is deleted from crates/gob-mdtest/coverage-allowlist.toml; the product's rule_coverage test passes"
+text = "AFFECT001 CFG001 CI001 CI003 CI006 CI007 CI010 CI014 each have an mdtest fire/clean pair and their allowlist entries are deleted; rule_coverage passes (COV003 split to ~0JTK1XS)"
 bound = false
 +++
 
