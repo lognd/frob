@@ -2,7 +2,8 @@
 id = "01M4CTE6TNY9C5R18NE53J42W1"
 title = "Config Document: parse frob.toml once per command; move [tickets] and git tables into frob-ledger with one parser (audit M13)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
