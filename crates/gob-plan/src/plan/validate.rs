@@ -310,7 +310,9 @@ fn references(p: &PlanParts) -> Result<(), PlanError> {
                     str_in_range(c, n)?;
                 }
             }
-            Op::MatchSnippet { var, lang, pattern } => {
+            Op::MatchSnippet {
+                var, lang, pattern, ..
+            } => {
                 var_in_range(*var, p.vars)?;
                 str_in_range(*lang, n)?;
                 str_in_range(*pattern, n)?;

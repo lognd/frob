@@ -466,11 +466,17 @@ fn put_op(w: &mut Vec<u8>, op: &Op) {
             put_u16(w, *var);
             put_u32(w, *attr);
         }
-        Op::MatchSnippet { var, lang, pattern } => {
+        Op::MatchSnippet {
+            var,
+            lang,
+            pattern,
+            within,
+        } => {
             w.push(21);
             put_u16(w, *var);
             put_u32(w, *lang);
             put_u32(w, *pattern);
+            w.push(u8::from(*within));
         }
         Op::Under { subject, prefix } => {
             w.push(19);
@@ -768,6 +774,7 @@ impl Reader<'_> {
                 var: self.u16("var")?,
                 lang: self.u32("lang")?,
                 pattern: self.u32("pattern")?,
+                within: self.bool("within")?,
             },
             22 => Op::MatchGlobOperand {
                 subject: self.operand()?,

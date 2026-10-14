@@ -418,6 +418,9 @@ pub enum Op {
         lang: StrId,
         /// The pattern text, in the string pool.
         pattern: StrId,
+        /// `as KIND` cast: the node need only lie inside a match (the binder's kind selects
+        /// the node) instead of being exactly a match.
+        within: bool,
     },
     /// Condition: `x under p`: the segment-wise path or module prefix test (`a.b` is under `a`,
     /// `ab` is not).

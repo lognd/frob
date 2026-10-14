@@ -291,7 +291,7 @@ impl<'a> Eval<'a> {
             Op::MatchRegex { subject, .. }
             | Op::MatchGlob { subject, .. }
             | Op::MatchGlobSet { subject, .. } => self.matches(id, subject, env),
-            Op::MatchSnippet { var, .. } => self.snippet_op(id, *var, env),
+            Op::MatchSnippet { var, within, .. } => self.snippet_op(id, *var, *within, env),
             op @ (Op::Is { .. }
             | Op::Exists { .. }
             | Op::HasAttr { .. }
@@ -500,7 +500,7 @@ impl<'a> Eval<'a> {
 
     /// `var is` a snippet: the node's span is exactly a pattern match; Unknown when the file
     /// text is missing, does not parse, or the node has no text location.
-    fn snippet_op(&self, id: OpId, var: VarId, env: &Env) -> Verdict {
+    fn snippet_op(&self, id: OpId, var: VarId, within: bool, env: &Env) -> Verdict {
         let node = Self::node(env, var);
         let unknown = |field: &str| {
             Verdict::unknown(Doubt::Dynamic {
@@ -537,7 +537,11 @@ impl<'a> Eval<'a> {
         match self.rd.model.term().node(node).location() {
             Location::Text { range, .. } => {
                 let r = u32::from(range.start()) as usize..u32::from(range.end()) as usize;
-                Verdict::certain(ranges.contains(&r))
+                Verdict::certain(if within {
+                    ranges.iter().any(|m| m.start <= r.start && r.end <= m.end)
+                } else {
+                    ranges.contains(&r)
+                })
             }
             _ => unknown("location"),
         }

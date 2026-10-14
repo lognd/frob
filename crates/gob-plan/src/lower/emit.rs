@@ -240,10 +240,16 @@ impl Builder {
                 var: self.var(var)?,
                 attr: self.intern(attr),
             },
-            Cond::MatchSnippet { var, lang, pattern } => Op::MatchSnippet {
+            Cond::MatchSnippet {
+                var,
+                lang,
+                pattern,
+                within,
+            } => Op::MatchSnippet {
                 var: self.var(var)?,
                 lang: self.intern(lang),
                 pattern: self.intern(pattern),
+                within: *within,
             },
             Cond::InVocab { var, classes } => Op::InVocab {
                 var: self.var(var)?,

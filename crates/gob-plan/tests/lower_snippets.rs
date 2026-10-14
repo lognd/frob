@@ -120,3 +120,52 @@ fn a_macro_snippet_with_a_sequence_metavariable_fires_on_its_call_only() {
     assert_eq!(run(miss), 0);
     assert!(run(hit) >= 1);
 }
+
+// frob:ticket 01M4XF8KYPGPRH6J6CAH2V8QVT
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+// frob:tests crates/gob-plan/src/exec/core/eval.rs::snippet_op
+#[test]
+fn a_snippet_cast_selects_nodes_of_its_kind_inside_the_match() {
+    const TEXT: &str = "mod m {\n    fn inner() {}\n}\nfn outer() {}\n";
+    let run = |plan: &Plan, with_text: bool| {
+        let model = gob_symbols::model_of_source("rust", TEXT).unwrap();
+        let source = gob_text::SourceText::new(TEXT.to_owned()).unwrap();
+        let input = Input {
+            model: &model,
+            source: with_text.then_some(&source),
+        };
+        let out = outcomes(plan, &input, &Relations::new()).unwrap();
+        out.findings.iter().filter(|f| f.kind == Kind::Fire).count()
+    };
+    let cast = lower(
+        "lang rust",
+        &[
+            "find c: `mod m { fn $F() {} }` as function",
+            "report c \"x\"",
+        ],
+    )
+    .unwrap();
+    assert!(
+        cast.parts()
+            .ops
+            .iter()
+            .any(|o| matches!(o, Op::MatchSnippet { within: true, .. }))
+    );
+    // `inner` lies inside the matched module; `outer` does not.
+    assert_eq!(run(&cast, true), 1);
+    // Without the file text the match cannot be decided.
+    assert_eq!(run(&cast, false), 0);
+    let back = Plan::load(&cast.to_bytes()).unwrap();
+    assert_eq!(back.to_bytes(), cast.to_bytes());
+    // An uncast snippet demands the node be exactly the match, so no function qualifies.
+    let exact = lower(
+        "lang rust",
+        &[
+            "find c: function",
+            "where c is `mod m { fn $F() {} }`",
+            "report c \"x\"",
+        ],
+    )
+    .unwrap();
+    assert_eq!(run(&exact, true), 0);
+}

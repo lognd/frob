@@ -5,8 +5,8 @@ use gob_text::Span;
 
 use super::LowerError;
 use crate::grl::ast::{
-    self, Binding, Clause, ClauseKind, CondKind, Header, HeaderKind, LangSet, LiteralKind,
-    MessagePart, Object, RelKind, Rule, ShapeKind, Source, Term, TermKind,
+    self, Binding, CastKind, Clause, ClauseKind, CondKind, Header, HeaderKind, LangSet,
+    LiteralKind, MessagePart, Object, RelKind, Rule, ShapeKind, Source, Term, TermKind,
 };
 use crate::plan::{ANY_NODES, Certainty, CmpOp, Need, Polarity, Position, Quant};
 
@@ -98,6 +98,8 @@ pub(super) enum Cond {
         var: String,
         lang: String,
         pattern: String,
+        /// `as KIND` cast: inside a match rather than exactly one.
+        within: bool,
     },
     InUnit {
         sub: String,
@@ -481,7 +483,7 @@ fn is_snippet_cond(
         return unsupported("`is` a snippet as roles", span);
     }
     match var_name(cx, subject)? {
-        Some(var) => snippet_cond(cx, &var, snippet, span),
+        Some(var) => snippet_cond(cx, &var, snippet, false, span),
         None => unsupported("`is` a snippet on a non-variable", subject.span),
     }
 }
@@ -491,6 +493,7 @@ fn snippet_cond(
     cx: &Cx,
     var: &str,
     snippet: &crate::grl::Snippet,
+    within: bool,
     span: Span,
 ) -> Result<Cond, LowerError> {
     let lang = match (&snippet.lang, &cx.lang) {
@@ -503,6 +506,7 @@ fn snippet_cond(
         var: var.to_owned(),
         lang,
         pattern: snippet.text.clone(),
+        within,
     })
 }
 
@@ -523,11 +527,18 @@ fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>)
                 Src::Kind(kind.text.clone())
             }
             ShapeKind::Snippet { snippet, cast } => {
-                if cast.is_some() {
-                    return unsupported("a snippet cast", s.span);
+                match cast.as_ref().map(|c| &c.node) {
+                    // `as KIND`: the binder ranges over nodes of KIND inside a match.
+                    Some(CastKind::Kind(k)) => {
+                        attached.push(snippet_cond(cx, &name, snippet, true, s.span)?);
+                        Src::Kind(k.text.clone())
+                    }
+                    Some(CastKind::Roles) => return unsupported("a snippet as roles", s.span),
+                    None => {
+                        attached.push(snippet_cond(cx, &name, snippet, false, s.span)?);
+                        Src::Kind(ANY_NODES.to_owned())
+                    }
                 }
-                attached.push(snippet_cond(cx, &name, snippet, s.span)?);
-                Src::Kind(ANY_NODES.to_owned())
             }
             ShapeKind::Alt(_) => return unsupported("alternative shapes", s.span),
         },
