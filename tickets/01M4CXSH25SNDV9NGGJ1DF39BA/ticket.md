@@ -2,13 +2,13 @@
 id = "01M4CXSH25SNDV9NGGJ1DF39BA"
 title = "Exit: hullbreach platform CI runs the Rust crunk instead of uv run crunk, with a reasoned divergence list"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "high"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:54:20Z"
-updated = "2026-10-12T17:48:59Z"
+updated = "2026-10-14T05:23:58Z"
 scope = ["changelog.d/**", "crates/crunk/**", "docs/crunk/**"]
 
 [[acceptance]]
