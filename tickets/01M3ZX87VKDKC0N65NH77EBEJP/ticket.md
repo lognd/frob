@@ -2,13 +2,13 @@
 id = "01M3ZX87VKDKC0N65NH77EBEJP"
 title = "Profile behaviours: teach count, next-step line, doable order, failure help"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-03T03:34:46Z"
-updated = "2026-10-03T03:34:46Z"
+updated = "2026-10-14T16:27:12Z"
 idempotency_key = "m2-nav-profile-behaviour"
 labels = ["milestone:2", "area:navigation"]
 scope = ["crates/frob/src/profile.rs", "crates/gob-cli/src/render.rs"]
