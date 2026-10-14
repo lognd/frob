@@ -1,0 +1,26 @@
+kind = "evidence"
+captured_at = "2026-10-14T12:26:55Z"
+digest = "e643ec13350468b959d73dfb06749aa48fe8ad163f0e3da9dba30f2a604a65ad"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.73s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5202009e-f922-4092-83a5-adf70b6ae49f with nextest profile: default
+    Starting 4 tests across 351 binaries (3092 tests skipped)
+        PASS [   0.006s] gob-ir::eval annotation_required_opaque_is_required_when_configured
+        PASS [   0.006s] gob-check required::tests::an_annotation_prefix_in_the_message_alone_marks_nothing
+        PASS [   0.007s] gob-check required::tests::a_typed_annotation_reason_maps_to_a_required_mark_without_reading_the_message
+        PASS [   0.043s] frob-check::check an_annotation_required_unresolved_finding_is_marked_required
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.049s] 4 tests run: 4 passed, 3092 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "annotation_"
+size = 908
+status = "measured"
+test_count = 4
+tests_digest = "36d711eaa52681ab879f4523c800e1de6648de7c169bdb8ace90aa26771b3aaa"
+at = "2026-10-14T12:26:55Z"
+actor = "Claude"
+rev = 1
