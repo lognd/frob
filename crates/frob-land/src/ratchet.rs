@@ -159,7 +159,10 @@ pub fn base_findings(
         .join(LAND_BASE_DIR)
         .join(format!("{tree}-{key}.json"));
     let stable = |n: &FindingNote| n.path.as_deref().is_some_and(|p| !ledger.is_ledger_path(p));
-    let exact = run_at_base(wt, wt_path, oid, ledger, true)?;
+    // frob:ticket 01M4D6NTFHJT2BRA8VCRD8WDJ4
+    // One lock and one checkout serve both passes of a cache miss.
+    let base = BaseCheckout::open(wt, wt_path, oid)?;
+    let exact = base.run(ledger, true)?;
     let mut exact_rest: Vec<FindingNote> = exact.into_iter().filter(|n| !stable(n)).collect();
     if let Some(set) = read_cache(&cache, &tree, &key) {
         tracing::info!(
@@ -173,7 +176,8 @@ pub fn base_findings(
         findings.append(&mut exact_rest);
         return Ok(findings);
     }
-    let all = run_at_base(wt, wt_path, oid, ledger, false)?;
+    tracing::info!(oid, "land base cache miss; full pass in the same checkout");
+    let all = base.run(ledger, false)?;
     let mut cached: Vec<FindingNote> = all.iter().filter(|n| stable(n)).cloned().collect();
     // Tool-only findings: what the full run has beyond the exact pass, as a multiset.
     let mut budget = counts(&exact_rest);
@@ -304,33 +308,45 @@ fn lock_base_checkout(lock: &Path) -> Result<std::fs::File, LandError> {
     Ok(file)
 }
 
-/// Check out `oid` detached in the persistent base checkout and run the unscoped check there.
-fn run_at_base(
-    wt: &Repo,
-    wt_path: &Path,
-    oid: &str,
-    ledger: &LedgerConfig,
-    skip_tools: bool,
-) -> Result<Vec<FindingNote>, LandError> {
-    let common = wt.common_dir();
-    let (dir, lock) = base_checkout_paths(common);
-    if let Some(parent) = dir.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| LandError::Config(format!("{}: {e}", parent.display())))?;
+/// The persistent base checkout, locked and moved to one commit, for as many check passes as needed.
+struct BaseCheckout {
+    /// The checkout directory.
+    dir: PathBuf,
+    /// Holds the exclusive checkout lock until the value is dropped.
+    _guard: std::fs::File,
+}
+
+impl BaseCheckout {
+    /// Lock the persistent base checkout and move it to `oid` once.
+    fn open(wt: &Repo, wt_path: &Path, oid: &str) -> Result<Self, LandError> {
+        let common = wt.common_dir();
+        let (dir, lock) = base_checkout_paths(common);
+        if let Some(parent) = dir.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| LandError::Config(format!("{}: {e}", parent.display())))?;
+        }
+        let guard = lock_base_checkout(&lock)?;
+        checkout_base(wt, wt_path, &dir, oid)?;
+        share_build_dir(common, &dir);
+        Ok(Self {
+            dir,
+            _guard: guard,
+        })
     }
-    let _guard = lock_base_checkout(&lock)?;
-    checkout_base(wt, wt_path, &dir, oid)?;
-    share_build_dir(common, &dir);
-    let result = frob_check::run(
-        &dir,
-        &CheckOptions {
-            ledger: Some(ledger.clone()),
-            skip_telemetry: true,
-            skip_tools,
-            ..CheckOptions::default()
-        },
-    );
-    Ok(notes(&result?))
+
+    /// Run the unscoped check in the checkout, without the tool stages when `skip_tools`.
+    fn run(&self, ledger: &LedgerConfig, skip_tools: bool) -> Result<Vec<FindingNote>, LandError> {
+        let result = frob_check::run(
+            &self.dir,
+            &CheckOptions {
+                ledger: Some(ledger.clone()),
+                skip_telemetry: true,
+                skip_tools,
+                ..CheckOptions::default()
+            },
+        );
+        Ok(notes(&result?))
+    }
 }
 
 /// The ratchet's decision for one land.

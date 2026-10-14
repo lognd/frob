@@ -2262,3 +2262,35 @@ fn a_failing_ticket_lands_the_passing_prefix_and_defers_the_rest() {
             .is_some()
     );
 }
+
+// frob:ticket 01M4D6NTFHJT2BRA8VCRD8WDJ4
+// frob:tests crates/frob-land/src/ratchet.rs::base_findings
+#[test]
+#[cfg(unix)]
+fn a_cache_miss_checks_out_the_base_once_for_both_passes() {
+    use std::os::unix::fs::PermissionsExt;
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    // A post-checkout hook logs every checkout of the shared base worktree (git runs it on `worktree add` too).
+    let hooks = fx.repo().common_dir().join("hooks");
+    std::fs::create_dir_all(&hooks).expect("hooks dir");
+    let log = fx.root.join("..").join("base-checkouts.log");
+    let hook = hooks.join("post-checkout");
+    std::fs::write(
+        &hook,
+        format!("#!/bin/sh\necho \"$PWD\" >> \"{}\"\n", log.display()),
+    )
+    .expect("hook");
+    std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+    let oid = fx.main_tip();
+    frob_land::base_findings(&fx.repo(), &fx.root, &oid, &LedgerConfig::default())
+        .expect("base findings on a miss");
+    let base_runs = std::fs::read_to_string(&log)
+        .unwrap_or_default()
+        .lines()
+        .filter(|l| l.ends_with("land-checkout"))
+        .count();
+    assert_eq!(base_runs, 1, "one checkout serves the exact and full passes");
+}
