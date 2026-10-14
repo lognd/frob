@@ -2,7 +2,8 @@
 id = "01M4CTE5SS3BGF5R4PP5A9VYZQ"
 title = "Snapshot content API: rules read the walked content, ban std::fs::read in rule code (audit M7)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
