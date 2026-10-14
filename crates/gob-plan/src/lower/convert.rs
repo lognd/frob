@@ -388,6 +388,22 @@ fn message_text(m: &ast::Message) -> String {
         .collect()
 }
 
+/// The field equalities a kind shape states: its `(f = v)` pairs, and a string argument
+/// (`directive "todo"`) as an equality on the node's `name`.
+fn kind_fields(
+    fields: &[ast::FieldEq],
+    arg: Option<&ast::StrLit>,
+) -> Result<Vec<(String, Opd)>, LowerError> {
+    let mut out = fields
+        .iter()
+        .map(|f| Ok((f.name.text.clone(), literal(&f.value)?)))
+        .collect::<Result<Vec<_>, LowerError>>()?;
+    if let Some(a) = arg {
+        out.push(("name".to_owned(), Opd::Str(a.value.clone())));
+    }
+    Ok(out)
+}
+
 /// The source of a binder and the conditions written on it: field equalities, relations, filter.
 fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>), LowerError> {
     let name = b.name.text.clone();
@@ -395,14 +411,11 @@ fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>)
     let src = match &b.source {
         Source::Shape(s) => match &s.node {
             ShapeKind::Kind { kind, fields, arg } => {
-                if arg.is_some() {
-                    return unsupported("a kind with a string argument", s.span);
-                }
-                for f in fields {
+                for (f, rhs) in kind_fields(fields, arg.as_ref())? {
                     attached.push(Cond::Cmp {
-                        lhs: Opd::Field(name.clone(), f.name.text.clone()),
+                        lhs: Opd::Field(name.clone(), f),
                         op: CmpOp::Eq,
-                        rhs: literal(&f.value)?,
+                        rhs,
                     });
                 }
                 Src::Kind(kind.text.clone())
@@ -869,14 +882,7 @@ fn with_object(
         },
         Object::Shape(s) => match &s.node {
             ShapeKind::Kind { kind, fields, arg } => {
-                if arg.is_some() {
-                    return unsupported("a kind with a string argument", s.span);
-                }
-                let fs = fields
-                    .iter()
-                    .map(|f| Ok((f.name.text.clone(), literal(&f.value)?)))
-                    .collect::<Result<_, LowerError>>()?;
-                (kind.text.clone(), fs)
+                (kind.text.clone(), kind_fields(fields, arg.as_ref())?)
             }
             _ => return unsupported("a snippet or alternatives as a relation object", s.span),
         },
