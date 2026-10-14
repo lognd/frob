@@ -8,12 +8,12 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:47Z"
-updated = "2026-10-14T16:06:51Z"
+updated = "2026-10-14T23:44:25Z"
 scope = ["changelog.d/**", "crates/*/tests/**", "crates/*/Cargo.toml", "crates/gob-testsupport/**"]
 
 [[acceptance]]
 text = "Given the ci nextest profile, when the suite runs on quasar, then wall time drops by at least 25 percent against the recorded baseline with no test removed"
-bound = false
+bound = true
 +++
 
 notes/review/audit-2026-10-07.md M17. Suite CPU is dominated by tests spawning the debug binary (build-test-ci.md section 5).
