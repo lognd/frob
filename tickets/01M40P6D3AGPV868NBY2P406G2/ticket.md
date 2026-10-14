@@ -2,7 +2,8 @@
 id = "01M40P6D3AGPV868NBY2P406G2"
 title = "GRL lexer: keep strings raw and let the parser decide interpolation by position"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
