@@ -104,7 +104,7 @@ pub const PRESENTER: Presenter = Presenter {
 mod tests {
     use super::*;
 
-    // frob:tests profile.rs::teach_for
+    // frob:tests crates/frob/src/profile.rs::Profile.teach_for
     #[test]
     fn newcomer_is_taught_five_times_then_first() {
         for n in 0..NEWCOMER_TEACH_OCCURRENCES {
@@ -117,7 +117,7 @@ mod tests {
         assert_eq!(Profile::Experienced.teach_for(0), Teach::First);
     }
 
-    // frob:tests profile.rs::next_step_line
+    // frob:tests crates/frob/src/profile.rs::next_step
     #[test]
     fn work_and_doable_name_a_next_command() {
         let work = serde_json::json!({"handle": "~ABC"});
@@ -133,7 +133,7 @@ mod tests {
         assert_eq!(next_step_line("check", &work), None);
     }
 
-    // frob:tests profile.rs::failure_help
+    // frob:tests crates/frob/src/profile.rs::failure_help
     #[test]
     fn failure_help_is_newcomer_only() {
         let dir = tempfile::tempdir().unwrap();
@@ -141,6 +141,26 @@ mod tests {
         let help = failure_help(dir.path()).unwrap();
         assert!(help.contains(GUIDE_PAGE));
         assert_eq!(help.matches("frob ").count(), 3);
+    }
+
+    /// Run `git` in `dir` through the runner and assert it exited 0.
+    fn git(dir: &Path, args: &[&str]) {
+        let spec = gob_exec::Spec {
+            program: gob_exec::Program::Git,
+            args: args.iter().map(|a| (*a).to_owned()).collect(),
+            cwd: Some(dir.to_owned()),
+            env: Vec::new(),
+            timeout: std::time::Duration::from_secs(30),
+            capture: true,
+        };
+        let out = gob_exec::Runner::new(gob_exec::Limits { jobs: 1 })
+            .run(&spec)
+            .expect("run git");
+        assert!(
+            matches!(out.status, gob_exec::Outcome::Exited(0)),
+            "git {args:?}: {}",
+            out.stderr
+        );
     }
 
     fn repo() -> tempfile::TempDir {
@@ -151,28 +171,13 @@ mod tests {
             vec!["config", "user.name", "Test User"],
             vec!["config", "user.email", "test@example.com"],
         ] {
-            let st = std::process::Command::new("git")
-                .args(&args)
-                .current_dir(dir.path())
-                .status()
-                .unwrap();
-            assert!(st.success());
+            git(dir.path(), &args);
         }
         let cli = crate::cli();
         let (code, out, err) = gob_cli::run_for_test(&cli, &["init"], dir.path());
         assert_eq!(code, 0, "{out} {err}");
-        let st = std::process::Command::new("git")
-            .args(["add", "-A"])
-            .current_dir(dir.path())
-            .status()
-            .unwrap();
-        assert!(st.success());
-        let st = std::process::Command::new("git")
-            .args(["commit", "-q", "-m", "base"])
-            .current_dir(dir.path())
-            .status()
-            .unwrap();
-        assert!(st.success());
+        git(dir.path(), &["add", "-A"]);
+        git(dir.path(), &["commit", "-q", "-m", "base"]);
         let (code, out, err) = gob_cli::run_for_test(
             &cli,
             &["ticket", "new", "--title", "One", "--type", "chore"],
@@ -182,8 +187,8 @@ mod tests {
         dir
     }
 
-    // frob:tests profile.rs::next_step
-    // frob:tests profile.rs::failure_help
+    // frob:tests crates/frob/src/profile.rs::next_step
+    // frob:tests crates/frob/src/profile.rs::failure_help
     #[test]
     fn newcomer_text_output_ends_with_next_and_experienced_does_not() {
         let dir = repo();
@@ -213,7 +218,7 @@ mod tests {
         assert!(!err.contains(GUIDE_PAGE), "{err}");
     }
 
-    // frob:tests profile.rs::next_step
+    // frob:tests crates/frob/src/profile.rs::next_step
     #[test]
     fn check_findings_and_exit_code_do_not_depend_on_the_profile() {
         let dir = repo();
