@@ -48,7 +48,9 @@ pub use error::ConfigError;
 pub use gob_macros::ConfigTable;
 pub use inventory;
 pub use ledger_dir::{DEFAULT_LEDGER_DIR, ledger_dir};
-pub use load::{ConfigSource, Loaded, Provenance, load, load_str, load_with};
+pub use load::{
+    ConfigDocument, ConfigSource, Loaded, Provenance, file_reads, load, load_str, load_with,
+};
 pub use local::{repo_file, user_config_dir, user_config_dir_with, user_file};
 pub use materialize::{MaterializeReport, materialize};
 pub use schema::schema;

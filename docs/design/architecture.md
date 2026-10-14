@@ -254,6 +254,8 @@ returns a `Result` so an unreadable file is not silently clean; and each
 `frob.toml` overrides (Combine derive), then CLI flags. `frob config
 show --effective` prints the merged result with provenance.
 
+One read, one parser (audit M13): `ConfigDocument::read` reads and parses the file once and `ConfigDocument::table` loads each table from that parse, so `FrobConfig::load` touches the disk once (`gob_config::file_reads` is the counter the tests assert on). The `[tickets]` and `[git]` tables, their knob enums and the `LedgerConfig` they imply live in `frob-ledger::config`, the only parser of those tables; `frob-cli` re-exports them.
+
 Config inventory. This table is the one place that lists every knob;
 "materialized" means `frob init` writes it with its default and CFG001
 flags its absence. Defaults are the initial values proposed by this

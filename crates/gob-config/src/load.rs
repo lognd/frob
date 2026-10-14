@@ -2,6 +2,7 @@
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::describe::{ConfigTable, TableDescription};
 use crate::error::ConfigError;
@@ -22,6 +23,72 @@ impl ConfigSource {
             file: crate::config_path(root, product),
             overrides: BTreeMap::new(),
         }
+    }
+}
+
+/// Config files read from disk by this process so far (test hook for the one-read-per-command guarantee).
+static FILE_READS: AtomicUsize = AtomicUsize::new(0);
+
+/// How many times this process has read a config file from disk; a test hook, monotonic.
+#[must_use]
+pub fn file_reads() -> usize {
+    FILE_READS.load(Ordering::SeqCst)
+}
+
+/// One product config file, read and parsed once, from which any number of tables are loaded.
+#[derive(Debug, Clone)]
+pub struct ConfigDocument {
+    root: toml::Value,
+    file: PathBuf,
+    file_present: bool,
+}
+
+impl ConfigDocument {
+    /// Read and parse `<root>/<product>.toml` once (a missing file is an empty document).
+    ///
+    /// # Errors
+    ///
+    /// `Io`/`Parse` for an unreadable or malformed file.
+    pub fn read(root: &Path, product: &str) -> Result<Self, ConfigError> {
+        let file = crate::config_path(root, product);
+        let (root, file_present) = read_table(&file)?;
+        Ok(Self {
+            root,
+            file,
+            file_present,
+        })
+    }
+
+    /// Parse TOML `text` labelled `label` (for example a committed blob).
+    ///
+    /// # Errors
+    ///
+    /// `Parse` naming `label` when `text` is not TOML.
+    pub fn parse(text: &str, label: &Path) -> Result<Self, ConfigError> {
+        let table = text
+            .parse::<toml::Table>()
+            .map_err(|e| ConfigError::Parse {
+                path: label.to_owned(),
+                message: e.to_string(),
+            })?;
+        Ok(Self {
+            root: toml::Value::Table(table),
+            file: label.to_owned(),
+            file_present: true,
+        })
+    }
+
+    /// Load table `T` from the already-parsed document, with no overrides.
+    ///
+    /// # Errors
+    ///
+    /// As [`load_with`], minus the file errors.
+    pub fn table<T: ConfigTable>(&self) -> Result<Loaded<T>, ConfigError> {
+        let source = ConfigSource {
+            file: self.file.clone(),
+            overrides: BTreeMap::new(),
+        };
+        build(&self.root, self.file_present, &source)
     }
 }
 
@@ -144,6 +211,7 @@ fn build<T: ConfigTable>(
 
 /// Read and parse a TOML file; a missing file yields an empty table.
 pub(crate) fn read_table(path: &Path) -> Result<(toml::Value, bool), ConfigError> {
+    FILE_READS.fetch_add(1, Ordering::SeqCst);
     match std::fs::read_to_string(path) {
         Ok(text) => {
             let table = text

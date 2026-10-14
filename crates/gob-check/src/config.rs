@@ -27,7 +27,16 @@ impl TypesTable {
     ///
     /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or an unknown `trust` spelling.
     pub fn load(root: &Path, product: &str) -> Result<Self, ConfigError> {
-        let table = gob_config::load::<Self>(root, product)?.value;
+        Self::from_document(&gob_config::ConfigDocument::read(root, product)?)
+    }
+
+    /// Load `[types]` from an already-parsed config document and validate `trust`.
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unknown key or an unknown `trust` spelling.
+    pub fn from_document(doc: &gob_config::ConfigDocument) -> Result<Self, ConfigError> {
+        let table = doc.table::<Self>()?.value;
         table.trust()?;
         Ok(table)
     }
@@ -288,7 +297,16 @@ impl CheckTable {
     ///
     /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
     pub fn load(root: &Path, product: &str) -> Result<Self, ConfigError> {
-        let table = gob_config::load::<Self>(root, product)?.value;
+        Self::from_document(&gob_config::ConfigDocument::read(root, product)?)
+    }
+
+    /// Load `[check]` from an already-parsed config document and validate its tool stages.
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unknown key, mistyped value or invalid tool stage.
+    pub fn from_document(doc: &gob_config::ConfigDocument) -> Result<Self, ConfigError> {
+        let table = doc.table::<Self>()?.value;
         table.tool.iter().try_for_each(ToolStage::validate)?;
         Ok(table)
     }

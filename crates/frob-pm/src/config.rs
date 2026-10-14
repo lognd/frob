@@ -201,13 +201,22 @@ impl PmConfig {
     ///
     /// The [`ConfigError`] for an unreadable file, bad TOML, an unknown key or requirement name (with a did-you-mean) or a mistyped value.
     pub fn load(root: &Path) -> Result<Self, ConfigError> {
-        let cfg = Self {
-            pm: gob_config::load::<PmTable>(root, PRODUCT)?.value,
-            wip: gob_config::load::<PmWipTable>(root, PRODUCT)?.value,
-            classes: gob_config::load::<PmClassesTable>(root, PRODUCT)?.value,
-        };
+        let cfg = Self::from_document(&gob_config::ConfigDocument::read(root, PRODUCT)?)?;
         tracing::debug!(root = %root.display(), "pm config loaded");
         Ok(cfg)
+    }
+
+    /// Load `[pm]`, `[pm.wip]` and `[pm.classes]` from an already-parsed config document.
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unknown key or requirement name or a mistyped value.
+    pub fn from_document(doc: &gob_config::ConfigDocument) -> Result<Self, ConfigError> {
+        Ok(Self {
+            pm: doc.table::<PmTable>()?.value,
+            wip: doc.table::<PmWipTable>()?.value,
+            classes: doc.table::<PmClassesTable>()?.value,
+        })
     }
 
     /// Like [`PmConfig::load`], but the repository-wide tables (`[pm]`, `[pm.wip]`, `[pm.classes]`) come from `<rev>:frob.toml` when that blob exists, so a branch cut before a limit changed enforces the current value; a missing blob or unreadable `rev` keeps the file in `root`.
