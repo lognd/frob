@@ -41,6 +41,7 @@ pub mod product_rules;
 mod scope;
 mod sibling;
 mod snapshot;
+mod typefacts;
 mod verb;
 
 use std::path::Path;

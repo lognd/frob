@@ -56,7 +56,7 @@ The cargo-json severity is the rustc level: `error` is Error, `warning` is Warn.
 
 ruff-json reads `ruff check --output-format=json`. A diagnostic without a rule code (a syntax error) is dropped and is not a finding; only unparseable stdout fails the stage (`TOOL001`). An `id_map` entry for a ruff code wins over the table above.
 
-ty-gitlab reads `ty check --output-format gitlab` and pyright-json reads `pyright --outputjson` (error and warning diagnostics only, 0-based ranges shifted to 1-based). Both map every finding to `LINT001` (Advisory) unless `id_map` says otherwise, and normal exits are 0 and 1. Their findings also decide which Python files are type-clean for `[types] trust`.
+ty-gitlab reads `ty check --output-format gitlab` and pyright-json reads `pyright --outputjson` (error and warning diagnostics only, 0-based ranges shifted to 1-based). Both map every finding to `LINT001` (Advisory) unless `id_map` says otherwise, and normal exits are 0 and 1. Their findings also decide which Python files are type-clean for `[types] trust`. `frob check` runs the first such stage (fixed argv, no placeholders) once while building the snapshot graph and feeds the clean-file set to the graph build; if the stage is absent, cannot run, exits other than 0 or 1, or prints unreadable output, no file is clean and annotations stay claims (May). With `trust` other than `checked` the stage is not consulted for facts.
 
 ## `[types]`
 

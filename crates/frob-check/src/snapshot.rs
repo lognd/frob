@@ -16,7 +16,7 @@ use gob_directives::{
 use gob_languages::{Language, grammar_identity};
 use gob_lock::{LockFile, file_name};
 use gob_rules::Finding;
-use gob_symbols::{EXTRACTOR_VERSION, Target, build_graph_with_stats, extract_file};
+use gob_symbols::{EXTRACTOR_VERSION, Target, build_graph_with_stats_typed, extract_file};
 use gob_text::{FileId, FileInterner};
 use gob_walk::{FileEntry, Roles};
 use rayon::prelude::*;
@@ -369,7 +369,9 @@ pub(crate) fn collect(
     let core = cx.core;
     let (root, entries, files, index) = (&core.root, &core.entries, &core.files, &core.index);
     let started = Instant::now();
-    let (graph, built) = build_graph_with_stats(root, entries, cx.cache);
+    // frob:ticket 01M4X64AXQH3HTB6Z9ZGCPFTAD
+    let facts = crate::typefacts::type_facts(root, cx.table, entries, PRODUCT);
+    let (graph, built) = build_graph_with_stats_typed(root, entries, cx.cache, facts);
     cx.stats.graph_cached = built.cached;
     cx.stats.graph_extracted = built.extracted;
     cx.timing.push("graph", started.elapsed(), true);
