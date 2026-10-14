@@ -2,12 +2,12 @@
 id = "01M4X64ATCQ55PKCTX0HEVH0W5"
 title = "frob test: Argument list too long (E2BIG) on full-workspace base run"
 type = "bug"
-category = "in-progress"
+category = "todo"
 priority = "high"
 points = 2
 reporter = "Claude"
 created = "2026-10-14T12:27:54Z"
-updated = "2026-10-14T12:41:45Z"
+updated = "2026-10-14T12:42:30Z"
 scope = ["crates/frob-test/**"]
 
 [[acceptance]]
