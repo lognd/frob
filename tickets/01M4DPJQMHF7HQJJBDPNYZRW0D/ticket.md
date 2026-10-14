@@ -8,8 +8,8 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T12:07:32Z"
-updated = "2026-10-14T05:19:15Z"
-scope = ["changelog.d/**", "crates/gob-macros/**", "crates/crunk-rules/**", "crates/frob-release/**"]
+updated = "2026-10-14T05:19:16Z"
+scope = ["changelog.d/**", "crates/gob-macros/**", "crates/crunk-rules/**", "crates/frob-release/**", "crates/gob-rules/**", "docs/design/**"]
 
 [[acceptance]]
 text = "Given a rule with release_severity Error and severity Advisory, when release status runs, then the finding blocks; in check it stays Advisory"
