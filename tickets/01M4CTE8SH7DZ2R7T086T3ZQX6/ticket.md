@@ -8,8 +8,8 @@ points = 8
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:46Z"
-updated = "2026-10-14T14:22:28Z"
-scope = ["changelog.d/**", "crates/frob/**", "crates/grimble/**", "crates/crunk/**", "crates/gob-cli/**", "crates/frob-*/src/cli.rs"]
+updated = "2026-10-14T14:24:15Z"
+scope = ["changelog.d/**", "crates/frob/**", "crates/grimble/**", "crates/crunk/**", "crates/gob-cli/**", "crates/frob-*/src/cli.rs", "crates/frob-*/**", "Cargo.lock", "docs/**"]
 
 [[acceptance]]
 text = "Given every verb, when inspected, then no flag is looked up by string name (lint)"
