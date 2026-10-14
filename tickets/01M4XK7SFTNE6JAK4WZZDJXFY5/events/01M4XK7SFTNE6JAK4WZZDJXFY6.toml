@@ -1,0 +1,12 @@
+kind = "create"
+title = "GRL runner: multi-file and config-row inputs for INV002 and DOC002 (link/heading kinds)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 8
+scope = ["crates/gob-plan/src/**", "crates/gob-symbols/src/**"]
+acceptance = ["INV002 and DOC002 corpus examples pass via run_example"]
+body = "Found while working ~YJPYE5V: INV002 needs path-aware model_of_source (gob-symbols names every example file example.<ext>) plus config rows matched by i.file.path; DOC002 needs link/heading kinds, cross-file file domain, resolve(...), a second file input and a multi-model executor. Runner still returns Unsupported for second file, model, fixed."
+at = "2026-10-14T16:16:59Z"
+actor = "lognd"
+rev = 1
