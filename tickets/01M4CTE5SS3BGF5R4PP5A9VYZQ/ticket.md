@@ -2,13 +2,13 @@
 id = "01M4CTE5SS3BGF5R4PP5A9VYZQ"
 title = "Snapshot content API: rules read the walked content, ban std::fs::read in rule code (audit M7)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:43Z"
-updated = "2026-10-08T03:55:43Z"
+updated = "2026-10-14T13:45:08Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/gob-rules/**", "crates/frob-check/**", "crates/grimble-check/**", "crates/crunk-check/**"]
 
 [[acceptance]]
