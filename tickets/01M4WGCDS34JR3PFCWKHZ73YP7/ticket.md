@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "Claude"
 created = "2026-10-14T06:07:51Z"
-updated = "2026-10-14T14:30:15Z"
+updated = "2026-10-14T14:30:23Z"
 scope = ["crates/gob-plan/**"]
 
 [[links]]
