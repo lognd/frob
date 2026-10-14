@@ -2,13 +2,14 @@
 id = "01M4MH62PCSG1MB8J9883RPV1W"
 title = "Shared build cache for ticket worktrees: sccache or a content-addressed rlib store so a new worktree does not rebuild the workspace and land checkouts start warm"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:47:56Z"
-updated = "2026-10-14T16:27:14Z"
+updated = "2026-10-14T20:51:18Z"
 scope = ["frob.toml"]
 
 [[links]]
