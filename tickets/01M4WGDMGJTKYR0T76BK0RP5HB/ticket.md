@@ -2,12 +2,12 @@
 id = "01M4WGDMGJTKYR0T76BK0RP5HB"
 title = "Fix red experimental baseline: frob-gh layer entry, hand-rolled temp-and-rename in gob-cache and frob-land"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "high"
 points = 2
 reporter = "Claude"
 created = "2026-10-14T06:08:30Z"
-updated = "2026-10-14T06:08:34Z"
+updated = "2026-10-14T11:40:06Z"
 scope = ["crates/gob-dev/**", "crates/gob-fs/**", "crates/gob-cache/**", "crates/frob-land/**", "changelog.d/**"]
 
 [[acceptance]]
