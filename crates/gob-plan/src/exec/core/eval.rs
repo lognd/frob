@@ -37,6 +37,8 @@ pub(crate) type Domain = Rc<Vec<(NodeId, Truth)>>;
 pub(crate) enum Matcher {
     Regex(Regex),
     Glob(globset::GlobMatcher),
+    /// Any glob of a side-relation column.
+    Set(globset::GlobSet),
 }
 
 /// The relation inputs a plan names, resolved by the plan string that names them.
@@ -254,7 +256,9 @@ impl<'a> Eval<'a> {
                     }
                 })
             }
-            Op::MatchRegex { subject, .. } | Op::MatchGlob { subject, .. } => {
+            Op::MatchRegex { subject, .. }
+            | Op::MatchGlob { subject, .. }
+            | Op::MatchGlobSet { subject, .. } => {
                 self.matches(id, subject, env)
             }
             Op::CountCmp {
@@ -461,6 +465,7 @@ impl<'a> Eval<'a> {
         let test = |s: &str| match &self.matchers[&id] {
             Matcher::Regex(r) => r.is_match(s),
             Matcher::Glob(g) => g.is_match(s),
+            Matcher::Set(g) => g.is_match(s),
         };
         let truth = match &d {
             Datum::Known(Scalar::Str(s)) => Truth::from_bool(test(s)),

@@ -190,6 +190,25 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
                 let g = globset::Glob::new(src).map_err(|e| bad_pattern(p, src, &e))?;
                 matchers.insert(id, Matcher::Glob(g.compile_matcher()));
             }
+            Op::MatchGlobSet { table, column, .. } => {
+                let name = &p.strings[*table as usize];
+                let t = rels
+                    .side
+                    .get(name)
+                    .ok_or_else(|| missing(p, "side table", name))?;
+                let col = &p.strings[*column as usize];
+                let mut set = globset::GlobSetBuilder::new();
+                for row in 0..t.len() {
+                    let row = u32::try_from(row).expect("side tables are far below u32::MAX rows");
+                    if let Datum::Known(Scalar::Str(src)) = t.cell(row, col) {
+                        let g = globset::Glob::new(&src).map_err(|e| bad_pattern(p, &src, &e))?;
+                        set.add(g);
+                    }
+                }
+                let set = set.build().map_err(|e| bad_pattern(p, name, &e))?;
+                tracing::debug!(table = name.as_str(), rows = t.len(), "glob set compiled");
+                matchers.insert(id, Matcher::Set(set));
+            }
             Op::FindSide { table, .. } => {
                 let name = &p.strings[*table as usize];
                 let t = rels
@@ -252,7 +271,9 @@ fn free_vars(p: &PlanParts, id: OpId, out: &mut Vec<VarId>) {
             operand(lhs, out);
             operand(rhs, out);
         }
-        Op::MatchRegex { subject, .. } | Op::MatchGlob { subject, .. } => operand(subject, out),
+        Op::MatchRegex { subject, .. }
+        | Op::MatchGlob { subject, .. }
+        | Op::MatchGlobSet { subject, .. } => operand(subject, out),
         Op::Find { .. } | Op::FindSide { .. } => {}
     }
 }

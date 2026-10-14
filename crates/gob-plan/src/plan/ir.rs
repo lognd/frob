@@ -313,6 +313,18 @@ pub enum Op {
         /// Glob source.
         pattern: StrId,
     },
+    /// Condition: the operand matches any glob held in one column of a side relation
+    /// (`p matches lease.globs`); an empty table matches nothing.
+    MatchGlobSet {
+        /// Value tested.
+        subject: Operand,
+        /// The side relation family that must be declared in `needs`.
+        need: Need,
+        /// The relation's dotted name in the string pool.
+        table: StrId,
+        /// The column holding the globs, in the string pool.
+        column: StrId,
+    },
 }
 
 /// An `unresolved when COND because "reason"` clause: a binding for which the condition is Yes

@@ -281,6 +281,16 @@ fn references(p: &PlanParts) -> Result<(), PlanError> {
                 operand_refs(subject, p)?;
                 str_in_range(*pattern, n)?;
             }
+            Op::MatchGlobSet {
+                subject,
+                table,
+                column,
+                ..
+            } => {
+                operand_refs(subject, p)?;
+                str_in_range(*table, n)?;
+                str_in_range(*column, n)?;
+            }
             Op::And(_) | Op::Or(_) | Op::Not(_) => {}
         }
         if let Op::CountCmp {
@@ -500,6 +510,12 @@ impl<'a> Walk<'a> {
                 self.use_operand(rhs)?;
             }
             Op::MatchRegex { subject, .. } | Op::MatchGlob { subject, .. } => {
+                self.use_operand(subject)?;
+            }
+            Op::MatchGlobSet { subject, need, .. } => {
+                if !p.needs.contains(*need) {
+                    return Err(PlanError::UndeclaredNeed { need: need.name() });
+                }
                 self.use_operand(subject)?;
             }
         }

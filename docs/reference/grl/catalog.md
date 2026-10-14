@@ -375,3 +375,11 @@ Query: Q04. Languages: code languages (not data, prose or style files).
 | grmb | // /* |
 | opaque-text |  |
 | binary |  |
+
+## Glob-set operands in lowering
+
+`x matches lease.globs` and `x matches config.<table>.<key>` lower to the plan op
+`MatchGlobSet`: the subject matches when any glob in the side table's column matches. A
+`config.*` list is read through a single column named `value`; `lease.globs` uses its `glob`
+column. A missing table is a `MissingRelation` error, not an empty set; an empty table matches
+nothing.

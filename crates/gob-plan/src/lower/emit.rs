@@ -65,7 +65,9 @@ fn free(c: &Cond, bound: &mut Vec<String>, out: &mut BTreeSet<String>) {
             free_in_opd(lhs, bound, out);
             free_in_opd(rhs, bound, out);
         }
-        Cond::Regex { subject, .. } | Cond::Glob { subject, .. } => {
+        Cond::Regex { subject, .. }
+        | Cond::Glob { subject, .. }
+        | Cond::GlobSet { subject, .. } => {
             free_in_opd(subject, bound, out);
         }
     }
@@ -188,6 +190,17 @@ impl Builder {
             Cond::Glob { subject, pattern } => Op::MatchGlob {
                 subject: self.operand(subject)?,
                 pattern: self.intern(pattern),
+            },
+            Cond::GlobSet {
+                subject,
+                need,
+                table,
+                column,
+            } => Op::MatchGlobSet {
+                subject: self.operand(subject)?,
+                need: *need,
+                table: self.intern(table),
+                column: self.intern(column),
             },
         };
         Ok(self.push(op))

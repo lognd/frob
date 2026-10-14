@@ -9,9 +9,10 @@
 //!
 //! Covered: `find` of a kind (with field equalities and relations) or of a side relation,
 //! `where`, `some`/`no`, `and`/`or`/`any`/`not`, `inside`/`has`, `before`/`after`/`adjoins`, verbs,
-//! comparisons of variables, fields and literals, regex and glob literals, `report` and
-//! `unresolved when`. Everything else (snippets, defs, `count`, knobs, `reaches`, `in`, `is`,
-//! `exists`, side-relation operands, `under`, `in unit`) is a [`LowerError::Unsupported`] that names
+//! comparisons of variables, fields and literals, regex and glob literals, `matches` against a
+//! side-relation glob column (`lease.globs`, or a `config.<table>.<key>` list read through its
+//! `value` column; lowered to `MatchGlobSet`), `report` and `unresolved when`. Everything else (snippets, defs, `count`, knobs, `reaches`, `in`, `is`,
+//! `exists`, other side-relation operands, `under`, `in unit`) is a [`LowerError::Unsupported`] that names
 //! the construct. Notes and fixes are not part of the plan and are dropped.
 
 mod convert;

@@ -61,6 +61,12 @@ pub(super) enum Cond {
         subject: Opd,
         pattern: String,
     },
+    GlobSet {
+        subject: Opd,
+        need: Need,
+        table: String,
+        column: String,
+    },
 }
 
 /// What a `find` ranges over.
@@ -105,6 +111,8 @@ pub(super) struct Lowered {
 
 struct Cx {
     scope: Vec<String>,
+    /// Variables bound by a top-level side-relation find, with that relation's dotted name.
+    side_vars: Vec<(String, String)>,
     fresh: u32,
 }
 
@@ -129,6 +137,7 @@ pub(super) fn convert(rule: &Rule) -> Result<Lowered, LowerError> {
     }
     let mut cx = Cx {
         scope: Vec::new(),
+        side_vars: Vec::new(),
         fresh: 0,
     };
     for c in &rule.clauses {
@@ -270,8 +279,10 @@ fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>)
             if !top {
                 return unsupported("a side relation inside a quantifier", p.span);
             }
-            let table: Vec<&str> = p.segments[1..].iter().map(|s| s.text.as_str()).collect();
-            Src::Side(need, table.join("."))
+            let table: Vec<&str> = p.segments.iter().map(|s| s.text.as_str()).collect();
+            let table = table.join(".");
+            cx.side_vars.push((name.clone(), table.clone()));
+            Src::Side(need, table[p.segments[0].text.len() + 1..].to_owned())
         }
     };
     if !top {
@@ -349,8 +360,17 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
             },
             _ => return unsupported("a non-literal pattern after ~", rhs.span),
         },
+        CondKind::GlobMatch { lhs, rhs } if side_set(rhs).is_some() => {
+            let (need, table, column) = side_set(rhs).expect("guarded");
+            Cond::GlobSet {
+                subject: glob_subject(cx, lhs)?,
+                need,
+                table,
+                column,
+            }
+        }
         CondKind::GlobMatch { lhs, rhs } => {
-            let subject = operand(cx, lhs)?;
+            let subject = glob_subject(cx, lhs)?;
             let globs = glob_literals(rhs)?;
             let mut alts: Vec<Cond> = globs
                 .into_iter()
@@ -394,6 +414,46 @@ fn regex_text(r: &crate::grl::Regex) -> String {
     } else {
         format!("(?{flags}){}", r.pattern)
     }
+}
+
+/// The side relation a glob set names (`lease.globs`, `config.lease.shared_files`) with the
+/// column that holds the globs: the catalog's only column for a fixed relation, `value` for a
+/// `config.` list.
+fn side_set(t: &Term) -> Option<(Need, String, String)> {
+    let TermKind::Path(p) = &t.node else {
+        return None;
+    };
+    let words: Vec<&str> = p.segments.iter().map(|s| s.text.as_str()).collect();
+    let table = words.join(".");
+    match words.first().copied()? {
+        "config" if words.len() >= 3 => Some((Need::Config, table, "value".to_owned())),
+        "lease" | "diff" | "model" => {
+            let rel = crate::catalog::side_relation(&table)?;
+            let (col, _) = rel.columns.first()?;
+            let need = match words[0] {
+                "lease" => Need::Lease,
+                "diff" => Need::Diff,
+                _ => Need::Model,
+            };
+            Some((need, table, (*col).to_owned()))
+        }
+        _ => None,
+    }
+}
+
+/// The tested value of a glob match: a variable bound to a side-relation row stands for the
+/// first column of its relation (`p` in `find p: diff.changed` is its path).
+fn glob_subject(cx: &Cx, t: &Term) -> Result<Opd, LowerError> {
+    if let Some(name) = var_name(cx, t)?
+        && let Some((_, table)) = cx.side_vars.iter().find(|(v, _)| *v == name)
+    {
+        let rel = crate::catalog::side_relation(table);
+        return match rel.and_then(|r| r.columns.first()) {
+            Some((col, _)) => Ok(Opd::Field(name, (*col).to_owned())),
+            None => unsupported("a config row as a glob subject", t.span),
+        };
+    }
+    operand(cx, t)
 }
 
 fn glob_literals(t: &Term) -> Result<Vec<String>, LowerError> {

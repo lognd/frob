@@ -421,6 +421,18 @@ fn put_op(w: &mut Vec<u8>, op: &Op) {
             put_operand(w, subject);
             put_u32(w, *pattern);
         }
+        Op::MatchGlobSet {
+            subject,
+            need,
+            table,
+            column,
+        } => {
+            w.push(15);
+            put_operand(w, subject);
+            w.push(*need as u8);
+            put_u32(w, *table);
+            put_u32(w, *column);
+        }
     }
 }
 
@@ -665,6 +677,12 @@ impl Reader<'_> {
             14 => Op::Call {
                 def: self.u16("def")?,
                 args: self.u16s("call arguments", MAX_PARAMS)?,
+            },
+            15 => Op::MatchGlobSet {
+                subject: self.operand()?,
+                need: self.need()?,
+                table: self.u32("table")?,
+                column: self.u32("column")?,
             },
             tag => return Err(PlanError::BadTag { what: "op", tag }),
         })

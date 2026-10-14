@@ -349,3 +349,68 @@ fn a_def_is_a_view_computed_once_per_distinct_arguments() {
     // Four functions, two call sites each: four views, not eight evaluations.
     assert_eq!(out.views, 4);
 }
+
+// frob:ticket 01M4MAPRB2H8WZKJZSH3A9N1B2
+// frob:tests crates/gob-plan/src/exec/core/eval.rs::Matcher.matches
+#[test]
+fn a_glob_set_op_matches_any_glob_in_a_side_column() {
+    let (m, _) = model(&["a"]);
+    let mut b = PlanBuilder::new("SIDE002", Polarity::Pplus);
+    b.needs(NeedSet::of(&[Need::Diff, Need::Lease]));
+    let p = b.var();
+    let dt = b.s("diff.changed");
+    let id = b.op(Op::FindSide {
+        var: p,
+        need: Need::Diff,
+        table: dt,
+    });
+    b.clause(id);
+    let path = b.field(p, "path");
+    let lt = b.s("lease.globs");
+    let col = b.s("glob");
+    let g = b.op(Op::MatchGlobSet {
+        subject: path,
+        need: Need::Lease,
+        table: lt,
+        column: col,
+    });
+    b.clause(g);
+    b.report(None, p, "changed");
+    let plan = b.build();
+    let mut side = SideData::new();
+    let rows = [("src/a.rs", "modified"), ("docs/x.md", "added")]
+        .iter()
+        .map(|(a, s)| vec![Scalar::Str((*a).into()), Scalar::Str((*s).into())])
+        .collect();
+    side.insert(
+        "diff.changed",
+        SideTable::new(
+            vec![col_("path"), col_("status")],
+            rows,
+        ),
+    )
+    .unwrap();
+    side.insert(
+        "lease.globs",
+        SideTable::new(
+            vec![col_("glob")],
+            vec![vec![Scalar::Str("src/**".into())]],
+        ),
+    )
+    .unwrap();
+    let rels = Relations::new().with_side(side);
+    let out = run_with(&plan, &input(&m), &rels).unwrap();
+    let got: Vec<u32> = out
+        .rows
+        .iter()
+        .map(|r| match r.vars[usize::from(p)] {
+            Some(gob_plan::exec::Val::Row(row)) => row.index,
+            other => panic!("unexpected {other:?}"),
+        })
+        .collect();
+    assert_eq!(got, vec![0]);
+}
+
+fn col_(name: &str) -> Column {
+    col(name, FieldType::Str)
+}
