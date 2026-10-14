@@ -2,7 +2,8 @@
 id = "01M4DPJMH0KAMV38DMWTXC59AG"
 title = "gob-git ledger: a CAS loser re-runs the local-edit check on retry; skipped sync paths are reported, not only logged"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
