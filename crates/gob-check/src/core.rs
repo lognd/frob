@@ -140,8 +140,8 @@ mod tests {
     use crate::report::{Stats, Timing};
 
     // frob:ticket 01M4CTE5SS3BGF5R4PP5A9VYZQ
-    // frob:tests crates/gob-check/src/core.rs::Core::text
-    // frob:tests crates/gob-check/src/core.rs::Core::bytes
+    // frob:tests crates/gob-check/src/core.rs::Core.text
+    // frob:tests crates/gob-check/src/core.rs::Core.bytes
     #[test]
     fn core_reads_walked_content_and_reports_absence() {
         let dir = tempfile::tempdir().expect("tempdir");
