@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Each listed rule has an mdtest fire/clean pair or fixture; its [[gap]] entry is deleted from crates/gob-mdtest/coverage-allowlist.toml; the product's rule_coverage test passes"]
+new = ["AFFECT001 CFG001 CI001 CI003 CI006 CI007 CI010 CI014 each have an mdtest fire/clean pair and their allowlist entries are deleted; rule_coverage passes (COV003 split to ~0JTK1XS)"]
+moved = [0]
+at = "2026-10-14T23:35:07Z"
+actor = "lognd"
+rev = 1
