@@ -2,12 +2,12 @@
 id = "01M4X91TW6Y91R51R9BETGCVS0"
 title = "GRL lowering: function-call terms (resolve, slug) in rule bodies"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T13:18:58Z"
-updated = "2026-10-14T13:18:58Z"
+updated = "2026-10-14T15:47:52Z"
 scope = ["crates/gob-plan/**"]
 +++
 
