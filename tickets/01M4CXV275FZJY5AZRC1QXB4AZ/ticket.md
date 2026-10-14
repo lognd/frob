@@ -8,12 +8,12 @@ points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T04:55:11Z"
-updated = "2026-10-14T01:22:14Z"
+updated = "2026-10-14T01:44:22Z"
 scope = ["changelog.d/**", "crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
 text = "Given the ambiguous forms, when parsed, then the grammar has one documented binding and the printer generator finds no ambiguity"
-bound = false
+bound = true
 +++
 
 notes/review/formal-review-2026-10-08.md section 3 and item 6.
