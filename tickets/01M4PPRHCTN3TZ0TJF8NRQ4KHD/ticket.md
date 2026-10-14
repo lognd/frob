@@ -2,12 +2,12 @@
 id = "01M4PPRHCTN3TZ0TJF8NRQ4KHD"
 title = "G17b: gob-pattern grammar-level patterns, metavariables, fix templates and GPOL id generation"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-12T00:03:52Z"
-updated = "2026-10-12T00:03:52Z"
+updated = "2026-10-14T14:35:24Z"
 scope = ["crates/gob-pattern/**", "crates/grimble-lints/**"]
 
 [[links]]
