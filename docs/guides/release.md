@@ -79,7 +79,7 @@ GitHub trusted publisher with:
 
 Never add a PyPI token as a repository or environment secret. The workflow
 uses trusted publishing, and a test in
-`crates/frob-release/tests/release_workflow.rs` fails if the workflow reads a
+`crates/frob-release/tests/it/release_workflow.rs` fails if the workflow reads a
 `secrets.` value other than the crates.io `CARGO_REGISTRY_TOKEN` in the `crates`
 job.
 

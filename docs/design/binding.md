@@ -1188,7 +1188,7 @@ The model is grmb-spec section 13. Rows of B, with the rank that gave them:
 | flow/f_walk | producer | `crates/gob-walk/src/lib.rs::walk` | Must | 2, `producer` literal path |
 | flow/f_walk | consumer | `crates/frob-check/src/snapshot.rs` (module unit) | Must | 2, literal file path |
 | contract/walk_result | shape | `crates/gob-walk/src/lib.rs::WalkResult` | Must | 2, literal |
-| claim/no_frob_to_grimble | evidence | `crates/frob/tests/wiring.rs` (and its tests) | Must | 2, file selector gives the file and its test units |
+| claim/no_frob_to_grimble | evidence | `crates/frob/tests/it/wiring.rs` (and its tests) | Must | 2, file selector gives the file and its test units |
 
 Checks over these rows. `f_walk : gob -> frob` has a producer owned by `gob`
 and a consumer owned by `frob`: no SYS003 `end-owner`. Had the consumer been

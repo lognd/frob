@@ -543,6 +543,29 @@ place that can check it cheaply:
   opt-level 1 (clean compile slower, suite no faster). The suite is now
   bound by aggregate CPU of the many `frob-cli` tests that spawn the debug
   binary, which no per-crate opt level moved outside noise.
+- One integration-test binary per crate (~E0E8M28, audit M17). Every
+  `tests/*.rs` file of `frob-cli`, `gob-symbols`, `frob-check`, `gob-ir`
+  and `frob-release` is a module of `tests/it/main.rs`, so each crate
+  links once instead of once per file (insta snapshots gained an `it__`
+  prefix). Data directories (`corpus`, `fixtures`, `mdtest`,
+  `snapshots` read by hand) stay under `tests/`. Tests that need a
+  separate registry stay separate binaries: `frob-cli`'s
+  `tests/siblings/` (links `grimble` and `crunk`, whose inventory
+  registrations would otherwise leak into frob's config sections) and
+  `frob-check`'s `tests/rule_coverage.rs`. Crates with trybuild, `#[path]`
+  or concurrency tests (`gob-macros`, `gob-rules`, `gob-mdtest`,
+  `gob-plan`) are unchanged.
+- `frob-cli` tests run the CLI in process by default:
+  `common::frob_command()` calls `gob_cli::run_for_test` and returns a
+  `std::process::Output`. `common::process_command()` (assert_cmd, hermetic
+  `PATH`) is the `process` escape hatch for exit status, stdio and signals;
+  `frob_command()` falls back to it for `.env`, `.timeout`,
+  `.real_process()` or a non-hermetic ambient `PATH`. Injecting env and
+  `PATH` into the Context (so more tests can run in process) needs a
+  source change and is a follow-up. `cargo nextest run -p frob-cli
+  --profile ci` went from 326 tests in 11.8 s (consolidated, spawning) to
+  10.4 s (in process default); the workspace-wide wall time against the
+  138 s baseline was not re-measured under the shared-host limits.
 - Two guards, for two purposes. Hang guard: the nextest `ci` profile
   terminates and fails any test over 120 s (`slow-timeout` period 30 s,
   `terminate-after` 4), so a hung test fails fast while slower CI runners

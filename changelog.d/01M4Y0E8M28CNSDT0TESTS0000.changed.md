@@ -1,0 +1,1 @@
+Tests: integration tests of frob-cli, gob-symbols, frob-check, gob-ir and frob-release now build as one `tests/it` binary per crate, and frob-cli tests run the CLI in process by default (`process_command()` keeps the spawning path).

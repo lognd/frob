@@ -4,7 +4,7 @@
 # one more [[product]] table here plus its row in the workflow's count steps (a test pins both).
 # Each wheel carries only its own binary; `depends` names sibling products pinned at the same
 # lockstep version (`grimble==<version>`), so the package manager composes the install.
-# Gates (D87, pinned by crates/frob-release/tests/products.rs): frob's `depends` gains "crunk"
+# Gates (D87, pinned by crates/frob-release/tests/it/products.rs): frob's `depends` gains "crunk"
 # only at the first crunk preview release (~AYA6294); the release workflow builds and smokes the
 # crunk wheel but does not upload it to PyPI until the Python crunk (lognd/crunk) is retired,
 # so a Rust wheel never replaces that project's releases.

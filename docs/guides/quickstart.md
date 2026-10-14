@@ -13,7 +13,7 @@ minutes and needs `git`, `frob` ([install](../../README.md#install)) and
 pytest, vitest and jest, and `frob doctor --text` lists what it found).
 
 Every command block below marked `sh` is run against a real repository by the
-test `crates/frob/tests/doc_commands.rs`, so it stays true. Handles such as
+test `crates/frob/tests/it/doc_commands.rs`, so it stays true. Handles such as
 `~Q5FEE2P` are generated per ticket; in your repository, use the one
 `frob ticket new` prints.
 

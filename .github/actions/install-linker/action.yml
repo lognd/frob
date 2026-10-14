@@ -2,7 +2,7 @@ name: Install the Linux linker
 description: >-
   Install clang and mold on a Linux runner, the linker setup .cargo/config.toml selects for
   Linux (clang driver, -fuse-ld=mold). A no-op on other runners. Every job that compiles Rust
-  on a Linux host uses this one step (a test in crates/frob-release/tests/release_workflow.rs
+  on a Linux host uses this one step (a test in crates/frob-release/tests/it/release_workflow.rs
   fails otherwise).
 runs:
   using: composite
