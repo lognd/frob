@@ -8,10 +8,10 @@ points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:23Z"
-updated = "2026-10-14T16:26:57Z"
+updated = "2026-10-14T16:31:32Z"
 idempotency_key = "m2-grl-check-integration"
 labels = ["milestone:2", "area:grl"]
-scope = ["crates/frob-check/src/**"]
+scope = ["crates/frob-check/src/**", "docs/reference/rules/GRL016.md", "docs/reference/rules/README.md", "docs/design/grl-spec.md"]
 
 [[links]]
 kind = "blocked-by"
