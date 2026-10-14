@@ -497,6 +497,34 @@ fn macro_arguments_scope_their_closure_parameters() {
     assert_both_may(&g, "s2");
 }
 
+// frob:ticket 01M4D6NJZYKMD1J9PSFE4GA6NV
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.link_calls
+#[test]
+fn macro_arguments_after_a_long_prefix_and_across_lines_still_resolve_exactly() {
+    let g = graph(
+        "pub fn pad() {}
+
+         pub fn t1(items: Vec<Foo>) {
+             assert!(
+                 items.iter().any(|x| {
+                     x.go();
+                     true
+                 }),
+                 \"msg {}\",
+                 items.len()
+             );
+         }
+         pub fn t2(items: Vec<Foo>) {
+             let n = vec![
+                 items.iter().filter(|x| { x.go(); true }).count();
+                 2
+             ];
+         }",
+    );
+    assert_foo_must(&g, "t1");
+    assert_foo_must(&g, "t2");
+}
+
 // frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.link_calls
 #[test]
 fn crate_paths_resolve_in_source_files_only() {
