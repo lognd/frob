@@ -8,8 +8,8 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-12T02:42:21Z"
-updated = "2026-10-15T23:31:51Z"
-scope = ["crates/gob-plan/src/lower/**"]
+updated = "2026-10-15T23:33:08Z"
+scope = ["crates/gob-plan/src/lower/**", "crates/gob-plan/src/examples/corpus_tests.rs"]
 
 [[acceptance]]
 text = "Given the six section 12 rules TODO001 DOC002 COV001 INV002 SCOPE001 NEAT013, when run_example runs each example, then none fails with a cannot-lower error"
