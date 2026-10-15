@@ -2,7 +2,8 @@
 id = "01M41S1KX3ZVF51H8KPJ3YXZF9"
 title = "Clippy confinement: path-to-text conversion only in gob-path, with a shrinking allow list"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M41S1JXXN380WPE29ATR5EP7"
