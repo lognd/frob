@@ -16,6 +16,7 @@ the `crunk-check` crate with the rule set listed in [rules/README.md](rules/READ
 | `crunk check` | yes | Runs the rule set and prints the `gob.sibling/1` document with `product = "crunk"` (`--json`), or a count summary. `--only`, `--fail-on`, `--base`, `--ticket-scope` as for `grimble check`. |
 | `crunk doctor` | no | Reports the crunk version, the repository root and the state of `crunk.toml`. |
 | `crunk tokens` | yes | Writes, previews (`--target` css, json or tailwind) or drift-checks (`--check`) the generated token files. |
+| `crunk gallery check` | yes | Opt-in (`cargo install crunk --features gallery`): checks `gallery/manifest.json` (`--manifest`) against the spec's cells with GALLERY001 to GALLERY005 (`--route` repeats, feeding GALLERY005). The default build refuses with `E-GALLERY-NOT-BUILT` and that remedy. |
 | `crunk schema` | no | Built-in: the JSON Schema of a verb's output. |
 
 Global flags (`--json`, `--text`, `--format`, `--color`, `-v`, `--version`) come from
@@ -54,3 +55,24 @@ Path-filtered jobs and the optional node job: [ci.md](ci.md).
 ## Boundary
 
 No frob crate is a dependency of `crunk` or `crunk-check` (`crates/crunk/tests/boundary.rs`).
+
+## Gallery (opt-in)
+
+The `gallery` cargo feature of `crunk` pulls in `crunk-gallery`; it is off by default so the default
+binary and the PyPI wheel stay small. The crate holds the manifest (v1 per-screen approvals, v2
+per-state cells with a hashed render, v3 attributed verdicts that can expire; schemas
+`docs/schemas/crunk-gallery-manifest-v{1,2,3}.json`), the cell enumeration (screens, then states,
+then platforms, in spec order; `applies_to` on a state narrows its screen's, `tag:<name>` expands
+to tagged platforms) and the check report (`docs/schemas/crunk-gallery-check-v1.json`).
+
+| Rule | Severity | Meaning |
+|---|---|---|
+| GALLERY001 | error | a cell has no render |
+| GALLERY002 | error | a render is not approved (no verdict, or pending) |
+| GALLERY003 | error | an approval's `expires_at` is before today |
+| GALLERY004 | error | a render was rejected |
+| GALLERY005 | warn | a router route has no `[[screen]]` with that entry (query and one trailing slash ignored; `*` never needs a screen) |
+
+Not yet verified: the manifest shapes and cell order were rebuilt from the design notes and the
+shipped fixtures because the Python source is not in this checkout; the parity check is tracked as
+a follow-up ticket. Rendering is separate work (render orchestration).

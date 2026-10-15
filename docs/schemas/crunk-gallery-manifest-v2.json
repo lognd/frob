@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.crunk.dev/crunk-gallery-manifest-v2.json",
+  "title": "crunk gallery manifest v2",
+  "description": "Per-state cells with a hashed render and a status.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "cells"
+  ],
+  "properties": {
+    "version": {
+      "const": 2
+    },
+    "cells": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "screen",
+          "state",
+          "platform",
+          "status"
+        ],
+        "properties": {
+          "screen": {
+            "type": "string",
+            "minLength": 1
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1
+          },
+          "platform": {
+            "type": "string",
+            "minLength": 1
+          },
+          "image": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sha256": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

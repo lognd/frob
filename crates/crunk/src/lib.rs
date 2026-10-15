@@ -11,6 +11,7 @@
 // frob:ticket 01M47QSGHYD2EQ4552V1B4EEQZ
 
 pub mod doctor;
+pub mod gallery;
 pub mod review;
 pub mod tokens;
 
@@ -110,6 +111,7 @@ impl Product for CrunkProduct {
         cli.register::<tokens::Tokens>()
             .register::<review::Review>()
             .register::<review::Ack>()
+            .register::<gallery::GalleryCheck>()
     }
 }
 
