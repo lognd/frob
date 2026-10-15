@@ -11,7 +11,7 @@ created = "2026-10-15T05:48:20Z"
 updated = "2026-10-15T22:01:53Z"
 idempotency_key = "train-driver"
 labels = ["area:land"]
-scope = ["crates/frob-land/src/train.rs", "crates/frob-land/src/verb.rs", "crates/frob/src/**", "crates/frob-land/src/lib.rs", "tests/**", "docs/reference/**", "docs/design/cli.md", "crates/frob-land/src/land.rs", "crates/frob-land/src/base_ci.rs", "crates/frob-land/src/plan.rs"]
+scope = ["crates/frob-land/src/train.rs", "crates/frob-land/src/verb.rs", "crates/frob/src/**", "crates/frob-land/src/lib.rs", "tests/**", "docs/reference/**", "docs/design/cli.md", "crates/frob-land/src/land.rs", "crates/frob-land/src/base_ci.rs", "crates/frob-land/src/plan.rs", "crates/frob-land/tests/land.rs"]
 
 [[links]]
 kind = "blocked-by"
