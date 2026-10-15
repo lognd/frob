@@ -415,6 +415,6 @@ fn line_of(root: &std::path::Path, path: &str, offset: u32) -> u32 {
     let end = usize::try_from(offset)
         .unwrap_or(usize::MAX)
         .min(bytes.len());
-    let newlines = bytes[..end].iter().filter(|b| **b == b'\n').count();
+    let newlines = bytes[..end].split(|b| *b == b'\n').count() - 1;
     u32::try_from(newlines + 1).unwrap_or(u32::MAX)
 }

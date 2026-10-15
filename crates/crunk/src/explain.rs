@@ -64,7 +64,8 @@ impl Command for Explain {
                     self.name
                 );
                 if !close.is_empty() {
-                    message.push_str(&format!("\ndid you mean: {}", close.join(", ")));
+                    message.push_str("\ndid you mean: ");
+                    message.push_str(&close.join(", "));
                 }
                 CliError::Usage(message)
             })?;
