@@ -2,7 +2,8 @@
 id = "01M50CN1ETGK88AQ6H6JQGAVD0"
 title = "ci: gob-dev layering (gob-packs->gob-plan up a layer) and publish no-consumer test fail on main"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
