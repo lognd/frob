@@ -2,13 +2,13 @@
 id = "01M4Z1MYF3JKB73KCCX5BPJ7WJ"
 title = "Land train: pure group-testing bisection planner with fake-runner tests"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:04Z"
-updated = "2026-10-15T05:48:33Z"
+updated = "2026-10-15T05:48:47Z"
 idempotency_key = "train-bisect"
 labels = ["area:land", "creates:crates/frob-land/src/bisect.rs"]
 scope = ["crates/frob-land/src/bisect.rs"]
