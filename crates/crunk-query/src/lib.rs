@@ -54,6 +54,10 @@ impl<'a> Model<'a> {
     }
 
     /// `path` relative to the root, `/`-separated.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+    )]
     pub fn relative(&self, path: &Path) -> String {
         path.strip_prefix(self.root)
             .unwrap_or(path)
