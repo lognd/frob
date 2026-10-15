@@ -15,7 +15,7 @@ fn compile(count: &Cell<u32>) -> Result<Vec<gob_plan::plan::Plan>, String> {
     lower_source("rules/T.grl", GRL).map_err(|e| e.to_string())
 }
 
-// frob:tests PlanCache::load_or_compile
+// frob:tests load_or_compile
 #[test]
 fn a_pack_loaded_twice_is_read_from_the_cache_not_recompiled() {
     let dir = tempfile::tempdir().unwrap();
@@ -40,7 +40,7 @@ fn a_pack_loaded_twice_is_read_from_the_cache_not_recompiled() {
     assert_eq!(third.source, Source::Compiled);
 }
 
-// frob:tests PlanCache::load_or_compile
+// frob:tests load_or_compile
 #[test]
 fn an_entry_with_an_invalid_mac_is_discarded_and_rebuilt() {
     let dir = tempfile::tempdir().unwrap();
