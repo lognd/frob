@@ -8,9 +8,9 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:05Z"
-updated = "2026-10-15T05:48:05Z"
+updated = "2026-10-15T05:48:33Z"
 idempotency_key = "train-state"
-labels = ["area:land"]
+labels = ["area:land", "creates:crates/frob-land/src/train_state.rs"]
 scope = ["crates/frob-land/src/train_state.rs"]
 
 [[acceptance]]
