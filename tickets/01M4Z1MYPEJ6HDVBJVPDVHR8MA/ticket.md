@@ -2,7 +2,8 @@
 id = "01M4Z1MYPEJ6HDVBJVPDVHR8MA"
 title = "Land train: candidate builder merging ticket branches into a temp branch, skipping conflicts"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
