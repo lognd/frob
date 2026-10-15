@@ -2,7 +2,8 @@
 id = "01M4ZMHBHERF8Q4T3JH5GFR0YN"
 title = "Gate train_state crashed-driver test to Linux (pid_alive is conservative elsewhere)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 1
 reporter = "lognd"
