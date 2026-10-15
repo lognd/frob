@@ -2,12 +2,12 @@
 id = "01M50C2K3H0STZWFR5P29BWY8G"
 title = "ci: frob-land lockfile merge commit needs git identity in test env"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-15T18:09:32Z"
-updated = "2026-10-15T18:10:04Z"
+updated = "2026-10-15T18:10:05Z"
 scope = ["crates/frob-land/src/lockfile.rs"]
 
 [[acceptance]]
