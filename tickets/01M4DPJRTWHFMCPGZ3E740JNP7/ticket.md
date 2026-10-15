@@ -2,13 +2,13 @@
 id = "01M4DPJRTWHFMCPGZ3E740JNP7"
 title = "GRL017/GRL018 follow-ups: keyword-only span, spec section 10 rows, explain pages, may_be_unknown type checks"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-08T12:07:33Z"
-updated = "2026-10-08T12:07:33Z"
+updated = "2026-10-15T23:02:56Z"
 scope = ["changelog.d/**", "crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
