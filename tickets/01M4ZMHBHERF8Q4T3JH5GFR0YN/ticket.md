@@ -7,7 +7,7 @@ priority = "critical"
 points = 1
 reporter = "lognd"
 created = "2026-10-15T11:18:10Z"
-updated = "2026-10-15T11:18:13Z"
+updated = "2026-10-15T11:40:22Z"
 idempotency_key = "trainstate-win-test"
 scope = ["crates/frob-land/src/train_state.rs"]
 
