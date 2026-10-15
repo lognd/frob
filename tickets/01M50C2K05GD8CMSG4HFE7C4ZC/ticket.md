@@ -7,12 +7,12 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-15T18:09:32Z"
-updated = "2026-10-15T18:09:55Z"
+updated = "2026-10-15T18:49:00Z"
 scope = ["crates/frob-land/src/candidate.rs", "crates/frob/tests/siblings/remedies.rs"]
 
 [[acceptance]]
 text = "siblings remedies test passes"
-bound = false
+bound = true
 +++
 
 frob-cli siblings remedies_name_only_existing_commands_and_flags fails: crates/frob-land/src/candidate.rs:285 names 'frob land --train' which does not exist. Fix the remedy text to an existing flag/command (or add the flag if train is intended).
