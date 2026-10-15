@@ -2,7 +2,8 @@
 id = "01M4Z1N97QX3ZBQ4HNYY7WKNCH"
 title = "Land train: design first - amend D25, foreground driver, invariants, cost model"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
