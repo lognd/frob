@@ -2,13 +2,13 @@
 id = "01M4Y3S931TSR9SBH9HYF4S0QS"
 title = "Replace placeholder packs/std/rules/TODO001.grl with real std sources"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-14T21:06:09Z"
-updated = "2026-10-14T21:06:11Z"
+updated = "2026-10-15T22:44:55Z"
 scope = ["packs/std/**"]
 
 [[links]]
