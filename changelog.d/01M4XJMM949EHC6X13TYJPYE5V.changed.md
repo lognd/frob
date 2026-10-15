@@ -1,0 +1,1 @@
+GRL example runner: kind `directive`, the `calls` and `resolves to` edge relations, and language-less examples with `config`, `diff` and `lease` inputs now run (TODO001, SCOPE001), and a `file` side-table name keeps its full dotted path.

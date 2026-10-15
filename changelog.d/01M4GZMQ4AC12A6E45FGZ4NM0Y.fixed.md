@@ -1,0 +1,1 @@
+TOOL001 stage failures are fingerprinted by stage and exit class instead of the raw output excerpt, so a tool stage already red on the base is pre-existing on land even when its timings or ordering differ.

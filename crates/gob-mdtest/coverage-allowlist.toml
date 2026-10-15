@@ -4,46 +4,6 @@
 
 [[gap]]
 product = "frob"
-rule = "AFFECT001"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "CFG001"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "CI001"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "CI003"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "CI006"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "CI007"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "CI010"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "CI014"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
 rule = "COV003"
 ticket = "~C5DQ4WJ"
 

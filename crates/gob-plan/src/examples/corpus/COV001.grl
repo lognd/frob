@@ -1,0 +1,27 @@
+rule COV001 "untested-public-function" {
+  lang *
+  polarity P-  severity warn  scope repo  must_measure
+  knob depth: int = 12 "call levels a test may go through"
+
+  find f: function where f is public and not f inside test
+  where any { some t: test where t reaches f via calls within knob.depth,
+              some t: test where t tests f }
+  report f "public {f.kind} `{f.name}` has no test that reaches it"
+
+  example fire rust """
+    pub fn double(x: i32) -> i32 { x * 2 }       //~ warn
+  """
+  example clean rust """
+    pub fn double(x: i32) -> i32 { x * 2 }
+    #[cfg(test)] mod tests { #[test] fn d() { assert_eq!(super::double(2), 4); } }
+  """
+  example unresolved python """
+    def helper(cb): cb()                          #~ unresolved
+    def test_run(): helper(len)
+  """
+  explain """
+    Public callables should be reached by at least one test.
+    ## Remedy
+    Add a test that calls it, or link one with `frob:tests`.
+  """
+}

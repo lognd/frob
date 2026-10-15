@@ -1,0 +1,22 @@
+kind = "evidence"
+captured_at = "2026-10-14T23:34:29Z"
+digest = "492a2838196f542f62537cb9f1847f8a0c11b360917047e42a36937b397b3eca"
+exit_code = 0
+inline = """
+
+running 1 test
+test every_frob_rule_has_a_corpus ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+    Finished `release` profile [optimized] target(s) in 0.27s
+     Running tests/rule_coverage.rs (target/release/deps/rule_coverage-4bddb1cf425f69e5)
+"""
+passed = true
+provider = "command"
+ref = "cargo test --release -j2 -p frob-check --test rule_coverage"
+size = 304
+status = "measured"
+at = "2026-10-14T23:34:29Z"
+actor = "lognd"
+rev = 1

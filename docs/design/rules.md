@@ -283,7 +283,13 @@ run on the same per-file memo as Rust rules, get the declared
 `FAMILYNNN` id and optional slug alias, appear in the generated rule
 reference, and are
 tested with the same markdown corpus format (`frob rule test` runs the
-cases embedded in the rule file). Engine: `ast-grep-core` for the
+cases embedded in the rule file; examples may carry `config` (a TOML
+subset: tables, arrays of tables, strings, string arrays), `diff` and
+`lease` inputs, and a rule with `lang -` needs no example language; a
+`fire` example with only side inputs passes iff the rule reports, and
+findings with no source node are reported at line 0; an example in a
+language the capability matrix does not model is not applicable to a
+`lang *` rule). Engine: `ast-grep-core` for the
 grammar level, with the U level implemented on the same matcher trait
 so combinators behave identically. Status, stated once: version
 compatibility is answered (D42, ast-grep-core 0.45.3 against the

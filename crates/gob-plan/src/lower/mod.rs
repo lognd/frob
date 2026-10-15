@@ -26,9 +26,11 @@ mod convert;
 mod emit;
 mod error;
 mod prefilter;
+mod source;
 
 pub use error::LowerError;
 pub use prefilter::prefilter_kinds;
+pub use source::{SourceError, lower_source};
 
 use crate::grl::ast::Rule;
 use crate::plan::{Plan, Provenance};

@@ -41,6 +41,8 @@ pub enum Kind {
     Cli,
     /// JSON schemas.
     Schemas,
+    /// Rust modules compiled from the std GRL rules (`packs/std`).
+    StdRules,
     /// Everything above.
     All,
 }
@@ -77,6 +79,9 @@ pub enum GenError {
     /// The per-crate rule indexes could not be generated.
     #[error(transparent)]
     RulesIndex(#[from] render::rules_index::RulesIndexError),
+    /// The std GRL rules could not be compiled to Rust.
+    #[error(transparent)]
+    StdRules(#[from] render::std_rules::StdRulesError),
 }
 
 /// Build the files for `kind`, sorted by path; `crates_dir` locates mdtest corpora.
@@ -94,6 +99,11 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError>
     }
     if all || kind == Kind::RulesIndex {
         files.extend(render::rules_index::generate(crates_dir)?);
+    }
+    if all || kind == Kind::StdRules {
+        // frob:ticket 01M3ZX7HN0YF3SYGVJRT5H07H5
+        let root = crates_dir.parent().unwrap_or(crates_dir);
+        files.extend(render::std_rules::generate(root)?);
     }
     if all || kind == Kind::Directives {
         files.extend(render::directives::generate());

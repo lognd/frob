@@ -969,6 +969,7 @@ dependencies = [
  "gob-git",
  "gob-languages",
  "gob-lock",
+ "gob-mdtest",
  "gob-rules",
  "gob-symbols",
  "gob-text",
@@ -1011,6 +1012,7 @@ dependencies = [
  "gob-languages",
  "gob-lock",
  "gob-mdtest",
+ "gob-plan",
  "gob-rules",
  "gob-symbols",
  "gob-testsupport",
@@ -2330,6 +2332,7 @@ version = "0.532.0"
 dependencies = [
  "blake3",
  "gob-macros",
+ "gob-mdtest",
  "gob-rules",
  "insta",
  "inventory",
