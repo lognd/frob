@@ -2,12 +2,12 @@
 id = "01M4ZA7NEFTAD36KPSGX4VYJD2"
 title = "Unfulfilled clippy expectations on Windows target in test crates (gob-trust and siblings)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-10-15T08:18:06Z"
-updated = "2026-10-15T08:18:06Z"
+updated = "2026-10-15T08:18:09Z"
 idempotency_key = "fix-win-expect-2"
 scope = ["crates/gob-trust/tests/trust.rs"]
 
