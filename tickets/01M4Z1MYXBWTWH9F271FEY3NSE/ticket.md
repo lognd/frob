@@ -17,6 +17,10 @@ scope = ["crates/frob-check/**", "crates/frob-land/src/train_check.rs"]
 kind = "blocked-by"
 target = "01M4Z1MYF3JKB73KCCX5BPJ7WJ"
 
+[[links]]
+kind = "blocked-by"
+target = "01M4Z1MYPEJ6HDVBJVPDVHR8MA"
+
 [[acceptance]]
 text = "Given a candidate of N tickets, when checked, then one check runs over the union of cones"
 bound = false
