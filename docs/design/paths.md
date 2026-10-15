@@ -81,6 +81,19 @@ the owner's "one renderer, no `println!` scattered" rule, and it fails
 existing conversions in 105 files migrate crate by crate; each
 migration ticket ends with that crate free of the allow list.
 
+The allow list is shrink-only and lives in one place: the `ALLOW` array in
+`crates/gob-path/tests/confinement.rs`. A crate on it carries, at the root
+of each target that still converts, `#![expect(clippy::disallowed_methods,
+reason = "confinement allow list: ...")]` (`cfg_attr(test, ...)` when only
+its unit tests convert). Three failures keep it honest: a new conversion in
+an unlisted crate fails `cargo clippy -D warnings` naming the method and the
+`gob_path` replacement; a listed crate whose conversions are gone fails
+clippy with an unfulfilled expectation, and once the marker is removed the
+`confinement` test fails until the crate leaves `ALLOW`; a marker in an
+unlisted crate fails the same test. `disallowed-types` for `PathBuf` in
+persisted-type modules is not expressible per module in clippy.toml; the
+persisted-type check stays with the PATH rules (section 5).
+
 ### 3.1 Canonicalization and the deletion jail (~EDPHHFS)
 
 `std::fs::canonicalize` returns a verbatim path (`\\?\C:\...`) on Windows that git and

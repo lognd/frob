@@ -1,6 +1,10 @@
 //! `lease_ticket` from a linked worktree: the shape every ticket worktree has.
 
 // frob:ticket 01M4DPJKMT0JYSBXXXHPSJRG93
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use frob_tests::lease_ticket;
 use gob_git::Repo;

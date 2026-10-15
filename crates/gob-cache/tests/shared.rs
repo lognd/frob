@@ -1,4 +1,8 @@
 //! The repository-shared cache: location from any checkout, and two processes writing at once (~TSK0M4Y).
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::Path;
 use std::process::Command;

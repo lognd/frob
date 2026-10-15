@@ -2,6 +2,10 @@
 //!
 //! Scans the verb sources of frob, grimble, crunk and the `frob-*` verb crates. The shared
 //! root in `gob-cli/src/cli.rs` (global flags) and the `gob-*` plumbing crates are out of scope.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::{Path, PathBuf};
 

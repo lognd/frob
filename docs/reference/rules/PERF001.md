@@ -23,3 +23,27 @@ Only raised when the enforcement knob of the perf table is on. The
 breakdown from `frob check --timing` shows which stage grew; a cold cache
 (first run, new checkout) legitimately exceeds the warm budget, so rerun
 before treating it as a regression.
+
+## Examples
+
+### PERF001 check over budget / A zero budget enforced fires #1 (line 8) (fire)
+
+```text
+=== frob.toml
+[perf]
+enforce = true
+budget_ms = 0
+=== src/lib.rs
+//! Library.
+```
+
+### PERF001 check over budget / An unenforced budget is clean #2 (line 19) (clean)
+
+```text
+=== frob.toml
+[perf]
+enforce = false
+budget_ms = 0
+=== src/lib.rs
+//! Library.
+```

@@ -1,6 +1,10 @@
 //! Framework detection and route discovery over the monorepo fixture (D96, language-engines.md section 4).
 
 // frob:ticket 01M47QKVBB5G9N1QZP3AVXTRHX
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::{Path, PathBuf};
 

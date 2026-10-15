@@ -25,3 +25,56 @@ body, doc or attr facet of the symbol changed (the code changed under the doc),
 or the digest of the named markdown section changed (the doc changed
 under the code). The message names the facet. Re-read the pair and run
 `frob ack <symref> --reason ...` to record the new state.
+
+## Examples
+
+### DRIFT001 doc binding drift / Code changed under an acked binding fires #1 (line 10) (fire)
+
+```text
+=== src/lib.rs
+// frob:doc docs/guide.md#greeting
+pub fn greet(name: &str) -> String {
+    format!("hello {name}")
+}
+
+pub fn plain(x: u32) -> u32 {
+    x + 1
+}
+=== docs/guide.md
+# Guide
+
+## Greeting
+
+Greets a person by name.
+
+=== git
+=== ack src/lib.rs::greet
+=== src/lib.rs
+// frob:doc docs/guide.md#greeting
+pub fn greet(name: &str) -> String {
+    format!("hi {name}")
+}
+```
+
+### DRIFT001 doc binding drift / An acked binding with nothing changed is clean #2 (line 38) (clean)
+
+```text
+=== src/lib.rs
+// frob:doc docs/guide.md#greeting
+pub fn greet(name: &str) -> String {
+    format!("hello {name}")
+}
+
+pub fn plain(x: u32) -> u32 {
+    x + 1
+}
+=== docs/guide.md
+# Guide
+
+## Greeting
+
+Greets a person by name.
+
+=== git
+=== ack src/lib.rs::greet
+```

@@ -5,6 +5,10 @@
 //! must fail with a shrunk example.
 
 // frob:ticket 01M47YJF46HM8MA5PVWNH92W1H
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::fmt::Write as _;
 

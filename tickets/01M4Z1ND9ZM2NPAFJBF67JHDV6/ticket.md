@@ -8,7 +8,7 @@ points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:20Z"
-updated = "2026-10-15T05:48:37Z"
+updated = "2026-10-15T08:16:33Z"
 idempotency_key = "train-driver"
 labels = ["area:land"]
 scope = ["crates/frob-land/src/train.rs", "crates/frob-land/src/verb.rs", "crates/frob/src/**"]
@@ -36,6 +36,10 @@ target = "01M4Z1MYXBWTWH9F271FEY3NSE"
 [[links]]
 kind = "blocked-by"
 target = "01M4Z1N93S11HX3DGGKBJF5WGP"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4Z1N97QX3ZBQ4HNYY7WKNCH"
 
 [[acceptance]]
 text = "Given 12 ready tickets with one failing, when the train runs, then 11 land and the culprit returns to its agent with the failing evidence"
