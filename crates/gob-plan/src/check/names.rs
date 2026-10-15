@@ -9,7 +9,7 @@
 use std::collections::{BTreeSet, HashSet};
 use std::rc::Rc;
 
-use gob_text::Span;
+use gob_text::{Span, TextRange};
 
 use super::vocab::{self, Ty};
 use super::{Code, Diagnostic};
@@ -567,11 +567,16 @@ impl<'a> Checker<'a> {
             } => {
                 self.verb(verb);
                 if certainty.is_some() && self.parity {
+                    // The relation starts at the keyword, so keyword..verb is the keyword and verb only.
+                    let span = Span::new(
+                        rel.span.file,
+                        TextRange::new(rel.span.range.start(), verb.span.range.end()),
+                    );
                     self.out.push(
                         Diagnostic::new(
                             Code::Grl017,
                             "`certainly` and `possibly` cannot be used under `not` or `no`",
-                            rel.span,
+                            span,
                             "this sits in a negative position",
                         )
                         .with_note("`certainly` turns an unknown edge into No and `possibly` into Yes, so under a negation the rule would fire on a guess")

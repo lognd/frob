@@ -33,6 +33,8 @@ pub struct Doctor {
     languages: bool,
     /// Run the garbage-collection pass now, unthrottled, and report what it reclaimed.
     fix: bool,
+    /// Also run the dry-run garbage-collection plan (what a pass would reclaim); costly, so opt-in.
+    gc_plan: bool,
 }
 
 /// One capability of an adapter with its precision label.
@@ -329,6 +331,11 @@ struct DoctorArgs {
         help = "Run the garbage-collection pass now, unthrottled, and report it"
     )]
     fix: bool,
+    #[arg(
+        long,
+        help = "Also run the dry-run garbage-collection plan (slower): what a pass would reclaim"
+    )]
+    gc_plan: bool,
 }
 
 impl Doctor {
@@ -347,6 +354,7 @@ impl Doctor {
         Ok(Self {
             languages: a.languages,
             fix: a.fix,
+            gc_plan: a.gc_plan,
         })
     }
 
@@ -408,7 +416,7 @@ impl Doctor {
             .iter()
             .map(|p| sibling_row(&runner, p, &ctx.cwd))
             .collect();
-        let gc = gc_info(&located, &cfg, self.fix, &ctx.clock);
+        let gc = gc_info(&located, &cfg, self.fix, self.gc_plan, &ctx.clock);
         let leases = lease_info(&located, &cfg, self.fix, &ctx.clock);
         let languages = self
             .languages
@@ -735,12 +743,13 @@ fn gc_skipped(why: &str) -> GcInfo {
     }
 }
 
-/// The garbage-collection section: with `fix` run a forced pass first, then a dry run for the current picture.
+/// The garbage-collection section: stamp stats always; the costly dry-run plan only with `fix` or `plan_wanted`.
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
 fn gc_info(
     located: &Located,
     cfg: &FrobConfig,
     fix: bool,
+    plan_wanted: bool,
     clock: &std::sync::Arc<dyn gob_time::Clock>,
 ) -> GcInfo {
     let Some(repo) = located.repo.as_ref().filter(|r| r.work_dir().is_some()) else {
@@ -763,7 +772,13 @@ fn gc_info(
             warnings: r.warnings,
         }
     });
-    let plan = run(Mode::DryRun);
+    // The dry-run plan walks every worktree and ticket event log; only pay for it when asked.
+    let plan = if fix || plan_wanted {
+        run(Mode::DryRun)
+    } else {
+        tracing::debug!("gc dry-run plan skipped; pass --gc-plan to include it");
+        Report::default()
+    };
     let stamp = gc::stamp::load(repo.common_dir());
     tracing::info!(
         passes = stamp.passes,
