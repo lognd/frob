@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-15T19:53:00Z"
+digest = "839984e0ace4d485a4259942de9f425fc11f92c4c8a3230093490a70b68a0f77"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7fcaf984-c003-43ac-8d25-4b53a06687f6 with nextest profile: default
+    Starting 2 tests across 11 binaries (38 tests skipped)
+        PASS [   0.013s] crunk::rule_catalog the_catalog_lists_the_pack_rules_when_crunk_web_is_on
+        PASS [   0.015s] crunk::rule_catalog the_catalog_is_empty_until_crunk_web_is_switched_on
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 2 tests run: 2 passed, 38 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(the_catalog_)"
+size = 664
+status = "measured"
+test_count = 2
+tests_digest = "9551b769f293d3f99700ec3e7b1431686cc683d654a1b61d5599b4102f8da8ce"
+at = "2026-10-15T19:53:00Z"
+actor = "lognd"
+rev = 1
