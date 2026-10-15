@@ -8,7 +8,7 @@ points = 5
 parent = "01M480C43A6BCH54NX8C5DQ4WJ"
 reporter = "lognd"
 created = "2026-10-14T23:22:40Z"
-updated = "2026-10-15T14:02:56Z"
+updated = "2026-10-15T14:13:24Z"
 scope = ["crates/gob-mdtest/coverage-allowlist.toml", "crates/frob-check/tests/**", "docs/reference/rules/TICK00*.md", "docs/reference/rules/TOOL00*.md", "changelog.d/01M4YBK86ZC7V4VCBSMWTJ0SE3.*"]
 
 [[acceptance]]
