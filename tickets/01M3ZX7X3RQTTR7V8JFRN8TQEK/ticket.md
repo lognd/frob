@@ -2,7 +2,8 @@
 id = "01M3ZX7X3RQTTR7V8JFRN8TQEK"
 title = "Required packs: required Unresolved reasons for unfinished plugins"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
