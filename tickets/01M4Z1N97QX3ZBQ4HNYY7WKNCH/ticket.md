@@ -8,10 +8,14 @@ points = 2
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:15Z"
-updated = "2026-10-15T05:48:34Z"
+updated = "2026-10-15T05:48:37Z"
 idempotency_key = "train-docs"
 labels = ["area:land"]
 scope = ["docs/design/build-test-ci.md", "docs/design/tickets.md"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M4Z1ND9ZM2NPAFJBF67JHDV6"
 
 [[acceptance]]
 text = "Given the doc, then it describes verbs, state file and bisection rounds bound"
