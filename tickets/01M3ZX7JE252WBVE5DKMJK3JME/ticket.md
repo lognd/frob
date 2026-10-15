@@ -2,13 +2,13 @@
 id = "01M3ZX7JE252WBVE5DKMJK3JME"
 title = "Plan cache for disk packs, keyed by tree digest and engine fingerprint"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-03T03:34:24Z"
+updated = "2026-10-15T04:04:05Z"
 idempotency_key = "m2-packs-plan-cache"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/gob-packs/src/plan_cache.rs"]
