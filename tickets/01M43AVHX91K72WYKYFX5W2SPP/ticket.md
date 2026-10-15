@@ -11,7 +11,7 @@ created = "2026-10-04T11:30:14Z"
 updated = "2026-10-15T14:05:40Z"
 idempotency_key = "crunk-plan-webpack"
 labels = ["area:crunk"]
-scope = ["packs/crunk-web/**", "crates/crunk-check/src/packs.rs", "docs/crunk/packs/crunk-web.md", "crates/crunk-check/Cargo.toml", "crates/crunk-check/src/lib.rs", "crates/crunk-check/tests/crunk_web_pack.rs"]
+scope = ["packs/crunk-web/**", "crates/crunk-check/src/packs.rs", "docs/crunk/packs/crunk-web.md", "crates/crunk-check/Cargo.toml", "crates/crunk-check/src/lib.rs", "crates/crunk-check/tests/crunk_web_pack.rs", "Cargo.lock"]
 
 [[links]]
 kind = "blocked-by"
