@@ -23,6 +23,10 @@
 //! To turn a code on: register its renderer in [`checker`], and flip its line in
 //! the `goldens!` table from `pending` to `enabled`. Any difference, even one
 //! byte, then fails with a line diff (see [`compare`]).
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::fmt::Write as _;
 use std::path::PathBuf;

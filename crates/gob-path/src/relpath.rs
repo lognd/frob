@@ -40,6 +40,10 @@ impl RelPath {
     ///
     /// # Errors
     /// See [`RelPath::from_host_style`]; also [`PathError::NotUtf8`].
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "gob-path is the one crate that bridges host paths to text"
+    )]
     pub fn from_host(root: &Path, p: &Path) -> Result<Self, PathError> {
         let text = |x: &Path| {
             x.to_str()

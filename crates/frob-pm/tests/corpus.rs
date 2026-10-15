@@ -7,6 +7,10 @@
 // frob:ticket 01M4CSZFC0QF9PH544ARF60RCZ
 // frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
 // frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::collections::{BTreeMap, BTreeSet};
 

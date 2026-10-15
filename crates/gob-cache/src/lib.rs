@@ -9,6 +9,10 @@
 //! Writes are best-effort: a failure is logged at warn and never surfaces.
 //! When the database cannot be opened the cache degrades to a null cache
 //! where every read misses and every write is a no-op.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};

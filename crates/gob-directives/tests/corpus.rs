@@ -1,4 +1,8 @@
 //! Corpus tests: PARSE001 and DSL001 to DSL003 with firing and clean controls.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 mod common;
 

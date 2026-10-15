@@ -1,4 +1,8 @@
 //! `land` end to end in temporary repositories (system git required: gob-git spawns it for worktrees and merges).
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

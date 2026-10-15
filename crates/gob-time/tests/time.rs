@@ -1,4 +1,8 @@
 //! Behaviour of the one clock, one zone crate (docs/design/time.md, D93).
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::{Path, PathBuf};
 

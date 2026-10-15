@@ -1,5 +1,9 @@
 //! grimble never depends on a frob crate (boundaries.md): walk every grimble crate's path
 //! dependencies transitively and fail on any `frob-*` crate.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
