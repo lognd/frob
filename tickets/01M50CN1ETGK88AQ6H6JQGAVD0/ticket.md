@@ -7,12 +7,12 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-15T18:19:36Z"
-updated = "2026-10-15T18:44:27Z"
+updated = "2026-10-15T18:45:56Z"
 scope = ["crates/gob-packs/**", "crates/gob-dev/**", "docs/design/boundaries.md"]
 
 [[acceptance]]
 text = "gob-dev layering and publish no-consumer tests pass"
-bound = false
+bound = true
 +++
 
 found while working ~1XR3FK6: commit b7e45b936 added gob-packs -> gob-plan (layer 4 -> 5); layering test fails, and publish::tests::crates_with_no_consumer... reports crunk-check depends on unpublished gob-packs.
