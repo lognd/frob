@@ -1,4 +1,8 @@
 //! The `unity` evidence provider: editor discovery and license refusal, against the `fake-unity` stand-in editor.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;

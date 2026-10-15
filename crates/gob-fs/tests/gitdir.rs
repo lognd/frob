@@ -1,6 +1,10 @@
 //! `git_common_dir` and `canonical` live in gob-fs, below gob-exec and gob-cache.
 
 // frob:ticket 01M4M52WKHGXADHPQ08J1AS8BJ
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use gob_fs::{canonical, git_common_dir};
 

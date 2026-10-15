@@ -8,6 +8,10 @@
 //! boundary test in `tests/boundary.rs`).
 
 // frob:ticket 01M47QSGHYD2EQ4552V1B4EEQZ
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 pub mod ack;
 pub mod compile_cmd;

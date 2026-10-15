@@ -1,4 +1,8 @@
 //! The `dotnet` evidence provider end to end, against the `fake-dotnet` stand-in executable (no .NET SDK needed).
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::Path;
 use std::time::Duration;

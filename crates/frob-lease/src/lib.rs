@@ -14,6 +14,10 @@
 //! contention), [`LeaseGuard`] (the [`LeaseCheck`](frob_ledger::guards::LeaseCheck)
 //! for `ticket doable`), [`scope001`], and [`register`] for the `lease list` and
 //! `lease list --contention` verbs.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 pub mod config;
 pub mod error;

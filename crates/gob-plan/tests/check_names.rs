@@ -1,4 +1,8 @@
 //! Behaviour of the name and type checks beyond the goldens (grl-spec.md sections 7.1 and 10).
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use gob_plan::check::{Code, Diagnostic, Tier, check_file, check_file_as};
 use gob_plan::grl::parse;
