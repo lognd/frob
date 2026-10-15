@@ -8,10 +8,10 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:04Z"
-updated = "2026-10-15T09:11:45Z"
+updated = "2026-10-15T09:11:48Z"
 idempotency_key = "train-bisect"
 labels = ["area:land", "creates:crates/frob-land/src/bisect.rs"]
-scope = ["crates/frob-land/src/bisect.rs"]
+scope = ["crates/frob-land/src/bisect.rs", "crates/frob-land/src/lib.rs"]
 
 [[acceptance]]
 text = "Given a batch of 12 with 1 failing and a fake runner, then the 11 good tickets are landable and the culprit is isolated in at most 2*ceil(log2 12) checks"
