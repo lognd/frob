@@ -314,6 +314,7 @@ mod tests {
     }
 
     // frob:tests plan
+    // frob:tests Runner.check
     #[test]
     fn one_failing_of_twelve_is_isolated_within_budget() {
         let b = batch(12);
