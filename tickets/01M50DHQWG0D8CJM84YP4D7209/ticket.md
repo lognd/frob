@@ -2,7 +2,8 @@
 id = "01M50DHQWG0D8CJM84YP4D7209"
 title = "docs: regenerate drifted docs/reference/rules (gob-dev gen all)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
