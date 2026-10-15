@@ -153,14 +153,23 @@ pub fn catalog(switch: PacksSwitch) -> Result<Vec<CatalogRow>, PackBuildError> {
 
 /// Confirms the tree at `root` holds exactly the embedded sources and returns its digest.
 ///
+/// `read` fetches a pack-relative file as bytes (the caller owns disk access; rule code does
+/// not read the disk).
+///
 /// # Errors
 /// [`PackBuildError::Drift`] if a file differs or is missing, PACK005 if the tree is unreadable.
-pub fn verify_tree(root: &Path) -> Result<Digest, PackBuildError> {
+pub fn verify_tree(
+    root: &Path,
+    read: impl Fn(&Path) -> Option<Vec<u8>>,
+) -> Result<Digest, PackBuildError> {
     let embedded = [("pack.toml", MANIFEST_TEXT)].into_iter().chain(RULES);
     for (rel, text) in embedded {
-        match std::fs::read(root.join(rel)) {
-            Ok(disk) if disk == text.as_bytes() => {}
-            _ => return Err(PackBuildError::Drift(rel.to_owned())),
+        if read(&root.join(rel)).as_deref() != Some(text.as_bytes()) {
+            tracing::warn!(
+                file = rel,
+                "crunk-web pack tree differs from the embedded copy"
+            );
+            return Err(PackBuildError::Drift(rel.to_owned()));
         }
     }
     Ok(tree_digest(root, &[])?)
@@ -170,7 +179,10 @@ pub fn verify_tree(root: &Path) -> Result<Digest, PackBuildError> {
 ///
 /// # Errors
 /// As [`verify_tree`], or PACK005 if the embedded manifest is malformed.
-pub fn locked(root: &Path) -> Result<LockedPack, PackBuildError> {
-    let digest = verify_tree(root)?;
+pub fn locked(
+    root: &Path,
+    read: impl Fn(&Path) -> Option<Vec<u8>>,
+) -> Result<LockedPack, PackBuildError> {
+    let digest = verify_tree(root, read)?;
     Ok(snapshot(&manifest()?, None, &digest))
 }

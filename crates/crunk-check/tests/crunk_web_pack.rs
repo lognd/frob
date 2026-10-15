@@ -1,3 +1,7 @@
+#![allow(
+    clippy::disallowed_methods,
+    reason = "a test reads the pack tree on disk, not a walked snapshot"
+)]
 //! The crunk-web pack: four families with one rule each, GRL011 without examples, lock digest.
 
 // frob:ticket 01M43AVHX91K72WYKYFX5W2SPP
@@ -8,6 +12,10 @@ use crunk_check::packs::{self, PackBuildError, PacksSwitch};
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/crunk-web")
+}
+
+fn disk(p: &Path) -> Option<Vec<u8>> {
+    std::fs::read(p).ok()
 }
 
 // frob:tests catalog
@@ -47,7 +55,7 @@ fn a_rule_without_examples_does_not_compile() {
 // frob:tests locked
 #[test]
 fn the_lock_digest_matches_the_pack_tree() {
-    let lock = packs::locked(&root()).unwrap();
+    let lock = packs::locked(&root(), disk).unwrap();
     let digest = gob_packs::tree_digest(&root(), &[]).unwrap();
     assert_eq!(lock.name, "crunk-web");
     assert_eq!(lock.tree, format!("blake3:{}", gob_packs::to_hex(&digest)));
@@ -59,7 +67,7 @@ fn a_drifted_tree_is_refused() {
     let dir = tempfile::tempdir().unwrap();
     std::fs::write(dir.path().join("pack.toml"), "x").unwrap();
     assert!(matches!(
-        packs::verify_tree(dir.path()),
+        packs::verify_tree(dir.path(), disk),
         Err(PackBuildError::Drift(_))
     ));
 }
