@@ -2,13 +2,13 @@
 id = "01M3ZX7HRM8SVB3607V973VQTH"
 title = "Conformance test: compiled-in std rules equal their plans byte for byte"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-03T03:34:24Z"
+updated = "2026-10-15T23:44:19Z"
 idempotency_key = "m2-conformance"
 labels = ["milestone:2", "area:grl", "kind:test"]
 scope = ["crates/gob-plan/tests/conformance/**"]
