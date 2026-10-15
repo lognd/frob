@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a pack family A11Y and rule id A11Y101, when validated and lexed, then both are accepted, while lowercase, leading-digit and non-3-digit-suffix forms are rejected"]
+moved = []
+at = "2026-10-15T15:00:19Z"
+actor = "lognd"
+rev = 1
