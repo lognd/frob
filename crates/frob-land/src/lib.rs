@@ -12,6 +12,7 @@
 )]
 
 pub mod base_ci;
+pub mod batch_size;
 pub mod bisect;
 pub mod candidate;
 pub mod error;

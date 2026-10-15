@@ -578,6 +578,11 @@ one-by-one only while the per-ticket red rate is low (roughly below 0.3), so
 the default stays gated on the measured rate of `E-LAND-CHECK-RED` against
 green lands.
 
+**Controller.** `crates/frob-land/src/batch_size.rs`: `next_size(prev, outcome,
+max)` adds one after a green train, halves after a red one (integer division)
+and clamps to `[1, max]`, where `max` is `train_max`. `BatchSize` holds the
+size and cap and serializes into the train state file.
+
 **Measured inputs (~K3YG11Q, 2026-10-15).** Red rate p: the ledger holds 658
 `tickets(land)` commits and 7 tickets whose events carry `E-LAND-CHECK-RED`
 (some of those are tickets about that very error code, so 7 is an upper
