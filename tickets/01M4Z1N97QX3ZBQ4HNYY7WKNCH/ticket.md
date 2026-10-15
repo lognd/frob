@@ -1,6 +1,6 @@
 +++
 id = "01M4Z1N97QX3ZBQ4HNYY7WKNCH"
-title = "Land train: design section in build-test-ci.md and tickets.md land-lock note"
+title = "Land train: design first - amend D25, foreground driver, invariants, cost model"
 type = "task"
 category = "todo"
 priority = "high"
@@ -8,10 +8,10 @@ points = 2
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:15Z"
-updated = "2026-10-15T05:48:37Z"
+updated = "2026-10-15T07:58:24Z"
 idempotency_key = "train-docs"
 labels = ["area:land"]
-scope = ["docs/design/build-test-ci.md", "docs/design/tickets.md"]
+scope = ["docs/design/build-test-ci.md", "docs/design/tickets.md", "docs/design/README.md", "docs/design/cli.md"]
 
 [[links]]
 kind = "blocked-by"
