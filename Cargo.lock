@@ -523,11 +523,14 @@ dependencies = [
  "gob-exec",
  "gob-lock",
  "gob-mdtest",
+ "gob-packs",
+ "gob-plan",
  "gob-rules",
  "gob-text",
  "serde",
  "serde_json",
  "tempfile",
+ "thiserror",
  "tracing",
 ]
 
