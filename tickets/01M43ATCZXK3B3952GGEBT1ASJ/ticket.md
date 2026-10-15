@@ -2,13 +2,14 @@
 id = "01M43ATCZXK3B3952GGEBT1ASJ"
 title = "crunk query, map and explain verbs: crunk-query crate"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:36Z"
-updated = "2026-10-15T15:36:55Z"
+updated = "2026-10-15T17:33:46Z"
 idempotency_key = "crunk-plan-qry"
 labels = ["area:crunk"]
 scope = ["crates/crunk-query/**", "crates/crunk/src/query.rs", "crates/crunk/src/map.rs", "crates/crunk/src/explain.rs", "crates/crunk/tests/query*.rs", "Cargo.lock", "crates/crunk/Cargo.toml", "crates/crunk/src/lib.rs", "docs/crunk/README.md"]

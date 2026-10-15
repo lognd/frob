@@ -15,7 +15,10 @@
 )]
 
 pub mod doctor;
+pub mod explain;
 pub mod gallery;
+pub mod map;
+pub mod query;
 pub mod review;
 pub mod tokens;
 
@@ -115,6 +118,9 @@ impl Product for CrunkProduct {
         cli.register::<tokens::Tokens>()
             .register::<review::Review>()
             .register::<review::Ack>()
+            .register::<query::Query>()
+            .register::<map::Map>()
+            .register::<explain::Explain>()
             .register::<gallery::GalleryCheck>()
     }
 }

@@ -613,6 +613,7 @@ mod tests {
     }
 
     // frob:tests crates/frob-land/src/train_state.rs::TrainStore.status
+    #[cfg(target_os = "linux")]
     #[test]
     fn crashed_driver_is_reported_stale_and_resumable() {
         let dir = tempfile::tempdir().unwrap();

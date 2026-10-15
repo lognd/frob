@@ -488,15 +488,19 @@ dependencies = [
  "clap",
  "crunk-check",
  "crunk-gallery",
+ "crunk-ingest",
+ "crunk-query",
  "crunk-rules",
  "crunk-spec",
  "crunk-tokens",
+ "gob-cache",
  "gob-check",
  "gob-cli",
  "gob-config",
  "gob-git",
  "gob-lock",
  "gob-product",
+ "gob-rules",
  "jsonschema",
  "schemars",
  "serde",
@@ -571,6 +575,18 @@ dependencies = [
  "thiserror",
  "tracing",
  "tree-sitter",
+]
+
+[[package]]
+name = "crunk-query"
+version = "0.532.0"
+dependencies = [
+ "crunk-ingest",
+ "crunk-tokens",
+ "crunk-values",
+ "schemars",
+ "serde",
+ "tracing",
 ]
 
 [[package]]

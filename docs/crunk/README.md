@@ -16,8 +16,17 @@ the `crunk-check` crate with the rule set listed in [rules/README.md](rules/READ
 | `crunk check` | yes | Runs the rule set and prints the `gob.sibling/1` document with `product = "crunk"` (`--json`), or a count summary. `--only`, `--fail-on`, `--base`, `--ticket-scope` as for `grimble check`. |
 | `crunk doctor` | no | Reports the crunk version, the repository root and the state of `crunk.toml`. |
 | `crunk tokens` | yes | Writes, previews (`--target` css, json or tailwind) or drift-checks (`--check`) the generated token files. |
+| `crunk query KIND [ARG]` | yes | Read-only questions: `find NAME` (exact, then prefix, then substring, with use counts), `component NAME` (BEM structure; unknown is exit 2), `dupes [--threshold 0.6]` (sheet pairs repeating declarations), `unused` (tokens nothing references), `uses TOKEN` (`var()` sites), `color HEX` (every palette color by redmean distance), `violations [--rule ID] [--path GLOB]` (check findings, always exit 0). `--no-cache` is accepted and a no-op: queries always ingest fresh. |
+| `crunk map` | yes | The style inventory bucketed by `[org] buckets` order, plus strays. |
+| `crunk explain NAME` | yes | Value, group, definition file, `var()` sites and utilities of one token; an unknown name exits 2 and lists close matches. |
 | `crunk gallery check` | yes | Opt-in (`cargo install crunk --features gallery`): checks `gallery/manifest.json` (`--manifest`) against the spec's cells with GALLERY001 to GALLERY005 (`--route` repeats, feeding GALLERY005). The default build refuses with `E-GALLERY-NOT-BUILT` and that remedy. |
 | `crunk schema` | no | Built-in: the JSON Schema of a verb's output. |
+
+Query output is the gob envelope: `data` holds `{kind, results}` (`query`), `{buckets, strays}` (`map`)
+or `{results}` (`explain`); the Python `version` field is dropped, rows are otherwise identical.
+`query violations` omits unresolved findings (rules that could not run), reports line 0 for a
+finding anchored at the start of a file, and words its messages as the Rust rules do. `dupes`
+scores whole sheets by shared `(property, value)` declarations over the smaller sheet.
 
 Global flags (`--json`, `--text`, `--format`, `--color`, `-v`, `--version`) come from
 `gob-cli`; `--version` prints the workspace lockstep version.
