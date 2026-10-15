@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/WDSAP5S; scope: packs/crunk-web/rules/seo/**, packs/crunk-web/tests/seo/**; ttl 7200s"
+at = "2026-10-15T17:45:55Z"
+actor = "lognd"
+rev = 1
