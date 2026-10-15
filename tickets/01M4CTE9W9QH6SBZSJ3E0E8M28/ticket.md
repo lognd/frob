@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:47Z"
-updated = "2026-10-14T23:44:25Z"
-scope = ["changelog.d/**", "crates/*/tests/**", "crates/*/Cargo.toml", "crates/gob-testsupport/**"]
+updated = "2026-10-15T02:22:27Z"
+scope = ["changelog.d/**", "crates/*/tests/**", "crates/*/Cargo.toml", "crates/gob-testsupport/**", ".github/**"]
 
 [[acceptance]]
 text = "Given the ci nextest profile, when the suite runs on quasar, then wall time drops by at least 25 percent against the recorded baseline with no test removed"
