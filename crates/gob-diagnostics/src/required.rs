@@ -26,3 +26,40 @@ impl UnresolvedPolicy {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use gob_rules::{Finding, PackFailure, RequiredReason, Severity};
+
+    use super::UnresolvedPolicy;
+    use crate::{ExitCode, fail_on};
+
+    fn trapped(required: bool) -> Finding {
+        let mut f = Finding::new(
+            "PACK006".parse().unwrap(),
+            Severity::Unresolved,
+            None,
+            "pack trapped",
+            "gob.toml",
+        );
+        f.required = RequiredReason::for_pack(required, "core", PackFailure::Trap);
+        f
+    }
+
+    // frob:tests fail_on
+    #[test]
+    fn required_pack_trap_fails_the_gate() {
+        let fs = [trapped(true)];
+        assert_eq!(
+            fail_on(&fs, None, UnresolvedPolicy::Required),
+            ExitCode::Negative
+        );
+    }
+
+    // frob:tests fail_on
+    #[test]
+    fn unmarked_pack_trap_does_not_fail_the_gate() {
+        let fs = [trapped(false)];
+        assert_eq!(fail_on(&fs, None, UnresolvedPolicy::Required), ExitCode::Ok);
+    }
+}
