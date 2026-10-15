@@ -2,7 +2,8 @@
 id = "01M4Y3S931TSR9SBH9HYF4S0QS"
 title = "Replace placeholder packs/std/rules/TODO001.grl with real std sources"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
