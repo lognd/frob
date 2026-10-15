@@ -22,3 +22,17 @@ A ticket's frontmatter differs from the fold of its events.
 `ticket.md` is a cache of the events; when it disagrees (a hosting
 provider's merge button skipped the merge driver, or a hand edit) the
 events win. Run `frob ticket doctor --fix` to rewrite the frontmatter.
+
+## Examples
+
+### TICK001 ticket card disagrees with its events / A hand-edited title fires #1 (line 9) (fire)
+
+```text
+title = "Edited by hand"
+```
+
+### TICK001 ticket card disagrees with its events / An untouched card is clean #2 (line 15) (clean)
+
+```text
+
+```

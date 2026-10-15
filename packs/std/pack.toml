@@ -1,0 +1,11 @@
+# The std pack manifest. The version below is a placeholder: the binary stamps its own
+# version over it (plugins.md 6.1), so the lock entry is frozen to the binary.
+[pack]
+name = "std"
+version = "0.0.0"
+families = ["AFFECT", "CAP", "CFG", "CI", "COV", "DOC", "DRIFT", "DSL", "EXC", "GRL", "INV", "MDL", "PARSE", "PERF", "PM", "PROC", "READ", "REF", "REL", "SCOPE", "SIB", "SYS", "TEST", "TICK", "TODO", "TOOL"]
+
+[provides]
+rules = ["rules/*.grl"]
+
+[effects]
