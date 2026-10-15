@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:47Z"
-updated = "2026-10-15T02:23:28Z"
+updated = "2026-10-15T02:26:55Z"
 scope = ["changelog.d/**", "crates/*/tests/**", "crates/*/Cargo.toml", "crates/gob-testsupport/**", ".github/**", "crates/gob-dev/profile.toml", "docs/**", "packaging/pypi/**"]
 
 [[acceptance]]
