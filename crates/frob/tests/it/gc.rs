@@ -131,7 +131,12 @@ fn doctor_reports_the_last_pass_and_fix_runs_one_unthrottled() {
     assert_eq!(before["state"], "ok");
     assert_eq!(before["passes"], 0);
     assert!(before["last_run_unix"].is_null());
-    assert!(before["usage"].as_array().expect("usage").len() >= 4);
+    assert!(
+        before["usage"].as_array().expect("usage").is_empty(),
+        "the dry-run plan is opt-in"
+    );
+    let planned = repo.ok(&["doctor", "--gc-plan"])["data"]["gc"].clone();
+    assert!(planned["usage"].as_array().expect("usage").len() >= 4);
     let fixed = repo.ok(&["doctor", "--fix"]);
     assert_eq!(fixed["data"]["gc"]["fixed"]["reclaimed_bytes"], 0);
     let again = repo.ok(&["doctor", "--fix"]);
