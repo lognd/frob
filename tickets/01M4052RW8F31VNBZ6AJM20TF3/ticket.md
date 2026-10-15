@@ -2,13 +2,13 @@
 id = "01M4052RW8F31VNBZ6AJM20TF3"
 title = "Work classes in strict priority with round-robin resumption inside a class"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-03T05:51:36Z"
+updated = "2026-10-15T04:04:01Z"
 idempotency_key = "m2-mirror2-work-classes"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/plan.rs"]
