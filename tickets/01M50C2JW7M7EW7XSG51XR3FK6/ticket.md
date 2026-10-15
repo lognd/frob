@@ -7,12 +7,12 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-15T18:09:31Z"
-updated = "2026-10-15T18:09:38Z"
+updated = "2026-10-15T18:19:51Z"
 scope = ["profile.toml", "crates/gob-dev/**", "crates/gob-path/tests/confinement.rs", "crates/crunk-query/**", ".github/**", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
 text = "gob-dev profile_coverage, layering, ci_plan tests and gob-path confinement pass"
-bound = false
+bound = true
 +++
 
 CI run 38778784081 failed: profile leaf commands crunk explain/gallery check/map/query lack scenario or skip reason; gob-dev layering (crunk-query needs a layer); ci_plan the_crunk_job_lists_every_crunk_package; gob-path confinement: crunk-query carries the marker but is not on ALLOW (list may only shrink; fix by using gob_path::Shown/RelPath/Arg in crunk-query, not by allowlisting). Failure log: scratchpad/ci-fail.txt
