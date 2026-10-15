@@ -2,11 +2,12 @@
 id = "01M50DYGDXT6GQF7VM83VWZJRD"
 title = "docs: regenerate stale docs/schemas (envelope.json, sibling.json)"
 type = "docs"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-15T18:42:15Z"
-updated = "2026-10-15T18:42:15Z"
+updated = "2026-10-15T18:42:21Z"
 scope = ["docs/schemas/**"]
 +++
 
