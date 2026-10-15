@@ -8,7 +8,7 @@ points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:15Z"
-updated = "2026-10-15T21:37:00Z"
+updated = "2026-10-15T21:37:11Z"
 idempotency_key = "train-ledger-close"
 labels = ["area:land", "creates:crates/frob-land/src/train_close.rs"]
 scope = ["crates/frob-land/src/train_close.rs", "crates/frob-ledger/src/**", "crates/frob-ledger/tests/ledger.rs", "crates/frob-land/src/land.rs", "crates/frob-land/src/git.rs", "crates/frob-land/src/ratchet.rs", "crates/frob-land/src/candidate.rs", "crates/frob-land/src/events.rs", "crates/frob-land/src/lib.rs", "docs/design/build-test-ci.md"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a base that moved, then the CAS retries and either lands or reports E-LAND-STALE per policy"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a crash after fast-forward, then resume closes the remaining tickets"
