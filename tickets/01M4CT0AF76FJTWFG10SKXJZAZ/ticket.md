@@ -8,8 +8,8 @@ points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:48:09Z"
-updated = "2026-10-15T23:22:38Z"
-scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-check/**", "docs/reference/**"]
+updated = "2026-10-15T23:22:39Z"
+scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-check/**", "docs/reference/**", "docs/schemas/**"]
 
 [[acceptance]]
 text = "Given a ticket in progress longer than max_age_days, when frob check runs, then PM008 fires with the age"
