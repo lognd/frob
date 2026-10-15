@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:35Z"
-updated = "2026-10-15T04:03:51Z"
+updated = "2026-10-15T04:08:42Z"
 idempotency_key = "m2-sec-required-packs"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-diagnostics/src/required.rs", "crates/gob-rules/src/required.rs"]
+scope = ["crates/gob-diagnostics/src/required.rs", "crates/gob-rules/src/required.rs", "crates/gob-rules/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
@@ -19,11 +19,11 @@ target = "01M3ZX7JWHQZQHD66HV2SB0498"
 
 [[acceptance]]
 text = "Given a required pack that traps, when check runs, then the Unresolved is required and exits 1 under fail_on_unresolved=required"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the same pack not marked required, when it traps, then the Unresolved does not fail the gate"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.7 (I9).
