@@ -1,0 +1,43 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T03:00:31Z"
+digest = "11764405dd4752c558fcf8a9c5671d32847ccd2be5f03630ea822c4ec5bca58c"
+exit_code = 0
+inline = '''
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-text v0.532.0 (<worktree>/crates/gob-text)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-frameworks v0.532.0 (<worktree>/crates/gob-frameworks)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.80s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ad56ff5d-f58e-4947-8d1a-54ab439553b1 with nextest profile: default
+    Starting 1 test across 261 binaries (3168 tests skipped)
+        PASS [   0.024s] frob-check::rule_coverage every_frob_rule_has_a_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.032s] 1 test run: 1 passed, 3168 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "every_frob_rule_has_a_corpus"
+size = 1764
+status = "measured"
+test_count = 1
+tests_digest = "50857de0871d9cebe1f95765408efa418d2ae498665fdff3de67919989848149"
+at = "2026-10-15T03:00:31Z"
+actor = "lognd"
+rev = 1

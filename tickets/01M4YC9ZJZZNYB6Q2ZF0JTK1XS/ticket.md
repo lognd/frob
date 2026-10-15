@@ -8,12 +8,12 @@ points = 2
 parent = "01M480C43A6BCH54NX8C5DQ4WJ"
 reporter = "lognd"
 created = "2026-10-14T23:35:05Z"
-updated = "2026-10-15T02:55:48Z"
+updated = "2026-10-15T03:00:31Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
 text = "gob_mdtest::coverage treats a declared alias rule as covered by its target (or exempts it); the COV003 allowlist entry is deleted; rule_coverage passes"
-bound = false
+bound = true
 +++
 
 Found by ~K4JKY97: COV003 can never fire, so no fire block exists. See crates/frob-obligations/src/lib.rs COV003_ALIAS_OF.
