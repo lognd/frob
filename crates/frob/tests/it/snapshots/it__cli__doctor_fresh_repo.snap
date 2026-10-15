@@ -1,5 +1,5 @@
 ---
-source: crates/frob/tests/cli.rs
+source: crates/frob/tests/it/cli.rs
 expression: v
 ---
 {
@@ -31,28 +31,7 @@ expression: v
       "passes": 0,
       "state": "ok",
       "total_reclaimed_bytes": 0,
-      "usage": [
-        {
-          "bytes": "[bytes]",
-          "category": "build"
-        },
-        {
-          "bytes": "[bytes]",
-          "category": "worktrees"
-        },
-        {
-          "bytes": "[bytes]",
-          "category": "caches"
-        },
-        {
-          "bytes": "[bytes]",
-          "category": "artifacts"
-        },
-        {
-          "bytes": "[bytes]",
-          "category": "land-base"
-        }
-      ],
+      "usage": [],
       "would_reclaim": [],
       "would_reclaim_bytes": 0
     },

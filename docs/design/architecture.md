@@ -161,8 +161,8 @@ it also keeps them under budget; goway owns its remote hosts and their own
 collection. There is no collection verb. An opportunistic pass runs inside
 verbs that already run often and are about to need disk: `frob work` (before
 a new worktree builds) and `frob land` (after the worktree is removed), and
-unthrottled from `frob doctor --fix`. `frob doctor` itself runs a dry pass and
-reports it. A stamp `<common_dir>/frob/gc.json` throttles automatic passes to
+unthrottled from `frob doctor --fix`. `frob doctor` reports the stamp
+only; the dry-run plan (what a pass would reclaim) is opt-in via `--gc-plan`. A stamp `<common_dir>/frob/gc.json` throttles automatic passes to
 one per `[gc] interval_secs` (default 1 h) and records the last pass for
 `doctor`; free space below `[gc] guard_min_free_gb` (default 20 GiB, 0 turns it
 off) overrides the interval. The pass is bounded by `[gc] time_limit_secs`,
