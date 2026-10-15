@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-15T18:09:32Z"
-updated = "2026-10-15T18:23:47Z"
+updated = "2026-10-15T18:25:22Z"
 scope = ["crates/frob-land/src/lockfile.rs"]
 
 [[acceptance]]
