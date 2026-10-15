@@ -11,10 +11,16 @@ pub(crate) fn kebab(s: &str, max: usize) -> Result<(), String> {
     bound(s, max)
 }
 
-/// Checks a rule family prefix: 2 to `max` ASCII capital letters.
+/// Checks a rule family prefix: 2 to `max` ASCII capitals or digits, starting with a capital.
 pub(crate) fn family(s: &str, max: usize) -> Result<(), String> {
-    if s.len() < 2 || !s.bytes().all(|b| b.is_ascii_uppercase()) {
-        return Err("must be 2 or more capital letters A-Z".into());
+    let ok = s.len() >= 2
+        && s.as_bytes()[0].is_ascii_uppercase()
+        && s.bytes()
+            .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit());
+    if !ok {
+        return Err(
+            "must be 2 or more characters A-Z or 0-9, starting with a capital letter".into(),
+        );
     }
     bound(s, max)
 }
@@ -84,4 +90,24 @@ fn bound(s: &str, max: usize) -> Result<(), String> {
         return Err(format!("is {} bytes, the limit is {max}", s.len()));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod family_tests {
+    use super::family;
+
+    #[test]
+    fn family_accepts_letters_and_digits_after_first() {
+        assert!(family("COLOR", 16).is_ok());
+        assert!(family("A11Y", 16).is_ok());
+        assert!(family("W3", 16).is_ok());
+    }
+
+    #[test]
+    fn family_rejects_bad_shapes() {
+        for bad in ["", "A", "1A", "11", "a11y", "A-Y", "A11y"] {
+            assert!(family(bad, 16).is_err(), "{bad}");
+        }
+        assert!(family("A11YA11YA11YA11YX", 16).is_err());
+    }
 }
