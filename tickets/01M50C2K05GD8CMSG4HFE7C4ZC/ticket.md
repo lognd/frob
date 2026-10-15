@@ -2,7 +2,8 @@
 id = "01M50C2K05GD8CMSG4HFE7C4ZC"
 title = "ci: remedies test flags 'land --train' as unknown flag"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
