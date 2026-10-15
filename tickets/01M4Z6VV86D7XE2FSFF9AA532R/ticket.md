@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-15T07:19:13Z"
-updated = "2026-10-15T07:19:16Z"
+updated = "2026-10-15T07:35:15Z"
 idempotency_key = "fix-ts-expect-win"
 scope = ["crates/frob-tests/tests/typescript.rs"]
 
