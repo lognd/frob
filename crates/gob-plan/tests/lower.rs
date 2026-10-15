@@ -1,6 +1,10 @@
 //! Lowering a checked rule to a plan: shape, clause-order independence, and honest refusals.
 
 // frob:ticket 01M3ZX7EKNE5Q0NB0DKCH77AZX
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use gob_plan::grl::parse;
 use gob_plan::lower::{LowerError, lower_rule};

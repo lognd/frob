@@ -1,4 +1,8 @@
 //! Acceptance tests for the authenticated state store (~TX6YZZE).
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::fs;
 use std::path::{Path, PathBuf};

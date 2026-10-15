@@ -26,6 +26,10 @@
 //!
 //! Ticket reads only accept `tickets/<ULID>/ticket.md`, so a binary without
 //! this crate ignores `_milestones/` and `_cycles/` entirely.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 pub mod board;
 pub mod config;

@@ -43,6 +43,10 @@
     clippy::format_push_string,
     reason = "the reference page and path renderers build text with push_str(&format!(..)) for readability"
 )]
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 // frob:ticket 01M43ARX764095Q4VWABWXXV5H
 

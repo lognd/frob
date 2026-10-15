@@ -1,4 +1,8 @@
 //! Integration tests against temporary repositories built with gix only.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::Path;
 use std::sync::{Arc, Barrier};

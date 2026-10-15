@@ -1,4 +1,8 @@
 //! `walk_paths` lists without reading; `walk` hashes through the installed git content backend.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::fs;
 use std::path::Path;

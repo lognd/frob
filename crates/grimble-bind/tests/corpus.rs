@@ -15,6 +15,10 @@
 //! `[grimble] strict` on.
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};

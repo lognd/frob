@@ -1,4 +1,8 @@
 //! Dogfood: ack and the DRIFT and AFFECT rules against a temporary git copy of a fixture crate.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::Path;
 use std::time::Duration;

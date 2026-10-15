@@ -11,6 +11,10 @@
 //! The [`selector`] module parses the grmb-spec 6 selector grammar and evaluates it over the walk
 //! ([`select_files`]); gob-ir evaluates the same selectors over units. [`owner`] resolves which
 //! entity owns an item by [`Specificity`] and the possible-worlds reading of binding.md 2.2.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::fmt;
 use std::path::Path;
