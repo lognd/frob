@@ -8,10 +8,10 @@ points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:05Z"
-updated = "2026-10-15T21:17:58Z"
+updated = "2026-10-15T21:19:19Z"
 idempotency_key = "train-cone"
 labels = ["area:land", "creates:crates/frob-land/src/train_check.rs"]
-scope = ["crates/frob-land/src/train_check.rs", "crates/frob-check/src/diff_base.rs"]
+scope = ["crates/frob-land/src/train_check.rs", "crates/frob-check/src/diff_base.rs", "crates/frob-land/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
