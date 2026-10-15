@@ -2,7 +2,8 @@
 id = "01M43AVHX91K72WYKYFX5W2SPP"
 title = "Pack scaffold: crunk-web (A11Y, SEO, LAUNCH, WEBPERF markup and assets)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
