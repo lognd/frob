@@ -1,7 +1,6 @@
 //! Query tests on a term with nested explicit spans, registries and builder errors.
 #![allow(clippy::many_single_char_names, reason = "terse fixtures")]
 
-
 use gob_ir::{
     Anchor, Answer, Digest, Facet, FacetDigest, Identity, IdentityDelta, Location, NodeSpec,
     OccurrenceKind, Operator, Sort, SymrefLookup, TermBuilder, TermError, registry,

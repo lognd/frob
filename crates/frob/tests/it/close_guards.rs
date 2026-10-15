@@ -213,8 +213,17 @@ fn the_running_frob_is_an_allowed_command_tool_without_listing_it() {
         .real_process()
         .current_dir(dir.path())
         .args([
-            "--json", "ticket", "evidence", "add", &id, "--provider", "command", "--ref",
-            &reference, "--accepts", "1",
+            "--json",
+            "ticket",
+            "evidence",
+            "add",
+            &id,
+            "--provider",
+            "command",
+            "--ref",
+            &reference,
+            "--accepts",
+            "1",
         ])
         .output()
         .expect("run frob");
