@@ -2,7 +2,7 @@
 id = "01M4Z1ND9ZM2NPAFJBF67JHDV6"
 title = "Land train: driver and verbs (frob land --train, frob train status|run|drain)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
