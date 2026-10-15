@@ -2,7 +2,8 @@
 id = "01M50C2K3H0STZWFR5P29BWY8G"
 title = "ci: frob-land lockfile merge commit needs git identity in test env"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
