@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T15:05:03Z"
+digest = "4f1e6b69972840ec73de53213dc3b350eb24a66fbf644bfac0f84bf6f651e81e"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d93ebf86-e4b3-45c7-887f-51fa09cd86f9 with nextest profile: default
+    Starting 2 tests across 6 binaries (34 tests skipped)
+        PASS [   0.005s] gob-packs validate::family_tests::family_accepts_letters_and_digits_after_first
+        PASS [   0.005s] gob-packs validate::family_tests::family_rejects_bad_shapes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 2 tests run: 2 passed, 34 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs family_tests"
+size = 764
+status = "measured"
+test_count = 2
+tests_digest = "36ff429a89adcdc67450bebdb18826aa0f9f719548ef147e7996c0e7a14c02f1"
+at = "2026-10-15T15:05:03Z"
+actor = "lognd"
+rev = 1
