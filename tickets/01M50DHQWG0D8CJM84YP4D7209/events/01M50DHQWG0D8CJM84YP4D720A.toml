@@ -1,0 +1,12 @@
+kind = "create"
+title = "docs: regenerate drifted docs/reference/rules (gob-dev gen all)"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 1
+scope = ["docs/reference/rules/**"]
+acceptance = ["gob-dev gen --check is clean"]
+body = "gob-dev gen --check reports drift (TOOL001) in docs/reference/rules (MDL019-021, SYS010/011/013 and ~20 others). Run gob-dev gen all, commit, and find why check and committed docs disagree."
+at = "2026-10-15T18:35:17Z"
+actor = "lognd"
+rev = 1

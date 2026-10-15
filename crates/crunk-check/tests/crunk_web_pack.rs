@@ -2,7 +2,7 @@
     clippy::disallowed_methods,
     reason = "a test reads the pack tree on disk, not a walked snapshot"
 )]
-//! The crunk-web pack: four families with one rule each, GRL011 without examples, lock digest.
+//! The crunk-web pack: four families, three A11Y and three SEO rules, GRL011 without examples, lock digest.
 
 // frob:ticket 01M43AVHX91K72WYKYFX5W2SPP
 
@@ -20,7 +20,7 @@ fn disk(p: &Path) -> Option<Vec<u8>> {
 
 // frob:tests catalog
 #[test]
-fn catalog_lists_four_families_with_one_rule_each_when_on() {
+fn catalog_lists_the_pack_rules_when_on() {
     let rows = packs::catalog(PacksSwitch { crunk_web: true }).unwrap();
     let got: Vec<(&str, &str)> = rows
         .iter()
@@ -30,8 +30,12 @@ fn catalog_lists_four_families_with_one_rule_each_when_on() {
         got,
         [
             ("A11Y", "A11Y101"),
+            ("A11Y", "A11Y102"),
+            ("A11Y", "A11Y103"),
             ("LAUNCH", "LAUNCH101"),
             ("SEO", "SEO101"),
+            ("SEO", "SEO102"),
+            ("SEO", "SEO103"),
             ("WEBPERF", "WEBPERF101")
         ]
     );
@@ -70,4 +74,57 @@ fn a_drifted_tree_is_refused() {
         packs::verify_tree(dir.path(), disk),
         Err(PackBuildError::Drift(_))
     ));
+}
+
+// frob:ticket 01M43AVJ85D28XYZKWSSHGXWRT
+// frob:tests compile_rule
+#[test]
+fn every_a11y_rule_passes_its_examples() {
+    let mut ran = 0;
+    for (file, src) in packs::RULES.iter().filter(|(f, _)| f.contains("A11Y")) {
+        let t = gob_plan::verbs::test::test_file(file, src);
+        assert!(t.passed(), "{file}: {:?} {:?}", t.diagnostics, t.examples);
+        assert_eq!(t.examples.len(), 3, "{file}");
+        ran += 1;
+    }
+    assert_eq!(ran, 3);
+}
+
+// frob:ticket 01M43AVJ85D28XYZKWSSHGXWRT
+// frob:tests compile_rule
+#[test]
+fn a11y_rules_fire_with_teaching_text_on_a_violation() {
+    let (file, src) = packs::RULES
+        .iter()
+        .find(|(f, _)| f.contains("A11Y102"))
+        .unwrap();
+    assert!(src.contains("lang=\\\"en\\\""));
+    assert!(src.contains("## Remedy"));
+    assert!(packs::compile_rule(file, src).is_ok());
+}
+
+// frob:ticket 01M43AVJJEGJB09WH8QWDSAP5S
+// frob:tests compile_rule
+#[test]
+fn every_seo_rule_passes_its_examples() {
+    let mut ran = 0;
+    for (file, src) in packs::RULES.iter().filter(|(f, _)| f.contains("SEO")) {
+        let t = gob_plan::verbs::test::test_file(file, src);
+        assert!(t.passed(), "{file}: {:?} {:?}", t.diagnostics, t.examples);
+        assert_eq!(t.examples.len(), 3, "{file}");
+        ran += 1;
+    }
+    assert_eq!(ran, 3);
+}
+
+// frob:ticket 01M43AVJJEGJB09WH8QWDSAP5S
+// frob:tests compile_rule
+#[test]
+fn seo_rules_carry_teaching_text_and_a_remedy() {
+    for (file, src) in packs::RULES.iter().filter(|(f, _)| f.contains("SEO")) {
+        assert!(src.contains("## Remedy"), "{file}");
+        assert!(src.contains("example fire"), "{file}");
+        assert!(src.contains("example notapplicable"), "{file}");
+        assert!(packs::compile_rule(file, src).is_ok(), "{file}");
+    }
 }

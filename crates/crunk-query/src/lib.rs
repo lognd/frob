@@ -5,6 +5,7 @@
 //! relative to the project root and `/`-separated.
 
 // frob:ticket 01M43ATCZXK3B3952GGEBT1ASJ
+// frob:ticket 01M50C2JW7M7EW7XSG51XR3FK6
 
 pub mod rows;
 
@@ -54,15 +55,9 @@ impl<'a> Model<'a> {
     }
 
     /// `path` relative to the root, `/`-separated.
-    #[expect(
-        clippy::disallowed_methods,
-        reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-    )]
     pub fn relative(&self, path: &Path) -> String {
-        path.strip_prefix(self.root)
-            .unwrap_or(path)
-            .to_string_lossy()
-            .replace('\\', "/")
+        let rel = path.strip_prefix(self.root).unwrap_or(path);
+        gob_path::Shown::of(rel).as_str().replace('\\', "/")
     }
 
     /// Every `var(--name)` reference site of `name` (with `--`), sorted.

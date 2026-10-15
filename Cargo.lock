@@ -584,6 +584,7 @@ dependencies = [
  "crunk-ingest",
  "crunk-tokens",
  "crunk-values",
+ "gob-path",
  "schemars",
  "serde",
  "tracing",

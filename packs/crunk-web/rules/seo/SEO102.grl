@@ -1,0 +1,22 @@
+rule SEO102 "canonical-link-without-href" {
+  lang [typescript, html]
+  severity warn
+
+  find e: element where e.tag == "link" and e has attribute(name = "rel", value = "canonical") and not e has attribute(name = "href")
+  report e "canonical link has no href: search engines ignore it and may index duplicates"
+
+  example fire html """
+    <link rel="canonical">  <!--~ warn -->
+  """
+  example clean html """
+    <link rel="canonical" href="https://example.com/pricing">
+  """
+  example notapplicable markdown """
+    A canonical link is written <link rel="canonical"> in prose.
+  """
+  explain """
+    The canonical URL tells crawlers which address is the preferred copy of a page; without an `href` the hint carries nothing.
+    ## Remedy
+    Add the absolute canonical URL as the `href` attribute.
+  """
+}
