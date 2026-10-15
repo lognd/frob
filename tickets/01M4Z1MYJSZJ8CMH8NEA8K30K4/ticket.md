@@ -2,7 +2,7 @@
 id = "01M4Z1MYJSZJ8CMH8NEA8K30K4"
 title = "Land train: adaptive batch size controller (grow on green, halve on red, train_max cap)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
