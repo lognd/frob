@@ -8,7 +8,7 @@ points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:05Z"
-updated = "2026-10-15T11:52:33Z"
+updated = "2026-10-15T12:01:11Z"
 idempotency_key = "train-candidate"
 labels = ["area:land", "creates:crates/frob-land/src/candidate.rs"]
 scope = ["crates/frob-land/src/git.rs", "crates/frob-land/src/candidate.rs", "crates/frob-land/src/lib.rs"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given tickets with overlapping lease scopes, then they are placed in separate trains"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given any failure, then no temp ref is left behind"
