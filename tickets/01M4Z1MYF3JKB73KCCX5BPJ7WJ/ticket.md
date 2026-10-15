@@ -8,17 +8,17 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:04Z"
-updated = "2026-10-15T09:11:48Z"
+updated = "2026-10-15T09:11:53Z"
 idempotency_key = "train-bisect"
 labels = ["area:land", "creates:crates/frob-land/src/bisect.rs"]
 scope = ["crates/frob-land/src/bisect.rs", "crates/frob-land/src/lib.rs"]
 
 [[acceptance]]
-text = "Given a batch of 12 with 1 failing and a fake runner, then the 11 good tickets are landable and the culprit is isolated in at most 2*ceil(log2 12) checks"
+text = "Given a batch of 12 with 1 failing and a fake runner, then the 11 good tickets are landable and the culprit is isolated in at most 8 checks"
 bound = false
 
 [[acceptance]]
-text = "Given a batch of 12 with 2 failing, then both culprits are isolated within ceil(log2 12)*2+2 checks"
+text = "Given a batch of 12 with 2 failing, then both culprits are isolated within 12 checks"
 bound = false
 
 [[acceptance]]
@@ -26,7 +26,15 @@ text = "Given an all-green batch, then exactly one check runs"
 bound = false
 
 [[acceptance]]
-text = "Given a red parent whose halves are both green, then the planner reports an interaction and does not loop"
+text = "Given a red parent whose parts are all green, then the planner reports an interaction, blames nobody and does not loop"
+bound = false
+
+[[acceptance]]
+text = "Given an A+C interaction plus an independent culprit D, then the landable set is a set that was checked whole"
+bound = false
+
+[[acceptance]]
+text = "Given a runner fault, then it is retried once and a second fault blames no ticket and reports the rest as unchecked"
 bound = false
 +++
 
