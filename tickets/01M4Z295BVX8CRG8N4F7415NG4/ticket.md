@@ -8,10 +8,10 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:59:07Z"
-updated = "2026-10-15T19:18:19Z"
+updated = "2026-10-15T19:19:03Z"
 idempotency_key = "train-tb"
 labels = ["area:land"]
-scope = ["crates/frob-check/src/options.rs", "crates/frob-check/src/lib.rs"]
+scope = ["crates/frob-check/src/options.rs", "crates/frob-check/src/lib.rs", "crates/frob-check/src/product.rs"]
 
 [[acceptance]]
 text = "frob-check can scope a run to a diff against a base oid with no ticket"
