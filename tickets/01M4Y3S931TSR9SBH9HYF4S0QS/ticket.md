@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-14T21:06:09Z"
-updated = "2026-10-15T22:44:55Z"
+updated = "2026-10-15T22:53:23Z"
 scope = ["packs/std/**"]
 
 [[links]]
@@ -17,7 +17,7 @@ target = "01M3ZX7FYE5D1N2SY01VNVVACK"
 
 [[acceptance]]
 text = "Given the real std GRL sources, when cargo dev gen all --check runs, then it reports no GEN001 and no placeholder copy remains"
-bound = false
+bound = true
 +++
 
 Follow-up of ~T5H07H5: packs/std/rules/TODO001.grl is a copy of the gob-plan corpus rule used to exercise std-rules codegen. Replace with the real std GRL sources once ~VNVVACK defines them and regenerate.
