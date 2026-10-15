@@ -33,6 +33,8 @@ mod limits;
 pub mod lock;
 mod manifest;
 mod plan_cache;
+#[path = "std/mod.rs"]
+pub mod std_pack;
 pub mod tier1;
 mod validate;
 
