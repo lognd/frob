@@ -8,10 +8,10 @@ points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:15Z"
-updated = "2026-10-15T05:59:17Z"
+updated = "2026-10-15T21:17:57Z"
 idempotency_key = "train-ledger-close"
 labels = ["area:land", "creates:crates/frob-land/src/train_close.rs"]
-scope = ["crates/frob-ledger/**", "crates/frob-land/src/train_close.rs"]
+scope = ["crates/frob-land/src/train_close.rs", "crates/frob-ledger/src/**"]
 
 [[links]]
 kind = "blocked-by"
