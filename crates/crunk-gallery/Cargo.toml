@@ -1,0 +1,25 @@
+[package]
+name = "crunk-gallery"
+version.workspace = true
+description = "The crunk gallery: manifest v1-v3 with shipped JSON Schemas, cell enumeration over [[platform]] and [[screen]], and GALLERY001-005."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+readme = "README.md"
+
+[lints]
+workspace = true
+
+[dependencies]
+crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
+gob-time = { version = "0.532.0", path = "../gob-time" }
+jsonschema = { version = "0.58.5", default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3"

@@ -20,9 +20,15 @@ path = "src/lib.rs"
 name = "crunk"
 path = "src/main.rs"
 
+[features]
+default = []
+# The screen gallery (manifest, cells, GALLERY001-005); off by default to keep the binary and wheel small.
+gallery = ["dep:crunk-gallery"]
+
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 crunk-check = { version = "0.532.0", path = "../crunk-check" }
+crunk-gallery = { version = "0.532.0", path = "../crunk-gallery", optional = true }
 crunk-rules = { version = "0.532.0", path = "../crunk-rules" }
 crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
 crunk-tokens = { version = "0.532.0", path = "../crunk-tokens" }
