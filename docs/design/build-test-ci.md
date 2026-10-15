@@ -545,6 +545,14 @@ against base, no ticket, no SCOPE001) plus the cheap per-member ticket rules
 A red finding whose path lies in exactly one member's diff is attributed to
 that member with no extra check; only unattributable findings are bisected.
 
+**Union checker.** `crates/frob-land/src/train_check.rs`: `CandidateChecker`
+is the planner `Runner`. Per check it runs the cheap ticket rules once per
+member (tools skipped), then one `diff_base` tool run over the candidate,
+ratcheted once against the cached base findings. A member's rule result is
+reused while no other member's scope overlaps its cone (`scopes_overlap`).
+Red evidence is attributed to a member when the finding path is in exactly
+one member's diff; any failure to run is a `CheckFault`, never red.
+
 **Bisection.** Group testing over cumulative sets: each round tests
 `accepted ++ half`, so every green test is a superset of every earlier
 green and the final landable set equals the last green-tested set.
