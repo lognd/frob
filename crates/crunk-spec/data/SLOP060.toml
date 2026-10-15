@@ -1,0 +1,73 @@
+# Buzzword tells for SLOP060. Each entry is dated and sourced; edit this file (or drop a
+# replacement at `tells/SLOP060.toml` in the project) to refresh the list without a code change.
+# `term` is matched as a substring of the lowercased copy.
+
+[[tell]]
+term = "seamless"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
+
+[[tell]]
+term = "unlock"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
+
+[[tell]]
+term = "elevate"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
+
+[[tell]]
+term = "supercharge"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
+
+[[tell]]
+term = "streamline"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
+
+[[tell]]
+term = "empower"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
+
+[[tell]]
+term = "world-class"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
+
+[[tell]]
+term = "enterprise-grade"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
+
+[[tell]]
+term = "best-in-class"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
+
+[[tell]]
+term = "battle-tested"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
+
+[[tell]]
+term = "unleash"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
+
+[[tell]]
+term = "robust"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
+
+[[tell]]
+term = "comprehensive"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
+
+[[tell]]
+term = "fast-paced world"
+added = "2026-10-08"
+source = "deslop-research-2026-10-08 H-copy buzzwords [S5]"
