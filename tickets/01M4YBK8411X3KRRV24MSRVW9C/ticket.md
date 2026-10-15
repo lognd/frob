@@ -2,13 +2,13 @@
 id = "01M4YBK8411X3KRRV24MSRVW9C"
 title = "Rule corpora (frob): DRIFT001-004 EXC005 PERF001 PROC001 READ001 SCOPE001 SIB001 TEST001"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M480C43A6BCH54NX8C5DQ4WJ"
 reporter = "lognd"
 created = "2026-10-14T23:22:40Z"
-updated = "2026-10-14T23:22:40Z"
+updated = "2026-10-15T03:48:17Z"
 scope = ["crates/gob-mdtest/coverage-allowlist.toml"]
 
 [[acceptance]]
