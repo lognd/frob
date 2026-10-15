@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:22Z"
-updated = "2026-10-15T13:33:03Z"
+updated = "2026-10-15T14:00:19Z"
 idempotency_key = "m2-packs-std-skeleton"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/gob-packs/src/std/**", "packs/std/**", "crates/gob-packs/src/lib.rs", "crates/gob-packs/tests/std_pack.rs"]
@@ -31,7 +31,7 @@ bound = false
 
 [[acceptance]]
 text = "Given a plugin pack declaring family CAP, when loaded, then PACK004 is raised because std owns it"
-bound = false
+bound = true
 +++
 
 Implements plugins.md sections 2, 6.1 and 11.2.
