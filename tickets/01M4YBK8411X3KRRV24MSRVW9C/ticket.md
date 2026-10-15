@@ -2,7 +2,8 @@
 id = "01M4YBK8411X3KRRV24MSRVW9C"
 title = "Rule corpora (frob): DRIFT001-004 EXC005 PERF001 PROC001 READ001 SCOPE001 SIB001 TEST001"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M480C43A6BCH54NX8C5DQ4WJ"
