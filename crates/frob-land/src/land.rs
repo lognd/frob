@@ -205,12 +205,24 @@ fn build_guards(
     Ok((evidence, done))
 }
 
-/// Check every precondition (merging the base into the ticket branch unless dry-running).
-#[expect(
-    clippy::too_many_lines,
-    reason = "one ordered pipeline of timed preconditions; splitting it would scatter the order"
-)]
-fn prepare(
+/// The ticket-local preconditions, established with no lock, no merge and no check.
+pub(crate) struct Preconditions {
+    repo: Repo,
+    wt: Repo,
+    wt_path: PathBuf,
+    primary: PathBuf,
+    id: TicketId,
+    handle: String,
+    branch: String,
+    site: Workspace,
+    evidence: EvidenceGuard,
+    done: DoneGuard,
+    base_oid: Oid,
+    ci_gate: base_ci::Gate,
+}
+
+/// Check the lease, worktree, cleanliness, close guards and base-CI gate; takes no lock and runs no merge or check.
+fn preconditions(
     repo: Repo,
     cwd_root: &Path,
     here: Workspace,
@@ -218,7 +230,7 @@ fn prepare(
     view: &TicketView,
     base: &str,
     opts: &LandOptions,
-) -> Result<Ready, LandError> {
+) -> Result<Preconditions, LandError> {
     let clock = here.ledger.clock().clone();
     let id = view.ticket.front.id;
     let handle = view.summary.handle.clone();
@@ -258,6 +270,46 @@ fn prepare(
         opts.override_base_ci.as_deref(),
         (&site.ledger, &handle),
     )?;
+    Ok(Preconditions {
+        repo,
+        wt,
+        wt_path,
+        primary,
+        id,
+        handle,
+        branch,
+        site,
+        evidence,
+        done,
+        base_oid,
+        ci_gate,
+    })
+}
+
+/// Check every precondition (merging the base into the ticket branch unless dry-running).
+fn prepare(
+    repo: Repo,
+    cwd_root: &Path,
+    here: Workspace,
+    leases: &LeaseStore,
+    view: &TicketView,
+    base: &str,
+    opts: &LandOptions,
+) -> Result<Ready, LandError> {
+    let Preconditions {
+        repo,
+        wt,
+        wt_path,
+        primary,
+        id,
+        handle,
+        branch,
+        site,
+        evidence,
+        done,
+        base_oid,
+        ci_gate,
+    } = preconditions(repo, cwd_root, here, leases, view, base, opts)?;
     // frob:ticket 01M4W4R7PNWSRECR99078ATXCB
     // The lock is taken before the merge and the check: a queued land does no heavy work (and so
     // never contends on cargo's build lock with the holder), and the base cannot move under the check.
@@ -425,18 +477,30 @@ impl Ready {
             .stages
             .push(StageTiming::new("publish", started.elapsed()));
         self.out.commit = Some(oid.to_string());
+        Ok(self.finish(leases, opts, oid, &actor))
+    }
+
+    /// Push, record and close, release the lease and clean up once the base advanced to `oid`.
+    pub(crate) fn finish(
+        mut self,
+        leases: &LeaseStore,
+        opts: &LandOptions,
+        oid: Oid,
+        actor: &str,
+    ) -> LandOutcome {
+        let on_branch = self.site.ledger.config().mode == RefMode::Branch;
         if opts.push {
             self.out.pushed = push_base(&self.repo, &self.base, &mut self.out.warnings);
         }
         if !on_branch && !self.close_after_advance(opts) {
-            return Ok(self.out);
+            return self.out;
         }
         self.out.closed = true;
         self.out.outcome = Some(opts.outcome);
         self.out
             .changelog_exempt
             .clone_from(&opts.no_changelog_reason);
-        release(leases, self.id, &actor, &mut self.out.warnings);
+        release(leases, self.id, actor, &mut self.out.warnings);
         if !opts.keep_worktree && self.wt_path != self.primary {
             self.out.worktree_removed = remove_worktree(
                 &self.repo,
@@ -455,7 +519,7 @@ impl Ready {
             &mut self.out.warnings,
         );
         tracing::info!(ticket = %self.id, commit = %oid, pushed = self.out.pushed, "land complete");
-        Ok(self.out)
+        self.out
     }
 }
 
@@ -1022,7 +1086,7 @@ fn run_guards(
 }
 
 /// The pieces of the locked publish.
-struct Publish<'a> {
+pub(crate) struct Publish<'a> {
     repo: &'a Repo,
     wt: &'a Repo,
     primary: &'a Path,
@@ -1054,7 +1118,7 @@ impl Publish<'_> {
     /// cone path differs between the base the branch contained and the new base
     /// (any non-ledger path when the check reported no cone). Nothing is written before
     /// the compare-and-swap succeeds, so a crash here resumes with `frob land`.
-    fn recover_stale(
+    pub(crate) fn recover_stale(
         &self,
         ledger: &Ledger,
         opts: &LandOptions,
@@ -1105,7 +1169,7 @@ impl Publish<'_> {
     /// In branch ref mode the ledger commits ride on the ticket branch, so
     /// they are written before the tip is read; in trunk mode `before` is not
     /// called (the caller writes them after the base has moved).
-    fn advance(
+    pub(crate) fn advance(
         &self,
         ledger_on_branch: bool,
         before: impl FnOnce() -> Result<(), LandError>,
