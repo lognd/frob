@@ -2,13 +2,14 @@
 id = "01M3ZX7Z4HQ9TD07SHFNDXPCJ1"
 title = "Text renderer labels non-host text with its origin"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:37Z"
-updated = "2026-10-14T22:11:38Z"
+updated = "2026-10-15T01:22:38Z"
 idempotency_key = "m2-sec-origin-render"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-diagnostics/src/text.rs"]

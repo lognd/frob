@@ -10,6 +10,7 @@ use gob_rules::{Applicability, Finding, Fix, Registry, Severity, TextEdit, Unres
 use gob_text::{TextSize, render_snippet};
 
 use crate::escape::escape_text;
+use crate::record::TextOrigin;
 use crate::source::SourceProvider;
 
 /// Whether the renderer emits ANSI color; the caller decides (TTY, `NO_COLOR`).
@@ -139,11 +140,13 @@ fn write_finding(
                 .and_then(|s| s.line_col(sp.range.start()))
         })
         .map_or(String::new(), |l| format!("{}:{}: ", l.line, l.col));
+    let origin = TextOrigin::of_rule(registry.provenance(f.rule.as_str()));
     let _ = writeln!(
         out,
-        "  {col}{st}{}[{}{slug}]{st:#}: {}",
+        "  {col}{st}{}[{}{slug}]{st:#}: {}{}",
         severity_label(f.severity),
         f.rule,
+        origin_prefix(&origin),
         escape_text(&f.message)
     );
     if opts.snippets
@@ -171,6 +174,17 @@ fn write_finding(
     }
     if let Some(fix) = &f.fix {
         write_fix(out, report.sources, fix);
+    }
+}
+
+/// Label for text a pack wrote (`pack(NAME) says: `); empty for host and std text (security.md 2.10).
+fn origin_prefix(origin: &TextOrigin) -> String {
+    match origin {
+        TextOrigin::Pack(name) => {
+            tracing::debug!(pack = %name, "labeling pack-authored message");
+            format!("pack({}) says: ", escape_text(name))
+        }
+        _ => String::new(),
     }
 }
 
@@ -330,4 +344,25 @@ fn write_summary(out: &mut String, findings: &[Finding]) {
         n(Severity::Advisory),
         n(Severity::Unresolved)
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests origin_prefix
+    #[test]
+    fn pack_message_is_prefixed() {
+        assert_eq!(
+            origin_prefix(&TextOrigin::Pack("py-safety".into())),
+            "pack(py-safety) says: "
+        );
+    }
+
+    // frob:tests origin_prefix
+    #[test]
+    fn host_and_std_messages_are_not_prefixed() {
+        assert_eq!(origin_prefix(&TextOrigin::Host), "");
+        assert_eq!(origin_prefix(&TextOrigin::Std), "");
+    }
 }
