@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-15T22:35:11Z"
+digest = "4dcab4ab0fbf935aa9fe2ae7220ce4656709be01edf5f495b87dfc7db16212cd"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fe6497fc-e861-4226-9d80-b06132fa6b4a with nextest profile: default
+    Starting 1 test across 3 binaries (113 tests skipped)
+        PASS [   0.271s] frob-land::land with_the_train_disabled_land_train_behaves_as_plain_land
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.272s] 1 test run: 1 passed, 113 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(/with_the_train_disabled/)'"
+size = 565
+status = "measured"
+test_count = 1
+tests_digest = "a5a6762514287f13968306d928662727515683edfc21868ed6cc9b80f588867b"
+at = "2026-10-15T22:35:11Z"
+actor = "lognd"
+rev = 1
