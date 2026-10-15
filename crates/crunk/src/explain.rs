@@ -10,7 +10,7 @@ use serde::Serialize;
 
 use crate::query::load;
 
-/// Explain a token: value, group, where defined, every use site and utilities.
+/// Explain a token (value, group, where defined, every use site and utilities) or a rule id with a tell list (each tell's date and source).
 #[derive(Debug, Clone, Default, gob_cli::Command)]
 #[command(
     verb = "explain",
@@ -27,6 +27,9 @@ pub struct Explain {
 pub struct ExplainData {
     /// The explained token (one row).
     pub results: Vec<ExplainRow>,
+    /// For a rule id: each tell with its date and source (empty for a token).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tells: Vec<String>,
 }
 
 /// `Explain` flags.
@@ -54,6 +57,21 @@ impl Command for Explain {
 
     fn run(&self, ctx: &Context) -> Outcome<ExplainData> {
         let loaded = load("explain", ctx)?;
+        if crunk_spec::tells::has_list(&self.name) {
+            let list = crunk_spec::tells::TellList::load(&self.name, &loaded.spec.root)
+                .map_err(|e| CliError::Usage(format!("explain: {e}")))?;
+            tracing::info!(rule = %self.name, tells = list.tells.len(), "explained rule tells");
+            let tells = list
+                .tells
+                .iter()
+                .map(crunk_spec::tells::Tell::provenance)
+                .collect();
+            return Ok(Payload::new(ExplainData {
+                results: Vec::new(),
+                tells,
+            })
+            .with_rendered(list.provenance_lines()));
+        }
         let defined_in = loaded.spec.tokens_path();
         let row = loaded
             .model()
@@ -75,6 +93,10 @@ impl Command for Explain {
         ];
         lines.extend(row.sites.iter().map(|s| format!("  {}:{}", s.path, s.line)));
         tracing::info!(name = %row.name, sites = row.sites.len(), "explained");
-        Ok(Payload::new(ExplainData { results: vec![row] }).with_rendered(lines))
+        Ok(Payload::new(ExplainData {
+            results: vec![row],
+            tells: Vec::new(),
+        })
+        .with_rendered(lines))
     }
 }

@@ -544,3 +544,12 @@ args = ["rule", "catalog"]
 readonly = true
 exit = [0, 1, 3]
 budget_ms = 500
+
+[scenario."frob train run"]
+skip = "lands a batch of ready tickets onto the base branch, which mutates the repo and needs finished tickets the repo fixture does not provide; covered by the frob-land train tests"
+
+[scenario."frob train drain"]
+skip = "repeats train runs until the queue is empty, which mutates the repo and needs finished tickets the repo fixture does not provide; covered by the frob-land train tests"
+
+[scenario."frob train status"]
+skip = "reports the state of a running train, which the repo fixture never has; the cost is a single state-file read"

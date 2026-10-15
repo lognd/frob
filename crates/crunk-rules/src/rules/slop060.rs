@@ -1,5 +1,5 @@
 //! SLOP060: buzzword density (research top-20 #60). The literal text of a JSX source is scored
-//! against a lexicon (seamless, unlock, elevate, supercharge, world-class, ...); at least three
+//! against the dated tell list `SLOP060.toml` (seamless, unlock, elevate, supercharge, world-class, ...); at least three
 //! hits and at least three hits per 100 words (over 30 words or more) fires once per source,
 //! never on a single hit. `[decisions] voice` (a tone file that allows them) silences it. Advisory.
 
@@ -10,24 +10,7 @@ use gob_rules::{Out, RepoRule, rule};
 use crate::host::{CrunkHost, missing_inputs};
 use crate::sheets::site_path;
 use crate::slop;
-
-/// Buzzwords and phrases, lowercase; a match is a substring of the lowercased copy.
-const LEXICON: &[&str] = &[
-    "seamless",
-    "unlock",
-    "elevate",
-    "supercharge",
-    "streamline",
-    "empower",
-    "world-class",
-    "enterprise-grade",
-    "best-in-class",
-    "battle-tested",
-    "unleash",
-    "robust",
-    "comprehensive",
-    "fast-paced world",
-];
+use crunk_spec::tells::TellList;
 
 /// Fewest words of copy worth scoring.
 const MIN_WORDS: usize = 30;
@@ -61,6 +44,13 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Slop060 {
         if slop::decided(spec, "voice") {
             return;
         }
+        let lexicon = match TellList::load("SLOP060", &spec.root) {
+            Ok(list) => list.terms(),
+            Err(e) => {
+                tracing::warn!(error = %e, "SLOP060: tell list unusable, rule skipped");
+                return;
+            }
+        };
         for sheet in slop::markup_sheets(styles) {
             let path = site_path(spec, &sheet.path);
             let mut copy = String::new();
@@ -73,7 +63,10 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Slop060 {
                 }
             }
             let words = copy.split_whitespace().count();
-            let hits: usize = LEXICON.iter().map(|w| copy.matches(w).count()).sum();
+            let hits: usize = lexicon
+                .iter()
+                .map(|w| copy.matches(w.as_str()).count())
+                .sum();
             #[allow(clippy::cast_precision_loss, reason = "word counts of one file")]
             let density = hits as f64 * 100.0 / words.max(1) as f64;
             if words >= MIN_WORDS && hits >= MIN_HITS && density >= MIN_DENSITY {

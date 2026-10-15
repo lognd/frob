@@ -8,12 +8,12 @@ points = 3
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-08T04:54:42Z"
-updated = "2026-10-15T22:52:32Z"
+updated = "2026-10-15T23:29:57Z"
 scope = ["changelog.d/**", "crates/crunk-spec/**", "crates/crunk-check/**", "crates/crunk/**", "crates/crunk-rules/**"]
 
 [[acceptance]]
 text = "Given a tell list entry with a date and source, when crunk explain shows the rule, then the provenance is printed"
-bound = false
+bound = true
 +++
 
 deslop research proposal 1.

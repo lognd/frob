@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T23:36:33Z"
+digest = "12507a4a9437c88b7f2dafdd2bf0e9678610e0324ba2691d1804c4511bd940f7"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ac2fdd35-c40c-4633-a0ca-59bfb59d7bbb with nextest profile: default
+    Starting 1 test across 24 binaries (254 tests skipped)
+        PASS [   0.034s] gob-plan examples::corpus_tests::section_12_rules_never_fail_with_a_lowering_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.035s] 1 test run: 1 passed, 254 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan section_12_rules_never_fail_with_a_lowering_error"
+size = 691
+status = "measured"
+test_count = 1
+tests_digest = "b62886fb47f2f8a0da78e335d3932f34b7c7d284c70b96cf614423d0b3bb131d"
+at = "2026-10-15T23:36:33Z"
+actor = "lognd"
+rev = 1
