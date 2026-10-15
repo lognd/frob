@@ -2,13 +2,13 @@
 id = "01M4YBK8D1MVC7EES28M18EDAV"
 title = "Rule corpora (grimble): MDL011-MDL021"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M480C4GC6M96Y0BQ9QSK0WB1"
 reporter = "lognd"
 created = "2026-10-14T23:22:40Z"
-updated = "2026-10-14T23:22:40Z"
+updated = "2026-10-15T15:43:25Z"
 scope = ["crates/gob-mdtest/coverage-allowlist.toml"]
 
 [[acceptance]]
