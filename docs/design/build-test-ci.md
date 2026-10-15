@@ -578,6 +578,20 @@ one-by-one only while the per-ticket red rate is low (roughly below 0.3), so
 the default stays gated on the measured rate of `E-LAND-CHECK-RED` against
 green lands.
 
+**Measured inputs (~K3YG11Q, 2026-10-15).** Red rate p: the ledger holds 658
+`tickets(land)` commits and 7 tickets whose events carry `E-LAND-CHECK-RED`
+(some of those are tickets about that very error code, so 7 is an upper
+bound), giving p <= 7/658, about 1%, far below the 0.3 break-even. Union
+cone: over 40 sampled windows of 8 consecutive non-merge commits touching
+`crates/`, a batch directly touches a mean of 9.5 and a median of 8 of the 58
+crates (max 45), about 16% of the workspace before reverse dependencies, so
+one union check costs well under 8 separate full checks. With p about 1% an
+8-member train is red roughly 8% of the time (1 - 0.99^8) and a bisect then
+costs about 3 extra checks, so expected checks per ticket are about 0.125 +
+0.08*3/8, roughly 0.16, versus 1.0 one-by-one. `train_max` therefore
+defaults to 8: larger batches gain little (the cone grows toward the
+workspace and a red costs more bisect), smaller ones forgo most of the saving.
+
 **Reuse.** `crates/frob-land/src/train.rs` stays the one train module: the
 planner is its verifier trait, and scope overlap, merge and lock helpers
 are shared, not copied. Relation to earlier work: the done merge train
