@@ -24,3 +24,17 @@ Private terms are defined only in local files (the user config `frob/privacy.tom
 runs where those rules exist and reports nothing where they do not, so CI without the local files is
 silent. A finding names the rule's replace label and a hash of its pattern, never the term.
 `frob ticket doctor --fix` replaces the term in one forward commit (history is never rewritten).
+
+## Examples
+
+### TICK005 private term in a committed ticket / A body containing the private term fires #1 (line 9) (fire)
+
+```text
+Talk to the hush-term team.
+```
+
+### TICK005 private term in a committed ticket / A body without it is clean #2 (line 15) (clean)
+
+```text
+Talk to the platform team.
+```

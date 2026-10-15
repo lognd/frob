@@ -22,3 +22,17 @@ A configured tool stage (`[[check.tool]]`) exited nonzero, timed out or could no
 The finding names the stage and its exit status. Run the stage's command
 by hand to see its output, fix what it reports, or set `fail_on_nonzero`
 to false when the stage is advisory.
+
+## Examples
+
+### TOOL001 tool stage failed / A stage that exits nonzero fires #1 (line 8) (fire)
+
+```sh
+exit 3
+```
+
+### TOOL001 tool stage failed / A stage that exits zero is clean #2 (line 14) (clean)
+
+```sh
+exit 0
+```
