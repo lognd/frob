@@ -1,4 +1,8 @@
 //! The typed `pack.toml` manifest, its loader and the cross-pack checks.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Read;

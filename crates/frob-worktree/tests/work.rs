@@ -1,6 +1,10 @@
 //! `work`, `start` and `requeue` end to end in temporary repositories (system git required).
 // frob:ticket 01M4069T76A6WSNHT3NZERXHAH
 // frob:ticket 01M4069VZVMHVZ15RSPZQRNCXY
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;

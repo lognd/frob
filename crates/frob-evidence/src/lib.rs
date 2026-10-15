@@ -21,6 +21,10 @@
 //! code-changing ticket needs a measured record (`E-EVIDENCE-MISSING`) unless
 //! [`EvidenceGuard::allow_bypass`] was set (and recorded with
 //! [`EvidenceGuard::record_bypass`]).
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 pub mod attestation;
 pub mod config;

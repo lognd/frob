@@ -1,6 +1,10 @@
 //! Path-filtered CI (monorepo.md 4): `.github/scripts/plan-jobs.py` maps a diff to job sets and
 //! `ci.yml` gates the workspace job, the crunk job and the optional node job on its outputs.
 // frob:ticket 01M43ARWT173GKANZ322H41VF1
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::io::Write;
 use std::path::PathBuf;
