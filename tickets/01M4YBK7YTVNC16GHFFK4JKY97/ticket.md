@@ -2,7 +2,8 @@
 id = "01M4YBK7YTVNC16GHFFK4JKY97"
 title = "Rule corpora (frob): AFFECT001 CFG001 CI001 CI003 CI006 CI007 CI010 CI014 COV003"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M480C43A6BCH54NX8C5DQ4WJ"
