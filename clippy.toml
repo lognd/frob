@@ -15,4 +15,14 @@ disallowed-methods = [
     { path = "jiff::Zoned::now", reason = "take a gob_time::Clock; local-zone reads are gob_time::Shown only" },
     { path = "jiff::tz::TimeZone::system", reason = "local-zone reads are gob_time::Shown only" },
     { path = "jiff::tz::TimeZone::try_system", reason = "local-zone reads are gob_time::Shown only" },
+
+    # Path-to-text conversion lives only in gob-path (docs/design/paths.md section 3).
+    # PathBuf derefs to Path and OsString to OsStr, so the owned forms resolve to these.
+    { path = "std::path::Path::to_str", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
+    { path = "std::path::Path::to_string_lossy", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
+    { path = "std::path::Path::display", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
+    { path = "std::ffi::OsStr::to_str", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
+    { path = "std::ffi::OsStr::to_string_lossy", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
+    { path = "std::ffi::OsStr::display", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
+    { path = "std::ffi::OsString::into_string", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
 ]

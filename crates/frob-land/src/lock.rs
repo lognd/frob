@@ -492,7 +492,7 @@ fn replace_lock(path: &Path, sidecar: &Path, file: &File) -> Result<File, LandEr
 }
 
 /// True when process `pid` exists.
-fn pid_alive(pid: u32) -> bool {
+pub(crate) fn pid_alive(pid: u32) -> bool {
     if cfg!(target_os = "linux") {
         Path::new(&format!("/proc/{pid}")).exists()
     } else {

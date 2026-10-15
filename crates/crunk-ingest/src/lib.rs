@@ -29,6 +29,10 @@
 //!   readers as the fallback), JSX and TS sources by [`jsx`]; each lists its own divergences.
 
 // frob:ticket 01M43ARY91XZ35DN9SCHRHS033
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 mod error;
 mod facts;

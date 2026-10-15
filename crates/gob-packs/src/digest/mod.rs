@@ -6,6 +6,10 @@
 //! text alike), plus the digests of included packs. Symlinks, hardlinks,
 //! device files and paths escaping the root are refused as PACK005 and no
 //! digest is produced.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::fmt::Write as _;
 use std::fs;

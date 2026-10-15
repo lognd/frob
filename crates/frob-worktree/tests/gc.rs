@@ -1,5 +1,9 @@
 //! The garbage-collection pass on fixture directories with fake artifacts and controlled mtimes.
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};

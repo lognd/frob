@@ -543,6 +543,12 @@ There is one `[[pack]]` per enabled pack, sorted by name. The lock is
 small: the three built-in packs of section 8 have 146, 102 and 43 items
 (8.4), one line each.
 
+Implementation: `gob_packs::lock` (crate `gob-packs`) reads, writes and
+verifies the lock. `verify` returns typed PACK001 findings (`LockMissing`,
+`LockStale`, `Scheme`, `Version`, `Effects`, per-item `Item`) and, when only
+the tree digest differs (a documentation-only edit), exactly one `TreeOnly`.
+The file name is a parameter of `read` and `write`.
+
 ### 4.3 What changes require re-locking
 
 | Change | Re-lock? | Surfaces as |

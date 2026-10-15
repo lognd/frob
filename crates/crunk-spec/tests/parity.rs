@@ -5,6 +5,10 @@
 //! (`DesignSpec.model_dump(mode="json")` without `root`).
 
 // frob:ticket 01M43ARX764095Q4VWABWXXV5H
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 mod common;
 

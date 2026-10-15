@@ -163,7 +163,7 @@ That is the whole loop: paste, read, test, refine, run, ask why. Section
   may hold several rules; std rules use one rule per file named by id.
 - Comments: `#` to end of line, outside snippets and strings.
 - Identifiers: `[a-z_][a-z0-9_]*` for variables, defs and knobs; rule ids
-  `[A-Z]+[0-9]{3}`; kinds and relations are lowercase words from the
+  `[A-Z][A-Z0-9]*[0-9]{3}`; kinds and relations are lowercase words from the
   catalog (section 6), multi-word relations are written with spaces
   (`resolves to`, `owned by`).
 - Strings: `"..."` with `\"`, `\\`, `\n`, `\{` and `\}`. Interpolation `{expr}`

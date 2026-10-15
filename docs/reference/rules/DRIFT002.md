@@ -21,3 +21,35 @@ A `frob:doc` directive names a markdown section that does not exist.
 
 The message carries the nearest heading slug of the target file by edit
 distance, so a renamed or mistyped heading is a one-line fix.
+
+## Examples
+
+### DRIFT002 dangling doc target / A mistyped heading fires #1 (line 8) (fire)
+
+```text
+=== src/lib.rs
+// frob:doc docs/guide.md#greting
+pub fn greet() {}
+=== docs/guide.md
+# Guide
+
+## Greeting
+
+Greets a person by name.
+
+```
+
+### DRIFT002 dangling doc target / An existing heading is clean #2 (line 23) (clean)
+
+```text
+=== src/lib.rs
+// frob:doc docs/guide.md#greeting
+pub fn greet() {}
+=== docs/guide.md
+# Guide
+
+## Greeting
+
+Greets a person by name.
+
+```

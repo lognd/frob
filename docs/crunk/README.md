@@ -19,6 +19,7 @@ the `crunk-check` crate with the rule set listed in [rules/README.md](rules/READ
 | `crunk query KIND [ARG]` | yes | Read-only questions: `find NAME` (exact, then prefix, then substring, with use counts), `component NAME` (BEM structure; unknown is exit 2), `dupes [--threshold 0.6]` (sheet pairs repeating declarations), `unused` (tokens nothing references), `uses TOKEN` (`var()` sites), `color HEX` (every palette color by redmean distance), `violations [--rule ID] [--path GLOB]` (check findings, always exit 0). `--no-cache` is accepted and a no-op: queries always ingest fresh. |
 | `crunk map` | yes | The style inventory bucketed by `[org] buckets` order, plus strays. |
 | `crunk explain NAME` | yes | Value, group, definition file, `var()` sites and utilities of one token; an unknown name exits 2 and lists close matches. |
+| `crunk gallery check` | yes | Opt-in (`cargo install crunk --features gallery`): checks `gallery/manifest.json` (`--manifest`) against the spec's cells with GALLERY001 to GALLERY005 (`--route` repeats, feeding GALLERY005). The default build refuses with `E-GALLERY-NOT-BUILT` and that remedy. |
 | `crunk schema` | no | Built-in: the JSON Schema of a verb's output. |
 
 Query output is the gob envelope: `data` holds `{kind, results}` (`query`), `{buckets, strays}` (`map`)
@@ -63,3 +64,24 @@ Path-filtered jobs and the optional node job: [ci.md](ci.md).
 ## Boundary
 
 No frob crate is a dependency of `crunk` or `crunk-check` (`crates/crunk/tests/boundary.rs`).
+
+## Gallery (opt-in)
+
+The `gallery` cargo feature of `crunk` pulls in `crunk-gallery`; it is off by default so the default
+binary and the PyPI wheel stay small. The crate holds the manifest (v1 per-screen approvals, v2
+per-state cells with a hashed render, v3 attributed verdicts that can expire; schemas
+`docs/schemas/crunk-gallery-manifest-v{1,2,3}.json`), the cell enumeration (screens, then states,
+then platforms, in spec order; `applies_to` on a state narrows its screen's, `tag:<name>` expands
+to tagged platforms) and the check report (`docs/schemas/crunk-gallery-check-v1.json`).
+
+| Rule | Severity | Meaning |
+|---|---|---|
+| GALLERY001 | error | a cell has no render |
+| GALLERY002 | error | a render is not approved (no verdict, or pending) |
+| GALLERY003 | error | an approval's `expires_at` is before today |
+| GALLERY004 | error | a render was rejected |
+| GALLERY005 | warn | a router route has no `[[screen]]` with that entry (query and one trailing slash ignored; `*` never needs a screen) |
+
+Not yet verified: the manifest shapes and cell order were rebuilt from the design notes and the
+shipped fixtures because the Python source is not in this checkout; the parity check is tracked as
+a follow-up ticket. Rendering is separate work (render orchestration).

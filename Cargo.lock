@@ -487,6 +487,7 @@ dependencies = [
  "assert_cmd",
  "clap",
  "crunk-check",
+ "crunk-gallery",
  "crunk-ingest",
  "crunk-query",
  "crunk-rules",
@@ -531,6 +532,20 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "tracing",
+]
+
+[[package]]
+name = "crunk-gallery"
+version = "0.532.0"
+dependencies = [
+ "crunk-spec",
+ "gob-time",
+ "jsonschema",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
  "tracing",
 ]
 
@@ -2585,6 +2600,8 @@ dependencies = [
  "blake3",
  "globset",
  "gob-ir",
+ "gob-plan",
+ "gob-trust",
  "proptest",
  "serde",
  "tempfile",
