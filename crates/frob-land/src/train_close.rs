@@ -627,56 +627,35 @@ mod tests {
         )
     }
 
-    /// Commit `path` = `body` on top of ref `name` with plumbing only (no direct tree writer).
+    /// Commit `path` = `body` on top of ref `name` with plumbing and a throwaway work tree.
     fn commit(repo: &Repo, name: &str, path: &str, body: &str) {
-        use std::io::Write;
-        use std::process::{Command, Stdio};
         let gd = repo.git_dir().to_path_buf();
-        let index = gd.join("train-close-test-index");
-        let run = |args: &[&str], input: Option<&str>| -> String {
-            let mut c = Command::new("git");
-            c.arg("--git-dir")
-                .arg(&gd)
-                .args(args)
-                .env("GIT_INDEX_FILE", &index)
-                .stdin(Stdio::piped())
-                .stdout(Stdio::piped());
-            let mut child = c.spawn().expect("spawn git");
-            child
-                .stdin
-                .take()
-                .expect("stdin")
-                .write_all(input.unwrap_or("").as_bytes())
-                .expect("stdin");
-            let out = child.wait_with_output().expect("git");
-            assert!(out.status.success(), "git {args:?} failed");
-            String::from_utf8(out.stdout)
-                .expect("utf8")
-                .trim()
-                .to_owned()
+        let gd_s = gd.to_string_lossy().into_owned();
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let wt = tmp.path().to_string_lossy().into_owned();
+        let run = |args: &[&str]| -> String {
+            let mut full = vec!["--git-dir", gd_s.as_str(), "--work-tree", wt.as_str()];
+            full.extend_from_slice(args);
+            let r = git(repo, tmp.path(), &full).expect("git");
+            assert!(r.ok(), "git {args:?}: {}", r.text);
+            r.text.trim().to_owned()
         };
         let parent = repo.rev_parse(name).ok().map(|o| o.to_string());
+        let index = gd.join("index");
         let _ = std::fs::remove_file(&index);
         if let Some(p) = &parent {
-            run(&["read-tree", p], None);
+            run(&["read-tree", p]);
         }
-        let blob = run(&["hash-object", "-w", "--stdin"], Some(body));
-        run(
-            &[
-                "update-index",
-                "--add",
-                "--cacheinfo",
-                &format!("100644,{blob},{path}"),
-            ],
-            None,
-        );
-        let tree = run(&["write-tree"], None);
+        let file = tmp.path().join(path);
+        std::fs::write(&file, body).expect("write");
+        run(&["add", path]);
+        let tree = run(&["write-tree"]);
         let mut args = vec!["commit-tree", tree.as_str(), "-m", "change"];
         if let Some(p) = &parent {
             args.extend(["-p", p.as_str()]);
         }
-        let c = run(&args, None);
-        run(&["update-ref", name, &c], None);
+        let c = run(&args);
+        run(&["update-ref", name, &c]);
         let _ = std::fs::remove_file(&index);
     }
 
