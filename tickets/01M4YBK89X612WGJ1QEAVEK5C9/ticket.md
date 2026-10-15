@@ -2,7 +2,8 @@
 id = "01M4YBK89X612WGJ1QEAVEK5C9"
 title = "Rule corpora (grimble): MDL000-MDL010"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M480C4GC6M96Y0BQ9QSK0WB1"
