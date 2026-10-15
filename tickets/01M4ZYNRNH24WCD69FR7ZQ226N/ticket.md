@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-15T14:15:20Z"
-updated = "2026-10-15T14:57:35Z"
+updated = "2026-10-15T14:59:06Z"
 scope = ["crates/gob-packs/src/validate.rs", "crates/gob-plan/src/grl/lexer.rs", "docs/design/grl-spec.md"]
 +++
 
