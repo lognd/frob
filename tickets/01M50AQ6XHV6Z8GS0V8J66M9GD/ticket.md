@@ -2,7 +2,8 @@
 id = "01M50AQ6XHV6Z8GS0V8J66M9GD"
 title = "Wire [packs] crunk_web switch into crunk.toml and crunk rule catalog"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
