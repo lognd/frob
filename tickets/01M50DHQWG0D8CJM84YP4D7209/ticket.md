@@ -2,12 +2,12 @@
 id = "01M50DHQWG0D8CJM84YP4D7209"
 title = "docs: regenerate drifted docs/reference/rules (gob-dev gen all)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-15T18:35:17Z"
-updated = "2026-10-15T18:35:17Z"
+updated = "2026-10-15T18:41:45Z"
 scope = ["docs/reference/rules/**"]
 
 [[acceptance]]
