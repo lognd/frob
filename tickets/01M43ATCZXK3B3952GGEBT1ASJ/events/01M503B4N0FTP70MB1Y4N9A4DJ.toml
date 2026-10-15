@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-15T15:35:57Z"
+digest = "950e1bc90e73ab72e5849222071fd25449080a81ea97f77771fe91e26c5e1c09"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+warning: unused imports: `CliError` and `Value`
+  --> crates/crunk/src/gallery.rs:88:17
+   |
+88 |     use super::{CliError, Context, GalleryCheck, GalleryData, Outcome, Value, refusal};
+   |                 ^^^^^^^^                                               ^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `crunk` (lib) generated 1 warning (run `cargo fix --lib -p crunk` to apply 1 suggestion)
+warning: `crunk` (lib test) generated 1 warning (1 duplicate)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 56.86s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d1f58e27-93f2-43a1-8483-783973d45dbd with nextest profile: default
+    Starting 1 test across 10 binaries (37 tests skipped)
+        PASS [   0.017s] crunk::query explain_unknown_token_exits_two_and_names_close_matches
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 1 test run: 1 passed, 37 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E 'test(explain_unknown_token_exits_two_and_names_close_matches)'"
+size = 1128
+status = "measured"
+test_count = 1
+tests_digest = "d978175a747556a1ea4fe18b8ba1df0670a871a791379485654767a77efe63d0"
+at = "2026-10-15T15:35:57Z"
+actor = "lognd"
+rev = 1
