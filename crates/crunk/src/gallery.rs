@@ -85,7 +85,7 @@ fn refusal(code: &str, message: &str) -> Refusal {
 
 #[cfg(not(feature = "gallery"))]
 mod imp {
-    use super::{CliError, Context, GalleryCheck, GalleryData, Outcome, Value, refusal};
+    use super::{Context, GalleryCheck, GalleryData, Outcome, refusal};
 
     /// Refuse: this binary was built without the gallery.
     pub(super) fn run(_cmd: &GalleryCheck, _ctx: &Context) -> Outcome<GalleryData> {
@@ -101,7 +101,7 @@ mod imp {
 
 #[cfg(feature = "gallery")]
 mod imp {
-    use super::{CliError, Context, GalleryCheck, GalleryData, Outcome, Value, refusal};
+    use super::{Context, GalleryCheck, GalleryData, Outcome, refusal};
     use gob_cli::Payload;
 
     /// Load the spec and manifest, run the gallery rules and map errors to a gate failure.

@@ -464,9 +464,9 @@ fn ticket_restricts_per_file_rules_to_its_scope() {
 #[test]
 fn diff_base_scopes_a_run_without_a_ticket() {
     let (dir, _id) = ticket_fixture();
-    let bare = format!("// {}: later\n", marker());
-    write(dir.path(), "src/a/lib.rs", &bare);
-    write(dir.path(), "src/b/lib.rs", &bare);
+    let unmarked = format!("// {}: later\n", marker());
+    write(dir.path(), "src/a/lib.rs", &unmarked);
+    write(dir.path(), "src/b/lib.rs", &unmarked);
     let repo = Repo::discover(dir.path()).expect("repo");
     let base = repo.rev_parse("main").expect("main").to_string();
     let scoped_to_both = run(
