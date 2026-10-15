@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:15Z"
-updated = "2026-10-15T18:25:32Z"
+updated = "2026-10-15T18:28:20Z"
 idempotency_key = "crunk-plan-web_SEO"
 labels = ["area:crunk"]
 scope = ["packs/crunk-web/rules/seo/**", "packs/crunk-web/tests/seo/**", "packs/crunk-web/pack.toml", "crates/crunk-check/src/packs.rs", "crates/crunk-check/tests/crunk_web_pack.rs", "docs/crunk/packs/crunk-web.md"]
@@ -19,7 +19,7 @@ target = "01M43AVHX91K72WYKYFX5W2SPP"
 
 [[acceptance]]
 text = "Given a TSX file violating the first rule of the family, when `crunk check` runs, then the finding fires with its teaching text and fix suggestion if any"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the clean example, when `crunk rule test` runs, then it passes"
