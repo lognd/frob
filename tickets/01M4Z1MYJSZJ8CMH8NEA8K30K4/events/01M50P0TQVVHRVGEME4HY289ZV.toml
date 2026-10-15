@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3, 4]
+captured_at = "2026-10-15T21:03:19Z"
+digest = "f0fc392ec095b0488712bdced74967f38bc588d915712461615fb7a20146e618"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID eed1421c-cb0d-4ac7-affb-8204a408e06f with nextest profile: default
+    Starting 1 test across 275 binaries (3258 tests skipped)
+        PASS [   0.005s] frob-land batch_size::tests::never_exceeds_a_cap_of_three
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 3258 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "frob-land batch_size::tests::never_exceeds_a_cap_of_three"
+size = 554
+status = "measured"
+test_count = 1
+tests_digest = "cc2e8fd682077d4f93a4b2ad036244e54b4d8f5c85258fce25e24305451b036a"
+at = "2026-10-15T21:03:19Z"
+actor = "lognd"
+rev = 1
