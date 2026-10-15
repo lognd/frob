@@ -72,7 +72,7 @@ impl Command for RuleCatalog {
             Refusal::new(
                 "E-SPEC",
                 RefusalClass::GuardNeedsAction,
-                &format!("crunk.toml is not a valid design spec: {e}"),
+                format!("crunk.toml is not a valid design spec: {e}"),
             )
             .with_remedy("fix crunk.toml as described, then rerun")
         })?;
@@ -80,7 +80,7 @@ impl Command for RuleCatalog {
             Refusal::new(
                 "E-PACK",
                 RefusalClass::GuardNeedsAction,
-                &format!("the crunk-web pack does not build: {e}"),
+                format!("the crunk-web pack does not build: {e}"),
             )
         })?;
         let packs: Vec<PackRuleRow> = rows.into_iter().map(PackRuleRow::from).collect();

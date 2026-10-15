@@ -538,3 +538,9 @@ args = ["rule", "new", "PROF001", "--from", "Cargo.toml:1", "--print"]
 readonly = true
 exit = [0, 2]
 budget_ms = 500
+
+[scenario."crunk rule catalog"]
+args = ["rule", "catalog"]
+readonly = true
+exit = [0, 1, 3]
+budget_ms = 500
