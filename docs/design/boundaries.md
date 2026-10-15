@@ -375,8 +375,8 @@ fails the test. Every workspace crate must appear here exactly once.
 | 5 | config | gob-config, gob-diagnostics, gob-frameworks, gob-plan |
 | 6 | pipeline | gob-check, gob-cli, gob-directives, gob-mdtest, gob-testsupport |
 | 7 | product base | crunk-spec, crunk-tailwind, frob-ack, frob-ledger, frob-mirror, gob-product, grimble-lints, grimble-model |
-| 8 | product core | crunk-ingest, crunk-tokens, frob-lease, frob-pm, grimble-bind |
-| 9 | product mid | crunk-rules, frob-release, frob-worktree, grimble-check |
+| 8 | product core | crunk-gallery, crunk-ingest, crunk-tokens, frob-lease, frob-pm, grimble-bind |
+| 9 | product mid | crunk-query, crunk-rules, frob-release, frob-worktree, grimble-check |
 | 10 | product upper | crunk-check, frob-evidence, frob-gh, grimble |
 | 11 | product top | crunk, frob-tests |
 | 12 | obligations | frob-obligations |

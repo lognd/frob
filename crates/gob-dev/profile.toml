@@ -467,6 +467,27 @@ readonly = true
 exit = [0, 1, 3]
 budget_ms = 500
 
+[scenario."crunk explain"]
+args = ["explain", "--color-primary"]
+readonly = true
+exit = [0, 1, 2, 3]
+budget_ms = 500
+
+[scenario."crunk map"]
+args = ["map"]
+readonly = true
+exit = [0, 1, 3]
+budget_ms = 500
+
+[scenario."crunk query"]
+args = ["query", "dupes"]
+readonly = true
+exit = [0, 1, 3]
+budget_ms = 500
+
+[scenario."crunk gallery check"]
+skip = "opt-in behind the gallery cargo feature, absent from the default build the profile times; covered by crates/crunk-gallery tests"
+
 [scenario."frob serve"]
 skip = "a long-running stdio MCP server that blocks on stdin; there is no run to time (per-tool costs are the underlying read verbs)"
 
