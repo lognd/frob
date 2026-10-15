@@ -4,56 +4,6 @@
 
 [[gap]]
 product = "grimble"
-rule = "MDL011"
-ticket = "~QSK0WB1"
-
-[[gap]]
-product = "grimble"
-rule = "MDL012"
-ticket = "~QSK0WB1"
-
-[[gap]]
-product = "grimble"
-rule = "MDL013"
-ticket = "~QSK0WB1"
-
-[[gap]]
-product = "grimble"
-rule = "MDL014"
-ticket = "~QSK0WB1"
-
-[[gap]]
-product = "grimble"
-rule = "MDL015"
-ticket = "~QSK0WB1"
-
-[[gap]]
-product = "grimble"
-rule = "MDL016"
-ticket = "~QSK0WB1"
-
-[[gap]]
-product = "grimble"
-rule = "MDL017"
-ticket = "~QSK0WB1"
-
-[[gap]]
-product = "grimble"
-rule = "MDL019"
-ticket = "~QSK0WB1"
-
-[[gap]]
-product = "grimble"
-rule = "MDL020"
-ticket = "~QSK0WB1"
-
-[[gap]]
-product = "grimble"
-rule = "MDL021"
-ticket = "~QSK0WB1"
-
-[[gap]]
-product = "grimble"
 rule = "SYS001"
 ticket = "~QSK0WB1"
 
