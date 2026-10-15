@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the clean example, when `crunk rule test` runs, then it passes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a file type with no adapter, when the family runs, then the result is NotApplicable or Unresolved with the reason"
