@@ -13,6 +13,7 @@
 
 pub mod base_ci;
 pub mod bisect;
+pub mod candidate;
 pub mod error;
 pub mod events;
 mod git;
