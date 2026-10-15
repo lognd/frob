@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:22Z"
-updated = "2026-10-15T13:26:37Z"
+updated = "2026-10-15T13:27:11Z"
 idempotency_key = "m2-packs-lock"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/gob-packs/src/lock/**", "crates/gob-packs/tests/lock.rs", "docs/design/packs.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a lock missing an enabled pack, when verified, then a typed lock-missing result is returned for PACK001"
-bound = false
+bound = true
 +++
 
 Implements packs.md sections 2.5 and 4; security.md section 2.1.
