@@ -7,13 +7,13 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-15T07:19:13Z"
-updated = "2026-10-15T07:35:15Z"
+updated = "2026-10-15T07:35:46Z"
 idempotency_key = "fix-ts-expect-win"
 scope = ["crates/frob-tests/tests/typescript.rs"]
 
 [[acceptance]]
 text = "clippy passes on windows target"
-bound = false
+bound = true
 +++
 
 typescript.rs expect(clippy::disallowed_methods) is unfulfilled on windows because the display() call is unix-gated; use cfg_attr(unix, expect(...)).
