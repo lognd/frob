@@ -15,6 +15,10 @@ scope = ["crates/frob-ledger/**", "crates/frob-land/src/train_close.rs"]
 
 [[links]]
 kind = "blocked-by"
+target = "01M4Z1MYSTFADV8FJM8SEXKGZ7"
+
+[[links]]
+kind = "blocked-by"
 target = "01M4Z295816V7K5982R20NW1SA"
 
 [[acceptance]]
