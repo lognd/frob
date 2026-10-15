@@ -7,8 +7,8 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-15T18:09:31Z"
-updated = "2026-10-15T18:19:51Z"
-scope = ["profile.toml", "crates/gob-dev/**", "crates/gob-path/tests/confinement.rs", "crates/crunk-query/**", ".github/**", "crates/gob-dev/profile.toml"]
+updated = "2026-10-15T18:33:14Z"
+scope = ["profile.toml", "crates/gob-dev/**", "crates/gob-path/tests/confinement.rs", "crates/crunk-query/**", ".github/**", "crates/gob-dev/profile.toml", "docs/design/boundaries.md"]
 
 [[acceptance]]
 text = "gob-dev profile_coverage, layering, ci_plan tests and gob-path confinement pass"
