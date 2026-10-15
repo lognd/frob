@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-15T18:35:17Z"
-updated = "2026-10-15T18:44:32Z"
+updated = "2026-10-15T18:45:07Z"
 scope = ["docs/reference/rules/**", "docs/schemas/**"]
 
 [[acceptance]]
