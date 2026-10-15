@@ -2,7 +2,8 @@
 id = "01M4Z295BVX8CRG8N4F7415NG4"
 title = "Land train: frob-check diff_base scoping without a ticket"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
