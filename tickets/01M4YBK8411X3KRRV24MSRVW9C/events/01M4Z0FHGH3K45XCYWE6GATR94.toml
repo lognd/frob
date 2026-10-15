@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T05:15:27Z"
+digest = "9433d6f5bdb8c1b8730e84d5965ebbb1c85735372d8d688f97cfa460bb9d094a"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12m 10s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c6bc2e8b-401e-4bea-8c7e-c0e926c8627b with nextest profile: default
+    Starting 1 test across 261 binaries (3168 tests skipped)
+        PASS [   0.016s] frob-check::rule_coverage every_frob_rule_has_a_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 1 test run: 1 passed, 3168 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "every_frob_rule_has_a_corpus"
+size = 607
+status = "measured"
+test_count = 1
+tests_digest = "50857de0871d9cebe1f95765408efa418d2ae498665fdff3de67919989848149"
+at = "2026-10-15T05:15:27Z"
+actor = "lognd"
+rev = 1
