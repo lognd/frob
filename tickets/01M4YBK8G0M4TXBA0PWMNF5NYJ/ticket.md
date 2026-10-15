@@ -2,7 +2,8 @@
 id = "01M4YBK8G0M4TXBA0PWMNF5NYJ"
 title = "Rule corpora (grimble): SYS001-SYS013 CAP001 CAP002"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M480C4GC6M96Y0BQ9QSK0WB1"
