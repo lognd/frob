@@ -314,7 +314,7 @@ fn tick_dir_runner(case: &Case) -> Vec<Finding> {
     let mut new = NewTicket::new("Original", TicketType::Task);
     let by_body = matches!(case.rule.as_str(), "TICK004" | "TICK005");
     if by_body {
-        new.body = case.text.clone();
+        new.body.clone_from(&case.text);
     }
     let id = ledger.new_ticket(new).expect("ticket").ticket.front.id;
     if case.rule.as_str() == "TICK005" {
@@ -340,7 +340,7 @@ fn tick_dir_runner(case: &Case) -> Vec<Finding> {
             let key = edit.split(" = ").next().unwrap_or_default();
             let prefix = format!("{key} = ");
             if let Some(line) = lines.iter_mut().find(|l| l.starts_with(&prefix)) {
-                *line = edit.to_owned();
+                edit.clone_into(line);
             } else if let Some(at) = lines.iter().position(|l| l.starts_with("title = ")) {
                 lines.insert(at + 1, edit.to_owned());
             }
