@@ -8,8 +8,8 @@ points = 5
 parent = "01M480C43A6BCH54NX8C5DQ4WJ"
 reporter = "lognd"
 created = "2026-10-14T23:22:40Z"
-updated = "2026-10-15T03:55:44Z"
-scope = ["crates/gob-mdtest/coverage-allowlist.toml", "crates/frob-check/**"]
+updated = "2026-10-15T03:55:45Z"
+scope = ["crates/gob-mdtest/coverage-allowlist.toml", "crates/frob-check/**", "docs/reference/rules/**"]
 
 [[acceptance]]
 text = "Each listed rule has an mdtest fire/clean pair or fixture; its [[gap]] entry is deleted from crates/gob-mdtest/coverage-allowlist.toml; the product's rule_coverage test passes"
