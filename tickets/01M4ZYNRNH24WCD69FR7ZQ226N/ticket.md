@@ -2,12 +2,12 @@
 id = "01M4ZYNRNH24WCD69FR7ZQ226N"
 title = "Allow digits in pack family prefixes and rule ids (A11Y)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-15T14:15:20Z"
-updated = "2026-10-15T14:15:41Z"
+updated = "2026-10-15T14:15:42Z"
 scope = ["crates/gob-packs/src/validate.rs", "crates/gob-plan/src/grl/lexer.rs"]
 +++
 
