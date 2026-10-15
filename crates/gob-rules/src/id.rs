@@ -7,7 +7,9 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// Why a string is not a valid rule id.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-#[error("invalid rule id `{0}`: expected a 2-8 character uppercase family (letters, digits after the first) then 3 digits (e.g. COV006, A11Y101)")]
+#[error(
+    "invalid rule id `{0}`: expected a 2-8 character uppercase family (letters, digits after the first) then 3 digits (e.g. COV006, A11Y101)"
+)]
 pub struct ParseRuleIdError(pub String);
 
 /// A rule identifier such as `COV006`: an uppercase family plus 3 digits.
@@ -47,7 +49,9 @@ impl FromStr for RuleId {
         let (fam, digits) = s.split_at_checked(split).ok_or_else(bad)?;
         let ok = (2..=8).contains(&fam.len())
             && fam.bytes().next().is_some_and(|b| b.is_ascii_uppercase())
-            && fam.bytes().all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
+            && fam
+                .bytes()
+                .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
             && digits.bytes().all(|b| b.is_ascii_digit());
         if ok {
             Ok(Self(s.to_owned()))

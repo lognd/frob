@@ -158,8 +158,8 @@ pub fn catalog(switch: PacksSwitch) -> Result<Vec<CatalogRow>, PackBuildError> {
 pub fn verify_tree(root: &Path) -> Result<Digest, PackBuildError> {
     let embedded = [("pack.toml", MANIFEST_TEXT)].into_iter().chain(RULES);
     for (rel, text) in embedded {
-        match std::fs::read_to_string(root.join(rel)) {
-            Ok(disk) if disk == text => {}
+        match std::fs::read(root.join(rel)) {
+            Ok(disk) if disk == text.as_bytes() => {}
             _ => return Err(PackBuildError::Drift(rel.to_owned())),
         }
     }

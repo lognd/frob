@@ -4,7 +4,7 @@
 
 use std::path::{Path, PathBuf};
 
-use crunk_check::packs::{self, PacksSwitch, PackBuildError};
+use crunk_check::packs::{self, PackBuildError, PacksSwitch};
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/crunk-web")
@@ -14,10 +14,18 @@ fn root() -> PathBuf {
 #[test]
 fn catalog_lists_four_families_with_one_rule_each_when_on() {
     let rows = packs::catalog(PacksSwitch { crunk_web: true }).unwrap();
-    let got: Vec<(&str, &str)> = rows.iter().map(|r| (r.family.as_str(), r.rule.as_str())).collect();
+    let got: Vec<(&str, &str)> = rows
+        .iter()
+        .map(|r| (r.family.as_str(), r.rule.as_str()))
+        .collect();
     assert_eq!(
         got,
-        [("A11Y", "A11Y101"), ("LAUNCH", "LAUNCH101"), ("SEO", "SEO101"), ("WEBPERF", "WEBPERF101")]
+        [
+            ("A11Y", "A11Y101"),
+            ("LAUNCH", "LAUNCH101"),
+            ("SEO", "SEO101"),
+            ("WEBPERF", "WEBPERF101")
+        ]
     );
     assert!(rows.iter().all(|r| r.pack == "crunk-web"));
 }
@@ -50,5 +58,8 @@ fn the_lock_digest_matches_the_pack_tree() {
 fn a_drifted_tree_is_refused() {
     let dir = tempfile::tempdir().unwrap();
     std::fs::write(dir.path().join("pack.toml"), "x").unwrap();
-    assert!(matches!(packs::verify_tree(dir.path()), Err(PackBuildError::Drift(_))));
+    assert!(matches!(
+        packs::verify_tree(dir.path()),
+        Err(PackBuildError::Drift(_))
+    ));
 }
