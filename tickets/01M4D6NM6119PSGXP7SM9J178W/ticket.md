@@ -8,8 +8,8 @@ points = 2
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:30Z"
-updated = "2026-10-15T22:44:49Z"
-scope = ["changelog.d/**", "crates/frob-worktree/**", "crates/frob/**"]
+updated = "2026-10-15T22:59:49Z"
+scope = ["changelog.d/**", "crates/frob-worktree/**", "crates/frob/**", "docs/design/architecture.md"]
 
 [[acceptance]]
 text = "Given frob doctor, when timed on this repository, then it stays under 0.2 s warm"
