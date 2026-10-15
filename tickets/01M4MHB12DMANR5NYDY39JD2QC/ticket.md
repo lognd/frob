@@ -2,13 +2,13 @@
 id = "01M4MHB12DMANR5NYDY39JD2QC"
 title = "crunk fix: preserve CRLF line endings when writing fixes"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-11T03:50:38Z"
-updated = "2026-10-11T03:50:38Z"
+updated = "2026-10-15T22:44:46Z"
 scope = ["changelog.d/**"]
 
 [[acceptance]]
