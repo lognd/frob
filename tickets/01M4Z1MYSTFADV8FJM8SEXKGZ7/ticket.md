@@ -2,7 +2,8 @@
 id = "01M4Z1MYSTFADV8FJM8SEXKGZ7"
 title = "Land train: train state schema under .git/frob/train and its store"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
