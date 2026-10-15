@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-15T04:04:05Z"
+updated = "2026-10-15T04:11:42Z"
 idempotency_key = "m2-packs-plan-cache"
 labels = ["milestone:2", "area:packs"]
-scope = ["crates/gob-packs/src/plan_cache.rs"]
+scope = ["crates/gob-packs/src/plan_cache.rs", "crates/gob-packs/Cargo.toml", "crates/gob-packs/src/lib.rs", "crates/gob-packs/tests/plan_cache.rs", "Cargo.lock"]
 
 [[links]]
 kind = "blocked-by"
