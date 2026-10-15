@@ -2,7 +2,7 @@
 id = "01M3ZX7FTSKACE9TE7MBHQH7ET"
 title = "Pack lock: pin tree digest and semantic digests; read, write, verify"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
