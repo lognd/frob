@@ -21,6 +21,7 @@ mod lockfile;
 pub mod plan;
 mod ratchet;
 pub mod train;
+pub mod train_state;
 pub mod verb;
 
 pub use base_ci::{CiReader, GhCli, LandConfig};
