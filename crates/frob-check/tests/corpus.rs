@@ -90,10 +90,10 @@ fn steps(case: &Case) -> Vec<Step> {
     let mut out = Vec::new();
     let mut current: Option<(String, String)> = Some((case.file_name.clone(), String::new()));
     let flush = |cur: &mut Option<(String, String)>, out: &mut Vec<Step>| {
-        if let Some((path, text)) = cur.take() {
-            if !(text.is_empty() && path == case.file_name) {
-                out.push(Step::File(path, text));
-            }
+        if let Some((path, text)) = cur.take()
+            && !(text.is_empty() && path == case.file_name)
+        {
+            out.push(Step::File(path, text));
         }
     };
     for line in case.text.split_inclusive('\n') {
@@ -230,12 +230,8 @@ fn scope_runner(case: &Case) -> Vec<Finding> {
     let root = dir.path();
     let repo = Repo::init(root).expect("init");
     std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").expect("head");
-    let cfg = std::fs::read_to_string(repo.git_dir().join("config")).expect("config");
-    std::fs::write(
-        repo.git_dir().join("config"),
-        format!("{cfg}[user]\n\tname = Test User\n\temail = test@example.com\n"),
-    )
-    .expect("identity");
+    git(root, &["config", "user.name", "Test User"]);
+    git(root, &["config", "user.email", "test@example.com"]);
     drop(repo);
     let repo = Repo::discover(root).expect("discover");
     repo.commit_paths(
