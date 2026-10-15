@@ -2,6 +2,10 @@
 //! companions, collision errors and the DTCG-shaped value types.
 
 // frob:ticket 01M43ARZAJ8NJ3F38157ERAKR5
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::{Path, PathBuf};
 

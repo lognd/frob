@@ -6,6 +6,10 @@
 //! platform's own React tree (7 sheets, 126 utilities).
 
 // frob:ticket 01M43ARYFVG86PAGGM78JGRZY3
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 mod common;
 

@@ -38,6 +38,75 @@ pub enum RequiredReason {
         /// The name of the tool stage that did not produce evidence.
         stage: String,
     },
+    /// A required pack was not trusted, so its rules did not run.
+    Untrusted {
+        /// The pack that was not trusted.
+        pack: String,
+    },
+    /// A required pack changed in this change and so is not trusted for it.
+    UntrustedInChange {
+        /// The pack that changed.
+        pack: String,
+    },
+    /// A required pack exhausted its compute budget.
+    Budget {
+        /// The pack that ran out of budget.
+        pack: String,
+    },
+    /// A required pack trapped while running.
+    Trap {
+        /// The pack that trapped.
+        pack: String,
+    },
+    /// A required pack attempted an effect its grants deny.
+    EffectDenied {
+        /// The pack that was denied.
+        pack: String,
+    },
+    /// A required pack could not be loaded or found.
+    PackUnavailable {
+        /// The pack that was unavailable.
+        pack: String,
+    },
+}
+
+/// How an enabled pack failed to finish (security.md section 2.7).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum PackFailure {
+    /// The pack is not trusted.
+    Untrusted,
+    /// The pack changed in this change.
+    UntrustedInChange,
+    /// The pack ran out of budget.
+    Budget,
+    /// The pack trapped.
+    Trap,
+    /// The pack attempted a denied effect.
+    EffectDenied,
+    /// The pack could not be loaded.
+    PackUnavailable,
+}
+
+impl RequiredReason {
+    /// The required reason for a pack failure, or `None` when the pack is not marked required.
+    #[must_use]
+    pub fn for_pack(required: bool, pack: &str, failure: PackFailure) -> Option<Self> {
+        if !required {
+            tracing::debug!(pack, ?failure, "pack failure is not required");
+            return None;
+        }
+        let pack = pack.to_owned();
+        tracing::debug!(pack, ?failure, "pack failure is required");
+        Some(match failure {
+            PackFailure::Untrusted => Self::Untrusted { pack },
+            PackFailure::UntrustedInChange => Self::UntrustedInChange { pack },
+            PackFailure::Budget => Self::Budget { pack },
+            PackFailure::Trap => Self::Trap { pack },
+            PackFailure::EffectDenied => Self::EffectDenied { pack },
+            PackFailure::PackUnavailable => Self::PackUnavailable { pack },
+        })
+    }
 }
 
 impl fmt::Display for RequiredReason {
@@ -57,6 +126,39 @@ impl fmt::Display for RequiredReason {
                 write!(f, "evaluation-failed: {rule}: {error}")
             }
             Self::ToolFailed { stage } => write!(f, "tool-failed: {stage}"),
+            Self::Untrusted { pack } => write!(f, "untrusted: {pack}"),
+            Self::UntrustedInChange { pack } => write!(f, "untrusted-in-change: {pack}"),
+            Self::Budget { pack } => write!(f, "budget: {pack}"),
+            Self::Trap { pack } => write!(f, "trap: {pack}"),
+            Self::EffectDenied { pack } => write!(f, "effect-denied: {pack}"),
+            Self::PackUnavailable { pack } => write!(f, "pack-unavailable: {pack}"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests for_pack
+    #[test]
+    fn required_pack_failure_maps_to_matching_variant() {
+        let r = RequiredReason::for_pack(true, "core", PackFailure::Trap);
+        assert_eq!(
+            r,
+            Some(RequiredReason::Trap {
+                pack: "core".into()
+            })
+        );
+        assert_eq!(r.unwrap().to_string(), "trap: core");
+    }
+
+    // frob:tests for_pack
+    #[test]
+    fn unmarked_pack_failure_is_not_required() {
+        assert_eq!(
+            RequiredReason::for_pack(false, "core", PackFailure::Trap),
+            None
+        );
     }
 }

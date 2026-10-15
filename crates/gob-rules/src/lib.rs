@@ -49,7 +49,7 @@ pub use meta::{
 pub use precision::{Demotion, MIN_DECIDED, PrecisionLedger, PrecisionRow, RuleTally};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
 pub use registry::{Registry, RegistryError, RuleRow, RuleSettings};
-pub use required::RequiredReason;
+pub use required::{PackFailure, RequiredReason};
 pub use unresolved::{RuleReport, UnresolvedReason};
 
 /// A declared rule; implemented by `#[derive(Rule)]`. Object safe.

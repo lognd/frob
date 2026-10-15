@@ -2,13 +2,13 @@
 id = "01M4Z1MYPEJ6HDVBJVPDVHR8MA"
 title = "Land train: candidate builder merging ticket branches into a temp branch, skipping conflicts"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:05Z"
-updated = "2026-10-15T05:48:33Z"
+updated = "2026-10-15T05:48:50Z"
 idempotency_key = "train-candidate"
 labels = ["area:land", "creates:crates/frob-land/src/candidate.rs"]
 scope = ["crates/frob-land/src/git.rs", "crates/frob-land/src/candidate.rs"]

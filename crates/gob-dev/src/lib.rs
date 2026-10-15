@@ -9,6 +9,10 @@
     clippy::format_push_string,
     reason = "page renderers build markdown with push_str(&format!(..)) for readability"
 )]
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 pub mod ci;
 pub mod files;

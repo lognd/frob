@@ -1,4 +1,8 @@
 //! Determinism, check-mode and orphan-page tests for the generator.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::collections::BTreeSet;
 use std::path::Path;

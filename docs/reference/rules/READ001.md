@@ -25,3 +25,29 @@ failure or any other read error, or a file over `[check] size_cap`. Such a
 file must never look clean. Fix the encoding or permissions, raise
 `size_cap`, or list the file under `[check] exclude` when it is binary or
 generated; an excluded file is never walked, read or reported.
+
+## Examples
+
+### READ001 unreadable file / A file over the size cap fires #1 (line 8) (fire)
+
+```text
+=== frob.toml
+[check]
+size_cap = 64
+=== docs/big.md
+# Big
+
+This file is well over the sixty-four byte cap set above, so it is skipped.
+```
+
+### READ001 unreadable file / A file under the cap is clean #2 (line 20) (clean)
+
+```text
+=== frob.toml
+[check]
+size_cap = 4096
+=== docs/small.md
+# Small
+
+Fits.
+```
