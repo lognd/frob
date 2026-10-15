@@ -2,13 +2,13 @@
 id = "01M43AVJJEGJB09WH8QWDSAP5S"
 title = "crunk-web family SEO: first slice of rules in GRL"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:15Z"
-updated = "2026-10-04T11:30:15Z"
+updated = "2026-10-15T17:45:55Z"
 idempotency_key = "crunk-plan-web_SEO"
 labels = ["area:crunk"]
 scope = ["packs/crunk-web/rules/seo/**", "packs/crunk-web/tests/seo/**"]
