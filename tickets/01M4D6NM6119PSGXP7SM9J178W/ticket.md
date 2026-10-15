@@ -2,13 +2,13 @@
 id = "01M4D6NM6119PSGXP7SM9J178W"
 title = "frob doctor: cheap gc oracle (batched events) and no full dry-run gc pass unless asked"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-10-08T07:29:30Z"
-updated = "2026-10-08T07:29:30Z"
+updated = "2026-10-15T22:44:49Z"
 scope = ["changelog.d/**", "crates/frob-worktree/**", "crates/frob/**"]
 
 [[acceptance]]
