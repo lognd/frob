@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T16:05:56Z"
+digest = "cf969b213470665d9c9f9f932b453e5a2017b4beec442e0e98a71432b50563f6"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 63d1b9c7-6f95-4cad-bc84-c65980d92c3b with nextest profile: default
+    Starting 2 tests across 7 binaries (36 tests skipped)
+        PASS [   0.029s] grimble-check::rule_coverage every_grimble_rule_has_a_corpus
+        PASS [   0.491s] grimble-check::corpus mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.491s] 2 tests run: 2 passed, 36 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E test(mdtest_corpus)+test(every_grimble_rule_has_a_corpus)"
+size = 739
+status = "measured"
+test_count = 2
+tests_digest = "60accb1f14f8f5dd4aeab25b20cbd3bf1463210601dff7f0312487caad77a8e0"
+at = "2026-10-15T16:05:56Z"
+actor = "lognd"
+rev = 1
