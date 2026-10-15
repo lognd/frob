@@ -2,7 +2,8 @@
 id = "01M4YBK86ZC7V4VCBSMWTJ0SE3"
 title = "Rule corpora (frob): TICK001-005 TICK007-009 TOOL001 TOOL002"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M480C43A6BCH54NX8C5DQ4WJ"
