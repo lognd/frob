@@ -17,6 +17,10 @@ scope = ["crates/frob-land/src/batch_size.rs"]
 kind = "blocked-by"
 target = "01M4Z1MYSTFADV8FJM8SEXKGZ7"
 
+[[links]]
+kind = "blocked-by"
+target = "01M4Z295FNVR7DY5A20K3YG11Q"
+
 [[acceptance]]
 text = "Given consecutive green trains, then the size grows by one up to the cap"
 bound = false
