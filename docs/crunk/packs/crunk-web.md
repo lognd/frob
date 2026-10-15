@@ -1,0 +1,30 @@
+# crunk-web pack
+
+The `crunk-web` std pack holds crunk's web markup and asset rules in GRL (design D89). It is
+opt-in: the `[packs] crunk_web` switch is off by default, and `crunk_check::packs::PacksSwitch`
+carries it until the crunk.toml spec exposes the table.
+
+## Families
+
+| Family | Rule | Checks |
+|--------|------|--------|
+| A11Y | A11Y101 | `img` elements carry an `alt` attribute |
+| SEO | SEO101 | `a` elements carry an `href` attribute |
+| LAUNCH | LAUNCH101 | no lorem-ipsum placeholder text ships |
+| WEBPERF | WEBPERF101 | `img` elements carry a `loading` attribute |
+
+Each family ships one worked rule; more land under the same prefixes.
+
+## Layout
+
+- `packs/crunk-web/pack.toml`: the manifest (name, version, families, rule globs).
+- `packs/crunk-web/rules/*.grl`: one rule per file, each with a firing, a clean and a
+  not-applicable example. A rule without a firing and a clean example fails to compile (GRL011).
+
+## Embedding and lock
+
+`crates/crunk-check/src/packs.rs` embeds the manifest and rules with `include_str!`.
+`packs::plans()` compiles them, `packs::catalog()` yields the `crunk rule catalog` rows
+(pack, family, rule; empty when the switch is off), and `packs::locked(root)` returns the lock
+entry after `verify_tree(root)` confirms the tree on disk equals the embedded sources. The lock
+digest is the gob-packs tree digest of `packs/crunk-web`.

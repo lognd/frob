@@ -7,13 +7,14 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// Why a string is not a valid rule id.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-#[error("invalid rule id `{0}`: expected 2-8 uppercase letters then 3 digits (e.g. COV006)")]
+#[error("invalid rule id `{0}`: expected a 2-8 character uppercase family (letters, digits after the first) then 3 digits (e.g. COV006, A11Y101)")]
 pub struct ParseRuleIdError(pub String);
 
 /// A rule identifier such as `COV006`: an uppercase family plus 3 digits.
 ///
 /// ```
 /// use gob_rules::RuleId;
+/// assert_eq!("A11Y101".parse::<RuleId>().unwrap().family(), "A11Y");
 /// assert!("cov006".parse::<RuleId>().is_err());
 /// assert_eq!("EXC001".parse::<RuleId>().unwrap().to_string(), "EXC001");
 /// ```
@@ -21,7 +22,7 @@ pub struct ParseRuleIdError(pub String);
 pub struct RuleId(String);
 
 impl RuleId {
-    /// The family prefix (letters only).
+    /// The family prefix (capital letters, digits allowed after the first).
     pub fn family(&self) -> &str {
         &self.0[..self.0.len() - 3]
     }
@@ -45,7 +46,8 @@ impl FromStr for RuleId {
         let split = s.len().checked_sub(3).ok_or_else(bad)?;
         let (fam, digits) = s.split_at_checked(split).ok_or_else(bad)?;
         let ok = (2..=8).contains(&fam.len())
-            && fam.bytes().all(|b| b.is_ascii_uppercase())
+            && fam.bytes().next().is_some_and(|b| b.is_ascii_uppercase())
+            && fam.bytes().all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
             && digits.bytes().all(|b| b.is_ascii_digit());
         if ok {
             Ok(Self(s.to_owned()))
@@ -71,5 +73,18 @@ impl<'de> Deserialize<'de> for RuleId {
     fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         let s = String::deserialize(d)?;
         s.parse().map_err(serde::de::Error::custom)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RuleId;
+
+    // frob:tests RuleId
+    #[test]
+    fn families_may_carry_digits_after_the_first_letter() {
+        assert!("A11Y101".parse::<RuleId>().is_ok());
+        assert!("1ABC101".parse::<RuleId>().is_err());
+        assert!("cov006".parse::<RuleId>().is_err());
     }
 }

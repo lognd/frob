@@ -21,6 +21,7 @@
 use gob_diagnostics as _; // unused today; removal tracked in ~MKG678C
 
 mod product;
+pub mod packs;
 pub mod product_rules;
 pub mod review;
 pub mod sibling;

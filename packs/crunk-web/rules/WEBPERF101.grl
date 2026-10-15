@@ -1,0 +1,22 @@
+rule WEBPERF101 "img-without-dimensions" {
+  lang [typescript, html]
+  severity warn
+
+  find e: element where e.tag == "img" and not e has attribute(name = "width")
+  report e "image has no width: the layout shifts when it loads"
+
+  example fire html """
+    <img src="hero.png" alt="Hero">  <!--~ warn -->
+  """
+  example clean html """
+    <img src="hero.png" alt="Hero" width="640" height="360">
+  """
+  example notapplicable markdown """
+    Prose has no images with dimensions.
+  """
+  explain """
+    An image without reserved size moves the content below it when it loads (layout shift).
+    ## Remedy
+    Set `width` and `height` on the image, or reserve its box with CSS aspect-ratio.
+  """
+}

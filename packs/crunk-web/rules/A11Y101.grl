@@ -1,0 +1,22 @@
+rule A11Y101 "img-missing-alt" {
+  lang [typescript, html]
+  severity error
+
+  find e: element where e.tag == "img" and not e has attribute(name = "alt")
+  report e "image has no alt text: add alt=\"...\" (alt=\"\" for a decorative image)"
+
+  example fire html """
+    <img src="logo.png">           <!--~ error -->
+  """
+  example clean html """
+    <img src="logo.png" alt="Company logo">
+  """
+  example notapplicable markdown """
+    An image is written ![](a.png) here.
+  """
+  explain """
+    A screen reader announces an image without alt text by its file name, or skips it.
+    ## Remedy
+    Describe the image in `alt`, or write `alt=""` when it is purely decorative.
+  """
+}
