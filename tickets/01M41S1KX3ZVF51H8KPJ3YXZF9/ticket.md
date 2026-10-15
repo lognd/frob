@@ -2,13 +2,13 @@
 id = "01M41S1KX3ZVF51H8KPJ3YXZF9"
 title = "Clippy confinement: path-to-text conversion only in gob-path, with a shrinking allow list"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:59:44Z"
-updated = "2026-10-03T20:59:44Z"
+updated = "2026-10-15T04:03:58Z"
 scope = ["clippy.toml", "Cargo.toml", "crates/gob-path/**", "docs/design/paths.md"]
 
 [[links]]
