@@ -130,7 +130,7 @@ impl DoneRequirement {
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "pm", materialize)]
 pub struct PmTable {
-    /// Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.
+    /// Strict process policy: PM rules that are warnings by default (PM001, PM002, PM008, PM009, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.
     #[config(default = false, enforcement)]
     pub strict: bool,
     /// Pull policy; `rank` takes the highest-ranked doable ticket, the only policy so far and the scrumban default.
@@ -183,6 +183,19 @@ pub struct PmClassesTable {
     pub intangible_share: f64,
 }
 
+/// Ticket aging limits in days per category (`[pm.max_age_days]`); 0 turns a limit off.
+// frob:ticket 01M4CT0AF76FJTWFG10SKXJZAZ
+#[derive(Debug, Clone, ConfigTable)]
+#[config(table = "pm.max_age_days", materialize)]
+pub struct PmMaxAgeTable {
+    /// Days a ticket may stay in progress before PM008 fires; 3 keeps work from lingering, 0 is off.
+    #[config(default = 3, enforcement)]
+    pub in_progress: u32,
+    /// Days a ticket may wait in the ready queue (`todo`) before PM008 fires; 30 retires stale intentions, 0 is off.
+    #[config(default = 30, enforcement)]
+    pub ready: u32,
+}
+
 /// Every pm table, loaded and validated from one `frob.toml`; the value later tickets consume.
 #[derive(Debug, Clone, Default)]
 pub struct PmConfig {
@@ -192,6 +205,8 @@ pub struct PmConfig {
     pub wip: PmWipTable,
     /// `[pm.classes]`.
     pub classes: PmClassesTable,
+    /// `[pm.max_age_days]`.
+    pub max_age_days: PmMaxAgeTable,
 }
 
 impl PmConfig {
@@ -216,6 +231,7 @@ impl PmConfig {
             pm: doc.table::<PmTable>()?.value,
             wip: doc.table::<PmWipTable>()?.value,
             classes: doc.table::<PmClassesTable>()?.value,
+            max_age_days: doc.table::<PmMaxAgeTable>()?.value,
         })
     }
 
@@ -235,6 +251,7 @@ impl PmConfig {
             pm: gob_config::load_str::<PmTable>(&text, label)?.value,
             wip: gob_config::load_str::<PmWipTable>(&text, label)?.value,
             classes: gob_config::load_str::<PmClassesTable>(&text, label)?.value,
+            max_age_days: gob_config::load_str::<PmMaxAgeTable>(&text, label)?.value,
         };
         tracing::debug!(rev, "pm config read from the base ref");
         Ok(cfg)

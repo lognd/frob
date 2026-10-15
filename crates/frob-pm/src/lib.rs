@@ -45,7 +45,8 @@ pub mod rules;
 pub mod store;
 
 pub use config::{
-    DoneRequirement, PmClassesTable, PmConfig, PmTable, PmWipTable, Pull, ReadyRequirement,
+    DoneRequirement, PmClassesTable, PmConfig, PmMaxAgeTable, PmTable, PmWipTable, Pull,
+    ReadyRequirement,
 };
 pub use error::{PmError, Result};
 pub use model::{Cycle, Day, Milestone, Object, ObjectId, ObjectKind, State};
