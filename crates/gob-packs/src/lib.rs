@@ -32,6 +32,7 @@ mod error;
 mod limits;
 pub mod lock;
 mod manifest;
+mod plan_cache;
 pub mod tier1;
 mod validate;
 
@@ -40,3 +41,4 @@ pub use digest::{Digest, to_hex, tree_digest};
 pub use error::{PackCode, PackError};
 pub use limits::{MAX_MANIFEST_BYTES, Owner};
 pub use manifest::{Manifest, PackTable, Provides, check_unique, load};
+pub use plan_cache::{Loaded, PlanCache, Source};

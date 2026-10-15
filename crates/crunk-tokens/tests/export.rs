@@ -2,6 +2,10 @@
 //! the drift check (CSS byte for byte, JSON after parsing).
 
 // frob:ticket 01M43ARZH9F9MCPJCKXM635E0X
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::{Path, PathBuf};
 

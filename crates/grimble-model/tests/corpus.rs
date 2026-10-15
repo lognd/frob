@@ -2,6 +2,10 @@
 //! directory holding an `expect` file. See `tests/corpus/README.md` for the format.
 
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};

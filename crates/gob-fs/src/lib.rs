@@ -8,6 +8,10 @@
 // frob:ticket 01M43JETBHW7FYNMR6SGVWFAEV
 
 // frob:ticket 01M4M52WKHGXADHPQ08J1AS8BJ
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 mod gitdir;
 mod path;
 

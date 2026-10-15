@@ -2,13 +2,13 @@
 id = "01M43AVHX91K72WYKYFX5W2SPP"
 title = "Pack scaffold: crunk-web (A11Y, SEO, LAUNCH, WEBPERF markup and assets)"
 type = "story"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:14Z"
-updated = "2026-10-15T04:11:28Z"
+updated = "2026-10-15T04:11:50Z"
 idempotency_key = "crunk-plan-webpack"
 labels = ["area:crunk"]
 scope = ["packs/crunk-web/**", "crates/crunk-check/src/packs.rs", "docs/crunk/packs/crunk-web.md"]

@@ -1,5 +1,9 @@
 //! `diff_names(merge_base, WorkTree)` must agree with `git status` on symlinks and line endings.
 #![cfg(unix)]
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::Path;
 use std::process::Command;

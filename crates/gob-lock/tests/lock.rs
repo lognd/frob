@@ -1,4 +1,8 @@
 //! Round trip, atomic save, missing file and diff behavior of `gob-lock`.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use gob_lock::{
     Current, CurrentFlow, CurrentSymbol, EntryKind, Facet, FacetSet, FlowEnd, FlowEntry, LockEntry,

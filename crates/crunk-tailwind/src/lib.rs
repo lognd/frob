@@ -14,6 +14,10 @@
 //!   own Tailwind, cached; `Unresolved` when node or tailwindcss is absent.
 
 // frob:ticket 01M43ARVZPN52N6NMB7VRKZYGS
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 pub mod candidate;
 pub mod defaults;

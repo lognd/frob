@@ -5,6 +5,10 @@
 //! section at the top of CHANGELOG.md (below the header), and removed only after the file
 //! write succeeded. Every compiled section ends with a BLAKE3 marker, so `--check` detects a
 //! hand edit of an older section without needing git history.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 pub mod adopt;
 pub mod bump;

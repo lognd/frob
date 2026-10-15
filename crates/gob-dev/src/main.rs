@@ -1,4 +1,8 @@
 //! `cargo dev`: developer task runner for the frob monorepo.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::PathBuf;
 use std::time::Duration;
