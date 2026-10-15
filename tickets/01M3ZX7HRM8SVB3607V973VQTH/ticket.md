@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-15T23:46:49Z"
+updated = "2026-10-15T23:50:46Z"
 idempotency_key = "m2-conformance"
 labels = ["milestone:2", "area:grl", "kind:test"]
 scope = ["crates/gob-plan/tests/conformance/**"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a deliberately divergent generated rule, when the test runs, then it fails naming the rule and the first differing finding"
-bound = false
+bound = true
 +++
 
 Implements plugins.md section 6.1 (semantics row); security.md section 2.8.
