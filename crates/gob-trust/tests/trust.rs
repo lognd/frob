@@ -1,7 +1,10 @@
 //! Acceptance and property tests for gob-trust.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+#![cfg_attr(
+    unix,
+    expect(
+        clippy::disallowed_methods,
+        reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+    )
 )]
 
 use gob_trust::{
