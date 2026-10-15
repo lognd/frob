@@ -20,7 +20,8 @@ pub use gob_check::sibling::SCHEMA_VERSION;
 /// Unresolved reason code of a finding: the required mark decides, else its typed reason, else `fidelity`.
 fn reason_of(f: &Finding) -> Option<String> {
     use gob_rules::RequiredReason::{
-        AnnotationRequired, EvaluationFailed, SiblingMissing, ToolFailed, ZeroSubjects,
+        AnnotationRequired, Budget, EffectDenied, EvaluationFailed, PackUnavailable,
+        SiblingMissing, ToolFailed, Trap, Untrusted, UntrustedInChange, ZeroSubjects,
     };
     (f.severity == Severity::Unresolved).then(|| match &f.required {
         Some(ZeroSubjects { .. }) => "vacuous".to_owned(),
@@ -28,6 +29,14 @@ fn reason_of(f: &Finding) -> Option<String> {
         Some(SiblingMissing { .. }) => "incompatible".to_owned(),
         Some(ToolFailed { .. }) => "tool-failed".to_owned(),
         Some(EvaluationFailed { .. }) => "evaluation-failed".to_owned(),
+        Some(
+            Untrusted { .. }
+            | UntrustedInChange { .. }
+            | Budget { .. }
+            | Trap { .. }
+            | EffectDenied { .. }
+            | PackUnavailable { .. },
+        ) => "pack-unfinished".to_owned(),
         None => f
             .reason
             .as_ref()
