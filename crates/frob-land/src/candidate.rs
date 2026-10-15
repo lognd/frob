@@ -143,7 +143,7 @@ pub fn build_candidate(
     members: &[CandidateMember],
 ) -> Result<Candidate, LandError> {
     let (dir, lock) = checkout_paths(repo.common_dir());
-    let guard = lock_checkout(&lock)?;
+    let guard = crate::git::lock_exclusive(&lock)?;
     prepare_checkout(repo, primary, &dir, base_oid)?;
     let shared_files = lockfile::committed_shared_files(repo, base_oid)?;
     let (merged, skipped) = merge_all(repo, &dir, &shared_files, members)?;
@@ -176,23 +176,6 @@ fn checkout_paths(common: &Path) -> (PathBuf, PathBuf) {
         frob.join(TRAIN_CHECKOUT_DIR),
         frob.join(format!("{TRAIN_CHECKOUT_DIR}.lock")),
     )
-}
-
-/// Take the exclusive lock of the train checkout until the returned file drops.
-fn lock_checkout(lock: &Path) -> Result<std::fs::File, LandError> {
-    if let Some(parent) = lock.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| LandError::io(format!("creating {}", parent.display()), e))?;
-    }
-    let file = std::fs::OpenOptions::new()
-        .create(true)
-        .truncate(false)
-        .write(true)
-        .open(lock)
-        .map_err(|e| LandError::io(format!("opening {}", lock.display()), e))?;
-    file.lock()
-        .map_err(|e| LandError::io(format!("locking {}", lock.display()), e))?;
-    Ok(file)
 }
 
 /// Move the persistent train checkout to `oid`, creating it on first use or when unusable.

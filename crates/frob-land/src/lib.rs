@@ -24,6 +24,7 @@ mod lockfile;
 pub mod plan;
 mod ratchet;
 pub mod train;
+pub mod train_close;
 pub mod train_state;
 pub mod verb;
 

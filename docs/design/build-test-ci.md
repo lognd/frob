@@ -566,7 +566,13 @@ bisect), else keep the verdict; compare-and-swap; retry within budget.
 Branch mode: ledger close commits go on the candidate before the advance.
 The closes reuse the guarded `ledger_step` per member (land event dedup,
 base-CI override comment), committed once where the ledger allows, so a
-crash after the advance resumes by closing the remaining members.
+crash after the advance resumes by closing the remaining members. The
+advance is a compare-and-swap with the same bounded retry as ledger
+commits; a base that moved only by ledger commits is folded in, any other
+move is refused as `E-LAND-STALE`. All members close in one ledger commit
+(`Ledger::close_batch`); a member whose guards refuse stays green in the
+train state as pending-close, with the base already advanced, and the next
+run resumes by closing it.
 
 **Cost model.** Checks run sequentially, one candidate at a time; there are
 no parallel halves and no speculative pre-build, because two cargo runs

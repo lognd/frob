@@ -1235,7 +1235,7 @@ impl Publish<'_> {
 }
 
 /// A full-jitter backoff for `attempt`: uniform in zero to the doubling ceiling (clock entropy, no rng dependency).
-fn jitter(policy: &RetryPolicy, attempt: u32, salt: &str) -> Duration {
+pub(crate) fn jitter(policy: &RetryPolicy, attempt: u32, salt: &str) -> Duration {
     let ceiling = policy
         .backoff_base
         .saturating_mul(1_u32 << attempt.min(16))

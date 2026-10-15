@@ -294,23 +294,6 @@ fn checkout_base(wt: &Repo, wt_path: &Path, dir: &Path, oid: &str) -> Result<(),
     Ok(())
 }
 
-/// Hold the exclusive lock of the persistent base checkout until the returned file is dropped.
-fn lock_base_checkout(lock: &Path) -> Result<std::fs::File, LandError> {
-    if let Some(parent) = lock.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| LandError::io(format!("creating {}", parent.display()), e))?;
-    }
-    let file = std::fs::OpenOptions::new()
-        .create(true)
-        .truncate(false)
-        .write(true)
-        .open(lock)
-        .map_err(|e| LandError::io(format!("opening {}", lock.display()), e))?;
-    file.lock()
-        .map_err(|e| LandError::io(format!("locking {}", lock.display()), e))?;
-    Ok(file)
-}
-
 /// The persistent base checkout, locked and moved to one commit, for as many check passes as needed.
 struct BaseCheckout {
     /// The checkout directory.
@@ -328,7 +311,7 @@ impl BaseCheckout {
             std::fs::create_dir_all(parent)
                 .map_err(|e| LandError::Config(format!("{}: {e}", parent.display())))?;
         }
-        let guard = lock_base_checkout(&lock)?;
+        let guard = crate::git::lock_exclusive(&lock)?;
         checkout_base(wt, wt_path, &dir, oid)?;
         share_build_dir(common, &dir);
         Ok(Self { dir, _guard: guard })
