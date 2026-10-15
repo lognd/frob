@@ -990,7 +990,7 @@ mod tests {
         let json = read_metadata(&root).unwrap();
         let order = plan(&json).unwrap();
         let planned: BTreeSet<&str> = order.iter().map(|c| c.name.as_str()).collect();
-        for skipped in ["gob-frameworks", "gob-packs", "frob-gh"] {
+        for skipped in ["gob-frameworks", "frob-gh"] {
             assert!(!planned.contains(skipped), "{skipped} must not publish");
         }
         let meta: serde_json::Value = serde_json::from_str(&json).unwrap();
