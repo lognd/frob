@@ -2,7 +2,8 @@
 id = "01M4ZYNRNH24WCD69FR7ZQ226N"
 title = "Allow digits in pack family prefixes and rule ids (A11Y)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
