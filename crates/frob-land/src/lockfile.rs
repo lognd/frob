@@ -48,7 +48,7 @@ pub(crate) fn all_shared(shared_files: &[String], paths: &[String]) -> Result<bo
 }
 
 /// Resolve the in-progress merge whose only conflicts are the lockfiles `paths`, then commit it.
-// frob:ticket 29BWY8G
+// frob:ticket 01M50C2K3H0STZWFR5P29BWY8G
 ///
 /// The merge is aborted and a refusal returned when a lockfile has no offline
 /// resolver or the resolver fails.
