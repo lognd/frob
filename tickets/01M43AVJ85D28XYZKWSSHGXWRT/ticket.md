@@ -8,10 +8,10 @@ points = 8
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:14Z"
-updated = "2026-10-15T17:46:27Z"
+updated = "2026-10-15T17:46:28Z"
 idempotency_key = "crunk-plan-web_A11Y"
 labels = ["area:crunk"]
-scope = ["packs/crunk-web/rules/a11y/**", "packs/crunk-web/tests/a11y/**", "packs/crunk-web/pack.toml", "crates/crunk-check/src/packs.rs", "crates/crunk-check/tests/crunk_web_pack.rs"]
+scope = ["packs/crunk-web/rules/a11y/**", "packs/crunk-web/tests/a11y/**", "packs/crunk-web/pack.toml", "crates/crunk-check/src/packs.rs", "crates/crunk-check/tests/crunk_web_pack.rs", "docs/crunk/packs/crunk-web.md"]
 
 [[links]]
 kind = "blocked-by"
