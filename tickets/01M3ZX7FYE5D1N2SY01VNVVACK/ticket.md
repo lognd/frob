@@ -2,7 +2,8 @@
 id = "01M3ZX7FYE5D1N2SY01VNVVACK"
 title = "Std pack: compiled-in plan bytes, registry entry, lock entry frozen to the binary"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
