@@ -2,7 +2,8 @@
 id = "01M4ZA7NEFTAD36KPSGX4VYJD2"
 title = "Unfulfilled clippy expectations on Windows target in test crates (gob-trust and siblings)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 2
 reporter = "lognd"
