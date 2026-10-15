@@ -52,6 +52,13 @@ pub struct LandConfig {
     /// When base CI cannot be read: false reports it as Unresolved and lands anyway, true refuses.
     #[config(default = false, enforcement)]
     pub block_on_unknown_ci: bool,
+    // frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6
+    /// Land ready tickets as batches on the merge train; false makes `land --train` land one ticket at a time.
+    #[config(default = true, enforcement)]
+    pub train: bool,
+    /// The most tickets one train batch may hold.
+    #[config(default = 8_u32, enforcement)]
+    pub train_max: u32,
 }
 
 /// Reads the CI state of one commit; injectable so tests never use the network.
@@ -346,6 +353,25 @@ fn with_culprit(
     )
 }
 
+// frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6
+/// Read the `[land]` table from the committed `frob.toml` of `base`; defaults when the file is absent.
+///
+/// # Errors
+///
+/// `E-CONFIG` when the file is not UTF-8 or the table is invalid; git read failures.
+pub(crate) fn read_config(wt: &Repo, base: &str) -> Result<LandConfig, LandError> {
+    let base_ref = format!("refs/heads/{base}");
+    let text = match wt.read_blob_at(&base_ref, "frob.toml")? {
+        Some(bytes) => String::from_utf8(bytes)
+            .map_err(|e| LandError::Config(format!("{base}:frob.toml is not UTF-8: {e}")))?,
+        None => String::new(),
+    };
+    let cfg = gob_config::load_str::<LandConfig>(&text, Path::new("frob.toml"))
+        .map_err(|e| LandError::Config(format!("{base}:frob.toml: {e}")))?
+        .value;
+    Ok(cfg)
+}
+
 /// Run the gate for `base`: read the config from the committed base, the CI of its pushed tip, and judge.
 ///
 /// `landing` is the handle of the ticket being landed: an open `blocks-lands` ticket other than it
@@ -358,16 +384,8 @@ pub(crate) fn gate(
     override_reason: Option<&str>,
     (ledger, landing): (&Ledger, &str),
 ) -> Result<Gate, LandError> {
-    let label = Path::new("frob.toml");
+    let cfg = read_config(wt, base)?;
     let base_ref = format!("refs/heads/{base}");
-    let text = match wt.read_blob_at(&base_ref, "frob.toml")? {
-        Some(bytes) => String::from_utf8(bytes)
-            .map_err(|e| LandError::Config(format!("{base}:frob.toml is not UTF-8: {e}")))?,
-        None => String::new(),
-    };
-    let cfg = gob_config::load_str::<LandConfig>(&text, label)
-        .map_err(|e| LandError::Config(format!("{base}:frob.toml: {e}")))?
-        .value;
     if !cfg.require_base_green {
         tracing::info!("base CI gate off ([land] require_base_green = false)");
         return Ok(Gate::default());

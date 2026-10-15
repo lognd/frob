@@ -524,8 +524,9 @@ go to closing) and the file second; an unknown schema version discards the
 in-flight run and requeues its members. Members are merged by frozen oid;
 a moved branch evicts the member ("branch moved since enqueue"). Enqueuing
 is the holder's consent: the driver uses the enqueuer's recorded actor,
-renews member leases each round, and never removes a member's worktree (the
-waiting enqueuer does, on reading its result).
+renews member leases each round, and after a member lands the driver
+releases its lease and removes its worktree (`finish_member`); a red or
+evicted member keeps both so its agent can fix and enqueue again.
 
 **Lock.** The driver holds `land.lock` for the whole train, so single
 lands, the base-CI gate and the watchdog work unchanged (tickets.md
@@ -610,6 +611,23 @@ costs about 3 extra checks, so expected checks per ticket are about 0.125 +
 0.08*3/8, roughly 0.16, versus 1.0 one-by-one. `train_max` therefore
 defaults to 8: larger batches gain little (the cone grows toward the
 workspace and a red costs more bisect), smaller ones forgo most of the saving.
+
+**Driver and verbs (~67JHDV6).** `crates/frob-land/src/train.rs` wires the
+planner, batch controller, candidate builder and state store. A round takes
+the oldest queued tickets up to `min(batch.current, train_max)`, leaves any
+whose scope overlaps a chosen one queued, plans with `bisect::plan` over
+`CandidateChecker` (sequential checks), records culprits as red results
+carrying the failing evidence, builds the final candidate, closes it with
+`TrainCloser::close_run`, then adapts the batch size. A check fault aborts
+the round with `E-LAND-TRAIN-FAULT` and leaves every member queued. A stale
+`state.json` is recovered first (close the rest when the candidate reached
+the base, else discard). Verbs: `frob land --train` (enqueue, drive when
+nobody else does, wait up to `--wait`; a lone ticket, a dry run or
+`[land] train = false` use the plain single-ticket `land`), `frob train
+status` (queue, current candidate, batch size, as an envelope with a schema),
+`frob train run` (one round) and `frob train drain` (rounds until the queue
+is empty); the driving verbs refuse with `E-LAND-TRAIN-OFF` when the train is
+disabled. `--push` is not applied by the train.
 
 **Reuse.** `crates/frob-land/src/train.rs` stays the one train module: the
 planner is its verifier trait, and scope overlap, merge and lock helpers

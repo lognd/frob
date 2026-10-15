@@ -164,6 +164,8 @@ Materialized: no.
 | `ci_ignore` | `Vec<String>` | `["*publish*", "*release*"]` | yes | Check-name patterns that never block a land (publish and release jobs by default, which test no code). |
 | `ci_required` | `Vec<String>` | `[]` | yes | Check-name patterns (`*` wildcard, case-insensitive) that count toward the gate; empty means every check. |
 | `require_base_green` | `bool` | `true` | yes | Refuse a land whose base tip has a failing required CI check; false turns the whole gate off. |
+| `train` | `bool` | `true` | yes | Land ready tickets as batches on the merge train; false makes `land --train` land one ticket at a time. |
+| `train_max` | `u32` | `8` | yes | The most tickets one train batch may hold. |
 
 ## `[lease]`
 

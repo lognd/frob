@@ -431,6 +431,18 @@
           "default": true,
           "description": "Refuse a land whose base tip has a failing required CI check; false turns the whole gate off.",
           "type": "boolean"
+        },
+        "train": {
+          "default": true,
+          "description": "Land ready tickets as batches on the merge train; false makes `land --train` land one ticket at a time.",
+          "type": "boolean"
+        },
+        "train_max": {
+          "default": 8,
+          "description": "The most tickets one train batch may hold.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
         }
       },
       "type": "object"

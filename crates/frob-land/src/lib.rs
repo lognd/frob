@@ -37,9 +37,15 @@ pub use plan::{LandOptions, LandOutcome, RetryPolicy, StageTiming};
 pub use ratchet::FindingNote;
 #[doc(hidden)]
 pub use ratchet::{base_findings, cache_key, code_tree_key};
-pub use train::{TrainOptions, TrainOutcome, TrainVerifier, land_train};
+pub use train::{
+    Enqueued, TrainOptions, TrainRunReport, TrainStatusReport, enqueue, land_train, train_drain,
+    train_run, train_status,
+};
 
 /// Register `land` on a product root.
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<verb::Land>()
+        .register::<verb::TrainStatus>()
+        .register::<verb::TrainRun>()
+        .register::<verb::TrainDrain>()
 }

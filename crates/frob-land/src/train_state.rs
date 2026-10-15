@@ -403,6 +403,16 @@ impl TrainStore {
         read_json(&self.results_dir().join(format!("{id}.json")))
     }
 
+    // frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6
+    /// Forget a ticket's result, so a re-enqueued ticket never reads its previous run's verdict.
+    ///
+    /// # Errors
+    ///
+    /// `E-LAND-IO` when the file cannot be removed.
+    pub fn clear_result(&self, id: &TicketId) -> Result<(), LandError> {
+        remove_file(&self.results_dir().join(format!("{id}.json")))
+    }
+
     /// Keep only the `keep` most recently finished results; returns how many were removed.
     ///
     /// # Errors
