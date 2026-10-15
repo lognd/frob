@@ -2,7 +2,8 @@
 id = "01M4Z6VV86D7XE2FSFF9AA532R"
 title = "Fix unfulfilled clippy expectation in frob-tests typescript on windows"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
