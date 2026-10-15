@@ -2,13 +2,13 @@
 id = "01M4PZTQGGPR4K03T4W0AHKXWC"
 title = "GRL lowerer gaps block acceptance corpus A: knobs, is, 3-segment paths, globs, vocab relation"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-12T02:42:21Z"
-updated = "2026-10-12T02:42:21Z"
+updated = "2026-10-15T23:31:51Z"
 scope = ["crates/gob-plan/src/lower/**"]
 
 [[acceptance]]
