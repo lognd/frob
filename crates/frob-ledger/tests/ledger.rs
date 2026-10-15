@@ -9,7 +9,7 @@ use std::path::Path;
 use frob_ledger::guards::{NoLeases, default_close_guards};
 use frob_ledger::index::{Index, ListFilter};
 use frob_ledger::model::{Category, CommentSubtype, LinkKind, Outcome, Priority, TicketType};
-use frob_ledger::ops::{NewTicket, Patch};
+use frob_ledger::ops::{BatchClose, NewTicket, Patch};
 use frob_ledger::{Layout, Ledger, LedgerConfig, LedgerError, RefMode, TicketId, fold, rules};
 use gob_git::{CommitOptions, RelPath, Repo, TreeRef};
 
@@ -1182,4 +1182,64 @@ fn branch_mode_reads_the_configured_ref_on_a_detached_head_and_only_writes_refus
         tip,
         "nothing moved"
     );
+}
+
+// frob:ticket 01M4Z1N93S11HX3DGGKBJF5WGP
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.close_batch
+/// Closing a batch commits every ticket in one commit; repeats are `already`; a conflicting outcome writes nothing.
+#[test]
+fn close_batch_closes_every_ticket_in_one_commit() {
+    let (_dir, ledger) = fixture(Layout::Dir, RefMode::Trunk);
+    let ids: Vec<TicketId> = (0..3)
+        .map(|i| {
+            ledger
+                .new_ticket(NewTicket::new(format!("T{i}"), TicketType::Task))
+                .expect("new")
+                .ticket
+                .front
+                .id
+        })
+        .collect();
+    let guards = default_close_guards();
+    let refs: Vec<&dyn frob_ledger::guards::CloseGuard> = guards.iter().map(|g| &**g).collect();
+    let items = |outcome: Outcome| -> Vec<BatchClose<'_>> {
+        ids.iter()
+            .map(|id| BatchClose {
+                id: *id,
+                before: vec![frob_ledger::event::EventBody::Comment(
+                    frob_ledger::event::CommentData {
+                        subtype: CommentSubtype::Decision,
+                        body: "audit".into(),
+                    },
+                )],
+                outcome,
+                reason: None,
+                guards: refs.clone(),
+            })
+            .collect()
+    };
+    let before = commits_since_root(ledger.repo(), Layout::Dir).len();
+    let applied = ledger.close_batch(&items(Outcome::Done)).expect("batch");
+    assert_eq!(applied.len(), 3);
+    assert!(
+        applied
+            .iter()
+            .all(|a| a.ticket.front.category == Category::Done && !a.already)
+    );
+    assert!(applied.iter().all(|a| a.events.len() == 2));
+    assert_eq!(
+        commits_since_root(ledger.repo(), Layout::Dir).len(),
+        before + 1,
+        "one ledger commit for the whole batch"
+    );
+    let again = ledger.close_batch(&items(Outcome::Done)).expect("repeat");
+    assert!(again.iter().all(|a| a.already));
+    assert_eq!(
+        commits_since_root(ledger.repo(), Layout::Dir).len(),
+        before + 1
+    );
+    assert!(matches!(
+        ledger.close_batch(&items(Outcome::Fixed)),
+        Err(LedgerError::Terminal { .. })
+    ));
 }

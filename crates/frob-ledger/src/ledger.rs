@@ -1016,6 +1016,84 @@ impl Ledger {
         })
     }
 
+    // frob:ticket 01M4Z1N93S11HX3DGGKBJF5WGP
+    /// Append events to several existing tickets and commit them all as ONE ledger commit.
+    ///
+    /// Each ticket is re-folded from its events plus its new ones, exactly as
+    /// [`Ledger::commit_events`] does; the index is left for the next read to
+    /// sync (the tree key changed). Tickets must be distinct and already exist.
+    pub(crate) fn commit_events_many(
+        &self,
+        verb: &str,
+        batch: &[(TicketId, Vec<Event>)],
+    ) -> Result<Vec<Applied>> {
+        self.ledger_write_ref()?;
+        for ev in batch.iter().flat_map(|(_, evs)| evs) {
+            self.refuse_private(&ev.to_toml()?)?;
+        }
+        let Synced {
+            index,
+            ref_name,
+            tip,
+            ..
+        } = self.synced()?;
+        let tip_hex = tip
+            .ok_or_else(|| LedgerError::invalid("the ledger has no commits to extend"))?
+            .to_string();
+        let mut changes = Vec::new();
+        let mut folded: Vec<(Ticket, String, Vec<Event>)> = Vec::new();
+        for (id, new) in batch {
+            if folded.iter().any(|(t, _, _)| t.front.id == *id) {
+                return Err(LedgerError::invalid(format!(
+                    "ticket {id} listed twice in one batch commit"
+                )));
+            }
+            let mut all = self.read_events_at(&tip_hex, *id)?;
+            all.extend(new.iter().cloned());
+            let ticket = fold(*id, &all)?.ticket;
+            let (file, events_dir) = self.write_paths(&index, tip, &ticket, false)?;
+            changes.push((
+                RelPath::new(&file)?,
+                Some(doc::render(&ticket)?.into_bytes()),
+            ));
+            for ev in new {
+                tracing::debug!(ticket = %id, event = %ev.id, kind = %ev.kind, "event written");
+                changes.push((
+                    RelPath::new(format!("{events_dir}/{}", ev.file_name()))?,
+                    Some(ev.to_toml()?.into_bytes()),
+                ));
+            }
+            let handle = self.handle_among(&index, *id)?;
+            folded.push((ticket, handle, new.clone()));
+        }
+        let handles: Vec<&str> = folded.iter().map(|(_, h, _)| h.as_str()).collect();
+        let message = format!(
+            "tickets({verb}): {} ticket(s) in one commit\n\n{}",
+            folded.len(),
+            handles.join(" ")
+        );
+        let opts = CommitOptions {
+            cas_retries: self.cfg.cas_retries,
+            author: None,
+        };
+        let out = self
+            .repo
+            .commit_paths(&ref_name, &changes, &message, &opts)?;
+        tracing::info!(verb, tickets = folded.len(), commit = %out.oid, retries = out.retries, "ledger batch commit");
+        let warnings = unsynced_warnings(&out.unsynced);
+        Ok(folded
+            .into_iter()
+            .map(|(ticket, handle, evs)| Applied {
+                ticket,
+                handle,
+                events: evs.iter().map(|e| e.id).collect(),
+                already: false,
+                commit: Some(out.oid),
+                warnings: warnings.clone(),
+            })
+            .collect())
+    }
+
     /// Update the index after our commit, or repair a concurrent writer's frontmatter overwrite.
     #[allow(
         clippy::too_many_arguments,

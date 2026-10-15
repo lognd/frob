@@ -100,3 +100,4 @@ pub use error::{Candidate, LedgerError, Result};
 pub use id::{EventId, TicketId};
 pub use layout::Layout;
 pub use ledger::{Applied, Ledger, LedgerConfig, RefMode};
+pub use ops::BatchClose;
