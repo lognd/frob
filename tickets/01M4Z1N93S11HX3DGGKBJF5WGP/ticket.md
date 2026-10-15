@@ -2,7 +2,8 @@
 id = "01M4Z1N93S11HX3DGGKBJF5WGP"
 title = "Land train: close N tickets in one ledger commit on green fast-forward"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
