@@ -906,10 +906,13 @@ fn game_table_loads_reports_missing_keys_and_rejects_unknown_or_duplicate_keys()
 
 // frob:ticket 01M50AQ6XHV6Z8GS0V8J66M9GD
 // frob:tests crates/crunk-spec/src/table.rs::PacksConfig
+// frob:tests crates/crunk-spec/src/table.rs::PacksConfig.is_default
 #[test]
 fn packs_table_defaults_off_and_switches_crunk_web() {
+    use crunk_spec::table::PacksConfig;
     assert!(!ok(full()).packs.crunk_web, "packs are opt-in");
-    assert!(ok(full()).packs.is_default());
+    assert!(PacksConfig::default().is_default());
+    assert!(!PacksConfig { crunk_web: true }.is_default());
     let on = ok(&with("[packs]\ncrunk_web = true\n"));
     assert!(on.packs.crunk_web);
     let bad = err(&with("[packs]\nunknown = true\n"));

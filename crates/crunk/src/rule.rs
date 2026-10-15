@@ -49,7 +49,7 @@ pub struct RuleCatalogData {
 pub struct RuleCatalog;
 
 /// The pack switches a loaded spec declares.
-pub fn switch_of(spec: &crunk_spec::DesignSpec) -> PacksSwitch {
+fn switch_of(spec: &crunk_spec::DesignSpec) -> PacksSwitch {
     PacksSwitch {
         crunk_web: spec.packs.crunk_web,
     }
