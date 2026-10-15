@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-15T17:45:50Z"
-updated = "2026-10-15T19:48:04Z"
-scope = ["crates/crunk-spec/**", "crates/crunk-cli/**"]
+updated = "2026-10-15T19:48:44Z"
+scope = ["crates/crunk-spec/**", "crates/crunk-cli/**", "crates/crunk/**"]
 +++
 
 found while working ~X5W2SPP: crunk_check::packs::PacksSwitch (default off) and packs::catalog() exist; crunk.toml [packs] crunk_web and the crunk rule catalog pack rows are not wired.
