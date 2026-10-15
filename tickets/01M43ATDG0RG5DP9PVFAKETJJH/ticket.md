@@ -11,7 +11,7 @@ created = "2026-10-04T11:29:37Z"
 updated = "2026-10-15T05:04:56Z"
 idempotency_key = "crunk-plan-gal1"
 labels = ["area:crunk"]
-scope = ["crates/crunk-gallery/**", "docs/schemas/crunk-gallery-*.json", "crates/crunk/Cargo.toml", "Cargo.lock", "crates/crunk/src/gallery.rs", "crates/crunk/tests/gallery.rs"]
+scope = ["crates/crunk-gallery/**", "docs/schemas/crunk-gallery-*.json", "crates/crunk/Cargo.toml", "Cargo.lock", "crates/crunk/src/gallery.rs", "crates/crunk/tests/gallery.rs", "docs/crunk/README.md"]
 
 [[links]]
 kind = "blocked-by"
