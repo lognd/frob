@@ -2,7 +2,8 @@
 id = "01M4DPJRTWHFMCPGZ3E740JNP7"
 title = "GRL017/GRL018 follow-ups: keyword-only span, spec section 10 rows, explain pages, may_be_unknown type checks"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
