@@ -25,6 +25,10 @@
 //! - [`host`]: [`host::CrunkHost`], the host trait crunk's rules evaluate against.
 
 // frob:ticket 01M43ATASM383KB9130JY79XVV
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 pub mod breakpoints;
 pub mod color;

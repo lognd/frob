@@ -20,6 +20,10 @@
 //! ```
 
 // frob:ticket 01M3ZX7VYSYT45N8ZKZJQ2DY5D
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 pub mod effects;
 mod error;
 // frob:ticket 01M3ZX7TR7HMSXPCQSHFSG8SMS

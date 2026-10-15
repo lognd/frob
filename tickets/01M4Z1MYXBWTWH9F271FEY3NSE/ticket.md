@@ -8,7 +8,7 @@ points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:05Z"
-updated = "2026-10-15T05:48:37Z"
+updated = "2026-10-15T05:59:16Z"
 idempotency_key = "train-cone"
 labels = ["area:land", "creates:crates/frob-land/src/train_check.rs"]
 scope = ["crates/frob-check/**", "crates/frob-land/src/train_check.rs"]
@@ -20,6 +20,10 @@ target = "01M4Z1MYF3JKB73KCCX5BPJ7WJ"
 [[links]]
 kind = "blocked-by"
 target = "01M4Z1MYPEJ6HDVBJVPDVHR8MA"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4Z295BVX8CRG8N4F7415NG4"
 
 [[acceptance]]
 text = "Given a candidate of N tickets, when checked, then one check runs over the union of cones"

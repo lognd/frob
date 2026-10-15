@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T07:59:33Z"
+digest = "7ead6b1cd422238c9cd1056ca2509abc1400fed78e1928e11ef437c48eb5f145"
+provider = "file"
+ref = "docs/design/build-test-ci.md"
+size = 46921
+status = "measured"
+at = "2026-10-15T07:59:33Z"
+actor = "lognd"
+rev = 1

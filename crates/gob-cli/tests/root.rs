@@ -1,4 +1,8 @@
 //! The root's contract with a dummy product: exit table, flags, rendering.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{

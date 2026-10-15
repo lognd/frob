@@ -23,3 +23,17 @@ Widen the ticket's scope (`frob ticket update`) and re-acquire the lease, or
 move the change to a ticket that owns the path. Paths matching
 `[lease] shared_files` are exempt, and so is the ticket's own changelog fragment
 (`changelog.d/<its ULID>.<type>.md`); other tickets' fragments are not.
+
+## Examples
+
+### SCOPE001 path outside the lease / A new file outside the scope fires #1 (line 8) (fire)
+
+```rust
+//! Outside.
+```
+
+### SCOPE001 path outside the lease / A new file inside the scope is clean #2 (line 14) (clean)
+
+```rust
+//! Inside.
+```

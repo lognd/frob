@@ -1,4 +1,8 @@
 //! Evidence end to end against temporary repositories: guard, store, verbs, redaction.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::Path;
 use std::time::Duration;

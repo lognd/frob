@@ -17,6 +17,10 @@
 //! let tokens = TokenSet::from_spec(&spec).unwrap();
 //! assert!(tokens.get("--color-ink").is_some());
 //! ```
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 pub mod dialect;
 pub mod export;

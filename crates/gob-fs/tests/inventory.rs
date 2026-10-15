@@ -1,6 +1,10 @@
 //! Inventory: every temp-and-rename write goes through `gob_fs`; a new hand-rolled copy fails here.
 
 // frob:ticket 01M43JETBHW7FYNMR6SGVWFAEV
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::fs;
 use std::path::{Path, PathBuf};

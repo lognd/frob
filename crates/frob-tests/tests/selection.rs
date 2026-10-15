@@ -1,4 +1,8 @@
 //! Selection, dry-run and a real nextest run against a tiny two-crate cargo workspace.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::Path;
 

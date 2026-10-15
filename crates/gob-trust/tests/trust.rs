@@ -1,4 +1,11 @@
 //! Acceptance and property tests for gob-trust.
+#![cfg_attr(
+    unix,
+    expect(
+        clippy::disallowed_methods,
+        reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+    )
+)]
 
 use gob_trust::{
     Canonical, CanonicalWriter, MachineKey, TrustError, mac, mac_record, resolve_key_path, verify,

@@ -14,6 +14,10 @@ impl Shown {
     }
 
     /// Render `p` with an explicit `home` (none skips the rule); the one scrub function.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "gob-path is the one crate that renders paths to text"
+    )]
     pub fn with_home(p: &Path, home: Option<&Path>) -> Self {
         let shown = match home
             .filter(|h| !h.as_os_str().is_empty())
