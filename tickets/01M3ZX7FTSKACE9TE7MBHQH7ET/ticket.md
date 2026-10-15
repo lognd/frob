@@ -2,16 +2,16 @@
 id = "01M3ZX7FTSKACE9TE7MBHQH7ET"
 title = "Pack lock: pin tree digest and semantic digests; read, write, verify"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:22Z"
-updated = "2026-10-03T03:34:22Z"
+updated = "2026-10-15T04:22:20Z"
 idempotency_key = "m2-packs-lock"
 labels = ["milestone:2", "area:packs"]
-scope = ["crates/gob-packs/src/lock/**"]
+scope = ["crates/gob-packs/src/lock/**", "crates/gob-packs/tests/lock.rs", "docs/design/packs.md"]
 
 [[links]]
 kind = "blocked-by"
