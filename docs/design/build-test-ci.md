@@ -501,7 +501,7 @@ Target: a one-crate code ticket lands in under 60 s on this repository.
 The CLI-side wording (the `land` verb's scope flags and report fields)
 belongs in cli.md section 3 and follows the implementation tickets.
 
-### Land train: batched lands (~N7PFN4Q, D137)
+### Fast lands (land train) (~N7PFN4Q, D137)
 
 Fast lands cut the cost of one land; the train cuts the cost per ticket by
 checking several disjoint tickets once. It follows Uber's SubmitQueue
