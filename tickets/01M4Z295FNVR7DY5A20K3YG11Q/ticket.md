@@ -2,7 +2,8 @@
 id = "01M4Z295FNVR7DY5A20K3YG11Q"
 title = "Land train: measure land red rate and union-cone size, set train_max default"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
