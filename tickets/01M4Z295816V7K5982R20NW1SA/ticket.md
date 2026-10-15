@@ -2,13 +2,13 @@
 id = "01M4Z295816V7K5982R20NW1SA"
 title = "Land train: refactor land.rs into preconditions()/finish() with stale-base publish parameterized by tree and cone"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:59:07Z"
-updated = "2026-10-15T05:59:07Z"
+updated = "2026-10-15T19:17:56Z"
 idempotency_key = "train-ta"
 labels = ["area:land"]
 scope = ["crates/frob-land/src/land.rs"]
