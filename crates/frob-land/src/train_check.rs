@@ -1,4 +1,5 @@
 //! Union check of a land-train candidate (frob:ticket 01M4Z1MYXBWTWH9F271FEY3NSE).
+// frob:ticket 01M4Z1MYXBWTWH9F271FEY3NSE
 //!
 //! [`CandidateChecker`] implements the planner's [`Runner`]: for a subset of the batch it runs the
 //! cheap per-member ticket rules (one ticket-scoped run per member, tools skipped), then ONE
@@ -356,7 +357,7 @@ mod tests {
         hs.iter().map(|h| (*h).to_owned()).collect()
     }
 
-    // frob:tests crate::train_check::CandidateChecker::check
+    // frob:tests crates/frob-land/src/train_check.rs::check
     #[test]
     fn one_union_run_covers_all_members() {
         let fake = Fake::default();
@@ -367,7 +368,7 @@ mod tests {
         assert_eq!(c.stats().rules_run, 2);
     }
 
-    // frob:tests crate::train_check::CandidateChecker::check
+    // frob:tests crates/frob-land/src/train_check.rs::check
     #[test]
     fn disjoint_member_rules_are_reused() {
         let fake = Fake::default();
@@ -378,7 +379,7 @@ mod tests {
         assert_eq!(c.stats().rules_reused, 1);
     }
 
-    // frob:tests crate::train_check::CandidateChecker::check
+    // frob:tests crates/frob-land/src/train_check.rs::check
     #[test]
     fn touched_cone_reruns_member_rules() {
         let fake = Fake::default();
@@ -397,7 +398,7 @@ mod tests {
         );
     }
 
-    // frob:tests crate::train_check::CandidateChecker::check
+    // frob:tests crates/frob-land/src/train_check.rs::check
     #[test]
     fn red_union_attributes_by_path() {
         let fake = Fake {
@@ -412,7 +413,7 @@ mod tests {
         assert!(ev.contains("[union] R1 -: bad"), "{ev}");
     }
 
-    // frob:tests crate::train_check::CandidateChecker::check
+    // frob:tests crates/frob-land/src/train_check.rs::check
     #[test]
     fn red_member_rules_skip_the_union_run() {
         let mut fake = Fake::default();
@@ -422,7 +423,7 @@ mod tests {
         assert!(fake.union_calls.borrow().is_empty());
     }
 
-    // frob:tests crate::train_check::CandidateChecker::check
+    // frob:tests crates/frob-land/src/train_check.rs::check
     #[test]
     fn fault_is_not_red() {
         let fake = Fake {
