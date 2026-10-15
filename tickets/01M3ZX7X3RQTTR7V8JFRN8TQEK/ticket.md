@@ -2,13 +2,13 @@
 id = "01M3ZX7X3RQTTR7V8JFRN8TQEK"
 title = "Required packs: required Unresolved reasons for unfinished plugins"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:35Z"
-updated = "2026-10-03T03:34:35Z"
+updated = "2026-10-15T04:03:51Z"
 idempotency_key = "m2-sec-required-packs"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-diagnostics/src/required.rs", "crates/gob-rules/src/required.rs"]
