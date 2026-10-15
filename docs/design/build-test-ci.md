@@ -501,6 +501,90 @@ Target: a one-crate code ticket lands in under 60 s on this repository.
 The CLI-side wording (the `land` verb's scope flags and report fields)
 belongs in cli.md section 3 and follows the implementation tickets.
 
+### Land train: batched lands (~N7PFN4Q, D137)
+
+Fast lands cut the cost of one land; the train cuts the cost per ticket by
+checking several disjoint tickets once. It follows Uber's SubmitQueue
+(Ananthanarayanan et al., "Keeping Master Green at Scale", EuroSys 2019):
+build a candidate from a batch, test it, and on red locate culprits by
+group testing, never landing anything that was not tested. It amends D25
+(see D137) without adding a daemon.
+
+**Model.** No daemon and no background job. `frob land --train` writes a
+per-ticket request file `.git/frob/train/queue/<ULID>.json` (enqueued_at,
+actor, worktree, frozen head oid, heartbeat, ttl; modeled on the lease
+waiters). If no live driver exists, that caller becomes the driver and runs
+the train in its own foreground; other callers wait up to `--wait <secs>`
+for `.git/frob/train/results/<ULID>.json`, and `--wait 0` enqueues and
+returns. One file per ticket avoids lost updates; `state.json` holds only
+the driver-owned run in flight (id, base oid, candidate oid, members keyed
+by ticket id with frozen head oid, phase, rounds). Resume trusts git first
+(a candidate that is an ancestor of the base means the advance happened;
+go to closing) and the file second; an unknown schema version discards the
+in-flight run and requeues its members. Members are merged by frozen oid;
+a moved branch evicts the member ("branch moved since enqueue"). Enqueuing
+is the holder's consent: the driver uses the enqueuer's recorded actor,
+renews member leases each round, and never removes a member's worktree (the
+waiting enqueuer does, on reading its result).
+
+**Lock.** The driver holds `land.lock` for the whole train, so single
+lands, the base-CI gate and the watchdog work unchanged (tickets.md
+section 10). Per-member preconditions and the cheap close guards run for
+every member before the candidate is built and again before publish; a
+refusing member is evicted with its refusal.
+
+**Candidate and check.** The candidate merges members (disjoint scopes) onto
+the base in one persistent train checkout, `<common>/frob/land-train-checkout`,
+reused by every round so cargo fingerprints stay valid (as the base
+checkout does, ~8J3BE8W); no per-candidate worktree. A merge conflict
+confined to shared files (`Cargo.lock`) is resolved with `lockfile::resolve`;
+a conflict elsewhere skips the member to the next train. The check is one
+union run through frob-check with `diff_base` (scoped to the diff of head
+against base, no ticket, no SCOPE001) plus the cheap per-member ticket rules
+(`skip_tools`), then the ratchet against base findings cached by base oid.
+A red finding whose path lies in exactly one member's diff is attributed to
+that member with no extra check; only unattributable findings are bisected.
+
+**Bisection.** Group testing over cumulative sets: each round tests
+`accepted ++ half`, so every green test is a superset of every earlier
+green and the final landable set equals the last green-tested set.
+Checks return `Result<Verdict, CheckFault>`. A fault (git error, tool
+timeout, OOM kill) aborts the train and requeues every member unchanged.
+A red parent whose parts all pass is re-run once: green means flake, land
+that tested tree and record the flake; red again means interaction, and the
+interacting set is requeued as singletons.
+
+**Invariants.** (1) Landed tree == tested tree: publish fast-forwards to
+exactly the candidate oid that went green. (2) No blame on fault or flake:
+only a reproducible red attributed by path or by a cumulative bisection
+names a ticket.
+
+**Publish.** Trunk mode: the ledger ref is the base, so the base will move
+by ledger commits during a long check. Loop: if the base moved, merge it
+into the candidate; if the delta touches the union cone, re-check (or
+bisect), else keep the verdict; compare-and-swap; retry within budget.
+Branch mode: ledger close commits go on the candidate before the advance.
+The closes reuse the guarded `ledger_step` per member (land event dedup,
+base-CI override comment), committed once where the ledger allows, so a
+crash after the advance resumes by closing the remaining members.
+
+**Cost model.** Checks run sequentially, one candidate at a time; there are
+no parallel halves and no speculative pre-build, because two cargo runs
+share one target directory and serialize, and concurrent runs would double
+RAM and run cold. The batch size is `[land] train_max` (default 8): grow on
+green, halve on red; it is not derived from RAM, since one check is one
+bounded cargo invocation whatever the batch size. Group testing beats
+one-by-one only while the per-ticket red rate is low (roughly below 0.3), so
+the default stays gated on the measured rate of `E-LAND-CHECK-RED` against
+green lands.
+
+**Reuse.** `crates/frob-land/src/train.rs` stays the one train module: the
+planner is its verifier trait, and scope overlap, merge and lock helpers
+are shared, not copied. Relation to earlier work: the done merge train
+(~DSD1QBK) is the base this extends; the enqueue ticket (~3V4VKC9) was
+closed wont-fix, so the queue above is new and file-based. `require_base_green`
+and the post-merge CI net (items 3 and 4 above) apply unchanged.
+
 ## 5. Developer loop
 
 ```

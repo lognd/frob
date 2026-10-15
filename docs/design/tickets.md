@@ -750,6 +750,13 @@ Milestone 2 or later (D36). Push is opt-in (`[land] push`). Version bump
 and changelog fragments stay land-owned; the fragment check is rule
 REL003 (documentation.md section 6).
 
+Land train and the lock (D137, build-test-ci.md section 4 "Land train"). The train driver holds
+`land.lock` for the whole train (build, every check round, publish), so the lock stays the single
+serialization point: a fallback single-ticket `frob land <t>` simply waits on it. The driver
+reports `train:build`, `train:check round k` and `train:publish` through the lock progress, so
+`land --status` and the stall watchdog keep working. There is no separate `train.lock`; the train
+state file is written only by the lock holder. Still no daemon and no job store.
+
 ## 11. Verbs (see cli.md for the full surface)
 
 ```

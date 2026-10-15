@@ -86,7 +86,7 @@ Every verb, every time:
   `init`, `schema`, `config show`, `config sync` and `merge-driver`, plus
   `--help` and `--schema` on any verb.
 - There is no "job failed" class in milestone 1: `land` is synchronous
-  (D25), so a failed check inside `land` is a guard that needs action.
+  (D25, as amended by D137: the train driver also runs in the foreground), so a failed check inside `land` is a guard that needs action.
 - The environment never changes the exit contract. The earlier CI
   environment switch is gone: set `[check] fail_on` in `frob.toml`
   (materialized, architecture.md section 6) or pass `--fail-on <severity>`.
@@ -184,7 +184,7 @@ Every verb, every time:
   recomputes the digest and refuses with `E-PLAN-STALE` (exit 3, needs
   action) if any input changed.
 - Waiting: `land` is synchronous and prints LAND-PROOF; there are no
-  job records and no job verbs in milestone 1 (D25). `--wait <secs>` on
+  job records and no job verbs in milestone 1 (D25; the land train of D137 adds per-ticket queue files, not jobs). `--wait <secs>` on
   `land` and on lease-taking verbs bounds lock acquisition only; when it
   expires the verb exits 3 `E-WAIT-TIMEOUT` with `retryable: true`. If
   jobs ever exist they arrive with the daemon and a job store under
