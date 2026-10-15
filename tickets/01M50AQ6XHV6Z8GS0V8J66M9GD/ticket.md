@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-15T17:45:50Z"
-updated = "2026-10-15T19:52:41Z"
+updated = "2026-10-15T19:52:47Z"
 scope = ["crates/crunk-spec/**", "crates/crunk-cli/**", "crates/crunk/**", "crates/crunk-check/**", "docs/crunk/**", "packs/crunk-web/**", "docs/schemas/**"]
 
 [[acceptance]]
 text = "crunk.toml [packs] crunk_web = true is accepted by crunk-spec and defaults to off"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "crunk rule catalog lists the crunk-web pack rows only when the switch is on"
