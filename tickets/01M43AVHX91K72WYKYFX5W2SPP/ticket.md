@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:14Z"
-updated = "2026-10-15T14:05:40Z"
+updated = "2026-10-15T14:15:28Z"
 idempotency_key = "crunk-plan-webpack"
 labels = ["area:crunk"]
 scope = ["packs/crunk-web/**", "crates/crunk-check/src/packs.rs", "docs/crunk/packs/crunk-web.md", "crates/crunk-check/Cargo.toml", "crates/crunk-check/src/lib.rs", "crates/crunk-check/tests/crunk_web_pack.rs", "Cargo.lock"]
@@ -24,6 +24,10 @@ target = "01M43ARYFVG86PAGGM78JGRZY3"
 [[links]]
 kind = "blocked-by"
 target = "01M43ATCF5GGK59S96K1ZF0G9C"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4ZYNRNH24WCD69FR7ZQ226N"
 
 [[acceptance]]
 text = "Given the scaffold, when `crunk rule catalog` lists packs, then crunk-web shows its four families and one rule each"
