@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:22Z"
-updated = "2026-10-15T12:48:10Z"
+updated = "2026-10-15T13:26:37Z"
 idempotency_key = "m2-packs-lock"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/gob-packs/src/lock/**", "crates/gob-packs/tests/lock.rs", "docs/design/packs.md"]
@@ -23,7 +23,7 @@ target = "01M3ZX7FPXFVAXEF6QJCFZ0A54"
 
 [[acceptance]]
 text = "Given a pack and a lock, when a documentation-only file is edited, then the semantic digests match but the tree digest differs and verify reports exactly that"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a lock missing an enabled pack, when verified, then a typed lock-missing result is returned for PACK001"
