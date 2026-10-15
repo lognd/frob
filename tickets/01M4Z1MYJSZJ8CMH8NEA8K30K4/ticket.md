@@ -8,10 +8,14 @@ points = 2
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:05Z"
-updated = "2026-10-15T05:48:33Z"
+updated = "2026-10-15T05:59:17Z"
 idempotency_key = "train-batchsize"
 labels = ["area:land", "creates:crates/frob-land/src/batch_size.rs"]
 scope = ["crates/frob-land/src/batch_size.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M4Z1MYSTFADV8FJM8SEXKGZ7"
 
 [[acceptance]]
 text = "Given consecutive green trains, then the size grows by one up to the cap"
