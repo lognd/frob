@@ -2,7 +2,8 @@
 id = "01M50C2JW7M7EW7XSG51XR3FK6"
 title = "ci: crunk-query fallout (profile.toml, layering, ci_plan, gob-path ALLOW)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
