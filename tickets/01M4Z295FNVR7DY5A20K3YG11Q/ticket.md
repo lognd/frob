@@ -8,14 +8,14 @@ points = 1
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:59:07Z"
-updated = "2026-10-15T20:18:30Z"
+updated = "2026-10-15T20:19:21Z"
 idempotency_key = "train-tc"
 labels = ["area:land"]
 scope = ["docs/design/build-test-ci.md"]
 
 [[acceptance]]
 text = "measured p and cone size recorded in build-test-ci.md; [land] train_max default justified"
-bound = false
+bound = true
 +++
 
 From Opus review /tmp/claude-1000/-home-logan-projects-frob/16155c8d-cb3b-4f50-9b9f-c8f4865826de/scratchpad/land-train-review.md (T-c). Blocks A8K30K4.
