@@ -12,6 +12,8 @@ carries it until the crunk.toml spec exposes the table.
 | A11Y | A11Y102 | the `html` element carries a `lang` attribute |
 | A11Y | A11Y103 | `iframe` elements carry a `title` attribute |
 | SEO | SEO101 | `a` elements carry an `href` attribute |
+| SEO | SEO102 | a `link rel="canonical"` carries an `href` attribute |
+| SEO | SEO103 | a `meta name="description"` carries a `content` attribute |
 | LAUNCH | LAUNCH101 | no lorem-ipsum placeholder text ships |
 | WEBPERF | WEBPERF101 | `img` elements carry a `loading` attribute |
 
@@ -20,7 +22,7 @@ Each family ships one worked rule; more land under the same prefixes.
 ## Layout
 
 - `packs/crunk-web/pack.toml`: the manifest (name, version, families, rule globs).
-- `packs/crunk-web/rules/*.grl` and `rules/a11y/*.grl`: one rule per file, each with a firing, a clean and a
+- `packs/crunk-web/rules/*.grl`, `rules/a11y/*.grl` and `rules/seo/*.grl`: one rule per file, each with a firing, a clean and a
   not-applicable example. A rule without a firing and a clean example fails to compile (GRL011).
 
 ## Embedding and lock
