@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1, 2, 3, 4]
+captured_at = "2026-10-15T21:26:18Z"
+digest = "bdde0b29e872fadbbf677606f602c8f94e12e95e80e72e1106d2fa1822f9c6de"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f4429954-ff22-4359-99e2-6a0629b070d8 with nextest profile: default
+    Starting 6 tests across 3 binaries (100 tests skipped)
+        PASS [   0.007s] frob-land train_check::tests::fault_is_not_red
+        PASS [   0.007s] frob-land train_check::tests::touched_cone_reruns_member_rules
+        PASS [   0.007s] frob-land train_check::tests::red_member_rules_skip_the_union_run
+        PASS [   0.007s] frob-land train_check::tests::red_union_attributes_by_path
+        PASS [   0.008s] frob-land train_check::tests::disjoint_member_rules_are_reused
+        PASS [   0.009s] frob-land train_check::tests::one_union_run_covers_all_members
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 6 tests run: 6 passed, 100 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land train_check"
+size = 980
+status = "measured"
+test_count = 6
+tests_digest = "3ef7ae434606cdb4a0894161a3b3411660e3550f01969515d5bc7a9bc1d21264"
+at = "2026-10-15T21:26:18Z"
+actor = "lognd"
+rev = 1
