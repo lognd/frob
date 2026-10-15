@@ -2,13 +2,13 @@
 id = "01M4YC9ZJZZNYB6Q2ZF0JTK1XS"
 title = "Rule coverage: exempt alias rules (COV003 aliases TEST001, never emitted) instead of allowlisting"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M480C43A6BCH54NX8C5DQ4WJ"
 reporter = "lognd"
 created = "2026-10-14T23:35:05Z"
-updated = "2026-10-14T23:35:05Z"
+updated = "2026-10-15T02:28:39Z"
 
 [[acceptance]]
 text = "gob_mdtest::coverage treats a declared alias rule as covered by its target (or exempts it); the COV003 allowlist entry is deleted; rule_coverage passes"
