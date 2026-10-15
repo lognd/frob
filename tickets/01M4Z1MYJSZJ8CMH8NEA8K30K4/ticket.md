@@ -8,7 +8,7 @@ points = 2
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:05Z"
-updated = "2026-10-15T20:54:54Z"
+updated = "2026-10-15T21:03:17Z"
 idempotency_key = "train-batchsize"
 labels = ["area:land", "creates:crates/frob-land/src/batch_size.rs"]
 scope = ["crates/frob-land/src/batch_size.rs", "crates/frob-land/src/lib.rs", "docs/design/build-test-ci.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a red train, then the size halves and never drops below 1"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a RAM cap of 3, then the size never exceeds 3"
