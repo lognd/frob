@@ -1,5 +1,4 @@
 //! Union check of a land-train candidate (frob:ticket 01M4Z1MYXBWTWH9F271FEY3NSE).
-// frob:ticket 01M4Z1MYXBWTWH9F271FEY3NSE
 //!
 //! [`CandidateChecker`] implements the planner's [`Runner`]: for a subset of the batch it runs the
 //! cheap per-member ticket rules (one ticket-scoped run per member, tools skipped), then ONE
