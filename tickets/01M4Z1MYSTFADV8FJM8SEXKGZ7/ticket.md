@@ -8,10 +8,10 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:05Z"
-updated = "2026-10-15T05:48:53Z"
+updated = "2026-10-15T06:06:48Z"
 idempotency_key = "train-state"
 labels = ["area:land", "creates:crates/frob-land/src/train_state.rs"]
-scope = ["crates/frob-land/src/train_state.rs"]
+scope = ["crates/frob-land/src/train_state.rs", "crates/frob-land/src/lock.rs"]
 
 [[acceptance]]
 text = "Given a written state, when reloaded, then it round-trips and validates against its schema"
