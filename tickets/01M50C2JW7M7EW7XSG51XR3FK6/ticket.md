@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-15T18:09:31Z"
-updated = "2026-10-15T18:33:14Z"
+updated = "2026-10-15T18:33:15Z"
 scope = ["profile.toml", "crates/gob-dev/**", "crates/gob-path/tests/confinement.rs", "crates/crunk-query/**", ".github/**", "crates/gob-dev/profile.toml", "docs/design/boundaries.md"]
 
 [[acceptance]]
