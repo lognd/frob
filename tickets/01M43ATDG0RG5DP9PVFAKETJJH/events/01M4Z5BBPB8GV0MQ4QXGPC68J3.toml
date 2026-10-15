@@ -1,0 +1,61 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-15T06:49:12Z"
+digest = "5afbbaf5f691a58a89891f7080b03e16510392893c729163f8ec9552f413e1d3"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling memchr v2.8.3
+   Compiling tracing v0.1.44
+   Compiling getrandom v0.3.4
+   Compiling serde_json v1.0.151
+   Compiling aho-corasick v1.1.5
+   Compiling schemars v1.2.2
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling parking_lot_core v0.9.12
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling regex-automata v0.4.18
+   Compiling ahash v0.8.12
+   Compiling bit-vec v0.8.0
+   Compiling strum_macros v0.28.0
+   Compiling fluent-uri v0.4.1
+   Compiling bit-set v0.8.0
+   Compiling parking_lot v0.12.5
+   Compiling jsonschema-value v0.58.5
+   Compiling referencing v0.58.5
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling fancy-regex v0.19.2
+   Compiling strum v0.28.0
+   Compiling regex v1.13.1
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling email_address v0.2.9
+   Compiling jsonschema v0.58.5
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling crunk-gallery v0.532.0 (<worktree>/crates/crunk-gallery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 44cef66d-f065-4022-a9b5-4ea4f686e930 with nextest profile: default
+    Starting 8 tests across 2 binaries
+        PASS [   0.007s] crunk-gallery::gallery normalize_route_strips_query_fragment_and_trailing_slash
+        PASS [   0.008s] crunk-gallery::gallery gallery005_routes_normalize_and_ignore_catch_all
+        PASS [   0.009s] crunk-gallery::gallery cells_filter_narrows
+        PASS [   0.009s] crunk-gallery::gallery enumerate_orders_screen_state_platform
+        PASS [   0.024s] crunk-gallery::gallery broken_manifest_fails_with_a_located_error
+        PASS [   0.028s] crunk-gallery::gallery report_counts_and_validates_against_its_schema
+        PASS [   0.032s] crunk-gallery::gallery manifest_v1_v2_v3_pass_their_schemas
+        PASS [   0.035s] crunk-gallery::gallery rejected_and_pending_are_distinct_rules
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.041s] 8 tests run: 8 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-gallery"
+size = 2401
+status = "measured"
+test_count = 8
+tests_digest = "b37f3fe7718a929c3aed21f1051c68bb2228ecc5c9b069d4ed4cd0535f56722c"
+at = "2026-10-15T06:49:12Z"
+actor = "lognd"
+rev = 1
