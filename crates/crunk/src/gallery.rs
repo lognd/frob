@@ -101,7 +101,7 @@ mod imp {
 
 #[cfg(feature = "gallery")]
 mod imp {
-    use super::{Context, GalleryCheck, GalleryData, Outcome, refusal};
+    use super::{CliError, Context, GalleryCheck, GalleryData, Outcome, Value, refusal};
     use gob_cli::Payload;
 
     /// Load the spec and manifest, run the gallery rules and map errors to a gate failure.
