@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-15T18:19:36Z"
-updated = "2026-10-15T18:45:56Z"
+updated = "2026-10-15T18:45:59Z"
 scope = ["crates/gob-packs/**", "crates/gob-dev/**", "docs/design/boundaries.md"]
 
 [[acceptance]]
