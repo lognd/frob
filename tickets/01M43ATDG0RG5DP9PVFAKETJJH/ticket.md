@@ -2,7 +2,8 @@
 id = "01M43ATDG0RG5DP9PVFAKETJJH"
 title = "crunk-gallery (opt-in): manifest v1-v3, schemas, enumerate and GALLERY001-005"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
