@@ -172,3 +172,17 @@ fn explain_unknown_token_exits_two_and_names_close_matches() {
     assert!(text.contains("token name not found"), "{text}");
     assert!(text.contains("color-ink"), "{text}");
 }
+
+// frob:tests crates/crunk/src/explain.rs::Explain
+#[test]
+fn explain_rule_id_prints_each_tells_date_and_source() {
+    let dir = project();
+    let (code, out, err) = crunk(dir.path(), &["explain", "SLOP060", "--json"]);
+    assert_eq!(code, 0, "{out} {err}");
+    let tells = json(&out)["data"]["tells"].clone();
+    let first = tells[0].as_str().unwrap();
+    assert!(
+        first.contains("added 2026-10-08") && first.contains("source:"),
+        "{first}"
+    );
+}

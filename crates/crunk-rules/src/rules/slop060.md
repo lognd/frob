@@ -5,6 +5,8 @@
 
 Scores the literal text of a JSX source against a buzzword lexicon (seamless, unlock, elevate, supercharge, world-class and similar). Three or more hits at three or more per 100 words, over at least 30 words, fires once per source; a single hit never fires. `[decisions] voice` silences it. Advisory.
 
+The lexicon is a dated tell list (`SLOP060.toml`: term, added day, source). `crunk explain SLOP060` prints each entry's provenance; drop a replacement at `tells/SLOP060.toml` in the project to refresh it without a code change.
+
 ## Why it matters
 
 Copy dense with buzzwords says nothing a competitor could not also say.
