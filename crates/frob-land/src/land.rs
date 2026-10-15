@@ -213,7 +213,6 @@ pub(crate) struct Preconditions {
     primary: PathBuf,
     id: TicketId,
     handle: String,
-    base: String,
     branch: String,
     site: Workspace,
     evidence: EvidenceGuard,
@@ -278,7 +277,6 @@ fn preconditions(
         primary,
         id,
         handle,
-        base: base.to_owned(),
         branch,
         site,
         evidence,
@@ -289,10 +287,6 @@ fn preconditions(
 }
 
 /// Check every precondition (merging the base into the ticket branch unless dry-running).
-#[expect(
-    clippy::too_many_lines,
-    reason = "one ordered pipeline of timed preconditions; splitting it would scatter the order"
-)]
 fn prepare(
     repo: Repo,
     cwd_root: &Path,
@@ -309,7 +303,6 @@ fn prepare(
         primary,
         id,
         handle,
-        base: _,
         branch,
         site,
         evidence,
