@@ -4,9 +4,10 @@ title = "Wire [packs] crunk_web switch into crunk.toml and crunk rule catalog"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-15T17:45:50Z"
-updated = "2026-10-15T17:45:50Z"
+updated = "2026-10-15T19:48:04Z"
 scope = ["crates/crunk-spec/**", "crates/crunk-cli/**"]
 +++
 
