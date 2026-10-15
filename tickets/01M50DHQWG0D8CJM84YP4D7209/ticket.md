@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-15T18:35:17Z"
-updated = "2026-10-15T18:41:45Z"
-scope = ["docs/reference/rules/**"]
+updated = "2026-10-15T18:42:20Z"
+scope = ["docs/reference/rules/**", "docs/schemas/**"]
 
 [[acceptance]]
 text = "gob-dev gen --check is clean"
