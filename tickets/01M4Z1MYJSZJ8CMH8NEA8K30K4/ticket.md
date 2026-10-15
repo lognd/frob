@@ -8,7 +8,7 @@ points = 2
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:05Z"
-updated = "2026-10-15T20:51:27Z"
+updated = "2026-10-15T20:51:42Z"
 idempotency_key = "train-batchsize"
 labels = ["area:land", "creates:crates/frob-land/src/batch_size.rs"]
 scope = ["crates/frob-land/src/batch_size.rs", "crates/frob-land/src/lib.rs", "docs/design/build-test-ci.md"]
@@ -31,6 +31,10 @@ bound = false
 
 [[acceptance]]
 text = "Given a RAM cap of 3, then the size never exceeds 3"
+bound = false
+
+[[acceptance]]
+text = "Given train_max 3, then the size never exceeds 3 (the cap is the plain train_max parameter, not RAM-derived)"
 bound = false
 +++
 

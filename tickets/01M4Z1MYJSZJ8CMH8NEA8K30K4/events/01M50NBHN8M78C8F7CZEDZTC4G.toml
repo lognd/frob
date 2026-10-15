@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given consecutive green trains, then the size grows by one up to the cap", "Given a red train, then the size halves and never drops below 1", "Given a RAM cap of 3, then the size never exceeds 3"]
+new = ["Given consecutive green trains, then the size grows by one up to the cap", "Given a red train, then the size halves and never drops below 1", "Given a RAM cap of 3, then the size never exceeds 3", "Given train_max 3, then the size never exceeds 3 (the cap is the plain train_max parameter, not RAM-derived)"]
+moved = [1, 2, 3]
+at = "2026-10-15T20:51:42Z"
+actor = "lognd"
+rev = 1
