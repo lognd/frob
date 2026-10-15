@@ -25,11 +25,15 @@ fn data_for(project: &str, args: &[&str]) -> Value {
     env["data"].clone()
 }
 
+#[expect(
+    clippy::disallowed_methods,
+    reason = "test-only: matrix directory names are ASCII fixture ids"
+)]
 fn projects() -> Vec<String> {
     let mut names: Vec<String> = std::fs::read_dir(parity_root().join("expected/matrix"))
         .expect("matrix dir")
-        .filter_map(|e| e.ok())
-        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .flatten()
+        .filter_map(|e| e.file_name().into_string().ok())
         .collect();
     names.sort();
     names
