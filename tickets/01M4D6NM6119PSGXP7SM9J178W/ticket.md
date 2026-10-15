@@ -2,7 +2,8 @@
 id = "01M4D6NM6119PSGXP7SM9J178W"
 title = "frob doctor: cheap gc oracle (batched events) and no full dry-run gc pass unless asked"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
