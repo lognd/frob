@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["packs/crunk-web/rules/seo/**", "packs/crunk-web/tests/seo/**", "packs/crunk-web/pack.toml"]
+new = ["packs/crunk-web/rules/seo/**", "packs/crunk-web/tests/seo/**", "packs/crunk-web/pack.toml", "crates/crunk-check/src/packs.rs"]
+at = "2026-10-15T18:25:29Z"
+actor = "lognd"
+rev = 1
