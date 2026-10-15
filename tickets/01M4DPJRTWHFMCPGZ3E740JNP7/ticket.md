@@ -8,12 +8,12 @@ points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-08T12:07:33Z"
-updated = "2026-10-15T23:07:38Z"
+updated = "2026-10-15T23:21:45Z"
 scope = ["changelog.d/**", "crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
 text = "Given GRL017, when reported, then the span covers only the keyword and verb; grl-spec section 10 lists GRL017 and GRL018"
-bound = false
+bound = true
 +++
 
 Follow-ups from ~E8Q56WW.
