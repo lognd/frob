@@ -8,7 +8,7 @@ points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:05Z"
-updated = "2026-10-15T12:01:11Z"
+updated = "2026-10-15T12:06:15Z"
 idempotency_key = "train-candidate"
 labels = ["area:land", "creates:crates/frob-land/src/candidate.rs"]
 scope = ["crates/frob-land/src/git.rs", "crates/frob-land/src/candidate.rs", "crates/frob-land/src/lib.rs"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given any failure, then no temp ref is left behind"
-bound = false
+bound = true
 +++
 
 Given base oid and ordered ticket branches, build a candidate on a temp ref (refs/frob/train/<id>) off base by sequential merge (octopus when all scopes are disjoint, else sequential). A textual conflict skips that ticket, it stays queued, and the merge is aborted cleanly. Same-file shared-scope tickets are split into separate trains. Returns candidate oid, merged list, skipped list with reasons. Temp refs removed on drop/failure. Log each merge and skip.
