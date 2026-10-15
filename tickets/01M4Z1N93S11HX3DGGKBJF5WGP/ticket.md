@@ -8,10 +8,10 @@ points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:15Z"
-updated = "2026-10-15T05:48:15Z"
+updated = "2026-10-15T05:48:34Z"
 idempotency_key = "train-ledger-close"
-labels = ["area:land"]
-scope = ["crates/frob-ledger/**,crates/frob-land/src/train_close.rs"]
+labels = ["area:land", "creates:crates/frob-land/src/train_close.rs"]
+scope = ["crates/frob-ledger/**", "crates/frob-land/src/train_close.rs"]
 
 [[acceptance]]
 text = "Given a green batch, when it lands, then all tickets close in one ledger commit"
