@@ -2,12 +2,12 @@
 id = "01M50C2JW7M7EW7XSG51XR3FK6"
 title = "ci: crunk-query fallout (profile.toml, layering, ci_plan, gob-path ALLOW)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-15T18:09:31Z"
-updated = "2026-10-15T18:09:37Z"
+updated = "2026-10-15T18:09:38Z"
 scope = ["profile.toml", "crates/gob-dev/**", "crates/gob-path/tests/confinement.rs", "crates/crunk-query/**", ".github/**", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
