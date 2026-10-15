@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-land/src/train_check.rs", "crates/frob-check/src/diff_base.rs", "crates/frob-land/src/lib.rs", "docs/design/build-test-ci.md"]
+new = ["crates/frob-land/src/train_check.rs", "crates/frob-check/src/diff_base.rs", "crates/frob-land/src/lib.rs", "docs/design/build-test-ci.md", "changelog.d/01M4Z1MYXBWTWH9F271FEY3NSE.changed.md"]
+at = "2026-10-15T21:24:10Z"
+actor = "lognd"
+rev = 1
