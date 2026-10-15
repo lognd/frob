@@ -338,18 +338,12 @@ mod tests {
     use super::*;
 
     fn sh(dir: &Path, args: &[&str]) -> String {
-        let out = std::process::Command::new("git")
-            .args(["-c", "user.name=t", "-c", "user.email=t@t"])
-            .args(args)
-            .current_dir(dir)
-            .output()
-            .expect("git");
-        assert!(
-            out.status.success(),
-            "{args:?}: {}",
-            String::from_utf8_lossy(&out.stderr)
-        );
-        String::from_utf8_lossy(&out.stdout).trim().to_owned()
+        let repo = Repo::discover(dir).expect("open");
+        let mut full = vec!["-c", "user.name=t", "-c", "user.email=t@t"];
+        full.extend_from_slice(args);
+        let run = git(&repo, dir, &full).expect("git");
+        assert!(run.ok(), "{args:?}: {}", run.text);
+        run.text
     }
 
     /// A repo with `a.txt`/`b.txt` on main and one branch per `(name, file, content)`.
