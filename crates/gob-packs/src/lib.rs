@@ -30,6 +30,7 @@ mod activation;
 mod digest;
 mod error;
 mod limits;
+pub mod lock;
 mod manifest;
 pub mod tier1;
 mod validate;
