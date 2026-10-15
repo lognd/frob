@@ -22,16 +22,20 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
+crunk-ingest = { version = "0.532.0", path = "../crunk-ingest" }
 crunk-check = { version = "0.532.0", path = "../crunk-check" }
+crunk-query = { version = "0.532.0", path = "../crunk-query" }
 crunk-rules = { version = "0.532.0", path = "../crunk-rules" }
 crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
 crunk-tokens = { version = "0.532.0", path = "../crunk-tokens" }
+gob-cache = { version = "0.532.0", path = "../gob-cache" }
 gob-check = { version = "0.532.0", path = "../gob-check" }
 gob-cli = { version = "0.532.0", path = "../gob-cli" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 # frob:ticket 01M4RN89XGXSXMSF2HV2FPSG41
 gob-lock = { version = "0.532.0", path = "../gob-lock" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-product = { version = "0.532.0", path = "../gob-product" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
