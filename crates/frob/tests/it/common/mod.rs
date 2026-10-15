@@ -159,9 +159,10 @@ impl FrobCmd {
         self
     }
 
-    /// Whether this run needs a real process rather than the in-process runner.
+    /// Whether this run needs a real process rather than the in-process runner; `init` always does, since it records `current_exe` as the git merge driver and the test binary cannot serve as one.
     fn needs_process(&self) -> bool {
         self.force_process
+            || self.args.iter().any(|a| a == "init")
             || !self.envs.is_empty()
             || self.timeout.is_some()
             || self.removed.iter().any(|k| k != "FROB_LOG")
