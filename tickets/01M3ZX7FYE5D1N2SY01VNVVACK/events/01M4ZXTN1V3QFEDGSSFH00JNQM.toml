@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-15T14:00:19Z"
+digest = "a09c0dd4aee4a7ba542ee3b22ff10ae46f5e5bf5ebd212f1862cfbee3b2332f3"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.76s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1c1be97a-9c94-4dcb-8183-bae3bf738e2b with nextest profile: default
+    Starting 1 test across 6 binaries (33 tests skipped)
+        PASS [   0.004s] gob-packs::std_pack a_plugin_declaring_cap_or_the_name_std_is_pack004
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 33 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs -E test(a_plugin_declaring_cap)"
+size = 615
+status = "measured"
+test_count = 1
+tests_digest = "a5e96eb3ec0dd13ea701025935a41c3fce0aecf2d54998af1fc20895fdcd2a61"
+at = "2026-10-15T14:00:19Z"
+actor = "lognd"
+rev = 1
