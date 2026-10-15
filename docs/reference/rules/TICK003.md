@@ -20,3 +20,17 @@
 A link or parent names a ticket that does not exist.
 
 Remove the link with `frob ticket unlink`, or restore the ticket.
+
+## Examples
+
+### TICK003 dangling ticket reference / A parent naming a ticket that does not exist fires #1 (line 8) (fire)
+
+```text
+parent = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+```
+
+### TICK003 dangling ticket reference / An untouched card is clean #2 (line 14) (clean)
+
+```text
+
+```

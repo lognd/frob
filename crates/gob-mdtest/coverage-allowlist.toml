@@ -3,56 +3,6 @@
 # crunk registers COLOR001 with an mdtest corpus, so it has no entries.
 
 [[gap]]
-product = "frob"
-rule = "TICK001"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TICK002"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TICK003"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TICK004"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TICK005"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TICK007"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TICK008"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TICK009"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TOOL001"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TOOL002"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
 product = "grimble"
 rule = "MDL000"
 ticket = "~QSK0WB1"

@@ -22,3 +22,17 @@ A reindex commit is not what the pure reindex of its parent tree produces.
 Replaying the reindex in memory on the parent commit's tree with the frob version named in the commit's
 `Frob-Reindex` trailer must give the commit's own tree; a difference means a hand edit rode in on a reindex
 commit. When that version is not the one running, the result is Unresolved with reason `generator-version`.
+
+## Examples
+
+### TICK007 reindex commit that does not replay / A reindex-trailer commit carrying a hand edit fires #1 (line 9) (fire)
+
+```text
+edit smuggled line
+```
+
+### TICK007 reindex commit that does not replay / A genuine reindex is clean #2 (line 15) (clean)
+
+```text
+reindex
+```
