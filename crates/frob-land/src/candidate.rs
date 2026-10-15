@@ -282,7 +282,7 @@ fn moved_branch(repo: &Repo, dir: &Path, m: &CandidateMember) -> Result<Option<S
         return Ok(None);
     }
     Ok(Some(format!(
-        "branch {} moved since enqueue; re-run frob land --train",
+        "branch {} moved since enqueue; re-run frob land",
         m.branch
     )))
 }
