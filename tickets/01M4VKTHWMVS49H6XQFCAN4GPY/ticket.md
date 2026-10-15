@@ -4,9 +4,10 @@ title = "boundaries.md still lists frob-gh after the crate was removed: gob-dev 
 type = "bug"
 category = "todo"
 priority = "high"
+points = 1
 reporter = "lognd"
 created = "2026-10-13T21:48:45Z"
-updated = "2026-10-13T21:48:45Z"
+updated = "2026-10-15T05:19:13Z"
 scope = ["docs/design/boundaries.md"]
 +++
 
