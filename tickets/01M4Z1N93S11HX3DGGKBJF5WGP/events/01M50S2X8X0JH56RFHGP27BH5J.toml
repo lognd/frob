@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-15T21:56:53Z"
+digest = "7e98944afdc1dba86a8473f9ed273577e0252fea4c1bf11a4fa614c0baea9878"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2b29e595-0f6e-410d-b02a-e67c6d87c2c9 with nextest profile: default
+    Starting 2 tests across 3 binaries (110 tests skipped)
+        PASS [   0.118s] frob-land train_close::tests::a_member_that_cannot_close_stays_pending_in_the_train_state
+        PASS [   0.140s] frob-land train_close::tests::resume_after_the_fast_forward_closes_only_the_remaining_members
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.141s] 2 tests run: 2 passed, 110 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(/resume_after_the_fast_forward|a_member_that_cannot_close/)'"
+size = 703
+status = "measured"
+test_count = 2
+tests_digest = "da045fb855e9977c274c4c36826f819610d63b8383da77068fee5f9c2f040dcb"
+at = "2026-10-15T21:56:53Z"
+actor = "lognd"
+rev = 1
