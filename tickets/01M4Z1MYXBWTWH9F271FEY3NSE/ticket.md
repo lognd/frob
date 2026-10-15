@@ -2,7 +2,8 @@
 id = "01M4Z1MYXBWTWH9F271FEY3NSE"
 title = "Land train: union affected-cone check and bound-evidence reuse across a candidate"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
