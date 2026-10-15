@@ -350,7 +350,7 @@ fn write_summary(out: &mut String, findings: &[Finding]) {
 mod tests {
     use super::*;
 
-    // frob:tests gob_diagnostics::text::origin_prefix
+    // frob:tests origin_prefix
     #[test]
     fn pack_message_is_prefixed() {
         assert_eq!(
@@ -359,7 +359,7 @@ mod tests {
         );
     }
 
-    // frob:tests gob_diagnostics::text::origin_prefix
+    // frob:tests origin_prefix
     #[test]
     fn host_and_std_messages_are_not_prefixed() {
         assert_eq!(origin_prefix(&TextOrigin::Host), "");
