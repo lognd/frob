@@ -24,6 +24,9 @@ pub struct CheckOptions {
     pub fix: bool,
     /// Overrides the `[check] fail_on` of `frob.toml` when deciding the exit code.
     pub fail_on: Option<FailOn>,
+    /// Scope the run to what the tree changed since this ref or oid (plus dependents), with no
+    /// ticket: SCOPE001, TICK002 and REL003 are skipped. Ignored when `ticket` is set.
+    pub diff_base: Option<String>,
     /// Overrides `[check] base` for the diff of a `--ticket` run.
     pub base: Option<String>,
     /// Ledger settings (the `[tickets]` and `[git]` tables live in the binary); defaults when absent.
@@ -49,7 +52,11 @@ impl CheckOptions {
     /// The product-neutral half of these options, as [`gob_check::run`] takes them.
     pub(crate) fn run_options(&self) -> RunOptions {
         RunOptions {
-            scope: self.ticket.clone(),
+            scope: self.ticket.clone().or_else(|| {
+                self.diff_base
+                    .as_ref()
+                    .map(|_| crate::scope::DIFF_SCOPE_REF.to_owned())
+            }),
             only: self.only.clone(),
             fix: self.fix,
             fail_on: self.fail_on,

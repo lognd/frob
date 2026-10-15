@@ -460,6 +460,35 @@ fn ticket_restricts_per_file_rules_to_its_scope() {
     assert!(scoped.scope.is_some());
 }
 
+// frob:tests crates/frob-check/src/options.rs::CheckOptions
+#[test]
+fn diff_base_scopes_a_run_without_a_ticket() {
+    let (dir, _id) = ticket_fixture();
+    let bare = format!("// {}: later\n", marker());
+    write(dir.path(), "src/a/lib.rs", &bare);
+    write(dir.path(), "src/b/lib.rs", &bare);
+    let repo = Repo::discover(dir.path()).expect("repo");
+    let base = repo.rev_parse("main").expect("main").to_string();
+    let scoped_to_both = run(
+        dir.path(),
+        &CheckOptions {
+            diff_base: Some(base.clone()),
+            ..quiet()
+        },
+    )
+    .expect("diff scoped");
+    assert!(scoped_to_both.scope.is_some());
+    assert!(
+        scoped_to_both
+            .findings
+            .iter()
+            .all(|f| !matches!(f.rule.as_str(), "SCOPE001" | "TICK002" | "REL003")),
+        "no ticket rules without a ticket"
+    );
+    let unscoped = run(dir.path(), &quiet()).expect("unscoped");
+    assert!(unscoped.scope.is_none());
+}
+
 #[test]
 fn ticket_without_a_ledger_is_an_error() {
     let dir = fixture();
