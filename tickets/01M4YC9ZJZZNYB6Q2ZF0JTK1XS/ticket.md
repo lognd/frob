@@ -2,7 +2,8 @@
 id = "01M4YC9ZJZZNYB6Q2ZF0JTK1XS"
 title = "Rule coverage: exempt alias rules (COV003 aliases TEST001, never emitted) instead of allowlisting"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M480C43A6BCH54NX8C5DQ4WJ"
