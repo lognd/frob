@@ -21,10 +21,18 @@ pub const FILE: &str = "<builtin>/crunk-web/pack.toml";
 const MANIFEST_TEXT: &str = include_str!("../../../packs/crunk-web/pack.toml");
 
 /// Embedded GRL sources by pack-relative path, one rule per file.
-pub const RULES: [(&str, &str); 4] = [
+pub const RULES: [(&str, &str); 8] = [
     (
         "rules/A11Y101.grl",
         include_str!("../../../packs/crunk-web/rules/A11Y101.grl"),
+    ),
+    (
+        "rules/a11y/A11Y102.grl",
+        include_str!("../../../packs/crunk-web/rules/a11y/A11Y102.grl"),
+    ),
+    (
+        "rules/a11y/A11Y103.grl",
+        include_str!("../../../packs/crunk-web/rules/a11y/A11Y103.grl"),
     ),
     (
         "rules/LAUNCH101.grl",
@@ -33,6 +41,14 @@ pub const RULES: [(&str, &str); 4] = [
     (
         "rules/SEO101.grl",
         include_str!("../../../packs/crunk-web/rules/SEO101.grl"),
+    ),
+    (
+        "rules/seo/SEO102.grl",
+        include_str!("../../../packs/crunk-web/rules/seo/SEO102.grl"),
+    ),
+    (
+        "rules/seo/SEO103.grl",
+        include_str!("../../../packs/crunk-web/rules/seo/SEO103.grl"),
     ),
     (
         "rules/WEBPERF101.grl",

@@ -48,6 +48,7 @@ pub(crate) fn all_shared(shared_files: &[String], paths: &[String]) -> Result<bo
 }
 
 /// Resolve the in-progress merge whose only conflicts are the lockfiles `paths`, then commit it.
+// frob:ticket 01M50C2K3H0STZWFR5P29BWY8G
 ///
 /// The merge is aborted and a refusal returned when a lockfile has no offline
 /// resolver or the resolver fails.
@@ -109,7 +110,19 @@ pub(crate) fn resolve(
         add.push(path);
         git(wt, wt_path, &add)?;
     }
-    let commit = git(wt, wt_path, &["commit", "--no-edit"])?;
+    // Explicit identity so the merge commit never depends on ambient git config (CI has none).
+    let commit = git(
+        wt,
+        wt_path,
+        &[
+            "-c",
+            "user.name=frob-land",
+            "-c",
+            "user.email=frob-land@localhost",
+            "commit",
+            "--no-edit",
+        ],
+    )?;
     if !commit.ok() {
         return Err(abort(
             format!("committing the lockfile merge failed: {}", commit.text),

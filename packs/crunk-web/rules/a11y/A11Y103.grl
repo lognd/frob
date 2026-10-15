@@ -1,0 +1,22 @@
+rule A11Y103 "iframe-missing-title" {
+  lang [typescript, html]
+  severity error
+
+  find e: element where e.tag == "iframe" and not e has attribute(name = "title")
+  report e "iframe has no title: add title=\"...\" naming its content"
+
+  example fire html """
+    <iframe src="map.html"></iframe>           <!--~ error -->
+  """
+  example clean html """
+    <iframe src="map.html" title="Office map"></iframe>
+  """
+  example notapplicable markdown """
+    An iframe is embedded here in prose.
+  """
+  explain """
+    Assistive technology lists frames by title; an untitled frame is announced only as "frame".
+    ## Remedy
+    Add a short `title` that says what the frame contains.
+  """
+}

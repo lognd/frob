@@ -1,0 +1,22 @@
+rule SEO103 "meta-description-without-content" {
+  lang [typescript, html]
+  severity warn
+
+  find e: element where e.tag == "meta" and e has attribute(name = "name", value = "description") and not e has attribute(name = "content")
+  report e "meta description has no content: search results fall back to scraped page text"
+
+  example fire html """
+    <meta name="description">  <!--~ warn -->
+  """
+  example clean html """
+    <meta name="description" content="Plans and pricing for every team size.">
+  """
+  example notapplicable markdown """
+    A description is written <meta name="description"> in prose.
+  """
+  explain """
+    The meta description is the snippet engines show under the page title; without `content` it is empty.
+    ## Remedy
+    Add a `content` attribute holding a one or two sentence summary of the page.
+  """
+}

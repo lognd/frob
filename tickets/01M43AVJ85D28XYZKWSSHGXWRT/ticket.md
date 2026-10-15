@@ -2,13 +2,14 @@
 id = "01M43AVJ85D28XYZKWSSHGXWRT"
 title = "crunk-web family A11Y: first slice of rules in GRL"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:14Z"
-updated = "2026-10-15T18:09:19Z"
+updated = "2026-10-15T18:19:05Z"
 idempotency_key = "crunk-plan-web_A11Y"
 labels = ["area:crunk"]
 scope = ["packs/crunk-web/rules/a11y/**", "packs/crunk-web/tests/a11y/**", "packs/crunk-web/pack.toml", "crates/crunk-check/src/packs.rs", "crates/crunk-check/tests/crunk_web_pack.rs", "docs/crunk/packs/crunk-web.md"]
