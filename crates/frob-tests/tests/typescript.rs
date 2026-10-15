@@ -1,7 +1,10 @@
 //! TypeScript tests: vitest and jest selection, runs through fake runners, and the missing-tool refusal (~RNQ92ZK).
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+#![cfg_attr(
+    unix,
+    expect(
+        clippy::disallowed_methods,
+        reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+    )
 )]
 
 use std::path::Path;
