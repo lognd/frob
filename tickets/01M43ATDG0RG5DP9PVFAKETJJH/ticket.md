@@ -2,13 +2,13 @@
 id = "01M43ATDG0RG5DP9PVFAKETJJH"
 title = "crunk-gallery (opt-in): manifest v1-v3, schemas, enumerate and GALLERY001-005"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:37Z"
-updated = "2026-10-04T11:29:37Z"
+updated = "2026-10-15T04:09:49Z"
 idempotency_key = "crunk-plan-gal1"
 labels = ["area:crunk"]
 scope = ["crates/crunk-gallery/**", "docs/schemas/crunk-gallery-*.json", "crates/crunk/Cargo.toml", "Cargo.lock"]
