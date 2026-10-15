@@ -1,4 +1,8 @@
 //! Reading and writing the lock file as TOML.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::Path;
 
