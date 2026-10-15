@@ -2,7 +2,8 @@
 id = "01M3ZX7JE252WBVE5DKMJK3JME"
 title = "Plan cache for disk packs, keyed by tree digest and engine fingerprint"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
