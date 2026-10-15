@@ -2,7 +2,8 @@
 id = "01M4Z295816V7K5982R20NW1SA"
 title = "Land train: refactor land.rs into preconditions()/finish() with stale-base publish parameterized by tree and cone"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
