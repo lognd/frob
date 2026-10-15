@@ -23,3 +23,29 @@ Fires once per entry (symbol or flow) when `frob.lock` predates this build's for
 version or digest scheme. The digests are not comparable across schemes, so no drift
 rule judges such an entry and nothing is silently accepted; `frob ack --all --reason ...`
 re-records every entry under the current scheme.
+
+## Examples
+
+### DRIFT004 re-attestation required / A version 1 lock fires #1 (line 8) (fire)
+
+```text
+=== frob.lock
+version = 1
+
+[entries."a.rs::a"]
+sig = "11"
+body = "22"
+doc = "33"
+acked_by = "Me"
+acked_at = "2026-10-01T00:00:00Z"
+reason = "old"
+=== a.rs
+pub fn a() {}
+```
+
+### DRIFT004 re-attestation required / A repository without a lock is clean #2 (line 25) (clean)
+
+```text
+=== a.rs
+pub fn a() {}
+```

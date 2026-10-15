@@ -22,3 +22,34 @@ A `frob:tests` directive whose target resolves to no test (or, inside a test, to
 On a non-test item the target names a test and must resolve to a test
 function; inside a test item the target is the symbol the test covers and
 must resolve to any symbol. Fix the symref or remove the directive.
+
+## Examples
+
+### TEST001 tests target missing / A directive naming no test fires #1 (line 8) (fire)
+
+```text
+=== src/lib.rs
+//! Library.
+
+/* frob:tests tests::missing */
+/// Bound to nothing.
+pub fn dangling() {}
+```
+
+### TEST001 tests target missing / A directive naming a test function is clean #2 (line 19) (clean)
+
+```text
+=== src/lib.rs
+//! Library.
+
+/* frob:tests adds_one */
+/// Adds one.
+pub fn add_one(x: u32) -> u32 {
+    x + 1
+}
+
+#[test]
+fn adds_one() {
+    assert_eq!(add_one(1), 2);
+}
+```

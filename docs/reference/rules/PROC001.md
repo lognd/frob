@@ -24,3 +24,27 @@ A repository-local policy: only repositories that list crates in
 `Command`, `Child`, `Stdio` and exec/spawn APIs, never `ExitCode`, `exit`
 or `id`. Move the call into a listed crate or route it through
 `gob_exec::Runner`.
+
+## Examples
+
+### PROC001 process spawn outside the spawner crates / A spawn in an unlisted crate fires #1 (line 8) (fire)
+
+```text
+=== frob.toml
+[check]
+process_spawners = ["gob-exec"]
+=== crates/other/src/lib.rs
+//! Other.
+use std::process::Command;
+```
+
+### PROC001 process spawn outside the spawner crates / An exit code in an unlisted crate is clean #2 (line 19) (clean)
+
+```text
+=== frob.toml
+[check]
+process_spawners = ["gob-exec"]
+=== crates/other/src/lib.rs
+//! Other.
+use std::process::ExitCode;
+```
