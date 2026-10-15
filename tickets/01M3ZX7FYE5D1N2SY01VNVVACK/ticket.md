@@ -2,16 +2,16 @@
 id = "01M3ZX7FYE5D1N2SY01VNVVACK"
 title = "Std pack: compiled-in plan bytes, registry entry, lock entry frozen to the binary"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:22Z"
-updated = "2026-10-03T03:34:22Z"
+updated = "2026-10-15T13:33:03Z"
 idempotency_key = "m2-packs-std-skeleton"
 labels = ["milestone:2", "area:packs"]
-scope = ["crates/gob-packs/src/std/**", "packs/std/**"]
+scope = ["crates/gob-packs/src/std/**", "packs/std/**", "crates/gob-packs/src/lib.rs", "crates/gob-packs/tests/std_pack.rs"]
 
 [[links]]
 kind = "blocked-by"

@@ -30,6 +30,7 @@ mod activation;
 mod digest;
 mod error;
 mod limits;
+pub mod lock;
 mod manifest;
 mod plan_cache;
 pub mod tier1;
