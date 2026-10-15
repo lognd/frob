@@ -90,6 +90,9 @@ registered rule of a product, from the `inventory` registry:
 - covered by a fixture `crates/*/resources/test/fixtures/<FAMILY>/<RULE>.<ext>`
   with its diagnostics snapshot `<RULE>.snap` beside it.
 
+Alias rules (`RULE_ALIASES`, e.g. `COV003` for `TEST001`) are never emitted and
+are exempt: the target's coverage stands for them.
+
 `frob-check`, `grimble-check` and `crunk-check` each carry a
 `tests/rule_coverage.rs` calling `assert_product_coverage`; the failure
 names every uncovered rule. Known gaps are listed in

@@ -25,6 +25,13 @@ use walkdir::WalkDir;
 
 use crate::parse::{Expect, parse_suite};
 
+/// Alias rules and the rule that owns their findings, `(alias, target)`.
+///
+/// An alias is declared so references resolve but is never emitted, so it can
+/// have no corpus of its own; it is exempt, its target's coverage standing for it. Mirrors
+/// `frob_obligations::COV003_ALIAS_OF`.
+pub const RULE_ALIASES: &[(&str, &str)] = &[("COV003", "TEST001")];
+
 /// Allowlist location relative to the workspace root.
 pub const ALLOWLIST_PATH: &str = "crates/gob-mdtest/coverage-allowlist.toml";
 
@@ -277,6 +284,9 @@ impl CoverageReport {
 }
 
 /// Compare `rules` (one product) against `corpus` and `allowlist`.
+///
+/// A rule listed in [`RULE_ALIASES`] is exempt: its target's coverage (or
+/// allowlist entry) stands for it.
 #[must_use]
 pub fn analyze(
     product: &str,
@@ -306,7 +316,12 @@ pub fn analyze(
             corpus.fire.contains(&rule.id),
             corpus.clean.contains(&rule.id),
         );
-        let covered = fixture || (fire && clean);
+        let covered = if RULE_ALIASES.iter().any(|(alias, _)| *alias == rule.id) {
+            tracing::debug!(alias = %rule.id, "alias rule is never emitted; exempt from corpus");
+            true
+        } else {
+            fixture || (fire && clean)
+        };
         match (covered, allowed.contains_key(rule.id.as_str())) {
             (true, true) => report.stale.push(rule.id.clone()),
             (false, false) => {
