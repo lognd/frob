@@ -2,7 +2,8 @@
 id = "01M4CTE9W9QH6SBZSJ3E0E8M28"
 title = "Tests: consolidate integration-test binaries per crate and run frob CLI tests in process by default (audit M17)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
