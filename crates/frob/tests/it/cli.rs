@@ -403,7 +403,7 @@ fn every_verb_is_in_the_command_inventory() {
 
 /// A foreign `crunk` on the ambient PATH must not change `doctor` output: the harness PATH is hermetic.
 // frob:ticket 01M43MPMEGYAZ33JTP3GRCHKE2
-// frob:tests crates/frob/tests/common/mod.rs::hermetic_path_from
+// frob:tests hermetic_path_from
 #[cfg(unix)]
 #[test]
 fn foreign_crunk_on_ambient_path_leaves_doctor_unchanged() {
