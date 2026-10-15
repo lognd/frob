@@ -1,0 +1,13 @@
+kind = "create"
+title = "Fix unfulfilled clippy expectation in frob-tests typescript on windows"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 1
+idempotency_key = "fix-ts-expect-win"
+scope = ["crates/frob-tests/tests/typescript.rs"]
+acceptance = ["clippy passes on windows target"]
+body = "typescript.rs expect(clippy::disallowed_methods) is unfulfilled on windows because the display() call is unix-gated; use cfg_attr(unix, expect(...))."
+at = "2026-10-15T07:19:13Z"
+actor = "lognd"
+rev = 1

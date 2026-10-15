@@ -8,14 +8,14 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:05Z"
-updated = "2026-10-15T06:40:49Z"
+updated = "2026-10-15T07:24:26Z"
 idempotency_key = "train-state"
 labels = ["area:land", "creates:crates/frob-land/src/train_state.rs"]
 scope = ["crates/frob-land/src/train_state.rs", "crates/frob-land/src/lock.rs", "crates/frob-land/src/lib.rs"]
 
 [[acceptance]]
 text = "Given a written state, when reloaded, then it round-trips and validates against its schema"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a crashed driver, when status runs, then the stale train is reported and resumable"

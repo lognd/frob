@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:37Z"
-updated = "2026-10-15T06:49:12Z"
+updated = "2026-10-15T06:52:45Z"
 idempotency_key = "crunk-plan-gal1"
 labels = ["area:crunk"]
 scope = ["crates/crunk-gallery/**", "docs/schemas/crunk-gallery-*.json", "crates/crunk/Cargo.toml", "Cargo.lock", "crates/crunk/src/gallery.rs", "crates/crunk/tests/gallery.rs", "docs/crunk/README.md", "crates/crunk/src/lib.rs"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the default build, when `crunk gallery check` is run, then it reports the feature is not built in with the remedy"
-bound = false
+bound = true
 +++
 
 Opt-in crate behind a `gallery` cargo feature of `crunk` (off by default, so the default binary and PyPI wheel stay small; owner decision recorded as a design gap). Port gallery manifest (v1, v2, v3 schemas from the crunk repository schemas/ into docs/schemas), enumerate (V*S*B cells), cells, check_report, and GALLERY001-005 (005 warn). Config comes from crunk-spec [[platform]]/[[screen]]. Port tests/unit/test_gallery_manifest.py, _enumerate, _cells, _check_report, test_rules_gallery.py and the fixtures screens_v1_1, gallery005_routes.
