@@ -12,6 +12,8 @@
 )]
 
 pub mod base_ci;
+pub mod bisect;
+pub mod candidate;
 pub mod error;
 pub mod events;
 mod git;
@@ -21,6 +23,7 @@ mod lockfile;
 pub mod plan;
 mod ratchet;
 pub mod train;
+pub mod train_state;
 pub mod verb;
 
 pub use base_ci::{CiReader, GhCli, LandConfig};
