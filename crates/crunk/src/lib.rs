@@ -20,6 +20,7 @@ pub mod gallery;
 pub mod map;
 pub mod query;
 pub mod review;
+pub mod rule;
 pub mod tokens;
 
 use std::path::Path;
@@ -121,6 +122,7 @@ impl Product for CrunkProduct {
             .register::<query::Query>()
             .register::<map::Map>()
             .register::<explain::Explain>()
+            .register::<rule::RuleCatalog>()
             .register::<gallery::GalleryCheck>()
     }
 }

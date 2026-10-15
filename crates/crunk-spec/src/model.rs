@@ -11,9 +11,9 @@ use serde::{Serialize, Serializer};
 
 use crate::catalog::{Severity, default_severity};
 use crate::table::{
-    Engine, GameConfig, JsxConfig, MediaFeatures, NetworkThrottle, OrgConfig, ProjectConfig,
-    ReviewConfig, RosterEntry, ScalesConfig, ScreenConfig, TailwindConfig, TypographyConfig,
-    Viewport,
+    Engine, GameConfig, JsxConfig, MediaFeatures, NetworkThrottle, OrgConfig, PacksConfig,
+    ProjectConfig, ReviewConfig, RosterEntry, ScalesConfig, ScreenConfig, TailwindConfig,
+    TypographyConfig, Viewport,
 };
 
 /// One `[palette.roles]` entry: a foreground and background palette name plus a contrast floor.
@@ -203,6 +203,10 @@ pub struct DesignSpec {
     /// `[review]`: the human review lock policy.
     #[serde(skip_serializing_if = "ReviewConfig::is_default")]
     pub review: ReviewConfig,
+    // frob:ticket 01M50AQ6XHV6Z8GS0V8J66M9GD
+    /// `[packs]`: the std pack switches.
+    #[serde(skip_serializing_if = "PacksConfig::is_default")]
+    pub packs: PacksConfig,
     // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
     /// `[game]`: the game accessibility profile, when the project declares one.
     #[serde(skip_serializing_if = "Option::is_none")]

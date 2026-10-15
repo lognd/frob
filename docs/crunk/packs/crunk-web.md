@@ -2,7 +2,7 @@
 
 The `crunk-web` std pack holds crunk's web markup and asset rules in GRL (design D89). It is
 opt-in: the `[packs] crunk_web` switch is off by default, and `crunk_check::packs::PacksSwitch`
-carries it until the crunk.toml spec exposes the table.
+is read from `crunk.toml` by `crunk_spec` (`DesignSpec::packs`) and listed by `crunk rule catalog`.
 
 ## Families
 
