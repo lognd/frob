@@ -1,0 +1,92 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T19:22:27Z"
+digest = "e9c8b50379ae88b38442a77609c599a996959a6b47088b597f5886e2fa4cb393"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+warning: field `base` is never read
+   --> crates/frob-land/src/land.rs:216:5
+    |
+209 | pub(crate) struct Preconditions {
+    |                   ------------- field in this struct
+...
+216 |     base: String,
+    |     ^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `frob-land` (lib) generated 1 warning
+warning: `frob-land` (lib test) generated 1 warning (1 duplicate)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 40s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9a3dc9d4-ef4d-44e7-bedf-989afc2a7613 with nextest profile: default
+    Starting 55 tests across 1 binary (2 binaries skipped)
+        PASS [   0.122s] frob-land::land a_check_in_a_fresh_worktree_hits_the_cache_the_primary_warmed
+        PASS [   0.175s] frob-land::land a_cache_miss_checks_out_the_base_once_for_both_passes
+        PASS [   0.291s] frob-land::land a_configured_block_on_unknown_refuses_an_unreadable_base_ci
+        PASS [   0.366s] frob-land::land a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_worktree
+        PASS [   0.371s] frob-land::land a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts
+        PASS [   0.376s] frob-land::land a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path
+        PASS [   0.436s] frob-land::land a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses
+        PASS [   0.283s] frob-land::land a_red_base_ci_refuses_naming_the_run_and_moves_nothing
+        PASS [   0.664s] frob-land::land a_finding_already_on_the_base_lands_and_is_reported_pre_existing
+        PASS [   0.702s] frob-land::land a_base_commit_changing_code_misses_the_cached_base_set
+        PASS [   0.638s] frob-land::land a_new_finding_refuses_naming_only_the_new_one
+        PASS [   0.488s] frob-land::land a_red_base_files_one_blocking_fix_ticket_and_later_lands_wait_for_it
+        PASS [   0.699s] frob-land::land a_pruned_expired_lease_is_renewed_for_the_ticket_worktree_when_landing_from_the_primary
+        PASS [   0.634s] frob-land::land a_publish_only_failure_on_the_base_does_not_block_the_land
+        PASS [   0.573s] frob-land::land a_release_finding_the_ticket_introduces_refuses
+        PASS [   0.236s] frob-land::land an_expired_lease_is_not_renewed_when_another_holder_took_an_overlap
+        PASS [   1.017s] frob-land::land a_failing_ticket_lands_the_passing_prefix_and_defers_the_rest
+        PASS [   0.622s] frob-land::land a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket
+        PASS [   1.096s] frob-land::land a_green_train_verifies_the_combined_tree_once_and_lands_every_ticket
+        PASS [   0.461s] frob-land::land a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one
+        PASS [   0.223s] frob-land::land an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_nothing
+        PASS [   0.269s] frob-land::land an_unleased_ticket_and_another_worktree_are_refused
+        PASS [   0.594s] frob-land::land a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check
+        PASS [   0.188s] frob-land::land dirty_worktree_refuses_and_lists_paths
+        PASS [   0.242s] frob-land::land conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean
+        PASS [   0.517s] frob-land::land an_expired_lease_is_renewed_and_lands_when_nothing_overlapped_since
+        PASS [   0.689s] frob-land::land a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands
+        PASS [   0.520s] frob-land::land an_override_lands_on_a_red_base_and_records_a_decision_on_the_ticket
+        PASS [   0.528s] frob-land::land an_unreadable_base_ci_is_reported_unresolved_and_the_default_policy_lands
+        PASS [   0.553s] frob-land::land base_commits_differing_only_under_tickets_share_the_cached_base_set
+        PASS [   1.631s] frob-land::land a_conflict_confined_to_cargo_lock_is_regenerated_at_land
+        PASS [   0.557s] frob-land::land dry_run_plan_is_deterministic_and_changes_nothing
+        PASS [   0.530s] frob-land::land dry_run_treats_a_base_that_moved_only_by_ledger_commits_as_merged
+        PASS [   0.574s] frob-land::land fixing_a_base_finding_is_reported_resolved
+        PASS [   0.584s] frob-land::land happy_path_lands_closes_and_cleans_up
+        PASS [   0.497s] frob-land::land landing_from_inside_the_worktree_defaults_to_its_ticket
+        PASS [   0.521s] frob-land::land land_runs_the_throttled_gc_pass_after_removing_the_worktree
+        PASS [   0.150s] frob-land::land retrying_the_land_record_after_a_failed_close_leaves_exactly_one_land_event
+        PASS [   0.591s] frob-land::land lock_contention_refuses_retryably_naming_the_holder
+        PASS [   0.551s] frob-land::land missing_evidence_refuses_unless_bypassed_with_a_reason
+        PASS [   0.455s] frob-land::land red_check_lists_only_blocking_findings_and_counts_the_rest
+        PASS [   0.210s] frob-land::land the_base_ci_gate_asks_about_the_remote_tracking_tip_when_there_is_one
+        PASS [   0.242s] frob-land::land the_base_ci_gate_falls_back_to_the_local_tip_without_a_remote_tracking_ref
+        PASS [   0.621s] frob-land::land no_changelog_with_a_reason_lands_without_a_fragment_and_records_the_event
+        PASS [   0.487s] frob-land::land red_check_refuses_with_exit_3_and_moves_nothing
+        PASS [   0.239s] frob-land::land the_close_guards_refuse_before_the_base_is_merged_or_checked
+        PASS [   0.507s] frob-land::land require_base_green_false_skips_the_ci_read_entirely
+        PASS [   1.041s] frob-land::land land_reuses_a_recorded_tool_pass_for_an_unchanged_tree_and_reruns_after_an_input_changes
+        PASS [   0.493s] frob-land::land the_base_is_resolved_by_full_ref_so_a_same_named_tag_cannot_shadow_it
+        PASS [   0.451s] frob-land::land wait_gives_up_naming_the_attempts_when_the_base_keeps_moving
+        PASS [   0.466s] frob-land::land wait_retries_a_base_that_moved_with_a_code_change
+        PASS [   0.488s] frob-land::land wait_retries_a_base_that_moved_once_with_ledger_only_commits
+        PASS [   0.595s] frob-land::land without_wait_a_moved_base_is_not_retried
+        PASS [   0.807s] frob-land::land two_lands_back_to_back_from_one_primary_both_succeed_without_failure_warnings
+        PASS [   7.285s] frob-land::land concurrent_lands_under_branch_delete_and_pack_refs_churn_succeed_or_refuse_cleanly
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   8.345s] 55 tests run: 55 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = '-p frob-land -E "binary(land)"'
+size = 6718
+status = "measured"
+test_count = 55
+tests_digest = "c72bf6a401731ab377908b74cf6a2863c5649cb89233910a5fe884ec514cade1"
+at = "2026-10-15T19:22:27Z"
+actor = "lognd"
+rev = 1
