@@ -1,6 +1,6 @@
 +++
 id = "01M4Z1MYJSZJ8CMH8NEA8K30K4"
-title = "Land train: adaptive batch size controller (grow on green, halve on red, RAM cap)"
+title = "Land train: adaptive batch size controller (grow on green, halve on red, train_max cap)"
 type = "task"
 category = "todo"
 priority = "high"
@@ -8,10 +8,10 @@ points = 2
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-15T05:48:05Z"
-updated = "2026-10-15T05:59:17Z"
+updated = "2026-10-15T20:51:27Z"
 idempotency_key = "train-batchsize"
 labels = ["area:land", "creates:crates/frob-land/src/batch_size.rs"]
-scope = ["crates/frob-land/src/batch_size.rs"]
+scope = ["crates/frob-land/src/batch_size.rs", "crates/frob-land/src/lib.rs", "docs/design/build-test-ci.md"]
 
 [[links]]
 kind = "blocked-by"
