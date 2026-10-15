@@ -7,8 +7,8 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-15T18:09:32Z"
-updated = "2026-10-15T18:09:32Z"
-scope = ["crates/frob-land/src/lockfile.rs", "crates/frob-land/src/candidate.rs"]
+updated = "2026-10-15T18:10:04Z"
+scope = ["crates/frob-land/src/lockfile.rs"]
 
 [[acceptance]]
 text = "test passes with no global git identity"
