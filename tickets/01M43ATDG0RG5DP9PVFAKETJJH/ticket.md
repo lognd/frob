@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:37Z"
-updated = "2026-10-15T06:40:29Z"
+updated = "2026-10-15T06:49:12Z"
 idempotency_key = "crunk-plan-gal1"
 labels = ["area:crunk"]
 scope = ["crates/crunk-gallery/**", "docs/schemas/crunk-gallery-*.json", "crates/crunk/Cargo.toml", "Cargo.lock", "crates/crunk/src/gallery.rs", "crates/crunk/tests/gallery.rs", "docs/crunk/README.md", "crates/crunk/src/lib.rs"]
@@ -23,11 +23,11 @@ target = "01M43ATASM383KB9130JY79XVV"
 
 [[acceptance]]
 text = "Given the manifest fixtures v1-v3, when validated, then they pass the shipped schemas and a broken one fails with a located error"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given screens and platforms, when enumerated, then the cell list equals the Python list"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the default build, when `crunk gallery check` is run, then it reports the feature is not built in with the remedy"
