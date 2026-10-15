@@ -2,12 +2,12 @@
 id = "01M4ZMHBHERF8Q4T3JH5GFR0YN"
 title = "Gate train_state crashed-driver test to Linux (pid_alive is conservative elsewhere)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 1
 reporter = "lognd"
 created = "2026-10-15T11:18:10Z"
-updated = "2026-10-15T11:18:10Z"
+updated = "2026-10-15T11:18:13Z"
 idempotency_key = "trainstate-win-test"
 scope = ["crates/frob-land/src/train_state.rs"]
 
