@@ -22,3 +22,17 @@ A bound tool reported a finding that no frob rule id covers.
 The message starts with `tool/id` (for example `zizmor/self-repository`).
 Map the tool id to a rule through the stage's `id_map`, or accept the
 finding with `frob:accept TOOL002`. Always Advisory.
+
+## Examples
+
+### TOOL002 tool finding with no frob rule / A finding whose id maps to no rule fires #1 (line 8) (fire)
+
+```json
+[{"ident":"no-such-id","desc":"unmapped","locations":[{"symbolic":{"key":{"Local":{"verbatim_path":"./.github/workflows/ci.yml"}},"annotation":"here","kind":"Primary"},"concrete":{"location":{"offset_span":{"start":10,"end":20}}}}]}]
+```
+
+### TOOL002 tool finding with no frob rule / A linter that reports nothing is clean #2 (line 14) (clean)
+
+```json
+[]
+```

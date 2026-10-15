@@ -21,3 +21,17 @@ A ticket id is referenced but absent from the base ref.
 
 A directive or trailer that names a ticket missing from the base branch
 fails locally and in CI; push the ledger commit or fix the id.
+
+## Examples
+
+### TICK002 frob:ticket directive naming an unknown ticket / A directive naming a ticket absent from the base fires #1 (line 9) (fire)
+
+```rust
+// frob:ticket 01ARZ3NDEKTSV4RRFFQ69G5FAV
+```
+
+### TICK002 frob:ticket directive naming an unknown ticket / A directive naming the ticket under test is clean #2 (line 15) (clean)
+
+```rust
+// frob:ticket {ticket}
+```
