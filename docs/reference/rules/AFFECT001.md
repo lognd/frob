@@ -25,3 +25,29 @@ transitive caller from `SymbolGraph::affects`, excluding the symbol's own
 containers and file nodes) has no lock entry acked strictly later than
 the symbol's own entry. Re-ack the symbol after reviewing its dependents,
 and ack the dependents you reviewed.
+
+## Examples
+
+### AFFECT001 dependents of a changed public contract / A changed signature with unacknowledged dependents fires #1 (line 9) (fire)
+
+```rust
+pub fn base(x: u64) -> u32 {
+    (x * 2) as u32
+}
+
+pub fn caller(x: u32) -> u32 {
+    base(u64::from(x)) + 1
+}
+```
+
+### AFFECT001 dependents of a changed public contract / An unchanged signature is clean #2 (line 21) (clean)
+
+```rust
+pub fn base(x: u32) -> u32 {
+    x * 2
+}
+
+pub fn caller(x: u32) -> u32 {
+    base(x) + 1
+}
+```

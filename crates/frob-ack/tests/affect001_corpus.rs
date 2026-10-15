@@ -24,7 +24,12 @@ fn git(dir: &Path, args: &[&str]) {
         capture: true,
     };
     let out = Runner::new(Limits { jobs: 1 }).run(&spec).expect("run git");
-    assert_eq!(out.status, Outcome::Exited(0), "git {args:?}: {}", out.stderr);
+    assert_eq!(
+        out.status,
+        Outcome::Exited(0),
+        "git {args:?}: {}",
+        out.stderr
+    );
 }
 
 /// Commit and acknowledge the baseline, replace `src/lib.rs` with the block, return the findings.
