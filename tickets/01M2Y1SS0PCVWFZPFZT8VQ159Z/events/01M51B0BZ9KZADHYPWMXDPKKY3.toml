@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D122 sweep (~6ZBSBCW): re-scope. Bind ruff S324 (md5/sha1), S311 (random for security), S501/S501-family (verify=False TLS), S105-S107 (hardcoded secrets) to the matching WEBSEC2xx ids via the id map (catalogue K19). Native stays for CSRF, cookie flags, session fixation, JWT algorithm allowlist, OAuth state/PKCE and NIST 800-63B password policy: no bound tool ships them."
+at = "2026-10-16T03:10:05Z"
+actor = "lognd"
+rev = 1
