@@ -24,6 +24,7 @@
 
 pub mod dialect;
 pub mod export;
+pub mod lint;
 pub mod model;
 pub mod naming;
 

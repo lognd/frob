@@ -3,7 +3,9 @@
 //!
 //! The case's `config=no-tokens` leaves the tokens sheet out, so the definition set is incomplete;
 //! `config=breakpoints` adds a `[breakpoints]` table; `config=tw-theme-*` declares a Tailwind config and a stand-in theme; `config=tokens-current` writes the generated token
-//! files the spec renders, so TOKENS001 finds no drift.
+//! files the spec renders, so TOKENS001 finds no drift; `config=tokens-divergent` then hand-edits one
+//! generated value (EXPORT002); `config=uses-ink` adds a stylesheet reading `var(--color-ink)` (the
+//! TOKEN rules that look at uses). The authored `design/tokens/*.toml` files load as the pipeline does.
 
 // frob:ticket 01M43ATB4X0B56W8T0G8MQFYVM
 
@@ -19,6 +21,7 @@ use crunk_ingest::{ProjectStyles, ingest_tree};
 use crunk_rules::CrunkHost;
 use crunk_rules::review::{AckSignature, ReviewFacts, Subject, judge};
 use crunk_rules::tailwind::TailwindFacts;
+use crunk_rules::token_files::TokenFacts;
 use crunk_spec::DesignSpec;
 use crunk_tailwind::runtime::{ClassDeclaration, ClassResult, ClassStatus};
 use gob_cache::Cache;
@@ -33,6 +36,7 @@ pub struct Project {
     pub styles: ProjectStyles,
     pub tailwind: TailwindFacts,
     pub reviews: Option<ReviewFacts>,
+    pub tokens: Option<TokenFacts>,
     _dir: tempfile::TempDir,
 }
 
@@ -48,6 +52,9 @@ impl CrunkHost for Project {
     }
     fn reviews(&self) -> Option<&ReviewFacts> {
         self.reviews.as_ref()
+    }
+    fn tokens(&self) -> Option<&TokenFacts> {
+        self.tokens.as_ref()
     }
 }
 
@@ -230,20 +237,38 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
         write(dir.path(), file, text);
     }
     if config != Some("no-tokens")
-        && config != Some("tokens-current")
+        && !matches!(config, Some("tokens-current" | "tokens-divergent"))
         && file != "styles/tokens.css"
     {
         write(dir.path(), "styles/tokens.css", ":root {}\n");
     }
     let spec = crunk_spec::parse_spec(&spec_text, &dir.path().join("crunk.toml"), dir.path())
         .expect("spec parses");
-    if config == Some("tokens-current") {
+    if matches!(config, Some("tokens-current" | "tokens-divergent")) {
         for rendered in crunk_tokens::export::render_managed(&spec).expect("render") {
             std::fs::create_dir_all(rendered.path.parent().expect("parent")).expect("mkdir");
             std::fs::write(&rendered.path, rendered.content).expect("write generated file");
         }
     }
+    if config == Some("tokens-divergent") {
+        let css = dir.path().join("styles/tokens.css");
+        let text = std::fs::read_to_string(&css).expect("read generated css");
+        assert!(
+            text.contains("--space-16: 16px;"),
+            "the preset renders --space-16"
+        );
+        std::fs::write(&css, text.replace("--space-16: 16px;", "--space-16: 17px;")).expect("edit");
+    }
+    // frob:ticket 01M4CXR0EQH7WHQSNXCGKXE3V8
+    if config == Some("uses-ink") {
+        write(
+            dir.path(),
+            "styles/use.css",
+            ".a { color: var(--color-ink); }\n",
+        );
+    }
     let styles = ingest_tree(&spec, &Cache::null()).expect("ingest").styles;
+    let tokens = Some(TokenFacts::load(&spec));
     let tailwind = tailwind_facts(&spec, &styles, config);
     let reviews = config.and_then(|c| review_facts(&spec, c));
     Project {
@@ -251,6 +276,7 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
         styles,
         tailwind,
         reviews,
+        tokens,
         _dir: dir,
     }
 }

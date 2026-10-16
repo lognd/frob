@@ -32,6 +32,7 @@ mod drift;
 mod dtcg;
 mod flat;
 mod json;
+mod parity;
 mod tailwind;
 mod uss;
 mod write;
@@ -49,6 +50,7 @@ pub use drift::{DriftReport, FileDrift, Rendered, Status, check, compare, render
 pub use dtcg::{DTCG_VERSION, DtcgExporter, document as dtcg_document};
 pub use flat::FlatJsonExporter;
 pub use json::Json;
+pub use parity::{Divergence, check_parity, parity_of};
 pub use tailwind::TailwindExporter;
 pub use uss::UssExporter;
 pub use write::{ExportError, WriteReport, WrittenFile, write_all};

@@ -13,6 +13,10 @@ pub mod color001;
 pub mod color002;
 /// Rule `CONTRAST001`.
 pub mod contrast001;
+/// Rule `EXPORT001`.
+pub mod export001;
+/// Rule `EXPORT002`.
+pub mod export002;
 /// Rule `GX001`.
 pub mod gx001;
 /// Rule `HUMAN001`.
@@ -55,6 +59,22 @@ pub mod slop040;
 pub mod slop060;
 /// Rule `SPACE001`.
 pub mod space001;
+/// Rule `TOKEN002`.
+pub mod token002;
+/// Rule `TOKEN003`.
+pub mod token003;
+/// Rule `TOKEN004`.
+pub mod token004;
+/// Rule `TOKEN005`.
+pub mod token005;
+/// Rule `TOKEN006`.
+pub mod token006;
+/// Rule `TOKEN007`.
+pub mod token007;
+/// Rule `TOKEN008`.
+pub mod token008;
+/// Rule `TOKEN009`.
+pub mod token009;
 /// Rule `TOKENS001`.
 pub mod tokens001;
 /// Rule `TW001`.
@@ -85,6 +105,8 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <color001::Color001 as gob_rules::RuleDecl>::DEF,
     <color002::Color002 as gob_rules::RuleDecl>::DEF,
     <contrast001::Contrast001 as gob_rules::RuleDecl>::DEF,
+    <export001::Export001 as gob_rules::RuleDecl>::DEF,
+    <export002::Export002 as gob_rules::RuleDecl>::DEF,
     <gx001::Gx001 as gob_rules::RuleDecl>::DEF,
     <human001::Human001 as gob_rules::RuleDecl>::DEF,
     <human002::Human002 as gob_rules::RuleDecl>::DEF,
@@ -106,6 +128,14 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <slop040::Slop040 as gob_rules::RuleDecl>::DEF,
     <slop060::Slop060 as gob_rules::RuleDecl>::DEF,
     <space001::Space001 as gob_rules::RuleDecl>::DEF,
+    <token002::Token002 as gob_rules::RuleDecl>::DEF,
+    <token003::Token003 as gob_rules::RuleDecl>::DEF,
+    <token004::Token004 as gob_rules::RuleDecl>::DEF,
+    <token005::Token005 as gob_rules::RuleDecl>::DEF,
+    <token006::Token006 as gob_rules::RuleDecl>::DEF,
+    <token007::Token007 as gob_rules::RuleDecl>::DEF,
+    <token008::Token008 as gob_rules::RuleDecl>::DEF,
+    <token009::Token009 as gob_rules::RuleDecl>::DEF,
     <tokens001::Tokens001 as gob_rules::RuleDecl>::DEF,
     <tw001::Tw001 as gob_rules::RuleDecl>::DEF,
     <tw002::Tw002 as gob_rules::RuleDecl>::DEF,
@@ -138,6 +168,8 @@ where
     color001::Color001: gob_rules::Measured<P>,
     color002::Color002: gob_rules::Measured<P>,
     contrast001::Contrast001: gob_rules::RepoRule<P>,
+    export001::Export001: gob_rules::Measured<P>,
+    export002::Export002: gob_rules::Measured<P>,
     gx001::Gx001: gob_rules::RepoRule<P>,
     human001::Human001: gob_rules::RepoRule<P>,
     human002::Human002: gob_rules::RepoRule<P>,
@@ -159,6 +191,14 @@ where
     slop040::Slop040: gob_rules::RepoRule<P>,
     slop060::Slop060: gob_rules::RepoRule<P>,
     space001::Space001: gob_rules::Measured<P>,
+    token002::Token002: gob_rules::Measured<P>,
+    token003::Token003: gob_rules::Measured<P>,
+    token004::Token004: gob_rules::Measured<P>,
+    token005::Token005: gob_rules::Measured<P>,
+    token006::Token006: gob_rules::Measured<P>,
+    token007::Token007: gob_rules::Measured<P>,
+    token008::Token008: gob_rules::Measured<P>,
+    token009::Token009: gob_rules::Measured<P>,
     tokens001::Tokens001: gob_rules::Measured<P>,
     tw001::Tw001: gob_rules::Measured<P>,
     tw002::Tw002: gob_rules::Measured<P>,
@@ -177,6 +217,8 @@ where
     rules.push(gob_rules::BoundRule::measured(color001::Color001));
     rules.push(gob_rules::BoundRule::measured(color002::Color002));
     rules.push(gob_rules::BoundRule::repo(contrast001::Contrast001));
+    rules.push(gob_rules::BoundRule::measured(export001::Export001));
+    rules.push(gob_rules::BoundRule::measured(export002::Export002));
     rules.push(gob_rules::BoundRule::repo(gx001::Gx001));
     rules.push(gob_rules::BoundRule::repo(human001::Human001));
     rules.push(gob_rules::BoundRule::repo(human002::Human002));
@@ -198,6 +240,14 @@ where
     rules.push(gob_rules::BoundRule::repo(slop040::Slop040));
     rules.push(gob_rules::BoundRule::repo(slop060::Slop060));
     rules.push(gob_rules::BoundRule::measured(space001::Space001));
+    rules.push(gob_rules::BoundRule::measured(token002::Token002));
+    rules.push(gob_rules::BoundRule::measured(token003::Token003));
+    rules.push(gob_rules::BoundRule::measured(token004::Token004));
+    rules.push(gob_rules::BoundRule::measured(token005::Token005));
+    rules.push(gob_rules::BoundRule::measured(token006::Token006));
+    rules.push(gob_rules::BoundRule::measured(token007::Token007));
+    rules.push(gob_rules::BoundRule::measured(token008::Token008));
+    rules.push(gob_rules::BoundRule::measured(token009::Token009));
     rules.push(gob_rules::BoundRule::measured(tokens001::Tokens001));
     rules.push(gob_rules::BoundRule::measured(tw001::Tw001));
     rules.push(gob_rules::BoundRule::measured(tw002::Tw002));

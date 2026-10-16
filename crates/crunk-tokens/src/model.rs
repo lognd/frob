@@ -313,6 +313,8 @@ pub struct Token {
     pub scopes: Vec<Scope>,
     /// Free-text description, when authored.
     pub description: Option<String>,
+    /// Why the token is deprecated (and what replaces it), when authored; TOKEN009 flags its uses.
+    pub deprecated: Option<String>,
 }
 
 /// A Tailwind `theme` section a token can map into.
@@ -504,6 +506,7 @@ impl Builder {
             modes: IndexMap::new(),
             scopes: Vec::new(),
             description: None,
+            deprecated: None,
         })
     }
 

@@ -24,6 +24,7 @@ fn token(name: &str, kind: TokenKind, value: TokenValue, modes: &[(&str, TokenVa
             .collect::<IndexMap<_, _>>(),
         scopes: Vec::new(),
         description: None,
+        deprecated: None,
     }
 }
 
