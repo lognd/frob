@@ -40,11 +40,11 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Contrast001 {
     fn check(&self, host: &P, out: &mut Out<'_, Self>) {
         let Some(spec) = host.spec() else { return };
         for mode in modes(spec) {
-            for pair in measure_roles(spec, mode)
+            for pair in measure_roles(spec, &mode)
                 .into_iter()
                 .filter(Measured::fails)
             {
-                tracing::debug!(role = %pair.role, ratio = pair.ratio, floor = pair.floor, mode = mode.name, "CONTRAST001: below floor");
+                tracing::debug!(role = %pair.role, ratio = pair.ratio, floor = pair.floor, mode = %mode.name, "CONTRAST001: below floor");
                 out.fire_in(
                     SPEC_FILE,
                     0,

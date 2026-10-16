@@ -4,7 +4,7 @@
 //! The literals come from [`crunk_ingest`]: the colours of every declaration and custom property
 //! of the CSS sheets and of the JSX style props and `className` sites, each with its own byte span.
 //! The palette maths is `crunk-values` through [`crate::color::Palette`]. The rule runs once per
-//! declared mode ([`crate::mode`]); the spec declares one palette today.
+//! declared mode ([`crate::mode`]); the spec may declare `[palette.modes.<name>]` overlays.
 //!
 //! Divergences from the Python rule: the finding is located at the colour token, not at the
 //! declaration line; the fix payload is not attached here (the autofix ticket owns it), so
@@ -52,7 +52,7 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Color001 {
             for sheet in styles.sheets.iter().filter(|s| !is_tokens_sheet(s)) {
                 let path = site_path(spec, &sheet.path);
                 for span in sheet.declarations.iter().flat_map(|d| &d.unreadable_colors) {
-                    tracing::debug!(%path, mode = mode.name, "COLOR001: unreadable colour literal");
+                    tracing::debug!(%path, mode = %mode.name, "COLOR001: unreadable colour literal");
                     out.unresolved_in(
                         &path,
                         span.0,
@@ -72,7 +72,7 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Color001 {
                     };
                     let token = color_token(&spec.tokens, name);
                     let near = distance <= spec.lint.color_tolerance;
-                    tracing::debug!(%path, mode = mode.name, %token, distance, "COLOR001: off-palette literal");
+                    tracing::debug!(%path, mode = %mode.name, %token, distance, "COLOR001: off-palette literal");
                     out.fire_in(
                         &path,
                         located.span.0,

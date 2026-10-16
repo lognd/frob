@@ -626,7 +626,7 @@ pub struct RawSpec {
     /// Where managed CSS and generated tokens live. Required.
     #[schemars(required)]
     pub project: Option<ProjectConfig>,
-    /// Named colors (`name = "<css color>"`), plus the `[palette.roles]` subtable. Required.
+    /// Named colors (`name = "<css color>"`), plus the `[palette.roles]` and `[palette.modes.<name>]` subtables. Required.
     #[schemars(required)]
     #[schemars(schema_with = "palette_schema")]
     pub palette: Option<IndexMap<String, Dyn>>,
@@ -713,8 +713,16 @@ fn decisions_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
 fn palette_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
     schemars::json_schema!({
         "type": "object",
-        "description": "Named colors (`name = \"<css color>\"`), plus the `[palette.roles]` subtable. Required.",
+        "description": "Named colors (`name = \"<css color>\"`), plus the `[palette.roles]` and `[palette.modes.<name>]` subtables. Required.",
         "properties": {
+            "modes": {
+                "type": "object",
+                "description": "Mode name (`dark`, `cb-safe`, ...) to a table recolouring declared palette names; COLOR and CONTRAST rules run once per mode.",
+                "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": {"type": "string", "description": "A CSS color literal replacing the palette entry in this mode."}
+                }
+            },
             "roles": {
                 "type": "object",
                 "description": "Role name to a `[foreground, background]` palette-name pair, or a `{ pair = [fg, bg], floor = <n> }` table overriding the contrast floor (default 4.5).",

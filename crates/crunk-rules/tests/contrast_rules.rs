@@ -59,7 +59,7 @@ fn measure_roles_reports_ratio_and_floor_per_role() {
         &spec_with("#000000", "body = [\"ink\", \"paper\"]"),
         None,
     );
-    let measured = measure_roles(&host.spec, Mode::DEFAULT);
+    let measured = measure_roles(&host.spec, &Mode::DEFAULT);
     assert_eq!(measured.len(), 1);
     assert!(
         (measured[0].ratio - 21.0).abs() < 0.01,

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D122 sweep (~6ZBSBCW): stays native. UNITY301/302 (legacy Input in an Input System project, AddForce in Update) depend on project settings and call context; UNT0004 covers only fixedDeltaTime in Update (row U04 binds it via ~DTW2X7C). No bound tool ships these ids."
+at = "2026-10-16T03:10:05Z"
+actor = "lognd"
+rev = 1

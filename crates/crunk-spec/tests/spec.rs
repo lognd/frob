@@ -918,3 +918,23 @@ fn packs_table_defaults_off_and_switches_crunk_web() {
     let bad = err(&with("[packs]\nunknown = true\n"));
     assert!(detail(&bad).contains("unknown"), "{}", detail(&bad));
 }
+
+// frob:ticket 01M4CXR2R5R3FK8RQS1JJB0WF7
+// frob:tests crates/crunk-spec/src/validate.rs::palette
+#[test]
+fn palette_modes_overlay_declared_names_and_reject_unknown_ones() {
+    let ok_spec = ok(&swap(
+        "[palette.roles]",
+        "[palette.modes.dark]\nink = \"#ffffff\"\n\n[palette.roles]",
+    ));
+    assert_eq!(ok_spec.palette_modes.len(), 1);
+    assert!(ok_spec.palette_modes["dark"].contains_key("ink"));
+    let bad = err(&swap(
+        "[palette.roles]",
+        "[palette.modes.dark]\nnope = \"#fff\"\n\n[palette.roles]",
+    ));
+    assert!(
+        format!("{bad}").contains("not a declared palette name"),
+        "{bad}"
+    );
+}
