@@ -282,28 +282,33 @@ ownership: the parser in `gob-directives` is namespace-parametric and
 one registry holds every verb; a verb is namespaced by what it says,
 and a product evaluates only the verbs its rules consume. The binding
 and capability verbs describe the model and are written `grimble:binds`,
-`grimble:node`, `grimble:channel`, `grimble:effect` (frob never parses
+`grimble:node`, `grimble:channel`, `grimble:boundary` (frob never parses
 them, D28); accounting verbs stay `frob:ticket`, `frob:doc`,
-`frob:tests`; crunk has `crunk:accept` and `crunk:defer`. The claim
-verbs describe work accounting and claims about code that the owner
-makes, so they are in the `frob:` namespace, but their consumer is the
-NEAT family in grimble-lints, which reads them through the shared
-gob-directives registry; grimble ignores `frob:ticket`, `frob:doc` and
-the other accounting verbs.
+`frob:tests`; crunk has `crunk:accept` and `crunk:defer`. Claim verbs (effects,
+roles, dynamic call targets) are claims about the design of code and are
+`grimble:` verbs: a directive is namespaced by its consumer (D120,
+cohesion.md section 4), and frob never consumes them. They are read
+through the shared gob-directives registry; grimble ignores `frob:ticket`,
+`frob:doc` and the other accounting verbs. Every directive must pass the
+admission tests of cohesion.md 4 (not derivable, not an exception in
+disguise, consumed by two rules or verified).
 
 Milestone-2 directives (none is parsed in milestone 1; DSL001 flags
 them until their milestone):
 
 | Verb | Surface | Target | Meaning | Evaluated by |
 |---|---|---|---|---|
-| `frob:effects <set>` | code | unit | the owner's effect claim; the set is `none`, `honest`, `io`, `any` or a list of atoms from neatness.md 3 (`reads(X)`, `writes(Y)`, `clock`, `rng`, `env`, `fs`, `net`, `stdio`, `exit`, `panic`, `diverge`, optional `total`), atoms resolving through the shared registry (grimble-model.md 9.6) | NEAT rules (grimble-lints) |
-| `frob:pure`, `frob:honest` | code | unit | aliases of `frob:effects none` and `frob:effects honest` | NEAT |
-| `frob:core`, `frob:shell` | code | unit | functional-core or imperative-shell marker | NEAT |
-| `frob:hook [kind]` | code | unit | framework entry point, subject to the thin-hook rule | NEAT030 |
-| `frob:dispatcher` | code | unit | intentional dispatcher; opts out of NEAT031 | NEAT031 |
-| `frob:idempotent` | code | unit | a claim discharged only by bound evidence: a passing `frob:tests` binding of kind `idempotent` (a test that applies the unit twice); unbound it is unverified (Unresolved) | NEAT and frob-evidence |
-| `frob:trusted` | code | unit | an unverified claim the owner owns; never counted as verified | NEAT |
-| `frob:calls <symref>...` | code | call site | declares the targets of a dynamic call (May precision) | gob-ir resolution, every product |
+| `grimble:effects <set> [because "..."]` | code | unit or model node | the owner's effect claim; the set is `none`, `honest`, `io`, `any` or a list of atoms from neatness.md 3 (`reads(X)`, `writes(Y)`, `clock`, `rng`, `env`, `fs`, `net`, `stdio`, `exit`, `panic`, `diverge`, optional `total`), atoms resolving through the shared registry (grimble-model.md 9.6); the single spelling that merges the former frob effects and grimble effect verbs (D120) | NEAT rules (grimble-lints) |
+| `grimble:core`, `grimble:shell` | code | unit | functional-core or imperative-shell role claim, verified by the effects rules | NEAT014-016, COH002 |
+| `grimble:calls <symref>...` | code | call site | declares the targets of a dynamic call (May precision) | gob-ir resolution, every product |
+
+Dropped by D120: the pure and honest aliases (spell `grimble:effects none`
+or `honest`), the hook marker (inferred from gob-frameworks; bridge a gap
+with `accept` on NEAT030), the dispatcher marker (`accept` on NEAT031),
+the trusted marker (`accept` on the UNVERIFIED finding) and the
+idempotent marker (the `frob:tests` binding of kind `idempotent` already
+states it). Old spellings parse for one minor release with a DSL
+deprecation finding and an automatic fix.
 
 Ticket ids in `frob:ticket`, `frob:todo` and
 `ticket=` are full ULIDs: a fixer expands a `~handle`, a TICK rule flags

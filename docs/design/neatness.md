@@ -66,16 +66,18 @@ so under section 4.6 the adapter reads it or requires it:
 - Native markers map in where the language has them: Verse `<computes>`
   is `none`; D weak `pure`, Nim `func`, SPARK `Global => null` are
   `honest`; Haskell non-IO types are `none`; Rust `const fn` is `none`.
-- Otherwise a directive on the unit: `frob:effects <set>` where the set
+- Otherwise a directive on the unit: `grimble:effects <set>` where the set
   is `none`, `honest`, `io`, `any`, or a list of atoms `reads(X)`,
   `writes(Y)`, `clock`, `rng`, `env`, `fs`, `net`, `stdio`, `exit`,
   `panic`, `diverge`, optionally suffixed `total` (no panic, no
-  divergence). Aliases: `frob:pure` = `none`, `frob:honest` = `honest`.
-  Markers: `frob:core`, `frob:shell`, `frob:hook [kind]`,
-  `frob:dispatcher` (intentional), `frob:idempotent` (a claim discharged
-  only by a passing bound `frob:tests` of kind `idempotent`; unbound it
-  is unverified), `frob:trusted` (an unverified claim the owner owns).
-  The directives are in the `frob:` namespace and evaluated here
+  divergence). `none` and `honest` are the sets that were once spelled
+  as separate pure and honest verbs; there is one spelling per fact.
+  Role markers: `grimble:core`, `grimble:shell`. Hooks are inferred from
+  the framework vocabulary, an intentional dispatcher or an unverified
+  claim the owner owns is an `accept` exception with a reason and
+  expiry, and an idempotence claim is discharged by a bound `frob:tests`
+  of kind `idempotent`; none of these has a dedicated marker (D120).
+  The directives are in the `grimble:` namespace and evaluated here
   (code-model.md section 4 has the table and the namespace rule).
 - The atoms are the shared registry's (grimble-model.md 9.6), which is
   hierarchical (`fs` covers `fs.read` and `fs.write`); there is one
@@ -160,5 +162,5 @@ Open for the owner:
    no directive?
 2. NEAT031's dispatcher-by-shape heuristic (a body that is mostly
    guarded calls) will have false positives on state machines; is
-   `frob:dispatcher` as the opt-out acceptable, or should the rule be
+   an `accept` exception on NEAT031 acceptable as the opt-out (D120), or should the rule be
    Advisory until the heuristic is measured on this repository?
