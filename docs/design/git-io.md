@@ -106,6 +106,13 @@ Every digest compared with recorded state goes through it (`gob-walk`'s
 checkout under `core.autocrlf` hashes like its LF twin. Parsed text is the
 normalized text, so spans are offsets into it; line numbers are identical
 in both forms.
+The normalization costs time in the `walk` stage: measured with
+`frob check --timing` on a release build over this repository (warm
+caches, three runs), `walk` takes 239-244 ms (it was about 65 ms before
+normalization, and about 240 ms in a debug build). That is roughly 3% of
+the 7.8-8.1 s check budget, well inside it; the dominant stages are
+`file-rules` (about 6.4 s) and `graph` (about 1.1 s). No further walk
+optimization is planned unless `walk` exceeds 5% of the budget.
 
 Measured target: a typical ticket verb spawns zero processes; `land`
 spawns at most two git processes (merge fallback, hooks); `check` spawns
