@@ -88,6 +88,7 @@ pub fn collect(root: &Path) -> Result<Collected, CollectError> {
     let walked = walk(root, &config)?;
     let scanner = Scanner::new(&ScanConfig::default());
     let roles = Roles::new(&gob_config::ledger_dir(root));
+    let content = gob_walk::ContentSource::locate(root);
     let mut directives = Vec::new();
     for entry in &walked.files {
         // frob:ticket 01M43KP0RXKB1DJA8KGJTV288R
@@ -97,7 +98,7 @@ pub fn collect(root: &Path) -> Result<Collected, CollectError> {
         let Some(lang) = Language::detect(&entry.path) else {
             continue;
         };
-        let Ok(text) = std::fs::read_to_string(root.join(&entry.path)) else {
+        let Ok(text) = content.with_reader(|r| r.read_text(&entry.path)) else {
             tracing::debug!(path = %entry.path, "unreadable file not scanned for directives");
             continue;
         };

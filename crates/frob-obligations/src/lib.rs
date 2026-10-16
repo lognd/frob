@@ -347,8 +347,10 @@ pub fn evaluate(inputs: &ObligationInputs<'_>) -> Evaluation {
         .collect();
     let mut raw = Vec::new();
     let mut opaque: BTreeMap<&'static str, (&'static RuleMeta, Vec<String>)> = BTreeMap::new();
+    // Git-normalized content: the same normal form the cache keys and symbol offsets use.
+    let content = gob_walk::ContentSource::locate(inputs.root);
     for path in paths {
-        let Ok(bytes) = std::fs::read(inputs.root.join(path)) else {
+        let Ok(bytes) = content.with_reader(|r| r.read(path)) else {
             tracing::warn!(path, "unreadable file skipped by per-file rules");
             continue;
         };
