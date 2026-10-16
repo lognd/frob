@@ -522,7 +522,7 @@ the train in its own foreground; other callers wait up to `--wait <secs>`
 for `.git/frob/train/results/<ULID>.json`, and `--enqueue-only` (implies
 `--train`) runs the ticket-local gates, writes the queue entry and returns
 exit 0 "queued" without driving or waiting (`--wait 0` still drives one
-round when the lock is free). One file per ticket avoids lost updates; `state.json` holds only
+round when the lock is free). A caller whose `--wait` runs out before its result exists exits 0 "queued"; the entry stays and lands with the next driver. One file per ticket avoids lost updates; `state.json` holds only
 the driver-owned run in flight (id, base oid, candidate oid, members keyed
 by ticket id with frozen head oid, phase, rounds). Resume trusts git first
 (a candidate that is an ancestor of the base means the advance happened;
@@ -578,7 +578,7 @@ that member with no extra check; only unattributable findings are bisected.
 is the planner `Runner`. Per check it runs the cheap ticket rules once per
 member (tools skipped), then one `diff_base` tool run over the candidate,
 ratcheted once against the cached base findings. A member's rule result is
-reused while no other member's scope overlaps its cone (`scopes_overlap`).
+reused while no other member's scope overlaps its cone (`scopes_overlap`); the cone is the set of globs the member's bound evidence depends on, widened by unresolved edges.
 Red evidence is attributed to a member when the finding path is in exactly
 one member's diff; any failure to run is a `CheckFault`, never red.
 
@@ -654,6 +654,7 @@ the round with `E-LAND-TRAIN-FAULT` and leaves every member queued. A stale
 the base, else discard). Verbs: `frob land --train` (enqueue, drive when
 nobody else does, wait up to `--wait`; a lone ticket, a dry run or
 `[land] train = false` use the plain single-ticket `land`), `frob train
+drop <ticket> --reason <text>` (remove one queue entry, releasing nothing else), `frob train
 status` (queue, current candidate, batch size, as an envelope with a schema),
 `frob train run` (one round) and `frob train drain` (rounds until the queue
 is empty); the driving verbs refuse with `E-LAND-TRAIN-OFF` when the train is
