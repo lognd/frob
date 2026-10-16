@@ -201,7 +201,7 @@ mod tests {
         assert_eq!(names().len(), 3);
     }
 
-    // frob:tests crates/gob-check/src/tool_def.rs::ToolDef::default_args
+    // frob:tests crates/gob-check/src/tool_def.rs::ToolDef.default_args
     #[test]
     fn pinned_version_is_substituted_into_argv() {
         let def = lookup("zizmor").unwrap();
@@ -230,7 +230,7 @@ args = ["old-flag", "{version}"]
         .unwrap()
     }
 
-    // frob:tests crates/gob-check/src/tool_def.rs::ToolDef::args_for
+    // frob:tests crates/gob-check/src/tool_def.rs::ToolDef.args_for
     #[test]
     fn version_in_a_renamed_flag_range_selects_the_variant() {
         let def = renamed();

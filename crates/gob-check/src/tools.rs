@@ -1406,7 +1406,7 @@ mod tests {
         assert_eq!(spawns(), 2);
     }
 
-    // frob:tests crates/gob-check/src/config.rs::ToolStage::resolved
+    // frob:tests crates/gob-check/src/config.rs::ToolStage.resolved
     #[test]
     fn a_def_stage_runs_from_data_for_zizmor_and_ruff() {
         let t: crate::config::CheckTable = toml::from_str(
@@ -1430,7 +1430,7 @@ mod tests {
         assert_eq!(with_variant(&r, Some("0.14.1")).args, r.args);
     }
 
-    // frob:tests crates/gob-check/src/config.rs::ToolStage::validate
+    // frob:tests crates/gob-check/src/config.rs::ToolStage.validate
     #[test]
     fn an_unknown_def_is_a_cfg_error() {
         let t: crate::config::CheckTable =
