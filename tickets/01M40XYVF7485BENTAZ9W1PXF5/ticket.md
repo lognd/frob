@@ -8,10 +8,10 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T13:06:22Z"
-updated = "2026-10-16T03:17:01Z"
+updated = "2026-10-16T03:22:25Z"
 idempotency_key = "m2-raw-readers-normalized"
 labels = ["milestone:2"]
-scope = ["crates/gob-check/**", "crates/frob-obligations/**", "crates/frob-check/src/snapshot.rs", "crates/gob-walk/**"]
+scope = ["crates/gob-check/**", "crates/frob-obligations/**", "crates/frob-check/src/snapshot.rs", "crates/gob-walk/**", "crates/frob-check/tests/it/**"]
 
 [[acceptance]]
 text = "Given core.autocrlf toggled with unchanged content, when check runs twice, then findings and their spans are identical"
