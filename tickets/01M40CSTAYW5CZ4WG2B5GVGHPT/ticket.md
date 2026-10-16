@@ -2,7 +2,8 @@
 id = "01M40CSTAYW5CZ4WG2B5GVGHPT"
 title = "gob-cli: per-verb text renderers instead of the generic field dump"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
