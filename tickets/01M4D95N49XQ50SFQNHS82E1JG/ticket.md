@@ -2,7 +2,8 @@
 id = "01M4D95N49XQ50SFQNHS82E1JG"
 title = "TYPING001: strict null or type checking disabled in project configuration (tsconfig, csproj Nullable, pyright, ty or mypy settings)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
