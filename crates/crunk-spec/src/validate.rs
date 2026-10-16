@@ -249,35 +249,72 @@ pub(crate) fn tokens(raw: &RawTokens) -> Res<TokensConfig> {
     })
 }
 
-/// The parsed colors and the raw `roles` subtable of `[palette]`.
-pub(crate) type PaletteParts = (IndexMap<String, Color>, IndexMap<String, Dyn>);
+/// The parsed colors, the raw `roles` subtable and the per-mode colour overlays of `[palette]`.
+pub(crate) type PaletteParts = (
+    IndexMap<String, Color>,
+    IndexMap<String, Dyn>,
+    IndexMap<String, IndexMap<String, Color>>,
+);
 
-/// `[palette]`: split off `roles` and parse every color literal.
+fn color_literal(path: Vec<Seg>, value: &Dyn) -> Res<Color> {
+    let Dyn::Str(literal) = value else {
+        return Err(fail(path, "color literal must be a string"));
+    };
+    Color::parse(literal).map_err(|_| fail(path, format!("unparseable color literal {literal:?}")))
+}
+
+/// `[palette.modes.<name>]`: each table recolours declared palette names for one mode.
+fn palette_modes(
+    raw: &IndexMap<String, Dyn>,
+    colors: &IndexMap<String, Color>,
+) -> Res<IndexMap<String, IndexMap<String, Color>>> {
+    let mut out = IndexMap::new();
+    for (mode, value) in raw {
+        let path = keys(&["palette", "modes", mode]);
+        let Dyn::Table(table) = value else {
+            return Err(fail(path, "must be a table of palette name to color"));
+        };
+        if mode == "default" {
+            return Err(fail(path, "`default` is the palette itself, not a mode"));
+        }
+        let mut overlay = IndexMap::new();
+        for (name, literal) in table {
+            let leaf = extend(&path, vec![key(name)]);
+            if !colors.contains_key(name) {
+                return Err(fail(
+                    leaf,
+                    format!("`{name}` is not a declared palette name"),
+                ));
+            }
+            overlay.insert(name.clone(), color_literal(leaf, literal)?);
+        }
+        tracing::debug!(mode = %mode, colors = overlay.len(), "[palette.modes] resolved");
+        out.insert(mode.clone(), overlay);
+    }
+    Ok(out)
+}
+
+/// `[palette]`: split off `roles` and `modes` and parse every color literal.
 pub(crate) fn palette(raw: &IndexMap<String, Dyn>) -> Res<PaletteParts> {
     let mut colors = IndexMap::new();
     let mut roles = IndexMap::new();
+    let mut modes_raw = IndexMap::new();
     for (name, value) in raw {
-        if name == "roles" {
-            match value {
-                Dyn::Table(t) => roles.clone_from(t),
-                _ => return Err(fail(keys(&["palette", "roles"]), "must be a table")),
-            }
-            continue;
-        }
-        let path = keys(&["palette", name]);
-        let Dyn::Str(literal) = value else {
-            return Err(fail(path, "color literal must be a string"));
-        };
-        match Color::parse(literal) {
-            Ok(color) => {
-                colors.insert(name.clone(), color);
-            }
-            Err(_) => {
-                return Err(fail(path, format!("unparseable color literal {literal:?}")));
+        match (name.as_str(), value) {
+            ("roles", Dyn::Table(t)) => roles.clone_from(t),
+            ("roles", _) => return Err(fail(keys(&["palette", "roles"]), "must be a table")),
+            ("modes", Dyn::Table(t)) => modes_raw.clone_from(t),
+            ("modes", _) => return Err(fail(keys(&["palette", "modes"]), "must be a table")),
+            _ => {
+                colors.insert(
+                    name.clone(),
+                    color_literal(keys(&["palette", name]), value)?,
+                );
             }
         }
     }
-    Ok((colors, roles))
+    let modes = palette_modes(&modes_raw, &colors)?;
+    Ok((colors, roles, modes))
 }
 
 fn pair_names(path: &[Seg], value: &Dyn) -> Res<(String, String)> {

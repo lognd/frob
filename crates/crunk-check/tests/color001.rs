@@ -135,6 +135,27 @@ fn a_failing_role_pair_is_reported_at_the_spec() {
     );
 }
 
+// frob:ticket 01M4CXR2R5R3FK8RQS1JJB0WF7
+// frob:tests crates/crunk-rules/src/rules/contrast001.rs::Contrast001
+#[test]
+fn a_contrast_failure_only_in_the_cb_safe_mode_names_the_mode() {
+    let with_mode = spec().replace(
+        "[palette.roles]",
+        "[palette.modes.cb-safe]\npaper = \"#2a2a2a\"\n\n[palette.roles]",
+    );
+    let f = findings_of(&with_mode, "styles/a.css", ".a { padding: 0; }\n");
+    let hits: Vec<_> = f
+        .iter()
+        .filter(|f| f.rule.as_str() == "CONTRAST001")
+        .collect();
+    assert_eq!(hits.len(), 1, "{hits:?}");
+    assert!(
+        hits[0].message.ends_with(" in mode `cb-safe`"),
+        "{}",
+        hits[0].message
+    );
+}
+
 /// A spec-only project: a valid `crunk.toml` and nothing to ingest.
 // frob:ticket 01M4DYPH29YAN8DBKAKKCDWQGX
 // frob:tests crates/crunk-rules/src/rules/color001.rs::Color001

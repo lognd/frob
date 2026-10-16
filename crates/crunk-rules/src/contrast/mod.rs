@@ -36,14 +36,14 @@ impl Measured {
 ///
 /// A role naming a palette entry the mode lacks is skipped with a warning: the spec validates
 /// role names at load, so it only happens for a mode palette that omits an entry.
-pub fn measure_roles(spec: &DesignSpec, mode: Mode) -> Vec<Measured> {
+pub fn measure_roles(spec: &DesignSpec, mode: &Mode) -> Vec<Measured> {
     let palette = mode.palette(spec);
     let colour = |name: &str| palette.iter().find(|(n, _)| *n == name).map(|(_, c)| *c);
     spec.roles
         .iter()
         .filter_map(|(role, pair)| {
             let (Some(fg), Some(bg)) = (colour(&pair.foreground), colour(&pair.background)) else {
-                tracing::warn!(role, mode = mode.name, "role names a colour the mode lacks");
+                tracing::warn!(role, mode = %mode.name, "role names a colour the mode lacks");
                 return None;
             };
             Some(Measured {
