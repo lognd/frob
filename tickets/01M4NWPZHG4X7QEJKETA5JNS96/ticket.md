@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-11T16:28:38Z"
-updated = "2026-10-16T13:26:02Z"
+updated = "2026-10-16T13:49:21Z"
 scope = ["crates/gob-dev/src/files.rs", "crates/gob-dev/tests/generate.rs", "changelog.d/*A5JNS96*"]
 +++
 
