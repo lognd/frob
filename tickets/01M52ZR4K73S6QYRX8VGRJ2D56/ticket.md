@@ -8,6 +8,6 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T18:31:50Z"
-updated = "2026-10-16T18:31:52Z"
+updated = "2026-10-16T18:52:54Z"
 scope = ["crates/gob-dev/tests/layering.rs", ".github/workflows/**", "crates/frob-release/tests/**", "crates/gob-check/**", "crates/gob-packs/**", "changelog.d/**", "docs/**"]
 +++
