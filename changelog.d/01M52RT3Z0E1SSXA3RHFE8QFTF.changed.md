@@ -1,0 +1,1 @@
+- The land train now evicts a member that fails to merge into the verified final candidate (settled evicted with git's reason) and ends the round, instead of faulting the whole round.

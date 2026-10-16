@@ -29,7 +29,7 @@ use serde::Serialize;
 use crate::base_ci::{CachedCi, LandConfig, read_config};
 use crate::batch_size::{self, Outcome as SizeOutcome};
 use crate::bisect::{self, CheckFault, Plan, Runner, Verdict};
-use crate::candidate::{CandidateMember, build_candidate, scopes_overlap};
+use crate::candidate::{CandidateMember, Skipped, build_candidate, scopes_overlap};
 use crate::error::{LandError, needs_action};
 use crate::land::{
     Begun, Preconditions, already_done, base_ref, begin, blank_outcome, finish_member, land,
@@ -522,7 +522,18 @@ impl<'a> Driver<'a> {
             base_oid,
             &members,
         )?;
-        for s in &candidate.skipped {
+        self.evict_skipped(&candidate.skipped, chosen, report)?;
+        Ok(())
+    }
+
+    /// Settle every skipped member `Evicted` with git's reason and drop it from `chosen`.
+    fn evict_skipped(
+        &self,
+        skipped: &[Skipped],
+        chosen: &mut Vec<Chosen>,
+        report: &mut RoundReport,
+    ) -> Result<(), LandError> {
+        for s in skipped {
             let Some(c) = chosen.iter().find(|c| c.pre.handle == s.handle) else {
                 continue;
             };
@@ -531,8 +542,8 @@ impl<'a> Driver<'a> {
             report.evicted.push(format!("{}: {reason}", s.handle));
             self.settle(&c.pre.id, &report.run, MemberStatus::Evicted, Some(reason))?;
         }
-        let gone: Vec<String> = candidate.skipped.iter().map(|s| s.handle.clone()).collect();
-        chosen.retain(|c| !gone.contains(&c.pre.handle));
+        let gone: Vec<&str> = skipped.iter().map(|s| s.handle.as_str()).collect();
+        chosen.retain(|c| !gone.contains(&c.pre.handle.as_str()));
         Ok(())
     }
 
@@ -750,11 +761,14 @@ impl<'a> Driver<'a> {
                 &base_oid,
                 &members,
             )?;
-            if let Some(s) = candidate.skipped.first() {
-                return Err(LandError::Config(format!(
-                    "{} did not merge into the verified candidate: {}",
-                    s.handle, s.reason
-                )));
+            if !candidate.skipped.is_empty() {
+                // The checked candidate no longer matches: evict the non-merging members and
+                // end the round so the rest are re-screened and re-checked next round.
+                let skipped = candidate.skipped.clone();
+                drop(candidate);
+                tracing::warn!(run = %report.run, evicted = skipped.len(), "final candidate dropped members; round ends");
+                self.evict_skipped(&skipped, &mut chosen, &mut report)?;
+                return Ok(report);
             }
             let mut run = TrainRun::new(
                 report.run.clone(),
