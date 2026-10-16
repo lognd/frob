@@ -1,0 +1,1 @@
+frob land --train: ticket rules now run at enqueue (a red ticket is refused before queueing), base CI is read once per train round, and members red on their own rules or attributed by finding path are bisected first.

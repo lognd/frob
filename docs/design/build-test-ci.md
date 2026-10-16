@@ -541,6 +541,17 @@ evicted result is also written to the ticket in the ledger, not only to
 The writes happen after the round publishes, so a ledger that lives on the
 base branch is not moved mid-round.
 
+**Work outside the lock.** The ticket's cheap rules (tools skipped) run at
+enqueue, in the agent's process: a ticket that is new-red on them is refused
+there, and the raw blocking findings go into the queue entry with the frozen
+head oid. The driver re-ratchets them against the base findings instead of
+running the rules again (an entry without them is run by the driver). Base CI
+is read once per round and shared by every member's preconditions, not once
+per member. When the first batch check is red, the planner bisects the
+suspects first: members red on their own rules, or named by finding path in
+the union run. A member red on its own rules needs no union run, so one such
+member costs one union run rather than a full bisection.
+
 **Lock.** The driver holds `land.lock` for the whole train, so single
 lands, the base-CI gate and the watchdog work unchanged (tickets.md
 section 10). Per-member preconditions and the cheap close guards run for

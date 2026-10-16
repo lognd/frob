@@ -14,8 +14,10 @@
 //! and the land proceeds; `block_on_unknown_ci = true` refuses instead.
 
 // frob:ticket 01M4CTDWJRKBC64EBQPGHMWDGG
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 use frob_ledger::Ledger;
 use frob_ledger::index::ListFilter;
@@ -111,6 +113,64 @@ impl GhCli {
         Program::Tool {
             name: "gh".to_owned(),
         }
+    }
+}
+
+/// A [`CiReader`] that asks its inner reader once per commit until [`reset`](Self::reset).
+///
+/// The train driver loads every queued member in a round against the same base tip; this makes that
+/// one `gh` read per round instead of one per member (the enqueue read stays as the early refusal).
+#[derive(Debug)]
+pub struct CachedCi {
+    inner: Option<Arc<dyn CiReader>>,
+    seen: Mutex<HashMap<String, CiState>>,
+}
+
+impl CachedCi {
+    /// A cache over `inner` (the GitHub CLI when `None`).
+    #[must_use]
+    pub fn new(inner: Option<Arc<dyn CiReader>>) -> Self {
+        Self {
+            inner,
+            seen: Mutex::new(HashMap::new()),
+        }
+    }
+
+    /// Forget every cached state (call at the start of a round).
+    pub fn reset(&self) {
+        self.seen
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clear();
+    }
+
+    fn reader(&self) -> &dyn CiReader {
+        self.inner.as_deref().unwrap_or(&GhCli)
+    }
+}
+
+impl CiReader for CachedCi {
+    fn read(&self, repo: &Repo, cwd: &Path, sha: &str) -> CiState {
+        if let Some(state) = self
+            .seen
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get(sha)
+        {
+            tracing::debug!(sha, "base CI state reused within the round");
+            return state.clone();
+        }
+        let state = self.reader().read(repo, cwd, sha);
+        tracing::info!(sha, "base CI read for the round");
+        self.seen
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(sha.to_owned(), state.clone());
+        state
+    }
+
+    fn runs(&self, repo: &Repo, cwd: &Path, branch: &str) -> Option<Vec<RunRecord>> {
+        self.reader().runs(repo, cwd, branch)
     }
 }
 
@@ -515,5 +575,39 @@ mod tests {
         };
         let g = judge(&cfg(), red, "abcdef0123456789", Some("hotfix")).expect("overridden");
         assert!(g.override_note.expect("note").contains("hotfix"));
+    }
+}
+
+#[cfg(test)]
+mod cached_ci_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicU32, Ordering};
+
+    #[derive(Debug, Default)]
+    struct Counting(AtomicU32);
+
+    impl CiReader for Counting {
+        fn read(&self, _repo: &Repo, _cwd: &Path, _sha: &str) -> CiState {
+            self.0.fetch_add(1, Ordering::SeqCst);
+            CiState::Green { checks: 1 }
+        }
+    }
+
+    // frob:tests crates/frob-land/src/base_ci.rs::CachedCi
+    #[test]
+    fn one_read_per_sha_until_reset() {
+        let dir = tempfile::tempdir().unwrap();
+        let repo = Repo::init(dir.path()).expect("init");
+        let inner = Arc::new(Counting::default());
+        let cache = CachedCi::new(Some(inner.clone()));
+        for _ in 0..3 {
+            cache.read(&repo, dir.path(), "abc");
+        }
+        assert_eq!(inner.0.load(Ordering::SeqCst), 1);
+        cache.read(&repo, dir.path(), "def");
+        assert_eq!(inner.0.load(Ordering::SeqCst), 2);
+        cache.reset();
+        cache.read(&repo, dir.path(), "abc");
+        assert_eq!(inner.0.load(Ordering::SeqCst), 3);
     }
 }

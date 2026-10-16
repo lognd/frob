@@ -346,7 +346,7 @@ pub(crate) struct Verdict {
 }
 
 /// Notes of the findings of `report` that fail the gate (its own `fail_on` predicate, one finding at a time).
-fn blocking(report: &CheckReport) -> Vec<FindingNote> {
+pub(crate) fn blocking(report: &CheckReport) -> Vec<FindingNote> {
     if report.exit_code() == gob_diagnostics::ExitCode::Ok {
         return Vec::new();
     }
@@ -368,8 +368,13 @@ fn blocking(report: &CheckReport) -> Vec<FindingNote> {
 // frob:ticket 01M4MH62H1AE14Z472QDSD1QBK
 /// Blocking findings of an unscoped `report` that the `base` set does not absorb (multiset comparison); the merge train's verdict.
 pub(crate) fn new_blocking(report: &CheckReport, base: &[FindingNote]) -> Vec<FindingNote> {
+    without_base(blocking(report), base)
+}
+
+/// The `found` findings the `base` set does not absorb (multiset comparison); re-ratchets stored findings with no re-run.
+pub(crate) fn without_base(found: Vec<FindingNote>, base: &[FindingNote]) -> Vec<FindingNote> {
     let mut budget = counts(base);
-    blocking(report)
+    found
         .into_iter()
         .filter(|n| match budget.get_mut(n.fingerprint.as_str()) {
             Some(left) if *left > 0 => {

@@ -125,7 +125,11 @@ impl<R: Runner> Planner<'_, R> {
         Err(last.expect("two attempts ran"))
     }
 
-    fn solve(&mut self, batch: Vec<String>, suspects: &[String]) -> Result<(), CheckFault> {
+    fn solve(
+        &mut self,
+        batch: Vec<String>,
+        suspects: &dyn Fn() -> Vec<String>,
+    ) -> Result<(), CheckFault> {
         let mut pending = batch;
         let mut evidence: Option<String> = None;
         let mut first = true;
@@ -140,6 +144,7 @@ impl<R: Runner> Planner<'_, R> {
                     Verdict::Red(ev) => ev,
                 },
             };
+            let suspects = if first { suspects() } else { Vec::new() };
             if first && !suspects.is_empty() && suspects.len() < pending.len() {
                 let rest: Vec<String> = pending
                     .iter()
@@ -152,7 +157,7 @@ impl<R: Runner> Planner<'_, R> {
                         "train bisect narrowed to suspects"
                     );
                     self.accepted.extend(rest);
-                    pending = suspects.to_vec();
+                    pending.clone_from(&suspects);
                 }
             }
             first = false;
@@ -234,6 +239,16 @@ impl<R: Runner> Planner<'_, R> {
 ///
 /// `suspects` are tickets already attributed to a failure by path; they are bisected first.
 pub fn plan<R: Runner>(batch: &[String], suspects: &[String], runner: &R) -> Plan {
+    plan_with(batch, &|| suspects.to_vec(), runner)
+}
+
+/// As [`plan`], but `suspects` is asked for once, after the first red check of the batch, so a
+/// runner can attribute the failure (to members red on their own rules, or by finding path) first.
+pub fn plan_with<R: Runner>(
+    batch: &[String],
+    suspects: &dyn Fn() -> Vec<String>,
+    runner: &R,
+) -> Plan {
     let mut planner = Planner {
         runner,
         batch,

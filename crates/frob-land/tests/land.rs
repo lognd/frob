@@ -2377,10 +2377,6 @@ fn a_member_that_does_not_merge_is_evicted_and_the_rest_land() {
             let s = fx.start(&format!("Add {dir}"), &[&format!("{dir}/**")]);
             let rel = format!("{dir}/{dir}.rs");
             Fixture::commit_in(&s.wt, &rel, "fn f() {}\n");
-            if i < 2 {
-                // members 0 and 1 add the same file with other content: a merge conflict
-                Fixture::commit_in(&s.wt, "shared/gen.md", &format!("from {i}\n"));
-            }
             Fixture::evidence(&s, &rel);
             let lo = LandOptions {
                 handle: Some(s.handle.clone()),
@@ -2391,6 +2387,9 @@ fn a_member_that_does_not_merge_is_evicted_and_the_rest_land() {
         })
         .collect();
     let clash = &tickets[1];
+    // the base gains the clash member's file with other content after enqueue: an add/add conflict
+    // that only shows once the member is merged onto the moving base, so the ticket rules stay green
+    Fixture::commit_in(&fx.root, "t01/t01.rs", "fn other() {}\n");
     let store = frob_land::train_state::TrainStore::new(fx.repo().common_dir());
     store
         .set_batch(&frob_land::train_state::BatchSize { current: 8, max: 8 })

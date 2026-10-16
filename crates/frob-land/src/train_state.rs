@@ -24,6 +24,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::LandError;
 use crate::lock::pid_alive;
+use crate::ratchet::FindingNote;
 
 /// Version of the on-disk layouts; a run with another value is discarded on load.
 pub const SCHEMA_VERSION: u32 = 1;
@@ -200,6 +201,11 @@ pub struct QueueEntry {
     pub worktree: String,
     /// Frozen head oid of the branch at enqueue.
     pub head_oid: String,
+    /// Raw blocking findings of the ticket-scoped rules run at enqueue for `head_oid`, outside the
+    /// land lock; the driver re-ratchets them against the base instead of re-running (absent on
+    /// entries written before this field existed, which the driver runs itself).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rules: Option<Vec<FindingNote>>,
 }
 
 /// What became of one ticket, for its enqueuer.
@@ -672,6 +678,7 @@ mod tests {
             actor: "a".into(),
             worktree: "/w".into(),
             head_oid: "d".repeat(40),
+            rules: None,
         };
         let (b, a) = (mk(20), mk(10));
         store.enqueue(&b).unwrap();

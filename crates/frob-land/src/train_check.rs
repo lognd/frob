@@ -66,6 +66,8 @@ pub struct CandidateChecker<B: CandidateBackend> {
     backend: B,
     members: Vec<MemberInfo>,
     cache: Mutex<HashMap<String, Vec<FindingNote>>>,
+    /// Members the last red union run attributed by finding path.
+    attributed: Mutex<Vec<String>>,
     stats: Mutex<CheckStats>,
 }
 
@@ -76,6 +78,7 @@ impl<B: CandidateBackend> CandidateChecker<B> {
             backend,
             members,
             cache: Mutex::new(HashMap::new()),
+            attributed: Mutex::new(Vec::new()),
             stats: Mutex::new(CheckStats::default()),
         }
     }
@@ -86,6 +89,30 @@ impl<B: CandidateBackend> CandidateChecker<B> {
             .stats
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    /// Members known to be behind a red verdict without another check: red on their own rules, or
+    /// named by path in the last red union run, in batch order (the planner bisects these first).
+    pub fn suspects(&self) -> Vec<String> {
+        let cache = self
+            .cache
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let attributed = self
+            .attributed
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let out: Vec<String> = self
+            .members
+            .iter()
+            .filter(|m| {
+                cache.get(&m.handle).is_some_and(|f| !f.is_empty())
+                    || attributed.contains(&m.handle)
+            })
+            .map(|m| m.handle.clone())
+            .collect();
+        tracing::info!(suspects = out.len(), "train suspects attributed");
+        out
     }
 
     fn bump(&self, f: impl FnOnce(&mut CheckStats)) {
@@ -191,6 +218,13 @@ impl<B: CandidateBackend> Runner for CandidateChecker<B> {
             return Ok(Verdict::Green);
         }
         tracing::warn!(red = found.len(), "train candidate red on the union run");
+        *self
+            .attributed
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = found
+            .iter()
+            .filter_map(|n| self.attribute(subset, n))
+            .collect();
         let lines: Vec<String> = found
             .iter()
             .map(|n| {
@@ -220,6 +254,37 @@ pub struct GitBackend {
     pub worktrees: HashMap<String, PathBuf>,
     /// Counter naming the temp refs of successive candidates.
     pub round: Mutex<u32>,
+    /// Raw rule findings stored at enqueue, by handle; a member listed here is re-ratcheted, not re-run.
+    pub stored: HashMap<String, Vec<FindingNote>>,
+}
+
+/// Run the cheap ticket rules (tools skipped) of `handle` in `dir` and return the raw blocking findings.
+///
+/// Used at enqueue, in the agent's process outside the land lock; the driver re-ratchets the result
+/// against the base findings instead of running the rules again.
+///
+/// # Errors
+///
+/// The check could not run.
+pub fn run_member_rules(
+    dir: &Path,
+    handle: &str,
+    base_oid: &str,
+    ledger: &LedgerConfig,
+) -> Result<Vec<FindingNote>, LandError> {
+    let report = frob_check::run(
+        dir,
+        &CheckOptions {
+            ledger: Some(ledger.clone()),
+            skip_telemetry: true,
+            ticket: Some(handle.to_owned()),
+            base: Some(base_oid.to_owned()),
+            skip_tools: true,
+            ..CheckOptions::default()
+        },
+    )
+    .map_err(|e| LandError::Config(e.to_string()))?;
+    Ok(ratchet::blocking(&report))
 }
 
 impl GitBackend {
@@ -245,17 +310,14 @@ impl CandidateBackend for GitBackend {
             .get(handle)
             .ok_or_else(|| fault(format!("no worktree for {handle}")))?;
         let (_, base) = self.base(dir).map_err(fault)?;
-        let report = frob_check::run(
-            dir,
-            &CheckOptions {
-                ticket: Some(handle.to_owned()),
-                base: Some(self.base_oid.clone()),
-                skip_tools: true,
-                ..self.options()
-            },
-        )
-        .map_err(fault)?;
-        Ok(ratchet::new_blocking(&report, &base))
+        let raw = match self.stored.get(handle) {
+            Some(found) => {
+                tracing::info!(%handle, "train member rules taken from enqueue");
+                found.clone()
+            }
+            None => run_member_rules(dir, handle, &self.base_oid, &self.ledger).map_err(fault)?,
+        };
+        Ok(ratchet::without_base(raw, &base))
     }
 
     fn union_run(&self, subset: &[String]) -> Result<Vec<FindingNote>, CheckFault> {
@@ -436,5 +498,40 @@ mod tests {
                 message: "oom".into()
             })
         );
+    }
+
+    // frob:tests crates/frob-land/src/train_check.rs::suspects
+    #[test]
+    fn member_red_on_own_rules_is_a_suspect() {
+        let mut fake = Fake::default();
+        fake.rules.insert("B".into(), vec![note(Some("b/y.rs"))]);
+        let c = CandidateChecker::new(&fake, members());
+        assert!(matches!(c.check(&set(&["A", "B"])), Ok(Verdict::Red(_))));
+        assert_eq!(c.suspects(), set(&["B"]));
+    }
+
+    // frob:tests crates/frob-land/src/train_check.rs::suspects
+    #[test]
+    fn path_attributed_union_finding_is_a_suspect() {
+        let fake = Fake {
+            union: vec![note(Some("a/x.rs")), note(None)],
+            ..Fake::default()
+        };
+        let c = CandidateChecker::new(&fake, members());
+        assert!(matches!(c.check(&set(&["A", "B"])), Ok(Verdict::Red(_))));
+        assert_eq!(c.suspects(), set(&["A"]));
+    }
+
+    // frob:tests crates/frob-land/src/train_check.rs::suspects
+    // frob:tests crates/frob-land/src/bisect.rs::plan_with
+    #[test]
+    fn own_rule_red_member_costs_one_union_run() {
+        let mut fake = Fake::default();
+        fake.rules.insert("B".into(), vec![note(Some("b/y.rs"))]);
+        let c = CandidateChecker::new(&fake, members());
+        let plan = crate::bisect::plan_with(&set(&["A", "B"]), &|| c.suspects(), &c);
+        assert_eq!(plan.landable, set(&["A"]));
+        assert_eq!(plan.culprits.len(), 1);
+        assert_eq!(c.stats().union_runs, 1);
     }
 }

@@ -26,7 +26,7 @@ use gob_time::Clock;
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use crate::base_ci::{LandConfig, read_config};
+use crate::base_ci::{CachedCi, LandConfig, read_config};
 use crate::batch_size::{self, Outcome as SizeOutcome};
 use crate::bisect::{self, CheckFault, Plan, Runner, Verdict};
 use crate::candidate::{CandidateMember, build_candidate, scopes_overlap};
@@ -37,7 +37,8 @@ use crate::land::{
 };
 use crate::lock::{CODE_LOCKED, LandLock};
 use crate::plan::{LandOptions, LandOutcome};
-use crate::train_check::{CandidateChecker, GitBackend, MemberInfo};
+use crate::ratchet::{self, FindingNote};
+use crate::train_check::{CandidateChecker, GitBackend, MemberInfo, run_member_rules};
 use crate::train_close::{CloseMember, TrainCloser};
 use crate::train_state::{
     BatchSize, Member, MemberStatus, Phase, QueueEntry, SCHEMA_VERSION, TicketResult, TrainRun,
@@ -272,6 +273,8 @@ struct Driver<'a> {
     /// Red and evicted results waiting to be written onto their tickets once the round has published
     /// (a ledger write mid-round would move a base branch that also carries the ledger).
     handbacks: Mutex<Vec<(TicketId, MemberStatus, Option<String>)>>,
+    /// Base CI read once per round and shared by every member's preconditions.
+    ci: Arc<CachedCi>,
 }
 
 impl<'a> Driver<'a> {
@@ -297,6 +300,7 @@ impl<'a> Driver<'a> {
             lock,
             seq: 0,
             handbacks: Mutex::new(Vec::new()),
+            ci: Arc::new(CachedCi::new(opts.land.ci_reader.clone())),
         })
     }
 
@@ -305,6 +309,7 @@ impl<'a> Driver<'a> {
         let lo = LandOptions {
             handle: Some(entry.id.to_string()),
             dry_run: false,
+            ci_reader: Some(self.ci.clone()),
             ..self.opts.land.clone()
         };
         let begun = match begin(Path::new(&entry.worktree), &lo, self.clock) {
@@ -554,6 +559,10 @@ impl<'a> Driver<'a> {
                 .map(|c| (c.pre.handle.clone(), c.pre.wt_path.clone()))
                 .collect::<HashMap<_, _>>(),
             round: Mutex::new(0),
+            stored: chosen
+                .iter()
+                .filter_map(|c| c.entry.rules.clone().map(|r| (c.pre.handle.clone(), r)))
+                .collect(),
         };
         let infos = chosen
             .iter()
@@ -564,7 +573,8 @@ impl<'a> Driver<'a> {
                 paths: c.paths.clone(),
             })
             .collect();
-        bisect::plan(&batch, &[], &CandidateChecker::new(backend, infos))
+        let checker = CandidateChecker::new(backend, infos);
+        bisect::plan_with(&batch, &|| checker.suspects(), &checker)
     }
 
     /// Close `run` over `landable`, then release each landed member and record its result.
@@ -678,6 +688,7 @@ impl<'a> Driver<'a> {
                 "--push is not applied by the land train; push the base afterwards".to_owned(),
             );
         }
+        self.ci.reset();
         self.lock.progress("train-select");
         let mut chosen = self.select(size as usize, &mut report)?;
         let base_oid = self
@@ -953,6 +964,7 @@ pub fn enqueue(
     } = begun;
     let pre = preconditions(repo, &cwd_root, here, &leases, &view, &base, opts)?;
     let head = pre.wt.rev_parse(&pre.branch)?;
+    let rules = enqueue_rules(&pre)?;
     let store = TrainStore::new(pre.repo.common_dir());
     store.clear_result(&id)?;
     store.enqueue(&QueueEntry {
@@ -962,11 +974,49 @@ pub fn enqueue(
         actor: pre.site.ledger.actor()?,
         worktree: pre.wt_path.display().to_string(),
         head_oid: head.to_string(),
+        rules: Some(rules),
     })?;
     mark_queued(&pre.primary, clock, id, true);
     clear_result_labels(&pre.site.ledger, id);
     tracing::info!(ticket = %pre.handle, %head, "ticket enqueued on the land train");
     Ok(Enqueued::Queued { id })
+}
+
+/// Run the ticket's cheap rules at enqueue (in the agent's process, outside the land lock).
+///
+/// A ticket new-red on its own rules is refused here, before it takes a queue slot; otherwise the raw
+/// blocking findings are returned for the queue entry, and the driver re-ratchets them rather than re-run.
+fn enqueue_rules(pre: &crate::land::Preconditions) -> Result<Vec<FindingNote>, LandError> {
+    let ledger = pre.site.ledger.config().clone();
+    let base_oid = pre.base_oid.to_string();
+    let raw = run_member_rules(&pre.wt_path, &pre.handle, &base_oid, &ledger)?;
+    let base = ratchet::base_findings(&pre.wt, &pre.wt_path, &base_oid, &ledger)?;
+    let new = ratchet::without_base(raw.clone(), &base);
+    if !new.is_empty() {
+        let lines: Vec<String> = new
+            .iter()
+            .map(|n| {
+                format!(
+                    "{} {}: {}",
+                    n.rule,
+                    n.path.as_deref().unwrap_or("-"),
+                    n.message
+                )
+            })
+            .collect();
+        tracing::warn!(ticket = %pre.handle, red = new.len(), "enqueue refused: ticket rules red");
+        return Err(needs_action(
+            "E-LAND-CHECK-RED",
+            format!(
+                "{} is red on its own ticket rules: {}",
+                pre.handle,
+                lines.join("; ")
+            ),
+            "fix the findings above, commit, and run `frob land --train` again",
+        ));
+    }
+    tracing::info!(ticket = %pre.handle, raw = raw.len(), "ticket rules ran at enqueue");
+    Ok(raw)
 }
 
 /// The outcome of a ticket the train landed, read back from the ledger.
