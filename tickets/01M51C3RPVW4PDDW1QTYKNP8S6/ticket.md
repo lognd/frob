@@ -2,7 +2,8 @@
 id = "01M51C3RPVW4PDDW1QTYKNP8S6"
 title = "Docs propagation D118-D121 leftovers: grmb-spec, plugins, grl-spec, binding, packs, README still use dropped claim-verb spellings"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
