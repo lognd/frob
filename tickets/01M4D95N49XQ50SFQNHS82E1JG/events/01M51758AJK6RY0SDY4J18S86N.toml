@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-16T02:02:50Z"
+digest = "e1aa4fe320c41d8f1bdff2befeddcb5d2eb02ebe4f2b129c42dc41f191d5a63e"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bd879701-f658-4b88-9618-7772b5e31561 with nextest profile: default
+    Starting 4 tests across 1 binary (11 tests skipped)
+        PASS [   0.005s] grimble-lints typing::tests::tsconfig_strict_false_or_unset_is_a_site_and_strict_true_is_clean
+        PASS [   0.005s] grimble-lints typing::tests::csproj_needs_nullable_enable
+        PASS [   0.006s] grimble-lints typing::tests::pyproject_flags_lax_mypy_and_pyright_only
+        PASS [   0.006s] grimble-lints typing::tests::file_names_classify
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 4 tests run: 4 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints typing::"
+size = 838
+status = "measured"
+test_count = 4
+tests_digest = "bdcf9cde9b29c5b9e3cf1bf0ba625a669712153035fc1dddb64d2869cc3a5ca9"
+at = "2026-10-16T02:02:50Z"
+actor = "lognd"
+rev = 1
