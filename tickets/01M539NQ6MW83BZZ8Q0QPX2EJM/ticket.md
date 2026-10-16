@@ -2,7 +2,8 @@
 id = "01M539NQ6MW83BZZ8Q0QPX2EJM"
 title = "GRL examples: rust/python adapters emit the test attr (subset of COV001 examples 1 and 2)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
