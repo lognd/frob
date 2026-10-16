@@ -2,17 +2,17 @@
 
 // frob:ticket 01M4M99GMQDG93W4X05A4HFP5X
 // frob:ticket 01M4XJMM949EHC6X13TYJPYE5V
-use super::judge::{judge, ExampleResult};
-use super::markers::{expect_line, parse_markers, Actual, Expected, Level, Mark};
-use super::side::{side_data, SideInputs};
+use super::judge::{ExampleResult, judge};
+use super::markers::{Actual, Expected, Level, Mark, expect_line, parse_markers};
+use super::side::{SideInputs, side_data};
 use crate::catalog::lang_of;
-use crate::exec::outcome::{outcomes, Kind};
+use crate::exec::outcome::{Kind, outcomes};
 use crate::exec::relations::Relations;
 use crate::exec::{ExecError, Input};
 use crate::grl::ast::{
     Example, ExampleBody, ExpectKind, HeaderKind, InputKind, LangSet, Rule, Severity,
 };
-use crate::lower::{lower_rule, LowerError};
+use crate::lower::{LowerError, lower_rule};
 use crate::plan::{Langs, Op, Plan, Provenance};
 
 /// The line reported for a finding whose subject is not a node of the example source.
