@@ -1,8 +1,8 @@
 //! Candidate builder of the land train (frob:ticket 01M4Z1MYPEJ6HDVBJVPDVHR8MA).
 //!
 //! Merges ordered ticket branches into a temp ref `refs/frob/train/<id>` off a
-//! base commit. A branch that conflicts is skipped (it stays queued) and its
-//! merge aborted; tickets whose lease scopes overlap are split into separate
+//! base commit. A branch that conflicts is skipped (the train evicts it with git's
+//! reason and the rest proceed) and its merge aborted; tickets whose lease scopes overlap are split into separate
 //! trains. The temp ref is removed when the [`Candidate`] drops, and is never
 //! created when the build fails.
 

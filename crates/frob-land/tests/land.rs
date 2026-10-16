@@ -2281,6 +2281,68 @@ fn twelve_ready_tickets_with_one_failing_land_eleven_and_return_the_culprit() {
     ));
 }
 
+// frob:ticket 01M51CKG205D0WF5XNGPRK8GZ3
+// frob:tests crates/frob-land/src/train.rs::train_drain
+#[test]
+fn a_member_that_does_not_merge_is_evicted_and_the_rest_land() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let clock = train_clock();
+    let tickets: Vec<Started> = (0..3)
+        .map(|i| {
+            let dir = format!("t{i:02}");
+            let s = fx.start(&format!("Add {dir}"), &[&format!("{dir}/**")]);
+            let rel = format!("{dir}/{dir}.rs");
+            Fixture::commit_in(&s.wt, &rel, "fn f() {}\n");
+            if i < 2 {
+                // members 0 and 1 add the same file with other content: a merge conflict
+                Fixture::commit_in(&s.wt, "shared/gen.md", &format!("from {i}\n"));
+            }
+            Fixture::evidence(&s, &rel);
+            let lo = LandOptions {
+                handle: Some(s.handle.clone()),
+                ..LandOptions::default()
+            };
+            frob_land::enqueue(&s.wt, &lo, &clock).expect("enqueue");
+            s
+        })
+        .collect();
+    let clash = &tickets[1];
+    let store = frob_land::train_state::TrainStore::new(fx.repo().common_dir());
+    store
+        .set_batch(&frob_land::train_state::BatchSize { current: 8, max: 8 })
+        .expect("batch");
+    let opts = frob_land::TrainOptions {
+        land: LandOptions::default(),
+        runner: Some(Arc::new(Poison {
+            poison: None,
+            calls: 0.into(),
+        })),
+    };
+    let report = frob_land::train_drain(&fx.root, &opts, &train_clock()).expect("drain");
+    let landed: usize = report.rounds.iter().map(|r| r.landed.len()).sum();
+    assert_eq!(landed, 2, "{report:?}");
+    let res = store.result(&clash.id).expect("result").expect("recorded");
+    assert_eq!(res.status, frob_land::train_state::MemberStatus::Evicted);
+    assert!(
+        res.reason
+            .as_deref()
+            .unwrap_or("")
+            .contains("did not merge"),
+        "{res:?}"
+    );
+    assert_eq!(
+        fx.ledger()
+            .show(tickets[2].id)
+            .expect("show")
+            .summary
+            .category,
+        Category::Done
+    );
+}
+
 // frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6
 // frob:tests crates/frob-land/src/train.rs::train_status
 #[test]

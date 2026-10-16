@@ -366,6 +366,41 @@ impl<'a> Driver<'a> {
         Ok(chosen)
     }
 
+    /// Evict every chosen member that does not merge onto the base, with git's reason.
+    ///
+    /// A merge conflict is the member's own fault, not the round's: it is settled `Evicted` and the
+    /// rest of the batch proceeds (a dry candidate build in merge order finds them).
+    fn evict_unmergeable(
+        &self,
+        base_oid: &str,
+        chosen: &mut Vec<Chosen>,
+        report: &mut RoundReport,
+    ) -> Result<(), LandError> {
+        if chosen.is_empty() {
+            return Ok(());
+        }
+        let members: Vec<CandidateMember> = chosen.iter().map(member_of).collect();
+        let candidate = build_candidate(
+            &self.site.repo,
+            &self.site.primary,
+            &format!("screen-{}", report.run),
+            base_oid,
+            &members,
+        )?;
+        for s in &candidate.skipped {
+            let Some(c) = chosen.iter().find(|c| c.pre.handle == s.handle) else {
+                continue;
+            };
+            let reason = format!("did not merge onto the base: {}", s.reason);
+            tracing::warn!(ticket = %s.handle, %reason, "train member evicted");
+            report.evicted.push(format!("{}: {reason}", s.handle));
+            self.settle(&c.pre.id, &report.run, MemberStatus::Evicted, Some(reason))?;
+        }
+        let gone: Vec<String> = candidate.skipped.iter().map(|s| s.handle.clone()).collect();
+        chosen.retain(|c| !gone.contains(&c.pre.handle));
+        Ok(())
+    }
+
     /// A fresh run id, unique across drivers and rounds.
     fn run_id(&mut self) -> String {
         self.seq += 1;
@@ -518,17 +553,18 @@ impl<'a> Driver<'a> {
             );
         }
         self.lock.progress("train-select");
-        let chosen = self.select(size as usize, &mut report)?;
-        report.considered = chosen.iter().map(|c| c.pre.handle.clone()).collect();
-        if chosen.is_empty() {
-            tracing::info!(run = %report.run, "nothing ready to land");
-            return Ok(report);
-        }
+        let mut chosen = self.select(size as usize, &mut report)?;
         let base_oid = self
             .site
             .repo
             .rev_parse(&base_ref(&self.site.base))?
             .to_string();
+        self.evict_unmergeable(&base_oid, &mut chosen, &mut report)?;
+        report.considered = chosen.iter().map(|c| c.pre.handle.clone()).collect();
+        if chosen.is_empty() {
+            tracing::info!(run = %report.run, "nothing ready to land");
+            return Ok(report);
+        }
         tracing::info!(run = %report.run, size, members = chosen.len(), %base_oid, "train round planned");
 
         self.lock.progress("train-check");

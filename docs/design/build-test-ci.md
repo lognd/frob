@@ -615,7 +615,9 @@ workspace and a red costs more bisect), smaller ones forgo most of the saving.
 **Driver and verbs (~67JHDV6).** `crates/frob-land/src/train.rs` wires the
 planner, batch controller, candidate builder and state store. A round takes
 the oldest queued tickets up to `min(batch.current, train_max)`, leaves any
-whose scope overlaps a chosen one queued, plans with `bisect::plan` over
+whose scope overlaps a chosen one queued, evicts (settles `Evicted` with
+git's reason) any member that does not merge onto the base so the rest of
+the batch proceeds, plans with `bisect::plan` over
 `CandidateChecker` (sequential checks), records culprits as red results
 carrying the failing evidence, builds the final candidate, closes it with
 `TrainCloser::close_run`, then adapts the batch size. A check fault aborts
