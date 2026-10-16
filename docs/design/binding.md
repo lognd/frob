@@ -188,7 +188,7 @@ bare path could be either:
    role=R` and `grimble:boundary B` (grimble-model.md section 4) are
    sugar for form 1 and produce the same rank 1 row; they remain
    code-side only (MDL013 in a .grmb file, grmb-spec 8.2).
-   `grimble:effect` attests a capability, not a binding, and belongs to
+   `grimble:effects` attests a capability, not a binding, and belongs to
    grimble-capabilities (G14).
 
 Resolution of the operand. A symref operand resolves by the symref
@@ -1466,8 +1466,8 @@ and the expected findings with reasons.
    becomes "one spelling per exception", not "one spelling per file kind". The
    `design:` target costs nothing new (the code-side form already exists) and
    it removes the only place where frob would have to rewrite a model.
-9. Claim verbs (`frob:effects` and the rest) on `.grmb` units. PROPOSED:
-   MDL013 for the eight claim verbs, keep `frob:doc`, `frob:ticket`, `frob:todo`,
+9. Claim verbs (`grimble:effects` and the rest) on `.grmb` units. PROPOSED:
+   MDL013 for the claim verbs (`grimble:effects`, `core`, `shell`, `calls`), keep `frob:doc`, `frob:ticket`, `frob:todo`,
    `frob:invariant`, `frob:decision`, `frob:deprecated` and `frob:until`. A claim
    about a model entity ("this node has no effects") is already expressible as
    the absence of grants plus the detector matrix (section 7), which is measured
