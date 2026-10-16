@@ -547,7 +547,8 @@ fn fold_tree_inline(
         ..
     } = f;
     let term = cx.b.finish(root_id)?;
-    let scopes = ScopeGraph::from_term(&term);
+    let mut scopes = ScopeGraph::from_term(&term);
+    bind_super_paths(&term, &mut scopes);
     let v = view::build(&term, input.path, Naming::Rust);
     let mut file = base_file(input, "rust");
     file.fidelity = Fidelity::F3;
@@ -591,6 +592,48 @@ fn fold_tree_inline(
         "rust file folded"
     );
     Ok(Folded { term, scopes, file })
+}
+
+// frob:ticket 01M53BEYPGE27A1202G8KS9TG8
+/// Makes `super::name` references resolve: each gets an alias declaration, in the reference's
+/// scope, of `name` as seen from the scope enclosing the nearest module.
+fn bind_super_paths(term: &gob_ir::Term, scopes: &mut ScopeGraph) {
+    use gob_ir::{Label, Universal};
+    let wanted: Vec<(gob_ir::ScopeId, String)> = scopes
+        .refs()
+        .iter()
+        .filter_map(|r| {
+            let leaf = r.name.strip_prefix("super::")?;
+            (!leaf.contains("::")).then(|| (r.scope, leaf.to_owned()))
+        })
+        .collect();
+    for (scope, leaf) in wanted {
+        let mut cur = scope;
+        let module = loop {
+            let is_module = scopes.scope_node(cur).is_some_and(|n| {
+                matches!(term.node(n).op(),
+                    Operator::Universal(Universal::Unit { kind, .. }) if kind == "module")
+            });
+            let next = scopes
+                .edges(cur)
+                .iter()
+                .find(|e| e.label == Label::Lexical)
+                .map(|e| e.target);
+            match (is_module, next) {
+                (true, Some(parent)) => break Some(parent),
+                (false, Some(n)) => cur = n,
+                _ => break None,
+            }
+        };
+        let Some(parent) = module else {
+            tracing::debug!(leaf, "super:: path outside a module");
+            continue;
+        };
+        if let gob_ir::Resolution::Must(d) = scopes.resolve_name(parent, &leaf) {
+            scopes.declare_alias(scope, &format!("super::{leaf}"), d);
+            tracing::trace!(leaf, "super:: path bound");
+        }
+    }
 }
 
 /// Files `site` (found in `caller`) as a call or a value reference of `file`.
@@ -1911,10 +1954,18 @@ impl<'a> Fold<'a> {
         let group = self
             .cx
             .op(Operator::group(GroupOrder::Sequence), n, &toks)?;
+        let mut kids = vec![group];
         if let Some(&caller) = self.callers.last() {
             self.scan_macro(n, caller);
+            let args = self.macro_arg_terms(n);
+            if !args.is_empty() {
+                kids.push(
+                    self.cx
+                        .op(Operator::group(GroupOrder::Sequence), n, &args)?,
+                );
+            }
         }
-        self.cx.op(Operator::phase("macro"), n, &[group])
+        self.cx.op(Operator::phase("macro"), n, &kids)
     }
 
     /// Records the calls inside the macro invocation `n`: exactly when it is a std macro with expression
@@ -1932,29 +1983,68 @@ impl<'a> Fold<'a> {
     /// keeps its byte offset and line in the real file. Names bound inside the arguments (closure
     /// parameters, `let`, match arms) shadow outer typed variables for the whole invocation.
     fn scan_exact_macro(&mut self, n: Node<'_>, caller: usize) -> bool {
-        let Some(name) = n
+        self.with_exact_macro_args(n, |s, root, name| {
+            let saved_env = s.env.borrow().len();
+            s.macro_walk(root, caller, name);
+            s.env.borrow_mut().truncate(saved_env);
+            tracing::trace!(
+                path = s.path,
+                macro_name = name,
+                "std macro arguments scanned as expressions"
+            );
+        })
+        .is_some()
+    }
+
+    // frob:ticket 01M53BEYPGE27A1202G8KS9TG8
+    /// Term nodes for the call arguments of a std macro, so calls inside it are `apply` nodes the
+    /// scope graph sees; empty when the macro is not exact or is `matches!`.
+    ///
+    /// Sites and bindings the translation records are dropped: [`Self::scan_exact_macro`] owns them.
+    fn macro_arg_terms(&mut self, n: Node<'_>) -> Vec<NodeId> {
+        let sites = self.sites.len();
+        let out = self
+            .with_exact_macro_args(n, |s, root, name| {
+                if name == "matches" {
+                    return Vec::new();
+                }
+                let saved_env = s.env.borrow().len();
+                let mut out = Vec::new();
+                for a in children(root).into_iter().filter(|a| a.is_named()) {
+                    match s.with_expr(true, |s| s.tr(a, 0)) {
+                        Ok(id) => out.push(id),
+                        Err(_) => return Vec::new(),
+                    }
+                }
+                s.env.borrow_mut().truncate(saved_env);
+                out
+            })
+            .unwrap_or_default();
+        self.sites.truncate(sites);
+        out
+    }
+
+    /// Re-parses the arguments of std macro `n` as expressions and runs `f` on the argument list
+    /// node (the `match` for `matches!`) and the macro name; `None` when it is not such a macro.
+    fn with_exact_macro_args<T>(
+        &mut self,
+        n: Node<'_>,
+        f: impl FnOnce(&mut Self, Node<'_>, &str) -> T,
+    ) -> Option<T> {
+        let name = n
             .child_by_field_name("macro")
             .and_then(|m| self.t(m).rsplit("::").next())
-            .filter(|m| EXACT_MACROS.contains(m))
-        else {
-            return false;
-        };
-        let Some(tt) = children(n).into_iter().find(|c| c.kind() == "token_tree") else {
-            return false;
-        };
-        let Some((start, tail)) = self.synthetic_macro_text(name, tt) else {
-            return false;
-        };
-        let Some(tree) = self.parse_synthetic(start, &tail, tt) else {
-            return false;
-        };
+            .filter(|m| EXACT_MACROS.contains(m))?;
+        let tt = children(n).into_iter().find(|c| c.kind() == "token_tree")?;
+        let (start, tail) = self.synthetic_macro_text(name, tt)?;
+        let tree = self.parse_synthetic(start, &tail, tt)?;
         if tree.root_node().has_error() {
             tracing::trace!(
                 path = self.path,
                 macro_name = name,
                 "macro arguments are not plain expressions"
             );
-            return false;
+            return None;
         }
         let a = tt.start_byte();
         let root = if name == "matches" {
@@ -1962,19 +2052,8 @@ impl<'a> Fold<'a> {
         } else {
             find_synthetic(tree.root_node(), "call_expression", a - 1)
                 .and_then(|c| c.child_by_field_name("arguments"))
-        };
-        let Some(root) = root else {
-            return false;
-        };
-        let saved_env = self.env.borrow().len();
-        self.macro_walk(root, caller, name);
-        self.env.borrow_mut().truncate(saved_env);
-        tracing::trace!(
-            path = self.path,
-            macro_name = name,
-            "std macro arguments scanned as expressions"
-        );
-        true
+        }?;
+        Some(f(self, root, name))
     }
 
     /// The synthetic Rust text that re-parses the arguments of macro `name` (token tree `tt`) as expressions.

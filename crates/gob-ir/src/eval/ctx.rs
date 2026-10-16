@@ -318,6 +318,10 @@ impl<'m> Ctx<'m> {
                 Resolution::Must(d) => {
                     if let Some(&n) = scopes.decl(d).nodes.first() {
                         r.insert(caller, n, Truth::Yes);
+                    } else {
+                        // A binder (parameter, local) has no node: the callee is a runtime value.
+                        self.record(head, PoisonReason::Edge(Status::Unknown));
+                        r.mark_unknown_out(caller);
                     }
                 }
                 Resolution::May(set) => {

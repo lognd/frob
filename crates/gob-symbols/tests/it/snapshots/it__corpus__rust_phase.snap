@@ -1,9 +1,9 @@
 ---
-source: crates/gob-symbols/tests/corpus.rs
+source: crates/gob-symbols/tests/it/corpus.rs
 expression: out
 ---
 == term ==
-(unit "file" "impl" @rust (attr "doc" (lit "str" "Phases: macro invocations keep their tokens and their calls (capped at May).")) (unit "function" "impl" name="shout" \1 (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "fn" "fn") (rust.parameter (lit "pattern" "_") (rust.reference_type (lit "&" "&") (lit "primitive_type" "str")))) (group "sequence" (rust.expression_statement (phase "macro" (group "sequence" (lit "identifier" "println") (lit "!" "!") (lit "(" "(") (lit "\"" "\"") (lit "string_content" "{}") (lit "\"" "\"") (lit "," ",") (lit "identifier" "greet") (lit "(" "(") (lit "identifier" "name") (lit ")" ")") (lit ")" ")"))) (lit ";" ";")))) (unit "function" "impl" name="greet" \1 (group "sequence" (lit "fn" "fn") (rust.parameter (lit "pattern" "_") (rust.reference_type (lit "&" "&") (lit "primitive_type" "str"))) (lit "->" "->") (lit "type_identifier" "String")) (group "sequence" (phase "macro" (group "sequence" (lit "identifier" "format") (lit "!" "!") (lit "(" "(") (lit "\"" "\"") (lit "string_content" "hi {name}") (lit "\"" "\"") (lit ")" ")"))))))
+(unit "file" "impl" @rust (attr "doc" (lit "str" "Phases: macro invocations keep their tokens and their calls (capped at May).")) (unit "function" "impl" name="shout" \1 (group "sequence" (rust.visibility_modifier (lit "pub" "pub")) (lit "fn" "fn") (rust.parameter (lit "pattern" "_") (rust.reference_type (lit "&" "&") (lit "primitive_type" "str")))) (group "sequence" (rust.expression_statement (phase "macro" (group "sequence" (lit "identifier" "println") (lit "!" "!") (lit "(" "(") (lit "\"" "\"") (lit "string_content" "{}") (lit "\"" "\"") (lit "," ",") (lit "identifier" "greet") (lit "(" "(") (lit "identifier" "name") (lit ")" ")") (lit ")" ")")) (group "sequence" (rust.string_literal (lit "\"" "\"") (lit "string_content" "{}") (lit "\"" "\"")) (apply "call" (ref "greet") (ref #0)))) (lit ";" ";")))) (unit "function" "impl" name="greet" \1 (group "sequence" (lit "fn" "fn") (rust.parameter (lit "pattern" "_") (rust.reference_type (lit "&" "&") (lit "primitive_type" "str"))) (lit "->" "->") (lit "type_identifier" "String")) (group "sequence" (phase "macro" (group "sequence" (lit "identifier" "format") (lit "!" "!") (lit "(" "(") (lit "\"" "\"") (lit "string_content" "hi {name}") (lit "\"" "\"") (lit ")" ")")) (group "sequence" (rust.string_literal (lit "\"" "\"") (lit "string_content" "hi {name}") (lit "\"" "\"")))))))
 == scope graph ==
 S0
 S1 lexical>S0:Must
@@ -13,6 +13,8 @@ D0 S1 Unit "shout" Must
 D1 S2 Binder "_" Must
 D2 S1 Unit "greet" Must
 D3 S3 Binder "_" Must
+R0 S2 must D2
+R1 S2 must D1
 
 == file ==
 fidelity F3 status Complete

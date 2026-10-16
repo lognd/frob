@@ -3,7 +3,7 @@ rule COV001 "untested-public-function" {
   polarity P-  severity warn  scope repo  must_measure
   knob depth: int = 12 "call levels a test may go through"
 
-  find f: function where f is public and not f inside test
+  find f: function where f is public and not f inside test and not f is test
   where any { some t: test where t reaches f via calls within knob.depth,
               some t: test where t tests f }
   report f "public {f.kind} `{f.name}` has no test that reaches it"

@@ -360,6 +360,18 @@ impl ScopeGraph {
         id
     }
 
+    // frob:ticket 01M53BEYPGE27A1202G8KS9TG8
+    /// Declare `name` in `scope` as another spelling of `target`: it shares the target's nodes
+    /// (so a call through it reaches them) without taking over their node-to-declaration entry.
+    pub fn declare_alias(&mut self, scope: ScopeId, name: &str, target: DeclId) -> DeclId {
+        let nodes = self.decls[target.index()].nodes.clone();
+        let status = self.decls[target.index()].status;
+        let id = self.declare(scope, name, None, DeclKind::Other, status, None);
+        self.decls[id.index()].nodes = nodes;
+        debug!(scope = scope.0, name, target = target.0, "alias declared");
+        id
+    }
+
     /// Record a use of `name` in `scope`.
     pub fn reference(&mut self, scope: ScopeId, name: &str, node: Option<NodeId>) -> RefId {
         let id = RefId(crate::idx32(self.refs.len()));
