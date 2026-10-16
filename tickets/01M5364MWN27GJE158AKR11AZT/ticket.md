@@ -8,14 +8,10 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T20:23:31Z"
-updated = "2026-10-16T21:48:00Z"
+updated = "2026-10-16T21:49:52Z"
 
 [[acceptance]]
-text = "Given the GRL rules, when the std pack builds, then findings equal the removed Rust rules on the corpus"
-bound = false
-
-[[acceptance]]
-text = "Given the conformance test, when it runs, then compiled and plan findings are byte identical"
+text = "Given a string value, when a GRL rule tests it with is integer, then signed whole numbers hold and keywords such as auto, decimals and units do not"
 bound = false
 +++
 
