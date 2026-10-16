@@ -5,9 +5,10 @@ type = "task"
 category = "todo"
 priority = "medium"
 points = 1
+parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-10T02:25:28Z"
-updated = "2026-10-10T02:25:28Z"
+updated = "2026-10-16T16:30:34Z"
 scope = ["crates/frob-release/src/ci.rs"]
 
 [[acceptance]]
