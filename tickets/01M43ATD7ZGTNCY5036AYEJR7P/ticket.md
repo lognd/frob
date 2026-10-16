@@ -2,7 +2,8 @@
 id = "01M43ATD7ZGTNCY5036AYEJR7P"
 title = "crunk preview, diff and init with presets and detection"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
