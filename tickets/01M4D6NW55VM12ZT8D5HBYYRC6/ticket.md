@@ -2,7 +2,8 @@
 id = "01M4D6NW55VM12ZT8D5HBYYRC6"
 title = "Adapter hypothesis check: May sets must contain the true referent; adapters that cannot guarantee it emit Unknown (oracle corpus test)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
