@@ -4,8 +4,9 @@ title = "TICK006: scan hand-written ticket-branch files (bodies, EPIC.md)"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-11T19:56:45Z"
-updated = "2026-10-11T19:56:45Z"
+updated = "2026-10-16T13:18:17Z"
 +++
