@@ -77,7 +77,7 @@ mod tool_parse;
 mod tools;
 mod type_parse;
 
-pub use config::{CheckTable, FailOn, PerfTable, ToolParser, ToolStage, TypesTable};
+pub use config::{CheckTable, FailOn, PerfTable, ToolParser, ToolStage, ToolTier, TypesTable};
 pub use core::{Core, FileIndex};
 pub use error::CheckError;
 pub use filecheck::{CheckCtx, FileCheck, SharedCtx};

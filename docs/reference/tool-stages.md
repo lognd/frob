@@ -20,6 +20,7 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | `min_version`, `max_version` | unset | Inclusive dotted-number range of trusted tool versions. |
 | `version_args` | parser default | Arguments of `command` that print the version (needed behind `uvx`). |
 | `optional` | `false` | A missing binary is Unresolved but not required. |
+| `tier` | `ticket` | Earliest check level that runs the stage: `ticket` (also under `frob check --ticket --quick`), `train` (a plain `--ticket` run, which is the land and train check) or `ci` (only the unscoped check). Levels widen, so a `ci` stage never delays a land. |
 
 ## Parsed stages
 

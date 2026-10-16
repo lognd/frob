@@ -155,9 +155,21 @@ fn begin_tools(
                 .any(|t| t.args.iter().any(|a| a == "{packages}"))
         })
         .map(|files| affected_packages(core, manifests, files, changes));
+    let tiered: Vec<_> = table
+        .tool
+        .iter()
+        .filter(|t| {
+            let runs = t.tier.runs_at(opts.tool_tier);
+            if !runs {
+                tracing::info!(stage = %t.name, tier = ?t.tier, level = ?opts.tool_tier, "tool stage skipped: above this run's tier");
+            }
+            runs
+        })
+        .cloned()
+        .collect();
     start_tools(
         &core.root,
-        &applicable_stages(&table.tool, scope_files, affected.as_ref()),
+        &applicable_stages(&tiered, scope_files, affected.as_ref()),
         opts.tool_memo.as_ref(),
     )
 }

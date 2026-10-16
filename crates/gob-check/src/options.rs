@@ -13,6 +13,8 @@ pub struct RunOptions {
     pub fix: bool,
     /// Overrides the `[check] fail_on` of the product config when deciding the exit code.
     pub fail_on: Option<FailOn>,
+    /// Highest tool tier to run; `None` runs every stage (the unscoped CI check).
+    pub tool_tier: Option<crate::config::ToolTier>,
     /// Skip the `[[check.tool]]` stages (a caller that runs them itself).
     pub skip_tools: bool,
     /// Do not write the telemetry line even when `[check] telemetry` is true.

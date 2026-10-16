@@ -697,6 +697,7 @@ mod tests {
             version_args: None,
             optional: false,
             inputs: Vec::new(),
+            tier: crate::ToolTier::Ticket,
             unscoped_packages: vec!["--workspace".to_owned()],
         }
     }

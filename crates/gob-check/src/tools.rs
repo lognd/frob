@@ -958,6 +958,7 @@ mod tests {
             version_args: Some(vec!["-c".to_owned(), probe.to_owned()]),
             optional: false,
             inputs: Vec::new(),
+            tier: crate::ToolTier::Ticket,
             unscoped_packages: vec!["--workspace".to_owned()],
         }
     }

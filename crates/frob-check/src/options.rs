@@ -35,6 +35,8 @@ pub struct CheckOptions {
     pub lease: Option<LeaseConfig>,
     /// Extra per-file checks run next to the built-in ones (tests, embedders).
     pub extra_checks: Vec<Arc<dyn FileCheck<Frob>>>,
+    /// With `ticket`: run only the `ticket`-tier tool stages (`--quick`).
+    pub quick: bool,
     /// Skip the `[[check.tool]]` stages (frob-land runs them itself).
     pub skip_tools: bool,
     /// Run this executable for a sibling product instead of resolving it next to frob or on `PATH`
@@ -49,6 +51,15 @@ pub struct CheckOptions {
 }
 
 impl CheckOptions {
+    /// The tool tier of this run: `ticket` under `--quick`, `train` for a ticket run, else every tier.
+    pub(crate) fn tool_tier(&self) -> Option<gob_check::ToolTier> {
+        match (&self.ticket, self.quick) {
+            (Some(_), true) => Some(gob_check::ToolTier::Ticket),
+            (Some(_), false) => Some(gob_check::ToolTier::Train),
+            (None, _) => None,
+        }
+    }
+
     /// The product-neutral half of these options, as [`gob_check::run`] takes them.
     pub(crate) fn run_options(&self) -> RunOptions {
         RunOptions {
@@ -60,10 +71,28 @@ impl CheckOptions {
             only: self.only.clone(),
             fix: self.fix,
             fail_on: self.fail_on,
+            tool_tier: self.tool_tier(),
             skip_tools: self.skip_tools,
             skip_telemetry: self.skip_telemetry,
             clock: self.clock.clone(),
             tool_memo: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CheckOptions;
+    use gob_check::ToolTier;
+
+    // frob:tests crates/frob-check/src/options.rs::CheckOptions::tool_tier
+    #[test]
+    fn quick_ticket_runs_only_the_ticket_tier() {
+        let mut o = CheckOptions::default();
+        assert_eq!(o.tool_tier(), None);
+        o.ticket = Some("~X".to_owned());
+        assert_eq!(o.tool_tier(), Some(ToolTier::Train));
+        o.quick = true;
+        assert_eq!(o.tool_tier(), Some(ToolTier::Ticket));
     }
 }

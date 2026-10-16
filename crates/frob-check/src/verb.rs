@@ -134,6 +134,7 @@ pub struct Check {
     explain: Option<String>,
     timing: bool,
     base: Option<String>,
+    quick: bool,
 }
 
 fn fail_on_name(f: FailOn) -> &'static str {
@@ -297,6 +298,12 @@ struct CheckArgs {
         help = "Ref the --ticket diff is taken against (default: [check] base)"
     )]
     base: Option<String>,
+    #[arg(
+        long,
+        requires = "ticket",
+        help = "With --ticket: run only the ticket-tier tool stages (skip train and ci tiers)"
+    )]
+    quick: bool,
 }
 
 impl Command for Check {
@@ -316,6 +323,7 @@ impl Command for Check {
             explain: a.explain,
             timing: a.timing,
             base: a.base,
+            quick: a.quick,
         })
     }
 
@@ -333,6 +341,7 @@ impl Command for Check {
             fix: self.fix,
             fail_on: self.fail_on,
             base: self.base.clone(),
+            quick: self.quick,
             clock: Some(ctx.clock.clone()),
             ..CheckOptions::default()
         };

@@ -251,6 +251,7 @@ mod tests {
             version_args: None,
             optional: false,
             inputs: Vec::new(),
+            tier: gob_check::ToolTier::Ticket,
             unscoped_packages: Vec::new(),
         };
         stage.id_map.insert("a".into(), "CI001".into());

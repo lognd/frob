@@ -135,6 +135,32 @@ pub enum ToolParser {
     TyposJson,
 }
 
+/// The earliest check level that runs a tool stage (`tier` of `[[check.tool]]`).
+///
+/// Levels widen: `frob check --ticket --quick` runs `ticket` stages, a plain `--ticket` run (the
+/// land and train check) adds `train`, and the unscoped CI run adds `ci`.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Serialize, Deserialize, JsonSchema,
+)]
+#[serde(rename_all = "kebab-case")]
+pub enum ToolTier {
+    /// Cheap enough for every run, including `--ticket --quick` (the default).
+    #[default]
+    Ticket,
+    /// Runs in the land and train check and on CI, not under `--quick`.
+    Train,
+    /// Runs only in the unscoped CI check.
+    Ci,
+}
+
+impl ToolTier {
+    /// True when a run at `level` executes a stage of this tier; `None` is an unrestricted run.
+    #[must_use]
+    pub fn runs_at(self, level: Option<ToolTier>) -> bool {
+        level.is_none_or(|l| self <= l)
+    }
+}
+
 /// One external tool stage: a command run after the built-in rules (`[[check.tool]]`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -177,6 +203,9 @@ pub struct ToolStage {
     /// Repo-relative globs of the files this stage reads; a `--ticket` run whose scope matches none of them skips the stage (CI still runs it). Empty means the stage always runs.
     #[serde(default)]
     pub inputs: Vec<String>,
+    /// The earliest check level that runs this stage: `ticket` (default), `train` or `ci`.
+    #[serde(default)]
+    pub tier: ToolTier,
     /// What the `{packages}` argument token expands to outside a `--ticket` run (default `--workspace`); in a `--ticket` run it becomes `-p <name>` for each affected cargo package.
     #[serde(default = "default_unscoped_packages")]
     pub unscoped_packages: Vec<String>,
@@ -324,5 +353,20 @@ impl PerfTable {
     /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
     pub fn load(root: &Path, product: &str) -> Result<Self, ConfigError> {
         Ok(gob_config::load::<Self>(root, product)?.value)
+    }
+}
+
+#[cfg(test)]
+mod tier_tests {
+    use super::ToolTier;
+
+    // frob:tests crates/gob-check/src/config.rs::ToolTier::runs_at
+    #[test]
+    fn tiers_widen_with_the_run_level() {
+        assert!(ToolTier::Ticket.runs_at(Some(ToolTier::Ticket)));
+        assert!(!ToolTier::Train.runs_at(Some(ToolTier::Ticket)));
+        assert!(ToolTier::Train.runs_at(Some(ToolTier::Train)));
+        assert!(!ToolTier::Ci.runs_at(Some(ToolTier::Train)));
+        assert!(ToolTier::Ci.runs_at(None));
     }
 }
