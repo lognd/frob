@@ -171,6 +171,11 @@ pub struct DesignSpec {
     /// `[palette]` colors in declaration order.
     #[serde(serialize_with = "serialize_palette")]
     pub palette: IndexMap<String, Color>,
+    /// `[palette.modes.<name>]`: per-mode colours substituted into the palette, in declaration
+    /// order; empty when no mode is declared.
+    #[serde(skip_serializing_if = "IndexMap::is_empty")]
+    #[serde(serialize_with = "serialize_palette_modes")]
+    pub palette_modes: IndexMap<String, IndexMap<String, Color>>,
     /// `[palette.roles]` in declaration order.
     pub roles: IndexMap<String, RolePair>,
     /// `[scales]`.
@@ -215,6 +220,15 @@ pub struct DesignSpec {
     /// `[decisions]`: decision key to the reason it was made.
     #[serde(skip_serializing_if = "IndexMap::is_empty")]
     pub decisions: IndexMap<String, String>,
+}
+
+fn serialize_palette_modes<S: Serializer>(
+    modes: &IndexMap<String, IndexMap<String, Color>>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    #[derive(Serialize)]
+    struct Mode<'a>(#[serde(serialize_with = "serialize_palette")] &'a IndexMap<String, Color>);
+    serializer.collect_map(modes.iter().map(|(name, m)| (name, Mode(m))))
 }
 
 fn serialize_palette<S: Serializer>(

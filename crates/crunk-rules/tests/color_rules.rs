@@ -135,7 +135,7 @@ fn a_host_without_spec_or_styles_is_inapplicable() {
 
 // frob:tests crates/crunk-rules/src/mode.rs::modes
 #[test]
-fn one_default_mode_until_phase_two() {
+fn one_default_mode_without_declared_modes() {
     let host = css("");
     let modes = mode::modes(&host.spec);
     assert_eq!(modes, [mode::Mode::DEFAULT]);

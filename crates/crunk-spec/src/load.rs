@@ -281,7 +281,7 @@ impl<'a> Ctx<'a> {
             .org
             .unwrap_or_else(|| unreachable!("required sections are checked first"));
 
-        let (palette, roles_raw) = validate::palette(&palette_raw)?;
+        let (palette, roles_raw, palette_modes) = validate::palette(&palette_raw)?;
         let roles = validate::roles(&roles_raw, &palette)?;
         validate::scales(&scales)?;
         validate::typography(&typography)?;
@@ -317,6 +317,7 @@ impl<'a> Ctx<'a> {
             root: root.to_owned(),
             project,
             palette,
+            palette_modes,
             roles,
             scales,
             typography,

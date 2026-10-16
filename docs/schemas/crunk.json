@@ -1401,8 +1401,19 @@
         "description": "A CSS color literal: hex, rgb(), hsl() or a named color.",
         "type": "string"
       },
-      "description": "Named colors (`name = \"<css color>\"`), plus the `[palette.roles]` subtable. Required.",
+      "description": "Named colors (`name = \"<css color>\"`), plus the `[palette.roles]` and `[palette.modes.<name>]` subtables. Required.",
       "properties": {
+        "modes": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "description": "A CSS color literal replacing the palette entry in this mode.",
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "description": "Mode name (`dark`, `cb-safe`, ...) to a table recolouring declared palette names; COLOR and CONTRAST rules run once per mode.",
+          "type": "object"
+        },
         "roles": {
           "additionalProperties": {
             "oneOf": [
