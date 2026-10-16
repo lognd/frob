@@ -25,6 +25,22 @@ pub struct LandEvent<'a> {
     pub pushed: bool,
 }
 
+/// True when ticket `id` already carries a `land` event for the same ref, commit and branch as `body`.
+///
+/// # Errors
+///
+/// Ledger lookup or fold failures.
+pub(crate) fn land_recorded(
+    ledger: &Ledger,
+    id: TicketId,
+    body: &LandEvent<'_>,
+) -> Result<bool, LandError> {
+    Ok(ledger.events(id)?.iter().any(|e| {
+        matches!(&e.body, EventBody::Land(d)
+            if d.base_ref == body.base_ref && d.commit == body.commit && d.branch == body.branch)
+    }))
+}
+
 /// Append a `land` event to ticket `id` and commit it on the ledger ref; returns the ledger commit.
 ///
 /// Idempotent: an identical earlier `land` event (same ref, commit and branch) is kept and the ledger tip returned.
@@ -35,11 +51,7 @@ pub struct LandEvent<'a> {
 pub fn append_land(ledger: &Ledger, id: TicketId, body: &LandEvent<'_>) -> Result<Oid, LandError> {
     // frob:ticket 01M4CXTP6NCCZ7YNQCER0RXNYF
     // A retry after a failed close must not record the same land twice.
-    let recorded = ledger.events(id)?.iter().any(|e| {
-        matches!(&e.body, EventBody::Land(d)
-            if d.base_ref == body.base_ref && d.commit == body.commit && d.branch == body.branch)
-    });
-    if recorded {
+    if land_recorded(ledger, id, body)? {
         tracing::info!(ticket = %id, commit = body.commit, "land event already recorded; not appending again");
         return Ok(ledger.repo().rev_parse(&ledger.ledger_ref()?)?);
     }

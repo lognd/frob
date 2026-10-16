@@ -50,11 +50,25 @@ node crunk : trusted {
   may exec at "crates/crunk*/tests/**";
 }
 
+/// The std rules compiled to Rust by `cargo dev gen std-rules`: no grants, so any ambient effect in them is CAP001.
+node std_rules : trusted {
+  kind component;
+  clearance Internal;
+  owns "packs/std/generated/**";
+}
+
 /// Substrate data (check results, locks, walks) flows to crunk, which calls it (SYS013 allows an edge in either direction of a flow).
 flow gob_to_crunk : gob -> crunk {
   label Internal;
   producer "crates/gob-check/src/pipeline.rs";
   consumer "crates/crunk-check/src/lib.rs";
+}
+
+/// The conformance test in gob-plan runs the compiled-in std rule modules against their plans.
+flow std_rules_to_gob : std_rules -> gob {
+  label Internal;
+  producer "packs/std/generated/**";
+  consumer "crates/gob-plan/tests/conformance/main.rs";
 }
 
 /// Substrate data flows to grimble, which calls it.

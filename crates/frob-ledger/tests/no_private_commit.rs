@@ -1,4 +1,8 @@
 //! The evidence and land crates write events only through `Ledger::append`.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::Path;
 

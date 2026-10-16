@@ -8,7 +8,7 @@ ledger-only commits, no ticket-tree merge conflicts on pull requests). The
 design is in [../design/mirror.md](../design/mirror.md) section 1.
 
 Every `sh` block below is run against a real repository by
-`crates/frob/tests/doc_commands.rs`.
+`crates/frob/tests/it/doc_commands.rs`.
 
 ## Set it up
 

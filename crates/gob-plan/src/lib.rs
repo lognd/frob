@@ -2,6 +2,10 @@
 //!
 //! This milestone holds the GRL lexer and parser ([`grl`]), the plan format ([`plan`]), the
 //! relation [`catalog`] and the Kleene plan executor ([`exec`]).
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 pub mod catalog;
 pub mod check;

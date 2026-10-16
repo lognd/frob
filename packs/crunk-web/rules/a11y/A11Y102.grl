@@ -1,0 +1,22 @@
+rule A11Y102 "html-missing-lang" {
+  lang [typescript, html]
+  severity error
+
+  find e: element where e.tag == "html" and not e has attribute(name = "lang")
+  report e "page has no lang: add lang=\"en\" (or the page language) to <html>"
+
+  example fire html """
+    <html><body>Hi</body></html>           <!--~ error -->
+  """
+  example clean html """
+    <html lang="en"><body>Hi</body></html>
+  """
+  example notapplicable markdown """
+    The html tag is written in prose here.
+  """
+  explain """
+    Screen readers pick a pronunciation voice from the lang attribute; without it they guess.
+    ## Remedy
+    Set `lang` on the root `html` element to the primary language of the page.
+  """
+}

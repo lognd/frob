@@ -174,6 +174,20 @@ pub struct TicketView {
     pub children: Vec<Summary>,
 }
 
+/// One ticket of [`Ledger::close_batch`].
+pub struct BatchClose<'a> {
+    /// The ticket to close.
+    pub id: TicketId,
+    /// Events committed ahead of the transition (the `land` event, audit comments).
+    pub before: Vec<EventBody>,
+    /// The outcome it closes with.
+    pub outcome: Outcome,
+    /// Why, when the outcome needs a reason.
+    pub reason: Option<String>,
+    /// Guards that must all pass before anything is written.
+    pub guards: Vec<&'a dyn CloseGuard>,
+}
+
 impl Ledger {
     /// Resolve a full ULID, `~suffix` handle or alias to one ticket.
     ///
@@ -836,6 +850,86 @@ impl Ledger {
         })?;
         drop(s);
         self.transition_as(verb, id, Category::Done, Some(outcome), reason)
+    }
+
+    // frob:ticket 01M4Z1N93S11HX3DGGKBJF5WGP
+    /// Close several tickets, each after its guards pass, in ONE ledger commit.
+    ///
+    /// A ticket already done with the same outcome is `already` and writes
+    /// nothing; any guard refusal or terminal conflict fails the whole batch
+    /// before anything is written. Each item's `before` events (a `land`
+    /// event, audit comments) are committed ahead of its transition to done.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::GuardRefused`], [`LedgerError::Terminal`], lookup and store failures.
+    pub fn close_batch(&self, items: &[BatchClose<'_>]) -> Result<Vec<Applied>> {
+        let s = self.synced()?;
+        let mut writes: Vec<(TicketId, Vec<Event>)> = Vec::new();
+        let mut already: Vec<(usize, Applied)> = Vec::new();
+        for (i, item) in items.iter().enumerate() {
+            let (summary, current) = Self::load(&s, item.id)?;
+            if current.front.category == Category::Done {
+                if current.front.outcome == Some(item.outcome) {
+                    already.push((i, Self::already(&s, item.id)?));
+                    continue;
+                }
+                return Err(LedgerError::Terminal {
+                    message: format!(
+                        "{} is already done with outcome {}; it cannot become {}",
+                        summary.handle,
+                        current.front.outcome.map_or("none", Outcome::as_str),
+                        item.outcome
+                    ),
+                });
+            }
+            let cx = CloseContext {
+                ticket: &current,
+                handle: &summary.handle,
+                outcome: Some(item.outcome),
+            };
+            for g in &item.guards {
+                if let Err(f) = g.check(&cx) {
+                    tracing::info!(ticket = %item.id, guard = g.name(), code = %f.code, "close guard refused in batch");
+                    return Err(LedgerError::GuardRefused {
+                        code: f.code,
+                        message: f.message,
+                        remedy: f.remedy,
+                    });
+                }
+            }
+            let actor = self.actor()?;
+            let mut events: Vec<Event> = item
+                .before
+                .iter()
+                .map(|b| Event::new(self.now(), &actor, b.clone()))
+                .collect();
+            events.push(Event::new(
+                self.now(),
+                &actor,
+                EventBody::Transition(TransitionData {
+                    from: current.front.category,
+                    to: Category::Done,
+                    outcome: Some(item.outcome),
+                    reason: item.reason.clone(),
+                }),
+            ));
+            writes.push((item.id, events));
+        }
+        drop(s);
+        let mut applied = if writes.is_empty() {
+            Vec::new()
+        } else {
+            self.commit_events_many("close", &writes)?
+        };
+        let mut out = Vec::with_capacity(items.len());
+        for i in 0..items.len() {
+            match already.iter().position(|(j, _)| *j == i) {
+                Some(p) => out.push(already.remove(p).1),
+                None => out.push(applied.remove(0)),
+            }
+        }
+        Ok(out)
     }
 
     /// Drop `id`: close with outcome `wont-fix` and a required reason.

@@ -21,3 +21,17 @@ A ticket file on the tip of the ticket branch is not at its computed path.
 
 Every ticket file sits at `<top-epic-slug>/<slug>.md` (or `_unfiled/`). A parent or title change that was left
 to CI, a hand rename or a stale checkout leaves files elsewhere. Run `frob ticket reindex` to move them.
+
+## Examples
+
+### TICK009 ticket filed at the wrong path / A ticket moved off its derived path fires #1 (line 6) (fire)
+
+```text
+rename elsewhere/renamed.md
+```
+
+### TICK009 ticket filed at the wrong path / An untouched branch is clean #2 (line 12) (clean)
+
+```text
+none
+```

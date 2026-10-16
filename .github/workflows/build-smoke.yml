@@ -11,7 +11,7 @@ name: build-smoke
 #          jobs build none);
 #   smoke  every artifact re-run on a fresh runner (not the build runner).
 # It needs no secrets and declares none; callers must not pass `secrets:` (pinned by
-# crates/frob-release/tests/release_workflow.rs). Its jobs ask for `contents: read`
+# crates/frob-release/tests/it/release_workflow.rs). Its jobs ask for `contents: read`
 # only, which is also the most a caller can grant them.
 
 on:
@@ -227,7 +227,7 @@ jobs:
   # grimble; `uv tool install frob` finding grimble off PATH; then the fixture repository loop
   # of packaging/smoke/fixture-loop.sh) except the macOS x86_64 one: it is cross-built on the arm64 macos-latest
   # runner, which cannot execute it. That exemption is the matrix entry with
-  # `smoke: false`; crates/frob-release/tests/release_workflow.rs pins the
+  # `smoke: false`; crates/frob-release/tests/it/release_workflow.rs pins the
   # exempt set and fails if any other entry skips the smoke.
   wheel:
     name: wheel (${{ matrix.target }})
@@ -380,7 +380,7 @@ jobs:
   # the build machine has is caught), installed, and driven through the fixture
   # repository loop. The exemption is the matrix entry with `smoke: false`
   # (cross-built macOS x86_64: no runner executes it); the same exempt set is
-  # pinned by crates/frob-release/tests/release_workflow.rs, which also requires
+  # pinned by crates/frob-release/tests/it/release_workflow.rs, which also requires
   # every publishing job of release.yml to need the call of this workflow.
   smoke:
     name: smoke (${{ matrix.target }})

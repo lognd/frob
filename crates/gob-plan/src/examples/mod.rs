@@ -6,9 +6,12 @@
 //! diff. [`runner`] produces those findings: it lowers the rule, builds the example's model, runs
 //! the executor and hands the result to the judge.
 
+#[cfg(test)]
+mod corpus_tests;
 pub mod judge;
 pub mod markers;
 pub mod runner;
+mod side;
 
 pub use judge::{ExampleResult, GRL016, judge, judge_fixed};
 pub use markers::{Actual, Expected, Level, Mark, expect_line, parse_markers};

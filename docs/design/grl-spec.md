@@ -163,7 +163,7 @@ That is the whole loop: paste, read, test, refine, run, ask why. Section
   may hold several rules; std rules use one rule per file named by id.
 - Comments: `#` to end of line, outside snippets and strings.
 - Identifiers: `[a-z_][a-z0-9_]*` for variables, defs and knobs; rule ids
-  `[A-Z]+[0-9]{3}`; kinds and relations are lowercase words from the
+  `[A-Z][A-Z0-9]*[0-9]{3}`; kinds and relations are lowercase words from the
   catalog (section 6), multi-word relations are written with spaces
   (`resolves to`, `owned by`).
 - Strings: `"..."` with `\"`, `\\`, `\n`, `\{` and `\}`. Interpolation `{expr}`
@@ -857,7 +857,10 @@ Unresolved `budget` (plugins.md 6.5).
   they turn into failures when they start firing (so a fix is noticed).
 - `example ... fixed """..."""` asserts the output of the rule's fix.
 - `grimble rule test` runs every example, prints per-example results,
-  and is part of `frob check` for std and repository packs.
+  and is part of `frob check` for std and repository packs. `frob check`
+  runs it over every `.grl` file in the repository as rule GRL016 (one
+  finding per failing example or compile error; passing examples are the
+  rule's subject count). The std pack joins once its compiled-in bytes exist.
 
 ## 10. Compile errors (each has a golden test)
 

@@ -72,6 +72,7 @@ pub mod sibling_doc;
 mod status;
 mod store;
 mod telemetry;
+mod tool_key;
 mod tool_parse;
 mod tools;
 mod type_parse;

@@ -9,9 +9,18 @@
 
 // frob:ticket 01M43ARVS24254G85TMFYH8FGQ
 // frob:ticket 01M47QSGHYD2EQ4552V1B4EEQZ
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 pub mod doctor;
+pub mod explain;
+pub mod gallery;
+pub mod map;
+pub mod query;
 pub mod review;
+pub mod rule;
 pub mod tokens;
 
 use std::path::Path;
@@ -110,6 +119,11 @@ impl Product for CrunkProduct {
         cli.register::<tokens::Tokens>()
             .register::<review::Review>()
             .register::<review::Ack>()
+            .register::<query::Query>()
+            .register::<map::Map>()
+            .register::<explain::Explain>()
+            .register::<rule::RuleCatalog>()
+            .register::<gallery::GalleryCheck>()
     }
 }
 

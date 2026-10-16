@@ -487,15 +487,20 @@ dependencies = [
  "assert_cmd",
  "clap",
  "crunk-check",
+ "crunk-gallery",
+ "crunk-ingest",
+ "crunk-query",
  "crunk-rules",
  "crunk-spec",
  "crunk-tokens",
+ "gob-cache",
  "gob-check",
  "gob-cli",
  "gob-config",
  "gob-git",
  "gob-lock",
  "gob-product",
+ "gob-rules",
  "jsonschema",
  "schemars",
  "serde",
@@ -522,11 +527,28 @@ dependencies = [
  "gob-exec",
  "gob-lock",
  "gob-mdtest",
+ "gob-packs",
+ "gob-plan",
  "gob-rules",
  "gob-text",
  "serde",
  "serde_json",
  "tempfile",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "crunk-gallery"
+version = "0.532.0"
+dependencies = [
+ "crunk-spec",
+ "gob-time",
+ "jsonschema",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
  "tracing",
 ]
 
@@ -553,6 +575,19 @@ dependencies = [
  "thiserror",
  "tracing",
  "tree-sitter",
+]
+
+[[package]]
+name = "crunk-query"
+version = "0.532.0"
+dependencies = [
+ "crunk-ingest",
+ "crunk-tokens",
+ "crunk-values",
+ "gob-path",
+ "schemars",
+ "serde",
+ "tracing",
 ]
 
 [[package]]
@@ -969,6 +1004,7 @@ dependencies = [
  "gob-git",
  "gob-languages",
  "gob-lock",
+ "gob-mdtest",
  "gob-rules",
  "gob-symbols",
  "gob-text",
@@ -1011,6 +1047,7 @@ dependencies = [
  "gob-languages",
  "gob-lock",
  "gob-mdtest",
+ "gob-plan",
  "gob-rules",
  "gob-symbols",
  "gob-testsupport",
@@ -2330,6 +2367,7 @@ version = "0.532.0"
 dependencies = [
  "blake3",
  "gob-macros",
+ "gob-mdtest",
  "gob-rules",
  "insta",
  "inventory",
@@ -2566,6 +2604,8 @@ dependencies = [
  "blake3",
  "globset",
  "gob-ir",
+ "gob-plan",
+ "gob-trust",
  "proptest",
  "serde",
  "tempfile",

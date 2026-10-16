@@ -16,8 +16,8 @@ use crate::product::Frob;
 pub struct TicketScope {
     /// The ticket handle with `~`.
     pub handle: String,
-    /// The live lease, or one synthesized from the ticket scope.
-    pub lease: Lease,
+    /// The live lease, or one synthesized from the ticket scope; `None` for a ticketless diff scope.
+    pub lease: Option<Lease>,
     /// Walked files in scope plus `ticket_hops` hops of dependents.
     pub files: BTreeSet<String>,
     /// `[lease] shared_files`: paths every ticket may touch without a lease violation.
@@ -148,6 +148,70 @@ fn dependents(graph: &SymbolGraph) -> HashMap<String, BTreeSet<String>> {
     map
 }
 
+/// `files` plus `hops` hops of dependents, from the call-edge graph.
+fn with_dependents(
+    snap: &Snapshot<Frob>,
+    mut files: BTreeSet<String>,
+    hops: u32,
+) -> BTreeSet<String> {
+    let deps = dependents(&snap.inputs.ack.graph);
+    let mut frontier = files.clone();
+    for hop in 0..hops {
+        let next: BTreeSet<String> = frontier
+            .iter()
+            .filter_map(|f| deps.get(f))
+            .flatten()
+            .filter(|f| !files.contains(*f))
+            .cloned()
+            .collect();
+        tracing::debug!(hop, added = next.len(), "dependents added");
+        if next.is_empty() {
+            break;
+        }
+        files.extend(next.iter().cloned());
+        frontier = next;
+    }
+    files
+}
+
+/// Reference `CheckOptions::diff_base` runs hand to the generic pipeline in place of a ticket.
+pub(crate) const DIFF_SCOPE_REF: &str = "@diff-base";
+
+/// Scope a run to what the tree changed since `base` (any ref or oid) plus `hops` of dependents,
+/// with no ticket, lease or ledger involved.
+pub(crate) fn resolve_diff(
+    snap: &Snapshot<Frob>,
+    hops: u32,
+    base: &str,
+    ledger: &LedgerConfig,
+) -> Result<TicketScope, CheckError> {
+    let repo = Repo::discover(&snap.core.root)
+        .map_err(|e| CheckError::Ticket(format!("diff base `{base}`: {e}")))?;
+    repo.rev_parse(base)
+        .map_err(|e| CheckError::Ticket(format!("diff base `{base}` does not resolve: {e}")))?;
+    let changes = branch_api_changes(&repo, &snap.core.root, base, ledger);
+    let seed: BTreeSet<String> = changes.as_ref().map_or_else(
+        || snap.core.entries.iter().map(|e| e.path.clone()).collect(),
+        |c| {
+            snap.core
+                .entries
+                .iter()
+                .filter(|e| c.files.contains(&e.path))
+                .map(|e| e.path.clone())
+                .collect()
+        },
+    );
+    let files = with_dependents(snap, seed, hops);
+    tracing::info!(base, files = files.len(), "diff-base file set computed");
+    Ok(TicketScope {
+        handle: format!("diff:{base}"),
+        lease: None,
+        files,
+        shared_files: Vec::new(),
+        changes,
+    })
+}
+
 /// Resolve `reference` against the ledger and compute the files of the scoped run.
 pub(crate) fn resolve(
     snap: &Snapshot<Frob>,
@@ -203,35 +267,19 @@ pub(crate) fn resolve(
         }
     };
     let set = glob_set(&globs).map_err(|e| CheckError::Ticket(format!("{handle}: {e}")))?;
-    let mut files: BTreeSet<String> = snap
+    let files: BTreeSet<String> = snap
         .core
         .entries
         .iter()
         .filter(|e| set.is_match(e.path.as_str()))
         .map(|e| e.path.clone())
         .collect();
-    let deps = dependents(&snap.inputs.ack.graph);
-    let mut frontier = files.clone();
-    for hop in 0..hops {
-        let next: BTreeSet<String> = frontier
-            .iter()
-            .filter_map(|f| deps.get(f))
-            .flatten()
-            .filter(|f| !files.contains(*f))
-            .cloned()
-            .collect();
-        tracing::debug!(hop, added = next.len(), "dependents added");
-        if next.is_empty() {
-            break;
-        }
-        files.extend(next.iter().cloned());
-        frontier = next;
-    }
+    let files = with_dependents(snap, files, hops);
     tracing::info!(%handle, files = files.len(), "ticket file set computed");
     let changes = branch_api_changes(ledger.repo(), &snap.core.root, base, ledger.config());
     Ok(TicketScope {
         handle,
-        lease,
+        lease: Some(lease),
         files,
         shared_files,
         changes,
@@ -336,6 +384,9 @@ pub(crate) fn ticket_rules(
     diff: &mut Option<BTreeSet<String>>,
 ) -> Vec<Finding> {
     let shared = &scope.shared_files;
+    let Some(lease) = &scope.lease else {
+        return Vec::new();
+    };
     let Some(state) = &snap.inputs.ledger else {
         return Vec::new();
     };
@@ -366,7 +417,7 @@ pub(crate) fn ticket_rules(
     let mut out = Vec::new();
     match branch_changes(&repo, base, state.ledger.config()) {
         Ok(paths) => {
-            out.extend(scope001(&paths, &scope.lease, shared));
+            out.extend(scope001(&paths, lease, shared));
             tracing::debug!(paths = paths.len(), "ticket diff set recorded");
             *diff = Some(paths.iter().map(|p| p.as_str().to_owned()).collect());
         }

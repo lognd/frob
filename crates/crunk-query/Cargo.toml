@@ -1,0 +1,26 @@
+[package]
+name = "crunk-query"
+version.workspace = true
+description = "The crunk project queries: find, component, dupes, unused, uses, color, map and explain over ingested styles and the token set."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+keywords = ["css", "design-system", "design-tokens", "query"]
+categories = ["web-programming"]
+readme = "README.md"
+
+[lints]
+workspace = true
+
+[dependencies]
+crunk-ingest = { version = "0.532.0", path = "../crunk-ingest" }
+crunk-tokens = { version = "0.532.0", path = "../crunk-tokens" }
+crunk-values = { version = "0.532.0", path = "../crunk-values" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+tracing = "0.1"
+
+[dev-dependencies]

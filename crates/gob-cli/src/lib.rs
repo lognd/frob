@@ -11,6 +11,10 @@
 //! the exit code from the one table in cli.md section 2. Nothing in this
 //! crate writes to stdout or stderr except `emit` in the private render
 //! module.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 mod cli;
 mod command;
@@ -25,7 +29,7 @@ mod serve;
 extern crate self as gob_cli;
 
 pub use clap;
-pub use cli::{Cli, Guard, run_for_test};
+pub use cli::{Cli, Guard, Presenter, run_for_test};
 pub use command::{Command, augment, parse};
 pub use context::{ColorMode, Context, FormatChoice};
 pub use error::{CliError, FindingsFailure, Outcome, Payload};

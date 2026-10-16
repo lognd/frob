@@ -351,6 +351,18 @@
         }
       ]
     },
+    "PacksConfig": {
+      "additionalProperties": false,
+      "description": "The `[packs]` table: which std packs are on (all opt-in, off by default).",
+      "properties": {
+        "crunk_web": {
+          "default": false,
+          "description": "Run the crunk-web pack (A11Y, SEO, LAUNCH and WEBPERF rules in GRL).",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "Provenance": {
       "description": "Who authored a screen.",
       "oneOf": [
@@ -1372,6 +1384,17 @@
         "buckets"
       ],
       "type": "object"
+    },
+    "packs": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PacksConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Std pack switches (`crunk_web`); optional, absent means every pack is off."
     },
     "palette": {
       "additionalProperties": {

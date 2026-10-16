@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.crunk.dev/crunk-gallery-check-v1.json",
+  "title": "crunk gallery check --json",
+  "description": "The gallery check report: cell counts and the findings of GALLERY001-005.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "cells",
+    "findings",
+    "errors",
+    "warnings"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "cells": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "errors": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "warnings": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rule",
+          "severity",
+          "message"
+        ],
+        "properties": {
+          "rule": {
+            "type": "string",
+            "pattern": "^GALLERY00[1-5]$"
+          },
+          "severity": {
+            "enum": [
+              "error",
+              "warn"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "screen": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "platform": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

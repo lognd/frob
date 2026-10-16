@@ -13,6 +13,7 @@ use gob_ir::style;
 use gob_ir::{AttrValue, Model, NodeId, Operator, Truth, Universal};
 use gob_text::SourceText;
 
+use super::kind::directive_name;
 use crate::plan::CmpOp;
 
 /// A known scalar.
@@ -234,6 +235,10 @@ impl Reader<'_> {
         }
         match (n.name(), n.op()) {
             (Some(s), _) => Datum::text(s),
+            // frob:ticket 01M4XJMM949EHC6X13TYJPYE5V
+            (None, Operator::Universal(Universal::Comment { text })) => {
+                directive_name(text).map_or(Datum::Absent, Datum::text)
+            }
             (None, Operator::Universal(Universal::Ref { name })) => Datum::text(name.clone()),
             (None, _) => Datum::Absent,
         }

@@ -86,7 +86,7 @@ Every verb, every time:
   `init`, `schema`, `config show`, `config sync` and `merge-driver`, plus
   `--help` and `--schema` on any verb.
 - There is no "job failed" class in milestone 1: `land` is synchronous
-  (D25), so a failed check inside `land` is a guard that needs action.
+  (D25, as amended by D137: the train driver also runs in the foreground), so a failed check inside `land` is a guard that needs action.
 - The environment never changes the exit contract. The earlier CI
   environment switch is gone: set `[check] fail_on` in `frob.toml`
   (materialized, architecture.md section 6) or pass `--fail-on <severity>`.
@@ -184,7 +184,7 @@ Every verb, every time:
   recomputes the digest and refuses with `E-PLAN-STALE` (exit 3, needs
   action) if any input changed.
 - Waiting: `land` is synchronous and prints LAND-PROOF; there are no
-  job records and no job verbs in milestone 1 (D25). `--wait <secs>` on
+  job records and no job verbs in milestone 1 (D25; the land train of D137 adds per-ticket queue files, not jobs). `--wait <secs>` on
   `land` and on lease-taking verbs bounds lock acquisition only; when it
   expires the verb exits 3 `E-WAIT-TIMEOUT` with `retryable: true`. If
   jobs ever exist they arrive with the daemon and a job store under
@@ -270,7 +270,10 @@ described in their own files, and are Milestone 2 or later (D36).
 | `lease list [--contention]` | frob | frob-lease | yes, read-only | 0 2 4 | 1 |
 | `work <ticket>` | frob | frob-worktree | only for the same holder; others get 3 | 0 2 3 4 | 1 |
 | `worktree sweep\|remove` | frob | frob-worktree | yes | 0 2 3 4 | 2 |
-| `land <ticket> [--wait <secs>] [--dry-run]` | frob | frob-land | yes, a landed ticket returns `already` | 0 2 3 4 | 1 |
+| `land <ticket> [--train] [--wait <secs>] [--dry-run]` | frob | frob-land | yes, a landed ticket returns `already` | 0 2 3 4 | 1 |
+| `train status` | frob | frob-land | yes, read only | 0 3 | 1 |
+| `train run [--wait <secs>]` | frob | frob-land | yes, one round of the land train | 0 3 | 1 |
+| `train drain [--wait <secs>]` | frob | frob-land | yes, rounds until the queue is empty | 0 3 | 1 |
 | `check [--ticket] [--fix] [--fail-on]` | frob | frob-check | yes | 0 1 2 3 4 | 1 |
 | `fix` | frob | frob-check | yes | 0 2 3 4 | 1 |
 | `ack` | frob | frob-ack | yes | 0 2 3 4 | 1 |

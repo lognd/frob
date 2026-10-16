@@ -199,7 +199,7 @@ part of the job's design:
   opts in with `[package.metadata.dist] dist = true`; no published crate
   declares a binary that is not a product (test helpers such as
   `fake-sibling` live in the `publish = false` crate `gob-testsupport`).
-  `crates/frob-release/tests/products.rs` pins the binary set, the dist
+  `crates/frob-release/tests/it/products.rs` pins the binary set, the dist
   set and the archive names the smoke and upload steps use.
 - **Build matrix:** cargo-dist per binary (monorepo.md 4): linux
   x86_64 and aarch64, macOS arm64 and x86_64 (cross), windows x86_64.
@@ -312,7 +312,7 @@ part of the job's design:
   rebuilds the dev channel at most once an hour, so the last land of a
   burst can wait for the next code push to be published; and sccache
   (GitHub Actions backend) caches workspace crates by content across
-  runs. `crates/frob-release/tests/dev_workflow.rs`
+  runs. `crates/frob-release/tests/it/dev_workflow.rs`
   pins these invariants and that both workflows call the shared one;
   publishing is not a `cargo dev ci` step, so the parity test ignores it.
 - **CI status in `release status`.** Read through the hosting API (`gh`

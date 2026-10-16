@@ -558,6 +558,13 @@ impl Product for Frob {
                 vec![Rel003.meta()],
                 |s: &Snapshot<Self>, _| rel003_findings(s),
             ),
+            // frob:ticket 01M3ZX7H37B9GKN45MPD6ZNBTY
+            RepoGroup::new(
+                "repo:grl",
+                vec![crate::grl::Grl016.meta()],
+                |s: &Snapshot<Self>, files| crate::grl::findings(s, files),
+            )
+            .counting(|s| vec![("GRL016", crate::grl::example_count(s))]),
             RepoGroup::new(
                 "repo:ledger",
                 ledger_rule_metas(),
@@ -592,6 +599,17 @@ impl Product for Frob {
             Some(c) => c.clone(),
             None => LeaseConfig::load(&snap.core.root)?,
         };
+        if reference == scope::DIFF_SCOPE_REF {
+            let base = self.opts.diff_base.as_deref().unwrap_or(&table.base);
+            let cfg = snap
+                .inputs
+                .ledger
+                .as_ref()
+                .map(|l| l.ledger.config().clone())
+                .or_else(|| self.opts.ledger.clone())
+                .unwrap_or_default();
+            return scope::resolve_diff(snap, table.ticket_hops, base, &cfg);
+        }
         scope::resolve(snap, reference, table.ticket_hops, &table.base, lease_cfg)
     }
 
@@ -607,6 +625,15 @@ impl Product for Frob {
             .cone
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(scope.files.clone());
+        if scope.lease.is_none() {
+            tracing::debug!(label = %scope.handle, "diff-base scope: ticket rules skipped");
+            *self
+                .diff
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner) =
+                scope.changes.as_ref().map(|c| c.files.clone());
+            return ScopedFindings::default();
+        }
         let mut findings = scope::ticket_rules(snap, scope, &base, &mut diff);
         *self
             .diff

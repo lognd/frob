@@ -6,8 +6,15 @@
 //! branch, writes a `land` event, closes the ticket, releases the lease and
 //! removes the worktree. Everything runs in the foreground; `--wait` bounds
 //! the lock acquisition and the retries of a stale base (`E-LAND-STALE`). [`register`] adds the verb to a product root.
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 pub mod base_ci;
+pub mod batch_size;
+pub mod bisect;
+pub mod candidate;
 pub mod error;
 pub mod events;
 mod git;
@@ -17,6 +24,9 @@ mod lockfile;
 pub mod plan;
 mod ratchet;
 pub mod train;
+pub mod train_check;
+pub mod train_close;
+pub mod train_state;
 pub mod verb;
 
 pub use base_ci::{CiReader, GhCli, LandConfig};
@@ -27,9 +37,15 @@ pub use plan::{LandOptions, LandOutcome, RetryPolicy, StageTiming};
 pub use ratchet::FindingNote;
 #[doc(hidden)]
 pub use ratchet::{base_findings, cache_key, code_tree_key};
-pub use train::{TrainOptions, TrainOutcome, TrainVerifier, land_train};
+pub use train::{
+    Enqueued, TrainOptions, TrainRunReport, TrainStatusReport, enqueue, land_train, train_drain,
+    train_run, train_status,
+};
 
 /// Register `land` on a product root.
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<verb::Land>()
+        .register::<verb::TrainStatus>()
+        .register::<verb::TrainRun>()
+        .register::<verb::TrainDrain>()
 }

@@ -501,6 +501,141 @@ Target: a one-crate code ticket lands in under 60 s on this repository.
 The CLI-side wording (the `land` verb's scope flags and report fields)
 belongs in cli.md section 3 and follows the implementation tickets.
 
+### Fast lands (land train) (~N7PFN4Q, D137)
+
+Fast lands cut the cost of one land; the train cuts the cost per ticket by
+checking several disjoint tickets once. It follows Uber's SubmitQueue
+(Ananthanarayanan et al., "Keeping Master Green at Scale", EuroSys 2019):
+build a candidate from a batch, test it, and on red locate culprits by
+group testing, never landing anything that was not tested. It amends D25
+(see D137) without adding a daemon.
+
+**Model.** No daemon and no background job. `frob land --train` writes a
+per-ticket request file `.git/frob/train/queue/<ULID>.json` (enqueued_at,
+actor, worktree, frozen head oid, heartbeat, ttl; modeled on the lease
+waiters). If no live driver exists, that caller becomes the driver and runs
+the train in its own foreground; other callers wait up to `--wait <secs>`
+for `.git/frob/train/results/<ULID>.json`, and `--wait 0` enqueues and
+returns. One file per ticket avoids lost updates; `state.json` holds only
+the driver-owned run in flight (id, base oid, candidate oid, members keyed
+by ticket id with frozen head oid, phase, rounds). Resume trusts git first
+(a candidate that is an ancestor of the base means the advance happened;
+go to closing) and the file second; an unknown schema version discards the
+in-flight run and requeues its members. Members are merged by frozen oid;
+a moved branch evicts the member ("branch moved since enqueue"). Enqueuing
+is the holder's consent: the driver uses the enqueuer's recorded actor,
+renews member leases each round, and after a member lands the driver
+releases its lease and removes its worktree (`finish_member`); a red or
+evicted member keeps both so its agent can fix and enqueue again.
+
+**Lock.** The driver holds `land.lock` for the whole train, so single
+lands, the base-CI gate and the watchdog work unchanged (tickets.md
+section 10). Per-member preconditions and the cheap close guards run for
+every member before the candidate is built and again before publish; a
+refusing member is evicted with its refusal.
+
+**Candidate and check.** The candidate merges members (disjoint scopes) onto
+the base in one persistent train checkout, `<common>/frob/land-train-checkout`,
+reused by every round so cargo fingerprints stay valid (as the base
+checkout does, ~8J3BE8W); no per-candidate worktree. A merge conflict
+confined to shared files (`Cargo.lock`) is resolved with `lockfile::resolve`;
+a conflict elsewhere skips the member to the next train. The check is one
+union run through frob-check with `diff_base` (scoped to the diff of head
+against base, no ticket, no SCOPE001) plus the cheap per-member ticket rules
+(`skip_tools`), then the ratchet against base findings cached by base oid.
+A red finding whose path lies in exactly one member's diff is attributed to
+that member with no extra check; only unattributable findings are bisected.
+
+**Union checker.** `crates/frob-land/src/train_check.rs`: `CandidateChecker`
+is the planner `Runner`. Per check it runs the cheap ticket rules once per
+member (tools skipped), then one `diff_base` tool run over the candidate,
+ratcheted once against the cached base findings. A member's rule result is
+reused while no other member's scope overlaps its cone (`scopes_overlap`).
+Red evidence is attributed to a member when the finding path is in exactly
+one member's diff; any failure to run is a `CheckFault`, never red.
+
+**Bisection.** Group testing over cumulative sets: each round tests
+`accepted ++ half`, so every green test is a superset of every earlier
+green and the final landable set equals the last green-tested set.
+Checks return `Result<Verdict, CheckFault>`. A fault (git error, tool
+timeout, OOM kill) aborts the train and requeues every member unchanged.
+A red parent whose parts all pass is re-run once: green means flake, land
+that tested tree and record the flake; red again means interaction, and the
+interacting set is requeued as singletons.
+
+**Invariants.** (1) Landed tree == tested tree: publish fast-forwards to
+exactly the candidate oid that went green. (2) No blame on fault or flake:
+only a reproducible red attributed by path or by a cumulative bisection
+names a ticket.
+
+**Publish.** Trunk mode: the ledger ref is the base, so the base will move
+by ledger commits during a long check. Loop: if the base moved, merge it
+into the candidate; if the delta touches the union cone, re-check (or
+bisect), else keep the verdict; compare-and-swap; retry within budget.
+Branch mode: ledger close commits go on the candidate before the advance.
+The closes reuse the guarded `ledger_step` per member (land event dedup,
+base-CI override comment), committed once where the ledger allows, so a
+crash after the advance resumes by closing the remaining members. The
+advance is a compare-and-swap with the same bounded retry as ledger
+commits; a base that moved only by ledger commits is folded in, any other
+move is refused as `E-LAND-STALE`. All members close in one ledger commit
+(`Ledger::close_batch`); a member whose guards refuse stays green in the
+train state as pending-close, with the base already advanced, and the next
+run resumes by closing it.
+
+**Cost model.** Checks run sequentially, one candidate at a time; there are
+no parallel halves and no speculative pre-build, because two cargo runs
+share one target directory and serialize, and concurrent runs would double
+RAM and run cold. The batch size is `[land] train_max` (default 8): grow on
+green, halve on red; it is not derived from RAM, since one check is one
+bounded cargo invocation whatever the batch size. Group testing beats
+one-by-one only while the per-ticket red rate is low (roughly below 0.3), so
+the default stays gated on the measured rate of `E-LAND-CHECK-RED` against
+green lands.
+
+**Controller.** `crates/frob-land/src/batch_size.rs`: `next_size(prev, outcome,
+max)` adds one after a green train, halves after a red one (integer division)
+and clamps to `[1, max]`, where `max` is `train_max`. `BatchSize` holds the
+size and cap and serializes into the train state file.
+
+**Measured inputs (~K3YG11Q, 2026-10-15).** Red rate p: the ledger holds 658
+`tickets(land)` commits and 7 tickets whose events carry `E-LAND-CHECK-RED`
+(some of those are tickets about that very error code, so 7 is an upper
+bound), giving p <= 7/658, about 1%, far below the 0.3 break-even. Union
+cone: over 40 sampled windows of 8 consecutive non-merge commits touching
+`crates/`, a batch directly touches a mean of 9.5 and a median of 8 of the 58
+crates (max 45), about 16% of the workspace before reverse dependencies, so
+one union check costs well under 8 separate full checks. With p about 1% an
+8-member train is red roughly 8% of the time (1 - 0.99^8) and a bisect then
+costs about 3 extra checks, so expected checks per ticket are about 0.125 +
+0.08*3/8, roughly 0.16, versus 1.0 one-by-one. `train_max` therefore
+defaults to 8: larger batches gain little (the cone grows toward the
+workspace and a red costs more bisect), smaller ones forgo most of the saving.
+
+**Driver and verbs (~67JHDV6).** `crates/frob-land/src/train.rs` wires the
+planner, batch controller, candidate builder and state store. A round takes
+the oldest queued tickets up to `min(batch.current, train_max)`, leaves any
+whose scope overlaps a chosen one queued, plans with `bisect::plan` over
+`CandidateChecker` (sequential checks), records culprits as red results
+carrying the failing evidence, builds the final candidate, closes it with
+`TrainCloser::close_run`, then adapts the batch size. A check fault aborts
+the round with `E-LAND-TRAIN-FAULT` and leaves every member queued. A stale
+`state.json` is recovered first (close the rest when the candidate reached
+the base, else discard). Verbs: `frob land --train` (enqueue, drive when
+nobody else does, wait up to `--wait`; a lone ticket, a dry run or
+`[land] train = false` use the plain single-ticket `land`), `frob train
+status` (queue, current candidate, batch size, as an envelope with a schema),
+`frob train run` (one round) and `frob train drain` (rounds until the queue
+is empty); the driving verbs refuse with `E-LAND-TRAIN-OFF` when the train is
+disabled. `--push` is not applied by the train.
+
+**Reuse.** `crates/frob-land/src/train.rs` stays the one train module: the
+planner is its verifier trait, and scope overlap, merge and lock helpers
+are shared, not copied. Relation to earlier work: the done merge train
+(~DSD1QBK) is the base this extends; the enqueue ticket (~3V4VKC9) was
+closed wont-fix, so the queue above is new and file-based. `require_base_green`
+and the post-merge CI net (items 3 and 4 above) apply unchanged.
+
 ## 5. Developer loop
 
 ```
@@ -543,6 +678,29 @@ place that can check it cheaply:
   opt-level 1 (clean compile slower, suite no faster). The suite is now
   bound by aggregate CPU of the many `frob-cli` tests that spawn the debug
   binary, which no per-crate opt level moved outside noise.
+- One integration-test binary per crate (~E0E8M28, audit M17). Every
+  `tests/*.rs` file of `frob-cli`, `gob-symbols`, `frob-check`, `gob-ir`
+  and `frob-release` is a module of `tests/it/main.rs`, so each crate
+  links once instead of once per file (insta snapshots gained an `it__`
+  prefix). Data directories (`corpus`, `fixtures`, `mdtest`,
+  `snapshots` read by hand) stay under `tests/`. Tests that need a
+  separate registry stay separate binaries: `frob-cli`'s
+  `tests/siblings/` (links `grimble` and `crunk`, whose inventory
+  registrations would otherwise leak into frob's config sections) and
+  `frob-check`'s `tests/rule_coverage.rs`. Crates with trybuild, `#[path]`
+  or concurrency tests (`gob-macros`, `gob-rules`, `gob-mdtest`,
+  `gob-plan`) are unchanged.
+- `frob-cli` tests run the CLI in process by default:
+  `common::frob_command()` calls `gob_cli::run_for_test` and returns a
+  `std::process::Output`. `common::process_command()` (assert_cmd, hermetic
+  `PATH`) is the `process` escape hatch for exit status, stdio and signals;
+  `frob_command()` falls back to it for `.env`, `.timeout`,
+  `.real_process()` or a non-hermetic ambient `PATH`. Injecting env and
+  `PATH` into the Context (so more tests can run in process) needs a
+  source change and is a follow-up. `cargo nextest run -p frob-cli
+  --profile ci` went from 326 tests in 11.8 s (consolidated, spawning) to
+  10.4 s (in process default); the workspace-wide wall time against the
+  138 s baseline was not re-measured under the shared-host limits.
 - Two guards, for two purposes. Hang guard: the nextest `ci` profile
   terminates and fails any test over 120 s (`slow-timeout` period 30 s,
   `terminate-after` 4), so a hung test fails fast while slower CI runners

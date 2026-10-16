@@ -1,6 +1,10 @@
 //! C# test selection and runs: `.csproj` projects run through the dotnet provider, Unity assemblies refuse with a remedy (~J5RTJ6).
 
 // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::Path;
 

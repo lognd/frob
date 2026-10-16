@@ -1,0 +1,15 @@
+kind = "create"
+title = "Land train: measure land red rate and union-cone size, set train_max default"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 1
+parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
+idempotency_key = "train-tc"
+labels = ["area:land"]
+scope = ["docs/design/build-test-ci.md"]
+acceptance = ["measured p and cone size recorded in build-test-ci.md; [land] train_max default justified"]
+body = "From Opus review /tmp/claude-1000/-home-logan-projects-frob/16155c8d-cb3b-4f50-9b9f-c8f4865826de/scratchpad/land-train-review.md (T-c). Blocks A8K30K4."
+at = "2026-10-15T05:59:07Z"
+actor = "lognd"
+rev = 1

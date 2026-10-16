@@ -5,6 +5,10 @@
 //! (`DesignSpec.model_dump(mode="json")` without `root`).
 
 // frob:ticket 01M43ARX764095Q4VWABWXXV5H
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 mod common;
 
@@ -116,7 +120,7 @@ fn corpus_covers_every_section() {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
     // Tables added after the Python reference was frozen; tests/spec.rs covers them.
-    const RUST_ONLY: &[&str] = &["review", "game", "decisions"];
+    const RUST_ONLY: &[&str] = &["review", "packs", "game", "decisions"];
     let all: String = fixtures()
         .iter()
         .map(|p| std::fs::read_to_string(p).unwrap())

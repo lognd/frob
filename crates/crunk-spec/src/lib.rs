@@ -16,6 +16,7 @@
 //!   the project root.
 //! - [`naming`]: every custom-property name crunk emits, from the `[tokens]` prefixes.
 //! - [`presets`]: the `default` and `mono` `crunk.toml` texts for `crunk init`.
+//! - [`tells`]: dated, sourced tell lists the SLOP rules match, refreshable without code changes.
 //! - [`catalog`]: the rule catalog rows and default severities `[lint]` overrides.
 //!
 //! ```
@@ -43,6 +44,10 @@
     clippy::format_push_string,
     reason = "the reference page and path renderers build text with push_str(&format!(..)) for readability"
 )]
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 // frob:ticket 01M43ARX764095Q4VWABWXXV5H
 
@@ -55,6 +60,7 @@ pub mod naming;
 pub mod presets;
 pub mod schema;
 pub mod table;
+pub mod tells;
 mod validate;
 
 pub use catalog::{CATALOG, CONTRAST_AA_FLOOR, CatalogRow, Severity};

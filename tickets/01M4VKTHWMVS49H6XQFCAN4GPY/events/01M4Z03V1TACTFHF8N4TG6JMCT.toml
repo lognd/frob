@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "already fixed by 12895609b; layering test passes"
+at = "2026-10-15T05:21:15Z"
+actor = "lognd"
+rev = 1

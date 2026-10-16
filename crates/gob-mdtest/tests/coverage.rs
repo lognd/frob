@@ -150,3 +150,23 @@ fn the_checked_in_allowlist_parses() {
     let list = Allowlist::load(&root.join("../..").join(ALLOWLIST_PATH)).unwrap();
     assert!(list.gap.iter().all(|g| !g.ticket.is_empty()));
 }
+
+// frob:tests crates/gob-mdtest/src/coverage.rs::analyze
+#[test]
+fn alias_rule_is_exempt_without_its_own_corpus() {
+    let dir = tempfile::tempdir().unwrap();
+    let r = analyze(
+        "frob",
+        &[rule("COV003")],
+        &scan_corpus(dir.path()),
+        &Allowlist::default(),
+    );
+    assert!(r.passed(), "{}", r.render());
+    let stale = analyze(
+        "frob",
+        &[rule("COV003")],
+        &scan_corpus(dir.path()),
+        &gap("COV003", "~ABCDEFG"),
+    );
+    assert_eq!(stale.stale, vec!["COV003".to_owned()]);
+}

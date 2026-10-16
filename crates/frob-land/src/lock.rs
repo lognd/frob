@@ -484,13 +484,15 @@ fn replace_lock(path: &Path, sidecar: &Path, file: &File) -> Result<File, LandEr
             return open_lock(path);
         }
     }
+    #[cfg(not(unix))]
+    let _ = file;
     let _ = std::fs::remove_file(path);
     let _ = std::fs::remove_file(sidecar);
     open_lock(path)
 }
 
 /// True when process `pid` exists.
-fn pid_alive(pid: u32) -> bool {
+pub(crate) fn pid_alive(pid: u32) -> bool {
     if cfg!(target_os = "linux") {
         Path::new(&format!("/proc/{pid}")).exists()
     } else {

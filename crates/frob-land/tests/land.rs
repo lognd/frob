@@ -1,4 +1,8 @@
 //! `land` end to end in temporary repositories (system git required: gob-git spawns it for worktrees and merges).
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -2170,116 +2174,185 @@ fn retrying_the_land_record_after_a_failed_close_leaves_exactly_one_land_event()
     assert_eq!(lands, 1, "a retry must not duplicate the land event");
 }
 
-/// Counts verifications and goes red when the combined tree holds `poison`.
-struct Counting {
+/// A train runner that fails any batch holding `poison` and counts its checks.
+struct Poison {
+    poison: Option<String>,
     calls: std::sync::atomic::AtomicU32,
-    poison: Option<&'static str>,
 }
 
-impl frob_land::TrainVerifier for Counting {
-    fn verify(&self, tree: &Path, _members: &[String]) -> Result<(), String> {
+impl frob_land::bisect::Runner for Poison {
+    fn check(
+        &self,
+        subset: &[String],
+    ) -> Result<frob_land::bisect::Verdict, frob_land::bisect::CheckFault> {
         self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        match self.poison {
-            Some(p) if tree.join(p).exists() => Err(format!("{p} breaks the build")),
-            _ => Ok(()),
+        match &self.poison {
+            Some(p) if subset.contains(p) => Ok(frob_land::bisect::Verdict::Red(format!(
+                "{p}: test failed (assertion left != right)"
+            ))),
+            _ => Ok(frob_land::bisect::Verdict::Green),
         }
     }
 }
 
-/// Three disjoint started tickets, each with one committed and evidenced file.
-fn train_of_three(fx: &Fixture) -> Vec<Started> {
-    ["a", "b", "c"]
-        .iter()
-        .map(|n| {
-            let s = fx.start(&format!("Add {n}"), &[&format!("{n}/**")]);
-            let rel = format!("{n}/{n}.rs");
+/// `n` disjoint started tickets, each with one committed and evidenced file, all enqueued.
+fn enqueued(fx: &Fixture, n: usize) -> Vec<Started> {
+    (0..n)
+        .map(|i| {
+            let dir = format!("t{i:02}");
+            let s = fx.start(&format!("Add {dir}"), &[&format!("{dir}/**")]);
+            let rel = format!("{dir}/{dir}.rs");
             Fixture::commit_in(&s.wt, &rel, "fn f() {}\n");
             Fixture::evidence(&s, &rel);
+            let clock = Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
+            let lo = LandOptions {
+                handle: Some(s.handle.clone()),
+                ..LandOptions::default()
+            };
+            let q = frob_land::enqueue(&s.wt, &lo, &clock).expect("enqueue");
+            assert!(matches!(q, frob_land::Enqueued::Queued { .. }));
             s
         })
         .collect()
 }
 
-fn train_opts(tickets: &[Started], verifier: &Arc<Counting>) -> frob_land::TrainOptions {
-    frob_land::TrainOptions {
-        handles: tickets.iter().map(|s| s.handle.clone()).collect(),
-        land: LandOptions::default(),
-        verifier: Some(verifier.clone()),
-    }
+fn train_clock() -> Arc<dyn gob_time::Clock> {
+    Arc::new(gob_time::SystemClock)
 }
 
-// frob:ticket 01M4MH62H1AE14Z472QDSD1QBK
-// frob:tests crates/frob-land/src/train.rs::land_train
+// frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6
+// frob:tests crates/frob-land/src/train.rs::train_drain
 #[test]
-fn a_green_train_verifies_the_combined_tree_once_and_lands_every_ticket() {
+fn twelve_ready_tickets_with_one_failing_land_eleven_and_return_the_culprit() {
     if !git_available() {
         return;
     }
     let fx = Fixture::new();
-    let tickets = train_of_three(&fx);
-    let v = Arc::new(Counting {
+    let tickets = enqueued(&fx, 12);
+    let culprit = &tickets[3];
+    let store = frob_land::train_state::TrainStore::new(fx.repo().common_dir());
+    store
+        .set_batch(&frob_land::train_state::BatchSize { current: 8, max: 8 })
+        .expect("batch");
+    let runner = Arc::new(Poison {
+        poison: Some(culprit.handle.clone()),
         calls: 0.into(),
-        poison: None,
     });
-    let clock = Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
-    let out = frob_land::land_train(&fx.root, &train_opts(&tickets, &v), &clock).expect("train");
-    assert_eq!(out.verifications, 1, "one verification for three tickets");
-    assert_eq!(v.calls.load(std::sync::atomic::Ordering::SeqCst), 1);
-    assert_eq!(out.landed.len(), 3);
-    assert!(out.deferred.is_empty() && out.culprit.is_none(), "{out:?}");
-    for n in ["a", "b", "c"] {
-        let blob = fx
-            .repo()
-            .read_blob_at("main", &format!("{n}/{n}.rs"))
-            .expect("read");
-        assert!(blob.is_some(), "{n} landed on main");
-    }
+    let opts = frob_land::TrainOptions {
+        land: LandOptions::default(),
+        runner: Some(runner),
+    };
+    let report = frob_land::train_drain(&fx.root, &opts, &train_clock()).expect("drain");
+    let landed: usize = report.rounds.iter().map(|r| r.landed.len()).sum();
+    assert_eq!(landed, 11, "{report:?}");
+    assert_eq!(report.remaining, 0);
     for s in &tickets {
         let view = fx.ledger().show(s.id).expect("show");
-        assert_eq!(view.summary.category, Category::Done);
+        if s.id == culprit.id {
+            assert_eq!(view.summary.category, Category::InProgress);
+            assert!(fx.leases().live_lease(s.id).expect("lease").is_some());
+            let res = store.result(&s.id).expect("result").expect("recorded");
+            assert_eq!(res.status, frob_land::train_state::MemberStatus::Red);
+            assert!(
+                res.reason.as_deref().unwrap_or("").contains("test failed"),
+                "failing evidence travels with the culprit: {res:?}"
+            );
+        } else {
+            assert_eq!(view.summary.category, Category::Done);
+        }
     }
+    let rel = "t00/t00.rs";
+    assert!(fx.repo().read_blob_at("main", rel).expect("read").is_some());
+    assert!(
+        fx.repo()
+            .read_blob_at("main", "t03/t03.rs")
+            .expect("read")
+            .is_none(),
+        "the culprit did not land"
+    );
+    // the culprit's agent gets the evidence when it asks the train again
+    let lo = LandOptions {
+        handle: Some(culprit.handle.clone()),
+        ..LandOptions::default()
+    };
+    assert!(matches!(
+        frob_land::enqueue(&culprit.wt, &lo, &train_clock()).expect("re-enqueue"),
+        frob_land::Enqueued::Queued { .. }
+    ));
 }
 
-// frob:ticket 01M4MH62H1AE14Z472QDSD1QBK
-// frob:tests crates/frob-land/src/train.rs::land_train
+// frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6
+// frob:tests crates/frob-land/src/train.rs::train_status
 #[test]
-fn a_failing_ticket_lands_the_passing_prefix_and_defers_the_rest() {
+fn train_status_reports_queue_candidate_and_batch_size_as_an_envelope() {
     if !git_available() {
         return;
     }
     let fx = Fixture::new();
-    let tickets = train_of_three(&fx);
-    let v = Arc::new(Counting {
-        calls: 0.into(),
-        poison: Some("c/c.rs"),
+    let tickets = enqueued(&fx, 2);
+    let st = frob_land::train_status(&fx.root, &train_clock()).expect("status");
+    assert_eq!(st.queue.len(), 2);
+    assert_eq!(st.queue[0].id, tickets[0].id, "oldest first");
+    assert!(st.current.is_none());
+    assert_eq!((st.batch.current, st.batch.max), (1, 8));
+    assert!(st.enabled);
+    let json = serde_json::to_value(&st).expect("json");
+    for key in ["summary", "enabled", "queue", "batch", "live", "stale"] {
+        assert!(json.get(key).is_some(), "{key} in {json}");
+    }
+    let schema = schemars::schema_for!(frob_land::TrainStatusReport);
+    let text = serde_json::to_string(&schema).expect("schema");
+    assert!(text.contains("queue") && text.contains("batch"), "{text}");
+}
+
+// frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6
+// frob:tests crates/frob-land/src/train.rs::land_train
+#[test]
+fn a_lone_ticket_lands_through_the_plain_land_path() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Lone", &["solo/**"]);
+    Fixture::commit_in(&s.wt, "solo/solo.rs", "fn f() {}\n");
+    Fixture::evidence(&s, "solo/solo.rs");
+    let opts = frob_land::TrainOptions::new(LandOptions {
+        handle: Some(s.handle.clone()),
+        ..LandOptions::default()
     });
-    let clock = Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
-    let out = frob_land::land_train(&fx.root, &train_opts(&tickets, &v), &clock).expect("train");
-    assert_eq!(out.landed.len(), 2, "{out:?}");
-    assert_eq!(out.culprit.as_deref(), Some(tickets[2].handle.as_str()));
-    assert_eq!(out.deferred, vec![tickets[2].handle.clone()]);
-    assert!(out.verifications > 1);
+    let out = frob_land::land_train(&s.wt, &opts, &train_clock()).expect("land --train");
+    assert!(out.closed, "{out:?}");
     assert!(
         fx.repo()
-            .read_blob_at("main", "b/b.rs")
+            .read_blob_at("main", "solo/solo.rs")
             .expect("read")
-            .is_some(),
-        "the passing prefix landed"
-    );
-    assert!(
-        fx.repo()
-            .read_blob_at("main", "c/c.rs")
-            .expect("read")
-            .is_none(),
-        "the culprit did not"
-    );
-    let culprit = fx.ledger().show(tickets[2].id).expect("show");
-    assert_eq!(culprit.summary.category, Category::InProgress);
-    assert!(
-        fx.leases()
-            .live_lease(tickets[2].id)
-            .expect("lease")
             .is_some()
+    );
+    let store = frob_land::train_state::TrainStore::new(fx.repo().common_dir());
+    assert!(store.queue().expect("queue").is_empty());
+}
+
+// frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6
+// frob:tests crates/frob-land/src/train.rs::land_train
+#[test]
+fn with_the_train_disabled_land_train_behaves_as_plain_land() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::configured("criteria_evidenced", "\n[land]\ntrain = false\n");
+    let s = fx.start("Plain", &["plain/**"]);
+    Fixture::commit_in(&s.wt, "plain/plain.rs", "fn f() {}\n");
+    Fixture::evidence(&s, "plain/plain.rs");
+    let opts = frob_land::TrainOptions::new(LandOptions {
+        handle: Some(s.handle.clone()),
+        ..LandOptions::default()
+    });
+    let out = frob_land::land_train(&s.wt, &opts, &train_clock()).expect("land --train");
+    assert!(out.closed, "{out:?}");
+    let err = frob_land::train_run(&fx.root, &opts, &train_clock()).expect_err("off");
+    assert_eq!(
+        err.refusal().map(|r| r.code.as_str()),
+        Some("E-LAND-TRAIN-OFF")
     );
 }
 

@@ -23,7 +23,7 @@ lockstep version (`frob-cli`) read at render time, so every wheel and the `grimb
 it by construction and `frob release bump` has no Python metadata to edit. Adding a product
 (crunk was the last) is one more `[[product]]` table, one more name in the
 workflow count loops (`for product in frob grimble crunk`, pinned by
-`crates/frob-release/tests/products.rs`) and the archive/dist entries of products.md 6.
+`crates/frob-release/tests/it/products.rs`) and the archive/dist entries of products.md 6.
 
 ## Local build (this host)
 
@@ -64,7 +64,7 @@ run artifact (`wheel-<target>`), nothing is published there.
 - macOS arm64: `macos-latest`. macOS x86_64: `macos-latest` with
   `cargo dev wheel --target x86_64-apple-darwin` (cargo and maturin both get the target).
   The arm64 runner cannot execute it, so it is the single smoke exemption
-  (`smoke: false`; pinned by `crates/frob-release/tests/release_workflow.rs`).
+  (`smoke: false`; pinned by `crates/frob-release/tests/it/release_workflow.rs`).
 - Windows x86_64: `windows-latest`; `cargo dev wheel` and `cargo dev wheel-smoke` pick the
   venv's `Scripts\python.exe` layout in Rust, so no shell, `realpath` or `uname` is involved
   (a GNU-only `realpath -m` and a bare `Scripts/python` broke the shell script on macOS and

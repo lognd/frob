@@ -1,0 +1,22 @@
+rule SEO101 "anchor-without-href" {
+  lang [typescript, html]
+  severity warn
+
+  find e: element where e.tag == "a" and not e has attribute(name = "href")
+  report e "anchor has no href: crawlers do not follow it"
+
+  example fire html """
+    <a onclick="go()">Pricing</a>  <!--~ warn -->
+  """
+  example clean html """
+    <a href="/pricing">Pricing</a>
+  """
+  example notapplicable markdown """
+    A link is written [x](y) here.
+  """
+  explain """
+    Search engines follow links through the href attribute; a script-only anchor is a dead end.
+    ## Remedy
+    Give the anchor an `href`, or use a `button` for an action that is not navigation.
+  """
+}

@@ -21,3 +21,17 @@ A ledger commit without the reindex trailer renamed or deleted a ticket file, or
 
 Only a reindex commit (trailer `Frob-Reindex`) may move a ticket file; ordinary commits add events and edit
 frontmatter. Scrub, migrate, init and reconcile commits are exempt by subject. Fix the move by reindexing instead.
+
+## Examples
+
+### TICK008 ticket move outside a reindex / A rename without a reindex trailer fires #1 (line 6) (fire)
+
+```text
+rename _unfiled/renamed.md
+```
+
+### TICK008 ticket move outside a reindex / An untouched branch is clean #2 (line 12) (clean)
+
+```text
+none
+```

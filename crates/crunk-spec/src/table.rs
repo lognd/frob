@@ -538,6 +538,23 @@ impl ReviewConfig {
     }
 }
 
+// frob:ticket 01M50AQ6XHV6Z8GS0V8J66M9GD
+/// The `[packs]` table: which std packs are on (all opt-in, off by default).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct PacksConfig {
+    /// Run the crunk-web pack (A11Y, SEO, LAUNCH and WEBPERF rules in GRL).
+    #[serde(default)]
+    pub crunk_web: bool,
+}
+
+impl PacksConfig {
+    /// True when nothing is switched on (used to keep the spec dump unchanged).
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
 // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
 /// The game accessibility coverage keys a `[game]` profile declares, each with the guideline it
 /// answers (GAG = Game Accessibility Guidelines, XAG = Xbox Accessibility Guidelines, IGDA = IGDA
@@ -649,6 +666,9 @@ pub struct RawSpec {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     /// Human review lock policy; optional.
     pub review: Option<ReviewConfig>,
+    // frob:ticket 01M50AQ6XHV6Z8GS0V8J66M9GD
+    /// Std pack switches (`crunk_web`); optional, absent means every pack is off.
+    pub packs: Option<PacksConfig>,
     // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
     /// Game accessibility profile (GX rules); optional, absent means the GX rules are off.
     pub game: Option<GameConfig>,

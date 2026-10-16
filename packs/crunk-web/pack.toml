@@ -1,0 +1,11 @@
+# The crunk-web pack manifest (packs.md tier 1 data file). Families are registered under the
+# crunk namespace; the rules are GRL (tier 2) over markup (html, tsx) and stylesheet nodes.
+[pack]
+name = "crunk-web"
+version = "0.1.0"
+families = ["A11Y", "LAUNCH", "SEO", "WEBPERF"]
+
+[provides]
+rules = ["rules/*.grl", "rules/a11y/*.grl", "rules/seo/*.grl"]
+
+[effects]

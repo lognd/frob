@@ -72,6 +72,11 @@ fn load(path: &Path) -> Stored {
         .unwrap_or_default()
 }
 
+/// The profile recorded in `.frob/profile.toml` under `root`, if the person chose one.
+pub(crate) fn chosen_profile(root: &Path) -> Option<String> {
+    load(&store_path(root)).profile
+}
+
 fn save(path: &Path, stored: &Stored) -> Result<(), CliError> {
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir).map_err(CliError::internal)?;

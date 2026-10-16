@@ -8,6 +8,10 @@ use crate::error::LandError;
 use crate::land::land;
 use crate::lock::LandLock;
 use crate::plan::{LandOptions, LandOutcome, RetryPolicy};
+use crate::train::{
+    TrainOptions, TrainRunReport, TrainStatusReport, land_train, train_drain, train_run,
+    train_status,
+};
 use frob_ledger::TicketId;
 
 /// Land a leased ticket branch onto the base branch, close the ticket and clean up.
@@ -21,6 +25,7 @@ use frob_ledger::TicketId;
 )]
 pub struct Land {
     opts: LandOptions,
+    train: bool,
 }
 
 /// The flags of `land`, declared once; the help text is the operator-facing contract.
@@ -41,6 +46,11 @@ struct LandArgs {
         help = "Wait up to this many seconds for the land lock and to retry when the base moves (default 0)"
     )]
     wait: Option<u64>,
+    #[arg(
+        long,
+        help = "Land through the batched train: enqueue, then wait for the train to land this ticket"
+    )]
+    train: bool,
     #[arg(
         long,
         help = "Show who holds the land lock, at which stage and for how long; land nothing"
@@ -124,6 +134,7 @@ impl Command for Land {
         let no_evidence_reason = no_evidence.then(|| given("--no-evidence")).transpose()?;
         let no_changelog_reason = no_changelog.then(|| given("--no-changelog")).transpose()?;
         Ok(Self {
+            train: a.train,
             opts: LandOptions {
                 handle: a.ticket,
                 dry_run: false,
@@ -149,7 +160,11 @@ impl Command for Land {
         if opts.status {
             return lock_status(ctx);
         }
-        let out = land(&ctx.cwd, &opts, &ctx.clock)?;
+        let out = if self.train {
+            land_train(&ctx.cwd, &TrainOptions::new(opts), &ctx.clock)?
+        } else {
+            land(&ctx.cwd, &opts, &ctx.clock)?
+        };
         let already = out.already;
         let mut warnings = out.warnings.clone();
         warnings.extend(out.pre_existing.iter().map(|n| {
@@ -188,4 +203,117 @@ fn lock_status(ctx: &Context) -> Outcome<LandOutcome> {
     let mut out = crate::land::blank_outcome(nil, "-", "-", &LandOptions::default());
     out.lock = Some(status.clone());
     Ok(Payload::new(out).with_warning(status.summary))
+}
+
+// frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6
+/// Show the land train: queue, current candidate, batch size.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "train status",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, internal)
+)]
+pub struct TrainStatus;
+
+/// No flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct TrainStatusArgs {}
+
+impl Command for TrainStatus {
+    type Data = TrainStatusReport;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        gob_cli::augment::<TrainStatusArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        gob_cli::parse::<TrainStatusArgs>(m)?;
+        Ok(Self)
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<TrainStatusReport> {
+        Ok(Payload::new(train_status(&ctx.cwd, &ctx.clock)?))
+    }
+}
+
+/// The flags shared by the driving train verbs.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct TrainDriveArgs {
+    #[arg(
+        long,
+        value_name = "SECS",
+        help = "Wait up to this many seconds for the land lock (default 0)"
+    )]
+    wait: Option<u64>,
+}
+
+/// The driving options the train verbs build.
+fn drive_opts(a: &TrainDriveArgs) -> TrainOptions {
+    TrainOptions::new(LandOptions {
+        wait_secs: a.wait.unwrap_or(0),
+        ..LandOptions::default()
+    })
+}
+
+/// Run one round of the land train over the queued tickets.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "train run",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, internal)
+)]
+pub struct TrainRun {
+    opts: TrainOptions,
+}
+
+impl Command for TrainRun {
+    type Data = TrainRunReport;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        gob_cli::augment::<TrainDriveArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            opts: drive_opts(&gob_cli::parse::<TrainDriveArgs>(m)?),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<TrainRunReport> {
+        Ok(Payload::new(train_run(&ctx.cwd, &self.opts, &ctx.clock)?))
+    }
+}
+
+/// Run land train rounds until the queue is empty.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "train drain",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, internal)
+)]
+pub struct TrainDrain {
+    opts: TrainOptions,
+}
+
+impl Command for TrainDrain {
+    type Data = TrainRunReport;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        gob_cli::augment::<TrainDriveArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self {
+            opts: drive_opts(&gob_cli::parse::<TrainDriveArgs>(m)?),
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<TrainRunReport> {
+        Ok(Payload::new(train_drain(&ctx.cwd, &self.opts, &ctx.clock)?))
+    }
 }

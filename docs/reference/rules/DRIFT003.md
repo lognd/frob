@@ -22,3 +22,31 @@ A symbol was acked, its signature changed, and no `frob:doc` directive covers it
 The ack recorded an older contract and nothing ties it to documentation,
 so nobody is told to re-read anything. Re-ack the symbol or bind it to
 the doc that describes it.
+
+## Examples
+
+### DRIFT003 stale ack / An acked signature change fires #1 (line 8) (fire)
+
+```text
+=== src/lib.rs
+pub fn plain(x: u32) -> u32 {
+    x + 1
+}
+=== git
+=== ack src/lib.rs::plain
+=== src/lib.rs
+pub fn plain(x: u64) -> u64 {
+    x + 1
+}
+```
+
+### DRIFT003 stale ack / An acked symbol left alone is clean #2 (line 23) (clean)
+
+```text
+=== src/lib.rs
+pub fn plain(x: u32) -> u32 {
+    x + 1
+}
+=== git
+=== ack src/lib.rs::plain
+```

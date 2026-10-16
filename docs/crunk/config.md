@@ -121,6 +121,14 @@ File and class organization. Required.
 | `model` | `buckets` or `utility-first` | no | `"buckets"` | How style files are organized. |
 | `tokens_only_custom_props` | boolean | no | `true` | Whether custom properties may only be defined in the tokens file. |
 
+## `[packs]`
+
+The `[packs]` table: which std packs are on (all opt-in, off by default).
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| `crunk_web` | boolean | no | `false` | Run the crunk-web pack (A11Y, SEO, LAUNCH and WEBPERF rules in GRL). |
+
 ## `[palette]`
 
 Named colors (`name = "<css color>"`), plus the `[palette.roles]` subtable. Required.

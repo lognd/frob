@@ -346,9 +346,36 @@ impl<'a> Lexer<'a> {
     }
 }
 
-/// True for `[A-Z]+[0-9]{3}`.
+/// True for `[A-Z][A-Z0-9]*[0-9]{3}`: a family prefix starting with a capital, then exactly 3 digits.
 fn is_rule_id(word: &str) -> bool {
-    let letters = word.bytes().take_while(u8::is_ascii_uppercase).count();
-    let digits = &word[letters..];
-    letters > 0 && digits.len() == 3 && digits.bytes().all(|b| b.is_ascii_digit())
+    let b = word.as_bytes();
+    if b.len() < 4 || !b[0].is_ascii_uppercase() {
+        return false;
+    }
+    let (family, digits) = b.split_at(b.len() - 3);
+    digits.iter().all(u8::is_ascii_digit)
+        && family
+            .iter()
+            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+}
+
+#[cfg(test)]
+mod rule_id_tests {
+    use super::is_rule_id;
+
+    #[test]
+    fn rule_id_accepts_digits_in_family() {
+        for ok in ["COLOR001", "A11Y101", "A123", "W3C042"] {
+            assert!(is_rule_id(ok), "{ok}");
+        }
+    }
+
+    #[test]
+    fn rule_id_rejects_bad_shapes() {
+        for bad in [
+            "", "A12", "1A123", "123", "COLOR01", "a11y101", "A11Y101x", "A-1101", "P0",
+        ] {
+            assert!(!is_rule_id(bad), "{bad}");
+        }
+    }
 }

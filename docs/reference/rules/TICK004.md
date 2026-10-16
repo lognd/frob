@@ -22,3 +22,17 @@ A committed ledger file holds an absolute home path.
 `/home/<name>/`, `/Users/<name>/`, `/root/` and `C:\Users\<name>\` in a ledger file publish the local user name and
 directory layout of everyone who pushes. `frob ticket doctor --fix` scrubs the paths in one new commit (history is
 never rewritten); a hand edit to `~/` or a path relative to the repository parent clears the finding too.
+
+## Examples
+
+### TICK004 home path in a committed ticket / A body naming a home directory fires #1 (line 8) (fire)
+
+```text
+See /home/someone/projects/secret for the notes.
+```
+
+### TICK004 home path in a committed ticket / A body with no machine path is clean #2 (line 14) (clean)
+
+```text
+See the notes in the repository.
+```

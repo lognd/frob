@@ -7,6 +7,10 @@
 //! built-in `schema` from `gob-cli`; the lease, worktree, evidence, tests and
 //! ack, check and land verbs come from their sibling crates' `register`; [`milestone_cmd`] holds `milestone new/add/show/list`; [`cycle_cmd`] holds `cycle new/show/list/close`; [`release_cmd`] holds `release changelog`. Config knobs are the
 //! `ConfigTable` structs in [`config`].
+#![expect(
+    clippy::disallowed_methods,
+    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
+)]
 
 pub mod board_cmd;
 pub mod config;
@@ -19,6 +23,7 @@ pub mod lease_cmd;
 pub mod milestone_cmd;
 pub mod milestone_evidence_cmd;
 mod product;
+pub mod profile;
 pub mod profile_cmd;
 pub mod release_cmd;
 pub mod rule_cmd;
