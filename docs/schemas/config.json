@@ -633,6 +633,13 @@
           },
           "type": "object"
         },
+        "max_story_points": {
+          "default": 8,
+          "description": "Largest story in points that PM006 accepts; 8 keeps a story finishable within a cycle, 0 turns the check off.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
         "min_history": {
           "default": 3,
           "description": "Completed cycles needed before capacity and forecasts are enforced; below it they report Unresolved, so a fresh repository never needs an over-commit.",

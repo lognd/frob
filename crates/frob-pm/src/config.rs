@@ -157,6 +157,9 @@ pub struct PmTable {
     /// Sprint gate: while a cycle is active, `work` and `start` refuse a ticket that is not a member of it (`E-PM-NOT-IN-CYCLE`) unless it is expedite or started with `--unplanned --reason`, which assigns it to the cycle as a recorded over-commit; with no active cycle the gate is silent, so it defaults on.
     #[config(default = true, enforcement)]
     pub sprint_gate: bool,
+    /// Largest story in points that PM006 accepts; 8 keeps a story finishable within a cycle, 0 turns the check off.
+    #[config(default = 8, enforcement)]
+    pub max_story_points: u32,
 }
 
 /// Work-in-progress limits (`[pm.wip]`); 0 turns a limit off.

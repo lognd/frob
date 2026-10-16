@@ -62,6 +62,17 @@ engineer, I want ...") unless overridden. The body renders them. Checks:
   points set before `ready` (estimable); at least one criterion bound
   to evidence before `done` (testable, already in tickets.md).
 
+Implemented (PM003-PM007, warn by default, error under `[pm] strict`):
+each rule examines live stories only (quality objectives are exempt from
+PM003-PM005). PM004 flags a `so_that` whose tokens overlap `i_want` by
+0.8 or more; the persona list and the implementation-noun deny list are
+not built yet. PM005 accepts a Given/When/Then criterion or one starting
+`free-form:`. PM006 currently checks only size, against `[pm]
+max_story_points` (default 8, 0 disables). PM007 fires on a task whose
+scope touches user-visible paths (anything outside docs, tests, tickets,
+changelog.d, .github, notes, scripts and `*.md`) and whose parent is not
+a story, unless it carries the `no-story` label.
+
 ## 2a. Non-functional goals: quality objectives that must qualify
 
 Not every goal has a user behind it (a 10x faster check, a flaky test

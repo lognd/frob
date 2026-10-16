@@ -134,6 +134,11 @@
 |---|---|---|---|---|---|---|
 | [PM001](PM001.md) | milestone-without-goal | warn | manual | P+ | false | A milestone has no goal statement or no exit criteria. |
 | [PM002](PM002.md) | milestone-epics-incomplete | warn | manual | P+ | false | A milestone has no epics, or a member epic is done while work under it is open. |
+| [PM003](PM003.md) | story-structure | warn | manual | P+ | false | A story lacks one of `as_a`, `i_want`, `so_that`, or one is shorter than three words. |
+| [PM004](PM004.md) | story-restates-want | warn | manual | P+ | false | A story's `so_that` restates its `i_want`. |
+| [PM005](PM005.md) | story-criteria-shape | warn | manual | P+ | false | A story has no acceptance criteria, or a criterion is neither Given/When/Then nor explicit free-form. |
+| [PM006](PM006.md) | story-too-large | warn | manual | P+ | false | A story is larger than `[pm] max_story_points`. |
+| [PM007](PM007.md) | task-without-story | warn | manual | P+ | false | A task with user-visible scope has no parent story and no `no-story` reason. |
 | [PM008](PM008.md) | ticket-aged | warn | manual | P+ | false | A ticket has stayed in its category longer than `[pm.max_age_days]` allows. |
 | [PM009](PM009.md) | ready-unsized | warn | manual | P+ | false | A ready ticket (`todo`, not an epic) has no story points. |
 | [PM010](PM010.md) | cycle-over-capacity | advisory | manual | P+ | false | An open or planned cycle commits more points than its capacity. |

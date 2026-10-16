@@ -15,6 +15,7 @@ use frob_pm::rules::aging::{Pm008, Pm009};
 use frob_pm::rules::cycle::Pm036;
 use frob_pm::rules::cycle_plan::{Pm010, Pm011, Pm012};
 use frob_pm::rules::good_first::Pm031;
+use frob_pm::rules::story::{Pm003, Pm004, Pm005, Pm006, Pm007};
 use frob_pm::rules::membership::Pm034;
 use frob_pm::rules::milestone::{Pm001, Pm002};
 use frob_pm::rules::pm032::Pm032;
@@ -383,6 +384,26 @@ fn good_first_findings(inputs: &FrobInputs) -> Vec<Finding> {
         .map_err(|e| failed(ALL, e))])
 }
 
+/// `PM003`-`PM007` findings for the `repo:story` group; empty without a ledger, the size limit from `[pm] max_story_points`.
+// frob:ticket 01M4CT054RN6SY75KRYSY14778
+fn story_findings(inputs: &FrobInputs) -> Vec<Finding> {
+    const ALL: &[&str] = &["PM003", "PM004", "PM005", "PM006", "PM007"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
+    };
+    let max = match frob_pm::PmConfig::load(&inputs.root) {
+        Ok(cfg) => cfg.pm.max_story_points,
+        Err(e) => {
+            return settle([Err(failed(ALL, format_args!("pm config unreadable: {e}")))]);
+        }
+    };
+    settle([frob_pm::rules::story::evaluate(&state.ledger, max)
+        .map(|e| e.findings)
+        .map_err(|e| failed(ALL, e))])
+}
+
 /// `PM033` findings for the `repo:replenish` group; ready is `Ledger::doable` under the live lease check, as `ticket doable` computes it.
 // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
 fn replenish_findings(inputs: &FrobInputs, lease_cfg: Option<&LeaseConfig>) -> Vec<Finding> {
@@ -548,6 +569,13 @@ impl Product for Frob {
                 "repo:cycle-plan",
                 vec![Pm010.meta(), Pm011.meta(), Pm012.meta()],
                 |s: &Snapshot<Self>, _| strict_pm(&s.inputs, cycle_plan_findings(&s.inputs)),
+            )
+            .full_only(),
+            // frob:ticket 01M4CT054RN6SY75KRYSY14778
+            RepoGroup::new(
+                "repo:story",
+                vec![Pm003.meta(), Pm004.meta(), Pm005.meta(), Pm006.meta(), Pm007.meta()],
+                |s: &Snapshot<Self>, _| strict_pm(&s.inputs, story_findings(&s.inputs)),
             )
             .full_only(),
             // frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8

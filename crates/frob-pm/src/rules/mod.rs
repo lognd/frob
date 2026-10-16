@@ -8,6 +8,7 @@ pub mod membership;
 pub mod milestone;
 pub mod pm032;
 pub mod replenish;
+pub mod story;
 pub mod wip;
 
 use gob_rules::{Finding, Severity};
@@ -17,6 +18,11 @@ use gob_rules::{Finding, Severity};
 pub const STRICT_SEVERITY: &[(&str, Severity)] = &[
     ("PM001", Severity::Error),
     ("PM002", Severity::Error),
+    ("PM003", Severity::Error),
+    ("PM004", Severity::Error),
+    ("PM005", Severity::Error),
+    ("PM006", Severity::Error),
+    ("PM007", Severity::Error),
     ("PM008", Severity::Error),
     ("PM009", Severity::Error),
     ("PM013", Severity::Error),

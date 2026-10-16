@@ -67,7 +67,7 @@ pub fn max_points(root: &std::path::Path) -> u32 {
 }
 
 /// True when `text` reads as Given ... when ... then.
-fn is_gwt(text: &str) -> bool {
+pub(crate) fn is_gwt(text: &str) -> bool {
     let t = text.to_ascii_lowercase();
     let Some(g) = t.find("given") else {
         return false;

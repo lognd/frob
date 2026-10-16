@@ -181,6 +181,8 @@ min_history = 3
 capacity_k = 0.5
 # Sprint gate: while a cycle is active, `work` and `start` refuse a ticket that is not a member of it (`E-PM-NOT-IN-CYCLE`) unless it is expedite or started with `--unplanned --reason`, which assigns it to the cycle as a recorded over-commit; with no active cycle the gate is silent, so it defaults on.
 sprint_gate = true
+# Largest story in points that PM006 accepts; 8 keeps a story finishable within a cycle, 0 turns the check off.
+max_story_points = 8
 
 [pm.classes]
 # Expedite tickets that may exceed the repository WIP limit at once; 1 lets one critical fix through without opening the floodgates.

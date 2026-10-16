@@ -20,7 +20,8 @@ use frob_ledger::model::{Category, Outcome, TicketType};
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig, TicketId};
 use frob_pm::rules::{
-    aging, cycle, cycle_plan, good_first, membership::evaluate, milestone, pm032, replenish, wip,
+    aging, cycle, cycle_plan, good_first, membership::evaluate, milestone, pm032, replenish, story,
+    wip,
 };
 use frob_pm::{NewObject, ObjectKind, PmStore, State, event::Op};
 use gob_git::{CommitOptions, RelPath, Repo};
@@ -167,9 +168,18 @@ fn new_ticket(
         "## Start here\nRead the scope first.".clone_into(&mut t.body);
     }
     if ty == TicketType::Story && o.get("value") != Some(&"none") {
-        t.persona = Some("maintainer".to_owned());
-        t.capability = Some("see the plan".to_owned());
-        t.outcome_text = Some("work is clear".to_owned());
+        let text = |k: &str, d: &str| o.get(k).map_or(d, |v| *v).replace('_', " ");
+        t.persona = Some(text("as_a", "busy release engineer"));
+        t.capability = Some(text("want", "see the plan"));
+        t.outcome_text = Some(text("so", "work is clear"));
+    }
+    match o.get("criterion") {
+        Some(&"plain") => t.acceptance.push("it works".to_owned()),
+        Some(&"free") => t.acceptance.push("free-form: a visual check".to_owned()),
+        _ => {}
+    }
+    if o.get("flavour") == Some(&"objective") {
+        t.flavour = Some("quality_objective".to_owned());
     }
     if let Some(class) = o.get("class") {
         t.class = class.parse().expect("class");
@@ -191,6 +201,7 @@ fn runner(case: &Case) -> Vec<Finding> {
     let mut good_first_min = pm032::DEFAULT_MIN;
     let mut good_first_max = good_first::DEFAULT_MAX_POINTS;
     let mut expedite_max = 1_u32;
+    let mut max_story_points = story::DEFAULT_MAX_STORY_POINTS;
     let mut live: BTreeSet<TicketId> = BTreeSet::new();
     let mut pm = frob_pm::PmConfig::load(dir.path()).expect("defaults").pm;
     let mut ages = frob_pm::PmConfig::load(dir.path())
@@ -218,6 +229,9 @@ fn runner(case: &Case) -> Vec<Finding> {
                     }
                 }
                 keys.insert(w[1].to_owned(), id);
+            }
+            "max_story_points" => {
+                max_story_points = w[1].parse().expect("max_story_points");
             }
             "limit" => limit = w[1].parse().expect("limit"),
             "good_first_max" => good_first_max = w[1].parse().expect("good_first_max"),
@@ -292,6 +306,23 @@ fn runner(case: &Case) -> Vec<Finding> {
             .filter(|f| f.rule == case.rule)
             .collect();
     }
+    if matches!(
+        case.rule.to_string().as_str(),
+        "PM003" | "PM004" | "PM005" | "PM006" | "PM007"
+    ) {
+        // frob:tests crates/frob-pm/src/rules/story.rs::pm003
+        // frob:tests crates/frob-pm/src/rules/story.rs::pm004
+        // frob:tests crates/frob-pm/src/rules/story.rs::pm005
+        // frob:tests crates/frob-pm/src/rules/story.rs::pm006
+        // frob:tests crates/frob-pm/src/rules/story.rs::pm007
+        // frob:tests crates/frob-pm/src/rules/story.rs::evaluate
+        return story::evaluate(&ledger, max_story_points)
+            .expect("evaluate")
+            .findings
+            .into_iter()
+            .filter(|f| f.rule == case.rule)
+            .collect();
+    }
     if case.rule.to_string() == "PM036" {
         return pm036_findings(&ledger);
     }
@@ -353,6 +384,11 @@ macro_rules! corpus_file {
 
 corpus_file!(pm001, "pm001.md");
 corpus_file!(pm002, "pm002.md");
+corpus_file!(pm003, "pm003.md");
+corpus_file!(pm004, "pm004.md");
+corpus_file!(pm005, "pm005.md");
+corpus_file!(pm006, "pm006.md");
+corpus_file!(pm007, "pm007.md");
 corpus_file!(pm010, "pm010.md");
 corpus_file!(pm011, "pm011.md");
 corpus_file!(pm012, "pm012.md");
@@ -379,7 +415,8 @@ fn every_corpus_file_has_a_test() {
     assert_eq!(
         files,
         [
-            "pm001.md", "pm002.md", "pm008.md", "pm009.md", "pm010.md", "pm011.md", "pm012.md",
+            "pm001.md", "pm002.md", "pm003.md", "pm004.md", "pm005.md", "pm006.md", "pm007.md",
+            "pm008.md", "pm009.md", "pm010.md", "pm011.md", "pm012.md",
             "pm013.md", "pm031.md", "pm032.md", "pm033.md", "pm034.md", "pm036.md"
         ],
         "corpus files and corpus_file! lines must match"
