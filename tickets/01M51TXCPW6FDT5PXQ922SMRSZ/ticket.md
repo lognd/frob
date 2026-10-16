@@ -2,7 +2,8 @@
 id = "01M51TXCPW6FDT5PXQ922SMRSZ"
 title = "Fix 4 crunk integration tests red on CI after GKXE3V8 (clean project now exits 1)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
