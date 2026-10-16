@@ -7,7 +7,15 @@ priority = "medium"
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T20:23:31Z"
-updated = "2026-10-16T20:23:31Z"
+updated = "2026-10-16T20:23:45Z"
+
+[[acceptance]]
+text = "Given the GRL rules, when the std pack builds, then findings equal the removed Rust rules on the corpus"
+bound = false
+
+[[acceptance]]
+text = "Given the conformance test, when it runs, then compiled and plan findings are byte identical"
+bound = false
 +++
 
 Found while working ~C6A77WW. See packs/crunk-core/exceptions.toml on branch ticket/C6A77WW: every LAYER001/ORG001-005 is blocked by a named missing construct (int-parse value predicate, css class-selector node, per-file bucket attribute, glob membership over config.org columns, config.layers/org side relations typed from docs/schemas/crunk.json, gen rules target for a non-std pack with a CrunkHost).
