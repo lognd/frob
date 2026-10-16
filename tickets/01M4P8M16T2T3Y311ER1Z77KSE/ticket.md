@@ -2,7 +2,8 @@
 id = "01M4P8M16T2T3Y311ER1Z77KSE"
 title = "TICK006: scan hand-written ticket-branch files (bodies, EPIC.md)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
