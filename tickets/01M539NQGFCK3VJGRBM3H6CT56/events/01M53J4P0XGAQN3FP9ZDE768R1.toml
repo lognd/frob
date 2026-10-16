@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-16T23:53:15Z"
+digest = "4172aab005174a36185ab16dee4a838a91856206be4773103d058b939a046f14"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 806ac2c1-5449-49ea-a84f-a8f5cfde7f75 with nextest profile: default
+    Starting 1 test across 2 binaries (256 tests skipped)
+        PASS [   0.006s] gob-symbols ambient::tests::python_clock_and_rng_names_are_ambient_and_helpers_are_not
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 256 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E test(ambient)"
+size = 579
+status = "measured"
+test_count = 1
+tests_digest = "07505ce15efc7a746dcce538b9c60899b0eee77dc078ed09a762a601aa59542b"
+at = "2026-10-16T23:53:15Z"
+actor = "lognd"
+rev = 1
