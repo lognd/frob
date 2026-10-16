@@ -8,10 +8,10 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:37Z"
-updated = "2026-10-16T01:17:52Z"
+updated = "2026-10-16T01:17:54Z"
 idempotency_key = "crunk-plan-prev"
 labels = ["area:crunk"]
-scope = ["crates/crunk/src/preview.rs", "crates/crunk/src/diff.rs", "crates/crunk/src/init/**", "crates/crunk/tests/init*.rs", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml", "crates/gob-product/src/product.rs", "crates/gob-product/src/workspace.rs", "docs/crunk", "changelog.d", "crates/gob-dev/profile.toml", "docs/crunk/**"]
+scope = ["crates/crunk/src/preview.rs", "crates/crunk/src/diff.rs", "crates/crunk/src/init/**", "crates/crunk/tests/init*.rs", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml", "crates/gob-product/src/product.rs", "crates/gob-product/src/workspace.rs", "docs/crunk", "changelog.d", "crates/gob-dev/profile.toml", "docs/crunk/**", "Cargo.lock"]
 
 [[links]]
 kind = "blocked-by"
