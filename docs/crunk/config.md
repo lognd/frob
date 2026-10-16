@@ -131,12 +131,21 @@ The `[packs]` table: which std packs are on (all opt-in, off by default).
 
 ## `[palette]`
 
-Named colors (`name = "<css color>"`), plus the `[palette.roles]` subtable. Required.
+Named colors (`name = "<css color>"`), plus the `[palette.roles]` and `[palette.modes.<name>]` subtables. Required.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
+| `modes` | table | no | `-` | Mode name (`dark`, `cb-safe`, ...) to a table recolouring declared palette names; COLOR and CONTRAST rules run once per mode. |
 | `roles` | table | no | `-` | Role name to a `[foreground, background]` palette-name pair, or a `{ pair = [fg, bg], floor = <n> }` table overriding the contrast floor (default 4.5). |
 | any other key | string | no | - | A CSS color literal: hex, rgb(), hsl() or a named color. |
+
+## `[palette.modes]`
+
+Mode name (`dark`, `cb-safe`, ...) to a table recolouring declared palette names; COLOR and CONTRAST rules run once per mode.
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| any other key | table | no | - | user-named entry |
 
 ## `[palette.roles]`
 

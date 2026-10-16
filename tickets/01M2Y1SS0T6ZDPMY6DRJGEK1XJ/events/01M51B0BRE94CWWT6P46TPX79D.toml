@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D122 sweep (~6ZBSBCW): re-scope. JSX/TSX rules (alt, labels, accessible names, tabindex, aria-hidden focusable, ARIA role/prop pairs, autoplay media, heading content) are bound to eslint-plugin-jsx-a11y under A11Y ids via the ~V4KM7K8 id map (catalogue row W01), not reimplemented. Native stays for HTML, Vue, templates and CSS (focus-visible, target size, reduced-motion, contrast), cross-file rules (skip link, page title unique, heading order) and the statement page, which no bound tool ships."
+at = "2026-10-16T03:10:05Z"
+actor = "lognd"
+rev = 1

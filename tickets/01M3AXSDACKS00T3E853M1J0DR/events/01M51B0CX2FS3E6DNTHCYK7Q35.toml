@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D122 sweep (~6ZBSBCW): stays native. SYSDESIGN rules are cross-resource design/topology checks over strata plus IaC; the bind list in lint-catalogue-2026-10-08.md and the per-tool lists in lint-reuse-research-2026-10-08.md contain no tool shipping them. Individual K8s-manifest children may bind an IaC linter later; revisit only if one is added to the bind list."
+at = "2026-10-16T03:10:06Z"
+actor = "lognd"
+rev = 1

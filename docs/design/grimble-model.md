@@ -122,7 +122,7 @@ attestations; neither side is ever auto-regenerated to match the other
 | `surface SELECTOR` | node | intended public symbols |
 | `flow via producer/consumer/contract` | flow | three symbols, any languages |
 | `vmodel ... ref / runnable` | vmodel | doc anchor or test symbol |
-| `grimble:binds SYMREF via="manual"`, `grimble:node N`, `grimble:channel F role=producer`, `grimble:boundary B`, `grimble:effect ATOM because "..."` | code comments (grimble namespace; frob never reads them) | attestations checked against the model; `grimble:binds` is the highest-precedence binding source (9.1). Effect claims about a unit (`frob:effects`) are a different directive in the `frob:` namespace, evaluated by NEAT (code-model.md section 4) |
+| `grimble:binds SYMREF via="manual"`, `grimble:node N`, `grimble:channel F role=producer`, `grimble:boundary B`, `grimble:effects SET because "..."` | code comments (grimble namespace; frob never reads them) | attestations checked against the model; `grimble:binds` is the highest-precedence binding source (9.1). `grimble:effects` is the one effect-claim verb for units and model nodes (D120, code-model.md section 4) |
 
 Drift findings (all computed from the code graph and the model on every
 check; each is one generated rule in `grimble-bind` or
@@ -347,7 +347,7 @@ Rust enum, so data packs add atoms and detectors with a pack-qualified
 id. Atoms are hierarchical (`fs` covers `fs.read` and `fs.write`).
 There is one callee-vocabulary table per language; the NEAT
 `[neat.effects]` tables and grimble's detectors are views over it, and
-both `frob:effects` claims and `grimble:effect` attestations name atoms
+both `grimble:effects` claims on units and on model nodes name atoms
 from the one registry (adding `tokio::fs` once serves both). The
 detector registry row is `{atom, language, detector_kind,
 pattern_or_vocab_ref, precision: Typed | Lexical, cwe, rationale,
