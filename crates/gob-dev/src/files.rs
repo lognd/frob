@@ -305,7 +305,7 @@ fn link_problems(root: &Path, files: &[GenFile]) -> Vec<String> {
     let mut problems = Vec::new();
     for file in files
         .iter()
-        .filter(|f| f.path.ends_with(".md") && !f.path.starts_with(EXAMPLE_PAGES))
+        .filter(|f| is_markdown(&f.path) && !f.path.starts_with(EXAMPLE_PAGES))
     {
         let dir = file.path.rsplit_once('/').map_or("", |(d, _)| d);
         for link in relative_links(&file.content) {
@@ -361,7 +361,7 @@ fn summary_problems(root: &Path) -> Vec<String> {
             let child = format!("{rel}/{name}");
             if entry.path().is_dir() {
                 stack.push((entry.path(), child));
-            } else if name.ends_with(".md") && child != "docs/SUMMARY.md" {
+            } else if is_markdown(&name) && child != "docs/SUMMARY.md" {
                 pages.push(child);
             }
         }
@@ -372,4 +372,11 @@ fn summary_problems(root: &Path) -> Vec<String> {
         .filter(|p| !linked.contains(p))
         .map(|p| format!("{p}: docs page missing from docs/SUMMARY.md"))
         .collect()
+}
+
+/// Whether `path` names a markdown file (extension compared without regard to case).
+fn is_markdown(path: &str) -> bool {
+    Path::new(path)
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("md"))
 }
