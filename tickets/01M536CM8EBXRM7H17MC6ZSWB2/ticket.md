@@ -2,7 +2,8 @@
 id = "01M536CM8EBXRM7H17MC6ZSWB2"
 title = "GRL example runner: DOC002 markdown link kind, COV001 test edges, NEAT013 external callee units (1K8VGCQ follow-up)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
