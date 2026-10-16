@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-08T04:53:31Z"
-updated = "2026-10-16T03:36:02Z"
-scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-tokens/**", "crates/crunk-rules/**", "crates/crunk-spec/**"]
+updated = "2026-10-16T03:48:04Z"
+scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-tokens/**", "crates/crunk-rules/**", "crates/crunk-spec/**", "docs/crunk/**"]
 
 [[acceptance]]
 text = "Given fire and clean mdtest cases for each rule, when the corpus runs, then each rule fires only on its fire case"
