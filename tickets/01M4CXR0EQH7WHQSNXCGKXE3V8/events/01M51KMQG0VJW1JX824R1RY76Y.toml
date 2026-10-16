@@ -1,0 +1,265 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-16T05:37:27Z"
+digest = "306e5115f0aba4988f512d89de4ed397d54a0226ea7f4051db150f2c79792dba"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling find-msvc-tools v0.1.14
+   Compiling shlex v2.0.1
+   Compiling cc v1.5.1
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling syn v3.0.6
+   Compiling once_cell v1.21.4
+   Compiling serde_core v1.0.229
+   Compiling memchr v2.8.3
+   Compiling tree-sitter-language v0.1.8
+   Compiling syn v2.0.119
+   Compiling cfg-if v1.0.5
+   Compiling zmij v1.0.23
+   Compiling tracing-core v0.1.36
+   Compiling equivalent v1.0.2
+   Compiling itoa v1.0.18
+   Compiling hashbrown v0.17.1
+   Compiling serde v1.0.229
+   Compiling tracing-attributes v0.1.31
+   Compiling serde_derive v1.0.229
+   Compiling thiserror v2.0.21
+   Compiling pin-project-lite v0.2.17
+   Compiling tracing v0.1.44
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_json v1.0.151
+   Compiling aho-corasick v1.1.5
+   Compiling regex-syntax v0.8.11
+   Compiling regex-automata v0.4.18
+   Compiling indexmap v2.14.2
+   Compiling ref-cast v1.0.27
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive_internals v0.30.0
+   Compiling blake3 v1.8.7
+   Compiling fnv v1.0.7
+   Compiling ident_case v1.0.1
+   Compiling strsim v0.11.1
+   Compiling darling_core v0.20.11
+   Compiling schemars_derive v1.2.2
+   Compiling cpufeatures v0.3.1
+   Compiling constant_time_eq v0.4.2
+   Compiling dyn-clone v1.0.20
+   Compiling arrayvec v0.7.8
+   Compiling crossbeam-utils v0.8.23
+   Compiling schemars v1.2.2
+   Compiling darling_macro v0.20.11
+   Compiling crossbeam-epoch v0.9.21
+   Compiling bitflags v2.13.2
+   Compiling libc v0.2.189
+   Compiling log v0.4.34
+   Compiling darling v0.20.11
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling version_check v0.9.5
+   Compiling crossbeam-deque v0.8.8
+   Compiling zerocopy v0.8.59
+   Compiling gob-text v0.532.0 (<worktree>/crates/gob-text)
+   Compiling ahash v0.8.12
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling same-file v1.0.6
+   Compiling inventory v0.3.24
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling walkdir v2.5.0
+   Compiling rayon-core v1.13.0
+   Compiling winnow v1.0.4
+   Compiling smallvec v1.16.2
+   Compiling pkg-config v0.3.34
+   Compiling vcpkg v0.2.15
+   Compiling libsqlite3-sys v0.30.1
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling regex v1.13.1
+   Compiling bstr v1.13.1
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_spanned v1.1.1
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling globset v0.4.20
+   Compiling hashbrown v0.14.5
+   Compiling tree-sitter v0.27.0
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling tree-sitter-md v0.5.3
+   Compiling tree-sitter-toml-ng v0.7.0
+   Compiling tree-sitter-javascript v0.25.0
+   Compiling tree-sitter-html v0.23.2
+   Compiling tree-sitter-rust v0.24.2
+   Compiling tree-sitter-python v0.25.0
+   Compiling tree-sitter-typescript v0.23.2
+   Compiling tree-sitter-c-sharp v0.23.5
+   Compiling tree-sitter-css v0.25.0
+   Compiling rustix v1.1.5
+   Compiling either v1.18.0
+   Compiling getrandom v0.4.3
+   Compiling jiff-core v0.1.1
+   Compiling jiff v0.2.37
+   Compiling rayon v1.12.0
+   Compiling hashlink v0.9.1
+   Compiling ignore v0.4.33
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling streaming-iterator v0.1.9
+   Compiling fallible-iterator v0.3.0
+   Compiling lazy_static v1.5.1
+   Compiling utf8parse v0.2.2
+   Compiling foldhash v0.1.5
+   Compiling cfg_aliases v0.2.2
+   Compiling linux-raw-sys v0.12.1
+   Compiling nix v0.31.3
+   Compiling hashbrown v0.15.5
+   Compiling anstyle-parse v0.2.7
+   Compiling sharded-slab v0.1.7
+   Compiling rusqlite v0.32.1
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling tracing-log v0.2.0
+   Compiling matchers v0.2.0
+   Compiling cobs v0.3.0
+   Compiling tracing-serde v0.2.0
+   Compiling thread_local v1.1.10
+   Compiling colorchoice v1.0.5
+   Compiling anstyle-query v1.1.5
+   Compiling anstyle v1.0.14
+   Compiling fixedbitset v0.5.7
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling fastrand v2.5.0
+   Compiling nu-ansi-term v0.50.3
+   Compiling tracing-subscriber v0.3.23
+   Compiling tempfile v3.27.0
+   Compiling anstream v0.6.21
+   Compiling petgraph v0.8.3
+   Compiling postcard v1.1.3
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling which v8.0.6
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling console v0.16.6
+   Compiling similar v2.7.0
+   Compiling insta v1.48.0
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6ce98aa7-f37e-4955-acdd-860819a73e5a with nextest profile: default
+    Starting 91 tests across 11 binaries
+        PASS [   0.006s] crunk-rules rules::freshness::rules_index_is_fresh
+        PASS [   0.005s] crunk-rules::breakpoints_rules a_breakpoint_matches_exactly_or_at_minus_point_oh_two
+        PASS [   0.005s] crunk-rules::breakpoints_rules a_declared_name_or_an_arbitrary_min_variant_is_responsive
+        PASS [   0.005s] crunk-rules::breakpoints_rules bare_entries_share_the_display_group_and_dashed_entries_are_their_own
+        PASS [   0.015s] crunk-rules::breakpoints_rules bp001_names_the_query_the_width_and_the_declared_points
+        PASS [   0.019s] crunk-rules::breakpoints_rules bp002_judges_each_class_list_on_its_own
+        PASS [   0.014s] crunk-rules::breakpoints_rules bp003_names_the_smallest_breakpoint
+        PASS [   0.021s] crunk-rules::breakpoints_rules the_family_is_off_without_breakpoints
+        PASS [   0.015s] crunk-rules::color_rules a_host_without_spec_or_styles_is_inapplicable
+        PASS [   0.017s] crunk-rules::color_rules a_literal_beyond_color_tolerance_still_fires_and_says_so
+        PASS [   0.038s] crunk-rules::color_rules a_literal_within_color_tolerance_names_the_palette_token
+        PASS [   0.036s] crunk-rules::color_rules a_readable_oklch_literal_is_checked_against_the_palette
+        PASS [   0.034s] crunk-rules::color_rules a_translucent_off_palette_literal_says_the_fix_preserves_alpha
+        PASS [   0.064s] crunk-rules::color_rules an_ungoverned_css_file_makes_the_definition_set_incomplete
+        PASS [   0.098s] crunk-rules::color_rules an_unreadable_colour_literal_is_unresolved_never_clean
+        PASS [   0.023s] crunk-rules::color_rules color002_is_a_p_minus_rule_and_color001_a_p_plus_rule
+        PASS [   0.013s] crunk-rules::color_rules conformance_is_exact_or_translucent_over_an_opaque_entry
+        PASS [   0.012s] crunk-rules::color_rules nearest_ranks_by_delta_e_ok_where_redmean_ranks_wrong
+        PASS [   0.034s] crunk-rules::color_rules one_default_mode_without_declared_modes
+        PASS [   0.051s] crunk-rules::color_rules subjects_are_the_examined_sheets_without_the_tokens_sheet
+        PASS [   0.048s] crunk-rules::color_rules the_definition_set_unions_the_token_export_and_the_sheets_own_properties
+        PASS [   0.036s] crunk-rules::color_rules the_finding_is_located_at_the_literal_in_its_file
+        PASS [   0.010s] crunk-rules::color_rules the_message_is_alpha_aware_and_names_the_tolerance
+        PASS [   0.054s] crunk-rules::color_rules the_tokens_sheet_is_not_an_examined_sheet
+        PASS [   0.060s] crunk-rules::color_rules with_the_generated_sheet_indexed_an_undefined_reference_is_an_error
+        PASS [   0.035s] crunk-rules::color_rules without_the_generated_sheet_the_same_reference_is_unresolved_not_clean
+        PASS [   0.052s] crunk-rules::contrast_rules a_pair_just_below_the_floor_fires_with_the_measured_ratio
+        PASS [   0.040s] crunk-rules::contrast_rules a_role_with_its_own_lower_floor_is_judged_against_it
+        PASS [   0.040s] crunk-rules::contrast_rules measure_roles_reports_ratio_and_floor_per_role
+        PASS [   0.041s] crunk-rules::contrast_rules the_finding_sits_at_the_start_of_the_spec
+        PASS [   0.016s] crunk-rules::org_rules a_component_class_is_the_name_or_its_element_or_modifier
+        PASS [   0.013s] crunk-rules::org_rules a_line_maps_to_the_offset_it_starts_at
+        PASS [   0.018s] crunk-rules::org_rules bem_names_split_on_double_separators_only
+        PASS [   0.011s] crunk-rules::org_rules case_names_are_the_crunk_toml_spellings
+        PASS [   0.041s] crunk-rules::org_rules layer001_is_inapplicable_without_layers
+        PASS [   0.040s] crunk-rules::org_rules layer001_names_the_declared_layers_and_skips_auto
+        PASS [   0.083s] crunk-rules::org_rules org001_names_the_stray_path_and_is_silent_under_utility_first
+        PASS [   0.064s] crunk-rules::org_rules org002_honours_class_case_and_locates_the_line
+        PASS [   0.078s] crunk-rules::org_rules org003_flags_a_foreign_class_and_respects_its_switches
+        PASS [   0.097s] crunk-rules::org_rules org004_flags_definitions_outside_tokens_only
+        PASS [   0.111s] crunk-rules::org_rules org005_names_the_file_and_the_css_root
+        PASS [   0.027s] crunk-rules::org_rules the_three_case_grammars_match_the_python_patterns
+        PASS [   0.019s] crunk-rules::review a_changed_token_makes_the_review_stale_and_is_named
+        PASS [   0.012s] crunk-rules::review a_current_rejection_is_rejected_and_a_missing_entry_is_missing
+        PASS [   0.017s] crunk-rules::review changed_inputs_lists_added_removed_and_changed
+        PASS [   0.037s] crunk-rules::review signatures_and_the_allow_list_are_enforced
+        PASS [   0.017s] crunk-rules::rules a_rules_own_release_severity_beats_the_family_and_the_default
+        PASS [   0.017s] crunk-rules::rules bind_yields_one_bound_rule_per_declaration
+        PASS [   0.013s] crunk-rules::rules declared_severities_agree_with_the_spec_catalog
+        PASS [   0.021s] crunk-rules::rules every_declared_family_has_a_metadata_row
+        PASS [   0.020s] crunk-rules::rules family_prefixes_are_unique_and_every_catalog_prefix_has_a_row
+        PASS [   0.043s] crunk-rules::rules lint_levels_map_onto_pipeline_severities
+        PASS [   4.955s] crunk-rules::rules mdtest_corpus
+        PASS [   0.019s] crunk-rules::rules only_declaration_level_families_are_waivable
+        PASS [   0.015s] crunk-rules::rules the_registry_lists_id_family_severity_fixable_and_doc
+        PASS [   0.021s] crunk-rules::rules the_registry_page_names_every_rule_and_family
+        PASS [   0.032s] crunk-rules::rules the_release_gate_raises_human_and_leaves_others_alone
+        PASS [   0.031s] crunk-rules::scales_rules a_length_on_the_scale_or_not_px_comparable_is_not_off_scale
+        PASS [   0.055s] crunk-rules::scales_rules every_off_scale_length_of_a_shorthand_is_its_own_finding_at_its_token
+        PASS [   0.112s] crunk-rules::scales_rules radius001_is_inapplicable_without_declared_radii
+        PASS [   0.068s] crunk-rules::scales_rules size001_falls_back_to_spacing_names_and_exempts_max_width
+        PASS [   0.056s] crunk-rules::scales_rules size001_uses_the_declared_sizes_scale_and_its_token_names
+        PASS [   0.018s] crunk-rules::scales_rules step_zero_borrows_an_absolute_allowance_from_the_smallest_nonzero_step
+        PASS [   0.078s] crunk-rules::scales_rules subjects_are_the_examined_sheets
+        PASS [   0.089s] crunk-rules::scales_rules the_message_names_the_property_the_bracket_and_the_nearest_step
+        PASS [   0.023s] crunk-rules::scales_rules the_neighbours_the_nearest_step_and_the_tolerance_are_reported
+        PASS [   0.130s] crunk-rules::scales_rules type001_judges_font_size_against_the_font_size_scale
+        PASS [   0.084s] crunk-rules::tailwind_rules a_utility_tailwind_did_not_answer_for_is_unresolved_not_clean
+        PASS [   0.023s] crunk-rules::tailwind_rules an_alpha_modifier_is_a_trailing_slash_and_digits
+        PASS [   0.035s] crunk-rules::tailwind_rules drift_messages_name_the_status_and_the_banner_only_case
+        PASS [   0.080s] crunk-rules::tailwind_rules facts_answer_per_utility_and_fingerprint_stably
+        PASS [   0.028s] crunk-rules::tailwind_rules family_stems_keep_compound_prefixes_and_negation_whole
+        PASS [   0.022s] crunk-rules::tailwind_rules the_arbitrary_form_is_a_dashed_prefix_then_a_bracket
+        PASS [   0.078s] crunk-rules::tailwind_rules tokens001_names_the_drifted_file
+        PASS [   0.104s] crunk-rules::tailwind_rules tw001_messages_name_the_neighbours_the_token_and_the_layers
+        PASS [   0.165s] crunk-rules::tailwind_rules tw002_is_inapplicable_without_a_tailwind_config
+        PASS [   0.090s] crunk-rules::tailwind_rules tw003_names_the_entry_its_mapping_and_warns
+        PASS [   0.116s] crunk-rules::tailwind_rules tw004_names_the_default_colour_and_the_nearest_token
+        PASS [   0.096s] crunk-rules::tailwind_rules tw005_spares_a_default_key_that_lands_on_the_declared_scale
+        PASS [   0.072s] crunk-rules::typography_rules a_named_stack_replaces_the_implicit_one
+        PASS [   0.025s] crunk-rules::typography_rules a_stack_is_split_lowercased_and_unquoted
+        PASS [   0.055s] crunk-rules::typography_rules a_var_anywhere_in_the_value_exempts_the_whole_stack
+        PASS [   0.080s] crunk-rules::typography_rules type003_names_the_weight_and_the_declared_ones_and_is_a_warning
+        PASS [   0.041s] crunk-rules::typography_rules weights_resolve_keywords_and_exempt_relative_ones
+        PASS [   0.095s] crunk-rules::typography_rules without_named_stacks_the_families_are_the_one_implicit_stack
+        PASS [   0.032s] crunk-rules::waiver a_leading_waiver_covers_the_next_declaration_up_to_its_semicolon
+        PASS [   0.032s] crunk-rules::waiver a_trailing_waiver_covers_its_own_line
+        PASS [   0.018s] crunk-rules::waiver a_waiver_with_nothing_after_it_is_an_orphan
+        PASS [   0.026s] crunk-rules::waiver only_a_reasoned_waiver_of_a_waivable_rule_grants_an_exception
+        PASS [   0.024s] crunk-rules::waiver prose_and_malformed_comments_are_not_waivers
+        PASS [   0.020s] crunk-rules::waiver reasons_missing_blank_or_quoted_with_escapes_are_read
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   8.916s] 91 tests run: 91 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -j1"
+size = 15340
+status = "measured"
+test_count = 91
+tests_digest = "12c93b80981728dfce9d347175823cbcfc2fe7a8d2923c543c53add239f09719"
+at = "2026-10-16T05:37:27Z"
+actor = "lognd"
+rev = 1

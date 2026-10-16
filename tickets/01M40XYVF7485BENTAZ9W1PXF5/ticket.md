@@ -2,13 +2,14 @@
 id = "01M40XYVF7485BENTAZ9W1PXF5"
 title = "Remaining raw-text readers pair raw offsets with git-normalized cache keys"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T13:06:22Z"
-updated = "2026-10-16T03:22:25Z"
+updated = "2026-10-16T03:32:47Z"
 idempotency_key = "m2-raw-readers-normalized"
 labels = ["milestone:2"]
 scope = ["crates/gob-check/**", "crates/frob-obligations/**", "crates/frob-check/src/snapshot.rs", "crates/gob-walk/**", "crates/frob-check/tests/it/**"]

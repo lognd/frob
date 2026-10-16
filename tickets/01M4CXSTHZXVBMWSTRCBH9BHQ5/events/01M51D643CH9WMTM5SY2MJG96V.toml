@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-16T03:48:10Z"
+digest = "c47f1ae93d9d3363bf37cd472d9ae7d4e3946dc3e76465f13961170fd9cbc742"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 81185d93-5ac2-496a-b691-3324ac4ae8e9 with nextest profile: default
+    Starting 5 tests across 1 binary (7 binaries skipped)
+        PASS [   0.007s] grimble-check::coh004 coh004_python_fire
+        PASS [   0.007s] grimble-check::coh004 split_words_handles_snake_and_camel
+        PASS [   0.006s] grimble-check::coh004 coh004_python_clean
+        PASS [   0.008s] grimble-check::coh004 coh004_rust_fire
+        PASS [   0.008s] grimble-check::coh004 coh004_rust_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 5 tests run: 5 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'binary(coh004)'"
+size = 811
+status = "measured"
+test_count = 5
+tests_digest = "263c6564aafaf16e435ad1d792354be0bc6a097ab4ba856b758770891f96487e"
+at = "2026-10-16T03:48:10Z"
+actor = "lognd"
+rev = 1

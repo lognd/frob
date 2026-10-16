@@ -8,16 +8,16 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:48:03Z"
-updated = "2026-10-16T03:34:07Z"
-scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**"]
+updated = "2026-10-16T05:45:24Z"
+scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-check/src/product.rs", "docs/reference/**", "docs/schemas/**", "frob.toml"]
 
 [[acceptance]]
 text = "Given mdtest fire and clean pairs for each of PM003-PM007, when the corpus runs, then each rule fires only on its fire case"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given this repository, when frob check runs, then the new findings are counted in the report and none is an Error by default"
-bound = false
+bound = true
 +++
 
 Designed in pm-enforcement.md sections 2-3, not implemented in v2. Implement PM003 (as_a/i_want/so_that present, three words each), PM004 (so_that token overlap with i_want), PM005 (criteria exist, Given/When/Then or explicit form), PM006 (size at or under [pm] max_story_points), PM007 (task with user-visible scope and no parent story or no-story reason).
