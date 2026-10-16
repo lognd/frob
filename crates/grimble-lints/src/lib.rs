@@ -9,8 +9,12 @@
 //! [`res::scan`] finds acquire calls with no paired release in scope (`performance.mark`,
 //! `Map.set`, `setTimeout`, `addEventListener`, ...) in TypeScript and JavaScript from a table of
 //! acquire/release pairs ([`res::PAIRS`]); a new pair is a data change.
+//!
+//! [`typing::scan`] finds `TYPING001` sites: a tsconfig with `strict` off, a csproj without
+//! `<Nullable>enable</Nullable>`, or a lax mypy or pyright table, each naming the key to set.
 
 // frob:ticket 01M4D956T20WN96P7A3K4B9CKF
 
 pub mod err;
 pub mod res;
+pub mod typing;
