@@ -1,0 +1,1 @@
+grimble-check: COH004 mixed vocabularies, an Advisory heuristic that splits a unit's identifiers into words, links words sharing a statement and reports two or more disjoint clusters (`grimble_check::coh004`).
