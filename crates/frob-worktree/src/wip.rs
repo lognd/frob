@@ -185,6 +185,10 @@ pub fn check(
         tracing::debug!(%id, "repository wip limit off");
         return Ok(());
     }
+    // A ticket queued on the land train was handed off: it holds no slot (frob:ticket 01M51CKGHR8XECF9SBCZ5TQW0Z).
+    let queued: BTreeSet<TicketId> = live.iter().filter(|l| l.queued).map(|l| l.ticket).collect();
+    let live: Vec<Lease> = live.iter().filter(|l| !l.queued).cloned().collect();
+    let live = live.as_slice();
     let live_ids: BTreeSet<TicketId> = live.iter().map(|l| l.ticket).collect();
     let mut wip = frob_pm::rules::wip::count(
         holders(ledger, live, id)?,
@@ -192,7 +196,7 @@ pub fn check(
         limits.expedite_max,
     );
     for list in [&mut wip.standard, &mut wip.expedite, &mut wip.stale] {
-        list.retain(|s| s.id != id);
+        list.retain(|s| s.id != id && !queued.contains(&s.id));
     }
     let holding = |s: Summary| {
         let lease = live.iter().find(|l| l.ticket == s.id)?.clone();

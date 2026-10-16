@@ -333,7 +333,12 @@ fn live_leases(
     match LeaseStore::open(state.ledger.repo(), cfg, state.ledger.clock().clone())
         .and_then(|s| s.live_snapshot())
     {
-        Ok(live) => Some(live.into_iter().map(|l| l.ticket).collect()),
+        Ok(live) => Some(
+            live.into_iter()
+                .filter(|l| !l.queued)
+                .map(|l| l.ticket)
+                .collect(),
+        ),
         Err(err) => {
             tracing::warn!(%err, "leases unreadable; PM013 counts every in-progress ticket");
             None

@@ -309,7 +309,11 @@ impl Command for BoardVerb {
             .and_then(|(s, _)| s.live_snapshot().map_err(CliError::from))
         {
             Ok(leases) => {
-                let ids: BTreeSet<TicketId> = leases.iter().map(|l| l.ticket).collect();
+                let ids: BTreeSet<TicketId> = leases
+                    .iter()
+                    .filter(|l| !l.queued)
+                    .map(|l| l.ticket)
+                    .collect();
                 let holders: BTreeMap<TicketId, String> = leases
                     .iter()
                     .map(|l| (l.ticket, l.holder.actor.clone()))
@@ -324,7 +328,10 @@ impl Command for BoardVerb {
                 (BTreeMap::new(), None, Vec::new())
             }
         };
-        let wip = wip::read(&ledger, live.as_ref(), limits.expedite_max).map_err(cli_err)?;
+        let mut wip = wip::read(&ledger, live.as_ref(), limits.expedite_max).map_err(cli_err)?;
+        // Queued on the land train: handed off, neither counted nor stale (frob:ticket 01M51CKGHR8XECF9SBCZ5TQW0Z).
+        wip.stale
+            .retain(|s| !leases.iter().any(|l| l.queued && l.ticket == s.id));
         let tickets = ledger.list(&ListFilter::default()).map_err(cli_err)?;
         let doable_order: Vec<TicketId> = ledger
             .doable(&NoLeases)

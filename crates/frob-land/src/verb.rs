@@ -26,6 +26,7 @@ use frob_ledger::TicketId;
 pub struct Land {
     opts: LandOptions,
     train: bool,
+    enqueue_only: bool,
 }
 
 /// The flags of `land`, declared once; the help text is the operator-facing contract.
@@ -51,6 +52,11 @@ struct LandArgs {
         help = "Land through the batched train: enqueue, then wait for the train to land this ticket"
     )]
     train: bool,
+    #[arg(
+        long,
+        help = "Implies --train: run the ticket-local gates, queue the ticket and return at once; the ticket leaves the WIP count while queued"
+    )]
+    enqueue_only: bool,
     #[arg(
         long,
         help = "Show who holds the land lock, at which stage and for how long; land nothing"
@@ -134,7 +140,8 @@ impl Command for Land {
         let no_evidence_reason = no_evidence.then(|| given("--no-evidence")).transpose()?;
         let no_changelog_reason = no_changelog.then(|| given("--no-changelog")).transpose()?;
         Ok(Self {
-            train: a.train,
+            train: a.train || a.enqueue_only,
+            enqueue_only: a.enqueue_only,
             opts: LandOptions {
                 handle: a.ticket,
                 dry_run: false,
@@ -161,7 +168,9 @@ impl Command for Land {
             return lock_status(ctx);
         }
         let out = if self.train {
-            land_train(&ctx.cwd, &TrainOptions::new(opts), &ctx.clock)?
+            let mut train = TrainOptions::new(opts);
+            train.enqueue_only = self.enqueue_only;
+            land_train(&ctx.cwd, &train, &ctx.clock)?
         } else {
             land(&ctx.cwd, &opts, &ctx.clock)?
         };

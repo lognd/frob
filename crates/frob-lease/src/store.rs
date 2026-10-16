@@ -432,7 +432,7 @@ impl LeaseStore {
         if limit > 0 {
             let count = live
                 .iter()
-                .filter(|l| l.ticket != ticket && &l.holder == holder)
+                .filter(|l| l.ticket != ticket && &l.holder == holder && !l.queued)
                 .count();
             if count >= limit as usize {
                 tracing::info!(%ticket, %holder, count, limit, "acquire refused: wip limit");
@@ -469,6 +469,7 @@ impl LeaseStore {
                 scope: scope.to_vec(),
                 renewed_at: now,
                 ttl_secs: self.cfg.ttl_secs,
+                queued: false,
                 ..e.clone()
             },
             None => Lease {
@@ -479,6 +480,7 @@ impl LeaseStore {
                 renewed_at: now,
                 ttl_secs: self.cfg.ttl_secs,
                 history: Vec::new(),
+                queued: false,
             },
         };
         let already = existing.is_some_and(|e| e.scope == scope);
@@ -688,6 +690,28 @@ impl LeaseStore {
         lease.ttl_secs = self.cfg.ttl_secs;
         self.write(&lock, &lease)?;
         tracing::info!(%ticket, %holder, "lease renewed");
+        Ok(lease)
+    }
+
+    /// Mark `holder`'s lease on `ticket` as waiting on the land train (`queued`) or taken back; a queued lease no longer counts toward WIP.
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::NotHeld`] with no lease, [`LeaseError::Held`] for another holder, plus lock and I/O failures.
+    pub fn set_queued(
+        &self,
+        ticket: TicketId,
+        holder: &Holder,
+        queued: bool,
+    ) -> Result<Lease, LeaseError> {
+        let lock = self.lock()?;
+        let mut lease = self.find(ticket)?.ok_or(LeaseError::NotHeld { ticket })?;
+        if &lease.holder != holder {
+            return Err(held_by(&lease, SAME_TICKET));
+        }
+        lease.queued = queued;
+        self.write(&lock, &lease)?;
+        tracing::info!(%ticket, %holder, queued, "lease queued flag set");
         Ok(lease)
     }
 

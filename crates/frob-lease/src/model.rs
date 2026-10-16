@@ -55,6 +55,9 @@ pub struct Lease {
     /// Takeovers and rescopes, oldest first.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub history: Vec<StealRecord>,
+    /// True while the ticket waits on the land train: the holder handed it off, so it no longer counts toward WIP.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub queued: bool,
 }
 
 impl Lease {

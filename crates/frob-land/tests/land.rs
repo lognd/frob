@@ -2241,6 +2241,7 @@ fn twelve_ready_tickets_with_one_failing_land_eleven_and_return_the_culprit() {
     let opts = frob_land::TrainOptions {
         land: LandOptions::default(),
         runner: Some(runner),
+        enqueue_only: false,
     };
     let report = frob_land::train_drain(&fx.root, &opts, &train_clock()).expect("drain");
     let landed: usize = report.rounds.iter().map(|r| r.landed.len()).sum();
@@ -2253,6 +2254,28 @@ fn twelve_ready_tickets_with_one_failing_land_eleven_and_return_the_culprit() {
             assert!(fx.leases().live_lease(s.id).expect("lease").is_some());
             let res = store.result(&s.id).expect("result").expect("recorded");
             assert_eq!(res.status, frob_land::train_state::MemberStatus::Red);
+            // the red result is on the ticket itself, and its lease is back in the WIP count
+            assert!(view.ticket.front.labels.contains(&"train-red".to_owned()));
+            let comments: Vec<String> = fx
+                .ledger()
+                .events(s.id)
+                .expect("events")
+                .iter()
+                .filter_map(|e| match &e.body {
+                    frob_ledger::event::EventBody::Comment(c) => Some(c.body.clone()),
+                    _ => None,
+                })
+                .collect();
+            assert!(
+                comments.iter().any(|c| c.contains("test failed")),
+                "{comments:?}"
+            );
+            let lease = fx
+                .leases()
+                .recorded_lease(s.id)
+                .expect("lease")
+                .expect("held");
+            assert!(!lease.queued, "a red ticket is back with its agent");
             assert!(
                 res.reason.as_deref().unwrap_or("").contains("test failed"),
                 "failing evidence travels with the culprit: {res:?}"
@@ -2320,12 +2343,21 @@ fn a_member_that_does_not_merge_is_evicted_and_the_rest_land() {
             poison: None,
             calls: 0.into(),
         })),
+        enqueue_only: false,
     };
     let report = frob_land::train_drain(&fx.root, &opts, &train_clock()).expect("drain");
     let landed: usize = report.rounds.iter().map(|r| r.landed.len()).sum();
     assert_eq!(landed, 2, "{report:?}");
     let res = store.result(&clash.id).expect("result").expect("recorded");
     assert_eq!(res.status, frob_land::train_state::MemberStatus::Evicted);
+    let labels = fx
+        .ledger()
+        .show(clash.id)
+        .expect("show")
+        .ticket
+        .front
+        .labels;
+    assert!(labels.contains(&"train-evicted".to_owned()), "{labels:?}");
     assert!(
         res.reason
             .as_deref()
@@ -2392,6 +2424,43 @@ fn a_lone_ticket_lands_through_the_plain_land_path() {
     );
     let store = frob_land::train_state::TrainStore::new(fx.repo().common_dir());
     assert!(store.queue().expect("queue").is_empty());
+}
+
+// frob:ticket 01M51CKGHR8XECF9SBCZ5TQW0Z
+// frob:tests crates/frob-land/src/train.rs::land_train
+// frob:tests crates/frob-land/src/train.rs::enqueue
+#[test]
+fn enqueue_only_queues_the_ticket_and_flags_its_lease_without_driving() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Queued", &["solo/**"]);
+    Fixture::commit_in(&s.wt, "solo/solo.rs", "fn f() {}\n");
+    Fixture::evidence(&s, "solo/solo.rs");
+    let mut opts = frob_land::TrainOptions::new(LandOptions {
+        handle: Some(s.handle.clone()),
+        ..LandOptions::default()
+    });
+    opts.enqueue_only = true;
+    let out = frob_land::land_train(&s.wt, &opts, &train_clock()).expect("enqueue-only");
+    assert!(!out.closed, "{out:?}");
+    assert!(out.warnings.iter().any(|w| w.contains("queued")), "{out:?}");
+    let store = frob_land::train_state::TrainStore::new(fx.repo().common_dir());
+    assert_eq!(store.queue().expect("queue").len(), 1);
+    assert!(
+        fx.repo()
+            .read_blob_at("main", "solo/solo.rs")
+            .expect("read")
+            .is_none(),
+        "nothing landed"
+    );
+    let lease = fx
+        .leases()
+        .recorded_lease(s.id)
+        .expect("lease")
+        .expect("held");
+    assert!(lease.queued, "a queued ticket's lease leaves the WIP count");
 }
 
 // frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6

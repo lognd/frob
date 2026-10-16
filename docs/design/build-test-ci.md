@@ -515,8 +515,10 @@ per-ticket request file `.git/frob/train/queue/<ULID>.json` (enqueued_at,
 actor, worktree, frozen head oid, heartbeat, ttl; modeled on the lease
 waiters). If no live driver exists, that caller becomes the driver and runs
 the train in its own foreground; other callers wait up to `--wait <secs>`
-for `.git/frob/train/results/<ULID>.json`, and `--wait 0` enqueues and
-returns. One file per ticket avoids lost updates; `state.json` holds only
+for `.git/frob/train/results/<ULID>.json`, and `--enqueue-only` (implies
+`--train`) runs the ticket-local gates, writes the queue entry and returns
+exit 0 "queued" without driving or waiting (`--wait 0` still drives one
+round when the lock is free). One file per ticket avoids lost updates; `state.json` holds only
 the driver-owned run in flight (id, base oid, candidate oid, members keyed
 by ticket id with frozen head oid, phase, rounds). Resume trusts git first
 (a candidate that is an ancestor of the base means the advance happened;
@@ -527,6 +529,17 @@ is the holder's consent: the driver uses the enqueuer's recorded actor,
 renews member leases each round, and after a member lands the driver
 releases its lease and removes its worktree (`finish_member`); a red or
 evicted member keeps both so its agent can fix and enqueue again.
+
+**Hand-off.** Enqueuing marks the ticket's lease `queued`: a queued ticket
+is handed off, so it no longer counts toward the per-holder lease limit,
+the repository WIP limit (`work`/`start`/PM013) or the board's stale-holder
+list, and the agent is free to start the next ticket. The flag is cleared
+when the train lands, reds or evicts the ticket, or lands it alone. A red or
+evicted result is also written to the ticket in the ledger, not only to
+`.git/frob/train/results/`: a note comment with the failing evidence and a
+`train-red` or `train-evicted` label (dropped again on the next enqueue).
+The writes happen after the round publishes, so a ledger that lives on the
+base branch is not moved mid-round.
 
 **Lock.** The driver holds `land.lock` for the whole train, so single
 lands, the base-CI gate and the watchdog work unchanged (tickets.md

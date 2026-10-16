@@ -7,7 +7,9 @@
 //! [`TrainCloser::close_run`] and cleans up each landed member. A culprit gets a red result with the
 //! failing evidence and keeps its lease and worktree so its agent can fix and enqueue again. The
 //! batch size grows after a green round and halves after a red one. `land --train` ([`land_train`])
-//! is the enqueuer: it waits for its own result, driving the train itself when nobody else does, and
+//! is the enqueuer (`--enqueue-only` queues the ticket and returns at once; a queued ticket's lease is
+//! flagged so it leaves the WIP count, and a red or evicted result is written to the ticket as a
+//! comment and a label): it waits for its own result, driving the train itself when nobody else does, and
 //! falls back to the plain single-ticket [`land`] for a lone ticket or when `[land] train` is off.
 
 use std::collections::HashMap;
@@ -17,6 +19,8 @@ use std::time::{Duration, Instant};
 
 use frob_evidence::Workspace;
 use frob_ledger::TicketId;
+use frob_ledger::model::CommentSubtype;
+use frob_ledger::ops::Patch;
 use gob_git::{Repo, TreeRef};
 use gob_time::Clock;
 use schemars::JsonSchema;
@@ -43,6 +47,51 @@ use crate::train_state::{
 /// Finished results kept for waiting enqueuers.
 const KEEP_RESULTS: usize = 256;
 
+/// Label a ticket carries after the train found it red, until it is enqueued again.
+pub const TRAIN_RED: &str = "train-red";
+
+/// Label a ticket carries after the train evicted it, until it is enqueued again.
+pub const TRAIN_EVICTED: &str = "train-evicted";
+
+/// The other train result label (the one to drop when `label` is set).
+fn other_label(label: &str) -> &'static str {
+    if label == TRAIN_RED {
+        TRAIN_EVICTED
+    } else {
+        TRAIN_RED
+    }
+}
+
+/// Set or clear the queued flag on a ticket's lease, whoever holds it; failures only warn.
+fn mark_queued(root: &Path, clock: &Arc<dyn Clock>, id: TicketId, queued: bool) {
+    let result = frob_lease::open_store_from_file(root, clock.clone())
+        .map_err(|e| e.to_string())
+        .and_then(|(leases, _)| {
+            let held = leases.recorded_lease(id).map_err(|e| e.to_string())?;
+            let Some(lease) = held else {
+                return Ok(());
+            };
+            leases
+                .set_queued(id, &lease.holder, queued)
+                .map(|_| ())
+                .map_err(|e| e.to_string())
+        });
+    if let Err(e) = result {
+        tracing::warn!(ticket = %id, queued, error = %e, "lease queued flag not updated");
+    }
+}
+
+/// Drop the train result labels from a ticket that is being enqueued again; failures only warn.
+fn clear_result_labels(ledger: &frob_ledger::Ledger, id: TicketId) {
+    let patch = Patch {
+        remove_labels: vec![TRAIN_RED.to_owned(), TRAIN_EVICTED.to_owned()],
+        ..Patch::default()
+    };
+    if let Err(e) = ledger.update(id, &patch) {
+        tracing::warn!(ticket = %id, error = %e, "train labels not cleared");
+    }
+}
+
 /// How long a waiting enqueuer sleeps between lock attempts.
 const POLL: Duration = Duration::from_millis(200);
 
@@ -53,6 +102,8 @@ pub struct TrainOptions {
     pub land: LandOptions,
     /// Checks batches instead of the real candidate checker; the seam tests inject a failing member through.
     pub runner: Option<Arc<dyn Runner>>,
+    /// Queue the ticket and return without driving or waiting (`land --enqueue-only`).
+    pub enqueue_only: bool,
 }
 
 impl std::fmt::Debug for TrainOptions {
@@ -60,6 +111,7 @@ impl std::fmt::Debug for TrainOptions {
         f.debug_struct("TrainOptions")
             .field("land", &self.land)
             .field("runner", &self.runner.as_ref().map(|_| "<injected>"))
+            .field("enqueue_only", &self.enqueue_only)
             .finish()
     }
 }
@@ -67,7 +119,11 @@ impl std::fmt::Debug for TrainOptions {
 impl TrainOptions {
     /// Options for a verb: the real checker with `land`'s settings.
     pub fn new(land: LandOptions) -> Self {
-        Self { land, runner: None }
+        Self {
+            land,
+            runner: None,
+            enqueue_only: false,
+        }
     }
 }
 
@@ -213,6 +269,9 @@ struct Driver<'a> {
     clock: &'a Arc<dyn Clock>,
     lock: LandLock,
     seq: u32,
+    /// Red and evicted results waiting to be written onto their tickets once the round has published
+    /// (a ledger write mid-round would move a base branch that also carries the ledger).
+    handbacks: Mutex<Vec<(TicketId, MemberStatus, Option<String>)>>,
 }
 
 impl<'a> Driver<'a> {
@@ -237,6 +296,7 @@ impl<'a> Driver<'a> {
             clock,
             lock,
             seq: 0,
+            handbacks: Mutex::new(Vec::new()),
         })
     }
 
@@ -317,10 +377,56 @@ impl<'a> Driver<'a> {
             id: *id,
             run: run.to_owned(),
             status,
-            reason,
+            reason: reason.clone(),
             finished: self.clock.now().unix(),
         })?;
+        if matches!(status, MemberStatus::Red | MemberStatus::Evicted) {
+            mark_queued(&self.site.primary, self.clock, *id, false);
+            self.handbacks
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .push((*id, status, reason));
+        }
         self.site.store.dequeue(id)
+    }
+
+    /// Write every pending red or evicted result onto its ticket (failures only warn).
+    fn flush_handbacks(&self) {
+        let pending = std::mem::take(
+            &mut *self
+                .handbacks
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner),
+        );
+        for (id, status, reason) in pending {
+            self.record_on_ticket(&id, status, reason.as_deref());
+        }
+    }
+
+    /// Write one red or evicted result onto its ticket as a comment and a label (failures only warn).
+    fn record_on_ticket(&self, id: &TicketId, status: MemberStatus, reason: Option<&str>) {
+        let (label, verdict) = if status == MemberStatus::Red {
+            (TRAIN_RED, "red")
+        } else {
+            (TRAIN_EVICTED, "evicted")
+        };
+        let body = format!(
+            "The land train found this ticket {verdict}: {}\n\nFix the cause, commit, and run `frob land --train` again; the ticket is still leased.",
+            reason.unwrap_or("no reason recorded")
+        );
+        let ledger = &self.site.ws.ledger;
+        if let Err(e) = ledger.comment(*id, CommentSubtype::Note, &body) {
+            tracing::warn!(ticket = %id, error = %e, "train result not written to the ticket");
+            return;
+        }
+        let patch = Patch {
+            add_labels: vec![label.to_owned()],
+            remove_labels: vec![other_label(label).to_owned()],
+            ..Patch::default()
+        };
+        if let Err(e) = ledger.update(*id, &patch) {
+            tracing::warn!(ticket = %id, error = %e, "train label not set on the ticket");
+        }
     }
 
     /// Select up to `size` mutually disjoint tickets from the queue, oldest first.
@@ -666,7 +772,9 @@ impl<'a> Driver<'a> {
             if self.site.store.queue()?.is_empty() {
                 break;
             }
-            let report = self.round()?;
+            let round = self.round();
+            self.flush_handbacks();
+            let report = round?;
             let moved = report.progressed();
             out.push(report);
             if !moved || rounds.is_some_and(|n| out.len() >= n as usize) {
@@ -835,6 +943,8 @@ pub fn enqueue(
         worktree: pre.wt_path.display().to_string(),
         head_oid: head.to_string(),
     })?;
+    mark_queued(&pre.primary, clock, id, true);
+    clear_result_labels(&pre.site.ledger, id);
     tracing::info!(ticket = %pre.handle, %head, "ticket enqueued on the land train");
     Ok(Enqueued::Queued { id })
 }
@@ -889,6 +999,10 @@ pub fn land_train(
     if let Enqueued::Done(out) = enqueue(root, &opts.land, clock)? {
         return Ok(*out);
     }
+    if opts.enqueue_only {
+        tracing::info!(ticket = %handle, "enqueue-only: queued without driving");
+        return Ok(queued_outcome(id, &handle, &opts.land));
+    }
     let store = TrainStore::new(&common);
     let deadline = Instant::now() + Duration::from_secs(opts.land.wait_secs);
     loop {
@@ -902,6 +1016,7 @@ pub fn land_train(
                 if alone {
                     tracing::info!(ticket = %handle, "alone on the train; landing it directly");
                     driver.site.store.dequeue(&id)?;
+                    mark_queued(&driver.site.primary, clock, id, false);
                     drop(driver);
                     return land(root, &opts.land, clock);
                 }

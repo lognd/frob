@@ -1,0 +1,1 @@
+`frob land --enqueue-only` queues a ticket on the land train and returns at once. A queued ticket's lease is flagged `queued` and leaves the lease, repository WIP and board stale-holder counts, and a red or evicted train result is written to the ticket as a note and a `train-red` / `train-evicted` label.

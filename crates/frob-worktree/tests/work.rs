@@ -596,6 +596,39 @@ fn refusal_message(e: &WorktreeError) -> String {
     }
 }
 
+// frob:ticket 01M51CKGHR8XECF9SBCZ5TQW0Z
+// frob:tests crates/frob-worktree/src/wip.rs::check
+#[test]
+fn a_ticket_queued_on_the_land_train_leaves_the_repository_wip_count() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let ledger = fx.ledger(None);
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ids = fill_wip(&ledger, &leases, &cfg, 2);
+    let limited = fx.leases().with_repo_limit(2);
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &limited,
+        config: &cfg,
+    };
+    let third = Fixture::ticket(&ledger, "Third", TicketType::Task, &["area9/**"]);
+    let err = ws
+        .work(&third.to_string(), &WorkOptions::default())
+        .expect_err("full");
+    assert_eq!(refusal_code(&err), "E-WIP-REPO");
+    let holder = leases
+        .recorded_lease(ids[0])
+        .expect("lease")
+        .expect("held")
+        .holder;
+    leases.set_queued(ids[0], &holder, true).expect("queue");
+    ws.work(&third.to_string(), &WorkOptions::default())
+        .expect("a queued ticket frees its slot");
+}
+
 // frob:tests crates/frob-worktree/src/wip.rs::check
 #[test]
 fn work_refuses_past_the_repository_limit_naming_both_holders() {

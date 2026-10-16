@@ -323,6 +323,42 @@ fn renew_extends_and_wip_limit_refuses() {
     ));
 }
 
+// frob:tests crates/frob-lease/src/store.rs::set_queued
+#[test]
+fn queued_lease_leaves_the_holder_limit_until_taken_back() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default()).with_holder_limit(1);
+    let t = TicketId::mint();
+    store
+        .acquire(t, &holder("a"), &scope(&["a/**"]))
+        .expect("a");
+    assert!(matches!(
+        store.set_queued(t, &holder("b"), true),
+        Err(LeaseError::Held { .. })
+    ));
+    assert!(
+        store
+            .set_queued(t, &holder("a"), true)
+            .expect("queue")
+            .queued
+    );
+    assert!(store.live_lease(t).expect("read").expect("live").queued);
+    let next = TicketId::mint();
+    store
+        .acquire(next, &holder("a"), &scope(&["b/**"]))
+        .expect("a queued ticket frees the holder's slot");
+    assert!(
+        !store
+            .set_queued(t, &holder("a"), false)
+            .expect("back")
+            .queued
+    );
+    assert!(matches!(
+        store.acquire(TicketId::mint(), &holder("a"), &scope(&["c/**"])),
+        Err(LeaseError::WipLimit { .. })
+    ));
+}
+
 #[test]
 fn contention_ranks_shared_files() {
     let dir = tempfile::tempdir().expect("tempdir");

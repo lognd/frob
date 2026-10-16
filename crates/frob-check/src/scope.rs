@@ -262,6 +262,7 @@ pub(crate) fn resolve(
                 renewed_at: now,
                 ttl_secs: 0,
                 history: Vec::new(),
+                queued: false,
             };
             (globs, lease)
         }
