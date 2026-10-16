@@ -77,6 +77,7 @@
 | `ticket url` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print the current blob URL of the ticket file on the ticket branch, and the mirrored issue URL when one exists. |
 | `tour` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show the repository tour: one stop at a time on a terminal, every stop otherwise. |
 | `train drain` | yes | no | 0 ok, 3 refused, 4 internal | Run land train rounds until the queue is empty. |
+| `train drop` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove one queue entry of the land train with a reason. |
 | `train run` | yes | no | 0 ok, 3 refused, 4 internal | Run one round of the land train over the queued tickets. |
 | `train status` | yes | no | 0 ok, 3 refused, 4 internal | Show the land train: queue, current candidate, batch size. |
 | `work` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Lease a ticket, create its worktree and branch, and move it to in-progress; `--here` leases it for this checkout instead. |

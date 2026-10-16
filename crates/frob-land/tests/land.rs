@@ -2606,3 +2606,29 @@ fn a_cache_miss_checks_out_the_base_once_for_both_passes() {
         "one checkout serves the exact and full passes"
     );
 }
+
+// frob:ticket 01M51CKH0VJ2AVAWHG8WA6YETF
+// frob:tests crates/frob-land/src/train.rs::train_drop
+#[test]
+fn train_drop_removes_one_entry_with_a_reason_and_refuses_an_unqueued_ticket() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let tickets = enqueued(&fx, 2);
+    let report = frob_land::train_drop(&fx.root, &tickets[0].handle, "superseded", &train_clock())
+        .expect("drop");
+    assert_eq!(report.remaining, 1);
+    let st = frob_land::train_status(&fx.root, &train_clock()).expect("status");
+    assert_eq!(st.queue.len(), 1);
+    assert_eq!(st.queue[0].id, tickets[1].id);
+    let store = frob_land::train_state::TrainStore::new(fx.repo().common_dir());
+    let res = store.result(&tickets[0].id).expect("result").expect("some");
+    assert!(
+        res.reason.as_deref().unwrap_or("").contains("superseded"),
+        "{res:?}"
+    );
+    let again = frob_land::train_drop(&fx.root, &tickets[0].handle, "x", &train_clock())
+        .expect_err("not queued");
+    assert_eq!(refusal(&again).code, "E-TRAIN-NOT-QUEUED");
+}

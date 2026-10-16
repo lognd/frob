@@ -929,6 +929,82 @@ pub fn train_status(root: &Path, clock: &Arc<dyn Clock>) -> Result<TrainStatusRe
     })
 }
 
+/// What `frob train drop` did.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct TrainDropReport {
+    /// The dropped ticket's handle.
+    pub handle: String,
+    /// Why it was dropped.
+    pub reason: String,
+    /// Tickets still queued afterwards.
+    pub remaining: usize,
+}
+
+// frob:ticket 01M51CKH0VJ2AVAWHG8WA6YETF
+/// Remove one ticket's queue entry with a reason (`frob train drop <ticket> --reason`).
+///
+/// The ticket keeps its lease and leaves the queued state; its waiting enqueuer reads an
+/// evicted result carrying the reason, and the ticket gets a note.
+///
+/// # Errors
+///
+/// `E-TRAIN-NOT-QUEUED` when the ticket has no queue entry, `E-TRAIN-IN-FLIGHT` when a live run
+/// holds it, plus ledger, git and state-store failures.
+pub fn train_drop(
+    root: &Path,
+    handle: &str,
+    reason: &str,
+    clock: &Arc<dyn Clock>,
+) -> Result<TrainDropReport, LandError> {
+    let site = Site::open(root, clock)?;
+    let id = site.ws.ledger.resolve(handle)?;
+    let label = site.ws.ledger.show(id)?.summary.handle;
+    let queued = site.store.queue()?.iter().any(|e| e.id == id);
+    if !queued {
+        return Err(needs_action(
+            "E-TRAIN-NOT-QUEUED",
+            format!("{label} is not on the land train queue"),
+            "frob train status",
+        ));
+    }
+    let in_flight = site
+        .store
+        .status()?
+        .run
+        .is_some_and(|r| r.phase != Phase::Done && r.members.iter().any(|m| m.id == id))
+        && site.store.status()?.live;
+    if in_flight {
+        return Err(needs_action(
+            "E-TRAIN-IN-FLIGHT",
+            format!("{label} is part of the train run in flight"),
+            "wait for the run to finish, then frob train drop again",
+        ));
+    }
+    site.store.put_result(&TicketResult {
+        schema_version: SCHEMA_VERSION,
+        id,
+        run: "dropped".to_owned(),
+        status: MemberStatus::Evicted,
+        reason: Some(format!("dropped from the queue: {reason}")),
+        finished: clock.now().unix(),
+    })?;
+    site.store.dequeue(&id)?;
+    mark_queued(&site.primary, clock, id, false);
+    let body = format!(
+        "Dropped from the land train queue: {reason}\n\nThe ticket is still leased; run `frob land --train` to queue it again."
+    );
+    if let Err(e) = site.ws.ledger.comment(id, CommentSubtype::Note, &body) {
+        tracing::warn!(ticket = %id, error = %e, "train drop not written to the ticket");
+    }
+    let remaining = site.store.queue()?.len();
+    tracing::info!(ticket = %label, %reason, remaining, "ticket dropped from the land train");
+    Ok(TrainDropReport {
+        handle: label,
+        reason: reason.to_owned(),
+        remaining,
+    })
+}
+
 /// What [`enqueue`] did.
 pub enum Enqueued {
     /// The ticket needed no train (already done).

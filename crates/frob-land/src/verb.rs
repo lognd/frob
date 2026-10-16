@@ -9,8 +9,8 @@ use crate::land::land;
 use crate::lock::LandLock;
 use crate::plan::{LandOptions, LandOutcome, RetryPolicy};
 use crate::train::{
-    TrainOptions, TrainRunReport, TrainStatusReport, land_train, train_drain, train_run,
-    train_status,
+    TrainDropReport, TrainOptions, TrainRunReport, TrainStatusReport, land_train, train_drain,
+    train_drop, train_run, train_status,
 };
 use frob_ledger::TicketId;
 
@@ -324,5 +324,63 @@ impl Command for TrainDrain {
 
     fn run(&self, ctx: &Context) -> Outcome<TrainRunReport> {
         Ok(Payload::new(train_drain(&ctx.cwd, &self.opts, &ctx.clock)?))
+    }
+}
+
+// frob:ticket 01M51CKH0VJ2AVAWHG8WA6YETF
+/// Remove one queue entry of the land train with a reason.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "train drop",
+    product = "frob",
+    idempotent = false,
+    exits(ok, refused, usage, internal)
+)]
+pub struct TrainDrop {
+    ticket: String,
+    reason: String,
+}
+
+/// The arguments of `train drop`.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct TrainDropArgs {
+    #[arg(
+        value_name = "TICKET",
+        help = "Full ULID, ~handle or alias of the queued ticket"
+    )]
+    ticket: String,
+    #[arg(
+        long,
+        help = "Why the ticket leaves the queue; recorded on the ticket and in its train result"
+    )]
+    reason: String,
+}
+
+impl Command for TrainDrop {
+    type Data = TrainDropReport;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        gob_cli::augment::<TrainDropArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<TrainDropArgs>(m)?;
+        if a.reason.trim().is_empty() {
+            return Err(CliError::Usage("--reason must not be empty".to_owned()));
+        }
+        Ok(Self {
+            ticket: a.ticket,
+            reason: a.reason,
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<TrainDropReport> {
+        Ok(Payload::new(train_drop(
+            &ctx.cwd,
+            &self.ticket,
+            &self.reason,
+            &ctx.clock,
+        )?))
     }
 }

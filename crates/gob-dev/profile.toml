@@ -566,5 +566,8 @@ skip = "lands a batch of ready tickets onto the base branch, which mutates the r
 [scenario."frob train drain"]
 skip = "repeats train runs until the queue is empty, which mutates the repo and needs finished tickets the repo fixture does not provide; covered by the frob-land train tests"
 
+[scenario."frob train drop"]
+skip = "removes a queue entry, which mutates the repo and needs a queued ticket the repo fixture does not provide; covered by the frob-land train tests"
+
 [scenario."frob train status"]
 skip = "reports the state of a running train, which the repo fixture never has; the cost is a single state-file read"

@@ -38,8 +38,8 @@ pub use ratchet::FindingNote;
 #[doc(hidden)]
 pub use ratchet::{base_findings, cache_key, code_tree_key};
 pub use train::{
-    Enqueued, TrainOptions, TrainRunReport, TrainStatusReport, enqueue, land_train, train_drain,
-    train_run, train_status,
+    Enqueued, TrainDropReport, TrainOptions, TrainRunReport, TrainStatusReport, enqueue,
+    land_train, train_drain, train_drop, train_run, train_status,
 };
 
 /// Register `land` on a product root.
@@ -48,4 +48,5 @@ pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<verb::TrainStatus>()
         .register::<verb::TrainRun>()
         .register::<verb::TrainDrain>()
+        .register::<verb::TrainDrop>()
 }
