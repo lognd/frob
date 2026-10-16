@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:47Z"
-updated = "2026-10-16T00:01:00Z"
+updated = "2026-10-16T00:04:40Z"
 idempotency_key = "crunk-plan-fix"
 labels = ["area:crunk"]
 scope = ["crates/gob-fix/**", "Cargo.lock"]
@@ -19,7 +19,7 @@ target = "01M3ZX7E968R74N08V8DW4RJVG"
 
 [[acceptance]]
 text = "Given two overlapping edits in one file, when planned, then the first is kept and the dropped one is returned with its rule and span"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a plan, when applied with dry-run and then for real, then the dry-run diff equals the real diff and bytes outside edited spans are unchanged"
