@@ -140,7 +140,7 @@ fn flatten(term: &Term, list: NodeId, out: &mut Vec<NodeId>) {
 }
 
 /// The unit's top-level statements, Rust `let` chains flattened, sorted by node id.
-fn statements(term: &Term, unit: NodeId) -> Vec<NodeId> {
+pub(crate) fn statements(term: &Term, unit: NodeId) -> Vec<NodeId> {
     let body = term.node(unit).children().iter().rev().copied().find(|&c| {
         matches!(
             term.node(c).op(),
