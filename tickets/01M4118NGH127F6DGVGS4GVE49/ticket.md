@@ -8,10 +8,10 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T14:04:09Z"
-updated = "2026-10-16T16:30:45Z"
+updated = "2026-10-16T16:37:21Z"
 idempotency_key = "m2-remedy-registry"
 labels = ["milestone:2", "area:diagnostics"]
-scope = ["crates/gob-cli/**", "crates/gob-diagnostics/**"]
+scope = ["crates/gob-cli/**", "crates/gob-diagnostics/**", "docs/schemas/envelope.json"]
 
 [[acceptance]]
 text = "Given every error code, when the remedy test enumerates their structured remedies, then each names an existing verb path and flags"
