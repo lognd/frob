@@ -912,7 +912,7 @@ fn ensure_clean(wt: &Repo, wt_path: &Path) -> Result<(), LandError> {
 /// Configuration is read from the base's committed `frob.toml` before the merge
 /// starts, never from the worktree mid-merge (frob:ticket 01M43FX5KWVP277RX5666MMPM1).
 fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<String, LandError> {
-    let shared_files = lockfile::committed_shared_files(wt, base)?;
+    let shared_files = lockfile::committed_regenerable(wt, base)?;
     match wt.merge_branch(wt_path, base)? {
         MergeOutcome::UpToDate => Ok("up-to-date".to_owned()),
         MergeOutcome::FastForward => {
@@ -924,12 +924,12 @@ fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<
             Ok("merged".to_owned())
         }
         // frob:ticket 01M418TM2GZ24YPQE7ECTKE1J4
-        MergeOutcome::Conflicts(paths) if lockfile::all_shared(&shared_files, &paths)? => {
+        MergeOutcome::Conflicts(paths) if lockfile::all_regenerable(&shared_files, &paths)? => {
             tracing::info!(
                 count = paths.len(),
                 "base merge conflicts only in shared lockfiles"
             );
-            lockfile::resolve(wt, wt_path, base, &paths)
+            lockfile::resolve(wt, wt_path, base, &shared_files, &paths)
         }
         MergeOutcome::Conflicts(paths) => {
             let abort = git(wt, wt_path, &["merge", "--abort"])?;

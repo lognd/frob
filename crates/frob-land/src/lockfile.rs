@@ -1,4 +1,8 @@
-//! Resolving a base-merge conflict confined to generated lockfiles (frob:ticket 01M418TM2GZ24YPQE7ECTKE1J4).
+//! Resolving a base-merge conflict confined to generated files (frob:ticket 01M418TM2GZ24YPQE7ECTKE1J4, frob:ticket 01M51CKG5T7817RJXJ57H020EB).
+//!
+//! Generated outputs (`[lease] generated_files`, the `gen all` pages and
+//! schemas) are resolved the same way: take the base side, then re-run
+//! `cargo dev gen all` on the merged tree and commit what it writes.
 //!
 //! A lockfile is generated, so a textual conflict in it carries no intent:
 //! take the base side (`git checkout --theirs`, the base is the branch being
@@ -21,12 +25,24 @@ use crate::git::{cargo, git};
 /// Stable code of the refusal when a lockfile conflict cannot be regenerated.
 const CODE_LOCKFILE: &str = "E-LAND-LOCKFILE";
 
-/// The `[lease] shared_files` globs committed at `base`, read before any merge starts (frob:ticket 01M43FX5KWVP277RX5666MMPM1).
+/// Stable code of the refusal when a generated-file conflict cannot be regenerated.
+const CODE_GENERATED: &str = "E-LAND-GENERATED";
+
+/// The `[lease]` globs whose conflicts land resolves by regeneration.
+#[derive(Debug, Clone, Default)]
+pub(crate) struct Regenerable {
+    /// `shared_files`: lockfiles an offline resolver rebuilds.
+    pub shared: Vec<String>,
+    /// `generated_files`: outputs `cargo dev gen all` rewrites.
+    pub generated: Vec<String>,
+}
+
+/// The `[lease] shared_files` and `generated_files` globs committed at `base`, read before any merge starts (frob:ticket 01M43FX5KWVP277RX5666MMPM1).
 ///
 /// Land never reads configuration from the worktree while a merge may be in
 /// progress: its `frob.toml` can hold conflict markers. The base is the
 /// authority land merges toward, so its committed file decides.
-pub(crate) fn committed_shared_files(wt: &Repo, base: &str) -> Result<Vec<String>, LandError> {
+pub(crate) fn committed_regenerable(wt: &Repo, base: &str) -> Result<Regenerable, LandError> {
     let label = Path::new("frob.toml");
     let text = match wt.read_blob_at(base, "frob.toml")? {
         Some(bytes) => String::from_utf8(bytes)
@@ -35,19 +51,25 @@ pub(crate) fn committed_shared_files(wt: &Repo, base: &str) -> Result<Vec<String
     };
     let cfg = gob_config::load_str::<LeaseConfig>(&text, label)
         .map_err(|e| LandError::Config(format!("{base}:frob.toml: {e}")))?;
-    Ok(cfg.value.shared_files)
+    Ok(Regenerable {
+        shared: cfg.value.shared_files,
+        generated: cfg.value.generated_files,
+    })
 }
 
-/// True when every conflicted path is a shared lockfile matching `shared_files`.
-pub(crate) fn all_shared(shared_files: &[String], paths: &[String]) -> Result<bool, LandError> {
+/// True when every conflicted path is a shared lockfile or a generated output.
+pub(crate) fn all_regenerable(globs: &Regenerable, paths: &[String]) -> Result<bool, LandError> {
     if paths.is_empty() {
         return Ok(false);
     }
-    let shared = glob_set(shared_files).map_err(|e| LandError::Config(e.to_string()))?;
-    Ok(paths.iter().all(|p| shared.is_match(p)))
+    let shared = glob_set(&globs.shared).map_err(|e| LandError::Config(e.to_string()))?;
+    let generated = glob_set(&globs.generated).map_err(|e| LandError::Config(e.to_string()))?;
+    Ok(paths
+        .iter()
+        .all(|p| shared.is_match(p) || generated.is_match(p)))
 }
 
-/// Resolve the in-progress merge whose only conflicts are the lockfiles `paths`, then commit it.
+/// Resolve the in-progress merge whose only conflicts are the lockfiles and generated outputs `paths`, then commit it.
 // frob:ticket 01M50C2K3H0STZWFR5P29BWY8G
 ///
 /// The merge is aborted and a refusal returned when a lockfile has no offline
@@ -56,8 +78,13 @@ pub(crate) fn resolve(
     wt: &Repo,
     wt_path: &Path,
     base: &str,
+    globs: &Regenerable,
     paths: &[String],
 ) -> Result<String, LandError> {
+    let generated = glob_set(&globs.generated).map_err(|e| LandError::Config(e.to_string()))?;
+    let (generated_paths, paths): (Vec<String>, Vec<String>) =
+        paths.iter().cloned().partition(|p| generated.is_match(p));
+    let paths = paths.as_slice();
     let abort = |why: String, remedy: String| -> LandError {
         match git(wt, wt_path, &["merge", "--abort"]) {
             Ok(run) => tracing::warn!(aborted = run.ok(), "lockfile conflict unresolved"),
@@ -110,6 +137,9 @@ pub(crate) fn resolve(
         add.push(path);
         git(wt, wt_path, &add)?;
     }
+    if !generated_paths.is_empty() {
+        regenerate(wt, wt_path, base, globs, &generated_paths, &abort)?;
+    }
     // Explicit identity so the merge commit never depends on ambient git config (CI has none).
     let commit = git(
         wt,
@@ -133,10 +163,71 @@ pub(crate) fn resolve(
         ));
     }
     tracing::info!(
-        count = paths.len(),
-        "lockfile conflicts resolved by regeneration"
+        lockfiles = paths.len(),
+        generated = generated_paths.len(),
+        "conflicts resolved by regeneration"
     );
     Ok("merged (lockfile regenerated)".to_owned())
+}
+
+/// Take the base side of each generated conflict, re-run `cargo dev gen all` on the merged tree and stage what it wrote.
+fn regenerate(
+    wt: &Repo,
+    wt_path: &Path,
+    base: &str,
+    globs: &Regenerable,
+    generated_paths: &[String],
+    abort: &dyn Fn(String, String) -> LandError,
+) -> Result<(), LandError> {
+    let by_hand = format!(
+        "git -C {} merge {base}, run `cargo dev gen all`, commit, then frob land again",
+        wt_path.display()
+    );
+    for path in generated_paths {
+        let taken = git(wt, wt_path, &["checkout", "--theirs", "--", path])?;
+        if !taken.ok() {
+            return Err(abort_with(
+                abort,
+                CODE_GENERATED,
+                format!("taking the {base} side of {path} failed: {}", taken.text),
+                by_hand,
+            ));
+        }
+    }
+    let regen = cargo(wt, wt_path, &["dev", "gen", "all"])?;
+    tracing::info!(ok = regen.ok(), "generated files regenerated on the merged tree");
+    if !regen.ok() {
+        return Err(abort_with(
+            abort,
+            CODE_GENERATED,
+            format!("`cargo dev gen all` on the merged tree failed: {}", regen.text),
+            by_hand,
+        ));
+    }
+    for glob in &globs.generated {
+        let spec = format!(":(glob){glob}");
+        let add = git(wt, wt_path, &["add", "-A", "--", &spec])?;
+        if !add.ok() {
+            return Err(abort_with(
+                abort,
+                CODE_GENERATED,
+                format!("staging {glob} failed: {}", add.text),
+                by_hand,
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Run the merge-aborting closure, then swap its error's code for `code`.
+fn abort_with(
+    abort: &dyn Fn(String, String) -> LandError,
+    code: &str,
+    why: String,
+    remedy: String,
+) -> LandError {
+    let _ = abort(String::new(), String::new());
+    needs_action(code, why, remedy)
 }
 
 fn file_name(path: &str) -> &str {

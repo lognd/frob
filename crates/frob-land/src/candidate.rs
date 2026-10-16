@@ -145,7 +145,7 @@ pub fn build_candidate(
     let (dir, lock) = checkout_paths(repo.common_dir());
     let guard = crate::git::lock_exclusive(&lock)?;
     prepare_checkout(repo, primary, &dir, base_oid)?;
-    let shared_files = lockfile::committed_shared_files(repo, base_oid)?;
+    let shared_files = lockfile::committed_regenerable(repo, base_oid)?;
     let (merged, skipped) = merge_all(repo, &dir, &shared_files, members)?;
     let oid = head(repo, &dir)?;
     let ref_name = format!("{TRAIN_REF_PREFIX}{id}");
@@ -219,7 +219,7 @@ fn prepare_checkout(repo: &Repo, primary: &Path, dir: &Path, oid: &str) -> Resul
 fn merge_all(
     repo: &Repo,
     dir: &Path,
-    shared_files: &[String],
+    shared_files: &lockfile::Regenerable,
     members: &[CandidateMember],
 ) -> Result<(Vec<String>, Vec<Skipped>), LandError> {
     let mut merged = Vec::new();
@@ -274,7 +274,7 @@ fn moved_branch(repo: &Repo, dir: &Path, m: &CandidateMember) -> Result<Option<S
 fn merge_one(
     repo: &Repo,
     dir: &Path,
-    shared_files: &[String],
+    shared_files: &lockfile::Regenerable,
     m: &CandidateMember,
 ) -> Result<Result<(), String>, LandError> {
     let run = git(
@@ -295,8 +295,8 @@ fn merge_one(
     }
     let listed = git(repo, dir, &["diff", "--name-only", "--diff-filter=U"])?;
     let paths: Vec<String> = listed.text.lines().map(str::to_owned).collect();
-    if lockfile::all_shared(shared_files, &paths)? {
-        return match lockfile::resolve(repo, dir, &m.handle, &paths) {
+    if lockfile::all_regenerable(shared_files, &paths)? {
+        return match lockfile::resolve(repo, dir, &m.handle, shared_files, &paths) {
             Ok(_) => Ok(Ok(())),
             // `resolve` aborted the merge itself.
             Err(e) => Ok(Err(e.to_string())),
@@ -498,5 +498,38 @@ mod tests {
         let ms = [member(p, "x", "a.txt"), member(p, "z", "b.txt")];
         let c = build_candidate(&repo, p, "t5", &base, &ms).expect("build");
         assert_eq!(c.merged, ["x", "z"], "{:?}", c.skipped);
+    }
+
+    // frob:ticket 01M51CKG5T7817RJXJ57H020EB
+    // frob:tests crates/frob-land/src/candidate.rs::merge_one
+    #[test]
+    fn a_generated_file_conflict_is_regenerated_not_a_plain_conflict() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let repo = Repo::init(dir.path()).expect("init");
+        let p = dir.path();
+        std::fs::create_dir_all(p.join("docs/reference")).expect("dirs");
+        std::fs::write(p.join("docs/reference/g.md"), "base\n").expect("g");
+        std::fs::write(p.join("a.txt"), "a\n").expect("a");
+        std::fs::write(p.join("b.txt"), "b\n").expect("b");
+        sh(p, &["add", "."]);
+        sh(p, &["commit", "-m", "base"]);
+        let base = sh(p, &["rev-parse", "HEAD"]);
+        for (name, file) in [("ticket-x", "a.txt"), ("ticket-z", "b.txt")] {
+            sh(p, &["checkout", "-b", name, &base]);
+            std::fs::write(p.join(file), "changed\n").expect("write");
+            std::fs::write(p.join("docs/reference/g.md"), format!("{name}\n")).expect("g");
+            sh(p, &["commit", "-am", name]);
+        }
+        sh(p, &["checkout", "--detach", &base]);
+        let ms = [member(p, "x", "a.txt"), member(p, "z", "b.txt")];
+        let c = build_candidate(&repo, p, "t6", &base, &ms).expect("build");
+        // The conflict is classified as regenerable; with no `cargo dev` in this repo the
+        // regeneration itself fails, which names the generator rather than a bare conflict.
+        assert_eq!(c.merged, ["x"]);
+        assert!(
+            c.skipped[0].reason.contains("cargo dev gen all"),
+            "{:?}",
+            c.skipped
+        );
     }
 }

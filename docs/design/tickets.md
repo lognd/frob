@@ -369,6 +369,11 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   regenerates `Cargo.lock` with `cargo metadata --offline` (it keeps locked
   versions, unlike `cargo update --workspace`), committing the result in
   the merge commit; any other lockfile refuses with `E-LAND-LOCKFILE`;
+  a conflict confined to lockfiles and `generated_files` takes the base
+  side of the generated paths, re-runs `cargo dev gen all` on the merged
+  tree and commits what it wrote (a failing generator refuses with
+  `E-LAND-GENERATED`; in the land train the member is skipped with that
+  reason);
   any other conflicting base merge (including one in `frob.toml`, which
   is never read while conflicted) is aborted so the worktree is exactly as
   before and refused with `E-LAND-CONFLICT` naming the conflicted paths,
