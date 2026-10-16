@@ -4,10 +4,11 @@ title = "GRL constructs to express LAYER and ORG: crunk host input, class-select
 type = "story"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T20:23:31Z"
-updated = "2026-10-16T20:23:45Z"
+updated = "2026-10-16T21:47:59Z"
 
 [[acceptance]]
 text = "Given the GRL rules, when the std pack builds, then findings equal the removed Rust rules on the corpus"
