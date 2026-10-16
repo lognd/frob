@@ -8,5 +8,5 @@ points = 2
 reporter = "lognd"
 created = "2026-10-16T03:29:25Z"
 updated = "2026-10-16T16:31:51Z"
-scope = ["docs/**", "docs/design/plugins.md"]
+scope = ["docs/**", "docs/design/plugins.md", "docs/design/grl-spec.md"]
 +++
