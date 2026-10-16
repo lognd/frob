@@ -7,6 +7,6 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-16T07:48:04Z"
-updated = "2026-10-16T09:06:16Z"
+updated = "2026-10-16T09:06:49Z"
 scope = ["crates/crunk/**", "crates/crunk-check/src/**"]
 +++
