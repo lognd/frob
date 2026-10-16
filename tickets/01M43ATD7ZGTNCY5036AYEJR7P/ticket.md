@@ -8,7 +8,7 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:37Z"
-updated = "2026-10-16T00:33:43Z"
+updated = "2026-10-16T00:44:14Z"
 idempotency_key = "crunk-plan-prev"
 labels = ["area:crunk"]
 scope = ["crates/crunk/src/preview.rs", "crates/crunk/src/diff.rs", "crates/crunk/src/init/**", "crates/crunk/tests/init*.rs", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml", "crates/gob-product/src/product.rs", "crates/gob-product/src/workspace.rs", "docs/crunk", "changelog.d"]
@@ -27,7 +27,7 @@ target = "01M43ATCF5GGK59S96K1ZF0G9C"
 
 [[acceptance]]
 text = "Given an empty Vite project, when `crunk init` runs, then the files are written and `crunk check` on the result exits 0"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given NO_COLOR set, when preview runs, then no escape codes are printed"
