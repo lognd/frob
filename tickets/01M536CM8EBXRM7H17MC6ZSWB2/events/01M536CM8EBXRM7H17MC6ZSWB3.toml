@@ -1,0 +1,11 @@
+kind = "create"
+title = "GRL example runner: DOC002 markdown link kind, COV001 test edges, NEAT013 external callee units (1K8VGCQ follow-up)"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
+scope = ["crates/gob-plan/**"]
+at = "2026-10-16T20:27:52Z"
+actor = "lognd"
+rev = 1
