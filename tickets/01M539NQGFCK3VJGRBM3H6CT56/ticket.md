@@ -4,10 +4,11 @@ title = "GRL examples: NEAT013 example 0 needs python import resolution onto the
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T21:25:16Z"
-updated = "2026-10-16T21:25:16Z"
+updated = "2026-10-16T21:48:02Z"
 scope = ["crates/gob-plan/**", "crates/gob-symbols/**"]
 +++
 
