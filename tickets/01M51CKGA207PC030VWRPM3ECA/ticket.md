@@ -2,7 +2,8 @@
 id = "01M51CKGA207PC030VWRPM3ECA"
 title = "Land train: the driver renews member leases and never treats an expired lease as an empty scope"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
