@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-16T21:31:33Z"
+digest = "d450e7c6ca6474b1bffc1416fb9cea0c1cb906ba9e0eb024bb42cee34873b40f"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.65s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7028ac3b-4571-471b-9aa3-016ac43ab524 with nextest profile: default
+    Starting 1 test across 3 binaries (125 tests skipped)
+        PASS [   1.069s] frob-land::land a_member_dropped_from_the_final_candidate_is_evicted_not_a_round_fault
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.070s] 1 test run: 1 passed, 125 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E test(a_member_dropped_from_the_final_candidate_is_evicted_not_a_round_fault)"
+size = 634
+status = "measured"
+test_count = 1
+tests_digest = "3f1c46e21f59ec4ec61d9e9e11dc9127c83b509277c756d3d804fff8ddb991d1"
+at = "2026-10-16T21:31:33Z"
+actor = "lognd"
+rev = 1

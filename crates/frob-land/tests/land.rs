@@ -2460,6 +2460,56 @@ fn a_member_that_does_not_merge_is_evicted_and_the_rest_land() {
     );
 }
 
+/// A runner that moves a member's branch once, as an agent pushing mid-round would.
+struct MovesBranch {
+    wt: std::path::PathBuf,
+    moved: std::sync::atomic::AtomicBool,
+}
+
+impl frob_land::bisect::Runner for MovesBranch {
+    fn check(
+        &self,
+        _subset: &[String],
+    ) -> Result<frob_land::bisect::Verdict, frob_land::bisect::CheckFault> {
+        if !self.moved.swap(true, std::sync::atomic::Ordering::SeqCst) {
+            Fixture::commit_in(&self.wt, "moved.txt", "late\n");
+        }
+        Ok(frob_land::bisect::Verdict::Green)
+    }
+}
+
+// frob:ticket 01M52RT3Z0E1SSXA3RHFE8QFTF
+// frob:tests crates/frob-land/src/train.rs::train_drain
+#[test]
+fn a_member_dropped_from_the_final_candidate_is_evicted_not_a_round_fault() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let clock = train_clock();
+    let tickets = enqueued(&fx, 3);
+    let store = frob_land::train_state::TrainStore::new(fx.repo().common_dir());
+    store
+        .set_batch(&frob_land::train_state::BatchSize { current: 8, max: 8 })
+        .expect("batch");
+    let opts = frob_land::TrainOptions {
+        land: LandOptions::default(),
+        runner: Some(Arc::new(MovesBranch {
+            wt: tickets[1].wt.clone(),
+            moved: false.into(),
+        })),
+        enqueue_only: false,
+    };
+    let report = frob_land::train_drain(&fx.root, &opts, &clock).expect("drain does not fault");
+    let res = store
+        .result(&tickets[1].id)
+        .expect("result")
+        .expect("recorded");
+    assert_eq!(res.status, frob_land::train_state::MemberStatus::Evicted);
+    let landed: usize = report.rounds.iter().map(|r| r.landed.len()).sum();
+    assert_eq!(landed, 2, "{report:?}");
+}
+
 // frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6
 // frob:tests crates/frob-land/src/train.rs::train_status
 #[test]
