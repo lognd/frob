@@ -2,7 +2,8 @@
 id = "01M4CXT2K2YC9QR4P9QX4EY1DC"
 title = "Propagate D118-D121 into code-model.md, neatness.md, grimble-model.md and universal-model.md"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
