@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "duplicate: --enqueue-only (15222d7a8) and per-round lease renewal (f97f70cff) already landed in crates/frob-land"
+at = "2026-10-16T23:48:20Z"
+actor = "lognd"
+rev = 1
