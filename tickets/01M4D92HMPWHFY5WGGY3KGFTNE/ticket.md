@@ -2,13 +2,13 @@
 id = "01M4D92HMPWHFY5WGGY3KGFTNE"
 title = "typos JSON parser mapped to SPELL001 (Advisory), honouring typos.toml"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:11:30Z"
-updated = "2026-10-08T08:11:30Z"
+updated = "2026-10-16T02:21:03Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**"]
 
 [[acceptance]]
