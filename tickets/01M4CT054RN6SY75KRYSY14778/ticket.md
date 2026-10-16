@@ -2,7 +2,8 @@
 id = "01M4CT054RN6SY75KRYSY14778"
 title = "PM003-PM007: story structure, so_that restatement, criteria shape, INVEST size, task without parent story"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
