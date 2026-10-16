@@ -8,10 +8,10 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T08:06:31Z"
-updated = "2026-10-16T00:59:54Z"
+updated = "2026-10-16T01:40:19Z"
 idempotency_key = "m2-gobcli-text-renderers"
 labels = ["milestone:2", "area:diagnostics"]
-scope = ["crates/gob-cli/**", "crates/frob/src/release_cmd.rs", "crates/frob/src/milestone_cmd.rs", "crates/frob/tests/**", "crates/frob-release/src/status.rs"]
+scope = ["crates/gob-cli/**", "crates/frob/src/release_cmd.rs", "crates/frob/src/milestone_cmd.rs", "crates/frob/tests/**", "crates/frob-release/src/status.rs", "docs/schemas/crunk.json"]
 
 [[acceptance]]
 text = "Given release status in text mode, when it runs, then it prints the verdict first and readable sections without duplicated fields, and the JSON has no at_a_glance array"
