@@ -199,17 +199,16 @@ fn pinned_array(frob_toml: &toml::Table, tool: &str, key: &str) -> Result<Vec<St
                 .find(|t| t.get("name").and_then(toml::Value::as_str) == Some(tool))
         })
         .ok_or_else(|| bad("no [[check.tool]] entry"))?;
-    entry
-        .get(key)
-        .and_then(toml::Value::as_array)
-        .ok_or_else(|| bad(&format!("no {key}")))?
-        .iter()
-        .map(|v| {
-            v.as_str()
-                .map(str::to_owned)
-                .ok_or_else(|| bad(&format!("non-string {key}")))
-        })
-        .collect()
+    // A `def = "<name>"` entry takes its argv and probe from the std-pack tool definition, so
+    // resolve it exactly as `frob check` does before reading the arrays.
+    let resolved = frob_check::ToolStage::deserialize(toml::Value::Table(entry.clone()))
+        .map_err(|e| bad(&e.to_string()))?
+        .resolved();
+    match key {
+        "args" => Ok(resolved.args),
+        "version_args" => resolved.version_args.ok_or_else(|| bad("no version_args")),
+        other => Err(bad(&format!("unsupported key {other}"))),
+    }
 }
 
 /// `version_args` of the `[[check.tool]]` named `tool` in `frob.toml`: the pinned uvx invocation.

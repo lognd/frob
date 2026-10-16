@@ -19,16 +19,32 @@ fn toml_of(rel: &str) -> toml::Table {
     read(rel).parse().unwrap()
 }
 
-/// The `[[check.tool]]` entry named `name` in `frob.toml`.
+/// The `[[check.tool]]` entry named `name` in `frob.toml`; a `def = "<tool>"` entry is merged
+/// over its std-pack definition with `{version}` replaced by the pinned version.
 fn frob_tool(name: &str) -> toml::Table {
     let frob = toml_of("frob.toml");
-    frob["check"]["tool"]
+    let mut entry = frob["check"]["tool"]
         .as_array()
         .unwrap()
         .iter()
         .map(|t| t.as_table().unwrap().clone())
         .find(|t| t["name"].as_str() == Some(name))
-        .unwrap_or_else(|| panic!("no [[check.tool]] named {name}"))
+        .unwrap_or_else(|| panic!("no [[check.tool]] named {name}"));
+    let Some(def) = entry.get("def").and_then(toml::Value::as_str).map(str::to_owned) else {
+        return entry;
+    };
+    let mut merged = toml_of(&format!("crates/gob-packs/src/std/tools/{def}.toml"));
+    let version = merged["pinned_version"].as_str().unwrap().to_owned();
+    for key in ["args", "version_args"] {
+        if let Some(arr) = merged.get_mut(key).and_then(toml::Value::as_array_mut) {
+            for v in arr {
+                *v = toml::Value::String(v.as_str().unwrap().replace("{version}", &version));
+            }
+        }
+    }
+    entry.remove("def");
+    merged.extend(entry);
+    merged
 }
 
 fn strings(v: &toml::Value) -> Vec<String> {

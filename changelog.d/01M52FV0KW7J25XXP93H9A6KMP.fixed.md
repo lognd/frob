@@ -1,0 +1,1 @@
+- gob-dev ci resolves std-pack tool definitions (def = ...) when reading pinned argv, fixing the fmt step.
