@@ -2,7 +2,8 @@
 id = "01M3ZX7HRM8SVB3607V973VQTH"
 title = "Conformance test: compiled-in std rules equal their plans byte for byte"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
