@@ -224,6 +224,11 @@ fn everything_ready_prints_ready_and_the_changelog_preview() {
     assert_eq!(code(&out), 0);
     let text = String::from_utf8_lossy(&out.stdout);
     assert!(text.contains("0.532.0: READY"), "{text}");
+    assert!(text.starts_with("0.532.0: READY"), "verdict first: {text}");
+    assert!(!text.contains("at_a_glance"), "{text}");
+    assert_eq!(text.matches("exit criteria").count(), 1, "{text}");
+    let json = repo.ok(&["release", "status"]);
+    assert!(json["data"]["report"].get("at_a_glance").is_none());
 }
 
 #[test]
