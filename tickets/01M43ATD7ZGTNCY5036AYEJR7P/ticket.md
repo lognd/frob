@@ -11,7 +11,7 @@ created = "2026-10-04T11:29:37Z"
 updated = "2026-10-16T00:33:40Z"
 idempotency_key = "crunk-plan-prev"
 labels = ["area:crunk"]
-scope = ["crates/crunk/src/preview.rs", "crates/crunk/src/diff.rs", "crates/crunk/src/init/**", "crates/crunk/tests/init*.rs", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml"]
+scope = ["crates/crunk/src/preview.rs", "crates/crunk/src/diff.rs", "crates/crunk/src/init/**", "crates/crunk/tests/init*.rs", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml", "crates/gob-product/src/product.rs"]
 
 [[links]]
 kind = "blocked-by"
