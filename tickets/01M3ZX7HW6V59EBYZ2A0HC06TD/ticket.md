@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-16T00:18:08Z"
+updated = "2026-10-16T00:20:51Z"
 idempotency_key = "m2-grl-ten-a"
 labels = ["milestone:2", "area:grl", "kind:test"]
 scope = ["crates/gob-plan/tests/ten_rules/**"]
@@ -27,11 +27,11 @@ target = "01M3ZVQAA1DNM1BJ5TZG5B3CFR"
 
 [[acceptance]]
 text = "Given the six .grl files, when `rule test` runs, then every example passes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the same six rules and the hand-written Rust versions on this repository, when both run, then findings agree or each difference is recorded in the ticket"
-bound = false
+bound = true
 +++
 
 Implements grl-spec.md sections 12 and 13.3; plugins.md section 11 (frob families stay tier 0).
