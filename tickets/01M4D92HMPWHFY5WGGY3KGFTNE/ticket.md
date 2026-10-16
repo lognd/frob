@@ -2,7 +2,8 @@
 id = "01M4D92HMPWHFY5WGGY3KGFTNE"
 title = "typos JSON parser mapped to SPELL001 (Advisory), honouring typos.toml"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4D8X558Q07HCMEBP224NQP4"
