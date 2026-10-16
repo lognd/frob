@@ -1,0 +1,23 @@
+kind = "evidence"
+captured_at = "2026-10-16T07:13:45Z"
+digest = "fefc6ba0d9019ad277dfae8f3f1b951e2853b37b47a4295dad8f5b6f8b5ca1f9"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.92s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 708abd1e-546a-467f-9cff-1629c6eb7bcf with nextest profile: default
+    Starting 1 test across 284 binaries (3348 tests skipped)
+        PASS [   0.236s] frob-land candidate::tests::a_generated_file_conflict_is_regenerated_not_a_plain_conflict
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.245s] 1 test run: 1 passed, 3348 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_generated_file_conflict"
+size = 586
+status = "measured"
+test_count = 1
+tests_digest = "001f566e7face7b1b4c97cf1b5bab129036b5757cc1f37b24c99209b20b8d227"
+at = "2026-10-16T07:13:45Z"
+actor = "lognd"
+rev = 1
