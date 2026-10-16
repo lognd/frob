@@ -1033,9 +1033,10 @@ fn wait_gives_up_naming_the_attempts_when_the_base_keeps_moving() {
     );
 }
 
-// Covers ~VMHTBE7.
+// Covers ~XV9V6NR.
+// frob:tests crates/frob-land/src/land.rs::Publish
 #[test]
-fn without_wait_a_moved_base_is_not_retried() {
+fn without_wait_a_ledger_only_base_move_folds() {
     if !git_available() {
         return;
     }
@@ -1048,6 +1049,33 @@ fn without_wait_a_moved_base_is_not_retried() {
     opts.retry = retry_with(4000, move |n| {
         if n == 1 {
             move_main(&root, "tickets/zz-note.txt", "note\n");
+        }
+    });
+    let out = land(
+        &fx.root,
+        &opts,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("folded");
+    assert!(out.closed);
+    assert_eq!(out.attempts, 2);
+}
+
+// Covers ~VMHTBE7.
+#[test]
+fn without_wait_a_code_moved_base_is_not_retried() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+    let root = fx.root.clone();
+    let mut opts = Fixture::opts(&s);
+    opts.retry = retry_with(4000, move |n| {
+        if n == 1 {
+            move_main(&root, "docs/other.md", "other\n");
         }
     });
 

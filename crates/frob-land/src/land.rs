@@ -109,6 +109,9 @@ struct Ready {
     lock: Option<LandLock>,
 }
 
+/// Retry budget for folding a ledger-only base move when no `--wait` was given (frob:ticket ~XV9V6NR).
+const LEDGER_FOLD_BUDGET: Duration = Duration::from_secs(30);
+
 // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
 /// True when every path that changed from `fork` to `base_oid` lies under the ledger directory `dir` (trunk-mode ticket commits).
 fn ledger_only_ahead(
@@ -436,6 +439,8 @@ impl Ready {
             .retry
             .budget
             .unwrap_or_else(|| Duration::from_secs(opts.wait_secs));
+        let fold_budget = budget.max(LEDGER_FOLD_BUDGET);
+        let ledger_dir = site.ledger.config().dir.clone();
         let mut cone = self.cone.clone();
         let mut attempt = 0_u32;
         let oid = loop {
@@ -455,7 +460,10 @@ impl Ready {
                 )
             });
             match advanced {
-                Err(LandError::Refused(r)) if retrying && r.code == CODE_STALE => {
+                Err(LandError::Refused(r))
+                    if r.code == CODE_STALE
+                        && (retrying || ctx.moved_by_ledger_only(&ledger_dir)?) =>
+                {
                     lock.progress("recheck");
                     let timer = Instant::now();
                     let rechecked = ctx.recover_stale(
@@ -464,7 +472,7 @@ impl Ready {
                         (cone.as_ref(), &self.scope),
                         attempt,
                         started,
-                        budget,
+                        if retrying { budget } else { fold_budget },
                     )?;
                     record_recheck(&mut self.out, rechecked, timer.elapsed(), &mut cone);
                 }
@@ -1181,6 +1189,15 @@ pub(crate) struct Publish<'a> {
 }
 
 impl Publish<'_> {
+    /// True when the base moved past the branch fork only by ledger commits, so the land folds them without `--wait`.
+    fn moved_by_ledger_only(&self, dir: &str) -> Result<bool, LandError> {
+        let fork = self.wt.merge_base(&base_ref(self.base), self.branch)?;
+        let now = self.wt.rev_parse(&base_ref(self.base))?;
+        let only = ledger_only_ahead(self.wt, fork, now, dir)?;
+        tracing::info!(base = self.base, only, "stale base: ledger-only move check");
+        Ok(only)
+    }
+
     /// The retryable `E-LAND-STALE` refusal, naming the attempt count once retries ran out.
     fn stale(&self, gave_up_after: Option<u32>) -> LandError {
         let message = match gave_up_after {

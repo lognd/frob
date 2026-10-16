@@ -472,7 +472,11 @@ Master Green at Scale", EuroSys 2019).
    run or gated when the ticket touches none of them.
 2. **Moving base.** New base commits that touch nothing in the ticket's
    cone, ledger-only commits included, force neither a re-check nor
-   `E-LAND-STALE`; only a commit inside the cone does.
+   `E-LAND-STALE`; only a commit inside the cone does. A base that moved
+   past the branch fork by ledger commits alone is folded by `frob land`
+   itself (a bounded 30 second retry) without `--wait`; a code move
+   still needs `--wait`. A lone ticket on the train is a batch of one and
+   lands directly.
 3. **CI split.** The full unscoped check, the whole suite and the
    cross-platform jobs run on CI after every land. This is the safety
    net for what the cone misses, so the cone may be conservative but
