@@ -2,7 +2,8 @@
 id = "01M5364MWN27GJE158AKR11AZT"
 title = "GRL value-domain predicate: is integer (first construct toward crunk LAYER and ORG; rest on ~Y8CNED9)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
