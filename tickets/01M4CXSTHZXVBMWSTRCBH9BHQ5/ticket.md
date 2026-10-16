@@ -2,7 +2,8 @@
 id = "01M4CXSTHZXVBMWSTRCBH9BHQ5"
 title = "COH004 mixed vocabularies (Advisory heuristic)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
