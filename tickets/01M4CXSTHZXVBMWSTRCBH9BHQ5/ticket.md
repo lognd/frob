@@ -2,13 +2,13 @@
 id = "01M4CXSTHZXVBMWSTRCBH9BHQ5"
 title = "COH004 mixed vocabularies (Advisory heuristic)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 2
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:30Z"
-updated = "2026-10-08T04:54:30Z"
+updated = "2026-10-16T03:45:10Z"
 scope = ["changelog.d/**", "crates/grimble-check/**"]
 
 [[acceptance]]
