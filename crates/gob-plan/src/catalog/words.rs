@@ -88,6 +88,11 @@ pub const FLAGS: &[Flag] = &[
         may_be_unknown: true,
     },
     Flag {
+        word: "integer",
+        query: "",
+        may_be_unknown: false,
+    },
+    Flag {
         word: "public",
         query: "Q07",
         may_be_unknown: true,

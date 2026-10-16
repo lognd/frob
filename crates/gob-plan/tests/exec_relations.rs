@@ -520,6 +520,26 @@ fn is_exists_and_under_filter_function_names() {
     assert_eq!(rows_of(&under, &m, 0), idx(&[fs[0]]));
 }
 
+// frob:ticket 01M5364MWN27GJE158AKR11AZT
+// frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::Eval.is_op
+#[test]
+fn is_integer_accepts_signed_whole_numbers_and_rejects_the_rest() {
+    let (m, fs) = model(&["10", "-3", "auto", "1.5", " 7 "]);
+    let mut b = PlanBuilder::new("PRED002", Polarity::Pplus);
+    let f = b.find("function");
+    let s = b.field(f, "name");
+    let t = b.s("integer");
+    let op = b.op(Op::Is {
+        subject: s,
+        test: t,
+    });
+    b.clause(op);
+    b.report(None, f, "x");
+    let plan = b.build();
+    let want: Vec<usize> = [fs[0], fs[1], fs[4]].iter().map(|x| x.index()).collect();
+    assert_eq!(rows_of(&plan, &m, 0), want);
+}
+
 // frob:ticket 01M4WGCDK2ND23SEPX38Q9444T
 // frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
 #[test]

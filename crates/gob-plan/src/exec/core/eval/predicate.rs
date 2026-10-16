@@ -8,7 +8,7 @@ use super::{
 };
 
 /// Words that test a string value (`l.target is relative`).
-const STRING_WORDS: &[&str] = &["relative", "valid_glob"];
+const STRING_WORDS: &[&str] = &["relative", "valid_glob", "integer"];
 /// Words that read a boolean field of a node (`f is public`).
 const FLAG_WORDS: &[&str] = &["public", "exported"];
 
@@ -31,6 +31,13 @@ fn is_relative(s: &str) -> bool {
                 .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
     });
     !scheme && !s.starts_with('/') && !s.starts_with("//")
+}
+
+/// Whether `s` parses as a whole integer: an optional sign and digits, surrounding blanks ignored.
+fn is_integer(s: &str) -> bool {
+    let ok = s.trim().parse::<i64>().is_ok();
+    tracing::trace!(value = %s, ok, "integer value predicate");
+    ok
 }
 
 /// Whether `path` lies under `prefix`, segment by segment (`.`, `/` and `::` separate).
@@ -81,6 +88,7 @@ impl Eval<'_> {
             _ => match self.datum(subject, env) {
                 Datum::Known(Scalar::Str(s)) => Verdict::certain(match word {
                     "relative" => is_relative(&s),
+                    "integer" => is_integer(&s),
                     _ => globset::Glob::new(&s).is_ok(),
                 }),
                 Datum::Absent | Datum::Known(_) | Datum::Node(_) => Verdict::no(),
