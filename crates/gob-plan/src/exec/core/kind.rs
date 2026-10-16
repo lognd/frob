@@ -117,7 +117,7 @@ impl KindTest {
         match self {
             Self::Artifact => yes(node == term.root()),
             Self::Any => Some(Truth::Yes),
-            Self::Unit => yes(is_canonical_unit(model, node)),
+            Self::Unit => yes(is_canonical_unit(model, node) || is_external_unit(model, node)),
             Self::UnitKind(kinds) => match universal {
                 Some(Universal::Unit { kind, .. }) => {
                     yes(kinds.contains(&kind.as_str()) && is_canonical_unit(model, node))
@@ -202,6 +202,21 @@ pub(crate) fn is_canonical_unit(model: &Model, node: NodeId) -> bool {
     let n = model.term().node(node);
     matches!(n.op(), Operator::Universal(Universal::Unit { .. }))
         && n.attrs().get_str(gob_ir::reserved::FACET) != Some("sig")
+}
+
+/// Whether `node` stands for an external ambient unit: a `ref` that resolves to nothing in the
+/// file but names a registered ambient source (`time.time`), so `c resolves to v` can bind `v`.
+// frob:ticket 01M539NQGFCK3VJGRBM3H6CT56
+pub(crate) fn is_external_unit(model: &Model, node: NodeId) -> bool {
+    let n = model.term().node(node);
+    let Operator::Universal(Universal::Ref { name }) = n.op() else {
+        return false;
+    };
+    let unresolved = model
+        .scopes()
+        .ref_at(node)
+        .is_some_and(|r| matches!(model.scopes().resolve(r), gob_ir::Resolution::Unknown));
+    unresolved && gob_symbols::is_ambient_name(n.lang(), name)
 }
 
 /// Whether some part of the model is unread (an opaque region or a hole), so that any kind may

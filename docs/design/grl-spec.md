@@ -1217,6 +1217,11 @@ declares the vocabulary in `needs` (`needs vocab(sources)`), so Lua is NotApplic
 rule as a whole and not reported clean; inside the formula an empty
 vocabulary is the empty set (7.0.7).
 
+An unimported stdlib call such as python `time.time()` resolves to an external ambient unit: an
+unresolved `ref` whose name is in the language's ambient vocabulary (`clock`, `rng`, `env`,
+`stdio`, `exit`; registered in `gob-symbols`), so `c resolves to v` binds `v` and `v in knob.sources`
+holds. `has attr "frob:shell"` also holds when a `frob:shell` comment sits just before the node.
+
 ### NEAT031 dispatch-site-owns-logic
 
 ```grl

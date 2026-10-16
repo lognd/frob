@@ -36,7 +36,7 @@ pub use field::{Datum, Scalar, compare};
 pub use verdict::{Doubt, Verdict};
 
 use eval::Matcher;
-pub(crate) use kind::{KindTest, may_hide_members};
+pub(crate) use kind::{KindTest, is_external_unit, may_hide_members};
 
 use crate::exec::relations::{Count, PEER_OF, Relations, SideRow};
 use crate::plan::{Op, OpId, Operand, Plan, PlanParts, Polarity, StrId, VarId};

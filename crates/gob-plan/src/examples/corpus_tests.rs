@@ -42,8 +42,7 @@ fn cov001_calls_examples_pass() {
 // frob:tests crates/gob-plan/src/examples/runner.rs::run_example
 #[test]
 fn neat013_resolves_to_examples_pass() {
-    // Example 0 (python `time.time()`) needs vocab classes and import resolution; follow-up ticket.
-    run_except("NEAT013.grl", include_str!("corpus/NEAT013.grl"), &[0]);
+    run_all("NEAT013.grl", include_str!("corpus/NEAT013.grl"));
 }
 
 // frob:tests crates/gob-plan/src/examples/runner.rs::run_example

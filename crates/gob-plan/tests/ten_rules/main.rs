@@ -19,10 +19,9 @@ const RULES: [(&str, &str); 6] = [
 ///
 /// A listed example must still fail: when the engine learns the feature the test fails
 /// and the entry is deleted, so the list can only shrink.
-const KNOWN_ENGINE_GAPS: [(&str, usize); 3] = [
+const KNOWN_ENGINE_GAPS: [(&str, usize); 2] = [
     ("COV001", 2), // python `unresolved` verdict for a call reached through a parameter callee
     ("DOC002", 1), // example runner lacks multi-file `file "..."` inputs
-    ("NEAT013", 0), // `resolves to` does not yet map `time.time` onto the clock vocab
 ];
 
 /// Run every example of one corpus rule and return (index, description) of each failure.

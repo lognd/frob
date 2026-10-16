@@ -51,6 +51,7 @@
 )]
 
 mod adapter;
+mod ambient;
 mod crates;
 mod def_use;
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
@@ -91,6 +92,7 @@ pub use adapter::{
     Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
     ParseStatus, Precision,
 };
+pub use ambient::{AMBIENT_CLASSES, is_ambient_name};
 pub use crates::CrateDeps;
 pub use csharp::{
     CSharpAdapter, CsharpTest, CsharpTestFramework, csharp_test, is_csharp_path,

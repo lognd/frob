@@ -21,6 +21,28 @@ pub(crate) fn is_test_word(word: &str, on_field: bool) -> bool {
     }
 }
 
+/// Whether the sibling just before `node` is a comment carrying the `frob:<name>` directive `key`.
+// frob:ticket 01M539NQGFCK3VJGRBM3H6CT56
+fn preceded_by_directive(term: &gob_ir::Term, node: gob_ir::NodeId, key: &str) -> bool {
+    let Some(want) = key.strip_prefix("frob:") else {
+        return false;
+    };
+    let Some(parent) = term.node(node).parent() else {
+        return false;
+    };
+    let sibs = term.node(parent).children();
+    let Some(i) = sibs.iter().position(|s| *s == node) else {
+        return false;
+    };
+    let hit = i.checked_sub(1).is_some_and(|j| {
+        matches!(term.node(sibs[j]).op(),
+            gob_ir::Operator::Universal(gob_ir::Universal::Comment { text })
+                if super::super::kind::directive_name(text) == Some(want))
+    });
+    tracing::trace!(key, hit, "has attr: directive comment before node");
+    hit
+}
+
 /// Whether `s` is a relative reference: no URL scheme and not rooted.
 fn is_relative(s: &str) -> bool {
     let scheme = s.split_once(':').is_some_and(|(head, _)| {
@@ -111,6 +133,9 @@ impl Eval<'_> {
         let term = self.rd.model.term();
         let key = self.string(attr);
         if term.node(Self::node(env, var)).attrs().get(key).is_some() {
+            return Verdict::yes();
+        }
+        if preceded_by_directive(term, Self::node(env, var), key) {
             return Verdict::yes();
         }
         match term

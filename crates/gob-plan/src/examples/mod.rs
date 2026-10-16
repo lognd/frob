@@ -10,6 +10,7 @@
 mod corpus_tests;
 pub mod judge;
 pub mod markers;
+mod resolves;
 pub mod runner;
 mod side;
 

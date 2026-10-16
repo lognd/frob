@@ -9,7 +9,7 @@ pub mod outcome;
 pub mod prefilter;
 pub mod relations;
 
-pub(crate) use self::core::is_test_word;
 pub use self::core::{
     Datum, Doubt, ExecError, Input, Row, Run, Scalar, Val, Verdict, compare, count, run, run_with,
 };
+pub(crate) use self::core::{is_external_unit, is_test_word};

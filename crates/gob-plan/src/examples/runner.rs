@@ -81,7 +81,7 @@ fn edges(plan: &Plan, model: &gob_ir::Model) -> Relations {
     for name in named {
         match name {
             "calls" => rel = rel.with_edges(name, ctx.rel_calls()),
-            "resolves to" => rel = rel.with_edges(name, ctx.rel_resolves()),
+            "resolves to" => rel = rel.with_edges(name, super::resolves::resolves_relation(model)),
             // `frob:tests` links join files; one example source has none.
             "tests" => rel = rel.with_edges(name, gob_ir::eval::Relation::new()),
             other => tracing::debug!(edge = other, "no example edge relation for this word"),
