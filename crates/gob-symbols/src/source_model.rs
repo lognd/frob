@@ -37,11 +37,23 @@ fn extension_of_tag(tag: &str) -> String {
 /// [`FoldError`] only when an adapter builds an ill-formed term (an adapter bug).
 pub fn model_of_source(language: &str, text: &str) -> Result<Model, FoldError> {
     let path = format!("example.{}", extension_of_tag(language));
+    model_of_source_at(&path, text)
+}
+
+/// Builds the [`Model`] of `text` as the file `path`; the extension picks the adapter.
+///
+/// Like [`model_of_source`] but the artifact keeps the caller's repository path, so a rule that
+/// reads `file.path` sees the path an example named.
+///
+/// # Errors
+///
+/// [`FoldError`] only when an adapter builds an ill-formed term (an adapter bug).
+pub fn model_of_source_at(path: &str, text: &str) -> Result<Model, FoldError> {
     let entry = FileEntry {
-        language: LanguageHint::from_path(&path),
+        language: LanguageHint::from_path(path),
         digest: Digest::of(text.as_bytes()),
         size: text.len() as u64,
-        path,
+        path: path.to_owned(),
     };
     tracing::debug!(path = %entry.path, bytes = text.len(), "building example model");
     let folded = fold_file(&entry, text)?;
@@ -98,5 +110,12 @@ mod tests {
         let model = model_of_source("json", "{\"a\": 1}").expect("model");
         let term = model.term();
         assert!(term.ids().any(|id| term.node(id).op().is_opaque()));
+    }
+
+    // frob:tests crates/gob-symbols/src/source_model.rs::model_of_source_at
+    #[test]
+    fn the_artifact_keeps_the_path_it_was_given() {
+        let model = model_of_source_at("src/core/a.py", "import requests\n").expect("model");
+        assert_eq!(model.term().locator(), "src/core/a.py");
     }
 }

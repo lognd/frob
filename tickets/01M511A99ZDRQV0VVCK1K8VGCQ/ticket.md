@@ -2,12 +2,13 @@
 id = "01M511A99ZDRQV0VVCK1K8VGCQ"
 title = "GRL example runner gaps: markdown link kind, multi-file, config inputs, test edges, resolves-to on vocab"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-16T00:20:44Z"
-updated = "2026-10-16T19:24:21Z"
+updated = "2026-10-16T20:16:09Z"
 scope = ["crates/gob-plan/tests/ten_rules/main.rs", "crates/gob-symbols/src/source_model.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-plan/src/examples/runner.rs", "crates/gob-plan/src/exec/core/field.rs", "crates/gob-plan/src/exec/core/kind.rs", "changelog.d/1K8VGCQ.changed.md"]
 +++
 

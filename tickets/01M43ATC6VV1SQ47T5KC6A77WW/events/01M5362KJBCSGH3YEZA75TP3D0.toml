@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-16T20:22:24Z"
+digest = "bad14c75084d11c477863d423797ed57ff92e033ad273e551e688b3528c32db7"
+provider = "file"
+ref = "packs/crunk-core/exceptions.toml"
+size = 1872
+status = "measured"
+at = "2026-10-16T20:22:24Z"
+actor = "lognd"
+rev = 1

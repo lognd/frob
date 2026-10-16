@@ -101,17 +101,26 @@ fn severity(rule: &Rule) -> Level {
         .unwrap_or(Level::Warn)
 }
 
+/// An example's file text, its file path, the sub-block expectations and the side inputs.
+type Inputs = (Option<String>, Option<String>, Vec<Expected>, SideInputs);
+
 /// The example's source text and the expectations written in sub-blocks.
-fn inputs(example: &Example) -> Result<(Option<String>, Vec<Expected>, SideInputs), RunError> {
+fn inputs(example: &Example) -> Result<Inputs, RunError> {
     match &example.body {
-        ExampleBody::Source(b) => Ok((Some(b.value.clone()), Vec::new(), SideInputs::default())),
+        ExampleBody::Source(b) => Ok((
+            Some(b.value.clone()),
+            None,
+            Vec::new(),
+            SideInputs::default(),
+        )),
         ExampleBody::Inputs(items) => {
-            let (mut text, mut expected) = (None, Vec::new());
+            let (mut text, mut path, mut expected) = (None, None, Vec::new());
             let mut side = SideInputs::default();
             for i in items {
                 match &i.node {
-                    InputKind::File { text: t, .. } if text.is_none() => {
+                    InputKind::File { path: p, text: t } if text.is_none() => {
                         text = Some(t.value.clone());
+                        path = Some(p.value.clone());
                     }
                     InputKind::File { .. } => return Err(RunError::Unsupported("second file")),
                     InputKind::Expect(s) => expected.extend(expect_line(&s.value)),
@@ -129,7 +138,7 @@ fn inputs(example: &Example) -> Result<(Option<String>, Vec<Expected>, SideInput
             if text.is_none() && side == SideInputs::default() {
                 return Err(RunError::Unsupported("no file"));
             }
-            Ok((text, expected, side))
+            Ok((text, path, expected, side))
         }
     }
 }
@@ -143,7 +152,7 @@ fn inputs(example: &Example) -> Result<(Option<String>, Vec<Expected>, SideInput
 pub fn run_example(rule: &Rule, example: &Example) -> Result<ExampleResult, RunError> {
     let plan = lower_rule(rule, Provenance::Std)?;
     let lang = language(rule, example, &plan)?;
-    let (file_text, mut expected, side) = inputs(example)?;
+    let (file_text, file_path, mut expected, side) = inputs(example)?;
     let has_file = file_text.is_some();
     let text = file_text.unwrap_or_default();
     if let Some(l) = &lang {
@@ -162,8 +171,11 @@ pub fn run_example(rule: &Rule, example: &Example) -> Result<ExampleResult, RunE
     if !not_applicable {
         let model_lang = lang.as_deref().unwrap_or(EMPTY_MODEL_LANG);
         let model_text = if lang.is_some() { text.as_str() } else { "" };
-        let model = gob_symbols::model_of_source(model_lang, model_text)
-            .map_err(|e| RunError::Model(e.to_string()))?;
+        let model = match (file_path.as_deref(), lang.is_some()) {
+            (Some(p), true) => gob_symbols::model_of_source_at(p, model_text),
+            _ => gob_symbols::model_of_source(model_lang, model_text),
+        }
+        .map_err(|e| RunError::Model(e.to_string()))?;
         let source = gob_text::SourceText::new(text).map_err(|_| RunError::TooLarge)?;
         let input = Input {
             model: &model,
