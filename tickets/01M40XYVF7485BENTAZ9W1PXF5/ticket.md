@@ -2,7 +2,8 @@
 id = "01M40XYVF7485BENTAZ9W1PXF5"
 title = "Remaining raw-text readers pair raw offsets with git-normalized cache keys"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
