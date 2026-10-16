@@ -110,6 +110,28 @@ impl Cli {
         exec.exit
     }
 
+    // frob:ticket 01M4118NGH127F6DGVGS4GVE49
+    /// Check a structured remedy against this CLI: its verb path must exist and accept every flag it names.
+    ///
+    /// # Errors
+    /// Names the unknown verb path or the flag the verb does not accept.
+    pub fn check_remedy(&self, command: &gob_diagnostics::RemedyCommand) -> Result<(), String> {
+        let table = self.verb_flags();
+        let path = command.verb_path();
+        let Some(flags) = table.get(&path) else {
+            let group = format!("{path} ");
+            return if table.keys().any(|k| k.starts_with(&group)) {
+                Ok(())
+            } else {
+                Err(format!("`{path}` is not a verb path"))
+            };
+        };
+        match command.flags.iter().find(|f| !flags.contains(&f.name)) {
+            Some(f) => Err(format!("`{path}` has no flag --{}", f.name)),
+            None => Ok(()),
+        }
+    }
+
     // frob:ticket 01M40YQZF4422S88TN6992AN0Q
     /// Every verb path with the long flags it accepts (its own plus the global ones).
     ///
@@ -415,14 +437,16 @@ impl Cli {
         if matches!(e.kind(), ErrorKind::DisplayHelp | ErrorKind::DisplayVersion) {
             return Execution::out(e.to_string());
         }
-        let (message, remedy) = usage_parts(e, self.product);
+        let (message, remedy, command) = usage_parts(e, self.product);
         tracing::debug!(kind = ?e.kind(), "usage error");
         let mut err = gob_diagnostics::Refusal::new(
             "E-USAGE",
             gob_diagnostics::RefusalClass::UsageError,
             message,
         );
-        if let Some(r) = remedy {
+        if let Some(c) = command {
+            err = err.with_command(c);
+        } else if let Some(r) = remedy {
             err = err.with_remedy(r);
         }
         render::failure(None, &CliError::Refusal(err), sniff_json(argv))
@@ -449,7 +473,14 @@ fn quoted(names: &[String]) -> String {
 }
 
 /// Build the one-line usage message and its remedy from clap's structured error, not its rendering.
-fn usage_parts(e: &clap::Error, product: &str) -> (String, Option<String>) {
+fn usage_parts(
+    e: &clap::Error,
+    product: &str,
+) -> (
+    String,
+    Option<String>,
+    Option<gob_diagnostics::RemedyCommand>,
+) {
     let arg = context_strings(e, ContextKind::InvalidArg);
     let value = context_strings(e, ContextKind::InvalidValue);
     let valid = context_strings(e, ContextKind::ValidValue);
@@ -481,7 +512,8 @@ fn usage_parts(e: &clap::Error, product: &str) -> (String, Option<String>) {
     // A suggested verb is itself the remedy: the exact command to run instead.
     let subs = context_strings(e, ContextKind::SuggestedSubcommand);
     if let Some(s) = subs.first() {
-        return (message, Some(format!("{product} {s}")));
+        let command = gob_diagnostics::RemedyCommand::new(product, s);
+        return (message, Some(command.render()), Some(command));
     }
     let mut hints = Vec::new();
     let args = context_strings(e, ContextKind::SuggestedArg);
@@ -511,7 +543,7 @@ fn usage_parts(e: &clap::Error, product: &str) -> (String, Option<String>) {
         hints.push(format!("subcommands: {}", subcommands.join(", ")));
     }
     let remedy = (!hints.is_empty()).then(|| hints.join("; "));
-    (message, remedy)
+    (message, remedy, None)
 }
 
 /// Fallback for error kinds without a structured form: the first paragraph of clap's text, on one line.

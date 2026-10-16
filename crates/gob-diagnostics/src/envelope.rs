@@ -3,6 +3,7 @@
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use crate::command::RemedyCommand;
 use crate::record::{FindingRecord, TextOrigin};
 
 /// Version of the envelope layout; bump on any breaking change.
@@ -20,6 +21,10 @@ pub struct EnvelopeError {
     pub message_origin: TextOrigin,
     /// The exact corrected command, when one exists.
     pub remedy: Option<String>,
+    // frob:ticket 01M4118NGH127F6DGVGS4GVE49
+    /// The remedy as data (verb path, flags, placeholders), when it is a command.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub command: Option<RemedyCommand>,
     /// True when the same argv may succeed later with no caller action.
     pub retryable: bool,
     /// True when `remedy` is prose for a person, never a command an agent may run (security.md 2.3).

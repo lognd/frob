@@ -1,5 +1,6 @@
 //! Refusal classes (one per row of the cli.md table) and the `Refusal` error.
 
+use crate::command::RemedyCommand;
 use crate::envelope::EnvelopeError;
 use crate::exit::ExitCode;
 use crate::record::TextOrigin;
@@ -72,6 +73,8 @@ pub struct Refusal {
     pub message: String,
     /// The exact corrected command, when one exists.
     pub remedy: Option<String>,
+    /// The remedy as structured data, when it is a command; `remedy` holds its rendering.
+    pub command: Option<Box<RemedyCommand>>,
     /// True when only a person at a terminal can act; `remedy` is then prose, not a command.
     pub requires_human: bool,
 }
@@ -84,6 +87,7 @@ impl Refusal {
             class,
             message: message.into(),
             remedy: None,
+            command: None,
             requires_human: false,
         };
         tracing::debug!(code = %r.code, ?class, "refusal built");
@@ -112,6 +116,15 @@ impl Refusal {
         self
     }
 
+    // frob:ticket 01M4118NGH127F6DGVGS4GVE49
+    /// Attach the remedy as a structured command; its rendering becomes the text remedy.
+    #[must_use]
+    pub fn with_command(mut self, command: RemedyCommand) -> Self {
+        self.remedy = Some(command.render());
+        self.command = Some(Box::new(command));
+        self
+    }
+
     /// Mark the remedy as a person's to carry out: an agent must stop and tell the user.
     #[must_use]
     pub const fn requiring_human(mut self) -> Self {
@@ -133,6 +146,7 @@ impl From<&Refusal> for EnvelopeError {
             // frob:ticket 01M4S1YMTPRCGNHN585C78QET8
             message_origin: TextOrigin::Host,
             remedy: r.remedy.clone(),
+            command: r.command.as_deref().cloned(),
             retryable: r.class.retryable(),
             requires_human: r.requires_human,
         }
