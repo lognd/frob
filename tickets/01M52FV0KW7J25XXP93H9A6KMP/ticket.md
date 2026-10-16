@@ -7,6 +7,6 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-16T13:53:47Z"
-updated = "2026-10-16T16:11:50Z"
+updated = "2026-10-16T16:13:50Z"
 scope = ["crates/gob-dev/src/ci.rs", "crates/frob-release/tests/it/ci_pins.rs", "changelog.d/**"]
 +++
