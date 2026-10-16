@@ -65,9 +65,9 @@ flow gob_to_crunk : gob -> crunk {
 }
 
 /// The conformance test in gob-plan runs the compiled-in std rule modules against their plans.
-flow gob_to_std_rules : gob -> std_rules {
+flow std_rules_to_gob : std_rules -> gob {
   label Internal;
-  producer "packs/std/generated/todo001.rs";
+  producer "packs/std/generated/**";
   consumer "crates/gob-plan/tests/conformance/main.rs";
 }
 

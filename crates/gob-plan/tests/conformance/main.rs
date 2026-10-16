@@ -4,6 +4,11 @@
 
 // frob:ticket 01M3ZX7HRM8SVB3607V973VQTH
 
+#![allow(
+    clippy::unnecessary_debug_formatting,
+    reason = "paths are shown for failures only, and only gob-path converts them to text"
+)]
+
 mod compare;
 mod corpus;
 
@@ -73,11 +78,15 @@ fn every_std_rule_source_has_a_compiled_in_module() {
     let dir = corpus::root().join("packs/std/rules");
     let mut on_disk: Vec<String> = std::fs::read_dir(dir)
         .unwrap()
-        .filter_map(|e| {
-            e.ok()?
-                .path()
-                .file_stem()
-                .and_then(|s| s.to_str().map(str::to_owned))
+        .filter_map(|e| std::fs::read_to_string(e.ok()?.path()).ok())
+        .flat_map(|text| {
+            let parsed = gob_plan::grl::parse(gob_text::FileInterner::new().intern("r.grl"), &text);
+            parsed
+                .file
+                .rules
+                .into_iter()
+                .map(|r| r.id.text)
+                .collect::<Vec<_>>()
         })
         .collect();
     on_disk.sort();
