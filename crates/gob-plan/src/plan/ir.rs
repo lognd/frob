@@ -390,7 +390,7 @@ pub enum Op {
     },
     /// Condition: `x is WORD`. A kind word tests membership of a variable; any other word reads
     /// the boolean field of that name (`is public`), or for a field operand a string predicate
-    /// (`is relative`, `is valid_glob`) or the dotted field `field.WORD`.
+    /// (`is relative`, `is valid_glob`, `is integer`) or the dotted field `field.WORD`.
     Is {
         /// The value tested.
         subject: Operand,

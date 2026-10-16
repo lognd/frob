@@ -334,6 +334,7 @@ Query: Q04. Languages: code languages (not data, prose or style files).
 |---|---|---|
 | `is async` | Q07 | never |
 | `is exported` | Q33 | may |
+| `is integer` |  | never |
 | `is public` | Q07 | may |
 | `is relative` | Q11 | never |
 | `is valid_glob` |  | never |

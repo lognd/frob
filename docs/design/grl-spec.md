@@ -373,6 +373,7 @@ the compiler and the engine read one source. `grimble rule catalog
 | `diff.changed`, `diff.added` | side relation | gob-git | needs `diff` |
 | `lease.globs`, `lease.ticket` | side relation | frob-lease | needs `lease` |
 | `model.nodes`, `model.selectors` | side relation | grimble-model | needs `model` |
+| `is integer` | flag | built in | a string value that is a whole signed integer; `auto` and units are not |
 | `glob(s)`, `resolve(path, from)`, `slug(s)`, `valid_glob` | function | built in | typed signatures in the catalog |
 
 Side relations are typed from their JSON schemas (config, diff, lease,
