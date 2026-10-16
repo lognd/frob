@@ -4,10 +4,11 @@ title = "GRL examples: call edges for super:: calls and macro args, unresolved f
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T21:56:32Z"
-updated = "2026-10-16T21:56:32Z"
+updated = "2026-10-16T22:48:17Z"
 scope = ["crates/gob-symbols/**", "crates/gob-plan/tests/ten_rules/**", "crates/gob-plan/src/examples/**"]
 +++
 
