@@ -2,7 +2,8 @@
 id = "01M43ARX0JB4A8E1YW329MKDDF"
 title = "gob-fix: Edit, Fix tiers, overlap resolution, dry-run diff, atomic write"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
