@@ -13,5 +13,5 @@ scope = ["crates/gob-plan/**"]
 
 [[acceptance]]
 text = "GRL DOC002 example 0 (broken markdown link) passes in the example runner"
-bound = false
+bound = true
 +++
