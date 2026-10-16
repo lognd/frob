@@ -8,12 +8,12 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T20:23:31Z"
-updated = "2026-10-16T21:57:48Z"
+updated = "2026-10-16T22:03:18Z"
 scope = ["crates/gob-plan/src/catalog/words.rs", "crates/gob-plan/src/exec/core/eval/predicate.rs", "crates/gob-plan/src/plan/ir.rs", "crates/gob-plan/tests/exec_relations.rs", "docs/design/grl-spec.md", "docs/reference/grl/catalog.md", "changelog.d/01M5364MWN27GJE158AKR11AZT.added.md"]
 
 [[acceptance]]
 text = "Given a string value, when a GRL rule tests it with is integer, then signed whole numbers hold and keywords such as auto, decimals and units do not"
-bound = false
+bound = true
 +++
 
 Found while working ~C6A77WW. See packs/crunk-core/exceptions.toml on branch ticket/C6A77WW: every LAYER001/ORG001-005 is blocked by a named missing construct (int-parse value predicate, css class-selector node, per-file bucket attribute, glob membership over config.org columns, config.layers/org side relations typed from docs/schemas/crunk.json, gen rules target for a non-std pack with a CrunkHost).
