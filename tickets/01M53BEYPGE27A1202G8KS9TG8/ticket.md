@@ -2,7 +2,8 @@
 id = "01M53BEYPGE27A1202G8KS9TG8"
 title = "GRL examples: call edges for super:: calls and macro args, unresolved for param calls (COV001 examples 1 and 2)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
