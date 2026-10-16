@@ -19,13 +19,11 @@ const RULES: [(&str, &str); 6] = [
 ///
 /// A listed example must still fail: when the engine learns the feature the test fails
 /// and the entry is deleted, so the list can only shrink.
-const KNOWN_ENGINE_GAPS: [(&str, usize); 7] = [
+const KNOWN_ENGINE_GAPS: [(&str, usize); 5] = [
     ("DOC002", 0),  // example runner and executor lack the markdown `link` kind
     ("DOC002", 1),  // example runner lacks multi-file `file "..."` inputs
     ("COV001", 1),  // example model has no test-to-function edges, so the clean case fires
     ("COV001", 2),  // example model cannot yet mark the dynamic call unresolved
-    ("INV002", 0),  // example runner ignores `config """..."""` inputs
-    ("INV002", 2),  // same: the invalid-glob row never reaches the rule
     ("NEAT013", 0), // `resolves to` does not yet map `time.time` onto the clock vocab
 ];
 

@@ -137,7 +137,7 @@ pub use registry::{
 pub use rust::RustAdapter;
 pub use types::{AnnotationWeight, TypeFacts, TypesTrust};
 // frob:ticket 01M4MC43CFCTQ7TQCHCF0C0YRR
-pub use source_model::model_of_source;
+pub use source_model::{model_of_source, model_of_source_at};
 pub use symref::{Symref, SymrefError, Target};
 pub use typescript::{
     ConstProject, Evaluated, JsxElement, JsxKind, Origin, TestItem, TestRole, TypeScriptAdapter,

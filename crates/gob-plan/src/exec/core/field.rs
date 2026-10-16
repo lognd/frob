@@ -190,8 +190,51 @@ impl Reader<'_> {
             "tag" | "spread" | "value" => self.markup(node, name),
             "selector" | "property" | "important" | "raw" => self.style(node, name),
             "callee" => self.callee(node).map_or(Datum::Absent, Datum::text),
+            "target" => self.import_target(node),
             _ => Datum::Unknown,
         }
+    }
+
+    /// The module an import statement names, read from its token children: `import a.b`,
+    /// `from a.b import c` and `import x from "a/b"` all yield `a.b` or `a/b`. Absent off imports.
+    fn import_target(&self, node: NodeId) -> Datum {
+        let term = self.model.term();
+        let is_import = matches!(term.node(node).op(),
+            Operator::Adapter(a) if matches!(a.name.as_str(), "import" | "use"));
+        if !is_import {
+            return Datum::Absent;
+        }
+        let lexemes: Vec<String> = term
+            .node(node)
+            .children()
+            .iter()
+            .filter_map(|&c| match term.node(c).op() {
+                Operator::Universal(Universal::Lit { lexeme, .. }) => Some(lexeme.clone()),
+                _ => None,
+            })
+            .collect();
+        let quoted = |s: &String| s.trim_matches(['"', '\'', '`']).to_owned();
+        let target = match lexemes.first().map(String::as_str) {
+            Some("from") => lexemes[1..]
+                .iter()
+                .take_while(|l| *l != "import")
+                .cloned()
+                .collect(),
+            Some("import") => {
+                let rest = &lexemes[1..];
+                match rest.iter().position(|l| l == "from") {
+                    Some(i) => rest.get(i + 1).map(quoted).unwrap_or_default(),
+                    None => rest
+                        .iter()
+                        .take_while(|l| *l != "as" && *l != ",")
+                        .cloned()
+                        .collect(),
+                }
+            }
+            _ => return Datum::Unknown,
+        };
+        tracing::trace!(%target, "import target");
+        Datum::text(target)
     }
 
     fn dotted(&self, node: NodeId, head: &str, rest: &str) -> Datum {
