@@ -2,7 +2,8 @@
 id = "01M52FV0KW7J25XXP93H9A6KMP"
 title = "gob-dev ci: resolve def-based tool stages (fix red CI after tool defs)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
