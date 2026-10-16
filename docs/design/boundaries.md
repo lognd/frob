@@ -372,7 +372,7 @@ fails the test. Every workspace crate must appear here exactly once.
 | 2 | repo | gob-git, gob-trust |
 | 3 | model | gob-ir |
 | 4 | rules | gob-pattern, gob-rules, gob-symbols |
-| 5 | config | gob-config, gob-diagnostics, gob-frameworks, gob-plan |
+| 5 | config | gob-config, gob-diagnostics, gob-fix, gob-frameworks, gob-plan |
 | 6 | pipeline | gob-check, gob-cli, gob-directives, gob-mdtest, gob-packs, gob-testsupport |
 | 7 | product base | crunk-spec, crunk-tailwind, frob-ack, frob-ledger, frob-mirror, gob-product, grimble-lints, grimble-model |
 | 8 | product core | crunk-gallery, crunk-ingest, crunk-tokens, frob-lease, frob-pm, grimble-bind |
