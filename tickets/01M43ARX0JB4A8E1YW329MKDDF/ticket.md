@@ -2,13 +2,13 @@
 id = "01M43ARX0JB4A8E1YW329MKDDF"
 title = "gob-fix: Edit, Fix tiers, overlap resolution, dry-run diff, atomic write"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:47Z"
-updated = "2026-10-04T11:28:47Z"
+updated = "2026-10-16T00:01:00Z"
 idempotency_key = "crunk-plan-fix"
 labels = ["area:crunk"]
 scope = ["crates/gob-fix/**", "Cargo.lock"]
