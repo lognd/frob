@@ -2,7 +2,8 @@
 id = "01M4NWPZHG4X7QEJKETA5JNS96"
 title = "GEN001 cross-checks: SUMMARY coverage and relative links resolve"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
