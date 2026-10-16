@@ -20,6 +20,9 @@ the `crunk-check` crate with the rule set listed in [rules/README.md](rules/READ
 | `crunk map` | yes | The style inventory bucketed by `[org] buckets` order, plus strays. |
 | `crunk explain NAME` | yes | Value, group, definition file, `var()` sites and utilities of one token; an unknown name exits 2 and lists close matches. |
 | `crunk gallery check` | yes | Opt-in (`cargo install crunk --features gallery`): checks `gallery/manifest.json` (`--manifest`) against the spec's cells with GALLERY001 to GALLERY005 (`--route` repeats, feeding GALLERY005). The default build refuses with `E-GALLERY-NOT-BUILT` and that remedy. |
+| `crunk preview` | yes | Prints the palette, spacing, font-size and radius scales, font stacks and layers as a terminal sheet. `--color always` adds truecolor swatches; `NO_COLOR` set suppresses every escape code. |
+| `crunk diff OTHER` | yes | Compares the generated tokens with those of the spec in directory (or file) `OTHER`: `+ NAME VALUE` added, `- NAME VALUE` removed, `~ NAME CURRENT -> OTHER` changed, or `no differences`. Always exit 0. |
+| `crunk init [--preset default\|mono] [--force]` | no | Scaffolds `crunk.toml` (the preset plus detected `[jsx]` and `[tailwind]` sections), the `[org] buckets` directories under `css_root`, a starter `base/reset.css` and the token files; the result passes `crunk check`. An existing `crunk.toml` is a usage error (exit 2) without `--force`. |
 | `crunk schema` | no | Built-in: the JSON Schema of a verb's output. |
 
 Query output is the gob envelope: `data` holds `{kind, results}` (`query`), `{buckets, strays}` (`map`)
