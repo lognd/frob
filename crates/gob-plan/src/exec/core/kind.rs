@@ -128,8 +128,10 @@ impl KindTest {
                 Some(Universal::Apply { kind }) => yes(kind == k),
                 _ => None,
             },
-            Self::ApplyKinds(ks) => match universal {
-                Some(Universal::Apply { kind }) => yes(ks.contains(&kind.as_str())),
+            Self::ApplyKinds(ks) => match (universal, n.op()) {
+                (Some(Universal::Apply { kind }), _) => yes(ks.contains(&kind.as_str())),
+                // An adapter statement node (a Python `import`) carries its kind as its name.
+                (None, Operator::Adapter(a)) => yes(ks.contains(&a.name.as_str())),
                 _ => None,
             },
             Self::Control(ks) => match universal {

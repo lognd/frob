@@ -1,0 +1,1 @@
+gob-plan: the GRL example runner now honours a `file "path"` input as the model path and reads python/other adapter `import` statements as `import` nodes with a `target` field, so INV002 examples run; link, multi-file, test-edge and vocab-resolution gaps remain listed.

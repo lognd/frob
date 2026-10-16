@@ -2,17 +2,17 @@
 
 // frob:ticket 01M4M99GMQDG93W4X05A4HFP5X
 // frob:ticket 01M4XJMM949EHC6X13TYJPYE5V
-use super::judge::{ExampleResult, judge};
-use super::markers::{Actual, Expected, Level, Mark, expect_line, parse_markers};
-use super::side::{SideInputs, side_data};
+use super::judge::{judge, ExampleResult};
+use super::markers::{expect_line, parse_markers, Actual, Expected, Level, Mark};
+use super::side::{side_data, SideInputs};
 use crate::catalog::lang_of;
-use crate::exec::outcome::{Kind, outcomes};
+use crate::exec::outcome::{outcomes, Kind};
 use crate::exec::relations::Relations;
 use crate::exec::{ExecError, Input};
 use crate::grl::ast::{
     Example, ExampleBody, ExpectKind, HeaderKind, InputKind, LangSet, Rule, Severity,
 };
-use crate::lower::{LowerError, lower_rule};
+use crate::lower::{lower_rule, LowerError};
 use crate::plan::{Langs, Op, Plan, Provenance};
 
 /// The line reported for a finding whose subject is not a node of the example source.
@@ -102,16 +102,24 @@ fn severity(rule: &Rule) -> Level {
 }
 
 /// The example's source text and the expectations written in sub-blocks.
-fn inputs(example: &Example) -> Result<(Option<String>, Vec<Expected>, SideInputs), RunError> {
+fn inputs(
+    example: &Example,
+) -> Result<(Option<String>, Option<String>, Vec<Expected>, SideInputs), RunError> {
     match &example.body {
-        ExampleBody::Source(b) => Ok((Some(b.value.clone()), Vec::new(), SideInputs::default())),
+        ExampleBody::Source(b) => Ok((
+            Some(b.value.clone()),
+            None,
+            Vec::new(),
+            SideInputs::default(),
+        )),
         ExampleBody::Inputs(items) => {
-            let (mut text, mut expected) = (None, Vec::new());
+            let (mut text, mut path, mut expected) = (None, None, Vec::new());
             let mut side = SideInputs::default();
             for i in items {
                 match &i.node {
-                    InputKind::File { text: t, .. } if text.is_none() => {
+                    InputKind::File { path: p, text: t } if text.is_none() => {
                         text = Some(t.value.clone());
+                        path = Some(p.value.clone());
                     }
                     InputKind::File { .. } => return Err(RunError::Unsupported("second file")),
                     InputKind::Expect(s) => expected.extend(expect_line(&s.value)),
@@ -129,7 +137,7 @@ fn inputs(example: &Example) -> Result<(Option<String>, Vec<Expected>, SideInput
             if text.is_none() && side == SideInputs::default() {
                 return Err(RunError::Unsupported("no file"));
             }
-            Ok((text, expected, side))
+            Ok((text, path, expected, side))
         }
     }
 }
@@ -143,7 +151,7 @@ fn inputs(example: &Example) -> Result<(Option<String>, Vec<Expected>, SideInput
 pub fn run_example(rule: &Rule, example: &Example) -> Result<ExampleResult, RunError> {
     let plan = lower_rule(rule, Provenance::Std)?;
     let lang = language(rule, example, &plan)?;
-    let (file_text, mut expected, side) = inputs(example)?;
+    let (file_text, file_path, mut expected, side) = inputs(example)?;
     let has_file = file_text.is_some();
     let text = file_text.unwrap_or_default();
     if let Some(l) = &lang {
@@ -162,8 +170,11 @@ pub fn run_example(rule: &Rule, example: &Example) -> Result<ExampleResult, RunE
     if !not_applicable {
         let model_lang = lang.as_deref().unwrap_or(EMPTY_MODEL_LANG);
         let model_text = if lang.is_some() { text.as_str() } else { "" };
-        let model = gob_symbols::model_of_source(model_lang, model_text)
-            .map_err(|e| RunError::Model(e.to_string()))?;
+        let model = match (file_path.as_deref(), lang.is_some()) {
+            (Some(p), true) => gob_symbols::model_of_source_at(p, model_text),
+            _ => gob_symbols::model_of_source(model_lang, model_text),
+        }
+        .map_err(|e| RunError::Model(e.to_string()))?;
         let source = gob_text::SourceText::new(text).map_err(|_| RunError::TooLarge)?;
         let input = Input {
             model: &model,
