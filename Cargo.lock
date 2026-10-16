@@ -497,6 +497,7 @@ dependencies = [
  "gob-check",
  "gob-cli",
  "gob-config",
+ "gob-diagnostics",
  "gob-git",
  "gob-lock",
  "gob-product",
@@ -506,6 +507,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "thiserror",
  "toml",
  "tracing",
 ]

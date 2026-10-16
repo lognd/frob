@@ -32,7 +32,7 @@ pub fn locate_root(product: &str, cwd: &Path) -> PathBuf {
 ///
 /// `E-NO-CONFIG` (exit 3, remedy: create the file) when `verb` needs config and none exists.
 pub fn require_config<P: Product>(verb: &str, ctx: &Context) -> Result<(), CliError> {
-    if NO_CONFIG_VERBS.contains(&verb) {
+    if NO_CONFIG_VERBS.contains(&verb) || P::NO_CONFIG_VERBS.contains(&verb) {
         tracing::debug!(verb, "verb needs no config file");
         return Ok(());
     }
