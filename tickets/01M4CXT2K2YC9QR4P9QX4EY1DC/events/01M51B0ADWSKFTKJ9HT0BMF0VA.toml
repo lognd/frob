@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-16T03:10:03Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+inline = ""
+passed = true
+provider = "command"
+ref = "python3 /tmp/claude-1000/-home-logan-projects-frob/16155c8d-cb3b-4f50-9b9f-c8f4865826de/scratchpad/chk.py"
+size = 0
+status = "measured"
+at = "2026-10-16T03:10:03Z"
+actor = "lognd"
+rev = 1

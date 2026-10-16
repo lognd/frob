@@ -8,12 +8,12 @@ points = 2
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:38Z"
-updated = "2026-10-16T03:09:10Z"
+updated = "2026-10-16T03:10:03Z"
 scope = ["docs/design/code-model.md", "docs/design/neatness.md", "docs/design/grimble-model.md", "docs/design/universal-model.md", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given the design set, when doc consistency runs, then no file names a dropped directive or the old namespace placement"
-bound = false
+bound = true
 +++
 
 docs/design/cohesion.md is the source; the directive table and namespace rule in code-model.md section 4 change.
