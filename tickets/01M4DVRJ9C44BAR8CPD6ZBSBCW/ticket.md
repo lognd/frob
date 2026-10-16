@@ -2,13 +2,13 @@
 id = "01M4DVRJ9C44BAR8CPD6ZBSBCW"
 title = "Backlog sweep: re-scope or drop native rule tickets that reimplement a rule a bound tool ships (D122)"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T13:38:06Z"
-updated = "2026-10-08T13:38:06Z"
+updated = "2026-10-16T03:09:14Z"
 scope = ["changelog.d/**", "tickets/**"]
 
 [[acceptance]]
