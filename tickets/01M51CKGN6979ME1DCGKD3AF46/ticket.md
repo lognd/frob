@@ -2,7 +2,8 @@
 id = "01M51CKGN6979ME1DCGKD3AF46"
 title = "Tool-stage tiers (ticket, train, ci) and frob check --ticket --quick"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
