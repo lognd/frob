@@ -2,7 +2,8 @@
 id = "01M51CKH4HHT7ABEB2TZS54NX7"
 title = "Docs: land-train section matches the driver (leases, suspects, --wait 0, actor, cone)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
