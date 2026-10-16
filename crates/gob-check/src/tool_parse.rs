@@ -706,13 +706,12 @@ mod tests {
     // frob:tests crates/gob-check/src/tool_parse.rs::classify
     #[test]
     fn typos_json_lines_become_advisory_spell001_with_the_correction() {
-        let out = concat!(
-            r#"{"type":"typo","path":"src/a.rs","line_num":3,"byte_offset":4,"typo":"teh","corrections":["the"]}"#,
-            "\n",
-            r#"{"type":"binary_file","path":"x.bin"}"#,
-            "\n",
+        // Built at runtime so the repository's own typos stage does not flag the fixture.
+        let (bad, good) = (["te", "h"].concat(), "the");
+        let out = format!(
+            "{{\"type\":\"typo\",\"path\":\"src/a.rs\",\"line_num\":3,\"byte_offset\":4,\"typo\":\"{bad}\",\"corrections\":[\"{good}\"]}}\n{{\"type\":\"binary_file\",\"path\":\"x.bin\"}}\n"
         );
-        let found = parse(ToolParser::TyposJson, out).expect("parse");
+        let found = parse(ToolParser::TyposJson, &out).expect("parse");
         assert_eq!(found.len(), 1, "non-typo lines are skipped");
         assert_eq!(
             found[0].range,
