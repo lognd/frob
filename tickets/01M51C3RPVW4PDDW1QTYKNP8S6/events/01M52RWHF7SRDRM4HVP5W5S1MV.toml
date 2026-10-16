@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/**", "docs/design/plugins.md", "docs/design/grl-spec.md", "docs/design/binding.md", "docs/design/packs.md", "docs/design/grmb-spec.md", "docs/design/README.md"]
+new = ["docs/**", "docs/design/plugins.md", "docs/design/grl-spec.md", "docs/design/binding.md", "docs/design/packs.md", "docs/design/grmb-spec.md", "docs/design/README.md", "changelog.d/01M51C3RPVW4PDDW1QTYKNP8S6.changed.md"]
+at = "2026-10-16T16:31:54Z"
+actor = "lognd"
+rev = 1

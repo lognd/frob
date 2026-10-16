@@ -619,7 +619,7 @@ clean.
 
 An atom whose lo or hi bound rests on an UNVERIFIED claim (a
 `grimble:effects` claim on an unanalysable body, an annotation without
-checker closure, a `frob:calls` directive that narrows an Unknown
+checker closure, a `grimble:calls` directive that narrows an Unknown
 resolution) is evaluated with the claim, and every outcome whose
 definiteness depends on it is conditional, with reason
 `assumed:<claim>` (cohesion.md D121; D119's rule that an unverified
@@ -1185,17 +1185,17 @@ rule NEAT013 "ambient-source-call" {
   needs vocab(sources)
   knob sources: vocab = vocab("clock", "rng", "env", "fs", "net", "stdio", "exit") "ambient sources"
 
-  find fn: function where not fn has attr "frob:shell"
+  find fn: function where not fn has attr "grimble:shell"
   find c: call where c in unit fn
   where some v: unit where c resolves to v and v in knob.sources
-  report c "{fn.name} calls {v.name}, an ambient source; inject it or mark the unit frob:shell"
+  report c "{fn.name} calls {v.name}, an ambient source; inject it or mark the unit grimble:shell"
 
   example fire python """
     def now_str():
         return time.time()          #~ warn
   """
   example clean python """
-    # frob:shell
+    # grimble:shell
     def now_str():
         return time.time()
   """
@@ -1206,7 +1206,7 @@ rule NEAT013 "ambient-source-call" {
     Calls to clocks, randomness, the environment, files, network or stdio make a
     function impure and hard to test.
     ## Remedy
-    Pass the source in as a parameter, or mark the unit `frob:shell`.
+    Pass the source in as a parameter, or mark the unit `grimble:shell`.
   """
 }
 ```
@@ -1227,7 +1227,7 @@ rule NEAT031 "dispatch-site-owns-logic" {
   def peer_call(s) = s is call and some p: function where s resolves to p and p peer of s.unit
   def guarded_call(s) = s is rust`if $C { $F($$$A) }` as roles and some k: call where k directly inside s and peer_call(k)
 
-  find d: function where not d has attr "frob:dispatcher"
+  find d: function
   where count(s: stmt directly inside d where peer_call(s) or guarded_call(s))
         >= knob.ratio * count(s: stmt directly inside d)
   find b: (branch | loop) where b in unit d and not guarded_call(b)

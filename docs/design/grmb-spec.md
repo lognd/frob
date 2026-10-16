@@ -937,9 +937,9 @@ or an `attr` node and every downstream query (`attachments`,
 | `frob:invariant`, `frob:decision`, `frob:deprecated`, `frob:until` | entity or clause | as in code-model.md section 4, bound to a unit |
 | `grimble:binds SYMREF [via="manual"]` | entity (node, flow end, contract, claim, vmodel) | explicit binding, source rank 1 of 10.3: the entity is bound to the identity SYMREF at Must. For a node it adds SYMREF to the node's ownership regardless of `owns`; on a flow it is accepted before a `producer`, `consumer` or `contract` clause to bind that end |
 | `frob:tests SYMREF` | claim or vmodel test | reverse evidence binding: the target entity's evidence includes this test (also written in test code, 8.3) |
-| claim verbs `frob:effects`, `frob:pure`, `frob:honest`, `frob:core`, `frob:shell`, `frob:hook`, `frob:dispatcher`, `frob:idempotent` | entity | parsed and bound (a `unit` is a legal target); the NEAT rules answer NotApplicable on `grmb` units (no effects), so they never produce findings here; reserved so a future claim about a model entity has a place (open question 9) |
+| claim verbs `grimble:effects`, `grimble:core`, `grimble:shell`, `grimble:calls` (D120; the dropped spellings are DSL003 findings, not claims) | entity | parsed and bound (a `unit` is a legal target); the NEAT rules answer NotApplicable on `grmb` units (no effects), so they never produce findings here; reserved so a future claim about a model entity has a place (open question 9) |
 | `grimble:accept`, `grimble:defer`, `grimble:hotfix` | none | MDL013: use the clause (section 7) |
-| `grimble:node`, `grimble:channel`, `grimble:boundary`, `grimble:effect` | none | these are code-side attestations naming an entity; written in a .grmb file they are MDL013 |
+| `grimble:node`, `grimble:channel`, `grimble:boundary` | none | these are code-side attestations naming an entity; written in a .grmb file they are MDL013 |
 
 A `frob:` directive evaluated by frob needs `grimble graph --json`; a
 frob without grimble reports it Unresolved (grimble-model.md 9.3). The
@@ -1477,7 +1477,7 @@ sections:
     MDL005 is the new file-level warning and suppresses SYS004 for the
     same selector.
 15. The directive table row `grimble:node N`, `grimble:channel F`,
-    `grimble:boundary B`, `grimble:effect`: code-side only; written in a
+    `grimble:boundary B`: code-side only; written in a
     .grmb comment they are MDL013 (they name an entity from outside it).
 16. Dropped from the grammar and not carried: `host`, `krb`, `deploy`,
     cdn/balancer/queue/cache/secret/resource as keywords (kinds now),
@@ -1518,7 +1518,7 @@ sections:
    expressible.
 8. `growth` period. v1's `growth 15 %/month` needs a period unit; the
    time table stops at `d`. Add `w` and `mo`, or keep `%/d` only?
-9. Claim verbs (`frob:effects` and the rest) are accepted but inert on
+9. Claim verbs (`grimble:effects` and the rest) are accepted but inert on
    .grmb units. Is a claim about a model entity (for example "this node
    has no effects") meaningful, or should they be MDL013 too?
 10. Include globs: sorted lexicographic expansion is deterministic, but a
