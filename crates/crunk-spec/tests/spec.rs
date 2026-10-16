@@ -571,7 +571,7 @@ fn breakpoints_precedence() {
 #[test]
 fn catalog_rows() {
     let ids = catalog::rule_ids();
-    assert_eq!(ids.len(), 30);
+    assert_eq!(ids.len(), 40);
     assert!(ids.contains(&"SIZE001".to_owned()));
     assert_eq!(catalog::default_severity("SIZE001"), Some(Severity::Warn));
     for id in ["BP001", "BP002", "BP003"] {

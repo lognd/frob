@@ -5,7 +5,7 @@
 //! `"16px"` (dimension), `"150ms"` / `"0.2s"` (duration), `"{color.ink}"` (alias), an integer or
 //! float (number), `[0.4, 0, 0.2, 1]` (cubic bezier), `["Inter", "sans-serif"]` (font family) and
 //! a table (composite: typography, shadow, border, transition). A token table may also carry
-//! `type`, `tier`, `description`, `scopes` and `modes = { dark = "#fff" }`.
+//! `type`, `tier`, `description`, `deprecated`, `scopes` and `modes = { dark = "#fff" }`.
 //!
 //! ```
 //! let set = crunk_tokens::dialect::parse("[color]\nink = \"#e6e8ef\"\n", "tokens.toml").unwrap();
@@ -139,7 +139,17 @@ fn walk(
 
 fn token(fields: &IndexMap<String, Raw>, ctx: &Ctx<'_>) -> Result<Token, DialectError> {
     for key in fields.keys() {
-        if !["value", "type", "tier", "description", "scopes", "modes"].contains(&key.as_str()) {
+        if ![
+            "value",
+            "type",
+            "tier",
+            "description",
+            "scopes",
+            "modes",
+            "deprecated",
+        ]
+        .contains(&key.as_str())
+        {
             return Err(ctx.invalid(format!("unknown field `{key}`")));
         }
     }
@@ -152,6 +162,11 @@ fn token(fields: &IndexMap<String, Raw>, ctx: &Ctx<'_>) -> Result<Token, Dialect
     match fields.get("description") {
         Some(Raw::Str(d)) => tok.description = Some(d.clone()),
         Some(_) => return Err(ctx.invalid("`description` must be a string")),
+        None => {}
+    }
+    match fields.get("deprecated") {
+        Some(Raw::Str(d)) => tok.deprecated = Some(d.clone()),
+        Some(_) => return Err(ctx.invalid("`deprecated` must be a string")),
         None => {}
     }
     match fields.get("tier") {
@@ -233,6 +248,7 @@ fn token_from_value(
         modes: IndexMap::new(),
         scopes: Vec::new(),
         description: None,
+        deprecated: None,
     })
 }
 

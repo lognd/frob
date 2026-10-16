@@ -1,0 +1,43 @@
+<!-- mdtest: rule=TOKEN005 -->
+# TOKEN005 token-naming
+
+Token paths follow the naming and layering convention. Each block is one source file in a project whose `crunk.toml` is the default preset.
+
+## What it does
+
+Every path segment must be kebab-case (lowercase words joined by hyphens). A leading `primitive`, `semantic` or `component` segment must match the token's `tier`. A component token that aliases a primitive directly, skipping the semantic layer, is also a finding.
+
+## Why it matters
+
+A predictable vocabulary is what makes tokens discoverable, and the layers are what let a theme change without touching components.
+
+## Remedy
+
+Rename the token, fix its tier, or alias a semantic token.
+
+## Examples
+
+### A camelCase segment fires
+
+```toml expect=fire file=design/tokens/brand.toml
+[color]
+inkBlue = "#101820"
+```
+
+### A component aliasing a primitive fires
+
+```toml expect=fire file=design/tokens/brand.toml
+[color]
+ink = "#101820"
+
+[color.button-text]
+tier = "component"
+value = "{color.ink}"
+```
+
+### Kebab-case paths are clean
+
+```toml expect=clean file=design/tokens/brand.toml
+[color]
+ink-blue = "#101820"
+```

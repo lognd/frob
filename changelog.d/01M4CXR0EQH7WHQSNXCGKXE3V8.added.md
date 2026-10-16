@@ -1,0 +1,1 @@
+Added crunk rules EXPORT001-002 (export drift and cross-target parity) and TOKEN002-009 (token file schema, aliases, unused, naming, mode completeness, scopes, near-duplicates, deprecated use), plus a `deprecated` token field.

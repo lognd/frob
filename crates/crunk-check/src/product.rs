@@ -36,6 +36,9 @@ pub struct CrunkInputs {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     /// Judged human-review subjects (crunk.md 4.1); `None` when there is no spec.
     pub reviews: Option<crunk_rules::review::ReviewFacts>,
+    // frob:ticket 01M4CXR0EQH7WHQSNXCGKXE3V8
+    /// The authored `design/tokens/*.toml` files, compiled one by one.
+    pub tokens: Option<crunk_rules::token_files::TokenFacts>,
 }
 
 impl CrunkHost for CrunkInputs {
@@ -54,6 +57,10 @@ impl CrunkHost for CrunkInputs {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     fn reviews(&self) -> Option<&crunk_rules::review::ReviewFacts> {
         self.reviews.as_ref()
+    }
+
+    fn tokens(&self) -> Option<&crunk_rules::token_files::TokenFacts> {
+        self.tokens.as_ref()
     }
 }
 
@@ -140,6 +147,10 @@ impl Product for Crunk {
         let reviews = spec.as_ref().map(|spec| {
             crate::review::gather(spec, &crate::review::GitSignatures::new(&cx.core.root))
         });
+        // frob:ticket 01M4CXR0EQH7WHQSNXCGKXE3V8
+        let tokens = spec
+            .as_ref()
+            .map(crunk_rules::token_files::TokenFacts::load);
         Ok(Collected {
             shared: CrunkShared,
             inputs: CrunkInputs {
@@ -147,6 +158,7 @@ impl Product for Crunk {
                 styles,
                 tailwind,
                 reviews,
+                tokens,
             },
             findings: Vec::new(),
         })
@@ -175,6 +187,10 @@ impl Product for Crunk {
         if let Some(facts) = &snap.inputs.reviews {
             // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
             digest.extend(format!("{facts:?}").into_bytes());
+        }
+        if let Some(facts) = &snap.inputs.tokens {
+            // frob:ticket 01M4CXR0EQH7WHQSNXCGKXE3V8
+            digest.extend(facts.fingerprint().into_bytes());
         }
         if let Some(spec) = &snap.inputs.spec {
             // TOKENS001 reads the generated files from disk, outside the walk.

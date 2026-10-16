@@ -30,7 +30,7 @@ fn findings_of(spec_text: &str, rel: &str, source: &str) -> Vec<gob_rules::Findi
         .report
         .findings
         .into_iter()
-        .filter(|f| !matches!(f.rule.as_str(), "ORG001" | "TOKENS001"))
+        .filter(|f| !matches!(f.rule.as_str(), "ORG001" | "TOKENS001" | "EXPORT001"))
         .collect()
 }
 

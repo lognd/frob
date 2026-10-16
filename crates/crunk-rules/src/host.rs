@@ -8,6 +8,7 @@ use crunk_spec::DesignSpec;
 
 use crate::review::ReviewFacts;
 use crate::tailwind::TailwindFacts;
+use crate::token_files::TokenFacts;
 
 /// What a crunk rule may ask of its product: the validated design spec and the ingested styles.
 ///
@@ -31,6 +32,13 @@ pub trait CrunkHost {
         None
     }
 
+    // frob:ticket 01M4CXR0EQH7WHQSNXCGKXE3V8
+    /// The authored `design/tokens/*.toml` files, when the pipeline loaded them (the TOKEN rules'
+    /// input).
+    fn tokens(&self) -> Option<&TokenFacts> {
+        None
+    }
+
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     /// The judged human reviews, when the pipeline gathered them (HUMAN001 and HUMAN002's input).
     fn reviews(&self) -> Option<&ReviewFacts> {
@@ -47,4 +55,29 @@ pub fn missing_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {
         return Some("no stylesheets were ingested".to_owned());
     }
     None
+}
+
+/// Why a TOKEN rule cannot run on `host`, if it cannot: no valid spec, or no authored token files.
+pub fn missing_token_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {
+    if host.spec().is_none() {
+        return Some("no valid crunk.toml".to_owned());
+    }
+    match host.tokens() {
+        Some(facts) if !facts.files.is_empty() => None,
+        _ => Some("no design/tokens/*.toml files".to_owned()),
+    }
+}
+
+/// Why a TOKEN rule that also reads the stylesheets cannot run on `host`, if it cannot.
+pub fn missing_token_style_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {
+    missing_token_inputs(host).or_else(|| {
+        host.styles()
+            .is_none()
+            .then(|| "no stylesheets were ingested".to_owned())
+    })
+}
+
+/// How many authored token files `host` carries (the TOKEN rules' subject count).
+pub fn token_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
+    host.tokens().map_or(0, |facts| facts.files.len())
 }
