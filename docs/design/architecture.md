@@ -330,7 +330,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[pm] strict`, `stories_required` | frob.toml | yes | false, true | frob-pm |
 | `[pm] max_story_points`, `max_chore_points` | frob.toml | yes | 8, 2 | frob-pm |
 | `[pm] max_objective_share` | frob.toml | yes | 0.4 | frob-pm |
-| `[pm] max_age_days` | frob.toml | yes | 60 | frob-pm |
+| `[pm.max_age_days]` (`in_progress`, `ready`) | frob.toml | yes | 3, 30 (0 is off); PM008 fires past the limit for the days since the ticket entered its category | frob-pm |
 | `[pm] capacity_k`, `capacity_points`, `min_history` | frob.toml | yes | 0.5, unset, 3 | frob-pm |
 | `[pm] sprint_gate` | frob.toml | yes | true; with a cycle active, `work` and `start` refuse a ticket outside it with `E-PM-NOT-IN-CYCLE` (expedite exempt, `--unplanned --reason` assigns it as an over-commit) | frob-pm, frob-worktree |
 | `[pm] max_duplicate_objective_text` | frob.toml | yes | 3 | frob-pm |

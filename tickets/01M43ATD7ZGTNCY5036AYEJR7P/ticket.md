@@ -2,16 +2,16 @@
 id = "01M43ATD7ZGTNCY5036AYEJR7P"
 title = "crunk preview, diff and init with presets and detection"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:37Z"
-updated = "2026-10-16T00:18:16Z"
+updated = "2026-10-16T00:33:43Z"
 idempotency_key = "crunk-plan-prev"
 labels = ["area:crunk"]
-scope = ["crates/crunk/src/preview.rs", "crates/crunk/src/diff.rs", "crates/crunk/src/init/**", "crates/crunk/tests/init*.rs"]
+scope = ["crates/crunk/src/preview.rs", "crates/crunk/src/diff.rs", "crates/crunk/src/init/**", "crates/crunk/tests/init*.rs", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml", "crates/gob-product/src/product.rs", "crates/gob-product/src/workspace.rs", "docs/crunk", "changelog.d"]
 
 [[links]]
 kind = "blocked-by"

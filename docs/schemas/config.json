@@ -612,6 +612,27 @@
           },
           "type": "array"
         },
+        "max_age_days": {
+          "additionalProperties": false,
+          "description": "Ticket aging limits in days per category (`[pm.max_age_days]`); 0 turns a limit off.",
+          "properties": {
+            "in_progress": {
+              "default": 3,
+              "description": "Days a ticket may stay in progress before PM008 fires; 3 keeps work from lingering, 0 is off.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "ready": {
+              "default": 30,
+              "description": "Days a ticket may wait in the ready queue (`todo`) before PM008 fires; 30 retires stale intentions, 0 is off.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
         "min_history": {
           "default": 3,
           "description": "Completed cycles needed before capacity and forecasts are enforced; below it they report Unresolved, so a fresh repository never needs an over-commit.",
@@ -652,7 +673,7 @@
         },
         "strict": {
           "default": false,
-          "description": "Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.",
+          "description": "Strict process policy: PM rules that are warnings by default (PM001, PM002, PM008, PM009, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.",
           "type": "boolean"
         },
         "wip": {
