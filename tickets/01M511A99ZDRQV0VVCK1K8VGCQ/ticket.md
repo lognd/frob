@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-16T00:20:44Z"
-updated = "2026-10-16T19:23:50Z"
+updated = "2026-10-16T19:23:55Z"
 scope = ["crates/gob-plan/tests/ten_rules/main.rs", "crates/gob-symbols/src/source_model.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-plan/src/examples/runner.rs", "crates/gob-plan/src/exec/core/field.rs", "crates/gob-plan/src/exec/core/kind.rs", "changelog.d/1K8VGCQ.changed.md"]
 +++
 
