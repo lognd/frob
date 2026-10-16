@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "GRL constructs to express LAYER and ORG: crunk host input, class-selector kind, value-domain predicates, crunk.json side relations"
+new = "GRL value-domain predicate: is integer (first construct toward crunk LAYER and ORG; rest on ~Y8CNED9)"
+at = "2026-10-16T21:49:57Z"
+actor = "lognd"
+rev = 1

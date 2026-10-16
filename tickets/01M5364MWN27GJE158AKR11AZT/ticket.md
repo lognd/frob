@@ -1,6 +1,6 @@
 +++
 id = "01M5364MWN27GJE158AKR11AZT"
-title = "GRL constructs to express LAYER and ORG: crunk host input, class-selector kind, value-domain predicates, crunk.json side relations"
+title = "GRL value-domain predicate: is integer (first construct toward crunk LAYER and ORG; rest on ~Y8CNED9)"
 type = "story"
 category = "in-progress"
 priority = "medium"
@@ -8,7 +8,7 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T20:23:31Z"
-updated = "2026-10-16T21:49:52Z"
+updated = "2026-10-16T21:49:57Z"
 
 [[acceptance]]
 text = "Given a string value, when a GRL rule tests it with is integer, then signed whole numbers hold and keywords such as auto, decimals and units do not"
