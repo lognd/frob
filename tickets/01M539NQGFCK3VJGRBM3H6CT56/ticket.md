@@ -8,7 +8,7 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T21:25:16Z"
-updated = "2026-10-16T23:50:59Z"
+updated = "2026-10-16T23:53:14Z"
 scope = ["crates/gob-plan/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "External ambient units and the python ambient vocab are covered by unit tests"
-bound = false
+bound = true
 +++
 
 Split from ~C6ZSWB2: 'c resolves to v' for python time.time must yield a unit in the clock vocab. Remove NEAT013 0 from KNOWN_ENGINE_GAPS.
