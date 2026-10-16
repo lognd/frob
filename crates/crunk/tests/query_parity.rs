@@ -11,6 +11,20 @@ fn parity_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/crunk-parity")
 }
 
+/// Rules added after the Python captures; absent from every golden by design.
+const RUST_ONLY_RULES: &[&str] = &[
+    "EXPORT001",
+    "EXPORT002",
+    "TOKEN002",
+    "TOKEN003",
+    "TOKEN004",
+    "TOKEN005",
+    "TOKEN006",
+    "TOKEN007",
+    "TOKEN008",
+    "TOKEN009",
+];
+
 fn golden(path: &Path) -> Value {
     let text = std::fs::read_to_string(path).expect("read golden");
     serde_json::from_str(&text).expect("golden is json")
@@ -120,6 +134,13 @@ fn violations_match_python_for_every_project() {
                 .as_array()
                 .expect("rows")
                 .iter()
+                // Rules the Python tool never had are not parity subjects; EXPORT001 restates
+                // TOKENS001 per export target, so it reports the same files a second time.
+                .filter(|row| {
+                    !row["rule"]
+                        .as_str()
+                        .is_some_and(|r| RUST_ONLY_RULES.contains(&r))
+                })
                 .map(|row| {
                     let mut row = row.clone();
                     row.as_object_mut().expect("row").remove("message");
