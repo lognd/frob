@@ -1,0 +1,31 @@
+# Known exceptions: rules that stay hand-written Rust in crates/crunk-rules/src/rules because GRL
+# cannot express them yet. Each names the missing construct (feeds the owner decision on
+# value-domain predicates). Shared blockers, true for every rule below:
+#   host-input  the rules read CrunkHost (spec + stylesheet index), not a code-model node tree
+#   side-schema config.layers and config.org need a side-relation catalog typed from
+#               docs/schemas/crunk.json; the catalog only types config.<table> from config.json
+#   gen-target  cargo dev gen rules emits only the std pack against the gob host
+
+[[exception]]
+rule = "LAYER001"
+missing = "value-domain predicate: parse a declaration value as an integer (with the keyword auto exempt) and test membership in the config.layers value set"
+
+[[exception]]
+rule = "ORG001"
+missing = "stylesheet-path predicate: a file under css_root that sits in no config.org.buckets directory (no glob-membership over a side-relation column, no css_root-relative path attribute)"
+
+[[exception]]
+rule = "ORG002"
+missing = "css class-selector node kind and a BEM segment-split plus per-segment case predicate keyed by config.org.class_case (value-domain predicate over an enum-selected grammar)"
+
+[[exception]]
+rule = "ORG003"
+missing = "css class-selector node kind and a per-file bucket/component attribute; the component-prefix test (name equals component or starts with component__ or component--) has no GRL form"
+
+[[exception]]
+rule = "ORG004"
+missing = "per-file bucket attribute on stylesheet nodes (custom_property exists in the catalog, but 'file is not in the tokens bucket' cannot be stated)"
+
+[[exception]]
+rule = "ORG005"
+missing = "ungoverned-stylesheet relation: a css file outside css_root and outside config.org.ignore globs (no negated glob-membership over a side-relation column, no css_root attribute)"
