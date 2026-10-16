@@ -112,6 +112,9 @@ impl Cli {
 
     // frob:ticket 01M4118NGH127F6DGVGS4GVE49
     /// Check a structured remedy against this CLI: its verb path must exist and accept every flag it names.
+    ///
+    /// # Errors
+    /// Names the unknown verb path or the flag the verb does not accept.
     pub fn check_remedy(&self, command: &gob_diagnostics::RemedyCommand) -> Result<(), String> {
         let table = self.verb_flags();
         let path = command.verb_path();

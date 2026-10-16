@@ -74,7 +74,7 @@ pub struct Refusal {
     /// The exact corrected command, when one exists.
     pub remedy: Option<String>,
     /// The remedy as structured data, when it is a command; `remedy` holds its rendering.
-    pub command: Option<RemedyCommand>,
+    pub command: Option<Box<RemedyCommand>>,
     /// True when only a person at a terminal can act; `remedy` is then prose, not a command.
     pub requires_human: bool,
 }
@@ -121,7 +121,7 @@ impl Refusal {
     #[must_use]
     pub fn with_command(mut self, command: RemedyCommand) -> Self {
         self.remedy = Some(command.render());
-        self.command = Some(command);
+        self.command = Some(Box::new(command));
         self
     }
 
@@ -146,7 +146,7 @@ impl From<&Refusal> for EnvelopeError {
             // frob:ticket 01M4S1YMTPRCGNHN585C78QET8
             message_origin: TextOrigin::Host,
             remedy: r.remedy.clone(),
-            command: r.command.clone(),
+            command: r.command.as_deref().cloned(),
             retryable: r.class.retryable(),
             requires_human: r.requires_human,
         }
