@@ -2,7 +2,8 @@
 id = "01M511A99ZDRQV0VVCK1K8VGCQ"
 title = "GRL example runner gaps: markdown link kind, multi-file, config inputs, test edges, resolves-to on vocab"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
