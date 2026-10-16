@@ -13,7 +13,7 @@ scope = ["crates/gob-plan/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
 text = "NEAT013 examples all pass, with python time.time resolving to a unit in the clock vocab"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "External ambient units and the python ambient vocab are covered by unit tests"
