@@ -9,7 +9,7 @@ parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T20:23:31Z"
 updated = "2026-10-16T21:52:13Z"
-scope = ["crates/gob-plan/src/catalog/words.rs", "crates/gob-plan/src/exec/core/eval/predicate.rs", "crates/gob-plan/src/plan/ir.rs"]
+scope = ["crates/gob-plan/src/catalog/words.rs", "crates/gob-plan/src/exec/core/eval/predicate.rs", "crates/gob-plan/src/plan/ir.rs", "crates/gob-plan/tests/exec_relations.rs"]
 
 [[acceptance]]
 text = "Given a string value, when a GRL rule tests it with is integer, then signed whole numbers hold and keywords such as auto, decimals and units do not"
