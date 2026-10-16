@@ -7,6 +7,10 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-16T03:34:56Z"
-updated = "2026-10-16T20:17:59Z"
+updated = "2026-10-16T20:31:06Z"
 scope = ["docs/**"]
+
+[[acceptance]]
+text = "docs/design/git-io.md records the release walk-stage timing and budget share"
+bound = false
 +++
