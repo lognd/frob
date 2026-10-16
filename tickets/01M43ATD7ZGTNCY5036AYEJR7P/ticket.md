@@ -8,7 +8,7 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:37Z"
-updated = "2026-10-16T00:44:14Z"
+updated = "2026-10-16T00:47:17Z"
 idempotency_key = "crunk-plan-prev"
 labels = ["area:crunk"]
 scope = ["crates/crunk/src/preview.rs", "crates/crunk/src/diff.rs", "crates/crunk/src/init/**", "crates/crunk/tests/init*.rs", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml", "crates/gob-product/src/product.rs", "crates/gob-product/src/workspace.rs", "docs/crunk", "changelog.d"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given NO_COLOR set, when preview runs, then no escape codes are printed"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given two spec dirs, when `crunk diff` runs, then added, removed and changed tokens are listed"
