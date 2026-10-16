@@ -2,13 +2,13 @@
 id = "01M4CT054RN6SY75KRYSY14778"
 title = "PM003-PM007: story structure, so_that restatement, criteria shape, INVEST size, task without parent story"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:48:03Z"
-updated = "2026-10-08T03:48:03Z"
+updated = "2026-10-16T03:34:07Z"
 scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**"]
 
 [[acceptance]]
