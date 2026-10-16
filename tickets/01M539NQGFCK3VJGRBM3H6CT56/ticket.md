@@ -2,13 +2,13 @@
 id = "01M539NQGFCK3VJGRBM3H6CT56"
 title = "GRL examples: NEAT013 example 0 needs python import resolution onto the clock vocab (time.time)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T21:25:16Z"
-updated = "2026-10-16T21:48:02Z"
+updated = "2026-10-16T23:42:55Z"
 scope = ["crates/gob-plan/**", "crates/gob-symbols/**"]
 +++
 
