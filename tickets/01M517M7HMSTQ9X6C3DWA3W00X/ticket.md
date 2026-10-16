@@ -2,7 +2,8 @@
 id = "01M517M7HMSTQ9X6C3DWA3W00X"
 title = "Wire the TYPING001 scanner (grimble-lints typing::scan) into a rule that emits the Advisory finding, with rule docs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
