@@ -8,7 +8,7 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T21:25:16Z"
-updated = "2026-10-16T21:53:29Z"
+updated = "2026-10-16T22:17:35Z"
 scope = ["crates/gob-symbols/**", "crates/gob-plan/tests/ten_rules/**"]
 
 [[acceptance]]
