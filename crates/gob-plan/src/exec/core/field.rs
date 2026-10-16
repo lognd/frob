@@ -190,8 +190,42 @@ impl Reader<'_> {
             "tag" | "spread" | "value" => self.markup(node, name),
             "selector" | "property" | "important" | "raw" => self.style(node, name),
             "callee" => self.callee(node).map_or(Datum::Absent, Datum::text),
-            "target" => self.import_target(node),
+            "target" => self.target(node),
+            "file" => Datum::text(self.model.term().locator()),
+            "slug" => self.slug(node),
             _ => Datum::Unknown,
+        }
+    }
+
+    /// The destination of a markdown link as written, else the module an import names.
+    fn target(&self, node: NodeId) -> Datum {
+        match self.link_dest(node) {
+            Some(dest) => Datum::text(dest),
+            None => self.import_target(node),
+        }
+    }
+
+    /// The destination of a markdown `link` node: the spelled name of its head `ref`.
+    fn link_dest(&self, node: NodeId) -> Option<String> {
+        let term = self.model.term();
+        let n = term.node(node);
+        if !matches!(n.op(), Operator::Universal(Universal::Apply { kind }) if kind == "link") {
+            return None;
+        }
+        match term.node(*n.children().first()?).op() {
+            Operator::Universal(Universal::Ref { name }) => Some(name.clone()),
+            _ => None,
+        }
+    }
+
+    /// The anchor slug of a markdown heading (its section unit's name).
+    fn slug(&self, node: NodeId) -> Datum {
+        let n = self.model.term().node(node);
+        match (n.op(), n.name()) {
+            (Operator::Universal(Universal::Unit { kind, .. }), Some(s)) if kind == "section" => {
+                Datum::text(s)
+            }
+            _ => Datum::Absent,
         }
     }
 
@@ -243,6 +277,19 @@ impl Reader<'_> {
                 Datum::text(c.rsplit(['.', ':']).next().unwrap_or(&c))
             }),
             ("file", "path") => self.field(node, "path"),
+            ("target", "path" | "anchor") => match self.link_dest(node) {
+                Some(dest) => {
+                    let (path, anchor) = dest
+                        .split_once('#')
+                        .map_or((&*dest, None), |(p, a)| (p, Some(a)));
+                    match (rest, anchor) {
+                        ("path", _) => Datum::text(path),
+                        (_, Some(a)) => Datum::text(a),
+                        _ => Datum::Absent,
+                    }
+                }
+                None => Datum::Absent,
+            },
             _ => Datum::Unknown,
         }
     }
@@ -292,8 +339,29 @@ impl Reader<'_> {
             Operator::Universal(Universal::Lit { lexeme, .. }) => Datum::text(lexeme.clone()),
             Operator::Universal(Universal::Comment { text }) => Datum::text(text.clone()),
             Operator::Universal(Universal::Ref { name }) => Datum::text(name.clone()),
+            Operator::Universal(Universal::Unit { kind, .. }) if kind == "section" => {
+                self.heading_text(node)
+            }
             _ => self.slice(node).map_or(Datum::Unknown, Datum::text),
         }
+    }
+
+    /// The heading text of a markdown `section` unit: the literal inside its `sig` facet.
+    fn heading_text(&self, node: NodeId) -> Datum {
+        let term = self.model.term();
+        let lit = term.node(node).children().iter().find_map(|&c| {
+            let sig = term.node(c);
+            if sig.attrs().get_str(gob_ir::reserved::FACET) != Some("sig") {
+                return None;
+            }
+            sig.children()
+                .iter()
+                .find_map(|&l| match term.node(l).op() {
+                    Operator::Universal(Universal::Lit { lexeme, .. }) => Some(lexeme.clone()),
+                    _ => None,
+                })
+        });
+        lit.map_or(Datum::Unknown, Datum::text)
     }
 
     /// `public` and `exported` read the `visibility` attribute; an adapter that does not provide

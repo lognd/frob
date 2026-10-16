@@ -51,6 +51,10 @@ pub(crate) enum KindTest {
     ApplyKinds(&'static [&'static str]),
     /// A comment.
     Comment,
+    /// A markdown link: an `apply` of kind `link` (inline links and reference definitions).
+    Link,
+    /// A markdown heading: the `section` unit that carries it.
+    Heading,
     // frob:ticket 01M4XJMM949EHC6X13TYJPYE5V
     /// A comment that carries a `frob:<name>` directive; its `name` field is the directive name.
     Directive,
@@ -88,6 +92,8 @@ impl KindTest {
             "branch" => Self::Control(BRANCH_KINDS),
             "loop" => Self::Control(LOOP_KINDS),
             "comment" => Self::Comment,
+            "link" => Self::Link,
+            "heading" => Self::Heading,
             "directive" => Self::Directive,
             "literal" => Self::Literal,
             "element" => Self::Element,
@@ -137,6 +143,16 @@ impl KindTest {
             Self::Control(ks) => match universal {
                 Some(Universal::Apply { kind } | Universal::Bind { kind, .. }) => {
                     yes(ks.contains(&kind.as_str()))
+                }
+                _ => None,
+            },
+            Self::Link => match universal {
+                Some(Universal::Apply { kind }) => yes(kind == "link"),
+                _ => None,
+            },
+            Self::Heading => match universal {
+                Some(Universal::Unit { kind, .. }) => {
+                    yes(kind == "section" && is_canonical_unit(model, node))
                 }
                 _ => None,
             },
