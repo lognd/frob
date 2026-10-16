@@ -9,7 +9,7 @@ use std::process::Output;
 use serde_json::Value;
 
 // frob:ticket 01M4D6NRS8BHPBDVD2CEGY0KCD
-const PM_KEYS: [&str; 13] = [
+const PM_KEYS: [&str; 15] = [
     "pm.strict",
     "pm.pull",
     "pm.ready_min",
@@ -21,6 +21,8 @@ const PM_KEYS: [&str; 13] = [
     "pm.sprint_gate",
     "pm.classes.expedite_max",
     "pm.classes.intangible_share",
+    "pm.max_age_days.in_progress",
+    "pm.max_age_days.ready",
     "pm.wip.in_progress_per_identity",
     "pm.wip.in_progress",
 ];
