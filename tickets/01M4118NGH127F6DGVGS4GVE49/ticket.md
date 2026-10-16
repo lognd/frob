@@ -2,7 +2,8 @@
 id = "01M4118NGH127F6DGVGS4GVE49"
 title = "Remedies as structured data checked against the CLI registry, replacing the source-text scan"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
