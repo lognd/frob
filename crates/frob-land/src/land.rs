@@ -1401,7 +1401,7 @@ fn ledger_step(
 }
 
 /// Push `base` to `origin`; a failure is a warning because the local land is done.
-fn push_base(repo: &Repo, base: &str, warnings: &mut Vec<String>) -> bool {
+pub(crate) fn push_base(repo: &Repo, base: &str, warnings: &mut Vec<String>) -> bool {
     match repo.push("origin", base) {
         Ok(()) => {
             tracing::info!(base, "base pushed");

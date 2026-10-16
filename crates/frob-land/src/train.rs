@@ -33,7 +33,7 @@ use crate::candidate::{CandidateMember, build_candidate, scopes_overlap};
 use crate::error::{LandError, needs_action};
 use crate::land::{
     Begun, Preconditions, already_done, base_ref, begin, blank_outcome, finish_member, land,
-    preconditions, primary_root,
+    preconditions, primary_root, push_base,
 };
 use crate::lock::{CODE_LOCKED, LandLock};
 use crate::plan::{LandOptions, LandOutcome};
@@ -174,6 +174,10 @@ pub struct TrainRunReport {
     pub rounds: Vec<RoundReport>,
     /// Tickets still queued afterwards.
     pub remaining: usize,
+    /// True when the base was pushed once at the end of the drain (`--push`).
+    pub pushed: bool,
+    /// Non-fatal notes, such as a failed push.
+    pub warnings: Vec<String>,
 }
 
 /// What `frob train status` found.
@@ -683,11 +687,6 @@ impl<'a> Driver<'a> {
             batch_size: size,
             ..RoundReport::default()
         };
-        if self.opts.land.push {
-            report.warnings.push(
-                "--push is not applied by the land train; push the base afterwards".to_owned(),
-            );
-        }
         self.ci.reset();
         self.lock.progress("train-select");
         let mut chosen = self.select(size as usize, &mut report)?;
@@ -812,12 +811,22 @@ impl<'a> Driver<'a> {
                 break;
             }
         }
+        let mut warnings = Vec::new();
+        let landed: usize = out.iter().map(|r| r.landed.len()).sum();
+        // One push per drain, not per round or member: CI runs once on the final tip.
+        let pushed = if self.opts.land.push && landed > 0 {
+            push_base(&self.site.repo, &self.site.base, &mut warnings)
+        } else {
+            false
+        };
         let pruned = self.site.store.prune_results(KEEP_RESULTS)?;
         let remaining = self.site.store.queue()?.len();
         tracing::info!(rounds = out.len(), remaining, pruned, "train drained");
         Ok(TrainRunReport {
             rounds: out,
             remaining,
+            pushed,
+            warnings,
         })
     }
 }

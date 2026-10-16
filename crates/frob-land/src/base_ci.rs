@@ -236,6 +236,17 @@ pub(crate) fn judge(
             }
         }
         CiState::Red { failures } => {
+            // A cancelled run (superseded by a newer push) is neither a pass nor a failure.
+            let (cancelled, failures): (Vec<_>, Vec<_>) = failures
+                .into_iter()
+                .partition(|f| f.conclusion.eq_ignore_ascii_case("cancelled"));
+            if !cancelled.is_empty() {
+                tracing::info!(sha = short, "base CI has cancelled checks; not red");
+                gate.warnings.push(format!(
+                    "base CI at {short} has cancelled checks (not counted as red): {}",
+                    join(cancelled.iter().map(|f| &f.name))
+                ));
+            }
             let (counted, ignored): (Vec<_>, Vec<_>) =
                 failures.into_iter().partition(|f| cfg.counts(&f.name));
             if !ignored.is_empty() {
@@ -504,6 +515,16 @@ mod tests {
         assert!(!wild("*publish*", "rust (windows-latest)"));
         assert!(wild("a*b*c", "aXbYc"));
         assert!(!wild("a*b*c", "aXcYb"));
+    }
+
+    // frob:tests crates/frob-land/src/base_ci.rs::judge
+    #[test]
+    fn a_cancelled_run_is_not_red() {
+        let mut c = fail("rust (linux)");
+        c.conclusion = "cancelled".to_owned();
+        let red = CiState::Red { failures: vec![c] };
+        let gate = judge(&cfg(), red, "abcdef0123456789", None).expect("not refused");
+        assert!(gate.warnings.iter().any(|w| w.contains("cancelled")));
     }
 
     // frob:tests crates/frob-land/src/base_ci.rs::judge
