@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["packs/crunk-core/**", "crates/crunk-rules/src/layers/**", "crates/crunk-rules/src/org/**", "crates/crunk-rules/Cargo.toml"]
+new = ["packs/crunk-core/**", "crates/crunk-rules/src/layers/**", "crates/crunk-rules/src/org/**", "crates/crunk-rules/Cargo.toml", "changelog.d/01M43ATC6VV1SQ47T5KC6A77WW.changed.md"]
+at = "2026-10-16T20:18:58Z"
+actor = "lognd"
+rev = 1
