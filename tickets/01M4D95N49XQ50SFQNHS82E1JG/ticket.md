@@ -2,13 +2,13 @@
 id = "01M4D95N49XQ50SFQNHS82E1JG"
 title = "TYPING001: strict null or type checking disabled in project configuration (tsconfig, csproj Nullable, pyright, ty or mypy settings)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T08:13:03Z"
-updated = "2026-10-08T08:13:03Z"
+updated = "2026-10-16T02:01:10Z"
 scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
