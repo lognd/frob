@@ -2,7 +2,8 @@
 id = "01M4CXR0EQH7WHQSNXCGKXE3V8"
 title = "EXPORT001/002 and TOKEN002-009: export drift and parity across targets, token schema, cycles, unused, naming, mode completeness, scopes, near-duplicates, deprecated"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
