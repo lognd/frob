@@ -1,0 +1,15 @@
+# actionlint: GitHub Actions workflow linter (std pack tool definition, tool-binding.md section 2).
+name = "actionlint"
+command = "uvx"
+pinned_version = "1.7.12.25"
+parser = "actionlint-json"
+version_args = ["--from", "actionlint-py=={version}", "actionlint", "-version"]
+min_version = "1.7.0"
+max_version = "1.7.99"
+args = ["--from", "actionlint-py=={version}", "actionlint", "-format", "{{json .}}"]
+inputs = [".github/workflows/**"]
+config_files = [".github/actionlint.yaml", ".github/actionlint.yml"]
+
+[exit]
+success = [0]
+findings = [1]

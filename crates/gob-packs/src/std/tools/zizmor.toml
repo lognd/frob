@@ -1,0 +1,16 @@
+# zizmor: GitHub Actions security audit (std pack tool definition, tool-binding.md section 2).
+name = "zizmor"
+command = "uvx"
+pinned_version = "1.30.1"
+parser = "zizmor-json-v1"
+version_args = ["zizmor@{version}", "--version"]
+min_version = "1.30.0"
+max_version = "1.30.99"
+args = ["zizmor@{version}", "--offline", "--format", "json-v1", "--no-exit-codes", "."]
+inputs = [".github/workflows/**", ".github/actions/**"]
+config_files = ["zizmor.yml", ".github/zizmor.yml"]
+suppression_pattern = 'zizmor:\s*ignore\[([a-z-]+)\]'
+
+[exit]
+success = [0]
+findings = [10, 11, 12, 13, 14]

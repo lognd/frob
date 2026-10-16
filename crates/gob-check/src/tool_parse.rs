@@ -598,7 +598,7 @@ pub(crate) fn find_version(output: &str) -> Option<String> {
 }
 
 /// Compare dotted versions numerically, padding the shorter with zeros.
-fn compare(a: &[u64], b: &[u64]) -> Ordering {
+pub(crate) fn compare(a: &[u64], b: &[u64]) -> Ordering {
     let n = a.len().max(b.len());
     (0..n)
         .map(|i| {
@@ -685,6 +685,7 @@ mod tests {
     fn stage(parser: ToolParser) -> ToolStage {
         ToolStage {
             name: "t".to_owned(),
+            def: None,
             command: "t".to_owned(),
             args: Vec::new(),
             timeout_secs: 5,

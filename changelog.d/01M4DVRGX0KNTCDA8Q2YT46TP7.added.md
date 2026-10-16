@@ -1,0 +1,1 @@
+Tool definitions as data in the std pack: `[[check.tool]] def = "zizmor" | "actionlint" | "ruff"` takes the command, pinned version, probe, trusted range, version-ranged argv variants, exit classes, parser, inputs and config files from a definition; this repository's zizmor and actionlint stages now run from definitions.

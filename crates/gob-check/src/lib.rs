@@ -53,6 +53,7 @@ mod cargo_json;
 mod config;
 mod core;
 mod defs;
+mod tool_def;
 mod error;
 mod filecheck;
 mod fix;
@@ -101,5 +102,6 @@ pub use status::{
     SubjectStatus, hole_caveat, is_binary, locate_hole, opaque_finding, subject_status,
     subject_status_for, unreadable_finding, unresolved_finding, unresolved_finding_at,
 };
+pub use tool_def::ToolDef;
 pub use tools::ToolMemo;
 pub use type_parse::type_facts_from_output;

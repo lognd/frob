@@ -8,7 +8,7 @@ use gob_rules::{Finding, Fingerprint, Registry, Rule, RuleDef, RuleMeta, Severit
 use gob_text::FileInterner;
 
 use crate::applicability::{FileFacts, RuleRef, resolve};
-use crate::config::{CheckTable, PerfTable};
+use crate::config::{CheckTable, PerfTable, ToolStage};
 use crate::core::{Core, walk_core};
 use crate::defs::{self, Live};
 use crate::error::CheckError;
@@ -165,7 +165,7 @@ fn begin_tools(
             }
             runs
         })
-        .cloned()
+        .map(ToolStage::resolved)
         .collect();
     start_tools(
         &core.root,

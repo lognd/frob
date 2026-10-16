@@ -21,7 +21,7 @@ const MAX_BYTES: u64 = 2 * 1024 * 1024;
 /// The tool id to frob rule id pairs that the `id_map` of `stages` bind.
 fn bound_ids(stages: &[ToolStage]) -> BTreeMap<String, RuleId> {
     let mut out = BTreeMap::new();
-    for stage in stages {
+    for stage in stages.iter().map(ToolStage::resolved) {
         for (tool_id, target) in &stage.id_map {
             match target.parse::<RuleId>() {
                 Ok(rule) => {
@@ -239,6 +239,7 @@ mod tests {
     fn only_id_map_targets_are_bound() {
         let mut stage = ToolStage {
             name: "x".to_owned(),
+            def: None,
             command: "x".to_owned(),
             args: Vec::new(),
             timeout_secs: 5,

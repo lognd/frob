@@ -458,8 +458,35 @@ fn abnormal(o: &Output, stage: &ToolStage) -> Option<String> {
     }
 }
 
+/// Exit statuses of `stage` that are not a tool error: its definition's classes, else the parser's.
+fn stage_normal_exits(stage: &ToolStage) -> Vec<i32> {
+    stage
+        .def
+        .as_deref()
+        .and_then(crate::tool_def::lookup)
+        .map(crate::tool_def::ToolDef::normal_exits)
+        .filter(|e| !e.is_empty())
+        .unwrap_or_else(|| normal_exits(stage.parser).to_vec())
+}
+
+/// `stage` with the definition's argv variant for the probed `version`, when its `def` has one that matches.
+///
+/// Only a stage still on the definition's default argv is swapped; an explicit `args` always wins.
+fn with_variant(stage: &ToolStage, version: Option<&str>) -> ToolStage {
+    let Some(def) = stage.def.as_deref().and_then(crate::tool_def::lookup) else {
+        return stage.clone();
+    };
+    let mut out = stage.clone();
+    if stage.args == def.default_args() {
+        out.args = def.args_for(version);
+    }
+    out
+}
+
 fn execute(runner: &Runner, root: &Path, stage: &ToolStage) -> StageResult {
     let parsed = stage.parser != ToolParser::None;
+    let variant_stage;
+    let mut stage = stage;
     if parsed {
         match tool_version(runner, root, stage) {
             Err(result) => return result,
@@ -468,6 +495,8 @@ fn execute(runner: &Runner, root: &Path, stage: &ToolStage) -> StageResult {
                 if let VersionVerdict::Lag(why) = check_version(stage, version.as_deref()) {
                     return StageResult::Lag(why);
                 }
+                variant_stage = with_variant(stage, version.as_deref());
+                stage = &variant_stage;
             }
         }
     }
@@ -495,7 +524,7 @@ fn execute(runner: &Runner, root: &Path, stage: &ToolStage) -> StageResult {
     }
     // A parsed stage exits nonzero when it has findings; only an undeclared status or unreadable output is a failure.
     let declared =
-        matches!(output.status, Outcome::Exited(c) if normal_exits(stage.parser).contains(&c));
+        matches!(output.status, Outcome::Exited(c) if stage_normal_exits(stage).contains(&c));
     if !declared {
         return StageResult::Failed(failure(
             stage,
@@ -946,6 +975,7 @@ mod tests {
     fn sh_stage(name: &str, parser: ToolParser, script: &str, probe: &str) -> ToolStage {
         ToolStage {
             name: name.to_owned(),
+            def: None,
             command: "sh".to_owned(),
             args: vec!["-c".to_owned(), script.to_owned()],
             timeout_secs: 30,
@@ -1374,5 +1404,35 @@ mod tests {
         std::fs::write(dir.path().join("a.txt"), "two").expect("write");
         assert_eq!(run(), "tool:m", "a changed input misses");
         assert_eq!(spawns(), 2);
+    }
+
+    // frob:tests crates/gob-check/src/config.rs::ToolStage::resolved
+    #[test]
+    fn a_def_stage_runs_from_data_for_zizmor_and_ruff() {
+        let t: crate::config::CheckTable = toml::from_str(
+            "[[tool]]\nname = \"zizmor\"\ndef = \"zizmor\"\n[[tool]]\nname = \"ruff\"\ndef = \"ruff\"\nid_map = { F401 = \"DEAD001\" }\n",
+        )
+        .unwrap_or_else(|e| panic!("{e}"));
+        let [z, r] = &t.tool[..] else { panic!("two stages") };
+        z.validate().unwrap();
+        let (z, r) = (z.resolved(), r.resolved());
+        assert_eq!(z.command, "uvx");
+        assert_eq!(z.parser, ToolParser::ZizmorJsonV1);
+        assert_eq!(z.args[0], "zizmor@1.30.1");
+        assert_eq!(z.min_version.as_deref(), Some("1.30.0"));
+        assert!(z.inputs.contains(&".github/workflows/**".to_owned()));
+        assert_eq!(stage_normal_exits(&z), [0, 10, 11, 12, 13, 14]);
+        assert_eq!(r.parser, ToolParser::RuffJson);
+        assert!(r.inputs.contains(&"ruff.toml".to_owned()));
+        assert_eq!(r.id_map["F401"], "DEAD001");
+        assert_eq!(with_variant(&r, Some("0.14.1")).args, r.args);
+    }
+
+    // frob:tests crates/gob-check/src/config.rs::ToolStage::validate
+    #[test]
+    fn an_unknown_def_is_a_cfg_error() {
+        let t: crate::config::CheckTable =
+            toml::from_str("[[tool]]\nname = \"x\"\ndef = \"nope\"\n").unwrap();
+        assert!(t.tool[0].validate().is_err());
     }
 }

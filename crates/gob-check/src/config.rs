@@ -167,7 +167,12 @@ impl ToolTier {
 pub struct ToolStage {
     /// Stage name shown in findings and timing; also the allowlisted program name.
     pub name: String,
-    /// The program, found on `PATH`: one fixed name, no path separators, whitespace or shell syntax.
+    /// Name of a std-pack tool definition (`zizmor`, `actionlint`, `ruff`) that supplies every key this stage leaves unset.
+    // frob:ticket 01M4DVRGX0KNTCDA8Q2YT46TP7
+    #[serde(default)]
+    pub def: Option<String>,
+    /// The program, found on `PATH`: one fixed name, no path separators, whitespace or shell syntax; unset only with `def`.
+    #[serde(default)]
     pub command: String,
     /// The argv template: fixed flags and typed placeholders (`{packages}`, `{file}`), passed without shell interpretation; required, `[]` when the program takes none.
     // frob:ticket 01M3ZX7VJE22Y68R184Y9WQC2N
@@ -236,6 +241,15 @@ impl ToolStage {
                 message: format!("stage `{}`: {why}", self.name),
             })
         };
+        if let Some(d) = &self.def {
+            if crate::tool_def::lookup(d).is_none() {
+                return bad(&format!(
+                    "`def` names no std-pack tool definition (known: {})",
+                    crate::tool_def::names().join(", ")
+                ));
+            }
+            return self.validate_with_def();
+        }
         let c = &self.command;
         if c.is_empty() {
             return bad("`command` is empty");
@@ -251,6 +265,63 @@ impl ToolStage {
             return bad("no `args` argv template declared (use `args = []` for none)");
         }
         Ok(())
+    }
+}
+
+impl ToolStage {
+    /// Validate the keys a stage with `def` sets itself (an explicit `command` must still be a bare program name).
+    fn validate_with_def(&self) -> Result<(), ConfigError> {
+        if self.command.is_empty() {
+            return Ok(());
+        }
+        let own = Self {
+            def: None,
+            ..self.clone()
+        };
+        own.validate()
+    }
+
+    /// This stage with its `def` expanded: unset keys come from the definition, `id_map` and `inputs` are merged.
+    ///
+    /// A stage without `def` (or naming an unknown one, which [`ToolStage::validate`] refuses) is returned unchanged.
+    #[must_use]
+    // frob:ticket 01M4DVRGX0KNTCDA8Q2YT46TP7
+    pub fn resolved(&self) -> Self {
+        let Some(def) = self.def.as_deref().and_then(crate::tool_def::lookup) else {
+            return self.clone();
+        };
+        let mut out = self.clone();
+        if out.command.is_empty() {
+            out.command.clone_from(&def.command);
+        }
+        if out.args.iter().any(|a| a == MISSING_TEMPLATE) {
+            out.args = def.default_args();
+        }
+        if out.parser == ToolParser::None {
+            out.parser = def.parser;
+        }
+        if out.version_args.is_none() {
+            out.version_args = Some(def.probe_args());
+        }
+        if out.min_version.is_none() {
+            out.min_version.clone_from(&def.min_version);
+        }
+        if out.max_version.is_none() {
+            out.max_version.clone_from(&def.max_version);
+        }
+        for (tool_id, rule) in &def.id_map {
+            out.id_map
+                .entry(tool_id.clone())
+                .or_insert_with(|| rule.clone());
+        }
+        // Config files are inputs too: editing one re-runs the stage and changes its cache key.
+        for glob in def.inputs.iter().chain(&def.config_files) {
+            if !out.inputs.contains(glob) {
+                out.inputs.push(glob.clone());
+            }
+        }
+        tracing::debug!(stage = %out.name, def = %def.name, "tool stage resolved from its definition");
+        out
     }
 }
 

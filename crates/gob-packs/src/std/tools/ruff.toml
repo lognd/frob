@@ -1,0 +1,20 @@
+# ruff: Python linter (std pack tool definition, tool-binding.md section 2).
+name = "ruff"
+command = "uvx"
+pinned_version = "0.14.1"
+parser = "ruff-json"
+version_args = ["ruff@{version}", "--version"]
+min_version = "0.14.0"
+max_version = "0.14.99"
+args = ["ruff@{version}", "check", "--output-format=json", "--no-cache", "."]
+inputs = ["**/*.py", "**/*.pyi"]
+config_files = ["ruff.toml", ".ruff.toml", "pyproject.toml"]
+suppression_pattern = '#\s*noqa(?::\s*([A-Z0-9, ]+))?'
+
+[fix]
+args = ["ruff@{version}", "check", "--fix", "--no-cache", "."]
+unattended = true
+
+[exit]
+success = [0]
+findings = [1]

@@ -10,7 +10,8 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | Key | Default | Meaning |
 |---|---|---|
 | `name` | required | Stage name; prefixes every message (`zizmor/unpinned-uses: ...`). |
-| `command` | required | Program on `PATH` (no separators); the allowlist is the set of stage commands. |
+| `def` | unset | Name of a std-pack tool definition (`zizmor`, `actionlint`, `ruff`); see Tool definitions. |
+| `command` | required (unset with `def`) | Program on `PATH` (no separators); the allowlist is the set of stage commands. |
 | `args` | `[]` | Arguments, no shell. |
 | `timeout_secs` | `300` | Kill limit. |
 | `fail_on_nonzero` | `true` | A failing stage is `TOOL001` (Error); a missing binary is `TOOL001` Unresolved and required. |
@@ -21,6 +22,18 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | `version_args` | parser default | Arguments of `command` that print the version (needed behind `uvx`). |
 | `optional` | `false` | A missing binary is Unresolved but not required. |
 | `tier` | `ticket` | Earliest check level that runs the stage: `ticket` (also under `frob check --ticket --quick`), `train` (a plain `--ticket` run, which is the land and train check) or `ci` (only the unscoped check). Levels widen, so a `ci` stage never delays a land. |
+
+## Tool definitions
+
+A stage with `def = "<name>"` takes every key it leaves unset from a tool definition shipped in the std pack (`crates/gob-packs/src/std/tools/*.toml`; design: `docs/design/tool-binding.md` section 2). A definition holds the pinned version, the version probe, the trusted range, the default argv, argv variants keyed by version range, exit classes (`success`, `findings`; any other status is `TOOL001`), the parser id, the input and configuration globs, the native suppression pattern, an id map and an optional fix command. `{version}` in an argv stands for the pinned version. Keys the stage sets itself win; `id_map` and `inputs` are merged. The configuration globs join `inputs`, so editing a tool's config re-runs the stage and changes its cache key (file digests, pinned version and range, command line). The version is probed first and the first `[[variant]]` whose inclusive `min_version`..`max_version` holds the probed version replaces the default argv (a stage with its own `args` is never swapped).
+
+```toml
+[[check.tool]]
+name = "ruff"
+def = "ruff"
+```
+
+The suppression pattern and fix command are recorded in the definition; EXC017 and the tier A fix runner do not read them yet.
 
 ## Parsed stages
 
