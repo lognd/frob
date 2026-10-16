@@ -163,6 +163,7 @@ fn ledger_rule_metas() -> Vec<&'static gob_rules::RuleMeta> {
         Tick007.meta(),
         Tick008.meta(),
         Tick009.meta(),
+        frob_obligations::Tick006.meta(),
     ]
 }
 
@@ -208,7 +209,21 @@ fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
             .ledger
             .misfiled_ticket_findings()
             .map_err(|e| failed(&["TICK009"], e)),
+        // frob:ticket 01M4P8M16T2T3Y311ER1Z77KSE
+        tick006_ledger_findings(&state.ledger),
     ])
+}
+
+/// `TICK006` over the hand-written files of a ticket-branch ledger (bodies, `EPIC.md`).
+// frob:ticket 01M4P8M16T2T3Y311ER1Z77KSE
+fn tick006_ledger_findings(ledger: &frob_ledger::Ledger) -> Evaluated {
+    let texts = ledger
+        .hand_written_texts()
+        .map_err(|e| failed(&["TICK006"], e))?;
+    Ok(texts
+        .iter()
+        .flat_map(|(path, text)| frob_obligations::tick006_ledger_file(path, text, ledger))
+        .collect())
 }
 
 // frob:ticket 01M42EZ8J63P84XFKTR2GXRW72

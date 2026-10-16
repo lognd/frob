@@ -71,6 +71,7 @@ pub mod fold;
 // frob:ticket 01M3ZX868H7TQ34ZDPXY13NRRG
 pub mod r#gen;
 pub mod guards;
+pub mod hand_written; // frob:ticket 01M4P8M16T2T3Y311ER1Z77KSE
 pub mod id;
 pub mod index;
 pub mod layout;

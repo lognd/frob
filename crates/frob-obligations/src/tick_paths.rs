@@ -152,6 +152,22 @@ fn word_finding(
     Some(f)
 }
 
+/// TICK006 over a hand-written file of the ticket branch (`path` is the ledger path), classified against `ledger`.
+///
+/// The file is not in the working tree, so the findings carry no span and no fix: the link is edited in the
+/// ticket (`frob ticket edit`), which writes the ULID.
+// frob:ticket 01M4P8M16T2T3Y311ER1Z77KSE
+pub fn tick006_ledger_file(path: &str, text: &str, ledger: &Ledger) -> Vec<Finding> {
+    let file = gob_text::FileInterner::new().intern(path);
+    let mut found = tick006(file, path, text, Some(ledger));
+    for f in &mut found {
+        f.span = None;
+        f.fix = None;
+    }
+    tracing::debug!(path, findings = found.len(), "TICK006 scanned a ledger file");
+    found
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -86,3 +86,30 @@ fn generated_pages_and_non_ticket_markdown_links_do_not_fire() {
     std::fs::write(p.join("docs/other.md"), "see docs/design/x.md and a/b.md\n").expect("write");
     assert!(tick006(p).is_empty());
 }
+
+#[test]
+fn a_ticket_body_linking_a_ticket_path_fires_on_the_ledger_file_without_a_fix() {
+    // frob:ticket 01M4P8M16T2T3Y311ER1Z77KSE
+    let (dir, _id) = fixture("plain\n");
+    let p = dir.path();
+    json(
+        p,
+        &[
+            "ticket",
+            "new",
+            "--title",
+            "Follow up",
+            "--body",
+            "See _unfiled/parser-rewrite.md for context.",
+        ],
+    );
+    let found = tick006(p);
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(
+        found[0]["message"]
+            .as_str()
+            .is_some_and(|m| m.contains("_unfiled/follow-up.md") || m.contains("parser-rewrite.md")),
+        "{found:?}"
+    );
+    assert!(found[0]["fix"].is_null(), "ledger files carry no fix");
+}
