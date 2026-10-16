@@ -221,6 +221,7 @@ fn plain(code: &str, message: String) -> EnvelopeError {
         // frob:ticket 01M4S1YMTPRCGNHN585C78QET8
         message_origin: TextOrigin::Host,
         remedy: None,
+        command: None,
         retryable: false,
         requires_human: false,
     }

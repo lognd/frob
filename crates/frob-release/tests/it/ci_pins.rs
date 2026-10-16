@@ -37,7 +37,7 @@ fn frob_tool(name: &str) -> toml::Table {
     else {
         return entry;
     };
-    let mut merged = toml_of(&format!("crates/gob-packs/src/std/tools/{def}.toml"));
+    let mut merged = toml_of(&format!("crates/gob-check/src/tools/{def}.toml"));
     let version = merged["pinned_version"].as_str().unwrap().to_owned();
     for key in ["args", "version_args"] {
         if let Some(arr) = merged.get_mut(key).and_then(toml::Value::as_array_mut) {

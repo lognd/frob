@@ -166,10 +166,10 @@ syntax.
 ```text
 rule NEAT013 "ambient-source-call"
   lang * polarity P+ severity warn
-  for u: unit(kind=function) where not attr(u, "frob:shell")
+  for u: unit(kind=function) where not attr(u, "grimble:shell")
   find c: apply(head=resolves_to(v)) inside u
        where vocab(v, "clock" | "rng" | "env" | "fs" | "net" | "stdio" | "exit")
-  report c "{u} calls {v}, an ambient source; inject it or mark the unit frob:shell"
+  report c "{u} calls {v}, an ambient source; inject it or mark the unit grimble:shell"
 ```
 
 Rules written in Rust today (`#[derive(Rule)]`) stay valid as tier-0 std

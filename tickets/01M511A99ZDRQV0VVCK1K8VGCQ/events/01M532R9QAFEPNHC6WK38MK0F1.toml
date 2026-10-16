@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-10-16T19:23:55Z"
+digest = "c06bf9d4130c0bc3ec5d135ed4b82057041cfba0293c68c7b367427d751686cb"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 24.83s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6d896b5a-b3c1-46a5-83d8-1781f818e669 with nextest profile: default
+    Starting 1 test across 26 binaries (265 tests skipped)
+        PASS [   0.006s] gob-plan::ten_rules inv002_examples_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 265 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E test(inv002_examples_pass)"
+size = 649
+status = "measured"
+test_count = 1
+tests_digest = "8edb54158d186f09f1689d39b81fe4676a8007cca893fd1b64dacfa1e30a6f6d"
+at = "2026-10-16T19:23:55Z"
+actor = "lognd"
+rev = 1

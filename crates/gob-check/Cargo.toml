@@ -15,7 +15,6 @@ gob-caps = { version = "0.532.0", path = "../gob-caps" }
 gob-cache = { version = "0.532.0", path = "../gob-cache" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
-gob-packs = { version = "0.532.0", path = "../gob-packs" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
 gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }

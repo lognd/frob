@@ -133,6 +133,14 @@ Every verb, every time:
   clap tree with arguments optional when argv carries `--schema`), so
   `frob work --schema` prints the schema and exits 0.
 - Every error names the exact corrected command in `remedy`.
+- When the remedy is a command, the error also carries it as data in
+  `error.command` (a `gob_diagnostics::RemedyCommand`: `product`, `verb`
+  words, `flags` as `{name, value}` with `value` null for a switch, and
+  `args`); `remedy` is its rendering (`product verb args --flag value`).
+  `command` is omitted from the JSON when the remedy is prose.
+  `Cli::check_remedy` validates a `RemedyCommand` against `verb_flags()`:
+  the verb path must exist and accept every flag it names, so a test can
+  prove a quoted remedy is runnable.
 - No prefix abbreviation of flags (clap `infer_long_args = false`);
   did-you-mean on unknown verbs and flags.
 - A verb path may have any number of words (`ticket show`, `graph why`,

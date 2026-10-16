@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/**", "docs/design/plugins.md", "docs/design/grl-spec.md"]
+new = ["docs/**", "docs/design/plugins.md", "docs/design/grl-spec.md", "docs/design/binding.md"]
+at = "2026-10-16T16:31:52Z"
+actor = "lognd"
+rev = 1
