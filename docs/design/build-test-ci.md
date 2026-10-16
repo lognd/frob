@@ -501,6 +501,17 @@ and the cone computation is itself covered by a CI job that compares the
 scoped verdict against the full check on recent lands and reports any
 disagreement as a defect of the cone.
 
+That job is `cone-compare` in `.github/workflows/ci.yml`, driven by
+`.github/scripts/cone-compare.py`. On each push it takes the newest three
+land commits (`tickets(land): ~HANDLE ...`) and, per land, runs in a
+throwaway worktree the scoped `frob check --ticket HANDLE --base PREV` (PREV
+is the previous land commit) and the full `frob check` at the land and at
+PREV. A finding present in the full check at the land and absent at PREV
+(matched by fingerprint, at or above `fail_on`) is the land's own; if the
+scoped check did not report it, the cone missed it, the script logs a
+`cone defect` line and the job fails. A land whose checks produce no
+envelope is skipped with a warning, never counted as agreement.
+
 Target: a one-crate code ticket lands in under 60 s on this repository.
 The CLI-side wording (the `land` verb's scope flags and report fields)
 belongs in cli.md section 3 and follows the implementation tickets.
