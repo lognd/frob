@@ -1090,6 +1090,24 @@
             "off"
           ]
         },
+        "EXPORT001": {
+          "default": "error",
+          "description": "Severity override for this rule.",
+          "enum": [
+            "error",
+            "warn",
+            "off"
+          ]
+        },
+        "EXPORT002": {
+          "default": "error",
+          "description": "Severity override for this rule.",
+          "enum": [
+            "error",
+            "warn",
+            "off"
+          ]
+        },
         "GALLERY001": {
           "default": "error",
           "description": "Severity override for this rule.",
@@ -1209,6 +1227,78 @@
         },
         "SPACE001": {
           "default": "error",
+          "description": "Severity override for this rule.",
+          "enum": [
+            "error",
+            "warn",
+            "off"
+          ]
+        },
+        "TOKEN002": {
+          "default": "error",
+          "description": "Severity override for this rule.",
+          "enum": [
+            "error",
+            "warn",
+            "off"
+          ]
+        },
+        "TOKEN003": {
+          "default": "error",
+          "description": "Severity override for this rule.",
+          "enum": [
+            "error",
+            "warn",
+            "off"
+          ]
+        },
+        "TOKEN004": {
+          "default": "warn",
+          "description": "Severity override for this rule.",
+          "enum": [
+            "error",
+            "warn",
+            "off"
+          ]
+        },
+        "TOKEN005": {
+          "default": "warn",
+          "description": "Severity override for this rule.",
+          "enum": [
+            "error",
+            "warn",
+            "off"
+          ]
+        },
+        "TOKEN006": {
+          "default": "error",
+          "description": "Severity override for this rule.",
+          "enum": [
+            "error",
+            "warn",
+            "off"
+          ]
+        },
+        "TOKEN007": {
+          "default": "error",
+          "description": "Severity override for this rule.",
+          "enum": [
+            "error",
+            "warn",
+            "off"
+          ]
+        },
+        "TOKEN008": {
+          "default": "warn",
+          "description": "Severity override for this rule.",
+          "enum": [
+            "error",
+            "warn",
+            "off"
+          ]
+        },
+        "TOKEN009": {
+          "default": "warn",
           "description": "Severity override for this rule.",
           "enum": [
             "error",

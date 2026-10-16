@@ -71,6 +71,8 @@ Per-rule severities (`RULE001 = "error" | "warn" | "off"`), `fix_tolerance` and
 | `COLOR001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
 | `COLOR002` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
 | `CONTRAST001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
+| `EXPORT001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
+| `EXPORT002` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
 | `GALLERY001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
 | `GALLERY002` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
 | `GALLERY003` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
@@ -85,6 +87,14 @@ Per-rule severities (`RULE001 = "error" | "warn" | "off"`), `fix_tolerance` and
 | `RADIUS001` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
 | `SIZE001` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
 | `SPACE001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
+| `TOKEN002` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
+| `TOKEN003` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
+| `TOKEN004` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
+| `TOKEN005` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
+| `TOKEN006` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
+| `TOKEN007` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
+| `TOKEN008` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
+| `TOKEN009` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
 | `TOKENS001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
 | `TW001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
 | `TW002` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
