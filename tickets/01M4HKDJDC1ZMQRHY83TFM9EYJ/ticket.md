@@ -5,9 +5,10 @@ type = "bug"
 category = "todo"
 priority = "medium"
 points = 1
+parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-10T00:29:15Z"
-updated = "2026-10-10T03:04:18Z"
+updated = "2026-10-16T16:30:34Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-check/src/tools.rs", "crates/frob-land/src/**", "changelog.d/**"]
 
