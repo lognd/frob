@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-15T23:55:58Z"
+updated = "2026-10-16T00:00:28Z"
 idempotency_key = "m2-conformance"
 labels = ["milestone:2", "area:grl", "kind:test"]
-scope = ["crates/gob-plan/tests/conformance/**"]
+scope = ["crates/gob-plan/tests/conformance/**", "design/model.grmb"]
 
 [[links]]
 kind = "blocked-by"
