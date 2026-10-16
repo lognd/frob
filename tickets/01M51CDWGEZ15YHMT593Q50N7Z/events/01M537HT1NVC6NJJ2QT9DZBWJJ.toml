@@ -1,0 +1,47 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-16T20:40:53Z"
+digest = "538f52ff9222c624cd99fd52295962b2c230feddb039fc17e0b77e75b34e5c23"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling zerocopy-derive v0.8.59
+   Compiling regex-automata v0.4.18
+   Compiling zerocopy v0.8.59
+   Compiling serde_json v1.0.151
+   Compiling bstr v1.13.1
+   Compiling log v0.4.34
+   Compiling clap_builder v4.6.7
+   Compiling half v2.7.1
+   Compiling ciborium-ll v0.2.2
+   Compiling ppv-lite86 v0.2.21
+   Compiling globset v0.4.20
+   Compiling rayon v1.12.0
+   Compiling ignore v0.4.33
+   Compiling tinytemplate v1.2.1
+   Compiling clap v4.6.7
+   Compiling rand_chacha v0.9.0
+   Compiling ciborium v0.2.2
+   Compiling regex v1.13.1
+   Compiling is-terminal v0.4.17
+   Compiling proptest v1.11.0
+   Compiling criterion v0.5.1
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7m 17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 566501dd-999f-44e2-9119-d6b57398ae92 with nextest profile: default
+    Starting 1 test across 2 binaries (46 tests skipped)
+        PASS [   0.005s] gob-walk owner::tests::most_specific_must_wins
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 46 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-walk -E test(most_specific_must_wins)"
+size = 1284
+status = "measured"
+test_count = 1
+tests_digest = "e3dd9ba1e0f3d2e0307a11cc6409362445f4e46713bd9787089a466b8fee70b2"
+at = "2026-10-16T20:40:53Z"
+actor = "lognd"
+rev = 1
