@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob/**", "crates/frob-lease/**", "docs/**", "changelog.d/**"]
+new = ["crates/frob/**", "crates/frob-lease/**", "docs/**", "changelog.d/**", "crates/frob-land/**"]
+at = "2026-10-16T09:50:34Z"
+actor = "lognd"
+rev = 1
