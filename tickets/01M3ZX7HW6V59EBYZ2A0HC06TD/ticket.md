@@ -2,13 +2,13 @@
 id = "01M3ZX7HW6V59EBYZ2A0HC06TD"
 title = "Acceptance corpus A: TODO001, DOC002, COV001, INV002, SCOPE001, NEAT013 written in GRL"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-14T16:06:45Z"
+updated = "2026-10-16T00:18:08Z"
 idempotency_key = "m2-grl-ten-a"
 labels = ["milestone:2", "area:grl", "kind:test"]
 scope = ["crates/gob-plan/tests/ten_rules/**"]
