@@ -5,9 +5,10 @@ type = "story"
 category = "todo"
 priority = "medium"
 points = 3
+parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-09T04:11:46Z"
-updated = "2026-10-09T04:11:46Z"
+updated = "2026-10-16T16:30:34Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-ledger/**", "docs/guides/**", "changelog.d/**"]
 
