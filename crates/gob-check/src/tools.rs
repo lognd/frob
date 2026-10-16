@@ -1413,7 +1413,9 @@ mod tests {
             "[[tool]]\nname = \"zizmor\"\ndef = \"zizmor\"\n[[tool]]\nname = \"ruff\"\ndef = \"ruff\"\nid_map = { F401 = \"DEAD001\" }\n",
         )
         .unwrap_or_else(|e| panic!("{e}"));
-        let [z, r] = &t.tool[..] else { panic!("two stages") };
+        let [z, r] = &t.tool[..] else {
+            panic!("two stages")
+        };
         z.validate().unwrap();
         let (z, r) = (z.resolved(), r.resolved());
         assert_eq!(z.command, "uvx");

@@ -207,7 +207,10 @@ mod tests {
         let def = lookup("zizmor").unwrap();
         assert_eq!(def.default_args()[0], "zizmor@1.30.1");
         assert_eq!(def.probe_args(), ["zizmor@1.30.1", "--version"]);
-        assert_eq!(lookup("actionlint").unwrap().default_args()[1], "actionlint-py==1.7.12.25");
+        assert_eq!(
+            lookup("actionlint").unwrap().default_args()[1],
+            "actionlint-py==1.7.12.25"
+        );
     }
 
     fn renamed() -> ToolDef {
