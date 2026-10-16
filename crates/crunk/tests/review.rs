@@ -11,7 +11,10 @@ fn project() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     let spec = crunk_spec::presets::preset("default")
         .expect("default preset")
-        .replace("[lint]", "[lint]\nTOKENS001 = \"off\"\nORG001 = \"off\"");
+        .replace(
+            "[lint]",
+            "[lint]\nTOKENS001 = \"off\"\nEXPORT001 = \"off\"\nORG001 = \"off\"",
+        );
     let spec = format!(
         "{spec}\n[[screen]]\nid = \"home\"\nentry = \"/\"\nreview = \"human\"\n[[screen.states]]\nid = \"default\"\n"
     );

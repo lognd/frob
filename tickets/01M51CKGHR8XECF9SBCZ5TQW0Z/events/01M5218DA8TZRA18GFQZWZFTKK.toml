@@ -1,0 +1,123 @@
+kind = "evidence"
+captured_at = "2026-10-16T09:38:44Z"
+digest = "6ceb39edfbc242aec99eb94a0ee9239426390f5596b04b2f9bdc6b82c235e302"
+exit_code = 101
+inline = """
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+error[E0599]: no method named `set_queued` found for struct `LeaseStore` in the current scope
+   --> crates/frob-lease/tests/lease.rs:336:15
+    |
+336 |         store.set_queued(t, &holder("b"), true),
+    |               ^^^^^^^^^^
+    |
+help: there is a method `dequeue` with a similar name, but with different arguments
+   --> crates/frob-lease/src/store.rs:629:4
+
+error[E0599]: no method named `set_queued` found for struct `LeaseStore` in the current scope
+   --> crates/frob-lease/tests/lease.rs:341:14
+    |
+340 | /         store
+341 | |             .set_queued(t, &holder("a"), true)
+    | |_____________-^^^^^^^^^^
+    |
+help: there is a method `dequeue` with a similar name, but with different arguments
+   --> crates/frob-lease/src/store.rs:629:4
+
+error[E0609]: no field `queued` on type `Lease`
+   --> crates/frob-lease/tests/lease.rs:345:63
+    |
+345 |     assert!(store.live_lease(t).expect("read").expect("live").queued);
+    |                                                               ^^^^^^ unknown field
+    |
+    = note: available fields are: `ticket`, `holder`, `scope`, `acquired_at`, `renewed_at` ... and 2 others
+
+error[E0599]: no method named `set_queued` found for struct `LeaseStore` in the current scope
+   --> crates/frob-lease/tests/lease.rs:352:14
+    |
+351 |           !store
+    |  __________-
+352 | |             .set_queued(t, &holder("a"), false)
+    | |_____________-^^^^^^^^^^
+    |
+help: there is a method `dequeue` with a similar name, but with different arguments
+   --> crates/frob-lease/src/store.rs:629:4
+
+error[E0560]: struct `TrainOptions` has no field named `enqueue_only`
+    --> crates/frob-land/tests/land.rs:2244:9
+     |
+2244 |         enqueue_only: false,
+     |         ^^^^^^^^^^^^ `TrainOptions` does not have this field
+     |
+     = note: all struct fields are already assigned
+
+error[E0609]: no field `queued` on type `frob_lease::Lease`
+    --> crates/frob-land/tests/land.rs:2278:28
+     |
+2278 |             assert!(!lease.queued, "a red ticket is back with its agent");
+     |                            ^^^^^^ unknown field
+     |
+     = note: available fields are: `ticket`, `holder`, `scope`, `acquired_at`, `renewed_at` ... and 2 others
+
+error[E0560]: struct `TrainOptions` has no field named `enqueue_only`
+    --> crates/frob-land/tests/land.rs:2346:9
+     |
+2346 |         enqueue_only: false,
+     |         ^^^^^^^^^^^^ `TrainOptions` does not have this field
+     |
+     = note: all struct fields are already assigned
+
+error[E0609]: no field `enqueue_only` on type `TrainOptions`
+    --> crates/frob-land/tests/land.rs:2445:10
+     |
+2445 |     opts.enqueue_only = true;
+     |          ^^^^^^^^^^^^ unknown field
+     |
+     = note: available fields are: `land`, `runner`
+
+error[E0609]: no field `queued` on type `frob_lease::Lease`
+    --> crates/frob-land/tests/land.rs:2463:19
+     |
+2463 |     assert!(lease.queued, "a queued ticket's lease leaves the WIP count");
+     |                   ^^^^^^ unknown field
+     |
+     = note: available fields are: `ticket`, `holder`, `scope`, `acquired_at`, `renewed_at` ... and 2 others
+
+Some errors have detailed explanations: E0599, E0609.
+For more information about an error, try `rustc --explain E0599`.
+error: could not compile `frob-lease` (test "lease") due to 4 previous errors
+warning: build failed, waiting for other jobs to finish...
+Some errors have detailed explanations: E0560, E0609.
+For more information about an error, try `rustc --explain E0560`.
+error: could not compile `frob-land` (test "land") due to 5 previous errors
+error[E0609]: no field `queued` on type `&&frob_lease::Lease`
+   --> crates/frob/src/board_cmd.rs:314:36
+    |
+314 |                     .filter(|l| !l.queued)
+    |                                    ^^^^^^ unknown field
+    |
+    = note: available fields are: `ticket`, `holder`, `scope`, `acquired_at`, `renewed_at` ... and 2 others
+
+error[E0609]: no field `queued` on type `&frob_lease::Lease`
+   --> crates/frob/src/board_cmd.rs:334:50
+    |
+334 |             .retain(|s| !leases.iter().any(|l| l.queued && l.ticket == s.id));
+    |                                                  ^^^^^^ unknown field
+    |
+    = note: available fields are: `ticket`, `holder`, `scope`, `acquired_at`, `renewed_at` ... and 2 others
+
+For more information about this error, try `rustc --explain E0609`.
+error: could not compile `frob-cli` (lib test) due to 2 previous errors
+error: could not compile `frob-cli` (lib) due to 2 previous errors
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "test(a_ticket_queued_on_the_land_train_leaves_the_repository_wip_count)"
+size = 4908
+status = "measured"
+at = "2026-10-16T09:38:44Z"
+actor = "lognd"
+rev = 1

@@ -22,7 +22,10 @@ fn project(css: &str) -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     let spec = crunk_spec::presets::preset("default")
         .expect("default preset")
-        .replace("[lint]", "[lint]\nTOKENS001 = \"off\"\nORG001 = \"off\"");
+        .replace(
+            "[lint]",
+            "[lint]\nTOKENS001 = \"off\"\nEXPORT001 = \"off\"\nORG001 = \"off\"",
+        );
     write(dir.path(), "crunk.toml", &spec);
     write(dir.path(), "styles/a.css", css);
     dir
