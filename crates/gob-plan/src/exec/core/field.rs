@@ -177,7 +177,7 @@ impl Reader<'_> {
             return self.dotted(node, head, rest);
         }
         match name {
-            "path" => Datum::text(self.model.term().locator()),
+            "path" | "file" => Datum::text(self.model.term().locator()),
             "line" => self.line_of(node).map_or(Datum::Unknown, Datum::int),
             "kind" => self.kind(node),
             "role" => match self.model.term().node(node).op() {
@@ -191,7 +191,6 @@ impl Reader<'_> {
             "selector" | "property" | "important" | "raw" => self.style(node, name),
             "callee" => self.callee(node).map_or(Datum::Absent, Datum::text),
             "target" => self.target(node),
-            "file" => Datum::text(self.model.term().locator()),
             "slug" => self.slug(node),
             _ => Datum::Unknown,
         }
