@@ -2,7 +2,8 @@
 id = "01M4PZTQGGPR4K03T4W0AHKXWC"
 title = "GRL lowerer gaps block acceptance corpus A: knobs, is, 3-segment paths, globs, vocab relation"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
