@@ -439,7 +439,9 @@ fn normal_exits(parser: ToolParser) -> &'static [i32] {
         // Lints under `-D warnings` and compile errors both exit 101; the diagnostics decide.
         ToolParser::CargoJson => &[0, 101],
         // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
-        ToolParser::StylelintJson => &[0, 2],
+        // frob:ticket 01M4D92HMPWHFY5WGGY3KGFTNE
+        // typos exits 2 when it reports typos.
+        ToolParser::StylelintJson | ToolParser::TyposJson => &[0, 2],
     }
 }
 
