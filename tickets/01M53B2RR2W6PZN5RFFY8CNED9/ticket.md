@@ -2,13 +2,13 @@
 id = "01M53B2RR2W6PZN5RFFY8CNED9"
 title = "GRL constructs to express LAYER and ORG, remainder: crunk host input, class-selector kind, bucket attribute, crunk.json side relations"
 type = "story"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T21:49:52Z"
-updated = "2026-10-16T22:48:22Z"
+updated = "2026-10-16T22:48:58Z"
 
 [[acceptance]]
 text = "Given the GRL rules, when the std pack builds, then findings equal the removed Rust rules on the corpus"
