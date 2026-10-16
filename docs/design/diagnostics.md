@@ -60,6 +60,16 @@ commands come only from host templates; first-occurrence teaching
 applies to std rules only; plugin fixes are at most `maybe-incorrect`
 unless the pack holds `fix.machine`, and never touch the control plane.
 
+Structured remedies: a refusal whose remedy is a command carries it as
+a `RemedyCommand` (`Refusal::with_command`), not only as a string. It
+holds the `product`, the `verb` path words, `flags` (long names without
+`--`, each with an optional value; `<placeholders>` allowed) and
+positional `args`. `with_command` sets the text `remedy` to its
+rendering, and the envelope `error` gains an optional `command` field,
+omitted from JSON when empty. Tests and agents check the data instead of
+parsing prose; `Cli::check_remedy` rejects an unknown verb path or a flag
+the verb does not accept.
+
 Rules for the renderer (gob-diagnostics): primary span with a label;
 secondary spans in other files with `:::` headers; `note` for facts the
 user did not ask for but needs; `help` for the next action; `fix` lines
