@@ -22,7 +22,9 @@ Hand-written text links to a ticket-branch path instead of the ticket's ULID.
 A ticket file's path (`<epic>/<slug>.md`) changes when the ticket is retitled or reparented, so a link to
 it rots. This covers a bare path that is a ticket file, a blob or tree URL on the ticket branch, and the
 old `tickets/<ULID>/ticket.md` form. `frob check --fix` rewrites the link to the ULID. Generated pages
-(first line carries the generated marker) use relative paths on purpose and are skipped.
+(first line carries the generated marker) use relative paths on purpose and are skipped. On a ticket-branch
+ledger the hand-written files (ticket bodies, `EPIC.md`) are scanned too; those findings name the ledger path
+and carry no machine fix (edit the ticket so it links the ULID).
 
 ## Examples
 
