@@ -320,11 +320,6 @@ impl<'a> Driver<'a> {
         if begun.view.summary.category == frob_ledger::model::Category::Done {
             return Ok(Err(Unfit::Closed));
         }
-        let scope = begun
-            .leases
-            .live_lease(begun.id)?
-            .map(|l| l.scope)
-            .unwrap_or_default();
         let Begun {
             repo,
             cwd_root,
@@ -332,6 +327,7 @@ impl<'a> Driver<'a> {
             leases,
             view,
             base,
+            id,
             ..
         } = begun;
         let pre = match preconditions(repo, &cwd_root, here, &leases, &view, &base, &lo) {
@@ -341,6 +337,13 @@ impl<'a> Driver<'a> {
                 return Ok(Err(Unfit::Evict(e.to_string())));
             }
             Err(e) => return Err(e),
+        };
+        let scope = Self::renewed_scope(&leases, id)?;
+        let Some(scope) = scope else {
+            return Ok(Err(Unfit::Evict(
+                "its lease is gone and could not be renewed; run `frob work` and enqueue again"
+                    .to_owned(),
+            )));
         };
         let head = pre.wt.rev_parse(&pre.branch)?;
         let head_text = head.to_string();
@@ -362,6 +365,23 @@ impl<'a> Driver<'a> {
             scope,
             paths,
         }))
+    }
+
+    /// Renew the member's lease for this round and return its scope; `None` when no lease exists.
+    ///
+    /// `preconditions` already re-took an expired lease, so a missing lease here is a real loss and
+    /// must never be read as an empty scope (an empty scope overlaps nothing).
+    fn renewed_scope(
+        leases: &frob_lease::LeaseStore,
+        id: TicketId,
+    ) -> Result<Option<Vec<String>>, LandError> {
+        let Some(lease) = leases.live_lease(id)? else {
+            tracing::warn!(ticket = %id, "train: member has no live lease");
+            return Ok(None);
+        };
+        let renewed = leases.renew(id, &lease.holder)?;
+        tracing::debug!(ticket = %id, "train: member lease renewed for the round");
+        Ok(Some(renewed.scope))
     }
 
     /// Record a ticket's end state for its waiting enqueuer and take it off the queue.

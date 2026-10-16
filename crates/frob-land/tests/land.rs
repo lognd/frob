@@ -2304,6 +2304,64 @@ fn twelve_ready_tickets_with_one_failing_land_eleven_and_return_the_culprit() {
     ));
 }
 
+// frob:ticket 01M51CKGA207PC030VWRPM3ECA
+// frob:tests crates/frob-land/src/train.rs::train_drain
+#[test]
+fn the_driver_renews_a_queued_members_lease_each_round() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let tickets = enqueued(&fx, 1);
+    let s = &tickets[0];
+    // age the lease (still live) so a renewal is visible
+    let path = fx
+        .repo()
+        .common_dir()
+        .join("frob/leases")
+        .join(format!("{}.toml", s.id));
+    let text = std::fs::read_to_string(&path).expect("lease file");
+    let old = text
+        .lines()
+        .find(|l| l.starts_with("renewed_at"))
+        .expect("renewed_at")
+        .to_owned();
+    std::fs::write(
+        &path,
+        text.replace(&old, "renewed_at = \"2020-01-01T00:00:00Z\"")
+            .replace("ttl_secs = 7200", "ttl_secs = 99999999999"),
+    )
+    .expect("age lease");
+    let before = fx
+        .leases()
+        .recorded_lease(s.id)
+        .expect("lease")
+        .expect("held");
+    let runner = Arc::new(Poison {
+        poison: Some(s.handle.clone()),
+        calls: 0.into(),
+    });
+    let opts = frob_land::TrainOptions {
+        land: LandOptions::default(),
+        runner: Some(runner),
+        enqueue_only: false,
+    };
+    frob_land::train_drain(&fx.root, &opts, &train_clock()).expect("drain");
+    let after = fx
+        .leases()
+        .recorded_lease(s.id)
+        .expect("lease")
+        .expect("held");
+    assert!(
+        after.renewed_at > before.renewed_at,
+        "the round renewed the lease"
+    );
+    assert!(
+        !after.scope.is_empty(),
+        "the scope is the lease's, never empty"
+    );
+}
+
 // frob:ticket 01M51CKG205D0WF5XNGPRK8GZ3
 // frob:tests crates/frob-land/src/train.rs::train_drain
 #[test]
