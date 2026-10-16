@@ -2,7 +2,8 @@
 id = "01M4CT0AF76FJTWFG10SKXJZAZ"
 title = "PM008 and PM009: ticket aging per category and unsized ticket in ready"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
