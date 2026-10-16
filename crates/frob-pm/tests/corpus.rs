@@ -416,8 +416,8 @@ fn every_corpus_file_has_a_test() {
         files,
         [
             "pm001.md", "pm002.md", "pm003.md", "pm004.md", "pm005.md", "pm006.md", "pm007.md",
-            "pm008.md", "pm009.md", "pm010.md", "pm011.md", "pm012.md",
-            "pm013.md", "pm031.md", "pm032.md", "pm033.md", "pm034.md", "pm036.md"
+            "pm008.md", "pm009.md", "pm010.md", "pm011.md", "pm012.md", "pm013.md", "pm031.md",
+            "pm032.md", "pm033.md", "pm034.md", "pm036.md"
         ],
         "corpus files and corpus_file! lines must match"
     );

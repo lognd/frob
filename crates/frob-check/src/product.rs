@@ -15,11 +15,11 @@ use frob_pm::rules::aging::{Pm008, Pm009};
 use frob_pm::rules::cycle::Pm036;
 use frob_pm::rules::cycle_plan::{Pm010, Pm011, Pm012};
 use frob_pm::rules::good_first::Pm031;
-use frob_pm::rules::story::{Pm003, Pm004, Pm005, Pm006, Pm007};
 use frob_pm::rules::membership::Pm034;
 use frob_pm::rules::milestone::{Pm001, Pm002};
 use frob_pm::rules::pm032::Pm032;
 use frob_pm::rules::replenish::Pm033;
+use frob_pm::rules::story::{Pm003, Pm004, Pm005, Pm006, Pm007};
 use frob_pm::rules::wip::Pm013;
 use frob_release::rel001::Rel001;
 use frob_release::rel002::Rel002;
@@ -574,7 +574,13 @@ impl Product for Frob {
             // frob:ticket 01M4CT054RN6SY75KRYSY14778
             RepoGroup::new(
                 "repo:story",
-                vec![Pm003.meta(), Pm004.meta(), Pm005.meta(), Pm006.meta(), Pm007.meta()],
+                vec![
+                    Pm003.meta(),
+                    Pm004.meta(),
+                    Pm005.meta(),
+                    Pm006.meta(),
+                    Pm007.meta(),
+                ],
                 |s: &Snapshot<Self>, _| strict_pm(&s.inputs, story_findings(&s.inputs)),
             )
             .full_only(),

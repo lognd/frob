@@ -235,7 +235,10 @@ pub fn pm003(t: &Ticket, handle: &str) -> Option<Finding> {
     Some(finding(
         &Pm003,
         handle,
-        format!("story {handle} is not a structured user story: {}", bad.join("; ")),
+        format!(
+            "story {handle} is not a structured user story: {}",
+            bad.join("; ")
+        ),
     ))
 }
 
