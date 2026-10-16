@@ -270,6 +270,13 @@ them (D76).
 | UX, PROC | design-cycle traceability (section 8), ready gate, flows without dead ends or missing error paths | T0 |
 | web pack (D88/D89) | A11Y, SEO, LAUNCH, WEBPERF over markup and assets (crunk-web, existing tickets) | T0 |
 
+Known limitations of the first TOKEN and EXPORT rules (GKXE3V8):
+
+- EXPORT002 anchors its findings at `crunk.toml`, not at the diverging file, because the
+  `Divergence` record carries token names, targets and values but no file path.
+- EXPORT001 overlaps TOKENS001 by design: both report a missing or drifted generated file;
+  EXPORT001 adds the export target's name, TOKENS001 stays the target-agnostic gate.
+
 ## 7. Game UI and Unity (D116)
 
 - Unity UI Toolkit: USS, UXML and TSS are parsed in gob as a CSS dialect

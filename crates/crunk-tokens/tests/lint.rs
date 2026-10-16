@@ -106,3 +106,19 @@ fn deprecated_is_read_as_a_string() {
     );
     assert!(parse("[a]\nb = { value = \"1px\", deprecated = 3 }", "t.toml").is_err());
 }
+
+// frob:tests crates/crunk-tokens/src/lint.rs::tier_skips
+#[test]
+fn a_component_aliasing_a_primitive_skips_the_semantic_tier() {
+    let src = r##"
+[color]
+ink = "#101010"
+button = { value = "{color.ink}", tier = "component" }
+"##;
+    let set = parse(src, "t.toml").unwrap();
+    let skips = lint::tier_skips(&set);
+    assert_eq!(skips.len(), 1);
+    assert_eq!(skips[0].0.key, "color.button");
+    assert_eq!(skips[0].1.key, "color.ink");
+    assert!(lint::tier_skips(&parse(SOURCE, "t.toml").unwrap()).is_empty());
+}
