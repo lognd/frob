@@ -1,0 +1,10 @@
+kind = "create"
+title = "gob-dev ci: resolve def-based tool stages (fix red CI after tool defs)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 1
+scope = ["crates/gob-dev/src/ci.rs", "crates/frob-release/tests/it/ci_pins.rs", "changelog.d/**"]
+at = "2026-10-16T13:53:47Z"
+actor = "lognd"
+rev = 1
