@@ -7,12 +7,12 @@ use gob_plan::grl::parse;
 use gob_text::FileInterner;
 
 const RULES: [(&str, &str); 6] = [
-    ("TODO001", include_str!("TODO001.grl")),
-    ("DOC002", include_str!("DOC002.grl")),
-    ("COV001", include_str!("COV001.grl")),
-    ("INV002", include_str!("INV002.grl")),
-    ("SCOPE001", include_str!("SCOPE001.grl")),
-    ("NEAT013", include_str!("NEAT013.grl")),
+    ("TODO001", include_str!("cases/TODO001.grl")),
+    ("DOC002", include_str!("cases/DOC002.grl")),
+    ("COV001", include_str!("cases/COV001.grl")),
+    ("INV002", include_str!("cases/INV002.grl")),
+    ("SCOPE001", include_str!("cases/SCOPE001.grl")),
+    ("NEAT013", include_str!("cases/NEAT013.grl")),
 ];
 
 /// Examples the current engine cannot yet judge, as (rule, example index); each is a filed gap.
