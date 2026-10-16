@@ -86,6 +86,43 @@ pub struct MilestoneView {
 }
 
 impl MilestoneView {
+    /// The text view: the verdict line first, then epics and criteria with their evidence, no duplicated fields.
+    pub(crate) fn text_rows(&self) -> Vec<String> {
+        let bound = self.criteria.iter().filter(|c| c.bound).count();
+        let target = self.target.as_deref().unwrap_or("unscheduled");
+        let mut rows = vec![
+            format!(
+                "{} ({}): {}, {bound}/{} criteria bound, target {target}",
+                self.version,
+                self.handle,
+                self.state,
+                self.criteria.len()
+            ),
+            format!("goal: {}", self.goal),
+            format!("epics ({}):", self.epics.len()),
+        ];
+        for e in &self.epics {
+            rows.push(format!(
+                "  {} {}",
+                e.handle.as_deref().unwrap_or(&e.id),
+                e.title.as_deref().unwrap_or("(unreadable)")
+            ));
+        }
+        rows.push(format!("exit criteria ({}):", self.criteria.len()));
+        for c in &self.criteria {
+            rows.push(format!("  {}. {} {}", c.position, c.state, c.text));
+            for b in &c.bound_by {
+                let what = b
+                    .label
+                    .clone()
+                    .unwrap_or_else(|| format!("{}:{}", b.provider, b.reference));
+                rows.push(format!("       by {what}"));
+            }
+        }
+        tracing::debug!(rows = rows.len(), "milestone text view built");
+        rows
+    }
+
     /// View `m`, looking each member epic up in `ledger` for its handle and title.
     pub(crate) fn of(m: &Milestone, ledger: &Ledger) -> Self {
         let epics = m
@@ -502,11 +539,14 @@ impl Command for MilestoneShow {
     fn run(&self, ctx: &Context) -> Outcome<MilestoneData> {
         let ledger = open(ctx)?;
         let m = find(PmStore::new(&ledger), &self.version)?;
+        let milestone = MilestoneView::of(&m, &ledger);
+        let rows = milestone.text_rows();
         Ok(Payload::new(MilestoneData {
-            milestone: MilestoneView::of(&m, &ledger),
+            milestone,
             events: Vec::new(),
             commit: None,
-        }))
+        })
+        .with_rendered(rows))
     }
 }
 

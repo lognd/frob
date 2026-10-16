@@ -478,3 +478,15 @@ fn pm001_fires_on_a_milestone_with_no_tickets() {
     repo.ok(&["milestone", "new", "0.1.0", "--goal", "g"]);
     assert_eq!(check_severity(&repo, "PM001").as_deref(), Some("warning"));
 }
+
+#[test]
+fn milestone_show_text_leads_with_the_verdict_and_lists_criteria_once() {
+    // frob:tests crates/frob/src/milestone_cmd.rs::MilestoneView.text_rows
+    let repo = three();
+    let out = repo.run(&["--text", "milestone", "show", "0.532.0"]);
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.starts_with("0.532.0 (~"), "verdict line first: {text}");
+    assert!(text.contains("0/3 criteria bound"), "{text}");
+    assert_eq!(text.matches("exit criteria (3):").count(), 1, "{text}");
+    assert!(!text.contains("bound_by"), "{text}");
+}

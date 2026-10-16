@@ -213,7 +213,8 @@ pub struct CiReport {
 /// The readiness report for one release.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Report {
-    /// The report as lines, verdict first, for the text view.
+    /// The report as lines, verdict first, for the text view only; never serialized.
+    #[serde(skip)]
     pub at_a_glance: Vec<String>,
     /// Every reason the release is not ready.
     pub blockers: Vec<Blocker>,

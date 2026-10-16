@@ -201,7 +201,15 @@ fn an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it() {
     assert_eq!(list["data"]["records"][0]["effective_status"], "measured");
     assert_eq!(list["data"]["records"][0]["label"], label);
     let status = repo.ok(&["release", "status", "0.532.0"]);
-    let glance = status["data"]["report"]["at_a_glance"].to_string();
+    assert!(status["data"]["report"].get("at_a_glance").is_none());
+    let mut cmd = common::frob_command();
+    let text = cmd
+        .current_dir(repo.dir.path())
+        .env_remove("FROB_LOG")
+        .args(["--text", "release", "status", "0.532.0"])
+        .output()
+        .expect("run frob");
+    let glance = String::from_utf8_lossy(&text.stdout);
     assert!(glance.contains("attested by test@example.com"), "{glance}");
 }
 

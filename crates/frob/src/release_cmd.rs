@@ -320,11 +320,13 @@ impl Command for ReleaseStatus {
         let version = milestone.map_or(version, |m| m.version.clone());
         let ctx_dir = Located::discover(&ctx.cwd).into_repo()?.1;
         let report = report_for(&ledger, &ctx_dir, milestone, version)?;
+        let rows = report.at_a_glance.clone();
         Ok(Payload::new(StatusData {
             outcome: "report".to_owned(),
             message: None,
             report: Some(report),
-        }))
+        })
+        .with_rendered(rows))
     }
 }
 
