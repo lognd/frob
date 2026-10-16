@@ -164,7 +164,11 @@ pub fn tick006_ledger_file(path: &str, text: &str, ledger: &Ledger) -> Vec<Findi
         f.span = None;
         f.fix = None;
     }
-    tracing::debug!(path, findings = found.len(), "TICK006 scanned a ledger file");
+    tracing::debug!(
+        path,
+        findings = found.len(),
+        "TICK006 scanned a ledger file"
+    );
     found
 }
 
