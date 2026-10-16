@@ -1,0 +1,19 @@
+kind = "evidence"
+captured_at = "2026-10-16T12:17:40Z"
+digest = "10d5e725f036f43e3dd394f93d0ccef6a271352d229c8d800be1fe548465d919"
+exit_code = 0
+inline = """
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.000s
+
+OK
+"""
+passed = true
+provider = "command"
+ref = "python3 .github/scripts/test_cone_compare.py"
+size = 102
+status = "measured"
+at = "2026-10-16T12:17:40Z"
+actor = "lognd"
+rev = 1
