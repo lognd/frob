@@ -85,7 +85,7 @@ mod tests {
     use super::CheckOptions;
     use gob_check::ToolTier;
 
-    // frob:tests crates/frob-check/src/options.rs::CheckOptions::tool_tier
+    // frob:tests crates/frob-check/src/options.rs::CheckOptions.tool_tier
     #[test]
     fn quick_ticket_runs_only_the_ticket_tier() {
         let mut o = CheckOptions::default();

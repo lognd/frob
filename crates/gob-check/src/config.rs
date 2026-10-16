@@ -360,7 +360,7 @@ impl PerfTable {
 mod tier_tests {
     use super::ToolTier;
 
-    // frob:tests crates/gob-check/src/config.rs::ToolTier::runs_at
+    // frob:tests crates/gob-check/src/config.rs::ToolTier.runs_at
     #[test]
     fn tiers_widen_with_the_run_level() {
         assert!(ToolTier::Ticket.runs_at(Some(ToolTier::Ticket)));
