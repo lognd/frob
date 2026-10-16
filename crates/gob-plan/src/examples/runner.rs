@@ -101,10 +101,11 @@ fn severity(rule: &Rule) -> Level {
         .unwrap_or(Level::Warn)
 }
 
+/// An example's file text, its file path, the sub-block expectations and the side inputs.
+type Inputs = (Option<String>, Option<String>, Vec<Expected>, SideInputs);
+
 /// The example's source text and the expectations written in sub-blocks.
-fn inputs(
-    example: &Example,
-) -> Result<(Option<String>, Option<String>, Vec<Expected>, SideInputs), RunError> {
+fn inputs(example: &Example) -> Result<Inputs, RunError> {
     match &example.body {
         ExampleBody::Source(b) => Ok((
             Some(b.value.clone()),
