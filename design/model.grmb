@@ -64,6 +64,13 @@ flow gob_to_crunk : gob -> crunk {
   consumer "crates/crunk-check/src/lib.rs";
 }
 
+/// The conformance test in gob-plan runs the compiled-in std rule modules against their plans.
+flow std_rules_to_gob : std_rules -> gob {
+  label Internal;
+  producer "packs/std/generated/**";
+  consumer "crates/gob-plan/tests/conformance/main.rs";
+}
+
 /// Substrate data flows to grimble, which calls it.
 flow gob_to_grimble : gob -> grimble {
   label Internal;
