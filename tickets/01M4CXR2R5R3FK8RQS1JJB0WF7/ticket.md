@@ -8,12 +8,12 @@ points = 2
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-08T04:53:33Z"
-updated = "2026-10-16T01:12:00Z"
+updated = "2026-10-16T01:36:47Z"
 scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-spec/**", "crates/crunk-rules/**"]
 
 [[acceptance]]
 text = "Given a contrast failure only in the cb-safe mode, when crunk check runs, then the finding names the mode"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md section 7.
