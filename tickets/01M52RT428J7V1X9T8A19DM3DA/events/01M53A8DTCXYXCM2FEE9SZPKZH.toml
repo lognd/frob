@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "duplicate of FE8QFTF; behavior already present"
+at = "2026-10-16T21:35:29Z"
+actor = "lognd"
+rev = 1
