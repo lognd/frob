@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-16T13:08:13Z"
+digest = "912925787588b022cc1dec5a64174b31ad2e74a341bb203ac3995967c5457159"
+exit_code = 0
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 85f6ddfa-2144-481f-ba90-5e9289206c3c with nextest profile: default
+    Starting 2 tests across 6 binaries (111 tests skipped)
+        PASS [   0.006s] gob-check tools::tests::a_def_stage_runs_from_data_for_zizmor_and_ruff
+        PASS [   0.006s] gob-check tools::tests::an_unknown_def_is_a_cfg_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 2 tests run: 2 passed, 111 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'test(a_def_stage_runs_from_data_for_zizmor_and_ruff) | test(an_unknown_def_is_a_cfg_error)'"
+size = 707
+status = "measured"
+test_count = 2
+tests_digest = "991326c805942dc10d3ffcd013fec22fa939b7ff211fb6cf09b261d1400c919e"
+at = "2026-10-16T13:08:13Z"
+actor = "lognd"
+rev = 1

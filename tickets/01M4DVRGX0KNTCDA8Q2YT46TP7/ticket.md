@@ -8,12 +8,12 @@ points = 5
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T13:38:05Z"
-updated = "2026-10-16T12:22:31Z"
+updated = "2026-10-16T13:08:13Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/gob-packs/**", "docs/design/rules.md", "crates/frob-obligations/src/native.rs", "docs/reference/tool-stages.md", "docs/reference/config.md", "docs/schemas/config.json", "frob.toml", "docs/design/boundaries.md"]
 
 [[acceptance]]
 text = "Given a tool definition for zizmor and one for ruff, when frob check runs, then both stages run from data with no tool-specific Rust code beyond their parsers"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a tool whose version falls in a renamed-flag range, when the stage runs, then the matching command variant is used"
