@@ -2,13 +2,13 @@
 id = "01M4118NGH127F6DGVGS4GVE49"
 title = "Remedies as structured data checked against the CLI registry, replacing the source-text scan"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T14:04:09Z"
-updated = "2026-10-03T14:04:09Z"
+updated = "2026-10-16T16:30:45Z"
 idempotency_key = "m2-remedy-registry"
 labels = ["milestone:2", "area:diagnostics"]
 scope = ["crates/gob-cli/**", "crates/gob-diagnostics/**"]
