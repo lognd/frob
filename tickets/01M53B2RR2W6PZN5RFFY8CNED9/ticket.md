@@ -8,7 +8,7 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T21:49:52Z"
-updated = "2026-10-16T21:49:52Z"
+updated = "2026-10-16T22:48:58Z"
 
 [[acceptance]]
 text = "Given the GRL rules, when the std pack builds, then findings equal the removed Rust rules on the corpus"

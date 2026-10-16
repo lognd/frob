@@ -1,0 +1,27 @@
+kind = "evidence"
+captured_at = "2026-10-16T22:56:07Z"
+digest = "a99385d2ab382ad39934be9e503220780593b7647ebb881e6acf5e03183e6d48"
+exit_code = 0
+inline = '''
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 38127c4d-7d10-4ca5-87da-a08b571ced9a with nextest profile: default
+    Starting 3 tests across 2 binaries (253 tests skipped)
+        PASS [   0.006s] gob-symbols::it call_edges::python_parameter_callee_is_unknown
+        PASS [   0.006s] gob-symbols::it call_edges::rust_macro_argument_calls_become_edges
+        PASS [   0.006s] gob-symbols::it call_edges::rust_super_path_call_resolves
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 3 tests run: 3 passed, 253 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E test(call_edges)"
+size = 854
+status = "measured"
+test_count = 3
+tests_digest = "c2a4685bb9fc5281a7a6b25e546113aceaea669505d2f3b69b5ed1ceb42a897a"
+at = "2026-10-16T22:56:07Z"
+actor = "lognd"
+rev = 1

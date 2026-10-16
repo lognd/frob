@@ -1,0 +1,28 @@
+kind = "evidence"
+captured_at = "2026-10-16T22:58:29Z"
+digest = "33ad01046b35c30e6731ea23287a055d8fa5ba6dd1ed4a70f1c3f32951cca943"
+exit_code = 0
+inline = '''
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.89s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f1582604-d0ea-401d-8f7b-cbbb32894fd5 with nextest profile: default
+    Starting 2 tests across 26 binaries (265 tests skipped)
+        PASS [   0.006s] gob-plan::ten_rules cov001_examples_pass
+        PASS [   0.006s] gob-plan examples::corpus_tests::cov001_calls_examples_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 2 tests run: 2 passed, 265 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E test(cov001)"
+size = 869
+status = "measured"
+test_count = 2
+tests_digest = "1a75c4aca303ba3735aefef87d8f53c49f276e12e7defd38575aa7c2c771ee25"
+at = "2026-10-16T22:58:29Z"
+actor = "lognd"
+rev = 1

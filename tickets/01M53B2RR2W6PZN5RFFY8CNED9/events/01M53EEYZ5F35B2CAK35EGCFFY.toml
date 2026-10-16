@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "blocked on gob-symbols lease held by 8KS9TG8; retry after it lands"
+at = "2026-10-16T22:48:58Z"
+actor = "lognd"
+rev = 1
