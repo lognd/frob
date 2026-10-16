@@ -77,7 +77,10 @@ fn only_compiling_files_have_sets_and_the_fingerprint_follows_the_text() {
         ("a.toml", "[color]\nink = \"#111111\"\n"),
         ("b.toml", "not = [valid"),
     ]);
-    let (fa, fb) = (a.tokens().unwrap().fingerprint(), b.tokens().unwrap().fingerprint());
+    let (fa, fb) = (
+        a.tokens().unwrap().fingerprint(),
+        b.tokens().unwrap().fingerprint(),
+    );
     assert_ne!(fa, fb);
     assert_eq!(fa, a.tokens().unwrap().fingerprint());
 }
