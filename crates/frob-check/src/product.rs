@@ -11,6 +11,7 @@ use frob_ledger::rules::{Tick001, Tick003, Tick004, Tick005, Tick007, Tick008, T
 use frob_obligations::{
     Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
 };
+use frob_pm::rules::aging::{Pm008, Pm009};
 use frob_pm::rules::cycle::Pm036;
 use frob_pm::rules::cycle_plan::{Pm010, Pm011, Pm012};
 use frob_pm::rules::good_first::Pm031;
@@ -276,6 +277,28 @@ fn cycle_findings(inputs: &FrobInputs) -> Vec<Finding> {
         .map_err(|e| failed(ALL, e))])
 }
 
+/// `PM008` and `PM009` findings for the `repo:aging` group; limits from `[pm.max_age_days]`, age measured at the ledger clock's now.
+// frob:ticket 01M4CT0AF76FJTWFG10SKXJZAZ
+fn aging_findings(inputs: &FrobInputs) -> Vec<Finding> {
+    const ALL: &[&str] = &["PM008", "PM009"];
+    let state = match ledger_of(inputs, ALL) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
+    };
+    let limits = match frob_pm::PmConfig::load(&inputs.root) {
+        Ok(cfg) => cfg.max_age_days,
+        Err(e) => {
+            return settle([Err(failed(ALL, format_args!("pm config unreadable: {e}")))]);
+        }
+    };
+    settle([
+        frob_pm::rules::aging::evaluate(&state.ledger, &limits, state.ledger.clock().now())
+            .map(|e| e.findings)
+            .map_err(|e| failed(ALL, e)),
+    ])
+}
+
 /// `PM010`-`PM012` findings for the `repo:cycle-plan` group; empty without a ledger or cycles, `[pm]` knobs from `frob.toml`.
 // frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
 fn cycle_plan_findings(inputs: &FrobInputs) -> Vec<Finding> {
@@ -459,6 +482,7 @@ impl Product for Frob {
         checks
     }
 
+    #[allow(clippy::too_many_lines)] // one declarative table of repo groups
     fn repo_groups(&self) -> Vec<RepoGroup<Self>> {
         vec![
             RepoGroup::new(
@@ -511,6 +535,13 @@ impl Product for Frob {
             RepoGroup::new("repo:cycle", vec![Pm036.meta()], |s: &Snapshot<Self>, _| {
                 strict_pm(&s.inputs, cycle_findings(&s.inputs))
             })
+            .full_only(),
+            // frob:ticket 01M4CT0AF76FJTWFG10SKXJZAZ
+            RepoGroup::new(
+                "repo:aging",
+                vec![Pm008.meta(), Pm009.meta()],
+                |s: &Snapshot<Self>, _| strict_pm(&s.inputs, aging_findings(&s.inputs)),
+            )
             .full_only(),
             // frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
             RepoGroup::new(

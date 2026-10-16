@@ -2,13 +2,14 @@
 id = "01M4CT0AF76FJTWFG10SKXJZAZ"
 title = "PM008 and PM009: ticket aging per category and unsized ticket in ready"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:48:09Z"
-updated = "2026-10-15T23:26:54Z"
+updated = "2026-10-16T00:40:23Z"
 scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-check/**", "docs/reference/**", "docs/schemas/**", "docs/design/architecture.md"]
 
 [[acceptance]]

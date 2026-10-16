@@ -1,4 +1,4 @@
-//! `PM034`, `PM001`, `PM002`, `PM010`-`PM013`, `PM031`, `PM033` and `PM036` markdown corpus: each block is a small ledger built from a line DSL.
+//! `PM008`, `PM009`, `PM034`, `PM001`, `PM002`, `PM010`-`PM013`, `PM031`, `PM033` and `PM036` markdown corpus: each block is a small ledger built from a line DSL.
 // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
 // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
 // frob:ticket 01M4069TJA7YJTYSZCATV5ZYFS
@@ -7,6 +7,7 @@
 // frob:ticket 01M4CSZFC0QF9PH544ARF60RCZ
 // frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
 // frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
+// frob:ticket 01M4CT0AF76FJTWFG10SKXJZAZ
 #![expect(
     clippy::disallowed_methods,
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
@@ -19,7 +20,7 @@ use frob_ledger::model::{Category, Outcome, TicketType};
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig, TicketId};
 use frob_pm::rules::{
-    cycle, cycle_plan, good_first, membership::evaluate, milestone, pm032, replenish, wip,
+    aging, cycle, cycle_plan, good_first, membership::evaluate, milestone, pm032, replenish, wip,
 };
 use frob_pm::{NewObject, ObjectKind, PmStore, State, event::Op};
 use gob_git::{CommitOptions, RelPath, Repo};
@@ -192,6 +193,10 @@ fn runner(case: &Case) -> Vec<Finding> {
     let mut expedite_max = 1_u32;
     let mut live: BTreeSet<TicketId> = BTreeSet::new();
     let mut pm = frob_pm::PmConfig::load(dir.path()).expect("defaults").pm;
+    let mut ages = frob_pm::PmConfig::load(dir.path())
+        .expect("defaults")
+        .max_age_days;
+    let mut later_days = 0_i64;
     for line in case.text.lines().filter(|l| !l.trim().is_empty()) {
         let w: Vec<&str> = line.split_whitespace().collect();
         let o = opts(&w);
@@ -225,6 +230,9 @@ fn runner(case: &Case) -> Vec<Finding> {
                     .map(|r| r.parse().expect("ready requirement"))
                     .collect();
             }
+            "max_age_in_progress" => ages.in_progress = w[1].parse().expect("max_age_in_progress"),
+            "max_age_ready" => ages.ready = w[1].parse().expect("max_age_ready"),
+            "later_days" => later_days = w[1].parse().expect("later_days"),
             "min_history" => pm.min_history = w[1].parse().expect("min_history"),
             "cycle" => {
                 let id = add_cycle(&ledger, &o, w.contains(&"closed"));
@@ -266,6 +274,18 @@ fn runner(case: &Case) -> Vec<Finding> {
         // frob:tests crates/frob-pm/src/cycle/history.rs::cycle_events
         // frob:tests crates/frob-pm/src/cycle/history.rs::member_status
         return cycle_plan::evaluate(&ledger, &pm)
+            .expect("evaluate")
+            .findings
+            .into_iter()
+            .filter(|f| f.rule == case.rule)
+            .collect();
+    }
+    if matches!(case.rule.to_string().as_str(), "PM008" | "PM009") {
+        // frob:tests crates/frob-pm/src/rules/aging.rs::pm008
+        // frob:tests crates/frob-pm/src/rules/aging.rs::pm009
+        // frob:tests crates/frob-pm/src/rules/aging.rs::evaluate
+        let now = ledger.clock().now().plus_seconds(later_days * 86_400);
+        return aging::evaluate(&ledger, &ages, now)
             .expect("evaluate")
             .findings
             .into_iter()
@@ -342,6 +362,8 @@ corpus_file!(pm032, "pm032.md");
 corpus_file!(pm033, "pm033.md");
 corpus_file!(pm034, "pm034.md");
 corpus_file!(pm036, "pm036.md");
+corpus_file!(pm008, "pm008.md");
+corpus_file!(pm009, "pm009.md");
 
 /// Guards the per-file split: a new markdown file must get its own `corpus_file!` line above.
 // frob:ticket 01M4957V84TB1V6TRPR2E4H9EG
@@ -357,8 +379,8 @@ fn every_corpus_file_has_a_test() {
     assert_eq!(
         files,
         [
-            "pm001.md", "pm002.md", "pm010.md", "pm011.md", "pm012.md", "pm013.md", "pm031.md",
-            "pm032.md", "pm033.md", "pm034.md", "pm036.md"
+            "pm001.md", "pm002.md", "pm008.md", "pm009.md", "pm010.md", "pm011.md", "pm012.md",
+            "pm013.md", "pm031.md", "pm032.md", "pm033.md", "pm034.md", "pm036.md"
         ],
         "corpus files and corpus_file! lines must match"
     );

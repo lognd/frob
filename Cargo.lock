@@ -2476,6 +2476,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "gob-fix"
+version = "0.532.0"
+dependencies = [
+ "blake3",
+ "gob-fs",
+ "gob-rules",
+ "tempfile",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "gob-frameworks"
 version = "0.532.0"
 dependencies = [

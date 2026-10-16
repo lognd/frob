@@ -293,8 +293,8 @@ has none. Per-worktree code config stays per worktree.
 | PM001-PM002 | milestone and epic completeness |
 | PM003-PM006 | story structure, value statement, criteria shape, INVEST |
 | PM007 | task without parent story |
-| PM008 | ticket aging past `[pm] max_age_days` per category |
-| PM009 | unsized ticket in `ready` |
+| PM008 | ticket aging past `[pm.max_age_days]` per category (`in_progress` default 3, `ready` default 30, 0 is off); a ticket ages from its latest move into its category, epics do not age; there is no review category yet, so no review limit |
+| PM009 | unsized ticket in `ready` (a non-epic in `todo` with no points) |
 | PM010-PM012 | cycle over capacity, no goal, not-ready members |
 | PM013 | WIP limit exceeded |
 | PM014 | milestone without forecast (no sized work) or past target date |

@@ -1,0 +1,28 @@
+rule DOC002 "broken-markdown-link" {
+  lang markdown
+  severity error
+
+  find l: link where l.target is relative
+  def dest_exists(l) = some f: file where f.path == resolve(l.target.path, l.file)
+  report l "link target {l.target.path} does not exist" when not dest_exists(l)
+  report l "no heading #{l.target.anchor} in {l.target.path}"
+    when exists l.target.anchor
+     and no h: heading where h.file.path == resolve(l.target.path, l.file) and slug(h.text) == l.target.anchor
+
+  example fire """
+    See [gone](missing.md).        <!--~ error -->
+  """
+  example clean {
+    file "a.md" """
+      See [b](b.md#intro).
+    """
+    file "b.md" """
+      # Intro
+    """
+  }
+  explain """
+    A relative link must point at a file (and heading) that exists.
+    ## Remedy
+    Fix the path or anchor, or remove the link.
+  """
+}

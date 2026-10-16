@@ -134,6 +134,8 @@
 |---|---|---|---|---|---|---|
 | [PM001](PM001.md) | milestone-without-goal | warn | manual | P+ | false | A milestone has no goal statement or no exit criteria. |
 | [PM002](PM002.md) | milestone-epics-incomplete | warn | manual | P+ | false | A milestone has no epics, or a member epic is done while work under it is open. |
+| [PM008](PM008.md) | ticket-aged | warn | manual | P+ | false | A ticket has stayed in its category longer than `[pm.max_age_days]` allows. |
+| [PM009](PM009.md) | ready-unsized | warn | manual | P+ | false | A ready ticket (`todo`, not an epic) has no story points. |
 | [PM010](PM010.md) | cycle-over-capacity | advisory | manual | P+ | false | An open or planned cycle commits more points than its capacity. |
 | [PM011](PM011.md) | cycle-without-goal | warn | manual | P+ | false | An open or planned cycle states no goal. |
 | [PM012](PM012.md) | cycle-member-not-ready | advisory | manual | P+ | false | A not-yet-started member of an open or planned cycle fails the definition of ready. |

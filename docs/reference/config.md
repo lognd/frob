@@ -222,7 +222,7 @@ Materialized: yes.
 | `ready_min` | `u32` | `4` | yes | Replenishment order point: PM033 advises planning when ready tickets fall below this (default twice the repository WIP limit, so the queue never starves a full WIP). |
 | `ready_requires` | `Vec<ReadyRequirement>` | `["story_or_objective_qualified", "criteria", "points", "scope", "parent"]` | yes | Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-enforcement.md section 3 so no ill-formed goal is pulled. |
 | `sprint_gate` | `bool` | `true` | yes | Sprint gate: while a cycle is active, `work` and `start` refuse a ticket that is not a member of it (`E-PM-NOT-IN-CYCLE`) unless it is expedite or started with `--unplanned --reason`, which assigns it to the cycle as a recorded over-commit; with no active cycle the gate is silent, so it defaults on. |
-| `strict` | `bool` | `false` | yes | Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised. |
+| `strict` | `bool` | `false` | yes | Strict process policy: PM rules that are warnings by default (PM001, PM002, PM008, PM009, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised. |
 
 ## `[pm.classes]`
 
@@ -234,6 +234,17 @@ Materialized: yes.
 |---|---|---|---|---|
 | `expedite_max` | `u32` | `1` | yes | Expedite tickets that may exceed the repository WIP limit at once; 1 lets one critical fix through without opening the floodgates. |
 | `intangible_share` | `f64` | `0.2` | yes | Largest share (0.0 to 1.0) of a cycle's points that intangible work (chores, debt) may take, checked by PM035; 0.2 keeps upkeep from crowding out features. |
+
+## `[pm.max_age_days]`
+
+Ticket aging limits in days per category (`[pm.max_age_days]`); 0 turns a limit off.
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `in_progress` | `u32` | `3` | yes | Days a ticket may stay in progress before PM008 fires; 3 keeps work from lingering, 0 is off. |
+| `ready` | `u32` | `30` | yes | Days a ticket may wait in the ready queue (`todo`) before PM008 fires; 30 retires stale intentions, 0 is off. |
 
 ## `[pm.wip]`
 

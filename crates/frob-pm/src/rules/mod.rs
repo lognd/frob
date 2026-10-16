@@ -1,5 +1,6 @@
 //! The `PM` rule family: project-management rules over tickets and milestones.
 
+pub mod aging;
 pub mod cycle;
 pub mod cycle_plan;
 pub mod good_first;
@@ -16,6 +17,8 @@ use gob_rules::{Finding, Severity};
 pub const STRICT_SEVERITY: &[(&str, Severity)] = &[
     ("PM001", Severity::Error),
     ("PM002", Severity::Error),
+    ("PM008", Severity::Error),
+    ("PM009", Severity::Error),
     ("PM013", Severity::Error),
     ("PM034", Severity::Error),
     ("PM036", Severity::Error),
