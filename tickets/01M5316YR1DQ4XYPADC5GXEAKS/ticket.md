@@ -13,5 +13,5 @@ scope = ["docs/design/diagnostics.md", "docs/design/cli.md", "changelog.d/01M531
 
 [[acceptance]]
 text = "diagnostics.md and cli.md document RemedyCommand, error.command and check_remedy"
-bound = false
+bound = true
 +++
