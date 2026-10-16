@@ -65,6 +65,55 @@ pub fn scan(kind: ConfigKind, text: &str) -> Vec<Site> {
     sites
 }
 
+/// The rule id this module backs.
+pub const RULE_ID: &str = "TYPING001";
+
+/// The severity a `TYPING001` finding carries (a new rule ships Advisory until measured).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Severity {
+    /// Reported, never gating.
+    Advisory,
+}
+
+/// One `TYPING001` finding: a [`Site`] bound to its file, rule id and severity.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Finding {
+    /// Always [`RULE_ID`].
+    pub rule_id: &'static str,
+    /// Always [`Severity::Advisory`].
+    pub severity: Severity,
+    /// The config file path as given to [`check`].
+    pub path: String,
+    /// 1-based line of the offending key.
+    pub line: usize,
+    /// Human-readable explanation.
+    pub message: &'static str,
+    /// The exact key and value to set.
+    pub fix: &'static str,
+}
+
+/// Run the `TYPING001` rule over one file: classify it by name, scan it, emit Advisory findings.
+pub fn check(path: &str, text: &str) -> Vec<Finding> {
+    let name = path.rsplit(['/', '\\']).next().unwrap_or(path);
+    let Some(kind) = ConfigKind::of_file_name(name) else {
+        debug!(path, "typing001 skip: not a recognised config file");
+        return Vec::new();
+    };
+    let findings: Vec<Finding> = scan(kind, text)
+        .into_iter()
+        .map(|s| Finding {
+            rule_id: RULE_ID,
+            severity: Severity::Advisory,
+            path: path.to_owned(),
+            line: s.line,
+            message: s.message,
+            fix: s.fix,
+        })
+        .collect();
+    debug!(path, findings = findings.len(), "typing001 check");
+    findings
+}
+
 const TSCONFIG_FIX: &str = "\"strict\": true";
 const TSCONFIG_MSG: &str =
     "tsconfig does not enable strict type checking; set compilerOptions.strict to true";
@@ -282,5 +331,26 @@ mod tests {
             Some(ConfigKind::PyProject)
         );
         assert_eq!(ConfigKind::of_file_name("x.json"), None);
+    }
+
+    #[test]
+    fn check_emits_advisory_findings_for_config_files_only() {
+        let f = check(
+            "web/tsconfig.json",
+            "{\"compilerOptions\": {\"strict\": false}}",
+        );
+        assert_eq!(f.len(), 1);
+        assert_eq!(f[0].rule_id, "TYPING001");
+        assert_eq!(f[0].severity, Severity::Advisory);
+        assert_eq!(f[0].path, "web/tsconfig.json");
+        assert_eq!(f[0].fix, "\"strict\": true");
+        assert!(check("src/main.rs", "strict = false").is_empty());
+        assert!(
+            check(
+                "a/tsconfig.json",
+                "{\"compilerOptions\": {\"strict\": true}}"
+            )
+            .is_empty()
+        );
     }
 }
