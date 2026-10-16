@@ -67,17 +67,6 @@
           "description": "Stable code such as `E-LEASE-HELD`.",
           "type": "string"
         },
-        "command": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/RemedyCommand"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "The remedy as data (verb path, flags, placeholders), when it is a command."
-        },
         "message": {
           "description": "Human-readable explanation.",
           "type": "string"
@@ -235,63 +224,6 @@
         "title",
         "applicability",
         "edits"
-      ],
-      "type": "object"
-    },
-    "RemedyCommand": {
-      "description": "A runnable command a refusal points at, kept structured so tests and agents can check it.",
-      "properties": {
-        "args": {
-          "description": "Positional arguments or `<placeholders>`, in order.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "flags": {
-          "description": "Long flag names without the leading `--`, each with an optional value.",
-          "items": {
-            "$ref": "#/$defs/RemedyFlag"
-          },
-          "type": "array"
-        },
-        "product": {
-          "description": "Binary that runs the command, such as `frob`.",
-          "type": "string"
-        },
-        "verb": {
-          "description": "Verb path words, such as `[\"lease\", \"widen\"]`.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        }
-      },
-      "required": [
-        "product",
-        "verb",
-        "flags",
-        "args"
-      ],
-      "type": "object"
-    },
-    "RemedyFlag": {
-      "description": "One long flag of a [`RemedyCommand`] and its value, when it takes one.",
-      "properties": {
-        "name": {
-          "description": "Flag name without the leading `--`.",
-          "type": "string"
-        },
-        "value": {
-          "description": "Value or `<placeholder>`; `None` for a switch.",
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      },
-      "required": [
-        "name"
       ],
       "type": "object"
     },
