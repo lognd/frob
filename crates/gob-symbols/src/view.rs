@@ -20,6 +20,8 @@ use crate::symref::Symref;
 
 /// Attribute key holding a unit's visibility (`public`, `crate`, `private`).
 pub(crate) const ATTR_VISIBILITY: &str = "visibility";
+/// Unit attribute set to true on a test unit (`#[test]`, `cfg(test)`, a `test_*` function).
+pub(crate) const ATTR_TEST: &str = "test";
 /// Attribute key holding the trait text of an impl member.
 pub(crate) const ATTR_IMPLEMENTS: &str = "implements";
 /// Unit attribute: the `self` kind of a function (`none`, `ref`, `refmut`, `value`).

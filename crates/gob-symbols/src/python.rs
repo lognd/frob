@@ -49,7 +49,9 @@ use crate::model::{
 };
 use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
-use crate::view::{self, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, HOLE_UNMODELLED, Naming};
+use crate::view::{
+    self, ATTR_TEST, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, HOLE_UNMODELLED, Naming,
+};
 
 /// Deepest term nesting before a subtree collapses into one opaque node.
 const MAX_DEPTH: usize = 160;
@@ -995,10 +997,13 @@ impl<'a> Fold<'a> {
         kids.push(self.cx.add(sig_group, &sig_kids)?);
         kids.extend(body);
         let names: Vec<&str> = binders.iter().map(String::as_str).collect();
-        let spec = NodeSpec::new(Operator::unit(kind, "impl"), self.cx.node_loc(span))
+        let mut spec = NodeSpec::new(Operator::unit(kind, "impl"), self.cx.node_loc(span))
             .named(name)
             .binders(&names)
             .attr(ATTR_VISIBILITY, vis);
+        if kind == "function" && name.starts_with("test") {
+            spec = spec.attr(ATTR_TEST, true);
+        }
         let id = self.cx.add(spec, &kids)?;
         self.ord_nodes[ord] = Some(id);
         tracing::trace!(path = self.path, kind, name, "python unit");

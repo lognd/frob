@@ -50,7 +50,7 @@ use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
 use crate::view::{
     self, ATTR_ARITY, ATTR_IMPLEMENTS, ATTR_RET, ATTR_RET_ARG, ATTR_RET_ARG2, ATTR_RET_TUPLE,
-    ATTR_SELF_KIND, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, Naming,
+    ATTR_SELF_KIND, ATTR_TEST, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, Naming,
 };
 
 /// Deepest term nesting before a subtree collapses into one opaque node (the honest fallback).
@@ -139,6 +139,17 @@ struct Lead<'t> {
     docs: Vec<Node<'t>>,
     attrs: Vec<Node<'t>>,
     comments: Vec<Node<'t>>,
+}
+
+/// Whether an outer attribute's text marks a test (`#[test]`, `#[tokio::test]`, `#[cfg(test)]`).
+fn is_test_attr(text: &str) -> bool {
+    let body: String = text.chars().filter(|c| !c.is_whitespace()).collect();
+    let inner = body.trim_start_matches("#[").trim_end_matches(']');
+    inner == "cfg(test)"
+        || inner
+            .split('(')
+            .next()
+            .is_some_and(|p| p == "test" || p.ends_with("::test"))
 }
 
 enum SiteKind {
@@ -2869,6 +2880,9 @@ impl<'a> Fold<'a> {
         }
         if let Some(i) = implements {
             spec = spec.attr(ATTR_IMPLEMENTS, i);
+        }
+        if lead.attrs.iter().any(|a| is_test_attr(self.t(*a))) {
+            spec = spec.attr(ATTR_TEST, true);
         }
         if let Some((self_kind, arity, ret)) = self.fn_sig.take() {
             spec = spec

@@ -118,4 +118,36 @@ mod tests {
         let model = model_of_source_at("src/core/a.py", "import requests\n").expect("model");
         assert_eq!(model.term().locator(), "src/core/a.py");
     }
+
+    /// Names of the units carrying the boolean `test` attribute.
+    fn test_units(model: &Model) -> Vec<String> {
+        let term = model.term();
+        term.ids()
+            .filter(|id| {
+                matches!(
+                    term.node(*id).attrs().get("test"),
+                    Some(gob_ir::AttrValue::Bool(true))
+                )
+            })
+            .filter_map(|id| term.node(id).name().map(str::to_owned))
+            .collect()
+    }
+
+    // frob:tests crates/gob-symbols/src/source_model.rs::model_of_source
+    #[test]
+    fn rust_test_fns_and_cfg_test_modules_carry_the_test_attr() {
+        let text = "pub fn double(x: i32) -> i32 { x * 2 }\n#[cfg(test)] mod tests { #[test] fn d() {} }\n";
+        let got = test_units(&model_of_source("rust", text).expect("model"));
+        assert!(got.contains(&"d".to_owned()), "{got:?}");
+        assert!(got.contains(&"tests".to_owned()), "{got:?}");
+        assert!(!got.contains(&"double".to_owned()), "{got:?}");
+    }
+
+    // frob:tests crates/gob-symbols/src/source_model.rs::model_of_source
+    #[test]
+    fn python_test_functions_carry_the_test_attr() {
+        let text = "def helper(cb): cb()\ndef test_run(): helper(len)\n";
+        let got = test_units(&model_of_source("python", text).expect("model"));
+        assert_eq!(got, vec!["test_run".to_owned()]);
+    }
 }
