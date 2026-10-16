@@ -57,6 +57,8 @@ pub trait Product: Sized + 'static {
     ];
     /// True when every verb but `doctor` and `schema` refuses without `<NAME>.toml`.
     const REQUIRES_CONFIG: bool;
+    /// Verbs of this product that also run without `<NAME>.toml` (`init` creates it).
+    const NO_CONFIG_VERBS: &'static [&'static str] = &[];
 
     /// The `check` data type (its schema backs `check --schema`).
     type CheckData: Serialize + JsonSchema;

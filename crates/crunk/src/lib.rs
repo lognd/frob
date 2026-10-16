@@ -3,7 +3,7 @@
 //! [`cli`] assembles the root; `main` only runs it. The generic `check` (the `gob.sibling/1`
 //! document) and `doctor` verbs come from `gob-product`; [`doctor`] holds crunk's own report
 //! rows, [`tokens`] exports and checks the generated token files, and the built-in `schema` verb
-//! comes from `gob-cli`. Every verb but `doctor` refuses
+//! comes from `gob-cli`. Every verb but `doctor` and `init` refuse
 //! with `E-NO-CONFIG` (exit 3) when no `crunk.toml` exists. No frob crate is linked (the
 //! boundary test in `tests/boundary.rs`).
 
@@ -14,10 +14,13 @@
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
 )]
 
+pub mod diff;
 pub mod doctor;
 pub mod explain;
 pub mod gallery;
+pub mod init;
 pub mod map;
+pub mod preview;
 pub mod query;
 pub mod review;
 pub mod rule;
@@ -63,6 +66,7 @@ impl Product for CrunkProduct {
     const DOCTOR_SUMMARY: &'static str =
         "Report the crunk version, the repository root and the state of crunk.toml.";
     const REQUIRES_CONFIG: bool = true;
+    const NO_CONFIG_VERBS: &'static [&'static str] = &["init"];
 
     type CheckData = Value;
     type Doctor = doctor::DoctorData;
@@ -123,6 +127,9 @@ impl Product for CrunkProduct {
             .register::<map::Map>()
             .register::<explain::Explain>()
             .register::<rule::RuleCatalog>()
+            .register::<preview::Preview>()
+            .register::<diff::Diff>()
+            .register::<init::Init>()
             .register::<gallery::GalleryCheck>()
     }
 }

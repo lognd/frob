@@ -1,0 +1,1 @@
+Acceptance corpus A: TODO001, DOC002, COV001, INV002, SCOPE001, NEAT013 written in GRL.
