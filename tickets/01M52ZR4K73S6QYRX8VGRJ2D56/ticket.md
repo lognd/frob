@@ -2,7 +2,8 @@
 id = "01M52ZR4K73S6QYRX8VGRJ2D56"
 title = "CI red on both OS: layering gob-check->gob-packs goes up a layer; dev-artifacts must need cone-compare job"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
