@@ -485,10 +485,7 @@ fn milestone_show_text_leads_with_the_verdict_and_lists_criteria_once() {
     let repo = three();
     let out = repo.run(&["--text", "milestone", "show", "0.532.0"]);
     let text = String::from_utf8_lossy(&out.stdout);
-    assert!(
-        text.starts_with("0.532.0 (~"),
-        "verdict line first: {text}"
-    );
+    assert!(text.starts_with("0.532.0 (~"), "verdict line first: {text}");
     assert!(text.contains("0/3 criteria bound"), "{text}");
     assert_eq!(text.matches("exit criteria (3):").count(), 1, "{text}");
     assert!(!text.contains("bound_by"), "{text}");
