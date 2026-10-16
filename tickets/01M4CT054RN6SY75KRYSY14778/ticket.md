@@ -8,8 +8,8 @@ points = 5
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:48:03Z"
-updated = "2026-10-16T03:34:07Z"
-scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**"]
+updated = "2026-10-16T03:34:47Z"
+scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-check/src/product.rs", "docs/reference/**", "docs/schemas/**"]
 
 [[acceptance]]
 text = "Given mdtest fire and clean pairs for each of PM003-PM007, when the corpus runs, then each rule fires only on its fire case"
