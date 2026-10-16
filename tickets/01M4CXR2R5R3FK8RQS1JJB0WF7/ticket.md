@@ -2,7 +2,8 @@
 id = "01M4CXR2R5R3FK8RQS1JJB0WF7"
 title = "Colour-blind safe and dark modes: every COLOR and CONTRAST rule runs once per declared mode"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
