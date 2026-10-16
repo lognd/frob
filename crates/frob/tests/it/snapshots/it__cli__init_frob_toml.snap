@@ -1,5 +1,5 @@
 ---
-source: crates/frob/tests/cli.rs
+source: crates/frob/tests/it/cli.rs
 expression: toml1
 ---
 [check]
@@ -41,7 +41,7 @@ attesters = ["test@example.com"]
 cas_retries = 5
 
 [pm]
-# Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.
+# Strict process policy: PM rules that are warnings by default (PM001, PM002, PM008, PM009, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.
 strict = false
 # Pull policy; `rank` takes the highest-ranked doable ticket, the only policy so far and the scrumban default.
 pull = "rank"
@@ -65,6 +65,12 @@ sprint_gate = true
 expedite_max = 1
 # Largest share (0.0 to 1.0) of a cycle's points that intangible work (chores, debt) may take, checked by PM035; 0.2 keeps upkeep from crowding out features.
 intangible_share = 0.2
+
+[pm.max_age_days]
+# Days a ticket may stay in progress before PM008 fires; 3 keeps work from lingering, 0 is off.
+in_progress = 3
+# Days a ticket may wait in the ready queue (`todo`) before PM008 fires; 30 retires stale intentions, 0 is off.
+ready = 30
 
 [pm.wip]
 # Most tickets one holder (actor plus worktree path) may have in progress; 1 makes an agent finish before starting another, 0 is off.

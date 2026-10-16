@@ -593,5 +593,5 @@ fn an_unreadable_release_gate_is_an_unresolved_item_in_status() {
     git(repo.dir.path(), &["commit", "-q", "-m", "crunk.toml"]);
     let out = repo.frob(&["release", "status", "0.532.0"]);
     let text = String::from_utf8_lossy(&out.stdout).into_owned();
-    assert!(text.contains("release-tier findings: unresolved"), "{text}");
+    assert!(text.contains(r#""item":"release-tier findings""#), "{text}");
 }

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D122 sweep (~6ZBSBCW): stays native. SEO and WEBPERF per-page metadata, robots/sitemap/llms.txt and spam-policy rules are not in the bind list of lint-catalogue-2026-10-08.md; Lighthouse-style Web Vitals stay dynamic evidence, not a reimplemented rule."
+at = "2026-10-16T03:10:05Z"
+actor = "lognd"
+rev = 1

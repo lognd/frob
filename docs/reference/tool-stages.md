@@ -14,7 +14,7 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | `args` | `[]` | Arguments, no shell. |
 | `timeout_secs` | `300` | Kill limit. |
 | `fail_on_nonzero` | `true` | A failing stage is `TOOL001` (Error); a missing binary is `TOOL001` Unresolved and required. |
-| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab` or `pyright-json`: turn stdout into findings. |
+| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab`, `pyright-json` or `typos-json`: turn stdout into findings. |
 | `labels` | `[]` | actionlint runner labels the repository defines. |
 | `id_map` | `{}` | Tool finding id to rule id, merged over the parser default. |
 | `min_version`, `max_version` | unset | Inclusive dotted-number range of trusted tool versions. |
@@ -51,6 +51,7 @@ With a `parser` the stage exit status no longer decides: tools exit nonzero when
 | ruff-json | `B` plus digits (bugbear) | `LOGIC001` | Warn |
 | ruff-json | `PLR2004` | off (dropped) | none |
 | ruff-json | any other code | `LINT001` | Advisory |
+| typos-json | any typo | `SPELL001` | Advisory |
 
 The cargo-json severity is the rustc level: `error` is Error, `warning` is Warn. Summary lines (`aborting due to`, `warnings emitted`) are not findings; build artifacts and other non-diagnostic lines are skipped. A diagnostic repeated for each cargo target is reported once per site.
 
@@ -67,6 +68,8 @@ ty-gitlab reads `ty check --output-format gitlab` and pyright-json reads `pyrigh
 `gob_check::type_facts_from_output` turns a checker's stdout into the clean-file set the symbol graph consumes (`SymbolGraph::from_files_typed`).
 
 `frob init` in a repository with a `pyproject.toml` adds a pinned `ruff` stage: `uvx ruff@0.14.1 check --output-format=json --no-cache .`, parser `ruff-json`, with the range 0.14.0..0.14.99 and `inputs` covering Python sources and the ruff config files.
+
+typos-json reads `typos --format json` (exit 2 for typos is a normal exit); the correction is in the message, and the repository's `typos.toml` allowlist is applied by typos itself, so allowlisted words never reach the parser.
 
 stylelint runs as `stylelint --formatter json` (exit 2 for lint errors is a normal exit; the stage exit status does not decide). `crunk check` reads `[[check.tool]]` from `crunk.toml`, so the same stage binds under the crunk ids.
 

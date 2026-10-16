@@ -201,7 +201,61 @@ pub(crate) fn parse(parser: ToolParser, stdout: &str) -> Result<Vec<RawFinding>,
         ToolParser::RuffJson => parse_ruff(stdout),
         ToolParser::TyGitlab => crate::type_parse::parse_ty_gitlab(stdout),
         ToolParser::PyrightJson => crate::type_parse::parse_pyright(stdout),
+        ToolParser::TyposJson => parse_typos(stdout),
     }
+}
+
+// frob:ticket 01M4D92HMPWHFY5WGGY3KGFTNE
+/// One line of `typos --format json`; only `type = "typo"` lines are findings.
+#[derive(Deserialize)]
+struct TLine {
+    #[serde(rename = "type")]
+    kind: String,
+    #[serde(default)]
+    path: String,
+    #[serde(default)]
+    line_num: u32,
+    #[serde(default)]
+    byte_offset: u32,
+    #[serde(default)]
+    typo: String,
+    #[serde(default)]
+    corrections: Vec<String>,
+}
+
+// frob:ticket 01M4D92HMPWHFY5WGGY3KGFTNE
+/// typos `--format json`: JSON lines, one per typo, with a 1-based line and 0-based byte offset; the corrections go in the message as the remedy (empty output is no finding).
+fn parse_typos(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
+    let mut out = Vec::new();
+    for text in stdout.lines().map(str::trim).filter(|l| !l.is_empty()) {
+        let line: TLine = serde_json::from_str(text).map_err(|source| ParseError::Json {
+            format: "typos",
+            source,
+        })?;
+        if line.kind != "typo" {
+            continue;
+        }
+        let col = line.byte_offset + 1;
+        let width = u32::try_from(line.typo.len()).unwrap_or(u32::MAX).max(1);
+        let remedy = match line.corrections.as_slice() {
+            [] => "no correction known".to_owned(),
+            fixes => format!("did you mean {}?", fixes.join(" or ")),
+        };
+        out.push(RawFinding {
+            path: line.path,
+            range: RawRange::LineCol {
+                line: line.line_num,
+                col,
+                end_col: col.saturating_add(width),
+            },
+            tool_id: "typo".to_owned(),
+            message: format!("`{}` is a typo; {remedy}", line.typo),
+            suppressed: None,
+            meta: RawMeta::default(),
+        });
+    }
+    tracing::debug!(count = out.len(), "typos findings parsed");
+    Ok(out)
 }
 
 // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
@@ -383,6 +437,8 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
         | ToolParser::TyGitlab
         | ToolParser::PyrightJson
         | ToolParser::None => BTreeMap::new(),
+        // frob:ticket 01M4D92HMPWHFY5WGGY3KGFTNE
+        ToolParser::TyposJson => BTreeMap::from([("typo", "SPELL001")]),
     }
 }
 
@@ -611,7 +667,8 @@ pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
         | ToolParser::StylelintJson
         | ToolParser::RuffJson
         | ToolParser::TyGitlab
-        | ToolParser::PyrightJson => Some(vec!["--version".to_owned()]),
+        | ToolParser::PyrightJson
+        | ToolParser::TyposJson => Some(vec!["--version".to_owned()]),
         ToolParser::ActionlintJson => Some(vec!["-version".to_owned()]),
         ToolParser::Sarif | ToolParser::CargoJson | ToolParser::None => None,
     }
@@ -642,6 +699,37 @@ mod tests {
             inputs: Vec::new(),
             unscoped_packages: vec!["--workspace".to_owned()],
         }
+    }
+
+    // frob:ticket 01M4D92HMPWHFY5WGGY3KGFTNE
+    // frob:tests crates/gob-check/src/tool_parse.rs::parse
+    // frob:tests crates/gob-check/src/tool_parse.rs::classify
+    #[test]
+    fn typos_json_lines_become_advisory_spell001_with_the_correction() {
+        // Built at runtime so the repository's own typos stage does not flag the fixture.
+        let (bad, good) = (["te", "h"].concat(), "the");
+        let out = format!(
+            "{{\"type\":\"typo\",\"path\":\"src/a.rs\",\"line_num\":3,\"byte_offset\":4,\"typo\":\"{bad}\",\"corrections\":[\"{good}\"]}}\n{{\"type\":\"binary_file\",\"path\":\"x.bin\"}}\n"
+        );
+        let found = parse(ToolParser::TyposJson, &out).expect("parse");
+        assert_eq!(found.len(), 1, "non-typo lines are skipped");
+        assert_eq!(
+            found[0].range,
+            RawRange::LineCol {
+                line: 3,
+                col: 5,
+                end_col: 8
+            }
+        );
+        assert!(found[0].message.contains("did you mean the?"));
+        let (id, sev) = classify(&stage(ToolParser::TyposJson), &found[0]).expect("kept");
+        assert_eq!(
+            (id.to_string(), sev),
+            ("SPELL001".to_owned(), Severity::Advisory)
+        );
+        // typos prints nothing for words its typos.toml allowlists, so no finding.
+        assert!(parse(ToolParser::TyposJson, "").expect("empty").is_empty());
+        assert!(parse(ToolParser::TyposJson, "{").is_err());
     }
 
     // frob:tests crates/gob-check/src/tool_parse.rs::parse

@@ -14,7 +14,7 @@ expression: v
     },
     "config": {
       "error": null,
-      "missing_knobs": 34,
+      "missing_knobs": 36,
       "path": "[path]",
       "present": false
     },
@@ -380,6 +380,32 @@ expression: v
       "fix": null,
       "line": null,
       "message": "missing materialized knob `pm.classes.intangible_share` in frob.toml (default 0.2); run `frob init` (or `frob config sync`) to write it",
+      "message_origin": "std",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "1c9f9c5cab4dbb9c89cb730278770efc13e774b2b5a9ed76d84e9154db0a3058",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `pm.max_age_days.in_progress` in frob.toml (default 3); run `frob init` (or `frob config sync`) to write it",
+      "message_origin": "std",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "09d7ba4ba2c1c48dc39e441b6de4223e54d789bd02462109742e9150b5c3632e",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `pm.max_age_days.ready` in frob.toml (default 30); run `frob init` (or `frob config sync`) to write it",
       "message_origin": "std",
       "required": null,
       "rule": "CFG001",

@@ -6,6 +6,7 @@ use std::collections::BTreeSet;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
+use gob_ir::Resolution;
 use gob_symbols::{
     Adapter, CSharpAdapter, Fidelity, MarkdownAdapter, PythonAdapter, RustAdapter, SymbolGraph,
     fold_file,
@@ -246,5 +247,110 @@ fn rust_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit()
     assert!(
         segs <= 2 * syms,
         "symref storage stays flat: {segs} segs for {syms} symbols"
+    );
+}
+
+/// One oracle site: the `nth` reference spelled `name` (graph order) truly denotes the
+/// `decl_nth` declaration spelled `decl` (graph order), or lies outside the file (`None`).
+struct Oracle {
+    name: &'static str,
+    nth: usize,
+    truth: Option<(&'static str, usize)>,
+}
+
+/// Hypothesis check: every oracle referent lies inside the emitted May set, equals the Must
+/// declaration, or the site is Unknown (an external referent must be Unknown).
+fn check_oracle(path: &str, text: &str, oracle: &[Oracle]) -> usize {
+    let f = fold_file(&entry(path, text), text).expect("fold");
+    let decl_of = |name: &str, nth: usize| {
+        f.scopes
+            .decls()
+            .iter()
+            .enumerate()
+            .filter(|(_, d)| d.name == name)
+            .nth(nth)
+            .map_or_else(
+                || panic!("{path}: no declaration `{name}` #{nth}"),
+                |(i, _)| i,
+            )
+    };
+    let mut proven = 0;
+    for o in oracle {
+        let r = f
+            .scopes
+            .refs()
+            .iter()
+            .filter(|r| r.name == o.name)
+            .nth(o.nth)
+            .unwrap_or_else(|| panic!("{path}: no reference `{}` #{}", o.name, o.nth));
+        let id = f
+            .scopes
+            .ref_at(r.node.expect("term reference has a node"))
+            .expect("ref id");
+        let res = f.scopes.resolve(id);
+        match (&res, o.truth) {
+            (Resolution::Unknown, _) => {}
+            (_, None) => panic!("{path}: external `{}` resolved to {res:?}", o.name),
+            (Resolution::Must(d), Some((dn, dnth))) => {
+                assert_eq!(
+                    d.index(),
+                    decl_of(dn, dnth),
+                    "{path}: Must `{}` wrong",
+                    o.name
+                );
+                proven += 1;
+            }
+            (Resolution::May(set), Some((dn, dnth))) => {
+                assert!(
+                    set.iter().any(|d| d.index() == decl_of(dn, dnth)),
+                    "{path}: May set for `{}` omits the true referent: {set:?}",
+                    o.name
+                );
+                proven += 1;
+            }
+        }
+    }
+    proven
+}
+
+const fn site(name: &'static str, nth: usize, truth: Option<(&'static str, usize)>) -> Oracle {
+    Oracle { name, nth, truth }
+}
+
+// frob:tests crates/gob-ir/src/scope.rs::ScopeGraph.resolve
+#[test]
+fn rust_may_sets_contain_the_true_referent() {
+    let src = "pub fn pick(a: u32, b: u32) -> u32 { let c = a + b; let c = c + 1; free_name + c }\n\
+               fn g(a: u32) -> u32 { if a > 1 { pick(a, a) } else { a } }";
+    let oracle = [
+        site("free_name", 0, None),
+        site("c", 0, Some(("c", 1))),
+        site("c", 1, Some(("c", 0))),
+        site("a", 0, Some(("a", 0))),
+        site("b", 0, Some(("b", 0))),
+        site("a", 1, Some(("a", 1))),
+        site("pick", 0, Some(("pick", 0))),
+    ];
+    assert!(
+        check_oracle("o.rs", src, &oracle) >= 5,
+        "adapter must not go vacuously Unknown"
+    );
+}
+
+// frob:tests crates/gob-ir/src/scope.rs::ScopeGraph.resolve
+#[test]
+fn python_may_sets_contain_the_true_referent() {
+    let src = "def f(a):\n    return a\ndef g(a, b):\n    if a:\n        x = f(b)\n    else:\n        x = 2\n    return x + missing\n";
+    let oracle = [
+        site("a", 0, Some(("a", 0))),
+        site("a", 1, Some(("a", 1))),
+        site("x", 0, Some(("x", 0))),
+        site("f", 0, Some(("f", 0))),
+        site("b", 0, Some(("b", 0))),
+        site("missing", 0, None),
+    ];
+    assert!(
+        check_oracle("o.py", src, &oracle) >= 4,
+        "adapter must not go vacuously Unknown"
     );
 }

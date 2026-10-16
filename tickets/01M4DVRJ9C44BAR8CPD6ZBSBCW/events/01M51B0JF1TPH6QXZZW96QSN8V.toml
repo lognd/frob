@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-16T03:10:11Z"
+digest = "492ae17eec0b90166835afc87ae581609f54e52c598ce51b6205dc415139fc0e"
+provider = "file"
+ref = "changelog.d/01M4DVRJ9C44BAR8CPD6ZBSBCW.changed.md"
+size = 103
+status = "measured"
+at = "2026-10-16T03:10:11Z"
+actor = "lognd"
+rev = 1
