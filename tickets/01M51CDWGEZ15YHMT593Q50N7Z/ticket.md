@@ -2,7 +2,8 @@
 id = "01M51CDWGEZ15YHMT593Q50N7Z"
 title = "Measure the walk stage in release after the raw-offset/normalized-cache-key pairing (9W1PXF5 follow-up)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
