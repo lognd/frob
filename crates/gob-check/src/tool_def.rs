@@ -160,11 +160,18 @@ impl ToolDef {
     }
 }
 
+/// The embedded std tool definitions as `(name, toml text)`; kept here, below `gob-packs` in the layering.
+const TOOL_DEFS: [(&str, &str); 3] = [
+    ("zizmor", include_str!("tools/zizmor.toml")),
+    ("actionlint", include_str!("tools/actionlint.toml")),
+    ("ruff", include_str!("tools/ruff.toml")),
+];
+
 /// The std pack's tool definitions, parsed once; a malformed embedded record is a build defect.
 fn all() -> &'static [ToolDef] {
     static DEFS: OnceLock<Vec<ToolDef>> = OnceLock::new();
     DEFS.get_or_init(|| {
-        gob_packs::std_pack::TOOL_DEFS
+        TOOL_DEFS
             .iter()
             .map(|(name, text)| {
                 toml::from_str::<ToolDef>(text)

@@ -505,7 +505,7 @@ jobs:
 
   dev-artifacts:
     name: dev artifacts (build and smoke)
-    needs: [changes, docs, rust, profile, dev-gate]
+    needs: [changes, docs, rust, profile, cone-compare, dev-gate]
     if: ${{ github.event_name == 'push' && github.repository == 'lognd/frob' && contains(fromJSON('["refs/heads/experimental"]'), github.ref) && needs.dev-gate.outputs.build == 'true' }}
     # frob:accept TOOL002 because="actionlint accepts only ./ for a local reusable workflow; zizmor suggests $/, which actionlint rejects"
     uses: ./.github/workflows/build-smoke.yml
@@ -524,7 +524,7 @@ jobs:
   # recorded list, never a match by sha) and leaves the previous assets in place.
   dev-publish:
     name: publish (replace the dev prerelease assets)
-    needs: [changes, docs, rust, profile, dev-gate, dev-artifacts]
+    needs: [changes, docs, rust, profile, cone-compare, dev-gate, dev-artifacts]
     if: ${{ github.event_name == 'push' && github.repository == 'lognd/frob' && contains(fromJSON('["refs/heads/experimental"]'), github.ref) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15

@@ -2327,7 +2327,6 @@ dependencies = [
  "gob-fs",
  "gob-languages",
  "gob-lock",
- "gob-packs",
  "gob-rules",
  "gob-symbols",
  "gob-text",

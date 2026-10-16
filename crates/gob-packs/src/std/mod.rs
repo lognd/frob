@@ -132,10 +132,3 @@ pub fn check_plugin(file: &str, plugin: &Manifest) -> Result<(), PackError> {
     tracing::debug!(file, pack = %plugin.pack.name, "checking plugin pack against std");
     check_unique(&[(FILE, &std), (file, plugin)])
 }
-
-/// The embedded tool definitions as `(name, toml text)`; `gob-check` parses them into its `ToolDef` model.
-pub const TOOL_DEFS: [(&str, &str); 3] = [
-    ("zizmor", include_str!("tools/zizmor.toml")),
-    ("actionlint", include_str!("tools/actionlint.toml")),
-    ("ruff", include_str!("tools/ruff.toml")),
-];
