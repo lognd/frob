@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-16T02:27:00Z"
+digest = "8193ac00c158ea127d32cf304a3bf788e89dadbc406a8e687471f8f2be14b86c"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.05s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 19d3e90c-43d1-48a5-be07-36c967b30263 with nextest profile: default
+    Starting 2 tests across 1 binary (192 tests skipped)
+        PASS [   0.007s] gob-symbols::it corpus::python_may_sets_contain_the_true_referent
+        PASS [   0.007s] gob-symbols::it corpus::rust_may_sets_contain_the_true_referent
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 2 tests run: 2 passed, 192 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols --test it -E 'test(true_referent)'"
+size = 767
+status = "measured"
+test_count = 2
+tests_digest = "b61689dba001763773c11cdd49c835e88dddaad6f34dc332dafb59816038b3d8"
+at = "2026-10-16T02:27:00Z"
+actor = "lognd"
+rev = 1

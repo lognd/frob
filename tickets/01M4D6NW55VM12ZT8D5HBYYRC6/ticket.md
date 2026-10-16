@@ -8,12 +8,12 @@ points = 2
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T07:29:38Z"
-updated = "2026-10-16T02:21:11Z"
+updated = "2026-10-16T02:27:00Z"
 scope = ["changelog.d/**", "crates/gob-symbols/**", "crates/gob-ir/**"]
 
 [[acceptance]]
 text = "Given oracle corpora with known referents, when adapters resolve them, then every true referent is inside the emitted May set or the site is Unknown"
-bound = false
+bound = true
 +++
 
 Decision (coordinator, from the formal review's R_lo <= R_true <= R_hi): a referent outside a May set is an adapter bug, not an evaluator case. Follow-up from ~JVT37ES.
