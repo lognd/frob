@@ -2,7 +2,8 @@
 id = "01M51CKG205D0WF5XNGPRK8GZ3"
 title = "Land train: a member that does not merge is evicted with its reason, not a round fault"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
