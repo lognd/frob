@@ -8,7 +8,7 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T20:23:31Z"
-updated = "2026-10-16T21:52:40Z"
+updated = "2026-10-16T21:57:48Z"
 scope = ["crates/gob-plan/src/catalog/words.rs", "crates/gob-plan/src/exec/core/eval/predicate.rs", "crates/gob-plan/src/plan/ir.rs", "crates/gob-plan/tests/exec_relations.rs", "docs/design/grl-spec.md", "docs/reference/grl/catalog.md", "changelog.d/01M5364MWN27GJE158AKR11AZT.added.md"]
 
 [[acceptance]]

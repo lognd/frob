@@ -1,0 +1,47 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-16T21:57:48Z"
+digest = "cec5a112af1c09378490119ce8dd0cf5257f00f28ca82ef431b55dba847f8298"
+exit_code = 100
+failed_tests = ["is_integer_accepts_signed_whole_numbers_and_rejects_the_rest"]
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b4a9892d-2cb2-40f8-8a32-d6143b73d425 with nextest profile: default
+    Starting 1 test across 26 binaries (266 tests skipped)
+        FAIL [   0.006s] gob-plan::exec_relations is_integer_accepts_signed_whole_numbers_and_rejects_the_rest
+  output \u{2500}\u{2500}\u{2500}
+
+    running 1 test
+
+    thread 'is_integer_accepts_signed_whole_numbers_and_rejects_the_rest' (3134192) panicked at crates/gob-plan/tests/exec_relations.rs:540:5:
+    assertion `left == right` failed
+      left: [0, 1, 2, 3, 4]
+     right: [0, 1, 4]
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+    test is_integer_accepts_signed_whole_numbers_and_rejects_the_rest ... FAILED
+
+    failures:
+
+    failures:
+        is_integer_accepts_signed_whole_numbers_and_rejects_the_rest
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 0 passed, 1 failed, 266 skipped
+        FAIL [   0.006s] gob-plan::exec_relations is_integer_accepts_signed_whole_numbers_and_rejects_the_rest
+error: test run failed
+'''
+passed = false
+provider = "nextest"
+ref = "-p gob-plan -E test(is_integer_accepts_signed_whole_numbers_and_rejects_the_rest)"
+size = 1430
+status = "measured"
+test_count = 1
+tests_digest = "8a15073d4b3d3ae3e0524647e9fc912caa74bae843030698c8b68433d86c055a"
+at = "2026-10-16T21:57:48Z"
+actor = "lognd"
+rev = 1
