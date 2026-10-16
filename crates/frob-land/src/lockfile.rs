@@ -195,12 +195,18 @@ fn regenerate(
         }
     }
     let regen = cargo(wt, wt_path, &["dev", "gen", "all"])?;
-    tracing::info!(ok = regen.ok(), "generated files regenerated on the merged tree");
+    tracing::info!(
+        ok = regen.ok(),
+        "generated files regenerated on the merged tree"
+    );
     if !regen.ok() {
         return Err(abort_with(
             abort,
             CODE_GENERATED,
-            format!("`cargo dev gen all` on the merged tree failed: {}", regen.text),
+            format!(
+                "`cargo dev gen all` on the merged tree failed: {}",
+                regen.text
+            ),
             by_hand,
         ));
     }
