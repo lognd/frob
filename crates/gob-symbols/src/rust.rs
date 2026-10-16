@@ -2010,7 +2010,7 @@ impl<'a> Fold<'a> {
                 }
                 let saved_env = s.env.borrow().len();
                 let mut out = Vec::new();
-                for a in children(root).into_iter().filter(|a| a.is_named()) {
+                for a in children(root).into_iter().filter(Node::is_named) {
                     match s.with_expr(true, |s| s.tr(a, 0)) {
                         Ok(id) => out.push(id),
                         Err(_) => return Vec::new(),
