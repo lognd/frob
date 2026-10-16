@@ -37,15 +37,15 @@ fn rule_source(id: &str) -> String {
     let p = corpus::root()
         .join("packs/std/rules")
         .join(format!("{id}.grl"));
-    std::fs::read_to_string(&p).unwrap_or_else(|e| panic!("{}: {e}", p.display()))
+    std::fs::read_to_string(&p).unwrap_or_else(|e| panic!("{p:?}: {e}"))
 }
 
 fn plan_file(id: &str) -> Plan {
     let p = corpus::root()
         .join("packs/std/plans")
         .join(format!("{id}.plan"));
-    let bytes = std::fs::read(&p).unwrap_or_else(|e| panic!("{}: {e}", p.display()));
-    Plan::load(&bytes).unwrap_or_else(|e| panic!("{}: {e:?}", p.display()))
+    let bytes = std::fs::read(&p).unwrap_or_else(|e| panic!("{p:?}: {e}"));
+    Plan::load(&bytes).unwrap_or_else(|e| panic!("{p:?}: {e:?}"))
 }
 
 fn lowered(id: &str) -> (gob_plan::grl::ast::Rule, Plan) {
@@ -77,7 +77,7 @@ fn every_std_rule_source_has_a_compiled_in_module() {
             e.ok()?
                 .path()
                 .file_stem()
-                .map(|s| s.to_string_lossy().into_owned())
+                .and_then(|s| s.to_str().map(str::to_owned))
         })
         .collect();
     on_disk.sort();

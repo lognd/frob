@@ -70,7 +70,7 @@ pub fn std_corpus() -> Vec<Case> {
         .filter_map(|p| {
             let text = std::fs::read_to_string(&p).ok()?;
             Some(Case {
-                label: p.display().to_string(),
+                label: format!("{p:?}"),
                 lang: DEFAULT_LANG.to_owned(),
                 text,
             })
@@ -117,7 +117,7 @@ pub fn adversarial(seed: u64, count: usize) -> Vec<Case> {
     (0..count)
         .map(|n| {
             let mut text = String::new();
-            for _ in 0..(1 + g.next(12)) {
+            for _ in 0..=g.next(12) {
                 let path = format!("// src/{}/{}.rs", g.next(9999), g.next(9999));
                 text.push_str(&path);
                 text.push('\n');
