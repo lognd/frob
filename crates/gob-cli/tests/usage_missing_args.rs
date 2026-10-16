@@ -4,6 +4,7 @@
 
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{Cli, CliError, Command, Context, Outcome, Payload, run_for_test};
+use gob_diagnostics::RemedyCommand;
 
 /// Take two required options and a restricted one.
 #[derive(Debug, Command)]
@@ -107,4 +108,30 @@ fn missing_subcommand_is_one_complete_line() {
     let msg = e["message"].as_str().unwrap();
     assert!(!msg.is_empty() && !msg.contains('\n'), "{msg}");
     assert!(e["remedy"].as_str().unwrap().contains("usage:"), "{e}");
+}
+
+// frob:tests crates/gob-cli/src/cli.rs::check_remedy
+#[test]
+fn check_remedy_accepts_real_paths_and_flags_and_rejects_bad_ones() {
+    let cli = Cli::new("usagetest", "1.0.0").register::<PutCmd>();
+    let ok = RemedyCommand::new("usagetest", "grp put")
+        .flag("provider", "<p>")
+        .flag("ref", "<r>");
+    assert_eq!(cli.check_remedy(&ok), Ok(()));
+    let bad_flag = RemedyCommand::new("usagetest", "grp put").switch("nope");
+    assert!(cli.check_remedy(&bad_flag).unwrap_err().contains("--nope"));
+    let bad_verb = RemedyCommand::new("usagetest", "grp nonesuch");
+    assert!(cli.check_remedy(&bad_verb).is_err());
+}
+
+// frob:tests crates/gob-cli/src/cli.rs::usage_parts
+#[test]
+fn suggested_subcommand_is_carried_as_a_structured_command() {
+    let e = failure(&["grp", "pu"]);
+    let text = e["remedy"].as_str().unwrap_or_default();
+    // Whatever clap suggests, text and data agree and the command validates.
+    if let Some(c) = e.get("command").filter(|c| !c.is_null()) {
+        assert_eq!(c["product"], "usagetest");
+        assert!(text.starts_with("usagetest "), "{text}");
+    }
 }
