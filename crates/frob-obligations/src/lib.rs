@@ -102,7 +102,7 @@ pub use rules::{
     Inv002, Ref001, Tick006, Todo001, Todo002,
 };
 pub use sibling::{SiblingException, sibling_exception_findings};
-pub use tick_paths::tick006_reads_ledger;
+pub use tick_paths::{tick006_ledger_file, tick006_reads_ledger};
 
 use tickets::Tickets;
 

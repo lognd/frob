@@ -1,0 +1,137 @@
+kind = "evidence"
+captured_at = "2026-10-16T16:11:50Z"
+digest = "f4fc23c29c2573c838e72306ac9aef416bbba3ab3f7df1bbc78415917ee49b32"
+exit_code = 0
+inline = '''
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling zerocopy v0.8.59
+   Compiling syn v3.0.6
+   Compiling thiserror-impl v2.0.21
+   Compiling ahash v0.8.12
+   Compiling thiserror v2.0.21
+   Compiling hashbrown v0.14.5
+   Compiling gix-path v0.12.6
+   Compiling gix-features v0.49.1
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling dashmap v6.2.1
+   Compiling gix-tempfile v24.0.0
+   Compiling syn v2.0.119
+   Compiling gix-command v0.10.1
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-object v0.64.1
+   Compiling serde_core v1.0.229
+   Compiling gix-lock v24.0.0
+   Compiling gix-glob v0.27.1
+   Compiling tracing-attributes v0.1.31
+   Compiling serde_derive v1.0.229
+   Compiling tracing v0.1.44
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-attributes v0.35.0
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling gix-traverse v0.61.0
+   Compiling gix-config-value v0.19.1
+   Compiling gix-packetline v0.22.2
+   Compiling gix-index v0.55.0
+   Compiling gix-ignore v0.22.1
+   Compiling gix-ref v0.67.1
+   Compiling ident_case v1.0.1
+   Compiling darling_core v0.20.11
+   Compiling gix-worktree v0.56.0
+   Compiling gix-pathspec v0.20.0
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive_internals v0.30.0
+   Compiling schemars_derive v1.2.2
+   Compiling ref-cast v1.0.27
+   Compiling darling_macro v0.20.11
+   Compiling gix-filter v0.34.0
+   Compiling schemars v1.2.2
+   Compiling gix-url v0.38.0
+   Compiling darling v0.20.11
+   Compiling memchr v2.8.3
+   Compiling gix-zlib v0.1.0
+   Compiling aho-corasick v1.1.5
+   Compiling gix-diff v0.67.1
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gix-discover v0.55.0
+   Compiling tracing-serde v0.2.0
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling tracing-subscriber v0.3.23
+   Compiling gix-pack v0.74.2
+   Compiling gix-dir v0.29.1
+   Compiling regex-automata v0.4.18
+   Compiling nix v0.31.3
+   Compiling gix-transport v0.59.2
+   Compiling gix-config v0.60.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-shallow v0.13.0
+   Compiling serde_spanned v1.1.1
+   Compiling gix-macros v0.1.6
+   Compiling gix-refspec v0.45.1
+   Compiling indexmap v2.14.2
+   Compiling ppv-lite86 v0.2.21
+   Compiling either v1.18.0
+   Compiling rayon v1.12.0
+   Compiling gix-worktree-state v0.34.1
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling rand_chacha v0.9.0
+   Compiling gix-submodule v0.34.0
+   Compiling gix-protocol v0.65.1
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling gix-odb v0.84.0
+   Compiling gix-merge v0.20.1
+   Compiling regex v1.13.1
+   Compiling gix-status v0.34.1
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling gix v0.87.1
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling error_set_impl v0.9.2
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling rand v0.9.5
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling hashlink v0.9.1
+   Compiling rusqlite v0.32.1
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling ulid v1.2.1
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling error_set v0.9.2
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling insta v1.48.0
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling serde_yaml_ng v0.10.0
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 52s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 73aa0e2a-bca7-465d-b1f8-3ea9beedc3d0 with nextest profile: default
+    Starting 8 tests across 2 binaries (136 tests skipped)
+        PASS [   0.006s] frob-release status::tests::red_ci_is_one_blocker_naming_checks_and_links
+        PASS [   0.006s] frob-release status::tests::pending_ci_blocks_even_when_not_required
+        PASS [   0.006s] frob-release status::tests::unknown_ci_blocks_when_required_and_only_warns_when_not
+        PASS [   0.008s] frob-release::it ci_pins::dist_pin_matches_dist_workspace
+        PASS [   0.008s] frob-release::it ci_pins::ci_rust_toolchain_comes_from_rust_toolchain_toml
+        PASS [   0.009s] frob-release::it ci_pins::ci_installs_no_unpinned_cargo_tools_beyond_nextest
+        PASS [   0.012s] frob-release::it ci_pins::ci_zizmor_pin_matches_frob_toml
+        PASS [   0.011s] frob-release::it ci_pins::ci_actionlint_pin_matches_frob_toml
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 8 tests run: 8 passed, 136 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E test(ci_)"
+size = 5144
+status = "measured"
+test_count = 8
+tests_digest = "d7242e1f73f16b09c6091b44af10cb139dd6b236244341fbb259bd809abea680"
+at = "2026-10-16T16:11:50Z"
+actor = "lognd"
+rev = 1
