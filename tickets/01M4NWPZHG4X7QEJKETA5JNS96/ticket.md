@@ -9,7 +9,7 @@ parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-11T16:28:38Z"
 updated = "2026-10-16T13:19:00Z"
-scope = ["crates/gob-dev/src/files.rs", "crates/gob-dev/tests/generate.rs"]
+scope = ["crates/gob-dev/src/files.rs", "crates/gob-dev/tests/generate.rs", "changelog.d/*A5JNS96*"]
 +++
 
 Split from ~90R68TZ (navigation.md 3.3, survey 7.5): every docs page appears in SUMMARY.md, every relative link in generated pages resolves, glossary equals schema.
