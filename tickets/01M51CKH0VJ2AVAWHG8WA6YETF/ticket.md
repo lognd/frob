@@ -2,7 +2,8 @@
 id = "01M51CKH0VJ2AVAWHG8WA6YETF"
 title = "frob train drop <ticket>: remove one queue entry with a reason"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
