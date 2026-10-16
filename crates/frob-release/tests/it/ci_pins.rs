@@ -30,7 +30,11 @@ fn frob_tool(name: &str) -> toml::Table {
         .map(|t| t.as_table().unwrap().clone())
         .find(|t| t["name"].as_str() == Some(name))
         .unwrap_or_else(|| panic!("no [[check.tool]] named {name}"));
-    let Some(def) = entry.get("def").and_then(toml::Value::as_str).map(str::to_owned) else {
+    let Some(def) = entry
+        .get("def")
+        .and_then(toml::Value::as_str)
+        .map(str::to_owned)
+    else {
         return entry;
     };
     let mut merged = toml_of(&format!("crates/gob-packs/src/std/tools/{def}.toml"));
