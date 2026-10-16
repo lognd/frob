@@ -1,0 +1,22 @@
+kind = "evidence"
+captured_at = "2026-10-16T11:54:48Z"
+digest = "b6fa9fba6db175f1368b6a2262035ac2ba247a4616ca27a96c06d03492376f3c"
+exit_code = 0
+inline = """
+
+running 1 test
+test train_drop_removes_one_entry_with_a_reason_and_refuses_an_unqueued_ticket ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 61 filtered out; finished in 0.39s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+     Running tests/land.rs (target/debug/deps/land-33fa3638cceee2f5)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-land --test land train_drop"
+size = 341
+status = "measured"
+at = "2026-10-16T11:54:48Z"
+actor = "lognd"
+rev = 1
