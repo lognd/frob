@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:47Z"
-updated = "2026-10-16T00:04:40Z"
+updated = "2026-10-16T00:05:17Z"
 idempotency_key = "crunk-plan-fix"
 labels = ["area:crunk"]
 scope = ["crates/gob-fix/**", "Cargo.lock"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a plan, when applied with dry-run and then for real, then the dry-run diff equals the real diff and bytes outside edited spans are unchanged"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a file changed after the check, when apply runs, then it refuses that file and writes nothing to it"
