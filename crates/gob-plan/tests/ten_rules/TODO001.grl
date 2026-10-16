@@ -1,0 +1,29 @@
+rule TODO001 "bare-work-marker" {
+  lang *
+  severity error
+  knob markers: regex = /\b(TODO|FIXME|XXX|HACK)\b/ "words that need an owner"
+
+  find c: comment where c.text ~ knob.markers
+  where not c.text ~ /\b[A-Z]+\([0-9A-Z]{26}\)/
+  no d: directive "todo" where d adjoins c
+  report c "bare work marker: file a ticket, then add `frob:todo <ulid>`"
+
+  example fire rust """
+    /* TODO tidy this */           //~ error
+  """
+  example clean rust """
+    // frob:todo 01J9QKX3M8Z4T7N2V5B6C0D1E2
+    /* TODO tidy this */
+  """
+  example clean rust """
+    fn a() -> &'static str { "TODO inside a string" }
+  """
+  example notapplicable json """
+    { "note": "TODO" }
+  """
+  explain """
+    A work marker with no ticket is work nobody owns.
+    ## Remedy
+    File a ticket and put `frob:todo <ulid>` on the marker's line or the line above.
+  """
+}
