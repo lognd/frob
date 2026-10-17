@@ -2,7 +2,8 @@
 id = "01M53EVTSACNVDRSKYY4PQX0RF"
 title = "COV001 python example 2: unresolved verdict for a call reached through a parameter callee"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
