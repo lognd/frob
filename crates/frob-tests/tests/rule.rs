@@ -26,14 +26,18 @@ mod tests {
 ";
 
 fn fixture() -> (Vec<gob_directives::DirectiveRecord>, SymbolGraph) {
+    fixture_of(SRC)
+}
+
+fn fixture_of(src: &str) -> (Vec<gob_directives::DirectiveRecord>, SymbolGraph) {
     let entry = FileEntry {
         path: "src/lib.rs".into(),
-        size: SRC.len() as u64,
-        digest: Digest::of(SRC.as_bytes()),
+        size: src.len() as u64,
+        digest: Digest::of(src.as_bytes()),
         language: LanguageHint::Rust,
     };
-    let symbols = extract_file(&entry, SRC);
-    let scan = Scanner::new(&ScanConfig::default()).scan(Language::Rust, SRC, &symbols);
+    let symbols = extract_file(&entry, src);
+    let scan = Scanner::new(&ScanConfig::default()).scan(Language::Rust, src, &symbols);
     assert!(scan.findings.is_empty(), "{:?}", scan.findings);
     (scan.directives, SymbolGraph::from_files(vec![symbols]))
 }
@@ -63,4 +67,32 @@ fn attribute_scan_recognises_tests_outside_a_tests_module() {
     // With text, `ghost_function` is still unknown; the covers-form results are unchanged.
     let findings = test001_with_sources(&records, &graph, &|_| Some(SRC.to_owned()));
     assert_eq!(findings.len(), 2);
+}
+
+const MEMBER_SRC: &str = r"pub struct Widget;
+
+impl Widget {
+    // frob:tests src/lib.rs::Widget::spin
+    pub fn turn(&self) {}
+
+    pub fn spin(&self) {}
+}
+";
+
+// frob:tests crates/frob-tests/src/rule.rs::test001_with_sources
+// frob:ticket 01M4BMRXQ0H30CBE9V02RPYTC8
+#[test]
+fn double_colon_member_symref_is_told_the_dotted_form() {
+    let (records, graph) = fixture_of(MEMBER_SRC);
+    assert!(
+        graph.resolve("src/lib.rs::Widget.spin").is_ok(),
+        "dotted form must resolve for this test to mean anything"
+    );
+    let findings = test001(&records, &graph);
+    assert_eq!(findings.len(), 1, "{findings:#?}");
+    assert!(
+        findings[0].message.contains("`src/lib.rs::Widget.spin`"),
+        "{}",
+        findings[0].message
+    );
 }
