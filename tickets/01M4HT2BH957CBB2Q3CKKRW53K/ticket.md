@@ -2,7 +2,8 @@
 id = "01M4HT2BH957CBB2Q3CKKRW53K"
 title = "Land gate: a cancelled base CI check is Pending, not Red"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
