@@ -1153,6 +1153,139 @@ pub fn dotnet_matched_no_tests(cap: &Capture) -> bool {
     cap.tests.is_empty() && cap.exit_code == Some(0)
 }
 
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// The version a Unity project file names, relative to the project root.
+pub const UNITY_VERSION_FILE: &str = "ProjectSettings/ProjectVersion.txt";
+
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// The editor version in the text of `ProjectVersion.txt` (its `m_EditorVersion:` line), when present.
+pub fn parse_unity_version(text: &str) -> Option<String> {
+    text.lines()
+        .find_map(|l| l.trim().strip_prefix("m_EditorVersion:"))
+        .map(|v| v.trim().to_owned())
+        .filter(|v| !v.is_empty())
+}
+
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// The standard Unity Hub editor paths for `version`, under `home` for the Linux layout.
+///
+/// Lists the layout of the running OS first (Windows `C:/Program Files/Unity/Hub/Editor/<ver>/Editor/Unity.exe`,
+/// macOS `/Applications/Unity/Hub/Editor/<ver>/Unity.app/Contents/MacOS/Unity`, Linux
+/// `~/Unity/Hub/Editor/<ver>/Editor/Unity`); the others follow so a mounted install is still found.
+pub fn unity_hub_candidates(version: &str, home: Option<&Path>) -> Vec<PathBuf> {
+    let windows = PathBuf::from(format!(
+        "C:/Program Files/Unity/Hub/Editor/{version}/Editor/Unity.exe"
+    ));
+    let mac = PathBuf::from(format!(
+        "/Applications/Unity/Hub/Editor/{version}/Unity.app/Contents/MacOS/Unity"
+    ));
+    let linux = home.map(|h| h.join(format!("Unity/Hub/Editor/{version}/Editor/Unity")));
+    let mut all = if cfg!(windows) {
+        vec![Some(windows), Some(mac), linux]
+    } else if cfg!(target_os = "macos") {
+        vec![Some(mac), linux, Some(windows)]
+    } else {
+        vec![linux, Some(mac), Some(windows)]
+    };
+    all.drain(..).flatten().collect()
+}
+
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// A Unity project and the editor setting the provider resolves.
+#[derive(Debug, Clone, Copy)]
+pub struct UnityRun<'a> {
+    /// `[evidence.unity] editor`: an explicit editor path; empty resolves from the project version.
+    pub editor: &'a str,
+    /// The Unity project root (holds `ProjectSettings/`), also the editor's working directory.
+    pub project: &'a Path,
+    /// The home directory for the Linux Hub layout; `None` when unknown.
+    pub home: Option<&'a Path>,
+    /// Wall-clock limit for the license probe.
+    pub timeout: Duration,
+}
+
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// The Unity editor to run: `[evidence.unity] editor` verbatim when set, else the project's version under the Hub locations.
+///
+/// Returns the editor path and the project version (`unknown` when `ProjectVersion.txt` is absent).
+///
+/// # Errors
+///
+/// [`EvidenceError::UnityEditorMissing`] when the configured path is not a file or no Hub location holds the version.
+pub fn resolve_unity_editor(job: &UnityRun<'_>) -> Result<(PathBuf, String)> {
+    let version = std::fs::read_to_string(job.project.join(UNITY_VERSION_FILE))
+        .ok()
+        .and_then(|t| parse_unity_version(&t))
+        .unwrap_or_else(|| "unknown".to_owned());
+    let tried = if job.editor.is_empty() {
+        if version == "unknown" {
+            tracing::warn!(project = %job.project.display(), "no {UNITY_VERSION_FILE} version and no [evidence.unity] editor");
+            Vec::new()
+        } else {
+            unity_hub_candidates(&version, job.home)
+        }
+    } else {
+        vec![PathBuf::from(job.editor)]
+    };
+    if let Some(found) = tried.iter().find(|p| p.is_file()) {
+        tracing::info!(editor = %found.display(), %version, configured = !job.editor.is_empty(), "unity editor resolved");
+        return Ok((found.clone(), version));
+    }
+    tracing::warn!(%version, tried = ?tried, "unity editor missing");
+    let mut tried: Vec<String> = tried.iter().map(|p| p.display().to_string()).collect();
+    if tried.is_empty() {
+        tried.push(format!(
+            "nothing ({UNITY_VERSION_FILE} names no version and [evidence.unity] editor is unset)"
+        ));
+    }
+    Err(EvidenceError::UnityEditorMissing { version, tried })
+}
+
+// frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+/// Resolve the Unity editor and prove it has a valid license by starting it in batch mode, recording nothing.
+///
+/// The probe is `<editor> -batchmode -nographics -quit -logFile -` in the project root; an editor with no
+/// valid license (missing, expired or unavailable) exits non-zero, which is a refusal and never a skip.
+///
+/// # Errors
+///
+/// [`EvidenceError::UnityEditorMissing`] from [`resolve_unity_editor`], [`EvidenceError::UnityLicense`] when
+/// the probe exits non-zero, is killed or times out, [`EvidenceError::Exec`] when the editor cannot start.
+pub fn prepare_unity(runner: &Runner, job: &UnityRun<'_>) -> Result<PathBuf> {
+    let (editor, version) = resolve_unity_editor(job)?;
+    let probe = runner.run(&spec(
+        Program::Hook {
+            path: editor.clone(),
+        },
+        ["-batchmode", "-nographics", "-quit", "-logFile", "-"]
+            .map(str::to_owned)
+            .to_vec(),
+        job.project,
+        job.timeout,
+    ))?;
+    if probe.status == Outcome::Exited(0) {
+        tracing::info!(editor = %editor.display(), %version, "unity license verified");
+        return Ok(editor);
+    }
+    let tail: Vec<&str> = probe
+        .stdout
+        .lines()
+        .chain(probe.stderr.lines())
+        .filter(|l| !l.trim().is_empty())
+        .collect();
+    let detail = format!(
+        "{:?}; {}",
+        probe.status,
+        tail[tail.len().saturating_sub(3)..].join(" | ")
+    );
+    tracing::warn!(editor = %editor.display(), %version, %detail, "unity license probe failed");
+    Err(EvidenceError::UnityLicense {
+        editor: editor.display().to_string(),
+        version,
+        detail,
+    })
+}
+
 /// Run the provider named by `provider` for `reference` and return its record.
 ///
 /// `reference` is the nextest filter args, the pytest arguments, the command line or the file path.
