@@ -1,0 +1,14 @@
+@import "tailwindcss";
+@theme {
+  --color-primary: #282828;
+  --color-secondary: var(--color-primary);
+  --spacing-sm: 4px;
+  --radius-md: 8px; /* crunk:waive TW005 reason=brand radius */
+  --breakpoint-md: 48rem;
+  --font-sans: Inter, sans-serif;
+}
+@theme inline {
+  --text-lg: 1.25rem;
+  --color-accent: var(--color-missing);
+  --spacing-lg: calc(var(--spacing-sm) * 4);
+}

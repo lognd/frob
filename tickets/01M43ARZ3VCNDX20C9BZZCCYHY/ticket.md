@@ -2,13 +2,14 @@
 id = "01M43ARZ3VCNDX20C9BZZCCYHY"
 title = "crunk-ingest: Tailwind config ingest and theme mapping"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:28:49Z"
-updated = "2026-10-17T19:17:41Z"
+updated = "2026-10-17T19:17:50Z"
 idempotency_key = "crunk-plan-twcfg"
 labels = ["area:crunk", "creates:crates/crunk-ingest/src/tailwind/**", "creates:crates/crunk-ingest/tests/tailwind*.rs", "creates:crates/crunk-ingest/tests/fixtures/tailwind/**", "creates:crates/crunk-ingest/tests/fixtures/dump_tailwind.py"]
 scope = ["crates/crunk-ingest/src/tailwind/**", "crates/crunk-ingest/tests/tailwind*.rs", "crates/crunk-ingest/Cargo.toml", "crates/crunk-ingest/src/lib.rs", "Cargo.lock", "crates/crunk-ingest/tests/fixtures/tailwind/**", "crates/crunk-ingest/tests/fixtures/dump_tailwind.py", "docs/crunk/ingest-tailwind.md", "crates/crunk-ingest/tests/common/**"]
