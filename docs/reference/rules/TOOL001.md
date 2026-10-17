@@ -13,10 +13,57 @@
 | polarity | P+ |
 | must_measure | false |
 | version | 1 |
-| since | 2.0.0 |
+| since | 0.532.0 |
+
+<!-- mdtest: rule=TOOL001 -->
+# TOOL001 tool-stage-failed
 
 A configured tool stage (`[[check.tool]]`) exited nonzero, timed out or could not start.
 
-The finding names the stage and its exit status. Run the stage's command
-by hand to see its output, fix what it reports, or set `fail_on_nonzero`
-to false when the stage is advisory.
+## What it does
+
+A configured tool stage (`[[check.tool]]`) exited nonzero, timed out or could not start.
+
+## Why it matters
+
+A failed stage means the tool's checks did not run to completion, so its findings cannot be trusted as a clean result.
+
+## Remedy
+
+The finding names the stage and its exit status. Run the stage's command by hand to see its output, fix what it reports, or set `fail_on_nonzero` to false when the stage is advisory.
+
+## Examples
+
+### Fires case 1
+
+```toml expect=fire file=frob.toml
+[[check.tool]]
+name = "lint"
+command = ["false"]
+```
+
+### Clean case 1
+
+```toml expect=clean file=frob.toml
+[[check.tool]]
+name = "lint"
+command = ["true"]
+```
+
+## Examples
+
+### TOOL001 tool-stage-failed / Examples #1 (line 22) (fire)
+
+```toml
+[[check.tool]]
+name = "lint"
+command = ["false"]
+```
+
+### TOOL001 tool-stage-failed / Examples #2 (line 30) (clean)
+
+```toml
+[[check.tool]]
+name = "lint"
+command = ["true"]
+```

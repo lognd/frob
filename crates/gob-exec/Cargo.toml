@@ -13,7 +13,6 @@ gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-log = { version = "0.532.0", path = "../gob-log" }
 thiserror = "2"
 tracing = "0.1"
-walkdir = "2"
 which = "8"
 
 [target.'cfg(unix)'.dependencies]

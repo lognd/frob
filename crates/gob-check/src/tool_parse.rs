@@ -6,10 +6,17 @@
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
-use gob_rules::{RuleId, Severity};
+use gob_rules::{RuleDecl, RuleId, Severity};
 use serde::Deserialize;
 
 use crate::config::{ToolParser, ToolStage};
+use crate::rules::ci001::Ci001;
+use crate::rules::ci003::Ci003;
+use crate::rules::ci006::Ci006;
+use crate::rules::ci007::Ci007;
+use crate::rules::ci010::Ci010;
+use crate::rules::ci014::Ci014;
+use crate::rules::tool002::Tool002;
 
 /// Where a tool placed a finding, in the tool's own terms.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -246,11 +253,11 @@ fn parse_actionlint(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
 pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'static str> {
     match parser {
         ToolParser::ZizmorJsonV1 => BTreeMap::from([
-            ("unpinned-uses", "CI001"),
-            ("dangerous-triggers", "CI006"),
-            ("template-injection", "CI007"),
-            ("artipacked", "CI010"),
-            ("excessive-permissions", "CI003"),
+            ("unpinned-uses", Ci001::DEF.id),
+            ("dangerous-triggers", Ci006::DEF.id),
+            ("template-injection", Ci007::DEF.id),
+            ("artipacked", Ci010::DEF.id),
+            ("excessive-permissions", Ci003::DEF.id),
         ]),
         ToolParser::ActionlintJson | ToolParser::RuffJson | ToolParser::None => BTreeMap::new(),
     }
@@ -259,18 +266,17 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
 /// Rule used for a tool id that no map covers.
 fn fallback(parser: ToolParser) -> &'static str {
     match parser {
-        ToolParser::ActionlintJson => "CI014",
-        _ => "TOOL002",
+        ToolParser::ActionlintJson => Ci014::DEF.id,
+        _ => Tool002::DEF.id,
     }
 }
 
 /// Default severity of a rule this module can produce.
 fn default_severity(rule: &str) -> Severity {
-    match rule {
-        "CI006" | "CI007" => Severity::Error,
-        "CI001" | "CI003" | "CI014" => Severity::Warn,
-        _ => Severity::Advisory,
-    }
+    [Ci001::DEF, Ci003::DEF, Ci006::DEF, Ci007::DEF, Ci014::DEF]
+        .iter()
+        .find(|d| d.id == rule)
+        .map_or(Severity::Advisory, |d| d.severity)
 }
 
 /// The rule id (and severity) for `raw`, or `None` when the finding is dropped.
@@ -499,9 +505,9 @@ mod tests {
         assert_eq!(
             ids,
             [
-                ("CI001".to_owned(), Severity::Warn),
-                ("CI010".to_owned(), Severity::Advisory),
-                ("TOOL002".to_owned(), Severity::Advisory)
+                (Ci001::DEF.id.to_owned(), Severity::Warn),
+                (Ci010::DEF.id.to_owned(), Severity::Advisory),
+                (Tool002::DEF.id.to_owned(), Severity::Advisory)
             ]
         );
     }
@@ -510,7 +516,7 @@ mod tests {
     fn id_map_overrides_and_bad_targets_fall_back() {
         let mut st = stage(ToolParser::ZizmorJsonV1);
         st.id_map
-            .insert("unpinned-uses".to_owned(), "CI007".to_owned());
+            .insert("unpinned-uses".to_owned(), Ci007::DEF.id.to_owned());
         st.id_map
             .insert("artipacked".to_owned(), "nonsense".to_owned());
         let found = parse(ToolParser::ZizmorJsonV1, ZIZMOR).expect("parse");
@@ -519,7 +525,7 @@ mod tests {
             .filter_map(|f| classify(&st, f))
             .map(|(id, _)| id.to_string())
             .collect();
-        assert_eq!(ids, ["CI007", "TOOL002", "TOOL002"]);
+        assert_eq!(ids, [Ci007::DEF.id, Tool002::DEF.id, Tool002::DEF.id]);
     }
 
     #[test]
@@ -545,7 +551,7 @@ mod tests {
         assert!(
             found
                 .iter()
-                .all(|f| classify(&st, f).is_none_or(|c| c.0.as_str() == "CI014"))
+                .all(|f| classify(&st, f).is_none_or(|c| c.0.as_str() == Ci014::DEF.id))
         );
     }
 

@@ -129,6 +129,8 @@ pub(crate) fn cache_key(root: &Path, def: Option<&ToolDef>, version: Option<&str
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::rules::ci010::Ci010;
+    use gob_rules::RuleDecl;
 
     fn stage(tool: &str) -> ToolStage {
         ToolStage {
@@ -156,7 +158,7 @@ mod tests {
         assert_eq!(z.stage.parser, ToolParser::ZizmorJsonV1);
         assert_eq!(
             z.stage.id_map.get("artipacked").map(String::as_str),
-            Some("CI010")
+            Some(Ci010::DEF.id)
         );
         assert_eq!(
             z.stage.exit_codes.as_deref(),

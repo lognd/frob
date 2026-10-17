@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
-use crate::meta::{RuleEntry, RuleMeta};
+use crate::meta::{DeclaredEntry, RuleEntry, RuleMeta};
 
 /// A registry integrity failure.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -44,10 +44,15 @@ impl Registry {
         Self { rules }
     }
 
-    /// The process-wide registry of every `#[derive(Rule)]` linked in.
+    /// The process-wide registry of every `#[derive(Rule)]` and `list_in_registry!` rule linked in.
     pub fn global() -> &'static Registry {
         static GLOBAL: OnceLock<Registry> = OnceLock::new();
-        GLOBAL.get_or_init(|| Registry::from_metas(inventory::iter::<RuleEntry>().map(|e| e.meta)))
+        GLOBAL.get_or_init(|| {
+            // frob:ticket 01M48R03ZFTPSDD33HMJBD7STD
+            let derived = inventory::iter::<RuleEntry>().map(|e| e.meta);
+            let declared = inventory::iter::<DeclaredEntry>().map(DeclaredEntry::to_meta);
+            Registry::from_metas(derived.chain(declared))
+        })
     }
 
     /// Iterate rules in id order.

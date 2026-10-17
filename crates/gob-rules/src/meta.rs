@@ -141,3 +141,80 @@ impl RuleEntry {
 }
 
 inventory::collect!(RuleEntry);
+
+// frob:ticket 01M48R03ZFTPSDD33HMJBD7STD
+/// An inventory item pointing at a `#[rule]` declaration that also lists in the global registry.
+///
+/// A bridge for the crates whose rules are consumed through [`crate::Registry::global`] (rule
+/// listing, `explain`, `--only` validation) until the legacy registry is deleted.
+#[derive(Debug)]
+pub struct DeclaredEntry {
+    /// The declaration.
+    pub def: &'static crate::RuleDef,
+    /// The product the rule is reported under.
+    pub product: &'static str,
+    /// The module path of the declaration.
+    pub module: &'static str,
+}
+
+impl DeclaredEntry {
+    /// Wrap a declaration for submission to the inventory.
+    pub const fn new(
+        def: &'static crate::RuleDef,
+        product: &'static str,
+        module: &'static str,
+    ) -> Self {
+        Self {
+            def,
+            product,
+            module,
+        }
+    }
+
+    /// The legacy metadata of the declaration, leaked once (the registry holds `&'static`).
+    pub fn to_meta(&self) -> &'static RuleMeta {
+        let def = self.def;
+        tracing::debug!(
+            rule = def.id,
+            product = self.product,
+            "bridging declared rule"
+        );
+        Box::leak(Box::new(RuleMeta {
+            id: def.id,
+            slug: def.slug,
+            family: def.family,
+            product: self.product,
+            severity: def.severity,
+            summary: def.summary(),
+            explanation: def.doc,
+            tier: Tier::Universal,
+            scope: def.scope,
+            fix: def.fix,
+            polarity: def.polarity,
+            must_measure: def.must_measure,
+            version: def.version,
+            since: def.since,
+            module: self.module,
+        }))
+    }
+}
+
+inventory::collect!(DeclaredEntry);
+
+/// List a `#[rule]` type in [`crate::Registry::global`] under `product`.
+///
+/// ```ignore
+/// gob_rules::list_in_registry!(Proc001, "frob");
+/// ```
+#[macro_export]
+macro_rules! list_in_registry {
+    ($ty:ty, $product:expr) => {
+        $crate::inventory::submit! {
+            $crate::DeclaredEntry::new(
+                <$ty as $crate::RuleDecl>::DEF,
+                $product,
+                ::core::module_path!(),
+            )
+        }
+    };
+}
