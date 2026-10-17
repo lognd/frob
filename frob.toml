@@ -41,14 +41,7 @@ inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain*", "clippy.t
 # Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
 timeout_secs = 1200
 
-[[check.tool]]
-name = "cargo"
-command = "env"
-# The docs step CI runs with `RUSTDOCFLAGS: -D warnings`; a public doc linking a private item fails here, not after landing.
-args = ["RUSTDOCFLAGS=-D warnings", "cargo", "doc", "--no-deps", "--all-features", "{packages}"]
-unscoped_packages = ["--workspace"]
-inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain*"]
-timeout_secs = 1200
+# The docs step (cargo doc -D warnings) runs in CI only: a local rustdoc peaks near 4.5 GB and OOM-killed the dev box.
 
 [[check.tool]]
 name = "cargo"
@@ -188,8 +181,10 @@ ready = 30
 # Most tickets one holder (actor plus worktree path) may have in progress; 1 makes an agent finish before starting another, 0 is off.
 in_progress_per_identity = 1
 # Repository WIP cap: wide agent waves (owner 2026-10-09); suite runs go to the goway helpers with
-# per-host job fitting (goway ~K60F05J), so local builds stay scoped. Finished-but-unlanded tickets count.
+# per-host job fitting (goway ~K60F05J), so local builds stay scoped. Finished-but-unlanded tickets wait in the ready-to-land column instead.
 in_progress = 16
+# Most finished tickets (every criterion bound, evidence passing) waiting to land at once; they leave the `in_progress` count so serial lands do not starve new work, and 0 leaves this column unlimited.
+ready = 0
 
 [release]
 # When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green.

@@ -41,6 +41,9 @@ fn field(h: &mut blake3::Hasher, tag: &str, value: &[u8]) {
     h.update(value);
 }
 
+/// Files that are implicit inputs of every stage: its configuration (frob:ticket 01M4HKDJDC1ZMQRHY83TFM9EYJ).
+const IMPLICIT_INPUTS: &[&str] = &["frob.toml"];
+
 /// The memo key of `stage`: its command line and version window plus the content of every file its `inputs` match.
 ///
 /// `None` when the stage declares no inputs (what it reads is unknown) or a glob does not parse.
@@ -74,7 +77,10 @@ fn memo_key(stage: &ToolStage, files: &[gob_walk::FileEntry]) -> Option<String> 
         "max",
         stage.max_version.as_deref().unwrap_or("").as_bytes(),
     );
-    for f in files.iter().filter(|f| set.is_match(&f.path)) {
+    for f in files
+        .iter()
+        .filter(|f| set.is_match(&f.path) || IMPLICIT_INPUTS.contains(&f.path.as_str()))
+    {
         field(&mut h, "file", f.path.as_bytes());
         field(&mut h, "digest", f.digest.as_bytes());
     }
@@ -571,7 +577,7 @@ fn push_own(run: &mut ToolOutput, finding: Finding) {
 /// A stage without inputs, or an input glob that does not parse, never counts as untouched:
 /// the stage runs (frob:ticket 01M4GRW6NH23YPTSAQERDRSZC5).
 fn untouched(stage: &ToolStage, files: &std::collections::BTreeSet<String>) -> bool {
-    if stage.inputs.is_empty() {
+    if stage.inputs.is_empty() || files.iter().any(|f| IMPLICIT_INPUTS.contains(&f.as_str())) {
         return false;
     }
     let mut builder = globset::GlobSetBuilder::new();
@@ -1053,6 +1059,20 @@ mod tests {
             1
         );
         stage.inputs = vec!["[".to_owned()];
+        assert_eq!(
+            applicable_stages(std::slice::from_ref(&stage), Some(&scope), None).len(),
+            1
+        );
+    }
+
+    // frob:ticket 01M4HKDJDC1ZMQRHY83TFM9EYJ
+    // frob:tests crates/gob-check/src/tools.rs::untouched
+    #[test]
+    fn frob_toml_is_an_implicit_input_of_every_stage() {
+        let mut stage = sh_stage("gen", ToolParser::None, "true", "true");
+        stage.inputs = vec!["crates/**/*.rs".to_owned()];
+        let scope: std::collections::BTreeSet<String> =
+            ["frob.toml".to_owned()].into_iter().collect();
         assert_eq!(
             applicable_stages(std::slice::from_ref(&stage), Some(&scope), None).len(),
             1

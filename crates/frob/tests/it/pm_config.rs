@@ -9,7 +9,7 @@ use std::process::Output;
 use serde_json::Value;
 
 // frob:ticket 01M4D6NRS8BHPBDVD2CEGY0KCD
-const PM_KEYS: [&str; 16] = [
+const PM_KEYS: [&str; 17] = [
     "pm.strict",
     "pm.pull",
     "pm.ready_min",
@@ -26,6 +26,7 @@ const PM_KEYS: [&str; 16] = [
     "pm.max_age_days.ready",
     "pm.wip.in_progress_per_identity",
     "pm.wip.in_progress",
+    "pm.wip.ready",
 ];
 
 fn repo() -> tempfile::TempDir {
@@ -143,7 +144,7 @@ fn doctor_reports_missing_pm_knobs_as_cfg001() {
     )
     .expect("write");
     let v = json(&frob(dir.path(), &["doctor"]));
-    assert_eq!(v["data"]["config"]["missing_knobs"], 2);
+    assert_eq!(v["data"]["config"]["missing_knobs"], 3);
     let msgs: Vec<String> = v["findings"]
         .as_array()
         .expect("findings")

@@ -382,6 +382,7 @@ fn wip_evaluated(inputs: &FrobInputs, state: &snapshot::LedgerState) -> Evaluate
     let limits = frob_pm::rules::wip::WipLimits {
         in_progress: cfg.wip.in_progress,
         expedite_max: cfg.classes.expedite_max,
+        ready: cfg.wip.ready,
     };
     let live = live_leases(state, &inputs.root);
     frob_pm::rules::wip::evaluate_with(&state.ledger, limits, live.as_ref())

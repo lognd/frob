@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-17T08:23:48Z"
+digest = "cc9c68909af1f7c95454d0be64847ddebe65e7a9bc3d4ba59f6d2cae56ff2302"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fec6796c-f17b-48d2-b95a-e6eb470118d6 with nextest profile: default
+    Starting 1 test across 4 binaries (94 tests skipped)
+        PASS [   0.004s] frob-pm rules::wip::tests::ready_holders_leave_the_in_progress_count
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 94 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm -E test(ready_holders_leave_the_in_progress_count)"
+size = 559
+status = "measured"
+test_count = 1
+tests_digest = "051b64b189a38e3f69bb57232579bcca0543194016a8d0f88f1c37fc12d6ddbb"
+at = "2026-10-17T08:23:48Z"
+actor = "lognd"
+rev = 1

@@ -4,12 +4,16 @@ title = "crunk fix: preserve CRLF line endings when writing fixes"
 type = "task"
 category = "todo"
 priority = "medium"
-points = 1
+points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-11T03:50:38Z"
-updated = "2026-10-15T22:44:59Z"
+updated = "2026-10-17T08:48:37Z"
 scope = ["changelog.d/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M43ATCQVX9A1TJ6A4AE48FDX"
 
 [[acceptance]]
 text = "Given a CRLF file, when crunk fix writes it, then its line endings are preserved"

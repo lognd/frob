@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-17T08:57:27Z"
+digest = "afab02aea4a3acbddab3493741d870f7c9da6fc674795408de81bbfad0bd9425"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.98s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID eacd12b9-6a94-42eb-817c-0578f74343ad with nextest profile: default
+    Starting 1 test across 2 binaries (7 tests skipped)
+        PASS [   0.006s] crunk-fix::fix out_of_tolerance_finding_without_fix_is_left_alone
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-fix -E test(out_of_tolerance_finding_without_fix_is_left_alone)"
+size = 608
+status = "measured"
+test_count = 1
+tests_digest = "6f2340a7f8380023ed1de6356830b27b1fabf406c4f394ac82b1cf41185cfc9f"
+at = "2026-10-17T08:57:27Z"
+actor = "lognd"
+rev = 1

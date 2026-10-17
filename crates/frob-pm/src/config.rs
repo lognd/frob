@@ -172,6 +172,9 @@ pub struct PmWipTable {
     /// Most tickets in progress in the repository at once, sized to what the machine can build; the default 2 matches the two-builder rule, and 0 is off.
     #[config(default = 2, enforcement)]
     pub in_progress: u32,
+    /// Most finished tickets (every criterion bound, evidence passing) waiting to land at once; they leave the `in_progress` count so serial lands do not starve new work, and 0 leaves this column unlimited.
+    #[config(default = 0, enforcement)]
+    pub ready: u32,
 }
 
 /// Classes of service (`[pm.classes]`).
