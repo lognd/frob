@@ -157,7 +157,11 @@ pub fn ready_ids(
             out.insert(s.id);
         }
     }
-    tracing::debug!(ready = out.len(), held = held.len(), "ready-to-land tickets read");
+    tracing::debug!(
+        ready = out.len(),
+        held = held.len(),
+        "ready-to-land tickets read"
+    );
     Ok(out)
 }
 
@@ -268,7 +272,11 @@ pub fn pm013(limits: WipLimits, wip: &Wip) -> Evaluation {
         ));
     }
     if limits.ready > 0 && wip.ready.len() > limits.ready as usize {
-        tracing::debug!(count = wip.ready.len(), limit = limits.ready, "PM013: ready column over");
+        tracing::debug!(
+            count = wip.ready.len(),
+            limit = limits.ready,
+            "PM013: ready column over"
+        );
         out.findings.push(Finding::new(
             rule_id(),
             Severity::Warn,
@@ -353,7 +361,9 @@ mod tests {
     fn summary(n: u8) -> Summary {
         let at = frob_ledger::model::Stamp::from_unix(0);
         Summary {
-            id: format!("01M4069W45P08YPC4YH4XZVM{n:02}").parse().expect("ulid"),
+            id: format!("01M4069W45P08YPC4YH4XZVM{n:02}")
+                .parse()
+                .expect("ulid"),
             handle: format!("~4XZVM{n:02}"),
             title: "t".to_owned(),
             ty: "task".parse().expect("type"),
@@ -384,7 +394,10 @@ mod tests {
         let fail = evidence("-p x", false);
         assert!(is_ready(&[criterion(true)], std::slice::from_ref(&pass)));
         assert!(!is_ready(&[criterion(false)], std::slice::from_ref(&pass)));
-        assert!(!is_ready(&[criterion(true)], &[]), "no evidence is not ready");
+        assert!(
+            !is_ready(&[criterion(true)], &[]),
+            "no evidence is not ready"
+        );
         assert!(!is_ready(&[criterion(true)], &[pass.clone(), fail.clone()]));
         assert!(
             is_ready(&[criterion(true)], &[fail, pass]),
