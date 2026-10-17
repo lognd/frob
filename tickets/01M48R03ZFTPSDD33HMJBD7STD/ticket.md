@@ -8,8 +8,8 @@ points = 3
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:07Z"
-updated = "2026-10-17T21:58:44Z"
-scope = ["crates/gob-check/**", "crates/gob-directives/**", "crates/gob-exec/**", "crates/gob-rules/**", "Cargo.lock"]
+updated = "2026-10-17T22:06:38Z"
+scope = ["crates/gob-check/**", "crates/gob-directives/**", "crates/gob-exec/**", "crates/gob-rules/**", "Cargo.lock", "docs/reference/rules/**"]
 
 [[links]]
 kind = "blocked-by"
