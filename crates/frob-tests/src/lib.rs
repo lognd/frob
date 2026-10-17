@@ -49,7 +49,7 @@ pub use rule::{Test001, test001, test001_with_sources};
 pub use run::{
     DotnetGroup, FrameworkRun, JsGroup, MAX_FILTER_BYTES, RunOptions, RunReport, chunk_targets,
     dotnet_groups, failure_cause, js_groups, nextest_args, nextest_groups, pytest_args, run,
-    unity_assemblies,
+    unity_assemblies, unity_groups,
 };
 pub use select::{CsharpOwner, CsharpOwners, Framework, TestTarget, select_tests};
 pub use touched::{TouchedSet, build_repo_graph, build_repo_graph_with_stats, touched_set};

@@ -9,8 +9,8 @@ use std::time::Duration;
 
 use frob_evidence::EvidenceError;
 use frob_evidence::provider::{
-    UNITY_VERSION_FILE, UnityHost, UnityLookup, find_unity_editor, parse_unity_version,
-    unity_license_refusal,
+    UNITY_VERSION_FILE, UnityHost, UnityLookup, UnityMode, UnityRun, UnityTestRun,
+    find_unity_editor, parse_nunit, parse_unity_version, run_unity, unity_license_refusal,
 };
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 
@@ -227,4 +227,133 @@ fn the_current_host_matches_the_build_target() {
         UnityHost::Linux
     };
     assert_eq!(UnityHost::current(), expected);
+}
+
+const NUNIT: &str = r#"<test-run result="Failed" total="3">
+<test-suite type="Assembly"><test-case id="1" name="Adds" fullname="Game.Tests.MathTests.Adds" methodname="Adds" classname="Game.Tests.MathTests" result="Passed" duration="0.01" />
+<test-case id="2" name="Subtracts" fullname="Game.Tests.MathTests.Subtracts" methodname="Subtracts" classname="Game.Tests.MathTests" result="Failed" duration="0.02"><failure><message><![CDATA[Expected 1 but was 2]]></message></failure><output><![CDATA[subtract ran]]></output></test-case>
+<test-case id="3" name="Ignored" fullname="Game.Tests.MathTests.Ignored" methodname="Ignored" classname="Game.Tests.MathTests" result="Skipped" duration="0" />
+</test-suite></test-run>"#;
+
+fn unity_run<'a>(
+    dir: &'a Path,
+    home: &'a Path,
+    editor: &'a str,
+    mode: UnityMode,
+) -> UnityTestRun<'a> {
+    UnityTestRun {
+        run: UnityRun {
+            editor,
+            project: dir,
+            base: dir,
+            home: Some(home),
+        },
+        mode,
+        assemblies: &[],
+        ids: &[],
+    }
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+#[test]
+fn nunit_xml_with_a_pass_and_a_fail_yields_both_per_test_results() {
+    // frob:tests crates/frob-evidence/src/provider.rs::parse_nunit
+    let trx = parse_nunit(NUNIT);
+    assert_eq!(
+        trx.parsed.tests,
+        vec![
+            "Game.Tests.MathTests.Adds",
+            "Game.Tests.MathTests.Subtracts"
+        ]
+    );
+    assert_eq!(trx.parsed.failed, vec!["Game.Tests.MathTests.Subtracts"]);
+    assert!(
+        trx.summary.contains("Expected 1 but was 2"),
+        "{}",
+        trx.summary
+    );
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+#[test]
+fn a_batch_run_stores_the_measured_per_test_results() {
+    // frob:tests crates/frob-evidence/src/provider.rs::run_unity
+    let dir = project("6000.0.43f1");
+    std::fs::write(dir.path().join("fake-unity.xml"), NUNIT).expect("xml");
+    std::fs::write(dir.path().join("fake-unity.exit"), "2").expect("exit");
+    let home = tempfile::tempdir().expect("home");
+    let fake = gob_testsupport::fake_unity();
+    let cap = run_unity(
+        &Runner::new(Limits::default()),
+        &unity_run(
+            dir.path(),
+            home.path(),
+            fake.to_str().expect("utf8"),
+            UnityMode::PlayMode,
+        ),
+        Duration::from_secs(30),
+    )
+    .expect("run");
+    assert!(!cap.passed);
+    assert_eq!(cap.exit_code, Some(2));
+    assert_eq!(cap.tests.len(), 2);
+    assert_eq!(cap.failed_tests, vec!["Game.Tests.MathTests.Subtracts"]);
+    assert!(
+        cap.transcript.contains("-testPlatform PlayMode"),
+        "{}",
+        cap.transcript
+    );
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+#[test]
+fn edit_mode_is_passed_through_and_a_clean_run_passes() {
+    // frob:tests crates/frob-evidence/src/provider.rs::run_unity
+    let dir = project("6000.0.43f1");
+    let ok = NUNIT.replace("result=\"Failed\" duration", "result=\"Passed\" duration");
+    std::fs::write(dir.path().join("fake-unity.xml"), ok).expect("xml");
+    let home = tempfile::tempdir().expect("home");
+    let fake = gob_testsupport::fake_unity();
+    let cap = run_unity(
+        &Runner::new(Limits::default()),
+        &unity_run(
+            dir.path(),
+            home.path(),
+            fake.to_str().expect("utf8"),
+            UnityMode::EditMode,
+        ),
+        Duration::from_secs(30),
+    )
+    .expect("run");
+    assert!(cap.passed, "{:?}", cap.failed_tests);
+    assert!(
+        cap.transcript.contains("-testPlatform EditMode"),
+        "{}",
+        cap.transcript
+    );
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+#[test]
+fn a_project_open_in_another_editor_refuses_with_a_remedy() {
+    // frob:tests crates/frob-evidence/src/provider.rs::check_unity_unlocked
+    let dir = project("6000.0.43f1");
+    std::fs::create_dir_all(dir.path().join("Temp")).expect("temp");
+    std::fs::write(dir.path().join("Temp/UnityLockfile"), "").expect("lock");
+    let home = tempfile::tempdir().expect("home");
+    let fake = gob_testsupport::fake_unity();
+    let err = run_unity(
+        &Runner::new(Limits::default()),
+        &unity_run(
+            dir.path(),
+            home.path(),
+            fake.to_str().expect("utf8"),
+            UnityMode::EditMode,
+        ),
+        Duration::from_secs(30),
+    )
+    .expect_err("open");
+    assert!(matches!(err, EvidenceError::UnityProjectOpen { .. }));
+    let cli = format!("{:?}", err.into_cli());
+    assert!(cli.contains("close the Unity editor"), "{cli}");
 }

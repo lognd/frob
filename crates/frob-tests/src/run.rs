@@ -5,7 +5,8 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use frob_evidence::provider::{
-    Capture, DotnetRun, JsRun, NODE_PROGRAM, run_dotnet, run_js_tests, run_nextest, run_pytest,
+    Capture, DotnetRun, JsRun, NODE_PROGRAM, UnityMode, UnityRun, UnityTestRun, run_dotnet,
+    run_js_tests, run_nextest, run_pytest, run_unity, unity_assembly_name, unity_project_dir,
 };
 use frob_evidence::record::Provider;
 use gob_exec::Runner;
@@ -13,7 +14,7 @@ use gob_walk::{WalkConfig, walk};
 
 // frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
 use crate::catalog::Packages;
-use crate::error::{Result, TestsError};
+use crate::error::Result;
 use crate::node::{JsMembers, is_runner_test_file};
 use crate::select::{CsharpOwner, CsharpOwners, Framework, TestTarget};
 
@@ -38,6 +39,9 @@ pub struct RunOptions {
     // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
     /// `[tests] python`: the interpreter that runs pytest; empty prefers the repository's `.venv`.
     pub python: String,
+    // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+    /// `[evidence.unity] editor`: the Unity editor executable; empty finds the Hub install of the project's version.
+    pub unity_editor: String,
 }
 
 impl RunOptions {
@@ -58,6 +62,7 @@ impl RunOptions {
             node: NODE_PROGRAM.to_owned(),
             dotnet_path: String::new(),
             python: String::new(),
+            unity_editor: String::new(),
         }
     }
 }
@@ -104,8 +109,8 @@ impl FrameworkRun {
             Framework::Jest => Provider::Jest,
             // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
             Framework::Dotnet => Provider::Dotnet,
-            // A unity run never happens (it refuses first), so its evidence provider is the command fallback.
-            Framework::Unity => Provider::Command,
+            // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+            Framework::Unity => Provider::Unity,
         }
     }
 }
@@ -458,6 +463,62 @@ pub fn unity_assemblies(selected: &[TestTarget], opts: &RunOptions) -> Vec<Strin
     found.into_iter().collect()
 }
 
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+/// One Unity batch run: the assemblies of one project on one test platform, and the test ids to run (empty runs them whole).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct UnityGroup {
+    /// The Unity project directory (absolute).
+    pub project: PathBuf,
+    /// The test platform.
+    pub mode: &'static str,
+    /// Repo-relative `.asmdef` paths, sorted and unique.
+    pub assemblies: Vec<String>,
+    /// Fully qualified test ids, sorted and unique.
+    pub ids: Vec<String>,
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+/// The Unity batch runs for `selected`: one per (project, test platform), `EditMode` or `PlayMode` by what each assembly is.
+///
+/// With `opts.all` every test assembly runs whole.
+pub fn unity_groups(selected: &[TestTarget], opts: &RunOptions) -> Vec<UnityGroup> {
+    type Key = (PathBuf, &'static str);
+    let mut owners = CsharpOwners::new(&opts.root);
+    let mut groups: BTreeMap<Key, (BTreeSet<String>, BTreeSet<String>)> = BTreeMap::new();
+    let mut add = |owners: &mut CsharpOwners, assembly: &str, id: Option<&str>| {
+        let mode = match owners.test_mode(assembly) {
+            Some(gob_symbols::UnityTestMode::PlayMode) => UnityMode::PlayMode,
+            _ => UnityMode::EditMode,
+        };
+        let key = (unity_project_dir(&opts.root, assembly), mode.as_str());
+        let entry = groups.entry(key).or_default();
+        entry.0.insert(assembly.to_owned());
+        if let Some(id) = id {
+            entry.1.insert(id.to_owned());
+        }
+    };
+    if opts.all {
+        for assembly in unity_assemblies(selected, opts) {
+            add(&mut owners, &assembly, None);
+        }
+    } else {
+        for t in selected.iter().filter(|t| t.framework == Framework::Unity) {
+            add(&mut owners, &t.package, Some(&t.test_path));
+        }
+    }
+    groups
+        .into_iter()
+        .map(|((project, mode), (assemblies, ids))| UnityGroup {
+            project,
+            mode,
+            assemblies: assemblies.into_iter().collect(),
+            ids: ids.into_iter().collect(),
+        })
+        .collect()
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+#[allow(clippy::too_many_lines)]
 /// Run `selected` (or the whole workspace with `opts.all`) with cargo nextest, pytest, vitest, jest and dotnet.
 ///
 /// A runner runs only when it has selected tests (or, with `opts.all`, when the work
@@ -466,25 +527,9 @@ pub fn unity_assemblies(selected: &[TestTarget], opts: &RunOptions) -> Vec<Strin
 /// # Errors
 ///
 /// [`crate::TestsError::Evidence`] when pytest is not allowlisted, [`crate::TestsError::Exec`] when a runner cannot be started,
-/// [`crate::TestsError::UnityProviderMissing`] (before anything runs) when the selection includes Unity assembly tests.
+/// and the errors of the unity provider (an open editor, a missing license) when Unity tests are selected.
 #[allow(clippy::too_many_lines)]
 pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Result<RunReport> {
-    // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
-    let unity = unity_assemblies(selected, opts);
-    if !unity.is_empty() {
-        tracing::warn!(
-            ?unity,
-            "unity tests selected but no unity provider exists; refusing the run"
-        );
-        return Err(TestsError::UnityProviderMissing {
-            assemblies: unity,
-            plan: selected
-                .iter()
-                .filter(|t| t.framework == Framework::Unity)
-                .map(TestTarget::plan_line)
-                .collect(),
-        });
-    }
     let mut report = RunReport::default();
     // frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
     let nextest = if opts.all {
@@ -567,6 +612,47 @@ pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Resul
         )?;
         report.runs.push(FrameworkRun {
             framework: Framework::Dotnet,
+            member: String::new(),
+            args,
+            capture,
+        });
+    }
+    // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    for group in unity_groups(selected, opts) {
+        tracing::info!(
+            project = %group.project.display(),
+            mode = group.mode,
+            assemblies = group.assemblies.len(),
+            ids = group.ids.len(),
+            "running unity tests"
+        );
+        let mode = UnityMode::parse(group.mode).unwrap_or(UnityMode::EditMode);
+        let names: Vec<String> = group
+            .assemblies
+            .iter()
+            .map(|a| unity_assembly_name(&opts.root, a))
+            .collect();
+        let capture = run_unity(
+            runner,
+            &UnityTestRun {
+                run: UnityRun {
+                    editor: &opts.unity_editor,
+                    project: &group.project,
+                    base: &opts.root,
+                    home: home.as_deref(),
+                },
+                mode,
+                assemblies: &names,
+                ids: &group.ids,
+            },
+            opts.timeout,
+        )?;
+        let mut args = vec![group.mode.to_owned()];
+        args.extend(group.assemblies.iter().cloned());
+        args.extend(group.ids.iter().cloned());
+        report.runs.push(FrameworkRun {
+            framework: Framework::Unity,
             member: String::new(),
             args,
             capture,

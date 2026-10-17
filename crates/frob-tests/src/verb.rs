@@ -239,6 +239,8 @@ impl Command for TestVerb {
         opts.dotnet_path.clone_from(&ws.dotnet.path);
         // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
         opts.python.clone_from(&ws.tests.python);
+        // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+        opts.unity_editor.clone_from(&ws.unity.editor);
         let report = run(&ws.runner(), &data.selected, &opts).map_err(TestsError::into_cli)?;
         data.ran = true;
         data.passed = Some(report.passed());
