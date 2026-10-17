@@ -2,7 +2,8 @@
 id = "01M4CXV0A8THFSQZGY22SM2G7J"
 title = "grl-spec.md 7.0: denotational semantics of GRL into K3 over lo/hi structures (count as intervals, within N truncation as Unknown, polarity map, static NotApplicable, defs as views)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
