@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a tool whose version falls in a renamed-flag range, when the stage runs, then the matching command variant is used"
-bound = false
+bound = true
 +++
 
 docs/design/tool-binding.md section 2 (D122), after qlty plugin.toml and Trunk plugin.yaml. Existing zizmor and actionlint stages move to definitions. Results cached by (file digest, tool version, config digest); tools found on the project's own path first.
