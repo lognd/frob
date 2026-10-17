@@ -15,7 +15,6 @@ mod counter;
 mod discover;
 mod env;
 mod error;
-mod path;
 pub mod proc001;
 mod program;
 mod runner;
@@ -29,7 +28,7 @@ pub use discover::{
 };
 pub use env::{BASELINE, EnvPolicy, is_secret_shaped};
 pub use error::ExecError;
-pub use path::{
+pub use gob_fs::{
     Style, canonical, has_dot_component, path_has_dot_component, path_strictly_inside,
     simplify_verbatim, strictly_inside,
 };

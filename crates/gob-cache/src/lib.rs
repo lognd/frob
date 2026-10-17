@@ -217,13 +217,13 @@ pub const SHARED_DIR: &str = "frob";
 ///
 /// A primary checkout has a `.git` directory; a linked worktree has a `.git` file naming its
 /// private git dir, whose `commondir` file points back at the shared one. Both branches return
-/// the `gob_exec::canonical` form so the two spellings of one directory (8.3 short vs long name
+/// the `gob_fs::canonical` form so the two spellings of one directory (8.3 short vs long name
 /// on Windows) agree.
 pub fn git_common_dir(root: &Path) -> Option<PathBuf> {
     let dot_git = root.join(".git");
     let meta = std::fs::metadata(&dot_git).ok()?;
     if meta.is_dir() {
-        return gob_exec::canonical(&dot_git).ok();
+        return gob_fs::canonical(&dot_git).ok();
     }
     let text = std::fs::read_to_string(&dot_git).ok()?;
     let private = Path::new(text.trim().strip_prefix("gitdir:")?.trim());
@@ -236,7 +236,7 @@ pub fn git_common_dir(root: &Path) -> Option<PathBuf> {
         Ok(rel) => private.join(rel.trim()),
         Err(_) => private,
     };
-    gob_exec::canonical(&common).ok()
+    gob_fs::canonical(&common).ok()
 }
 
 /// The repository-wide cache directory for the state directory `state_dir` (for example `.frob`) of `root`.

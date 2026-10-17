@@ -1,6 +1,7 @@
 //! Worktree files read as git would store them (clean filters applied, symlinks as targets).
 
 // frob:ticket 01M40THSWB75TFY8949M4T7MXR
+// frob:ticket 01M4CTE0GYDX0XW64JRNF2ZMQG
 
 use std::cell::OnceCell;
 use std::path::{Path, PathBuf};
@@ -189,5 +190,26 @@ impl Repo {
     /// unreadable files, [`GitError::Index`] when the filter pipeline fails.
     pub fn worktree_content_as_git(&self, rel: &str) -> Result<Option<Vec<u8>>, GitError> {
         self.with_worktree_reader(|r| r.read(rel))?
+    }
+}
+
+impl gob_walk::NormalizedReader for WorktreeReader<'_> {
+    fn read(&mut self, rel: &str) -> Result<Option<Vec<u8>>, gob_walk::NormalizeError> {
+        WorktreeReader::read(self, rel).map_err(Into::into)
+    }
+}
+
+impl gob_walk::NormalizedSource for WorktreeSource {
+    fn with_reader(&self, f: &mut dyn FnMut(&mut dyn gob_walk::NormalizedReader)) {
+        WorktreeSource::with_reader(self, |r| f(r));
+    }
+}
+
+inventory::submit! {
+    gob_walk::SourceProvider {
+        locate: |root| {
+            WorktreeSource::locate(root)
+                .map(|s| std::sync::Arc::new(s) as std::sync::Arc<dyn gob_walk::NormalizedSource>)
+        },
     }
 }

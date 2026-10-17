@@ -2319,7 +2319,7 @@ name = "gob-cache"
 version = "0.532.0"
 dependencies = [
  "criterion",
- "gob-exec",
+ "gob-fs",
  "gob-time",
  "rusqlite",
  "tempfile",
@@ -2483,6 +2483,7 @@ dependencies = [
 name = "gob-exec"
 version = "0.532.0"
 dependencies = [
+ "gob-fs",
  "gob-log",
  "nix",
  "proptest",
@@ -2509,6 +2510,7 @@ dependencies = [
 name = "gob-fs"
 version = "0.532.0"
 dependencies = [
+ "proptest",
  "tempfile",
  "tracing",
 ]
@@ -2519,6 +2521,8 @@ version = "0.532.0"
 dependencies = [
  "gix",
  "gob-exec",
+ "gob-walk",
+ "inventory",
  "tempfile",
  "thiserror",
  "tracing",
@@ -2563,7 +2567,6 @@ name = "gob-lock"
 version = "0.532.0"
 dependencies = [
  "gob-fs",
- "gob-ir",
  "serde",
  "tempfile",
  "thiserror",
@@ -2748,8 +2751,10 @@ dependencies = [
  "criterion",
  "gob-git",
  "ignore",
+ "inventory",
  "proptest",
  "rayon",
+ "serde_json",
  "tempfile",
  "thiserror",
  "toml",
