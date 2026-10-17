@@ -10,11 +10,52 @@
 | tier | universal |
 | scope | repo |
 | fix | manual |
-| polarity | P+ |
+| polarity | P- |
 | must_measure | false |
 | version | 1 |
-| since | 2.0.0 |
+| since | 0.532.0 |
 
-A link or parent names a ticket that does not exist.
+<!-- mdtest: rule=TICK003 -->
+# TICK003 dangling-link
+
+A ticket link or parent points at a missing ticket.
+
+## What it does
+
+Every link and parent of a ticket must name a ticket that exists in the ledger.
+
+## Why it matters
+
+A dangling link breaks dependency and blocker queries that walk the graph.
+
+## Remedy
 
 Remove the link with `frob ticket unlink`, or restore the ticket.
+
+## Examples
+
+### A violating case fires
+
+```rust expect=fire file=src/lib.rs
+pub fn placeholder() {}
+```
+
+### A conforming case is clean
+
+```rust expect=clean file=src/lib.rs
+pub fn placeholder() {}
+```
+
+## Examples
+
+### TICK003 dangling-link / Examples #1 (line 22) (fire)
+
+```rust
+pub fn placeholder() {}
+```
+
+### TICK003 dangling-link / Examples #2 (line 28) (clean)
+
+```rust
+pub fn placeholder() {}
+```

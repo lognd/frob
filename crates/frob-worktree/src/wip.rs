@@ -7,7 +7,7 @@
 //! so it can be tested without a repository. The expedite lane of
 //! `releases.md` section 2 is the one exception: an expedite ticket may exceed
 //! the repository limit, at most `[pm.classes] expedite_max` at a time. What
-//! counts is defined once in `frob_pm::rules::wip::count`, shared with `PM013`.
+//! counts is defined once in `frob_pm::eval::wip::count`, shared with `PM013`.
 
 // frob:ticket 01M4069T76A6WSNHT3NZERXHAH
 // frob:ticket 01M4069VZVMHVZ15RSPZQRNCXY
@@ -140,7 +140,7 @@ pub struct Limits {
 
 /// The in-progress tickets plus every ticket holding a live lease, so a holder that is mid-start (lease taken, transition not yet recorded) still counts.
 fn holders(ledger: &Ledger, live: &[Lease], id: TicketId) -> Result<Vec<Summary>, WorktreeError> {
-    let mut all = frob_pm::rules::wip::in_progress(ledger)?;
+    let mut all = frob_pm::eval::wip::in_progress(ledger)?;
     for lease in live.iter().filter(|l| l.ticket != id) {
         if all.iter().any(|s| s.id == lease.ticket) {
             continue;
@@ -186,7 +186,7 @@ pub fn check(
         return Ok(());
     }
     let live_ids: BTreeSet<TicketId> = live.iter().map(|l| l.ticket).collect();
-    let mut wip = frob_pm::rules::wip::count(
+    let mut wip = frob_pm::eval::wip::count(
         holders(ledger, live, id)?,
         Some(&live_ids),
         limits.expedite_max,

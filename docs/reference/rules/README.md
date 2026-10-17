@@ -20,7 +20,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [CFG001](CFG001.md) | missing-materialized-knob | error | deterministic | P+ | false | A materialized config knob is missing from the product config file. |
+| [CFG001](CFG001.md) | missing-materialized-knob | error | deterministic | P- | false | A materialized config knob is missing from the product config file. |
 
 ## CI
 
@@ -150,12 +150,12 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [PM001](PM001.md) | milestone-without-goal | warn | manual | P+ | false | A milestone has no goal statement or no exit criteria. |
-| [PM002](PM002.md) | milestone-epics-incomplete | warn | manual | P+ | false | A milestone has no epics, or a member epic is done while work under it is open. |
-| [PM013](PM013.md) | wip-limit-exceeded | warn | manual | P+ | false | The repository has more tickets in progress than `[pm.wip] in_progress` allows. |
-| [PM033](PM033.md) | ready-queue-low | advisory | manual | P+ | false | The ready queue holds fewer doable tickets than `[pm] ready_min`. |
-| [PM034](PM034.md) | milestone-member-outside-epics | warn | manual | P+ | false | A ticket claims a milestone that its epic ancestry does not reach. |
-| [PM036](PM036.md) | cycle-overdue | warn | manual | P+ | false | An active cycle is past its end date and has not been closed. |
+| [PM001](PM001.md) | milestone-without-goal | warn | manual | P- | false | A milestone has no goal statement or no exit criteria. |
+| [PM002](PM002.md) | milestone-epics-incomplete | warn | manual | P- | false | A milestone has no epics, or a member epic is done while work under it is open. |
+| [PM013](PM013.md) | wip-limit-exceeded | warn | manual | P- | false | The repository has more tickets in progress than `[pm.wip] in_progress` allows. |
+| [PM033](PM033.md) | ready-queue-low | advisory | manual | P- | false | The ready queue holds fewer doable tickets than `[pm] ready_min`. |
+| [PM034](PM034.md) | milestone-member-outside-epics | warn | manual | P- | false | A ticket claims a milestone that its epic ancestry does not reach. |
+| [PM036](PM036.md) | cycle-overdue | warn | manual | P- | false | An active cycle is past its end date and has not been closed. |
 
 ## PROC
 
@@ -179,15 +179,15 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [REL001](REL001.md) | release-without-cut | error | manual | P+ | false | A product release tag that `frob release cut` did not create, or that no longer matches its cut. |
-| [REL002](REL002.md) | lockstep-version-mismatch | error | manual | P+ | false | Crates or the wheel whose version differs from the workspace version. |
-| [REL003](REL003.md) | changelog-fragment-required | error | manual | P+ | false | A changelog fragment that is missing for the checked ticket or that fails validation. |
+| [REL001](REL001.md) | release-without-cut | error | manual | P- | false | A product release tag that `frob release cut` did not create, or that no longer matches its cut. |
+| [REL002](REL002.md) | lockstep-version-mismatch | error | manual | P- | false | Crates or the wheel whose version differs from the workspace version. |
+| [REL003](REL003.md) | changelog-fragment-required | error | manual | P- | false | A changelog fragment that is missing for the checked ticket or that fails validation. |
 
 ## SCOPE
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [SCOPE001](SCOPE001.md) | path-outside-lease | error | manual | P+ | false | A changed path lies outside the globs of the ticket's scope lease. |
+| [SCOPE001](SCOPE001.md) | path-outside-lease | error | manual | P- | false | A changed path lies outside the globs of the ticket's scope lease. |
 
 ## SIB
 
@@ -222,11 +222,11 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [TICK001](TICK001.md) | frontmatter-differs-from-fold | error | deterministic | P+ | false | A ticket's frontmatter differs from the fold of its events. |
-| [TICK002](TICK002.md) | ticket-not-on-base | error | manual | P+ | true | A ticket id is referenced but absent from the base ref. |
-| [TICK003](TICK003.md) | dangling-link | error | manual | P+ | false | A link or parent names a ticket that does not exist. |
-| [TICK004](TICK004.md) | absolute-home-path | error | deterministic | P+ | false | A committed ledger file holds an absolute home path. |
-| [TICK005](TICK005.md) | private-term | error | deterministic | P+ | false | A committed ledger file or changelog fragment holds a private term. |
+| [TICK001](TICK001.md) | frontmatter-differs-from-fold | error | deterministic | P- | false | A ticket's `ticket.md` disagrees with the fold of its events. |
+| [TICK002](TICK002.md) | ticket-not-on-base | error | manual | P- | true | A directive or trailer names a ticket missing from the base branch. |
+| [TICK003](TICK003.md) | dangling-link | error | manual | P- | false | A ticket link or parent points at a missing ticket. |
+| [TICK004](TICK004.md) | absolute-home-path | error | deterministic | P- | false | A ledger file holds `/home/<name>/`, `/Users/<name>/`, `/root/` or `C:\Users\<name>\`. |
+| [TICK005](TICK005.md) | private-term | error | deterministic | P- | false | A ledger file or changelog fragment holds a term the local privacy rules forbid. |
 
 ## TODO
 

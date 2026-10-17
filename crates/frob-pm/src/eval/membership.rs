@@ -9,7 +9,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use frob_ledger::{Ledger, TicketId};
-use gob_rules::{Finding, Rule, RuleId, Severity};
+use gob_rules::{Finding, RuleId, Severity};
+
+use crate::eval::id_of;
+use crate::rules::pm034::Pm034;
 
 use crate::error::Result;
 use crate::model::{Milestone, Object, ObjectKind};
@@ -19,32 +22,6 @@ use crate::store::PmStore;
 pub const CLAIM_PREFIX: &str = "release:";
 
 // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
-/// A ticket claims a milestone that its epic ancestry does not reach.
-///
-/// A ticket carrying `release:VERSION` must sit under (or be) one of the
-/// epics that are members of milestone `VERSION`, and an epic that is a member
-/// of a milestone must not have children claiming a different one. This is
-/// the failure that scattered 72 tickets of one release with 70 of them
-/// outside any epic. Without milestone objects the rule is not applicable.
-///
-/// ## Remedy
-///
-/// Add the ticket's epic to the milestone with `frob milestone add EPIC
-/// VERSION`, reparent the ticket under a member epic with `frob ticket update
-/// TICKET --parent EPIC`, or drop the `release:VERSION` label.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "PM034",
-    slug = "milestone-member-outside-epics",
-    family = "PM",
-    severity = Warn,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Pm034;
-
 /// The facts of one ticket that `PM034` reads.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Claimant {
@@ -73,10 +50,7 @@ pub(crate) fn handle(id: TicketId) -> String {
 }
 
 fn rule_id() -> RuleId {
-    Pm034
-        .meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"))
+    id_of::<Pm034>()
 }
 
 /// Versions a ticket claims through `release:VERSION` labels, in label order.

@@ -17,6 +17,7 @@ pub mod fragment;
 pub mod rel001;
 pub mod rel002;
 pub mod rel003;
+pub mod rules;
 pub mod skeleton;
 pub mod status;
 

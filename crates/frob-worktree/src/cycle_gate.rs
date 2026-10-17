@@ -1,7 +1,7 @@
 //! The cycle gates of `work` and `start`: refuse new work while the sprint discipline is broken.
 //!
 //! `E-PM-CYCLE-OVERDUE` fires when an active cycle is past its end date
-//! (the same set `PM036` reports, from `frob_pm::rules::cycle`); an expedite
+//! (the same set `PM036` reports, from `frob_pm::eval::cycle`); an expedite
 //! ticket is exempt because it must be able to start whatever the state of the
 //! plan. Only a ticket taking a fresh slot is judged; re-entering a ticket that
 //! already holds its lease changes nothing.
@@ -17,7 +17,7 @@
 use frob_ledger::model::Class;
 use frob_ledger::{Ledger, TicketId};
 use frob_pm::PmStore;
-use frob_pm::rules::cycle::{self, Overdue, SprintCheck};
+use frob_pm::eval::cycle::{self, Overdue, SprintCheck};
 use gob_diagnostics::{Refusal, RefusalClass};
 
 use crate::error::WorktreeError;

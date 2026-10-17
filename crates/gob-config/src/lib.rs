@@ -31,13 +31,15 @@ mod check;
 mod compute;
 mod describe;
 mod error;
+pub mod host;
 mod load;
 mod local;
 mod materialize;
+pub mod rules;
 mod schema;
 
 pub use artifact::{ArtifactBody, ArtifactEntry, ArtifactFamily, all_artifacts};
-pub use check::{Cfg001, check};
+pub use check::check;
 pub use compute::{ComputeTable, blake3_tagged, compute_digest};
 pub use describe::{
     ConfigTable, FieldDescription, TableDescription, TableEntry, all_tables, render_default,
@@ -49,6 +51,7 @@ pub use inventory;
 pub use load::{ConfigSource, Loaded, Provenance, load, load_str, load_with};
 pub use local::{repo_file, user_config_dir, user_config_dir_with, user_file};
 pub use materialize::{MaterializeReport, materialize};
+pub use rules::cfg001::Cfg001;
 pub use schema::schema;
 pub use serde;
 pub use toml;

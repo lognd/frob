@@ -120,3 +120,27 @@ fn every_walked_file_appears_in_the_fidelity_counts() {
     assert_eq!(report.fidelity.languages["markdown"].files_examined, 1);
     assert!(!report.fidelity.lines().is_empty());
 }
+
+// frob:ticket 01M48R03CM670YGJ6V3P8VPKKP
+// frob:tests crates/frob-pm/src/rules/pm001.rs::Pm001
+#[test]
+fn pm_rules_inapplicable_reasons_appear_in_the_not_applicable_list() {
+    let dir = fixture();
+    let report = run(dir.path(), &options()).expect("run");
+    for rule in ["PM001", "PM002", "PM034"] {
+        let why =
+            report.fidelity.inapplicable.get(rule).unwrap_or_else(|| {
+                panic!("{rule} missing from {:?}", report.fidelity.inapplicable)
+            });
+        assert!(!why.is_empty(), "{rule} carries a reason");
+    }
+    assert!(
+        report
+            .fidelity
+            .lines()
+            .iter()
+            .any(|l| l.starts_with("inapplicable PM001: ")),
+        "{:?}",
+        report.fidelity.lines()
+    );
+}

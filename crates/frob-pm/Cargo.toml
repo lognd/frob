@@ -13,6 +13,7 @@ frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-time = { version = "0.532.0", path = "../gob-time" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 strsim = "0.11"

@@ -14,7 +14,7 @@ use frob_ledger::{Ledger, TicketId};
 use frob_pm::event::{AdoptData, CutData, OverrideData, PmBody, PmEvent, TransitionData};
 use frob_pm::model::Milestone;
 use frob_pm::model::{ObjectKind, State};
-use frob_pm::rules::membership::{CLAIM_PREFIX, claimants, pm034};
+use frob_pm::eval::membership::{CLAIM_PREFIX, claimants, pm034};
 use frob_pm::{NewObject, PmStore};
 use frob_release::adopt::AdoptError;
 use frob_release::bump::{BumpError, BumpOptions, BumpReport, LockState};

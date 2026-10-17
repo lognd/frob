@@ -90,6 +90,12 @@ pub struct FrobInputs {
     pub(crate) tickets_configured: bool,
     /// True when the caller declared the checked ticket exempt from the changelog fragment.
     pub(crate) changelog_exempt: bool,
+    /// Lease settings the caller supplied (`PM033` counts doable tickets under them); loaded from `frob.toml` when absent.
+    // frob:ticket 01M48R03CM670YGJ6V3P8VPKKP
+    pub(crate) lease: Option<frob_lease::LeaseConfig>,
+    /// The ledger doctor's findings, computed once for the four `TICK` rules that read them.
+    // frob:ticket 01M48R03CM670YGJ6V3P8VPKKP
+    pub(crate) doctor: std::sync::OnceLock<Result<Vec<gob_rules::Finding>, String>>,
 }
 
 impl FrobInputs {
@@ -159,7 +165,7 @@ fn open_ledger(
     };
     // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
     // frob:ticket 01M41DQF8CJG567CJ1AWETTCK4
-    let milestones = match frob_pm::rules::membership::milestones(&ledger) {
+    let milestones = match frob_pm::eval::membership::milestones(&ledger) {
         Ok(m) => m.len(),
         Err(err) => {
             tracing::warn!(%err, "milestones unreadable: ledger rules report required Unresolved");
@@ -440,6 +446,8 @@ pub(crate) fn collect(
             invariants,
             tickets_configured: configured,
             changelog_exempt: opts.changelog_exempt,
+            lease: opts.lease.clone(),
+            doctor: std::sync::OnceLock::new(),
         },
         findings: scan_findings,
     })

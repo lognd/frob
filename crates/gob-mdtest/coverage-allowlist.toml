@@ -4,11 +4,6 @@
 
 [[gap]]
 product = "frob"
-rule = "CFG001"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
 rule = "CI001"
 ticket = "~C5DQ4WJ"
 
@@ -54,37 +49,7 @@ ticket = "~C5DQ4WJ"
 
 [[gap]]
 product = "frob"
-rule = "SCOPE001"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
 rule = "SIB001"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TICK001"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TICK002"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TICK003"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TICK004"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TICK005"
 ticket = "~C5DQ4WJ"
 
 [[gap]]

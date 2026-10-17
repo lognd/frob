@@ -10,7 +10,9 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use gob_rules::{Finding, Rule, RuleId, Severity};
+use gob_rules::{Finding, RuleDecl, RuleId, Severity};
+
+use crate::rules::rel002::Rel002;
 use toml::{Table, Value};
 
 /// Wheel metadata files, relative to the repository root, in lookup order.
@@ -18,34 +20,6 @@ pub const WHEEL_METADATA: [&str; 2] = ["pyproject.toml", "packaging/pypi/pyproje
 
 /// The version Cargo assumes for a package that declares none.
 const CARGO_DEFAULT_VERSION: &str = "0.0.0";
-
-// frob:ticket 01M4069WNGJ8YR9DTTM9K9K8V5
-/// Crates or the wheel whose version differs from the workspace version.
-///
-/// Every crate and the wheel are released at one version, so a crate left behind (or
-/// ahead) means a published crate set that cannot be installed together. The workspace
-/// version is `[workspace.package] version`; a member inheriting it with
-/// `version.workspace = true` is equal by construction. A wheel whose version is dynamic
-/// under the `maturin` backend reads `Cargo.toml` and is equal by construction too. A manifest
-/// that cannot be parsed is reported Unresolved with the reason.
-///
-/// ## Remedy
-///
-/// Run `frob release cut VERSION`, which sets every crate and the wheel to VERSION in
-/// one commit (`frob release bump VERSION` rewrites the versions alone), or make the named
-/// member inherit the workspace version with `version.workspace = true`.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "REL002",
-    slug = "lockstep-version-mismatch",
-    family = "REL",
-    severity = Error,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Rel002;
 
 /// What [`evaluate`] found and how many manifests it examined.
 #[derive(Debug, Clone, Default)]
@@ -89,10 +63,10 @@ pub(crate) struct Member {
 }
 
 fn rule_id() -> RuleId {
-    Rel002
-        .meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"))
+    Rel002::DEF
+        .id
+        .parse()
+        .unwrap_or_else(|e| unreachable!("declaration validates the id: {e}"))
 }
 
 pub(crate) fn read_table(path: &Path) -> Result<Table, ManifestError> {

@@ -11,38 +11,16 @@
 
 use frob_ledger::Ledger;
 use frob_ledger::guards::LeaseCheck;
-use gob_rules::{Finding, Rule, RuleId, Severity};
+use gob_rules::{Finding, RuleId, Severity};
+
+use crate::eval::id_of;
+use crate::rules::pm033::Pm033;
 
 use crate::error::Result;
-use crate::rules::membership::Evaluation;
-
-/// The ready queue holds fewer doable tickets than `[pm] ready_min`.
-///
-/// Advisory only: it never fails the gate. A `ready_min` of 0 turns the rule
-/// off.
-///
-/// ## Remedy
-///
-/// Plan the next cycle (run `frob cycle plan`) or triage the backlog so more tickets become
-/// doable, or lower `[pm] ready_min` in `frob.toml`.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "PM033",
-    slug = "ready-queue-low",
-    family = "PM",
-    severity = Advisory,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Pm033;
+use crate::eval::membership::Evaluation;
 
 fn rule_id() -> RuleId {
-    Pm033
-        .meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"))
+    id_of::<Pm033>()
 }
 
 /// Evaluate `PM033` for a ready queue of `ready` tickets against `ready_min`; 0 is off.
@@ -97,13 +75,13 @@ mod tests {
 
     #[test]
     fn ready_min_zero_is_off() {
-        // frob:tests crates/frob-pm/src/rules/replenish.rs::pm033
+        // frob:tests crates/frob-pm/src/eval/replenish.rs::pm033
         assert!(pm033(0, 0).findings.is_empty());
     }
 
     #[test]
     fn message_carries_both_counts() {
-        // frob:tests crates/frob-pm/src/rules/replenish.rs::pm033
+        // frob:tests crates/frob-pm/src/eval/replenish.rs::pm033
         let f = &pm033(4, 1).findings[0];
         assert_eq!(f.severity, Severity::Advisory);
         assert!(

@@ -82,3 +82,17 @@ fn validate_ticket_distinguishes_missing_valid_and_invalid() {
     assert_eq!(errs.len(), 1);
     assert!(errs[0].to_string().contains("unknown type"));
 }
+
+// frob:ticket 01M48R03CM670YGJ6V3P8VPKKP
+// frob:tests crates/frob-release/src/rel003.rs::fragment_required
+#[test]
+fn fragment_required_follows_the_pm_done_requires_table() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    assert!(
+        frob_release::rel003::fragment_required(dir.path()),
+        "the default done_requires includes changelog_fragment"
+    );
+    std::fs::write(dir.path().join("frob.toml"), "[pm]\ndone_requires = []\n")
+        .expect("write frob.toml");
+    assert!(!frob_release::rel003::fragment_required(dir.path()));
+}

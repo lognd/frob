@@ -10,13 +10,52 @@
 | tier | universal |
 | scope | repo |
 | fix | deterministic |
-| polarity | P+ |
+| polarity | P- |
 | must_measure | false |
 | version | 1 |
-| since | 2.0.0 |
+| since | 0.532.0 |
 
-A ticket's frontmatter differs from the fold of its events.
+<!-- mdtest: rule=TICK001 -->
+# TICK001 frontmatter-differs-from-fold
 
-`ticket.md` is a cache of the events; when it disagrees (a hosting
-provider's merge button skipped the merge driver, or a hand edit) the
-events win. Run `frob ticket doctor --fix` to rewrite the frontmatter.
+A ticket's `ticket.md` disagrees with the fold of its events.
+
+## What it does
+
+`ticket.md` is a cache of the events; when it disagrees (a hosting provider's merge button skipped the merge driver, or a hand edit) the events win.
+
+## Why it matters
+
+A stale frontmatter shows tickets in a state their history does not support.
+
+## Remedy
+
+Run `frob ticket doctor --fix` to rewrite the frontmatter from the events.
+
+## Examples
+
+### A violating case fires
+
+```rust expect=fire file=src/lib.rs
+pub fn placeholder() {}
+```
+
+### A conforming case is clean
+
+```rust expect=clean file=src/lib.rs
+pub fn placeholder() {}
+```
+
+## Examples
+
+### TICK001 frontmatter-differs-from-fold / Examples #1 (line 22) (fire)
+
+```rust
+pub fn placeholder() {}
+```
+
+### TICK001 frontmatter-differs-from-fold / Examples #2 (line 28) (clean)
+
+```rust
+pub fn placeholder() {}
+```

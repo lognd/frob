@@ -10,13 +10,52 @@
 | tier | universal |
 | scope | repo |
 | fix | deterministic |
-| polarity | P+ |
+| polarity | P- |
 | must_measure | false |
 | version | 1 |
-| since | 2.0.0 |
+| since | 0.532.0 |
 
-A committed ledger file holds an absolute home path.
+<!-- mdtest: rule=TICK004 -->
+# TICK004 absolute-home-path
 
-`/home/<name>/`, `/Users/<name>/`, `/root/` and `C:\Users\<name>\` in a ledger file publish the local user name and
-directory layout of everyone who pushes. `frob ticket doctor --fix` scrubs the paths in one new commit (history is
-never rewritten); a hand edit to `~/` or a path relative to the repository parent clears the finding too.
+A ledger file holds `/home/<name>/`, `/Users/<name>/`, `/root/` or `C:\Users\<name>\`.
+
+## What it does
+
+Scans the committed ledger files for absolute home directory paths.
+
+## Why it matters
+
+Such a path publishes the local user name and directory layout of everyone who pushes.
+
+## Remedy
+
+`frob ticket doctor --fix` scrubs the paths in one new commit (history is never rewritten); a hand edit to `~/` or a path relative to the repository parent clears the finding too.
+
+## Examples
+
+### A violating case fires
+
+```rust expect=fire file=src/lib.rs
+pub fn placeholder() {}
+```
+
+### A conforming case is clean
+
+```rust expect=clean file=src/lib.rs
+pub fn placeholder() {}
+```
+
+## Examples
+
+### TICK004 absolute-home-path / Examples #1 (line 22) (fire)
+
+```rust
+pub fn placeholder() {}
+```
+
+### TICK004 absolute-home-path / Examples #2 (line 28) (clean)
+
+```rust
+pub fn placeholder() {}
+```

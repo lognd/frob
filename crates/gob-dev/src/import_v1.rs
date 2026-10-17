@@ -32,7 +32,7 @@ use frob_ledger::id::compute_handles;
 use frob_ledger::model::{
     Category, CommentSubtype, Link, LinkKind, Outcome, Points, Priority, Stamp, TicketType,
 };
-use frob_ledger::rules::{tick001, tick003};
+use frob_ledger::tick::{tick001, tick003};
 use frob_ledger::{EventId, TicketId, doc};
 use serde::{Deserialize, Serialize};
 use ulid::Ulid;

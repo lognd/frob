@@ -5,7 +5,7 @@ use std::collections::{BTreeSet, HashMap};
 use frob_lease::{Holder, Lease, LeaseConfig, LeaseStore, overlap::glob_set, scope001};
 use frob_ledger::LedgerConfig;
 use gob_git::{GitError, RelPath, Repo, TreeRef};
-use gob_rules::{Finding, Rule, RuleId, Severity};
+use gob_rules::{Finding, RuleDecl, RuleId, Severity};
 use gob_symbols::{CallEdge, SymbolGraph};
 
 use gob_check::{CheckError, ScopeView, Snapshot};
@@ -145,14 +145,16 @@ pub(crate) fn resolve(
     })
 }
 
-fn id_of<R: Rule>(rule: &R) -> RuleId {
-    rule.meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"))
+/// The validated id of the declared rule `R`.
+fn id_of<R: RuleDecl>() -> RuleId {
+    R::DEF
+        .id
+        .parse()
+        .unwrap_or_else(|e| unreachable!("the rule attribute validates the id: {e}"))
 }
 
-fn unresolved<R: Rule>(rule: &R, message: String) -> Finding {
-    Finding::new(id_of(rule), Severity::Unresolved, None, message, "base")
+fn unresolved(rule: RuleId, message: String) -> Finding {
+    Finding::new(rule, Severity::Unresolved, None, message, "base")
 }
 
 /// Root lock files written by frob's own verbs; SCOPE001 never counts them as branch changes.
@@ -218,8 +220,8 @@ pub(crate) fn ticket_rules(
         Err(err) => {
             let msg = format!("repository unreadable ({err}); SCOPE001 and TICK002 not evaluated");
             return vec![
-                unresolved(&frob_lease::Scope001, msg.clone()),
-                unresolved(&frob_ledger::rules::Tick002, msg),
+                unresolved(id_of::<frob_lease::Scope001>(), msg.clone()),
+                unresolved(id_of::<frob_ledger::rules::tick002::Tick002>(), msg),
             ];
         }
     };
@@ -228,11 +230,11 @@ pub(crate) fn ticket_rules(
         let msg = format!("base ref `{base}` does not resolve ({err}); set --base or [check] base");
         return vec![
             unresolved(
-                &frob_lease::Scope001,
+                id_of::<frob_lease::Scope001>(),
                 format!("{msg}; SCOPE001 not evaluated"),
             ),
             unresolved(
-                &frob_ledger::rules::Tick002,
+                id_of::<frob_ledger::rules::tick002::Tick002>(),
                 format!("{msg}; TICK002 not evaluated"),
             ),
         ];
@@ -245,7 +247,7 @@ pub(crate) fn ticket_rules(
             *diff = Some(paths.iter().map(|p| p.as_str().to_owned()).collect());
         }
         Err(err) => out.push(unresolved(
-            &frob_lease::Scope001,
+            id_of::<frob_lease::Scope001>(),
             format!("diff against `{base}` failed ({err}); SCOPE001 not evaluated"),
         )),
     }
@@ -267,10 +269,10 @@ pub(crate) fn ticket_rules(
         }
     }
     let ids: Vec<&str> = ids.into_iter().collect();
-    match frob_ledger::rules::tick002(&ids, base, &state.ledger) {
+    match frob_ledger::tick::tick002(&ids, base, &state.ledger) {
         Ok(f) => out.extend(f),
         Err(err) => out.push(unresolved(
-            &frob_ledger::rules::Tick002,
+            id_of::<frob_ledger::rules::tick002::Tick002>(),
             format!("TICK002 could not read `{base}` ({err})"),
         )),
     }

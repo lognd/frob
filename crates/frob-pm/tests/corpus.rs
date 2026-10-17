@@ -12,7 +12,7 @@ use frob_ledger::guards::NoLeases;
 use frob_ledger::model::{Category, Outcome, TicketType};
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig, TicketId};
-use frob_pm::rules::{cycle, membership::evaluate, milestone, replenish, wip};
+use frob_pm::eval::{cycle, membership::evaluate, milestone, replenish, wip};
 use frob_pm::{NewObject, ObjectKind, PmStore, State, event::Op};
 use gob_git::{CommitOptions, RelPath, Repo};
 use gob_mdtest::Case;

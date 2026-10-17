@@ -10,64 +10,18 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use frob_ledger::{Ledger, TicketId};
-use gob_rules::{Finding, Rule, RuleId, Severity};
+use gob_rules::{Finding, Severity};
+
+use crate::eval::id_of;
+use crate::rules::pm001::Pm001;
+use crate::rules::pm002::Pm002;
 
 use crate::error::Result;
+use crate::eval::membership::{self, Claimant, handle, reached};
 use crate::model::Milestone;
-use crate::rules::membership::{self, Claimant, handle, reached};
 
 // frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
-/// A milestone has no goal statement or no exit criteria.
-///
-/// A release is planned against a goal and defined done by its exit criteria
-/// (`milestone criterion add`). A blank goal, or a milestone with no criteria,
-/// leaves "is it finished" unanswerable. A milestone with no target date is
-/// `unscheduled`, which is allowed. Without milestone objects the rule is not
-/// applicable.
-///
-/// ## Remedy
-///
-/// Give the milestone its goal and criteria, for example `frob milestone new
-/// VERSION --goal "..." --criterion "..."` or `frob milestone criterion add
-/// VERSION TEXT`.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "PM001",
-    slug = "milestone-without-goal",
-    family = "PM",
-    severity = Warn,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Pm001;
-
 // frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
-/// A milestone has no epics, or a member epic is done while work under it is open.
-///
-/// A milestone's work arrives through its member epics (`milestone add EPIC
-/// VERSION`). With none it plans nothing; and an epic that is already `done`
-/// while a descendant ticket is still open claims a completeness it does not
-/// have. Without milestone objects the rule is not applicable.
-///
-/// ## Remedy
-///
-/// Add an epic with `frob milestone add EPIC VERSION`, or reopen the epic (or
-/// finish or move the open tickets under it).
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "PM002",
-    slug = "milestone-epics-incomplete",
-    family = "PM",
-    severity = Warn,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Pm002;
-
 /// A ticket's state as `PM002` reads it: its fold facts plus whether it is `done`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Progress {
@@ -86,16 +40,10 @@ pub struct Evaluation {
     pub subjects: usize,
 }
 
-fn rule_id<R: Rule>(rule: &R) -> RuleId {
-    rule.meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"))
-}
-
 // frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
 /// Evaluate `PM001` over folded `milestones`: a blank goal or no exit criteria fires.
 pub fn pm001(milestones: &[Milestone]) -> Vec<Finding> {
-    let id = rule_id(&Pm001);
+    let id = id_of::<Pm001>();
     let mut out = Vec::new();
     for m in milestones {
         let mut missing = Vec::new();
@@ -129,7 +77,7 @@ pub fn pm001(milestones: &[Milestone]) -> Vec<Finding> {
 // frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
 /// Evaluate `PM002` over folded `milestones` and ticket `progress`: no epics, or a done member epic with open descendants.
 pub fn pm002(milestones: &[Milestone], progress: &[Progress]) -> Vec<Finding> {
-    let id = rule_id(&Pm002);
+    let id = id_of::<Pm002>();
     let tickets: Vec<Claimant> = progress.iter().map(|p| p.ticket.clone()).collect();
     let by_id: BTreeMap<TicketId, &Claimant> = tickets.iter().map(|t| (t.id, t)).collect();
     let done: BTreeSet<TicketId> = progress

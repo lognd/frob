@@ -1422,12 +1422,12 @@ fn ready_candidates(ctx: &Context, ledger: &Ledger) -> Result<Ready, CliError> {
     let (lease_store, _) = open_lease_store(ctx)?;
     let guard = frob_lease::LeaseGuard::new(lease_store).map_err(CliError::internal)?;
     let doable = ledger.doable(&guard).map_err(cli_err)?;
-    let milestones = frob_pm::rules::membership::milestones(ledger).map_err(cycle_pm_err)?;
+    let milestones = frob_pm::eval::membership::milestones(ledger).map_err(cycle_pm_err)?;
     let next = next_milestone(&milestones);
     let in_next = match next {
         Some(m) => milestone_members(
             m,
-            &frob_pm::rules::membership::claimants(ledger).map_err(cycle_pm_err)?,
+            &frob_pm::eval::membership::claimants(ledger).map_err(cycle_pm_err)?,
         ),
         None => std::collections::BTreeSet::new(),
     };

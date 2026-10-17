@@ -11,5 +11,14 @@ use crate::host::FrobHost;
 gob_check::product_rules! {
     product = Frob;
     host = dyn FrobHost;
-    crates = [frob_tests, frob_ack, frob_obligations];
+    crates = [
+        frob_tests,
+        frob_ack,
+        frob_obligations,
+        frob_ledger,
+        frob_pm,
+        frob_release,
+        frob_lease,
+        gob_config,
+    ];
 }
