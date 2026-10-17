@@ -1,0 +1,1 @@
+- crunk: add `crunk fix [--dry-run]`, a Tier A autofix engine on gob-fix that applies tolerance-gated machine fixes to stylesheet findings and leaves JSX style-prop sites alone.
