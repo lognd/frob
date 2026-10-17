@@ -70,6 +70,43 @@ fn timeout_leaves_no_grandchild() {
     }
 }
 
+/// frob:ticket ~PYFAH0T
+#[cfg(unix)]
+#[test]
+fn timeout_returns_promptly_despite_setsid_grandchild_holding_the_pipe() {
+    if which_setsid().is_none() {
+        return;
+    }
+    let runner = Runner::new(Limits { jobs: 1 });
+    // The setsid grandchild leaves the process group and keeps stdout open past the timeout.
+    let spec = Spec {
+        program: Program::Tool { name: "sh".into() },
+        args: vec!["-c".into(), "setsid sleep 6 & echo started; wait".into()],
+        cwd: None,
+        env: vec![],
+        timeout: Duration::from_millis(300),
+        capture: true,
+    };
+    let t = Instant::now();
+    let out = runner.run(&spec).unwrap();
+    let took = t.elapsed();
+    assert_eq!(out.status, Outcome::TimedOut);
+    assert!(
+        took < Duration::from_millis(300) + Duration::from_secs(2),
+        "run blocked on the escaped grandchild: {took:?}"
+    );
+    assert!(out.stdout.contains("started"), "partial output kept");
+}
+
+#[cfg(unix)]
+fn which_setsid() -> Option<()> {
+    std::process::Command::new("setsid")
+        .arg("--version")
+        .output()
+        .ok()
+        .map(|_| ())
+}
+
 #[test]
 fn concurrency_is_bounded_by_jobs() {
     let runner = Runner::new(Limits { jobs: 2 });
