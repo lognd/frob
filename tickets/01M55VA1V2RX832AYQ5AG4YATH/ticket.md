@@ -11,7 +11,7 @@ scope = ["crates/crunk/**", "docs/design/git-io.md"]
 
 [[acceptance]]
 text = "Given the crunk lib/binary link set, when providers are enumerated, then a gob_walk::SourceProvider (gob-git) is registered"
-bound = false
+bound = true
 +++
 
 found while working ~NF2ZMQG: ContentSource::locate resolves gob-git via inventory; crunk bins do not link gob-git so they fall back to raw reads.
