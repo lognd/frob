@@ -81,7 +81,7 @@ fn a_repository_with_no_entity_at_all_is_not_applicable() {
     }
 }
 
-// frob:tests crates/grimble-bind/src/rules.rs::evaluate
+// frob:tests crates/grimble-bind/src/eval.rs::evaluate
 #[test]
 fn sys003_examines_operands_and_fires_on_a_dangling_one() {
     let b = bind(&[
@@ -96,7 +96,7 @@ fn sys003_examines_operands_and_fires_on_a_dangling_one() {
     assert!(!b.not_applicable.contains_key("SYS003"));
 }
 
-// frob:tests crates/grimble-bind/src/rules.rs::evaluate
+// frob:tests crates/grimble-bind/src/eval.rs::evaluate
 #[test]
 fn sys003_examines_a_singleton_clause_and_is_clean_on_a_good_one() {
     let model = format!(
@@ -110,7 +110,7 @@ fn sys003_examines_a_singleton_clause_and_is_clean_on_a_good_one() {
     assert!(!fired(&b, "SYS003"));
 }
 
-// frob:tests crates/grimble-bind/src/rules.rs::evaluate
+// frob:tests crates/grimble-bind/src/eval.rs::evaluate
 #[test]
 fn sys009_examines_a_flow_end_and_fires_on_an_unbound_one() {
     let model = format!(
@@ -130,7 +130,7 @@ fn sys009_examines_a_flow_end_and_fires_on_an_unbound_one() {
     assert!(!b.not_applicable.contains_key("SYS009"));
 }
 
-// frob:tests crates/grimble-bind/src/rules.rs::evaluate
+// frob:tests crates/grimble-bind/src/eval.rs::evaluate
 #[test]
 fn sys010_examines_a_claim_and_fires_without_evidence() {
     let model = format!(
@@ -145,7 +145,7 @@ fn sys010_examines_a_claim_and_fires_without_evidence() {
     assert!(!b.not_applicable.contains_key("SYS010"));
 }
 
-// frob:tests crates/grimble-bind/src/rules.rs::evaluate
+// frob:tests crates/grimble-bind/src/eval.rs::evaluate
 #[test]
 fn sys011_examines_a_vmodel_link_and_fires_when_it_is_broken() {
     let model = format!(
@@ -162,7 +162,7 @@ fn sys011_examines_a_vmodel_link_and_fires_when_it_is_broken() {
 
 const OWNERSHIP: [&str; 3] = ["SYS001", "SYS002", "SYS004"];
 
-// frob:tests crates/grimble-bind/src/rules.rs::sys004_inapplicable
+// frob:tests crates/grimble-bind/src/eval.rs::sys004_inapplicable
 #[test]
 fn no_model_entity_makes_sys001_sys002_sys004_not_applicable() {
     for files in [
@@ -185,7 +185,7 @@ fn no_model_entity_makes_sys001_sys002_sys004_not_applicable() {
     }
 }
 
-// frob:tests crates/grimble-bind/src/rules.rs::sys004_inapplicable
+// frob:tests crates/grimble-bind/src/eval.rs::sys004_inapplicable
 #[test]
 fn a_model_with_nodes_examines_ownership_subjects() {
     let model = format!("{PLAIN}node t : trusted {{ owns \"src/**\"; }}\n");
@@ -202,7 +202,7 @@ fn a_model_with_nodes_examines_ownership_subjects() {
     assert!(fired(&b, "SYS002"), "two nodes own src/** equally");
 }
 
-// frob:tests crates/grimble-bind/src/rules.rs::sys001_inapplicable
+// frob:tests crates/grimble-bind/src/eval.rs::sys001_inapplicable
 #[test]
 fn a_model_with_only_a_flow_has_no_node_to_own_files() {
     let model = "grimble = \"2\";\nmodule m;\n\nnode a : external { }\nnode b : external { }\nflow f : a -> b { }\n";

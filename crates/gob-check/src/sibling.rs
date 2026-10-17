@@ -40,6 +40,9 @@ pub struct PacksField {
 pub struct SiblingInput<'a> {
     /// The producing product name (`crunk`, `grimble`).
     pub product: &'a str,
+    // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
+    /// Metadata of every rule the product emits (slug and polarity of its rows).
+    pub registry: &'a Registry,
     /// The producer's own version.
     pub product_version: &'a str,
     /// Repository root the report's paths are relative to.
@@ -77,9 +80,9 @@ pub fn fidelity_reason(f: &Finding) -> Option<String> {
     (f.severity == Severity::Unresolved).then(|| "fidelity".to_owned())
 }
 
-/// Polarity of `rule` (`P+` when the registry does not know it).
-fn polarity_of(rule: &str) -> MarkOfPolarity {
-    Registry::global()
+/// Polarity of `rule` in `registry` (`P+` when it does not know the rule).
+fn polarity_of(registry: &Registry, rule: &str) -> MarkOfPolarity {
+    registry
         .by_id(rule)
         .map_or(MarkOfPolarity::Plus, |m| match m.polarity {
             RulePolarity::Pplus => MarkOfPolarity::Plus,
@@ -122,11 +125,11 @@ fn finding_row(input: &SiblingInput<'_>, sources: &MemorySources, f: &Finding) -
     let rule = f.rule.as_str();
     // The row's own `reason` (the product's code, `sibling.json`) replaces the record's typed one;
     // both flattened would repeat the key.
-    let mut record = FindingRecord::from_finding(f, sources, Registry::global());
+    let mut record = FindingRecord::from_finding(f, sources, input.registry);
     record.reason = None;
     FindingRow {
         record,
-        polarity: polarity_of(rule),
+        polarity: polarity_of(input.registry, rule),
         subjects_examined: input
             .report
             .subjects_examined
@@ -160,7 +163,7 @@ fn rules_json(input: &SiblingInput<'_>) -> Vec<RuleRecord> {
         .filter(|(rule, _)| !input.not_applicable.contains(rule.as_str()))
         .map(|(rule, subjects)| RuleRecord {
             rule: rule.clone(),
-            polarity: polarity_of(rule),
+            polarity: polarity_of(input.registry, rule),
             subjects_examined: *subjects as u64,
             findings: count(rule, None),
             suppressed: report
