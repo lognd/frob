@@ -190,6 +190,7 @@ pub struct ShowData {
     verb = "config show",
     product = "frob",
     idempotent = true,
+    read_only,
     exits(ok, refused, usage, internal)
 )]
 pub struct ConfigShow;

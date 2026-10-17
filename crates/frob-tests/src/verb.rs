@@ -215,6 +215,8 @@ impl Command for TestVerb {
         );
         // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
         opts.dotnet_path.clone_from(&ws.dotnet.path);
+        // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+        opts.unity_editor.clone_from(&ws.unity.editor);
         let report = run(&ws.runner(), &data.selected, &opts).map_err(TestsError::into_cli)?;
         data.ran = true;
         data.passed = Some(report.passed());

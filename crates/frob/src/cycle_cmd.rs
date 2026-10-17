@@ -504,6 +504,7 @@ impl Command for CycleNew {
     verb = "cycle show",
     product = "frob",
     idempotent = true,
+    read_only,
     exits(ok, refused, usage, internal)
 )]
 pub struct CycleShow {
@@ -556,6 +557,7 @@ impl Command for CycleShow {
     verb = "cycle list",
     product = "frob",
     idempotent = true,
+    read_only,
     exits(ok, refused, usage, internal)
 )]
 pub struct CycleList;

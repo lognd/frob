@@ -2,13 +2,14 @@
 id = "01M44YR0AAJ0X0BGXX7F17DMKH"
 title = "unity evidence provider: batch-mode EditMode and PlayMode runs"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:04Z"
-updated = "2026-10-17T18:41:34Z"
+updated = "2026-10-17T18:54:38Z"
 idempotency_key = "d94-unityrun"
 scope = ["crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/tests/unity.rs", "crates/frob-tests/src/select.rs", "crates/frob-tests/src/run.rs", "crates/frob-tests/tests/**", "docs/reference/config.md", "docs/design/build-test-ci.md", "crates/frob-evidence/src/error.rs", "crates/frob-tests/src/error.rs", "crates/frob-tests/src/lib.rs", "crates/frob-tests/src/verb.rs", "crates/gob-testsupport/src/bin/fake_dotnet.rs"]
 

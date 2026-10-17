@@ -451,6 +451,7 @@ impl Command for MilestoneAdd {
     verb = "milestone show",
     product = "frob",
     idempotent = true,
+    read_only,
     exits(ok, refused, usage, internal)
 )]
 pub struct MilestoneShow {
@@ -487,6 +488,7 @@ impl Command for MilestoneShow {
     verb = "milestone list",
     product = "frob",
     idempotent = true,
+    read_only,
     exits(ok, refused, usage, internal)
 )]
 pub struct MilestoneList;

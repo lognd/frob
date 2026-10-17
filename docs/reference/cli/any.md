@@ -5,3 +5,4 @@
 | Verb | Idempotent | Dry run | Exits | Summary |
 |---|---|---|---|---|
 | `schema` | yes | no | 0 ok, 2 usage, 4 internal | Print the JSON schemas of the output envelope and every config table. |
+| `serve` | yes | no | 0 ok, 4 internal | Serve the read-only verbs as MCP tools over stdin and stdout until the client closes the stream. |
